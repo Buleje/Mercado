@@ -1,0 +1,32 @@
+{
+ "ruta": "/admin?tab=inicio",
+ "pasos": [
+  {
+   "esperar": "[data-qa=menu-identidad]"
+  },
+  {
+   "esperar": 1500
+  },
+  {
+   "eval": "(() => { const r=(e)=>e?Math.round(e.getBoundingClientRect().top):null; const a=document.querySelector('[data-barra-lateral]'); const nav=a?.querySelector('nav'); const link=nav?.querySelector('a,button'); const d=document.querySelector('[aria-label=\"Menú de navegación\"]'); const dn=d?.querySelector('nav'); const dl=dn?.querySelector('a,button'); const h=document.querySelector('[data-admin-header]'); const b=document.querySelector('[data-qa=menu-identidad]'); const br=b?.getBoundingClientRect(); const sp=b?[...b.querySelectorAll('span span')]:[]; const vis=(e)=>!!e&&e.getClientRects().length>0; return {w:innerWidth, navTop:r(nav), navH: nav?Math.round(nav.getBoundingClientRect().height):null, linkTop:r(link), linkTxt:(link?.innerText||'').trim().slice(0,20), dNavTop: vis(d)?r(dn):null, dLinkTop: vis(d)?r(dl):null, hdrH: h?Math.round(h.getBoundingClientRect().height):null, hdrW: h?Math.round(h.getBoundingClientRect().width):null, trig: br?{x:Math.round(br.left),der:Math.round(innerWidth-br.right),w:Math.round(br.width),h:Math.round(br.height)}:null, img: !!b?.querySelector('img'), nombre: vis(sp[0])?sp[0].innerText:'(oculto)', rubro: vis(sp[1])?sp[1].innerText:'(oculto)', colorNombre: sp[0]?getComputedStyle(sp[0]).color:null, colorRubro: sp[1]?getComputedStyle(sp[1]).color:null, hdrFondo: h?(getComputedStyle(h).backgroundImage.slice(0,50)+' | '+getComputedStyle(h).backgroundColor):null, desborde: document.documentElement.scrollWidth>innerWidth}; })()"
+  },
+  {
+   "captura": "cerrado"
+  },
+  {
+   "click": "[data-qa=menu-identidad]"
+  },
+  {
+   "esperar": "[data-qa=tarjeta-negocio]"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "eval": "(() => { const t=document.querySelector('[data-qa=tarjeta-negocio]'); if(!t) return 'sin tarjeta'; const m=t.parentElement; const r=m.getBoundingClientRect(); const bs=[...m.querySelectorAll('button')].map(b=>Math.round(b.getBoundingClientRect().height)); return {menu:{izq:Math.round(r.left),der:Math.round(innerWidth-r.right),arriba:Math.round(r.top),alto:Math.round(r.height),ancho:Math.round(r.width)}, botonesAlto:bs, texto:m.innerText.replace(/\\s+/g,' ').slice(0,260)}; })()"
+  },
+  {
+   "captura": "menu"
+  }
+ ]
+}

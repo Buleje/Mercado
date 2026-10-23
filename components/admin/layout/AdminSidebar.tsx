@@ -2,8 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
-import Image from "next/image";
 import { m } from "@/components/admin/providers";
 import { ChevronRight, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,7 +15,6 @@ import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categorie
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
 import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import { PillPronto, SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
-import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle, SidebarExtendedConfig } from "@/components/admin/shared/SidebarConfigurator";
 import { gruposDeEnlaces, guardarModoMenu, leerModoMenu, type ModoMenu } from "@/components/admin/layout/sidebar-enlaces";
@@ -26,7 +23,7 @@ import { coloresDeIconos } from "@/components/admin/layout/sidebar-colores-icono
 import { COLOR_DE_ACENTO, DENSIDADES, estiloDeTema, guardarTema, leerTema } from "@/components/admin/layout/sidebar-temas";
 import { PieDeBarra } from "@/components/admin/layout/PieDeBarra";
 import { TiradorAncho } from "@/components/admin/layout/TiradorAncho";
-import { BulejeMark } from "@/components/ui-system/illustrations";
+import { BulejeMark, BulejeWordmark } from "@/components/ui-system/illustrations";
 import { useTenant } from "@/contexts/tenant-context";
 import { SIDEBAR_STYLE_PRESETS, type DefaultSidebarStyle } from "@/lib/admin-template";
 import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
@@ -71,8 +68,6 @@ export type AdminSidebarProps = {
   isSuperAdminImpersonating: boolean;
 
   // Tenant / usuario
-  activeTenantName: string | null | undefined;
-  activeTenantLogo: string | null | undefined;
   activeTenantSlug: string | null | undefined;
   userName: string;
   userRole: string;
@@ -136,11 +131,9 @@ export type AdminSidebarProps = {
 export const AdminSidebar = React.memo(function AdminSidebar({
   focusMode,
   presentationMode,
-  activeTenantName,
-  activeTenantLogo,
   activeTenantSlug,
   userName: _userName,
-  userRole,
+  userRole: _userRole,
   tab,
   navigateTab,
   allowedTabs,
@@ -191,10 +184,6 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   // aparecen si su spec está prendida (2026-05-29: antes seguían visibles aunque
   // el superadmin la apagara).
   const { enabledModuleIds: enabledSpecModuleIds } = useEnabledSpecs();
-
-  // Modal "Cambiar tipo de negocio" — solo visible para owner/admin
-  const [showIndustryModal, setShowIndustryModal] = React.useState(false);
-  const canChangeIndustry = userRole === "owner" || userRole === "admin";
 
   /* "Ver mi tienda" debe apuntar a la tienda real del negocio.
      Si el slug activo es uno de los demos del SaaS (main/previus/demo/preview),
@@ -689,41 +678,6 @@ export const AdminSidebar = React.memo(function AdminSidebar({
 
   // Section headers keyed by the first category id in each group
 
-  /* Logo del tenant (o BulejeMark de respaldo) — un solo nodo para no
-     duplicar el ternario en el modo compacto y en el modo expandido, que
-     ahora envuelve logo+nombre en el mismo marco con borde de color
-     (Brandon 2026-08-24: el ring gris genérico no decía nada de marca). */
-  const tenantLogoNode = activeTenantLogo ? (
-    <div className={cn("relative shrink-0", isDarkTheme && "drop-shadow-md")}>
-      <Image
-        src={activeTenantLogo}
-        alt={activeTenantName ?? "Logo"}
-        width={40}
-        height={40}
-        className={cn(
-          // Brandon mayo 2026 v4: fondo blanco SIEMPRE — el logo del tenant
-          // tiene mejor contraste sobre blanco que sobre gradient
-          // verde/accent, especialmente en sidebar oscuro.
-          "h-10 w-10 rounded-xl object-contain bg-[var(--surface-raised)] p-0.5",
-          isDarkTheme
-            ? "ring-2 ring-[color-mix(in_oklab,var(--accent)_55%,white_20%)]"
-            : "ring-2 ring-primary/30 dark:ring-card-border",
-        )}
-      />
-    </div>
-  ) : (
-    <div className={cn(
-      // Sin logo del tenant: usamos BulejeMark sobre blanco con accent
-      // color para el icon (mantiene identidad de marca).
-      "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-[var(--surface-raised)] ring-2",
-      isDarkTheme
-        ? "ring-[color-mix(in_oklab,var(--accent)_55%,white_20%)] text-[color:var(--accent)] shadow-[var(--shadow-md)]"
-        : "ring-primary/30 text-primary shadow-sm",
-    )}>
-      <BulejeMark size={22} strokeWidth={1.75} />
-    </div>
-  );
-
   return (
     <>
       {/* Desktop permanent sidebar — siempre desde top:0 para abarcar
@@ -759,64 +713,26 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               : "var(--libre-izq, 0px)",
         }}
       >
-        {/* ── Header: tenant + user ── */}
-        {/* Sidebar content SIEMPRE visible (incluso en configMode — el
-            configurator ahora se muestra en panel separado al lado) */}
+        {/* Arriba, la marca Buleje en una franja fina (Brandon 23-10: «el logo de mi
+            empresa Buleje y su nombre»). El logo, el nombre y el tipo de negocio del
+            TENANT están en el encabezado, en el botón de identidad
+            (`AdminUserDropdown`), y la ventana «Tipo de negocio» se abre desde su
+            tarjeta. Compactar y Configurar siguen en el pie (`PieDeBarra`). */}
         <>
-        <div className={cn(
-          "flex items-center gap-3 h-16 border-b transition-all duration-[var(--dur-base)] shrink-0",
-          themeClasses.headerBorder,
-          effectiveCompact ? "px-3 justify-center" : "px-4"
-        )}>
-          {effectiveCompact ? (
-            tenantLogoNode
-          ) : (
-            /* Marco de identidad: logo + nombre + badge de industria dentro
-               de un borde acento — antes flotaban sueltos en la barra y el
-               nombre del tenant se truncaba a la mitad porque el badge de
-               industria competía por el ancho en la misma fila (Brandon
-               2026-08-24). Usuario y rol salieron del bloque (Brandon
-               2026-08-28): ya se muestran en el dropdown de cuenta del
-               header superior (`AdminUserDropdown`) — repetirlos acá era
-               ruido, no información nueva. */
-            <div className={cn(
-              "flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-2.5 py-1.5 transition-colors",
-              isDarkTheme
-                ? "border-[color-mix(in_oklab,var(--accent)_28%,transparent)] bg-[color-mix(in_oklab,var(--accent)_7%,transparent)]"
-                : "border-primary/15 bg-primary/5"
-            )}>
-              {tenantLogoNode}
-              <div className="min-w-0 flex-1">
-                <p className={cn(
-                  "font-bold text-sm leading-tight tracking-tight truncate",
-                  isDarkTheme
-                    ? "text-white"
-                    : "text-[var(--text-primary)] dark:text-[var(--text-primary)]",
-                )}>
-                  {activeTenantName ?? verticalConfig.branding?.sidebarTitle ?? "Buleje"}
-                </p>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                  {/* Industry badge — clickable para owner/admin */}
-                  <button
-                    onClick={() => canChangeIndustry && setShowIndustryModal(true)}
-                    title={canChangeIndustry ? "Cambiar tipo de negocio" : verticalConfig.label}
-                    className={cn(
-                      "shrink-0 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-lg leading-none transition-all",
-                      isDarkTheme
-                        ? "bg-[color-mix(in_oklab,var(--accent)_20%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_30%,transparent)]"
-                        : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20",
-                      canChangeIndustry && "cursor-pointer hover:opacity-80",
-                      !canChangeIndustry && "cursor-default"
-                    )}
-                  >
-                    {verticalConfig.label}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+        <div className={cn("flex h-14 shrink-0 items-center", effectiveCompact ? "justify-center px-1.5" : "px-4")}>
+          <button
+            type="button"
+            onClick={() => navigateTab("inicio" as Tab)}
+            aria-label="Buleje: ir a Inicio"
+            className="inline-flex min-h-11 items-center rounded-xl px-1 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            {effectiveCompact ? (
+              <BulejeMark size={32} forceDark={isDarkTheme} />
+            ) : (
+              <BulejeWordmark size={32} textSize={19} forceDark={isDarkTheme} className={isDarkTheme ? "text-white" : undefined} />
+            )}
+          </button>
         </div>
-
         {/* Sin buscador acá — Brandon 2026-08-03. El encabezado ya tiene el
             suyo (⌘K / el pill "Buscar módulos, productos, clientes…"), que
             además busca productos, clientes y pedidos, no sólo módulos. Un
@@ -1350,43 +1266,6 @@ export const AdminSidebar = React.memo(function AdminSidebar({
         );
       })()}
 
-      {/* ── Modal: Cambiar tipo de negocio ──────────────────────────────────── */}
-      {canChangeIndustry && (
-        <AdminModal
-          open={showIndustryModal}
-          onClose={() => setShowIndustryModal(false)}
-          title="Tipo de negocio"
-          description="El tipo de negocio determina que modulos aparecen en tu panel."
-          variant="centered-sm"
-        >
-          <div className={MODAL_BODY}>
-            <div className={cn(
-              "flex items-center gap-3 p-3 rounded-xl mb-4",
-              isDarkTheme
-                ? "bg-[color-mix(in_oklab,var(--accent)_10%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
-                : "bg-primary/5 ring-1 ring-primary/15"
-            )}>
-              <div>
-                <p className="font-semibold text-sm text-[var(--text-primary)]">{verticalConfig.label}</p>
-                <p className="text-xs text-[var(--text-tertiary)]">{verticalConfig.description}</p>
-              </div>
-            </div>
-            <EnlacePanel apariencia="heredada"
-              href="/admin?tab=config&vista=negocio"
-              onClick={() => setShowIndustryModal(false)}
-              className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity hover:no-underline"
-            >
-              Cambiar tipo de negocio
-            </EnlacePanel>
-            <button
-              onClick={() => setShowIndustryModal(false)}
-              className="mt-2 w-full text-center text-sm text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors py-1.5"
-            >
-              Cancelar
-            </button>
-          </div>
-        </AdminModal>
-      )}
     </>
   );
 });

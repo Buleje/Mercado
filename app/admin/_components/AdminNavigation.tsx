@@ -42,7 +42,6 @@ type ShortcutItem = {
 
 // ── Grupos de props ────────────────────────────────────────────────────────
 export interface AdminNavigationShared {
-  activeTenantName: string | null | undefined;
   tab: Tab;
   navigateTab: (tab: Tab) => void;
   filteredTabs: TabItem[];
@@ -82,7 +81,6 @@ export interface AdminNavigationSidebar {
   focusMode: boolean;
   presentationMode: boolean;
   isSuperAdminImpersonating: boolean;
-  activeTenantLogo: string | null | undefined;
   activeTenantSlug: string | null | undefined;
   userName: string;
   userRole: string;
@@ -126,7 +124,6 @@ export const AdminNavigation = memo(function AdminNavigation({
       <AdminMobileDrawer
         open={drawer.open}
         onClose={drawer.onClose}
-        activeTenantName={shared.activeTenantName ?? null}
         tab={shared.tab}
         navigateTab={shared.navigateTab}
         filteredTabs={shared.filteredTabs}
@@ -161,8 +158,6 @@ export const AdminNavigation = memo(function AdminNavigation({
         focusMode={sidebar.focusMode}
         presentationMode={sidebar.presentationMode}
         isSuperAdminImpersonating={sidebar.isSuperAdminImpersonating}
-        activeTenantName={shared.activeTenantName}
-        activeTenantLogo={sidebar.activeTenantLogo}
         activeTenantSlug={sidebar.activeTenantSlug}
         userName={sidebar.userName}
         userRole={sidebar.userRole}

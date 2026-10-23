@@ -334,7 +334,7 @@ function AdminPage() {
   const onNavigateFromHeader = useCallback((t: string) => navigateTab(t as Tab), [navigateTab]);
 
   const sharedNav = useMemo(() => ({
-    activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
+    tab, navigateTab, filteredTabs, allowedTabs,
     visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
     recentCollapsed, onToggleRecentCollapsed,
     favoriteTabs, onToggleFavorite: toggleFavorite,
@@ -344,7 +344,7 @@ function AdminPage() {
     onRemoveShortcut: removeShortcut, onMoveShortcut: moveShortcut,
     clearedDemoTabs, alerts,
   }), [
-    activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
+    tab, navigateTab, filteredTabs, allowedTabs,
     visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
     recentCollapsed, onToggleRecentCollapsed,
     favoriteTabs, toggleFavorite,
@@ -365,13 +365,13 @@ function AdminPage() {
 
   const sidebarNav = useMemo(() => ({
     focusMode: effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
-    activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
+    activeTenantSlug, userName, userRole, openAccordionCategories,
     onToggleAccordion,
     sidebarFlyout, onSidebarFlyoutChange: setSidebarFlyout, flyoutTimerRef,
     hiddenTabs, allTabs: ALL_TABS,
   }), [
     effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
-    activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
+    activeTenantSlug, userName, userRole, openAccordionCategories,
     onToggleAccordion, sidebarFlyout, setSidebarFlyout, flyoutTimerRef, hiddenTabs,
   ]);
 
@@ -462,6 +462,8 @@ function AdminPage() {
           userName={userName}
           userRole={userRole}
           tenantSlug={activeTenantSlug}
+          activeTenantName={activeTenantName}
+          activeTenantLogo={activeTenantLogo}
           onOpenMobileNav={onOpenMobileNav}
           onOpenSearch={onOpenSearch}
           onOpenCierreDiario={onOpenCierreDiario}

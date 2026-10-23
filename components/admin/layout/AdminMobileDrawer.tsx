@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import {
   X,
-  ShoppingBasket,
   ChevronDown,
   ChevronUp,
   Star,
@@ -31,9 +30,6 @@ type TabItem = AllTabsItem;
 export type AdminMobileDrawerProps = {
   open: boolean;
   onClose: () => void;
-
-  // Tenant
-  activeTenantName: string | null;
 
   // Tab activa + navegación
   tab: Tab;
@@ -83,7 +79,6 @@ export type AdminMobileDrawerProps = {
 export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
   open,
   onClose,
-  activeTenantName,
   tab,
   navigateTab,
   filteredTabs,
@@ -142,24 +137,6 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/5">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center">
-              <ShoppingBasket className="h-4 w-4" />
-            </div>
-            <span className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">
-              {activeTenantName || "Buleje"}
-            </span>
-          </div>
-          <button aria-label="Cerrar"
-            onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"
-          >
-            <X className="h-5 w-5 text-[var(--text-secondary)]" />
-          </button>
-        </div>
-
         {/* Buscador. Reemplaza al selector "Todas las categorías", que
             desplegaba las CATORCE categorías para filtrar por una — o sea, la
             misma organización que ahora se ve agrupada en la lista de abajo,
@@ -167,8 +144,11 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
             tenía búsqueda… sin input: `sidebarSearch` se leía para filtrar pero
             NADIE lo escribía, así que era código muerto. Un solo mecanismo,
             presente en las dos superficies. */}
-        <div className="px-3 py-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-          <div className="relative">
+        {/* Brandon 23-10: sin la franja de marca arriba (el logo y el nombre del
+            negocio están en el encabezado, en el botón de identidad): el cajón
+            arranca con el buscador y los enlaces; «Cerrar» va al lado del campo. */}
+        <div className="flex items-center gap-2 px-3 py-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+          <div className="relative min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
             <input
               type="text"
@@ -188,6 +168,14 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
               </button>
             )}
           </div>
+          <button
+            type="button"
+            aria-label="Cerrar"
+            onClick={onClose}
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl hover:bg-[var(--rule-soft)] transition-colors"
+          >
+            <X className="h-5 w-5 text-[var(--text-secondary)]" />
+          </button>
         </div>
 
         {/* Nav list */}

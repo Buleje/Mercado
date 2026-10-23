@@ -11,7 +11,7 @@
  *  - Botón "Cerrar día"
  *  - Toggle focus mode (desktop only)
  *  - Toggle presentation mode (desktop only)
- *  - AdminUserDropdown (avatar + menú de usuario)
+ *  - AdminUserDropdown (logo, nombre y rubro del negocio + menú del negocio y la cuenta)
  *
  * Se oculta cuando `presentationMode === true` y se pega 56 px más abajo
  * (`top-14`) si está la franja de la vista de tienda del superadmin.
@@ -67,6 +67,9 @@ export interface AdminTopHeaderProps {
   userName: string;
   userRole: string;
   tenantSlug?: string | null;
+  /** Nombre y logo del tenant: respaldo del botón de identidad mientras llega el membrete. */
+  activeTenantName?: string | null;
+  activeTenantLogo?: string | null;
   onOpenMobileNav: () => void;
   /** @deprecated 20-10: el buscador es el campo de la cabecera; Ctrl+K lo enfoca solo. */
   onOpenSearch?: () => void;
@@ -90,6 +93,8 @@ export const AdminTopHeader = memo(function AdminTopHeader({
   userName,
   userRole,
   tenantSlug,
+  activeTenantName,
+  activeTenantLogo,
   onOpenMobileNav,
   onOpenCierreDiario,
   onToggleFocus,
@@ -227,9 +232,14 @@ export const AdminTopHeader = memo(function AdminTopHeader({
           onDarkHeader={isAutoDarkTheme}
         />
 
+        {/* Brandon 23-10: la marca del negocio salió de la barra lateral y vive acá,
+            en el mismo botón que la cuenta (un solo botón, no dos). */}
         <AdminUserDropdown
           userName={userName}
           userRole={userRole}
+          tenantName={activeTenantName}
+          tenantLogo={activeTenantLogo}
+          onDarkHeader={isAutoDarkTheme}
           onNavigate={onNavigate}
           onLogout={onLogout}
         />
