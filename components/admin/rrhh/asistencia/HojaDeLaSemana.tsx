@@ -39,7 +39,7 @@ import SemanaEnCelular from "./SemanaEnCelular";
 import SemanaEnTabla from "./SemanaEnTabla";
 import { useRetirarPersona } from "./use-retirar-persona";
 import { conteoDelMes, diasTrabajados } from "./conteo-mes";
-import { etiquetaSemana, formatearDias, horariosPorColaborador, marcaConTardanza, resumenTardanzas, tardanzasSinMarcar } from "./semana";
+import { etiquetaSemana, etiquetaSemanaCorta, formatearDias, horariosPorColaborador, marcaConTardanza, resumenTardanzas, tardanzasSinMarcar } from "./semana";
 import { descargarPdfDeLaSemana, type FilaSemana } from "./semana-pdf";
 import type { ColaboradorMinDTO, GanadoPersona, NivelRrhh } from "@/lib/rrhh/tipos";
 
@@ -130,7 +130,8 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
   const kpis = useKpisPlegables({
     claveMemoria: "rrhh-semana",
     alto: "md",
-    compactoEnMovil: true,
+    /* En la fila del título (23-10): ícono + cifras; «Indicadores» en el tooltip. */
+    soloIcono: true,
     anchoFijo: true,
     sinDatosAun: !hoja,
     resumen: conPlata && totales.ganado != null ? `Ganado ${formatearPEN(totales.ganado)}` : pluralizar(totales.faltas, "falta", "faltas"),
@@ -261,25 +262,10 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
       <EncabezadoDeVista
         vista="asistencia"
         secciones={selectorModo}
-        acciones={
-          <>
-            <button type="button" onClick={descargar} disabled={!hoja || filas.length === 0 || descargando} className={BOTON.secundario} title="La hoja de la semana para firmar">
-              <Download className="h-4 w-4" aria-hidden />
-              {descargando ? "Armando el PDF…" : "Descargar PDF"}
-            </button>
-            {conPlata && (
-              <button type="button" onClick={archivarPagos} disabled={!hoja || filas.length === 0 || archivando} className={BOTON.secundario} title="Guarda en el Archivo (Equipo/Pagos) el comprobante de pago de cada persona de esta semana">
-                <Archive className="h-4 w-4" aria-hidden />
-                {archivando ? "Archivando…" : "Archivar pagos"}
-              </button>
-            )}
-          </>
-        }
-      />
-      <div {...(selectorModo ? propsPanelAsistencia("semana") : {})} className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        periodo={
           <NavegadorPeriodo
             etiqueta={etiquetaSemana(desde)}
+            etiquetaCorta={etiquetaSemanaCorta(desde)}
             esActual={desde === semanaActual}
             textoActual="Esta semana"
             textoVolver="Ir a esta semana"
@@ -291,8 +277,17 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
             onVolver={() => irASemana(semanaActual)}
             selector={{ tipo: "date", valor: desde, max: hoy, onElegir: (f) => irASemana(semanaDe(f).desde) }}
           />
-        <div className="ml-auto">{kpis.boton}</div>
-      </div>
+        }
+        acciones={kpis.boton}
+        /* El PDF y archivar los pagos son de una vez por semana: van en «⋯» (regla 4). */
+        menu={[
+          { id: "pdf", label: descargando ? "Armando el PDF…" : "Descargar PDF", hint: "La hoja de la semana para firmar", icon: Download, disabled: !hoja || filas.length === 0 || descargando, onSelect: () => void descargar() },
+          ...(conPlata
+            ? [{ id: "archivar", label: archivando ? "Archivando…" : "Archivar pagos", hint: "Guarda en el Archivo (Equipo/Pagos) el comprobante de pago de cada persona de esta semana", icon: Archive, disabled: !hoja || filas.length === 0 || archivando, onSelect: () => void archivarPagos() }]
+            : []),
+        ]}
+      />
+      <div {...(selectorModo ? propsPanelAsistencia("semana") : {})} className="space-y-3">
       {kpis.panel}
       {contenido}
       </div>

@@ -12,9 +12,16 @@
  * es una trampa.
  */
 
-import { ChevronDown, Filter, X } from "@buleje/design-system/icons";
+import { useState } from "react";
+import { ChevronDown, Filter, Search, X } from "@buleje/design-system/icons";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import { SUMMARY_CABECERA, SUMMARY_CABECERA_COMPACTO, usePopoverCabecera } from "./use-popover-cabecera";
+
+/** Desde cuántas opciones aparece el «Buscar…» de adentro (Excel lo trae siempre;
+ *  con 3 estados un buscador es ruido). */
+const BUSCAR_DESDE = 8;
+
+const sinTildes = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 /** Qué dice el disparador sin abrirlo: el valor cuando es uno, cuántos cuando
  *  son varios — tres especies no entran sin romper el ancho de la columna. */
@@ -53,6 +60,11 @@ export function FiltroColumnaMulti({
   const { ref, alAbrir, estilo } = usePopoverCabecera(288);
   const elegidos = value ? [...value].filter(Boolean) : [];
   const vacio = options.length === 0;
+  /* Buscar DENTRO de la lista y tildar (Brandon 23-10: «estilo Excel para
+     escoger… y para buscar en su misma columna»). */
+  const [q, setQ] = useState("");
+  const conBuscador = options.length >= BUSCAR_DESDE;
+  const visibles = conBuscador && q.trim() ? options.filter((o) => sinTildes(etiqueta ? etiqueta(o.value) : o.value).includes(sinTildes(q.trim()))) : options;
   return (
     <details
       ref={ref}
@@ -96,7 +108,21 @@ export function FiltroColumnaMulti({
             Limpiar ({elegidos.length})
           </button>
         )}
-        {options.map((o) => {
+        {conBuscador && (
+          <div className="relative mb-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar…"
+              aria-label={`Buscar en ${label}`}
+              className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
+            />
+          </div>
+        )}
+        {conBuscador && q.trim() && visibles.length === 0 && <p className="px-2 py-1.5 text-sm text-[var(--text-tertiary)]">Nada con «{q.trim()}»</p>}
+        {visibles.map((o) => {
           const marcado = elegidos.includes(o.value);
           const texto = etiqueta ? etiqueta(o.value) : o.value;
           // Cuántas líneas Y cuánto pesan (m³, soles…) — el Libro CTP ya

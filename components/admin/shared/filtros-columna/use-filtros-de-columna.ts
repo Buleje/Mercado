@@ -17,7 +17,7 @@ import {
   columnaTieneAutofiltro,
   contarFacetas,
   facetasPuestas,
-  opcionesDeColumna,
+  opcionesEnCascada,
   type ChipFiltro,
   type ColumnaFiltro,
   type FacetaOpcion,
@@ -54,13 +54,8 @@ export function useFiltrosDeColumna<T>(
 ): UseFiltrosDeColumnaResult<T> {
   const [facetas, setFacetas] = useState<FacetasEstado>({});
 
-  const opciones = useMemo(() => {
-    const out: Record<string, FacetaOpcion[]> = {};
-    for (const c of columnas) {
-      if (c.tipo === "texto" || c.tipo === "multi") out[c.id] = opcionesDeColumna(filas, c);
-    }
-    return out;
-  }, [filas, columnas]);
+  /* En cascada (23-10): cada columna ofrece lo que dejan las demás, como Excel. */
+  const opciones = useMemo(() => opcionesEnCascada(filas, columnas, facetas), [filas, columnas, facetas]);
 
   const conAutofiltro = useMemo(() => {
     const out: Record<string, boolean> = {};

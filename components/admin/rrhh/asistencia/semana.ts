@@ -36,6 +36,13 @@ export function etiquetaSemana(lunes: FechaKey): string {
   return `${dia(lunes)} al ${dia(domingo)} de ${mes(domingo)} de ${anio(domingo)}`;
 }
 
+/** La semana en corto, para el encabezado angosto: «19–25/10», «29/09–05/10». */
+export function etiquetaSemanaCorta(lunes: FechaKey): string {
+  const domingo = sumarDias(lunes, 6);
+  const dm = (key: FechaKey) => `${key.slice(8, 10)}/${key.slice(5, 7)}`;
+  return lunes.slice(5, 7) === domingo.slice(5, 7) ? `${lunes.slice(8, 10)}–${dm(domingo)}` : `${dm(lunes)}–${dm(domingo)}`;
+}
+
 /** 5.5 → «5.5»; 5 → «5». */
 export function formatearDias(n: number): string {
   return n.toLocaleString("es-PE", { maximumFractionDigits: 1 });

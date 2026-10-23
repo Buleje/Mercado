@@ -3,9 +3,9 @@
 /**
  * HojaDelDia — la asistencia de UN día (ADR-414 §4/§7).
  *
- * Patrón del panel (noche 11-10): título · Día/Semana/Mes · «Todos presentes
- * (n)» · «⋯» en una fila; abajo ‹ fecha › con el resumen en una línea («2 de
- * 6 marcados · 1 falta») y la lista, una fila por persona. «Todos presentes»
+ * Patrón del panel (noche 11-10; 23-10 todo en UNA fila): título ·
+ * Día/Semana/Mes · ‹ fecha › · el resumen («2/6 marcados · 1 F») · «Todos
+ * presentes (n)» · «⋯»; abajo la lista, una fila por persona. «Todos presentes»
  * sólo toca a quien NO tiene marca; reemplazar lo ya marcado está en «⋯» y
  * pide confirmar con el número (nunca pisa lo cargado sin avisar, ADR-412).
  */
@@ -38,6 +38,7 @@ import { useFotosAsistencia } from "./use-fotos-asistencia";
 import HistorialMarcaModal from "./HistorialMarcaModal";
 import LeyendaEstados from "./LeyendaEstados";
 import NavegadorPeriodo from "./NavegadorPeriodo";
+import BotonTodosPresentes from "./BotonTodosPresentes";
 import { propsPanelAsistencia } from "./panel-asistencia";
 import ResumenDelDia from "./ResumenDelDia";
 import EncabezadoDeVista from "../EncabezadoDeVista";
@@ -229,34 +230,33 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
       <EncabezadoDeVista
         vista="asistencia"
         secciones={selectorModo}
+        periodo={
+          <>
+            <NavegadorPeriodo
+              etiqueta={etiquetaDia(fecha, hoy)}
+              etiquetaCorta={etiquetaDia(fecha, hoy).replace(/^(\S{3})\S*/, "$1")}
+              esActual={esHoy}
+              textoActual="Hoy"
+              chipSiempre
+              textoVolver="Ir a hoy"
+              puedeAvanzar={!esHoy}
+              etiquetaAnterior="Día anterior"
+              etiquetaSiguiente="Día siguiente"
+              onAnterior={() => irAFecha(sumarDias(fecha, -1))}
+              onSiguiente={() => irAFecha(sumarDias(fecha, 1))}
+              onVolver={() => irAFecha(hoy)}
+              selector={{ tipo: "date", valor: fecha, max: hoy, onElegir: irAFecha }}
+            />
+            {listo && <ResumenDelDia marcados={marcadosIncluidos.length} total={incluidos.length} conteo={conteo} />}
+          </>
+        }
         menu={menu}
         acciones={
-          puedeGestionar && listo && n > 0 ? (
-            <button type="button" onClick={() => void ejecutarMasivo(false)} disabled={!editable || guardando} className={BOTON.primario} title="Marca Presente a quien todavía no tiene marca hoy">
-              <CheckCheck className="h-4 w-4" aria-hidden /> Todos presentes ({n})
-            </button>
-          ) : null
+          puedeGestionar && listo && n > 0 ? <BotonTodosPresentes n={n} disabled={!editable || guardando} onClick={() => void ejecutarMasivo(false)} /> : null
         }
       />
 
       <div {...(selectorModo ? propsPanelAsistencia("dia") : {})} className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <NavegadorPeriodo
-          etiqueta={etiquetaDia(fecha, hoy)}
-          esActual={esHoy}
-          textoActual="Hoy"
-          textoVolver="Ir a hoy"
-          puedeAvanzar={!esHoy}
-          etiquetaAnterior="Día anterior"
-          etiquetaSiguiente="Día siguiente"
-          onAnterior={() => irAFecha(sumarDias(fecha, -1))}
-          onSiguiente={() => irAFecha(sumarDias(fecha, 1))}
-          onVolver={() => irAFecha(hoy)}
-          selector={{ tipo: "date", valor: fecha, max: hoy, onElegir: irAFecha }}
-        />
-        {listo && <ResumenDelDia marcados={marcadosIncluidos.length} total={incluidos.length} conteo={conteo} />}
-      </div>
-
       {/* Los días del mes que nadie marcó (ADR-417): sigue al mes que se está
           mirando, no siempre al actual, y no pinta nada si no hay ninguno. */}
       <AvisoDiasAbiertos mes={mesDe(fecha)} onIrAlDia={(destino) => void irAFecha(destino)} />

@@ -213,6 +213,36 @@ export function aplicarFacetas<T>(
   );
 }
 
+/**
+ * Las opciones de cada columna EN CASCADA, como el autofiltro de Excel
+ * (Brandon 23-10: «se anidan entre ellas… para ir filtrando más a detalle»):
+ * cada columna ofrece sólo lo que queda después de los filtros de las DEMÁS
+ * columnas (la suya no se cuenta, si no tildar «Juan» borraría a «Rosa» de su
+ * propia lista). Lo ya tildado sigue en la lista aunque ahora traiga 0, para
+ * poder destildarlo.
+ */
+export function opcionesEnCascada<T>(
+  filas: readonly T[],
+  columnas: readonly ColumnaFiltro<T>[],
+  facetas: FacetasEstado,
+): Record<string, FacetaOpcion[]> {
+  const out: Record<string, FacetaOpcion[]> = {};
+  for (const c of columnas) {
+    if (c.tipo !== "texto" && c.tipo !== "multi") continue;
+    const otras: FacetasEstado = { ...facetas };
+    delete otras[c.id];
+    const base = contarFacetas(otras) === 0 ? filas : aplicarFacetas(filas, columnas, otras);
+    const opciones = opcionesDeColumna(base, c);
+    const clave = c.clave ?? ((v: string) => v);
+    const hay = new Set(opciones.map((o) => clave(o.value)));
+    for (const v of valoresDe(facetas[c.id])) {
+      if (!hay.has(clave(v))) opciones.push({ value: v, count: 0, peso: c.peso ? 0 : undefined });
+    }
+    out[c.id] = opciones;
+  }
+  return out;
+}
+
 /** Cuántas COLUMNAS están acotando (el badge del botón «Filtros»): una columna
  *  con tres valores tildados cuenta 1, no 3. */
 export function contarFacetas(facetas: FacetasEstado): number {

@@ -206,24 +206,27 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
 
   return (
     <div className="space-y-3">
-      <EncabezadoDeVista vista="asistencia" secciones={selectorModo} />
+      <EncabezadoDeVista
+        vista="asistencia"
+        secciones={selectorModo}
+        periodo={
+          <NavegadorPeriodo
+            etiqueta={`${NOMBRES_MES[Number(mes.slice(5, 7)) - 1]} ${mes.slice(0, 4)}`}
+            esActual={mes === mesActual}
+            textoActual="Este mes"
+            chipSiempre
+            textoVolver="Ir a este mes"
+            puedeAvanzar={puedeAvanzar}
+            etiquetaAnterior="Mes anterior"
+            etiquetaSiguiente="Mes siguiente"
+            onAnterior={() => irAMes(sumarMeses(mes, -1))}
+            onSiguiente={() => irAMes(sumarMeses(mes, 1))}
+            onVolver={() => irAMes(mesActual)}
+            selector={{ tipo: "month", valor: mes, max: mesActual, onElegir: irAMes }}
+          />
+        }
+      />
       <div {...(selectorModo ? propsPanelAsistencia("mes") : {})} className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <NavegadorPeriodo
-          etiqueta={`${NOMBRES_MES[Number(mes.slice(5, 7)) - 1]} ${mes.slice(0, 4)}`}
-          esActual={mes === mesActual}
-          textoActual="Este mes"
-          textoVolver="Ir a este mes"
-          puedeAvanzar={puedeAvanzar}
-          etiquetaAnterior="Mes anterior"
-          etiquetaSiguiente="Mes siguiente"
-          onAnterior={() => irAMes(sumarMeses(mes, -1))}
-          onSiguiente={() => irAMes(sumarMeses(mes, 1))}
-          onVolver={() => irAMes(mesActual)}
-          selector={{ tipo: "month", valor: mes, max: mesActual, onElegir: irAMes }}
-        />
-      </div>
-
       {contenido}
       </div>
 

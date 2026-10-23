@@ -2,7 +2,7 @@
 
 /**
  * EncabezadoDeVista — la cabecera de cada vista de RRHH dentro de Equipo, en
- * UNA fila (patrón del panel, noche 11-10): título + ⓘ · secciones (Día /
+ * UNA fila (patrón del panel, noche 11-10; 23-10 suma el período): título + ⓘ · secciones (Día /
  * Semana / Mes) · a la derecha lo que la vista pide (Indicadores, la acción
  * principal) y «⋯ Más» con lo secundario.
  *
@@ -110,13 +110,16 @@ interface Props {
   vista: string;
   /** Las secciones de la vista (Día / Semana / Mes), pegadas al título. */
   secciones?: ReactNode;
+  /** Lo que antes iba en la fila de abajo (Brandon 23-10): ‹ fecha ›, el resumen
+   *  y los filtros. Toma el espacio que sobra; lo que no entra se corta con «…». */
+  periodo?: ReactNode;
   /** A la derecha: Indicadores y la acción principal (h-12). */
   acciones?: ReactNode;
   /** Lo secundario de la vista; los enlaces a otras pestañas se suman al final. */
   menu?: readonly MenuAccion[];
 }
 
-export default function EncabezadoDeVista({ vista, secciones, acciones, menu = [] }: Props) {
+export default function EncabezadoDeVista({ vista, secciones, periodo, acciones, menu = [] }: Props) {
   const encabezado = ENCABEZADOS_RRHH[vista];
   const ctx = useContextoPermiso();
   const enlaces = useMemo<MenuAccion[]>(
@@ -129,21 +132,32 @@ export default function EncabezadoDeVista({ vista, secciones, acciones, menu = [
   if (!encabezado) return null;
   const todas = [...menu, ...enlaces];
   return (
-    /* Como Turnos: en el celular las secciones bajan a su propia fila. */
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <div className="flex min-w-0 items-center gap-1.5">
-        <SectionTitle className="truncate">{encabezado.titulo}</SectionTitle>
-        <InfoTip title={encabezado.titulo} what={encabezado.ayuda.what} affects={encabezado.ayuda.affects} example={encabezado.ayuda.example} side="bottom" />
-      </div>
-      {secciones && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto">{secciones}</div>}
-      {(acciones || todas.length > 0) && (
-        <div className="ml-auto flex min-w-0 items-center gap-2">
-          {acciones}
-          {todas.length > 0 && (
-            <ActionMenu label="Más" icon={MoreHorizontal} actions={todas} soloIcono size="md" className="w-12 shrink-0" title={todas.map((a) => a.label).join(", ")} />
-          )}
+    /* UNA fila (Brandon 23-10: «en esa fila tiene que estar lo de abajo de
+       cambiar los días, filtros y demás»). Se decide por el ancho del
+       encabezado (`@container/enc`), no de la ventana: la barra lateral y las
+       cámaras al lado se comen el ancho. Angosto: título y acciones arriba,
+       las secciones y el período bajan cada uno a su fila. */
+    <div className="@container/enc">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 @min-[40rem]/enc:gap-x-3">
+        <div className="flex min-w-0 flex-[1_1_10rem] items-center gap-1.5 @min-[40rem]/enc:flex-none">
+          <SectionTitle className="min-w-0 @min-[40rem]/enc:truncate">{encabezado.titulo}</SectionTitle>
+          <InfoTip title={encabezado.titulo} what={encabezado.ayuda.what} affects={encabezado.ayuda.affects} example={encabezado.ayuda.example} side="bottom" />
         </div>
-      )}
+        {secciones && <div className="order-last w-full min-w-0 @min-[40rem]/enc:order-none @min-[40rem]/enc:w-auto">{secciones}</div>}
+        {periodo && (
+          <div className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-2 @min-[58rem]/enc:order-none @min-[58rem]/enc:w-auto @min-[58rem]/enc:flex-[1_1_0%]">
+            {periodo}
+          </div>
+        )}
+        {(acciones || todas.length > 0) && (
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {acciones}
+            {todas.length > 0 && (
+              <ActionMenu label="Más" icon={MoreHorizontal} actions={todas} soloIcono size="md" className="w-12 shrink-0" title={todas.map((a) => a.label).join(", ")} />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

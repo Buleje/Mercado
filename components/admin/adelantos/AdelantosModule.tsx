@@ -35,6 +35,8 @@ import CrearAdelantoModal from "./CrearAdelantoModal";
 import DescuentoPlanillaModal from "./DescuentoPlanillaModal";
 import DetalleAdelantoModal from "./detalle/DetalleAdelantoModal";
 import TablaAdelantos from "./lista/TablaAdelantos";
+import { COLUMNAS_FILTRO_ADELANTOS } from "./lista/filtros-columnas-adelantos";
+import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import FiltrosRecibo from "./lista/FiltrosRecibo";
 import { useEstadoRecibos } from "./lista/use-estado-recibos";
 import { useFiltroRecibos } from "./lista/use-filtro-recibos";
@@ -444,21 +446,27 @@ function AdelantosView({
     return okEstado && okQ;
   });
   const cuentaRecibos = contarRecibos(conEstadoYBusqueda, recibos.estados, filtroRecibos);
-  const filtrados = conEstadoYBusqueda.filter((a) => pasaFiltroRecibos(a, recibos.estados, filtroRecibos));
+  const conRecibos = conEstadoYBusqueda.filter((a) => pasaFiltroRecibos(a, recibos.estados, filtroRecibos));
+  /* Autofiltros de Excel en la cabecera de la tabla (Brandon 23-10): van DESPUÉS
+     de chips y buscador, y los totales y el CSV salen de lo que queda a la vista. */
+  const ft = useFiltrosTabla(conRecibos, COLUMNAS_FILTRO_ADELANTOS);
+  const filtrados = ft.filtradas;
+  const limpiarColumnas = ft.limpiar;
 
   /**
    * Filtrar o buscar vuelve a la página 1: quedarse en la 4 después de achicar
    * el resultado a 12 filas muestra una tabla vacía que parece un error.
    */
-  useEffect(() => setPagina(1), [filtro, filtroRecibos, q, orden.columna, orden.direccion]);
+  useEffect(() => setPagina(1), [filtro, filtroRecibos, q, orden.columna, orden.direccion, ft.facetas, ft.textos]);
 
   /* Si la ficha pedida estaba escondida, se limpian también los chips de recibo (estable: el hook lo usa como dependencia). */
   const alLimpiarFiltros = useCallback(
     (v: string) => {
       setFiltro(v);
       cambiarFiltroRecibos(SIN_FILTRO_RECIBOS);
+      limpiarColumnas();
     },
-    [cambiarFiltroRecibos],
+    [cambiarFiltroRecibos, limpiarColumnas],
   );
 
   /* La ficha abierta vive en `?adelanto=` (el «atrás» la cierra; el Resultado
@@ -628,11 +636,16 @@ function AdelantosView({
         <SkeletonGrid />
       ) : adelantos.length === 0 ? (
         <EmptyState icon={Coins} title="Sin adelantos" hint={beneficiarios.length === 0 ? "Primero crea una persona en la pestaña Personas." : "Registra tu primer adelanto."} />
-      ) : filtrados.length === 0 ? (
+      ) : filtrados.length === 0 && ft.activos === 0 ? (
         <EmptyState icon={Search} title="Sin resultados" hint="Prueba con otro filtro o búsqueda." />
       ) : (
+        <div>
+        {/* En el celular las columnas no entran: «Filtros por columna» + chips con ×.
+            En un <div> propio: suelta en el space-y-3, la barra vacía sumaba 12 px. */}
+        <BarraFiltrosTabla f={ft} sinConteo className="max-sm:mb-2 has-[[role=list]]:mb-2" />
         <TablaAdelantos
           adelantos={filtrados}
+          filtros={ft}
           orden={orden}
           onOrden={setOrden}
           pagina={pagina}
@@ -645,6 +658,7 @@ function AdelantosView({
              el modal de la fila abierto (mandar para firmar, WhatsApp). */
           onChange={() => onRegistrado(null)}
         />
+        </div>
       )}
 
       {creando && (

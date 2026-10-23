@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDownToLine, ChevronLeft, ChevronRight, Plus, Ruler } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { FiltroEnCabecera, SinCoincidenciasFila, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import {
   type ColumnaOrden,
   type Direccion,
@@ -56,6 +57,7 @@ export default function TablaAdelantos({
   onVerDetalle,
   resaltadoId = null,
   onChange,
+  filtros,
 }: {
   adelantos: DbAdelanto[];
   orden: { columna: ColumnaOrden; direccion: Direccion };
@@ -70,6 +72,8 @@ export default function TablaAdelantos({
   resaltadoId?: string | null;
   /** Refresca la lista tras anular o editar notas desde la fila. */
   onChange: () => void;
+  /** Autofiltros de Excel (`filtros-columnas-adelantos`): el embudo va al lado de cada título. */
+  filtros?: FiltrosTabla<DbAdelanto>;
 }) {
   const ordenados = ordenarAdelantos(adelantos, orden.columna, orden.direccion);
   const pag = paginar(ordenados, pagina, porPagina);
@@ -141,6 +145,9 @@ export default function TablaAdelantos({
 
   const th = (columna: ColumnaOrden, label: string, alineado?: "right", extra = "") => (
     <th className={`${alineado === "right" ? "text-right" : "text-left"} ${extra}`.trim()} aria-sort={ariaSort(orden, columna)}>
+      {/* Título arriba y embudo abajo, en TODAS las columnas: al lado no entra en
+          Fecha/Adelantado/Saldo/Estado (96-120 px) y bajaba sólo en ésas (medido 23-10). */}
+      <span className={`inline-flex flex-col gap-1 [&>span]:ml-0 ${alineado === "right" ? "items-end" : "items-start"}`}>
       <button
         type="button"
         onClick={() => onOrden(siguienteOrden(orden, columna))}
@@ -151,6 +158,8 @@ export default function TablaAdelantos({
         {label}
         <IconoOrden activo={orden.columna === columna} direccion={orden.direccion} />
       </button>
+      {filtros && <FiltroEnCabecera id={columna} f={filtros} compacto />}
+      </span>
     </th>
   );
 
@@ -190,12 +199,18 @@ export default function TablaAdelantos({
               <col style={{ width: 160 }} />
               <col style={{ width: 96 }} />
             </colgroup>
-            <thead>
+            {/* Los títulos parejos arriba aunque Recibo no tenga embudo. */}
+            <thead className="[&_th]:align-top">
               <tr>
                 {th("codigo", "Código")}
                 {th("persona", "Persona")}
                 {th("fecha", "Fecha")}
-                <th className="hidden 2xl:table-cell">Motivo</th>
+                <th className="hidden 2xl:table-cell">
+                  <span className="inline-flex flex-col items-start gap-1 [&>span]:ml-0">
+                    Motivo
+                    {filtros && <FiltroEnCabecera id="motivo" f={filtros} compacto />}
+                  </span>
+                </th>
                 {th("monto", "Adelantado", "right")}
                 {th("avance", "Avance", "right", "hidden 2xl:table-cell")}
                 {th("saldo", "Saldo", "right")}
@@ -205,6 +220,7 @@ export default function TablaAdelantos({
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)]">
+              {pag.items.length === 0 && <SinCoincidenciasFila colSpan={10} />}
               {pag.items.map((a) => {
                 const badge = STATUS_BADGE[a.status];
                 const pct = avanceDe(a);

@@ -41,6 +41,15 @@ interface Props {
 /** «15/09», o «11/03/2024» si es de otro año. */
 const conAnio = (f: FechaKey, hoy: FechaKey) => (f.slice(0, 4) === hoy.slice(0, 4) ? etiquetaCorta(f) : `${etiquetaCorta(f)}/${f.slice(0, 4)}`);
 
+/** «Rosa», «Rosa y Elena», «Rosa, Miguel y 2 más»: el primer nombre de cada uno. */
+export function nombresQueNoVienen(nombres: readonly string[]): string {
+  const primeros = nombres.map((n) => n.trim().split(/\s+/)[0]).filter(Boolean);
+  if (primeros.length <= 1) return primeros[0] ?? "";
+  if (primeros.length === 2) return `${primeros[0]} y ${primeros[1]}`;
+  if (primeros.length === 3) return `${primeros[0]}, ${primeros[1]} y ${primeros[2]}`;
+  return `${primeros[0]}, ${primeros[1]} y ${primeros.length - 2} más`;
+}
+
 function leerSigue(): Record<string, string> {
   try {
     return JSON.parse(window.localStorage.getItem(CLAVE_SIGUE) ?? "{}") as Record<string, string>;
@@ -52,6 +61,7 @@ function leerSigue(): Record<string, string> {
 export default function ListaDelDia({ fecha, esHoy, feriado, fijos, eventualesSinMarca, noIncluidos, ultimaVino, editable, fila, onMarcarVacaciones, onRetirar }: Props) {
   /* «Sigue»: se calla mientras su último día sea el mismo (si vuelve y deja de venir, se pregunta de nuevo). */
   const [sigue, setSigue] = useState<Record<string, string>>(() => (typeof window === "undefined" ? {} : leerSigue()));
+  const [verNoVienen, setVerNoVienen] = useState(false);
   const porId = new Map(fijos.map((c) => [c.id, c]));
   const noVienen =
     esHoy && onRetirar ? noVienenHace(fijos, ultimaVino, fecha).filter((n) => sigue[n.id] !== n.desde && porId.has(n.id)) : [];
@@ -75,29 +85,43 @@ export default function ListaDelDia({ fecha, esHoy, feriado, fijos, eventualesSi
       )}
 
       {noVienen.length > 0 && (
-        <AvisoRrhh tono="aviso" icono={UserMinus}>
-          <span className="block font-semibold">{noVienen.length === 1 ? "¿Se retiró? Lleva 14 días o más sin venir:" : "¿Se retiraron? Llevan 14 días o más sin venir:"}</span>
-          <ul className="mt-1 space-y-1">
-            {noVienen.map((n) => {
-              const c = porId.get(n.id);
-              if (!c) return null;
-              return (
-                <li key={n.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="min-w-0">
-                    <span className="font-semibold">{c.nombre}</span> · {n.nunca ? `nunca vino (ingresó el ${conAnio(n.desde, fecha)})` : `no viene desde el ${conAnio(n.desde, fecha)}`} · {n.dias} días
-                  </span>
-                  <span className="ml-auto flex gap-1">
-                    <button type="button" className={BOTON.chicoPeligro} onClick={() => onRetirar?.(c, n.desde)}>
-                      Sí, retirado
-                    </button>
-                    <button type="button" className={BOTON.chico} onClick={() => decirQueSigue(n.id, n.desde)} title="Sigue trabajando: no preguntar hasta que vuelva a marcar">
-                      Sigue
-                    </button>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+        /* Compacto (23-10, «todas mis páginas tienen que ser compactas»): una
+           línea con los nombres; el detalle y los botones, al abrir «Revisar». */
+        <AvisoRrhh
+          tono="aviso"
+          icono={UserMinus}
+          className="items-center py-2"
+          accion={
+            <button type="button" className={BOTON.chico} aria-expanded={verNoVienen} onClick={() => setVerNoVienen((v) => !v)}>
+              {verNoVienen ? "Ocultar" : `Revisar (${noVienen.length})`}
+            </button>
+          }
+        >
+          <span className="font-semibold">{noVienen.length === 1 ? "¿Se retiró?" : "¿Se retiraron?"}</span>{" "}
+          {nombresQueNoVienen(noVienen.map((n) => porId.get(n.id)?.nombre ?? ""))} {noVienen.length === 1 ? "lleva" : "llevan"} 14 días o más sin venir.
+          {verNoVienen && (
+            <ul className="mt-1 space-y-1">
+              {noVienen.map((n) => {
+                const c = porId.get(n.id);
+                if (!c) return null;
+                return (
+                  <li key={n.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="min-w-0">
+                      <span className="font-semibold">{c.nombre}</span> · {n.nunca ? `nunca vino (ingresó el ${conAnio(n.desde, fecha)})` : `no viene desde el ${conAnio(n.desde, fecha)}`} · {n.dias} días
+                    </span>
+                    <span className="ml-auto flex gap-1">
+                      <button type="button" className={BOTON.chicoPeligro} onClick={() => onRetirar?.(c, n.desde)}>
+                        Sí, retirado
+                      </button>
+                      <button type="button" className={BOTON.chico} onClick={() => decirQueSigue(n.id, n.desde)} title="Sigue trabajando: no preguntar hasta que vuelva a marcar">
+                        Sigue
+                      </button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </AvisoRrhh>
       )}
 

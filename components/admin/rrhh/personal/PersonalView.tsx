@@ -29,14 +29,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
-import { FileSignature, LayoutList, Plus, QrCode, Search, UserPlus, Users } from "@buleje/design-system/icons";
+import { FileSignature, LayoutList, Plus, QrCode, UserPlus, Users } from "@buleje/design-system/icons";
 import { EmptyState, LoadingState } from "@buleje/design-system";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import EncabezadoDeVista from "../EncabezadoDeVista";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
-import { BOTON, CLASE_CAMPO, claseChipFiltro } from "../rrhh-form";
+import { BOTON } from "../rrhh-form";
 import { pluralizar } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
 import ColaboradorFormModal from "./ColaboradorFormModal";
@@ -44,26 +44,18 @@ import FotochecksVista from "./FotochecksVista";
 import FichaColaboradorModal from "./FichaColaboradorModal";
 import TraerDesdeAdelantosModal from "./TraerDesdeAdelantosModal";
 import TablaPersonal from "./TablaPersonal";
+import FiltrosPersonal, { type ChipEstado } from "./FiltrosPersonal";
 import { useContratosDelPersonal } from "./use-contratos-del-personal";
 import type { EstadoColaborador, NivelRrhh } from "@/lib/rrhh/tipos";
 
 /** Los contratos que no están ligados a nadie se arreglan en la lista de Documentos. */
 const HREF_CONTRATOS = "/admin?tab=documentos&vista=contratos&sub=contratos";
 
-const CHIPS_ESTADO: { id: EstadoColaborador | "TODOS"; label: string }[] = [
-  { id: "TODOS", label: "Todos" },
-  { id: "ACTIVO", label: "Activos" },
-  { id: "VACACIONES", label: "Vacaciones" },
-  { id: "LICENCIA", label: "Licencia" },
-  { id: "SUSPENDIDO", label: "Suspendidos" },
-  { id: "CESADO", label: "Retirados" },
-];
-
 export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
   const [puestoId, setPuestoId] = useState("");
-  const [chip, setChip] = useState<EstadoColaborador | "TODOS">("ACTIVO");
+  const [chip, setChip] = useState<ChipEstado>("ACTIVO");
   const [soloPorVencer, setSoloPorVencer] = useState(false);
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
@@ -131,11 +123,28 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const encabezado = (
     <EncabezadoDeVista
       vista="personal"
+      periodo={
+        <FiltrosPersonal
+          qInput={qInput}
+          onQ={setQInput}
+          puestoId={puestoId}
+          onPuesto={setPuestoId}
+          puestos={puestos}
+          chip={chip}
+          onChip={setChip}
+          conteo={kpis}
+          total={colaboradores.length}
+          cuantosPorVencer={cuantosPorVencer}
+          soloPorVencer={soloPorVencer}
+          onSoloPorVencer={() => setSoloPorVencer((v) => !v)}
+        />
+      }
       menu={menu}
       acciones={
         puedeEditar ? (
-          <button type="button" onClick={() => setAltaAbierta(true)} className={BOTON.primario}>
-            <Plus className="h-4 w-4" aria-hidden /> Agregar persona
+          /* Angosto: «+» con tooltip, para que los filtros entren en la fila (regla 6). */
+          <button type="button" onClick={() => setAltaAbierta(true)} className={cn(BOTON.primario, "px-3 @min-[76rem]/enc:px-4")} title="Agregar persona" aria-label="Agregar persona">
+            <Plus className="h-4 w-4" aria-hidden /> <span className="hidden @min-[76rem]/enc:inline">Agregar persona</span>
           </button>
         ) : null
       }
@@ -158,47 +167,6 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
     <div className="space-y-3">
       {encabezado}
 
-      {/* Buscador, puesto y estado en UNA fila pegada a la tabla. Los estados en
-          0 no se ofrecen (salvo el elegido): un chip que lleva a nada es ruido. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[12rem] flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input
-            value={qInput}
-            onChange={(e) => setQInput(e.target.value)}
-            placeholder="Buscar por nombre..."
-            aria-label="Buscar personal por nombre"
-            className={cn(CLASE_CAMPO, "pl-10")}
-          />
-        </div>
-        <select
-          value={puestoId}
-          onChange={(e) => setPuestoId(e.target.value)}
-          aria-label="Filtrar por puesto"
-          className={cn(CLASE_CAMPO, "w-auto")}
-        >
-          <option value="">Todos los puestos</option>
-          {puestos.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-        </select>
-        <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5">
-          {CHIPS_ESTADO.filter((c) => c.id === "TODOS" || c.id === chip || kpis[c.id] > 0).map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              aria-pressed={chip === c.id}
-              onClick={() => setChip(c.id)}
-              className={claseChipFiltro(chip === c.id)}
-            >
-              {c.label} <span className="tabular-nums opacity-80">{c.id === "TODOS" ? colaboradores.length : kpis[c.id]}</span>
-            </button>
-          ))}
-          {(cuantosPorVencer > 0 || soloPorVencer) && (
-            <button type="button" aria-pressed={soloPorVencer} onClick={() => setSoloPorVencer((v) => !v)} className={claseChipFiltro(soloPorVencer)}>
-              Contrato por vencer <span className="tabular-nums opacity-80">{cuantosPorVencer}</span>
-            </button>
-          )}
-        </div>
-      </div>
       {contratos.sinPersona > 0 && (
         <p className="flex flex-wrap items-center gap-x-2 text-sm text-[var(--text-secondary)]">
           <FileSignature className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />

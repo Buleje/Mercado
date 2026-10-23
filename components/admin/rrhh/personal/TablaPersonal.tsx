@@ -7,7 +7,9 @@
  * por firmar…) con su vencimiento; todos se ven en su ficha. Sin contrato y
  * con permiso: «Hacer contrato» abre el creador con sus datos ya puestos.
  */
+import { useMemo } from "react";
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { abreLaFicha } from "@/lib/admin/enlaces-panel";
@@ -18,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { CLASE_CHIP } from "../rrhh-form";
 import { CLASE_FOCUS_FILA, COLABORADOR_ESTADO_META, filaClicableProps, formatearFecha } from "../rrhh-ui";
 import { claseEstadoContrato, etiquetaEstadoContrato } from "./FichaContratos";
+import { columnasFiltroPersonal } from "./filtros-columnas-personal";
 
 /** ¿El nombre de la fila es enlace a la ficha? (`EnlacePanel`, según la tabla de hipervínculos). */
 const NOMBRE_ES_ENLACE = abreLaFicha("colaborador");
@@ -65,21 +68,35 @@ function CeldaContrato({ c, id, puedeHacer }: { c: ContratoDePersona | undefined
 }
 
 export default function TablaPersonal({ filas, onAbrir, contratos, puedeHacerContrato }: Props) {
+  /* Autofiltros de Excel (23-10) sobre lo que ya dejaron los chips y el buscador de arriba. */
+  const columnas = useMemo(() => columnasFiltroPersonal(contratos), [contratos]);
+  const ft = useFiltrosTabla(filas, columnas);
+  /* Título arriba y embudo abajo en todas: al lado, Documento/Celular/Ingreso lo bajaban solas (medido 23-10). */
+  const cabeza = (label: string, id: string) => (
+    <span className="inline-flex flex-col items-start gap-1 [&>span]:ml-0">
+      {label}
+      <FiltroEnCabecera id={id} f={ft} compacto />
+    </span>
+  );
   return (
+    <>
+    {/* Sin chips, en escritorio la barra no ocupa nada: el margen sólo cuando hay algo. */}
+    <BarraFiltrosTabla f={ft} sinConteo className="max-sm:mb-2 has-[[role=list]]:mb-2" />
     <DataTable zebra>
-      <thead>
+      <thead className="[&_th]:align-top">
         <tr>
-          <th>Nombre</th>
-          <th>Puesto</th>
-          <th>Estado</th>
-          {contratos && <th>Contrato</th>}
-          <th>Documento</th>
-          <th>Celular</th>
-          <th>Ingreso</th>
+          <th>{cabeza("Nombre", "nombre")}</th>
+          <th>{cabeza("Puesto", "puesto")}</th>
+          <th>{cabeza("Estado", "estado")}</th>
+          {contratos && <th>{cabeza("Contrato", "contrato")}</th>}
+          <th>{cabeza("Documento", "documento")}</th>
+          <th>{cabeza("Celular", "celular")}</th>
+          <th>{cabeza("Ingreso", "ingreso")}</th>
         </tr>
       </thead>
       <tbody>
-        {filas.map((c) => {
+        {ft.filtradas.length === 0 && <SinCoincidenciasFila colSpan={contratos ? 7 : 6} />}
+        {ft.filtradas.map((c) => {
           const meta = COLABORADOR_ESTADO_META[c.estado];
           return (
             <tr
@@ -114,5 +131,6 @@ export default function TablaPersonal({ filas, onAbrir, contratos, puedeHacerCon
         })}
       </tbody>
     </DataTable>
+    </>
   );
 }

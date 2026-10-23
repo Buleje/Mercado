@@ -98,7 +98,7 @@ export default function GanadoView() {
   const kpis = useKpisPlegables({
     claveMemoria: "rrhh-ganado",
     alto: "md",
-    compactoEnMovil: true,
+    soloIcono: true,
     sinDatosAun: !ganado,
     resumen: sinCuenta ? `Ganado ${formatearPEN(ganado?.total ?? 0)}` : `Queda ${formatearPEN(queda.aPagar)}`,
     tarjetas: [
@@ -127,41 +127,52 @@ export default function GanadoView() {
 
   return (
     <div className="space-y-3">
-      <EncabezadoDeVista vista="ganado" acciones={kpis.boton} />
+      {/* Período en la fila del título (Brandon 23-10): chips si entran, si no
+          un selector; el rango si se pidió y las fechas que rigen, cortadas. */}
+      <EncabezadoDeVista
+        vista="ganado"
+        acciones={kpis.boton}
+        periodo={
+          <>
+            <div role="group" aria-label="Filtrar por período" className="hidden flex-wrap gap-1.5 @min-[76rem]/enc:flex">
+              {CHIPS.map((c) => (
+                <button key={c.id} type="button" aria-pressed={chip === c.id} onClick={() => setChip(c.id)} className={claseChipFiltro(chip === c.id)}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <select value={chip} onChange={(e) => setChip(e.target.value as Chip)} aria-label="Filtrar por período" className={cn(CLASE_CAMPO, "w-auto @min-[76rem]/enc:hidden")}>
+              {CHIPS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
 
-      {/* Período en UNA fila: chips, el rango si se pidió y las fechas que rigen. */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <div role="group" aria-label="Filtrar por período" className="flex flex-wrap gap-1.5">
-        {CHIPS.map((c) => (
-          <button key={c.id} type="button" aria-pressed={chip === c.id} onClick={() => setChip(c.id)} className={claseChipFiltro(chip === c.id)}>
-            {c.label}
-          </button>
-        ))}
-      </div>
+            {chip === "rango" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+                  Desde
+                  <input type="date" value={rangoManual.desde} onChange={(e) => setRangoManual((r) => ({ ...r, desde: e.target.value }))} className={cn(CLASE_CAMPO, "w-40")} />
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+                  Hasta
+                  <input type="date" value={rangoManual.hasta} onChange={(e) => setRangoManual((r) => ({ ...r, hasta: e.target.value }))} className={cn(CLASE_CAMPO, "w-40")} />
+                </label>
+                {rangoInvertido && (
+                  <p role="alert" className="w-full text-sm font-medium text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                    «Desde» no puede ser posterior a «Hasta» — corrige las fechas para ver el cálculo.
+                  </p>
+                )}
+              </div>
+            )}
 
-      {chip === "rango" && (
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Etiqueta en línea, al lado del campo: el rango vive en la fila del período. */}
-          <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
-            Desde
-            <input type="date" value={rangoManual.desde} onChange={(e) => setRangoManual((r) => ({ ...r, desde: e.target.value }))} className={cn(CLASE_CAMPO, "w-40")} />
-          </label>
-          <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
-            Hasta
-            <input type="date" value={rangoManual.hasta} onChange={(e) => setRangoManual((r) => ({ ...r, hasta: e.target.value }))} className={cn(CLASE_CAMPO, "w-40")} />
-          </label>
-          {rangoInvertido && (
-            <p role="alert" className="w-full text-sm font-medium text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-              «Desde» no puede ser posterior a «Hasta» — corrige las fechas para ver el cálculo.
+            <p className="text-sm text-[var(--text-secondary)] @min-[58rem]/enc:w-0 @min-[58rem]/enc:min-w-0 @min-[58rem]/enc:flex-1 @min-[58rem]/enc:truncate" title={`Del ${formatearFecha(desde)} al ${formatearFecha(hasta)}`}>
+              Del <strong className="text-[var(--text-primary)]">{formatearFecha(desde)}</strong> al <strong className="text-[var(--text-primary)]">{formatearFecha(hasta)}</strong>
             </p>
-          )}
-        </div>
-      )}
-
-      <p className="text-sm text-[var(--text-secondary)]">
-        Del <strong className="text-[var(--text-primary)]">{formatearFecha(desde)}</strong> al <strong className="text-[var(--text-primary)]">{formatearFecha(hasta)}</strong>
-      </p>
-      </div>
+          </>
+        }
+      />
 
       {kpis.panel}
 
