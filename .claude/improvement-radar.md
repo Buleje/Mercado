@@ -7,6 +7,8 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+### [pending] 2026-10-22 — **Plazo de registro del ingreso: ¿desde la recepción física o desde la fecha del ingreso?** El schema (comentario de `fechaRecepcion`, ADR-335) dice que el plazo se cuenta desde la recepción física; el código cuenta de `entryDate` a `createdAt` (`DIAS_HABILES_REGISTRO_SQL`). Lo encontró el carril que podó la skill serfor-osinfor-compliance el 22-10; sin tocar. Medir en Blas cuántos ingresos cambian de «en plazo» a «fuera de plazo» con cada criterio antes de decidir.
+
 ### [pending] 2026-10-09 — **Medir la economía de ejecución (desde el 09-10).** Correr `node scripts/medir-economia.mjs --desde 2026-10-03 --comparar .claude/economia-baseline-2026-10-02.json` y mostrar antes/después a Brandon. Base del 02-10: 92 turnos y 4 capturas leídas por subagente, 48,8 K de contexto inicial, 12,5 typecheck + 5,8 lint a mano por sesión, 3,7 gates justo antes de un commit. Si los turnos no bajan, mirar qué herramienta los come (memoria `economia-de-ejecucion-2026-10-02`).
 
 ### [pending] 2026-09-27 — **Salidas sin guía de Blas → despacho desde su Anexo 04.** ADR-445 lo midió: 4 días (76,66 m³) salieron marcados «usado» sin guía en el libro, y hay 10 Anexos 04 (99,06 m³) en KV `ctp-anexos:<id>` sin despacho. Falta el puente anexo→despacho (ver memoria `flujo-ingreso-despacho-blas-27-09`). Es lo que deja el libro de Blas fiscalizable.
