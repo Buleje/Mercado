@@ -26,6 +26,8 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BulejeGaugeChart } from "@/components/ui-system/charts";
 import type { LothCheck, LothComplianceResult, LothComplianceTone, LothNavTarget } from "@/lib/forestal/loth-compliance";
 import { Btn } from "./ctp-shared";
+import { SERIE } from "@/components/admin/shared/chart-palette";
+import Plegable from "@/components/admin/shared/Plegable";
 
 export const TONE_LABEL: Record<LothComplianceTone, string> = {
   success: "Libro al día",
@@ -33,9 +35,9 @@ export const TONE_LABEL: Record<LothComplianceTone, string> = {
   error: "Requiere atención",
 };
 const GAUGE_COLOR: Record<LothComplianceTone, string> = {
-  success: "var(--data-success-500)",
-  warning: "var(--data-warning-500)",
-  error: "var(--data-error-500)",
+  success: SERIE.ingresos,
+  warning: SERIE.alerta,
+  error: SERIE.gastos,
 };
 export const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
@@ -165,18 +167,19 @@ export function ProblemCard({ check, onNavigate }: { check: LothCheck; onNavigat
 export function EnOrden({ checks }: { checks: LothCheck[] }) {
   if (checks.length === 0) return null;
   return (
-    <details open className="group rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-2xl px-4 py-3 hover:bg-[var(--surface-canvas)]">
+    <Plegable
+      clave="loth:cumplimiento:en-orden"
+      abiertoAlInicio
+      titulo={
         <span className="inline-flex items-center gap-2">
           <ListChecks className="h-4 w-4 text-[var(--data-success-600)]" />
-          <span className="text-sm font-bold text-[var(--text-primary)]">
+          <span>
             Verificaciones en orden <span className="text-[var(--text-tertiary)]">({checks.length})</span>
           </span>
         </span>
-        <span className="text-xs font-bold text-[var(--text-tertiary)] group-open:hidden">Mostrar</span>
-        <span className="hidden text-xs font-bold text-[var(--text-tertiary)] group-open:inline">Ocultar</span>
-      </summary>
-      <ul className="grid gap-x-6 gap-y-2.5 border-t border-[var(--rule-base)] px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
+      }
+    >
+      <ul className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
         {checks.map((c) => (
           <li key={c.key} className="flex items-center gap-2 text-sm">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success-600)]" />
@@ -184,6 +187,6 @@ export function EnOrden({ checks }: { checks: LothCheck[] }) {
           </li>
         ))}
       </ul>
-    </details>
+    </Plegable>
   );
 }

@@ -13,6 +13,7 @@ import type { FilaIndicadorForm } from "@/lib/semaforo/formulario";
 import { CAMPO } from "@/components/admin/metas/clases-meta";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 interface Props {
   filas: Record<IndicadorId, FilaIndicadorForm>;
@@ -62,12 +63,10 @@ export function FilasIndicadores({ filas, onCambiar }: Props) {
               <span className="text-sm font-bold text-[var(--text-primary)]">{def.nombre}</span>
               <InfoTip what={def.mide} affects={conUmbral ? ayudaUmbral(def) : "Usa la meta de la decisión (sección Negocio)."} />
               <label className="ml-auto inline-flex min-h-12 cursor-pointer items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 accent-[var(--accent)]"
+                <Casilla
+                 
                   checked={!f.apagado}
-                  onChange={(e) => poner(def.id, { apagado: !e.target.checked })}
-                />
+                  onChange={(e) => poner(def.id, { apagado: !e.target.checked })} />
                 {f.apagado ? "Apagado" : "Encendido"}
               </label>
             </div>

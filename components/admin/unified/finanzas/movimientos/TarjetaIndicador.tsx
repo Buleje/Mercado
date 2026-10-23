@@ -8,8 +8,8 @@
  */
 
 import type { ReactNode } from "react";
+import { StatCard } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { cn } from "@/lib/utils";
 
 export interface Indicador {
   rotulo: string;
@@ -22,26 +22,15 @@ export interface Indicador {
 
 export function TarjetaIndicador({ rotulo, valor, nota, ayuda, tono = "neutro" }: Indicador) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border bg-[var(--surface-raised)] p-3",
-        tono === "destacado" ? "border-primary/40 ring-1 ring-primary/20" : tono === "rojo" ? "border-[var(--data-error-500)]/50" : "border-[var(--rule-base)]",
-      )}
-    >
-      <div className="mb-1 flex items-center gap-1.5">
-        <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
-        {ayuda && <InfoTip title={rotulo} what={ayuda} />}
-      </div>
-      <p
-        className={cn(
-          "text-lg font-extrabold tabular-nums",
-          tono === "rojo" ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]",
-        )}
-      >
-        {valor}
-      </p>
-      {nota && <p className="text-sm text-[var(--text-secondary)]">{nota}</p>}
-    </div>
+    <StatCard
+      density="compact"
+      label={rotulo}
+      value={valor}
+      subValue={nota}
+      emphasis={tono === "rojo" ? "error" : "neutral"}
+      highlight={tono === "destacado"}
+      info={ayuda ? <InfoTip title={rotulo} what={ayuda} /> : undefined}
+    />
   );
 }
 

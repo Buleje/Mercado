@@ -12,6 +12,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { plural } from "./CtpComplianceScore";
 import { Btn } from "./ctp-shared";
 import type { CheckDescriptor, Readiness } from "./ctp-cumplimiento-checks";
+import Plegable from "@/components/admin/shared/Plegable";
 
 const READINESS_META = {
   ready: {
@@ -131,18 +132,19 @@ export function ProblemCard({ check, onNavigate }: { check: CheckDescriptor; onN
 export function EnOrden({ checks }: { checks: readonly CheckDescriptor[] }) {
   if (checks.length === 0) return null;
   return (
-    <details open className="group rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-2xl px-4 py-3 hover:bg-[var(--surface-canvas)]">
+    <Plegable
+      clave="ctp:cumplimiento:en-orden"
+      abiertoAlInicio
+      titulo={
         <span className="inline-flex items-center gap-2">
           <ListChecks className="h-4 w-4 text-[var(--data-success-600)]" />
-          <span className="text-sm font-bold text-[var(--text-primary)]">
+          <span>
             Verificaciones en orden <span className="text-[var(--text-tertiary)]">({checks.length})</span>
           </span>
         </span>
-        <span className="text-xs font-bold text-[var(--text-tertiary)] group-open:hidden">Mostrar</span>
-        <span className="hidden text-xs font-bold text-[var(--text-tertiary)] group-open:inline">Ocultar</span>
-      </summary>
-      <ul className="grid gap-x-6 gap-y-2.5 border-t border-[var(--rule-base)] px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
+      }
+    >
+      <ul className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
         {checks.map((c) => (
           <li key={c.key} className="flex items-center gap-2 text-sm">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success-600)]" />
@@ -150,6 +152,6 @@ export function EnOrden({ checks }: { checks: readonly CheckDescriptor[] }) {
           </li>
         ))}
       </ul>
-    </details>
+    </Plegable>
   );
 }

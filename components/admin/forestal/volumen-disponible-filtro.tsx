@@ -22,6 +22,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useContratoActivo } from "@/contexts/contrato-activo-context";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { OpcionPermiso } from "@/lib/forestal/volumen-disponible";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 /** Hasta cuántas opciones van en chips; más, desplegable. */
 const CHIPS_HASTA = 3;
@@ -203,12 +204,9 @@ function Desplegable({ titulo, todos, opciones, elegidos, onAlternar, onTodos }:
                 key={o.clave || "sin-nombre"}
                 className={`flex min-h-10 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm transition-colors hover:bg-[var(--surface-sunken)] ${marcado ? "bg-primary/10 font-bold text-[var(--text-primary)]" : "text-[var(--text-primary)]"}`}
               >
-                <input
-                  type="checkbox"
+                <Casilla
                   checked={marcado}
-                  onChange={() => onAlternar(o.clave)}
-                  className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
-                />
+                  onChange={() => onAlternar(o.clave)} />
                 <span className="min-w-0 flex-1 truncate" title={o.etiqueta}>{o.etiqueta}</span>
                 <span className="shrink-0 tabular-nums text-[var(--text-secondary)]">{fmtM3(o.m3)} m³</span>
               </label>

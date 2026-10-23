@@ -10,6 +10,7 @@
 import { useEffect, useId, useState } from "react";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { POS_MAX_MM, POS_MIN_MM } from "@/lib/forestal/gtf-matricial-disposicion";
+import { Casilla as CasillaDS } from "@/components/ui-system/Casilla";
 import { I } from "./ctp-shared";
 
 const INPUT = I.replace("h-11", "h-12");
@@ -171,13 +172,7 @@ export function Casilla({
       title={ayuda}
       className={`flex min-h-12 items-center gap-3 rounded-xl px-1 text-sm font-semibold text-[var(--text-primary)] ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-5 w-5 shrink-0 accent-[var(--accent-dark)]"
-      />
+      <CasillaDS checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
       <span className="min-w-0">{label}</span>
     </label>
   );

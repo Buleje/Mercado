@@ -4,6 +4,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { nombreDe } from "./wizard-tipos";
 import type { ConteoWizard } from "./use-conteo-wizard";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 /** Paso 3: las diferencias encontradas y cuáles se ajustan al cerrar. */
 export function WizardPaso3({ w }: { w: ConteoWizard }) {
@@ -41,13 +42,10 @@ export function WizardPaso3({ w }: { w: ConteoWizard }) {
                         {dif > 0 ? "+" : ""}{dif}
                       </td>
                       <td className="text-center">
-                        <input
-                          type="checkbox"
+                        <Casilla
                           checked={item.ajustado}
                           onChange={() => w.toggleAjustado(item.id)}
-                          aria-label={`Ajustar ${nombreDe(item)}`}
-                          className="h-6 w-6 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
-                        />
+                          aria-label={`Ajustar ${nombreDe(item)}`} />
                       </td>
                     </tr>
                   );

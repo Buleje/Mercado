@@ -143,7 +143,7 @@ describe("AnalisisView — «Lo que recibiste» separado de lo dado", () => {
     const bloque = screen.getByText("Lo que recibiste").closest("div") as HTMLElement;
     expect(bloque).toBeTruthy();
     // El KPI "Adelantado" sigue siendo SÓLO lo dado (S/ 1,000), no S/ 2,731.
-    const adelantadoCard = screen.getByText("Adelantado").closest(".rounded-xl") as HTMLElement;
+    const adelantadoCard = screen.getByText("Adelantado").closest("[data-stat-card]") as HTMLElement;
     expect(within(adelantadoCard).getByText(/1,000|1000/)).toBeTruthy();
   });
 

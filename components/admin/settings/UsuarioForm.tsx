@@ -13,6 +13,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff, Loader2 } from "@buleje/design-system/icons";
 import { CLASE_CAMPO } from "./campos";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 /** Los roles que se pueden dar desde aquí (`/api/admin-users` acepta estos tres). */
 export type RolUsuario = "admin" | "cajero" | "almacenero";
@@ -99,7 +100,7 @@ export function UsuarioForm({ open, editando, form, setForm, guardando, onGuarda
         </Field>
         {editando && (
           <label className="flex min-h-12 cursor-pointer items-center gap-2">
-            <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="h-5 w-5 rounded accent-[var(--accent)]" />
+            <Casilla checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
             <span className="text-sm text-[var(--text-primary)]">Usuario activo (puede entrar al panel)</span>
           </label>
         )}

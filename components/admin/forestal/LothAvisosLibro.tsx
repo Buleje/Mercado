@@ -18,6 +18,7 @@
 import { useState } from "react";
 import { AlertTriangle, ArrowRight, Bell, CheckCircle2, Link2 } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { button } from "@/components/ui-system/button-variants";
 import type { PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
 import { formatNumber } from "@/lib/format";
 import type { AvisoLibroTh, EstadoAvisosLibroTh } from "./hooks/use-loth-avisos-libro";
@@ -31,7 +32,7 @@ const TONO: Record<AvisoLibroTh["tono"], string> = {
     "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] hover:border-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]",
 };
 
-const BOTON = "inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition-colors";
+const BOTON = button({ variant: "secondary", className: "shrink-0 px-3" });
 
 function resumenDe(avisos: AvisoLibroTh[]): string {
   if (avisos.length === 0) return "El libro está en orden: sin bloqueos, sin alertas y sin líneas sin permiso";

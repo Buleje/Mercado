@@ -13,6 +13,7 @@ import { Field } from "@/components/admin/shared/Field";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
 import { ESTADOS_ESTRATEGIA, type DatosSeccion } from "@/lib/planificacion/secciones";
+import { Casilla } from "@/components/ui-system/Casilla";
 import { cn } from "@/lib/utils";
 import { AREA_TEXTO, TEXTO_TONO, claseChip } from "../piezas/clases";
 import { CUADRANTE, ESTADO_ESTRATEGIA, NOMBRE_IMPACTO, ORDEN_MATRIZ, TIPO, type Estrategia, type TipoEstrategia } from "./foda-config";
@@ -117,9 +118,7 @@ export function EstrategiaModal({ abierto, inicial, esNueva, foda, onCerrar, onG
                   const marcado = f.usa.includes(p.id);
                   return (
                     <label key={p.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg px-2 hover:bg-[var(--surface-sunken)]">
-                      <input
-                        type="checkbox"
-                        className="size-5 shrink-0 accent-[var(--accent)]"
+                      <Casilla
                         checked={marcado}
                         disabled={!marcado && f.usa.length >= MAX_USA}
                         onChange={() => alternar(p.id)}

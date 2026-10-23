@@ -16,6 +16,7 @@ import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedeEscribirAgenda } from "@/lib/admin/agenda-acceso";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { ConfigResumenTelegram, Momento } from "@/lib/agenda/resumen-telegram";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const API = "/api/admin/agenda/telegram";
 const VINCULAR = "/admin?tab=asistente-ia&vista=automatizaciones";
@@ -105,7 +106,7 @@ export function SeccionTelegram() {
             {FILAS.map((f) => (
               <div key={f.m} className="flex min-h-12 items-center gap-3 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-primary)]">
                 <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-                  <input type="checkbox" className="size-5 shrink-0 accent-[var(--accent)]" checked={estado.config[f.m] !== null} onChange={(e) => alternar(f.m, e.target.checked)} />
+                  <Casilla checked={estado.config[f.m] !== null} onChange={(e) => alternar(f.m, e.target.checked)} />
                   <span className="min-w-0">
                     <span className="block font-semibold">{f.titulo}</span>
                     <span className="block text-[var(--text-tertiary)]">{f.texto}</span>

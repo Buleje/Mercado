@@ -16,6 +16,7 @@ import { limaDateKey } from "@/lib/utils";
 import type { PlanillaCampo, PromptGuardado } from "@/lib/forestal/planillas/tipos";
 import { Btn, ModalFooter } from "../ctp-shared";
 import { usePromptPlanilla } from "./use-prompt-planilla";
+import Plegable from "@/components/admin/shared/Plegable";
 
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;
 
@@ -115,16 +116,20 @@ export default function VentanaPrompt({
           />
         )}
 
-        <details className="group rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 text-sm font-semibold text-[var(--text-secondary)]">
-            <Lock className="h-4 w-4 shrink-0" aria-hidden />
-            Qué devolver · lo arma el sistema con las columnas de la hoja
-            <ChevronDown className="ml-auto h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
-          </summary>
-          <pre className="max-h-64 overflow-auto whitespace-pre-wrap border-t border-[var(--rule-soft)] p-3 font-mono text-xs leading-relaxed text-[var(--text-secondary)]">
+        <Plegable
+          clave="planillas:prompt:que-devolver"
+          variante="franja"
+          titulo={
+            <span className="inline-flex items-center gap-2">
+              <Lock className="h-4 w-4 shrink-0" aria-hidden />
+              Qué devolver · lo arma el sistema con las columnas de la hoja
+            </span>
+          }
+        >
+          <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 font-mono text-xs leading-relaxed text-[var(--text-secondary)]">
             {p.bloqueFijo}
           </pre>
-        </details>
+        </Plegable>
       </div>
     </AdminModal>
   );

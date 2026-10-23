@@ -13,6 +13,7 @@ import { CANALES_AGENDA, COLORES_AGENDA, ROLES_RESPONSABLE_AGENDA, type RolRespo
 import { NOMBRE_COLOR, PUNTO_COLOR } from "../comun/estado-ocurrencia";
 import { CANAL_UI, ROL_UI } from "../comun/reglas";
 import type { Borrador } from "./use-actividad-form";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 type Cambiar = <K extends keyof Borrador>(campo: K, valor: Borrador[K]) => void;
 
@@ -99,7 +100,7 @@ export function CamposAviso({ b, cambiar }: { b: Borrador; cambiar: Cambiar }) {
       </Field>
 
       <label className="flex min-h-12 items-center gap-3 rounded-lg border border-[var(--rule-base)] px-3 text-sm text-[var(--text-primary)]">
-        <input type="checkbox" className="size-5 accent-[var(--accent)]" checked={b.activo} onChange={(e) => cambiar("activo", e.target.checked)} />
+        <Casilla checked={b.activo} onChange={(e) => cambiar("activo", e.target.checked)} />
         <span className="font-semibold">Prendida</span>
         <span className="text-[var(--text-tertiary)]">{b.activo ? "Sale en Hoy, en el calendario y en los avisos" : "Apagada: no avisa ni sale en el calendario"}</span>
       </label>

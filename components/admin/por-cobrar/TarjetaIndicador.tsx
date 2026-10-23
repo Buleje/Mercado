@@ -5,15 +5,15 @@
  */
 
 import type { ReactNode } from "react";
+import { StatCard } from "@buleje/design-system";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { cn } from "@/lib/utils";
 
 export default function TarjetaIndicador({
   rotulo,
   valor,
   detalle,
-  icono: Icono,
+  icono,
   tono = "normal",
   ayuda,
   accion,
@@ -29,29 +29,18 @@ export default function TarjetaIndicador({
   accion?: ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border bg-[var(--surface-raised)] p-3",
-        tono === "destacado" ? "border-primary/40 ring-1 ring-primary/20" : "border-[var(--rule-base)]",
-      )}
-    >
-      <div className="mb-1 flex items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
-          <Icono className="h-4 w-4" aria-hidden />
-        </span>
-        <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
-        {ayuda && <InfoTip what={ayuda} />}
-      </div>
-      <p
-        className={cn(
-          "text-lg font-extrabold tabular-nums",
-          tono === "alerta" ? "text-[var(--data-error-ink)]" : tono === "destacado" ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]",
-        )}
-      >
-        {valor}
-      </p>
-      {detalle && <p className="text-sm text-[var(--text-secondary)]">{detalle}</p>}
-      {accion && <div className="mt-2">{accion}</div>}
+    <div className="flex flex-col gap-2">
+      <StatCard
+        density="compact"
+        label={rotulo}
+        value={valor}
+        subValue={detalle}
+        icon={icono}
+        emphasis={tono === "alerta" ? "error" : "neutral"}
+        highlight={tono === "destacado"}
+        info={ayuda ? <InfoTip what={ayuda} /> : undefined}
+      />
+      {accion && <div>{accion}</div>}
     </div>
   );
 }

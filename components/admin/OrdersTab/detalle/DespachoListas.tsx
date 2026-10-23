@@ -5,8 +5,9 @@
  * los ocupados. Salieron de `DespachoSection.tsx` (10-10). Se fue el chip
  * «Libre» de cada fila: la lista sólo tiene libres y la cabecera dice cuántos.
  */
-import { ChevronDown, Loader2, MapPin, Star, UserCheck } from "@buleje/design-system/icons";
+import { Loader2, MapPin, Star, UserCheck } from "@buleje/design-system/icons";
 import type { DeliveryPartnerLive } from "../hooks/useDeliveryPartnersLive";
+import Plegable from "@/components/admin/shared/Plegable";
 
 interface LibresProps {
   libres: readonly DeliveryPartnerLive[];
@@ -101,11 +102,12 @@ export function ListaOcupados({
 }) {
   if (ocupados.length === 0) return null;
   return (
-    <details className="group border-t border-[var(--rule-soft)]">
-      <summary className="flex min-h-12 cursor-pointer items-center gap-2 px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
-        <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
-        Ocupados ahora ({ocupados.length})
-      </summary>
+    <Plegable
+      clave="despacho:ocupados-ahora"
+      titulo={`Ocupados ahora (${ocupados.length})`}
+      variante="franja"
+      className="border-t border-[var(--rule-soft)] px-4"
+    >
       <ul className="divide-y divide-[var(--rule-soft)]">
         {ocupados.map((p) => (
           <li key={p.id} className="flex items-center gap-3 px-4 py-2">
@@ -120,6 +122,6 @@ export function ListaOcupados({
           </li>
         ))}
       </ul>
-    </details>
+    </Plegable>
   );
 }

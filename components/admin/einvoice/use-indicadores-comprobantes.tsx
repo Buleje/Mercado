@@ -9,13 +9,13 @@
  * aceptado y cobrado van separados: lo cobrado no vive acá (Caja/Conciliación).
  */
 import type { ReactNode } from "react";
+import { StatCard } from "@buleje/design-system";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { textoRango, type Rango } from "@/lib/comprobantes/periodo";
 import type { ResumenComprobantes } from "@/lib/comprobantes/resumen";
-import { cn } from "@/lib/utils";
 import type { FiltrosComprobantes } from "./filtros-comprobantes";
 import { fmt, type DocStatus, type DocType } from "./tipos";
 
@@ -60,40 +60,40 @@ function tarjetasDe(r: ResumenComprobantes): Tarjeta[] {
   ];
 }
 
-const TONO_CIFRA: Record<Tono, string> = {
-  neutral: "text-[var(--text-primary)]",
-  warning: "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]",
-  danger: "text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]",
-};
+const EMPHASIS: Record<Tono, "neutral" | "warning" | "error"> = { neutral: "neutral", warning: "warning", danger: "error" };
 
-function Cifra({ t, periodo, onAbrir }: { t: Tarjeta; periodo: string; onAbrir: (a: Alcance) => void }) {
+function tarjetaDe(t: Tarjeta, periodo: string, onAbrir: (a: Alcance) => void) {
   const cuerpo = (
     <>
-      <span className={cn("block text-lg font-extrabold tabular-nums", TONO_CIFRA[t.tono ?? "neutral"])}>{t.valor}</span>
-      {t.documentos != null && <span className="block text-sm text-[var(--text-secondary)]">{plural(t.documentos, "documento", "documentos")}</span>}
+      {t.valor}
+      {t.documentos != null && (
+        <span className="block text-sm font-normal text-[var(--text-secondary)]">{plural(t.documentos, "documento", "documentos")}</span>
+      )}
     </>
   );
   const abre = t.abre && t.documentos != null && t.documentos > 0 ? t.abre : null;
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-      <div className="mb-1 flex items-center gap-1.5">
-        <span className="text-sm font-semibold text-[var(--text-secondary)]">{t.rotulo}</span>
-        <InfoTip title={t.rotulo} what={t.formula} affects={`Período: ${periodo}.`} example={t.ejemplo} />
-      </div>
-      {abre ? (
-        <button
-          type="button"
-          onClick={() => onAbrir(abre)}
-          aria-label={`${t.rotulo}: ${t.valor}. Ver sus documentos`}
-          title="Ver los documentos de esta cifra"
-          className="-mx-1 block w-[calc(100%+0.5rem)] rounded-lg px-1 text-left hover:bg-[var(--surface-sunken)]"
-        >
-          {cuerpo}
-        </button>
-      ) : (
-        cuerpo
-      )}
-    </div>
+    <StatCard
+      key={t.rotulo}
+      label={t.rotulo}
+      emphasis={EMPHASIS[t.tono ?? "neutral"]}
+      info={<InfoTip title={t.rotulo} what={t.formula} affects={`Período: ${periodo}.`} example={t.ejemplo} />}
+      value={
+        abre ? (
+          <button
+            type="button"
+            onClick={() => onAbrir(abre)}
+            aria-label={`${t.rotulo}: ${t.valor}. Ver sus documentos`}
+            title="Ver los documentos de esta cifra"
+            className="-mx-1 block w-[calc(100%+0.5rem)] rounded-lg px-1 text-left hover:bg-[var(--surface-sunken)]"
+          >
+            {cuerpo}
+          </button>
+        ) : (
+          cuerpo
+        )
+      }
+    />
   );
 }
 
@@ -108,7 +108,7 @@ interface Opciones {
 export function useIndicadoresComprobantes({ resumen, rango, sinDatosAun, onAbrir }: Opciones) {
   const periodo = textoRango(rango);
   const r = resumen;
-  const tarjetas: ReactNode[] = r ? tarjetasDe(r).map((t) => <Cifra key={t.rotulo} t={t} periodo={periodo} onAbrir={onAbrir} />) : [];
+  const tarjetas: ReactNode[] = r ? tarjetasDe(r).map((t) => tarjetaDe(t, periodo, onAbrir)) : [];
   const titular = r
     ? r.pendientes > 0
       ? `Emitido ${fmt(r.emitido)} · ${plural(r.pendientes, "esperando", "esperando")} a SUNAT`

@@ -15,7 +15,7 @@
  * cuenta que el «Resumen por especie» de la lista.
  */
 
-import { BadgeStatus, CardTitle } from "@buleje/design-system";
+import { BadgeStatus, CardTitle, StatCard } from "@buleje/design-system";
 import type { ReactNode } from "react";
 import { formatNumber } from "@/lib/format";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -61,16 +61,6 @@ function Bloque({ titulo, children, hay = true }: { titulo: string; children: Re
   );
 }
 
-function Cifra({ rotulo, valor, sub }: { rotulo: string; valor: string; sub?: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-      <div className="text-xs font-medium text-[var(--text-secondary)]">{rotulo}</div>
-      <div className="text-base font-semibold tabular-nums text-[var(--text-primary)]">{valor}</div>
-      {sub && <div className="text-xs tabular-nums text-[var(--text-secondary)]">{sub}</div>}
-    </div>
-  );
-}
-
 export default function GtfDatosDetalles({
   ficha,
   verificada,
@@ -103,11 +93,12 @@ export default function GtfDatosDetalles({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <Cifra rotulo="Declara la guía" valor={declarado != null ? `${fmtM3(declarado)} m³` : "No lo publica"} />
-        <Cifra
-          rotulo="En el libro"
-          valor={`${fmtM3(r.m3)} m³`}
-          sub={`${formatNumber(r.trozas)} ${r.trozas === 1 ? "troza" : "trozas"}`}
+        <StatCard density="compact" label="Declara la guía" value={declarado != null ? `${fmtM3(declarado)} m³` : "No lo publica"} />
+        <StatCard
+          density="compact"
+          label="En el libro"
+          value={`${fmtM3(r.m3)} m³`}
+          subValue={`${formatNumber(r.trozas)} ${r.trozas === 1 ? "troza" : "trozas"}`}
         />
       </div>
 

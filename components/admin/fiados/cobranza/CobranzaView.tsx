@@ -34,6 +34,7 @@ import { useParamDeEntrada } from "@/hooks/use-param-de-entrada";
 import FilaDeudor from "./FilaDeudor";
 import AnotarGestion from "./AnotarGestion";
 import ModoLlamada from "./ModoLlamada";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 /** Texto comparable: minúsculas y sin tildes — quien busca en el mostrador escribe "maria", no "María". */
 const sinTildes = (v: string) => v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -182,7 +183,7 @@ export default function CobranzaView({ fiados, loading, cob, onCobrar, onRecorda
       <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] px-3 text-sm text-[var(--text-secondary)]">
         <label className="flex h-12 cursor-pointer items-center gap-3 font-semibold">
           <span className="flex w-8 justify-center">
-            <input type="checkbox" checked={todosMarcados} onChange={() => setTanda(todosMarcados ? new Set() : new Set(filtrados.map((d) => d.id)))} className="h-5 w-5" />
+            <Casilla checked={todosMarcados} onChange={() => setTanda(todosMarcados ? new Set() : new Set(filtrados.map((d) => d.id)))} />
           </span>
           {filtrados.length} cliente{filtrados.length === 1 ? "" : "s"}
           {tramo !== "todos" || q ? ` de ${deudores.length}` : ""}

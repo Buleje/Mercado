@@ -14,6 +14,7 @@ import type { ObjetivoActividad } from "@/lib/agenda/tipos";
 import { pedirJson } from "../agenda-api";
 import { ORDEN_REGLAS, REGLA_UI } from "../comun/reglas";
 import type { Borrador } from "./use-actividad-form";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 type Cambiar = <K extends keyof Borrador>(campo: K, valor: Borrador[K]) => void;
 
@@ -89,7 +90,7 @@ export function CamposRegla({ b, cambiar, cambiarRegla }: Props) {
       )}
       {b.regla === "servicio_aserrio" && (
         <label className="flex min-h-12 items-center gap-3 text-sm text-[var(--text-primary)]">
-          <input type="checkbox" className="size-5 accent-[var(--accent)]" checked={p.soloTerceros === true} onChange={(e) => ponerParametro("soloTerceros", e.target.checked)} />
+          <Casilla checked={p.soloTerceros === true} onChange={(e) => ponerParametro("soloTerceros", e.target.checked)} />
           Contar sólo el aserrío que haces a terceros
         </label>
       )}

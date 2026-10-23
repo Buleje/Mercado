@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
 
   // Allow cross-origin dev requests from Cloudflare Tunnel / ngrok
-  allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io"],
+  allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io", "buleje-panel.*.ts.net"],
 
   // Compress responses
   compress: true,

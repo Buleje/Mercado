@@ -13,9 +13,9 @@
  *  - «No trabajan este día» (vacaciones, licencia, antes de ingresar…).
  */
 import { useState, type ReactNode } from "react";
-import { CalendarOff, ChevronRight, UserMinus } from "@buleje/design-system/icons";
+import { CalendarOff, UserMinus } from "@buleje/design-system/icons";
 import type { ColaboradorMinDTO, FechaKey } from "@/lib/rrhh/tipos";
-import { cn } from "@/lib/utils";
+import Plegable from "@/components/admin/shared/Plegable";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
 import { motivoNoIncluido, noVienenHace } from "../rrhh-ui";
 import { etiquetaCorta } from "@/lib/rrhh/fechas";
@@ -105,13 +105,13 @@ export default function ListaDelDia({ fecha, esHoy, feriado, fijos, eventualesSi
       <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">{fijos.map((c) => fila(c))}</div>
 
       {eventualesSinMarca.length > 0 && (
-        <Plegable titulo={`Eventuales (${eventualesSinMarca.length})`} ayuda="Vienen algunos días: márcalos si vinieron hoy">
+        <BloqueDelDia clave="eventuales" titulo={`Eventuales (${eventualesSinMarca.length})`} ayuda="Vienen algunos días: márcalos si vinieron hoy">
           <div className="divide-y divide-[var(--rule-soft)] border-t border-[var(--rule-soft)]">{eventualesSinMarca.map((c) => fila(c))}</div>
-        </Plegable>
+        </BloqueDelDia>
       )}
 
       {noIncluidos.length > 0 && (
-        <Plegable titulo={`No trabajan este día (${noIncluidos.length})`}>
+        <BloqueDelDia clave="no-trabajan" titulo={`No trabajan este día (${noIncluidos.length})`}>
           <ul className="space-y-1 border-t border-[var(--rule-soft)] px-4 py-2">
             {noIncluidos.map((c) => (
               <li key={c.id} className="flex min-h-10 flex-wrap items-center justify-between gap-2 text-sm">
@@ -128,21 +128,25 @@ export default function ListaDelDia({ fecha, esHoy, feriado, fijos, eventualesSi
               </li>
             ))}
           </ul>
-        </Plegable>
+        </BloqueDelDia>
       )}
     </>
   );
 }
 
-function Plegable({ titulo, ayuda, children }: { titulo: string; ayuda?: string; children: ReactNode }) {
+/** Un bloque plegado del día: el `Plegable` recordado del panel, con la ayuda junto al título. */
+function BloqueDelDia({ clave, titulo, ayuda, children }: { clave: string; titulo: string; ayuda?: string; children: ReactNode }) {
   return (
-    <details className="group rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <summary className={cn("flex cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-0.5 px-4 py-3 text-sm font-semibold text-[var(--text-secondary)] [&::-webkit-details-marker]:hidden")}>
-        <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
-        {titulo}
-        {ayuda && <span className="font-normal text-[var(--text-tertiary)]">· {ayuda}</span>}
-      </summary>
+    <Plegable
+      clave={`rrhh:asistencia:${clave}`}
+      titulo={
+        <>
+          {titulo}
+          {ayuda && <span className="ml-2 font-normal text-[var(--text-tertiary)]">· {ayuda}</span>}
+        </>
+      }
+    >
       {children}
-    </details>
+    </Plegable>
   );
 }

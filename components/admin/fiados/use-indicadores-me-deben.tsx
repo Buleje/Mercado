@@ -13,10 +13,11 @@
  */
 import type { ReactNode } from "react";
 import { CalendarClock, HandCoins, Target, TriangleAlert } from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/format";
-import { limaDateKey, cn } from "@/lib/utils";
+import { limaDateKey } from "@/lib/utils";
 import { avanceDeMeta } from "@/lib/fiados/gestion-cobranza";
 import { cobradoDesde, debeTodavia, fiadosVencidos, lunesDe } from "./cifras-me-deben";
 import type { Cobranza } from "./use-cobranza";
@@ -34,11 +35,7 @@ interface Tarjeta {
   barra?: number | null;
 }
 
-const COLOR: Record<Tono, string> = {
-  neutro: "text-[var(--text-primary)]",
-  error: "text-[var(--data-error-ink)]",
-  exito: "text-[var(--data-success-ink)]",
-};
+const EMPHASIS = { neutro: "neutral", error: "error", exito: "success" } as const;
 
 export function useIndicadoresMeDeben(fiados: readonly Fiado[], cob: Cobranza, cargando: boolean) {
   const hoy = limaDateKey();
@@ -102,23 +99,28 @@ export function useIndicadoresMeDeben(fiados: readonly Fiado[], cob: Cobranza, c
     anchoFijo: true,
     sinDatosAun: cargando && fiados.length === 0,
     resumen,
-    tarjetas: tarjetas.map(({ rotulo, valor, pie, icono: Icono, tono = "neutro", ayuda, barra }) => (
-      <div key={rotulo} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-        <div className="mb-1 flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
-            <Icono className="h-4 w-4" aria-hidden />
-          </span>
-          <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
-          {ayuda && <InfoTip what={ayuda} />}
-        </div>
-        <p className={cn("text-lg font-extrabold tabular-nums", COLOR[tono])}>{valor}</p>
-        {barra != null && (
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]" aria-hidden>
-            <div className="h-full rounded-full bg-[var(--data-success-500)]" style={{ width: `${barra}%` }} />
-          </div>
-        )}
-        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{pie}</p>
-      </div>
+    tarjetas: tarjetas.map(({ rotulo, valor, pie, icono, tono = "neutro", ayuda, barra }) => (
+      <StatCard
+        key={rotulo}
+        label={rotulo}
+        value={valor}
+        icon={icono}
+        iconEmphasis
+        emphasis={EMPHASIS[tono]}
+        info={ayuda ? <InfoTip what={ayuda} /> : undefined}
+        subValue={
+          barra != null ? (
+            <>
+              <span className="mb-1 block h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]" aria-hidden>
+                <span className="block h-full rounded-full bg-[var(--data-success-500)]" style={{ width: `${barra}%` }} />
+              </span>
+              {pie}
+            </>
+          ) : (
+            pie
+          )
+        }
+      />
     )),
   });
 }

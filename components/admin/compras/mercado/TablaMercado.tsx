@@ -37,7 +37,7 @@ function origen(p: PrecioVisto): string {
   ].filter(Boolean).join(" · ");
 }
 
-function Casilla({ p, miPrecio, hoy }: { p: PrecioVisto; miPrecio: number; hoy: string }) {
+function CeldaPrecio({ p, miPrecio, hoy }: { p: PrecioVisto; miPrecio: number; hoy: string }) {
   const dias = antiguedad(p, hoy);
   const vigente = precioVigente(p, hoy);
   const dif = vigente ? diferenciaPct(miPrecio, p.precio) : null;
@@ -136,7 +136,7 @@ export default function TablaMercado({ productos, competidores, hoy, onCasilla, 
                       aria-label={visto ? `${c.name}: ${plata(visto)}. ${origen(visto)}` : `Anotar el precio de ${c.name} para ${p.productName}`}
                     >
                       {visto ? (
-                        <Casilla p={visto} miPrecio={p.myPrice} hoy={hoy} />
+                        <CeldaPrecio p={visto} miPrecio={p.myPrice} hoy={hoy} />
                       ) : (
                         <span className="inline-flex items-center gap-1 text-sm text-[var(--text-tertiary)]"><Plus className="h-3.5 w-3.5" aria-hidden /> Anotar</span>
                       )}

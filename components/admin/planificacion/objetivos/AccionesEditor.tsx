@@ -13,6 +13,7 @@ import { nuevoId } from "@/hooks/use-plan-empresa";
 import { cn } from "@/lib/utils";
 import { CAMPO_ALTO } from "../piezas/clases";
 import type { Accion } from "./objetivos-config";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const MAX_ACCIONES = 60;
 
@@ -45,13 +46,11 @@ export function AccionesEditor({ acciones, onCambiar, listaNombres }: Props) {
         <ul className="space-y-2">
           {acciones.map((a, i) => (
             <li key={a.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-soft)] p-2">
-              <input
-                type="checkbox"
-                className="size-5 shrink-0 accent-[var(--accent)]"
+              <Casilla
+               
                 checked={a.hecha}
                 aria-label={`Hecha: ${a.texto || `acción ${i + 1}`}`}
-                onChange={(e) => editar(a.id, { hecha: e.target.checked })}
-              />
+                onChange={(e) => editar(a.id, { hecha: e.target.checked })} />
               <input
                 type="text"
                 value={a.texto}

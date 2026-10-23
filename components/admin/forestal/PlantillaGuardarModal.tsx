@@ -27,6 +27,7 @@ import {
 } from "@/lib/forestal/gtf-plantillas";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import type { PlantillasGuia } from "./hooks/use-plantillas-guia";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const clave = (n: string) => n.trim().toLocaleLowerCase("es").replace(/\s+/g, " ");
 
@@ -130,13 +131,11 @@ export default function PlantillaGuardarModal({ g, pl, onCerrar }: { g: Despacho
                   hay ? "cursor-pointer bg-[var(--surface-raised)] hover:border-[var(--accent)]" : "bg-[var(--surface-sunken)] opacity-70"
                 }`}
               >
-                <input
-                  type="checkbox"
+                <Casilla
                   checked={marcados.has(b)}
                   disabled={!hay}
                   onChange={() => alternar(b)}
-                  className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-[var(--accent)] disabled:cursor-not-allowed"
-                />
+                  className="mt-0.5 disabled:cursor-not-allowed" />
                 <span className="grid min-w-0 gap-0.5">
                   <span className="text-sm font-semibold text-[var(--text-primary)]">{ROTULO_BLOQUE[b]}</span>
                   <span className="break-words text-xs text-[var(--text-secondary)]">{hay ? linea || "Con datos" : "Vacío en esta guía"}</span>

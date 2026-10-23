@@ -21,6 +21,7 @@ import { SeccionCelular } from "./SeccionCelular";
 import { SeccionSonido } from "./SeccionSonido";
 import { SeccionTelegram } from "./SeccionTelegram";
 import { DIAS_LARGOS, ORDEN_SEMANA } from "../comun/fechas";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const MODOS: readonly { id: ModoAviso; label: string; hint: string }[] = [
   { id: "ventana", label: "Ventana al centro", hint: "Tapa la página hasta que la cierres" },
@@ -177,7 +178,7 @@ export default function ConfigAvisoModal({ onCerrar }: { onCerrar: () => void })
 function Opcion({ marcado, onCambiar, titulo, texto }: { marcado: boolean; onCambiar: (v: boolean) => void; titulo: string; texto: ReactNode }) {
   return (
     <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-primary)]">
-      <input type="checkbox" className="size-5 shrink-0 accent-[var(--accent)]" checked={marcado} onChange={(e) => onCambiar(e.target.checked)} />
+      <Casilla checked={marcado} onChange={(e) => onCambiar(e.target.checked)} />
       <span className="min-w-0">
         <span className="block font-semibold">{titulo}</span>
         <span className="block text-[var(--text-tertiary)]">{texto}</span>

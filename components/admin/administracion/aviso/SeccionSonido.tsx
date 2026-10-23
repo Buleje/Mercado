@@ -13,6 +13,7 @@ import { claseChip } from "@/components/admin/planificacion/piezas/clases";
 import { button } from "@/components/ui-system/button-variants";
 import { SONIDOS_AVISO, type AvisoPantalla } from "@/lib/agenda/aviso-pantalla";
 import { duracionDe, probarSonido, SONIDOS_UI } from "@/lib/agenda/sonidos";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 type Parcial = Partial<Pick<AvisoPantalla, "sonido" | "volumen" | "flotantes">>;
 
@@ -89,7 +90,7 @@ export function SeccionSonido(props: Pick<AvisoPantalla, "sonido" | "volumen" | 
       </div>
 
       <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-primary)]">
-        <input type="checkbox" className="size-5 shrink-0 accent-[var(--accent)]" checked={flotantes} onChange={(e) => onCambiar({ flotantes: e.target.checked })} />
+        <Casilla checked={flotantes} onChange={(e) => onCambiar({ flotantes: e.target.checked })} />
         <span className="min-w-0 font-semibold">
           Notificación flotante por cada aviso nuevo
           <span className="block font-normal text-[var(--text-tertiary)]">Sale abajo a la derecha con su botón; el sonido suena aunque la apagues</span>

@@ -11,6 +11,7 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const BOTON_48 = button({ variant: "secondary", size: "icon", className: "shrink-0 rounded-xl" });
 
@@ -89,7 +90,7 @@ export function ElegirAccesosFijos({ open, onClose, titulo, tope, opciones, fija
             return (
               <li key={id}>
                 <label className={cn("flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-3 hover:bg-[var(--surface-sunken)]", bloqueada && "cursor-not-allowed opacity-50")}>
-                  <input type="checkbox" checked={marcada} disabled={bloqueada} onChange={() => alternar(id)} className="h-5 w-5 accent-[var(--accent)]" data-qa={`${prefijoQa}-fijar-${id}`} />
+                  <Casilla checked={marcada} disabled={bloqueada} onChange={() => alternar(id)} data-qa={`${prefijoQa}-fijar-${id}`} />
                   <Icono className="h-5 w-5 text-[var(--text-secondary)]" aria-hidden />
                   <span className="text-base text-[var(--text-primary)]">{label}</span>
                 </label>

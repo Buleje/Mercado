@@ -19,10 +19,10 @@
  */
 import { createContext, useContext, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { StatCard } from "@buleje/design-system";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { cn } from "@/lib/utils";
 
 /**
  * `undefined` = no hay cabecera (el botón va en su lugar); `null` = la cabecera
@@ -42,25 +42,18 @@ export interface Indicador {
   tono?: "ok" | "alerta" | "error";
 }
 
-const TONO: Record<NonNullable<Indicador["tono"]>, string> = {
-  ok: "text-[var(--data-success-ink)]",
-  alerta: "text-[var(--data-warning-ink)]",
-  error: "text-[var(--data-error-ink)]",
-};
+const EMPHASIS = { ok: "success", alerta: "warning", error: "error" } as const;
 
-function TarjetaIndicador({ icono: Icono, rotulo, valor, extra, ayuda, tono }: Indicador) {
+function TarjetaIndicador({ icono, rotulo, valor, extra, ayuda, tono }: Indicador) {
   return (
-    <div className="min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-      <div className="mb-1 flex items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
-          <Icono className="h-4 w-4" aria-hidden />
-        </span>
-        <span className="min-w-0 truncate text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
-        {ayuda && <InfoTip title={rotulo} what={ayuda} />}
-      </div>
-      <p className={cn("truncate text-lg font-extrabold tabular-nums text-[var(--text-primary)]", tono && TONO[tono])}>{valor}</p>
-      {extra && <p className="truncate text-sm tabular-nums text-[var(--text-secondary)]">{extra}</p>}
-    </div>
+    <StatCard
+      label={rotulo}
+      value={valor}
+      subValue={extra}
+      icon={icono}
+      info={ayuda ? <InfoTip title={rotulo} what={ayuda} /> : undefined}
+      emphasis={tono ? EMPHASIS[tono] : "neutral"}
+    />
   );
 }
 

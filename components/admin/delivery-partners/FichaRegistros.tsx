@@ -14,6 +14,7 @@ import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { STATUS_LABELS } from "@/components/admin/OrdersTab/types";
 import type { EntregaFicha, RetiroFicha } from "./use-ficha-repartidor";
+import Plegable from "@/components/admin/shared/Plegable";
 
 const HORA = new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", hour12: false });
 
@@ -39,11 +40,8 @@ function HistorialPedido({ e }: { e: EntregaFicha }) {
     ...e.historial.map((h) => ({ cuando: h.cuando, que: STATUS_LABELS[h.estado as keyof typeof STATUS_LABELS] ?? h.estado, quien: h.quien, nota: h.nota })),
   ].sort((a, b) => a.cuando.localeCompare(b.cuando));
   return (
-    <details className="mt-1 text-sm" data-qa="ficha-historial">
-      <summary className="cursor-pointer select-none text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-        Historial ({e.historial.length})
-      </summary>
-      <ol className="mt-1 space-y-0.5 border-l border-[var(--rule-base)] pl-3">
+    <Plegable clave={`repartidores:historial:${e.id}`} titulo={`Historial (${e.historial.length})`} variante="franja" className="mt-1 text-sm">
+      <ol className="space-y-0.5 border-l border-[var(--rule-base)] pl-3">
         {pasos.map((p, i) => (
           <li key={`${p.cuando}-${i}`} className="tabular-nums text-[var(--text-secondary)]">
             {HORA.format(new Date(p.cuando))} · <span className="font-semibold text-[var(--text-primary)]">{p.que}</span>
@@ -52,7 +50,7 @@ function HistorialPedido({ e }: { e: EntregaFicha }) {
           </li>
         ))}
       </ol>
-    </details>
+    </Plegable>
   );
 }
 

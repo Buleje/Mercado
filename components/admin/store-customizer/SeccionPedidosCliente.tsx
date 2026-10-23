@@ -7,7 +7,7 @@
  * Contrato: `lib/tienda-cliente/contrato.ts`.
  */
 import { MessageSquare } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Interruptor } from "@/components/ui-system/Interruptor";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { Bloque } from "./Bloque";
 import type { ConfigPedidosCliente } from "@/lib/tienda-cliente/contrato";
@@ -18,29 +18,6 @@ const OPCIONES: { clave: keyof ConfigPedidosCliente; titulo: string; frase: stri
   { clave: "pedirUbicacion", titulo: "Pedir la ubicación en vivo", frase: "Tu cliente comparte dónde está con su celular y tú recibes el punto en el mapa." },
   { clave: "pedidoComoImagen", titulo: "Pedido por WhatsApp como imagen", frase: "Además del texto, el pedido llega como una imagen con productos, precios y datos del cliente." },
 ];
-
-function Interruptor({ activo, onChange, etiqueta }: { activo: boolean; onChange: (v: boolean) => void; etiqueta: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={activo}
-      aria-label={etiqueta}
-      onClick={() => onChange(!activo)}
-      className={cn(
-        "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-        activo ? "border-primary bg-primary" : "border-transparent bg-[var(--surface-sunken)]",
-      )}
-    >
-      <span
-        className={cn(
-          "inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform duration-[var(--dur-base)]",
-          activo ? "translate-x-6" : "translate-x-1",
-        )}
-      />
-    </button>
-  );
-}
 
 export function SeccionPedidosCliente({
   config,
@@ -74,7 +51,7 @@ export function SeccionPedidosCliente({
                 <p className="text-sm font-semibold text-[var(--text-primary)]">{o.titulo}</p>
                 <p className="text-sm text-[var(--text-secondary)]">{o.frase}</p>
               </div>
-              <Interruptor activo={config[o.clave]} etiqueta={o.titulo} onChange={(v) => onChange({ ...config, [o.clave]: v })} />
+              <Interruptor variante="solo" enabled={config[o.clave]} label={o.titulo} onChange={(v) => onChange({ ...config, [o.clave]: v })} />
             </li>
           ))}
         </ul>

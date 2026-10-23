@@ -15,6 +15,7 @@ import { etiquetaPermiso } from "@/lib/forestal/medicion-carga";
 import { Btn } from "./ctp-shared";
 import { useCargasMedidas } from "./hooks/use-cargas-medidas";
 import LothCargasMedidasTarjeta, { DescartarCarga, EstadoDeCarga } from "./LothCargasMedidasTarjeta";
+import Plegable from "@/components/admin/shared/Plegable";
 
 const LothMedirCargaMonteModal = dynamic(() => import("./LothMedirCargaMonteModal"), { ssr: false });
 
@@ -61,21 +62,20 @@ export default function LothMedirCargaMonte() {
       ))}
 
       {recientes.length > 0 && (
-        <details className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" data-qa="cargas-terminadas">
-          <summary className="flex min-h-12 cursor-pointer items-center px-4 text-sm font-bold text-[var(--text-primary)]">
-            Cargas usadas o descartadas ({recientes.length})
-          </summary>
-          <ul className="divide-y divide-[var(--rule-soft)] px-4 pb-2">
-            {recientes.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
-                <span className="font-bold text-[var(--text-primary)]">
-                  {c.trozas} {c.trozas === 1 ? "troza" : "trozas"}
-                </span>
-                <EstadoDeCarga c={c} />
-              </li>
-            ))}
-          </ul>
-        </details>
+        <div data-qa="cargas-terminadas">
+          <Plegable clave="loth:medir-carga:terminadas" titulo={`Cargas usadas o descartadas (${recientes.length})`}>
+            <ul className="divide-y divide-[var(--rule-soft)]">
+              {recientes.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
+                  <span className="font-bold text-[var(--text-primary)]">
+                    {c.trozas} {c.trozas === 1 ? "troza" : "trozas"}
+                  </span>
+                  <EstadoDeCarga c={c} />
+                </li>
+              ))}
+            </ul>
+          </Plegable>
+        </div>
       )}
 
       {midiendo && <LothMedirCargaMonteModal cm={cm} onClose={() => setMidiendo(false)} />}

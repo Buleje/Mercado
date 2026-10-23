@@ -18,6 +18,7 @@ import { fijarEnHoja, type CambioPos } from "@/lib/forestal/gtf-matricial-posici
 import { NumeroMm } from "./gtf-matricial-controles";
 import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { SeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 /** Lo que muestra un renglón (campo o columna de la tabla). `y`/`letraPt` null = no tiene propia. */
 export interface RenglonPosicion {
@@ -153,14 +154,11 @@ export default function TablaPosiciones({
               )}
               <td className="text-center">
                 <label className="inline-flex min-h-12 min-w-12 cursor-pointer items-center justify-center">
-                  <input
-                    type="checkbox"
+                  <Casilla
                     aria-label={`Imprimir ${r.nombre}`}
                     checked={r.visible}
                     onFocus={elegir}
-                    onChange={(e) => cambiar(r, "visible", { visible: e.target.checked })}
-                    className="h-5 w-5 accent-[var(--accent-dark)]"
-                  />
+                    onChange={(e) => cambiar(r, "visible", { visible: e.target.checked })} />
                 </label>
               </td>
             </tr>

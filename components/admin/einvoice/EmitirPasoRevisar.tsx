@@ -13,6 +13,7 @@ import type { SunatEmisor } from "@/lib/sunat/modo-oficial.types";
 import { clientesFrecuentes, nombreAnteriorDistinto } from "./clientes-frecuentes";
 import { diaYFecha, TOPE_BOLETA_SIN_DNI, type DatosCliente, type PedidoElegible, type TipoComprobante } from "./emision-reglas";
 import type { EDocument } from "./tipos";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const ETIQUETA = "mb-1 block text-sm font-semibold text-[var(--text-secondary)]";
 const CAMPO = "h-12 w-full rounded-xl border bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]";
@@ -165,12 +166,10 @@ export function EmitirPasoRevisar({ pedido, datos, setDatos, emisor, falta, onCa
         {datos.tipo === "factura" && (
           <div className="flex items-start gap-1 border-t border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-primary)]">
             <label className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]"
+              <Casilla
+                className="mt-0.5"
                 checked={Boolean(datos.detraccionMadera)}
-                onChange={(e) => cambiar({ detraccionMadera: e.target.checked })}
-              />
+                onChange={(e) => cambiar({ detraccionMadera: e.target.checked })} />
               <span>Venta de madera (sujeta a detracción)</span>
             </label>
             <InfoTip

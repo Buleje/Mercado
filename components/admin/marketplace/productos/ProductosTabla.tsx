@@ -10,6 +10,7 @@ import { SortIcon } from "@/components/admin/marketplace/shared";
 import { CompetitionChip, OfertaCell, PriceCell } from "@/components/admin/marketplace/productos/celdas-precio";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const TH = "px-3 py-3 text-sm font-semibold text-[var(--text-secondary)]";
 
@@ -109,16 +110,13 @@ export function ProductosTabla({
           <thead className="sticky top-0 z-10">
             <tr>
               <th className="w-12" data-label="Elegir">
-                <input
-                  type="checkbox"
+                <Casilla
                   checked={v.todos}
                   ref={(el) => {
                     if (el) el.indeterminate = !v.todos && v.algunos;
                   }}
                   onChange={v.alternarTodos}
-                  aria-label="Elegir todos los productos de la lista"
-                  className="h-5 w-5 cursor-pointer rounded border border-[var(--rule-base)] accent-[var(--accent)]"
-                />
+                  aria-label="Elegir todos los productos de la lista" />
               </th>
               <Encabezado clave="name" rotulo="Producto" v={v} className="text-left" />
               <Encabezado clave="retailPrice" rotulo="Precio" v={v} className="text-right" />
@@ -136,13 +134,10 @@ export function ProductosTabla({
               return (
                 <tr key={p.id} className={cn("", elegido ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]/50")}>
                   <td>
-                    <input
-                      type="checkbox"
+                    <Casilla
                       checked={elegido}
                       onChange={() => v.alternar(p.id)}
-                      aria-label={`Elegir ${p.name}`}
-                      className="h-5 w-5 cursor-pointer rounded border border-[var(--rule-base)] accent-[var(--accent)]"
-                    />
+                      aria-label={`Elegir ${p.name}`} />
                   </td>
                   <td>
                     <div className="flex min-w-0 items-center gap-3">

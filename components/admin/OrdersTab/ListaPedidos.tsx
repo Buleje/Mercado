@@ -32,6 +32,7 @@ import {
 import { msEnEstado, nivelDeEspera, textoDeEspera } from "./tiempo-en-estado";
 import { TINTA_COBRO, cobroDe, responsableDe } from "./siguiente-paso";
 import { STATUS_COLORS, STATUS_LABELS } from "./types";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const TH = "px-3 text-left text-sm font-semibold text-[var(--text-secondary)]";
 const TD = "px-3 py-2.5";
@@ -129,8 +130,7 @@ export function ListaPedidos({
           <tr>
             <th className="w-12 py-0!" data-label="Elegir">
               <label className="flex h-12 w-12 cursor-pointer items-center justify-center">
-                <input
-                  type="checkbox"
+                <Casilla
                   checked={todos}
                   ref={(el) => {
                     if (el) el.indeterminate = algunos;
@@ -140,9 +140,7 @@ export function ListaPedidos({
                     todos
                       ? "Quitar la selección"
                       : `Elegir los ${pedidos.length} pedidos que se ven`
-                  }
-                  className="h-4 w-4 rounded border-[var(--rule-base)] text-[var(--accent)]"
-                />
+                  } />
               </label>
             </th>
             <CabezaOrden columna="cliente" orden={orden} onOrdenar={ordenar}>
@@ -188,13 +186,10 @@ export function ListaPedidos({
               >
                 <td className="w-12 py-0!" onClick={(e) => e.stopPropagation()}>
                   <label className="flex h-12 w-12 cursor-pointer items-center justify-center">
-                    <input
-                      type="checkbox"
+                    <Casilla
                       checked={elegido}
                       onChange={() => onElegir(o.id)}
-                      aria-label={`Elegir el pedido de ${o.customer.name}`}
-                      className="h-4 w-4 rounded border-[var(--rule-base)] text-[var(--accent)]"
-                    />
+                      aria-label={`Elegir el pedido de ${o.customer.name}`} />
                   </label>
                 </td>
                 <td className={TD}>

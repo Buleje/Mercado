@@ -17,6 +17,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { TIPOS_CONTRATO, type Contrato, type ContratoInput, type TipoContrato } from "@/lib/forestal/contratos";
 import { rucValido } from "@/lib/forestal/ctp-ficha-types";
 import type { ResultadoAltaPermiso } from "@/hooks/use-permisos-forestal";
+import Plegable from "@/components/admin/shared/Plegable";
 
 /** Los controles del import van a 48 px, como el resto del panel. */
 export const CAMPO =
@@ -133,11 +134,17 @@ export default function NuevoPermisoRapido({
         </Campo>
       </div>
 
-      <details className="group">
-        <summary className="flex h-12 cursor-pointer list-none items-center text-base font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-          Más datos <span className="ml-1 text-sm font-normal text-[var(--text-tertiary)]">(tipo, fechas, ubicación, área)</span>
-        </summary>
-        <div className="grid gap-3 pt-1 sm:grid-cols-2">
+      <Plegable
+        clave="serfor-import:permiso-rapido:mas-datos"
+        variante="franja"
+        montarAlAbrir={false}
+        titulo={
+          <>
+            Más datos <span className="ml-1 text-sm font-normal text-[var(--text-tertiary)]">(tipo, fechas, ubicación, área)</span>
+          </>
+        }
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
           <Campo etiqueta="Tipo">
             <select value={f.tipo} onChange={poner("tipo")} className={CAMPO}>
               <option value="">Sin indicar</option>
@@ -176,7 +183,7 @@ export default function NuevoPermisoRapido({
             <input value={f.notas} onChange={poner("notas")} className={CAMPO} />
           </Campo>
         </div>
-      </details>
+      </Plegable>
 
       {(error || doc.error) && (
         <p role="alert" className="text-sm font-semibold text-[var(--data-error)]">

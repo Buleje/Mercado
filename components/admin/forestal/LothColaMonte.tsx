@@ -21,6 +21,7 @@ import { PastillaEstadoMonte, cuandoLima, srcFotoHoja } from "./gtf-cola-monte-u
 import { AvisoImpresionDirecta, BotonProbarImpresora, QueNecesitasEnElMonte } from "./gtf-impresion-directa";
 import { useImprimirDirecto } from "./hooks/use-imprimir-directo";
 import LothMedirCargaMonte from "./LothMedirCargaMonte";
+import Plegable from "@/components/admin/shared/Plegable";
 
 /** Primero lo que hay que imprimir, después lo que hay que confirmar, después lo observado. */
 const ORDEN: Partial<Record<EstadoTrabajo, number>> = { pendiente: 0, impresa: 1, observada: 2 };
@@ -91,26 +92,25 @@ export default function LothColaMonte() {
       <LothMedirCargaMonte />
 
       {terminadas.length > 0 && (
-        <details className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" data-qa="terminadas-monte">
-          <summary className="flex min-h-12 cursor-pointer items-center px-4 text-sm font-bold text-[var(--text-primary)]">
-            Terminadas ({terminadas.length})
-          </summary>
-          <ul className="divide-y divide-[var(--rule-soft)] px-4 pb-2">
-            {terminadas.map((t) => (
-              <li key={t.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
-                <span className="font-mono font-bold text-[var(--text-primary)]">{t.numeroGuia}</span>
-                <PastillaEstadoMonte estado={t.estado} conFoto={!!t.fotoDocId} />
-                {t.numeroHoja && <span className="font-mono text-[var(--text-secondary)]">hoja {t.numeroHoja}</span>}
-                <span className="ml-auto text-xs text-[var(--text-tertiary)]">{cuandoLima(t.revisadaEn ?? t.creadoEn)}</span>
-                {t.fotoDocId && (
-                  <a href={srcFotoHoja(t.numeroGuia, t.fotoDocId)} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--accent-ink)] underline dark:text-[var(--accent)]">
-                    Foto
-                  </a>
-                )}
-              </li>
-            ))}
-          </ul>
-        </details>
+        <div data-qa="terminadas-monte">
+          <Plegable clave="loth:cola-monte:terminadas" titulo={`Terminadas (${terminadas.length})`}>
+            <ul className="divide-y divide-[var(--rule-soft)]">
+              {terminadas.map((t) => (
+                <li key={t.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
+                  <span className="font-mono font-bold text-[var(--text-primary)]">{t.numeroGuia}</span>
+                  <PastillaEstadoMonte estado={t.estado} conFoto={!!t.fotoDocId} />
+                  {t.numeroHoja && <span className="font-mono text-[var(--text-secondary)]">hoja {t.numeroHoja}</span>}
+                  <span className="ml-auto text-xs text-[var(--text-tertiary)]">{cuandoLima(t.revisadaEn ?? t.creadoEn)}</span>
+                  {t.fotoDocId && (
+                    <a href={srcFotoHoja(t.numeroGuia, t.fotoDocId)} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--accent-ink)] underline dark:text-[var(--accent)]">
+                      Foto
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Plegable>
+        </div>
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
+import { Casilla } from "@/components/ui-system/Casilla";
 import { cn } from "@/lib/utils";
 import { ConfigRevendedorasSchema, type ConfigRevendedoras } from "@/lib/revendedoras/reglas";
 
@@ -29,7 +30,6 @@ const MAX_NIVELES = 4;
 const INPUT =
   "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-60";
 const LABEL = "mb-1 block text-sm font-semibold text-[var(--text-secondary)]";
-const CHECK = "h-5 w-5 shrink-0 accent-[var(--accent)]";
 
 const txt = (n: number) => String(n);
 const num = (s: string) => (s.trim() === "" ? Number.NaN : Number(s.replace(",", ".")));
@@ -125,7 +125,7 @@ export default function ConfigRevendedorasModal({
     >
       <div className={cn(MODAL_BODY, "space-y-5")}>
         <label className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] px-3 py-3">
-          <input type="checkbox" checked={f.activo} onChange={(e) => poner({ activo: e.target.checked })} className={CHECK} />
+          <Casilla checked={f.activo} onChange={(e) => poner({ activo: e.target.checked })} />
           <span className="flex-1 text-sm font-semibold text-[var(--text-primary)]">Reglas activas en mi negocio</span>
         </label>
 
@@ -193,7 +193,7 @@ export default function ConfigRevendedorasModal({
           </div>
           <div>
             <label className="mb-1 flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
-              <input type="checkbox" checked={f.envioGratis} onChange={(e) => poner({ envioGratis: e.target.checked })} className={CHECK} />
+              <Casilla checked={f.envioGratis} onChange={(e) => poner({ envioGratis: e.target.checked })} />
               Envío gratis desde S/
             </label>
             <input

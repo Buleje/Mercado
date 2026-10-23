@@ -10,13 +10,14 @@
  */
 
 import { useRef } from "react";
-import { ChevronDown, ImagePlus, Trash2 } from "@buleje/design-system/icons";
+import { ImagePlus, Trash2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { MEDIDAS_PAPEL, moverRecuadro } from "@/lib/forestal/gtf-matricial-calibracion";
 import type { SeparadorFecha } from "@/lib/forestal/gtf-matricial-disposicion";
 import { MARCO_PLANTILLA } from "@/lib/forestal/gtf-talonario-plantilla";
 import { PERFIL_OFICINA_ID } from "@/lib/forestal/gtf-salida-tipos";
 import { Btn } from "./ctp-shared";
+import Plegable from "@/components/admin/shared/Plegable";
 import { Casilla, fmtMm, NumeroMm, Opciones } from "./gtf-matricial-controles";
 import FilasDeLaTabla, { datoDeLasFilas } from "./gtf-matricial-filas";
 import LetraDeLaHoja, { datoDeLaLetra } from "./gtf-matricial-letra";
@@ -25,17 +26,12 @@ import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { useFondoTalonario } from "./hooks/use-gtf-matricial-fondo";
 import type { EstadoPerfilesTalonario, useSalidaTalonario } from "./hooks/use-gtf-matricial-perfiles";
 
-/** Un bloque plegable: el título y su dato en un renglón de 48 px; abierto, sus controles. */
-function Plegable({ titulo, dato, children }: { titulo: string; dato: string; children: React.ReactNode }) {
+/** Un bloque plegable: el título y su dato en un renglón; abierto, sus controles. */
+function BloqueAjuste({ titulo, dato, children }: { titulo: string; dato: string; children: React.ReactNode }) {
   return (
-    <details className="group rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5">
-      <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 text-sm [&::-webkit-details-marker]:hidden">
-        <span className="shrink-0 font-bold text-[var(--text-primary)]">{titulo}</span>
-        <span className="min-w-0 flex-1 truncate text-right tabular-nums text-[var(--text-tertiary)]">{dato}</span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-open:rotate-180" aria-hidden />
-      </summary>
-      <div className="flex flex-col gap-2 pb-2.5">{children}</div>
-    </details>
+    <Plegable clave={`forestal:gtf-matricial:${titulo}`} titulo={titulo} resumen={dato} resumenAbierto montarAlAbrir={false}>
+      <div className="flex flex-col gap-2">{children}</div>
+    </Plegable>
   );
 }
 
@@ -71,19 +67,19 @@ export default function AjustesTalonario({
   const marco = hoja.marco ?? MARCO_PLANTILLA;
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <Plegable titulo="Calibrar" dato={`${p?.nombre ?? "Oficina"} · X ${fmtMm(dx)} · Y ${fmtMm(dy)} mm`}>
+      <BloqueAjuste titulo="Calibrar" dato={`${p?.nombre ?? "Oficina"} · X ${fmtMm(dx)} · Y ${fmtMm(dy)} mm`}>
         <ImpresoraTalonario t={t} imp={imp} salida={salida} conValores={conValores} setConValores={setConValores} onPrueba={onPrueba} />
-      </Plegable>
+      </BloqueAjuste>
 
-      <Plegable titulo="Letra" dato={datoDeLaLetra(t)}>
+      <BloqueAjuste titulo="Letra" dato={datoDeLaLetra(t)}>
         <LetraDeLaHoja t={t} />
-      </Plegable>
+      </BloqueAjuste>
 
-      <Plegable titulo={t.formato === "lista" ? "Filas de la lista" : "Filas del cuadro (34)"} dato={datoDeLasFilas(t)}>
+      <BloqueAjuste titulo={t.formato === "lista" ? "Filas de la lista" : "Filas del cuadro (34)"} dato={datoDeLasFilas(t)}>
         <FilasDeLaTabla t={t} />
-      </Plegable>
+      </BloqueAjuste>
 
-      <Plegable
+      <BloqueAjuste
         titulo="Medida"
         dato={`${fmtMm(hoja.anchoMm)} × ${fmtMm(hoja.altoMm)} mm${hoja.marco ? ` · recuadro ${fmtMm(marco.x)} / ${fmtMm(marco.y)}` : ""}`}
       >
@@ -127,9 +123,9 @@ export default function AjustesTalonario({
           </div>
         </div>
         <Opciones label="Fechas" value={hoja.separadorFecha} opciones={SEPARADORES} onChange={(separadorFecha) => t.cambiarHoja({ separadorFecha })} />
-      </Plegable>
+      </BloqueAjuste>
 
-      <Plegable
+      <BloqueAjuste
         titulo="Fondo"
         dato={[f.fondo.impreso ? "formato impreso" : "sin formato", f.fondo.src ? "con foto" : "sin foto"].join(" · ")}
       >
@@ -185,7 +181,7 @@ export default function AjustesTalonario({
         )}
         <Casilla label="Cuadrícula de 10 mm" checked={f.fondo.cuadricula} onChange={f.setCuadricula} />
         {f.aviso && <span className="text-sm font-semibold text-[var(--data-warning-ink)]">{f.aviso}</span>}
-      </Plegable>
+      </BloqueAjuste>
     </div>
   );
 }

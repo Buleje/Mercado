@@ -30,6 +30,7 @@ import {
   type PedidoPrep,
 } from "@/lib/pedidos/preparacion";
 import { ChipEtapa } from "./piezas";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 interface Props {
   pedido: PedidoPrep;
@@ -111,13 +112,11 @@ export function TarjetaPreparacion({ pedido: p, ocupado, puedeAnotar, puedeMover
           return (
             <li key={l.itemId} className="flex items-center gap-2 py-1">
               <label className={cn("flex min-h-12 min-w-0 flex-1 items-center gap-3", !bloqueado && "cursor-pointer")}>
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 shrink-0 accent-[var(--accent)]"
+                <Casilla
+                 
                   checked={completa}
                   disabled={bloqueado}
-                  onChange={() => void onCambiar({ accion: "linea", itemId: l.itemId, preparada: completa ? 0 : l.cantidad })}
-                />
+                  onChange={() => void onCambiar({ accion: "linea", itemId: l.itemId, preparada: completa ? 0 : l.cantidad })} />
                 <span className="min-w-0">
                   <span className={cn("block text-sm text-[var(--text-primary)]", completa && "text-[var(--text-tertiary)] line-through")}>
                     <b className="tabular-nums">{l.cantidad} {l.unidad}</b> · {l.nombre}

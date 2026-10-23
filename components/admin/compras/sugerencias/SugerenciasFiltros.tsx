@@ -1,6 +1,7 @@
 "use client";
 
-import { ListChecks, Search, X } from "@buleje/design-system/icons";
+import { ListChecks } from "@buleje/design-system/icons";
+import CampoBuscar from "@/components/ui-system/CampoBuscar";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import type { SugerenciasCompra } from "./use-sugerencias-compra";
@@ -36,27 +37,14 @@ export default function SugerenciasFiltros({ sc }: { sc: SugerenciasCompra }) {
   const todosVisiblesMarcados = visible.length > 0 && visible.every((s) => selected.has(s.productId));
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative h-12 min-w-0 grow basis-full sm:basis-44">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-        <input
-          type="search"
-          placeholder="Buscar producto…"
-          aria-label="Buscar producto o categoría"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={cn("h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-primary", search ? "pr-12" : "pr-3")}
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            aria-label="Limpiar búsqueda"
-            className="absolute right-0.5 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          >
-            <X className="h-4 w-4" aria-hidden />
-          </button>
-        )}
-      </div>
+      <CampoBuscar
+        valor={search}
+        onCambiar={setSearch}
+        placeholder="Buscar producto…"
+        etiqueta="Buscar producto o categoría"
+        limpiable
+        className="grow basis-full sm:basis-44"
+      />
       <select
         value={agruparPor}
         onChange={(e) => setAgruparPor(e.target.value as AgruparPor)}

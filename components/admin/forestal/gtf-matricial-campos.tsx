@@ -19,6 +19,7 @@ import type { EstadoGtfMatricial } from "./hooks/use-gtf-matricial";
 import type { SeleccionTalonario } from "./hooks/use-gtf-matricial-seleccion";
 import { BotonIcono } from "./gtf-matricial-controles";
 import { SUBTITULO } from "./gtf-matricial-panel";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 interface Fila {
   tipo: "campo" | "columna";
@@ -114,16 +115,13 @@ export default function CamposTalonario({ t, s, onPlegar }: { t: EstadoGtfMatric
                 const elegido = s.elegidos.includes(k);
                 return (
                   <li key={k} data-clave={k} className={`flex items-center gap-1.5 rounded-lg pl-1 ${elegido ? "bg-[var(--accent-muted)]" : ""}`}>
-                    <input
-                      type="checkbox"
+                    <Casilla
                       aria-label={`Imprimir ${f.label}`}
                       title="Se imprime"
                       checked={f.visible}
                       onChange={(e) =>
                         f.tipo === "campo" ? t.cambiarCampo(f.id, { visible: e.target.checked }) : t.cambiarColumna(f.id, { visible: e.target.checked })
-                      }
-                      className="h-5 w-5 shrink-0 accent-[var(--accent-dark)]"
-                    />
+                      } />
                     <button
                       type="button"
                       aria-pressed={elegido}

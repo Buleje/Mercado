@@ -34,6 +34,7 @@ import {
 } from "@/components/admin/comandos-ia/precios/use-precios-en-bloque";
 import { PanelCard } from "./ForecastPiezas";
 import type { Rebajas } from "./forecast-datos";
+import Plegable from "@/components/admin/shared/Plegable";
 
 type Fila = Rebajas["filas"][number];
 
@@ -163,11 +164,12 @@ export default function RebajasLista({ rebajas }: { rebajas: Rebajas }) {
       )}
 
       {rebajas.noEntran.length > 0 && (
-        <details className="mt-3 rounded-xl border border-[var(--rule-base)] px-3 py-2">
-          <summary className="cursor-pointer text-sm font-semibold text-[var(--text-secondary)]">
-            {rebajas.noEntran.length} {rebajas.noEntran.length === 1 ? "no entra" : "no entran"}
-          </summary>
-          <ul className="mt-2 space-y-1">
+        <Plegable
+          clave="forecasting:rebajas:no-entran"
+          titulo={`${rebajas.noEntran.length} ${rebajas.noEntran.length === 1 ? "no entra" : "no entran"}`}
+          className="mt-3"
+        >
+          <ul className="space-y-1">
             {rebajas.noEntran.slice(0, NO_ENTRAN_VISIBLES).map((x) => (
               <li key={x.productId} className="text-sm text-[var(--text-secondary)] [overflow-wrap:anywhere]">
                 <span className="font-medium text-[var(--text-primary)]">{x.nombre}</span> · {x.motivo}
@@ -177,7 +179,7 @@ export default function RebajasLista({ rebajas }: { rebajas: Rebajas }) {
               <li className="text-sm text-[var(--text-tertiary)]">y {rebajas.noEntran.length - NO_ENTRAN_VISIBLES} más</li>
             )}
           </ul>
-        </details>
+        </Plegable>
       )}
 
       {plan && <DiferenciaPreciosModal key={`${plan.filas.length}`} plan={plan} aplicando={aplicando} onCerrar={() => setPlan(null)} onAplicar={aplicar} />}

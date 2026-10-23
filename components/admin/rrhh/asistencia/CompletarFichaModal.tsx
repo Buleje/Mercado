@@ -17,6 +17,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import type { ColaboradorMinDTO, FechaKey, PuestoDTO } from "@/lib/rrhh/tipos";
 import { limaDateKey } from "@/lib/utils";
 import { BOTON, CLASE_CAMPO } from "../rrhh-form";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const FORM_ID = "rrhh-form-completar";
 
@@ -102,7 +103,7 @@ export default function CompletarFichaModal({ colaborador: c, puestos, onClose, 
           {(id) => <input id={id} type="date" value={fechaIngreso} max={limaDateKey()} onChange={(e) => setFechaIngreso(e.target.value)} className={CLASE_CAMPO} />}
         </Field>
         <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-primary)]">
-          <input type="checkbox" className="size-5 shrink-0 accent-[var(--accent)]" checked={eventual} onChange={(e) => setEventual(e.target.checked)} />
+          <Casilla checked={eventual} onChange={(e) => setEventual(e.target.checked)} />
           <span className="min-w-0">
             <span className="block font-semibold">Eventual (viene por día)</span>
             <span className="block text-[var(--text-tertiary)]">Sale en Asistencia sólo el día que viene; «Todos presentes» no lo marca.</span>

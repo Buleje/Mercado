@@ -8,6 +8,7 @@
  * negocio» eran dos cajas de media pantalla con un título cada una.
  */
 import type { ComponentType, ReactNode } from "react";
+import { StatCard } from "@buleje/design-system";
 import { CheckCircle, Megaphone, Store, TrendingUp, UserPlus, Activity } from "@buleje/design-system/icons";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -29,13 +30,6 @@ function Tarjeta({ icono: I, rotulo, ayuda, children }: { icono: Icono; rotulo: 
     </div>
   );
 }
-
-const Cifra = ({ valor, extra }: { valor: string; extra?: string }) => (
-  <>
-    <p className="truncate text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{valor}</p>
-    {extra && <p className="truncate text-sm text-[var(--text-secondary)]">{extra}</p>}
-  </>
-);
 
 /** Las 3 más altas de un reparto, «Anuncio de Facebook 4 · Recomendado 2». */
 function Reparto({ cuentas, rotulo }: { cuentas: Record<string, number>; rotulo: (k: string) => string }) {
@@ -59,18 +53,17 @@ export function useIndicadoresLeads(stats: FunnelStats | null, cargando: boolean
   /* Sin cifras todavía, el panel pinta esqueletos (`sinDatosAun`): las tarjetas en cero no se ven. */
   const s = stats ?? VACIO;
   const tarjetas = [
-        <Tarjeta key="total" icono={UserPlus} rotulo="En 90 días">
-          <Cifra valor={String(s.total)} extra={s.newestLeadAt ? `El último, el ${llegoEl(s.newestLeadAt)}` : undefined} />
-        </Tarjeta>,
-        <Tarjeta key="7" icono={Activity} rotulo="Últimos 7 días">
-          <Cifra valor={String(s.last7d)} />
-        </Tarjeta>,
-        <Tarjeta key="30" icono={TrendingUp} rotulo="Últimos 30 días">
-          <Cifra valor={String(s.last30d)} />
-        </Tarjeta>,
-        <Tarjeta key="avanzaron" icono={CheckCircle} rotulo="Avanzaron" ayuda="De los interesados de los últimos 90 días, cuántos ya vieron la demo, se registraron o pagan.">
-          <Cifra valor={`${s.conversionRate} %`} />
-        </Tarjeta>,
+        <StatCard key="total" density="compact" icon={UserPlus} label="En 90 días" value={String(s.total)} subValue={s.newestLeadAt ? `El último, el ${llegoEl(s.newestLeadAt)}` : undefined} />,
+        <StatCard key="7" density="compact" icon={Activity} label="Últimos 7 días" value={String(s.last7d)} />,
+        <StatCard key="30" density="compact" icon={TrendingUp} label="Últimos 30 días" value={String(s.last30d)} />,
+        <StatCard
+          key="avanzaron"
+          density="compact"
+          icon={CheckCircle}
+          label="Avanzaron"
+          value={`${s.conversionRate} %`}
+          info={<InfoTip what="De los interesados de los últimos 90 días, cuántos ya vieron la demo, se registraron o pagan." />}
+        />,
         <Tarjeta key="canal" icono={Megaphone} rotulo="Por dónde llegan">
           <Reparto cuentas={s.bySource} rotulo={rotuloCanal} />
         </Tarjeta>,

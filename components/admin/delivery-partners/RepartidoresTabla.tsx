@@ -18,6 +18,7 @@ import { toNum, VehicleIcon, vehicleKind, vehicleLabel, type DeliveryPartner } f
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { waLink, zoneColor } from "./repartidores-helpers";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 interface Props {
   partners: DeliveryPartner[];
@@ -87,15 +88,11 @@ export function RepartidoresTabla({
               <thead ref={orden.refCabecera}>
                 <tr>
                   <th className="w-10">
-                    <input
-                      type="checkbox"
+                    <Casilla
                       checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
-                      ref={(el) => {
-                        if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filtered.length;
-                      }}
+                      indeterminada={selectedIds.size > 0 && selectedIds.size < filtered.length}
                       onChange={toggleSelectAll}
                       aria-label="Seleccionar todos"
-                      className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                     />
                   </th>
                   <EnOrden
@@ -161,13 +158,10 @@ export function RepartidoresTabla({
                     )}
                   >
                     <td>
-                      <input
-                        type="checkbox"
+                      <Casilla
                         checked={isSelected}
                         onChange={() => toggleSelect(p.id)}
-                        aria-label={`Seleccionar ${p.name}`}
-                        className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
-                      />
+                        aria-label={`Seleccionar ${p.name}`} />
                     </td>
                     <EnOrden
                       orden={orden.orden}

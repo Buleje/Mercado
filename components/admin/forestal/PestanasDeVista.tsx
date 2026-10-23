@@ -35,6 +35,7 @@ export default function PestanasDeVista<T extends string>({
   items,
   activa,
   onCambiar,
+  unaFila = false,
   children,
 }: {
   /** Prefijo de los ids del tablist (`ctp-tablero` → `ctp-tablero-tab-margen`). */
@@ -44,6 +45,8 @@ export default function PestanasDeVista<T extends string>({
   items: readonly PestanaDeVista<T>[];
   activa: T;
   onCambiar: (id: T) => void;
+  /** Muchas pestañas (el Directorio): una sola fila que se desliza, no se parte. */
+  unaFila?: boolean;
   children: ReactNode;
 }) {
   const idTab = (id: T) => `${prefijo}-tab-${id}`;
@@ -69,9 +72,9 @@ export default function PestanasDeVista<T extends string>({
           etiqueta={etiqueta}
           idTab={idTab}
           idPanel={idPanel}
-          className="flex w-fit max-w-full flex-wrap gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-0.5"
+          className={`flex max-w-full gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-0.5 ${unaFila ? "overflow-x-auto [scrollbar-width:thin]" : "w-fit flex-wrap"}`}
           claseBoton={(sel) =>
-            `min-h-11 flex-1 basis-auto rounded-[10px] px-3 text-sm sm:px-4 font-semibold leading-tight transition-colors duration-[var(--dur-fast)] ${
+            `min-h-11 flex-1 basis-auto rounded-[10px] ${unaFila ? "shrink-0 whitespace-nowrap" : ""} px-3 text-sm sm:px-4 font-semibold leading-tight transition-colors duration-[var(--dur-fast)] ${
               sel
                 ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]/60 hover:text-[var(--text-primary)]"

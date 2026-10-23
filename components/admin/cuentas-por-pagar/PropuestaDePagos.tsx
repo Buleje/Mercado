@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/format";
 import { cn, exportToCSV } from "@/lib/utils";
 import { diaDeVencimiento, estaPagada, fechaConDia, ordenar, saldo, vencimiento, type CuentaPorPagar } from "./resumen-cuentas";
 import { CHIP_VENCE } from "./TablaCuentas";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -76,13 +77,10 @@ export default function PropuestaDePagos({ cuentas, hoy, elegidas, setElegidas, 
           <thead>
             <tr>
               <th data-label="Marcar">
-                <input
-                  type="checkbox"
+                <Casilla
                   checked={todas}
                   onChange={() => setElegidas(todas ? new Set() : new Set(abiertas.map((c) => c.id)))}
-                  aria-label={todas ? "Desmarcar todas" : "Marcar todas"}
-                  className="h-5 w-5 accent-[var(--accent)]"
-                />
+                  aria-label={todas ? "Desmarcar todas" : "Marcar todas"} />
               </th>
               <th>Proveedor</th>
               <th>Vence</th>
@@ -97,13 +95,10 @@ export default function PropuestaDePagos({ cuentas, hoy, elegidas, setElegidas, 
               return (
                 <tr key={c.id} className={cn(marcada && "bg-[var(--accent-soft)]")}>
                   <td>
-                    <input
-                      type="checkbox"
+                    <Casilla
                       checked={marcada}
                       onChange={() => alternar(c.id)}
-                      aria-label={`Incluir la cuenta con ${c.supplierName}`}
-                      className="h-5 w-5 accent-[var(--accent)]"
-                    />
+                      aria-label={`Incluir la cuenta con ${c.supplierName}`} />
                   </td>
                   <td>
                     <div className="min-w-0">

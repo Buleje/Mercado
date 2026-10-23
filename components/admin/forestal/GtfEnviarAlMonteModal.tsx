@@ -45,6 +45,7 @@ import { useColaMonteCtx } from "./cola-monte-contexto";
 import { PERFIL_MONTE, useColaMonte, usePerfilesImpresora } from "./hooks/use-cola-monte";
 import { PastillaEstadoMonte, cuandoLima } from "./gtf-cola-monte-ui";
 import MonteYaImpresa, { MOTIVO_MINIMO } from "./gtf-monte-ya-impresa";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const ETIQUETA = "block text-sm font-bold text-[var(--text-primary)]";
 const BOTON_ENLACE =
@@ -151,13 +152,11 @@ export default function GtfEnviarAlMonteModal({ g, onClose }: { g: Gtf; onClose:
                 const sinTrozas = h === "lista" && !conLista;
                 return (
                   <label key={h} className={cn("flex min-h-12 items-center gap-3 rounded-xl border border-[var(--rule-base)] px-3 text-base", sinTrozas ? "opacity-50" : "cursor-pointer hover:bg-[var(--surface-sunken)]")}>
-                    <input
-                      type="checkbox"
-                      className="h-5 w-5 accent-[var(--accent-dark)]"
+                    <Casilla
+                     
                       disabled={sinTrozas}
                       checked={hojas.includes(h)}
-                      onChange={(e) => setHojas((xs) => (e.target.checked ? HOJAS_SALIDA.filter((x) => x === h || xs.includes(x)) : xs.filter((x) => x !== h)))}
-                    />
+                      onChange={(e) => setHojas((xs) => (e.target.checked ? HOJAS_SALIDA.filter((x) => x === h || xs.includes(x)) : xs.filter((x) => x !== h)))} />
                     {ETIQUETA_HOJA[h]}
                     {sinTrozas && <span className="text-xs text-[var(--text-tertiary)]">(sin trozas)</span>}
                   </label>

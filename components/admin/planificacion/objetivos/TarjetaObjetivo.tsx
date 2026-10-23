@@ -16,6 +16,7 @@ import { BARRA_TONO, PASTILLA, PASTILLA_TONO, TARJETA, type Tono } from "../piez
 import { fechaCorta } from "../piezas/fechas";
 import { ESTADO_OBJETIVO, NOMBRE_PLAZO, type Accion, type Objetivo } from "./objetivos-config";
 import type { EstadoEnvio } from "./use-pasar-a-tareas";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 interface Props {
   objetivo: Objetivo;
@@ -99,7 +100,7 @@ export function TarjetaObjetivo({ objetivo: o, hoy, abierto, puedeEditar, estrat
               {o.acciones.map((a) => (
                 <li key={a.id} className="flex items-center gap-2">
                   <label className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-lg px-1 hover:bg-[var(--surface-sunken)]">
-                    <input type="checkbox" className="size-5 shrink-0 accent-[var(--accent)]" checked={a.hecha} disabled={!puedeEditar} onChange={(e) => onTildar(a.id, e.target.checked)} />
+                    <Casilla checked={a.hecha} disabled={!puedeEditar} onChange={(e) => onTildar(a.id, e.target.checked)} />
                     <span className="min-w-0 flex-1">
                       <span className={cn("block text-sm text-[var(--text-primary)]", a.hecha && "text-[var(--text-tertiary)] line-through")}>{a.texto}</span>
                       {(a.fecha || a.responsable) && (

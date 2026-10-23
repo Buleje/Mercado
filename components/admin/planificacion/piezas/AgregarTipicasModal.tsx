@@ -15,6 +15,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { NOMBRE_RUBRO, RUBROS_PLANTILLA, type RubroPlantilla } from "@/lib/planificacion/plantillas-politicas";
 import { cn } from "@/lib/utils";
 import { PASTILLA, PASTILLA_TONO, claseChip } from "./clases";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 export interface ItemTipico<T> {
   titulo: string;
@@ -115,7 +116,7 @@ export function AgregarTipicasModal<T>({ abierto, titulo, yaTodas, rubroInicial,
                 key={`${rubro}-${i}`}
                 className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-colors hover:border-[var(--accent)] has-[:checked]:border-[var(--accent)]"
               >
-                <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[var(--accent)]" checked={!fuera.has(i)} onChange={() => alternar(i)} />
+                <Casilla className="mt-0.5" checked={!fuera.has(i)} onChange={() => alternar(i)} />
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-[var(--text-primary)]">{it.titulo}</span>

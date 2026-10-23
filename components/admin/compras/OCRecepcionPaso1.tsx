@@ -10,6 +10,7 @@ import ConformidadDeLinea from "@/components/admin/ordenes-compra/recepciones/Co
 import AceptacionDeLinea from "@/components/admin/ordenes-compra/recepciones/AceptacionDeLinea";
 import { listarCorto } from "@/lib/compras/ciclo-oc";
 import { CONDICIONES, type CondicionItem, type ReceivedItem } from "./oc-recepcion-tipos";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 /** Paso 1 de «Recibir la orden»: contar lo que llegó, cómo llegó, vence y conformidad. */
 export default function OCRecepcionPaso1({ completos, receivedItems, controles, faltaC22, error, setError, updateItem }: {
@@ -115,13 +116,11 @@ export default function OCRecepcionPaso1({ completos, receivedItems, controles, 
                     </select>
                   </td>
                   <td className="text-center">
-                    <input
-                      type="checkbox"
+                    <Casilla
                       checked={item.noLlego}
                       onChange={(e) => updateItem(idx, { noLlego: e.target.checked })}
-                      className="h-4 w-4 accent-primary"
-                      aria-label={`${item.name} no llegó`}
-                    />
+                     
+                      aria-label={`${item.name} no llegó`} />
                   </td>
                 </tr>
                 {!item.noLlego && item.condition === "ok" && item.receivedQty > 0 && (

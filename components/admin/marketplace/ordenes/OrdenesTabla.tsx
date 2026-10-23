@@ -9,6 +9,7 @@ import { idCorto } from "@/components/admin/marketplace/ordenes/ordenes-util";
 import { diaConNombre } from "@/components/admin/inventario/movimientos/tipos";
 import { formatCurrency, formatTime } from "@/lib/format";
 import { cn, limaDateKey } from "@/lib/utils";
+import { Casilla } from "@/components/ui-system/Casilla";
 
 const TH = "px-3 py-3 text-sm font-semibold text-[var(--text-secondary)]";
 const NO_ABRE = "button, input, a, [data-no-row-click]";
@@ -54,15 +55,11 @@ export function OrdenesTabla({
           <thead className="sticky top-0 z-10">
             <tr>
               <th className="w-12" data-label="Elegir">
-                <input
-                  type="checkbox"
+                <Casilla
                   checked={todas}
-                  ref={(el) => {
-                    if (el) el.indeterminate = v.seleccion.size > 0 && !todas;
-                  }}
+                  indeterminada={v.seleccion.size > 0 && !todas}
                   onChange={v.alternarTodas}
                   aria-label="Elegir todas las órdenes de la lista"
-                  className="h-5 w-5 cursor-pointer rounded border border-[var(--rule-base)] accent-[var(--accent)]"
                 />
               </th>
               <th className={cn(TH, "text-left")}>Orden</th>
@@ -99,13 +96,10 @@ export function OrdenesTabla({
                   }}
                 >
                   <td>
-                    <input
-                      type="checkbox"
+                    <Casilla
                       checked={elegida}
                       onChange={() => v.alternar(o.id)}
-                      aria-label={`Elegir el pedido #${idCorto(o.id)}`}
-                      className="h-5 w-5 cursor-pointer rounded border border-[var(--rule-base)] accent-[var(--accent)]"
-                    />
+                      aria-label={`Elegir el pedido #${idCorto(o.id)}`} />
                   </td>
                   <td>
                     <div className="min-w-0">
