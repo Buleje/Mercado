@@ -21,12 +21,14 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, History, X } from "@buleje/design-system/icons";
+import { AlertTriangle, History, StickyNote, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tardanzaDe } from "@/lib/rrhh/asistencia";
 import { etiquetaDia } from "@/lib/rrhh/fechas";
+import { notaDelDia } from "@/lib/rrhh/nota-del-dia";
 import { marcarMenuAbierto, marcoDeFixed } from "@/components/admin/shared/action-menu";
 import { BOTON } from "../rrhh-form";
+import { useNotasDelDia } from "./notas-del-dia";
 import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA } from "../rrhh-ui";
 import type { AsistenciaDTO, ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 
@@ -136,6 +138,9 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
   const sugerida = minutosTarde !== null && marca?.estado === "PRESENTE" && editable && Boolean(onAceptarTardanza);
   const estadoLegible = meta?.label ?? (incluido ? "Sin marcar" : "No trabaja este día");
   // El punto de color no comunica solo: lo mismo que pinta viaja en el nombre accesible.
+  // Nota del día (23-10): marca chica en la casilla + tooltip; no cambia la letra ni los conteos.
+  const { sueltaDe } = useNotasDelDia();
+  const nota = notaDelDia(marca, sueltaDe(colaborador.id, fecha));
   const detalle = errorMsg ?? (minutosTarde === null ? estadoLegible : `${estadoLegible} · llegó ${minutosTarde} min tarde${sugerida ? ", tardanza sin marcar" : ""}`);
 
   const panel = open && pos && (
@@ -160,6 +165,11 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
           </button>
         </div>
         {!editable && motivoNoEditable && <p className="mb-2 text-sm text-[var(--text-tertiary)]">{motivoNoEditable}</p>}
+        {nota && (
+          <p className="mb-2 flex items-start gap-1.5 break-words text-sm text-[var(--text-secondary)]">
+            <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden /> {nota}
+          </p>
+        )}
         <div className="grid grid-cols-4 gap-1.5">
           {ORDEN_ESTADOS_ASISTENCIA.map((estado) => {
             const m = ESTADO_ASISTENCIA_META[estado];
@@ -239,8 +249,8 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
         disabled={!incluido && !marca}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={`${colaborador.nombre}, ${fecha}: ${detalle}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}`}
-        title={`${detalle}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}`}
+        aria-label={`${colaborador.nombre}, ${fecha}: ${detalle}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}${nota ? ` · Nota: ${nota}` : ""}`}
+        title={`${detalle}${!editable && motivoNoEditable ? ` — ${motivoNoEditable}` : ""}${nota ? ` · Nota: ${nota}` : ""}`}
         className={cn(
           "relative flex items-center justify-center rounded-md font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30",
           tamano === "grande" ? "h-9 w-9 text-sm" : "h-8 w-8 text-xs",
@@ -251,6 +261,16 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
         )}
       >
         {meta?.letra ?? "·"}
+        {nota && (
+          <span
+            data-nota-dia
+            aria-hidden
+            className={cn(
+              "absolute bottom-0 right-0 rounded-full bg-[var(--accent)] ring-2 ring-[var(--surface-raised)]",
+              tamano === "grande" ? "h-2.5 w-2.5" : "h-2 w-2",
+            )}
+          />
+        )}
         {/* Dentro del cuadrito y en su esquina: no mueve la grilla ni pisa la letra. */}
         {sugerida && (
           <span

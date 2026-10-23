@@ -133,6 +133,22 @@ export type RevisionMarca =
  * algo que guardar.
  */
 export function revisarMarca(input: MarcaInput, ctx: RevisarMarcaCtx): RevisionMarca {
+  const rechazo = revisarDiaDeMarca(input.fecha, ctx);
+  if (rechazo) return rechazo;
+  return revisarEstadoDeMarca(input, ctx);
+}
+
+/**
+ * Quién y cuándo (eliminado, futuro, ventana, ingreso, cese): lo que decide si
+ * ese día de esa persona se puede tocar, sin mirar qué se escribe. Lo usa
+ * también la nota del día sin marca (`PUT /api/rrhh/asistencia/nota`), que
+ * respeta la MISMA ventana que marcar. `null` = se puede.
+ */
+export function revisarDiaDeMarca(
+  fecha: FechaKey,
+  ctx: Pick<RevisarMarcaCtx, "colaborador" | "hoy" | "ventana">,
+): { ok: false; motivo: MotivoRechazo; message: string } | null {
+  const input = { fecha };
   if (ctx.colaborador.eliminado) {
     return { ok: false, motivo: "colaborador_eliminado", message: "Esta persona fue eliminada." };
   }
@@ -161,7 +177,11 @@ export function revisarMarca(input: MarcaInput, ctx: RevisarMarcaCtx): RevisionM
       message: `Se retiró el ${etiquetaCorta(fechaCese)}: no se le puede marcar el ${etiquetaCorta(input.fecha)}.`,
     };
   }
+  return null;
+}
 
+/** Lo que se escribe (estado, horas, nota), ya pasado `revisarDiaDeMarca`. */
+function revisarEstadoDeMarca(input: MarcaInput, ctx: RevisarMarcaCtx): RevisionMarca {
   // Quitar la marca del día: nada más que revisar.
   if (input.estado === null) {
     return {

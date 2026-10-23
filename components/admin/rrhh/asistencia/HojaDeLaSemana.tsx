@@ -42,6 +42,7 @@ import { conteoDelMes, diasTrabajados } from "./conteo-mes";
 import { etiquetaSemana, etiquetaSemanaCorta, formatearDias, horariosPorColaborador, marcaConTardanza, resumenTardanzas, tardanzasSinMarcar } from "./semana";
 import { descargarPdfDeLaSemana, type FilaSemana } from "./semana-pdf";
 import type { ColaboradorMinDTO, GanadoPersona, NivelRrhh } from "@/lib/rrhh/tipos";
+import { NotasDelDiaProvider } from "./notas-del-dia";
 
 interface Props {
   /** Lunes de la semana que se mira. */
@@ -57,7 +58,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selectorModo }: Props) {
   const hasta = sumarDias(desde, 6);
   const conPlata = nivel === "completo";
-  const { hoja, loading, error, pendientes, erroresPorCelda, marcar, guardarAhora, recargar } = useRrhhAsistencia(desde, hasta);
+  const { hoja, loading, error, pendientes, erroresPorCelda, marcar, guardarAhora, recargar, guardarNota } = useRrhhAsistencia(desde, hasta);
   const { ganado, error: errorGanado, recargar: recargarGanado } = useRrhhGanado(desde, hasta, undefined, conPlata);
   // El horario vive en el puesto y la hoja sólo trae `{ id, nombre }` del puesto
   // de cada persona (ADR-417): sin este catálogo ninguna celda tiene contra qué
@@ -258,6 +259,7 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
   }
 
   return (
+    <NotasDelDiaProvider notas={hoja?.notas} guardarNota={guardarNota}>
     <div className="space-y-3">
       <EncabezadoDeVista
         vista="asistencia"
@@ -294,5 +296,6 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
 
       {historial && <HistorialMarcaModal open onClose={() => setHistorial(null)} colaborador={historial.colaborador} fecha={historial.fecha} />}
     </div>
+    </NotasDelDiaProvider>
   );
 }

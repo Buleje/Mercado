@@ -186,6 +186,22 @@ export interface HojaAsistenciaDTO {
   /** Por colaborador: la fecha más reciente con marca de trabajo (PRESENTE/TARDANZA/MEDIO_DIA) en TODA su historia. Sin clave = nunca vino. */
   ultimaVino: Record<string, FechaKey>;
   marcas: AsistenciaDTO[]; // sólo vivas
+  /**
+   * Notas de días SIN marca (`AsistenciaNota`, 23-10). El día con marca lleva
+   * su nota en `AsistenciaDTO.nota`: nunca hay dos notas para la misma
+   * persona y día. No cuentan en presentes/tardanzas/faltas. Ausente = ninguna.
+   */
+  notas?: NotaAsistenciaDTO[];
+}
+
+/** Nota del día sin marca (`AsistenciaNota`): una por persona y día. */
+export interface NotaAsistenciaDTO {
+  colaboradorId: string;
+  fecha: FechaKey;
+  nota: string;
+  autor: string;
+  /** ISO. */
+  actualizadaEn: string;
 }
 
 // ── Resumen del hub ──────────────────────────────────────────────────────────

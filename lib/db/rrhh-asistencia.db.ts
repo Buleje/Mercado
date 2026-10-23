@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { dateDeFechaKey, fechaKeyDeDate } from "@/lib/rrhh/fechas";
 import { ESTADOS_CON_HORAS } from "@/lib/rrhh/asistencia";
+import { notaAlMarcar } from "@/lib/rrhh/nota-del-dia";
+import { candadoDeDiasEnTx } from "@/lib/db/asistencia-notas.db";
 import {
   esIgualALaViva,
   incluidosEnMasivo,
@@ -273,13 +275,25 @@ export const AsistenciaDB = {
           let quitadas = 0;
           let sinCambio = 0;
 
+          // Mismo candado persona+día que `AsistenciaNotasDB.guardar`, ANTES de leer.
+          await candadoDeDiasEnTx(tx, tenantId, marcas);
           const vivasRaw = await tx.asistencia.findMany({
             where: { tenantId, deletedAt: null, colaboradorId: { in: colaboradorIds }, fecha: { in: fechas } },
           });
           const vivaPorClave = new Map(vivasRaw.map((v) => [`${v.colaboradorId}|${fechaKeyDeDate(v.fecha)}`, v]));
+          // Nota del día anotada SIN marca (23-10): al marcar pasa a la marca y
+          // la suelta se borra; al quitar la marca, su nota vuelve a ser suelta.
+          const sueltasRaw = await tx.asistenciaNota.findMany({
+            where: { tenantId, colaboradorId: { in: colaboradorIds }, fecha: { in: fechas } },
+            select: { id: true, colaboradorId: true, fecha: true, nota: true },
+          });
+          const sueltaPorClave = new Map(sueltasRaw.map((n) => [`${n.colaboradorId}|${fechaKeyDeDate(n.fecha)}`, n]));
+          const sueltasPasadas: string[] = [];
 
-          for (const m of marcas) {
-            const viva = vivaPorClave.get(`${m.colaboradorId}|${m.fecha}`) ?? null;
+          for (const original of marcas) {
+            const viva = vivaPorClave.get(`${original.colaboradorId}|${original.fecha}`) ?? null;
+            const suelta = original.quitar ? undefined : sueltaPorClave.get(`${original.colaboradorId}|${original.fecha}`);
+            const m: MarcaNormalizada = suelta ? { ...original, nota: notaAlMarcar(original.nota, suelta.nota) } : original;
             const comparable = {
               estado: m.estado,
               entradaMin: m.entradaMin,
@@ -308,6 +322,16 @@ export const AsistenciaDB = {
               if (viva) {
                 await darDeBajaVivaEnTx(tx, tenantId, viva.id, m.marcadoPor, ctx.motivo);
                 quitadas++;
+                // Se junta con una suelta que ya hubiera (no se pisa lo anotado).
+                const sueltaExistente = sueltaPorClave.get(`${m.colaboradorId}|${m.fecha}`)?.nota ?? null;
+                const notaQueVuelve = viva.nota?.trim() ? notaAlMarcar(viva.nota.trim(), sueltaExistente) : null;
+                if (notaQueVuelve && notaQueVuelve !== sueltaExistente) {
+                  await tx.asistenciaNota.upsert({
+                    where: { tenantId_colaboradorId_fecha: { tenantId, colaboradorId: m.colaboradorId, fecha: viva.fecha } },
+                    create: { tenantId, colaboradorId: m.colaboradorId, fecha: viva.fecha, nota: notaQueVuelve, autor: m.marcadoPor },
+                    update: { nota: notaQueVuelve, autor: m.marcadoPor },
+                  });
+                }
               }
               continue;
             }
@@ -316,6 +340,11 @@ export const AsistenciaDB = {
 
             const nueva = await escribirMarcaEnTx(tx, tenantId, m, viva, { origen: ctx.origen, motivo: ctx.motivo });
             guardadas.push(mapAsistencia(nueva));
+            if (suelta) sueltasPasadas.push(suelta.id);
+          }
+
+          if (sueltasPasadas.length > 0) {
+            await tx.asistenciaNota.deleteMany({ where: { tenantId, id: { in: sueltasPasadas } } });
           }
 
           return { guardadas, quitadas, sinCambio };

@@ -2168,8 +2168,9 @@ model Colaborador {
 
   /// FK compuesta: no usar connect/disconnect (disconnect intentaría anular tenantId).
   puesto      Puesto?             @relation(fields: [tenantId, puestoId], references: [tenantId, id], onDelete: Restrict)
-  tarifas     ColaboradorTarifa[]
-  asistencias Asistencia[]
+  tarifas         ColaboradorTarifa[]
+  asistencias     Asistencia[]
+  notasAsistencia AsistenciaNota[]
 
   @@unique([tenantId, id])
   @@index([tenantId, estado])
@@ -2230,6 +2231,27 @@ model Asistencia {
 
   @@index([tenantId, fecha])
   @@index([tenantId, colaboradorId, fecha])
+}
+
+/// Nota del día SIN marca (23-10): «Asistencia.estado» es obligatorio, así que lo
+/// que se anota antes de marcar vive acá. Al marcar ese día la nota pasa a
+/// `Asistencia.nota` en la misma tx y la fila se borra; al quitar la marca, vuelve.
+/// No cuenta en presentes/tardanzas/faltas ni en lo ganado.
+model AsistenciaNota {
+  id            String   @id @default(cuid())
+  tenantId      String
+  colaboradorId String
+  fecha         DateTime @db.Date
+  nota          String
+  /// `AdminUser.username` de quien la escribió por última vez.
+  autor         String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  colaborador Colaborador @relation(fields: [tenantId, colaboradorId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, colaboradorId, fecha])
+  @@index([tenantId, fecha])
 }
 
 // ─── Metas y tareas del panel (ADR-415) ──────────────────

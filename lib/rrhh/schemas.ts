@@ -156,6 +156,17 @@ export const masivoSchema = z.object({
 });
 export type MasivoInput = z.infer<typeof masivoSchema>;
 
+/** Nota del día sin marca (`PUT /api/rrhh/asistencia/nota`): 1-300 caracteres. */
+export const notaAsistenciaSchema = z.object({
+  colaboradorId: id,
+  fecha: fechaKey,
+  nota: z.string().trim().min(1, "Escribe la nota").max(300),
+});
+export type NotaAsistenciaInput = z.infer<typeof notaAsistenciaSchema>;
+
+/** `DELETE /api/rrhh/asistencia/nota`: qué nota borrar. */
+export const borrarNotaAsistenciaSchema = z.object({ colaboradorId: id, fecha: fechaKey });
+
 export const rangoSchema = z.object({ desde: fechaKey, hasta: fechaKey, colaboradorId: id.optional() });
 export type RangoInput = z.infer<typeof rangoSchema>;
 

@@ -18,11 +18,14 @@
  */
 
 import { useState, type ReactNode } from "react";
-import { AlertTriangle, CalendarClock, CalendarDays, Clock, History, Loader2, MoreHorizontal, StickyNote, UserMinus } from "@buleje/design-system/icons";
+import { AlertTriangle, CalendarClock, CalendarDays, Clock, History, Loader2, MessageSquare, MoreHorizontal, StickyNote, UserMinus } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { tardanzaDe } from "@/lib/rrhh/asistencia";
+import { AVISO_NOTA_SIN_SALUD, NOTA_DIA_MAX, notaDelDia } from "@/lib/rrhh/nota-del-dia";
 import { cn } from "@/lib/utils";
 import { BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
+import CampoNotaSuelta from "./CampoNotaSuelta";
+import { useNotasDelDia } from "./notas-del-dia";
 import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, loQueFaltaALaFicha } from "../rrhh-ui";
 import type { AsistenciaDTO, ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 
@@ -58,6 +61,10 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
   const faltaFicha = loQueFaltaALaFicha(colaborador);
   const [notaAbierta, setNotaAbierta] = useState(false);
   const estadoActual = marca?.estado ?? null;
+  // Nota del día (23-10): con marca, la de la marca; sin marca, la suelta.
+  const { sueltaDe, guardarNota } = useNotasDelDia();
+  const nota = notaDelDia(marca, sueltaDe(colaborador.id, fecha));
+  const puedeAnotar = !soloLectura && Boolean(estadoActual || guardarNota);
   const metaActual = estadoActual ? ESTADO_ASISTENCIA_META[estadoActual] : null;
   const muestraHoras = Boolean(estadoActual && LLEVA_HORAS.has(estadoActual));
   // `null` mientras no haya hora marcada u horario del puesto: sin eso no hay nada que decir.
@@ -113,19 +120,30 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
         {pendiente && <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" aria-label="Guardando" />}
         {errorMsg && <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)]" aria-hidden />}
         {foto}
-        {/* Nota e historial en «⋯». Sin estado todavía no hay marca que anotar:
-            `Asistencia.estado` no admite null — una nota sin estado no tiene dónde vivir. */}
+        {/* Nota a la vista, con o sin marca (23-10): sin marca va a `AsistenciaNota`
+            y no cuenta en presentes/tardanzas/faltas; al marcar pasa a la marca. */}
+        {puedeAnotar && (
+          <button
+            type="button"
+            data-qa="rrhh-nota-dia"
+            onClick={() => setNotaAbierta((v) => !v)}
+            aria-pressed={notaAbierta}
+            aria-label={nota ? `Editar la nota del día de ${colaborador.nombre}` : `Anotar algo del día de ${colaborador.nombre}`}
+            title={nota ? `Nota: ${nota}` : estadoActual ? "Anotar algo del día" : "Anotar algo del día, sin marcar"}
+            className={cn(BOTON.icono, nota && "text-[var(--accent-dark)] dark:text-[var(--accent)]")}
+          >
+            <MessageSquare className="h-5 w-5" aria-hidden />
+          </button>
+        )}
+        {/* Historial, eventual y retirar en «⋯». */}
         <ActionMenu
           label={`Más de ${colaborador.nombre}`}
           icon={MoreHorizontal}
           soloIcono
           size="md"
           className="w-12 shrink-0"
-          title="Nota del día, historial, eventual y retirar"
+          title="Historial, eventual y retirar"
           actions={[
-            ...(estadoActual && !soloLectura
-              ? [{ id: "nota", label: notaAbierta ? "Ocultar la nota" : marca?.nota ? "Editar la nota del día" : "Anotar algo del día", icon: StickyNote, onSelect: () => setNotaAbierta((v) => !v) }]
-              : []),
             { id: "historial", label: "Historial de correcciones", hint: "Quién cambió esta marca y por qué", icon: History, onSelect: onVerHistorial },
             ...(onEventual
               ? [
@@ -222,14 +240,28 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
           value={marca?.nota ?? ""}
           onChange={(e) => onMarcar({ estado: estadoActual, nota: e.target.value || null })}
           aria-label={`Nota del día de ${colaborador.nombre}`}
-          placeholder="Nota corta (ej. feriado, llegó en la tarde)"
-          maxLength={300}
+          placeholder={AVISO_NOTA_SIN_SALUD}
+          title={`${AVISO_NOTA_SIN_SALUD}. Ej.: feriado, llegó en la tarde.`}
+          maxLength={NOTA_DIA_MAX}
           className={cn(CLASE_CAMPO, "col-span-2 @min-[58rem]:order-6 @min-[58rem]:col-span-4")}
         />
+      ) : !estadoActual && notaAbierta && puedeAnotar && guardarNota ? (
+        <CampoNotaSuelta
+          nombre={colaborador.nombre}
+          inicial={nota ?? ""}
+          onGuardar={(texto) => void guardarNota(colaborador.id, fecha, texto)}
+          onCerrar={() => setNotaAbierta(false)}
+          className="col-span-2 @min-[58rem]:order-6 @min-[58rem]:col-span-4"
+        />
       ) : (
-        marca?.nota && (
-          <p className="col-span-2 flex items-start gap-1.5 text-sm text-[var(--text-secondary)] @min-[58rem]:order-6 @min-[58rem]:col-span-4">
-            <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden /> {marca.nota}
+        nota && (
+          <p
+            data-qa="rrhh-nota-texto"
+            title={nota}
+            className="col-span-2 flex min-w-0 items-center gap-1.5 text-sm text-[var(--text-secondary)] @min-[58rem]:order-6 @min-[58rem]:col-span-4"
+          >
+            <StickyNote className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+            <span className="truncate">{nota}</span>
           </p>
         )
       )}

@@ -31,6 +31,7 @@ import EncabezadoDeVista from "../EncabezadoDeVista";
 import { conteoDelMes } from "./conteo-mes";
 import { horariosPorColaborador, marcaConTardanza } from "./semana";
 import type { ColaboradorMinDTO } from "@/lib/rrhh/tipos";
+import { NotasDelDiaProvider } from "./notas-del-dia";
 
 /** Por `getUTCDay()`: 0 = domingo. */
 const LETRA_DIA = ["D", "L", "M", "M", "J", "V", "S"];
@@ -51,7 +52,7 @@ function sumarMeses(mes: string, delta: number): string {
 }
 
 export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorModo }: Props) {
-  const { hoja, loading, error, pendientes, erroresPorCelda, marcar, guardarAhora, recargar } = useRrhhAsistencia(desde, hasta);
+  const { hoja, loading, error, pendientes, erroresPorCelda, marcar, guardarAhora, recargar, guardarNota } = useRrhhAsistencia(desde, hasta);
   // El horario vive en el puesto y la hoja sólo trae `{ id, nombre }` del puesto
   // de cada persona (ADR-417): sin el catálogo nadie queda con tardanza sugerida.
   const { puestos } = useRrhhPuestos();
@@ -205,6 +206,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
   }
 
   return (
+    <NotasDelDiaProvider notas={hoja?.notas} guardarNota={guardarNota}>
     <div className="space-y-3">
       <EncabezadoDeVista
         vista="asistencia"
@@ -232,5 +234,6 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
 
       {historial && <HistorialMarcaModal open onClose={() => setHistorial(null)} colaborador={historial.colaborador} fecha={historial.fecha} />}
     </div>
+    </NotasDelDiaProvider>
   );
 }

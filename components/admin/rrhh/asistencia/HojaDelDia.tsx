@@ -45,6 +45,7 @@ import EncabezadoDeVista from "../EncabezadoDeVista";
 import ColaboradorFormModal from "../personal/ColaboradorFormModal";
 import TraerDesdeAdelantosModal from "../personal/TraerDesdeAdelantosModal";
 import type { ColaboradorMinDTO, NivelRrhh } from "@/lib/rrhh/tipos";
+import { NotasDelDiaProvider } from "./notas-del-dia";
 
 interface Props {
   fecha: string;
@@ -56,7 +57,7 @@ interface Props {
 }
 
 export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPersonal, selectorModo }: Props) {
-  const { hoja, loading, error, guardando, pendientes, erroresPorCelda, marcar, masivo, guardarAhora, recargar } = useRrhhAsistencia(fecha, fecha);
+  const { hoja, loading, error, guardando, pendientes, erroresPorCelda, marcar, masivo, guardarAhora, recargar, guardarNota } = useRrhhAsistencia(fecha, fecha);
   const { confirm } = useConfirm();
   const [historialDe, setHistorialDe] = useState<ColaboradorMinDTO | null>(null);
   const [completarDe, setCompletarDe] = useState<ColaboradorMinDTO | null>(null);
@@ -226,6 +227,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   const n = sinMarcar.length;
   const listo = Boolean(hoja && !loading && incluidos.length > 0);
   return (
+    <NotasDelDiaProvider notas={hoja?.notas} guardarNota={guardarNota}>
     <div className="@container space-y-3">
       <EncabezadoDeVista
         vista="asistencia"
@@ -291,6 +293,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
         />
       )}
     </div>
+    </NotasDelDiaProvider>
   );
 }
 

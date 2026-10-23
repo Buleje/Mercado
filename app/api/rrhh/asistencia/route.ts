@@ -13,6 +13,7 @@ import { revisarMarca, type ContextoColaborador, type MarcaNormalizada } from "@
 import { guardarMarcasSchema } from "@/lib/rrhh/schemas";
 import type { FechaKey, HojaAsistenciaDTO } from "@/lib/rrhh/tipos";
 import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
+import { AsistenciaNotasDB } from "@/lib/db/asistencia-notas.db";
 
 const MAX_DIAS_RANGO = 62;
 
@@ -35,7 +36,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { colaboradores, marcas, ultimaVino } = await AsistenciaDB.hoja(auth.tenantId, desde, hasta);
+    const [{ colaboradores, marcas, ultimaVino }, notas] = await Promise.all([
+      AsistenciaDB.hoja(auth.tenantId, desde, hasta),
+      AsistenciaNotasDB.delRango(auth.tenantId, desde, hasta),
+    ]);
     const body: HojaAsistenciaDTO = {
       nivel,
       hoy,
@@ -45,6 +49,7 @@ export async function GET(req: NextRequest) {
       colaboradores: colaboradores.map(aColaboradorMinDTO),
       ultimaVino,
       marcas: marcas.map((m) => aAsistenciaDTO(m)),
+      notas,
     };
     return NextResponse.json(body, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {

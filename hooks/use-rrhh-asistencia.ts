@@ -30,6 +30,7 @@ import type { AsistenciaDTO, EstadoAsistencia, FechaKey, HojaAsistenciaDTO } fro
 import type { RrhhApiError } from "./use-rrhh-puestos";
 import { pedirMotivoCorreccion, type CambioACorregir } from "@/lib/rrhh/motivo-correccion";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { useGuardarNota, type GuardarNota } from "./use-nota-asistencia";
 
 export interface MarcaInput {
   colaboradorId: string;
@@ -119,6 +120,8 @@ export interface UseRrhhAsistenciaResult {
     | { ok: false; error: RrhhApiError }
   >;
   recargar: () => void;
+  /** Nota del día SIN marca (23-10): `null`/vacío = borrar. */
+  guardarNota: GuardarNota;
 }
 
 export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsistenciaResult {
@@ -200,7 +203,13 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
       // como una corrección de algo que el servidor nunca vio.
       if (!previaRef.current.has(k)) previaRef.current.set(k, previa);
       const sinEsta = prev.marcas.filter((m) => clave(m.colaboradorId, m.fecha) !== k);
-      if (input.estado === null) return { ...prev, marcas: sinEsta };
+      const suelta = prev.notas?.find((n) => clave(n.colaboradorId, n.fecha) === k);
+      if (input.estado === null) {
+        // Quitar la marca no borra lo anotado: su nota vuelve a ser suelta (igual que el servidor).
+        if (!previa?.nota || suelta) return { ...prev, marcas: sinEsta };
+        const vuelve = { colaboradorId: input.colaboradorId, fecha: input.fecha, nota: previa.nota, autor: "", actualizadaEn: new Date().toISOString() };
+        return { ...prev, marcas: sinEsta, notas: [...(prev.notas ?? []), vuelve] };
+      }
       const nueva: AsistenciaDTO = {
         id: previa?.id ?? `${ID_OPTIMISTA}${k}`,
         colaboradorId: input.colaboradorId,
@@ -210,7 +219,8 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
         salida: input.salida !== undefined ? input.salida : (previa?.salida ?? null),
         refrigerioMin: input.refrigerioMin ?? previa?.refrigerioMin ?? 0,
         horas: input.horas !== undefined ? input.horas : (previa?.horas ?? null),
-        nota: input.nota !== undefined ? input.nota : (previa?.nota ?? null),
+        // Sin marca previa, la nota suelta del día pasa a la marca (el servidor hace lo mismo).
+        nota: input.nota !== undefined ? input.nota : previa ? previa.nota : (suelta?.nota ?? null),
         origen: "manual",
         marcadoPor: previa?.marcadoPor ?? "",
         marcadoEn: new Date().toISOString(),
@@ -257,7 +267,10 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
             if (!prev) return prev;
             const guardadasPorClave = new Map(vigentes.map((g) => [clave(g.colaboradorId, g.fecha), g]));
             const conservadas = prev.marcas.filter((m) => !guardadasPorClave.has(clave(m.colaboradorId, m.fecha)));
-            return { ...prev, marcas: [...conservadas, ...vigentes] };
+            // El servidor pasó la nota suelta de cada día guardado a su marca (y la borró).
+            const escritas = new Set(data.guardadas.map((g) => clave(g.colaboradorId, g.fecha)));
+            const notas = prev.notas?.filter((n) => !escritas.has(clave(n.colaboradorId, n.fecha)));
+            return { ...prev, marcas: [...conservadas, ...vigentes], notas };
           });
           setErroresPorCelda((prev) => {
             const siguiente = new Map(prev);
@@ -455,5 +468,7 @@ export function useRrhhAsistencia(desde: FechaKey, hasta: FechaKey): UseRrhhAsis
     }
   }, [recargar]);
 
-  return { hoja, loading, error, guardando, pendientes, erroresPorCelda, marcar, guardarAhora, masivo, recargar };
+  const guardarNota = useGuardarNota(setHoja, recargar);
+
+  return { hoja, loading, error, guardando, pendientes, erroresPorCelda, marcar, guardarAhora, masivo, recargar, guardarNota };
 }
