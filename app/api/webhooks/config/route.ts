@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { enqueueActivityLog } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -66,28 +67,9 @@ async function getWebhooksFromSettings(tenantId: string): Promise<WebhookConfig[
 }
 
 async function saveWebhooksToSettings(tenantId: string, webhooks: WebhookConfig[]): Promise<void> {
-  // Leer flags actuales para no sobreescribirlos
-  const row = await prisma.settings.findUnique({
-    where: { tenantId },
-    select: { featureFlagsJson: true },
-  }) as { featureFlagsJson: string | null } | null;
-
-  let current: Record<string, unknown> = {};
-  if (row?.featureFlagsJson) {
-    try {
-      current = JSON.parse(row.featureFlagsJson) as Record<string, unknown>;
-    } catch {
-      current = {};
-    }
-  }
-
-  const updated = { ...current, webhooks };
-
-  await prisma.settings.upsert({
-    where: { tenantId },
-    update: { featureFlagsJson: JSON.stringify(updated) },
-    create: { tenantId, featureFlagsJson: JSON.stringify(updated) },
-  });
+  // Sólo la clave `webhooks`, en una sentencia: leer-mezclar-escribir el JSON
+  // entero pisaba lo que otro guardó en el medio (security 10-10 H3).
+  await SettingsDB.pisarClavesFlags(tenantId, { webhooks });
 }
 
 // ── GET ───────────────────────────────────────────────────────────────────────

@@ -305,13 +305,21 @@ export async function generateReceiptBlob(
 // Main send function
 export type SendResult = "shared" | "clipboard" | "fallback";
 
+/**
+ * `numero` = el WhatsApp DEL NEGOCIO (`usePedidosTienda().numeroWhatsapp`). Sin
+ * número, el chat se abre sin destinatario (el cliente elige a quién); antes iba
+ * fijo al 51929340532 (soporte de Buleje) en TODAS las tiendas, y los pedidos de
+ * otro negocio —con nombre, celular y dirección— llegaban a Buleje (11-10).
+ */
 export async function sendOrder(
   customer: Customer,
   items: OrderItem[],
-  total: number
+  total: number,
+  numero: string | null,
 ): Promise<SendResult> {
   const plainText = formatWhatsAppMessage(customer, items, total);
-  const waUrl = `https://wa.me/51929340532?text=${encodeURIComponent(plainText)}`;
+  const digitos = (numero ?? "").replace(/\D/g, "");
+  const waUrl = `https://wa.me/${digitos}?text=${encodeURIComponent(plainText)}`;
   const safeName = customer.name.replace(/\s+/g, "-");
   const filename = `Pedido-Buleje-${safeName}.png`;
 

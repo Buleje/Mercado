@@ -105,7 +105,7 @@ export default function CheckoutMobileCtaBar({
                 {fmt(total ?? 0)}
               </span>
               {ctaDisabled && disabledReason ? (
-                <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warn-600,#b45309)] leading-tight">
+                <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warn-600,#c93b2c)] leading-tight">
                   <AlertCircle className="h-3 w-3" strokeWidth={2.25} aria-hidden />
                   {disabledReason}
                 </span>

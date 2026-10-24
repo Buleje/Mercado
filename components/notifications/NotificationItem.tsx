@@ -1,208 +1,244 @@
 "use client";
 
-import React, { useState } from "react";
+/**
+ * Un aviso del centro de notificaciones (rediseño 10-10, modal central).
+ *
+ * Antes la fila entera era un botón que marcaba leído y navegaba con
+ * `window.location.href` (recargaba el panel; un enlace de WhatsApp se llevaba
+ * el panel entero). Ahora la fila se lee y las acciones son botones propios
+ * de 48 px: «Ir a…» (marca leído y navega sin recargar, o abre WhatsApp en
+ * otra pestaña) y «Marcar como leída».
+ *
+ * Rediseño 18-10 («más minimalista»): sin tarjeta, franja ni borde. Una fila
+ * de bandeja separada por una línea fina: punto turquesa = sin leer, el color
+ * del ícono = el nivel (rojo urgente, coral importante, turquesa informativo;
+ * leve y lo leído, gris), la hora arriba a la derecha y los repetidos en una
+ * sola fila («46 veces · desde jueves 08/10»). Los botones siguen de 48 px con
+ * margen negativo: el toque no cambia, la fila no se estira.
+ */
+import { useState } from "react";
 import {
-  CreditCard,
-  Package,
-  TrendingUp,
-  Clock,
   AlertTriangle,
-  Truck,
-  Target,
-  UserMinus,
   BellRing,
-  Loader2,
-} from "lucide-react";
-import { csrfHeaders } from "@/lib/csrf-client";
+  Repeat,
+  Camera,
+  Check,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  Package,
+  ShoppingBag,
+  Target,
+  TrendingUp,
+  Trees,
+  Truck,
+  UserMinus,
+  UserPlus,
+  Wallet,
+  type LucideIcon,
+} from "@buleje/design-system/icons";
+import { useMiRol } from "@/hooks/use-mi-rol";
 import { cn } from "@/lib/utils";
+import { NIVEL_ETIQUETA } from "@/lib/superadmin/nivel-aviso";
+import { nivelDeAviso, TOPE_MARCAR_JUNTOS, type AvisoJunto, type Nivel } from "./avisos-juntos";
+import CobroExpressFiado from "./CobroExpressFiado";
+import {
+  abrirAccionDeAviso,
+  categoriaDeTipo,
+  cuandoFue,
+  esEnlaceExterno,
+  etiquetaDeCategoria,
+} from "./notificaciones-categorias";
 import type { NotificationItem as NotificationItemType } from "./useNotificationCenter";
 
-const SEVERITY_BORDER: Record<string, string> = {
-  HIGH: "border-l-red-500",
-  MEDIUM: "border-l-amber-400",
-  LOW: "border-l-emerald-400",
-};
-
-const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+const ICONO_DE_TIPO: Record<string, LucideIcon> = {
   FIADO_VENCIDO: CreditCard,
+  FIADO_REMINDER: CreditCard,
+  ADELANTO_VENCIDO: Wallet,
   STOCK_CRITICO: Package,
+  forecast_daily: TrendingUp,
   VENTA_ALTA: TrendingUp,
   TURNO_SIN_CERRAR: Clock,
   DIFERENCIA_CAJA: AlertTriangle,
   PROVEEDOR_VENCIDO: Truck,
   META_ALCANZADA: Target,
   CLIENTE_INACTIVO: UserMinus,
+  CLIENTE_NUEVO: UserPlus,
+  marketplace_order: ShoppingBag,
+  CARRITO_ABANDONADO: ShoppingBag,
+  DRIVER_APPLICATION: Truck,
+  camaras: Camera,
+  DOCUMENTO_VENCIMIENTO: FileText,
+  DOCUMENTO_APROBACION: FileText,
+  PLAN_LICENCIA: FileText,
+  PLAN_OBJETIVO: Target,
+  PLAN_POLITICA: FileText,
+  CTP_PLAZO_SERFOR: Trees,
+  LOTH_PLAZO_SERFOR: Trees,
+  CACAO_BENEFICIO_ATENCION: Trees,
 };
 
-const SEVERITY_ICON_COLOR: Record<string, string> = {
-  HIGH: "text-[var(--data-error-500)]",
-  MEDIUM: "text-[var(--data-warning-500)]",
-  LOW: "text-[var(--data-success-500)]",
+/** El ícono por nivel, sólo sin leer: lo leído ya se atendió y queda gris. */
+const NEUTRO = {
+  chip: "bg-[var(--surface-sunken)] group-hover:bg-[var(--surface-raised)]",
+  icono: "text-[var(--text-secondary)]",
+};
+const TONO: Record<Nivel, { chip: string; icono: string }> = {
+  urgente: { chip: "bg-[var(--data-error-500)]/12", icono: "text-[var(--data-error-ink)]" },
+  importante: { chip: "bg-[var(--data-warning-500)]/12", icono: "text-[var(--data-warning-ink)]" },
+  informativo: {
+    chip: "bg-[var(--accent)]/10",
+    icono: "text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  },
+  leve: NEUTRO,
 };
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60_000);
-  const diffH = Math.floor(diffMs / 3_600_000);
-  const diffD = Math.floor(diffMs / 86_400_000);
-
-  if (diffMin < 1) return "ahora";
-  if (diffMin < 60) return `hace ${diffMin} min`;
-  if (diffH < 24) return `hace ${diffH}h`;
-  if (diffD === 1) return "ayer";
-  if (diffD < 7) return `hace ${diffD} días`;
-  return new Date(dateStr).toLocaleDateString("es-PE", { day: "numeric", month: "short" });
-}
+const BOTON =
+  "inline-flex h-12 items-center justify-center gap-1 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
 
 type Props = {
   notification: NotificationItemType;
-  onMarkRead: (id: string) => void;
+  /** Puede devolver la promesa del guardado: las copias se marcan de a una. */
+  onMarkRead: (id: string) => void | Promise<void>;
+  /** Se llamó cuando la acción navegó DENTRO del panel (el modal se cierra). */
+  onNavegar?: () => void;
+  /** El aviso con sus repetidos (18-10). Sin esto, la fila es sólo `notification`. */
+  junto?: Pick<AvisoJunto<NotificationItemType>, "veces" | "desde" | "sinLeer" | "idsSinLeer" | "nivel">;
 };
 
-export default function NotificationItem({ notification, onMarkRead }: Props) {
-  const isUnread = !notification.readAt;
-  const Icon = TYPE_ICON[notification.type] || BellRing;
-  const borderColor = SEVERITY_BORDER[notification.severity] || "border-l-gray-300";
-  const iconColor = SEVERITY_ICON_COLOR[notification.severity] || "text-gray-400";
+/** De a una (no en paralelo): cada «leído» relee la lista y la API cuenta 60 por minuto. */
+async function marcarEnFila(ids: readonly string[], marcar: Props["onMarkRead"]) {
+  for (const id of ids.slice(0, TOPE_MARCAR_JUNTOS)) await marcar(id);
+}
 
-  // Mejora M-8: Cobro express inline
-  const [showCobroExpress, setShowCobroExpress] = useState(false);
-  const [cobroMonto, setCobroMonto] = useState("");
-  const [cobroLoading, setCobroLoading] = useState(false);
-  const [cobroDone, setCobroDone] = useState(false);
+export default function NotificationItem({ notification: n, onMarkRead, onNavegar, junto }: Props) {
+  const sinLeer = junto?.sinLeer ?? !n.readAt;
+  const veces = junto?.veces ?? 1;
+  const nivel = junto?.nivel ?? nivelDeAviso(n);
+  const Icono = ICONO_DE_TIPO[n.type] ?? BellRing;
+  const tono = sinLeer ? TONO[nivel] : NEUTRO;
+  const externo = n.actionUrl ? esEnlaceExterno(n.actionUrl) : false;
+  const idsSinLeer = junto?.idsSinLeer ?? (n.readAt ? [] : [n.id]);
+  const marcarLeida = () => void marcarEnFila(idsSinLeer, onMarkRead);
 
-  const handleClick = () => {
-    if (isUnread) onMarkRead(notification.id);
-    if (notification.actionUrl) {
-      window.location.href = notification.actionUrl;
-    }
+  // /api/fiados/[id]/pagar pide admin o cajero (owner y manager pasan como admin): el resto no ve «Cobrar».
+  const rol = useMiRol();
+  const puedeCobrar = rol === "admin" || rol === "cajero" || rol === "owner" || rol === "manager";
+  const conCobro = n.type === "FIADO_VENCIDO" && puedeCobrar && Boolean(n.entityId);
+  const [cobrando, setCobrando] = useState(false);
+  const [cobrado, setCobrado] = useState(false);
+
+  const irALaAccion = () => {
+    if (!n.actionUrl) return;
+    if (idsSinLeer.length > 0) marcarLeida();
+    if (abrirAccionDeAviso(n.actionUrl)) onNavegar?.();
   };
 
-  const isFiadoVencido = notification.type === "FIADO_VENCIDO";
-
   return (
-    <div className="w-full">
-      <button
-        onClick={handleClick}
-        className={cn(
-          "w-full text-left px-4 py-3 border-l-4 transition-colors duration-[var(--dur-fast)] hover:bg-gray-50 dark:hover:bg-accent/50 flex items-start gap-3 group",
-          borderColor,
-          isUnread ? "bg-emerald-50/50 dark:bg-emerald-950/10" : "bg-transparent"
-        )}
-      >
-        {/* Icon */}
-        <div
-          className={cn(
-            "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center mt-0.5",
-            isUnread ? "bg-[var(--surface-raised)] shadow-sm" : "bg-gray-100 dark:bg-surface"
-          )}
-        >
-          <Icon className={cn("h-4 w-4", iconColor)} />
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
+    <article
+      data-notificacion={n.id}
+      className="group relative flex gap-3 rounded-xl py-3 pl-5 pr-3 transition-colors hover:bg-[var(--surface-sunken)]"
+    >
+      {sinLeer && (
+        <span aria-hidden className="absolute left-1.5 top-[1.6rem] h-2 w-2 rounded-full bg-[var(--accent)]" />
+      )}
+      <span aria-hidden className={cn("mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors", tono.chip)}>
+        <Icono className={cn("h-[1.125rem] w-[1.125rem]", tono.icono)} strokeWidth={2} />
+      </span>
+      <div className="flex-1">
+        <div className="flex items-baseline gap-3">
           <p
             className={cn(
-              "text-sm leading-tight",
-              isUnread
-                ? "font-semibold text-gray-900 dark:text-[var(--text-primary)]"
-                : "font-normal text-gray-600 dark:text-muted"
+              "flex-1 text-sm leading-5",
+              sinLeer ? "font-semibold text-[var(--text-primary)]" : "font-medium text-[var(--text-secondary)]",
             )}
           >
-            {notification.title}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-muted mt-0.5 line-clamp-2">
-            {notification.body}
-          </p>
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
-              {timeAgo(notification.createdAt)}
+            <span className="sr-only">
+              {sinLeer ? "Sin leer, " : ""}
+              {NIVEL_ETIQUETA[nivel].toLowerCase()}:{" "}
             </span>
-            {notification.actionLabel && notification.actionUrl && (
-              <span className="text-[length:var(--ts-2xs)] font-medium text-primary hover:underline">
-                {notification.actionLabel}
+            {n.title}
+          </p>
+          <time dateTime={n.createdAt} className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">
+            {cuandoFue(n.createdAt)}
+          </time>
+        </div>
+        {n.body && (
+          <p className="mt-0.5 line-clamp-2 text-sm leading-5 text-[var(--text-secondary)]">{n.body}</p>
+        )}
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3">
+          <p className="flex flex-wrap items-center gap-x-1.5 py-1 text-xs text-[var(--text-tertiary)]">
+            {sinLeer && nivel === "urgente" && (
+              <span aria-hidden className="font-semibold text-[var(--data-error-ink)]">
+                {NIVEL_ETIQUETA.urgente} ·
               </span>
             )}
-            {/* Mejora M-8: Boton cobrar para FIADO_VENCIDO */}
-            {isFiadoVencido && !cobroDone && (
+            <span>{etiquetaDeCategoria(categoriaDeTipo(n.type))}</span>
+            {veces > 1 && junto && (
+              <span className="inline-flex items-center gap-1">
+                · <Repeat className="h-3.5 w-3.5" aria-hidden />
+                {veces} veces · desde {cuandoFue(junto.desde)}
+              </span>
+            )}
+          </p>
+          <div className="-my-1.5 -mr-2 ml-auto flex flex-wrap items-center justify-end">
+            {cobrado && (
+              <span className="px-3 text-sm font-semibold text-[var(--data-success-ink)]">Pago registrado</span>
+            )}
+            {conCobro && !cobrado && !cobrando && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowCobroExpress(!showCobroExpress);
-                }}
-                className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] hover:text-[var(--data-success-700)] hover:underline"
+                type="button"
+                onClick={() => setCobrando(true)}
+                className={cn(BOTON, "text-[var(--data-success-ink)] hover:bg-[var(--data-success-500)]/10")}
               >
                 Cobrar
               </button>
             )}
-            {cobroDone && (
-              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)]">Pago registrado</span>
+            {n.actionUrl && (
+              <button
+                type="button"
+                onClick={irALaAccion}
+                className={cn(BOTON, "text-[var(--accent-ink)] hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]")}
+              >
+                {n.actionLabel || (externo ? "Abrir" : "Ver")}
+                {externo ? (
+                  <ExternalLink className="h-4 w-4" aria-hidden />
+                ) : (
+                  <ChevronRight className="h-4 w-4" aria-hidden />
+                )}
+                {externo && <span className="sr-only"> (se abre en otra pestaña)</span>}
+              </button>
+            )}
+            {idsSinLeer.length > 0 && (
+              <button
+                type="button"
+                onClick={marcarLeida}
+                aria-label={`Marcar como leída: ${n.title}${veces > 1 ? ` (y sus repeticiones)` : ""}`}
+                title={veces > 1 ? "Marcar como leída (con sus repeticiones)" : "Marcar como leída"}
+                className={cn(
+                  BOTON,
+                  "w-12 px-0 text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <Check className="h-5 w-5" aria-hidden />
+              </button>
             )}
           </div>
         </div>
-
-        {/* Unread dot */}
-        {isUnread && (
-          <div className="shrink-0 mt-2">
-            <div className="w-2 h-2 rounded-full bg-primary" />
-          </div>
+        {cobrando && n.entityId && (
+          <CobroExpressFiado
+            fiadoId={n.entityId}
+            onCancelar={() => setCobrando(false)}
+            onPagado={() => {
+              setCobrando(false);
+              setCobrado(true);
+              marcarLeida();
+            }}
+          />
         )}
-      </button>
-
-      {/* Mejora M-8: Cobro express inline panel */}
-      {showCobroExpress && isFiadoVencido && (
-        <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-l-4 border-l-emerald-400">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-[var(--text-primary)] mb-1.5">
-            Registrar pago
-          </p>
-          <div className="flex gap-1.5">
-            <div className="relative flex-1">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[length:var(--ts-2xs)] font-bold">S/</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.10"
-                value={cobroMonto}
-                onChange={(e) => setCobroMonto(e.target.value)}
-                placeholder="Monto"
-                onClick={(e) => e.stopPropagation()}
-                className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-xs font-bold text-gray-900 dark:text-[var(--text-primary)] outline-none focus:border-primary"
-              />
-            </div>
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                const monto = Number(cobroMonto);
-                if (!monto || monto <= 0) return;
-                setCobroLoading(true);
-                try {
-                  const entityId = (notification as unknown as { entityId?: string }).entityId;
-                  if (entityId) {
-                    const res = await fetch(`/api/fiados/${entityId}/pagar`, {
-                      method: "POST",
-                      headers: csrfHeaders({ "Content-Type": "application/json" }),
-                      body: JSON.stringify({ monto }),
-                    });
-                    if (res.ok) {
-                      setCobroDone(true);
-                      setShowCobroExpress(false);
-                      onMarkRead(notification.id);
-                    }
-                  }
-                } catch { /* silent */ }
-                setCobroLoading(false);
-              }}
-              disabled={cobroLoading || !cobroMonto || Number(cobroMonto) <= 0}
-              className="px-2.5 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
-            >
-              {cobroLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirmar"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+    </article>
   );
 }

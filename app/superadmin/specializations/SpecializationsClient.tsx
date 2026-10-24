@@ -14,9 +14,12 @@ import {
   Zap,
 } from "@buleje/design-system/icons";
 import type { Specialization, SpecializationKey } from "@/lib/specializations";
+import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { broadcastSpecsChanged } from "@/hooks/use-enabled-specs";
 import { AdminTabShell } from "@/app/admin/_components/_shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
+import { PiezasPorNegocio } from "@/components/superadmin/piezas/PiezasPorNegocio";
 
 interface TenantWithFlags {
   id: string;
@@ -65,10 +68,12 @@ export default function SpecializationsClient({
     setError(null);
 
     try {
-      const res = await fetch("/api/superadmin/specializations", {
+      // fetchSuperadmin: inyecta el header x-csrf-token (assertCsrf lo exige) y,
+      // ante 401/403 (sesión de plataforma expirada por idle 30 min), redirige
+      // solo al login en vez de dejar el error muerto "invalid or expired token".
+      const res = await fetchSuperadmin("/api/superadmin/specializations", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           tenantId,
           specKey,
@@ -116,14 +121,18 @@ export default function SpecializationsClient({
 
   return (
     <AdminTabShell
-      title="Especializaciones"
-      kicker="Plataforma · Habilitación por tenant"
-      description="Activa módulos verticales (forestal CTP, salud, textil) en cada negocio. Cambios aplican en tiempo real al panel admin del tenant."
-      icon={TreePine}
+      info={{
+        what: "Qué tiene cada negocio: los módulos de su rubro (forestal, salud, textil…) y las piezas a medida que le hicimos.",
+        affects: "Aplica en tiempo real al panel del negocio: le aparecen los módulos y las piezas que prendas.",
+        example: "Prendes «forestal» en una maderera y en su panel aparecen los módulos de madera; prendes una pieza y le aparece la pestaña «A medida».",
+      }}
+      title="Qué tiene cada negocio"
+      kicker="Plataforma · Por negocio"
+            icon={TreePine}
       stats={
         <>
-          <SAStatChip icon={Building2} label="Tenants" value={tenants.length} tone="sky" />
-          <SAStatChip icon={Layers} label="Especializaciones" value={`${availableSpecs}/${catalog.length}`} hint="disponibles / total" tone="violet" />
+          <SAStatChip icon={Building2} label="Negocios" value={tenants.length} tone="sky" />
+          <SAStatChip icon={Layers} label="Módulos" value={`${availableSpecs}/${catalog.length}`} hint="disponibles / total" tone="violet" />
           <SAStatChip icon={Zap} label="Activaciones" value={totalEnabled} tone="emerald" />
         </>
       }
@@ -132,7 +141,7 @@ export default function SpecializationsClient({
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)]">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <div className="text-sm">
-            <strong>Error al togglear:</strong> {error}
+            <strong>No se pudo cambiar:</strong> {error}
           </div>
         </div>
       )}
@@ -140,24 +149,24 @@ export default function SpecializationsClient({
       <div>
         {/* Filtros */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
+          <div className="flex flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
             <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar tenant por nombre, slug o industry..."
+              placeholder="Buscar negocio…"
               className="w-full bg-transparent outline-none text-base text-[var(--text-primary)]"
             />
           </div>
-          <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
+          <div className="flex items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
             <Filter className="h-4 w-4 text-[var(--text-tertiary)]" />
             <select
               value={verticalFilter}
               onChange={(e) => setVerticalFilter(e.target.value)}
               className="bg-transparent text-base font-medium text-[var(--text-primary)] outline-none"
             >
-              <option value="all">Todos los verticales</option>
+              <option value="all">Todos los rubros</option>
               {verticals.map((v) => (
                 <option key={v} value={v}>
                   {v}
@@ -174,12 +183,13 @@ export default function SpecializationsClient({
             return (
               <div
                 key={spec.key}
-                className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+                className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-[var(--text-primary)]">
+                    <p className="flex items-center gap-1 text-sm font-bold text-[var(--text-primary)]">
                       {spec.name}
+                      <InfoTip title={spec.name} what={spec.description} />
                     </p>
                     <p className="mt-0.5 text-xs uppercase tracking-wider text-[var(--text-tertiary)]">
                       {spec.vertical}
@@ -188,9 +198,9 @@ export default function SpecializationsClient({
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider ${
                       spec.status === "available"
-                        ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+                        ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
                         : spec.status === "beta"
-                          ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+                          ? "bg-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                     }`}
                   >
@@ -201,9 +211,6 @@ export default function SpecializationsClient({
                         : "Próximamente"}
                   </span>
                 </div>
-                <p className="mt-2 line-clamp-2 text-xs text-[var(--text-secondary)]">
-                  {spec.description}
-                </p>
                 <div className="mt-3 flex items-center justify-between border-t border-[var(--rule-soft)] pt-2">
                   <span className="text-xs text-[var(--text-tertiary)]">Activos</span>
                   <span className="text-sm font-bold text-[var(--text-primary)]">
@@ -216,12 +223,12 @@ export default function SpecializationsClient({
         </div>
 
         {/* Matriz tenants × specs */}
-        <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <table className="w-full text-sm">
             <thead className="bg-[var(--surface-sunken)] text-left">
               <tr>
                 <th className="sticky left-0 z-10 bg-[var(--surface-sunken)] px-4 py-3 font-bold text-[var(--text-primary)]">
-                  Tenant
+                  Negocio
                 </th>
                 {visibleCatalog.map((spec) => (
                   <th
@@ -274,9 +281,9 @@ export default function SpecializationsClient({
                           }`}
                         >
                           <span
-                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                              enabled ? "translate-x-6" : "translate-x-1"
-                            }`}
+                            className={`inline-block h-5 w-5 transform rounded-full bg-[var(--surface-raised)] shadow transition-transform ${
+ enabled ? "translate-x-6" : "translate-x-1"
+ }`}
                           />
                           {isPending && (
                             <Loader2
@@ -307,10 +314,13 @@ export default function SpecializationsClient({
         </div>
 
         {filteredTenants.length === 0 && (
-          <div className="mt-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
-            Sin tenants que coincidan con la búsqueda.
+          <div className="mt-6 rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
+            Ningún negocio coincide.
           </div>
         )}
+
+        {/* ADR-457 — las piezas a medida van en esta misma pantalla, con el mismo buscador. */}
+        <PiezasPorNegocio negocios={filteredTenants} />
       </div>
     </AdminTabShell>
   );

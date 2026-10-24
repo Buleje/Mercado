@@ -4,6 +4,8 @@ import { sendSuperAdminAlert } from "@/lib/mailer-superadmin";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
+import { PlatformExpensesDB } from "@/lib/db/platform-expenses.db";
+import { CAT_META, fmtPen } from "@/app/superadmin/gastos/gastos-helpers";
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -103,12 +105,41 @@ export async function GET(req: NextRequest) {
       items: expiringTrials.map(t => ({
         label: t.name,
         value: `Expira: ${t.trialEndsAt?.toLocaleDateString("es-PE") ?? "—"}`,
-        color: "#fbbf24",
+        color: "#ff8676",
       })),
       actionUrl: `${baseUrl}/superadmin`,
       actionLabel: "Contactar tiendas",
     }).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
     alerts.push(`${expiringTrials.length} trial(s) expiring`);
+  }
+
+  // 4) Sobregasto de plataforma vs presupuesto (tope global + por categoría).
+  // checkOverspend ya deduplica: solo devuelve breaches nuevos de este mes.
+  const overspend = await PlatformExpensesDB.checkOverspend();
+  if (overspend.global || overspend.categories.length > 0) {
+    const items: { label: string; value: string; color?: string }[] = [];
+    if (overspend.global) {
+      items.push({
+        label: "Gasto total / mes",
+        value: `${fmtPen(overspend.global.runRatePen)} · tope ${fmtPen(overspend.global.budgetPen)}`,
+        color: "#f87171",
+      });
+    }
+    for (const c of overspend.categories) {
+      items.push({
+        label: CAT_META[c.category]?.label ?? c.category,
+        value: `${fmtPen(c.spentPen)} · tope ${fmtPen(c.budgetPen)}`,
+        color: "#ff8676",
+      });
+    }
+    await sendSuperAdminAlert({
+      subject: "🚨 Sobregasto de plataforma",
+      title: "🚨 Presupuesto de gastos superado",
+      items,
+      actionUrl: `${baseUrl}/superadmin/gastos`,
+      actionLabel: "Ver gastos",
+    }).catch((err) => logger.warn("[cron/superadmin-alerts] overspend send failed", { error: String(err) }));
+    alerts.push(`overspend: ${overspend.global ? "global" : ""}${overspend.categories.length ? ` ${overspend.categories.length} cat` : ""}`);
   }
 
   return {

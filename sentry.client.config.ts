@@ -1,4 +1,10 @@
 import * as Sentry from "@sentry/nextjs";
+import { haySecretoEnRuta, tacharEventoSentry, tacharMiga, tacharSecretosDeRuta } from "@/lib/telemetry/secretos-en-url";
+
+/* Secretos en URLs que Sentry guarda (migas de red, URL de la página, Replay), todos por
+   `lib/telemetry/secretos-en-url`: el permiso de video de Hik-Connect (`accessToken=`, EZUIKit,
+   ADR-471; security 05-10), el enlace del kiosko/firma en la RUTA (security 10-10, H2) y el token
+   del chat de invitados en la query del stream (`?threadToken=`, security 17-10, T4). */
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -26,7 +32,16 @@ Sentry.init({
    * The middleware echoes this header on every response so the browser
    * can read it and include it in crash reports for log correlation.
    */
+  beforeBreadcrumb(miga) {
+    return tacharMiga(miga);
+  },
+
+  beforeSendTransaction(event) {
+    return tacharEventoSentry(event);
+  },
+
   beforeSend(event, hint) {
+    event = tacharEventoSentry(event);
     // Ignore errors from browser extensions (password managers, autofill overlays, etc.)
     const err = hint?.originalException;
     if (err instanceof Error) {
@@ -67,6 +82,11 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
         replay({
           maskAllText: true,
           blockAllMedia: true,
+          // Las URLs de red que graba Replay también pueden traer el permiso de video.
+          beforeAddRecordingEvent: (ev: object): object => {
+            const s = JSON.stringify(ev);
+            return haySecretoEnRuta(s) ? JSON.parse(tacharSecretosDeRuta(s)) : ev;
+          },
         }),
       );
     } catch {

@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef, useMemo } from "react";
-import Image from "next/image";
-import { Star, Package, ShoppingCart, Minus, Plus } from "@buleje/design-system/icons";
+import { Star, ShoppingCart, Minus, Plus } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";

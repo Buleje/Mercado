@@ -5,7 +5,7 @@ import { X, User, Phone, MapPin, Star, Trophy, LogOut, Package } from "@buleje/d
 import { useCustomer } from "@/contexts/customer-context";
 
 export default function UserAccountModal() {
-  const { customer, closeAccountModal, accountModalOpen, openModal, openOrderStatusModal, clear } = useCustomer();
+  const { customer, closeAccountModal, accountModalOpen, openModal, openOrderStatusModal, salir } = useCustomer();
   const [loyalty, setLoyalty] = useState<{ loyaltyPoints: number; loyaltyTier: string } | null>(null);
 
   useEffect(() => {
@@ -140,7 +140,7 @@ export default function UserAccountModal() {
           </button>
           {customer && (
             <button
-              onClick={() => { clear(); closeAccountModal(); }}
+              onClick={() => { void salir().then(closeAccountModal); }}
               className="w-full py-2.5 rounded-xl border-2 border-red-200 text-[var(--data-error-500)] font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2 text-sm"
             >
               <LogOut className="h-4 w-4" />

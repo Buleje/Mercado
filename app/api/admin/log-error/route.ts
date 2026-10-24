@@ -19,6 +19,7 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { recordClientError } from "@/lib/db/client-errors.db";
 
 
 const DIGEST_RE = /^[a-f0-9]{8,32}$/i;
@@ -49,6 +50,20 @@ export async function POST(req: Request) {
       digest: parsed.data.digest,
       source: parsed.data.source,
     });
+
+    // Persistir con tenantId (x-tenant-id lo setea el proxy server-side) para
+    // verlo en vivo en el superadmin. Fire-and-forget: no rompe el beacon.
+    const tenantId = req.headers.get("x-tenant-id");
+    if (tenantId) {
+      void recordClientError({
+        tenantId,
+        message: parsed.data.error,
+        digest: parsed.data.digest ?? null,
+        source: parsed.data.source ?? null,
+        userAgent: req.headers.get("user-agent"),
+      }).catch((err) => logger.warn("[admin-log-error] persist failed", { error: String(err) }));
+    }
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });

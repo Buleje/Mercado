@@ -2,77 +2,67 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { DailySummaryDB } from "@/lib/db/daily-summary.db";
+import { armarCierreDelDia } from "@/lib/caja/cierre-del-dia.server";
+import { camposDeCajaDelCierreAMano, ROLES_CIERRE_DEL_DIA } from "@/lib/caja/cierres-por-dia";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+/**
+ * «Cerrar el día»: el navegador manda SÓLO lo que contó y la nota. Fecha (día
+ * de Lima), ventas, fiados, stock y el esperado de caja los arma el servidor
+ * con la misma cuenta que el preview (revisión 19-10: antes guardaba los 13
+ * totales del cuerpo y la fecha como texto libre). Cualquier otro campo que
+ * llegue se ignora.
+ */
 const CierreDiarioSchema = z.object({
-  fecha: z.string().min(1),
-  totalVentas: z.number().nonnegative(),
-  cantidadVentas: z.number().int().nonnegative(),
-  ticketPromedio: z.number().nonnegative(),
-  efectivoContado: z.number().nonnegative().nullable().optional(),
-  efectivoEsperado: z.number().nonnegative(),
-  diferenciaCaja: z.number(),
-  fiadosCobrados: z.number().nonnegative().default(0),
-  fiadosNuevos: z.number().nonnegative().default(0),
-  fiadosVencidos: z.number().int().nonnegative().default(0),
-  mejorHora: z.string().nullable().optional(),
-  productoTop: z.string().nullable().optional(),
-  stockAlertas: z.string().nullable().optional(),
+  /** Efectivo contado en las cajas ABIERTAS; null = se saltó el conteo. */
+  efectivoContado: z.number().finite().nonnegative().max(10_000_000).nullable().optional(),
   notas: z.string().max(2000).nullable().optional(),
 });
 
-// POST — Save daily summary
 export async function POST(req: NextRequest) {
   const rateLimitResult = applyRateLimit(req, "STRICT", "cierre-diario-post");
   if (rateLimitResult) return rateLimitResult;
 
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_CIERRE_DEL_DIA);
   if (auth instanceof NextResponse) return auth;
 
+  const parsed = CierreDiarioSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+      { status: 400 },
+    );
+  }
+
   try {
-    const raw = await req.json();
-    const parsed = CierreDiarioSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
-        { status: 400 },
-      );
-    }
-
-    const data = parsed.data;
-
-    const summary = await DailySummaryDB.create(auth.tenantId, {
-      ...data,
+    const cierre = await armarCierreDelDia(auth.tenantId);
+    const caja = camposDeCajaDelCierreAMano(cierre.caja.efectivoEsperado, cierre.caja.cerradas, parsed.data.efectivoContado ?? null);
+    const { id, creado } = await DailySummaryDB.guardarAMano(auth.tenantId, new Date(`${cierre.fecha}T00:00:00.000Z`), {
+      totalVentas: cierre.ventas.total,
+      cantidadVentas: cierre.ventas.cantidad,
+      ticketPromedio: cierre.ventas.ticketPromedio,
+      ...caja,
+      fiadosCobrados: cierre.fiados.cobradosHoy,
+      fiadosNuevos: cierre.fiados.nuevosHoy,
+      fiadosVencidos: cierre.fiados.vencidos,
+      mejorHora: cierre.ventas.mejorHora,
+      productoTop: cierre.ventas.productoTop,
+      stockAlertas: cierre.stockAlertas.length > 0 ? JSON.stringify(cierre.stockAlertas) : null,
+      notas: parsed.data.notas?.trim() || null,
       creadoPor: auth.username,
     });
 
     logActivity(
-      "Crear", "cierre-diario",
-      `Cierre del día ${data.fecha} — Ventas: S/${data.totalVentas.toFixed(2)}`,
-      summary.id, auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      creado ? "Crear" : "Actualizar", "cierre-diario",
+      `Cierre del día ${cierre.fecha} — Ventas: S/${cierre.ventas.total.toFixed(2)}`,
+      id, auth.username,
+    ).catch((err) => logger.error("[cierre-diario] logActivity failed", { error: String(err) }));
 
-    return NextResponse.json(summary, { status: 201 });
+    return NextResponse.json({ id, creado, fecha: cierre.fecha, ...caja }, { status: creado ? 201 : 200 });
   } catch (e) {
     logger.error("[cierre-diario] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al guardar cierre" }, { status: 503 });
-  }
-}
-
-// GET — List last 30 daily summaries
-export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
-
-  try {
-    const summaries = await DailySummaryDB.listRecent(auth.tenantId, { take: 30 });
-    return NextResponse.json(summaries);
-  } catch (e) {
-    logger.error("[cierre-diario] GET error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "Error al obtener cierres" }, { status: 503 });
   }
 }

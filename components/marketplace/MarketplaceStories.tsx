@@ -81,7 +81,7 @@ const STORY_PRESENTATIONS: Record<string, { title: string; slides: StorySlide[] 
       {
         id: "s2",
         headline: "Productores locales",
-        subheadline: "Apoyás a familias de la Amazonía peruana en cada compra.",
+        subheadline: "Apoyas a familias de la Amazonía peruana en cada compra.",
         bg: "from-zinc-900 to-zinc-800",
         ctaLabel: "Conocer más",
         ctaHref: "#selva",

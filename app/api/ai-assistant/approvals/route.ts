@@ -14,7 +14,7 @@
  * Auth: requiere admin (cualquier rol admin). Para permisos más finos,
  * agregar un campo `requiredRole` a las tool definitions.
  *
- * Frontend consumer (pendiente, sesión futura): AICommandCenter.tsx hará
+ * Frontend consumer: Comandos IA › Lo que hizo la IA hace
  * polling a GET cada N segundos para mostrar modal de aprobación, y POST
  * al resolver.
  */
@@ -30,11 +30,14 @@ import {
   getPendingApproval,
   removePendingApproval,
 } from "@/lib/agents/pending-approvals";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 // ── GET: list pending approvals ──────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const rateLimited = applyRateLimit(req, "MODERATE", "approvals-get");
+  // SHELL_POLL: lo sondean solos el banner HITL (5 s) y «Lo que hizo la IA» (20 s);
+  // con MODERATE (20 cada 5 min) el 429 escondía aprobaciones vivas.
+  const rateLimited = applyRateLimit(req, "SHELL_POLL", "approvals-get");
   if (rateLimited) return rateLimited;
 
   const auth = await requireAdmin(req);
@@ -71,7 +74,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = ResolveSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

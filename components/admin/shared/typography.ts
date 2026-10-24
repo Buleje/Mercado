@@ -67,7 +67,7 @@ export const typography = {
   badgePrimary: "px-2 py-0.5 rounded-full bg-[#2563EB]/10 text-[#2563EB] text-xs font-bold",
   badgeDanger: "px-2 py-0.5 rounded-full bg-red-50 text-[var(--data-error-600)] text-xs font-bold",
   badgeWarning: "px-2 py-0.5 rounded-full bg-amber-50 text-[var(--data-warning-600)] text-xs font-bold",
-  badgeSuccess: "px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold",
+  badgeSuccess: "px-2 py-0.5 rounded-full bg-primary/10 text-[var(--data-success-500)] text-xs font-bold",
   badgeNeutral: "px-2 py-0.5 rounded-full bg-gray-100 text-[var(--text-secondary)] text-xs font-bold",
 
   // Tablas

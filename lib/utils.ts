@@ -236,6 +236,26 @@ export function formatLimaDate(
 }
 
 /**
+ * Devuelve la fecha de `value` en zona Lima como clave "YYYY-MM-DD".
+ * Bucketiza por día sin el off-by-one de UTC: una entrega a las 20:00 Lima
+ * (01:00 UTC del día siguiente) cae en el día Lima correcto, no en el de UTC.
+ *
+ * Uso:
+ *   limaDateKey(assignment.deliveredAt) → "2026-06-18"
+ */
+export function limaDateKey(value: Date | string | number = new Date()): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  // en-CA formatea como "YYYY-MM-DD".
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: STORE_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/**
  * Retorna el inicio del día (00:00:00) en zona Lima como timestamp UTC ms.
  *
  * Uso:
@@ -244,15 +264,8 @@ export function formatLimaDate(
  */
 export function startOfLimaDay(reference?: Date | string): number {
   const ref = reference ? (typeof reference === "string" ? new Date(reference) : reference) : new Date();
-  // Convertir a string en zona Lima, luego parsear como local
-  const limaDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: STORE_TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(ref);
   // Lima es UTC-5 → 00:00 Lima = 05:00 UTC del mismo día
-  return new Date(`${limaDate}T05:00:00.000Z`).getTime();
+  return new Date(`${limaDateKey(ref)}T05:00:00.000Z`).getTime();
 }
 
 /**
@@ -263,4 +276,37 @@ export function startOfLimaDayDaysAgo(days: number): number {
   const now = new Date();
   now.setUTCDate(now.getUTCDate() - days);
   return startOfLimaDay(now);
+}
+
+const SOLO_DIA = /^\d{4}-\d{2}-\d{2}$/;
+const UN_DIA_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * `[start, end)` de UN día de Lima, en instantes UTC (Lima = UTC−5 fijo).
+ * `"2026-10-09"` es un día de calendario y se toma tal cual: `new Date("2026-10-09")`
+ * es la medianoche UTC = 19:00 de Lima del 08 y corría el filtro al día anterior.
+ * Un instante (Date o ISO con hora) se pasa primero a su día de Lima.
+ *
+ * Uso: `const { start, end } = limaDayRange(req.query.date ?? new Date())` → `{ gte: start, lt: end }`.
+ */
+export function limaDayRange(day: Date | string = new Date()): { start: Date; end: Date } {
+  const key = typeof day === "string" && SOLO_DIA.test(day) ? day : limaDateKey(day);
+  const start = new Date(`${key}T05:00:00.000Z`);
+  return { start, end: new Date(start.getTime() + UN_DIA_MS) };
+}
+
+/**
+ * 00:00 de Lima del día 1 del mes de Lima (ms UTC), corrido `offsetMonths` meses:
+ * `0` = este mes, `-1` = el anterior, `1` = el siguiente (fin exclusivo del actual).
+ * Reemplaza a `new Date(now.getFullYear(), now.getMonth(), 1)`, que en el servidor
+ * (UTC) arrancaba el mes a las 19:00 de Lima del último día del mes anterior.
+ */
+export function startOfLimaMonth(offsetMonths = 0, reference: Date = new Date()): number {
+  const [y, m] = limaDateKey(reference).split("-").map(Number);
+  return Date.UTC(y, m - 1 + offsetMonths, 1, 5);
+}
+
+/** Día de la semana de Lima (0 = domingo … 6 = sábado); `getDay()` daba el de UTC. */
+export function limaWeekday(reference: Date = new Date()): number {
+  return new Date(`${limaDateKey(reference)}T12:00:00.000Z`).getUTCDay();
 }

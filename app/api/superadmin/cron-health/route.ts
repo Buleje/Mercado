@@ -23,6 +23,7 @@ const KNOWN_CRONS = [
   "marketplace-abandoned-carts", "market-alerts", "isolation-monitor",
   "inactive-customers", "demand-forecast", "credit-overdue",
   "birthday-greetings", "birthday-coupons", "ai-history-cleanup",
+  "planificacion-avisos",
 ];
 
 export async function GET(req: NextRequest) {

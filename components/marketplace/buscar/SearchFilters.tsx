@@ -6,181 +6,47 @@
  * Extiende el patron de CategoryFilters con soporte de categorias dinamicas
  * (facets del backend) en lugar de subCategorias estaticas.
  *
- * Grupos:
+ * Grupos (todos filtran en el servidor vía el link):
  *   1. Categoria (checkboxes con count desde facets)
  *   2. Tiendas (checkboxes con count, max 8 + "Ver mas")
  *   3. Precio (inputs desde/hasta)
- *   4. Disponibilidad (radio)
- *   5. Rating tienda (radio 4+/3+/2+/1+)
- *   6. Zona Pucallpa (radio)
- *   7. Entrega (radio)
- *   8. CTA Limpiar filtros
+ *   4. Disponibilidad (radio) — stock null = se hace al pedido = disponible
+ *   5. Calificación (radio 4+/3+/2+/1+) — sólo si alguna tienda tiene estrellas
+ *   6. Zona (radio) — sólo con 2+ zonas con tiendas publicadas
+ *   7. CTA Limpiar filtros
+ *
+ * «Entrega express / mismo día» se quitó (2026-10-09): no hay ningún dato de
+ * tiempo de entrega en la base y el filtro no hacía nada.
  */
 
 import { useState } from "react";
 import { Star, ChevronDown } from "@buleje/design-system/icons";
 import type { StoreFacet, CategoryFacet } from "@/lib/db/marketplace-search.db";
+import { FilterGroup, RadioRow, CheckboxRow } from "./SearchFilterControls";
+import { hayFiltrosActivos, type FiltrosBuscar } from "@/lib/marketplace/buscar-params";
 
-export type SearchFiltersState = {
-  categories: string[];
-  stores: string[];
-  priceMin: number | null;
-  priceMax: number | null;
-  availability: "all" | "inStock" | "outOfStock";
-  minRating: number;
-  zone: string | null;
-  deliveryTime: "any" | "express" | "sameDay";
-};
+/** El estado del panel ES lo que viaja en el link (lib/marketplace/buscar-params.ts). */
+export type SearchFiltersState = FiltrosBuscar;
 
 interface SearchFiltersProps {
   storesFacet: StoreFacet[];
   categoriesFacet: CategoryFacet[];
+  /** Zonas con tiendas publicadas: con menos de 2 el bloque se esconde. */
+  zonesFacet: string[];
   filters: SearchFiltersState;
   onChange: (next: SearchFiltersState) => void;
   onReset: () => void;
 }
 
-const ZONES = ["Calleria", "Manantay", "Yarinacocha"];
 const MAX_STORES_VISIBLE = 8;
 const MAX_CATS_VISIBLE = 6;
-
-// ── Sub-componentes de UI ─────────────────────────────────────────────────────
-
-function FilterGroup({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <h3 className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        {title}
-      </h3>
-      <div className="space-y-2">{children}</div>
-    </div>
-  );
-}
-
-function RadioRow({
-  checked,
-  onChange,
-  label,
-  count,
-  children,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-  count?: number;
-  children?: React.ReactNode;
-}) {
-  return (
-    <label className="flex items-center gap-2.5 text-sm cursor-pointer group">
-      <input
-        type="radio"
-        checked={checked}
-        onChange={onChange}
-        className="peer sr-only"
-      />
-      <span
-        aria-hidden="true"
-        className={`h-4 w-4 rounded-full border flex items-center justify-center transition-colors ${
-          checked
-            ? "border-primary bg-primary"
-            : "border-[var(--rule-base)] group-hover:border-[var(--rule-strong)]"
-        }`}
-      >
-        {checked && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-      </span>
-      <span
-        className={`flex-1 ${
-          checked
-            ? "font-semibold text-[var(--text-primary)]"
-            : "text-[var(--text-secondary)]"
-        }`}
-      >
-        {children ?? label}
-      </span>
-      {count != null && (
-        <span className="text-xs text-[var(--text-tertiary)]">
-          {count}
-        </span>
-      )}
-    </label>
-  );
-}
-
-function CheckboxRow({
-  checked,
-  onChange,
-  label,
-  count,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-  count?: number;
-}) {
-  return (
-    <label className="flex items-center gap-2.5 text-sm cursor-pointer group">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="peer sr-only"
-      />
-      <span
-        aria-hidden="true"
-        className={`h-4 w-4 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${
-          checked
-            ? "border-primary bg-primary"
-            : "border-[var(--rule-base)] group-hover:border-[var(--rule-strong)]"
-        }`}
-      >
-        {checked && (
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <path
-              d="M1.5 5.5L4 8L8.5 2.5"
-              stroke="white"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
-      </span>
-      <span
-        className={`flex-1 truncate ${
-          checked
-            ? "font-semibold text-[var(--text-primary)]"
-            : "text-[var(--text-secondary)]"
-        }`}
-      >
-        {label}
-      </span>
-      {count != null && (
-        <span className="text-xs text-[var(--text-tertiary)]">
-          {count}
-        </span>
-      )}
-    </label>
-  );
-}
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function SearchFilters({
   storesFacet,
   categoriesFacet,
+  zonesFacet,
   filters,
   onChange,
   onReset,
@@ -204,35 +70,27 @@ export default function SearchFilters({
     const exists = filters.stores.includes(storeId);
     onChange({
       ...filters,
-      stores: exists
-        ? filters.stores.filter((s) => s !== storeId)
-        : [...filters.stores, storeId],
+      stores: exists ? filters.stores.filter((s) => s !== storeId) : [...filters.stores, storeId],
     });
   };
 
-  const hasActive =
-    filters.categories.length > 0 ||
-    filters.stores.length > 0 ||
-    filters.priceMin !== null ||
-    filters.priceMax !== null ||
-    filters.availability !== "all" ||
-    filters.minRating > 0 ||
-    filters.zone !== null ||
-    filters.deliveryTime !== "any";
+  const hasActive = hayFiltrosActivos(filters);
+  // Bloques sin datos se esconden (salvo que el link ya traiga ese filtro,
+  // para poder deshacerlo): hoy las 4 tiendas tienen 0 estrellas y 1 zona.
+  const verCalificacion = filters.minRating > 0 || storesFacet.some((s) => s.rating > 0);
+  const verZona = filters.zone != null || zonesFacet.length > 1;
+  const zonas =
+    filters.zone && !zonesFacet.includes(filters.zone) ? [...zonesFacet, filters.zone] : zonesFacet;
 
-  const visibleStores = showAllStores
-    ? storesFacet
-    : storesFacet.slice(0, MAX_STORES_VISIBLE);
+  const visibleStores = showAllStores ? storesFacet : storesFacet.slice(0, MAX_STORES_VISIBLE);
 
-  const visibleCats = showAllCats
-    ? categoriesFacet
-    : categoriesFacet.slice(0, MAX_CATS_VISIBLE);
+  const visibleCats = showAllCats ? categoriesFacet : categoriesFacet.slice(0, MAX_CATS_VISIBLE);
 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl p-5 space-y-6 lg:sticky lg:top-24">
       {/* Categorias (facets dinamicos del backend) */}
       {categoriesFacet.length > 0 && (
-        <FilterGroup title="Categoria">
+        <FilterGroup title="Categoría">
           {visibleCats.map((cat) => (
             <CheckboxRow
               key={cat.category}
@@ -252,9 +110,7 @@ export default function SearchFilters({
                 strokeWidth={2}
                 aria-hidden="true"
               />
-              {showAllCats
-                ? "Ver menos"
-                : `Ver ${categoriesFacet.length - MAX_CATS_VISIBLE} mas`}
+              {showAllCats ? "Ver menos" : `Ver ${categoriesFacet.length - MAX_CATS_VISIBLE} más`}
             </button>
           )}
         </FilterGroup>
@@ -282,9 +138,7 @@ export default function SearchFilters({
                 strokeWidth={2}
                 aria-hidden="true"
               />
-              {showAllStores
-                ? "Ver menos"
-                : `Ver ${storesFacet.length - MAX_STORES_VISIBLE} mas`}
+              {showAllStores ? "Ver menos" : `Ver ${storesFacet.length - MAX_STORES_VISIBLE} más`}
             </button>
           )}
         </FilterGroup>
@@ -342,82 +196,61 @@ export default function SearchFilters({
         <RadioRow
           label="Agotados"
           checked={filters.availability === "outOfStock"}
-          onChange={() =>
-            onChange({ ...filters, availability: "outOfStock" })
-          }
+          onChange={() => onChange({ ...filters, availability: "outOfStock" })}
         />
       </FilterGroup>
 
-      {/* Rating tienda */}
-      <FilterGroup title="Rating tienda">
-        <RadioRow
-          label="Todos"
-          checked={filters.minRating === 0}
-          onChange={() => onChange({ ...filters, minRating: 0 })}
-        />
-        {[4, 3, 2, 1].map((n) => (
+      {/* Calificación de la tienda */}
+      {verCalificacion && (
+        <FilterGroup title="Calificación de la tienda">
           <RadioRow
-            key={n}
-            label={`${n}+`}
-            checked={filters.minRating === n}
-            onChange={() => onChange({ ...filters, minRating: n })}
-          >
-            <span className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  className={`h-3 w-3 ${
-                    s <= n
-                      ? "text-[var(--text-primary)] fill-current"
-                      : "text-[var(--rule-base)]"
-                  }`}
-                  strokeWidth={1.5}
-                  aria-hidden="true"
-                />
-              ))}
-              <span className="ml-1 text-xs text-[var(--text-tertiary)]">
-                y mas
-              </span>
-            </span>
-          </RadioRow>
-        ))}
-      </FilterGroup>
-
-      {/* Zona Ciudad Constitución */}
-      <FilterGroup title="Zona Ciudad Constitución">
-        <RadioRow
-          label="Todas"
-          checked={filters.zone === null}
-          onChange={() => onChange({ ...filters, zone: null })}
-        />
-        {ZONES.map((z) => (
-          <RadioRow
-            key={z}
-            label={z}
-            checked={filters.zone === z}
-            onChange={() => onChange({ ...filters, zone: z })}
+            label="Cualquiera"
+            checked={filters.minRating === 0}
+            onChange={() => onChange({ ...filters, minRating: 0 })}
           />
-        ))}
-      </FilterGroup>
+          {[4, 3, 2, 1].map((n) => (
+            <RadioRow
+              key={n}
+              label={`${n}+`}
+              checked={filters.minRating === n}
+              onChange={() => onChange({ ...filters, minRating: n })}
+            >
+              <span className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`h-3 w-3 ${
+                      s <= n ? "text-[var(--text-primary)] fill-current" : "text-[var(--rule-base)]"
+                    }`}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
+                ))}
+                <span className="ml-1 text-xs text-[var(--text-tertiary)]">o más</span>
+              </span>
+            </RadioRow>
+          ))}
+        </FilterGroup>
+      )}
 
-      {/* Tiempo entrega */}
-      <FilterGroup title="Entrega">
-        <RadioRow
-          label="Cualquiera"
-          checked={filters.deliveryTime === "any"}
-          onChange={() => onChange({ ...filters, deliveryTime: "any" })}
-        />
-        <RadioRow
-          label="Express <25 min"
-          checked={filters.deliveryTime === "express"}
-          onChange={() => onChange({ ...filters, deliveryTime: "express" })}
-        />
-        <RadioRow
-          label="Mismo dia"
-          checked={filters.deliveryTime === "sameDay"}
-          onChange={() => onChange({ ...filters, deliveryTime: "sameDay" })}
-        />
-      </FilterGroup>
+      {/* Zona: sale de las tiendas publicadas, no de una lista fija */}
+      {verZona && (
+        <FilterGroup title="Zona">
+          <RadioRow
+            label="Todas"
+            checked={filters.zone === null}
+            onChange={() => onChange({ ...filters, zone: null })}
+          />
+          {zonas.map((z) => (
+            <RadioRow
+              key={z}
+              label={z}
+              checked={filters.zone === z}
+              onChange={() => onChange({ ...filters, zone: z })}
+            />
+          ))}
+        </FilterGroup>
+      )}
 
       {/* CTA Limpiar */}
       {hasActive && (

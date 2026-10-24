@@ -218,7 +218,7 @@ export const MOCK_FAQS = [
   },
   {
     q: "¿Cómo me suscribo?",
-    a: "Elige tu plan (mensual o anual), confirmá tu método de pago y listo. La membresía se activa al instante.",
+    a: "Elige tu plan (mensual o anual), confirma tu método de pago y listo. La membresía se activa al instante.",
   },
   {
     q: "¿Aplica en todas las bodegas de Buleje?",
@@ -230,7 +230,7 @@ export const MOCK_FAQS = [
   },
   {
     q: "¿Qué pasa si no uso los beneficios un mes?",
-    a: "Nada malo. Los beneficios se activan cuando los usás; el cashback acumulado no vence mientras seas Socio activo.",
+    a: "Nada malo. Los beneficios se activan cuando los usas; el cashback acumulado no vence mientras seas Socio activo.",
   },
   {
     q: "¿Funciona el Socio si pido por WhatsApp?",

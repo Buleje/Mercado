@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, startTransition } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type NotifPermission = "default" | "granted" | "denied";
 
@@ -25,7 +26,7 @@ async function registerPushSubscription(phone?: string): Promise<void> {
     });
     await fetch("/api/notifications/subscribe", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ subscription: { endpoint: sub.endpoint, keys: { p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey("p256dh")!))), auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey("auth")!))) } }, phone }),
     });
   } catch { /* Push not supported or blocked */ }
@@ -88,6 +89,7 @@ export function useNotifications() {
 
 import { useState, useEffect } from "react";
 import { useCustomer } from "@/contexts/customer-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export function useHasCompletedFirstOrder(): boolean | null {
   const { customer } = useCustomer();

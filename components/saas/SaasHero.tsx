@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { m as motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const SPRING = [0.175, 0.885, 0.32, 1.275] as [number, number, number, number];
 const fadeUp = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, ease: SPRING } };
@@ -98,7 +99,7 @@ const TabDashboard = memo(function TabDashboard() {
     { label: "Ventas hoy", valor: kpi.ventas, color: "#14C2C2", bg: "rgba(0, 160, 160,0.12)", border: "rgba(0, 160, 160,0.3)" },
     { label: "Pedidos", valor: kpi.pedidos, color: "color-mix(in oklab, var(--accent) 60%, white)", bg: "rgba(0, 160, 160,0.08)", border: "rgba(0, 160, 160,0.2)" },
     { label: "Stock bajo", valor: kpi.stock, color: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.2)" },
-    { label: "Margen", valor: kpi.margen, color: "#fb923c", bg: "rgba(251,146,60,0.08)", border: "rgba(251,146,60,0.2)" },
+    { label: "Margen", valor: kpi.margen, color: "#ff8676", bg: "rgba(251,146,60,0.08)", border: "rgba(251,146,60,0.2)" },
   ];
   return (
     <div className="p-4 space-y-3">
@@ -268,7 +269,7 @@ export default function SaasHero() {
     setDemoLoading(true);
     setDemoError(null);
     try {
-      const res = await fetch("/api/demo/create", { method: "POST" });
+      const res = await fetch("/api/demo/create", { method: "POST", headers: csrfHeaders() });
       const data = await res.json() as { slug?: string; error?: string };
       if (!res.ok) {
         setDemoError(data.error ?? "No se pudo crear el demo. Intenta en unos minutos.");

@@ -1,93 +1,74 @@
 "use client";
 
+/**
+ * «Cómo va tu tienda hoy» — la cabecera de la pestaña Marketplace del Inicio.
+ *
+ * 2026-10-09 (regla R3 del tablero): 4 tarjetas propias → 3 `KpiTile` del
+ * Inicio (las mismas de las otras pestañas). Sin «S/ 0.00» de relleno: una
+ * venta en cero sale «—» con ⓘ; «Ayer» dejó de ser una tarjeta en cero y pasó a
+ * ser la variación y la línea chica de «Ventas hoy». Los pendientes y el
+ * stock bajo SÍ muestran el 0, porque ahí el cero es la noticia («estás al día»).
+ * Las acciones (antes 3 bloques de color) van en una fila al pie.
+ */
+
+import { DashboardSection } from "@/components/admin/inicio/_shared";
+import { kpiSinDato } from "@/lib/admin/inicio/hay-datos";
+import { cantidad, soles } from "@/lib/admin/inicio/formato-tablero";
 import type { VendorKPIs } from "./vendor-dashboard.types";
-import { TrendingUp, TrendingDown, Minus, ShoppingBag, AlertTriangle, Package } from "@buleje/design-system/icons";
-import StatusBadge from "@/components/admin/shared/StatusBadge";
+import { VendorQuickActions } from "./VendorQuickActions";
 
 type Props = {
   kpis: VendorKPIs;
 };
 
-function formatSoles(value: number): string {
-  return `S/ ${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
-}
+/** El endpoint trae como máximo 10 productos con stock bajo: 10 puede ser «10 o más». */
+const TOPE_STOCK_BAJO = 10;
 
-/**
- * TrendBadge — delta vs referencia, siempre via tokens.
- * (ADR-074 Phase 2: eliminado bg-[var(--accent-soft)]/red-50 hardcoded).
- */
-function TrendBadge({ today, reference, label }: { today: number; reference: number; label: string }) {
-  if (reference === 0) return null;
-  const pct = ((today - reference) / reference) * 100;
-  const up = pct >= 0;
-  const Icon = pct === 0 ? Minus : up ? TrendingUp : TrendingDown;
-  const variant: "success" | "error" | "neutral" = pct === 0 ? "neutral" : up ? "success" : "error";
-
-  return (
-    <StatusBadge
-      variant={variant}
-      label={`${Math.abs(pct).toFixed(0)}% vs ${label}`}
-      size="sm"
-      icon={Icon}
-    />
-  );
-}
-
-/**
- * KPITile inline — wrapper unificado para esta dashboard.
- * Usa AdminCard pattern (rounded-xl + border rule-base + surface-raised)
- * sin duplicar markup en cada card.
- */
-function KPITile({
-  icon: Icon,
-  label,
-  value,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2">
-      <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm font-medium">
-        <Icon className="h-4 w-4 text-[var(--text-primary)]" />
-        {label}
-      </div>
-      <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">{value}</p>
-      {children && <div className="flex flex-col gap-1">{children}</div>}
-    </div>
-  );
+function variacion(hoy: number, base: number): number | null {
+  return base > 0 ? ((hoy - base) / base) * 100 : null;
 }
 
 export function VendorKPICards({ kpis }: Props) {
-  const pendingVariant: "success" | "warning" | "error" =
-    kpis.pendingOrdersCount === 0 ? "success" : kpis.pendingOrdersCount <= 3 ? "warning" : "error";
-  const pendingLabel =
-    kpis.pendingOrdersCount === 0 ? "Al día" : kpis.pendingOrdersCount <= 3 ? "Atender pronto" : "Urgente";
+  const { salesToday: hoy, salesYesterday: ayer, salesLastWeek: semPasada, pendingOrdersCount: pendientes, lowStockCount: bajos } = kpis;
 
-  const stockVariant: "success" | "warning" = kpis.lowStockCount === 0 ? "success" : "warning";
-  const stockLabel = kpis.lowStockCount === 0 ? "Todo OK" : "Reponer pronto";
+  const referencias = [ayer > 0 ? `Ayer ${soles(ayer)}` : null, semPasada > 0 ? `hace 7 días ${soles(semPasada)}` : null].filter(Boolean);
+  const pistaSinVenta = ["Todavía no entra una venta hoy."]
+    .concat(ayer > 0 ? [`Ayer vendiste ${soles(ayer)}.`] : [])
+    .concat(semPasada > 0 ? [`Hace 7 días: ${soles(semPasada)}.`] : [])
+    .join(" ");
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <KPITile icon={ShoppingBag} label="Ventas hoy" value={formatSoles(kpis.salesToday)}>
-        <TrendBadge today={kpis.salesToday} reference={kpis.salesYesterday} label="ayer" />
-        <TrendBadge today={kpis.salesToday} reference={kpis.salesLastWeek} label="sem. pasada" />
-      </KPITile>
-
-      <KPITile icon={Package} label="Sin atender" value={String(kpis.pendingOrdersCount)}>
-        <StatusBadge variant={pendingVariant} label={pendingLabel} size="sm" />
-      </KPITile>
-
-      <KPITile icon={AlertTriangle} label="Stock bajo" value={String(kpis.lowStockCount)}>
-        <StatusBadge variant={stockVariant} label={stockLabel} size="sm" />
-      </KPITile>
-
-      <KPITile icon={TrendingUp} label="Ayer" value={formatSoles(kpis.salesYesterday)}>
-        <span className="text-sm text-[var(--text-tertiary)]">ventas del día anterior</span>
-      </KPITile>
-    </div>
+    <DashboardSection
+      kicker="Marketplace · hoy"
+      title="Cómo va tu tienda hoy"
+      kpis={[
+        {
+          label: "Ventas hoy",
+          value: soles(hoy),
+          sinDato: kpiSinDato(hoy),
+          sinDatoHint: pistaSinVenta,
+          delta: variacion(hoy, ayer),
+          deltaLabel: "vs ayer",
+          hint: "Suma de los pedidos entregados hoy.",
+          sub: referencias.length > 0 ? referencias.join(" · ") : undefined,
+        },
+        {
+          label: "Por atender",
+          value: cantidad(pendientes),
+          tone: pendientes === 0 ? "success" : "warning",
+          sub: pendientes === 0 ? "Estás al día" : pendientes <= 3 ? "Atiéndelos pronto" : "Urgente",
+          hint: "Pedidos pendientes o confirmados que todavía no salen.",
+        },
+        {
+          label: "Stock bajo",
+          value: bajos >= TOPE_STOCK_BAJO ? `${TOPE_STOCK_BAJO}+` : cantidad(bajos),
+          tone: bajos === 0 ? "success" : "warning",
+          sub: bajos === 0 ? "Todo en buen nivel" : "por reponer",
+          hint: "Productos con 5 unidades o menos.",
+        },
+      ]}
+    >
+      <VendorQuickActions pendientes={pendientes} />
+    </DashboardSection>
   );
 }

@@ -46,7 +46,7 @@ function BuscarEmptyState() {
             href={`/buscar?q=${slug}`}
             className="h-12 flex items-center justify-center gap-2.5 border-2 rounded-2xl text-base font-medium transition-all
               border-[var(--rule-base)] text-[var(--text-primary)]
-              hover:border-primary hover:text-primary hover:bg-primary/5
+              hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5
               active:scale-[0.97]"
           >
             <Icon className="h-5 w-5 shrink-0" />

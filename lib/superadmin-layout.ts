@@ -25,16 +25,25 @@
  *   <div className={SUPERADMIN_CONTENT}>…contenido…</div>
  */
 
-/** `<header>` exterior del hero (rule + surface raised + padding horizontal). */
+/**
+ * `<header>` exterior del hero viejo (rule + surface raised + padding horizontal).
+ * 18-10: las páginas usan `CabeceraConPestanas` (una fila: título + pestañas);
+ * esto queda para lo que todavía no migró.
+ */
 export const SUPERADMIN_HERO =
   "border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8";
 
 /** Wrapper interno del hero — sin cap, ocupa todo el ancho disponible. */
 export const SUPERADMIN_HERO_INNER = "w-full";
 
-/** Wrapper del contenido bajo el hero — full width + padding consistente. */
-export const SUPERADMIN_CONTENT =
-  "w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8";
+/**
+ * Wrapper del contenido bajo la cabecera. 18-10 (cabecera de una fila,
+ * `CabeceraConPestanas`): sin padding lateral propio —el `<main>` ya lo pone—
+ * para que el contenido arranque alineado con la banda del título, y 24 px
+ * debajo de ella (el mismo `space-y-6` de `AdminTabShell`). Antes sumaba
+ * 32 px por lado y 32 arriba encima del padding del `<main>`.
+ */
+export const SUPERADMIN_CONTENT = "w-full pt-6";
 
 /** Wrapper de página raíz (background canvas full-height). */
 export const SUPERADMIN_PAGE = "min-h-screen bg-[var(--surface-canvas)]";

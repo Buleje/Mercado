@@ -41,14 +41,14 @@ export function DataRow({
     >
       {leading && <span className="shrink-0">{leading}</span>}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-[var(--text-tertiary)]">
+        <div className="text-xs font-semibold text-[var(--text-tertiary)]">
           {label}
-        </p>
-        <p className="text-sm font-bold text-[var(--text-primary)] mt-0.5 truncate">
+        </div>
+        <div className="text-sm font-bold text-[var(--text-primary)] mt-0.5 truncate">
           {value}
-        </p>
+        </div>
         {hint && (
-          <p className="text-[length:var(--ts-xs)] text-gray-400 mt-0.5">{hint}</p>
+          <div className="text-[length:var(--ts-xs)] text-gray-400 mt-0.5">{hint}</div>
         )}
       </div>
       {trailing && <span className="shrink-0">{trailing}</span>}

@@ -1,5 +1,4 @@
 "use client";
-import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { GripVertical, ArrowUp, ArrowDown, Save, RotateCcw, Check } from "@buleje/design-system/icons";
@@ -57,15 +56,12 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ordenar categorías de la barra lateral</CardTitle>
-          <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">Arrastra o usa las flechas para mover cada categoría</p>
-        </div>
+      {/* El título lo pone el plegable de Configuración › Mi panel. */}
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Restablecer
           </button>
@@ -74,7 +70,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
             className={cn(
               "flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
               saved
-                ? "bg-[var(--accent-soft)] text-white"
+                ? "bg-primary/10 text-white"
                 : "bg-primary text-white hover:bg-primary/90"
             )}
           >
@@ -84,7 +80,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
         </div>
       </div>
 
-      <div className="space-y-1 bg-gray-50 dark:bg-surface rounded-xl p-2">
+      <div className="space-y-1 bg-[var(--surface-sunken)] rounded-xl p-2">
         {items.map((item, idx) => (
           <div
             key={item.id}
@@ -101,7 +97,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
             <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted w-5 text-center">{idx + 1}</span>
             <span className="flex-1 text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.label}</span>
             <div className="flex gap-0.5">
-              <button
+              <button aria-label="Subir"
                 onClick={() => moveItem(idx, idx - 1)}
                 disabled={idx === 0}
                 className={cn(
@@ -111,7 +107,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
               >
                 <ArrowUp className="h-3.5 w-3.5" />
               </button>
-              <button
+              <button aria-label="Bajar"
                 onClick={() => moveItem(idx, idx + 1)}
                 disabled={idx === items.length - 1}
                 className={cn(

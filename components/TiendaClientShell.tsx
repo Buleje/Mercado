@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import LazyLoad from "@/components/LazyLoad";
-import { SectionSkeleton } from "@/components/LoadingSkeleton";
 
 const RecentlyViewed    = dynamic(() => import("@/components/RecentlyViewedSingleTenant"),    {});
 const FavoritesSection  = dynamic(() => import("@/components/FavoritesSection"),  {});
@@ -22,16 +21,6 @@ const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"),
 const StickyCartBar     = dynamic(() => import("@/components/StickyCartBar"),     {});
 const VolumeDiscount    = dynamic(() => import("@/components/VolumeDiscount"),    {});
 const BackInStock       = dynamic(() => import("@/components/BackInStock"),       {});
-
-function SectionLoadingSkeleton() {
-  return (
-    <section className="py-12 sm:py-16 bg-surface">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionSkeleton />
-      </div>
-    </section>
-  );
-}
 
 /** Defer modal mounting until the browser is idle + 2s after hydration */
 function useDeferredMount(delay = 2000) {

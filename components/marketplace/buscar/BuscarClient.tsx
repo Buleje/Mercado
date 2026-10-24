@@ -3,20 +3,19 @@
 /**
  * BuscarClient — Orchestrator de /marketplace/buscar.
  *
- * Layout Amazon-style adaptado a Buleje (minimalismo Holded):
- *
  *   ┌────────────────────────────────────────────────────────────┐
  *   │ SearchHeader (breadcrumb + titulo editorial + stats + sort) │
  *   ├────────────────────────────────────────────────────────────┤
  *   │ [!query] SearchSuggestions (populares + categorias + shops) │
  *   ├──────────────┬─────────────────────────────────────────────┤
- *   │ SearchFilters│ SearchResults (grid 4 cols + pagination)    │
+ *   │ SearchFilters│ SearchResults (grid + pagination)           │
  *   │ (sticky 240) │                                             │
  *   └──────────────┴─────────────────────────────────────────────┘
  *
- * El estado de filtros se sincroniza con la URL via router.push para que
- * el Server Component revalide con datos frescos del backend (no filtrado
- * client-only). Esto cumple la regla "totales en backend".
+ * Cada filtro vive en el link (lib/marketplace/buscar-params.ts): tocar uno
+ * hace router.push y el Server Component rehace la consulta en el backend
+ * (regla "totales en backend"). Si el link cambia por fuera (atrás/adelante,
+ * link compartido, búsqueda nueva) los casilleros siguen al link.
  *
  * Mobile: sidebar se convierte en drawer accesible.
  */
@@ -24,135 +23,119 @@
 import { useState, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { SearchResult } from "@/lib/db/marketplace-search.db";
+import {
+  FILTROS_VACIOS,
+  hayFiltrosActivos,
+  linkBuscar,
+  type FiltrosBuscar,
+  type OrdenBuscar,
+  type ParamsBuscar,
+} from "@/lib/marketplace/buscar-params";
 import SearchHeader from "./SearchHeader";
-import SearchFilters, { type SearchFiltersState } from "./SearchFilters";
+import SearchFilters from "./SearchFilters";
 import SearchResults from "./SearchResults";
 import SearchSuggestions from "./SearchSuggestions";
 import SearchEmptyState from "./SearchEmptyState";
 
-export type SearchSortKey =
-  | "relevance"
-  | "price_asc"
-  | "price_desc"
-  | "rating"
-  | "newest";
+export type SearchSortKey = OrdenBuscar;
 
 interface BuscarClientProps {
-  initialQuery: string;
-  initialSort: SearchSortKey;
-  initialPage: number;
+  /** Lo que dice el link hoy (ya validado en el servidor). */
+  params: ParamsBuscar;
   initialData: SearchResult;
-  initialCategories: string[];
-  initialStores: string[];
-  initialPriceMin?: number;
-  initialPriceMax?: number;
 }
 
-const INITIAL_FILTERS = (
-  categories: string[],
-  stores: string[],
-  priceMin?: number,
-  priceMax?: number,
-): SearchFiltersState => ({
-  categories,
-  stores,
-  priceMin: priceMin ?? null,
-  priceMax: priceMax ?? null,
-  availability: "all",
-  minRating: 0,
-  zone: null,
-  deliveryTime: "any",
-});
+function filtrosDe(p: ParamsBuscar): FiltrosBuscar {
+  return {
+    categories: p.categories,
+    stores: p.stores,
+    priceMin: p.priceMin,
+    priceMax: p.priceMax,
+    availability: p.availability,
+    minRating: p.minRating,
+    zone: p.zone,
+  };
+}
 
-export default function BuscarClient({
-  initialQuery,
-  initialSort,
-  initialPage,
-  initialData,
-  initialCategories,
-  initialStores,
-  initialPriceMin,
-  initialPriceMax,
-}: BuscarClientProps) {
+export default function BuscarClient({ params, initialData }: BuscarClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const query = params.q;
 
-  const [filters, setFilters] = useState<SearchFiltersState>(
-    INITIAL_FILTERS(
-      initialCategories,
-      initialStores,
-      initialPriceMin,
-      initialPriceMax,
-    ),
-  );
-  const [sort, setSort] = useState<SearchSortKey>(initialSort);
+  const [filters, setFilters] = useState<FiltrosBuscar>(() => filtrosDe(params));
+  const [sort, setSort] = useState<OrdenBuscar>(params.sort);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  /**
-   * Sincroniza todos los filtros + sort con la URL para que el Server
-   * Component rehaga la query en el backend.
-   */
-  const pushSearch = useCallback(
-    (
-      nextFilters: SearchFiltersState,
-      nextSort: SearchSortKey,
-      page = 1,
-    ) => {
-      const params = new URLSearchParams();
+  // Links que armamos acá y todavía no volvieron del servidor. Si llega uno
+  // que no está en la lista, vino de afuera: los casilleros siguen al link.
+  const urlKey = linkBuscar(params);
+  const [enviados, setEnviados] = useState<string[]>([]);
+  const [visto, setVisto] = useState(urlKey);
+  if (visto !== urlKey) {
+    setVisto(urlKey);
+    if (!enviados.includes(urlKey)) {
+      setFilters(filtrosDe(params));
+      setSort(params.sort);
+      setEnviados([]);
+    } else if (enviados[enviados.length - 1] === urlKey) {
+      setEnviados([]);
+    }
+  }
 
-      if (initialQuery) params.set("q", initialQuery);
-      if (nextSort !== "relevance") params.set("sort", nextSort);
-      if (page > 1) params.set("page", String(page));
-
-      nextFilters.categories.forEach((c) => params.append("cat", c));
-      nextFilters.stores.forEach((s) => params.append("store", s));
-      if (nextFilters.priceMin != null)
-        params.set("min", String(nextFilters.priceMin));
-      if (nextFilters.priceMax != null)
-        params.set("max", String(nextFilters.priceMax));
-
+  const ir = useCallback(
+    (next: ParamsBuscar) => {
+      const qs = linkBuscar(next);
+      // El mismo link que ya está en pantalla no vuelve como cambio de urlKey:
+      // anotarlo lo dejaría pegado y un «atrás» a él no refrescaría los casilleros.
+      if (qs !== urlKey) setEnviados((e) => [...e, qs]);
       startTransition(() => {
-        router.push(`/marketplace/buscar?${params.toString()}`);
+        router.push(`/marketplace/buscar?${qs}`);
       });
     },
-    [initialQuery, router],
+    [router, urlKey],
   );
 
   const handleFiltersChange = useCallback(
-    (next: SearchFiltersState) => {
+    (next: FiltrosBuscar) => {
       setFilters(next);
-      pushSearch(next, sort);
+      ir({ ...next, q: query, sort, page: 1 });
     },
-    [sort, pushSearch],
+    [ir, query, sort],
   );
 
   const handleSortChange = useCallback(
-    (next: SearchSortKey) => {
+    (next: OrdenBuscar) => {
       setSort(next);
-      pushSearch(filters, next);
+      ir({ ...filters, q: query, sort: next, page: 1 });
     },
-    [filters, pushSearch],
+    [ir, query, filters],
   );
 
   const handleReset = useCallback(() => {
-    const clean = INITIAL_FILTERS([], [], undefined, undefined);
-    setFilters(clean);
+    setFilters(FILTROS_VACIOS);
     setSort("relevance");
-    const params = new URLSearchParams();
-    if (initialQuery) params.set("q", initialQuery);
-    startTransition(() => {
-      router.push(`/marketplace/buscar?${params.toString()}`);
-    });
-  }, [initialQuery, router]);
+    ir({ ...FILTROS_VACIOS, q: query, sort: "relevance", page: 1 });
+  }, [ir, query]);
 
-  const hasQuery = initialQuery.length > 0;
+  const hasQuery = query.length > 0;
   const hasResults = initialData.products.length > 0;
+  // Con filtros (o una página fuera de rango) y 0 resultados, el panel de
+  // filtros queda a la vista: sin él no había cómo deshacer el filtro.
+  const conPanel =
+    hasQuery && (hasResults || hayFiltrosActivos(filtrosDe(params)) || params.page > 1);
+
+  const filtrosProps = {
+    storesFacet: initialData.storesFacet,
+    categoriesFacet: initialData.categoriesFacet,
+    zonesFacet: initialData.zonesFacet,
+    filters,
+  };
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       {/* Header: breadcrumb + titulo + stats + sort */}
       <SearchHeader
-        query={initialQuery}
+        query={query}
         total={initialData.total}
         storeCount={initialData.storesFacet.length}
         sort={sort}
@@ -167,8 +150,8 @@ export default function BuscarClient({
         {!hasQuery ? (
           /* Sin query: sugerencias editoriales */
           <SearchSuggestions />
-        ) : hasResults ? (
-          /* Con query + resultados: layout 2 columnas */
+        ) : conPanel ? (
+          /* Con query + resultados (o filtros activos): layout 2 columnas */
           <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 lg:gap-8 mt-6">
             {/* Sidebar desktop — MK-03: sticky para que no se pierdan al scroll */}
             <aside
@@ -176,9 +159,7 @@ export default function BuscarClient({
               aria-label="Filtros de busqueda"
             >
               <SearchFilters
-                storesFacet={initialData.storesFacet}
-                categoriesFacet={initialData.categoriesFacet}
-                filters={filters}
+                {...filtrosProps}
                 onChange={handleFiltersChange}
                 onReset={handleReset}
               />
@@ -186,26 +167,40 @@ export default function BuscarClient({
 
             {/* Grid de resultados */}
             <div className="min-w-0">
-              <SearchResults
-                products={initialData.products}
-                total={initialData.total}
-                page={initialPage}
-                limit={24}
-                query={initialQuery}
-                isPending={isPending}
-              />
+              {hasResults ? (
+                <SearchResults
+                  products={initialData.products}
+                  total={initialData.total}
+                  page={params.page}
+                  limit={24}
+                  params={params}
+                  isPending={isPending}
+                />
+              ) : (
+                <div className="flex flex-col items-start gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6">
+                  <p className="text-base font-semibold text-[var(--text-primary)]">
+                    Nada coincide con estos filtros.
+                  </p>
+                  <button
+                    onClick={handleReset}
+                    className="rounded-full border-2 border-[var(--rule-base)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ) : (
           /* Con query + sin resultados: empty state */
           <div className="mt-6">
-            <SearchEmptyState query={initialQuery} />
+            <SearchEmptyState query={query} />
           </div>
         )}
       </div>
 
       {/* Mobile drawer de filtros */}
-      {mobileFiltersOpen && hasQuery && hasResults && (
+      {mobileFiltersOpen && conPanel && (
         <div
           className="fixed inset-0 z-50 lg:hidden"
           role="dialog"
@@ -248,9 +243,7 @@ export default function BuscarClient({
             </div>
 
             <SearchFilters
-              storesFacet={initialData.storesFacet}
-              categoriesFacet={initialData.categoriesFacet}
-              filters={filters}
+              {...filtrosProps}
               onChange={(next) => {
                 handleFiltersChange(next);
                 setMobileFiltersOpen(false);

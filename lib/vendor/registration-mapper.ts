@@ -7,6 +7,10 @@ import type {
   VendorPlan,
 } from "@/lib/generated/prisma/client";
 import type { VendorRegistrationPayload } from "@/lib/validators/vendor-registration";
+import {
+  scoreApplication,
+  type ApplicationScore,
+} from "@/lib/marketplace/application-score";
 
 /**
  * Mapea los enum values del wizard (Spanish labels) a los enums de Prisma.
@@ -109,6 +113,8 @@ export interface SuperadminApplicationView {
   reviewedAt?: string;
   rejectReason?: string;
   requestedInfo?: string;
+  /** Triage de revisión (completitud + riesgo). */
+  score: ApplicationScore;
 }
 
 const STATUS_UI_MAP: Record<
@@ -176,5 +182,17 @@ export function toSuperadminView(
       row.status === "info_requested" && row.infoRequestNote
         ? row.infoRequestNote
         : undefined,
+    score: scoreApplication({
+      ruc: row.ruc,
+      contactName: row.contactName,
+      contactDni: row.contactDni,
+      contactPhone: row.contactPhone,
+      contactEmail: row.contactEmail,
+      rucDocumentUrl: row.rucDocumentUrl,
+      storefrontPhotoUrl: row.storefrontPhotoUrl,
+      termsAcceptedAt: row.termsAcceptedAt,
+      schedule: row.schedule,
+      deliveryZones: row.deliveryZones,
+    }),
   };
 }

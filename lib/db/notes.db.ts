@@ -13,6 +13,8 @@ interface CreateData {
   content: string;
   color: string;
   pinned: boolean;
+  /** Día del calendario de Administración (ADR-501), `@db.Date` a medianoche UTC; null = sin día. */
+  fecha?: Date | null;
 }
 
 interface UpdateData {
@@ -20,12 +22,26 @@ interface UpdateData {
   content?: string;
   color?: string;
   pinned?: boolean;
+  /** undefined = no tocar; null = quitarle el día. */
+  fecha?: Date | null;
 }
 
+/**
+ * Prefijo de las notas «de sistema»: singletons que otro módulo guarda como
+ * nota (el presupuesto mensual es `__PRESUPUESTO_MENSUAL__`). No son apuntes
+ * de nadie: la lista de Notas no las muestra.
+ */
+export const PREFIJO_NOTA_DE_SISTEMA = "__";
+
 export const NotesDB = {
+  /**
+   * Las notas del equipo (Equipo › Notas), sin las de sistema. Sin este filtro,
+   * guardar el presupuesto del mes lo hacía aparecer como una nota más, con su
+   * JSON adentro, y borrarla desde ahí borraba el presupuesto.
+   */
   async list(tenantId: string) {
     return prisma.note.findMany({
-      where: { tenantId },
+      where: { tenantId, NOT: { title: { startsWith: PREFIJO_NOTA_DE_SISTEMA } } },
       orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
     });
   },
@@ -43,6 +59,23 @@ export const NotesDB = {
     });
     if (!existing) return null;
     return prisma.note.update({ where: { id }, data });
+  },
+
+  /**
+   * Notas con día entre `desde` y `hasta` (ambos `YYYY-MM-DD`, incluidos) para el
+   * calendario de Administración (ADR-501). Sin las de sistema.
+   */
+  async delRango(tenantId: string, desde: string, hasta: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.note.findMany({
+      where: {
+        tenantId,
+        fecha: { gte: new Date(`${desde}T00:00:00Z`), lte: new Date(`${hasta}T00:00:00Z`) },
+        NOT: { title: { startsWith: PREFIJO_NOTA_DE_SISTEMA } },
+      },
+      select: { id: true, title: true, content: true, color: true, fecha: true },
+      orderBy: [{ fecha: "asc" }, { pinned: "desc" }, { updatedAt: "desc" }],
+    });
   },
 
   async deleteForTenant(tenantId: string, id: string): Promise<boolean> {

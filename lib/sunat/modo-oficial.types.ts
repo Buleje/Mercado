@@ -31,6 +31,20 @@ export interface SunatModoOficialState {
   ambiente: "beta" | "produccion";
   /** Lista de bloqueos pendientes para poder activar. */
   bloqueos: SunatActivationBlocker[];
+  /**
+   * Quién emite y con qué series (sin el token): lo que la ventana de emisión
+   * muestra antes de confirmar (auditoría de comprobantes F03, 17-10). `null`
+   * si el negocio todavía no cargó sus datos fiscales.
+   */
+  emisor?: SunatEmisor | null;
+}
+
+/** El emisor tal como sale impreso en el comprobante. Nunca lleva el token. */
+export interface SunatEmisor {
+  ruc: string;
+  razonSocial: string;
+  serieBoleta: string;
+  serieFactura: string;
 }
 
 /** Payload del toggle (PUT superadmin). */

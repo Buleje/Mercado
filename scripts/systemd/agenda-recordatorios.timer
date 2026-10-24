@@ -1,0 +1,9 @@
+[Unit]
+Description=Buleje: recordatorios de la agenda cada 5 min
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=false
+
+[Install]
+WantedBy=timers.target

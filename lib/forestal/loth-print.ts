@@ -3,22 +3,48 @@
 /**
  * loth-print.ts — Export cliente del Libro LO-TH:
  *  - downloadLothExcel(): descarga el .xlsx del endpoint server (exceljs).
- *  - printLothLibro(): abre una ventana con el libro en formato oficial SERFOR
- *    e invoca print() (el usuario elige "Guardar como PDF").
+ *  - printLothLibro(): abre una ventana con el libro ENTERO en formato oficial
+ *    SERFOR y un botón «Imprimir / Guardar como PDF». No se imprime sola: como
+ *    en los reportes del Libro CTP (`openCtpReport`), el libro se ve primero y
+ *    la persona decide.
  * Client-safe: sin imports de lib/db ni prisma.
  */
-import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
+import {
+  LOTH_SECTIONS,
+  PLAZO_REGISTRO_DIAS,
+  diasDeRegistro,
+  estaFueraDePlazo,
+  type LothSection,
+} from "@/lib/forestal/loth-constants";
+import { avisoLibroIncompleto, leerLibroEntero, type LibroEntero } from "@/lib/forestal/loth-libro-entero";
+import {
+  encabezadoDelPermiso,
+  queryDelPermiso,
+  type FiltroPermiso,
+  type PlanParaEncabezado,
+} from "@/lib/forestal/loth-filtro-permiso";
 
-const PLAZO_DIAS = 15;
+/** El nombre que manda el servidor (`Content-Disposition`); si no viene, el de siempre. */
+function nombreDelAdjunto(res: Response, porDefecto: string): string {
+  const cd = res.headers.get("Content-Disposition") ?? "";
+  const m = /filename="([^"]+)"/.exec(cd);
+  return m?.[1] ?? porDefecto;
+}
 
-export async function downloadLothExcel(): Promise<void> {
-  const res = await fetch("/api/admin/forestal/loth/export?format=xlsx", { credentials: "include" });
+/**
+ * Descarga el .xlsx del libro. Con `permiso`, sólo las líneas de ese permiso
+ * (el servidor filtra y lo escribe en la Carátula y en cada hoja).
+ */
+export async function downloadLothExcel(opts: { permiso?: FiltroPermiso | null } = {}): Promise<void> {
+  const q = queryDelPermiso(opts.permiso ?? null);
+  const res = await fetch(`/api/admin/forestal/loth/export?format=xlsx${q ? `&${q}` : ""}`, { credentials: "include" });
+  if (res.status === 404) throw new Error("Ese permiso ya no existe: elige otro o «Todos los permisos».");
   if (!res.ok) throw new Error(`Export falló (HTTP ${res.status})`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `libro-loth-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.download = nombreDelAdjunto(res, `libro-loth-${new Date().toISOString().slice(0, 10)}.xlsx`);
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -36,12 +62,11 @@ const fdate = (v: unknown) => {
   try { return new Date(v as string).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }); }
   catch { return "—"; }
 };
-function lateDays(e: AnyEntry): number {
-  const a = e.entryDate ? new Date(e.entryDate as string).getTime() : 0;
-  const r = e.createdAt ? new Date(e.createdAt as string).getTime() : 0;
-  if (!a || !r) return 0;
-  return Math.max(0, Math.floor((r - a) / 86_400_000));
-}
+/** Días de registro / fuera de plazo — predicado ÚNICO (loth-constants). */
+const lateDays = (e: AnyEntry): number =>
+  diasDeRegistro(e.entryDate as string | null, e.createdAt as string | null) ?? 0;
+const isLate = (e: AnyEntry): boolean =>
+  estaFueraDePlazo(e.entryDate as string | null, e.createdAt as string | null);
 
 const SECTION_TITLE: Record<LothSection, string> = {
   tala: "1 · Tala (volteo)",
@@ -55,6 +80,25 @@ const SECTION_TITLE: Record<LothSection, string> = {
 const unit = (u: unknown) => (u === "m3" ? "m³" : u === "kg" ? "Kg" : u === "unidad" ? "Unidad" : esc(u));
 const sp = (e: AnyEntry) =>
   `${esc(e.speciesCommon ?? "—")}${e.speciesScientific ? `<br><i style="color:#6b7280">${esc(e.speciesScientific)}</i>` : ""}${e.cites ? ` <b style="color:#b91c1c">CITES</b>` : ""}`;
+
+/**
+ * El despacho de trozas sólo guarda código y GTF: especie y medidas son las de
+ * SU trozado, que la lista ya pega en `trozado` (`conTrozado`, 08-10). Lo
+ * propio de la línea manda; si falta, lo del trozado.
+ */
+const delTrozado = (e: AnyEntry): AnyEntry | null =>
+  e.trozado && typeof e.trozado === "object" ? (e.trozado as AnyEntry) : null;
+const propioOTrozado = (e: AnyEntry, k: string): unknown => {
+  const v = e[k];
+  return v != null && v !== "" ? v : (delTrozado(e)?.[k] ?? null);
+};
+/** La línea con la especie y las medidas de su trozado, para las celdas de siempre. */
+const conMedidas = (e: AnyEntry): AnyEntry => ({
+  ...e,
+  speciesCommon: propioOTrozado(e, "speciesCommon"),
+  speciesScientific: propioOTrozado(e, "speciesScientific"),
+  cites: Boolean(e.cites) || Boolean(delTrozado(e)?.cites),
+});
 
 type PCol = { h: string; align?: "right"; cell: (e: AnyEntry) => string };
 const SECTION_COLS: Record<LothSection, PCol[]> = {
@@ -78,6 +122,11 @@ const SECTION_COLS: Record<LothSection, PCol[]> = {
     { h: "Cód. troza", cell: (e) => `<b>${esc(e.trozaCode ?? "—")}</b>` },
     { h: "Cód. despacho", cell: (e) => esc(e.despachoCode ?? "—") },
     { h: "N° GTF", cell: (e) => `<b>${esc(e.gtfNumber ?? "—")}</b>` },
+    { h: "Especie", cell: (e) => sp(conMedidas(e)) },
+    { h: "Ø may", align: "right", cell: (e) => n(propioOTrozado(e, "diamMayorM"), 2) },
+    { h: "Ø men", align: "right", cell: (e) => n(propioOTrozado(e, "diamMenorM"), 2) },
+    { h: "Long.", align: "right", cell: (e) => n(propioOTrozado(e, "lengthM"), 2) },
+    { h: "Vol. m³", align: "right", cell: (e) => `<b>${n(propioOTrozado(e, "volumeM3"))}</b>` },
   ],
   consumo_troza: [
     { h: "Cód. troza", cell: (e) => `<b>${esc(e.trozaCode ?? "—")}</b>` },
@@ -115,7 +164,7 @@ function sectionTable(section: LothSection, entries: AnyEntry[]): string {
     ? `<tr><td colspan="${cols.length + 4}" class="empty">Sin registros.</td></tr>`
     : rows.map((e) => {
         const annulled = e.status === "anulado";
-        const late = lateDays(e) > PLAZO_DIAS;
+        const late = isLate(e);
         const cls = annulled ? ' class="annul"' : late ? ' class="late"' : "";
         const obs = [
           e.discarded ? "descartado" : "",
@@ -150,24 +199,86 @@ function caratulaBlock(c: AnyCaratula): string {
     .join("");
   return `<div class="caratula">
     <div class="cara-title">${titular}</div>
-    <div class="cara-grid">${cells || '<div class="muted">Carátula sin configurar — completá los datos del titular en el módulo.</div>'}</div>
+    <div class="cara-grid">${cells || '<div class="muted">Carátula sin configurar — completa los datos del titular en el módulo.</div>'}</div>
   </div>`;
 }
 
-/** Abre el Libro LO-TH completo en una ventana e invoca print(). */
-export async function printLothLibro(): Promise<void> {
-  const [entriesRes, caratulaRes] = await Promise.all([
-    fetch("/api/admin/forestal/loth?limit=500&includeAnnulled=1", { credentials: "include" }),
-    fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
-  ]);
-  if (!entriesRes.ok) throw new Error(`No se pudo cargar el libro (HTTP ${entriesRes.status})`);
-  const entries: AnyEntry[] = (await entriesRes.json()).entries ?? [];
-  const caratula: AnyCaratula = caratulaRes.ok ? (await caratulaRes.json()).active ?? null : null;
+/** Una página del libro, por la misma ruta que usa la pantalla (con su filtro de permiso). */
+function lectorDelLibro(permiso: FiltroPermiso | null) {
+  const q = queryDelPermiso(permiso);
+  return async (offset: number, limit: number): Promise<{ entries: AnyEntry[]; total: number }> => {
+    const r = await fetch(`/api/admin/forestal/loth?limit=${limit}&offset=${offset}&includeAnnulled=1${q ? `&${q}` : ""}`, {
+      credentials: "include",
+    });
+    if (r.status === 404 && permiso) throw new Error("Ese permiso ya no existe: elige otro o «Todos los permisos».");
+    if (!r.ok) throw new Error(`No se pudo cargar el libro (HTTP ${r.status})`);
+    const j = (await r.json()) as { entries?: AnyEntry[]; total?: number };
+    const entries = j.entries ?? [];
+    return { entries, total: Number(j.total ?? entries.length) };
+  };
+}
+
+/** «De qué permiso es este libro», arriba de la carátula. */
+function permisoBlock(filas: [string, string][]): string {
+  return `<div class="permiso" data-libro-permiso>${filas
+    .map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`)
+    .join("")}</div>`;
+}
+
+/**
+ * Abre el Libro LO-TH ENTERO en una ventana, listo para imprimir.
+ *
+ * Antes pedía `limit=500` y un libro de 650 líneas se imprimía con 500 — el
+ * papel que se declara ante SERFOR salía incompleto sin decirlo. Ahora lee
+ * todas las páginas; si alguna vez choca con el tope de seguridad, el impreso
+ * lo dice arriba («Se muestran N de M»).
+ *
+ * La ventana se abre en el MISMO clic, antes de esperar al servidor: después de
+ * un `await` el navegador la trata como pop-up y la bloquea (ADR-436). Por eso
+ * esto se llama sin `await` previo en el manejador del botón.
+ */
+export async function printLothLibro(
+  opts: {
+    ventana?: Window | null;
+    /** Sólo las líneas de este permiso; `null`/ausente = el libro entero. */
+    permiso?: FiltroPermiso | null;
+    /** Los datos del plan elegido, para decir arriba de qué permiso es. */
+    plan?: PlanParaEncabezado | null;
+  } = {},
+): Promise<void> {
+  const permiso = opts.permiso ?? null;
+  const encabezado = encabezadoDelPermiso(permiso, opts.plan ?? null);
+  const w = opts.ventana ?? window.open("", "_blank", "width=1100,height=800");
+  if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permite pop-ups para este sitio.");
+  w.document.write(
+    '<!doctype html><meta charset="utf-8"><title>Generando el libro…</title><p style="font:16px system-ui;padding:24px">Generando el libro…</p>',
+  );
+
+  let libro: LibroEntero<AnyEntry>;
+  let caratula: AnyCaratula;
+  try {
+    const [l, caratulaRes] = await Promise.all([
+      leerLibroEntero<AnyEntry>(lectorDelLibro(permiso)),
+      fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
+    ]);
+    libro = l;
+    caratula = caratulaRes.ok ? (await caratulaRes.json()).active ?? null : null;
+  } catch (err) {
+    w.close();
+    throw err;
+  }
+  const entries = libro.entries;
+  const incompleto = avisoLibroIncompleto({ mostradas: entries.length, total: libro.total });
   const now = new Date().toLocaleString("es-PE", { dateStyle: "long", timeStyle: "short" });
 
   const sections = LOTH_SECTIONS.map((s) => sectionTable(s, entries)).join("");
+  /* Sin script en el documento (defensa en profundidad, igual que
+     `openCtpReport`): cada campo pasa por `esc()`, y con esta CSP un olvido no
+     se vuelve XSS con la sesión del admin. El botón se ata desde afuera. */
+  const csp = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: https:; font-src data:";
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
-  <title>Libro LO-TH${caratula?.titularName ? ` — ${esc(caratula.titularName)}` : ""}</title>
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
+  <title>Libro LO-TH${encabezado.delLibroEntero ? "" : ` — ${esc(encabezado.titulo)}`}${caratula?.titularName ? ` — ${esc(caratula.titularName)}` : ""}</title>
   <style>
     @page { size: A4 landscape; margin: 12mm; }
     * { box-sizing: border-box; }
@@ -195,12 +306,21 @@ export async function printLothLibro(): Promise<void> {
     .foot { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; page-break-inside: avoid; }
     .sign { border-top: 1px solid #111827; padding-top: 4px; text-align: center; font-size: 10px; }
     .legal { margin-top: 16px; font-size: 9px; color: #6b7280; border-top: 1px dashed #d1d5db; padding-top: 6px; }
-    @media print { .noprint { display: none; } }
+    .permiso { display: flex; flex-wrap: wrap; gap: 4px 20px; border: 2px solid #14532d; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 11px; }
+    .permiso span { color: #6b7280; margin-right: 6px; }
+    .permiso b { color: #111827; }
+    .incompleto { border: 2px solid #b91c1c; background: #fef2f2; color: #991b1b; font-weight: 700; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; }
+    .print-bar { position: sticky; top: 0; z-index: 10; display: flex; justify-content: flex-end; gap: 8px; padding: 8px 0; margin: 0 0 6px; background: #fff; }
+    .print-bar button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 16px; font: 700 13px system-ui, sans-serif; background: #14532d; color: #fff; }
+    @media print { .noprint, .print-bar { display: none; } }
   </style></head><body>
+    <div class="print-bar"><button type="button" id="loth-print">Imprimir / Guardar como PDF</button></div>
     <div class="doc-head">
-      <h1>Libro de Operaciones — Títulos Habilitantes</h1>
+      <h1>Libro de Operaciones — Títulos Habilitantes${encabezado.delLibroEntero ? "" : ` · ${esc(encabezado.titulo)}`}</h1>
       <div class="sub">RDE N° 264-2019-MINAGRI-SERFOR-DE · Generado ${esc(now)} · Sistema Buleje</div>
     </div>
+    ${incompleto ? `<div class="incompleto" data-libro-incompleto>${esc(incompleto)}</div>` : ""}
+    ${permisoBlock(encabezado.filas)}
     ${caratulaBlock(caratula)}
     ${sections}
     <div class="foot">
@@ -211,14 +331,13 @@ export async function printLothLibro(): Promise<void> {
     <div class="legal">
       Declaro bajo juramento que la información registrada en el presente libro es veraz y corresponde a las
       operaciones efectivamente realizadas. Las líneas tachadas corresponden a subsanaciones (no se eliminan registros).
-      Las filas resaltadas en ámbar indican registro fuera del plazo de ${PLAZO_DIAS} días.
+      Las filas resaltadas en ámbar indican registro fuera del plazo de ${PLAZO_REGISTRO_DIAS} días.
     </div>
-    <script>setTimeout(function(){window.print();}, 350);</script>
   </body></html>`;
 
-  const w = window.open("", "_blank", "width=1100,height=800");
-  if (!w) throw new Error("El navegador bloqueó la ventana de impresión. Permití pop-ups para este sitio.");
+  w.document.open(); // reemplaza el «Generando el libro…»
   w.document.write(html);
   w.document.close();
+  w.document.getElementById("loth-print")?.addEventListener("click", () => w.print());
   w.focus();
 }

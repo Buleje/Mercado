@@ -6,17 +6,29 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { validarPlazoNuevo } from "@/lib/fiados/plazo";
 
-const PatchFiadoSchema = z.object({
-  status: z.enum(["ACTIVO", "PAGADO", "VENCIDO", "CANCELADO"]),
-});
+const PatchFiadoSchema = z
+  .object({
+    status: z.enum(["ACTIVO", "PAGADO", "VENCIDO", "CANCELADO"]).optional(),
+    // Habilita el compromiso de pago (firma digital) de FiadoModals.tsx, que
+    // manda sólo `descripcion` — el schema viejo lo rechazaba siempre porque
+    // exigía `status` (audit-verificado 2026-08-26).
+    descripcion: z.string().max(1000).optional(),
+    // Plazo para un fiado que no lo tiene (auditoría 15-10, M33): el día de
+    // Lima, «2026-10-24». Se guarda como medianoche UTC, igual que el alta.
+    fechaVence: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida").optional(),
+  })
+  .refine((d) => d.status !== undefined || d.descripcion !== undefined || d.fechaVence !== undefined, {
+    message: "Se requiere status, descripcion o fechaVence",
+  });
 
 // GET /api/fiados/[id] — fiado detail with cuotas
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -33,14 +45,14 @@ export async function GET(
   }
 }
 
-// PATCH /api/fiados/[id] — update status
+// PATCH /api/fiados/[id] — descripción (admin/cajero) o estado (sólo admin)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "fiados-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -54,19 +66,73 @@ export async function PATCH(
       );
     }
 
+    // Cambiar el estado (PAGADO/CANCELADO) es perdonar la deuda sin plata de
+    // por medio: sólo admin y su nivel (dueño/encargado pasan solos en
+    // requireAdmin). La cajera sólo anota la descripción (compromiso firmado).
+    if (parsed.data.status !== undefined && auth.role === "cajero") {
+      return NextResponse.json(
+        // `error` legible: la pantalla de Fiados muestra `error` tal cual.
+        { error: "Solo el administrador cambia el estado de un fiado", code: "forbidden" },
+        { status: 403 },
+      );
+    }
+
     const existing = await FiadosDB.getById(auth.tenantId, id);
     if (!existing || existing.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Fiado no encontrado" }, { status: 404 });
     }
 
-    const updated = await FiadosDB.updateStatus(auth.tenantId, id, parsed.data.status);
-    if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
+    // El plazo sólo se pone si no había (mover uno existente es otra cosa).
+    if (parsed.data.fechaVence !== undefined) {
+      if (existing.fechaVence) {
+        return NextResponse.json({ error: "Este fiado ya tiene fecha de vencimiento", code: "ya_tiene_fecha" }, { status: 409 });
+      }
+      if (existing.status !== "ACTIVO" && existing.status !== "VENCIDO") {
+        return NextResponse.json({ error: "Sólo un fiado abierto lleva fecha de vencimiento" }, { status: 409 });
+      }
+      const invalida = validarPlazoNuevo(parsed.data.fechaVence);
+      if (invalida) return NextResponse.json({ error: invalida }, { status: 400 });
+      // Plazo + cerrar el fiado en el mismo pedido se contradicen.
+      if (parsed.data.status === "PAGADO" || parsed.data.status === "CANCELADO") {
+        return NextResponse.json({ error: "Sólo un fiado abierto lleva fecha de vencimiento" }, { status: 409 });
+      }
+    }
 
-    logActivity(
-      "Actualizar", "fiado",
-      `Fiado ${id.slice(-6)} status -> ${parsed.data.status}`,
-      id, auth.username,
-    ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
+    let updated = existing;
+    // La fecha va PRIMERO: es la única escritura que puede perder una carrera
+    // (409). Antes iba al final y, con `status` en el mismo pedido, el estado
+    // quedaba guardado aunque la respuesta dijera 409 (security 17-10).
+    if (parsed.data.fechaVence !== undefined) {
+      const r = await FiadosDB.ponerFechaVence(auth.tenantId, id, new Date(`${parsed.data.fechaVence}T00:00:00.000Z`));
+      // null = alguien le puso fecha entre la lectura y ahora (o ya no está abierto).
+      if (!r) return NextResponse.json({ error: "Este fiado ya tiene fecha de vencimiento", code: "ya_tiene_fecha" }, { status: 409 });
+      updated = r;
+      logActivity(
+        "Actualizar", "fiado",
+        `Fiado ${id.slice(-6)} vence el ${parsed.data.fechaVence}`,
+        id, auth.username, undefined, auth.tenantId,
+      ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
+    }
+    if (parsed.data.status !== undefined) {
+      const r = await FiadosDB.updateStatus(auth.tenantId, id, parsed.data.status);
+      if (!r) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
+      updated = r;
+      logActivity(
+        "Actualizar", "fiado",
+        `Fiado ${id.slice(-6)} status -> ${parsed.data.status}`,
+        id, auth.username, undefined, auth.tenantId,
+      ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
+    }
+    if (parsed.data.descripcion !== undefined) {
+      const r = await FiadosDB.updateDescripcion(auth.tenantId, id, parsed.data.descripcion);
+      if (!r) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
+      updated = r;
+      logActivity(
+        "Actualizar", "fiado",
+        `Fiado ${id.slice(-6)} descripcion actualizada`,
+        id, auth.username, undefined, auth.tenantId,
+      ).catch((err) => logger.error("[fiados] logActivity failed", { error: String(err) }));
+    }
 
     return NextResponse.json(updated);
   } catch (e) {

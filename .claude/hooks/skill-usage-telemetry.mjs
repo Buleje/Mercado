@@ -9,7 +9,7 @@
  *
  * Usos:
  *   - pre-compact-skill-suggester lo lee para ranking
- *   - dreaming lo usa para decidir qué archivar
+ *   - revisar a mano qué skills no se usan (para archivarlas)
  *   - agent-report dashboard
  *
  * Non-blocking siempre.

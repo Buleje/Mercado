@@ -1,95 +1,127 @@
 "use client";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { useState, useMemo } from "react";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Star, Download, Eye,
   Coins, HelpCircle, TrendingDown,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
-import type { Product as BaseProduct } from "@/types/erp";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
+import type { BCGProduct } from "@/app/api/analytics/bcg/route";
+import { formatNumber } from "@/lib/format";
 
 /* ── Types ── */
 type Quadrant = "estrella" | "vaca" | "interrogante" | "perro";
-type Product = Omit<BaseProduct, "id"> & { id: number; quadrant: Quadrant; revenue: number; growth: number; marketShare: number; units: number };
+/** `productId` renombrado a `id` para calzar con el resto del componente
+ *  (celdas, detalle, exportar) que ya hablaba de `id` antes de conectarse
+ *  a datos reales. */
+type Product = Omit<BCGProduct, "productId"> & { id: number };
 
 /* ── Config ── */
 const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: string; bg: string; desc: string }> = {
   estrella: { label: "Estrellas", Icon: Star, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
-  vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
-  interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
+  vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
+  interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
   perro: { label: "Perros", Icon: TrendingDown, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-canvas)]/20 border-[var(--rule-base)]", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
 };
 
-/* ── Seed Data ── */
-const PRODUCTS: Product[] = [];
-
-const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
-
-// Pre-computed dot positions (module-level to avoid impure calls during render)
-const DOT_POSITIONS = new Map<number, { x: number; y: number }>();
-PRODUCTS.forEach(p => {
-  const x = p.quadrant === "estrella" || p.quadrant === "vaca" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
-  const y = p.quadrant === "estrella" || p.quadrant === "interrogante" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
-  DOT_POSITIONS.set(p.id, { x, y });
-});
+const fmt = (n: number) => `S/ ${formatNumber(n, { min: 2 })}`;
 
 export default function BCGMatrixTab() {
+  const [PRODUCTS, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedQ, setSelectedQ] = useState<Quadrant | "todas">("todas");
   const [detail, setDetail] = useState<Product | null>(null);
+  const detailModalRef = useRef<HTMLDivElement>(null);
+  const detailTitleId = useId();
+  const cerrarDetail = useCallback(() => setDetail(null), []);
+  useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detail });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventanaDetalle = useVentanaDeModal(!!detail, {
+    ref: detailModalRef,
+    aplicarTranslate: true,
+    claveMemoria: "bcg-detalle-producto",
+  });
+
+  useEffect(() => {
+    fetch("/api/analytics/bcg", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: BCGProduct[]) => setProducts(d.map((p) => ({ ...p, id: p.productId }))))
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Posición del punto en el mapa: determinística por producto (no `Math.random`
+  // en cada render, si no los puntos "bailan" cada vez que el componente
+  // vuelve a pintar), pero recalculada cuando llegan datos nuevos.
+  const DOT_POSITIONS = useMemo(() => {
+    const map = new Map<number, { x: number; y: number }>();
+    let seed = 0;
+    const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    PRODUCTS.forEach(p => {
+      const x = p.quadrant === "estrella" || p.quadrant === "vaca" ? 10 + rand() * 35 : 55 + rand() * 35;
+      const y = p.quadrant === "estrella" || p.quadrant === "interrogante" ? 10 + rand() * 35 : 55 + rand() * 35;
+      map.set(p.id, { x, y });
+    });
+    return map;
+  }, [PRODUCTS]);
 
   const grouped = useMemo(() => {
     const g: Record<Quadrant, Product[]> = { estrella: [], vaca: [], interrogante: [], perro: [] };
     PRODUCTS.forEach(p => g[p.quadrant].push(p));
     return g;
-  }, []);
+  }, [PRODUCTS]);
 
   const filtered = selectedQ === "todas" ? PRODUCTS : PRODUCTS.filter(p => p.quadrant === selectedQ);
   const totalRevenue = PRODUCTS.reduce((s, p) => s + p.revenue, 0);
 
+  if (loading) return <LoadingState />;
+
+  if (PRODUCTS.length === 0) {
+    return (
+      <VacioMetricas
+        icono={Star}
+        titulo="Todavía no hay ventas suficientes para la matriz"
+        descripcion="Compara los últimos 30 días contra los 30 anteriores: hacen falta ventas en los dos."
+      />
+    );
+  }
+
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <Star className="h-6 w-6 text-[var(--data-warning-500)]" /> Matriz BCG
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
-        </div>
-        <button onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
-          <Download className="h-4 w-4" /> Exportar
-        </button>
-      </div>
-
-      {/* Quadrant summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      {/* Sin título propio: el panel de Métricas dice «Matriz BCG» y su ⓘ
+          explica los cuadrantes. Los cuatro cuadrantes filtran la tabla. */}
+      <div className="flex flex-wrap items-stretch gap-2">
         {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
           const c = Q_CONFIG[q];
           const items = grouped[q];
           const rev = items.reduce((s, p) => s + p.revenue, 0);
           return (
-            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-xl border-2 p-3 sm:p-5 text-left transition-all hover:shadow-[var(--shadow-sm)]", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
-              </div>
-              <p className="text-2xl sm:text-3xl font-mono font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{items.length}</p>
-              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">{fmt(rev)} ({totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(0) : 0}%)</p>
+            <button key={q} type="button" aria-pressed={selectedQ === q} title={c.desc} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("min-h-12 min-w-0 flex-1 basis-40 rounded-xl border px-3 py-2 text-left transition-colors", c.bg, selectedQ === q && "ring-2 ring-[var(--accent)]")}>
+              <span className={cn("block text-sm font-extrabold", c.color)}>{c.label} · {items.length}</span>
+              <span className="block text-sm text-[var(--text-secondary)]">{fmt(rev)} ({totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(0) : 0} %)</span>
             </button>
           );
         })}
+        <button type="button" onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]">
+          <Download className="h-4 w-4" /> Exportar
+        </button>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
       {/* Visual Matrix */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-6">
-        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Mapa Visual BCG</CardTitle>
-        <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
+        <div className="relative w-full aspect-square max-w-[420px] mx-auto" style={{ minHeight: 320 }}>
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
-            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
+            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/10 dark:bg-primary/15 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]/40">Estrellas</span>
             </div>
-            <div className="border-b-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
+            <div className="border-b-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/10 dark:bg-primary/15 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]/40">Interrogantes</span>
             </div>
             <div className="border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
@@ -100,8 +132,8 @@ export default function BCGMatrixTab() {
             </div>
           </div>
           {/* Axis labels */}
-          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs font-semibold text-[var(--text-tertiary)]">Participacion (%)</div>
-          <div className="absolute -left-10 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-semibold text-[var(--text-tertiary)] whitespace-nowrap">Crecimiento (%)</div>
+          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-sm font-semibold text-[var(--text-secondary)]">Participación (%)</div>
+          <div className="absolute -left-10 top-1/2 -translate-y-1/2 -rotate-90 text-sm font-semibold text-[var(--text-secondary)] whitespace-nowrap">Crecimiento (%)</div>
           {/* Product dots */}
           {PRODUCTS.map(p => {
             const pos = DOT_POSITIONS.get(p.id) ?? { x: 50, y: 50 };
@@ -109,7 +141,7 @@ export default function BCGMatrixTab() {
             const y = pos.y;
             const size = Math.max(24, Math.min(48, (p.revenue / totalRevenue) * 400));
             return (
-              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[length:var(--ts-2xs)] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-[var(--accent-soft)] text-white" : p.quadrant === "vaca" ? "bg-[var(--data-warning-500)] text-white" : p.quadrant === "interrogante" ? "bg-[var(--accent-soft)] text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
+              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[length:var(--ts-2xs)] font-bold hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-primary/10 text-white" : p.quadrant === "vaca" ? "bg-[var(--data-warning-500)] text-white" : p.quadrant === "interrogante" ? "bg-primary/10 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
                 {p.name.slice(0, 2)}
               </button>
             );
@@ -118,76 +150,61 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Product Table */}
-      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-          <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de Productos ({filtered.length})</CardTitle>
+      <div className="bg-[var(--surface-raised)]">
+        <div className="pb-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Productos ({filtered.length})</CardTitle>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Ingreso</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Crecimiento</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Participación</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Cuadrante</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-center">Acción</th>
+        <DataTable stickyHeader wrapperClassName="max-h-[26rem] overflow-y-auto" className="min-w-[600px]">
+            <thead><tr>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th className="text-right">Ingreso</th>
+              <th className="text-right">Crecimiento</th>
+              <th className="text-right">Participación</th>
+              <th>Cuadrante</th>
+              <th className="text-center">Acción</th>
             </tr></thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+            <tbody>
               {filtered.map(p => {
                 const c = Q_CONFIG[p.quadrant];
                 return (
-                  <tr key={p.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface">
-                    <td className="px-5 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
-                    <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
-                    <td className="px-5 py-3 text-right font-bold">{fmt(p.revenue)}</td>
-                    <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
-                    <td className="px-5 py-3 text-right font-bold">{p.marketShare}%</td>
-                    <td className="px-5 py-3"><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
-                    <td className="px-5 py-3 text-center">
-                      <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
+                  <tr key={p.id}>
+                    <td className="font-bold">{p.name}</td>
+                    <td className="text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
+                    <td className="text-right font-bold">{fmt(p.revenue)}</td>
+                    <td className={cn("text-right font-bold", p.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
+                    <td className="text-right font-bold">{p.marketShare}%</td>
+                    <td><span className={cn("font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
+                    <td className="text-center">
+                      <button aria-label="Ver" onClick={() => setDetail(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] "><Eye className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-          </table>
-        </div>
+        </DataTable>
       </div>
 
-      {/* Recommendations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
-        {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
-          const c = Q_CONFIG[q];
-          const QIcon = c.Icon;
-          return (
-            <div key={q} className={cn("rounded-xl border-2 p-3 sm:p-5", c.bg)}>
-              <h4 className={cn("font-extrabold flex items-center gap-2", c.color)}>
-                <QIcon className="h-4 w-4" strokeWidth={1.75} />
-                {c.label}
-              </h4>
-              <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">{c.desc}</p>
-              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2 tabular-nums">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
-            </div>
-          );
-        })}
       </div>
 
       {/* Detail modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
-              <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
+        <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaDetalle.fijado) cerrarDetail(); }}>
+          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-md">
+            <div {...ventanaDetalle.asaProps} className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
+              <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventanaDetalle} />
+              </span>
+              <button onClick={cerrarDetail} aria-label="Cerrar" className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
-              <div className="col-span-2 bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">
-                <span className="text-xs text-[var(--text-tertiary)]">Cuadrante</span>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-sm text-[var(--text-secondary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-sm text-[var(--text-secondary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-sm text-[var(--text-secondary)]">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-sm text-[var(--text-secondary)]">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
+              <div className="col-span-2 bg-[var(--surface-alt)] rounded-xl p-3">
+                <span className="text-sm text-[var(--text-secondary)]">Cuadrante</span>
                 {(() => {
                   const DIcon = Q_CONFIG[detail.quadrant].Icon;
                   return (
@@ -198,8 +215,9 @@ export default function BCGMatrixTab() {
                   );
                 })()}
               </div>
-              <div className="col-span-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3"><span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Recomendación</span><p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
+              <div className="col-span-2 bg-primary/10 dark:bg-primary/15 rounded-xl p-3"><span className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">Recomendación</span><p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
             </div>
+            <TiradorDeVentana ventana={ventanaDetalle} />
           </div>
         </div>
       )}

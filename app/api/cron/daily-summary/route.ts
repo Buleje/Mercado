@@ -1,16 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
-import { SalesDB, CashRegistersDB } from "@/lib/db/sales.db";
+import { SalesDB } from "@/lib/db/sales.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";
+import { PorCobrarDB } from "@/lib/db/por-cobrar.db";
 import { logger } from "@/lib/logger";
 import { enqueueActivityLog } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
-import { generateDailyInsights } from "@/lib/ai/daily-insights";
+import { generateDailyInsights, soles } from "@/lib/ai/daily-insights";
 import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { CajaPorDiaDB } from "@/lib/db/caja-por-dia.db";
+import { DailySummaryDB } from "@/lib/db/daily-summary.db";
+import { cajasContadas, camposDeCajaDelResumen } from "@/lib/caja/cierres-por-dia";
+import { enStockBajo } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
+import { startOfLimaDay, limaDateKey } from "@/lib/utils";
 
 /**
  * GET /api/cron/daily-summary
@@ -22,6 +30,11 @@ import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
  * Sugerencia vercel.json: "0 20 * * *" (20:00 cada día)
  * Autorización: Bearer <CRON_SECRET>
  */
+/** El día de Lima de `ahora` a las 00:00 UTC: así guarda `DailySummary.fecha` cada día. */
+function fechaDelResumen(ahora: Date): Date {
+  return new Date(`${limaDateKey(ahora)}T00:00:00.000Z`);
+}
+
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization") ?? "";
@@ -44,15 +57,16 @@ export async function GET(req: NextRequest) {
         const tenantId = tenant.id;
 
         const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfDay = new Date(startOfLimaDay(now));
         const startOfDayISO = startOfDay.toISOString();
 
         // Recopilar datos en paralelo
-        const [allSales, todayOrders, allProducts, openCash] = await Promise.all([
+        const [allSales, todayOrders, allProducts, cuadreHoy] = await Promise.all([
           SalesDB.getAll(tenantId),
           OrdersDB.getAllFiltered({ since: startOfDayISO, tenantId }),
           ProductsDB.getAll(tenantId),
-          CashRegistersDB.getOpen(tenantId),
+          // El cuadre de las cajas que ya cerraron hoy (Caja › Historial › Caja por día).
+          CajaPorDiaDB.cuadreDelDia(tenantId, limaDateKey(now)),
         ]);
 
         // Ventas POS del día
@@ -97,37 +111,27 @@ export async function GET(req: NextRequest) {
           .slice(0, 5);
 
         // Productos con stock bajo
-        const productosStockBajo = allProducts.filter((p) => {
-          if (!p.active) return false;
-          if (p.stock == null) return false;
-          const min = p.stockMin ?? 5;
-          return p.stock <= min;
-        });
+        // Un solo stock mínimo (09-10): el propio o el global del negocio.
+        const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
+        const productosStockBajo = allProducts.filter(
+          (p) => p.active && enStockBajo(p, minimoGlobal),
+        );
 
-        // Diferencia de caja
-        let diferenciaCaja: number | null = null;
-        if (openCash) {
-          const totalIngresos = openCash.movements
-            .filter((m) => m.type === "venta" || m.type === "ingreso")
-            .reduce((sum, m) => sum + m.amount, 0);
-          const totalEgresos = openCash.movements
-            .filter((m) => m.type === "egreso")
-            .reduce((sum, m) => sum + m.amount, 0);
-          const esperado = openCash.openingAmount + totalIngresos - totalEgresos;
-          diferenciaCaja = openCash.closingAmount != null
-            ? openCash.closingAmount - esperado
-            : null;
-        }
+        /* Caja del día = las cajas CERRADAS y contadas (19-10). Antes miraba la
+           caja ABIERTA, cuyo `closingAmount` es siempre null: las 1 496 filas
+           del resumen quedaron con esperado 0, contado vacío y diferencia 0.
+           Sin ninguna caja contada todavía: contado null y sin línea de diferencia. */
+        const cajaHoy = camposDeCajaDelResumen(cuadreHoy);
+        const diferenciaCaja: number | null = cajaHoy.efectivoContado == null ? null : cajaHoy.diferenciaCaja;
 
         const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
         const fechaTexto = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
 
         // Obtener resumen del día anterior para comparar tendencias
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        yesterday.setHours(0, 0, 0, 0);
-        const yesterdayEnd = new Date(yesterday);
-        yesterdayEnd.setHours(23, 59, 59, 999);
+        // `DailySummary.fecha` guarda el DÍA a las 00:00 UTC (formato de siempre);
+        // el día es el de LIMA, no el del servidor (UTC).
+        const yesterday = new Date(fechaDelResumen(now).getTime() - 24 * 60 * 60 * 1000);
+        const yesterdayEnd = new Date(yesterday.getTime() + 24 * 60 * 60 * 1000 - 1);
 
         let summaryAyer: { totalVentas: number; totalPedidos: number; ticketPromedio: number } | null = null;
         try {
@@ -163,6 +167,7 @@ export async function GET(req: NextRequest) {
             // stock puede ser null (ilimitado) — el insight espera number|undefined
             productosStockBajo: productosStockBajo.map((p) => ({ ...p, stock: p.stock ?? undefined })),
             diferenciaCaja,
+            cajasCerradas: cajasContadas(cuadreHoy),
             tenantName: tenant.name,
             fechaTexto,
           },
@@ -191,45 +196,24 @@ export async function GET(req: NextRequest) {
         // to findFirst + update/create. Schema field types:
         //   diferenciaCaja: Decimal NOT NULL @default(0)
         //   stockAlertas:   String? (JSON stringified list)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const diferenciaCajaSafe = diferenciaCaja ?? 0;
+        const today = fechaDelResumen(new Date());
         const stockAlertasJson = JSON.stringify(
           productosStockBajo.map((p) => ({ id: p.id, name: p.name, stock: p.stock ?? 0 })),
         );
         try {
-          const existing = await prisma.dailySummary.findFirst({
-            where: { tenantId, fecha: today },
-            select: { id: true },
+          await DailySummaryDB.guardarDelCron(tenantId, today, {
+            totalVentas,
+            cantidadVentas: totalPedidos,
+            ticketPromedio,
+            ...cajaHoy,
+            stockAlertas: stockAlertasJson,
+            productoTop: top5Productos[0]?.nombre ?? null,
           });
-          if (existing) {
-            await prisma.dailySummary.update({
-              where: { id: existing.id },
-              data: {
-                totalVentas,
-                cantidadVentas: totalPedidos,
-                ticketPromedio,
-                diferenciaCaja: diferenciaCajaSafe,
-                stockAlertas: stockAlertasJson,
-                productoTop: top5Productos[0]?.nombre ?? null,
-                mejorHora: null,
-              },
-            });
-          } else {
-            await prisma.dailySummary.create({
-              data: {
-                tenantId,
-                fecha: today,
-                totalVentas,
-                cantidadVentas: totalPedidos,
-                ticketPromedio,
-                diferenciaCaja: diferenciaCajaSafe,
-                stockAlertas: stockAlertasJson,
-                productoTop: top5Productos[0]?.nombre ?? null,
-                creadoPor: "cron",
-              },
-            });
-          }
+          /* El de ayer se guardó a las 16:07, antes de que cerraran sus cajas:
+             se completa con el cuadre del día entero. */
+          // `yesterday` es medianoche UTC: su día es la fecha tal cual (limaDateKey daría anteayer).
+          const diaAyer = yesterday.toISOString().slice(0, 10);
+          await DailySummaryDB.completarCuadre(tenantId, yesterday, camposDeCajaDelResumen(await CajaPorDiaDB.cuadreDelDia(tenantId, diaAyer)));
         } catch (e) {
           logger.warn("[daily-summary] Error saving DailySummary", { error: String(e) });
         }
@@ -238,11 +222,19 @@ export async function GET(req: NextRequest) {
         const aiSummaryText = aiInsights?.summary ?? null;
         const trendEmoji = aiInsights?.emoji ?? "📊";
 
+        // Brandon 2026-06-17: "te deben Y" — agrega el total por cobrar (fiados)
+        // al resumen diario. PorCobrarDB es tenant-scoped; fallback null si falla.
+        const porCobrar = await PorCobrarDB.getSummary(tenant.id).catch(sinDato("cron/daily-summary total por cobrar"));
+
         const rawLines = [
           `💰 Ventas: S/ ${totalVentas.toFixed(2)} (${totalPedidos} transacciones)`,
           `🧾 Ticket promedio: S/ ${ticketPromedio.toFixed(2)}`,
+          porCobrar && porCobrar.fiados.total > 0
+            ? `🤝 Te deben: S/ ${porCobrar.fiados.total.toFixed(2)} (${porCobrar.fiados.count} fiados)`
+            : null,
           `📦 Stock bajo: ${productosStockBajo.length} productos`,
-          diferenciaCaja !== null ? `💵 Diferencia caja: S/ ${diferenciaCaja.toFixed(2)}` : null,
+          // A las 16:07 el día va por la mitad: es la diferencia de las cajas que YA cerraron, no la del día.
+          diferenciaCaja !== null ? `💵 Cajas cerradas hoy (${cajasContadas(cuadreHoy)}): diferencia ${soles(diferenciaCaja)}` : null,
           top5Productos.length > 0 ? `🏆 Top: ${top5Productos.slice(0, 3).map((p, i) => `${i + 1}. ${p.nombre} (${p.cantidad})`).join(" | ")}` : null,
           productosStockBajo.length > 0 ? `⚠ Stock crítico: ${productosStockBajo.slice(0, 3).map(p => `${p.name}(${p.stock})`).join(", ")}` : null,
         ].filter((line): line is string => line !== null).join("\n");
@@ -270,6 +262,7 @@ export async function GET(req: NextRequest) {
               where: { id: tenant.id },
               select: { ownerPhone: true },
             });
+            // TODO(ADR-457 §Excepciones): excepción de negocio — el teléfono de aviso de `main` sale de NOTIFY_PHONE. Debe ser una opción del dueño (campo/pantalla), no un `=== "main"`; requiere schema + pantalla, por eso queda escrita.
             const ownerPhone = tenantWithPhone?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (ownerPhone) {
               enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch((err) => logger.error("[cron/daily-summary] WhatsApp enqueue failed", { error: String(err), tenantId: tenant.id }));

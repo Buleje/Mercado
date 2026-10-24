@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Bike, MapPin, Wallet, Clock } from "@buleje/design-system/icons";
 export const metadata: Metadata = {
-  title: "Manejá tu propia ruta — Repartidores",
+  title: "Maneja tu propia ruta — Repartidores",
   description:
-    "Cumplí con bodegas de tu zona. Horarios flexibles, pagos diarios, app simple.",
+    "Cumple con bodegas de tu zona. Horarios flexibles, pagos diarios, app simple.",
   alternates: {
     canonical: "https://www.buleje.pe/repartidores",
   },
   openGraph: {
-    title: "Repartidores — Manejá tu propia ruta",
+    title: "Repartidores — Maneja tu propia ruta",
     description: "Horarios flexibles, pagos diarios, ruta corta en tu zona.",
     url: "https://www.buleje.pe/repartidores",
     type: "website",
@@ -33,10 +33,10 @@ export default function RepartidoresPage() {
             </p>
 
             <h1 className="text-[clamp(2.5rem,6.5vw,4.75rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.95] text-balance">
-              Manejá tu propia ruta.{" "}
+              Maneja tu propia ruta.{" "}
               <br />
               <span className="text-[var(--accent)]">
-                Cobrá lo que te toca.
+                Cobra lo que te toca.
               </span>
             </h1>
 
@@ -57,7 +57,7 @@ export default function RepartidoresPage() {
             </div>
 
             <p className="mt-6 text-sm text-[var(--text-tertiary)]">
-              Sin requisitos imposibles · Cobrás semanal · App liviana en español
+              Sin requisitos imposibles · Cobras semanal · App liviana en español
             </p>
           </div>
         </div>
@@ -84,14 +84,14 @@ export default function RepartidoresPage() {
               {
                 Icon: Clock,
                 title: "Horario que tú eliges",
-                desc: "Conectás cuando puedes. Sin turnos obligatorios, sin penalizaciones.",
+                desc: "Conectas cuando puedes. Sin turnos obligatorios, sin penalizaciones.",
               },
             ].map(({ Icon, title, desc }, i) => (
               <div
                 key={i}
                 className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-3xl p-8"
               >
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] mb-5">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-5">
                   <Icon className="h-6 w-6" strokeWidth={1.75} />
                 </span>
                 <h3 className="text-xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
@@ -120,7 +120,7 @@ export default function RepartidoresPage() {
             Empieza a repartir hoy.
           </h2>
           <p className="mt-6 text-xl text-[var(--text-secondary)] max-w-xl mx-auto leading-[1.4]">
-            Te validamos en menos de 24 horas. Si tú cumplís con bodegas de
+            Te validamos en menos de 24 horas. Si tú cumples con bodegas de
             tu zona, te asignamos pedidos esa misma semana.
           </p>
           <div className="mt-10">

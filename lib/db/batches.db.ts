@@ -1,8 +1,10 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import type { Batch as PBatch } from "@/lib/generated/prisma/client";
+import { Prisma, type Batch as PBatch } from "@/lib/generated/prisma/client";
 import { toNumOrZero } from "@/lib/decimal-utils";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
+import { cantidadQueSaleDeLotes, limitesDeVence, type LoteDeRecepcion } from "@/lib/compras/lotes-recepcion";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -129,18 +131,56 @@ function mapBatch(b: PBatchWithProduct): DbBatch {
  * Solo aplica si el lote tiene productId vinculado.
  * Siempre fire-and-forget: propagateExpiresAt(id).catch(() => {})
  */
-export async function propagateExpiresAt(productId: number | null | undefined): Promise<void> {
+export async function propagateExpiresAt(productId: number | null | undefined, tenantId?: string): Promise<void> {
   if (!productId) return;
   const nearest = await prisma.batch.findFirst({
-    where: { productId, quantity: { gt: 0 } },
+    where: { productId, ...(tenantId ? { tenantId } : {}), quantity: { gt: 0 } },
     orderBy: { expiryDate: "asc" },
     select: { expiryDate: true },
   });
+  /**
+   * Con `tenantId` esto pasa a ser `updateMany`: cargar un lote apuntando al
+   * `productId` de otra empresa le escribía la fecha de vencimiento a SU
+   * producto. `update({ where: { id } })` no tiene forma de acotar por tenant;
+   * `updateMany` sí, y si no matchea no toca nada en vez de fallar.
+   */
+  if (tenantId) {
+    await prisma.product.updateMany({
+      where: { id: productId, tenantId },
+      data: { expiresAt: nearest?.expiryDate ?? null },
+    });
+    return;
+  }
   await prisma.product.update({
     where: { id: productId },
     data: { expiresAt: nearest?.expiryDate ?? null },
   });
 }
+
+/**
+ * `getExpiring` guarda 60 s por tenant y días. Nadie lo soltaba al escribir:
+ * un lote recién cargado (o recién recibido) tardaba hasta un minuto en
+ * aparecer en la campana y en «Por vencer».
+ */
+function invalidarVencimientos(tenantId: string): void {
+  invalidateByPrefix(`batches-expiring:${tenantId}:`);
+}
+
+/**
+ * Id fijo por recepción + línea. Si la misma recepción se procesa dos veces
+ * (la transacción se reintenta, o se vuelve a correr), el lote ya existe y
+ * `skipDuplicates` no lo duplica.
+ */
+export function idDeLoteDeRecepcion(tenantId: string, receiptId: string, indice: number): string {
+  const huella = createHash("sha256").update(`${tenantId}:${receiptId}:${indice}`).digest("hex");
+  return `lrec_${huella.slice(0, 24)}`;
+}
+
+/** Lo que tocan los lotes de una recepción o de una venta: la tx del que llama. */
+type TxLotes = Pick<Prisma.TransactionClient, "batch" | "product" | "$executeRaw">;
+
+/** Un lote tocado por una venta: de cuál y cuánto salió. */
+export type DescuentoDeLote = { batchId: string; qty: number; expiryDate: Date };
 
 // ── BatchesDB ─────────────────────────────────────────────────────────────────
 
@@ -152,7 +192,8 @@ export const BatchesDB = {
   async getAll(tenantId: string, filters: DbBatchFilters = {}): Promise<DbBatchPage> {
     const page = Math.max(filters.page ?? 1, 1);
     const limit = Math.min(Math.max(filters.limit ?? 20, 1), 200);
-    const now = new Date();
+    // Por el día de Pucallpa, no por la hora: ver `limitesDeVence`.
+    const { hoy, hasta } = limitesDeVence(filters.expiringDays ?? 7);
 
     // Construir where clause
     const where: Record<string, unknown> = { tenantId };
@@ -173,15 +214,12 @@ export const BatchesDB = {
 
     if (filters.status === "active") {
       where.quantity = { gt: 0 };
-      where.expiryDate = { gte: now };
+      where.expiryDate = { gte: hoy };
     } else if (filters.status === "expired") {
-      where.expiryDate = { lt: now };
+      where.expiryDate = { lt: hoy };
       where.quantity = { gt: 0 };
     } else if (filters.status === "expiring") {
-      const days = filters.expiringDays ?? 7;
-      const cutoff = new Date(now);
-      cutoff.setDate(cutoff.getDate() + days);
-      where.expiryDate = { gte: now, lte: cutoff };
+      where.expiryDate = { gte: hoy, lte: hasta };
       where.quantity = { gt: 0 };
     } else if (filters.status === "empty") {
       where.quantity = { lte: 0 };
@@ -262,13 +300,13 @@ export const BatchesDB = {
     // pegan a /api/batches/expiring por carga y la query tardaba ~1.8s. Los
     // vencimientos no cambian al segundo → 60s es seguro. Perf 2026-05-29.
     return getOrSet(`batches-expiring:${tenantId}:${days}`, 60, async () => {
-      const now = new Date();
-      const cutoff = new Date(now);
-      cutoff.setDate(cutoff.getDate() + days);
+      // Por el día de Pucallpa: el lote que vence hoy está «por vencer» todo
+      // el día, no «vencido» desde las 19:00 de ayer (ver `limitesDeVence`).
+      const { hoy, hasta } = limitesDeVence(days);
       const rows = await prisma.batch.findMany({
         where: {
           tenantId,
-          expiryDate: { gte: now, lte: cutoff },
+          expiryDate: { gte: hoy, lte: hasta },
           quantity: { gt: 0 },
         },
         orderBy: { expiryDate: "asc" },
@@ -283,7 +321,7 @@ export const BatchesDB = {
     const rows = await prisma.batch.findMany({
       where: {
         tenantId,
-        expiryDate: { lt: new Date() },
+        expiryDate: { lt: limitesDeVence().hoy },
         quantity: { gt: 0 },
       },
       orderBy: { expiryDate: "asc" },
@@ -314,9 +352,10 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(row.productId).catch(() => {
+    propagateExpiresAt(row.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
+    invalidarVencimientos(tenantId);
 
     return mapBatch(row);
   },
@@ -348,14 +387,15 @@ export const BatchesDB = {
     });
 
     // Propagar al producto anterior y al nuevo si cambió el productId
-    propagateExpiresAt(existing.productId).catch(() => {
+    propagateExpiresAt(existing.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
     if (input.productId && input.productId !== existing.productId) {
-      propagateExpiresAt(input.productId).catch(() => {
+      propagateExpiresAt(input.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
     }
+    invalidarVencimientos(tenantId);
 
     if (!row) return null;
     return mapBatch(row);
@@ -373,12 +413,13 @@ export const BatchesDB = {
       where: { id, tenantId },
       data: { quantity: Math.max(0, newQuantity) },
     });
+    invalidarVencimientos(tenantId);
     const row = await prisma.batch.findFirst({
       where: { id, tenantId },
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(existing.productId).catch(() => {
+    propagateExpiresAt(existing.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
 
@@ -395,8 +436,9 @@ export const BatchesDB = {
     if (!existing) return false;
 
     await prisma.batch.deleteMany({ where: { id, tenantId } });
+    invalidarVencimientos(tenantId);
 
-    propagateExpiresAt(existing.productId).catch(() => {
+    propagateExpiresAt(existing.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
 
@@ -404,15 +446,125 @@ export const BatchesDB = {
   },
 
   /**
+   * Lotes que nacen al recibir mercadería, en la MISMA transacción que suma el
+   * stock: si la recepción se revierte, el lote también. Solo trae las líneas
+   * que entraron a stock vendible (la merma no vence). Devuelve cuántos lotes
+   * nuevos quedaron escritos (0 si ya existían: reintento de la misma recepción).
+   */
+  async crearDesdeRecepcionTx(
+    tx: TxLotes,
+    tenantId: string,
+    receiptId: string,
+    lotes: LoteDeRecepcion[],
+  ): Promise<number> {
+    if (lotes.length === 0) return 0;
+    const entrada = new Date();
+    const { count } = await tx.batch.createMany({
+      data: lotes.map((l) => ({
+        id: idDeLoteDeRecepcion(tenantId, receiptId, l.indice),
+        tenantId,
+        lote: l.lote,
+        productName: l.productName,
+        productId: l.productId,
+        productCategory: l.productCategory,
+        quantity: l.quantity,
+        unit: l.unit,
+        supplierId: l.supplierId,
+        supplierName: l.supplierName,
+        entryDate: entrada,
+        // Medianoche UTC, igual que el alta manual (`new Date("YYYY-MM-DD")`).
+        // Las listas comparan por el día de Pucallpa (`limitesDeVence`), así
+        // que «vence hoy» sigue «por vencer» hasta la medianoche de Lima.
+        expiryDate: new Date(`${l.expiryDate}T00:00:00.000Z`),
+        costUnit: l.costUnit,
+        notes: l.notes,
+      })),
+      skipDuplicates: true,
+    });
+    return count;
+  },
+
+  /**
+   * `Product.expiresAt` = el vencimiento MÁS PRÓXIMO entre sus lotes con stock.
+   * Lo lee el Resumen del inicio («vencen esta semana»). Va dentro de la tx de
+   * la recepción para que el producto y su lote nunca se contradigan.
+   *
+   * UNA sola consulta para todos los productos: antes eran 2 por producto, en
+   * serie, dentro de una tx que Prisma corta a los 5 s (revisión 09-10).
+   */
+  async propagarVenceTx(tx: TxLotes, tenantId: string, productIds: number[]): Promise<void> {
+    const ids = [...new Set(productIds)].filter((id) => Number.isInteger(id) && id > 0);
+    if (ids.length === 0) return;
+    await tx.$executeRaw`
+      UPDATE "Product" p
+         SET "expiresAt" = (
+               SELECT MIN(b."expiryDate") FROM "Batch" b
+                WHERE b."productId" = p."id" AND b."tenantId" = ${tenantId} AND b."quantity" > 0
+             )
+       WHERE p."tenantId" = ${tenantId}
+         AND p."id" IN (${Prisma.join(ids)})
+    `;
+  },
+
+  /**
+   * Lo que una venta saca de los lotes, en orden FEFO (el que vence primero).
+   * Llamar DESPUÉS de bajar `Product.stock`: solo sale de los lotes lo que el
+   * stock que queda ya no cubre (`cantidadQueSaleDeLotes`). Antes una venta
+   * vaciaba el lote aunque hubiera stock sin lote de sobra en el estante.
+   *
+   * Cada lote baja con `decrement` y la condición en el WHERE: dos ventas a la
+   * vez no se pisan (antes se escribía la cantidad absoluta leída).
+   *
+   * SIN CONECTAR (09-10): la venta sigue con la regla FEFO de siempre en
+   * `lib/inventory/fefo-deduct.ts`. «Primero lo sin lote» deja un lote vencido con
+   * unidades que ya se vendieron; decide el dueño antes de enchufarlo (y entonces
+   * también en `InventoryDB` para los pedidos online, con candado por producto).
+   */
+  async descontarVentaTx(
+    tx: TxLotes,
+    tenantId: string,
+    productId: number,
+    vendido: number,
+  ): Promise<{ lotes: DescuentoDeLote[]; desdeLotes: number }> {
+    const lotes = await tx.batch.findMany({
+      where: { tenantId, productId, quantity: { gt: 0 } },
+      orderBy: { expiryDate: "asc" },
+      select: { id: true, quantity: true, expiryDate: true },
+    });
+    if (lotes.length === 0) return { lotes: [], desdeLotes: 0 };
+    const producto = await tx.product.findFirst({ where: { id: productId, tenantId }, select: { stock: true } });
+    const sumaLotes = lotes.reduce((s, l) => s + Number(l.quantity), 0);
+    let falta = cantidadQueSaleDeLotes({ vendido, sumaLotes, stockDespues: producto ? producto.stock : null });
+    const tocados: DescuentoDeLote[] = [];
+    for (const lote of lotes) {
+      if (falta <= 0) break;
+      const qty = Math.round(Math.min(Number(lote.quantity), falta) * 1000) / 1000;
+      if (qty <= 0) continue;
+      const { count } = await tx.batch.updateMany({
+        where: { id: lote.id, tenantId, quantity: { gte: qty } },
+        data: { quantity: { decrement: qty } },
+      });
+      if (count === 0) continue;
+      tocados.push({ batchId: lote.id, qty, expiryDate: lote.expiryDate });
+      falta = Math.round((falta - qty) * 1000) / 1000;
+    }
+    const desdeLotes = Math.round(tocados.reduce((s, t) => s + t.qty, 0) * 1000) / 1000;
+    return { lotes: tocados, desdeLotes };
+  },
+
+  /** Después del commit de una recepción con lotes: la campana los ve ya. */
+  invalidarVencimientos(tenantId: string): void {
+    invalidarVencimientos(tenantId);
+  },
+
+  /**
    * Resumen estadístico de lotes del tenant.
    * Usado por el dashboard de inventario.
    */
   async getStats(tenantId: string): Promise<DbBatchStats> {
-    const now = new Date();
-    const in7Days = new Date(now);
-    in7Days.setDate(in7Days.getDate() + 7);
-    const in30Days = new Date(now);
-    in30Days.setDate(in30Days.getDate() + 30);
+    // Por el día de Pucallpa, igual que las listas (ver `limitesDeVence`).
+    const { hoy: now, hasta: in7Days } = limitesDeVence(7);
+    const { hasta: in30Days } = limitesDeVence(30);
 
     const [
       totalBatches,

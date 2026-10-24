@@ -4,7 +4,13 @@
  * las compile AHORA en vez de esperar al primer click del usuario.
  *
  * Uso: en una 2da terminal, despues de `npm run dev`:
- *   npm run dev:warm
+ *   npm run dev:warm            → tienda + marketplace + panel (todo)
+ *   npm run dev:warm -- --admin → SOLO el panel (4 rutas, ~8s)
+ *   npm run dev:warm -- --tienda → solo tienda/marketplace
+ *
+ * MEDIDO 2026-09-18: calentar las 14 rutas cuesta 45 s y deja al dev server en
+ * 8.76 GB de RSS (la RAM la come COMPILAR, no el paso del tiempo). Si el día es
+ * de panel, `--admin` evita compilar storefront y marketplace al pedo.
  *
  * Tarda ~30-60s la primera vez. Siguientes runs son casi instantaneos
  * porque `turbopackFileSystemCacheForDev` persiste entre restarts.
@@ -21,7 +27,18 @@ const BASE = process.env.DEV_BASE ?? "http://localhost:3000";
 // marketplace (antes calentaba rutas viejas /tienda /t/main/admin que ya casi
 // no se usan, y NO calentaba /tiendas, storefront, producto, ofertas, carrito —
 // justo las que el usuario recorre → se sentían "frías"/lentas al navegar).
-const ROUTES = [
+// El panel es UNA ruta de servidor con 133 pestañas en `next/dynamic`: calentar
+// /admin compila el shell, y los chunks de cada pestaña se compilan al abrirla
+// (un fetch no ejecuta JS, así que no hay forma de adelantarlos desde acá).
+// Las dos APIs son las que el shell pide siempre al montar.
+const ADMIN_ROUTES = [
+  "/admin",
+  "/login",
+  "/api/auth/me",
+  "/api/notification-center?limit=50",
+];
+
+const TIENDA_ROUTES = [
   "/",
   "/marketplace",
   "/tiendas",
@@ -37,6 +54,18 @@ const ROUTES = [
   "/negocios",
   "/ayuda",
 ];
+
+const modo = process.argv.includes("--admin")
+  ? "admin"
+  : process.argv.includes("--tienda")
+    ? "tienda"
+    : "todo";
+const ROUTES =
+  modo === "admin"
+    ? ADMIN_ROUTES
+    : modo === "tienda"
+      ? TIENDA_ROUTES
+      : [...TIENDA_ROUTES, ...ADMIN_ROUTES];
 
 async function waitForDevServer(maxAttempts = 30) {
   for (let i = 0; i < maxAttempts; i++) {
@@ -71,7 +100,7 @@ async function warmRoute(route) {
 }
 
 async function main() {
-  console.log(`🔥 warm-dev-routes — ${BASE}`);
+  console.log(`🔥 warm-dev-routes — ${BASE} · modo: ${modo}`);
   console.log("   Esperando al dev server...");
   const ok = await waitForDevServer();
   if (!ok) {

@@ -6,6 +6,7 @@ import { enqueueEmail } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { avisoCorreoActivo, registrarEnvioCorreo } from "@/lib/avisos-correo";
 
 /**
  * GET /api/cron/weekly-email-report
@@ -41,9 +42,16 @@ export async function GET(req: NextRequest) {
       });
 
       let emailsSent = 0;
+      let skippedPaused = 0;
 
       for (const tenant of tenants) {
         if (!tenant.ownerEmail) continue;
+        // Interruptor del superadmin (21-10): «Reportes» apagado o la tienda pausada.
+        if (!(await avisoCorreoActivo(tenant.id, "reportes"))) {
+          logger.info("[cron/weekly-email-report] omitido: avisos por correo apagados", { tenantId: tenant.id });
+          skippedPaused++;
+          continue;
+        }
 
         const tenantIds = tenant.id === tenant.slug
           ? [tenant.id]
@@ -129,7 +137,9 @@ export async function GET(req: NextRequest) {
           to: tenant.ownerEmail!,
           subject: `📊 Reporte semanal — ${tenant.name}`,
           html,
-        }).catch((err) => logger.error("[cron/weekly-email-report] email enqueue failed", { error: String(err), tenantId: tenant.id }));
+        })
+          .then(() => registrarEnvioCorreo(tenant.id, "reportes", tenant.ownerEmail!, true, "Reporte semanal (en cola)"))
+          .catch((err) => logger.error("[cron/weekly-email-report] email enqueue failed", { error: String(err), tenantId: tenant.id }));
 
         emailsSent++;
 
@@ -144,7 +154,7 @@ export async function GET(req: NextRequest) {
         ).catch((err) => logger.warn("[cron] activity log failed", { error: String(err) }));
       }
 
-      return { emailsSent, tenantsProcessed: tenants.length };
+      return { emailsSent, skippedPaused, tenantsProcessed: tenants.length };
     });
 
     return NextResponse.json({ ok: true, ...result });

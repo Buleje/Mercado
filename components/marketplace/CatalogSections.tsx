@@ -136,7 +136,7 @@ export default function CatalogSections() {
       id="catalog-liquidations"
       kicker="Stock final"
       title="Últimas unidades"
-      subtitle="Quedan pocas. Llevatelas antes que se agoten."
+      subtitle="Quedan pocas. Llévatelas antes de que se agoten."
     >
       <HorizontalCarousel ariaLabel="Últimas unidades">
         {data.liquidations.map((product, i) => (

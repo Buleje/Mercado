@@ -10,6 +10,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { startOfLimaDay, limaDateKey } from "@/lib/utils";
 
 
 /**
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
     }
 
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(startOfLimaDay(now));
     // Brandon 2026-06-01: ventana MÓVIL de 30 días (no mes calendario) para que
     // el resumen muestre siempre actividad reciente, sin el bajón a "0" cuando
     // recién arranca el mes. `month*` en la respuesta = últimos 30 días.
@@ -89,7 +90,7 @@ export async function GET(req: NextRequest) {
       salesByDay[key] = { revenue: 0, orders: 0 };
     }
     for (const row of dailySales) {
-      const key = new Date(row.createdAt).toISOString().slice(0, 10);
+      const key = limaDateKey(row.createdAt);
       if (salesByDay[key]) {
         // TD-018: row._sum.total es Decimal | null
         salesByDay[key].revenue += toNumOrZero(row._sum.total);

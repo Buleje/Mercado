@@ -4,7 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { ESTADOS_PEDIDO_QUE_ENTRAN, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 import nodemailer from "nodemailer";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
+import { altoDelPie, datosDelMembrete, dibujarMembrete, dibujarPies } from "@/lib/documentos/membrete-pdf";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { avisoCorreoActivo, registrarEnvioCorreo } from "@/lib/avisos-correo";
 
 /**
  * GET /api/cron/monthly-report
@@ -67,8 +72,12 @@ async function buildMonthlyReport(
   year: number,
   month: number, // 1-12
 ): Promise<ReportData> {
-  const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
-  const endDate   = new Date(year, month,     0, 23, 59, 59, 999); // último día del mes
+  // El mes de LIMA y la regla de ingresos de Mi Plata (`lib/finance/ingresos-del-periodo`):
+  // ventas del POS + pedidos concretados. Antes: pedidos no cancelados, sin el
+  // POS y con el mes del reloj del servidor — otra cifra que el Resumen.
+  const { start: startDate, end: endExcl } = rangoDelMesLima(`${year}-${String(month).padStart(2, "0")}`);
+  const fechaSolaDelMes = new Date(Date.UTC(year, month - 1, 1));
+  const fechaSolaDelSiguiente = new Date(Date.UTC(year, month, 1));
 
   const tenant = await prisma.tenant.findUnique({
     where:  { id: tenantId },
@@ -78,26 +87,41 @@ async function buildMonthlyReport(
   const tenantName = tenant?.name ?? tenantId;
   const period     = `${MONTH_NAMES[month - 1]} ${year}`;
 
-  // Ventas e ingresos (pedidos entregados)
-  const orders = await prisma.order.findMany({
-    where: {
-      tenantId,
-      createdAt: { gte: startDate, lte: endDate },
-      status:    { not: "cancelado" },
-    },
-    include: {
-      items:    true,
-      customer: { select: { name: true, phone: true } },
-    },
-  });
+  // Ingresos: pedidos concretados + ventas del POS
+  const [orders, sales] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        tenantId,
+        createdAt: { gte: startDate, lt: endExcl },
+        status:    { in: [...ESTADOS_PEDIDO_QUE_ENTRAN] },
+        deletedAt: null,
+      },
+      include: {
+        items:    true,
+        customer: { select: { name: true, phone: true } },
+      },
+    }),
+    prisma.sale.findMany({
+      where: { tenantId, createdAt: { gte: startDate, lt: endExcl } },
+      select: { total: true, items: { select: { name: true, price: true, quantity: true } } },
+    }),
+  ]);
 
-  const ingresos = orders.reduce((sum, o) => sum + toNumOrZero(o.total), 0);
+  const ingresos =
+    orders.reduce((sum, o) => sum + toNumOrZero(o.total), 0) +
+    sales.reduce((sum, v) => sum + toNumOrZero(v.total), 0);
 
-  // Gastos operativos del mes
+  // Gastos del mes (sin las plantillas de gasto fijo, ADR-374). `date` mezcla la
+  // fecha sola del formulario (medianoche UTC) y el instante de pago: misma
+  // regla que `IgvDelMesDB`.
   const expenses = await prisma.expense.findMany({
     where: {
       tenantId,
-      date: { gte: startDate, lte: endDate },
+      recurring: false,
+      AND: [
+        { OR: [{ date: { gte: startDate, lt: endExcl } }, { date: fechaSolaDelMes }] },
+        { NOT: { date: fechaSolaDelSiguiente } },
+      ],
     },
     select: { amount: true },
   });
@@ -107,7 +131,7 @@ async function buildMonthlyReport(
 
   // Top 10 productos por revenue
   const productRevMap = new Map<string, { revenue: number; quantity: number }>();
-  for (const order of orders) {
+  for (const order of [...orders, ...sales]) {
     for (const item of order.items) {
       const key  = item.name;
       const prev = productRevMap.get(key) ?? { revenue: 0, quantity: 0 };
@@ -136,7 +160,7 @@ async function buildMonthlyReport(
 
   // Fiados del mes
   const fiadosSummary = await prisma.fiado.aggregate({
-    where: { tenantId, createdAt: { gte: startDate, lte: endDate } },
+    where: { tenantId, createdAt: { gte: startDate, lt: endExcl } },
     _sum:  { total: true, saldo: true },
   });
   const fiadosTotal    = toNumOrZero(fiadosSummary._sum.total);
@@ -147,7 +171,7 @@ async function buildMonthlyReport(
     where: {
       tenantId,
       status:    "VENCIDO",
-      createdAt: { gte: startDate, lte: endDate },
+      createdAt: { gte: startDate, lt: endExcl },
     },
   });
 
@@ -176,27 +200,21 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
   const { default: autoTable } = await import("jspdf-autotable");
 
   const doc     = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const primary = [45, 106, 79] as [number, number, number];   // var(--accent)
+  const primary = [45, 106, 79] as [number, number, number];   // se reemplaza por el acento del negocio
   const dark    = [30, 30, 30]  as [number, number, number];
 
   let y = 20;
 
-  // ── Encabezado ──────────────────────────────────────────────────────────
-  doc.setFillColor(...primary);
-  doc.rect(0, 0, 210, 35, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("Reporte Mensual", 15, 15);
-
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
-  doc.text(report.tenantName, 15, 23);
-  doc.text(`Periodo: ${report.period}`, 15, 30);
+  // ── Membrete del negocio (logo + nombre, ADR-514) ───────────────────────
+  const mp = await membreteParaPdf(report.tenantId).catch(sinDato("monthly-report membrete del negocio"));
+  const logo = mp?.logo
+    ? { dataUrl: `data:image/png;base64,${Buffer.from(mp.logo.bytes).toString("base64")}`, ancho: mp.logo.ancho, alto: mp.logo.alto }
+    : null;
+  const mbr = datosDelMembrete({ ...(mp?.membrete ?? {}), nombre: mp?.membrete.nombre ?? report.tenantName, logo }, { tipo: "Reporte mensual", codigo: report.period });
+  primary[0] = mbr.acento[0]; primary[1] = mbr.acento[1]; primary[2] = mbr.acento[2];
 
   // ── KPIs ────────────────────────────────────────────────────────────────
-  y = 48;
+  y = dibujarMembrete(doc, mbr) + 4;
   doc.setTextColor(...dark);
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
@@ -235,13 +253,13 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
     theme:  "striped",
     headStyles: { fillColor: primary },
     styles:     { fontSize: 9 },
-    margin:     { left: 15, right: 15 },
+    margin:     { left: 15, right: 15, bottom: altoDelPie() + 2 },
   });
 
   y = (doc as typeof doc & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // ── Top 5 clientes ──────────────────────────────────────────────────────
-  if (y > 230) { doc.addPage(); y = 20; }
+  if (y > 220) { doc.addPage(); y = 20; }
 
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
@@ -256,7 +274,7 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
     theme:  "striped",
     headStyles: { fillColor: primary },
     styles:     { fontSize: 9 },
-    margin:     { left: 15, right: 15 },
+    margin:     { left: 15, right: 15, bottom: altoDelPie() + 2 },
   });
 
   y = (doc as typeof doc & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
@@ -285,18 +303,7 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
     y += 7;
   }
 
-  // ── Pie de página ───────────────────────────────────────────────────────
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(
-      `Generado por Buleje · ${new Date().toLocaleDateString("es-PE")} · Pág. ${i}/${pageCount}`,
-      15,
-      290,
-    );
-  }
+  dibujarPies(doc, mbr);
 
   return Buffer.from(doc.output("arraybuffer"));
 }
@@ -307,12 +314,12 @@ async function sendReportEmail(
   toEmail:    string,
   report:     ReportData,
   pdfBuffer:  Buffer,
-): Promise<void> {
+): Promise<boolean> {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) {
     logger.warn("[cron/monthly-report] SMTP no configurado — email omitido");
-    return;
+    return false;
   }
 
   const transporter = nodemailer.createTransport({
@@ -323,7 +330,7 @@ async function sendReportEmail(
   });
 
   await transporter.sendMail({
-    from:    `"Buleje" <${smtpUser}>`,
+    from:    `"${report.tenantName.replace(/"/g, "")}" <${smtpUser}>`,
     to:      toEmail,
     subject: `Reporte mensual ${report.period} — ${report.tenantName}`,
     html: `
@@ -358,6 +365,7 @@ async function sendReportEmail(
       },
     ],
   });
+  return true;
 }
 
 // ── Route Handler ────────────────────────────────────────────────────────────
@@ -409,11 +417,36 @@ export async function GET(req: NextRequest) {
       select: { ownerEmail: true },
     });
 
-    const ownerEmail = tenant?.ownerEmail ?? process.env.NOTIFY_EMAIL ?? process.env.SMTP_USER;
+    // `download=1`: el PDF para bajarlo desde el panel, sin mandar correo.
+    // `enviar=0`: generar desde el panel sin correo (el cron del día 1 sí envía).
+    if (url.searchParams.get("download") === "1") {
+      return new NextResponse(new Uint8Array(pdfBuffer), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="reporte-${year}-${String(month).padStart(2, "0")}.pdf"`,
+        },
+      });
+    }
+    const enviar = url.searchParams.get("enviar") !== "0";
+    /* Sin correo del dueño NO se manda al de la plataforma (reviewer 11-10: main, mi-pollo y
+       otros recibían «enviado» y el reporte iba a la casilla de Buleje). */
+    const ownerEmail = enviar ? (tenant?.ownerEmail ?? null) : null;
+    if (enviar && !ownerEmail) {
+      return NextResponse.json({ error: "Este negocio no tiene correo del dueño: agrégalo en Configuración › Datos del negocio." }, { status: 422 });
+    }
 
-    if (ownerEmail) {
-      await sendReportEmail(ownerEmail, report, pdfBuffer);
-      logger.info("[cron/monthly-report] Email enviado", { to: ownerEmail });
+    /* Interruptor del superadmin (21-10): sólo frena el envío AUTOMÁTICO (el cron, sin
+       `enviar`). «Mandármelo por correo» del panel llega con `enviar=1` y es un pedido a mano. */
+    const automatico = url.searchParams.get("enviar") === null;
+    const omitidoPorInterruptor = !!ownerEmail && automatico && !(await avisoCorreoActivo(tenantId, "reportes"));
+    if (omitidoPorInterruptor) {
+      logger.info("[cron/monthly-report] omitido: avisos por correo apagados", { tenantId });
+    } else if (ownerEmail) {
+      if (await sendReportEmail(ownerEmail, report, pdfBuffer)) {
+        logger.info("[cron/monthly-report] Email enviado", { to: ownerEmail });
+        await registrarEnvioCorreo(tenantId, "reportes", ownerEmail, true, `Reporte mensual ${report.period}`);
+      }
     }
 
     logActivity(
@@ -431,7 +464,8 @@ export async function GET(req: NextRequest) {
       ingresos:   report.ingresos,
       gastos:     report.gastos,
       utilidad:   report.utilidad,
-      emailSent:  !!ownerEmail,
+      emailSent:  !!ownerEmail && !omitidoPorInterruptor,
+      ...(omitidoPorInterruptor ? { emailOmitido: "avisos por correo apagados desde la plataforma" } : {}),
       pdfSize:    pdfBuffer.byteLength,
     });
   } catch (err) {

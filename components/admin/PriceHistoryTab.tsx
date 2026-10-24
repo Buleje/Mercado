@@ -1,240 +1,170 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
-import {
-  TrendingUp, Loader2, ArrowUpRight, ArrowDownRight,
-  Download, Search, X, User, Calendar,
-} from "@buleje/design-system/icons";
+import { useState } from "react";
+import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { ArrowDownRight, ArrowUpRight, Download, MoreHorizontal, TrendingDown, TrendingUp, Repeat } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
-import type { Product } from "@/types/erp";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type PriceRecord = {
-  id: string;
-  productId: number;
-  oldPrice: number;
-  newPrice: number;
-  changedAt: string;
-  changedBy?: string;
-};
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function fmtDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleString("es-PE", {
-      day: "2-digit", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
-  } catch { return iso; }
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
+import { formatCurrency, formatNumber } from "@/lib/format";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useHistorialPrecios } from "@/components/admin/precios/hooks/use-historial-precios";
+import PreciosFiltros from "@/components/admin/precios/PreciosFiltros";
+import { FILAS_VISIBLES, fmtFecha, variacionPct } from "@/components/admin/precios/precios-compartido";
 
 interface PriceHistoryTabProps {
   /** Si se pasa, carga sólo el historial de ese producto (modo "editor de producto") */
   productId?: number;
+  /** Acciones que la vista que lo monta suma al menú «Más» (p. ej. el enlace al Marketplace). */
+  accionesExtra?: MenuAccion[];
 }
 
-export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
-  const [history, setHistory] = useState<PriceRecord[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState(productId != null ? String(productId) : "");
+const TARJETA = "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3";
 
-  useEffect(() => {
-    let active = true;
-    const historyUrl = productId != null
-      ? `/api/products/${productId}/price-history`
-      : "/api/price-history";
+export default function PriceHistoryTab({ productId, accionesExtra = [] }: PriceHistoryTabProps) {
+  const h = useHistorialPrecios(productId);
+  /* La tabla muestra las primeras FILAS_VISIBLES; «Ver los N restantes» abre el resto. */
+  const [verTodos, setVerTodos] = useState(false);
+  const { cuentas, filas, nombres, filtros } = h;
+  const lista = verTodos ? filas : filas.slice(0, FILAS_VISIBLES);
+  const sinFiltro = productId != null;
 
-    Promise.all([
-      fetch(historyUrl),
-      productId == null ? fetch("/api/products") : Promise.resolve(null),
-    ])
-      .then(([hRes, pRes]) =>
-        Promise.all([
-          hRes.ok ? hRes.json() : [],
-          pRes && pRes.ok ? pRes.json() : [],
-        ])
-      )
-      .then(([h, p]: [PriceRecord[], Product[]]) => {
-        if (!active) return;
-        setHistory(h);
-        setProducts(p);
-        setLoading(false);
-      })
-      .catch(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [productId]);
+  const cifras = [
+    { rotulo: "Cambios", valor: String(cuentas.cambios), icono: Repeat, sub: `${cuentas.productos} producto${cuentas.productos === 1 ? "" : "s"}` },
+    { rotulo: "Subidas", valor: String(cuentas.subas), icono: TrendingUp },
+    { rotulo: "Bajadas", valor: String(cuentas.bajas), icono: TrendingDown },
+    {
+      rotulo: "Cambio promedio",
+      valor: cuentas.promedio == null ? "—" : `${cuentas.promedio > 0 ? "+" : ""}${formatNumber(cuentas.promedio, { max: 1 })}%`,
+      icono: TrendingUp,
+    },
+  ];
+  const kpis = useKpisPlegables({
+    claveMemoria: "precios-historial",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    resumen: `${cuentas.cambios} cambios · ${cuentas.subas} suben · ${cuentas.bajas} bajan`,
+    tarjetas: h.loading || filas.length === 0 ? [] : cifras.map((c) => (
+      <div key={c.rotulo} className={TARJETA}>
+        <div className="mb-1 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+            <c.icono className="h-4 w-4" aria-hidden />
+          </span>
+          <span className="text-sm font-semibold text-[var(--text-secondary)]">{c.rotulo}</span>
+        </div>
+        <p className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{c.valor}</p>
+        {c.sub && <p className="text-sm text-[var(--text-secondary)]">{c.sub}</p>}
+      </div>
+    )),
+  });
 
-  const productMap = useMemo(
-    () => Object.fromEntries(products.map(p => [p.id, p.name])),
-    [products],
-  );
-
-  const filtered = useMemo(() => {
-    let list = filter
-      ? history.filter(h => h.productId === Number(filter))
-      : history;
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(h => {
-        const name = (productMap[h.productId] ?? "").toLowerCase();
-        return name.includes(q) || (h.changedBy ?? "").toLowerCase().includes(q);
-      });
-    }
-    return [...list].sort(
-      (a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime()
+  const exportar = () =>
+    exportToCSV(
+      filas.map((r) => {
+        const pct = variacionPct(r);
+        return {
+          fecha: fmtFecha(r.changedAt),
+          producto: nombres[r.productId] ?? `#${r.productId}`,
+          precio_anterior: r.oldPrice,
+          precio_nuevo: r.newPrice,
+          cambio_pct: pct != null ? `${pct.toFixed(1)}%` : "N/A",
+          modificado_por: r.changedBy ?? "—",
+        };
+      }),
+      "historial-precios",
     );
-  }, [history, filter, search, productMap]);
+  const acciones: MenuAccion[] = [
+    { id: "exportar", label: "Exportar a Excel", hint: `${filas.length} cambios, con los filtros de abajo`, icon: Download, onSelect: exportar, disabled: filas.length === 0 },
+    ...accionesExtra,
+  ];
 
-  if (loading) {
-    return (
-      <LoadingState />
-    );
-  }
+  if (h.loading) return <LoadingState />;
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-          <TrendingUp className="h-6 w-6 text-primary" />
-          Historial de Precios
-        </SectionTitle>
-        <button
-          onClick={() =>
-            exportToCSV(
-              filtered.map(h => ({
-                fecha: fmtDate(h.changedAt),
-                producto: productMap[h.productId] ?? `#${h.productId}`,
-                precio_anterior: h.oldPrice,
-                precio_nuevo: h.newPrice,
-                cambio_pct: h.oldPrice > 0
-                  ? `${((h.newPrice - h.oldPrice) / h.oldPrice * 100).toFixed(1)}%`
-                  : "N/A",
-                modificado_por: h.changedBy ?? "—",
-              })),
-              "historial-precios"
-            )
-          }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
-        >
-          <Download className="h-4 w-4" /> Exportar
-        </button>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Historial de precios</SectionTitle>
+        <InfoTip
+          title="Historial de precios"
+          what="Cada vez que cambias el precio de un producto queda aquí: cuánto valía, cuánto vale y quién lo cambió."
+          affects="Es sólo lectura: cambiar un precio se hace en Productos y stock. Exportar baja a Excel lo que estás viendo con los filtros."
+          example="Arroz Costeño: de S/ 4.50 a S/ 4.80 el jueves 10/09, +6,7 %, lo cambió el dueño."
+        />
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Exportar y enlaces" />
+        </div>
       </div>
 
-      {/* Filters */}
-      {productId == null && (
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Producto o usuario…"
-              className="w-full pl-9 pr-9 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)]" />
-              </button>
-            )}
-          </div>
-          <select
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-          >
-            <option value="">Todos los productos</option>
-            {[...new Set(history.map(h => h.productId))].map(pid => (
-              <option key={pid} value={pid}>
-                {productMap[pid] ?? `Producto #${pid}`}
-              </option>
-            ))}
-          </select>
-        </div>
+      {kpis.panel}
+
+      {h.error && (
+        <p role="alert" className="text-sm text-[var(--data-error-ink)]">No pudimos cargar el historial. Recarga la página para intentarlo otra vez.</p>
       )}
 
-      {/* Empty state */}
-      {filtered.length === 0 && (
-        <p className="text-center text-[var(--text-tertiary)] dark:text-muted py-8">
-          No hay cambios de precios registrados
+      {!sinFiltro && (
+        <PreciosFiltros
+          filtros={filtros}
+          onCambiar={h.setFiltros}
+          productos={h.productosConCambios}
+          nombres={nombres}
+          hayFiltros={h.hayFiltros}
+          onLimpiar={h.limpiar}
+        />
+      )}
+
+      {filas.length === 0 ? (
+        <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
+          {h.hayFiltros ? "Ningún cambio coincide con los filtros." : "Aún no cambiaste ningún precio."}
         </p>
-      )}
-
-      {/* Table */}
-      {filtered.length > 0 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                <tr>
-                  <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Fecha</span>
-                  </th>
-                  {productId == null && (
-                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Producto</th>
-                  )}
-                  <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Precio anterior</th>
-                  <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Precio nuevo</th>
-                  <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">% Cambio</th>
-                  <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hidden sm:table-cell">
-                    <span className="flex items-center gap-1"><User className="h-3 w-3" /> Modificado por</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-card-border">
-                {filtered.map(h => {
-                  const diff   = h.newPrice - h.oldPrice;
-                  const pct    = h.oldPrice > 0 ? (diff / h.oldPrice) * 100 : null;
-                  const isUp   = diff > 0;
-                  return (
-                    <tr key={h.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                      <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted whitespace-nowrap">
-                        {fmtDate(h.changedAt)}
-                      </td>
-                      {productId == null && (
-                        <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                          {productMap[h.productId] ?? `Producto #${h.productId}`}
-                        </td>
-                      )}
-                      <td className="px-4 py-3 text-right text-[var(--text-tertiary)] line-through">
-                        {fmt(h.oldPrice)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                        {fmt(h.newPrice)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={cn(
-                          "inline-flex items-center gap-0.5 text-xs font-bold",
-                          isUp ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"
-                        )}>
-                          {isUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
-                          {pct != null ? `${isUp ? "+" : ""}${pct.toFixed(1)}%` : "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
-                        {h.changedBy ?? "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface">
-            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{filtered.length} cambio{filtered.length !== 1 ? "s" : ""} registrado{filtered.length !== 1 ? "s" : ""}</p>
-          </div>
+      ) : (
+        /* El historial a 14 px: fecha, producto (salvo en el editor de un producto), antes, ahora, % y quién. */
+        <div className="space-y-2">
+          <DataTable className="min-w-[600px]">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                {!sinFiltro && <th>Producto</th>}
+                <th className="text-right">Antes</th>
+                <th className="text-right">Ahora</th>
+                <th className="text-right">Cambio</th>
+                <th className="hidden sm:table-cell">Lo cambió</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map((r) => {
+                const pct = variacionPct(r);
+                const sube = r.newPrice > r.oldPrice;
+                return (
+                  <tr key={r.id}>
+                    <td className="whitespace-nowrap text-[var(--text-secondary)]">{fmtFecha(r.changedAt)}</td>
+                    {!sinFiltro && (
+                      <td className="font-semibold">{nombres[r.productId] ?? `Producto #${r.productId}`}</td>
+                    )}
+                    <td className="text-right tabular-nums text-[var(--text-secondary)] line-through">{formatCurrency(r.oldPrice)}</td>
+                    <td className="text-right font-bold tabular-nums">{formatCurrency(r.newPrice)}</td>
+                    <td className="text-right">
+                      <span className={cn("inline-flex items-center gap-0.5 font-bold tabular-nums", sube ? "text-[var(--data-error-ink)]" : "text-[var(--data-success-ink)]")}>
+                        {sube ? <ArrowUpRight className="h-4 w-4" aria-hidden /> : <ArrowDownRight className="h-4 w-4" aria-hidden />}
+                        {pct != null ? `${sube ? "+" : ""}${pct.toFixed(1)}%` : "N/A"}
+                      </span>
+                    </td>
+                    <td className="hidden text-[var(--text-secondary)] sm:table-cell">{r.changedBy ?? "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </DataTable>
+          {lista.length < filas.length && (
+            <button
+              type="button"
+              onClick={() => setVerTodos(true)}
+              className="h-12 w-full rounded-xl border border-dashed border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            >
+              Ver los {filas.length - lista.length} cambios restantes
+            </button>
+          )}
         </div>
       )}
     </div>

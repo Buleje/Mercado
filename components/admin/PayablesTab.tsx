@@ -1,349 +1,191 @@
-﻿"use client";
+"use client";
 
-import { CardTitle, PageTitle, StatCard } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
-
-import { useState, useEffect, useCallback, type FormEvent } from "react";
-import {
-  Trash2, Plus, ChevronDown, ChevronUp, X,
-  DollarSign, CreditCard, Check,
-} from "@buleje/design-system/icons";
-import type { DbPayable, DbSupplier, PaymentMethod } from "@/lib/jsondb";
-import { cn } from "@/lib/utils";
-import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useMemo, useState, type ReactNode } from "react";
+import { SectionTitle } from "@buleje/design-system";
+import { CreditCard, Download, MoreHorizontal, Plus, RefreshCw, ScrollText, X } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
-import AdminCard from "./shared/AdminCard";
-import StatusBadge from "./shared/StatusBadge";
-const PAY_STATUS_LABELS = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado" } as const;
-const PAY_STATUS_VARIANT: Record<"pendiente" | "parcial" | "pagado", "warning" | "info" | "success"> = {
-  pendiente: "warning",
-  parcial: "info",
-  pagado: "success",
-};
-const METHOD_LABELS: Record<PaymentMethod, string> = {
-  efectivo: "Efectivo", yape: "Yape", plin: "Plin", transferencia: "Transferencia",
-};
+import { button } from "@/components/ui-system/button-variants";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { codigoDeOrden, descripcionALaVista } from "@/lib/compras/referencia-documento";
+import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
+import CalendarioPorPagar from "@/components/admin/cuentas-por-pagar/CalendarioPorPagar";
+import EstadoDeCuentaModal from "@/components/admin/cuentas-por-pagar/EstadoDeCuentaModal";
+import NuevaCuentaModal from "@/components/admin/cuentas-por-pagar/NuevaCuentaModal";
+import PropuestaDePagos from "@/components/admin/cuentas-por-pagar/PropuestaDePagos";
+import SeccionCuentas, { type FiltrosCuentas } from "@/components/admin/cuentas-por-pagar/SeccionCuentas";
+import { consultaDeLaUrl } from "@/lib/compras/consulta-de-la-url";
+import type { Abierto } from "@/components/admin/cuentas-por-pagar/TablaCuentas";
+import VincularOrdenModal from "@/components/admin/cuentas-por-pagar/VincularOrdenModal";
+import { useCuentasPorPagar } from "@/components/admin/cuentas-por-pagar/use-cuentas-por-pagar";
+import { useIndicadoresPorPagar } from "@/components/admin/cuentas-por-pagar/use-indicadores-por-pagar";
+import {
+  diaDeVencimiento, estaPagada, ordenar, proveedoresConCuentas, resumir, saldo, sugeridasParaPagar, type CuentaPorPagar,
+} from "@/components/admin/cuentas-por-pagar/resumen-cuentas";
 
-function formatDate(iso: string) {
-  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return iso; }
+/** Las secciones de Lo que debo que dibuja esta pantalla (la barra la pone `LoQueDebo`). */
+export type SeccionPorPagar = "cuentas" | "calendario" | "propuesta";
+const FILTROS_INICIALES: FiltrosCuentas = { estado: "pendientes", proveedorId: "", q: "" };
+
+interface Props {
+  seccion?: SeccionPorPagar;
+  irA?: (s: SeccionPorPagar) => void;
+  /** La barra de secciones de Lo que debo; `propuesta` = cuántas quedaron marcadas para pagar. */
+  barra?: (propuesta: number) => ReactNode;
 }
+const sinNavegar = () => undefined;
 
-export default function PayablesTab() {
-  const [payables, setPayables] = useState<DbPayable[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
-  const [showPayment, setShowPayment] = useState<string | null>(null);
-  const [filterSupplier, setFilterSupplier] = useState("");
-  useScrollLock(showAdd);
+/**
+ * Cuentas por pagar a proveedores: a quién le debes, cuánto, cuándo vence y
+ * pagar. Desde el 18-10 vive en Mi Plata › Deudas › Lo que debo (antes, Compras
+ * › Por pagar): es la sección «Proveedores» (`cuentas`), el calendario con la
+ * antigüedad del saldo (C45) y la propuesta de pagos (C46, preparar no paga).
+ * La conciliación de documentos (N04) se fue a Compras › Órdenes y recepción.
+ * El estado de cuenta de un proveedor (C48) sale del «⋯» de la cabecera o de
+ * la fila.
+ */
+export default function PayablesTab({ seccion: vista = "cuentas", irA = sinNavegar, barra }: Props = {}) {
+  const { cuentas, proveedores, loading, error, setError, saving, load, crear, vincular, pagar, eliminar } = useCuentasPorPagar();
+  const { confirm } = useConfirm();
+  // «Ver su cuenta» desde Buscar en Compras llega con `?q=`: la cuenta aparece aunque ya esté pagada.
+  const [filtros, setFiltrosTodos] = useState<FiltrosCuentas>(() => {
+    const q = consultaDeLaUrl();
+    return q ? { estado: "todas", proveedorId: "", q } : FILTROS_INICIALES;
+  });
+  const [abierto, setAbierto] = useState<Abierto>(null);
+  const [nueva, setNueva] = useState(false);
+  const [aVincular, setAVincular] = useState<CuentaPorPagar | null>(null);
+  const [estadoDe, setEstadoDe] = useState<{ proveedor?: string } | null>(null);
+  // La propuesta arranca con las sugeridas; desde que marcas una, manda tu lista.
+  const [elegidasAMano, setElegidas] = useState<Set<string> | null>(null);
+  const [aviso, setAviso] = useState<{ texto: string; tono: "ok" | "aviso" } | null>(null);
+  const hoy = limaDateKey();
 
-  // Add form
-  const [addForm, setAddForm] = useState({ supplierId: "", description: "", amount: "", dueDate: "" });
-  const [saving, setSaving] = useState(false);
+  const resumen = useMemo(() => resumir(cuentas, hoy), [cuentas, hoy]);
+  const kpis = useIndicadoresPorPagar(resumen, !loading && !error);
+  const porProveedor = useMemo(() => proveedoresConCuentas(cuentas), [cuentas]);
+  const sugeridas = useMemo(() => new Set(sugeridasParaPagar(cuentas, hoy)), [cuentas, hoy]);
+  const elegidas = elegidasAMano ?? sugeridas;
+  const marcadas = cuentas.filter((c) => elegidas.has(c.id) && !estaPagada(c)).length;
 
-  // Payment form
-  const [payForm, setPayForm] = useState({ amount: "", method: "efectivo" as PaymentMethod, reference: "" });
+  const setFiltros = (cambio: Partial<FiltrosCuentas>) => setFiltrosTodos((f) => ({ ...f, ...cambio }));
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [payRes, supRes] = await Promise.all([
-        fetch("/api/payables"),
-        fetch("/api/suppliers"),
-      ]);
-      if (payRes.ok) setPayables(await payRes.json());
-      if (supRes.ok) setSuppliers(await supRes.json());
-    } catch {}
-    setLoading(false);
-  }, []);
-
-   
-  useEffect(() => { load(); }, [load]);
-
-  const addPayable = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!addForm.supplierId || !addForm.amount) return;
-    const sup = suppliers.find(s => s.id === addForm.supplierId);
-    setSaving(true);
-    await fetch("/api/payables", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        supplierId: addForm.supplierId,
-        supplierName: sup?.name || "",
-        description: addForm.description,
-        amount: Number(addForm.amount),
-        dueDate: addForm.dueDate ? new Date(addForm.dueDate).toISOString() : new Date().toISOString(),
-      }),
-    });
-    setSaving(false);
-    setShowAdd(false);
-    setAddForm({ supplierId: "", description: "", amount: "", dueDate: "" });
-    load();
+  const borrar = async (id: string) => {
+    if (!(await confirm({ title: "¿Eliminar esta cuenta por pagar?", description: "Se borra con sus pagos registrados.", intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
+    await eliminar(id);
   };
 
-  const registerPayment = async (e: FormEvent, payableId: string) => {
-    e.preventDefault();
-    if (!payForm.amount || Number(payForm.amount) <= 0) return;
-    setSaving(true);
-    await fetch(`/api/payables/${payableId}/payments`, {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        amount: Number(payForm.amount),
-        method: payForm.method,
-        reference: payForm.reference || undefined,
-      }),
-    });
-    setSaving(false);
-    setShowPayment(null);
-    setPayForm({ amount: "", method: "efectivo", reference: "" });
-    load();
+  /** Lleva a una cuenta, sin filtros que la escondan, con el pago abierto («Pagar» de la propuesta). */
+  const irACuenta = (id: string, abrir: Abierto) => {
+    setFiltrosTodos(abrir ? FILTROS_INICIALES : { ...FILTROS_INICIALES, estado: "todas" });
+    setAbierto(abrir);
+    irA("cuentas");
+    window.setTimeout(() => document.querySelector(`[data-cuenta="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center" }), 80);
   };
 
-  const deletePayable = async (id: string) => {
-    if (!confirm("¿Eliminar esta cuenta por pagar?")) return;
-    await fetch(`/api/payables/${id}`, { method: "DELETE" });
-    load();
-  };
+  const descargar = () => exportToCSV(ordenar(cuentas).map((c) => ({
+    proveedor: c.supplierName, concepto: descripcionALaVista(c.description, c.purchaseOrderId), total: c.amount, pagado: c.paidAmount,
+    falta: saldo(c), vence: diaDeVencimiento(c.dueDate), estado: c.status, orden: c.purchaseOrderId ? codigoDeOrden(c.purchaseOrderId) : "",
+  })), "cuentas-por-pagar");
 
-  const filtered = filterSupplier
-    ? payables.filter(p => p.supplierId === filterSupplier)
-    : payables;
-
-  const totalDebt = filtered.reduce((s, p) => s + (p.amount - p.paidAmount), 0);
-  const totalPaid = filtered.reduce((s, p) => s + p.paidAmount, 0);
-
-  // Summary by supplier
-  const supplierSummary = suppliers.map(sup => {
-    const debts = payables.filter(p => p.supplierId === sup.id);
-    const total = debts.reduce((s, p) => s + p.amount, 0);
-    const paid = debts.reduce((s, p) => s + p.paidAmount, 0);
-    return { ...sup, totalDebt: total, totalPaid: paid, pending: total - paid, count: debts.length };
-  }).filter(s => s.count > 0);
+  const conDatos = !loading && cuentas.length > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-semibold">Finanzas / Obligaciones</p>
-          <PageTitle className="mt-1 text-fs-h1 font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <CreditCard className="h-5 w-5 currentColor" />
-            Cuentas por Pagar
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">{filtered.length} cuentas activas con proveedores</p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
+        <SectionTitle className="shrink-0 whitespace-nowrap text-[var(--text-primary)]">Lo que debo</SectionTitle>
+        <InfoTip
+          title="Lo que debo a proveedores"
+          what="Lo que le debes a cada proveedor: las compras a crédito crean su cuenta sola y también puedes cargar una a mano con su factura u orden. Arriba van las vencidas y las que vencen primero."
+          affects="Al recibir con productos dañados, vencidos o faltantes, la cuenta de esa orden baja sola. Si pagas en efectivo puedes marcar «Sale de la caja» y el pago queda como egreso de la caja abierta."
+          example="Orden de S/ 140 a 15 días con Distribuidora Ucayali: vence el jueves 23/10; si pagas S/ 100 hoy te faltan S/ 40."
+        />
+        {barra && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-[1_1_8rem] xl:shrink">{barra(marcadas)}</div>}
+        <div className="ml-auto flex items-center gap-2 xl:shrink-0">
+          {conDatos && kpis.boton}
+          <button type="button" onClick={() => setNueva(true)} aria-haspopup="dialog" title="Nueva cuenta" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-2xl:w-12 max-2xl:px-0" })}>
+            <Plus className="h-4 w-4" aria-hidden /> <span className="max-2xl:sr-only">Nueva cuenta</span>
+          </button>
+          <ActionMenu
+            label="Más acciones"
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            icon={MoreHorizontal}
+            actions={[
+              { id: "refrescar", label: "Actualizar", icon: RefreshCw, onSelect: () => void load(), busy: loading },
+              { id: "estado", label: "Estado de cuenta", hint: "Cargos, pagos y saldo con un proveedor", icon: ScrollText, onSelect: () => setEstadoDe({ proveedor: filtros.proveedorId || undefined }), disabled: porProveedor.length === 0 },
+              { id: "csv", label: "Descargar CSV", hint: "Todas las cuentas", icon: Download, onSelect: descargar, disabled: cuentas.length === 0 },
+            ]}
+          />
         </div>
-        <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-xl transition-colors">
-          <Plus className="h-4 w-4" /> Nueva cuenta
-        </button>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Por pagar" value={`S/ ${totalDebt.toFixed(2)}`} icon={DollarSign} emphasis={totalDebt > 0 ? "warning" : "neutral"} />
-        <StatCard label="Pagado" value={`S/ ${totalPaid.toFixed(2)}`} icon={Check} emphasis="success" />
-        <StatCard label="Cuentas activas" value={filtered.length} icon={CreditCard} />
-      </div>
-
-      {/* Supplier summary cards */}
-      {supplierSummary.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {supplierSummary.map(s => (
-            <button
-              key={s.id}
-              onClick={() => setFilterSupplier(filterSupplier === s.id ? "" : s.id)}
-              className={cn(
-                "text-left p-3 rounded-xl border transition-all",
-                filterSupplier === s.id
-                  ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-gray-300"
-              )}
-            >
-              <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm truncate">{s.name}</p>
-              <div className="flex flex-wrap items-center gap-3 mt-1">
-                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: S/{Number(s.pending).toFixed(2)}</span>
-                <span className="text-xs text-[var(--data-success-500)]">Pagado: S/{Number(s.totalPaid).toFixed(2)}</span>
-              </div>
-              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{s.count} factura{s.count !== 1 ? "s" : ""}</p>
-            </button>
-          ))}
+      {(error || aviso) && (
+        <div
+          role={error ? "alert" : "status"}
+          className={cn(
+            "flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold",
+            error ? "border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]"
+              : aviso?.tono === "aviso" ? "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"
+              : "border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--text-primary)]",
+          )}
+        >
+          <p>{error ?? aviso?.texto}</p>
+          <button type="button" onClick={() => { setError(null); setAviso(null); }} className="shrink-0 hover:opacity-70" aria-label="Cerrar aviso">
+            <X className="h-4 w-4" aria-hidden />
+          </button>
         </div>
       )}
 
-      {/* Payables list */}
+      {conDatos && kpis.panel}
+
       {loading ? (
-        <TableSkeleton rows={4} cols={4} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl" />
-      ) : filtered.length === 0 ? (
+        <TableSkeleton rows={4} cols={4} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
+      ) : cuentas.length === 0 ? (
         <EmptyState
           icon={CreditCard}
-          title={filterSupplier ? "Sin cuentas para este proveedor" : "Sin cuentas por pagar"}
-          description={filterSupplier ? "Este proveedor no tiene deudas registradas." : "No tienes deudas con proveedores. ¡Excelente!"}
-          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl"
+          title="No le debes nada a ningún proveedor"
+          description="Las compras a crédito crean su cuenta aquí solas."
+          action={{ label: "Anotar una cuenta", onClick: () => setNueva(true) }}
+          className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
         />
       ) : (
-        <div className="space-y-3">
-          {filtered.map((p) => {
-            const remaining = p.amount - p.paidAmount;
-            const pct = p.amount > 0 ? (p.paidAmount / p.amount) * 100 : 0;
-            return (
-              <div key={p.id} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-                <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-[var(--text-primary)]">{p.supplierName}</span>
-                      <StatusBadge variant={PAY_STATUS_VARIANT[p.status]} label={PAY_STATUS_LABELS[p.status]} size="sm" dot />
-                    </div>
-                    {p.description && <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">{p.description}</p>}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
-                      <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(p.amount).toFixed(2)}</span></span>
-                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">S/{Number(p.paidAmount).toFixed(2)}</span></span>
-                      <span>Restante: <span className="font-bold text-[var(--data-error-500)]">S/{remaining.toFixed(2)}</span></span>
-                      <span>Vence: {formatDate(p.dueDate)}</span>
-                    </div>
-                    {/* Progress bar — fill sólido y diferenciado: verde cuando
-                        está 100% pagado, teal cuando es pago parcial. Antes usaba
-                        --accent-soft (pálido) para ambos → invisible y sin distinción. */}
-                    <div className="w-full bg-[var(--surface-sunken)] rounded-full h-1.5 mt-2">
-                      <div
-                        className={cn("h-1.5 rounded-full transition-all", pct >= 100 ? "bg-[var(--data-success-500)]" : "bg-primary")}
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {p.status !== "pagado" && (
-                      <button
-                        onClick={() => { setShowPayment(showPayment === p.id ? null : p.id); setPayForm({ amount: String(remaining.toFixed(2)), method: "efectivo", reference: "" }); }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 text-xs font-bold transition-colors"
-                      >
-                        <DollarSign className="h-3.5 w-3.5" /> Pagar
-                      </button>
-                    )}
-                    <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-                      {expanded === p.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </button>
-                    <button onClick={() => deletePayable(p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Payment form */}
-                {showPayment === p.id && (
-                  <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] flex flex-wrap items-end gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Monto (S/)</label>
-                      <input
-                        required type="number" step="0.01" min="0.01" max={remaining}
-                        value={payForm.amount}
-                        onChange={(e) => setPayForm(f => ({ ...f, amount: e.target.value }))}
-                        className="w-28 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Método</label>
-                      <select
-                        value={payForm.method}
-                        onChange={(e) => setPayForm(f => ({ ...f, method: e.target.value as PaymentMethod }))}
-                        className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                      >
-                        {(Object.keys(METHOD_LABELS) as PaymentMethod[]).map(m => (
-                          <option key={m} value={m}>{METHOD_LABELS[m]}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Referencia</label>
-                      <input
-                        value={payForm.reference}
-                        onChange={(e) => setPayForm(f => ({ ...f, reference: e.target.value }))}
-                        placeholder="Nº operación…"
-                        className="w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                      />
-                    </div>
-                    <button type="submit" disabled={saving} className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1 disabled:opacity-60">
-                      <Check className="h-3.5 w-3.5" /> Registrar pago
-                    </button>
-                    <button type="button" onClick={() => setShowPayment(null)} className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted text-xs font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                      Cancelar
-                    </button>
-                  </form>
-                )}
-
-                {/* Payment history */}
-                {expanded === p.id && (
-                  <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
-                    <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Historial de pagos</p>
-                    {p.payments.length === 0 ? (
-                      <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Sin pagos registrados</p>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {p.payments.map((pay) => (
-                          <div key={pay.id} className="flex items-center justify-between text-sm bg-[var(--surface-raised)] rounded-lg px-3 py-2">
-                            <div>
-                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(pay.amount).toFixed(2)}</span>
-                              <span className="text-[var(--text-tertiary)] dark:text-muted ml-2">{METHOD_LABELS[pay.method]}</span>
-                              {pay.reference && <span className="text-[var(--text-tertiary)] dark:text-muted ml-2 text-xs">Ref: {pay.reference}</span>}
-                            </div>
-                            <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{formatDate(pay.date)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">ID: {p.id}{p.purchaseOrderId ? ` · OC: ${p.purchaseOrderId}` : ""}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div>
+          {vista === "calendario" ? (
+            <CalendarioPorPagar cuentas={cuentas} hoy={hoy} />
+          ) : vista === "propuesta" ? (
+            <PropuestaDePagos cuentas={cuentas} hoy={hoy} elegidas={elegidas} setElegidas={setElegidas} onPagar={(id) => irACuenta(id, { id, que: "pagar" })} />
+          ) : (
+            <SeccionCuentas
+              cuentas={cuentas}
+              hoy={hoy}
+              filtros={filtros}
+              setFiltros={setFiltros}
+              abierto={abierto}
+              setAbierto={setAbierto}
+              saving={saving}
+              onPagar={pagar}
+              onEliminar={(id) => void borrar(id)}
+              onAviso={(texto, tono) => setAviso({ texto, tono })}
+              onEstadoDeCuenta={(proveedor) => setEstadoDe({ proveedor })}
+              onVincular={setAVincular}
+            />
+          )}
         </div>
       )}
-      {/* ── Add payable modal ── */}
-      {showAdd && (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-        <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
-          <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
-            <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
-          </div>
-          <form onSubmit={addPayable} className="p-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Proveedor *</label>
-                <select required value={addForm.supplierId} onChange={(e) => setAddForm(f => ({ ...f, supplierId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
-                  <option value="">Seleccionar proveedor</option>
-                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Monto (S/) *</label>
-                <input required type="number" step="0.01" min="0.01" value={addForm.amount} onChange={(e) => setAddForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Descripción</label>
-                <input value={addForm.description} onChange={(e) => setAddForm(f => ({ ...f, description: e.target.value }))} placeholder="Factura #001…" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Fecha de vencimiento</label>
-                <input type="date" value={addForm.dueDate} onChange={(e) => setAddForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
-                {saving ? "Guardando…" : "Crear cuenta"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+
+      {nueva && <NuevaCuentaModal proveedores={proveedores} cuentas={cuentas} saving={saving} onCrear={crear} onCerrar={() => setNueva(false)} />}
+      {aVincular && <VincularOrdenModal cuenta={aVincular} saving={saving} onVincular={vincular} onCerrar={() => setAVincular(null)} />}
+      {estadoDe && (
+        <EstadoDeCuentaModal
+          proveedores={porProveedor.map((p) => ({ id: p.id, nombre: p.nombre }))}
+          inicial={estadoDe.proveedor}
+          onCerrar={() => setEstadoDe(null)}
+        />
       )}
     </div>
   );
 }
-

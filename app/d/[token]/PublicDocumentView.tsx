@@ -34,6 +34,7 @@ export function PublicDocumentView({ token, doc, share, initialSignedUrl }: Prop
 
   const isPdf = doc.mimeType === "application/pdf";
   const isImage = doc.mimeType.startsWith("image/");
+  const isAudio = doc.mimeType.startsWith("audio/");
 
   async function unlock() {
     setLoading(true);
@@ -118,13 +119,28 @@ export function PublicDocumentView({ token, doc, share, initialSignedUrl }: Prop
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             {isPdf ? (
               <iframe
-                src={signedUrl}
+                src={`/api/public/documents/${encodeURIComponent(token)}/raw${share.hasPassword && password ? `?password=${encodeURIComponent(password)}` : ""}`}
                 title={doc.name}
                 className="w-full h-[80vh] border-0"
               />
             ) : isImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={signedUrl} alt={doc.name} className="w-full h-auto" />
+              <img src={`/api/public/documents/${encodeURIComponent(token)}/raw${share.hasPassword && password ? `?password=${encodeURIComponent(password)}` : ""}`} alt={doc.name} className="w-full h-auto" />
+            ) : isAudio ? (
+              // Una nota de voz (la grabadora del cubicador la manda por WhatsApp): se escucha acá mismo.
+              <div className="p-6 space-y-3">
+                <audio
+                  controls
+                  preload="metadata"
+                  src={`/api/public/documents/${encodeURIComponent(token)}/raw${share.hasPassword && password ? `?password=${encodeURIComponent(password)}` : ""}`}
+                  className="w-full"
+                >
+                  <track kind="captions" />
+                </audio>
+                <a href={signedUrl} download={doc.name} className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 hover:underline">
+                  <Download className="h-4 w-4" /> Descargar el audio
+                </a>
+              </div>
             ) : (
               <div className="p-12 text-center">
                 <FileText className="h-16 w-16 mx-auto text-slate-300 mb-4" />

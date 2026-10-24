@@ -31,21 +31,21 @@ export function BirthdayCard() {
 
   if (birthdays.length === 0) return null;
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-300">Cumpleanos</span>
+        <span className="text-xs font-bold text-[var(--text-secondary)] ">Cumpleanos</span>
       </div>
       <div className="space-y-2">
         {birthdays.map((b, i) => (
           <div key={i} className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-200">
+            <p className="text-sm font-semibold text-[var(--text-primary)] ">
               {b.isToday ? "Hoy cumple" : "Manana cumple"}: {b.name}
             </p>
             {b.phone && b.isToday && (
               <a
                 href={`https://wa.me/${b.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Feliz cumpleanos ${b.name}! De parte de Buleje.`)}`}
                 target="_blank" rel="noopener noreferrer"
-                className="shrink-0 px-2 py-1 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold hover:bg-[var(--accent-soft)] transition-colors"
+                className="shrink-0 px-2 py-1 rounded-lg bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold hover:bg-primary/10 transition-colors"
               >
                 Felicitar
               </a>

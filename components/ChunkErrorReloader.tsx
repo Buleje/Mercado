@@ -38,7 +38,39 @@ function isChunkUrl(url: string | null | undefined): boolean {
   return !!url && /\/_next\/static\/(chunks|css)\//.test(url);
 }
 
+/* En desarrollo (07-10): `npm run dev` trae solo los cambios de GitHub
+   (`scripts/dev-helpers/traer-cambios.mjs`) y Turbopack recompila módulos
+   grandes —el Libro TH— en 20-60 s. Durante ese rato el chunk nuevo todavía
+   no existe: un solo reintento a los 0 s volvía a fallar y el guard de 12 s
+   dejaba la pantalla de error. En dev se espera y se reintenta varias veces;
+   en producción sigue siendo UNA recarga. */
+const DEV = process.env.NODE_ENV === "development";
+const DEV_INTENTOS_KEY = "__bsm_chunk_reload_dev";
+const DEV_MAX_INTENTOS = 8;
+const DEV_ESPERA_MS = 6_000;
+const DEV_VENTANA_MS = 3 * 60_000;
+
+let recargaPendiente = false;
+
+function reloadOnceDev(): void {
+  if (recargaPendiente) return;
+  let intento = 1;
+  try {
+    const prev = JSON.parse(sessionStorage.getItem(DEV_INTENTOS_KEY) || "null") as { n: number; desde: number } | null;
+    const vigente = prev && Date.now() - prev.desde < DEV_VENTANA_MS;
+    intento = vigente ? prev.n + 1 : 1;
+    if (intento > DEV_MAX_INTENTOS) return; // 3 min sin chunk: que el ErrorBoundary lo muestre
+    sessionStorage.setItem(DEV_INTENTOS_KEY, JSON.stringify({ n: intento, desde: vigente ? prev.desde : Date.now() }));
+  } catch {
+    /* sin sessionStorage: un intento y listo */
+  }
+  recargaPendiente = true;
+  console.info(`[ChunkErrorReloader] el servidor está compilando cambios nuevos: recargo en ${DEV_ESPERA_MS / 1000} s (intento ${intento}/${DEV_MAX_INTENTOS})`);
+  window.setTimeout(() => window.location.reload(), intento === 1 ? 1_500 : DEV_ESPERA_MS);
+}
+
 function reloadOnce(): void {
+  if (DEV) return reloadOnceDev();
   try {
     const last = Number(sessionStorage.getItem(RELOAD_GUARD) || "0");
     // Anti-loop: si ya recargamos hace <12s, no insistas (el chunk falta de
@@ -79,7 +111,15 @@ export default function ChunkErrorReloader() {
     // no burbujean, así que un listener en bubbling no los vería.
     window.addEventListener("error", onError, true);
     window.addEventListener("unhandledrejection", onRejection);
+    // Dev: si la página aguantó 20 s sin otro fallo de chunk, la compilación
+    // terminó; la próxima tanda de cambios arranca a contar de cero.
+    const limpiar = DEV
+      ? window.setTimeout(() => {
+          try { sessionStorage.removeItem(DEV_INTENTOS_KEY); } catch { /* sin sessionStorage: nada que limpiar */ }
+        }, 20_000)
+      : undefined;
     return () => {
+      if (limpiar) window.clearTimeout(limpiar);
       window.removeEventListener("error", onError, true);
       window.removeEventListener("unhandledrejection", onRejection);
     };

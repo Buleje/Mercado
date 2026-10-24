@@ -29,7 +29,12 @@ async function ensureCached(tenant: string): Promise<{ products: Product[]; cate
   // Fetch from API
   const promise = (async () => {
     try {
-      const res = await fetch("/api/products");
+      // `credentials: "omit"` (16-10, como `contexts/cart-context.tsx`): con la
+      // sesión del ADMIN abierta, /api/products devuelve los productos del negocio
+      // del JWT (88 de main) y no los de la tienda que se mira. Como visitante,
+      // el endpoint resuelve la tienda por el subdominio o la página `/t/<slug>`.
+      // `no-store`: que no salga de la caché una respuesta pedida con sesión.
+      const res = await fetch("/api/products", { cache: "no-store", credentials: "omit" });
       if (!res.ok) {
         cacheByTenant.set(tenant, { products: [], categories: [] });
         return;

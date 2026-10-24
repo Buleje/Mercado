@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-label="Laca Fijación Flexible 300 ml">
+<defs>
+<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7ece7"/><stop offset="1" stop-color="#e9d3ca"/></linearGradient>
+<radialGradient id="luz" cx="50%" cy="36%" r="58%"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="b" x1="0" x2="1"><stop offset="0" stop-color="#4d363d"/><stop offset=".45" stop-color="#2b1d22"/><stop offset="1" stop-color="#1f1518"/></linearGradient>
+<linearGradient id="t" x1="0" x2="1"><stop offset="0" stop-color="#fbcb9e"/><stop offset=".5" stop-color="#c9a27e"/><stop offset="1" stop-color="#8d7158"/></linearGradient>
+<filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+</defs>
+
+<g transform="translate(300 330) scale(1.12) translate(-300 -330)"><ellipse cx="300" cy="514" rx="92" ry="16" fill="#000" opacity=".2" filter="url(#s)"/><rect x="252" y="120" width="96" height="90" rx="18" fill="url(#t)" opacity=".95"/><rect x="292" y="104" width="16" height="22" rx="4" fill="#79614c"/><rect x="238" y="202" width="124" height="310" rx="22" fill="url(#b)"/><rect x="238" y="214" width="124" height="6" fill="#000" opacity=".12"/><rect x="250" y="230" width="14" height="260" rx="7" fill="#fff" opacity=".2"/><text x="300" y="300" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="12" letter-spacing="3" fill="#c9a27e">BULEJE PRO</text><rect x="282" y="312" width="36" height="2" fill="#c9a27e" opacity=".8"/><text x="300" y="346" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="22" fill="#f6e7dc">Laca</text><text x="300" y="374" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="22" fill="#f6e7dc">Flexible</text><text x="300" y="402" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="10" letter-spacing="1" fill="#f6e7dc" opacity=".85">Fijación · 300 ml</text></g>
+</svg>

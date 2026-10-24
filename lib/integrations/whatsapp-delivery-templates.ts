@@ -63,7 +63,7 @@ export function deliveryNearbyMessage(vars: DeliveryNearbyVars): string {
     `Sigue su ubicación en vivo aquí:`,
     `${vars.trackingUrl}`,
     ``,
-    `¡Prepará el cambio! 🙌`,
+    `¡Prepara el cambio! 🙌`,
   ].join("\n");
 }
 
@@ -80,7 +80,7 @@ export function deliveryDeliveredMessage(vars: DeliveryDeliveredVars): string {
     ``,
     `Gracias por comprarnos. Si algo no está bien, respondenos este mensaje.`,
     ``,
-    `¿Todo ok? Calificá tu compra:`,
+    `¿Todo ok? Califica tu compra:`,
     `${vars.trackingUrl}`,
   ].join("\n");
 }
@@ -113,7 +113,7 @@ export function deliveryPickedUpMessage(vars: DeliveryTemplateVars): string {
     `${vars.storeName} ya despachó tu compra.`,
     `El repartidor está en camino a tu dirección.`,
     ``,
-    `Seguilo en vivo:`,
+    `Síguelo en vivo:`,
     `${vars.trackingUrl}`,
   ].join("\n");
 }

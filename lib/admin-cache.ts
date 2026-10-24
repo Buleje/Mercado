@@ -21,6 +21,7 @@
  * sin cambios en los call sites.
  */
 import { invalidate, invalidateByPrefix } from "@/lib/cache";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 
 export const invalidateAdminCache = {
   /**
@@ -28,6 +29,8 @@ export const invalidateAdminCache = {
    * Invalida: dashboard, stats, overview, today-summary, alerts-summary, doc-badges.
    */
   afterOrder(tenantId: string): void {
+    // Tablero de Ventas: `"use cache"` de Next (tag), no vive en `lib/cache`.
+    invalidarVentasOverview(tenantId);
     invalidateByPrefix(`admin:overview:${tenantId}`);
     invalidate(`admin:stats:${tenantId}`);
     invalidate(`admin:alerts-summary:${tenantId}`);

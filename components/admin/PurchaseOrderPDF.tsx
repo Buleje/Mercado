@@ -1,24 +1,40 @@
 "use client";
 
 import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
+import { totalesOC } from "@/lib/compras/totales-oc";
+import { formatCurrency, formatDateLong } from "@/lib/format";
+import type { Membrete } from "@/lib/admin/membrete";
+import { useMembrete } from "@/hooks/use-membrete";
+import { imprimirAlCargar, membreteParaHtml } from "@/lib/documentos/hoja-negocio";
+import { fechaDelDocumento } from "@/lib/documentos/membrete-pdf";
 
 interface PurchaseOrderPDFProps {
   order: DbPurchaseOrder;
   supplier?: DbSupplier;
 }
 
-export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier) {
-  const subtotal = order.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
-  const igv = subtotal * 0.18;
-  const total = subtotal + igv;
+/**
+ * El papel de la orden de compra, encabezado con el negocio de la sesión
+ * (`membrete`). Antes decía «Buleje», «Jr. Los Pinos 123» y un RUC de relleno
+ * en la orden de cualquier negocio.
+ */
+export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier, membrete?: Membrete | null) {
+  // Logo, nombre y datos del negocio de la sesión, con el membrete común (ADR-514). Tiene que
+  // venir ya cargado (`useMembrete`): una ventana abierta tras un `await` la bloquea el navegador.
+  const mbr = membreteParaHtml(membrete, {
+    tipo: "Orden de compra",
+    codigo: `#${order.id.slice(-8).toUpperCase()}`,
+    fecha: fechaDelDocumento(order.createdAt),
+  });
+  // El TOTAL del papel es el de la orden. Antes se calculaba acá sumando 18%
+  // encima del costo e ignorando el descuento, así que el PDF que se le
+  // entregaba al proveedor no coincidía con la orden ni con la pantalla.
+  const { subtotalBruto, descuentoPct, descuentoMonto, total, baseImponible, igvContenido } =
+    totalesOC(order);
 
   const orderDate = (() => {
     try {
-      return new Date(order.createdAt).toLocaleDateString("es-PE", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
+      return formatDateLong(order.createdAt);
     } catch {
       return order.createdAt;
     }
@@ -30,8 +46,8 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
       <tr style="background:${i % 2 === 0 ? "#f9fafb" : "#ffffff"}">
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#111827">${item.name}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:center;color:#374151">${item.quantity} ${item.unit}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;color:#374151">S/${Number(item.unitCost).toFixed(2)}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:600;color:#111827">S/${(item.quantity * item.unitCost).toFixed(2)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;color:#374151">${formatCurrency(Number(item.unitCost))}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:600;color:#111827">${formatCurrency(item.quantity * item.unitCost)}</td>
       </tr>`
     )
     .join("");
@@ -51,13 +67,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     body { font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; }
     .container { max-width: 800px; margin: 0 auto; padding: 32px; }
 
-    /* Header */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #00A0A0; }
-    .brand-name { font-size: 24px; font-weight: 900; color: #00A0A0; }
-    .brand-sub  { font-size: 11px; color: #6b7280; margin-top: 2px; }
-    .brand-info { font-size: 11px; color: #6b7280; margin-top: 4px; line-height: 1.5; }
-    .oc-badge   { background: #00A0A0; color: #fff; font-size: 22px; font-weight: 900; padding: 10px 20px; border-radius: 10px; text-align: right; }
-    .oc-num     { font-size: 12px; font-weight: 400; margin-bottom: 2px; }
+    ${mbr.estilos}
 
     /* Info grid */
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
@@ -67,7 +77,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     .info-row strong { color: #111827; }
 
     /* Status badge */
-    .status-pendiente { background:#fef3c7; color:#92400e; }
+    .status-pendiente { background:#fff1ef; color:#842e25; }
     .status-recibido  { background:#d1fae5; color:#065f46; }
     .status-parcial   { background:#dbeafe; color:#1e40af; }
     .status-cancelado { background:#fee2e2; color:#991b1b; }
@@ -101,24 +111,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
 <body>
 <div class="container">
 
-  <!-- Header -->
-  <div class="header">
-    <div>
-      <div class="brand-name">Buleje</div>
-      <div class="brand-sub">Abarrotes y Delivery - Pucallpa, Peru</div>
-      <div class="brand-info">
-        Jr. Los Pinos 123, Pucallpa<br>
-        RUC: 10XXXXXXXXXX<br>
-        Tel: 061-XXXXXX
-      </div>
-    </div>
-    <div>
-      <div class="oc-badge">
-        <div class="oc-num">ORDEN DE COMPRA</div>
-        #${order.id.slice(-8).toUpperCase()}
-      </div>
-    </div>
-  </div>
+  ${mbr.cabecera}
 
   <!-- Info Grid -->
   <div class="info-grid">
@@ -159,17 +152,26 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
   <!-- Totals -->
   <div class="totals">
     <div class="totals-box">
+      ${descuentoPct > 0 ? `
       <div class="totals-row">
-        <span>Subtotal (sin IGV)</span>
-        <span>S/${subtotal.toFixed(2)}</span>
+        <span>Subtotal</span>
+        <span>${formatCurrency(subtotalBruto)}</span>
       </div>
       <div class="totals-row">
-        <span>IGV (18%)</span>
-        <span>S/${igv.toFixed(2)}</span>
+        <span>Descuento (${descuentoPct}%)</span>
+        <span>-${formatCurrency(descuentoMonto)}</span>
+      </div>` : ""}
+      <div class="totals-row">
+        <span>Valor de venta</span>
+        <span>${formatCurrency(baseImponible)}</span>
+      </div>
+      <div class="totals-row">
+        <span>IGV (18%) incluido</span>
+        <span>${formatCurrency(igvContenido)}</span>
       </div>
       <div class="totals-row total">
         <span>TOTAL</span>
-        <span>S/${total.toFixed(2)}</span>
+        <span>${formatCurrency(total)}</span>
       </div>
     </div>
   </div>
@@ -201,6 +203,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     </div>
   </div>
 
+  ${mbr.pie}
 </div>
 </body>
 </html>`;
@@ -211,16 +214,15 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
   printWindow.document.write(html);
   printWindow.document.close();
   printWindow.focus();
-  printWindow.onload = () => {
-    printWindow.print();
-  };
+  imprimirAlCargar(printWindow);
 }
 
 export default function PurchaseOrderPDF({ order, supplier }: PurchaseOrderPDFProps) {
+  const membrete = useMembrete();
   return (
     <button
       type="button"
-      onClick={() => printPurchaseOrder(order, supplier)}
+      onClick={() => printPurchaseOrder(order, supplier, membrete)}
       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] hover:bg-[var(--data-warning-100)] text-xs font-bold transition-colors"
       title="Descargar / Imprimir PDF"
     >

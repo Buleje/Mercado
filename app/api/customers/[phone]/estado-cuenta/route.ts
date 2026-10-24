@@ -88,6 +88,7 @@ export async function GET(
       cliente: {
         ...customer,
         totalSpent: Number(customer.totalSpent),
+        // Saldo a favor del cliente (devoluciones a crédito), NO deuda: lo que debe es `resumen.totalFiados`.
         creditBalance: Number(customer.creditBalance),
       },
       resumen: {

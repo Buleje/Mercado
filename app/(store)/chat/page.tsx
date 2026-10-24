@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
 
 export const metadata: Metadata = {
   title: "Mensajes",
-  description: "Chateá con las tiendas del marketplace.",
+  description: "Chatea con las tiendas del marketplace.",
   robots: { index: false, follow: false },
 };
 

@@ -254,7 +254,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                 className={cn(
                   "flex-1 py-3 text-sm font-semibold transition-all border-b-2",
                   tab === key
-                    ? "text-primary border-primary bg-primary/5"
+                    ? "text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary bg-primary/5"
                     : "text-muted border-transparent hover:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
                 )}
               >

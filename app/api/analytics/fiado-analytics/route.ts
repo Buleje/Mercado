@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { AnalyticsFiadoDB } from "@/lib/db/analytics-fiado.db";
 import { logger } from "@/lib/logger";
+import { startOfLimaMonth } from "@/lib/utils";
+import { inicioDeLaTendencia, tendenciaMensualFiados, type MesDeTendencia } from "@/lib/fiados/tendencia-mensual";
 
 /**
  * GET /api/analytics/fiado-analytics
@@ -13,10 +15,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisMonthStart = new Date(startOfLimaMonth(0, now));
     // Audit project-wide 2026-05-19: migrado a AnalyticsFiadoDB.
-    const twelveMonthsAgo = new Date(now);
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    /* Desde el 1.º del mes de Lima de hace 11 meses: la tendencia agrupa por mes de Lima. */
+    const twelveMonthsAgo = inicioDeLaTendencia(now);
 
     const [activeFiados, cobradoEsteMes, allFiadosForTrend] = await Promise.allSettled([
       AnalyticsFiadoDB.getActiveFiadosWithCustomer(auth.tenantId),
@@ -58,22 +60,27 @@ export async function GET(req: NextRequest) {
     // --- Distribución por antigüedad ---
     const distribucion = [
       { rango: "Al día (0-7 días)", monto: 0, count: 0, color: "var(--accent)" },
-      { rango: "Por vencer (8-30 días)", monto: 0, count: 0, color: "#f97316" },
+      { rango: "Por vencer (8-30 días)", monto: 0, count: 0, color: "#ff6b5b" },
       { rango: "Vencido 31-60 días", monto: 0, count: 0, color: "#e76f51" },
       { rango: "Crítico +60 días", monto: 0, count: 0, color: "#d00000" },
     ];
 
     for (const fiado of activeList) {
       const saldo = Number(fiado.saldo);
-      const diasDesdeCreacion = Math.floor((now.getTime() - new Date(fiado.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+      // Brandon 2026-06-17: bucketizar por días respecto al VENCIMIENTO, no a la
+      // creación. Antes un fiado viejo con vencimiento lejano caía en "crítico"
+      // falsamente. Sin fechaVence → fallback createdAt. Días negativos (aún no
+      // vence) caen en "al día" (dias <= 7).
+      const ref = fiado.fechaVence ? new Date(fiado.fechaVence) : new Date(fiado.createdAt);
+      const dias = Math.floor((now.getTime() - ref.getTime()) / (1000 * 60 * 60 * 24));
 
-      if (diasDesdeCreacion <= 7) {
+      if (dias <= 7) {
         distribucion[0].monto += saldo;
         distribucion[0].count++;
-      } else if (diasDesdeCreacion <= 30) {
+      } else if (dias <= 30) {
         distribucion[1].monto += saldo;
         distribucion[1].count++;
-      } else if (diasDesdeCreacion <= 60) {
+      } else if (dias <= 60) {
         distribucion[2].monto += saldo;
         distribucion[2].count++;
       } else {
@@ -87,37 +94,11 @@ export async function GET(req: NextRequest) {
       d.monto = Math.round(d.monto * 100) / 100;
     }
 
-    // --- Tendencia 12 meses ---
-    const tendencia12m: { mes: string; cobrados: number; nuevos: number }[] = [];
-
-    for (let i = 11; i >= 0; i--) {
-      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = monthDate.toISOString().slice(0, 7); // YYYY-MM
-      tendencia12m.push({ mes: monthKey, cobrados: 0, nuevos: 0 });
-    }
-
-    if (allFiadosForTrend.status === "fulfilled") {
-      const { newFiados, paidCuotas } = allFiadosForTrend.value;
-
-      for (const fiado of newFiados) {
-        const monthKey = fiado.createdAt.toISOString().slice(0, 7);
-        const entry = tendencia12m.find((t) => t.mes === monthKey);
-        if (entry) entry.nuevos += Number(fiado.total);
-      }
-
-      for (const cuota of paidCuotas) {
-        if (!cuota.pagadoEn) continue;
-        const monthKey = cuota.pagadoEn.toISOString().slice(0, 7);
-        const entry = tendencia12m.find((t) => t.mes === monthKey);
-        if (entry) entry.cobrados += Number(cuota.monto);
-      }
-    }
-
-    // Round trend values
-    for (const t of tendencia12m) {
-      t.cobrados = Math.round(t.cobrados * 100) / 100;
-      t.nuevos = Math.round(t.nuevos * 100) / 100;
-    }
+    // --- Tendencia 12 meses (mes de Lima: `lib/fiados/tendencia-mensual.ts`) ---
+    const tendencia12m: MesDeTendencia[] =
+      allFiadosForTrend.status === "fulfilled"
+        ? tendenciaMensualFiados(now, allFiadosForTrend.value.newFiados, allFiadosForTrend.value.paidCuotas)
+        : tendenciaMensualFiados(now, [], []);
 
     // --- Top 10 deudores ---
     const topDeudores = activeList

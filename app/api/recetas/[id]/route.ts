@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { RecetasDB } from "@/lib/db/recetas.db";
+import { KitsDB, esCategoriaKit } from "@/lib/db/kits.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { RecetasDetailDB } from "@/lib/db/recetas-detail.db";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { invalidateByPrefix } from "@/lib/cache";
 
 const IngredienteSchema = z.object({
   productoId: z.number().int().positive(),
@@ -88,6 +90,18 @@ export async function PATCH(
       }
     }
 
+    // La receta de un kit (`lib/db/kits.db.ts`) con media unidad o un kit
+    // adentro de otro dejaría a la caja sin poder vender: misma regla del alta,
+    // sobre cómo queda la receta después del cambio.
+    if (esCategoriaKit(existing.categoria)) {
+      const problema = await KitsDB.problemaDeKit(auth.tenantId, {
+        recetaId: id,
+        productoId: parsed.data.productoId !== undefined ? parsed.data.productoId : existing.productoId,
+        ingredientes: parsed.data.ingredientes ?? existing.ingredientes,
+      });
+      if (problema) return NextResponse.json({ error: problema }, { status: 400 });
+    }
+
     // Build update data
     const updateData: Record<string, unknown> = {};
     if (parsed.data.nombre !== undefined) updateData.nombre = parsed.data.nombre;
@@ -107,6 +121,11 @@ export async function PATCH(
 
     // Recalculate cost
     await RecetasDB.calcularCosto(id);
+
+    // Editar ingredientes/nombre cambia el costo → invalidar el cache de
+    // getCostBreakdown (recipe-cost:${tenantId}:${id}, TTL 60s). Sin esto, el
+    // desglose de costo servía el valor viejo hasta 60s tras editar la receta.
+    invalidateByPrefix(`recipe-cost:${auth.tenantId}:${id}`);
 
     const result = await RecetasDB.getById(auth.tenantId, id);
 

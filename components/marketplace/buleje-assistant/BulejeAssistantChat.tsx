@@ -117,7 +117,7 @@ export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boo
         });
         const data = await res.json();
         if (!res.ok || !data.reply) {
-          setError(data.error ?? "No pudimos responder, intentá de nuevo");
+          setError(data.error ?? "No pudimos responder, intenta de nuevo");
         } else {
           setMessages((prev) => [
             ...prev,
@@ -129,7 +129,7 @@ export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boo
           ]);
         }
       } catch {
-        setError("Error de conexión. Intentá de nuevo.");
+        setError("Error de conexión. Intenta de nuevo.");
       } finally {
         setStatus("idle");
       }
@@ -194,7 +194,7 @@ export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boo
           {/* Header */}
           <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />
               </span>
               <div>
@@ -315,7 +315,7 @@ export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boo
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Escribí tu pregunta…"
+                placeholder="Escribe tu pregunta…"
                 disabled={isSending}
                 className="flex-1 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
               />

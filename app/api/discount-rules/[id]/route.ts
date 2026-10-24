@@ -25,9 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // existiera con mismo id en otro tenant (defensa en profundidad).
     const result = await prisma.discountRule.updateMany({
       where: { id, tenantId: auth.tenantId },
-      data: {
-        ...(typeof body.activa === "boolean" ? { activa: body.activa } : {}),
-      },
+      data: typeof body.activa === "boolean" ? { activa: body.activa } : {},
     });
     if (result.count === 0) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

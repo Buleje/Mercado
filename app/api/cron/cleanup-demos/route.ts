@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { permitirBorrarFirmas } from "@/lib/db/adelanto-firmas.db";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { logger } from "@/lib/logger";
 
@@ -37,9 +38,12 @@ export async function GET(req: NextRequest) {
     }
 
     // Borrar en cascada — Prisma propaga a AdminUser, Settings, Products, Orders, etc.
-    await prisma.tenant.deleteMany({
-      where: { id: { in: expired.map((t) => t.id) } },
-    });
+    // ADR-491: con el permiso LOCAL para el registro de firmas de adelantos
+    // (solo de agregar; sin esto el cascade choca con su trigger).
+    await prisma.$transaction([
+      permitirBorrarFirmas(),
+      prisma.tenant.deleteMany({ where: { id: { in: expired.map((t) => t.id) } } }),
+    ]);
 
     logger.info("[cron/cleanup-demos] Demos eliminados", {
       count: expired.length,

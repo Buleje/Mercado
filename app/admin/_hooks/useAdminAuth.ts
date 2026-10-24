@@ -84,9 +84,9 @@ export function useAdminAuth(onUnauth: () => void): UseAdminAuthResult {
       })
       .catch(() => {
         // 3. Fallback: admin bypass (solo si el tenant lo permite)
-        fetch("/api/settings")
-          .then((r) => (r.ok ? r.json() : null))
-          .then((s: SettingsResponse | null) => {
+        // La misma lectura del paso 1 (ya en vuelo o en cache): no se pide de nuevo.
+        cachedJson<SettingsResponse>("/api/settings", 30_000)
+          .then((s) => {
             if (!s?.adminBypassLogin) throw new Error("no bypass");
             return fetch("/api/auth/bypass", { method: "POST" })
               .then((r) => {

@@ -1,7 +1,6 @@
 "use client";
 
 // CR-2.3: importar constante unificada — fuente de verdad server-side (100 pts = S/1).
-import { PTS_PER_SOL } from "@/lib/loyalty-constants";
 import { m } from "framer-motion";
 import {
   Tag,
@@ -19,8 +18,10 @@ import {
 import { cn, formatCurrency } from "@/lib/utils";
 import { YapePaymentPanel } from "./YapePaymentPanel";
 import { CashChangeCalculator } from "./CashChangeCalculator";
-
-type PaymentMethod = "yape" | "efectivo";
+import { FiadoCheckoutOption } from "./FiadoCheckoutOption";
+import type { PaymentMethod } from "./types";
+import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
+import { CanjePuntos, muestraCanje, type CanjePuntosProps } from "./parts/CanjePuntos";
 
 interface Promo {
   id: string;
@@ -42,16 +43,25 @@ export interface CheckoutPaymentSectionProps {
   finalTotal: number;
   discount: number;
   promo: Promo | null;
-  tierDiscount: number;
-  tierDiscountPct: number;
-  loyaltyTier: string | null;
+  /**
+   * Descuento automático que decide el servidor (primera compra, volumen,
+   * cliente frecuente) — sale de `GET /api/orders/cotizar`, la misma función
+   * que cobra `POST /api/orders`.
+   */
+  descuentoAutomatico?: DescuentoAutomaticoVista | null;
   loyaltyPoints: number | null;
-  redemptionSoles: number;
-  onRedemptionChange: (soles: number) => void;
+  /** Canje de puntos (deslizador o «Inicia sesión»); sin esto no se dibuja. */
+  canje?: CanjePuntosProps;
+  /** Soles que pagan los puntos (ya en `finalTotal`); 0 = sin línea. */
+  descuentoPuntos?: number;
   paymentMethod: PaymentMethod | null;
   onPaymentMethodChange: (method: PaymentMethod) => void;
   yapeEnabled: boolean;
   cashEnabled: boolean;
+  /** Fiado ("paga el día de pago") — solo se muestra si el cliente es elegible. */
+  fiadoEligible?: boolean;
+  fiadoAvailableCredit?: number;
+  fiadoDueDateLabel?: string;
   yape: { enabled: boolean; image?: string; name?: string; phone?: string };
   yapeOpNumber: string;
   onYapeOpNumberChange: (v: string) => void;
@@ -101,7 +111,7 @@ function SectionHeader({
         >
           {title}
         </p>
-        {hint && <p className="text-xs text-muted mt-0.5">{hint}</p>}
+        {hint && <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-0.5">{hint}</p>}
       </div>
     </div>
   );
@@ -135,16 +145,17 @@ export function CheckoutPaymentSection({
   finalTotal,
   discount,
   promo,
-  tierDiscount,
-  tierDiscountPct,
-  loyaltyTier,
+  descuentoAutomatico,
   loyaltyPoints,
-  redemptionSoles,
-  onRedemptionChange,
+  canje,
+  descuentoPuntos = 0,
   paymentMethod,
   onPaymentMethodChange,
   yapeEnabled,
   cashEnabled,
+  fiadoEligible = false,
+  fiadoAvailableCredit = 0,
+  fiadoDueDateLabel = "",
   yape,
   yapeOpNumber,
   onYapeOpNumberChange,
@@ -193,14 +204,14 @@ export function CheckoutPaymentSection({
           <p className="text-base font-extrabold text-white leading-tight">
             {eta}
           </p>
-          <p className="text-xs text-white/85 leading-tight mt-0.5">{etaDetail}</p>
+          <p className="text-xs text-white/85 dark:text-white leading-tight mt-0.5">{etaDetail}</p>
         </div>
         <span
           className={cn(
             "relative h-2.5 w-2.5 rounded-full shrink-0",
             isOpen
               ? "bg-white animate-pulse"
-              : "bg-[var(--data-warning-300)]",
+              : "bg-[var(--data-warning-500)]",
           )}
           aria-hidden="true"
         />
@@ -211,7 +222,7 @@ export function CheckoutPaymentSection({
         <SectionHeader
           icon={Wallet}
           title="Método de pago"
-          hint="Elegí cómo pagar"
+          hint="Elige cómo pagar"
         />
 
         <div
@@ -335,6 +346,15 @@ export function CheckoutPaymentSection({
           )}
         </div>
 
+        {fiadoEligible && (
+          <FiadoCheckoutOption
+            selected={paymentMethod === "fiado"}
+            onSelect={() => onPaymentMethodChange("fiado")}
+            availableCredit={fiadoAvailableCredit}
+            dueDateLabel={fiadoDueDateLabel}
+          />
+        )}
+
         {paymentMethod === "yape" && yapeEnabled && (
           <YapePaymentPanel
             yape={yape}
@@ -347,10 +367,10 @@ export function CheckoutPaymentSection({
           <CashChangeCalculator finalTotal={finalTotal} />
         )}
         {showPaymentHint && (
-          <p className="flex items-center gap-1.5 text-sm text-[var(--data-error-600)] font-semibold">
+          <p className="flex items-center gap-1.5 text-sm text-[var(--data-error-600)] dark:text-[var(--data-error-500)] font-semibold">
             <X className="h-4 w-4" strokeWidth={2.5} />
             {!paymentMethod
-              ? "Elegí un método para continuar"
+              ? "Elige un método para continuar"
               : "Falta el número de operación de Yape"}
           </p>
         )}
@@ -363,7 +383,7 @@ export function CheckoutPaymentSection({
         <SectionHeader
           icon={HandCoins}
           title="Propina"
-          hint="Para tu repartidor (opcional)"
+          hint="Opcional · la propina se da en mano al repartidor"
         />
         <div className="grid grid-cols-4 gap-2">
           {[0, 1, 2, 5].map((v) => (
@@ -431,7 +451,7 @@ export function CheckoutPaymentSection({
             <button
               type="button"
               onClick={onRemoveCoupon}
-              className="text-xs font-bold text-muted hover:text-[var(--data-error-500)] transition-colors px-2"
+              className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors px-2"
             >
               Quitar
             </button>
@@ -452,7 +472,7 @@ export function CheckoutPaymentSection({
                 }
                 onKeyDown={(e) => e.key === "Enter" && onValidateCoupon()}
                 placeholder="CÓDIGO"
-                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none transition-colors"
+                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none transition-colors"
                 style={{
                   borderColor:
                     "color-mix(in oklch, var(--color-primary, #00A0A0) 22%, transparent)",
@@ -486,51 +506,20 @@ export function CheckoutPaymentSection({
           </div>
         )}
         {couponMsg && !couponApplied && (
-          <p className="text-sm text-[var(--data-error-600)] font-medium">
+          <p className="text-sm text-[var(--data-error-600)] dark:text-[var(--data-error-500)] font-medium">
             {couponMsg}
           </p>
         )}
       </section>
 
-      {/* Loyalty redemption — CR-2.3: usa PTS_PER_SOL importado de lib/loyalty-constants */}
-      {loyaltyPoints !== null && loyaltyPoints >= PTS_PER_SOL && (() => {
-        const maxSoles = Math.floor(loyaltyPoints / PTS_PER_SOL);
-        return (
-          <>
-            <BrandHair />
-            <section className="space-y-3">
-              <SectionHeader
-                icon={Gift}
-                title="Canjear puntos"
-                hint={`Tienes ${loyaltyPoints} pts · ${PTS_PER_SOL} pts = S/1`}
-              />
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  min={0}
-                  max={maxSoles}
-                  step={1}
-                  value={redemptionSoles}
-                  onChange={(e) => onRedemptionChange(Number(e.target.value))}
-                  className="flex-1 h-2 cursor-pointer accent-[var(--color-primary,#00A0A0)]"
-                  aria-label="Soles a canjear con puntos"
-                />
-                <div className="text-right shrink-0">
-                  <p
-                    className="text-base font-extrabold tabular-nums leading-tight"
-                    style={{ color: "var(--color-primary-dark, #009690)" }}
-                  >
-                    −{formatCurrency(redemptionSoles)}
-                  </p>
-                  <p className="text-xs text-muted tabular-nums">
-                    {redemptionSoles * PTS_PER_SOL} pts
-                  </p>
-                </div>
-              </div>
-            </section>
-          </>
-        );
-      })()}
+      {/* Canje de puntos: lo cobra POST /api/orders (misma fórmula, misma tx
+          que crea el pedido). Solo con sesión verificada. */}
+      {canje && muestraCanje(canje) && (
+        <>
+          <BrandHair />
+          <CanjePuntos {...canje} />
+        </>
+      )}
 
       {/* ═══ Resumen del pago — bloque brand-tinted ═══ */}
       <div
@@ -550,7 +539,7 @@ export function CheckoutPaymentSection({
         </p>
         <div className="space-y-1 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-muted">Subtotal</span>
+            <span className="text-muted dark:text-[var(--text-tertiary)]">Subtotal</span>
             <span
               className="tabular-nums font-semibold"
               style={{ color: "var(--color-primary-dark, #009690)" }}
@@ -576,44 +565,37 @@ export function CheckoutPaymentSection({
               </span>
             </div>
           )}
-          {tierDiscount > 0 && loyaltyTier && (
+          {descuentoAutomatico && descuentoAutomatico.monto > 0 && (
             <div
               className="flex items-center justify-between"
               style={{ color: "var(--color-primary-dark, #009690)" }}
+              data-testid="linea-descuento-automatico"
             >
               <span className="flex items-center gap-1.5 truncate pr-2">
                 <Award className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
                 <span className="truncate">
-                  Tier {loyaltyTier} ({tierDiscountPct}%)
+                  {descuentoAutomatico.etiqueta}
+                  {descuentoAutomatico.porcentaje > 0 &&
+                    ` −${descuentoAutomatico.porcentaje} %`}
                 </span>
               </span>
               <span className="tabular-nums font-bold shrink-0">
-                −{formatCurrency(tierDiscount)}
+                −{formatCurrency(descuentoAutomatico.monto)}
               </span>
             </div>
           )}
-          {redemptionSoles > 0 && (
+          {descuentoPuntos > 0 && (
             <div
               className="flex items-center justify-between"
-              style={{ color: "var(--color-primary-dark, #009690)" }}
+              style={{ color: "var(--color-primary-dark, var(--color-primary))" }}
+              data-testid="linea-puntos-canjeados"
             >
               <span className="flex items-center gap-1.5 truncate pr-2">
                 <Gift className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
                 <span className="truncate">Puntos canjeados</span>
               </span>
               <span className="tabular-nums font-bold shrink-0">
-                −{formatCurrency(redemptionSoles)}
-              </span>
-            </div>
-          )}
-          {tip > 0 && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted">Propina</span>
-              <span
-                className="tabular-nums font-semibold"
-                style={{ color: "var(--color-primary-dark, #009690)" }}
-              >
-                +{formatCurrency(tip)}
+                −{formatCurrency(descuentoPuntos)}
               </span>
             </div>
           )}
@@ -642,9 +624,20 @@ export function CheckoutPaymentSection({
             {formatCurrency(finalTotal)}
           </m.span>
         </div>
+        {/* La propina no entra en el total: el pedido no la guarda y se da en
+            mano al repartidor (antes Yape/efectivo cobraban total + propina). */}
+        {tip > 0 && (
+          <p
+            className="pt-1.5 flex items-center justify-between text-xs text-muted dark:text-[var(--text-tertiary)]"
+            data-testid="propina-en-mano"
+          >
+            <span>Propina · se da en mano al repartidor</span>
+            <span className="tabular-nums font-semibold">{formatCurrency(tip)}</span>
+          </p>
+        )}
         {loyaltyPoints !== null && finalTotal >= 5 && (
           <div className="flex items-center justify-between pt-1.5 text-xs">
-            <span className="text-muted flex items-center gap-1.5">
+            <span className="text-muted dark:text-[var(--text-tertiary)] flex items-center gap-1.5">
               <Sparkles
                 className="h-3.5 w-3.5"
                 strokeWidth={2}

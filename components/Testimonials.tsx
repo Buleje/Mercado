@@ -1,5 +1,6 @@
 "use client";
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { useState, useEffect, useCallback, startTransition, useRef } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
@@ -68,7 +69,7 @@ function TestiCard({ item, position }: { item: TItem; position: "left" | "center
       )}
     >
       {item.isUser && isCenter && (
-        <span className="absolute top-3 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary bg-primary/8 px-2 py-0.5 rounded-full">
+        <span className="absolute top-3 right-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/8 px-2 py-0.5 rounded-full">
           Cliente verificado
         </span>
       )}
@@ -226,12 +227,12 @@ export default function Testimonials() {
     <section ref={sectionRef} id="nuestros-clientes" className="py-20 sm:py-28 bg-primary/5">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(reviewSchema) }}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Title */}
         <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <Star className="w-3.5 h-3.5 fill-primary" />
             Reseñas verificadas
           </span>

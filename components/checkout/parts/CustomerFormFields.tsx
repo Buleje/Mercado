@@ -3,6 +3,7 @@
 import { Hash, User, Phone, Loader2, CheckCircle2, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DniLookupState } from "../types";
+import { LARGO_MAX_CELULAR_ESCRITO, limpiarCelularEscrito } from "./phone-validation";
 
 /**
  * CustomerFormFields — los inputs DNI / Nombre / Teléfono.
@@ -47,10 +48,10 @@ function FieldShell({
 }) {
   const hintColor =
     hintTone === "error"
-      ? "text-[var(--data-error-600)]"
+      ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
       : hintTone === "success"
         ? "text-[var(--data-success-600)]"
-        : "text-muted";
+        : "text-muted dark:text-[var(--text-tertiary)]";
   return (
     <div className="space-y-1.5">
       <label
@@ -105,7 +106,7 @@ export function CustomerFormFields({
         : "border-[var(--rule-soft)] focus:border-[var(--color-primary,#00A0A0)]";
 
   const inputBase =
-    "w-full h-12 rounded-xl border-2 bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-muted/60 focus:outline-none transition-colors text-base tabular-nums";
+    "w-full h-12 rounded-xl border-2 bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-muted/60 dark:placeholder:text-[var(--text-tertiary)] focus:outline-none transition-colors text-base tabular-nums";
 
   return (
     <div className="grid md:grid-cols-3 gap-4">
@@ -203,9 +204,9 @@ export function CustomerFormFields({
           <input
             type="tel"
             value={phone}
-            onChange={(e) => onPhoneChange(e.target.value.replace(/[^\d]/g, ""))}
+            onChange={(e) => onPhoneChange(limpiarCelularEscrito(e.target.value))}
             placeholder="987 654 321"
-            maxLength={9}
+            maxLength={LARGO_MAX_CELULAR_ESCRITO}
             data-testid="phone-input"
             className={cn(inputBase, "pl-10 pr-10", phoneBorder)}
           />

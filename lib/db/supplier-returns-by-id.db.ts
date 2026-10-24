@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
+import { DevolucionAnuladaError } from "@/lib/db/supplier-returns-anular.db";
 
 /**
  * SupplierReturnsByIdDB
@@ -29,48 +29,129 @@ export async function getSupplierReturnById(tenantId: string, id: string) {
 }
 
 /**
- * Actualiza el estado de una devolución.
- * Devuelve el registro actualizado, o null si no existe / no pertenece al tenant.
+ * Actualiza el estado de una devolución y, al pasar a ENVIADA, saca la
+ * mercadería del stock (ADR-379).
+ *
+ * Todo va en UNA transacción: si el kardex falla, el estado no cambia. Un
+ * estado "enviada" con el stock intacto es justo el descuadre silencioso que
+ * este módulo venía produciendo.
+ *
+ * Devuelve `{ devolucion, avisos }`, o `null` si no existe / no es del tenant.
+ * Los avisos son para mostrarle al encargado lo que NO se pudo descontar: sin
+ * ellos, un ítem escrito a mano desaparecería del inventario sin que nadie se
+ * entere.
  */
 export async function updateSupplierReturnEstado(
   tenantId: string,
   id: string,
   estado: Estado,
 ) {
-  const result = await prisma.supplierReturn.updateMany({
-    where: { id, tenantId },
-    data: { estado },
-  });
-  if (result.count === 0) return null;
-  return prisma.supplierReturn.findFirst({
-    where: { id, tenantId },
-    include: { items: true },
-  });
-}
+  const avisos: string[] = [];
 
-/**
- * Elimina una devolución por id. Devuelve true si se eliminó, false si no existía.
- */
-export async function deleteSupplierReturn(tenantId: string, id: string): Promise<boolean> {
-  const result = await prisma.supplierReturn.deleteMany({
-    where: { id, tenantId },
-  });
-  return result.count > 0;
-}
-
-/**
- * Obtiene el teléfono de un proveedor para notificaciones WhatsApp (fire-and-forget).
- * Devuelve null si no tiene teléfono o no existe.
- */
-export async function getSupplierPhone(proveedorId: string): Promise<string | null> {
-  const supplier = await prisma.supplier
-    .findUnique({ where: { id: proveedorId }, select: { phone: true } })
-    .catch((err: unknown) => {
-      logger.warn("[supplier-returns-by-id] supplier lookup failed", {
-        proveedorId,
-        error: String(err),
-      });
-      return null;
+  const devolucion = await prisma.$transaction(async (tx) => {
+    const actual = await tx.supplierReturn.findFirst({
+      where: { id, tenantId },
+      include: { items: true },
     });
-  return supplier?.phone ?? null;
+    if (!actual) return null;
+    // ANULADA es final (C55, 17-10): volver a ENVIADA sacaría el stock otra vez.
+    if (actual.estado === "ANULADA") throw new DevolucionAnuladaError();
+
+    // El stock sale UNA sola vez. No alcanza con mirar la transición: la API
+    // acepta cualquier estado válido, así que ENVIADA → RESUELTA → ENVIADA
+    // descontaría de nuevo. La marca en la fila lo vuelve imposible.
+    // Y se RECLAMA con un compara-y-cambia antes de tocar el stock (10-10, security): dos
+    // «Enviada» a la vez leían los dos `stockAplicadoAt = null` y descontaban dos veces. Con el
+    // `updateMany` condicionado, la segunda transacción espera la fila, la vuelve a evaluar ya
+    // marcada y su `count` es 0.
+    const debeDescontar =
+      estado === "ENVIADA" &&
+      actual.stockAplicadoAt === null &&
+      (await tx.supplierReturn.updateMany({
+        // `estado ≠ ANULADA` (revisión 17-10): una anulación que tomó la fila antes gana, y
+        // esta transacción, al reevaluar, ya no descuenta.
+        where: { id, tenantId, stockAplicadoAt: null, estado: { not: "ANULADA" } },
+        data: { stockAplicadoAt: new Date() },
+      })).count === 1;
+
+    if (debeDescontar) {
+      for (const item of actual.items) {
+        if (item.productId == null) {
+          avisos.push(`"${item.nombre}" se escribió a mano, así que no se descontó del inventario.`);
+          continue;
+        }
+        const producto = await tx.product.findFirst({
+          where: { id: item.productId, tenantId },
+          select: { id: true, name: true, stock: true },
+        });
+        if (!producto) {
+          avisos.push(`"${item.nombre}" ya no está en el catálogo: no se tocó el inventario.`);
+          continue;
+        }
+        if (producto.stock === null) {
+          avisos.push(`"${producto.name}" no lleva control de stock, así que no se descontó.`);
+          continue;
+        }
+
+        // El stock del proyecto es entero; una cantidad con decimales se
+        // redondea y se avisa, en vez de perder silenciosamente la fracción.
+        const cantidad = Math.round(item.cantidad);
+        if (cantidad !== item.cantidad) {
+          avisos.push(`"${producto.name}": se descontaron ${cantidad} (la devolución dice ${item.cantidad}).`);
+        }
+        if (cantidad <= 0) continue;
+
+        // `decrement` en la base, no «lo que leí − cantidad»: otra venta o ajuste del mismo
+        // producto entre la lectura y la escritura no se pierde.
+        const { stock: nuevoStockDb } = await tx.product.update({
+          where: { id: producto.id },
+          data: { stock: { decrement: cantidad } },
+          select: { stock: true },
+        });
+        const nuevoStock = nuevoStockDb ?? 0;
+        await tx.inventoryMovement.create({
+          data: {
+            productId: producto.id,
+            // Tipo PROPIO: `devolucion` ya existe y significa lo contrario —
+            // es la del cliente, que SUMA stock, y el kardex la lee como
+            // entrada. Reusarla haría que el libro contara como ingreso una
+            // mercadería que salió.
+            type: "devolucion_proveedor",
+            quantity: cantidad,
+            previousStock: nuevoStock + cantidad,
+            newStock: nuevoStock,
+            reference: id,
+            notes: `Devolución a ${actual.proveedorNombre} — ${actual.motivo}`,
+            tenantId,
+          },
+        });
+
+        if (nuevoStock < 0) {
+          // Se registra igual: el kardex tiene que decir la verdad, y un saldo
+          // negativo es la señal de que el inventario ya venía mal.
+          avisos.push(`"${producto.name}" quedó en ${nuevoStock}: revisa el inventario, faltaba stock antes de esta devolución.`);
+        }
+      }
+    }
+
+    // `estado ≠ ANULADA` en el WHERE: una anulación que llegó entre la lectura y acá no se pisa.
+    // Y si no cambió nada, se avisa (revisión 17-10): antes respondía «listo» con la
+    // devolución ya anulada; el throw deshace también el descuento de arriba, si lo hubo.
+    const { count } = await tx.supplierReturn.updateMany({ where: { id, tenantId, estado: { not: "ANULADA" } }, data: { estado } });
+    if (count === 0) throw new DevolucionAnuladaError();
+
+    return tx.supplierReturn.findFirst({
+      where: { id, tenantId },
+      include: { items: true },
+    });
+  });
+
+  if (!devolucion) return null;
+  return { devolucion, avisos };
 }
+
+/*
+ * El borrado definitivo (`deleteSupplierReturn`) se fue el 17-10 (C55): se
+ * llevaba el registro y devolvía al inventario mercadería que quizá seguía en
+ * el proveedor. Ahora se anula: `supplier-returns-anular.db.ts`.
+ */

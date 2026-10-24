@@ -20,7 +20,21 @@
  */
 
 import { useCallback, useState } from "react";
+import { normalizarGuardadas } from "@/lib/admin/permiso-vista";
+import { ALL_TABS } from "../_lib/tab-data";
 import type { Tab } from "../_lib/tabs.types";
+
+/**
+ * Un id guardado que dejó de ser pestaña (renombrado o absorbido en las olas del
+ * panel unificado) se normaliza AL CARGAR: si sólo se normalizara al dibujar, la
+ * estrella y `toggleFavorite` seguirían viendo el id viejo y ese favorito ya no
+ * se podría quitar (revisión de la ola 1, 09-10).
+ */
+const IDS_CONOCIDOS: ReadonlySet<string> = new Set(ALL_TABS.map((t) => t.id));
+const leerGuardadas = (clave: string): Tab[] => {
+  const s = localStorage.getItem(clave);
+  return s ? (normalizarGuardadas(JSON.parse(s) as string[], IDS_CONOCIDOS) as Tab[]) : [];
+};
 
 export interface UseFavoritesAndRecentResult {
   favoriteTabs: Set<Tab>;
@@ -33,8 +47,7 @@ export function useFavoritesAndRecent(): UseFavoritesAndRecentResult {
   const [favoriteTabs, setFavoriteTabs] = useState<Set<Tab>>(() => {
     if (typeof window === "undefined") return new Set<Tab>();
     try {
-      const s = localStorage.getItem("admin_fav_tabs");
-      return s ? new Set<Tab>(JSON.parse(s)) : new Set<Tab>();
+      return new Set<Tab>(leerGuardadas("admin_fav_tabs"));
     } catch {
       return new Set<Tab>();
     }
@@ -43,8 +56,7 @@ export function useFavoritesAndRecent(): UseFavoritesAndRecentResult {
   const [recentTabs, setRecentTabs] = useState<Tab[]>(() => {
     if (typeof window === "undefined") return [];
     try {
-      const s = localStorage.getItem("admin_recent_tabs");
-      return s ? JSON.parse(s) : [];
+      return leerGuardadas("admin_recent_tabs");
     } catch {
       return [];
     }

@@ -15,8 +15,9 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, ShoppingCart, Plus } from "@buleje/design-system/icons";
+import { Check, ShoppingCart, Plus, Store as StoreIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 
 type RP = {
@@ -37,6 +38,8 @@ interface Props {
   storeId: string;
   storeName: string;
   storeSlug: string;
+  /** Producto actual del PDP — ancla del combo ("Este producto + …"). */
+  anchor?: RP | null;
 }
 
 const fmt = (n: number) =>
@@ -64,7 +67,7 @@ function norm(raw: Record<string, unknown>): RP {
   };
 }
 
-export default function FrequentlyBoughtTogether({ productId, storeId, storeName, storeSlug }: Props) {
+export default function FrequentlyBoughtTogether({ productId, storeId, storeName, storeSlug, anchor }: Props) {
   const { addItem } = useMarketplaceCart();
   const [items, setItems] = useState<RP[] | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -72,18 +75,23 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
 
   useEffect(() => {
     let cancelled = false;
+    // Timeout por request: si la red se cuelga, el combo NO se queda en skeleton
+    // eterno — aborta a los 5s y cae al fallback / estado vacío (Brandon 2026-07-04).
+    const withTimeout = (url: string) => fetch(url, { signal: AbortSignal.timeout(5000) });
     (async () => {
       let list: RP[] = [];
       try {
-        const r = await fetch(`/api/marketplace/recommendations/${productId}`);
+        const r = await withTimeout(`/api/marketplace/recommendations/${productId}`);
         if (r.ok) {
           const j = await r.json();
           list = (Array.isArray(j.products) ? j.products : []).map(norm);
         }
-      } catch {/* sigue al fallback */}
+      } catch {/* timeout o error → sigue al fallback */}
       if (list.length === 0) {
         try {
-          const r = await fetch(`/api/marketplace/catalog?limit=8`);
+          // Fallback ACOTADO a la misma tienda: un combo de "una sola entrega"
+          // no puede mezclar 4 bodegas (Brandon 2026-07-04).
+          const r = await withTimeout(`/api/marketplace/catalog?store=${encodeURIComponent(storeSlug)}&limit=12`);
           if (r.ok) {
             const j = await r.json();
             const raw = Array.isArray(j.data) ? j.data : Array.isArray(j.items) ? j.items : [];
@@ -91,14 +99,21 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
           }
         } catch {/* queda vacío */}
       }
-      const clean = list.filter((p) => p.productId && p.productId !== productId && p.name).slice(0, 4);
+      // El FALLBACK ya viene acotado a la tienda; las recomendaciones de co-compra
+      // SÍ pueden ser de otra tienda (señal real) — se muestran con badge "otra
+      // tienda · entrega aparte" en vez de esconderlas (Brandon 2026-07-04).
+      const clean = list
+        .filter((p) => p.productId && p.productId !== productId && p.name)
+        .slice(0, 3);
+      // El producto actual abre el combo como ancla ("Este producto + …").
+      const withAnchor = anchor ? [anchor, ...clean] : clean;
       if (!cancelled) {
-        setItems(clean);
-        setSelected(new Set(clean.map((p) => p.productId)));
+        setItems(withAnchor);
+        setSelected(new Set(withAnchor.map((p) => p.productId)));
       }
     })();
     return () => { cancelled = true; };
-  }, [productId]);
+  }, [productId, storeSlug]);
 
   const toggle = useCallback((id: number) => {
     setSelected((prev) => {
@@ -135,49 +150,80 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
   // Loading
   if (items === null) {
     return (
-      <section aria-label="Cargando combo" className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="h-5 w-48 bg-[var(--surface-sunken)] animate-pulse mb-4" />
+      <section aria-label="Cargando combo" className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <div className="h-5 w-48 rounded-md bg-[var(--surface-sunken)] animate-pulse mb-4" />
         <div className="flex gap-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-28 w-28 bg-[var(--surface-sunken)] animate-pulse" />
+            <div key={i} className="h-40 w-36 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
           ))}
         </div>
       </section>
     );
   }
-  if (items.length === 0) return null;
+  // Sin complementos (solo el ancla) no tiene sentido mostrar el combo.
+  if (items.length <= (anchor ? 1 : 0)) return null;
 
   const chosen = items.filter((p) => selected.has(p.productId));
   const total = chosen.reduce((a, p) => a + p.price, 0);
+  // ¿Algún complemento es de OTRA tienda? Entonces son entregas separadas.
+  const hasOtherStore = items.some((p) => p.storeSlug && p.storeSlug !== storeSlug);
 
   return (
     <section
       aria-labelledby="fbt-heading"
-      className="border border-[var(--rule-base)] bg-[var(--surface-raised)]"
+      className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
     >
-      <header className="border-b border-[var(--rule-soft)] px-4 py-3">
-        <h2 id="fbt-heading" className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">
-          Comprados juntos
-        </h2>
-        <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-          Marcá lo que querés y agregalo de un toque
-        </p>
+      <header className="flex items-center gap-3 border-b border-[var(--rule-soft)] px-5 py-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+          <ShoppingCart className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <h2 id="fbt-heading" className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
+            Cómpralos juntos
+          </h2>
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+            Este producto + lo que suele acompañarlo
+            {hasOtherStore ? " · algunas de otra tienda (entregas separadas)" : " · una sola entrega"}
+          </p>
+        </div>
       </header>
 
       {/* Fila de items unidos por "+" (estilo bundle) */}
-      <div className="flex items-stretch gap-2 overflow-x-auto px-4 pt-4 pb-2">
+      <div className="flex items-stretch gap-3 overflow-x-auto px-5 pt-5 pb-3">
         {items.map((p, idx) => {
           const isSel = selected.has(p.productId);
+          const isAnchor = anchor != null && p.productId === anchor.productId;
+          const isOther = !isAnchor && !!p.storeSlug && p.storeSlug !== storeSlug;
           const href = `/marketplace/${p.storeSlug ?? storeSlug}/producto/${p.productId}`;
           return (
-            <div key={p.productId} className="flex items-center gap-2 shrink-0">
-              {idx > 0 && <Plus className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} aria-hidden />}
+            <div key={p.productId} className="flex items-center gap-3 shrink-0">
+              {idx > 0 && (
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                  <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                </span>
+              )}
               <div
                 className={cn(
-                  "relative w-32 border bg-[var(--surface-raised)] overflow-hidden transition-colors",
-                  isSel ? "border-[var(--accent)]" : "border-[var(--rule-soft)] opacity-70",
+                  "relative w-36 overflow-hidden rounded-xl border-2 bg-[var(--surface-raised)] transition-all",
+                  isSel
+                    ? "border-[var(--accent)] shadow-sm"
+                    : "border-[var(--rule-base)] opacity-60 hover:opacity-100",
                 )}
               >
+                {isAnchor && (
+                  <span className="absolute top-2 right-2 z-10 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white">
+                    Este producto
+                  </span>
+                )}
+                {isOther && (
+                  <span
+                    className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-500,#d97706)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white"
+                    title={p.storeName ? `De ${p.storeName} · entrega aparte` : "Otra tienda · entrega aparte"}
+                  >
+                    <StoreIcon className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                    Otra tienda
+                  </span>
+                )}
                 {/* Checkbox */}
                 <button
                   type="button"
@@ -185,27 +231,32 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
                   aria-pressed={isSel}
                   aria-label={isSel ? `Quitar ${p.name} del combo` : `Agregar ${p.name} al combo`}
                   className={cn(
-                    "absolute top-2 left-2 z-10 grid h-5 w-5 place-items-center rounded-sm border transition-colors",
-                    isSel ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "bg-[var(--surface-raised)] border-[var(--rule-base)]",
+                    "absolute top-2 left-2 z-10 grid h-6 w-6 place-items-center rounded-md border-2 transition-colors",
+                    isSel
+                      ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]",
                   )}
                 >
-                  {isSel && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
+                  {isSel && <Check className="h-4 w-4" strokeWidth={3} aria-hidden />}
                 </button>
                 <Link href={href} className="block">
                   <div className="relative aspect-square w-full bg-[var(--surface-sunken)]">
                     {p.image ? (
-                      <Image src={p.image} alt={p.name} fill sizes="128px" className="object-cover" />
+                      <Image src={p.image} alt={p.name} fill sizes="144px" className="object-cover" />
                     ) : (
-                      <span className="absolute inset-0 grid place-items-center text-lg font-semibold uppercase text-[var(--text-tertiary)]">
-                        {p.name.trim().charAt(0)}
-                      </span>
+                      <ProductPhotoFallback name={p.name} category={p.category} size="sm" showName={false} />
                     )}
                   </div>
-                  <div className="p-2">
-                    <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] line-clamp-2 leading-tight min-h-[2rem]">
+                  <div className="p-2.5">
+                    <p className="min-h-[2.1rem] text-[length:var(--ts-xs)] leading-snug text-[var(--text-secondary)] line-clamp-2">
                       {p.name}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--text-primary)] tabular-nums">{fmt(p.price)}</p>
+                    <p className="mt-1 text-base font-bold tabular-nums text-[var(--text-primary)]">{fmt(p.price)}</p>
+                    {isOther && p.storeName && (
+                      <p className="mt-0.5 truncate text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+                        {p.storeName}
+                      </p>
+                    )}
                   </div>
                 </Link>
               </div>
@@ -215,26 +266,26 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
       </div>
 
       {/* Footer: total + agregar combo */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[var(--rule-soft)] px-4 py-3">
-        <p className="text-sm text-[var(--text-secondary)]">
-          Total{" "}
-          <span className="text-[length:var(--ts-xs)]">({chosen.length} {chosen.length === 1 ? "artículo" : "artículos"})</span>
-          {": "}
-          <span className="text-lg font-semibold tabular-nums text-[var(--text-primary)]">{fmt(total)}</span>
-        </p>
+      <div className="flex flex-col gap-3 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
+            Total del combo · {chosen.length} {chosen.length === 1 ? "artículo" : "artículos"}
+          </p>
+          <p className="text-2xl font-black tabular-nums text-[var(--text-primary)]">{fmt(total)}</p>
+        </div>
         <button
           type="button"
           onClick={handleAddAll}
           disabled={chosen.length === 0}
           className={cn(
-            "inline-flex items-center justify-center gap-2 rounded-sm h-11 px-5 text-sm font-semibold transition-all active:scale-[0.99]",
+            "inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-sm font-extrabold transition-all active:scale-[0.99]",
             addedAll
               ? "bg-[var(--data-success-600)] text-white"
-              : "bg-[var(--accent)] text-white hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed",
+              : "bg-[var(--accent)] text-white hover:shadow-lg hover:shadow-[var(--accent)]/25 hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40",
           )}
         >
-          <ShoppingCart className="h-4 w-4" strokeWidth={2} aria-hidden />
-          {addedAll ? "¡Combo agregado!" : "Agregar combo"}
+          <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
+          {addedAll ? "¡Combo agregado!" : "Agregar combo al carrito"}
         </button>
       </div>
     </section>

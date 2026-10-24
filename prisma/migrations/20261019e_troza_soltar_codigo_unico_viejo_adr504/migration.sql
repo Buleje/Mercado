@@ -1,0 +1,25 @@
+-- ADR-504 · paso 3 (CONTRACT) — SÓLO la troza.
+--
+-- Suelta el índice único por CÓDIGO de troza (ADR-436,
+-- adr-436-codigo-planta-unico.sql:41). Desde acá manda el de 20261019b
+-- (`WoodEntryTroza_tenant_codigoPlanta_permiso_unico`: código + permiso, con
+-- `COALESCE("contratoId",'')`), así que el 12 del permiso 1 y el 12 del
+-- permiso 2 entran los dos con su código de planta, y dos trozas SIN permiso
+-- con el mismo código siguen chocando (falla segura).
+--
+-- La plata por permiso está PAUSADA (ADR-504 «Plata por permiso: PAUSADA»):
+-- `ForestCuentaMov_tenantId_gtf_madera_vivo_key` y
+-- `ForestGuiaGuardada_tenantId_gtf_vivo_key` NO se tocan acá (siguen en
+-- `adr-504-paso3-contract-NO-APLICAR.sql`, comentados).
+--
+-- Precondiciones medidas el 2026-10-19: backfill `--ensayo` = 0 pendientes;
+-- el índice nuevo `indisvalid = true`.
+--
+-- Aplicar (CONCURRENTLY no va en transacción):
+--   node -r dotenv/config scripts/aplicar-migracion-sesion.mjs prisma/migrations/20261019e_troza_soltar_codigo_unico_viejo_adr504/migration.sql --sin-tx dotenv_config_path=.env.local
+--
+-- Vuelta atrás: re-crear el viejo con su SQL original (adr-436-codigo-planta-unico.sql:41).
+--   Fallará si ya hay «permiso 1 código 12» y «permiso 2 código 12» vivos,
+--   que es justamente lo que ADR-504 permite.
+
+DROP INDEX CONCURRENTLY IF EXISTS "WoodEntryTroza_tenant_codigoPlanta_unico";

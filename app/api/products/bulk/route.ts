@@ -8,6 +8,8 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { revisarPisoDePrecios, type CambioDePrecio } from "@/lib/precios/piso-servidor";
+import { respuestaBajoPiso, textoBajoPisoConfirmado, type AvisoBajoPiso } from "@/lib/precios/piso";
 
 const BulkDeleteSchema = z.object({
   ids: z.array(z.number().int().positive()).min(1).max(500),
@@ -31,7 +33,21 @@ const BulkUpdateSchema = z.object({
     (f) => Object.values(f).some((v) => v !== undefined),
     { message: "At least one field to update is required" },
   ),
+  /** Piso de rebajas (Brandon 19-10): sin esto, bajar bajo costo + piso = 409. */
+  confirmarBajoPiso: z.boolean().optional(),
 });
+
+/** El cambio de precio de una fila leída acá (precio y costo de la base, nunca del cliente). */
+type Decimal = Parameters<typeof toNumOrZero>[0];
+function cambioDe(p: { id: number; name: string; price: Decimal; costPrice: Decimal }, precioNuevo: number): CambioDePrecio {
+  return {
+    productId: p.id,
+    nombre: p.name,
+    precioActual: toNumOrZero(p.price),
+    precioNuevo,
+    costo: p.costPrice == null ? null : toNumOrZero(p.costPrice),
+  };
+}
 
 // POST /api/products/bulk — bulk update products (admin only)
 export async function POST(req: NextRequest) {
@@ -54,10 +70,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { ids, fields } = parsed.data;
+  const { ids, fields, confirmarBajoPiso } = parsed.data;
 
   try {
     let updated = 0;
+    let avisosPiso: AvisoBajoPiso[] = [];
 
     // CRITICAL FIX 2026-05-11 (audit P0): bulk update DEBE scopear por
     // auth.tenantId. Antes un admin con IDs de productos de OTRO tenant
@@ -69,13 +86,21 @@ export async function POST(req: NextRequest) {
       // precios <= 0. TD-018: p.price es Decimal.
       const products = await prisma.product.findMany({
         where: { id: { in: ids }, tenantId: auth.tenantId },
-        select: { id: true, price: true },
+        select: { id: true, name: true, price: true, costPrice: true },
       });
-      for (const p of products) {
+      const nuevos = products.map((p) => {
         let newPrice = toNumOrZero(p.price);
         if (fields.priceAdjust !== undefined) newPrice = newPrice * (1 + fields.priceAdjust / 100);
         if (fields.priceDelta !== undefined) newPrice = newPrice + fields.priceDelta;
-        newPrice = Math.max(0.01, +newPrice.toFixed(2));
+        return { p, newPrice: Math.max(0.01, +newPrice.toFixed(2)) };
+      });
+      // Piso de rebajas: se revisa ANTES de escribir el primero.
+      const { pisoSobreCosto, avisos } = await revisarPisoDePrecios(auth.tenantId, nuevos.map(({ p, newPrice }) => cambioDe(p, newPrice)));
+      if (avisos.length > 0 && confirmarBajoPiso !== true) {
+        return NextResponse.json(respuestaBajoPiso(avisos, pisoSobreCosto), { status: 409 });
+      }
+      avisosPiso = avisos;
+      for (const { p, newPrice } of nuevos) {
         await prisma.product.updateMany({
           where: { id: p.id, tenantId: auth.tenantId },
           data: { price: newPrice },
@@ -83,6 +108,19 @@ export async function POST(req: NextRequest) {
         updated++;
       }
     } else {
+      // Precio fijo para todos: el piso se mide contra el precio y el costo de cada uno.
+      if (fields.price !== undefined) {
+        const products = await prisma.product.findMany({
+          where: { id: { in: ids }, tenantId: auth.tenantId },
+          select: { id: true, name: true, price: true, costPrice: true },
+        });
+        const precio = fields.price;
+        const { pisoSobreCosto, avisos } = await revisarPisoDePrecios(auth.tenantId, products.map((p) => cambioDe(p, precio)));
+        if (avisos.length > 0 && confirmarBajoPiso !== true) {
+          return NextResponse.json(respuestaBajoPiso(avisos, pisoSobreCosto), { status: 409 });
+        }
+        avisosPiso = avisos;
+      }
       // All other fields can be applied uniformly
       const data: Record<string, unknown> = {};
       if (fields.price !== undefined) data.price = fields.price;
@@ -103,11 +141,16 @@ export async function POST(req: NextRequest) {
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
+    const usuario = auth.username ?? "admin";
     logActivity(
       "Bulk", "producto",
       `Actualización masiva de ${updated} producto(s): ${Object.keys(fields).join(", ")}`,
-      undefined, "admin", requestId,
+      undefined, usuario, requestId, auth.tenantId,
     ).catch((err) => logger.error("[products/bulk] logActivity POST failed", { error: String(err) }));
+    if (avisosPiso.length > 0) {
+      logActivity("Precio bajo piso", "producto", textoBajoPisoConfirmado(avisosPiso, usuario), undefined, usuario, requestId, auth.tenantId)
+        .catch((err) => logger.error("[products/bulk] logActivity bajo piso failed", { error: String(err) }));
+    }
     invalidate(`dashboard:${auth.tenantId}`);
 
     return NextResponse.json({ ok: true, updated });

@@ -27,6 +27,7 @@ export {
   Label,
   Kicker,
   type TypographyProps,
+  BlockTitle,
 } from "./typography";
 
 // ── Canonical layout (ADR-075) ──────────────────────────────────────────────
@@ -55,6 +56,7 @@ export {
   type EmptyStateProps,
   type LoadingStateProps,
 } from "./feedback";
+export { CargaPagina, type CargaPaginaProps } from "./carga-pagina";
 
 // ── Canonical data-display (ADR-075) ────────────────────────────────────────
 export {

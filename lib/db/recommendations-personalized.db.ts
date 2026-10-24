@@ -212,7 +212,7 @@ export const RecommendationsPersonalizedDB = {
       if (topCategorySet.has(cat)) {
         score += 3;
         const originalCat = c.product.category;
-        reasons.push(`Porque comprás ${originalCat}`);
+        reasons.push(`Porque compras ${originalCat}`);
       }
 
       if (topHours.some((h) => isInHourWindow(currentHour, h))) {

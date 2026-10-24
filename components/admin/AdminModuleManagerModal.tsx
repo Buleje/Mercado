@@ -1,6 +1,5 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
 /**
  * components/admin/AdminModuleManagerModal.tsx
  *
@@ -11,7 +10,8 @@ import { SectionTitle } from "@buleje/design-system";
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
-import { CheckCircle, Eye, EyeOff, Loader2, X } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { CheckCircle, Eye, EyeOff, Loader2 } from "@buleje/design-system/icons";
 import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 import type { Tab } from "../../app/admin/_lib/tabs.types";
@@ -64,7 +64,7 @@ const PRIORITY_CONFIG: Record<ModulePriority, { label: string; cls: string; dot:
   core:   { label: "Esencial", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]",         dot: "" },
   high:   { label: "Alta",     cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/40 dark:text-[var(--data-warning-500)]", dot: "" },
   medium: { label: "Media",    cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/40 dark:text-[var(--data-warning-500)]",     dot: "" },
-  low:    { label: "Normal",   cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",     dot: "" },
+  low:    { label: "Normal",   cls: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",     dot: "" },
 };
 
 export function AdminModuleManagerModal({
@@ -82,33 +82,47 @@ export function AdminModuleManagerModal({
   demoClearing,
   onClearDemoData,
 }: AdminModuleManagerModalProps) {
-  if (!open) return null;
-
   const demoCount = Object.keys(demoModules).filter((t) => !clearedDemoTabs.has(t as Tab)).length;
 
   return (
-    <div className="fixed inset-0 z-100 overflow-y-auto">
-      <div className="modal-backdrop" onClick={onClose} />
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-3xl max-h-[90vh] flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-            <div>
-              <SectionTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Gestionar módulos</SectionTitle>
-              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
-                Activa, oculta o limpia datos de ejemplo por módulo
-              </p>
-            </div>
+    <AdminModal
+      open={open}
+      onClose={onClose}
+      title="Gestionar módulos"
+      description="Activa, oculta o limpia datos de ejemplo por módulo"
+      variant="wide"
+      footer={
+        hiddenTabs.size > 0 ? (
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onClearAllHidden}
+              className="text-sm font-semibold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] flex items-center gap-1.5"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Mostrar todos ({hiddenTabs.size})
+            </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
+              className="px-5 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
-              <X className="h-5 w-5 text-[var(--text-secondary)]" />
+              Listo
             </button>
           </div>
-
-          {/* Stats strip */}
-          <div className="px-6 py-3 bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2.5">
+        ) : (
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-5 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Listo
+            </button>
+          </div>
+        )
+      }
+    >
+      <div className={MODAL_BODY}>
+        {/* Stats strip */}
+        <div className="sticky top-0 z-10 -mx-5 sm:-mx-6 px-5 sm:px-6 py-3 bg-[var(--surface-alt)] border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2.5">
             <div className="flex gap-6">
               <div className="text-center">
                 <div className="text-xl font-extrabold text-primary">{allowedTabs.length}</div>
@@ -134,13 +148,13 @@ export function AdminModuleManagerModal({
               <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]">Esencial</span>
               <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/40 dark:text-[var(--data-warning-500)]">Alta</span>
               <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/40 dark:text-[var(--data-warning-500)]">Media</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">Normal</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]">Normal</span>
             </div>
-          </div>
+        </div>
 
-          {/* Tab list */}
-          <div className="overflow-y-auto flex-1 py-2">
-            {visibleCategories.map((category) => {
+        {/* Tab list */}
+        <div className="py-2">
+          {visibleCategories.map((category) => {
               const catTabs = category.tabs.filter((t) => allowedTabs.includes(t));
               if (catTabs.length === 0) return null;
               const CatIcon = category.icon;
@@ -166,14 +180,14 @@ export function AdminModuleManagerModal({
                       <div
                         key={tabId}
                         className={cn(
-                          "flex items-start gap-3 px-5 py-2.5 hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors",
+                          "flex items-start gap-3 px-5 py-2.5 hover:bg-[var(--surface-alt)] transition-colors",
                           isHidden && "opacity-50"
                         )}
                       >
                         <div
                           className={cn(
                             "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 relative mt-0.5",
-                            isHidden ? "bg-[var(--surface-sunken)] dark:bg-surface" : "bg-primary/10"
+                            isHidden ? "bg-[var(--surface-sunken)] " : "bg-primary/10"
                           )}
                         >
                           {(() => {
@@ -245,8 +259,8 @@ export function AdminModuleManagerModal({
                             className={cn(
                               "h-8 w-8 rounded-lg flex items-center justify-center transition-colors",
                               isHidden
-                                ? "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] hover:text-[var(--data-success-500)]"
-                                : "bg-primary/10 text-primary hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error-500)]"
+                                ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:bg-primary/10 dark:hover:bg-primary/15 hover:text-[var(--data-success-500)]"
+                                : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error-500)]"
                             )}
                           >
                             {isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -258,30 +272,8 @@ export function AdminModuleManagerModal({
                 </div>
               );
             })}
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-            {hiddenTabs.size > 0 ? (
-              <button
-                onClick={onClearAllHidden}
-                className="text-sm font-semibold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] flex items-center gap-1.5"
-              >
-                <CheckCircle className="h-4 w-4" />
-                Mostrar todos ({hiddenTabs.size})
-              </button>
-            ) : (
-              <div />
-            )}
-            <button
-              onClick={onClose}
-              className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
-            >
-              Listo
-            </button>
-          </div>
         </div>
       </div>
-    </div>
+    </AdminModal>
   );
 }

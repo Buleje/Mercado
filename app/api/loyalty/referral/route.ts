@@ -3,6 +3,7 @@ import { z } from "zod";
 import { processReferral, ensureReferralCode } from "@/lib/loyalty/referral";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { aplicarCodigoDeReferida } from "@/lib/referidas/aplicar-codigo";
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -17,7 +18,8 @@ const GetCodeSchema = z.object({
 
 /**
  * POST /api/loyalty/referral
- * Apply a referral code — credits both referrer and referee with 50 points.
+ * Apply a referral code — credits both referrer and referee with 50 points
+ * (o, si el negocio guardó su programa de referidas, cupones: ADR-510).
  *
  * Body: { refereePhone, referralCode }
  * No auth required — this is a public-facing endpoint for new customers.
@@ -43,6 +45,14 @@ export async function POST(req: NextRequest) {
       { error: "Datos inválidos", issues: parsed.error.issues },
       { status: 400 },
     );
+  }
+
+  // Negocio con su programa de referidas guardado (ADR-510) → cupones, con sesión.
+  const conPrograma = await aplicarCodigoDeReferida(req, tenantId, parsed.data.refereePhone, parsed.data.referralCode.toUpperCase());
+  if (conPrograma) {
+    return conPrograma.ok
+      ? NextResponse.json({ ok: true, pointsEarned: 0, couponCode: conPrograma.cupon, message: conPrograma.mensaje })
+      : NextResponse.json({ error: conPrograma.mensaje }, { status: conPrograma.status });
   }
 
   const result = await processReferral(

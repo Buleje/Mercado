@@ -7,6 +7,7 @@
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { SettingsDB } from "@/lib/db/settings.db";
 
 export const AdminPreferencesDB = {
   /**
@@ -31,34 +32,13 @@ export const AdminPreferencesDB = {
   },
 
   /**
-   * Hace merge del patch sobre "admin_prefs" en featureFlagsJson.
-   * Guard: upsert by tenantId — solo afecta el settings row del tenant dado.
+   * Hace merge del patch sobre "admin_prefs" en featureFlagsJson, en UNA
+   * sentencia (`SettingsDB.pisarSubclavesFlags`): leer-mezclar-escribir el JSON
+   * entero desde Node pisaba lo que otro guardó en el medio (webhooks, n8n, el
+   * enlace del kiosko de asistencia — security 10-10 H3).
+   * Guard: el WHERE va por tenantId — solo afecta el settings row del tenant dado.
    */
   async write(tenantId: string, patch: Record<string, unknown>): Promise<void> {
-    const row = await prisma.settings.findFirst({
-      where: { tenantId },
-      select: { featureFlagsJson: true },
-    });
-
-    let flags: Record<string, unknown> = {};
-    if (row?.featureFlagsJson) {
-      try {
-        flags = JSON.parse(row.featureFlagsJson) as Record<string, unknown>;
-      } catch {
-        /* JSON corrupto — se sobreescribe limpio */
-      }
-    }
-
-    const existing =
-      typeof flags["admin_prefs"] === "object" && flags["admin_prefs"] !== null
-        ? (flags["admin_prefs"] as Record<string, unknown>)
-        : {};
-    flags["admin_prefs"] = { ...existing, ...patch };
-
-    await prisma.settings.upsert({
-      where: { tenantId },
-      create: { tenantId, featureFlagsJson: JSON.stringify(flags) },
-      update: { featureFlagsJson: JSON.stringify(flags) },
-    });
+    await SettingsDB.pisarSubclavesFlags(tenantId, "admin_prefs", patch);
   },
 };

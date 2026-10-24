@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
+import { TurnosDB } from "@/lib/db/turnos.db";
+import { HORAS_TURNO_OLVIDADO } from "@/lib/caja/cierre-sin-conteo";
 
 // GET /api/turnos/activo — get currently open turno for authenticated admin
 export async function GET(req: NextRequest) {
@@ -32,22 +34,45 @@ export async function GET(req: NextRequest) {
         ...(isManagement ? {} : { adminUserId: adminUserId ?? "__none__" }),
       },
       orderBy: { abrioEn: "desc" },
+      include: { adminUser: { select: { name: true, username: true } } },
     });
 
     if (!turno) {
       return NextResponse.json({ turnoActivo: false, turno: null });
     }
 
+    /* Otros turnos abiertos en la MISMA caja (una por negocio, compartida a
+       propósito): al cerrar este turno la caja sigue abierta y la ventana de
+       cierre lo dice antes de contar. Mismo criterio que el cierre. */
+    const cajaCompartidaCon = turno.cashRegisterId
+      ? (await TurnosDB.otrosAbiertosEnCaja(auth.tenantId, turno.cashRegisterId, turno.id, {
+          abiertosDesde: new Date(Date.now() - HORAS_TURNO_OLVIDADO * 60 * 60 * 1000),
+        }).catch((err) => {
+          // El aviso es informativo: si falla, el turno se sigue mostrando.
+          logger.warn("[turnos/activo] otros turnos en la caja", { err: err instanceof Error ? err.message : String(err) });
+          return [];
+        })).map((o) => o.cajeroNombre)
+      : [];
+
     return NextResponse.json({
       turnoActivo: true,
       turno: {
         id: turno.id,
         adminUserId: turno.adminUserId,
+        /* La caja del turno y quién atiende: sin la caja, el cierre buscaba «la que
+           esté abierta» y sin el nombre la tarjeta decía «Yo mismo» cuando la
+           cajera no puede listar usuarios (GET /api/admin-users es de gestión). */
+        cashRegisterId: turno.cashRegisterId ?? undefined,
+        cajeroNombre: turno.adminUser?.name?.trim() || turno.adminUser?.username || undefined,
+        /* El dueño ve el turno abierto de cualquiera: sin esto, el mostrador decía
+           «Turno abierto» mientras él vendía a SU nombre, fuera del cuadre de ese turno. */
+        esMio: adminUserId != null && turno.adminUserId === adminUserId,
         inicioEfectivo: Number(turno.inicioEfectivo),
         ventasTotal: Number(turno.ventasTotal),
         status: turno.status,
         abrioEn: turno.abrioEn.toISOString(),
         minutosActivo: Math.floor((Date.now() - turno.abrioEn.getTime()) / 60000),
+        cajaCompartidaCon,
       },
     });
   } catch (e) {

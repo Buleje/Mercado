@@ -118,7 +118,7 @@ export async function postOrderToStoreChat(params: OrderChatParams): Promise<voi
       senderName: params.storeName,
       body:
         `¡Gracias por tu pedido #${shortId}! Ya lo estamos revisando. ` +
-        `¿Alguna indicación extra para prepararlo o entregarlo? Escribinos por acá.`,
+        `¿Alguna indicación extra para prepararlo o entregarlo? Escríbenos por acá.`,
     });
 
     logger.info("[marketplace-chat] order posted to chat", {

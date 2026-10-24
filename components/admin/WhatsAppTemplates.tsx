@@ -1,296 +1,193 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Copy, Check, Plus, Pencil, MessageSquare, Trash2 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+/**
+ * Mensajes › Plantillas: mensajes guardados para copiar y pegar en WhatsApp.
+ *
+ * Una fila de cabecera (título + ⓘ · Nueva plantilla), el buscador pegado a la
+ * lista y una plantilla por fila con el mensaje en una línea: «Copiar» a la
+ * vista, lo demás en «⋯». Ver, crear y editar van en una ventana con la vista
+ * previa tipo WhatsApp. Las tuyas son las mismas respuestas rápidas de la
+ * bandeja de WhatsApp (misma clave de localStorage, mismo formato).
+ *
+ * Antes (11-10, main): 1,42 pantallas, 63 textos < 14 px, un formulario que
+ * empujaba la grilla y botones de 28 px.
+ */
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable, SectionTitle, undoToast } from "@buleje/design-system";
+import { Check, Copy, Eye, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
+import {
+  PREDEFINED_QUICK_REPLIES,
+  QUICK_REPLIES_LS_KEY,
+  loadCustomQuickReplies,
+  type QuickReply,
+} from "@/components/admin/whatsapp/inbox/quick-replies";
+import { TextoConVariables, variablesDe } from "@/components/admin/whatsapp/plantillas/BurbujaWhatsApp";
+import { ModalPlantilla, type ModoPlantilla } from "@/components/admin/whatsapp/plantillas/ModalPlantilla";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+function guardar(lista: QuickReply[]) {
+  localStorage.setItem(QUICK_REPLIES_LS_KEY, JSON.stringify(lista));
+}
 
-type WATemplate = {
-  id: string;
-  nombre: string;
-  texto: string;
-  variables: string[];
-  custom?: boolean;
+const alTeclado = (fn: () => void) => (e: React.KeyboardEvent) => {
+  if (e.target !== e.currentTarget) return;
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    fn();
+  }
 };
 
-// ── Predefined templates ──────────────────────────────────────────────────────
-
-const PREDEFINED: WATemplate[] = [
-  {
-    id: "cobro-fiado",
-    nombre: "Cobrar fiado",
-    texto: "Hola {nombre}, te recordamos que tienes un pendiente de S/{monto} en Buleje. ¿Cuándo puedes pasar? 😊",
-    variables: ["nombre", "monto"],
-  },
-  {
-    id: "confirmar-pedido",
-    nombre: "Confirmar pedido",
-    texto: "✅ Hola {nombre}, tu pedido #{pedido} ha sido confirmado. Lo tendremos listo pronto. 🛒",
-    variables: ["nombre", "pedido"],
-  },
-  {
-    id: "cumpleanos",
-    nombre: "Feliz cumpleaños",
-    texto: "🎂 ¡Feliz cumpleaños {nombre}! Te regalamos un 10% de descuento. Usa el código: CUMPLE-{codigo}. ¡Te esperamos! 🎁",
-    variables: ["nombre", "codigo"],
-  },
-  {
-    id: "reactivacion",
-    nombre: "Reactivar cliente",
-    texto: "Hola {nombre}, ¡te extrañamos! Tenemos ofertas especiales esperándote en Buleje. ¡Visítanos! 🛍",
-    variables: ["nombre"],
-  },
-  {
-    id: "stock-disponible",
-    nombre: "Producto disponible",
-    texto: "📦 Hola {nombre}, {producto} ya está disponible en Buleje. ¡No te quedes sin el tuyo! 🏃",
-    variables: ["nombre", "producto"],
-  },
-  {
-    id: "agradecimiento",
-    nombre: "Agradecimiento",
-    texto: "🙏 Hola {nombre}, gracias por tu compra de hoy (S/{monto}). ¡Vuelve pronto a Buleje! 😊",
-    variables: ["nombre", "monto"],
-  },
-];
-
-const LS_KEY = "buleje-whatsapp-templates";
-
-function loadCustomTemplates(): WATemplate[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? (JSON.parse(raw) as WATemplate[]) : [];
-  } catch { return []; }
-}
-
-function saveCustomTemplates(templates: WATemplate[]) {
-  localStorage.setItem(LS_KEY, JSON.stringify(templates));
-}
-
-// ── Variable highlight ────────────────────────────────────────────────────────
-
-function HighlightedText({ text }: { text: string }) {
-  const parts = text.split(/(\{[^}]+\})/g);
-  return (
-    <span>
-      {parts.map((part, i) =>
-        part.startsWith("{") && part.endsWith("}") ? (
-          <span key={i} className="px-1 py-0.5 mx-0.5 rounded bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-semibold">
-            {part}
-          </span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </span>
-  );
-}
-
-// ── Main Component ────────────────────────────────────────────────────────────
-
 export default function WhatsAppTemplates() {
-  const [customTemplates, setCustomTemplates] = useState<WATemplate[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newName, setNewName] = useState("");
-  const [newText, setNewText] = useState("");
+  const [propias, setPropias] = useState<QuickReply[]>([]);
+  const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  const [modo, setModo] = useState<ModoPlantilla | null>(null);
+  const [texto, setTexto] = useState("");
 
   useEffect(() => {
-    setCustomTemplates(loadCustomTemplates());
+    setPropias(loadCustomQuickReplies());
   }, []);
 
-  const allTemplates = [...PREDEFINED, ...customTemplates];
+  /* Las tuyas primero: son las que armaste para tu negocio. */
+  const todas = useMemo(() => [...propias, ...PREDEFINED_QUICK_REPLIES], [propias]);
+  const filas = useMemo(() => {
+    const q = texto.trim().toLowerCase();
+    return q ? todas.filter((p) => `${p.nombre} ${p.texto}`.toLowerCase().includes(q)) : todas;
+  }, [todas, texto]);
 
-  const handleCopy = useCallback(async (id: string, text: string) => {
+  const copiar = useCallback(async (p: QuickReply) => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch { /* silent */ }
-  }, []);
-
-  const handleSaveNew = useCallback(() => {
-    if (!newName.trim() || !newText.trim()) return;
-    // Extract variables from {var} pattern
-    const vars = [...newText.matchAll(/\{(\w+)\}/g)].map(m => m[1]);
-    const unique = [...new Set(vars)];
-    const newTemplate: WATemplate = {
-      id: `custom-${Date.now()}`,
-      nombre: newName.trim(),
-      texto: newText.trim(),
-      variables: unique,
-      custom: true,
-    };
-
-    if (editingId) {
-      const updated = customTemplates.map(t => t.id === editingId ? { ...newTemplate, id: editingId } : t);
-      setCustomTemplates(updated);
-      saveCustomTemplates(updated);
-      setEditingId(null);
-    } else {
-      const updated = [...customTemplates, newTemplate];
-      setCustomTemplates(updated);
-      saveCustomTemplates(updated);
+      await navigator.clipboard.writeText(p.texto);
+      setCopiadoId(p.id);
+      setTimeout(() => setCopiadoId((id) => (id === p.id ? null : id)), 2000);
+    } catch {
+      /* sin permiso de portapapeles: el texto sigue a la vista en la ventana */
+      setModo({ tipo: "ver", plantilla: p });
     }
-    setCreating(false);
-    setNewName("");
-    setNewText("");
-  }, [newName, newText, editingId, customTemplates]);
-
-  const handleDelete = useCallback((id: string) => {
-    const updated = customTemplates.filter(t => t.id !== id);
-    setCustomTemplates(updated);
-    saveCustomTemplates(updated);
-  }, [customTemplates]);
-
-  const handleEdit = useCallback((template: WATemplate) => {
-    setEditingId(template.id);
-    setNewName(template.nombre);
-    setNewText(template.texto);
-    setCreating(true);
   }, []);
+
+  const alGuardar = (nombre: string, msg: string, id?: string) => {
+    const nueva: QuickReply = { id: id ?? `custom-${Date.now()}`, nombre, texto: msg, variables: variablesDe(msg), custom: true };
+    const lista = id ? propias.map((p) => (p.id === id ? nueva : p)) : [...propias, nueva];
+    setPropias(lista);
+    guardar(lista);
+    setModo(null);
+  };
+
+  const eliminar = (p: QuickReply) => {
+    const antes = propias;
+    const lista = propias.filter((x) => x.id !== p.id);
+    setPropias(lista);
+    guardar(lista);
+    undoToast({ message: `Borraste «${p.nombre}»`, onUndo: () => { setPropias(antes); guardar(antes); } });
+  };
+
+  /* El ⋯ no devuelve el foco a su botón al elegir: se enfoca a mano antes de
+     abrir, para que la ventana lo guarde como disparador y vuelva ahí al cerrar. */
+  const desdeElMenu = (p: QuickReply, m: ModoPlantilla) => () => {
+    document.querySelector<HTMLElement>(`[data-menu-plantilla="${CSS.escape(p.id)}"] button`)?.focus({ preventScroll: true });
+    setModo(m);
+  };
+
+  const accionesDe = (p: QuickReply): MenuAccion[] => [
+    { id: "ver", label: "Ver como queda", icon: Eye, onSelect: desdeElMenu(p, { tipo: "ver", plantilla: p }) },
+    p.custom
+      ? { id: "editar", label: "Editar", icon: Pencil, onSelect: desdeElMenu(p, { tipo: "editar", plantilla: p }) }
+      : { id: "base", label: "Usar como base", hint: "Una copia tuya para cambiarla", icon: Plus, onSelect: desdeElMenu(p, { tipo: "nueva", base: p }) },
+    ...(p.custom ? [{ id: "borrar", label: "Borrar", icon: Trash2, tone: "danger" as const, onSelect: () => eliminar(p) }] : []),
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-[#25D366] text-white flex items-center justify-center">
-            <MessageSquare className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-[var(--text-primary)]">Plantillas WhatsApp</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{allTemplates.length} plantillas disponibles</p>
-          </div>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Plantillas</SectionTitle>
+          <InfoTip
+            title="Plantillas de WhatsApp"
+            what="Mensajes guardados para copiar y pegar en WhatsApp. Las {palabras} entre llaves las cambias antes de mandar."
+            affects="Las que creas aparecen también como respuestas rápidas en la bandeja de WhatsApp. Se guardan en este navegador."
+            example="«Hola {nombre}, tu pedido #{pedido} ya está confirmado.»"
+          />
         </div>
-        {!creating && (
-          <button
-            onClick={() => { setCreating(true); setEditingId(null); setNewName(""); setNewText(""); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" /> Nueva plantilla
-          </button>
-        )}
+        <button type="button" onClick={() => setModo({ tipo: "nueva" })} className={button({ variant: "primary", className: "ml-auto rounded-xl" })}>
+          <Plus className="h-4 w-4" aria-hidden />
+          <span className="max-sm:sr-only">Nueva plantilla</span>
+        </button>
       </div>
 
-      {/* Create/Edit form */}
-      {creating && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-[var(--text-secondary)]">
-            {editingId ? "Editar plantilla" : "Nueva plantilla"}
-          </p>
-          <input
-            type="text"
-            value={newName}
-            onChange={e => setNewName(e.target.value)}
-            placeholder="Nombre (ej: Recordatorio pago)"
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          <textarea
-            value={newText}
-            onChange={e => setNewText(e.target.value)}
-            placeholder="Mensaje. Usa {nombre}, {monto}, etc. para variables"
-            rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-          />
-          {newText && (
-            <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface text-xs text-[var(--text-secondary)] leading-relaxed">
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-1">Vista previa:</p>
-              <HighlightedText text={newText} />
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => { setCreating(false); setEditingId(null); setNewName(""); setNewText(""); }}
-              className="px-3 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSaveNew}
-              disabled={!newName.trim() || !newText.trim()}
-              className="px-4 py-2 rounded-lg text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {editingId ? "Guardar cambios" : "Crear plantilla"}
-            </button>
-          </div>
-        </div>
-      )}
+      <label className="relative block">
+        <span className="sr-only">Buscar plantillas</span>
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+        <input
+          type="search"
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          placeholder={`Buscar entre ${todas.length} plantillas…`}
+          className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] sm:max-w-md"
+        />
+      </label>
 
-      {/* Templates grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {allTemplates.map(template => (
-          <div
-            key={template.id}
-            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">💬</span>
-                <p className="text-sm font-bold text-[var(--text-primary)]">{template.nombre}</p>
-              </div>
-              {template.custom && (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleEdit(template)}
-                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-[var(--surface-sunken)] transition-colors"
-                    title="Editar"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(template.id)}
-                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
-              <HighlightedText text={template.texto} />
-            </div>
-
-            {template.variables.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-3">
-                {template.variables.map(v => (
-                  <span key={v} className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-surface text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
-                    {v}
+      {filas.length === 0 ? (
+        <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Ninguna plantilla dice «{texto.trim()}».</p>
+      ) : (
+        <DataTable className="table-fixed">
+          <colgroup className="max-sm:hidden">
+            <col className="w-56" />
+            <col />
+            <col className="w-48" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Mensaje</th>
+              <th aria-label="Acciones" />
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((p) => (
+              <tr
+                key={p.id}
+                tabIndex={0}
+                onClick={() => setModo({ tipo: "ver", plantilla: p })}
+                onKeyDown={alTeclado(() => setModo({ tipo: "ver", plantilla: p }))}
+                aria-label={`Ver la plantilla ${p.nombre}`}
+                className="cursor-pointer"
+              >
+                <td className="font-semibold">
+                  <span className="block min-w-0 truncate">
+                    {p.nombre}
+                    {p.custom && <span className="font-normal text-[var(--text-secondary)]"> · tuya</span>}
                   </span>
-                ))}
-              </div>
-            )}
-
-            <button
-              onClick={() => handleCopy(template.id, template.texto)}
-              className={cn(
-                "w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
-                copiedId === template.id
-                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]"
-                  : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] hover:bg-[#25D366]/10 hover:text-[#25D366]"
-              )}
-            >
-              {copiedId === template.id ? (
-                <><Check className="h-3.5 w-3.5" /> Copiado</>
-              ) : (
-                <><Copy className="h-3.5 w-3.5" /> Copiar mensaje</>
-              )}
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {allTemplates.length === 0 && (
-        <div className="text-center py-12 text-[var(--text-tertiary)]">
-          <MessageSquare className="h-8 w-8 mx-auto mb-2" />
-          <p className="text-sm">Sin plantillas disponibles</p>
-        </div>
+                </td>
+                <td className="text-[var(--text-secondary)]">
+                  <TextoConVariables texto={p.texto} className="block min-w-0 truncate" />
+                </td>
+                <td onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end gap-1">
+                    <button type="button" onClick={() => void copiar(p)} className={button({ variant: "secondary", className: "rounded-xl px-3" })}>
+                      {copiadoId === p.id ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
+                      {copiadoId === p.id ? "Copiado" : "Copiar"}
+                    </button>
+                    <div data-menu-plantilla={p.id} className="contents">
+                      <ActionMenu label={`Más de ${p.nombre}`} icon={MoreHorizontal} actions={accionesDe(p)} soloIcono size="md" className="w-12 shrink-0" title="Ver, editar o borrar" />
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
       )}
+
+      <ModalPlantilla
+        modo={modo}
+        copiado={modo?.tipo === "ver" && copiadoId === modo.plantilla.id}
+        onCerrar={() => setModo(null)}
+        onCopiar={(p) => void copiar(p)}
+        onGuardar={alGuardar}
+        onCambiarModo={setModo}
+      />
     </div>
   );
 }

@@ -15,7 +15,7 @@
  * primer mount y cachea localmente para inyectar como CSS variables.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { DesignSystemActivoDB } from "@/lib/db/design-system-activo.db";
 import { logger } from "@/lib/logger";
 import {
   DEFAULT_PRESET_SLUG,
@@ -23,12 +23,6 @@ import {
   validateTokens,
   type DesignTokens,
 } from "@/lib/design-presets";
-
-interface ConfigRow {
-  activePresetSlug: string | null;
-  customTokensJson: unknown;
-  savedPresetsJson: unknown;
-}
 
 function parseSavedPresets(raw: unknown): DesignTokens[] {
   if (!Array.isArray(raw)) return [];
@@ -43,16 +37,26 @@ export async function GET(req: NextRequest) {
   const tenantId = searchParams.get("tenantId");
 
   // Resolver config global (slug + customTokens + savedPresets)
-  let config: ConfigRow | null = null;
-  try {
-    const rows = await prisma.$queryRaw<ConfigRow[]>`
-      SELECT "activePresetSlug", "customTokensJson", "savedPresetsJson"
-      FROM "DesignSystemConfig" WHERE id = 'singleton' LIMIT 1
-    `;
-    config = rows[0] ?? null;
-  } catch (err) {
-    logger.warn("[design-system/active] global lookup failed", { error: String(err) });
-  }
+  // Global y propio del negocio en paralelo y cacheados 60 s (16-10,
+  // velocidad: eran dos idas en serie en cada carga del panel). Un tenantId
+  // con forma rara no consulta (antes daba 0 filas → el global, igual que ahora)
+  // ni llena la caché de claves inventadas.
+  const tenantValido = tenantId && /^[A-Za-z0-9_-]{1,64}$/.test(tenantId) ? tenantId : null;
+  const [config, override] = await Promise.all([
+    DesignSystemActivoDB.global().catch((err: unknown) => {
+      logger.warn("[design-system/active] global lookup failed", { error: String(err) });
+      return null;
+    }),
+    tenantValido
+      ? DesignSystemActivoDB.deTenant(tenantValido).catch((err: unknown) => {
+          logger.warn("[design-system/active] tenant override lookup failed", {
+            error: String(err),
+            tenantId,
+          });
+          return null;
+        })
+      : Promise.resolve(null),
+  ]);
 
   const activeGlobalSlug = config?.activePresetSlug ?? DEFAULT_PRESET_SLUG;
   const globalCustomTokens =
@@ -71,38 +75,24 @@ export async function GET(req: NextRequest) {
     | "global-oficial"
     | "default" = "default";
 
-  if (tenantId) {
-    try {
-      const rows = await prisma.$queryRaw<
-        Array<{ presetSlug: string | null; tokensJson: unknown }>
-      >`
-        SELECT "presetSlug", "tokensJson" FROM "DesignPresetCustom"
-        WHERE "tenantId" = ${tenantId} LIMIT 1
-      `;
-      const override = rows[0];
-      if (
-        override?.tokensJson &&
-        typeof override.tokensJson === "object" &&
-        validateTokens(override.tokensJson).length === 0
-      ) {
-        resolvedTokens = override.tokensJson as DesignTokens;
-        source = "tenant-custom";
-      } else if (override?.presetSlug) {
-        const fromOficial = getPresetBySlug(override.presetSlug);
-        const fromSaved = savedPresets.find((p) => p.meta.slug === override.presetSlug);
-        if (fromOficial) {
-          resolvedTokens = fromOficial;
-          source = "tenant-preset";
-        } else if (fromSaved) {
-          resolvedTokens = fromSaved;
-          source = "tenant-preset";
-        }
+  if (override) {
+    if (
+      override.tokensJson &&
+      typeof override.tokensJson === "object" &&
+      validateTokens(override.tokensJson).length === 0
+    ) {
+      resolvedTokens = override.tokensJson as DesignTokens;
+      source = "tenant-custom";
+    } else if (override.presetSlug) {
+      const fromOficial = getPresetBySlug(override.presetSlug);
+      const fromSaved = savedPresets.find((p) => p.meta.slug === override.presetSlug);
+      if (fromOficial) {
+        resolvedTokens = fromOficial;
+        source = "tenant-preset";
+      } else if (fromSaved) {
+        resolvedTokens = fromSaved;
+        source = "tenant-preset";
       }
-    } catch (err) {
-      logger.warn("[design-system/active] tenant override lookup failed", {
-        error: String(err),
-        tenantId,
-      });
     }
   }
 

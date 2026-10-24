@@ -1,0 +1,8 @@
+[Unit]
+Description=Buleje: recordatorios de la agenda (Telegram y celular)
+
+[Service]
+Type=oneshot
+ExecStart=/home/usuario/proyectos/Mercado/scripts/agenda-recordatorios.sh
+StandardOutput=append:%h/.local/share/agenda-recordatorios.log
+StandardError=append:%h/.local/share/agenda-recordatorios.log

@@ -388,7 +388,12 @@ export const OrderTrackingDB = {
     const token = `${encoded}.${b64urlEncodeBytes(sig)}`;
 
     const origin = baseUrl ?? process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
-    const url = `${origin}/t/${encodeURIComponent(tenantId)}/seguimiento/${encodeURIComponent(token)}`;
+    // FIX (audit 2026-06-26): la ruta /t/[slug]/seguimiento espera el SLUG, no el
+    // tenantId (cuid). Antes el link compartido embebía el id → 404. Resolvemos el
+    // slug; la verificación del token usa el tenantId firmado, no esta URL.
+    const tenantRow = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
+    const slugForUrl = tenantRow?.slug ?? tenantId;
+    const url = `${origin}/t/${encodeURIComponent(slugForUrl)}/seguimiento/${encodeURIComponent(token)}`;
 
     return {
       token,

@@ -1,4 +1,6 @@
-import type { Preview } from "@storybook/nextjs";
+// Tipo desde @storybook/react (instalado); "@storybook/nextjs" NO está en
+// package.json y solo resolvía por hoisting transitivo (hallazgo knip 2026-07-13).
+import type { Preview } from "@storybook/react";
 import "../app/globals.css";
 
 const preview: Preview = {

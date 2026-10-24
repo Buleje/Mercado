@@ -13,6 +13,7 @@
  *   await setSpecialization(tenantId, "spec:forestal:ctp-libro", true, superadminId);
  */
 import { prisma } from "@/lib/prisma";
+import { getOrSet, invalidate } from "@/lib/cache";
 
 // ─── Registry: catálogo de especializaciones disponibles ──────────────────
 
@@ -37,8 +38,11 @@ export interface Specialization {
 
 export type SpecializationKey =
   | "spec:forestal:ctp-libro"
+  | "spec:forestal:lotes"
   | "spec:forestal:loth-libro"
   | "spec:forestal:gtf-emisor"
+  | "spec:forestal:herramientas"
+  | "spec:forestal:tramites"
   | "spec:agricola:cacao-acopio"
   | "spec:salud:recetas-medicas"
   | "spec:textil:cuero";
@@ -51,6 +55,27 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     description:
       "Registra ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial).",
     moduleId: "ctp-libro-operaciones",
+    recommendedIndustry: "madereria",
+    status: "available",
+  },
+  "spec:forestal:tramites": {
+    key: "spec:forestal:tramites",
+    vertical: "forestal",
+    name: "Trámites y Oficios (Forestal)",
+    description:
+      "Genera las solicitudes que el CTP presenta a la autoridad (visado de talonario de GTF, inspección de campo, actualización de datos, descargo ante supervisión, permiso CITES) con el membrete legal y los datos del Libro, y lleva el expediente de qué se presentó (ADR-308).",
+    moduleId: "forestal-tramites",
+    recommendedIndustry: "madereria",
+    status: "available",
+  },
+  "spec:forestal:lotes": {
+    key: "spec:forestal:lotes",
+    vertical: "forestal",
+    name: "Lotes de Producción",
+    description:
+      "Agrupa corridas de producción del CTP en lotes comerciales con código, grado de calidad, estado y cadena de custodia heredada. Certificado y QR verificable por lote. Requiere el Libro CTP.",
+    moduleId: "forestal-lotes",
+    requires: ["spec:forestal:ctp-libro"],
     recommendedIndustry: "madereria",
     status: "available",
   },
@@ -74,6 +99,16 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     requires: ["spec:forestal:ctp-libro"],
     recommendedIndustry: "madereria",
     status: "coming-soon",
+  },
+  "spec:forestal:herramientas": {
+    key: "spec:forestal:herramientas",
+    vertical: "forestal",
+    name: "Herramientas Forestales",
+    description:
+      "Utilidades para el negocio forestal. Incluye el cubicador de madera aserrada por voz (pie tablar + m³) con conversiones. Extensible a más herramientas.",
+    moduleId: "forestal-herramientas",
+    recommendedIndustry: "madereria",
+    status: "available",
   },
   "spec:agricola:cacao-acopio": {
     key: "spec:agricola:cacao-acopio",
@@ -122,6 +157,40 @@ export function isValidSpecializationKey(key: string): key is SpecializationKey 
 // ─── DB ops ───────────────────────────────────────────────────────────────
 
 /**
+ * Las claves `spec:*` encendidas del negocio, cacheadas 60 s (16-10, carril
+ * velocidad): las piden el sidebar en cada carga (`/api/admin/me/specializations`)
+ * y decenas de rutas forestales vía {@link isSpecializationEnabled}; era una
+ * ida a la base por pregunta (~120 ms desde la PC de Brandon). Los errores NO
+ * se cachean (getOrSet sólo guarda lo que resolvió). La limpian
+ * {@link setSpecialization} y `TenantFeatureFlagDB.set` vía
+ * {@link olvidarEspecializaciones}.
+ */
+async function especializacionesEncendidas(tenantId: string): Promise<string[]> {
+  // `{ v }`: getOrSet trata `null` como «no está»; una lista vacía sí se guarda.
+  const caja = await getOrSet<{ v: string[] }>(claveEspecializaciones(tenantId), 60, async () => {
+    const flags = await prisma.tenantFeatureFlag.findMany({
+      where: {
+        tenantId,
+        enabled: true,
+        flagKey: { startsWith: "spec:" },
+      },
+      select: { flagKey: true },
+    });
+    return { v: flags.map((f) => f.flagKey) };
+  });
+  return caja.v;
+}
+
+function claveEspecializaciones(tenantId: string): string {
+  return `especializaciones:${tenantId}`;
+}
+
+/** Tras escribir un `TenantFeatureFlag` del negocio. */
+export function olvidarEspecializaciones(tenantId: string): void {
+  invalidate(claveEspecializaciones(tenantId));
+}
+
+/**
  * ¿Está habilitada esta especialización para el tenant?
  * Falla cerrado: ante cualquier error retorna `false` (no habilitar).
  */
@@ -131,11 +200,7 @@ export async function isSpecializationEnabled(
 ): Promise<boolean> {
   if (!isValidSpecializationKey(spec)) return false;
   try {
-    const flag = await prisma.tenantFeatureFlag.findUnique({
-      where: { tenantId_flagKey: { tenantId, flagKey: spec } },
-      select: { enabled: true },
-    });
-    return flag?.enabled === true;
+    return (await especializacionesEncendidas(tenantId)).includes(spec);
   } catch {
     return false;
   }
@@ -149,17 +214,7 @@ export async function listEnabledSpecializations(
   tenantId: string,
 ): Promise<SpecializationKey[]> {
   try {
-    const flags = await prisma.tenantFeatureFlag.findMany({
-      where: {
-        tenantId,
-        enabled: true,
-        flagKey: { startsWith: "spec:" },
-      },
-      select: { flagKey: true },
-    });
-    return flags
-      .map((f) => f.flagKey)
-      .filter(isValidSpecializationKey);
+    return (await especializacionesEncendidas(tenantId)).filter(isValidSpecializationKey);
   } catch {
     return [];
   }
@@ -184,6 +239,7 @@ export async function setSpecialization(
     update: { enabled },
     create: { tenantId, flagKey: spec, enabled },
   });
+  olvidarEspecializaciones(tenantId);
   // TODO Fase 3: registrar ActivityLog con actorId, action, before/after
 }
 

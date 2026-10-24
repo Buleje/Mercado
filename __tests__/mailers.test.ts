@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/avisos-correo-plataforma", () => ({ avisoCorreoPlataformaActivo: async () => true }));
 
 // We must mock nodemailer before importing the modules under test
 const mockSendMail = vi.fn().mockResolvedValue({ messageId: "test-id" });

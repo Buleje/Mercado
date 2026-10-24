@@ -7,11 +7,13 @@ export function useLocalStorageDraft<T>(key: string) {
     return localStorage.getItem(key) !== null;
   });
 
-  const save = useCallback((data: T) => {
+  /** `false` si el navegador no lo dejó guardar (cuota llena, modo privado). */
+  const save = useCallback((data: T): boolean => {
     try {
       localStorage.setItem(key, JSON.stringify(data));
       setHasDraft(true);
-    } catch { /* quota exceeded */ }
+      return true;
+    } catch { return false; }
   }, [key]);
 
   const load = useCallback((): T | null => {

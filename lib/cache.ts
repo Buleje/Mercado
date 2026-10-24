@@ -1,3 +1,5 @@
+import { revalidateTag } from "next/cache";
+
 /**
  * lib/cache.ts
  *
@@ -292,4 +294,25 @@ export function invalidateByPrefix(prefix: string): void {
 /** Nuclear: evict ALL cached keys (for full data purge) */
 export function invalidateAll(): void {
   cacheStore.clearAll?.();
+}
+
+/**
+ * Invalida la lectura cacheada (`"use cache"` + `cacheTag`) de un recurso del
+ * tenant.
+ *
+ * Para endpoints que escriben con `prisma`/`tx` directo —por atomicidad— y por
+ * eso saltean a su DB class, que es quien normalmente invalida. Sin esto el
+ * dato queda bien en la base y viejo en pantalla: pasó con el stock recibido,
+ * con el stock vendido y con las cuentas por pagar (2026-08-12).
+ *
+ * Envuelto en try/catch a propósito: fuera de un request de Next —tests
+ * unitarios, scripts, seeds— `revalidateTag` lanza «static generation store
+ * missing», y ahí no hay ningún cache que purgar.
+ */
+export function revalidateTenantTag(tenantId: string, recurso: string): void {
+  try {
+    revalidateTag(`tenant:${tenantId}:${recurso}`, "max");
+  } catch {
+    /* fuera de contexto de request — no hay cache de Next que invalidar */
+  }
 }

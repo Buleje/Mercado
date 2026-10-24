@@ -5,7 +5,10 @@
  * alta demanda o próximos a vencer (FEFO).
  *
  * IMPORTANTE: Este endpoint solo SUGIERE. No modifica ningún precio.
- * El admin aplica los ajustes manualmente desde el panel.
+ * `rebajas` = la lista única «Rebajar lo que no se vende» (`lib/precios/rebajas.ts`,
+ * la misma que arma Comandos IA › Precios en bloque); se aplica por
+ * `/api/admin/comandos-ia/precios/aplicar` (OK explícito, recibo y deshacer).
+ * Piso sobre el costo y margen mínimo = los del negocio (Ajustes › Cobros).
  *
  * Query params:
  *   reason?: "slow_mover" | "hot_item" | "fefo_urgent"  — filtrar por tipo
@@ -18,6 +21,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { suggestPriceAdjustments } from "@/lib/forecasting/price-optimizer";
 import type { PriceSuggestionReason } from "@/lib/forecasting/price-optimizer";
+import { leerMargenesDelNegocio, listaDeRebajas } from "@/lib/precios/rebajas-servidor";
 import { logger } from "@/lib/logger";
 
 const QuerySchema = z.object({
@@ -51,7 +55,9 @@ export async function GET(req: NextRequest) {
 
   // 3. Obtener sugerencias
   try {
-    let suggestions = await suggestPriceAdjustments(auth.tenantId);
+    const margenes = await leerMargenesDelNegocio(auth.tenantId);
+    const rebajas = await listaDeRebajas(auth.tenantId, { margenes });
+    let suggestions = await suggestPriceAdjustments(auth.tenantId, rebajas);
 
     // Filtro opcional por tipo de razón
     if (parsed.data.reason) {
@@ -68,6 +74,7 @@ export async function GET(req: NextRequest) {
       total: suggestions.length,
       note: "Sugerencias únicamente. Ningún precio ha sido modificado.",
       suggestions,
+      rebajas,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

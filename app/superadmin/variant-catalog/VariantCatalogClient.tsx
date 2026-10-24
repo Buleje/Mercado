@@ -10,6 +10,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/superadmin/_shared/useConfirm";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ const TEMPLATE_PRESETS: TemplatePreset[] = [
     id: "polleria-presa",
     category: "Pollería",
     name: "Presa",
-    description: "Elegí la presa de tu preferencia",
+    description: "Elige la presa que prefieras",
     required: true,
     minSelect: 1,
     maxSelect: 1,
@@ -326,7 +327,7 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
             <div className="flex-1 min-w-[180px]">
               <p className="text-xs text-[var(--text-secondary)] truncate font-mono">{value}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
-                Click o arrastrá otra imagen para reemplazar
+                Click o arrastra otra imagen para reemplazar
               </p>
             </div>
             <button
@@ -348,7 +349,7 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
               <>
                 <Upload className="h-8 w-8 text-[var(--text-tertiary)] mb-2" />
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  Arrastrá una imagen aquí
+                  Arrastra una imagen aquí
                 </p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">
                   o <span className="text-primary font-bold underline">click para buscar en tu computadora</span>
@@ -382,7 +383,7 @@ function ImageDropzone({ value, onChange, folder = "variant-catalog" }: ImageDro
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://cdn.tu-cdn.com/imagen.jpg"
-          className="w-full mt-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary"
+          className="w-full mt-2 px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary"
         />
       </details>
     </div>
@@ -472,7 +473,7 @@ function NewTemplateModal({
               </Dialog.Title>
               <Dialog.Description className="text-xs text-[var(--text-tertiary)] mt-0.5">
                 {step === "preset"
-                  ? "Empezá desde un preset común o creá una en blanco"
+                  ? "Empieza desde un preset común o crea una en blanco"
                   : `${category}${name ? ` · ${name}` : ""}`}
               </Dialog.Description>
             </div>
@@ -503,7 +504,7 @@ function NewTemplateModal({
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       {p.required && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           Obligatorio
                         </span>
                       )}
@@ -523,7 +524,7 @@ function NewTemplateModal({
 
               <button
                 onClick={startBlank}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--text-primary)] border-2 border-dashed border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border border-dashed border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all"
               >
                 <Plus className="h-4 w-4" />
                 Crear plantilla en blanco
@@ -537,7 +538,7 @@ function NewTemplateModal({
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     placeholder="Pollería, Pizzería, Heladería…"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </Field>
                 <Field label="Nombre *" hint="Lo que verá el dueño al importar">
@@ -545,7 +546,7 @@ function NewTemplateModal({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Cremas, Presas, Tamaño…"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </Field>
               </div>
@@ -556,7 +557,7 @@ function NewTemplateModal({
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
                   placeholder="Cremas de la casa para acompañar el pollo"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
                 />
               </Field>
 
@@ -584,7 +585,7 @@ function NewTemplateModal({
                       type="number" min={0} max={20}
                       value={minSelect}
                       onChange={(e) => setMinSelect(Number(e.target.value) || 0)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
                     />
                   </Field>
                   <Field label="Máximo" hint="1 = single, 2+ = multi">
@@ -592,7 +593,7 @@ function NewTemplateModal({
                       type="number" min={1} max={20}
                       value={maxSelect}
                       onChange={(e) => setMaxSelect(Number(e.target.value) || 1)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
                     />
                   </Field>
                 </div>
@@ -614,14 +615,14 @@ function NewTemplateModal({
                 <div className="flex gap-2">
                   <button
                     onClick={() => onOpenChange(false)}
-                    className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+                    className="px-4 min-h-10 rounded-xl text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={submit}
                     disabled={saving}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Crear plantilla
@@ -680,11 +681,12 @@ function TemplateCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm font-bold text-[var(--text-primary)]">{template.name}</h3>
+              {template.description && <InfoTip title={template.name} what={template.description} />}
               <span className="text-xs text-[var(--text-tertiary)]">
                 {template.options.length} {template.options.length === 1 ? "opción" : "opciones"}
               </span>
               {template.required && (
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   Obligatorio
                 </span>
               )}
@@ -694,9 +696,6 @@ function TemplateCard({
                 </span>
               )}
             </div>
-            {template.description && (
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">{template.description}</p>
-            )}
           </div>
           <button
             onClick={togglePublished}
@@ -730,7 +729,7 @@ function TemplateCard({
 
             <button
               onClick={() => setOptionModal({ mode: "new" })}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary border border-dashed border-primary/40 hover:bg-primary/5 transition-colors"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-dashed border-primary/40 hover:bg-primary/5 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Añadir opción
@@ -906,7 +905,7 @@ function OptionModal({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Crema huancaína"
                   autoFocus
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </Field>
               <Field label="Delta de precio (S/)" hint="0 si no afecta">
@@ -915,12 +914,12 @@ function OptionModal({
                   step="0.10"
                   value={priceDelta}
                   onChange={(e) => setPriceDelta(Number(e.target.value) || 0)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm tabular-nums outline-none focus:border-primary"
                 />
               </Field>
             </div>
 
-            <Field label="Imagen" hint="Arrastrá un archivo, hacé click para buscarlo, o pegá una URL externa">
+            <Field label="Imagen" hint="Arrastra un archivo, haz click para buscarlo, o pega una URL externa">
               <ImageDropzone value={imageUrl} onChange={setImageUrl} folder="variant-catalog" />
             </Field>
 
@@ -951,14 +950,14 @@ function OptionModal({
           <div className="sticky bottom-0 bg-[var(--surface-raised)] border-t border-[var(--rule-soft)] px-6 py-4 flex justify-end gap-2">
             <button
               onClick={() => onOpenChange(false)}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+              className="px-4 min-h-10 rounded-xl text-sm font-medium text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={submit}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {editing ? "Guardar cambios" : "Crear opción"}

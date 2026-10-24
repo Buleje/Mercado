@@ -4,6 +4,7 @@ import { ProductsDB, CustomersDB, OrdersDB, FiadosDB, SettingsDB } from "@/lib/d
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { limaDateKey } from "@/lib/utils";
 
 // Brandon 2026-05-16 (audit P2 PII hardening): force-dynamic obligatorio +
 // rate limit STRICT. Este endpoint exporta TODA la PII del tenant (phones,
@@ -113,7 +114,7 @@ export async function GET(req: NextRequest) {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
 
-    const fecha = new Date().toISOString().slice(0, 10);
+    const fecha = limaDateKey();
     const filename = `buleje-export-${auth.tenantId}-${fecha}.json`;
 
     return new NextResponse(JSON.stringify(payload, null, 2), {

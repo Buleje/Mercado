@@ -1,0 +1,26 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- ADR-135 · ROLLBACK del puente N:M despacho → producción
+--
+-- ⚠️ CUÁNDO SÍ: SQL aplicado pero código NO deployado. Nada escribe la tabla ⇒
+--    dropearla es seguro.
+-- ⚠️ CUÁNDO NO: código YA deployado. Entonces el rollback es **revertir el
+--    deploy y DEJAR LA TABLA** (vacía o no, es inerte para el código viejo).
+--    Dropearla con el código nuevo vivo = P2021 en runtime.
+--
+-- QUÉ SE PIERDE: la atribución despacho→corrida. NO el acta — `gtfNumber`
+-- (la GTF de salida), `destino` y `quantity` viven en ForestCtpEntry y este SQL
+-- no los toca. Se pierde el ÍNDICE, nunca el ACTA (ADR-134 D2), y el índice es
+-- re-derivable corriendo el backfill de nuevo. Aun así: el snapshot del
+-- pre-flight incluye esta tabla, porque a diferencia de una columna nullable,
+-- acá SÍ hay datos propios que borrar.
+--
+-- Si sólo hay que deshacer el BACKFILL (atribuyó mal) y NO la tabla, esto es
+-- quirúrgico y no toca lo que cargó el operador:
+--   DELETE FROM "ForestCtpDespachoOrigen" WHERE "createdBy" = 'backfill:adr-135';
+--
+-- APLICAR: node scripts/apply-sql.mjs scripts/forestal-ctp-despacho-origen-rollback.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Los índices y FKs se van con la tabla (no hace falta dropearlos aparte).
+-- ADR-134 NO se toca: ForestCtpConsumo, los costos y el FK a Supplier se quedan.
+DROP TABLE IF EXISTS "ForestCtpDespachoOrigen";

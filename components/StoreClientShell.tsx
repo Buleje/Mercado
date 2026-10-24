@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 
 const CheckoutModal = dynamic(() => import("@/components/CheckoutModal"), {});
@@ -36,6 +37,16 @@ function useDeferredMount(delay = 2500) {
  */
 export default function StoreClientShell({ liveChat = true }: { liveChat?: boolean } = {}) {
   const ready = useDeferredMount(2500);
+  const pathname = usePathname();
+
+  /**
+   * El cupón de bienvenida NO va en el directorio de tiendas (Brandon
+   * 2026-08-03). `/tiendas` es la pantalla a la que se viene a BUSCAR un
+   * negocio: un popup fijo tapando la esquina mientras se recorre la lista
+   * estorba. Sigue apareciendo en la home y en el resto del marketplace, que es
+   * donde el cupón tiene sentido.
+   */
+  const enDirectorio = (pathname ?? "").startsWith("/tiendas");
 
   if (!ready) return null;
 
@@ -52,7 +63,7 @@ export default function StoreClientShell({ liveChat = true }: { liveChat?: boole
           en el "Mensaje" del storefront. */}
       {liveChat && <LiveChatWidget />}
       <WebVitalsReporter />
-      <FirstVisitCouponModal />
+      {!enDirectorio && <FirstVisitCouponModal />}
     </>
   );
 }

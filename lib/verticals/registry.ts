@@ -25,6 +25,7 @@ export type Industry =
   | "farmacia"
   | "ferreteria"
   | "panaderia"
+  | "belleza"
   | "otro";
 
 export type ModuleId = Tab | string; // string = comingSoon ids no en Tab union aún
@@ -83,6 +84,29 @@ const CORE_BASE: ModuleId[] = [
   "rendimiento",
   "mi-perfil",
   "support-inbox",
+  // Inbox WhatsApp del negocio — universal: toda vertical habla con clientes por WhatsApp
+  "whatsapp-inbox",
+  /* Cámaras del local o del patio (ADR-411): universal a propósito. Nació para
+     el aserradero, pero mirar quién entró de noche no es de un rubro — una
+     bodega con una cámara en la puerta usa exactamente la misma pantalla. Si
+     viviera sólo en la vertical maderera, el sidebar la ocultaría en silencio
+     en todas las demás (el filtro vertical no avisa, simplemente no dibuja). */
+  "camaras",
+  /* Recursos Humanos (ADR-414): universal por la misma razón que Cámaras — toda
+     bodega, restaurante o aserradero tiene gente que marca asistencia y cobra.
+     Fuera de este núcleo, el filtro vertical lo ocultaba EN SILENCIO de la barra
+     lateral de escritorio (medido 2026-09-14 en un negocio «bodega»), mientras
+     el menú del celular, que no aplica este filtro, sí lo mostraba. */
+  "rrhh",
+  /* Tareas del equipo: herramienta interna de cualquier negocio. La categoría
+     «Equipo» sólo la trae a ella; fuera de este núcleo el filtro vertical la
+     ocultaba de la barra de escritorio igual que a RRHH (medido 2026-09-14). */
+  "tareas",
+  /* Plan de la empresa (ADR-497): ficha, socios, FODA, objetivos y políticas
+     son de cualquier negocio — bodega, restaurante o aserradero. */
+  "planificacion",
+  /* Agenda del negocio (ADR-501): trae Tareas y Notas (universales). */
+  "administracion",
 ];
 
 /** Set extendido — todos los tabs actuales (35). */
@@ -103,10 +127,16 @@ const ALL_CURRENT: ModuleId[] = [
   "delivery-partners",
   "delivery-live",
   "marketplace-chat",
+  "canales",
   "store-customizer",
   "pagina-inicio",
   "auditoria",
   "colas",
+  /* Campañas (Brandon 19-10, plan Pro): mandar una oferta a un grupo de clientes
+     (uno por uno o automático) sirve a todo negocio que vende al público. Va a mano
+     en cada rubro y NO en CORE_BASE: la maderería vende B2B por cotización. El
+     plan sigue mandando (plan-tiers: sólo enterprise/max). */
+  "campanas",
 ];
 
 // ─── Registry ──────────────────────────────────────────────────────────────────
@@ -119,7 +149,10 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
     description: "Bodegas, minimarkets, abarrotes — venta diaria + fiados + delivery.",
     modules: {
       enabled: ALL_CURRENT,
-      featured: ["vendor-dashboard", "ventas-caja", "inventario", "fiados", "marketplace"],
+      // "fiados" ya no es entrada propia del sidebar (colapsada dentro de
+      // FinanzasModule, auditoría 2026-08-02) — el destacado apunta a "plata",
+      // que es la entrada visible que lleva hasta Fiados en 2 clicks.
+      featured: ["vendor-dashboard", "ventas-caja", "inventario", "plata", "marketplace"],
       hidden: [],
       comingSoon: [],
     },
@@ -145,6 +178,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "pagina-inicio",
         "auditoria",
         "colas",
+        "campanas", // Brandon 19-10: ofertas a clientes por WhatsApp (plan Pro); el plan manda
         "recetas",        // futuro — Receta model ya existe
       ],
       featured: ["recetas", "ventas-caja", "inventario", "mesas", "comandas", "cocina-kds"],
@@ -179,8 +213,10 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "analytics-pro",
         "auditoria",
       ],
-      featured: ["cotizaciones", "guias-remision", "contratos", "fiados", "compras"],
-      hidden: ["delivery-partners", "delivery-live", "marketplace-chat", "metas-logros"],
+      // "fiados" ya no es entrada propia del sidebar (colapsada dentro de
+      // FinanzasModule, auditoría 2026-08-02) — el destacado apunta a "plata".
+      featured: ["cotizaciones", "guias-remision", "contratos", "plata", "compras"],
+      hidden: ["delivery-partners", "delivery-live", "marketplace-chat"],
       comingSoon: ["pietaje", "calculadora-cubicaje", "lotes-madera"],
     },
     branding: {
@@ -207,8 +243,12 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "auditoria",
         "store-customizer",
         "pagina-inicio",
+        "campanas", // Brandon 19-10: ofertas a clientes (plan Pro)
       ],
-      featured: ["inventario", "ventas-caja", "lotes-vencimiento", "recetas-medicas", "auditoria"],
+      // "auditoria" ya no es entrada propia del sidebar (colapsada dentro de
+      // SistemaHubModule, auditoría 2026-08-02) — el destacado apunta a
+      // "rendimiento", que es la entrada visible del hub.
+      featured: ["inventario", "ventas-caja", "lotes-vencimiento", "recetas-medicas", "rendimiento"],
       hidden: ["cotizaciones", "contratos", "marketplace-chat"],
       comingSoon: [
         "lotes-vencimiento",       // Batch model ya existe — solo UI
@@ -245,8 +285,11 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "forecasting",
         "store-customizer",
         "pagina-inicio",
+        "campanas", // Brandon 19-10: ofertas a clientes (plan Pro)
       ],
-      featured: ["productos", "cotizaciones", "fiados", "ventas-caja", "compras"],
+      // "fiados" ya no es entrada propia del sidebar (colapsada dentro de
+      // FinanzasModule, auditoría 2026-08-02) — el destacado apunta a "plata".
+      featured: ["productos", "cotizaciones", "plata", "ventas-caja", "compras"],
       hidden: ["delivery-live", "marketplace-chat"],
       comingSoon: ["mayorista-pricing", "kits-bundles", "garantias-tracking"],
     },
@@ -269,6 +312,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "store-customizer",
         "pagina-inicio",
         "recetas",
+        "campanas", // Brandon 19-10: ofertas a clientes (plan Pro)
       ],
       featured: ["recetas", "ventas-caja", "inventario", "produccion-lote", "compras"],
       hidden: ["cotizaciones", "guias-remision", "contratos", "prestamos"],
@@ -278,6 +322,33 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
       sidebarTitle: "Mi Panadería",
       customCopy: {
         producto: "producto horneado",
+      },
+    },
+  },
+
+  /* Belleza y cuidado personal (ADR-509, Brandon 2026-10-20): tiendas de
+     cosmética, cabello y piel — Musa. Ve lo mismo que una bodega (medido con el
+     guardián del panel: 0 pares perdidos para un negocio que sale de «bodega»)
+     menos Préstamos, que nadie de este rubro usa y cuya vista vive igual en Mi
+     Plata. Cotizaciones (venta a salones) y Guías de Remisión (envíos por
+     agencia) se quedan. Lo forestal no entra por el rubro: lo prenden sus
+     especializaciones. */
+  belleza: {
+    industry: "belleza",
+    label: "Belleza y cuidado personal",
+    icon: "Sparkles",
+    description: "Tiendas de belleza y cosmética — catálogo con fichas, revendedoras, tienda online y seguimiento de clientas.",
+    modules: {
+      enabled: ALL_CURRENT.filter((id) => id !== "prestamos"),
+      featured: ["productos", "ventas-caja", "clientes", "canales", "metas-logros"],
+      hidden: ["prestamos"],
+      comingSoon: [],
+    },
+    branding: {
+      sidebarTitle: "Mi Tienda de Belleza",
+      customCopy: {
+        cliente: "clienta",
+        clientes: "clientas",
       },
     },
   },
@@ -301,6 +372,12 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "mi-perfil",
         "support-inbox",
         "plan",
+        "compras",
+        "dropship", // ADR-298 — tiendas dropshipping (gate real = Settings.dropshipEnabled)
+        "rrhh", // ADR-414 — universal; «otro» no hereda CORE_BASE, así que va explícito
+        "tareas", // universal, misma razón que rrhh
+        "administracion", // ADR-501 — Tareas y Notas viven ahí desde el 18-10
+        "campanas", // Brandon 19-10: ofertas a clientes (plan Pro)
       ],
       featured: [],
       hidden: [],

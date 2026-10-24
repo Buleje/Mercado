@@ -86,7 +86,7 @@ export default function SaasBeforeAfter() {
             style={{ left: `${sliderPos}%` }}
           >
             <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-10 w-10 rounded-full bg-white shadow-xl border-2 border-[var(--accent)] flex items-center justify-center">
-              <svg className="h-4 w-4 text-[var(--accent-dark)]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <svg className="h-4 w-4 text-[var(--accent-dark)] dark:text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
               </svg>
             </div>

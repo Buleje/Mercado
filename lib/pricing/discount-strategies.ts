@@ -21,6 +21,8 @@
  *   const result = engine.apply(orderContext);
  */
 
+import { porcentajeDe } from "./total-pedido";
+
 // ── Interface (the "contract" all strategies follow) ────────────────────────
 
 export interface OrderContext {
@@ -34,8 +36,13 @@ export interface OrderContext {
 
 export interface DiscountResult {
   strategyName: string;
+  /** Soles, redondeado al céntimo (`porcentajeDe`). */
   discountAmount: number;
   reason: string;
+  /** Porcentaje aplicado (5 = 5 %); 0 si no aplica. */
+  percent?: number;
+  /** Rótulo corto para la línea del resumen del checkout. */
+  etiqueta?: string;
 }
 
 export interface IDiscountStrategy {
@@ -70,8 +77,10 @@ export class VolumeDiscountStrategy implements IDiscountStrategy {
 
     return {
       strategyName: this.name,
-      discountAmount: percent > 0 ? Math.round((ctx.subtotal * percent) / 100) : 0,
+      discountAmount: percent > 0 ? porcentajeDe(ctx.subtotal, percent) : 0,
       reason,
+      percent,
+      etiqueta: "Descuento por volumen",
     };
   }
 }
@@ -100,8 +109,10 @@ export class LoyaltyDiscountStrategy implements IDiscountStrategy {
 
     return {
       strategyName: this.name,
-      discountAmount: percent > 0 ? Math.round((ctx.subtotal * percent) / 100) : 0,
+      discountAmount: percent > 0 ? porcentajeDe(ctx.subtotal, percent) : 0,
       reason,
+      percent,
+      etiqueta: "Descuento de cliente frecuente",
     };
   }
 }
@@ -120,8 +131,10 @@ export class CouponDiscountStrategy implements IDiscountStrategy {
     const percent = Math.min(ctx.couponDiscountPercent, 50); // Cap at 50%
     return {
       strategyName: this.name,
-      discountAmount: Math.round((ctx.subtotal * percent) / 100),
+      discountAmount: porcentajeDe(ctx.subtotal, percent),
       reason: `Cupón "${ctx.couponCode}": ${percent}% de descuento`,
+      percent,
+      etiqueta: `Cupón ${ctx.couponCode}`,
     };
   }
 }
@@ -140,8 +153,10 @@ export class FirstPurchaseDiscountStrategy implements IDiscountStrategy {
     const percent = 5;
     return {
       strategyName: this.name,
-      discountAmount: Math.round((ctx.subtotal * percent) / 100),
+      discountAmount: porcentajeDe(ctx.subtotal, percent),
       reason: "¡Bienvenido! 5% de descuento en tu primera compra",
+      percent,
+      etiqueta: "Descuento de primera compra",
     };
   }
 }

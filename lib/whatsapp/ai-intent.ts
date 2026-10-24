@@ -81,7 +81,7 @@ export async function classifyWhatsappIntent(
   // Promise siempre truthy → guard NUNCA bloquea. Atacante con bot spam
   // podía quemar $50+/mes ilimitado. Fix: await + chequeo correcto.
   const INTENT_COST_USD = 0.001;
-  if (tenantId && !(await aiCostGuard.canSpend(tenantId, INTENT_COST_USD, "free"))) {
+  if (tenantId && !(await aiCostGuard.canSpend(tenantId, INTENT_COST_USD))) {
     logger.warn("[whatsapp-ai-intent] presupuesto agotado, usando fallback", {
       tenantId: tenantId.slice(-6),
     });

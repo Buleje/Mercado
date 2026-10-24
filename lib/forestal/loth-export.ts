@@ -8,23 +8,26 @@
  *  - Hoja "Resumen": conteo + volumen por sección.
  * Cada hoja marca anuladas (tachado) y registro fuera de plazo (15 días).
  */
-import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
+import {
+  LOTH_SECTIONS,
+  diasDeRegistro,
+  estaFueraDePlazo,
+  type LothSection,
+} from "@/lib/forestal/loth-constants";
+import { avisoLibroIncompleto } from "@/lib/forestal/loth-libro-entero";
+import type { EncabezadoPermiso } from "@/lib/forestal/loth-filtro-permiso";
 
 type AnyEntry = Record<string, unknown>;
 type AnyCaratula = Record<string, unknown> | null;
 
-const PLAZO_DIAS = 15;
 const num = (v: unknown) => (v == null || v === "" ? null : Number(v));
 const dateOnly = (v: unknown) => (v ? new Date(v as string) : null);
 
-/** Días entre actividad y registro; >15 = fuera de plazo SERFOR. */
-function lateDays(entry: AnyEntry): number | null {
-  const act = dateOnly(entry.entryDate);
-  const reg = dateOnly(entry.createdAt);
-  if (!act || !reg) return null;
-  const d = Math.floor((reg.getTime() - act.getTime()) / 86_400_000);
-  return d > 0 ? d : 0;
-}
+/** Días de registro / fuera de plazo — predicado ÚNICO (loth-constants). */
+const lateDays = (e: AnyEntry): number | null =>
+  diasDeRegistro(e.entryDate as string | null, e.createdAt as string | null);
+const isLate = (e: AnyEntry): boolean =>
+  estaFueraDePlazo(e.entryDate as string | null, e.createdAt as string | null);
 
 const SECTION_TITLE: Record<LothSection, string> = {
   tala: "1. Tala (volteo)",
@@ -47,6 +50,18 @@ const COMMON_TAIL: ColDef[] = [
   { header: "Estado", width: 12, get: (e) => (e.status === "anulado" ? "ANULADO" : "Registrado") },
   { header: "Días registro", width: 12, get: (e) => lateDays(e) ?? "" },
 ];
+/**
+ * El despacho de trozas sólo guarda código y GTF: especie y medidas son las de
+ * SU línea de trozado, que la ruta pega en `trozado` (`conTrozado`). Lo propio
+ * de la línea manda; si falta, lo del trozado. Las demás secciones no traen
+ * `trozado` y leen lo suyo, como siempre.
+ */
+const delTrozado = (e: AnyEntry): AnyEntry | null =>
+  e.trozado && typeof e.trozado === "object" ? (e.trozado as AnyEntry) : null;
+const propioOTrozado = (e: AnyEntry, k: string): unknown => {
+  const v = e[k];
+  return v != null && v !== "" ? v : (delTrozado(e)?.[k] ?? null);
+};
 const SP = (e: AnyEntry) => e.speciesCommon ?? "";
 const SC = (e: AnyEntry) => e.speciesScientific ?? "";
 const CITES = (e: AnyEntry) => (e.cites ? "SÍ" : "");
@@ -73,6 +88,12 @@ const SECTION_COLS: Record<LothSection, ColDef[]> = {
     { header: "Cód. troza", width: 14, get: (e) => e.trozaCode ?? "" },
     { header: "Cód. despacho", width: 16, get: (e) => e.despachoCode ?? "" },
     { header: "N° GTF", width: 18, get: (e) => e.gtfNumber ?? "" },
+    { header: "Especie", width: 18, get: (e) => propioOTrozado(e, "speciesCommon") ?? "" },
+    { header: "Nombre científico", width: 24, get: (e) => propioOTrozado(e, "speciesScientific") ?? "" },
+    { header: "Ø mayor (m)", width: 12, get: (e) => num(propioOTrozado(e, "diamMayorM")), numFmt: "0.00" },
+    { header: "Ø menor (m)", width: 12, get: (e) => num(propioOTrozado(e, "diamMenorM")), numFmt: "0.00" },
+    { header: "Longitud (m)", width: 12, get: (e) => num(propioOTrozado(e, "lengthM")), numFmt: "0.00" },
+    { header: "Volumen (m³)", width: 14, get: (e) => num(propioOTrozado(e, "volumeM3")), numFmt: "0.0000" },
   ],
   consumo_troza: [
     { header: "Cód. troza", width: 14, get: (e) => e.trozaCode ?? "" },
@@ -117,7 +138,18 @@ const HEADER_FONT = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
 export async function buildLothWorkbook(opts: {
   caratula: AnyCaratula;
   entries: AnyEntry[];
+  /**
+   * Cuántas líneas tiene el libro. Si es más que `entries`, el archivo lo dice
+   * en la Carátula y en el Resumen: un libro incompleto no se entrega callado.
+   */
+  totalLibro?: number;
   generatedAtISO: string;
+  /**
+   * De qué permiso es el archivo (`encabezadoDelPermiso`). Va en la Carátula,
+   * en el título de cada hoja y en el Resumen: un Excel de un solo plan no
+   * puede confundirse con el libro entero.
+   */
+  permiso?: EncabezadoPermiso | null;
 }): Promise<Buffer> {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -132,7 +164,26 @@ export async function buildLothWorkbook(opts: {
   cs.mergeCells("A2:B2");
   cs.getCell("A2").value = "Anexo 1 · RDE N° 264-2019-MINAGRI-SERFOR-DE";
   cs.getCell("A2").font = { italic: true, size: 10, color: { argb: "FF6B7280" } };
+  const incompleto = avisoLibroIncompleto({
+    mostradas: opts.entries.length,
+    total: opts.totalLibro ?? opts.entries.length,
+  });
+  if (incompleto) {
+    cs.mergeCells("A3:B3");
+    cs.getCell("A3").value = incompleto;
+    cs.getCell("A3").font = { bold: true, color: { argb: "FFB91C1C" } };
+  }
   let row = 4;
+  if (opts.permiso) {
+    for (const [label, valor] of opts.permiso.filas) {
+      cs.getCell(`A${row}`).value = label;
+      cs.getCell(`A${row}`).font = { bold: true, color: { argb: "FF14532D" } };
+      cs.getCell(`B${row}`).value = valor;
+      cs.getCell(`B${row}`).font = { bold: true };
+      row++;
+    }
+    row++; // una fila en blanco entre el permiso y los datos del libro
+  }
   for (const [key, label] of CARATULA_FIELDS) {
     cs.getCell(`A${row}`).value = label;
     cs.getCell(`A${row}`).font = { bold: true };
@@ -142,12 +193,15 @@ export async function buildLothWorkbook(opts: {
   cs.getColumn(1).width = 28;
   cs.getColumn(2).width = 44;
 
+  /** El permiso en el título de cada hoja, sólo si el archivo es de uno (no del libro entero). */
+  const conPermiso = opts.permiso && !opts.permiso.delLibroEntero ? opts.permiso.titulo : null;
+
   // ── Una hoja por sección ──
   for (const section of LOTH_SECTIONS) {
     const cols = [...COMMON_HEAD, ...SECTION_COLS[section], ...COMMON_TAIL];
     const ws = wb.addWorksheet(SECTION_TITLE[section].slice(0, 28));
     ws.mergeCells(1, 1, 1, cols.length);
-    ws.getCell(1, 1).value = SECTION_TITLE[section];
+    ws.getCell(1, 1).value = conPermiso ? `${SECTION_TITLE[section]} — ${conPermiso}` : SECTION_TITLE[section];
     ws.getCell(1, 1).font = { bold: true, size: 12, color: { argb: "FF14532D" } };
 
     const headerRow = ws.getRow(2);
@@ -165,7 +219,7 @@ export async function buildLothWorkbook(opts: {
       const r = ws.addRow(cols.map((c) => c.get(e) ?? ""));
       cols.forEach((c, i) => { if (c.numFmt) r.getCell(i + 1).numFmt = c.numFmt; });
       const annulled = e.status === "anulado";
-      const late = (lateDays(e) ?? 0) > PLAZO_DIAS;
+      const late = isLate(e);
       if (annulled) r.font = { strike: true, color: { argb: "FF9CA3AF" } };
       if (late && !annulled) {
         // resalta la celda de "Días registro" en ámbar
@@ -181,7 +235,7 @@ export async function buildLothWorkbook(opts: {
 
   // ── Resumen ──
   const rs = wb.addWorksheet("Resumen");
-  rs.getCell("A1").value = "RESUMEN POR SECCIÓN";
+  rs.getCell("A1").value = conPermiso ? `RESUMEN POR SECCIÓN — ${conPermiso}` : "RESUMEN POR SECCIÓN";
   rs.getCell("A1").font = { bold: true, size: 12, color: { argb: "FF14532D" } };
   const head = rs.getRow(2);
   ["Sección", "Líneas", "Anuladas", "Fuera de plazo", "Volumen (m³)"].forEach((h, i) => {
@@ -194,12 +248,17 @@ export async function buildLothWorkbook(opts: {
       SECTION_TITLE[section],
       reg.length,
       rows.length - reg.length,
-      reg.filter((e) => (lateDays(e) ?? 0) > PLAZO_DIAS).length,
-      Math.round(reg.reduce((a, e) => a + (num(e.volumeM3) ?? 0), 0) * 10000) / 10000,
+      reg.filter((e) => isLate(e)).length,
+      // El despacho de trozas suma el m³ de su trozado (la línea no lo guarda).
+      Math.round(reg.reduce((a, e) => a + (num(propioOTrozado(e, "volumeM3")) ?? 0), 0) * 10000) / 10000,
     ]);
     r.getCell(5).numFmt = "0.0000";
   });
   rs.columns.forEach((c, i) => { c.width = i === 0 ? 34 : 14; });
+  if (incompleto) {
+    const r = rs.addRow([incompleto]);
+    r.font = { bold: true, color: { argb: "FFB91C1C" } };
+  }
 
   const buf = await wb.xlsx.writeBuffer();
   return Buffer.from(buf);

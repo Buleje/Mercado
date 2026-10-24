@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 // GET — Pronóstico de demanda para un producto
 export async function GET(req: NextRequest) {
@@ -166,7 +168,8 @@ export async function GET(req: NextRequest) {
         id: product.id,
         name: product.name,
         stock: product.stock ?? 0,
-        stockMin: product.stockMin ?? 0,
+        // Un solo stock mínimo (09-10): el propio o el global del negocio.
+        stockMin: stockMinimoDe(product, await minimoGlobalDelNegocio(auth.tenantId)),
       },
     });
   } catch (e) {

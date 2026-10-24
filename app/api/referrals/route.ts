@@ -3,6 +3,7 @@ import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { aplicarCodigoDeReferida } from "@/lib/referidas/aplicar-codigo";
 
 const ApplySchema = z.object({
   phone: z.string().min(5).max(20),
@@ -31,6 +32,13 @@ export async function POST(req: NextRequest) {
 
   const { phone, code } = parsed.data;
   const tenantId = getTenantIdFromRequest(req);
+  // Negocio con su programa de referidas guardado (ADR-510) → cupones, con sesión.
+  const conPrograma = await aplicarCodigoDeReferida(req, tenantId, normalizePhone(phone), code);
+  if (conPrograma) {
+    return conPrograma.ok
+      ? NextResponse.json({ ok: true, message: conPrograma.mensaje, couponCode: conPrograma.cupon })
+      : NextResponse.json({ error: conPrograma.mensaje }, { status: conPrograma.status });
+  }
   const result = await CustomersDB.applyReferralCode(tenantId, normalizePhone(phone), code);
   if (!result.success) return NextResponse.json({ error: result.message }, { status: 400 });
   return NextResponse.json({ ok: true, message: result.message });

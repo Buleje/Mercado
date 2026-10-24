@@ -10,6 +10,8 @@
  * proxy.ts orchestrator from ballooning again.
  */
 
+import { NEGOCIO_POR_DEFECTO } from "@/lib/tenancy/negocio-por-defecto";
+
 /**
  * Root domain for tenant routing (strip port).
  * Set ROOT_DOMAIN=bodegasaas.com in production .env
@@ -27,7 +29,7 @@ export const CUSTOM_DOMAIN_PREFIX = "custom--";
  * Default tenant slug used when no strategy resolved a specific tenant.
  * This matches the legacy hard-coded "main" value scattered across the app.
  */
-export const DEFAULT_TENANT_ID = "main";
+export const DEFAULT_TENANT_ID: string = NEGOCIO_POR_DEFECTO;
 
 /**
  * Path prefixes whose tenant may be resolved from the ADMIN SESSION context

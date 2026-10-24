@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Lightbulb, Plus, X } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 interface Suggestion {
   id: number;
@@ -16,7 +17,7 @@ interface POSCrossSellProps {
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function POSCrossSell({
@@ -82,7 +83,7 @@ export default function POSCrossSell({
   if (!suggestion || dismissed) return null;
 
   return (
-    <div className="mx-3 mb-1 flex items-center gap-2 p-2 bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg">
+    <div className="mx-3 mb-1 flex items-center gap-2 p-3 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg">
       <Lightbulb className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">
@@ -101,6 +102,7 @@ export default function POSCrossSell({
       </button>
       <button
         onClick={handleDismiss}
+        aria-label="Descartar sugerencia"
         className="shrink-0 p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
       >
         <X className="h-3 w-3" />

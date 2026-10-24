@@ -102,7 +102,17 @@ export async function autoEarnLoyaltyPoints(
     let multiplierBreakdown: { category: string; points: number; multiplier: number }[] | undefined;
 
     if (categoryItems && categoryItems.length > 0) {
-      const result = calculatePointsWithMultipliers(categoryItems);
+      // Puntos sobre lo COBRADO, no sobre precio × cantidad: si el pedido tuvo
+      // canje de puntos, cupón o descuento, cada línea se prorratea por
+      // total ÷ Σ líneas (nunca hacia arriba). Sin esto, canjear 500 puntos
+      // devolvía puntos por los soles que pagaron esos mismos puntos.
+      const sumaLineas = categoryItems.reduce((s, it) => s + Math.max(0, it.lineTotal), 0);
+      const factor = sumaLineas > 0 ? Math.min(1, Math.max(0, orderTotal) / sumaLineas) : 0;
+      const result = calculatePointsWithMultipliers(
+        factor < 1
+          ? categoryItems.map((it) => ({ ...it, lineTotal: it.lineTotal * factor }))
+          : categoryItems,
+      );
       pointsToEarn = result.totalPoints;
       multiplierBreakdown = result.breakdown;
     } else {

@@ -2,6 +2,7 @@
 
 import { LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useEffect, useState } from "react";
 import {
   Plus,
@@ -51,6 +52,7 @@ const EMPTY_FORM: Omit<Promotion, "id" | "position"> = {
 };
 
 export default function PromotionsTab() {
+  const { confirm } = useConfirm();
   const [list, setList] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -111,8 +113,12 @@ export default function PromotionsTab() {
   }
 
   async function remove(id: string) {
-    if (!confirm("¿Eliminar esta promoción?")) return;
-    await fetch(`/api/store-page/promotions/${id}`, { method: "DELETE" });
+    if (!(await confirm({
+      title: "¿Eliminar esta promoción?",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
+    await fetch(`/api/store-page/promotions/${id}`, { method: "DELETE", headers: csrfHeaders() });
     await load();
   }
 
@@ -256,11 +262,11 @@ export default function PromotionsTab() {
                 <div className="flex items-center gap-2">
                   <p className="font-bold">{p.title}</p>
                   {p.active ? (
-                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       Activa
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-200 text-[var(--text-secondary)]">
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--rule-base)] text-[var(--text-secondary)]">
                       Pausada
                     </span>
                   )}
@@ -283,11 +289,11 @@ export default function PromotionsTab() {
               <button
                 onClick={() => toggleActive(p)}
                 title={p.active ? "Pausar" : "Activar"}
-                className={`p-2 rounded-lg ${
-                  p.active
-                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
-                    : "bg-gray-100 text-[var(--text-secondary)]"
-                }`}
+                className={`p-2 rounded-xl ${
+ p.active
+ ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+ : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
+ }`}
               >
                 {p.active ? (
                   <Power className="w-4 h-4" />
@@ -295,9 +301,9 @@ export default function PromotionsTab() {
                   <PowerOff className="w-4 h-4" />
                 )}
               </button>
-              <button
+              <button aria-label="Eliminar"
                 onClick={() => remove(p.id)}
-                className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)]"
+                className="p-2 rounded-xl bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)]"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

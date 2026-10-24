@@ -29,7 +29,7 @@ export default function CompareHero({ count, max, onClear }: CompareHeroProps) {
     <div className="relative">
       <UnifiedHero
         kicker="Comparador"
-        title="Compará productos lado a lado"
+        title="Compara productos lado a lado"
         description={`Revisa precio, stock, tienda y características de hasta ${max} productos al mismo tiempo. Así eliges con confianza antes de llevar al carrito.`}
         trustChips={
           count > 0

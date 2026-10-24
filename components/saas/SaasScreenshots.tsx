@@ -407,7 +407,7 @@ function MockWhatsApp() {
 function MockAnalytics() {
   const insights = [
     { label: "Arroz 5kg se acaba en 3 días", color: "#ef4444" },
-    { label: "José Quispe no compra hace 14 días", color: "#f97316" },
+    { label: "José Quispe no compra hace 14 días", color: "#ff6b5b" },
     { label: "Aceite 1L: margen subió 8%", color: "var(--accent)" },
     { label: "Sábados venden 2x más que lunes", color: "var(--accent)" },
   ];
@@ -570,7 +570,7 @@ export default function SaasScreenshots() {
           {/* Barra de título tipo browser */}
           <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-[#152019] border-b border-gray-200 dark:border-[rgba(0, 160, 160,0.18)]">
             <div className="w-3 h-3 rounded-full bg-[#ef4444]" aria-hidden="true" />
-            <div className="w-3 h-3 rounded-full bg-[#f97316]" aria-hidden="true" />
+            <div className="w-3 h-3 rounded-full bg-[#ff6b5b]" aria-hidden="true" />
             <div className="w-3 h-3 rounded-full bg-[var(--accent)]" aria-hidden="true" />
             {/* URL bar */}
             <div className="ml-3 flex-1 max-w-xs flex items-center gap-2 bg-white/50 dark:bg-[#0a0f0d]/40 rounded-md px-3 py-1">

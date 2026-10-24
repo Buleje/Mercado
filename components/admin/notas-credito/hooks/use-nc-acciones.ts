@@ -1,0 +1,186 @@
+import { membreteDelDocumento } from "@/lib/documentos/membrete-cargar";
+import { datosDelMembrete, dibujarMembrete, dibujarPies, fechaDelDocumento } from "@/lib/documentos/membrete-pdf";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { type NotaCredito, STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
+import { useNcEstado } from "@/components/admin/notas-credito/hooks/use-nc-estado";
+import { useNcSelector } from "@/components/admin/notas-credito/hooks/use-nc-selector";
+import { useNcLista } from "@/components/admin/notas-credito/hooks/use-nc-lista";
+import { useNcDocumento } from "@/components/admin/notas-credito/hooks/use-nc-documento";
+
+/** Crear, duplicar, emitir, anular, PDF y WhatsApp (las plantillas, en `useNcPlantillas`). Parte de `useNotasCredito`. */
+export function useNcAcciones(previo: ReturnType<typeof useNcEstado> & ReturnType<typeof useNcSelector> & ReturnType<typeof useNcDocumento> & ReturnType<typeof useNcLista>) {
+  const {
+    selected, setSelected, checkedIds, setCheckedIds, setShowNew, setWizardStep, setCreating,
+    setCreateError, form, setForm, setPickerSearch, setPickerDocType, setSelectedVenta, confirm, notice,
+    fetchNotas, filteredNotas, importe, descripcionFinal, remanente, limpiarDocumento, setCopiaDe,
+  } = previo;
+  // ── CRUD Operations ───────────────────────────────────────────────────────
+  const resetWizard = () => {
+    setShowNew(false); setWizardStep(0); setCreateError(null);
+    setForm({ orderId: "", codigoMotivo: "", descripcionMotivo: "", monto: "", notasText: "" });
+    setSelectedVenta(null); setPickerSearch(""); setPickerDocType("all");
+    limpiarDocumento(); setCopiaDe(null);
+  };
+
+  const handleCreate = async () => {
+    setCreateError(null);
+    // Lo mismo que muestra la vista previa; el servidor vuelve a contar y pone el tope (F12).
+    if (importe.problema || !importe.cuerpo) { setCreateError(importe.problema ?? "Revisa el importe."); return; }
+    if (!descripcionFinal.trim()) { setCreateError("Escribe por qué se emite la nota."); return; }
+    setCreating(true);
+    try {
+      const res = await fetch("/api/notas-credito", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          saleId: form.orderId.trim() || undefined,
+          motivoCodigo: form.codigoMotivo,
+          motivoDesc: descripcionFinal,
+          ...importe.cuerpo,
+          notas: form.notasText.trim() || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Error al crear" }));
+        throw new Error(typeof err.error === "string" ? err.error : "Error al crear nota de crédito");
+      }
+      resetWizard();
+      fetchNotas();
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : "Error desconocido");
+      // Otra nota pudo restar del documento mientras tanto: la vista previa se pone al día.
+      remanente.recargar();
+    } finally { setCreating(false); }
+  };
+
+  /**
+   * Copia el motivo, su texto y las notas internas; NUNCA el monto ni el documento (F14, 17-10):
+   * antes repetía el importe y saltaba al paso 2 con la misma venta, que ya podía estar acreditada.
+   */
+  const handleDuplicate = (nc: NotaCredito) => {
+    setForm({ orderId: "", codigoMotivo: nc.motivoCodigo, descripcionMotivo: nc.motivoDesc, monto: "", notasText: nc.notas ?? "" });
+    setSelectedVenta(null); limpiarDocumento(); setCopiaDe(nc.numero); setCreateError(null);
+    setShowNew(true); setWizardStep(0); setSelected(null);
+  };
+
+  /** El error del servidor en palabras, o el genérico. */
+  const motivoDe = async (res: Response) => {
+    const j = (await res.json().catch(() => null)) as { error?: unknown } | null;
+    return typeof j?.error === "string" ? j.error : `El servidor respondió ${res.status}.`;
+  };
+
+  // «Emitir» sólo cambia el estado a EMITIDA en el sistema: no viaja a SUNAT
+  // (`PATCH /api/notas-credito/[id]`). La pantalla decía «Emitir a SUNAT» (B6, 17-10).
+  const handleEmitSunat = async (nc: NotaCredito) => {
+    if (!(await confirm({
+      title: `¿Marcar ${nc.numero} como emitida?`,
+      description: "Queda emitida en tus registros y ya no se edita. No se envía a SUNAT desde aquí.",
+      intent: "warning",
+      confirmLabel: "Sí, marcar emitida",
+    }))) return;
+    try {
+      const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) });
+      if (res.ok) { fetchNotas(); return; }
+      await notice({ title: "No se pudo marcar como emitida", description: await motivoDe(res), intent: "danger" });
+    } catch {
+      await notice({ title: "No se pudo marcar como emitida", description: "Se cortó la conexión. Revisa la lista antes de repetir.", intent: "danger" });
+    }
+  };
+
+  const handleAnular = async (nc: NotaCredito) => {
+    if (!(await confirm({
+      title: "¿Anular esta nota de crédito?",
+      intent: "danger",
+      confirmLabel: "Sí, anular",
+    }))) return;
+    try {
+      const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "ANULADA" }) });
+      if (res.ok) { fetchNotas(); if (selected?.id === nc.id) setSelected(null); return; }
+      await notice({ title: "No se pudo anular", description: await motivoDe(res), intent: "danger" });
+    } catch {
+      await notice({ title: "No se pudo anular", description: "Se cortó la conexión. Revisa la lista antes de repetir.", intent: "danger" });
+    }
+  };
+
+  // ── Marcar emitidas en lote ───────────────────────────────────────────────
+  const handleBulkEmit = async () => {
+    const borradores = filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR");
+    if (borradores.length === 0) return;
+    if (!(await confirm({
+      title: `¿Marcar ${borradores.length} nota${borradores.length === 1 ? "" : "s"} como emitida${borradores.length === 1 ? "" : "s"}?`,
+      description: "Quedan emitidas en tus registros y ya no se editan. No se envían a SUNAT desde aquí.",
+      intent: "warning",
+      confirmLabel: "Sí, marcar emitidas",
+    }))) return;
+    const oks = await Promise.all(borradores.map(nc =>
+      fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) })
+        .then(r => r.ok)
+        .catch(sinDato("Notas de crédito PATCH /api/notas-credito"))
+    ));
+    fetchNotas(); setCheckedIds(new Set());
+    const fallidas = oks.filter(ok => !ok).length;
+    if (fallidas > 0) await notice({ title: `${fallidas} de ${borradores.length} no se marcaron`, description: "Quedaron en borrador: revísalas y vuelve a intentar.", intent: "danger" });
+  };
+
+  // ── Exportar PDF real ─────────────────────────────────────────────────────
+  const exportPDF = async (nc: NotaCredito) => {
+    const { default: jsPDF } = await import("jspdf");
+    const doc = new jsPDF();
+    // Membrete común del negocio: logo, nombre, RUC y dirección de quien emite, y el tipo/número/fecha del documento.
+    const mbr = datosDelMembrete(await membreteDelDocumento(), {
+      tipo: "Nota de crédito",
+      codigo: nc.numero,
+      fecha: fechaDelDocumento(nc.createdAt),
+    });
+    const y0 = dibujarMembrete(doc, mbr);
+    doc.setDrawColor(45, 106, 79);
+    doc.setLineWidth(0.5);
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    const col1 = 20, col2 = 120;
+    const rows = [
+      ["N° Documento:", nc.numero],
+      ["Fecha:", formatDate(nc.createdAt)],
+      ["Estado:", STATUS_META[nc.status].label],
+      ["Cliente:", nc.clienteNombre ?? "—"],
+      ["RUC/DNI:", nc.clienteDocumento ?? "—"],
+      ["Doc. referencia:", nc.orderNumero ?? "—"],
+    ];
+    let y = y0 + 4;
+    rows.forEach(([label, value]) => {
+      doc.setFont("helvetica", "bold"); doc.text(label, col1, y);
+      doc.setFont("helvetica", "normal"); doc.text(value, col2, y);
+      y += 8;
+    });
+    y += 4;
+    doc.setFont("helvetica", "bold"); doc.text(`[${nc.motivoCodigo}] Motivo:`, col1, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(nc.motivoDesc, col2, y);
+    y += 12;
+    doc.line(15, y, 195, y); y += 8;
+    doc.setFontSize(12);
+    const montos = [["Monto base:", formatCurrency(nc.monto)], ["IGV:", formatCurrency(nc.igv)], ["TOTAL NC:", formatCurrency(nc.total)]];
+    montos.forEach(([label, value], i) => {
+      if (i === 2) { doc.setFontSize(14); doc.setTextColor(220, 38, 38); }
+      doc.setFont("helvetica", "bold"); doc.text(label, 110, y);
+      doc.text(value, 185, y, { align: "right" });
+      y += 9;
+    });
+    if (nc.notas) { doc.setFontSize(10); doc.setTextColor(120, 120, 120); doc.setFont("helvetica", "italic"); doc.text(`Notas: ${nc.notas}`, col1, y + 8); }
+    dibujarPies(doc, mbr);
+    doc.save(`NC-${nc.numero}-${nc.createdAt.slice(0, 10)}.pdf`);
+  };
+
+  // ── Enviar por WhatsApp ───────────────────────────────────────────────────
+  const sendWhatsApp = (nc: NotaCredito) => {
+    const text = `*Nota de Crédito ${nc.numero}*\nMotivo: [${nc.motivoCodigo}] ${nc.motivoDesc}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  return {
+    resetWizard, handleCreate, handleDuplicate, handleEmitSunat, handleAnular, handleBulkEmit,
+    exportPDF, sendWhatsApp,
+  };
+}

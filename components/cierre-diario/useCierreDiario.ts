@@ -16,7 +16,11 @@ export type PreviewData = {
     vencidos: number;
   };
   caja: {
+    /** Lo que se cuenta: el efectivo esperado de las cajas ABIERTAS. */
     efectivoEsperado: number;
+    abiertas?: number;
+    /** Las cajas ya cerradas hoy, con su propio conteo (no se vuelven a contar). */
+    cerradas?: { cajas: number; sinConteo: number; diferencia: number };
   };
   stockAlertas: Array<{ nombre: string; stock: number; stockMin: number }>;
   fecha: string;
@@ -114,7 +118,11 @@ export function useCierreDiario() {
   );
 
   const efectivoEsperado = preview?.caja?.efectivoEsperado ?? 0;
-  const diferencia = skipCaja ? 0 : totalContado - efectivoEsperado;
+  /* Preview: la misma cuenta que guarda el servidor (`camposDeCajaDelCierreAMano`):
+     lo contado contra las abiertas + la diferencia de las cajas ya cerradas hoy. */
+  const diferencia = skipCaja
+    ? 0
+    : Math.round((totalContado - efectivoEsperado + (preview?.caja?.cerradas?.diferencia ?? 0)) * 100) / 100;
 
   const incrementar = useCallback((valor: number) => {
     setConteo((prev) => ({ ...prev, [valor]: (prev[valor] ?? 0) + 1 }));
@@ -150,20 +158,9 @@ export function useCierreDiario() {
     setIsSaving(true);
     setError(null);
     try {
+      // Sólo lo contado y la nota: fecha, ventas, fiados y esperado los arma el servidor.
       const body = {
-        fecha: preview.fecha,
-        totalVentas: preview.ventas.total,
-        cantidadVentas: preview.ventas.cantidad,
-        ticketPromedio: preview.ventas.ticketPromedio,
         efectivoContado: skipCaja ? null : totalContado,
-        efectivoEsperado: preview.caja.efectivoEsperado,
-        diferenciaCaja: skipCaja ? 0 : diferencia,
-        fiadosCobrados: preview.fiados.cobradosHoy,
-        fiadosNuevos: preview.fiados.nuevosHoy,
-        fiadosVencidos: preview.fiados.vencidos,
-        mejorHora: preview.ventas.mejorHora,
-        productoTop: preview.ventas.productoTop,
-        stockAlertas: preview.stockAlertas.length > 0 ? JSON.stringify(preview.stockAlertas) : null,
         notas: notas.trim() || null,
       };
 

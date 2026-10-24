@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 export function StockTrackToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
       <div className="grid grid-cols-2 gap-1">
         {([
           [true, "Controlar stock", "Lleva la cuenta de unidades"],
@@ -23,7 +23,7 @@ export function StockTrackToggle({ value, onChange }: { value: boolean; onChange
             type="button"
             onClick={() => onChange(val)}
             className={cn(
-              "rounded-lg px-3 py-2 text-left transition-colors",
+              "rounded-xl px-3 min-h-10 text-left transition-colors",
               value === val
                 ? "bg-[var(--accent)] text-white shadow-sm"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",

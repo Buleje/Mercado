@@ -1,0 +1,297 @@
+/**
+ * loth-guia-print — los dos papeles de la guía del bosque: la GTF con sus
+ * casilleros (2)–(40) y la LISTA DE TROZAS O CUARTONES A MOVILIZAR.
+ *
+ * No hay formato propio: la GTF se arma con `cuerpoGtfOficial` —el mismo
+ * cuerpo que imprime la guía de salida del CTP— y la lista con
+ * `htmlListaTrozas`, la misma de los ingresos. Si el formato cambia, cambia
+ * para los dos libros a la vez.
+ *
+ * Lo único propio es de dónde sale la identidad (2)–(12): la guía del bosque
+ * no tiene Ficha de CTP, así que se arma una con lo que la guía GUARDÓ
+ * (`gtfDatos.guia` + `titulos[0]`) — nunca con la carátula de hoy: si mañana
+ * alguien la corrige, la guía que ya viajó sigue diciendo lo que dijo.
+ */
+
+import {
+  cabeceraDoc,
+  documentoHtml,
+  esc,
+  notaDoc,
+  resumenDoc,
+  selloDoc,
+  tituloDoc,
+  type FichaResumen,
+} from "./ctp-documento-print";
+import type { CtpFicha } from "./ctp-ficha-types";
+import { COPIAS_GTF, type GtfDatos } from "./ctp-gtf-datos";
+import { CSS_GTF_OFICIAL, CSS_GTF_SALIDA, cuerpoGtfOficial, fechaGtf, type CuerpoGtfInput } from "./ctp-gtf-formato";
+import { CSS_LISTA_TROZAS, htmlListaTrozas, type ListaTrozasInput } from "./ctp-lista-trozas";
+import { fmtM3 } from "./cubicacion-formato";
+import { detallePorEspecie, guiaEsDePlantacion, leyendaDeConstancia, leyendaDelTitulo, listaDeTrozas, totalM3, type FilaListaTrozas, type PiezaGuia } from "./loth-guia-despacho";
+import { filasPorHojaGuardada, hojasDeLista, listasEfectivas, partirEnHojas } from "./loth-lista-numero";
+
+/** Un documento listo para `CtpDocumentoVisor` (mismo shape que `DocumentoImprimible`). */
+export interface HojaGuiaLoth {
+  nombre: string;
+  archivo: string;
+  etiqueta: string;
+  pieCorrido: string;
+  html: string;
+}
+
+export interface GuiaLothParaImprimir {
+  gtfNumber: string;
+  /** `YYYY-MM-DD` — casillero (3). */
+  gtfDate: string;
+  /** (7) Nombre del titular. */
+  titular: string;
+  datos: GtfDatos;
+  piezas: readonly PiezaGuia[];
+  /** Completa el binomio que la troza no trae (catálogo de especies). */
+  cientificoDe?: (comun: string) => string | null | undefined;
+  /** Todavía no se registró: el papel lo dice en grande. */
+  borrador?: boolean;
+  /** Motivo, si la guía está anulada. */
+  anulada?: string | null;
+  logo?: string | null;
+}
+
+const t = (v: string | null | undefined) => (v ?? "").trim();
+
+/**
+ * Lo que se imprime en el (36) cuando la guía del bosque no trae GTF de origen.
+ * La madera sale del bosque y ninguna guía anterior la ampara; pero un
+ * casillero EN BLANCO en una declaración jurada se puede llenar después, así
+ * que el papel lo dice. Sólo se imprime: `gtfOrigenNro` queda vacío en la guía
+ * (lo leen otras rutas como N° de guía).
+ */
+export const ORIGEN_NO_APLICA = "NO APLICA";
+
+/**
+ * Cada lista en su hoja, SIN el aire de pantalla: `.doc-parte + .doc-parte
+ * { margin-top:14mm }` del armazón también se imprime (el margen después de un
+ * salto forzado no se trunca) y le robaba 14 mm a la hoja 2 en adelante —
+ * medido 29-09-2026: 61 trozas con borrador salían en 6 páginas y no en 4.
+ */
+const CSS_HOJAS_DE_LISTA = "@media print { .doc-parte + .doc-parte { margin-top:0; } }";
+
+/** El rótulo del recuadro del N° de una hoja de la lista (el de `htmlListaTrozas`). */
+const NOTA_LISTA = '<div class="pie">Anexo del casillero (33)</div>';
+
+/**
+ * Cuántas hojas sale la lista, de cuántas filas cada una y el N° de cada una
+ * (lo que va en el (33) y en cada cabecera). Las filas por hoja son las que
+ * la guía guardó al emitirse (`filasPorHojaGuardada`): una emitida antes del
+ * 16-10-2026 se reimprime de a 20; una nueva, de a 30 como el talonario.
+ */
+export function hojasDeLaLista(
+  datos: GtfDatos,
+  gtfNumber: string,
+  trozas: number,
+): { hojas: number; numeros: string[]; casillero35: string; filasPorHoja: number } {
+  const filasPorHoja = filasPorHojaGuardada(datos.guia.filasPorLista);
+  const hojas = Math.max(1, hojasDeLista(trozas, filasPorHoja));
+  const ef = listasEfectivas(datos.guia.listaTrozasNro, hojas);
+  /* Una guía vieja sin N° de lista: la lista lleva el de la guía, como se
+     imprimía antes (reimprimir no cambia lo que ya viajó). */
+  const respaldo = ef.texto || t(gtfNumber);
+  const numeros = Array.from({ length: hojas }, (_, i) => (ef.numeros[i] != null ? String(ef.numeros[i]) : respaldo));
+  return { hojas, numeros, casillero35: respaldo, filasPorHoja };
+}
+
+/**
+ * La «ficha» que espera el formato, armada con lo que la guía guardó. Sólo
+ * estos campos los lee el bloque (2)–(12): la autoridad, el titular y su
+ * representante, la ubicación y el título.
+ */
+export function fichaDeGuiaLoth(titular: string, datos: GtfDatos): CtpFicha {
+  const g = datos.guia;
+  const codigo = t(datos.titulos[0]);
+  return {
+    razonSocial: t(titular),
+    arffs: t(g.autoridad),
+    representante: t(g.representanteLegal),
+    region: t(g.departamento),
+    provincia: t(g.provincia),
+    distrito: t(g.distrito),
+    titulos: codigo
+      ? [{ tipo: t(g.origenRecurso), codigo, resolucion: t(g.resolucion), planManejo: t(g.planManejoTipo), vencimiento: "" }]
+      : [],
+  } as unknown as CtpFicha;
+}
+
+/**
+ * Lo que la hoja SERFOR imprime de la guía, ANTES de volverse HTML: la entrada
+ * del formato de casilleros, las filas de la lista y el encabezado de cada hoja
+ * de la lista. Lo leen `papelesGuiaLoth` (el papel A4) y el talonario de la
+ * matricial (`gtf-matricial-valores`): los dos imprimen los mismos valores.
+ */
+export interface EntradasGuiaLoth {
+  cuerpo: CuerpoGtfInput;
+  /** Las filas de la lista, en el orden del papel. */
+  filas: FilaListaTrozas[];
+  /** Cuántas hojas sale la lista, el N° de cada una y de a cuántas filas se parte (30, o 20 si la guía se emitió así). */
+  listas: { hojas: number; numeros: string[]; casillero35: string; filasPorHoja: number };
+  /** El encabezado de cada hoja de la lista (sin su N° ni sus trozas). */
+  lista: Omit<ListaTrozasInput, "numero" | "trozas">;
+}
+
+export function entradasGuiaLoth(g: GuiaLothParaImprimir): EntradasGuiaLoth {
+  const d = g.datos;
+  const numero = t(g.gtfNumber);
+  const filas = listaDeTrozas(g.piezas, g.cientificoDe);
+  const listas = hojasDeLaLista(d, numero, filas.length);
+  const ubicacion = [t(d.guia.distrito), t(d.guia.provincia), t(d.guia.departamento)].filter(Boolean).join(" · ");
+  const plantacion = guiaEsDePlantacion(d);
+  const leyenda = leyendaDelTitulo(t(d.titulos[0]), plantacion);
+  const constancia = plantacion ? leyendaDeConstancia(d.guia.resolucion) : "";
+  return {
+    cuerpo: {
+      ficha: fichaDeGuiaLoth(g.titular, d),
+      datos: d,
+      lineas: detallePorEspecie(g.piezas, g.cientificoDe),
+      numeroGtf: numero,
+      fechaExpedicion: g.gtfDate,
+      // (33) los N° de la lista que viaja con la guía, uno por hoja; (32) NO
+      // APLICA: madera del bosque, no la ampara ninguna guía anterior.
+      listasTrozas: listas.casillero35,
+      gtfOrigen: t(d.guia.gtfOrigenNro) || ORIGEN_NO_APLICA,
+      origenRecurso: t(d.guia.origenRecurso),
+      registroSerfor: "",
+    },
+    filas,
+    listas,
+    lista: {
+      titular: t(g.titular) || (plantacion ? "Titular de la plantación" : "Titular del título habilitante"),
+      subtitulo: [leyenda, constancia].filter(Boolean).join(" · ") || undefined,
+      ubicacion,
+      ruc: d.propietario.esElCtp && d.propietario.docTipo === "RUC" ? t(d.propietario.docNumero) : undefined,
+      guia: numero,
+      fecha: fechaGtf(g.gtfDate),
+      observaciones: t(d.observaciones),
+    },
+  };
+}
+
+/** Los dos papeles de la guía, listos para el visor. */
+export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; lista: HojaGuiaLoth } {
+  const d = g.datos;
+  const entradas = entradasGuiaLoth(g);
+  const numero = entradas.cuerpo.numeroGtf;
+  const lineas = entradas.cuerpo.lineas;
+  const filas = entradas.filas;
+  const total = totalM3(g.piezas);
+  const listas = entradas.listas;
+  const nroLista = listas.casillero35;
+  const ubicacion = entradas.lista.ubicacion ?? "";
+  const titulo = t(d.titulos[0]);
+  /* Una plantación se ampara con su REGISTRO (y su constancia), no con un
+     título habilitante: el papel lo dice como se llama (ADR-459). */
+  const plantacion = guiaEsDePlantacion(d);
+  const leyenda = leyendaDelTitulo(titulo, plantacion);
+  const constancia = plantacion ? leyendaDeConstancia(d.guia.resolucion) : "";
+  const origenDelPapel = plantacion ? "de la plantación" : "del bosque";
+
+  /* Lo que el papel NO es, arriba de todo: un borrador que se imprime antes
+     de registrar no puede salir a la carretera como si fuera la guía. */
+  const sello = g.anulada
+    ? selloDoc("Anulada", g.anulada, "rojo")
+    : g.borrador
+      ? selloDoc("Borrador", "Todavía no se registró en el libro: no sirve para movilizar", "rojo")
+      : "";
+
+  const fichas: FichaResumen[] = [
+    { k: "Destinatario", v: t(d.destinatario.nombre) },
+    { k: "Especies", v: lineas.length ? String(lineas.length) : "" },
+    { k: "Trozas", v: filas.length ? String(filas.length) : "" },
+    { k: "Volumen", v: filas.length ? fmtM3(total) : "", u: "m³", tono: "ok" },
+    { k: "Vence", v: fechaGtf(d.traslado.fechaFin) },
+  ];
+
+  const declaracion = notaDoc(
+    `<b>Declaración jurada.</b> El titular declara bajo juramento que las trozas descritas provienen ${
+      plantacion
+        ? "de la plantación forestal inscrita en el registro consignado"
+        : "del aprovechamiento autorizado por el título habilitante consignado"
+    }, registradas en su Libro de Operaciones,
+     y que la información de esta guía es verdadera (Ley N° 29763, art. 124; D.S. N° 018-2015-MINAGRI, art. 172).
+     ${t(d.citesPermiso) ? `Especie CITES amparada con el permiso N° <b>${esc(d.citesPermiso)}</b>.` : ""}`,
+  );
+  const visado = `<div class="gs-visado">
+      <div><span>Visado / marca de la ARFFS</span><i></i></div>
+      <div><span>Sello del puesto de control</span><i></i></div>
+    </div>`;
+
+  const cuerpo = cuerpoGtfOficial(entradas.cuerpo);
+
+  /* Una sola copia, la ORIGINAL (Brandon 07-10: «en el modal de la GTF solo
+     pon 1 copia»): las tres iguales seguidas eran tres páginas del mismo papel
+     en el visor. Las dos copias del art. 5 se sacan imprimiendo de nuevo. */
+  const cuerpos = COPIAS_GTF.slice(0, 1).map(
+    (copia) => `
+    <div class="gs-tira"><b>${esc(copia.titulo)}</b><span>${esc(copia.destino)}</span></div>
+    ${cabeceraDoc({
+      emisor: t(g.titular) || (plantacion ? "Titular de la plantación" : "Titular del título habilitante"),
+      logo: g.logo,
+      meta: [
+        t(d.propietario.docNumero) && d.propietario.esElCtp ? `${d.propietario.docTipo} ${t(d.propietario.docNumero)}` : "",
+        leyenda,
+        constancia,
+        ubicacion,
+      ],
+      tipo: "Guía de Transporte Forestal",
+      numero,
+      numeroNota: plantacion ? "Libro de Operaciones · registro de plantación" : "Libro de Operaciones del título habilitante",
+    })}
+    ${tituloDoc("Guía de Transporte Forestal", `Madera en rollo · Salida ${origenDelPapel} · Declaración jurada`)}
+    ${sello}
+    ${resumenDoc(fichas)}
+    ${cuerpo}
+    ${declaracion}
+    ${visado}
+    <div class="doc-pie">
+      <span>${esc(copia.titulo)} · GTF ${esc(numero)}</span>
+      <span>Lista de trozas N° ${esc(nroLista)} · RDE N° D000014-2024-MIDAGRI-SERFOR-DE, art. 5</span>
+    </div>`,
+  );
+
+  const pieGtf = `GTF ${numero} · Emitida por el titular desde su Libro de Operaciones`;
+  const pieLista = `${listas.hojas > 1 ? "Listas de trozas" : "Lista de trozas"} N° ${nroLista} · Anexo de la GTF ${numero}`;
+
+  /* Cada hoja es UNA lista con su N° (las de SERFOR: 34 trozas → listas 5 y
+     6), y se imprime en su propia página: cabecera, filas, total y firmas.
+     Se parte con las filas por hoja de `hojasDeLaLista`: las mismas con que
+     se contaron los N° del (33), y las de a 20 si la guía se emitió así. */
+  const trozos = partirEnHojas(filas, listas.filasPorHoja);
+  const hojasLista = (trozos.length ? trozos : [[]]).map((trozo, i, todas) => {
+    const html = htmlListaTrozas({ ...entradas.lista, numero: listas.numeros[i] ?? nroLista, trozas: trozo });
+    const nota = todas.length > 1 ? `<div class="pie">Hoja ${i + 1} de ${todas.length} · anexo del (33)</div>` : NOTA_LISTA;
+    return `${sello}${html.replace(NOTA_LISTA, nota)}`;
+  });
+
+  return {
+    gtf: {
+      nombre: `GTF ${numero}`,
+      archivo: `GTF ${numero}`,
+      etiqueta: "1 copia (original) · imprime 3 para el art. 5",
+      pieCorrido: pieGtf,
+      html: documentoHtml({ titulo: `GTF ${numero}`, css: CSS_GTF_OFICIAL + CSS_GTF_SALIDA, cuerpo: cuerpos, pieCorrido: pieGtf }),
+    },
+    lista: {
+      nombre: "Lista de trozas",
+      archivo: `Lista de trozas ${nroLista}`,
+      etiqueta:
+        listas.hojas > 1
+          ? `${filas.length} trozas en ${listas.hojas} hojas · anexo del (33)`
+          : `${filas.length} troza${filas.length === 1 ? "" : "s"} · anexo del (33)`,
+      pieCorrido: pieLista,
+      html: documentoHtml({
+        titulo: `Lista de trozas ${nroLista}`,
+        css: CSS_LISTA_TROZAS + CSS_HOJAS_DE_LISTA,
+        cuerpo: hojasLista.length > 1 ? hojasLista : hojasLista[0],
+        pieCorrido: pieLista,
+      }),
+    },
+  };
+}

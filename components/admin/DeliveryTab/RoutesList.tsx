@@ -1,13 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import { Truck, MapPin, Clock, Package } from "@buleje/design-system/icons";
+import {
+  Truck, MapPin, Clock, Package,
+  Motorbike, Car, Bike, Footprints, Scooter,
+} from "@buleje/design-system/icons";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   ROUTE_STATUS_COLORS,
   ROUTE_STATUS_LABELS,
   type DeliveryRouteView,
 } from "./types";
+import { formatTime } from "@/lib/format";
 
 interface RoutesListProps {
   routes: DeliveryRouteView[];
@@ -16,12 +21,12 @@ interface RoutesListProps {
   loading: boolean;
 }
 
-const VEHICLE_EMOJI: Record<string, string> = {
-  moto: "🏍️",
-  auto: "🚗",
-  bicicleta: "🚴",
-  "a pie": "🚶",
-  motokar: "🛺",
+const VEHICLE_ICON: Record<string, LucideIcon> = {
+  moto: Motorbike,
+  auto: Car,
+  bicicleta: Bike,
+  "a pie": Footprints,
+  motokar: Scooter,
 };
 
 export function RoutesList({
@@ -68,7 +73,7 @@ export function RoutesList({
           Sin rutas hoy
         </p>
         <p className="text-sm text-[var(--text-tertiary)] mt-1 max-w-xs mx-auto leading-snug">
-          Creá una ruta nueva para empezar a despachar pedidos del día.
+          Crea una ruta nueva para empezar a despachar pedidos del día.
         </p>
       </div>
     );
@@ -82,13 +87,10 @@ export function RoutesList({
           route.totalStops > 0
             ? Math.round((route.completedStops / route.totalStops) * 100)
             : 0;
-        const plannedTime = new Date(route.plannedStartAt).toLocaleTimeString("es-PE", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        const plannedTime = formatTime(route.plannedStartAt);
         const initial = (route.driverName || "?").trim().charAt(0).toUpperCase();
         const isLive = route.status === "in_progress";
-        const vehicleIcon = VEHICLE_EMOJI[route.vehicleType?.toLowerCase()] ?? "🚚";
+        const VehicleIcon = VEHICLE_ICON[route.vehicleType?.toLowerCase()] ?? Truck;
 
         return (
           <li key={route.id}>
@@ -132,7 +134,7 @@ export function RoutesList({
               <div className="flex items-center gap-3 mb-3">
                 <div className={cn(
                   "h-10 w-10 rounded-xl flex items-center justify-center text-base font-extrabold shrink-0",
-                  isLive ? "bg-primary/10 text-primary" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
+                  isLive ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
                 )}>
                   {initial}
                 </div>
@@ -141,10 +143,10 @@ export function RoutesList({
                     {route.driverName}
                   </p>
                   <p className="text-sm text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1.5">
-                    <span className="text-base">{vehicleIcon}</span>
+                    <VehicleIcon className="h-4 w-4" aria-hidden />
                     <span className="capitalize">{route.vehicleType}</span>
                     {route.optimizedByAi && (
-                      <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] uppercase">
+                      <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] uppercase">
                         IA
                       </span>
                     )}

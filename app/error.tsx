@@ -1,13 +1,16 @@
 "use client";
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+// Sentry se baja en el primer error, no en la carga de cada página (16-10).
+import { capturarErrorCliente } from "@/lib/telemetry/capturar-error-cliente";
 import Link from "next/link";
 import { RefreshCcw, Home, LifeBuoy } from "lucide-react";
-import { CuadernoFiadoReal } from "@/components/ui-system/illustrations";
+// Directo del archivo, no del barril: el barril trae ~580 KB de ilustraciones a
+// TODAS las páginas (error.tsx es global). Medido 08-10 por el carril de velocidad.
+import { CuadernoFiadoReal } from "@/components/ui-system/illustrations/pucallpa-locals";
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    capturarErrorCliente(error);
   }, [error]);
 
   return (

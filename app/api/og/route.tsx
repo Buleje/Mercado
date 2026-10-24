@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
             left: 0,
             right: 0,
             height: 6,
-            background: "linear-gradient(90deg, var(--accent), #10b981, #f97316)",
+            background: "linear-gradient(90deg, var(--accent), #10b981, #ff6b5b)",
           }}
         />
 
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
             style={{
               fontSize: 48,
               fontWeight: 900,
-              color: "#f97316",
+              color: "#ff6b5b",
               fontFamily: "Arial Black, Arial, sans-serif",
             }}
           >

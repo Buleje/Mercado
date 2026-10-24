@@ -6,23 +6,40 @@
 // auditoría de seguridad incorporada.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
+import { SalesDB, InventoryMovementsDB, LoyaltyDB } from "@/lib/jsondb";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
-import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { conteoLockKey } from "@/app/api/inventory/conteo/route";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, revalidateTenantTag } from "@/lib/cache";
 import { FiadosDB } from "@/lib/db/fiados.db";
+import { KitsDB, KitError, conCostoDeKits, salidasDeKits, type Kit, type SalidaDeComponente } from "@/lib/db/kits.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { extractIgv, igvRateFromSettings } from "@/lib/tax";
+import { desglosarPago, type LineaDePago } from "@/lib/caja/desglosar-pago";
+import { anotarVentaEnCaja, type MotivoSinAnotar } from "@/lib/caja/anotar-venta";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { MAX_RECIBIDO, notaTrueque } from "@/lib/pos/trueque";
+import { RevendedorasDB } from "@/lib/db/revendedoras.db";
+import { LISTA_REVENDEDORA } from "@/lib/revendedoras/reglas";
+import { preciosQueRigen } from "@/lib/pos/precio-revendedora";
+import { celularDeCaja } from "@/lib/pos/celular-de-caja";
+import {
+  excedeTopeCajero,
+  excedeTopeItemCajero,
+  pctLegible,
+  topeCajeroPct,
+  topeDescuentoCajero,
+} from "@/lib/pos/descuento-cajero";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -40,6 +57,8 @@ const SaleSchema = z.object({
   payment: z.enum(["efectivo", "yape", "plin", "tarjeta", "MIXTO", "fiado"]).optional().default("efectivo"),
   amountPaid: z.number().nonnegative().optional(),
   customerPhone: z.string().max(20).optional(),
+  /** Nombre de la clienta para el alta rápida desde el cobro (sólo si su celular no está en el negocio). */
+  customerName: z.string().trim().max(80).optional(),
   paymentDetails: z.string().optional(),
   // Mejora 1: Tipo de comprobante
   comprobanteTipo: z.enum(["ticket", "boleta", "factura", "cotizacion", "proforma"]).optional().default("ticket"),
@@ -50,6 +69,13 @@ const SaleSchema = z.object({
   // SECURITY 2026-05-07 (X2): idempotencyKey generada por el POS offline.
   // El server la usa para deduplicar; NUNCA toma el `id` del cliente.
   idempotencyKey: z.string().max(100).optional(),
+  // Trueque (09-10, lib/pos/trueque.ts): qué recibió el cliente y cuánto vale.
+  // El valor YA viaja como `descuentoMonto` (con el tope de rol de abajo: el
+  // trueque lo hereda); este campo sólo deja la nota en la venta.
+  trueque: z.object({
+    recibido: z.string().trim().min(1).max(MAX_RECIBIDO),
+    valor: z.number().positive().max(1_000_000),
+  }).optional(),
 }).strip(); // Strip unknown fields (e.g. _offlineId from offline queue)
 
 /**
@@ -66,8 +92,53 @@ const SaleSchema = z.object({
  * Default: 500 ventas mas recientes. Antes devolvia TODAS las ventas
  * del tenant sin limit (perf issue audit ventas-caja P2 #11).
  */
+/** La venta de este negocio con esa clave de idempotencia (con sus ítems), o `null`. */
+function ventaPorClave(tenantId: string, clave: string) {
+  return prisma.sale.findFirst({ where: { tenantId, idempotencyKey: clave }, include: { items: true } });
+}
+
+/** La respuesta de una venta que ya existía (reintento del POS con la misma clave). */
+function respuestaDeduplicada(existing: NonNullable<Awaited<ReturnType<typeof ventaPorClave>>>): NextResponse {
+  return NextResponse.json({
+    id: existing.id,
+    items: existing.items.map(i => ({ productId: i.productId, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit })),
+    total: existing.total,
+    payment: existing.payment,
+    amountPaid: existing.amountPaid,
+    change: existing.change,
+    createdAt: existing.createdAt.toISOString(),
+    _deduplicated: true,
+  }, { status: 200 });
+}
+
+/** Choque con un índice único (Prisma P2002 / Postgres 23505). */
+function esChoqueDeUnico(err: unknown): boolean {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (code === "P2002" || code === "23505") return true;
+  return err instanceof Error && /P2002|Unique constraint/i.test(err.message);
+}
+
+/**
+ * Alta rápida de la clienta con el celular tipeado en el cobro (20-10): sólo
+ * el celular, el nombre es opcional. Va por la venta y no por `/api/customers`
+ * porque esa ruta es sólo de administración (el cajero recibe 403). Celular de
+ * otra tienda (`Customer.phone` único en toda la plataforma) o un error → la
+ * venta sigue sin celular, como antes.
+ */
+async function altaDesdeLaCaja(tenantId: string, tipeado: string, nombre?: string): Promise<string | undefined> {
+  const phone = celularDeCaja(tipeado);
+  if (!phone) return undefined;
+  try {
+    const alta = await CustomersDB.altaSinPisar(tenantId, { phone, name: nombre?.trim() || `Cliente ${phone.slice(-4)}` });
+    return alta.estado === "otra_tienda" ? undefined : alta.cliente.phone;
+  } catch (err) {
+    logger.warn("[sales] alta rápida de la clienta falló", { err: String(err), tenantId });
+    return undefined;
+  }
+}
+
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/sales"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -79,6 +150,21 @@ export async function GET(req: NextRequest) {
     const toParam = searchParams.get("to");
     const cashierIdParam = searchParams.get("cashierId");
     const allParam = searchParams.get("all");
+
+    /* «¿Ya se guardó?» del POS sin conexión (revisión 17-10): antes de decir
+       «vuelve a anotarla» se busca la venta por su clave. La clave es un UUID
+       que sólo conoce el equipo que cobró, así que no se filtra por cajero; se
+       devuelve lo justo para reconocerla (monto y hora). */
+    const claveParam = searchParams.get("clave");
+    if (claveParam !== null) {
+      const clave = claveParam.trim();
+      if (!clave || clave.length > 100) return NextResponse.json({ error: "Clave inválida" }, { status: 400 });
+      const venta = await ventaPorClave(auth.tenantId, clave);
+      return NextResponse.json({
+        guardada: venta != null,
+        venta: venta ? { id: venta.id, total: venta.total, payment: venta.payment, createdAt: venta.createdAt.toISOString() } : null,
+      });
+    }
 
     // Audit 2026-05-17 B-P0-4: paginación + filtros Prisma-side (skip/take).
     // Antes: getAll() + 3 array.filter() en JS + slice() — cargaba todas las
@@ -159,15 +245,20 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // SECURITY 2026-05-05 (audit POS #12): rate-limit STRICT en POST /api/sales.
-  // Antes brute-force de creación inflaba reportes y quemaba IDs.
-  const rl = await applyRateLimit(req, "STRICT", "sales-post");
-  if (rl) return rl;
-
-  const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/sales"]);
   if (auth instanceof NextResponse) return auth;
-  const blocked = await requireActiveSubscription(auth.tenantId);
-  if (blocked) return blocked;
+  // SECURITY 2026-05-05 (audit POS #12): rate-limit en POST /api/sales contra el
+  // brute-force que inflaba reportes. 17-10: era STRICT por IP (10 cada 15 min) y
+  // la venta 11 de una bodega en hora punta daba 429 (el dueño y los cajeros
+  // comparten IP). Ahora va después del login, por negocio + cajero, 100/min.
+  const rl = await applyRateLimit(req, "GENEROUS", `sales-post:${auth.tenantId}:${auth.username}`);
+  if (rl) return rl;
+  // MODO GRACIA 2026-07-08 (decisión Brandon, reporte ventas-caja bug 1): el
+  // POS NUNCA se bloquea por trial expirado — una bodega real necesita seguir
+  // cobrando en el mostrador aunque el trial del SaaS haya vencido. El gate
+  // 402 (`requireActiveSubscription`) se mantiene en el resto de writes
+  // (productos, gastos, compras, etc.), NO en la venta. El aviso de "trial
+  // expirado" se muestra como banner persistente en el POS (TrialExpiredGuard).
   // Round 20 M004: Sale + Customer + InventoryMovement + LoyaltyTx writes.
   return runWithAuditContext(req, auth.username, () => salesHandler(req, auth));
 }
@@ -212,11 +303,39 @@ async function salesHandler(
       });
     }
   }
+  // La clienta de la venta (si viene su celular) y, si es revendedora, su
+  // precio (ADR-507 en la caja, 20-10). Se lee ANTES de armar los precios: la
+  // cotización la hace el servidor con precio y costo de la base y lo comprado
+  // en el mes; el precio y el descuento por ítem que mande el POS no cuentan.
+  // `Sale.customerPhone` es FK a `Customer.phone`: se guarda si existe (o si
+  // el alta rápida de abajo la crea). SECURITY 2026-05-07 (B1): `phone` es único GLOBAL; findFirst con tenantId
+  // garantiza que la clienta sea de este negocio.
+  const clienteDeLaVenta = data.customerPhone ? await RevendedorasDB.clientaDeLaCaja(auth.tenantId, data.customerPhone) : null;
+  const precioDeLista = clienteDeLaVenta?.id && clienteDeLaVenta.listaPrecio === LISTA_REVENDEDORA
+    ? await RevendedorasDB.cotizarEnCaja(
+        auth.tenantId,
+        clienteDeLaVenta.id,
+        data.items.filter(i => priceCostMap.has(i.productId)).map(i => ({ productId: i.productId, quantity: i.quantity })),
+      ).catch((err) => {
+        // Sin cotización se cobra el precio normal (nunca uno inventado).
+        logger.warn("[sales] precio de revendedora no disponible", { err: String(err), tenantId: auth.tenantId });
+        return null;
+      })
+    : null;
+  const preciosDeLista = preciosQueRigen(precioDeLista);
+
   // P0 fix (2026-06-04): cap de descuento por ítem alineado con el cap global —
-  // cajero ≤15%, admin/owner hasta 100%. El % viene del cliente pero el precio
-  // BASE siempre es el de DB (el cliente no puede inflar el precio).
+  // cajero hasta el tope de Ajustes (15 % de fábrica), admin/owner hasta 100%.
+  // El % viene del cliente pero el precio BASE siempre es el de DB (el cliente
+  // no puede inflar el precio). El tope lo lee el servidor de Settings, nunca
+  // del body: el POS sólo lo muestra (`lib/pos/descuento-cajero.ts`).
   const isPrivilegedRole = auth.role === "admin" || auth.role === "owner";
-  const MAX_ITEM_DISCOUNT_CAJERO = 15; // % máximo para cajero por ítem
+  const topePct = isPrivilegedRole
+    ? 100
+    : topeCajeroPct(
+        (await SettingsDB.get(auth.tenantId).catch(sinDato("api/sales tope de descuento del cajero")))
+          ?.maxDiscountPercent,
+      );
 
   // Reescribir items con precio de DB (rechaza items con productId desconocido).
   const itemsWithCost = data.items
@@ -227,10 +346,12 @@ async function salesHandler(
       const rawDiscount = i.discount ?? 0;
       const clampedDiscount = isPrivilegedRole
         ? Math.min(rawDiscount, 100)
-        : Math.min(rawDiscount, MAX_ITEM_DISCOUNT_CAJERO);
+        : Math.min(rawDiscount, topePct);
       // Precio neto por unidad = precio DB × (1 − descuento%). Es lo que se cobra
       // y lo que se persiste en SaleItem.price (sin columna nueva ni migración).
-      const netUnit = dbPrice.price * (1 - clampedDiscount / 100);
+      // Revendedora: su precio REEMPLAZA al descuento por ítem (no se suman).
+      const precioLista = preciosDeLista?.get(i.productId);
+      const netUnit = precioLista ?? dbPrice.price * (1 - clampedDiscount / 100);
       return {
         ...i,
         price: netUnit, // ⚠ neto sobre precio DB (NO se confía en el precio del cliente)
@@ -244,11 +365,11 @@ async function salesHandler(
   // Rechazo explícito si un cajero intenta superar el cap de descuento por ítem.
   if (!isPrivilegedRole) {
     const violating = data.items.find(
-      i => priceCostMap.has(i.productId) && (i.discount ?? 0) > MAX_ITEM_DISCOUNT_CAJERO,
+      i => priceCostMap.has(i.productId) && excedeTopeItemCajero(i.discount ?? 0, topePct),
     );
     if (violating) {
       return NextResponse.json(
-        { error: `Descuento por ítem excede ${MAX_ITEM_DISCOUNT_CAJERO}% — requiere autorización del admin` },
+        { error: `Descuento por ítem excede ${pctLegible(topePct)}% — requiere autorización del admin` },
         { status: 403 },
       );
     }
@@ -260,14 +381,16 @@ async function salesHandler(
   // El descuento global se aplica SOBRE el subtotal ya reducido por ítem — sin
   // doble conteo (el ítem reduce price, el global reduce el total resultante).
   // `isPrivilegedRole` ya está declarado arriba (cap de descuento por ítem).
+  // El tope (Ajustes, 15 % de fábrica) se compara en céntimos enteros con la
+  // MISMA función que usa el POS (`lib/pos/descuento-cajero.ts`): con decimales,
+  // 9 × 0,15 = 1,3499… y un descuento de S/ 1,35 sobre S/ 9,00 salía 403.
   const requestedDiscount = data.descuentoMonto ?? 0;
-  const maxCashierDiscount = total * 0.15;
   const discountAmount = isPrivilegedRole
     ? Math.min(requestedDiscount, total) // admin: hasta 100%
-    : Math.min(requestedDiscount, maxCashierDiscount); // cajero: hasta 15%
-  if (requestedDiscount > maxCashierDiscount && !isPrivilegedRole) {
+    : Math.min(requestedDiscount, topeDescuentoCajero(total, topePct)); // cajero: hasta el tope de Ajustes
+  if (!isPrivilegedRole && excedeTopeCajero(requestedDiscount, total, topePct)) {
     return NextResponse.json(
-      { error: "Descuento excede 15% — requiere autorización del admin" },
+      { error: `Descuento excede ${pctLegible(topePct)}% — requiere autorización del admin` },
       { status: 403 },
     );
   }
@@ -285,25 +408,29 @@ async function salesHandler(
     if (data.amountPaid + 0.01 < finalTotal) {
       return NextResponse.json(
         {
-          error: `Monto pagado (S/${data.amountPaid.toFixed(2)}) es menor que el total (S/${finalTotal.toFixed(2)}). Usá fiado si la deuda es intencional.`,
+          error: `Monto pagado (S/${data.amountPaid.toFixed(2)}) es menor que el total (S/${finalTotal.toFixed(2)}). Usa fiado si la deuda es intencional.`,
         },
         { status: 400 },
       );
     }
   }
 
-  // Validate customerPhone: only set it if the customer actually exists in DB
-  // (the Sale.customerPhone is a FK → Customer.phone; passing an unknown phone throws a FK error)
-  let resolvedCustomerPhone: string | undefined = undefined;
-  if (data.customerPhone) {
-    // SECURITY 2026-05-07 (B1): findUnique({where:{phone}}) es @unique global
-    // y puede traer un Customer de otro tenant. findFirst con tenantId garantiza
-    // aislamiento multi-tenant.
-    const existingCustomer = await prisma.customer.findFirst({
-      where: { phone: data.customerPhone, tenantId: auth.tenantId },
-      select: { phone: true },
-    });
-    resolvedCustomerPhone = existingCustomer?.phone ?? undefined;
+  // Trueque: la nota va en `paymentDetails` (la venta no tiene columna de notas).
+  // Nunca con pago MIXTO: ahí ese campo es el desglose que lee el arqueo
+  // (`desglosarPago`); con un solo medio nadie lo parsea.
+  const notaDeTrueque = data.trueque ? notaTrueque(data.trueque.recibido, data.trueque.valor) : null;
+  const detallesDePago = data.paymentDetails
+    ?? (data.trueque && notaDeTrueque && payment.toUpperCase() !== "MIXTO"
+      ? JSON.stringify({ tipo: "TRUEQUE", recibido: data.trueque.recibido, valor: data.trueque.valor, nota: notaDeTrueque })
+      : undefined);
+
+  // customerPhone sólo si la clienta existe en este negocio (leída arriba): es
+  // FK → Customer.phone y un celular desconocido rompería la venta.
+  let resolvedCustomerPhone: string | undefined = clienteDeLaVenta?.phone ?? undefined;
+  // Celular nuevo tipeado en el cobro (20-10): alta rápida para que la venta
+  // quede con su celular (seguimiento de clientas, ADR-508). El fiado tiene la suya abajo.
+  if (!resolvedCustomerPhone && data.customerPhone && data.payment !== "fiado") {
+    resolvedCustomerPhone = await altaDesdeLaCaja(auth.tenantId, data.customerPhone, data.customerName);
   }
 
   // ── Fiado: pre-validar antes de la transacción ────────────────────────────
@@ -387,22 +514,10 @@ async function salesHandler(
   // Deduplicación por idempotencyKey: si el POS offline reintenta un POST
   // que ya llegó, devolver la Sale existente en vez de crear un duplicado.
   if (data.idempotencyKey) {
-    const existing = await prisma.sale.findFirst({
-      where: { tenantId: auth.tenantId, idempotencyKey: data.idempotencyKey },
-      include: { items: true },
-    });
+    const existing = await ventaPorClave(auth.tenantId, data.idempotencyKey);
     if (existing) {
       logger.info("[sales] POST deduplicated by idempotencyKey", { tenantId: auth.tenantId, idempotencyKey: data.idempotencyKey, saleId: existing.id });
-      return NextResponse.json({
-        id: existing.id,
-        items: existing.items.map(i => ({ productId: i.productId, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit })),
-        total: existing.total,
-        payment: existing.payment,
-        amountPaid: existing.amountPaid,
-        change: existing.change,
-        createdAt: existing.createdAt.toISOString(),
-        _deduplicated: true,
-      }, { status: 200 });
+      return respuestaDeduplicada(existing);
     }
   }
 
@@ -412,6 +527,8 @@ async function salesHandler(
   // registro de deuda en la tabla Fiado.
   let sale;
   let createdFiadoId: string | null = null;
+  /** Componentes que salieron por los kits vendidos (para los lotes FEFO). */
+  let salidasDeKit: SalidaDeComponente[] = [];
   try {
     const saleRow = await prisma.$transaction(async (tx) => {
       // Pre-validar IDs de producto SCOPED a tenant — sin tenantId aquí un
@@ -432,13 +549,27 @@ async function salesHandler(
         }
       }
 
+      // Kits sin stock propio (`lib/db/kits.db.ts`): su composición, lo que sale
+      // de cada componente y su costo real (la suma de los componentes). Sólo se
+      // busca entre los productos sin control de stock: un kit con stock propio
+      // (cajas ya armadas) se vende como cualquier producto, con su costPrice.
+      const sinStockPropio = [...new Set(validItems.filter(i => productById.get(i.productId)?.stock == null).map(i => i.productId))];
+      const kits = sinStockPropio.length > 0
+        ? await KitsDB.kitsDeProductosEnTx(tx, auth.tenantId, sinStockPropio)
+        : new Map<number, Kit>();
+      salidasDeKit = salidasDeKits(validItems, kits);
+      const lineasVenta = conCostoDeKits(validItems, kits);
+      const cogsVenta = kits.size > 0
+        ? lineasVenta.reduce((s, i) => s + (i.costPrice ?? i.price * 0.7) * i.quantity, 0)
+        : totalCogs;
+
       // 1. Crear la venta
       const created = await tx.sale.create({
         data: {
           id,
           tenantId: auth.tenantId,
           total: finalTotal,
-          totalCogs: totalCogs ?? null,
+          totalCogs: cogsVenta ?? null,
           payment: data.payment ?? "efectivo",
           amountPaid: data.amountPaid ?? finalTotal,
           change: (data.amountPaid ?? finalTotal) - finalTotal,
@@ -448,10 +579,10 @@ async function salesHandler(
           comprobanteRuc: data.comprobanteRuc ?? null,
           descuentoMonto: data.descuentoMonto ?? null,
           descuentoPorcentaje: data.descuentoPorcentaje ?? null,
-          paymentDetails: data.paymentDetails ?? null,
+          paymentDetails: detallesDePago ?? null,
           idempotencyKey: data.idempotencyKey ?? null,
-          items: validItems.length > 0
-            ? { create: validItems.map(i => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit ?? "" })) }
+          items: lineasVenta.length > 0
+            ? { create: lineasVenta.map(i => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit ?? "" })) }
             : undefined,
         },
         include: { items: true },
@@ -469,29 +600,18 @@ async function salesHandler(
         createdFiadoId = fiado.id;
       }
 
-      // 3. Decremento atómico con guardia anti-TOCTOU.
-      //    `updateMany` con `stock: { gte: qty }` falla si entre la
-      //    pre-validación y este punto otro cajero vendió las mismas
-      //    unidades — evita stock negativo bajo concurrencia POS.
-      for (const item of validItems) {
-        const result = await tx.product.updateMany({
-          where: {
-            id: item.productId,
-            tenantId: auth.tenantId,
-            OR: [
-              { stock: null },                     // producto sin tracking de stock
-              { stock: { gte: item.quantity } },   // suficiente al momento del UPDATE
-            ],
-          },
-          data: { stock: { decrement: item.quantity } },
-        });
-        if (result.count === 0) {
-          const p = productById.get(item.productId);
-          throw new Error(
-            `Stock insuficiente para "${p?.name ?? item.productId}" (concurrencia detectada). Reintentá.`,
-          );
-        }
-      }
+      // 3. Stock, atómico y en orden de productId (`KitsDB.descontarVentaEnTx`):
+      //    cada línea con `updateMany` condicional (`stock: { gte: qty }`: si
+      //    otro cajero vendió esas unidades entre la pre-validación y acá, falla
+      //    y nada queda en negativo) y cada componente de un kit con su kardex.
+      //    El orden único evita que dos ventas cruzadas se bloqueen entre sí.
+      await KitsDB.descontarVentaEnTx(
+        tx,
+        auth.tenantId,
+        validItems.map(i => ({ productId: i.productId, quantity: i.quantity, nombre: productById.get(i.productId)?.name ?? String(i.productId) })),
+        salidasDeKit,
+        { referencia: id, creadoPor: cashierId || "system" },
+      );
 
       return created;
     });
@@ -515,8 +635,22 @@ async function salesHandler(
       ...(saleRow.paymentDetails != null && { paymentDetails: saleRow.paymentDetails }),
     };
   } catch (dbErr) {
+    /* Carrera por la clave (revisión 17-10): dos POST con la misma clave a la
+       vez pasan los dos la revisión de arriba; el segundo choca con el @unique
+       de `idempotencyKey` cuando el primero ya guardó. La venta EXISTE: se
+       devuelve como deduplicada (antes, 500 y el POS la dejaba «No pasó»). */
+    if (data.idempotencyKey && esChoqueDeUnico(dbErr)) {
+      const yaGuardada = await ventaPorClave(auth.tenantId, data.idempotencyKey).catch((err) => {
+        logger.error("[sales] relectura por clave tras P2002 falló", { tenantId: auth.tenantId, err: String(err) });
+        return null;
+      });
+      if (yaGuardada) {
+        logger.info("[sales] POST deduplicated by idempotencyKey (P2002)", { tenantId: auth.tenantId, idempotencyKey: data.idempotencyKey, saleId: yaGuardada.id });
+        return respuestaDeduplicada(yaGuardada);
+      }
+    }
     const msg = dbErr instanceof Error ? dbErr.message : "Error al procesar venta";
-    const isValidation = msg.startsWith("Stock insuficiente");
+    const isValidation = msg.startsWith("Stock insuficiente") || dbErr instanceof KitError;
     logger.error("[sales] POST error", { err: dbErr instanceof Error ? dbErr.message : String(dbErr), tenantId: auth.tenantId });
     return NextResponse.json({ error: msg }, { status: isValidation ? 400 : 500 });
   }
@@ -544,7 +678,7 @@ async function salesHandler(
       const cotNumero = comprobanteNumero || `COT-${Date.now()}`;
       // Lee la tasa de IGV real del tenant (settings.taxRate guarda %, ej. 18).
       // Fallback a IGV_RATE (0.18). Soporta RUS/exonerados (taxRate=0).
-      const settingsForTax = await SettingsDB.get(tenantId).catch(() => null);
+      const settingsForTax = await SettingsDB.get(tenantId).catch(sinDato("api/sales ajustes del negocio para el IGV de la cotización"));
       const igvRate = igvRateFromSettings(settingsForTax?.taxRate);
       const { base: subtotal, igv } = extractIgv(finalTotal, igvRate);
       await prisma.cotizacion.create({
@@ -581,6 +715,25 @@ async function salesHandler(
   // a Sentry para que no se pierda silenciosamente el desync entre stock y
   // movimientos. Sigue siendo fire-and-forget para no bloquear la venta,
   // pero los fallos quedan visibles para reconciliación manual.
+  // Lotes FEFO de lo que salió físicamente: los productos sueltos y los
+  // componentes de los kits (su kardex ya quedó dentro de la transacción).
+  const saleIdLotes = sale.id;
+  const descontarLotes = (productId: number, quantity: number) => {
+    hasBatchesWithStock(auth.tenantId, productId)
+      .then((hasBatches) => {
+        if (hasBatches) {
+          return deductStockFEFO(auth.tenantId, productId, quantity);
+        }
+      })
+      .catch((err) => {
+        logger.warn("[sales] FEFO deduct failed", { saleId: saleIdLotes, productId, err: String(err) });
+        import("@sentry/nextjs")
+          .then((Sentry) => Sentry.captureException(err, { extra: { saleId: saleIdLotes, productId, type: "fefo-deduct-loss" } }))
+          .catch((sentryErr) => logger.warn("[sales] sentry capture failed (fefo)", { err: String(sentryErr) }));
+      });
+  };
+  for (const s of salidasDeKit) descontarLotes(s.productId, s.quantity);
+
   for (const item of data.items) {
     InventoryMovementsDB.record({
       productId: item.productId,
@@ -589,6 +742,10 @@ async function salesHandler(
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
       tenantId: auth.tenantId,
+      // El stock ya lo bajó el `decrement` de la transacción de arriba. Sin
+      // esto, `record` lo bajaba OTRA VEZ: vender 3 descontaba 6 (medido
+      // 2026-08-11). Acá sólo se deja la constancia en el kardex.
+      stockYaAplicado: true,
     }).catch((err) => {
       logger.warn("[sales] inventory movement failed", { saleId: sale.id, err: String(err) });
       import("@sentry/nextjs")
@@ -597,32 +754,44 @@ async function salesHandler(
     });
 
     // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
-    hasBatchesWithStock(auth.tenantId, item.productId)
-      .then((hasBatches) => {
-        if (hasBatches) {
-          return deductStockFEFO(auth.tenantId, item.productId, item.quantity);
-        }
-      })
-      .catch((err) => {
-        logger.warn("[sales] FEFO deduct failed", { saleId: sale.id, productId: item.productId, err: String(err) });
-        import("@sentry/nextjs")
-          .then((Sentry) => Sentry.captureException(err, { extra: { saleId: sale.id, productId: item.productId, type: "fefo-deduct-loss" } }))
-          .catch((sentryErr) => logger.warn("[sales] sentry capture failed (fefo)", { err: String(sentryErr) }));
-      });
+    descontarLotes(item.productId, item.quantity);
   }
 
-  // Register cash movement if a register is open (fire-and-forget)
-  CashRegistersDB.getOpen(auth.tenantId).then(async (reg) => {
-    if (reg) {
-      await CashRegistersDB.addMovement(reg.id, {
-        type: "venta",
-        amount: finalTotal,
-        method: data.payment ?? "efectivo",
-        description: `Venta ${sale.id}`,
-        saleId: sale.id,
-      });
+  /**
+   * El movimiento de caja, ESPERADO antes de responder (F4, revisión de
+   * seguridad). Antes era fire-and-forget: si la caja se cerraba entre la venta y
+   * su movimiento, el 409 se tragaba en un `.catch(warn)` y la venta quedaba 201
+   * con su plata fuera del arqueo, sin aviso. Ahora se relee la caja y se
+   * reintenta una vez; lo que no entra vuelve en `cajaSinAnotar` para que el POS
+   * lo diga, y la carrera va a Sentry (`anotarVentaEnCaja`).
+   *
+   * Una línea por forma de pago, no una sola por el total: con pago mixto el POS
+   * manda `payment: "MIXTO"`, y el arqueo suma sólo los movimientos en efectivo
+   * (`desglosarPago`).
+   */
+  let cajaSinAnotar: { monto: number; metodo: string; motivo: MotivoSinAnotar | null; lineas: LineaDePago[] } | undefined;
+  try {
+    const lineas = desglosarPago(data.payment, detallesDePago, finalTotal);
+    const anotado = await anotarVentaEnCaja(auth.tenantId, sale.id, lineas);
+    if (anotado.sinAnotar.length > 0) {
+      cajaSinAnotar = {
+        monto: Math.round(anotado.sinAnotar.reduce((acc, l) => acc + l.amount, 0) * 100) / 100,
+        metodo: anotado.sinAnotar.length === 1 ? anotado.sinAnotar[0].method : "mixto",
+        motivo: anotado.motivo,
+        lineas: anotado.sinAnotar,
+      };
     }
-  }).catch((err) => logger.warn("[sales] cash register movement failed", { saleId: sale.id, err: String(err) }));
+  } catch (err) {
+    /* La venta ya está guardada: un fallo al anotar la caja no la tumba, pero
+       se dice en la respuesta y queda en Sentry. */
+    logger.error("[sales] cash register movement failed", { saleId: sale.id, error: String(err) });
+    cajaSinAnotar = { monto: finalTotal, metodo: data.payment ?? "efectivo", motivo: "fallo", lineas: [] };
+  }
+
+  // Tablero de Ventas: la venta y su movimiento de caja ya están escritos. Va
+  // DESPUÉS de anotar la caja para que un GET concurrente no re-cachee el saldo
+  // viejo; y fuera del movimiento porque una venta fiada/sin caja no escribe ninguno.
+  invalidarVentasOverview(auth.tenantId);
 
   // Accrue loyalty points for POS sale (fire-and-forget)
   if (data.customerPhone) {
@@ -635,15 +804,23 @@ async function salesHandler(
     action: "CREATE",
     entity: "Sale",
     entityId: sale.id,
-    detail: `Venta POS creada por ${fmtCurrent(finalTotal)} con método ${data.payment ?? "efectivo"}${data.comprobanteTipo !== "ticket" ? ` (${data.comprobanteTipo})` : ""}.`,
+    detail: `Venta POS creada por ${fmtCurrent(finalTotal)} con método ${data.payment ?? "efectivo"}${data.comprobanteTipo !== "ticket" ? ` (${data.comprobanteTipo})` : ""}.${notaDeTrueque ? ` ${notaDeTrueque}.` : ""}`,
     user: cashierId || "system",
   });
+
+  // El stock se descuenta arriba con `tx.product.updateMany` (updateMany
+  // condicional, para no quedar en negativo bajo dos cajeros a la vez), y eso
+  // saltea a ProductsDB, que es quien invalida. Sin esto `getAll` sirve su cache
+  // de 5 minutos: se vende toda la mañana y el Inventario muestra el stock de
+  // antes. Mismo patrón que mordió en recepciones y cuentas por pagar.
+  revalidateTenantTag(auth.tenantId, "products");
 
   // Asegurar que comprobanteNumero + fiadoId se incluyan en la respuesta
   const response = {
     ...sale,
     ...(comprobanteNumero ? { comprobanteNumero } : {}),
     ...(createdFiadoId ? { fiadoId: createdFiadoId } : {}),
+    ...(cajaSinAnotar ? { cajaSinAnotar } : {}),
   };
   return NextResponse.json(response, { status: 201 });
 }

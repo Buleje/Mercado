@@ -19,7 +19,7 @@ import {
 
 const PIE_COLORS = [
   "var(--color-primary)",
-  "#f97316",
+  "#ff6b5b",
   "#264653",
   "#e76f51",
   "#00BDBD",
@@ -32,7 +32,7 @@ const PAYMENT_COLORS: Record<string, string> = {
   yape: "#6d28d9",
   plin: "#3B82F6",
   tarjeta: "var(--color-primary)",
-  transferencia: "#f59e0b",
+  transferencia: "#ff6b5b",
 };
 
 export type ChartType =
@@ -155,7 +155,7 @@ export default function DashboardCharts({
             <YAxis fontSize={10} tickFormatter={(v: number) => fmtShort(v)} />
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <Tooltip formatter={((value: any) => fmt(Number(value))) as any} />
-            <Bar dataKey="ventas" fill="#f97316" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="ventas" fill="#ff6b5b" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       );

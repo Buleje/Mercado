@@ -78,7 +78,7 @@ interface Props {
 }
 
 const INTENT_COLORS = {
-  success: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  success: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   warning: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]",
   error: "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
   neutral: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
@@ -215,7 +215,7 @@ function DeltaBadge({ delta }: { delta: NonNullable<Props["delta"]> }) {
     delta.value === 0
       ? "text-[var(--text-secondary)] bg-[var(--surface-sunken)]"
       : delta.value > 0
-        ? "text-[var(--data-success-500)] bg-[var(--accent-soft)]"
+        ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12"
         : "text-[var(--data-error-500)] bg-[var(--data-error-50)]";
   return (
     <span

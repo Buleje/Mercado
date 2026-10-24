@@ -17,6 +17,7 @@
 
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { formatCategoryLabel } from "@/lib/format-category";
 
 export interface StoreCategoryChip {
   name: string;
@@ -70,7 +71,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           active
             ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)] shadow-sm"
-            : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/30",
+            : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-[var(--accent)]/50 hover:bg-primary/10",
         )}
       >
         {imageUrl && (
@@ -186,10 +187,7 @@ export default function StoreCategories({
   const imageMap = images ?? {};
 
   return (
-    <nav
-      aria-label="Categorías del catálogo"
-      className="flex flex-wrap gap-1.5 sm:gap-2"
-    >
+    <nav aria-label="Categorías del catálogo" className="flex flex-wrap gap-1.5 sm:gap-2">
       <ChipButton
         active={activeCategory === null}
         label="Todos"
@@ -201,7 +199,7 @@ export default function StoreCategories({
         <ChipButton
           key={cat.name}
           active={activeCategory === cat.name}
-          label={cat.name}
+          label={formatCategoryLabel(cat.name)}
           count={cat.count}
           imageUrl={imageMap[cat.name]}
           compact={compact}

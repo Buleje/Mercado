@@ -53,7 +53,7 @@ function block(reason, details) {
         `─────────────────────────\n` +
         `${reason}\n\n` +
         `Detalles:\n${details}\n\n` +
-        `Solución: corregir los errores y volver a intentar /deploy.\n` +
+        `Solución: corregir los errores y volver a intentar el deploy.\n` +
         `Bypass de emergencia: SKIP_DEPLOY_GATE=1 (solo hotfixes críticos).`
     }
   };
@@ -117,7 +117,7 @@ if (consoleCheck.ok && consoleCheck.output.length > 0) {
 }
 
 // ── Gate 2: TypeScript type-check ──────────────────────────────────────
-const tscCheck = run("npx tsc --noEmit 2>&1 | head -20");
+const tscCheck = run("node scripts/tsc7.mjs --noEmit 2>&1 | head -20");
 if (!tscCheck.ok) {
   block(
     "TypeScript type-check falló (tsc --noEmit)",

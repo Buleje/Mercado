@@ -2,14 +2,13 @@ import "server-only";
 import { logger } from "@/lib/logger";
 import { DOC_CATEGORIES } from "@/lib/types/documents";
 import { fetchGroqWithRetry } from "@/lib/groq-fetch";
-
-/** Modelo de visión Groq (multimodal). Mismo que el tier "premium" del router. */
-const GROQ_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+import { AVISO_SIN_VISION, esModeloInexistente, MODELO_VISION } from "./modelo-vision";
 
 /**
  * ADR-119 — Escáner de documentos desde cámara móvil.
  *
- * Recibe la URL firmada de una foto subida y usa visión (gpt-4o-mini) para
+ * Recibe la URL firmada de una foto subida y usa visión (modelo multimodal,
+ * ver `modelo-vision`) para
  * extraer de un vistazo: un nombre legible, categoría, tags, texto OCR y —lo
  * más valioso— la fecha de vencimiento si el documento la tiene (licencias,
  * certificados, contratos). Así el celular se vuelve un escáner que además
@@ -51,12 +50,12 @@ export async function scanDocument(imageUrl: string): Promise<ScanResult> {
   }
 
   try {
-    // Visión vía infra LLM del proyecto (Gateway / Groq directo). Llama-4-Scout
-    // es multimodal y acepta image_url en el payload OpenAI-compatible.
+    // Visión vía infra LLM del proyecto (Gateway / Groq directo): el modelo
+    // multimodal acepta image_url en el payload OpenAI-compatible.
     const resp = await fetchGroqWithRetry(
       apiKey ?? "",
       {
-        model: GROQ_VISION_MODEL,
+        model: MODELO_VISION,
         messages: [
           {
             role: "user",
@@ -72,7 +71,11 @@ export async function scanDocument(imageUrl: string): Promise<ScanResult> {
       "doc-scan"
     );
 
-    if (!resp.ok || !resp.data) return { ok: false, error: resp.error ?? "vision call failed" };
+    if (!resp.ok || !resp.data) {
+      // El modelo dado de baja por el proveedor rompía el escáner en silencio:
+      // ahora el motivo llega en castellano y dice qué configurar.
+      return { ok: false, error: esModeloInexistente(resp.error) ? AVISO_SIN_VISION : resp.error ?? "vision call failed" };
+    }
 
     const payload = resp.data as { choices?: { message?: { content?: string } }[] };
     const content = payload.choices?.[0]?.message?.content ?? "";

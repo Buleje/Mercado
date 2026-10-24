@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
+import { ForestLothTransformacionDB } from "@/lib/db/forest-loth-transformacion.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -10,9 +11,13 @@ import { withApiHandler } from "@/lib/api-handler";
 /**
  * /api/admin/forestal/loth/caratula — Carátula del libro LO-TH (Anexo 1, ADR-125)
  *
- * GET   — lista carátulas + carátula activa
+ * GET   — lista carátulas + carátula activa (+ `transformaEnElTh` de la activa)
  * POST  — crea carátula (tomo / documento de gestión)
  * PATCH — actualiza carátula { id, ...campos }
+ *
+ * `transformaEnElTh` (true | false | null) no es columna de la carátula: vive
+ * en el KV de `ForestLothTransformacionDB`, y se sube acá para que la carátula
+ * se guarde en un solo envío.
  */
 
 const caratulaSchema = z.object({
@@ -33,6 +38,8 @@ const caratulaSchema = z.object({
   docGestionName: z.string().trim().max(150).nullable().optional(),
   resolucionNumber: z.string().trim().max(120).nullable().optional(),
   resolucionDate: z.coerce.date().nullable().optional(),
+  /** ¿Asierra dentro del TH (true) o la madera va a una planta (false)? null = sin responder. */
+  transformaEnElTh: z.boolean().nullable().optional(),
 });
 
 const patchSchema = caratulaSchema.partial().extend({
@@ -61,7 +68,8 @@ export const GET = withApiHandler("forestal-loth-caratula-get", async (req: Next
       ForestLothDB.listCaratulas(auth.tenantId),
       ForestLothDB.getActiveCaratula(auth.tenantId),
     ]);
-    return NextResponse.json({ caratulas, active });
+    const transformaEnElTh = await ForestLothTransformacionDB.get(auth.tenantId, active?.id);
+    return NextResponse.json({ caratulas, active, transformaEnElTh });
   } catch (err) {
     logger.error("[loth.caratula.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -94,11 +102,15 @@ export const POST = withApiHandler("forestal-loth-caratula-post", async (req: Ne
   }
 
   try {
+    const { transformaEnElTh, ...datos } = parsed.data;
     const caratula = await ForestLothDB.createCaratula(auth.tenantId, {
-      ...parsed.data,
+      ...datos,
       createdBy: auth.username ?? "unknown",
     });
-    return NextResponse.json({ caratula }, { status: 201 });
+    if (transformaEnElTh !== undefined) {
+      await ForestLothTransformacionDB.set(auth.tenantId, caratula.id, transformaEnElTh, auth.username ?? "unknown");
+    }
+    return NextResponse.json({ caratula, transformaEnElTh: transformaEnElTh ?? null }, { status: 201 });
   } catch (err) {
     logger.error("[loth.caratula.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -131,9 +143,13 @@ export const PATCH = withApiHandler("forestal-loth-caratula-patch", async (req: 
   }
 
   try {
-    const { id, ...patch } = parsed.data;
-    const caratula = await ForestLothDB.updateCaratula(auth.tenantId, id, patch);
-    return NextResponse.json({ caratula });
+    const { id, transformaEnElTh, ...patch } = parsed.data;
+    const caratula = await ForestLothDB.updateCaratula(auth.tenantId, id, patch, auth.username ?? "unknown");
+    if (transformaEnElTh !== undefined) {
+      await ForestLothTransformacionDB.set(auth.tenantId, caratula.id, transformaEnElTh, auth.username ?? "unknown");
+    }
+    const enElTh = await ForestLothTransformacionDB.get(auth.tenantId, caratula.id);
+    return NextResponse.json({ caratula, transformaEnElTh: enElTh });
   } catch (err) {
     logger.error("[loth.caratula.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

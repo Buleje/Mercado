@@ -41,7 +41,9 @@ export async function POST(
   const session = await requirePartner(req);
   if (session instanceof NextResponse) return session;
 
-  const rl = await applyRateLimit(req, "STRICT", "delivery-deliver-upload");
+  // Por repartidor, no por IP: en datos móviles varios repartidores salen por
+  // la misma IP del operador y se gastaban el cupo entre ellos (17-10).
+  const rl = await applyRateLimit(req, "STRICT", `delivery-deliver-upload:${session.tenantId}:${session.partnerId}`);
   if (rl) return rl;
 
   const rawParams = await params;
@@ -75,7 +77,7 @@ export async function POST(
   }
   if (assignment.status !== "in_transit") {
     return NextResponse.json(
-      { error: `Iniciá la ruta antes de entregar (estado actual: ${assignment.status})` },
+      { error: `Inicia la ruta antes de entregar (estado actual: ${assignment.status})` },
       { status: 409 },
     );
   }
@@ -93,7 +95,7 @@ export async function POST(
   }
   if (!ALLOWED_TYPES.includes(file.type)) {
     return NextResponse.json(
-      { error: `Tipo no permitido: ${file.type}. Usá JPG, PNG, WebP o HEIC.` },
+      { error: `Tipo no permitido: ${file.type}. Usa JPG, PNG, WebP o HEIC.` },
       { status: 400 },
     );
   }

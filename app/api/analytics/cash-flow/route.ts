@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { AnalyticsCashFlowDB } from "@/lib/db/analytics-cash-flow.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay, limaDateKey } from "@/lib/utils";
 
 /**
  * GET /api/analytics/cash-flow
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(startOfLimaDay(now));
     const thirtyDaysAgo = new Date(todayStart);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     // Audit project-wide 2026-05-19: migrado a AnalyticsCashFlowDB (4 fuentes paralelas).
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     // Accumulate sales
     if (sales.status === "fulfilled") {
       for (const sale of sales.value) {
-        const key = sale.createdAt.toISOString().slice(0, 10);
+        const key = limaDateKey(sale.createdAt);
         const day = dailyMap.get(key);
         // TD-018: sale.total es Decimal
         if (day) day.ingresos += toNumOrZero(sale.total);

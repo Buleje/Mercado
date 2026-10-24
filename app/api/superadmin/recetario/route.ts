@@ -39,11 +39,9 @@ export async function GET(req: NextRequest) {
     const search = sp.get("search") ?? undefined;
 
     const recetas = await prisma.receta.findMany({
-      where: {
-        ...(search
-          ? { nombre: { contains: search, mode: "insensitive" as const } }
-          : {}),
-      },
+      where: search
+        ? { nombre: { contains: search, mode: "insensitive" as const } }
+        : {},
       include: {
         tenant: { select: { id: true, name: true, slug: true } },
         ingredientes: {
