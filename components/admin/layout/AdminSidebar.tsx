@@ -734,8 +734,13 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               <BulejeWordmark size={32} textSize={19} forceDark={isDarkTheme} className={isDarkTheme ? "text-white" : undefined} />
             )}
           </button>
-          <BotonCabecera oscuro={isDarkTheme} compacto={effectiveCompact} />
+          <BotonCabecera oscuro={isDarkTheme} />
         </div>
+        {/* Con el encabezado oculto, acá llegan su campana, mensajes y cuenta (portal de AdminTopHeader). */}
+        <div
+          data-hueco-cabecera=""
+          className={cn("flex shrink-0 items-center gap-1 empty:hidden", effectiveCompact ? "flex-col px-1.5 pb-2" : "px-3 pb-2")}
+        />
         {/* Sin buscador acá — Brandon 2026-08-03. El encabezado ya tiene el
             suyo (⌘K / el pill "Buscar módulos, productos, clientes…"), que
             además busca productos, clientes y pedidos, no sólo módulos. Un

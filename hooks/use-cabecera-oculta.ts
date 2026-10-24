@@ -58,11 +58,12 @@ function suscribirMd(avisar: () => void): () => void {
 }
 
 /**
- * La campana va en la barra lateral mientras el encabezado está oculto (Brandon
- * 24-10: «que no se pierdan los avisos»). Una sola campana montada a la vez:
+ * La campana, los mensajes y la cuenta van en la barra lateral mientras el
+ * encabezado está oculto (Brandon 24-10: «que no se pierdan los avisos» y
+ * «mensajes y cuenta en la barra»). Una sola copia montada a la vez: la campana
  * tiene sonido, avisos flotantes y la tecla N, y dos se pisarían.
  */
-export function useCampanaEnBarra(): boolean {
+export function useCabeceraEnBarra(): boolean {
   const oculta = useCabeceraOculta();
   const md = useSyncExternalStore(suscribirMd, desdeMd, () => false);
   return oculta && md;

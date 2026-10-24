@@ -31,11 +31,13 @@ interface AdminMensajesMenuProps {
   /** Mismo caso que NotificationBell: fondo oscuro del header (temas
    *  Buleje/Ejecutivo) que no depende del modo claro/oscuro del sitio. */
   onDarkHeader?: boolean;
+  /** En la barra lateral (encabezado oculto, 24-10): el menú se abre a la derecha. */
+  enBarra?: boolean;
 }
 
 const RUTA_PLATFORM_CHAT = "/api/admin/platform-chat" as const;
 
-export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensajesMenuProps) {
+export default function AdminMensajesMenu({ onDarkHeader = false, enBarra = false }: AdminMensajesMenuProps) {
   const [chatUnread, setChatUnread] = useState(0);
   const [plataformaUnread, setPlataformaUnread] = useState(0);
   // Gate de rol (2026-09-14): platform-chat sólo deja pasar admin/owner/manager
@@ -91,7 +93,8 @@ export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensaje
             // mobile con `max-sm:` sin importar el tema — ver AdminTopHeader).
             // El override a blanco sólo aplica desde `sm:`, donde el fondo
             // oscuro del tema realmente se pinta.
-            "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
+            "relative inline-flex shrink-0 items-center justify-center rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
+            enBarra ? "h-11 w-11" : "h-10 w-10",
             "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)]",
             onDarkHeader && "sm:text-white/60 sm:hover:bg-white/10 sm:hover:text-white",
           )}
@@ -107,7 +110,8 @@ export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensaje
 
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          align="end"
+          side={enBarra ? "right" : "bottom"}
+          align={enBarra ? "start" : "end"}
           sideOffset={8}
           className="z-50 min-w-[16rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-xl)]"
         >

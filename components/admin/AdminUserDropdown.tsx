@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { Settings, CreditCard, UserCircle, LogOut, ChevronDown, Store, ExternalLink } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,8 @@ interface AdminUserDropdownProps {
   tenantLogo?: string | null;
   /** «Ver mi tienda» (salió de la barra del encabezado el 24-10 y vive acá). */
   tenantSlug?: string | null;
+  /** En la barra lateral (encabezado oculto, 24-10): el menú sale a la derecha, por portal (la barra recorta). */
+  enBarra?: boolean;
   /** Encabezado con tema oscuro (Buleje/Ejecutivo): el nombre va en blanco. */
   onDarkHeader?: boolean;
   onNavigate: (tab: string) => void;
@@ -28,10 +31,13 @@ interface AdminUserDropdownProps {
  * rubro del negocio —antes arriba de la barra lateral— y, al abrirlo, la
  * tarjeta del negocio arriba y la cuenta del usuario abajo. Un solo botón.
  */
-export default function AdminUserDropdown({ userName, userRole, tenantName, tenantLogo, tenantSlug, onDarkHeader = false, onNavigate, onLogout }: AdminUserDropdownProps) {
+export default function AdminUserDropdown({ userName, userRole, tenantName, tenantLogo, tenantSlug, onDarkHeader = false, enBarra = false, onNavigate, onLogout }: AdminUserDropdownProps) {
   const [open, setOpen] = useState(false);
   const [verRubro, setVerRubro] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  // En la barra: al lado del botón, fijo (el menú va por portal a <body>).
+  const [enPantalla, setEnPantalla] = useState<{ left: number; top: number } | null>(null);
   // Logo y nombre de Ajustes › Datos del negocio (ADR-514), rubro e ID de soporte (ADR-500).
   const identidad = useIdentidadNegocio({ nombre: tenantName, logoUrl: tenantLogo });
   const puedeCambiarRubro = userRole === "owner" || userRole === "admin";
@@ -39,7 +45,8 @@ export default function AdminUserDropdown({ userName, userRole, tenantName, tena
   // Close on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const dentro = (el: HTMLElement | null) => !!el && el.contains(e.target as Node);
+      if (!dentro(ref.current) && !dentro(menuRef.current)) setOpen(false);
     }
     if (open) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -70,6 +77,84 @@ export default function AdminUserDropdown({ userName, userRole, tenantName, tena
     { id: "plan", label: "Mi plan", icon: CreditCard, color: "text-[var(--text-secondary)]" },
   ];
 
+  const capa = (
+    <AnimatePresence>
+      {open && (
+        <m.div
+          initial={{ opacity: 0, y: -4, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -4, scale: 0.97 }}
+          transition={{ duration: 0.15 }}
+          ref={menuRef}
+          style={enBarra && enPantalla ? { left: enPantalla.left, top: enPantalla.top } : undefined}
+          className={cn(
+            enBarra ? "fixed max-h-[calc(100dvh-1rem)] overflow-y-auto" : "absolute right-0 top-full mt-2 overflow-hidden",
+            "w-72 max-w-[calc(100vw-1.5rem)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl z-100",
+          )}
+        >
+          {/* El negocio arriba: logo, nombre, rubro, RUC e ID de soporte. */}
+          <TarjetaNegocio
+            identidad={identidad}
+            onCambiarRubro={puedeCambiarRubro ? () => { setOpen(false); setVerRubro(true); } : undefined}
+          />
+
+          {/* Debajo, quién está usando el panel. */}
+          <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] px-4 py-3">
+            <div className="h-8 w-8 rounded-full bg-[var(--accent-dark)] flex items-center justify-center shrink-0">
+              <span className="text-white text-xs font-bold">{initials}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--text-primary)] truncate capitalize">{userName}</p>
+              <p className="text-xs text-[var(--text-secondary)] capitalize">{userRole}</p>
+            </div>
+          </div>
+
+          {/* Menu items */}
+          <div className="py-1.5 px-1.5">
+            {MENU_ITEMS.map(item => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => { onNavigate(item.id); setOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 min-h-12 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                >
+                  <Icon className={cn("h-4 w-4 shrink-0", item.color)} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+            {tenantSlug && (
+              <a
+                href={`/t/${tenantSlug}/tienda`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="w-full flex items-center gap-3 px-3 min-h-12 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              >
+                <Store className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" />
+                <span className="flex-1">Ver mi tienda</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" aria-label="Se abre en una pestaña nueva" />
+              </a>
+            )}
+            <BotonSoporte variante="menu" alNavegar={() => setOpen(false)} />
+          </div>
+
+          {/* Logout divider */}
+          <div className="border-t border-[var(--rule-soft)] py-1.5 px-1.5">
+            <button
+              onClick={() => { onLogout(); setOpen(false); }}
+              className="w-full flex items-center gap-3 px-3 min-h-11 rounded-xl text-sm font-medium text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
+        </m.div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <div ref={ref} className="relative">
       {/* Trigger: logo siempre; nombre y rubro sólo si la cabecera tiene ancho (contenido ≥ 56 rem:
@@ -77,7 +162,13 @@ export default function AdminUserDropdown({ userName, userRole, tenantName, tena
       <button
         type="button"
         data-qa="menu-identidad"
-        onClick={() => setOpen(v => !v)}
+        onClick={(e) => {
+          if (enBarra && !open) {
+            const r = e.currentTarget.getBoundingClientRect();
+            setEnPantalla({ left: Math.round(r.right + 8), top: Math.round(r.top) });
+          }
+          setOpen(v => !v);
+        }}
         className={cn(
           "flex h-11 items-center gap-1.5 rounded-xl pl-1 pr-1.5 transition-colors duration-[var(--dur-base)]",
           onDarkHeader ? "max-sm:hover:bg-[var(--surface-sunken)] sm:hover:bg-white/10" : "hover:bg-[var(--surface-sunken)]",
@@ -105,77 +196,8 @@ export default function AdminUserDropdown({ userName, userRole, tenantName, tena
         )} />
       </button>
 
-      {/* Dropdown menu */}
-      <AnimatePresence>
-        {open && (
-          <m.div
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-1.5rem)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden z-100"
-          >
-            {/* El negocio arriba: logo, nombre, rubro, RUC e ID de soporte. */}
-            <TarjetaNegocio
-              identidad={identidad}
-              onCambiarRubro={puedeCambiarRubro ? () => { setOpen(false); setVerRubro(true); } : undefined}
-            />
-
-            {/* Debajo, quién está usando el panel. */}
-            <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] px-4 py-3">
-              <div className="h-8 w-8 rounded-full bg-[var(--accent-dark)] flex items-center justify-center shrink-0">
-                <span className="text-white text-xs font-bold">{initials}</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[var(--text-primary)] truncate capitalize">{userName}</p>
-                <p className="text-xs text-[var(--text-secondary)] capitalize">{userRole}</p>
-              </div>
-            </div>
-
-            {/* Menu items */}
-            <div className="py-1.5 px-1.5">
-              {MENU_ITEMS.map(item => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => { onNavigate(item.id); setOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 min-h-12 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
-                  >
-                    <Icon className={cn("h-4 w-4 shrink-0", item.color)} />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-              {tenantSlug && (
-                <a
-                  href={`/t/${tenantSlug}/tienda`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-3 px-3 min-h-12 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
-                >
-                  <Store className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" />
-                  <span className="flex-1">Ver mi tienda</span>
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" aria-label="Se abre en una pestaña nueva" />
-                </a>
-              )}
-              <BotonSoporte variante="menu" alNavegar={() => setOpen(false)} />
-            </div>
-
-            {/* Logout divider */}
-            <div className="border-t border-[var(--rule-soft)] py-1.5 px-1.5">
-              <button
-                onClick={() => { onLogout(); setOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 min-h-11 rounded-xl text-sm font-medium text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
-              >
-                <LogOut className="h-4 w-4 shrink-0" />
-                <span>Cerrar sesión</span>
-              </button>
-            </div>
-          </m.div>
-        )}
-      </AnimatePresence>
+      {/* En la barra lateral el menú va por portal: la barra recorta lo que sobresale. */}
+      {enBarra ? createPortal(capa, document.body) : capa}
 
       {puedeCambiarRubro && (
         <ModalTipoDeNegocio

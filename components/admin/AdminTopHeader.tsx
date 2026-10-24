@@ -22,6 +22,7 @@
  */
 
 import { memo, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Menu } from "@buleje/design-system/icons";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
@@ -31,7 +32,7 @@ import GlobalSearch from "@/components/admin/GlobalSearch";
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useRegistrarRecientes } from "@/hooks/use-recientes-panel";
-import { useCabeceraOculta, useCampanaEnBarra } from "@/hooks/use-cabecera-oculta";
+import { useCabeceraOculta, useCabeceraEnBarra } from "@/hooks/use-cabecera-oculta";
 import { cn } from "@/lib/utils";
 
 type HeaderThemingEvent = {
@@ -110,8 +111,14 @@ export const AdminTopHeader = memo(function AdminTopHeader({
   useRegistrarRecientes();
   /* Se oculta desde el botón al lado del logo de la barra lateral (sólo desde md). */
   const oculta = useCabeceraOculta();
-  /* Oculto desde md, la campana vive en la barra lateral (una sola montada: sonido, tecla N). */
-  const campanaEnBarra = useCampanaEnBarra();
+  /* Oculto desde md, la campana, los mensajes y la cuenta viven en la barra lateral
+     (`[data-hueco-cabecera]` de AdminSidebar), por portal: una sola copia montada
+     (la campana tiene sonido y la tecla N). */
+  const enBarra = useCabeceraEnBarra();
+  const [hueco, setHueco] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setHueco(enBarra ? document.querySelector<HTMLElement>("[data-hueco-cabecera]") : null);
+  }, [enBarra]);
 
   // Theming reactivo desde el sidebar
   const [theming, setTheming] = useState<HeaderThemingEvent>(readInitialHeaderTheming);
@@ -144,6 +151,22 @@ export const AdminTopHeader = memo(function AdminTopHeader({
         ? "bg-[linear-gradient(180deg,#09090b_0%,#18181b_100%)] border-[color-mix(in_oklab,var(--accent)_25%,transparent)] text-zinc-300"
         : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)]"
     : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]";
+
+  const mensajes = <AdminMensajesMenu onDarkHeader={isAutoDarkTheme} enBarra={enBarra} />;
+  const campana = <NotificationBell onDarkHeader={isAutoDarkTheme} />;
+  const cuenta = (
+    <AdminUserDropdown
+      userName={userName}
+      userRole={userRole}
+      tenantName={activeTenantName}
+      tenantLogo={activeTenantLogo}
+      tenantSlug={tenantSlug}
+      onDarkHeader={isAutoDarkTheme}
+      enBarra={enBarra}
+      onNavigate={onNavigate}
+      onLogout={onLogout}
+    />
+  );
 
   return (
     <header
@@ -199,10 +222,10 @@ export const AdminTopHeader = memo(function AdminTopHeader({
         {/* Chat con clientes + mensajes de la plataforma en UN botón con el
             total sin leer. Eran dos íconos sueltos con badges que competían
             entre sí y llenaban la barra (ADR-132 + Messenger 2026-06-06). */}
-        <AdminMensajesMenu onDarkHeader={isAutoDarkTheme} />
+        {!enBarra && mensajes}
         {/* En todos los anchos (10-10): escondida bajo 44 rem, en el celular
             no había por dónde llegar a las notificaciones. */}
-        {!campanaEnBarra && <NotificationBell onDarkHeader={isAutoDarkTheme} />}
+        {!enBarra && campana}
 
         <AdminOptionsDropdown
           focusMode={focusMode}
@@ -217,16 +240,8 @@ export const AdminTopHeader = memo(function AdminTopHeader({
 
         {/* Brandon 23-10: la marca del negocio salió de la barra lateral y vive acá,
             en el mismo botón que la cuenta (un solo botón, no dos). */}
-        <AdminUserDropdown
-          userName={userName}
-          userRole={userRole}
-          tenantName={activeTenantName}
-          tenantLogo={activeTenantLogo}
-          tenantSlug={tenantSlug}
-          onDarkHeader={isAutoDarkTheme}
-          onNavigate={onNavigate}
-          onLogout={onLogout}
-        />
+        {!enBarra && cuenta}
+        {enBarra && hueco && createPortal(<>{campana}{mensajes}{cuenta}</>, hueco)}
       </div>
     </header>
   );
