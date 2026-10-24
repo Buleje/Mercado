@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import sharp from "sharp";
 
@@ -468,6 +468,13 @@ describe("GET /api/admin/camaras/movimientos", () => {
       },
     };
     H.hik = (ruta) => (ruta.endsWith("/mq/messages") ? { ok: true, valor: LOTE_REAL } : { ok: true, valor: {} });
+    /* El servidor guarda «las últimas 24 h» desde la hora real: con el lote fechado
+       el 23-10 el test venció solo el 24-10 a las 12:26 UTC. Se fija la hora (sólo Date). */
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(T0 + 5 * 60_000);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("sin sesión: 401 (no 404, que sacaría del panel)", async () => {
