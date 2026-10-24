@@ -116,6 +116,8 @@ export interface UseDocumentsResult {
   /** Acciones sobre VARIAS carpetas. Devuelve cuántas cambió el servidor. */
   bulkFolders: (ids: string[], accion: BulkFolderAccion) => Promise<number>;
   deleteFolder: (id: string, opciones?: { conDocumentos?: boolean }) => Promise<void>;
+  /** ADR-516 — marcar (o desmarcar) el código como puesto en el papel físico; devuelve cuántos cambiaron. */
+  marcarCodigoFisico: (ids: string[], puesto: boolean) => Promise<number>;
 }
 
 /** Lo que se le puede pedir a una subida del drive. */
@@ -502,6 +504,27 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     );
   }, [optimista, cambiarLocal]);
 
+  /**
+   * El código anotado en el papel físico (ADR-516): al instante en la lista, y
+   * después lo que dijo el servidor (quién lo marcó). Un id que el servidor no
+   * cambió —sin código, ya marcado— vuelve a como estaba.
+   */
+  const marcarCodigoFisico = useCallback(async (ids: string[], puesto: boolean): Promise<number> => {
+    const conCodigo = new Set(ids);
+    const ahora = new Date().toISOString();
+    const revertir = cambiarLocal((docs) =>
+      docs.map((d) => (conCodigo.has(d.id) && d.codigo != null
+        ? { ...d, codigoFisicoAt: puesto ? d.codigoFisicoAt ?? ahora : null, codigoFisicoPor: puesto ? d.codigoFisicoPor ?? null : null }
+        : d)),
+    );
+    const r = await optimista(() => {}, revertir, () => marcarCodigoFisicoEnServidor(ids, puesto));
+    const cambiados = new Set(r.ids);
+    setDocuments((docs) => docs.map((d) => (cambiados.has(d.id)
+      ? { ...d, codigoFisicoAt: r.codigoFisicoAt, codigoFisicoPor: r.codigoFisicoPor }
+      : d)));
+    return r.ids.length;
+  }, [optimista, cambiarLocal]);
+
   const remove = useCallback(async (id: string) => {
     const revertir = cambiarLocal((docs) => docs.filter((d) => d.id !== id));
     await optimista(() => {}, revertir, () => http(`${BASE}/${id}`, { method: "DELETE" }));
@@ -818,7 +841,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     );
   }, [optimista, cambiarCarpetas, cambiarLocal]);
 
-  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, restoreMany, purgeMany, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder };
+  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, restoreMany, purgeMany, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder, marcarCodigoFisico };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────
@@ -1018,6 +1041,39 @@ export async function patchDocument(
 
 export async function getDocumentDetail(id: string): Promise<{ document: DbDocument; signedUrl: string | null }> {
   return http<{ document: DbDocument; signedUrl: string | null }>(`${BASE}/${id}`);
+}
+
+/** Lo que el servidor dejó tras marcar el código en el físico (ADR-516). */
+export interface CodigoFisicoMarcado {
+  /** Los que de verdad cambiaron: sin código, ya marcados o de otro rol quedan fuera. */
+  ids: string[];
+  codigoFisicoAt: string | null;
+  codigoFisicoPor: string | null;
+}
+
+/**
+ * ADR-516 — «Ya le puse el código al papel físico» (o deshacerlo), en tandas
+ * del tope del servidor. Standalone para la vista previa; el drive usa
+ * `marcarCodigoFisico` del hook, que además cambia la lista a la vista.
+ */
+export async function marcarCodigoFisicoEnServidor(ids: string[], puesto: boolean): Promise<CodigoFisicoMarcado> {
+  const out: CodigoFisicoMarcado = { ids: [], codigoFisicoAt: null, codigoFisicoPor: null };
+  for (const lote of enLotes(ids, IDS_POR_LOTE)) {
+    const r = await http<CodigoFisicoMarcado>(`${BASE}/codigo-fisico`, {
+      method: "PATCH",
+      body: JSON.stringify({ ids: lote, puesto }),
+    });
+    out.ids.push(...r.ids);
+    out.codigoFisicoAt = r.codigoFisicoAt;
+    out.codigoFisicoPor = r.codigoFisicoPor;
+  }
+  return out;
+}
+
+/** Cuántos papeles tienen código sin poner en el físico, y cuántos ya pasaron el plazo del aviso. */
+export async function fetchConteoCodigoPendiente(): Promise<{ pendientes: number; atrasados: number }> {
+  const r = await http<{ codigoPendiente: { pendientes: number; atrasados: number } }>(`${BASE}?conteo=1&codigoPendiente=1`);
+  return r.codigoPendiente;
 }
 
 export async function signDocument(id: string, body: {

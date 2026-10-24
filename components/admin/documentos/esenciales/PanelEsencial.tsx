@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import {
-  ChevronsLeft, ChevronsRight, Download, Eye, FileArchive, FolderOpen, Loader2, Lock, Maximize2, MessageCircle, Palette, ScanLine, Share2, StarOff, Upload, UserPlus, X,
+  ChevronsLeft, ChevronsRight, Download, Eye, FileArchive, FolderOpen, Loader2, Lock, Maximize2, MessageCircle, Palette, ScanLine, Share2, StarOff, Upload, X, Link2,
 } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { button } from "@/components/ui-system/button-variants";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { masAbiertos, type CarpetaEsencial, type UsoDoc } from "@/lib/documentos/esenciales";
-import { esTagDeVinculo, vinculosDeCarpeta, type OrdenDocsTercero } from "@/lib/documentos/terceros-vinculo";
+import { esTagDeVinculo, type OrdenDocsTercero } from "@/lib/documentos/terceros-vinculo";
 import { FolderGlyph } from "../folder-visuals";
 import { formatBytes, getFileIcon } from "../archivo-visual";
 import { tagsVisibles } from "../archivo/compartido";
@@ -82,7 +82,6 @@ export default function PanelEsencial({ e, dentroDe, setDentroDe, orden, setOrde
   const destacados = useMemo(() => masAbiertos(todos, uso, 3), [todos, uso]);
   const acceso = quienLaVe(f.allowedRoles);
   const etiquetas = tagsVisibles(f.tags).filter((t) => !esTagDeVinculo(t));
-  const terceros = vinculosDeCarpeta(f).length;
   const nombreZip = f.name.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "carpeta";
 
   const subir = async (archivos: File[], carpetasSueltas = 0) => {
@@ -246,7 +245,7 @@ export default function PanelEsencial({ e, dentroDe, setDentroDe, orden, setOrde
             { id: "expediente", label: "Armar expediente PDF", hint: "La carpeta en un PDF con carátula e índice", icon: FileArchive, disabled: todos.length === 0, onSelect: () => setExpediente({ tipo: "carpeta", folderId: f.id, nombre: f.name }) },
             { id: "whatsapp", label: "Enviar por WhatsApp", icon: MessageCircle, disabled: todos.length === 0, onSelect: () => setWhatsappDoc(todos) },
             { id: "compartir", label: "Compartir carpeta", icon: Share2, onSelect: () => setSharingFolder(f) },
-            { id: "terceros", label: terceros > 0 ? "Terceros vinculados…" : "Vincular a un tercero…", icon: UserPlus, onSelect: () => setVinculando(f) },
+            { id: "terceros", label: "Vínculos con el sistema…", icon: Link2, onSelect: () => setVinculando(f) },
             { id: "quitar", label: "Quitar de Esenciales", icon: StarOff, onSelect: () => onQuitar(f) },
           ]}
         />

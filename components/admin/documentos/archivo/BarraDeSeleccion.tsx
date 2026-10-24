@@ -1,13 +1,20 @@
 "use client";
 
-import { Star, MoreHorizontal, FileArchive, MessageCircle, Combine, FolderArchive, Tag, Trash2 } from "@buleje/design-system/icons";
+import { Star, MoreHorizontal, FileArchive, MessageCircle, Combine, FolderArchive, Hash, Tag, Trash2, Undo2 } from "@buleje/design-system/icons";
 import { type EstadoDoc, ORDEN_ESTADOS, META_ESTADO } from "@/lib/documents/estados-doc";
+import { button } from "@/components/ui-system/button-variants";
 import type { ModeloArchivo } from "./use-archivo";
+
+/** ADR-516 — los botones del código en el físico, del DS (la barra es turquesa). */
+const BOTON_DE_LA_BARRA = button({ variant: "ghost", size: "xs", className: "gap-1 rounded-lg bg-white/20 px-2.5 text-xs text-white hover:bg-white/30" });
+const OPCION_DEL_MENU = button({ variant: "ghost", size: "md", className: "w-full justify-start gap-2 rounded-none px-3 font-medium" });
+
 export default function BarraDeSeleccion({ arch }: { arch: ModeloArchivo }) {
   const { selectedIds, todosElegidos, setSelectedIds, selectAll, hayFiltroPuesto, displayDocs, bulkFavorite,
     bulkStatus, bulkMoreBtnRef, bulkMoreOpen, setBulkMoreOpen, setBulkMorePos, bulkMorePos, bulkMove,
     allFolderRows, bulkDownloadZip, zipping, documents, setWhatsappDoc, handleMerge, merging, setExpediente,
-    setBulkTagModalOpen, bulkDelete, clearSelection } = arch;
+    setBulkTagModalOpen, bulkDelete, clearSelection, bulkCodigoFisico, filterMode } = arch;
+  const enPapelera = filterMode === "trash";
   return (
     <>
           {/* Bulk bar — `flex-wrap` porque con las acciones de estado ya no
@@ -34,6 +41,18 @@ export default function BarraDeSeleccion({ arch }: { arch: ModeloArchivo }) {
               <button onClick={() => bulkFavorite(true)} className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1">
                 <Star className="h-3 w-3" /> Favorito
               </button>
+              {/* ADR-516 — ya le escribí el código a cada papel físico de la pila. */}
+              {!enPapelera && (
+                <button
+                  type="button"
+                  onClick={() => bulkCodigoFisico(true)}
+                  className={BOTON_DE_LA_BARRA}
+                  title="Ya escribiste su código en cada papel físico"
+                  data-qa="bulk-codigo-fisico"
+                >
+                  <Hash className="h-3 w-3" /> Código puesto
+                </button>
+              )}
 
               {/* Los dos veredictos de todos los días, a un clic. El resto de
                   estados vive en el menú de al lado. */}
@@ -110,6 +129,15 @@ export default function BarraDeSeleccion({ arch }: { arch: ModeloArchivo }) {
                   >
                     <FileArchive className="h-4 w-4 shrink-0" /> {zipping ? "Comprimiendo…" : "Descargar ZIP"}
                   </button>
+                  {!enPapelera && (
+                    <button
+                      type="button"
+                      onClick={() => { setBulkMoreOpen(false); bulkCodigoFisico(false); }}
+                      className={OPCION_DEL_MENU}
+                    >
+                      <Undo2 className="h-4 w-4 shrink-0" /> Volver a «código por poner»
+                    </button>
+                  )}
                   {/* Mandar la selección entera por WhatsApp: un enlace por
                       documento en un solo mensaje. Antes había que abrir la ficha
                       de cada uno y repetir el envío. */}

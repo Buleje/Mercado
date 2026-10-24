@@ -31,6 +31,7 @@ import { esTextoEditable } from "@/lib/documentos/texto-docx";
 import { formatDate } from "@/lib/format";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import UbicacionDoc from "../UbicacionDoc";
+import { CodigoChip } from "../CodigoDocumento";
 
 export type PestanaVisor = "preview" | "texto" | "details" | "versions" | "audit" | "share" | "sign" | "comentarios";
 
@@ -153,6 +154,8 @@ export default function CabeceraVistaPrevia({
               {doc.name}
             </p>
             <div className="mt-0.5 flex min-w-0 items-center gap-2">
+              {/* ADR-516 — el código del papel, a la vista y copiable. */}
+              <CodigoChip doc={doc} />
               {/* Dónde vive el archivo: se ve sin cambiar de pestaña y se mueve
                   desde acá. La grilla deja que el botón trunque su ruta. */}
               <div className="grid min-w-0 grid-cols-[minmax(0,1fr)]">

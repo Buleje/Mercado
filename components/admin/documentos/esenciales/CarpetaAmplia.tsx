@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CardTitle } from "@buleje/design-system";
-import { ChevronDown, ChevronLeft, Download, FileArchive, FolderOpen, MessageCircle, Share2, StarOff, UserPlus } from "@buleje/design-system/icons";
+import { ChevronDown, ChevronLeft, Download, FileArchive, FolderOpen, MessageCircle, Share2, StarOff, Link2 } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { button } from "@/components/ui-system/button-variants";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -12,7 +12,7 @@ import { logger } from "@/lib/logger";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import type { CarpetaEsencial, UsoDoc } from "@/lib/documentos/esenciales";
 import { aplanar, armarArbol, caminoHasta, idsAMover, idsDeLaRama, nodoDe, papelesDeLaVista, textoMovidos } from "@/lib/documentos/arbol-esencial";
-import { ordenarDocsTercero, vinculosDeCarpeta, type OrdenDocsTercero } from "@/lib/documentos/terceros-vinculo";
+import { ordenarDocsTercero, type OrdenDocsTercero } from "@/lib/documentos/terceros-vinculo";
 import { FolderGlyph } from "../folder-visuals";
 import type { ModeloArchivo } from "../archivo/use-archivo";
 import ArbolEsencial from "./ArbolEsencial";
@@ -88,7 +88,6 @@ export default function CarpetaAmplia({ e, arch, uso, ahora, dentroDe, setDentro
     [arbol, vivos, destino.id, incluirSub, q, orden],
   );
   const elegidos = useMemo(() => lista.filter((d) => sel.has(d.id)), [lista, sel]);
-  const terceros = vinculosDeCarpeta(f).length;
   const nombreZip = nombreDeArchivo(f.name);
 
   const irA = (id: string) => {
@@ -152,7 +151,7 @@ export default function CarpetaAmplia({ e, arch, uso, ahora, dentroDe, setDentro
               { id: "expediente", label: "Armar expediente PDF", hint: "La carpeta en un PDF con carátula e índice", icon: FileArchive, disabled: todos.length === 0, onSelect: () => setExpediente({ tipo: "carpeta", folderId: f.id, nombre: f.name }) },
               { id: "whatsapp", label: "Enviar por WhatsApp", icon: MessageCircle, disabled: todos.length === 0, onSelect: () => setWhatsappDoc(todos) },
               { id: "compartir", label: "Compartir carpeta", icon: Share2, onSelect: () => setSharingFolder(f) },
-              { id: "terceros", label: terceros > 0 ? "Terceros vinculados…" : "Vincular a un tercero…", icon: UserPlus, onSelect: () => setVinculando(f) },
+              { id: "terceros", label: "Vínculos con el sistema…", icon: Link2, onSelect: () => setVinculando(f) },
               { id: "quitar", label: "Quitar de Esenciales", icon: StarOff, onSelect: () => onQuitar(f) },
             ]}
           />

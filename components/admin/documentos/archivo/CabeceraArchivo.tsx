@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { precargarArchivo, DE_LA_CABECERA } from "./perezosos";
 import { AccionesDeLaVista, ORDEN_ACCION, TextoDeAccion, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import type { ModeloArchivo } from "./use-archivo";
+import AvisoCodigoPendiente from "./AvisoCodigoPendiente";
 export default function CabeceraArchivo({ arch }: { arch: ModeloArchivo }) {
   const { setFilterMode, filterMode, kpis, setShowCameraScan, setShowTemplates, setImportandoCarpeta,
     setOrdenando, fileInputRef, uploadProgress, handleFiles, scanInputRef, handleScan } = arch;
@@ -102,6 +103,8 @@ export default function CabeceraArchivo({ arch }: { arch: ModeloArchivo }) {
         {/* Los indicadores del drive: el botón va solo a la fila (orden «indicadores»). */}
         {filterMode !== "trash" && kpis.boton}
         <AccionesDeLaVista fueraDelLibro={null}>{escritorio}</AccionesDeLaVista>
+        {/* ADR-516 — «N por poner código»: no se dibuja si estás al día. */}
+        <AccionesDeLaVista fueraDelLibro={null}><AvisoCodigoPendiente arch={arch} /></AccionesDeLaVista>
         <AccionesDeLaVista orden={ORDEN_ACCION.principal} fueraDelLibro={null}>
           <span className="flex items-center gap-2" {...precargar}>
             {menu}
@@ -140,6 +143,7 @@ export default function CabeceraArchivo({ arch }: { arch: ModeloArchivo }) {
         </div>
         <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2" {...precargar}>
           {escritorio}
+          <AvisoCodigoPendiente arch={arch} />
           {filterMode !== "trash" && kpis.boton}
           {menu}
           <button

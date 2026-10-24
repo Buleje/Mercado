@@ -9,6 +9,7 @@ import { tieneDescripcion, ordenarPorRelevancia } from "@/lib/documentos/relevan
 import { cuantosFiltrosActivos, cumpleFiltros } from "@/lib/documentos/filtros-doc";
 import { tipoDeArchivo } from "../explorador/orden-agrupar";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
+import { codigoFisicoPendiente } from "@/lib/documentos/codigo-documento";
 import type { HastaArchivoEstados } from "./use-archivo-estados";
 export function useArchivoLista(previo: HastaArchivoEstados) {
   const { etiquetaFiltro, searchDebounced, semantic, filterMode, activeFolderId, escondeFotos, preview,
@@ -35,6 +36,7 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
             q: filterMode === "terceros" ? undefined : searchDebounced.trim() || undefined,
             favorite: filterMode === "favorites" ? true : undefined,
             expiring: filterMode === "expiring" ? 30 : undefined,
+            codigoPendiente: filterMode === "codigo" ? true : undefined,
             semantic: filterMode !== "terceros" && semantic && !!searchDebounced.trim(),
             deletedOnly: filterMode === "trash" ? true : undefined,
             sinTags: escondeFotos ? [...TAGS_FOTOS_DE_MAQUINA] : undefined,
@@ -45,6 +47,7 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
   const {
     documents, semanticTerms, folders, loading, error, refresh,
     upload, scan, patch, bulk, restore, purge, restoreMany, purgeMany, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder,
+    marcarCodigoFisico,
   } = useDocuments(filters);
   /** `?doc=<id>` abre ese papel y `?q=` pone la búsqueda (buscador del panel). */
   useAbrirDesdeUrl({ documents, loading, preview, setPreview, setBuscar: setSearch });
@@ -122,6 +125,9 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
         return n !== null && (soloVencimiento === "vencidos" ? n < 0 : n >= 0);
       });
     }
+    // ADR-516 — lo trae el servidor ya filtrado; esto saca al instante lo que
+    // se acaba de marcar como puesto, sin esperar la vuelta.
+    if (filterMode === "codigo") list = list.filter(codigoFisicoPendiente);
     if (filterMode === "smart" && activeSmartId) {
       const sf = smartFolders.find((f) => f.id === activeSmartId);
       if (sf) list = list.filter((d) => matchesSmartFolder(d, sf.rules));
@@ -175,6 +181,6 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
   return { filters, documents, semanticTerms, folders, loading, error, refresh, upload, scan, patch, bulk,
     restore, purge, restoreMany, purgeMany, createFolder, createFolderTree, existingNames, moveFolder,
     updateFolder, bulkFolders, deleteFolder, terminosBusqueda, handleScan, hayBusqueda, displayDocs,
-    statusCounts, indexableDocs };
+    statusCounts, indexableDocs, marcarCodigoFisico };
 }
 export type HastaArchivoLista = HastaArchivoEstados & ReturnType<typeof useArchivoLista>;

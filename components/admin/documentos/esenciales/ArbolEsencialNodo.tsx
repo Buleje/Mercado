@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import type { NodoArbol } from "@/lib/documentos/arbol-esencial";
 import { FolderGlyph } from "../folder-visuals";
+import MarcasCarpeta from "../explorador/MarcasCarpeta";
 import { formatBytes } from "../archivo-visual";
 import { papeles } from "./compartido";
 
@@ -83,6 +84,7 @@ export default function ArbolEsencialNodo({ nodo, ctx }: { nodo: Nodo; ctx: CtxA
         </span>
         <FolderGlyph folder={c} active={esElegida || abierto} className="h-5 w-5 shrink-0 text-lg" />
         <span className={cn("min-w-0 flex-1 truncate text-sm", esElegida ? "font-bold" : "font-semibold")}>{c.name}</span>
+        <MarcasCarpeta carpeta={c} sinEsencial />
         <span className={cn("shrink-0 text-xs tabular-nums", esElegida ? "font-bold" : "text-[var(--text-tertiary)]")} data-qa="arbol-cuenta">
           {nodo.docsTotales}
         </span>

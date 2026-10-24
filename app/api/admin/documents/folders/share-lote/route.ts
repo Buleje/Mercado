@@ -17,6 +17,11 @@ import { logger } from "@/lib/logger";
  * Mismos permisos que compartir una carpeta: dueño/admin/encargado; un rol
  * restringido recibe 404 si no ve alguna (no se confirma que exista) y 403 si
  * las ve. Si algo falla a mitad, se cortan los que ya se crearon.
+ *
+ * Todos salen «sin candado» (Brandon 24-10): van a terceros (el QR de la hoja
+ * «Para inspección», el contador), así que nunca sirven un papel restringido,
+ * aunque quien los arme sea el dueño o el admin y sí lo vea
+ * (`esEnlaceSinCandado`). «Compartir carpeta» de a una no cambia.
  */
 const Body = z.object({
   folderIds: z.array(z.string().min(1).max(64)).min(1).max(10),
@@ -59,6 +64,7 @@ export async function POST(req: NextRequest) {
           createdById: auth.username,
           expiresInDays: parsed.data.expiresInDays,
           password: parsed.data.password,
+          sinCandado: true,
         });
         if (!s) throw new Error(`carpeta ${folderId} no encontrada`);
         enlaces.push({ folderId, token: s.token, expiresAt: s.expiresAt });

@@ -13,6 +13,7 @@ import { diasHasta, textoCuando } from "@/lib/documentos/aviso-vencimiento";
 import { folderPath } from "@/lib/documentos/folder-tree";
 import { hrefDe, hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { formatDate } from "@/lib/format";
+import { formatoCodigoDocumento, leerCodigoDocumento } from "@/lib/documentos/codigo-documento";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import type { SearchResult } from "./indice-modulos";
 
@@ -65,9 +66,11 @@ export function papelesComoResultados(
 
   const porId = new Map(carpetas.map((c) => [c.id, c]));
   const palabras = plano(q).split(/\s+/).filter(Boolean);
+  // ADR-516 — «DOC-000123» o «123»: el papel con ese código va primero.
+  const codigo = leerCodigoDocumento(q);
   /* sort() es estable: a igual cantidad de coincidencias queda el orden del servidor. */
   const elegidos = vivos
-    .map((d) => ({ d, n: coincidencias(d.name, palabras) }))
+    .map((d) => ({ d, n: codigo != null && d.codigo === codigo ? Number.MAX_SAFE_INTEGER : coincidencias(d.name, palabras) }))
     .sort((a, b) => b.n - a.n)
     .slice(0, MAX_PAPELES)
     .map(({ d }) => d);
@@ -78,7 +81,7 @@ export function papelesComoResultados(
       id: `papel-${d.id}`,
       type: "papel",
       title: d.name,
-      subtitle: rutaCorta(d.folderId, porId),
+      subtitle: [formatoCodigoDocumento(d.codigo), rutaCorta(d.folderId, porId)].filter(Boolean).join(" · "),
       href: hrefDe("papel", d.id) ?? undefined,
       ...(vence ? { vence } : {}),
     };

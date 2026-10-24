@@ -70,7 +70,7 @@ export interface DepsExplorador {
   personalizar: (f: DbDocumentFolder) => void;
   compartir: (f: DbDocumentFolder) => void;
   armarExpediente?: (f: DbDocumentFolder) => void;
-  /** «Vincular a un tercero…»: la carpeta pasa a verse en la pestaña Terceros (ADR-502, por etiqueta). */
+  /** «Vínculos con el sistema…»: ligada a un tercero, la carpeta pasa a verse en la pestaña Terceros (ADR-502, por etiqueta). */
   vincularTercero?: (f: DbDocumentFolder) => void;
   /** «Llevar a Esenciales»: la carpeta pasa a verse en Documentos › Esenciales (etiqueta `marca:esencial`). */
   alternarEsencial?: (f: DbDocumentFolder) => void;

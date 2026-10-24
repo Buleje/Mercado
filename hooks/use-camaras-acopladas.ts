@@ -13,17 +13,19 @@
 import { useSyncExternalStore } from "react";
 
 const MARCA = "data-mosaico-acoplado";
+/** Marca temporal de Documentos › Esenciales (panel ancho): misma barra compacta, sin tocar la preferencia. */
+const MARCA_PANEL = "data-barra-compacta-temporal";
 
 function suscribir(avisar: () => void) {
   const obs = new MutationObserver(avisar);
-  obs.observe(document.documentElement, { attributes: true, attributeFilter: [MARCA] });
+  obs.observe(document.documentElement, { attributes: true, attributeFilter: [MARCA, MARCA_PANEL] });
   return () => obs.disconnect();
 }
 
 export function useCamarasAcopladas(): boolean {
   return useSyncExternalStore(
     suscribir,
-    () => document.documentElement.hasAttribute(MARCA),
+    () => document.documentElement.hasAttribute(MARCA) || document.documentElement.hasAttribute(MARCA_PANEL),
     () => false,
   );
 }

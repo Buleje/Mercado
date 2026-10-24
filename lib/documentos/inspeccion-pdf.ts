@@ -142,7 +142,7 @@ export async function armarHojaInspeccion(h: HojaInspeccion): Promise<{ bytes: A
     }
     const notas = [
       c.enSubcarpetas > 0 ? `${c.enSubcarpetas} papel${c.enSubcarpetas === 1 ? "" : "es"} más en sus subcarpetas (no van en el enlace).` : null,
-      c.ocultos > 0 ? `${c.ocultos} papel${c.ocultos === 1 ? "" : "es"} con permisos restringidos no se muestra${c.ocultos === 1 ? "" : "n"}.` : null,
+      // Los que tienen candado ni se nombran ni se cuentan: la hoja se la lleva un tercero (24-10).
     ].filter((x): x is string => !!x);
     for (const n of notas) papel.linea(n, { tam: 8, color: PALETA.terciario, alto: 4.5 });
     papel.y += 3;

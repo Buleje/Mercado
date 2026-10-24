@@ -66,6 +66,8 @@ export function qsDeFiltros(f: DocumentListFilters): string {
   if (f.expiring) qs.set("expiring", String(f.expiring));
   if (f.semantic && f.q) qs.set("semantic", "1");
   if (f.deletedOnly) qs.set("deleted", "1");
+  // ADR-516 — vista «Código por poner»: papeles con código sin anotar en el físico.
+  if (f.codigoPendiente) qs.set("codigoPendiente", "1");
   return qs.toString();
 }
 

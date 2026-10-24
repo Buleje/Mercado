@@ -9,6 +9,7 @@ import { SuppliersDB } from "@/lib/db/purchases.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
+import { VinculosCarpetaDB } from "@/lib/db/vinculos-carpeta.db";
 import { logger } from "@/lib/logger";
 import {
   TIPOS_TERCERO, claveVinculo, leerVinculo, nombreDeOtro, vinculosDeCarpeta,
@@ -22,7 +23,9 @@ import {
  * - Sin `buscar`: `{ nombres, uso }`. `nombres` = el nombre de cada tercero
  *   vinculado a una carpeta que el rol ve (la etiqueta guarda sólo el id).
  *   `uso` = aperturas de los últimos 90 días por carpeta («lo más usado»).
- * - Con `buscar` (+ `tipo`): candidatos para «Vincular a un tercero…». Sólo
+ *   Cada nombre trae su `alias` si el negocio le puso uno («Vínculos con el
+ *   sistema…»). `solo=nombres` no calcula `uso` (las marcas del árbol).
+ * - Con `buscar` (+ `tipo`): candidatos para «Vínculos con el sistema…». Sólo
  *   dueño/admin: son los que pueden etiquetar carpetas (`folders/bulk`).
  *
  * Vincular y desvincular NO pasan por acá: son etiquetas de la carpeta y van
@@ -32,6 +35,7 @@ import {
 const Query = z.object({
   buscar: z.string().trim().max(80).optional(),
   tipo: z.enum(TIPOS_TERCERO).optional(),
+  solo: z.literal("nombres").optional(),
 });
 
 const TOPE_NOMBRES = 150;
@@ -117,11 +121,11 @@ export async function GET(req: NextRequest) {
     if (csrfFail) return csrfFail;
 
     const sp = req.nextUrl.searchParams;
-    const parsed = Query.safeParse({ buscar: sp.get("buscar") ?? undefined, tipo: sp.get("tipo") ?? undefined });
+    const parsed = Query.safeParse({ buscar: sp.get("buscar") ?? undefined, tipo: sp.get("tipo") ?? undefined, solo: sp.get("solo") ?? undefined });
     if (!parsed.success) {
       return NextResponse.json({ error: "invalid_query", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
     }
-    const { buscar, tipo } = parsed.data;
+    const { buscar, tipo, solo } = parsed.data;
 
     if (buscar !== undefined) {
       const auth = await requireAdmin(req, ["admin", "owner"]);
@@ -135,9 +139,10 @@ export async function GET(req: NextRequest) {
     // Sólo las carpetas que el rol ve: de una carpeta escondida no se dice ni a quién está vinculada.
     const [carpetas, uso] = await Promise.all([
       DocumentsDB.listFolders(auth.tenantId, auth.role),
-      DocumentsDB.vistasPorCarpeta(auth.tenantId, 90, auth.role),
+      solo === "nombres" ? Promise.resolve({}) : DocumentsDB.vistasPorCarpeta(auth.tenantId, 90, auth.role),
     ]);
     const claves = [...new Set(carpetas.flatMap((c) => vinculosDeCarpeta(c)))].slice(0, TOPE_NOMBRES);
+    const alias = await VinculosCarpetaDB.aliasDe(auth.tenantId, claves);
     // DNI, RUC o teléfono sólo para quien gestiona: el cajero ve la carpeta, no el documento del colaborador.
     const veDetalle = ROLES_VEN_DETALLE.has(auth.role);
     const leerUno = async (clave: string) => {
@@ -145,7 +150,10 @@ export async function GET(req: NextRequest) {
       if (!v) return null;
       try {
         const n = await nombreDe(auth.tenantId, v.tipo, v.id);
-        return n ? ([clave, veDetalle ? n : { ...n, detalle: null }] as const) : null;
+        // Sin ficha pero con alias: el negocio igual lo reconoce por su nombre.
+        if (!n) return alias[clave] ? ([clave, { nombre: "", detalle: null, alias: alias[clave] }] as const) : null;
+        const conAlias: NombreTercero = { ...n, alias: alias[clave] ?? null };
+        return [clave, veDetalle ? conAlias : { ...conAlias, detalle: null }] as const;
       } catch (err) {
         // Un tercero que no carga no tumba la pestaña: sale «sin ficha».
         logger.warn("[documents.terceros] no pude leer un nombre", { clave, err: String(err) });

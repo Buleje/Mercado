@@ -35,8 +35,13 @@ vi.mock("@/lib/prisma", () => ({
 const haceHoras = (h: number) => new Date(Date.now() - h * 60 * 60 * 1000);
 
 import { NotificationCenterDB, filtroVisible, visibilidadDeRol } from "@/lib/db/notification-center.db";
+import { TIPO_AVISO_PAGO_SABADO as PAGO } from "@/lib/rrhh/pago-semana";
 import { TIPOS_AVISO_PLAN } from "@/lib/planificacion/avisos";
 import { TIPO_AVISO_ESENCIALES } from "@/lib/documentos/esenciales-avisos";
+import { TIPO_AVISO_CODIGO_FISICO } from "@/lib/documentos/codigo-fisico-avisos";
+
+/** Los tipos que sólo ve la gestión (plan, esenciales, código físico del papel). */
+const GESTION = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, TIPO_AVISO_CODIGO_FISICO];
 
 describe("NotificationCenterDB.create", () => {
   beforeEach(() => {
@@ -190,16 +195,20 @@ describe("campana por rol: los avisos de Cámaras sólo para quien ve las fotos 
     expect(filtroVisible("t1", visibilidadDeRol("cashier"))).toEqual({
       tenantId: "t1",
       severity: { not: "HIGH" },
-      type: { notIn: [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, "camaras"] },
+      type: { notIn: [...GESTION, "camaras", PAGO] },
     });
     expect(filtroVisible("t1", visibilidadDeRol("almacenero"))).toEqual({
       tenantId: "t1",
       severity: { not: "HIGH" },
-      type: { notIn: [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES] },
+      type: { notIn: [...GESTION, PAGO] },
     });
-    for (const rol of ["admin", "owner", "manager"]) expect(filtroVisible("t1", visibilidadDeRol(rol))).toEqual({ tenantId: "t1" });
-    /* Sin rol y sin ser gestión: lo más cerrado (tampoco Cámaras). */
-    expect(filtroVisible("t1", { canSeeHigh: false }).type).toEqual({ notIn: [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, "camaras"] });
+    for (const rol of ["admin", "owner"]) expect(filtroVisible("t1", visibilidadDeRol(rol))).toEqual({ tenantId: "t1" });
+    /* El pago del sábado lleva el sueldo: el encargado no lo ve (ADR-414 §7), sí lo demás. */
+    expect(filtroVisible("t1", visibilidadDeRol("manager"))).toEqual({ tenantId: "t1", type: { notIn: [PAGO] } });
+    /* Sin rol y sin ser gestión: lo más cerrado (tampoco Cámaras ni el pago). */
+    expect(filtroVisible("t1", { canSeeHigh: false }).type).toEqual({ notIn: [...GESTION, "camaras", PAGO] });
+    /* Gestión sin rol: ve lo de gestión, pero no el pago. */
+    expect(filtroVisible("t1", { canSeeHigh: true }).type).toEqual({ notIn: [PAGO] });
   });
 
   it("listar y contar usan el mismo filtro del rol", async () => {
@@ -218,7 +227,7 @@ describe("campana por rol: los avisos de Cámaras sólo para quien ve las fotos 
     expect(mockUpdateMany.mock.calls[1][0].where).toEqual({
       tenantId: "t1",
       severity: { not: "HIGH" },
-      type: { notIn: [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, "camaras"] },
+      type: { notIn: [...GESTION, "camaras", PAGO] },
       readAt: null,
     });
   });

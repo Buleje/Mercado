@@ -23,6 +23,8 @@ import {
   Combine,
   MessageCircle,
   CalendarClock,
+  ScanText,
+  Hash,
 } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentAuditLog, DocAction } from "@/lib/types/documents";
 import { fmtDate } from "./shared";
@@ -91,6 +93,8 @@ const ACTION_META: Record<DocAction, ActionMeta> = {
   link:          { label: "Vinculado",       Icon: Link2,     color: "var(--data-info-500)" },
   merge:         { label: "Combinado",       Icon: Combine,   color: "var(--accent)" },
   whatsapp_send: { label: "Enviado por WhatsApp", Icon: MessageCircle, color: "var(--data-success-500)" },
+  read_text:     { label: "Texto leído",     Icon: ScanText,  color: "var(--text-tertiary)" },
+  codigo_fisico: { label: "Código en el físico", Icon: Hash, color: "var(--data-warning-500)" },
 };
 
 function getMeta(action: DocAction): ActionMeta {

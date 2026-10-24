@@ -1,7 +1,7 @@
 "use client";
 
 import { DataTable } from "@buleje/design-system";
-import { Folder, FolderOpen, FileArchive, Share2, UserPlus } from "@buleje/design-system/icons";
+import { Folder, FolderOpen, FileArchive, Share2, Link2 } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
@@ -55,7 +55,7 @@ export default function PapelesDeCarpeta({ grupo, arch, miniaturas }: {
             { id: "abrir", label: "Abrir en el Archivo", icon: FolderOpen, onSelect: () => abrirCarpetaExp(carpeta.id) },
             { id: "compartir", label: "Compartir carpeta", icon: Share2, onSelect: () => setSharingFolder(carpeta) },
             { id: "expediente", label: "Armar expediente PDF", icon: FileArchive, onSelect: () => setExpediente({ tipo: "carpeta", folderId: carpeta.id, nombre: carpeta.name }) },
-            { id: "vinculos", label: "Terceros vinculados…", icon: UserPlus, onSelect: () => setVinculando(carpeta) },
+            { id: "vinculos", label: "Vínculos con el sistema…", icon: Link2, onSelect: () => setVinculando(carpeta) },
           ]}
         />
       </div>

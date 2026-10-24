@@ -7,6 +7,7 @@ import { mensajeDeError, type BuiltinCategory } from "./compartido";
 import { repartirVencimientos } from "@/lib/documentos/vencimientos-aviso";
 import { cuentaEnlacesGuardada, guardarCuentaEnlaces } from "@/lib/documentos/cache-lista-cliente";
 import type { HastaArchivoLista } from "./use-archivo-lista";
+import { useConteoCodigoPendiente } from "./use-codigo-pendiente";
 export function useArchivoIndice(previo: HastaArchivoLista) {
   const { documents, setAvisoIA, refresh, indexableDocs, progresoDesc, setProgresoDesc, loading, otrosAbierto } = previo;
   // RE-indexar (que los viejos ganen la descripción rica nueva).
@@ -116,6 +117,9 @@ export function useArchivoIndice(previo: HastaArchivoLista) {
       .then((links) => { guardarCuentaEnlaces(links.length); setEnlacesCount(links.length); })
       .catch((err) => { console.warn("[documentos] no pude contar los enlaces compartidos", err); setEnlacesCount(null); });
   }, [otrosAbierto]);
+  // ADR-516 — cuántos papeles tienen el código sin anotar en el físico (todo el Archivo).
+  const conteoCodigo = useConteoCodigoPendiente(documents);
+  const hayCodigoPendiente = (conteoCodigo?.pendientes ?? 0) > 0;
   const vistaConDatos = useMemo(() => ({
     all: true,
     // Siempre a la vista: vacía explica cómo vincular una carpeta (clic derecho).
@@ -125,18 +129,19 @@ export function useArchivoIndice(previo: HastaArchivoLista) {
     favorites: favCount > 0,
     recent: documents.length > 0,
     expiring: expiringSoonCount > 0,
+    codigo: hayCodigoPendiente,
     calendar: anyExpiryCount > 0,
     activity: documents.length > 0,
     enlaces: enlacesCount === null || enlacesCount > 0,
     duplicados: hayDuplicados,
     sync: true,
     trash: true,
-  }) as Record<BuiltinCategory["id"], boolean>, [documents.length, favCount, expiringSoonCount, anyExpiryCount, enlacesCount, hayDuplicados]);
+  }) as Record<BuiltinCategory["id"], boolean>, [documents.length, favCount, expiringSoonCount, anyExpiryCount, enlacesCount, hayDuplicados, hayCodigoPendiente]);
   const shownDocCount = loading && documents.length === 0 ? lastDocCount.current : documents.length;
 
   // ── Árbol de carpetas (subcarpetas anidadas) ──
   return { reindexableDocs, runIndex, handleIndexAll, describirFaltantes, handleReindexAll, totalSize,
     favCount, repartidos, vencidosDocs, expiringDocs, expiringSoonCount, lastDocCount, anyExpiryCount,
-    hayDuplicados, enlacesCount, setEnlacesCount, vistaConDatos, shownDocCount };
+    hayDuplicados, enlacesCount, setEnlacesCount, vistaConDatos, shownDocCount, conteoCodigo };
 }
 export type HastaArchivoIndice = HastaArchivoLista & ReturnType<typeof useArchivoIndice>;

@@ -121,6 +121,14 @@
       "schedule": "20 9 * * *"
     },
     {
+      "path": "/api/cron/documentos-codigo-avisos",
+      "schedule": "25 9 * * *"
+    },
+    {
+      "path": "/api/cron/rrhh-pago-sabado",
+      "schedule": "0 13 * * 0,6"
+    },
+    {
       "path": "/api/cron/documentos-indexar",
       "schedule": "40 3 * * *"
     },

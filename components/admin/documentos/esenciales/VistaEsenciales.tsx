@@ -22,6 +22,7 @@ import IconoCarpetaModal from "./IconoCarpetaModal";
 import PanelEsencial from "./PanelEsencial";
 import LadoEsencial from "./LadoEsencial";
 import { useAnchoPanelEsencial } from "./use-ancho-panel-esencial";
+import { useBarraCompactaConPanelAncho } from "./use-barra-compacta-con-panel-ancho";
 import ElegirCarpetasModal from "./ElegirCarpetasModal";
 import { marcarEsenciales } from "./marcar-esencial";
 import CabeceraEsenciales from "./CabeceraEsenciales";
@@ -92,6 +93,7 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
   const acoplado = !!lateral && anchoSeccion >= ANCHO_CON_COLUMNA;
   const conPanel = acoplado || (lateral === undefined && ancho >= ANCHO_CON_PANEL);
   const medida = useAnchoPanelEsencial(anchoSeccion);
+  useBarraCompactaConPanelAncho(medida.amplio, acoplado && !!elegidaId, anchoSeccion);
 
   const setElegida = useCallback((id: string | null) => {
     setElegidaEstado(id);
@@ -279,7 +281,7 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
         </LadoEsencial>
       )}
 
-      {compartiendo && <CompartirEsencialesModal carpetas={todas.map((e) => e.carpeta)} onClose={() => setCompartiendo(false)} />}
+      {compartiendo && <CompartirEsencialesModal carpetas={todas.map((e) => e.carpeta)} todas={folders} onClose={() => setCompartiendo(false)} />}
       {iconoDe && <IconoCarpetaModal folder={iconoDe} updateFolder={updateFolder} bulkFolders={bulkFolders} onClose={() => setIconoDe(null)} />}
       {escaneandoEn && <EscanerModal folderId={escaneandoEn.id} onClose={() => setEscaneandoEn(null)} onDone={() => void refresh()} />}
       {eligiendo && <ElegirCarpetasModal carpetas={folders} onGuardar={guardarElegidas} onClose={() => setEligiendo(false)} />}

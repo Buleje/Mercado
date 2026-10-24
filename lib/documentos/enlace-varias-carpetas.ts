@@ -8,8 +8,27 @@
  * solo, así que no se publica nada que cada enlace no publique ya por separado.
  */
 
-/** Formato exacto de un token de carpeta: `randomBytes(24).toString("hex")`. */
-export const TOKEN_ENLACE_CARPETA = /^[0-9a-f]{48}$/;
+/**
+ * Marca «sin candado» de un enlace de carpeta (Brandon 24-10, «QR sin papeles
+ * con candado»): va en el propio token, sin schema. Un enlace con la marca
+ * NUNCA sirve un papel restringido (por sí o por su cadena de carpetas), lo
+ * haya armado quien lo haya armado — el dueño y el admin los ven, así que la
+ * regla de siempre (`enlaceSigueSirviendo`) se los abría al tercero del QR.
+ * Lo ponen todos los enlaces de varias carpetas (`folders/share-lote`: hoja
+ * «Para inspección» y «Compartir» de Esenciales); «Compartir carpeta» de a
+ * una sigue sin ella. No se puede quitar ni poner desde afuera: el token se
+ * busca exacto, así que sin el prefijo es otro enlace (que no existe).
+ * `s` no es hexadecimal: un token de siempre nunca empieza así.
+ */
+export const PREFIJO_SIN_CANDADO = "sc";
+
+/** Formato exacto de un token de carpeta: `randomBytes(24).toString("hex")`, con o sin la marca «sin candado». */
+export const TOKEN_ENLACE_CARPETA = /^(?:sc)?[0-9a-f]{48}$/;
+
+/** ¿Este enlace de carpeta deja afuera todo lo que tiene candado? */
+export function esEnlaceSinCandado(token: string): boolean {
+  return token.startsWith(PREFIJO_SIN_CANDADO);
+}
 
 /** Tope de carpetas en un enlace (el de la ruta + 9 en `?mas=`). */
 export const MAX_CARPETAS_POR_ENLACE = 10;
@@ -21,7 +40,7 @@ export const MAX_CARPETAS_POR_ENLACE = 10;
  */
 export function leerTokensMas(mas: string | string[] | undefined, principal: string): string[] {
   const crudo = Array.isArray(mas) ? mas.join(",") : (mas ?? "");
-  // 9 tokens de 48 + comas = 440 caracteres: lo que pase de 1.000 no es un enlace nuestro.
+  // 9 tokens de 50 + comas = 458 caracteres: lo que pase de 1.000 no es un enlace nuestro.
   if (!crudo || crudo.length > 1000) return [];
   const vistos = new Set<string>([principal]);
   const extras: string[] = [];

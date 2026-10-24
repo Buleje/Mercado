@@ -2,7 +2,9 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { TIPOS_AVISO_PLAN } from "@/lib/planificacion/avisos";
 import { TIPO_AVISO_ESENCIALES } from "@/lib/documentos/esenciales-avisos";
+import { TIPO_AVISO_CODIGO_FISICO } from "@/lib/documentos/codigo-fisico-avisos";
 import { ROLES_VEN_CAMARAS, TIPO_AVISO_CAMARAS } from "@/lib/camaras/avisar-push";
+import { TIPO_AVISO_PAGO_SABADO } from "@/lib/rrhh/pago-semana";
 
 /**
  * NotificationCenterDB
@@ -18,7 +20,8 @@ import { ROLES_VEN_CAMARAS, TIPO_AVISO_CAMARAS } from "@/lib/camaras/avisar-push
  * Qué parte de la campana ve quien pide: la gestión ve todo; el resto, sin HIGH
  * ni los tipos de gestión, y los avisos de Cámaras sólo si su rol ve las fotos
  * (`ROLES_VEN_CAMARAS`: el cajero no, revisión 23-10). Sin `rol`, lo más
- * cerrado para quien no es gestión (tampoco ve Cámaras).
+ * cerrado para quien no es gestión (tampoco ve Cámaras). El pago del sábado de
+ * RRHH, sólo admin y dueño (`ROLES_VEN_PAGO_PERSONAL`).
  */
 export interface VisibilidadCampana {
   canSeeHigh: boolean;
@@ -76,7 +79,14 @@ export interface ResultadoSincronizar {
  * cajero no le sirven. `Notification` no tiene destinatario por rol (ver el
  * TODO de `/api/notification-center`), así que el filtro va por `type`.
  */
-const TIPOS_SOLO_GESTION: readonly string[] = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES];
+const TIPOS_SOLO_GESTION: readonly string[] = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, TIPO_AVISO_CODIGO_FISICO];
+
+/**
+ * El aviso del pago del sábado lleva la plata del sueldo (neto y adelantos a
+ * descontar): sólo admin y dueño, como lo ganado en RRHH (ADR-414 §7: el
+ * encargado no ve tarifas ni ganado). Sin `rol`, no lo ve nadie.
+ */
+const ROLES_VEN_PAGO_PERSONAL: readonly string[] = ["admin", "owner"];
 
 /** Los roles que ven HIGH y los tipos de gestión. */
 const ROLES_VEN_HIGH: readonly string[] = ["admin", "owner", "manager"];
@@ -91,6 +101,7 @@ export function filtroVisible(tenantId: string, v: VisibilidadCampana): Record<s
   const ocultos: string[] = v.canSeeHigh ? [] : [...TIPOS_SOLO_GESTION];
   const veCamaras = v.rol !== undefined ? ROLES_VEN_CAMARAS.includes(v.rol) : v.canSeeHigh;
   if (!veCamaras) ocultos.push(TIPO_AVISO_CAMARAS);
+  if (!(v.rol !== undefined && ROLES_VEN_PAGO_PERSONAL.includes(v.rol))) ocultos.push(TIPO_AVISO_PAGO_SABADO);
   const where: Record<string, unknown> = { tenantId };
   if (!v.canSeeHigh) where.severity = { not: "HIGH" };
   if (ocultos.length > 0) where.type = { notIn: ocultos };

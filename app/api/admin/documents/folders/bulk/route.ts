@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { VinculosCarpetaDB } from "@/lib/db/vinculos-carpeta.db";
 import { logger } from "@/lib/logger";
 import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
 import { FOLDER_ICON_KEYS } from "@/lib/documentos/folder-icon-keys";
@@ -93,9 +94,12 @@ export async function POST(req: NextRequest) {
     // Borrar es el único caso que además toca documentos: se resuelve aparte
     // para poder decir en la respuesta cuántos se fueron a la papelera.
     if (d.action === "delete") {
-      const { carpetas, documentos } = await DocumentsDB.eliminarCarpetas(auth.tenantId, d.ids, {
-        conDocumentos: d.conDocumentos,
-      });
+      // Sólo las que el rol puede borrar (el encargado no ve lo que tiene candado de dueño).
+      const ids = await DocumentsDB.carpetasQuePuedeTocar(auth.tenantId, d.ids, auth.role, "borrar");
+      const { carpetas, documentos } = ids.length > 0
+        // Con el rol: sin él no se filtran los papeles con candado de adentro (seguridad 24-10).
+        ? await DocumentsDB.eliminarCarpetas(auth.tenantId, ids, { conDocumentos: d.conDocumentos, viewerRole: auth.role })
+        : { carpetas: 0, documentos: 0 };
       logger.info("[documents.folders.bulk] ok", {
         tenantId: auth.tenantId,
         action: d.action,
@@ -107,7 +111,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, count: carpetas, documentos });
     }
 
-    const count = await DocumentsDB.bulkFolders(
+    // Con el rol: el encargado sólo toca las carpetas que ve por toda la cadena (24-10).
+    const { count, tocadas } = await DocumentsDB.bulkFoldersConDetalle(
       auth.tenantId,
       d.ids,
       d.action === "emoji"
@@ -121,7 +126,12 @@ export async function POST(req: NextRequest) {
             : d.action === "removeTags"
               ? { tipo: "removeTags", tags: d.tags }
               : { tipo: "delete" },
+      auth.role,
     );
+    // Quién ligó o quitó un vínculo con el sistema y cuándo (lo lee «Vínculos con el sistema…»).
+    if (d.action === "addTags" || d.action === "removeTags") {
+      await VinculosCarpetaDB.registrar(auth.tenantId, { carpetaIds: tocadas, accion: d.action, tags: d.tags, user: auth.username });
+    }
 
     logger.info("[documents.folders.bulk] ok", {
       tenantId: auth.tenantId,

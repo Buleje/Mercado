@@ -11,6 +11,8 @@
  * Sin dependencias de React ni de red: es lógica pura y por eso se testea.
  */
 
+import { formatoCodigoDocumento, leerCodigoDocumento } from "./codigo-documento";
+
 /** Lo mínimo que necesita saber esta lógica de un documento. */
 export interface DocBuscable {
   name: string;
@@ -21,9 +23,11 @@ export interface DocBuscable {
   ocrMetadata?: Record<string, unknown> | null;
   favorite?: boolean;
   uploadedAt?: string;
+  /** ADR-516 — correlativo del negocio: buscar «DOC-000123» lo pone primero. */
+  codigo?: number | null;
 }
 
-export type CampoCoincidencia = "nombre" | "propia" | "descripcion" | "datos" | "etiqueta" | "contenido";
+export type CampoCoincidencia = "codigo" | "nombre" | "propia" | "descripcion" | "datos" | "etiqueta" | "contenido";
 
 export interface Fragmento {
   antes: string;
@@ -41,6 +45,7 @@ export interface Coincidencia {
  *  del documento es el más débil porque una palabra suelta en la página 8 casi
  *  nunca es lo que la persona buscaba. */
 const PESO: Record<CampoCoincidencia, number> = {
+  codigo: 100,
   nombre: 10,
   propia: 8,
   descripcion: 6,
@@ -50,6 +55,7 @@ const PESO: Record<CampoCoincidencia, number> = {
 };
 
 export const ETIQUETA_CAMPO: Record<CampoCoincidencia, string> = {
+  codigo: "Por su código",
   nombre: "En el nombre",
   propia: "En tu descripción",
   descripcion: "En la descripción",
@@ -170,6 +176,15 @@ function camposDe(doc: DocBuscable): { campo: CampoCoincidencia; texto: string }
  * aparece suma, así el que trae más términos sube.
  */
 export function coincidenciaDe(doc: DocBuscable, terminos: string[]): Coincidencia | null {
+  // El código entero («DOC-000123», «doc 123», «7») gana a todo: es único. Va
+  // antes del filtro de largo: un código de una cifra también se busca.
+  if (doc.codigo != null) {
+    const pedido = [terminos.join(" "), ...terminos].map((t) => leerCodigoDocumento(t)).find((n) => n != null);
+    if (pedido === doc.codigo) {
+      const match = formatoCodigoDocumento(doc.codigo) ?? String(doc.codigo);
+      return { campo: "codigo", fragmento: { antes: "", match, despues: "" }, puntaje: PESO.codigo };
+    }
+  }
   const utiles = terminos.map((t) => t.trim()).filter((t) => t.length >= 2);
   if (utiles.length === 0) return null;
 

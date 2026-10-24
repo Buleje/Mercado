@@ -16,6 +16,7 @@ import { tipoDeArchivo } from "../explorador/orden-agrupar";
 import { fechaLarga } from "../explorador/propiedades-explorador";
 import { haceCuanto, quienLaVe, veces } from "./compartido";
 import LoQueDicePapel from "./LoQueDicePapel";
+import { CodigoFisicoControl } from "../CodigoDocumento";
 
 /** Los que suben sin ser una persona del panel (el `uploadedById` es su nombre). */
 const QUIEN_SUBE: Record<string, string> = { "sync-escritorio": "La carpeta de tu PC (sincronizada)" };
@@ -101,6 +102,9 @@ export default function DetallePapelEsencial({ doc, donde, uso, ahora, arch, onA
         </button>
         {menuDe(doc)}
       </div>
+
+      {/* ADR-516 — su código único y si ya se anotó en el papel físico. */}
+      <CodigoFisicoControl doc={doc} onMarcar={(puesto) => arch.marcarCodigoFisico([doc.id], puesto)} />
 
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 rounded-xl bg-[var(--surface-sunken)] p-3 text-sm">
         {datos.map(([k, v]) => (

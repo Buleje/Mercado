@@ -19,9 +19,11 @@ import { Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { formatBytes } from "../archivo-visual";
+import { codigoFisicoPendiente, formatoCodigoDocumento } from "@/lib/documentos/codigo-documento";
 import { arrastreActual, escribirCarga, fijarArrastre, hayCargaInterna, leerCarga, type CargaArrastre } from "./destino-soltar";
 import IconoArchivo from "./IconoArchivo";
 import IconoCarpeta from "./IconoCarpeta";
+import MarcasCarpeta from "./MarcasCarpeta";
 import { usePulsacionLarga } from "./use-pulsacion-larga";
 import type { PuntoDeMenu } from "./ubicar-menu";
 import type { Mods } from "./use-seleccion-explorador";
@@ -63,7 +65,12 @@ export default function ElementoExplorador({
   const esCarpeta = objeto.tipo === "carpeta";
   const nombre = esCarpeta ? objeto.carpeta.name : objeto.doc.name;
   const n = esCarpeta ? objeto.carpeta.documentCount ?? 0 : 0;
-  const meta = esCarpeta ? `${n} ${n === 1 ? "archivo" : "archivos"}` : formatBytes(objeto.doc.size);
+  // ADR-516 — el código del papel: en la lista, al lado del nombre; en íconos grandes, en la meta.
+  const codigo = esCarpeta ? null : formatoCodigoDocumento(objeto.doc.codigo);
+  const codigoPendiente = !esCarpeta && codigoFisicoPendiente(objeto.doc);
+  const meta = esCarpeta
+    ? `${n} ${n === 1 ? "archivo" : "archivos"}`
+    : codigo ? `${codigo} · ${formatBytes(objeto.doc.size)}` : formatBytes(objeto.doc.size);
 
   const origen = conMouse
     ? {
@@ -111,7 +118,7 @@ export default function ElementoExplorador({
       data-clave={clave}
       data-qa={esCarpeta ? "explorador-carpeta" : "explorador-archivo"}
       data-cortado={cortado || undefined}
-      title={nombre}
+      title={codigo ? `${nombre} · ${codigo}${codigoPendiente ? " (falta anotarlo en el físico)" : ""}` : nombre}
       {...pulsacion.handlers}
       {...origen}
       {...destino}
@@ -152,6 +159,13 @@ export default function ElementoExplorador({
           {!esCarpeta && objeto.doc.favorite && (
             <Star className="absolute right-0 top-0 h-4 w-4 fill-yellow-400 text-yellow-500" aria-label="Favorito" />
           )}
+          {/* Sobre el ícono, no al lado del nombre: el nombre sigue con sus 3 líneas. */}
+          {esCarpeta && (
+            <MarcasCarpeta
+              carpeta={objeto.carpeta}
+              className="absolute bottom-0 right-0 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 py-0.5"
+            />
+          )}
         </span>
       )}
       <span
@@ -163,6 +177,19 @@ export default function ElementoExplorador({
       >
         {nombre}
       </span>
+      {lista && esCarpeta && <MarcasCarpeta carpeta={objeto.carpeta} />}
+      {lista && codigo && (
+        <span
+          data-qa="codigo-doc"
+          data-pendiente={codigoPendiente || undefined}
+          className={cn(
+            "shrink-0 font-mono text-xs font-bold tabular-nums",
+            codigoPendiente ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]",
+          )}
+        >
+          {codigo}
+        </span>
+      )}
       {vista === "grandes" && <span className="text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>}
     </div>
   );

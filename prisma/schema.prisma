@@ -5440,17 +5440,36 @@ model Document {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
+  /// ADR-516 — código correlativo por negocio (se muestra `DOC-000123`). Lo pone
+  /// el trigger `documento_asignar_codigo` al insertar, desde
+  /// `DocumentCodigoContador`: nunca se repite ni se reutiliza (borrar no lo
+  /// devuelve). NULL = foto de máquina o negocio aún sin relleno.
+  codigo          Int?
+  /// Cuándo y quién marcó «ya puse el código en el papel físico».
+  codigoFisicoAt  DateTime?
+  codigoFisicoPor String?
+
   folder    DocumentFolder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
   versions  DocumentVersion[]
   shares    DocumentShare[]
   auditLogs DocumentAuditLog[]
 
+  @@unique([tenantId, codigo])
   @@index([tenantId, folderId, deletedAt])
   @@index([tenantId, category])
   @@index([tenantId, favorite])
   @@index([tenantId, uploadedAt])
   @@index([tenantId, expiresAt]) // ADR-119 — query "por vencer"
   @@index([tenantId, status])
+}
+
+/// ADR-516 — último código de documento entregado por negocio. Sólo sube
+/// (`ultimo + 1` dentro del INSERT del documento, vía trigger): así un código
+/// borrado nunca vuelve a salir. Sin FK a Tenant, igual que `Document.tenantId`.
+model DocumentCodigoContador {
+  tenantId  String   @id
+  ultimo    Int      @default(0)
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model DocumentFolder {

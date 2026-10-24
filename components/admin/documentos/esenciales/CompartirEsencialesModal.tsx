@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link2, Copy, Check, Loader2, MessageCircle, Lock, Share2, RotateCcw } from "@buleje/design-system/icons";
 import type { DbDocumentFolder } from "@/lib/types/documents";
+import { rolesDeLaCadena, type CarpetaConRoles } from "@/lib/documents/doc-access";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
@@ -40,14 +41,25 @@ const ETIQUETA =
 
 export default function CompartirEsencialesModal({
   carpetas,
+  todas,
   onClose,
 }: {
   /** Las esenciales, en el orden en que se muestran. */
   carpetas: DbDocumentFolder[];
+  /** Todas las carpetas del Archivo: para saber si una esencial tiene candado en su cadena. */
+  todas: DbDocumentFolder[];
   onClose: () => void;
 }) {
+  /* Con candado en la carpeta o en su cadena, el enlace (`sc…`) no la sirve: no se ofrece
+     (seguridad 24-10: su nombre iba en el WhatsApp y «N carpetas» prometía una que no abre). */
+  const cerradas = useMemo(() => {
+    const porId = new Map<string, CarpetaConRoles>(
+      todas.map((c) => [c.id, { parentId: c.parentId ?? null, allowedRoles: c.allowedRoles ?? [] }]),
+    );
+    return new Set(carpetas.filter((c) => rolesDeLaCadena(c.id, porId).length > 0).map((c) => c.id));
+  }, [carpetas, todas]);
   const [elegidas, setElegidas] = useState<Set<string>>(
-    () => new Set(carpetas.slice(0, MAX_CARPETAS_POR_ENLACE).map((c) => c.id)),
+    () => new Set(carpetas.filter((c) => !cerradas.has(c.id)).slice(0, MAX_CARPETAS_POR_ENLACE).map((c) => c.id)),
   );
   const [dias, setDias] = useState<Dias>("30");
   const [conClave, setConClave] = useState(false);
@@ -159,7 +171,7 @@ export default function CompartirEsencialesModal({
             <div className={ETIQUETA}>
               Qué carpetas van
               <InfoTip
-                what="Quien abra el enlace ve y descarga los papeles de cada carpeta marcada (sin sus subcarpetas)."
+                what="Quien abra el enlace ve y descarga los papeles de cada carpeta marcada (sin sus subcarpetas). Los que tienen candado nunca salen, aunque tú los veas."
                 example={`Al contador: licencias, contratos y SUNAT de una vez. Máximo ${MAX_CARPETAS_POR_ENLACE} por enlace.`}
               />
             </div>
@@ -176,8 +188,13 @@ export default function CompartirEsencialesModal({
                         htmlFor={id}
                         className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg px-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
                       >
-                        <Casilla id={id} checked={marcada} disabled={!marcada && lleno} onChange={() => alternar(c.id)} />
+                        <Casilla id={id} checked={marcada} disabled={cerradas.has(c.id) || (!marcada && lleno)} onChange={() => alternar(c.id)} />
                         <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                        {cerradas.has(c.id) && (
+                          <span className="flex shrink-0 items-center gap-1 text-xs text-[var(--text-tertiary)]">
+                            <Lock className="h-4 w-4" aria-hidden /> con candado, no va
+                          </span>
+                        )}
                       </label>
                     </li>
                   );

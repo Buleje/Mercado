@@ -2,7 +2,7 @@ import { esTagDeMaquinaPlan } from "@/lib/forestal/plan-documentos-tipos";
 import { esTagDeMarca } from "@/lib/documentos/esenciales";
 import { formatDateNumeric, formatNumber } from "@/lib/format";
 import type { DbDocument } from "@/lib/types/documents";
-import { FileSpreadsheet, type Folder, FolderArchive, LayoutDashboard, Sparkles, Star, Clock, AlarmClock, CalendarDays, History, Link2, Copy, Monitor, Trash2, Users } from "@buleje/design-system/icons";
+import { FileSpreadsheet, type Folder, FolderArchive, LayoutDashboard, Sparkles, Star, Clock, AlarmClock, CalendarDays, History, Link2, Copy, Hash, Monitor, Trash2, Users } from "@buleje/design-system/icons";
 import { diasHasta } from "@/lib/documentos/aviso-vencimiento";
 
 /**
@@ -107,7 +107,7 @@ export function mensajeDeError(msg: string, porDefecto = "No se pudo completar."
 }
 
 export interface BuiltinCategory {
-  id: "all" | "terceros" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "enlaces" | "duplicados" | "sync" | "trash";
+  id: "all" | "terceros" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "codigo" | "calendar" | "activity" | "enlaces" | "duplicados" | "sync" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -121,6 +121,8 @@ export const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-[var(--text-secondary)]" },
   { id: "expiring", label: "Vencimientos", icon: AlarmClock, color: "text-[var(--data-warning)]" },
+  // ADR-516 — papeles con código que todavía no se anotó en el físico.
+  { id: "codigo", label: "Código por poner", icon: Hash, color: "text-[var(--data-warning)]" },
   { id: "calendar", label: "Calendario", icon: CalendarDays, color: "text-primary" },
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
   { id: "enlaces", label: "Enlaces", icon: Link2, color: "text-[var(--accent)]" },
@@ -156,7 +158,7 @@ export function daysUntil(iso: string | null): number | null {
 
 /** Los modos del drive, estables: el hook los usa como dependencia. */
 export const DRIVE_MODOS = [
-  "all", "terceros", "dashboard", "assistant", "favorites", "recent", "expiring", "calendar",
+  "all", "terceros", "dashboard", "assistant", "favorites", "recent", "expiring", "codigo", "calendar",
   "folder", "activity", "enlaces", "duplicados", "sync", "trash", "smart",
 ] as const;
 

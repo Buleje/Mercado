@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import { formatDateShort } from "@/lib/format";
 import IconoCarpeta from "./IconoCarpeta";
+import MarcasCarpeta from "./MarcasCarpeta";
 import { usePulsacionLarga } from "./use-pulsacion-larga";
 import { puntoDeElemento, type PuntoDeMenu } from "./ubicar-menu";
 
@@ -79,6 +80,7 @@ export default function FilaCarpetaDetalles({ carpeta: f, cols, onAbrir, onMenu,
             <IconoCarpeta carpeta={f} tam="chico" />
           </span>
           <span className="max-w-[280px] truncate font-bold text-[var(--text-primary)]">{f.name}</span>
+          <MarcasCarpeta carpeta={f} />
         </button>
       </td>
       {cols.categoria && <td className="hidden sm:table-cell"><span className="text-xs text-[var(--text-secondary)]">Carpeta</span></td>}

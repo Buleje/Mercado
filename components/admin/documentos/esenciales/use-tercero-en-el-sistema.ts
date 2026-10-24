@@ -7,6 +7,8 @@ export interface NombreLigado {
   clave: string;
   tipo: TipoTercero;
   nombre: string;
+  /** Cómo lo llama el negocio («Santa Rosa»), puesto en «Vínculos con el sistema…». */
+  alias?: string | null;
 }
 
 const URL_RESUMEN = "/api/admin/documents/terceros/resumen";
@@ -37,6 +39,11 @@ function pedirNombre(carpetaId: string, clave: string): Promise<NombreLigado | n
     nombres.set(k, p);
   }
   return p;
+}
+
+/** Tras renombrar o re-ligar en «Vínculos con el sistema…»: el próximo montaje vuelve a pedir. */
+export function olvidarNombresLigados(): void {
+  nombres.clear();
 }
 
 /** Los nombres de los terceros ligados a la carpeta (`null` mientras carga o si no se encontró). */

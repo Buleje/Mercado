@@ -89,7 +89,7 @@ export default function VistaTerceros({ arch }: { arch: ModeloArchivo }) {
         <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
           Todavía no vinculaste carpetas a nadie.
           <InfoTip
-            what="Clic derecho en una carpeta (o su «⋯» en el panel) › «Vincular a un tercero…»."
+            what="Clic derecho en una carpeta (o su «⋯» en el panel) › «Vínculos con el sistema…»."
             affects="La carpeta y sus subcarpetas aparecen acá, bajo la persona, el proveedor o la comunidad que elijas."
             example="«Contrato del local» → Juana Pérez; «Guías 2026» → Comunidad Nativa Callería."
           />

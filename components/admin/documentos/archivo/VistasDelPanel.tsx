@@ -6,14 +6,17 @@ import { MoreHorizontal, ChevronDown } from "@buleje/design-system/icons";
 import type { ModeloArchivo } from "./use-archivo";
 import { precargarArchivo } from "./perezosos";
 export default function VistasDelPanel({ arch }: { arch: ModeloArchivo }) {
-  const { vistaConDatos, filterMode, otrosAbierto, setFilterMode, setActiveFolderId, setOtrosAbierto } = arch;
+  const { vistaConDatos, filterMode, otrosAbierto, setFilterMode, setActiveFolderId, setOtrosAbierto, conteoCodigo } = arch;
+  // ADR-516 — con papeles por anotar, «Código por poner» sube a la vista con su cifra.
+  const porPoner = conteoCodigo?.pendientes ?? 0;
+  const esPrincipal = (id: BuiltinCategory["id"]) => id === "all" || id === "terceros" || (id === "codigo" && porPoner > 0);
   return (
     <>
           {(() => {
             const visibles = BUILTIN_CATEGORIES.filter((cat) => vistaConDatos[cat.id] || filterMode === cat.id);
             // «Todos» y «Terceros» (lo más usado, 23-10) a la vista; el resto en «Más vistas».
-            const principales = visibles.filter((c) => c.id === "all" || c.id === "terceros");
-            const resto = visibles.filter((c) => c.id !== "all" && c.id !== "terceros");
+            const principales = visibles.filter((c) => esPrincipal(c.id));
+            const resto = visibles.filter((c) => !esPrincipal(c.id));
             // Cerrado, el grupo igual muestra la vista activa si vive adentro
             // (si no, "Papelera" parecería que nada está seleccionado). Antes
             // se abría entero: 10 botones más en Papelera y Actividad, y a
@@ -39,6 +42,11 @@ export default function VistasDelPanel({ arch }: { arch: ModeloArchivo }) {
                   >
                     <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : cat.color)} />
                     <span className="flex-1 text-left">{cat.label}</span>
+                    {cat.id === "codigo" && porPoner > 0 && (
+                      <span className="rounded-full bg-[var(--data-warning-100)] px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
+                        {porPoner}
+                      </span>
+                    )}
                   </button>
                 </li>
               );

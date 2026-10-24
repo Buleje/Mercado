@@ -50,8 +50,9 @@ import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import CompararVersiones from "./CompararVersiones";
 import {
   getDocumentDetail, fetchVersions, fetchAudit, fetchShares, createShare, revokeShare,
-  uploadVersion, signDocument, patchDocument, relateDoc, docApproval,
+  uploadVersion, signDocument, patchDocument, relateDoc, docApproval, marcarCodigoFisicoEnServidor,
 } from "@/hooks/use-documents";
+import { CodigoFisicoControl } from "./CodigoDocumento";
 import { DOC_RESTRICTABLE_ROLES } from "@/lib/documents/doc-access";
 import { buildChildrenMap, flattenAll, folderPath } from "@/lib/documentos/folder-tree";
 import type {
@@ -947,6 +948,15 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
     // con `columns-*`: las columnas de CSS parten las tarjetas por la mitad y
     // el botón de una sección terminaba pisando el título de la otra.
     <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-4 p-5 xl:grid-cols-2">
+      {/* ADR-516 — el código único del papel y si ya se anotó en el físico. */}
+      <CodigoFisicoControl
+        doc={doc}
+        className="rounded-2xl bg-[var(--surface-raised)] p-4 xl:col-span-2"
+        onMarcar={async (puesto) => {
+          const r = await marcarCodigoFisicoEnServidor([doc.id], puesto);
+          if (r.ids.length > 0) onPatched({ ...doc, codigoFisicoAt: r.codigoFisicoAt, codigoFisicoPor: r.codigoFisicoPor });
+        }}
+      />
       {/* Carpeta — dónde vive el documento, y mover sin salir del detalle */}
       <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-2 inline-flex items-center gap-1.5">
@@ -1432,6 +1442,8 @@ const ACTION_META: Record<string, { color: string; label: string }> = {
   move: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Movido" },
   tag: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Tag" },
   whatsapp_send: { color: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]", label: "Enviado por WhatsApp" },
+  read_text: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Texto leído" },
+  codigo_fisico: { color: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]", label: "Código en el físico" },
   ai_categorize: { color: "bg-[var(--accent)]/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", label: "Descrito con IA" },
   ai_expiry: { color: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]", label: "Vencimiento leído" },
   ocr: { color: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]", label: "Escaneado (OCR)" },

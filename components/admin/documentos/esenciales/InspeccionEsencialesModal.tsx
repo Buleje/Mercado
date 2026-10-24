@@ -9,7 +9,6 @@ import { button } from "@/components/ui-system/button-variants";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { Casilla } from "@/components/ui-system/Casilla";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { useMiRol } from "@/hooks/use-mi-rol";
 import { MAX_CARPETAS_POR_ENLACE } from "@/lib/documentos/enlace-varias-carpetas";
 import { contarHoja, indiceParaInspeccion, resumenDeLaHoja } from "@/lib/documentos/inspeccion-indice";
 import { MAX_PAPELES_EXPEDIENTE } from "@/lib/documents/expediente-indice";
@@ -41,8 +40,17 @@ export default function InspeccionEsencialesModal({ carpetas, folders, docs, onC
   docs: readonly DbDocument[];
   onClose: () => void;
 }) {
-  const rol = useMiRol();
-  const [elegidas, setElegidas] = useState<Set<string>>(() => new Set(carpetas.slice(0, MAX_CARPETAS_POR_ENLACE).map((c) => c.id)));
+  // Lo que el QR deja ver, carpeta por carpeta: sin subcarpetas y NUNCA lo que tiene candado.
+  const [ahora] = useState(() => Date.now());
+  const indice = useMemo(
+    () => indiceParaInspeccion({ elegidas: carpetas, carpetas: folders, docs, ahora }),
+    [carpetas, folders, docs, ahora],
+  );
+  const porId = useMemo(() => new Map(indice.map((c) => [c.id, c])), [indice]);
+  // Una carpeta con candado no se puede elegir: el QR no la abre.
+  const [elegidas, setElegidas] = useState<Set<string>>(
+    () => new Set(indice.filter((c) => !c.cerrada).slice(0, MAX_CARPETAS_POR_ENLACE).map((c) => c.id)),
+  );
   const [dias, setDias] = useState<Dias>("1");
   const [conClave, setConClave] = useState(false);
   const [clave, setClave] = useState("");
@@ -50,13 +58,6 @@ export default function InspeccionEsencialesModal({ carpetas, folders, docs, onC
   const h = useHojaInspeccion();
   const [copiado, setCopiado] = useState(false);
 
-  // Lo que el QR deja ver, carpeta por carpeta (sin subcarpetas; con candado sólo si quien lo crea los ve).
-  const [ahora] = useState(() => Date.now());
-  const indice = useMemo(
-    () => indiceParaInspeccion({ elegidas: carpetas, carpetas: folders, docs, rol, ahora }),
-    [carpetas, folders, docs, rol, ahora],
-  );
-  const porId = useMemo(() => new Map(indice.map((c) => [c.id, c])), [indice]);
   const enHoja = indice.filter((c) => elegidas.has(c.id));
   const cuenta = contarHoja(enHoja);
   const conCandado = enHoja.reduce((n, c) => n + c.conCandado, 0);
@@ -71,7 +72,7 @@ export default function InspeccionEsencialesModal({ carpetas, folders, docs, onC
     setElegidas((prev) => {
       const sig = new Set(prev);
       if (sig.has(id)) sig.delete(id);
-      else if (sig.size < MAX_CARPETAS_POR_ENLACE) sig.add(id);
+      else if (sig.size < MAX_CARPETAS_POR_ENLACE && !porId.get(id)?.cerrada) sig.add(id);
       return sig;
     });
 
@@ -143,7 +144,7 @@ export default function InspeccionEsencialesModal({ carpetas, folders, docs, onC
               Qué carpetas van
               <InfoTip
                 what="La hoja lista los papeles de cada carpeta marcada con su vencimiento; el QR abre esas mismas carpetas."
-                affects="Van los papeles sueltos de cada carpeta, no los de sus subcarpetas. Los que tienen candado van si tú puedes verlos (dueño y admin): el aviso de abajo te dice cuántos."
+                affects="Van los papeles sueltos de cada carpeta, no los de sus subcarpetas. Los que tienen candado nunca van, aunque tú los veas: el aviso de abajo te dice cuántos quedan fuera."
                 example={`Para SERFOR: licencias, guías y plan de manejo. Máximo ${MAX_CARPETAS_POR_ENLACE} carpetas.`}
               />
             </div>
@@ -153,12 +154,17 @@ export default function InspeccionEsencialesModal({ carpetas, folders, docs, onC
                 const id = `inspeccion-${c.id}`;
                 const info = porId.get(c.id);
                 const n = info ? contarHoja([info]) : null;
+                const cerrada = !!info?.cerrada;
                 return (
                   <li key={c.id}>
                     <label htmlFor={id} className="flex min-h-12 cursor-pointer items-center gap-2.5 rounded-lg px-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-raised)]">
-                      <Casilla id={id} checked={marcada} disabled={!marcada && lleno} onChange={() => alternar(c.id)} />
+                      <Casilla id={id} checked={marcada} disabled={cerrada || (!marcada && lleno)} onChange={() => alternar(c.id)} />
                       <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                      {n && (
+                      {cerrada ? (
+                        <span className="flex shrink-0 items-center gap-1 text-xs text-[var(--text-tertiary)]" data-qa="inspeccion-carpeta-cerrada">
+                          <Lock className="h-3.5 w-3.5" aria-hidden /> con candado, no va
+                        </span>
+                      ) : n && (
                         <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">
                           {n.papeles} papel{n.papeles === 1 ? "" : "es"}
                           {n.vencidos > 0 && <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"> · {n.vencidos} vencido{n.vencidos === 1 ? "" : "s"}</span>}
@@ -172,11 +178,11 @@ export default function InspeccionEsencialesModal({ carpetas, folders, docs, onC
             {conCandado > 0 && (
               <p className="flex items-center gap-1.5 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" data-qa="inspeccion-con-candado">
                 <Lock className="h-4 w-4 shrink-0" aria-hidden />
-                {conCandado} papel{conCandado === 1 ? "" : "es"} con candado van en el QR
+                {conCandado} papel{conCandado === 1 ? "" : "es"} con candado queda{conCandado === 1 ? "" : "n"} fuera
                 <InfoTip
-                  what="Tú los puedes ver, así que el enlace también los abre para quien escanee el QR."
-                  affects="Si no quieres que salgan, desmarca esa carpeta o sácalos de ella antes de crear el enlace."
-                  example="El contrato con candado de «Prueba demo» entra si marcas esa carpeta."
+                  what="El QR y la hoja nunca muestran un papel con candado, aunque tú lo veas: quien escanee no lo ve ni lo puede bajar."
+                  affects="Si el inspector lo necesita, quítale el candado antes de armar la hoja o entrégaselo en papel."
+                  example="El contrato con candado de «Prueba demo» no sale aunque marques esa carpeta."
                 />
               </p>
             )}

@@ -7,11 +7,10 @@
 
 import {
   ArrowDown, ArrowUp, CheckSquare, ClipboardPaste, Eye, FileArchive, FolderArchive, FolderOpen, FolderPlus, ImageOff, ImagePlus,
-  Info, Link2, Palette, Pencil, Pin, PinOff, Scissors, Share2, Star, StarOff, Trash2, UserPlus,
+  Info, Link2, Palette, Pencil, Pin, PinOff, Scissors, Share2, Star, StarOff, Trash2,
 } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { esImagenConvertible, esImagenRenderizable } from "@/lib/documents/tipos-archivo";
-import { esTagDeVinculo } from "@/lib/documentos/terceros-vinculo";
 import { esEsencial } from "@/lib/documentos/esenciales";
 import type { ExtraDelMenu } from "../MenuDocumento";
 import { docDeIconoCarpeta } from "../folder-visuals";
@@ -34,7 +33,7 @@ export interface AccionesCarpeta {
   descargar: (f: DbDocumentFolder) => void;
   /** «Armar expediente»: la carpeta (y sus subcarpetas, si quieres) en UN PDF con portada e índice. */
   armarExpediente?: (f: DbDocumentFolder) => void;
-  /** «Vincular a un tercero…» (o «Terceros vinculados…» si ya tiene): sólo si el rol puede etiquetar carpetas. */
+  /** «Vínculos con el sistema…»: lo ligado a mano y lo que puso un módulo; cambiarlo, sólo dueño/admin/encargado (lo dice la ventana). */
   vincularTercero?: (f: DbDocumentFolder) => void;
   /** «Llevar a Esenciales» / «Quitar de Esenciales»: la carpeta se ve en la pestaña Esenciales de Documentos. */
   alternarEsencial?: (f: DbDocumentFolder) => void;
@@ -97,8 +96,8 @@ export function itemsDeCarpeta(f: DbDocumentFolder, a: AccionesCarpeta): ItemMen
     ...(a.vincularTercero
       ? [{
           id: "tercero",
-          label: (f.tags ?? []).some(esTagDeVinculo) ? "Terceros vinculados…" : "Vincular a un tercero…",
-          Icon: UserPlus,
+          label: "Vínculos con el sistema…",
+          Icon: Link2,
           onSelect: () => a.vincularTercero?.(f),
         } satisfies ItemMenu]
       : []),

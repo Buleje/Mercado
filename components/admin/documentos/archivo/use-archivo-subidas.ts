@@ -10,7 +10,7 @@ import type { HastaArchivoCarpetas } from "./use-archivo-carpetas";
 export function useArchivoSubidas(previo: HastaArchivoCarpetas) {
   const { documents, confirm, setUploadProgress, setEstadoSubida, upload, activeFolderId, setDragOver,
     setImportandoCarpeta, setSoltado, clearSelection, selectedIds, bulk, reloadAllTags, zipping, setZipping,
-    displayDocs, activePath, merging, setMerging, refresh } = previo;
+    displayDocs, activePath, merging, setMerging, refresh, marcarCodigoFisico } = previo;
   const handleFiles = useCallback(
     async (files: FileList | File[]) => {
       const arr = Array.from(files);
@@ -128,6 +128,17 @@ export function useArchivoSubidas(previo: HastaArchivoCarpetas) {
     if (selectedIds.size === 0) return;
     await correrLote(() => bulk("favorite", Array.from(selectedIds), { favorite: fav }));
   };
+  /** ADR-516 — «Ya les puse el código en el físico» a toda la pila de una. */
+  const bulkCodigoFisico = async (puesto: boolean) => {
+    if (selectedIds.size === 0) return;
+    await correrLote(async () => {
+      const n = await marcarCodigoFisico(Array.from(selectedIds), puesto);
+      if (n === 0) toast.info(puesto ? "No había nada por marcar: ya estaban puestos o no tienen código." : "Ninguno estaba marcado como puesto.");
+      else toast.success(puesto
+        ? `${n} ${n === 1 ? "papel marcado" : "papeles marcados"} con el código en el físico.`
+        : `${n} ${n === 1 ? "papel vuelve" : "papeles vuelven"} a «código por poner».`);
+    });
+  };
   const bulkMove = async (folderId: string | null) => {
     if (selectedIds.size === 0) return;
     await correrLote(() => bulk("move", Array.from(selectedIds), { folderId }));
@@ -225,7 +236,7 @@ export function useArchivoSubidas(previo: HastaArchivoCarpetas) {
   };
 
   // Rotar un PDF 90° (todas las páginas) → nueva versión.
-  return { handleFiles, onDrop, onDragOver, onDragLeave, correrLote, bulkDelete, bulkFavorite, bulkMove,
+  return { handleFiles, onDrop, onDragOver, onDragLeave, correrLote, bulkDelete, bulkFavorite, bulkCodigoFisico, bulkMove,
     bulkStatus, bulkTag, zipAndDownload, bulkDownloadZip, downloadFolderZip, handleMerge };
 }
 export type HastaArchivoSubidas = HastaArchivoCarpetas & ReturnType<typeof useArchivoSubidas>;

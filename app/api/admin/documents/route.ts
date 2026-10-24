@@ -17,6 +17,7 @@ import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { interpretarBusqueda, quitarVacias, type BusquedaInterpretada } from "@/lib/documentos/busqueda-natural";
+import { leerCodigoDocumento } from "@/lib/documentos/codigo-documento";
 
 
 const ListQuery = z.object({
@@ -39,6 +40,9 @@ const ListQuery = z.object({
   conteo: z.enum(["1", "true"]).optional(),
   // Tope de filas: el buscador del panel pide unas pocas, no el drive entero.
   limite: z.coerce.number().int().min(1).max(50).optional(),
+  // ADR-516 — «Código pendiente de poner»: con código y sin marcar en el físico.
+  // Con `conteo`, devuelve `{ codigoPendiente: { pendientes, atrasados } }`.
+  codigoPendiente: z.enum(["1", "true"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -63,6 +67,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ documents: expiring });
   }
 
+  // ADR-516 — la cifra de la cabecera: cuántos códigos faltan poner en el físico.
+  if (f.conteo && f.codigoPendiente) {
+    const codigoPendiente = await DocumentsDB.conteoCodigoPendiente(auth.tenantId, auth.role);
+    return NextResponse.json({ codigoPendiente });
+  }
+
   // «Escondidas N fotos de las cámaras»: contar sin traer las fotos.
   if (f.conteo) {
     const etiquetas = f.tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
@@ -74,7 +84,12 @@ export async function GET(req: NextRequest) {
   // y sólo lo que queda se busca como texto (todas las palabras). Las carpetas
   // se piden únicamente si quedó alguna palabra que podría nombrar a una.
   let interp: BusquedaInterpretada | undefined;
-  if (f.q?.trim()) {
+  // ADR-516 — «DOC-000123» / «doc 123» / «#123» es un código, no una frase: va
+  // tal cual (la interpretación se comía el «doc»). Un número pelado sigue
+  // interpretándose («2026» es el año del papel); si queda como texto, la
+  // lista lo cruza igual con el código.
+  const esCodigo = leerCodigoDocumento(f.q) != null && !/^\s*\d+\s*$/.test(f.q ?? "");
+  if (f.q?.trim() && !esCodigo) {
     interp = interpretarBusqueda(f.q);
     if (interp.necesitaCarpetas) {
       const carpetas = await DocumentsDB.carpetasParaBuscar(auth.tenantId, auth.role);
@@ -84,13 +99,13 @@ export async function GET(req: NextRequest) {
   // Una frase que es toda relleno («de la», «lo que llegó») no busca nada: la
   // vista normal (la pantalla avisa «escribe algo más concreto»). Buscar «de» Y
   // «la» como subcadena traía 35 de 436 papeles sin ningún criterio.
-  const textoLibre = interp ? interp.texto.trim() : undefined;
+  const textoLibre = interp ? interp.texto.trim() : esCodigo ? f.q?.trim() : undefined;
 
   // ADR-119 — búsqueda semántica: la IA expande SÓLO las palabras que sobran
   // (sin relleno) y se OR-ean. «vencidos» con IA ya no le manda nada.
   let qAny: string[] | undefined;
   let semanticTerms: string[] | undefined;
-  if (f.semantic && textoLibre) {
+  if (f.semantic && textoLibre && !esCodigo) {
     const { expandSearchTerms } = await import("@/lib/documents/ai-search");
     qAny = quitarVacias(await expandSearchTerms(textoLibre));
     if (qAny.length === 0) qAny = undefined;
@@ -121,6 +136,7 @@ export async function GET(req: NextRequest) {
     supplierId: f.supplierId,
     deletedOnly,
     limite: f.limite,
+    codigoPendiente: f.codigoPendiente ? true : undefined,
     // El texto indexado sólo se manda cuando hay una búsqueda escrita: es lo
     // único que lo usa del lado del cliente (resaltar la coincidencia y
     // ordenar por relevancia). Abrir el drive es el caso común y ahí no hace

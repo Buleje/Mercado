@@ -12,6 +12,7 @@ import { descripcionDe } from "@/lib/documentos/relevancia";
 import PorQueAparecio from "../PorQueAparecio";
 import { FolderChip, ExpiryBadge } from "./piezas-sueltas";
 import { StructuredChip, tagsVisibles } from "./compartido";
+import { CodigoChip } from "../CodigoDocumento";
 
 export function DocCard({
   doc, selected, isRenaming, renameValue, terminos, folderNombre,
@@ -144,6 +145,8 @@ export function DocCard({
         {/* De qué se trata (o por qué apareció en la búsqueda). */}
         <PorQueAparecio doc={doc} terminos={terminos} />
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {/* ADR-516 — el código del papel; en coral mientras falta anotarlo en el físico. */}
+          <CodigoChip doc={doc} />
           {folderNombre !== undefined && <FolderChip nombre={folderNombre} />}
           {/* Sin estado no se dibuja nada: ponerlo es «⋯ › Estado». */}
           {marca && <StatusControl status={doc.status} onChange={onSetStatus} />}

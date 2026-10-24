@@ -10,6 +10,7 @@ import PorQueAparecio from "../PorQueAparecio";
 import { StatusControl } from "./estado-doc";
 import { tagsVisibles } from "./compartido";
 import { formatDateShort } from "@/lib/format";
+import { CodigoChip } from "../CodigoDocumento";
 import type { ModeloArchivo } from "./use-archivo";
 export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
   const { selectedIds, displayDocs, selectAll, clearSelection, sortBy, setSortBy, colsVisibles,
@@ -117,6 +118,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                               className="w-full max-w-[320px] px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none bg-[var(--surface-raised)] text-[var(--text-primary)]"
                             />
                           ) : (
+                            <div className="flex min-w-0 items-center gap-2">
                             <button onClick={() => setPreview(doc)} onDoubleClick={(e) => { e.preventDefault(); startRename(doc); }} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors" title="Doble-click para renombrar">
                               <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg shrink-0", bg)}>
                                 <Icon className={cn("h-4 w-4", tint)} />
@@ -128,6 +130,9 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                               )}
                               <ExpiryBadge expiresAt={doc.expiresAt} />
                             </button>
+                            {/* ADR-516 — fuera del botón del nombre: clic = copiar el código. */}
+                            <CodigoChip doc={doc} />
+                            </div>
                           )}
                           {/* Fuera del botón a propósito: un <p> adentro de un
                               <button> es HTML inválido y rompe el clic. */}

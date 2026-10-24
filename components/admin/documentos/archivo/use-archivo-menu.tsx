@@ -22,7 +22,7 @@ export function useArchivoMenu(previo: HastaArchivoAcciones) {
     zipAndDownload, bulkDownloadZip, bulkFavorite, bulkStatus, smartFolders, activeSmartId, setActiveSmartId,
     setSmartModal, setShowTags, etiquetaFiltro, semantic, search, setSearch, bulkFolders } = previo;
   const [menuEn, setMenuEn] = useState<({ id: string } & PuntoDeMenu) | null>(null);
-  // «Vincular a un tercero…» (pestaña Terceros): el id, para releer la carpeta
+  // «Vínculos con el sistema…» (Archivo, Terceros y Esenciales): el id, para releer la carpeta
   // de la lista tras cada vínculo (la etiqueta cambia y la ventana la muestra).
   const [vinculandoId, setVinculandoId] = useState<string | null>(null);
   const setVinculando = useCallback((f: DbDocumentFolder | null) => setVinculandoId(f?.id ?? null), []);

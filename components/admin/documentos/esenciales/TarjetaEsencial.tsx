@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import {
-  AlarmClock, AlertTriangle, ArrowLeft, ArrowRight, Eye, FileArchive, FolderOpen, GripHorizontal, Lock, Palette, ScanLine, Share2, StarOff, Upload, UserPlus,
+  AlarmClock, AlertTriangle, ArrowLeft, ArrowRight, Eye, FileArchive, FolderOpen, GripHorizontal, Lock, Palette, ScanLine, Share2, StarOff, Upload, Link2,
 } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import type { CarpetaEsencial } from "@/lib/documentos/esenciales";
-import { esTagDeVinculo } from "@/lib/documentos/terceros-vinculo";
 import { FolderGlyph } from "../folder-visuals";
+import MarcasCarpeta from "../explorador/MarcasCarpeta";
 import { formatBytes } from "../archivo-visual";
 import { haceCuanto, papeles, quienLaVe, subcarpetas, veces } from "./compartido";
 
@@ -118,8 +118,9 @@ export default function TarjetaEsencial({ e, elegida, ahora, puesto, acciones }:
         )}
       >
         <span className="flex items-center gap-3">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-3xl">
+          <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-3xl">
             <FolderGlyph folder={f} active={elegida} className="h-8 w-8" />
+            <MarcasCarpeta carpeta={f} sinEsencial className="absolute -bottom-1 -right-1 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 py-0.5" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="line-clamp-2 text-base font-extrabold leading-snug text-[var(--text-primary)]">{f.name}</span>
@@ -173,8 +174,8 @@ export default function TarjetaEsencial({ e, elegida, ahora, puesto, acciones }:
             { id: "expediente", label: "Armar expediente PDF", icon: FileArchive, disabled: e.docs === 0, onSelect: () => acciones.expediente(f) },
             {
               id: "terceros",
-              label: (f.tags ?? []).some(esTagDeVinculo) ? "Terceros vinculados…" : "Vincular a un tercero…",
-              icon: UserPlus,
+              label: "Vínculos con el sistema…",
+              icon: Link2,
               onSelect: () => acciones.terceros(f),
             },
             { id: "antes", label: "Mover antes", icon: ArrowLeft, disabled: puesto.primera, onSelect: () => acciones.mover(f, -1), seccion: "Mi orden" },

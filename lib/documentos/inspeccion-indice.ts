@@ -3,15 +3,15 @@
  * de Esenciales (Brandon 24-10: SERFOR/OSINFOR/SUNAT llegan y piden los
  * papeles). Puro: lo arma el navegador con lo que el Archivo ya trajo.
  *
- * Regla: la hoja lista EXACTAMENTE lo que el QR deja ver. El enlace de carpeta
- * sirve los papeles directos de cada carpeta (sin subcarpetas) y, si algo tiene
- * permisos o candado, sólo lo que quien crea el enlace puede ver hoy
- * (`DocumentsDB.docsDelEnlaceDeCarpeta` → `enlaceSigueSirviendo`). Acá se aplica
- * la misma regla, así un papel con candado no sale con su nombre en un papel
- * impreso que se lleva un tercero.
+ * Regla: la hoja lista EXACTAMENTE lo que el QR deja ver. El enlace del QR es
+ * «sin candado» (`folders/share-lote`, Brandon 24-10): sirve los papeles
+ * directos de cada carpeta (sin subcarpetas) y NUNCA uno con candado — por sí
+ * o por una carpeta de su cadena —, lo arme quien lo arme
+ * (`DocumentsDB.docsDelEnlaceDeCarpeta`). Acá se aplica la misma regla, así un
+ * papel con candado tampoco sale con su nombre en la hoja impresa.
  */
 
-import { enlaceSigueSirviendo, rolesDeLaCadena, type CarpetaConRoles } from "@/lib/documents/doc-access";
+import { estaRestringido, rolesDeLaCadena, type CarpetaConRoles } from "@/lib/documents/doc-access";
 import { etiquetaTipo } from "@/lib/documents/tipos-archivo";
 
 export type EstadoVence = "vencido" | "por-vencer" | "vigente" | "sin-fecha";
@@ -37,14 +37,14 @@ export interface CarpetaDeLaHoja {
   papeles: PapelDeLaHoja[];
   /** Papeles de sus subcarpetas: no van en el enlace ni en la hoja. */
   enSubcarpetas: number;
-  /** Papeles directos que el enlace no mostraría (permisos/candado de quien lo crea). */
-  ocultos: number;
   /**
-   * De los que SÍ van, cuántos tienen candado (suyo o de una carpeta de la cadena):
-   * el dueño y el admin los ven, así que el QR también los abre (seguridad 24-10:
-   * el modal decía «nunca los que tienen candado»). Se avisa antes de crear el enlace.
+   * Papeles directos con candado (suyo o de una carpeta de la cadena): quedan
+   * fuera del QR y de la hoja aunque quien la arma los vea. El modal lo avisa
+   * antes de crear el enlace; la hoja impresa no los nombra ni los cuenta.
    */
   conCandado: number;
+  /** La carpeta misma (o una de su cadena) tiene candado: el QR no la abre y no se puede elegir. */
+  cerrada: boolean;
 }
 
 export interface CuentaDeLaHoja {
@@ -96,17 +96,16 @@ function rutaDe(id: string, porId: ReadonlyMap<string, CarpetaMin>): string[] {
 
 /**
  * Las carpetas elegidas (en ese orden) con sus papeles directos visibles por el
- * enlace. Dentro de cada carpeta: lo vencido y lo que vence pronto primero,
- * después por nombre.
+ * enlace «sin candado». Dentro de cada carpeta: lo vencido y lo que vence
+ * pronto primero, después por nombre. No depende del rol de quien la arma.
  */
 export function indiceParaInspeccion<C extends CarpetaMin, D extends DocMin>(args: {
   elegidas: readonly C[];
   carpetas: readonly C[];
   docs: readonly D[];
-  rol: string | null;
   ahora: number;
 }): CarpetaDeLaHoja[] {
-  const { elegidas, carpetas, docs, rol, ahora } = args;
+  const { elegidas, carpetas, docs, ahora } = args;
   const porId = new Map<string, C>(carpetas.map((c) => [c.id, c]));
   const hijas = new Map<string, string[]>();
   for (const c of carpetas) if (c.parentId) hijas.set(c.parentId, [...(hijas.get(c.parentId) ?? []), c.id]);
@@ -117,10 +116,9 @@ export function indiceParaInspeccion<C extends CarpetaMin, D extends DocMin>(arg
   return elegidas.map((c) => {
     const cadena = rolesDeLaCadena(c.id, porId);
     const directos = porCarpeta.get(c.id) ?? [];
-    const sirve = directos.filter((d) => enlaceSigueSirviendo(rol, d.allowedRoles ?? [], cadena));
-    // Si la carpeta misma está cerrada para quien crea el enlace, el enlace no la sirve.
-    const carpetaSirve = cadena.length === 0 || enlaceSigueSirviendo(rol, [], cadena);
-    const lista = carpetaSirve ? sirve : [];
+    // Con candado en la carpeta o en su cadena, el enlace no la sirve entera.
+    const cerrada = cadena.length > 0;
+    const lista = directos.filter((d) => !estaRestringido(d.allowedRoles ?? [], cadena));
 
     let enSub = 0;
     const pila = [...(hijas.get(c.id) ?? [])];
@@ -129,7 +127,9 @@ export function indiceParaInspeccion<C extends CarpetaMin, D extends DocMin>(arg
       const id = pila.pop() as string;
       if (vistas.has(id)) continue;
       vistas.add(id);
-      enSub += porCarpeta.get(id)?.length ?? 0;
+      // Sólo los que el enlace serviría: los de una cadena con candado no se cuentan (seguridad 24-10).
+      const cadenaSub = rolesDeLaCadena(id, porId);
+      enSub += (porCarpeta.get(id) ?? []).filter((d) => !estaRestringido(d.allowedRoles ?? [], cadenaSub)).length;
       pila.push(...(hijas.get(id) ?? []));
     }
 
@@ -146,15 +146,14 @@ export function indiceParaInspeccion<C extends CarpetaMin, D extends DocMin>(arg
       }))
       .sort((a, b) => PESO[a.estado] - PESO[b.estado] || a.nombre.localeCompare(b.nombre, "es", { numeric: true }));
 
-    const conCandado = lista.filter((d) => cadena.length > 0 || (d.allowedRoles?.length ?? 0) > 0).length;
     return {
       id: c.id,
       nombre: c.name,
       ruta: rutaDe(c.id, porId),
       papeles,
       enSubcarpetas: enSub,
-      ocultos: directos.length - lista.length,
-      conCandado,
+      conCandado: directos.length - lista.length,
+      cerrada,
     };
   });
 }

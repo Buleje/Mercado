@@ -46,7 +46,7 @@ const CARGAS = {
   etiquetarVarios: () => import("../BulkTagModal"),
   etiqueta: () => import("../TagEditModal"),
   vistaPrevia: () => import("../DocumentPreviewModal"),
-  vincular: () => import("../terceros/VincularTerceroModal"),
+  vincular: () => import("../terceros/VinculosCarpetaModal"),
   // Las vistas, con la clave del `?sub=` que las abre (VistasDelPanel pasa `cat.id`).
   assistant: () => import("../AssistantView"),
   dashboard: () => import("../DashboardView"),
@@ -102,7 +102,7 @@ export const TagTaxonomyModal = dynamic(() => import("../TagTaxonomyModal").then
 export const BulkTagModal = dynamic(() => import("../BulkTagModal").then((m) => m.BulkTagModal), { ssr: false });
 export const TagEditModal = dynamic(() => import("../TagEditModal").then((m) => m.TagEditModal), { ssr: false });
 export const DocumentPreviewModal = dynamic(() => import("../DocumentPreviewModal").then((m) => m.DocumentPreviewModal), { ssr: false });
-export const VincularTerceroModal = dynamic(() => import("../terceros/VincularTerceroModal"), { ssr: false });
+export const VinculosCarpetaModal = dynamic(() => import("../terceros/VinculosCarpetaModal"), { ssr: false });
 
 // ── Vistas del panel: mientras baja su código, la misma caja «Cargando…» de la lista ──
 export const AssistantView = dynamic(() => import("../AssistantView").then((m) => m.AssistantView), { ssr: false, loading: cargandoVista });

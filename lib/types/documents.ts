@@ -26,6 +26,14 @@ export const DOC_ACTIONS = [
   "link",
   "merge",
   "whatsapp_send",
+  /**
+   * Alguien miró lo que el sistema leyó del papel (texto + datos clave, el
+   * detalle de Esenciales). Rastro de acceso (Ley 29733) que NO es una apertura:
+   * «Lo que más abres» cuenta sólo `view`.
+   */
+  "read_text",
+  /** ADR-516 — se marcó (o desmarcó) «ya puse el código en el papel físico». */
+  "codigo_fisico",
 ] as const;
 export type DocAction = (typeof DOC_ACTIONS)[number];
 
@@ -67,6 +75,12 @@ export interface DbDocument {
   uploadedAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  /** ADR-516 — correlativo del negocio (se muestra `DOC-000123`); null = foto de máquina o negocio sin relleno. */
+  codigo?: number | null;
+  /** Cuándo se marcó «ya puse el código en el papel físico» (null = pendiente). */
+  codigoFisicoAt?: string | null;
+  /** Usuario que lo marcó. */
+  codigoFisicoPor?: string | null;
   versionCount?: number;
   shareCount?: number;
 }
@@ -220,6 +234,8 @@ export interface DocumentListFilters {
   folderIds?: string[];
   /** Condiciones que se cruzan (AND); dentro de cada una basta con ALGUNA. */
   grupos?: GrupoBusqueda[];
+  /** ADR-516 — sólo los que tienen código y todavía no se marcó como puesto en el papel físico. */
+  codigoPendiente?: boolean;
 }
 
 /** Rango de fechas ISO, `desde` incluido y `hasta` excluido. Un borde ausente queda abierto. */

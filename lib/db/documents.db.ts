@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { TAG_ESENCIAL, esEsencial } from "@/lib/documentos/esenciales";
 import { DIAS_AVISO_ESENCIALES } from "@/lib/documentos/esenciales-avisos";
 import { conSubcarpetas } from "@/lib/documentos/terceros-vinculo";
+import { PREFIJO_SIN_CANDADO, esEnlaceSinCandado } from "@/lib/documentos/enlace-varias-carpetas";
 import {
   canRoleSeeEnCadena,
   enlaceSigueSirviendo,
@@ -16,6 +17,8 @@ import {
   type CarpetaConRoles,
 } from "@/lib/documents/doc-access";
 import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
+import { leerCodigoDocumento } from "@/lib/documentos/codigo-documento";
+import { DIAS_AVISO_CODIGO_FISICO } from "@/lib/documentos/codigo-fisico-avisos";
 import { TAGS_FOTOS_DE_MAQUINA } from "@/lib/documents/fotos-de-maquina";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type {
@@ -127,6 +130,10 @@ function mapDoc(
     uploadedAt: toISOReq(d.uploadedAt),
     updatedAt: toISOReq(d.updatedAt),
     deletedAt: toISO(d.deletedAt),
+    // ADR-516 — en la lista blanca: sin esto la columna existe y nadie la ve.
+    codigo: d.codigo ?? null,
+    codigoFisicoAt: toISO(d.codigoFisicoAt),
+    codigoFisicoPor: d.codigoFisicoPor ?? null,
     versionCount: d._count?.versions,
     shareCount: d._count?.shares,
   };
@@ -265,6 +272,15 @@ function filtraPorRol(viewerRole: string | null | undefined): viewerRole is stri
   return !!viewerRole && !veTodoElDrive(viewerRole);
 }
 
+/** Lo que hace `bulkFolders` sobre varias carpetas a la vez. */
+export type AccionLoteCarpetas =
+  | { tipo: "emoji"; emoji: string | null }
+  | { tipo: "color"; color: string | null }
+  | { tipo: "icon"; icon: string | null }
+  | { tipo: "addTags"; tags: string[] }
+  | { tipo: "removeTags"; tags: string[] }
+  | { tipo: "delete"; conDocumentos?: boolean };
+
 /** Todas las carpetas del negocio con su madre y sus roles (60 en `main`: 1 consulta). */
 async function mapaDeCarpetas(tenantId: string): Promise<Map<string, CarpetaConRoles>> {
   const filas = await prisma.documentFolder.findMany({
@@ -395,6 +411,11 @@ export class DocumentsDB {
     if (filters.supplierId) where.supplierId = filters.supplierId;
     if (filters.tags?.length) where.tags = { hasSome: filters.tags };
     if (filters.sinTags?.length) where.NOT = { tags: { hasSome: filters.sinTags } };
+    // ADR-516 — «Código pendiente de poner»: tiene código y nadie lo marcó en el físico.
+    if (filters.codigoPendiente) {
+      where.codigo = { not: null };
+      where.codigoFisicoAt = null;
+    }
 
     /** Un término contra todo lo que puede nombrar a un documento. */
     const enTodoElDoc = (t: string) => [
@@ -415,12 +436,18 @@ export class DocumentsDB {
       : terminosAny.length > 0
       ? { palabras: terminosAny, modo: "alguna" as const }
       : null;
-    const idsSinTildes = busqueda
-      ? await this.buscarIdsSinTildes(tenantId, busqueda.palabras, busqueda.modo, !!filters.deletedOnly)
-      : null;
+    // ADR-516 — si la consulta ENTERA es un código («DOC-000123», «doc 123»,
+    // «123»), el papel con ese código entra además de lo que coincida por texto
+    // (un «123» también puede estar escrito adentro de una boleta).
+    const [idsSinTildes, idPorCodigo] = await Promise.all([
+      busqueda
+        ? this.buscarIdsSinTildes(tenantId, busqueda.palabras, busqueda.modo, !!filters.deletedOnly)
+        : Promise.resolve(null),
+      this.idPorCodigo(tenantId, leerCodigoDocumento(filters.q), !!filters.deletedOnly),
+    ]);
 
     if (idsSinTildes) {
-      where.id = { in: idsSinTildes };
+      where.id = { in: idPorCodigo ? [idPorCodigo, ...idsSinTildes] : idsSinTildes };
     } else if (filters.q?.trim()) {
       const q = filters.q.trim();
       // Varias palabras = TODAS tienen que estar, cada una donde sea. Antes se
@@ -430,8 +457,10 @@ export class DocumentsDB {
       // exacta contiene todas sus palabras, sigue matcheando; el orden por
       // relevancia (client-side) es el que la pone primera.
       const palabras = palabrasUtiles(q);
-      if (palabras.length > 1) where.AND = palabras.map((p) => ({ OR: enTodoElDoc(p) }));
-      else where.OR = enTodoElDoc(q);
+      const porTexto =
+        palabras.length > 1 ? { AND: palabras.map((p) => ({ OR: enTodoElDoc(p) })) } : { OR: enTodoElDoc(q) };
+      if (idPorCodigo) where.OR = [porTexto, { id: idPorCodigo }];
+      else Object.assign(where, porTexto);
     } else if (filters.qAny?.length) {
       // ADR-119 — búsqueda semántica: cualquier término matchea.
       const terms = filters.qAny.filter((t) => t.trim().length > 1).slice(0, 12);
@@ -1395,6 +1424,76 @@ export class DocumentsDB {
     return r.count;
   }
 
+  // ── ADR-516: código único y «ya lo puse en el físico» ──────────────────────
+
+  /** Id del papel con ese código en el negocio (vivo, o en la papelera si `enPapelera`). */
+  private static async idPorCodigo(tenantId: string, codigo: number | null, enPapelera: boolean): Promise<string | null> {
+    if (codigo == null) return null;
+    const fila = await prisma.document.findFirst({
+      where: { tenantId, codigo, deletedAt: enPapelera ? { not: null } : null },
+      select: { id: true },
+    });
+    return fila?.id ?? null;
+  }
+
+  /**
+   * Marca (o desmarca) «ya puse el código en el papel físico» para varios de una.
+   * Sólo cambia los vivos, con código y que de verdad cambian de estado; devuelve
+   * esos ids (para la auditoría). SQL crudo a propósito: NO toca `updatedAt`,
+   * que es la versión que mira la sincronización con la PC (`drive-sync`) — una
+   * marca en el papel no es un archivo nuevo que bajar.
+   */
+  static async marcarCodigoFisico(
+    tenantId: string,
+    ids: readonly string[],
+    puesto: boolean,
+    actor: string,
+  ): Promise<{ id: string; codigo: number }[]> {
+    if (ids.length === 0) return [];
+    const filas = await prisma.$queryRaw<{ id: string; codigo: number }[]>`
+      UPDATE "Document"
+         SET "codigoFisicoAt" = CASE WHEN ${puesto} THEN CURRENT_TIMESTAMP ELSE NULL END,
+             "codigoFisicoPor" = CASE WHEN ${puesto} THEN ${actor}::text ELSE NULL END
+       WHERE "tenantId" = ${tenantId}
+         AND "id" = ANY(${[...ids]}::text[])
+         AND "deletedAt" IS NULL
+         AND "codigo" IS NOT NULL
+         AND ("codigoFisicoAt" IS NULL) = ${puesto}
+      RETURNING "id", "codigo"`;
+    return filas;
+  }
+
+  /**
+   * Cuántos papeles vivos tienen código sin poner en el físico (lo que el rol
+   * ve) y, de esos, cuántos llevan más de `diasAviso` días así.
+   */
+  static async conteoCodigoPendiente(
+    tenantId: string,
+    viewerRole?: string,
+    diasAviso = DIAS_AVISO_CODIGO_FISICO,
+  ): Promise<{ pendientes: number; atrasados: number }> {
+    const filas = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null, codigo: { not: null }, codigoFisicoAt: null },
+      select: { folderId: true, allowedRoles: true, uploadedAt: true },
+    });
+    const visibles = filtraPorRol(viewerRole) ? await soloVisibles(tenantId, filas, viewerRole) : filas;
+    const corte = Date.now() - diasAviso * 86_400_000;
+    return {
+      pendientes: visibles.length,
+      atrasados: visibles.filter((f) => f.uploadedAt.getTime() <= corte).length,
+    };
+  }
+
+  /**
+   * Negocios que ya numeran sus papeles (tienen contador), para el cron de
+   * avisos. Todos, no sólo los que tienen pendientes: así el que se puso al día
+   * ve resuelto el aviso que le quedó sin leer.
+   */
+  static async tenantsConCodigos(): Promise<string[]> {
+    const filas = await prisma.documentCodigoContador.findMany({ select: { tenantId: true } });
+    return filas.map((f) => f.tenantId);
+  }
+
   static async bulkAddTag(
     tenantId: string,
     ids: string[],
@@ -1847,41 +1946,67 @@ export class DocumentsDB {
    *   propias de cada una.
    * · `delete` — cascada a subcarpetas (schema); los documentos van a la raíz,
    *   o a la papelera con `conDocumentos` (ver `eliminarCarpetas`).
+   *
+   * `viewerRole` (24-10): el encargado sólo toca las carpetas que VE por toda la
+   * cadena. Antes el lote no miraba el rol y podía etiquetar (o ligar al
+   * sistema) una carpeta con candado de dueño que ni le aparece.
    */
   static async bulkFolders(
     tenantId: string,
     ids: string[],
-    accion:
-      | { tipo: "emoji"; emoji: string | null }
-      | { tipo: "color"; color: string | null }
-      | { tipo: "icon"; icon: string | null }
-      | { tipo: "addTags"; tags: string[] }
-      | { tipo: "removeTags"; tags: string[] }
-      | { tipo: "delete"; conDocumentos?: boolean },
+    accion: AccionLoteCarpetas,
+    viewerRole?: string,
   ): Promise<number> {
+    return (await this.bulkFoldersConDetalle(tenantId, ids, accion, viewerRole)).count;
+  }
+
+  /**
+   * De esos ids, los que el rol puede tocar: los ve por toda la cadena (y, para
+   * borrar, `puedeBorrarCarpeta`). Sin rol o dueño/admin: todos los del negocio.
+   */
+  static async carpetasQuePuedeTocar(tenantId: string, ids: readonly string[], viewerRole: string | undefined, para: "editar" | "borrar"): Promise<string[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const limpios = [...new Set(ids.filter((x) => typeof x === "string" && x.trim()))];
-    if (limpios.length === 0) return 0;
+    if (limpios.length === 0 || !filtraPorRol(viewerRole)) return limpios;
+    const mapa = await mapaDeCarpetas(tenantId);
+    return limpios.filter((id) => {
+      if (!mapa.has(id)) return false;
+      const cadena = rolesDeLaCadena(id, mapa);
+      return para === "borrar" ? puedeBorrarCarpeta(viewerRole, cadena) : canRoleSeeEnCadena(viewerRole, [], cadena);
+    });
+  }
+
+  /** Igual que `bulkFolders`, y además qué carpetas cambiaron sus etiquetas (para el registro de vínculos). */
+  static async bulkFoldersConDetalle(
+    tenantId: string,
+    ids: string[],
+    accion: AccionLoteCarpetas,
+    viewerRole?: string,
+  ): Promise<{ count: number; tocadas: string[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    // «No la ve» se responde igual que «no existe»: no cuenta y no se escribe.
+    const limpios = await this.carpetasQuePuedeTocar(tenantId, ids, viewerRole, accion.tipo === "delete" ? "borrar" : "editar");
+    if (limpios.length === 0) return { count: 0, tocadas: [] };
     const where = { id: { in: limpios }, tenantId };
 
     if (accion.tipo === "delete") {
       const { carpetas } = await this.eliminarCarpetas(tenantId, limpios, {
         conDocumentos: accion.conDocumentos,
       });
-      return carpetas;
+      return { count: carpetas, tocadas: [] };
     }
     if (accion.tipo === "emoji") {
       const { count } = await prisma.documentFolder.updateMany({ where, data: { emoji: accion.emoji } });
-      return count;
+      return { count, tocadas: [] };
     }
     if (accion.tipo === "icon") {
       // El emoji gana al ícono al dibujar: elegir ícono lo limpia.
       const { count } = await prisma.documentFolder.updateMany({ where, data: { icon: accion.icon, emoji: null } });
-      return count;
+      return { count, tocadas: [] };
     }
     if (accion.tipo === "color") {
       const { count } = await prisma.documentFolder.updateMany({ where, data: { color: accion.color } });
-      return count;
+      return { count, tocadas: [] };
     }
 
     // Etiquetas: se leen las actuales y se escribe carpeta por carpeta. `updateMany`
@@ -1892,7 +2017,7 @@ export class DocumentsDB {
       select: { id: true, tags: true },
     });
     const nuevas = accion.tags.map((t) => t.trim().toLowerCase()).filter(Boolean);
-    let tocadas = 0;
+    const tocadas: string[] = [];
     for (const f of actuales) {
       const antes = f.tags ?? [];
       const despues =
@@ -1903,9 +2028,9 @@ export class DocumentsDB {
       // vez que la carpeta cambió de verdad.
       if (antes.length === despues.length && antes.every((t, i) => t === despues[i])) continue;
       await prisma.documentFolder.update({ where: { id: f.id }, data: { tags: despues } });
-      tocadas += 1;
+      tocadas.push(f.id);
     }
-    return tocadas;
+    return { count: tocadas.length, tocadas };
   }
 
   // ── Versions ───────────────────────────────────────────────────────────────
@@ -2121,7 +2246,13 @@ export class DocumentsDB {
   static async createFolderShare(
     tenantId: string,
     folderId: string,
-    input: { createdById: string; expiresInDays?: number; password?: string }
+    input: {
+      createdById: string;
+      expiresInDays?: number;
+      password?: string;
+      /** Marca «sin candado» en el token: nunca sirve lo restringido, ni al dueño (`esEnlaceSinCandado`). */
+      sinCandado?: boolean;
+    }
   ): Promise<{ token: string; expiresAt: string; hasPassword: boolean } | null> {
     const folder = await prisma.documentFolder.findFirst({
       where: { id: folderId, tenantId },
@@ -2134,7 +2265,7 @@ export class DocumentsDB {
       data: {
         folderId,
         tenantId,
-        token: randomToken(24),
+        token: `${input.sinCandado ? PREFIJO_SIN_CANDADO : ""}${randomToken(24)}`,
         expiresAt,
         password: input.password ? hashPassword(input.password) : null,
         createdById: input.createdById,
@@ -2196,17 +2327,26 @@ export class DocumentsDB {
    * documento: lo restringido (la carpeta, su cadena o el doc) sólo si quien
    * creó el enlace lo ve hoy. Desde el 04-10 sólo un rol privilegiado crea
    * enlaces de carpeta; esto cubre los que se sacaron antes.
+   *
+   * Con la marca «sin candado» en el token (los de varias carpetas, 24-10) lo
+   * restringido no sale NUNCA, sin importar quién lo creó: ni el papel, ni la
+   * carpeta si ella o una de su cadena tiene roles (su nombre tampoco se publica).
    */
   private static async docsDelEnlaceDeCarpeta(share: {
     folderId: string;
     tenantId: string;
     createdById: string;
+    token: string;
   }): Promise<string[] | null> {
     const filas = await prisma.document.findMany({
       where: { folderId: share.folderId, tenantId: share.tenantId, deletedAt: null },
       select: { id: true, allowedRoles: true },
     });
     const cadena = rolesDeLaCadena(share.folderId, await mapaDeCarpetas(share.tenantId));
+    if (esEnlaceSinCandado(share.token)) {
+      if (cadena.length > 0) return null;
+      return filas.filter((d) => !estaRestringido(d.allowedRoles ?? [], cadena)).map((d) => d.id);
+    }
     const hayRestringido = cadena.length > 0 || filas.some((d) => (d.allowedRoles ?? []).length > 0);
     if (!hayRestringido) return filas.map((d) => d.id);
     const rol = await rolDelCreador(share.tenantId, share.createdById);
@@ -2221,7 +2361,7 @@ export class DocumentsDB {
   ): Promise<{ storagePath: string; mimeType: string; name: string } | null> {
     const share = await prisma.documentFolderShare.findUnique({
       where: { token },
-      select: { folderId: true, tenantId: true, revokedAt: true, expiresAt: true, createdById: true },
+      select: { folderId: true, tenantId: true, revokedAt: true, expiresAt: true, createdById: true, token: true },
     });
     if (!share || share.revokedAt || share.expiresAt.getTime() < Date.now()) return null;
     const visibles = await this.docsDelEnlaceDeCarpeta(share);

@@ -11,6 +11,7 @@ import type { DbDocumentFolder } from "@/lib/types/documents";
 import { ICONO_TERCERO } from "../terceros/compartido";
 import EnElSistema from "./EnElSistema";
 import { useNombresLigados } from "./use-tercero-en-el-sistema";
+import { useNombresVinculos } from "../terceros/use-nombres-vinculos";
 
 const AYUDA = {
   what: "Liga la carpeta a la comunidad, proveedor, cliente, colaborador o persona de la que son los papeles (el mismo vínculo de Archivo › Terceros).",
@@ -26,6 +27,8 @@ const AYUDA = {
 export default function LigadaA({ carpeta, onLigar }: { carpeta: DbDocumentFolder; onLigar: () => void }) {
   const claves = useMemo(() => vinculosDeCarpeta(carpeta), [carpeta]);
   const nombres = useNombresLigados(carpeta.id, claves);
+  // El alias vivo: se renombra en «Vínculos con el sistema…» y se ve acá sin recargar.
+  const vivos = useNombresVinculos(claves);
   const ligar = (
     <button type="button" onClick={onLigar} title="Ligar a…" aria-label="Ligar la carpeta a un tercero" className={button({ variant: "ghost", size: "icon" })} data-qa="esencial-ligar">
       <Link2 className="h-5 w-5" />
@@ -51,6 +54,8 @@ export default function LigadaA({ carpeta, onLigar }: { carpeta: DbDocumentFolde
         if (!v) return null;
         const Icono = ICONO_TERCERO[v.tipo];
         const n = nombres[clave];
+        const vivo = vivos[clave];
+        const nombre = vivo ? vivo.alias?.trim() || n?.nombre || vivo.nombre : n?.alias?.trim() || n?.nombre;
         return (
           <Plegable
             key={clave}
@@ -58,7 +63,7 @@ export default function LigadaA({ carpeta, onLigar }: { carpeta: DbDocumentFolde
             titulo={
               <span className="inline-flex min-w-0 items-center gap-2">
                 <Icono className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-                <span className="min-w-0 break-words">{n ? `De ${n.nombre} en el sistema` : `Ligada a ${TIPO_TERCERO_LABEL[v.tipo].uno.toLowerCase()}`}</span>
+                <span className="min-w-0 break-words">{nombre ? `De ${nombre} en el sistema` : `Ligada a ${TIPO_TERCERO_LABEL[v.tipo].uno.toLowerCase()}`}</span>
               </span>
             }
             acciones={

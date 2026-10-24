@@ -99,6 +99,8 @@ export interface UsoCarpeta {
 export interface NombreTercero {
   nombre: string;
   detalle?: string | null;
+  /** Cómo lo llama el negocio («Santa Rosa»): `admin_prefs["vinculoAlias:<clave>"]`, por tercero. */
+  alias?: string | null;
 }
 
 export interface TerceroVinculado {
@@ -201,7 +203,7 @@ export function armarTerceros(args: {
     const nombre = nombres[clave];
     lista.push({
       clave, tipo: v.tipo, id: v.id,
-      nombre: nombre?.nombre?.trim() || nombrePorDefecto(v.tipo, v.id),
+      nombre: nombre?.alias?.trim() || nombre?.nombre?.trim() || nombrePorDefecto(v.tipo, v.id),
       detalle: nombre?.detalle ?? null,
       carpetas: raices, carpetaIds, docs: n, vistas, ultima, vencidos, porVencer,
     });

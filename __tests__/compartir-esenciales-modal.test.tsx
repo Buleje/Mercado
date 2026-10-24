@@ -23,8 +23,20 @@ afterEach(() => {
 });
 
 describe("CompartirEsencialesModal", () => {
+  it("una esencial con candado en su cadena no se ofrece (el enlace no la serviría)", () => {
+    const madre = { id: "m", name: "Reservado", parentId: null, allowedRoles: ["candado:solo-duenos"] } as unknown as DbDocumentFolder;
+    const hija = { id: "h", name: "Actas", parentId: "m", allowedRoles: [] } as unknown as DbDocumentFolder;
+    const libre = { id: "l", name: "Licencias", parentId: null, allowedRoles: [] } as unknown as DbDocumentFolder;
+    render(<CompartirEsencialesModal carpetas={[hija, libre]} todas={[madre, hija, libre]} onClose={() => {}} />);
+    const actas = screen.getByLabelText(/^Actas/) as HTMLInputElement;
+    expect(actas.checked).toBe(false);
+    expect(actas.disabled).toBe(true);
+    expect(screen.getByText(/con candado, no va/)).toBeInTheDocument();
+    expect((screen.getByLabelText("Licencias") as HTMLInputElement).checked).toBe(true);
+  });
+
   it("todas marcadas de entrada; desmarcar baja la cuenta", () => {
-    render(<CompartirEsencialesModal carpetas={CARPETAS} onClose={() => {}} />);
+    render(<CompartirEsencialesModal carpetas={CARPETAS} todas={CARPETAS} onClose={() => {}} />);
     const casillas = CARPETAS.map((c) => screen.getByLabelText(c.name) as HTMLInputElement);
     expect(casillas.every((c) => c.checked)).toBe(true);
     expect(screen.getByText("3 de 3 carpetas")).toBeInTheDocument();
@@ -45,7 +57,7 @@ describe("CompartirEsencialesModal", () => {
         });
       }),
     );
-    render(<CompartirEsencialesModal carpetas={CARPETAS} onClose={() => {}} />);
+    render(<CompartirEsencialesModal carpetas={CARPETAS} todas={CARPETAS} onClose={() => {}} />);
     fireEvent.click(screen.getByLabelText("Contratos"));
     fireEvent.click(screen.getByRole("radio", { name: "90 días" }));
     fireEvent.click(screen.getByLabelText(/Pedir una clave/));
@@ -62,7 +74,7 @@ describe("CompartirEsencialesModal", () => {
 
   it("si falla: lo dice y no arma el enlace", async () => {
     vi.stubGlobal("fetch", vi.fn(() => json(403, { error: "forbidden" })));
-    render(<CompartirEsencialesModal carpetas={CARPETAS} onClose={() => {}} />);
+    render(<CompartirEsencialesModal carpetas={CARPETAS} todas={CARPETAS} onClose={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: /Crear enlace/ }));
 
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("no tienes permiso"));

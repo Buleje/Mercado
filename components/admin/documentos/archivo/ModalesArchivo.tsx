@@ -4,7 +4,7 @@ import { Check, X, Clock, Loader2 } from "@buleje/design-system/icons";
 import {
   TemplateGenerator, MoveToFolderModal, ImportarCarpetaModal, SendWhatsAppModal, OrdenarArchivoModal, ExpedienteModal,
   StampModal, EscanerModal, PageEditorModal, SmartFolderModal, IconoCarpetaModal, FolderShareModal, ConfirmarBorrarCarpetas,
-  TagTaxonomyModal, BulkTagModal, TagEditModal, VincularTerceroModal,
+  TagTaxonomyModal, BulkTagModal, TagEditModal, VinculosCarpetaModal,
 } from "./perezosos";
 import { descendantIds } from "@/lib/documentos/folder-tree";
 import { tagsVisibles } from "./compartido";
@@ -194,8 +194,9 @@ export default function ModalesArchivo({ arch }: { arch: ModeloArchivo }) {
       )}
 
       {vinculando && (
-        <VincularTerceroModal
+        <VinculosCarpetaModal
           carpeta={vinculando}
+          carpetas={folders}
           onClose={() => setVinculando(null)}
           onCambiar={(accion, clave) => bulkFolders([vinculando.id], { action: accion, tags: [clave] })}
         />

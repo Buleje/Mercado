@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { descendantIds } from "@/lib/documentos/folder-tree";
 import { ChevronRight, Plus, Palette, Share2, Trash2, Check } from "@buleje/design-system/icons";
 import { FolderGlyph } from "../folder-visuals";
+import MarcasCarpeta from "../explorador/MarcasCarpeta";
 import { tagsVisibles } from "./compartido";
 import type { ModeloArchivo } from "./use-archivo";
 import type { DbDocumentFolder } from "@/lib/types/documents";
@@ -113,6 +114,7 @@ export default function FilaCarpeta({ arch, f, depth, hasChildren }: { arch: Mod
                       >
                         <FolderGlyph folder={f} active={active} className="h-4 w-4 shrink-0" />
                         <span className="flex-1 text-left truncate">{f.name}</span>
+                        <MarcasCarpeta carpeta={f} />
                         {/* Nombre completo al hover — el sidebar es redimensionable
                             (puede llegar a 180px) y el `truncate` de arriba no
                             avisaba en absoluto qué decía el nombre cortado. */}

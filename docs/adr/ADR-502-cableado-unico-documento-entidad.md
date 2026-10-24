@@ -21,3 +21,9 @@ Cuatro FK nuevas (`terceroId`, `permisoId`, `colaboradorId`, `tramiteId`) con í
 ## Consecuencias
 
 Un documento de entidad se encuentra por tag aunque lo muevan de carpeta. Contra: el tag no tiene integridad referencial; si se borra la entidad, el documento queda huérfano (visible en su carpeta).
+
+## Nota 24-10 — nombre propio del vínculo y quién lo ligó
+
+- **Nombre propio (alias)**: `admin_prefs["vinculoAlias:<clave del tag>"] = alias` (una clave por tercero; `null` = quitado; el mapa `vinculosAlias` del primer día se sigue leyendo) en `Settings.featureFlagsJson`, vía `VinculosCarpetaDB` (`lib/db/vinculos-carpeta.db.ts`) → `AdminPreferencesDB`. Es por negocio y por tercero (todas sus carpetas lo muestran igual), sin schema. No va en el tag: el tope de 40 caracteres ya lo usa la clave, y renombrar no debe romper la búsqueda por `hasSome`. Tope 60. Una clave por tercero porque la escritura atómica de `admin_prefs` mezcla un solo nivel: con un mapa, dos renombres simultáneos se pisaban (seguridad 24-10).
+- **Registro**: ligar y quitar por `folders/bulk` (addTags/removeTags) dejan `ActivityLog` con `entity="DocumentFolder"`, `action=VINCULO_LIGAR|VINCULO_QUITAR`, `detail={clave}`; se espera antes de responder. Lo ligado antes del 24-10 no tiene registro.
+- **Permisos**: ver = quien ve la carpeta; cambiar = admin/owner/manager y sólo en carpetas que su rol ve por toda la cadena (`DocumentsDB.carpetasQuePuedeTocar`), también en `bulk addTags/removeTags`.

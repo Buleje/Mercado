@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { TerceroEnElSistemaDB } from "@/lib/db/tercero-en-el-sistema.db";
+import { VinculosCarpetaDB } from "@/lib/db/vinculos-carpeta.db";
 import { leerVinculo } from "@/lib/documentos/terceros-vinculo";
 import { logger } from "@/lib/logger";
 
@@ -52,7 +53,9 @@ export async function GET(req: NextRequest) {
         ? await TerceroEnElSistemaDB.nombre(auth.tenantId, clave, auth.role)
         : await TerceroEnElSistemaDB.resumen(auth.tenantId, auth.role, clave);
     if (!resumen) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json(resumen);
+    // Cómo lo llama el negocio («Santa Rosa»), si le puso alias en «Vínculos con el sistema…».
+    const alias = (await VinculosCarpetaDB.aliasDe(auth.tenantId, [clave]))[clave] ?? null;
+    return NextResponse.json({ ...resumen, alias });
   } catch (e) {
     logger.error("[documents.terceros-resumen] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
