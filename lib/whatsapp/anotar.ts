@@ -31,6 +31,8 @@ import { transcribirAudio } from "@/lib/ai/transcribir";
 import { conversar, errorParaLaPersona } from "@/lib/asistente/conversar";
 import { olvidar, anotarHecho } from "@/lib/asistente/memoria";
 import { nombreDelNegocio } from "@/lib/asistente/negocio";
+import { TOOL_MANDAR_PAPEL } from "@/lib/asistente/mandar-papel";
+import { DIAS_ENLACE } from "@/lib/forestal/contactos-envio";
 import { WhatsAppDuenosDB } from "@/lib/db/whatsapp-duenos.db";
 import type { Role } from "@/lib/auth/role-permissions";
 import { TenantsDB } from "@/lib/db/tenants.db";
@@ -288,6 +290,19 @@ export async function manejarMensajeDeDueno(entrada: MensajeDueno): Promise<void
   const dondePregunta = negocio ? `¿Lo anoto en *${negocio}*?` : "¿Lo anoto?";
 
   for (const p of r.pendientes) {
+    /**
+     * Mandar un papel no anota nada: sale a OTRA persona. La pregunta ya trae
+     * el papel, el nombre y el número tapado («¿Mando "X" a Alex (+51 9•• •••
+     * 123)?»); los botones dicen «mándalo», no «confirmar».
+     */
+    if (p.tool === TOOL_MANDAR_PAPEL) {
+      const desde = negocio ? `Sale desde *${negocio}*` : "Sale";
+      await mandarBotones(cred, telefono, `📎 *${p.resumen}*\n\n${desde}, con un enlace que vence en ${DIAS_ENLACE} días.`, [
+        { id: `${BOTON_OK}:${p.id}`, titulo: "✅ Sí, mándalo" },
+        { id: `${BOTON_NO}:${p.id}`, titulo: "✖ No" },
+      ]);
+      continue;
+    }
     await mandarBotones(cred, telefono, `📝 *${p.resumen}*\n\n${dondePregunta}`, [
       { id: `${BOTON_OK}:${p.id}`, titulo: "✅ Confirmar" },
       { id: `${BOTON_NO}:${p.id}`, titulo: "✖ Cancelar" },
@@ -397,9 +412,11 @@ async function manejarBoton(msg: MensajeDueno, rol: Role): Promise<void> {
     return;
   }
 
+  const esPapel = pendiente.toolName === TOOL_MANDAR_PAPEL;
+
   if (accion === BOTON_NO) {
     removePendingApproval(aprobacionId);
-    await mandarTexto(cred, telefono, "✖ Listo, no anoté nada.");
+    await mandarTexto(cred, telefono, esPapel ? "✖ Listo, no mandé nada." : "✖ Listo, no anoté nada.");
     return;
   }
 
@@ -412,11 +429,12 @@ async function manejarBoton(msg: MensajeDueno, rol: Role): Promise<void> {
     payload: pendiente.payload,
     tenantId,
     actorRole: rol,
+    actorId: pendiente.requestedBy,
   });
   removePendingApproval(aprobacionId);
 
   if (!res.success) {
-    await mandarTexto(cred, telefono, `⚠️ No se pudo anotar: ${errorParaLaPersona(res.error)}`);
+    await mandarTexto(cred, telefono, `⚠️ ${esPapel ? "No salió" : "No se pudo anotar"}: ${errorParaLaPersona(res.error)}`);
     return;
   }
 

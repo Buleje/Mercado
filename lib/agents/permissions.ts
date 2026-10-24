@@ -71,6 +71,10 @@ export const AGENT_ACTION_PERMISSIONS: Record<
   documentos: {
     "buscar":               { resource: "settings",       action: "read" },
     "por-vencer":           { resource: "settings",       action: "read" },
+    // Manda un papel por WhatsApp con un enlace firmado de 7 días: lo mismo que
+    // mandar un aviso a un tercero (admin, dueño, encargado). Cajero y
+    // almacenero sólo leen avisos: no comparten papeles hacia afuera.
+    "mandar-papel":         { resource: "notifications",  action: "write" },
   },
   caja: {
     "estado":               { resource: "cash-registers", action: "read" },

@@ -104,7 +104,8 @@ const PALABRAS: Record<AgentDomain, readonly string[]> = {
   pricing: ["precio", "precios", "promocion", "promoción", "promociones", "oferta", "ofertas", "descuento", "descuentos", "combo", "combos", "bundle", "competencia"],
   notifications: ["avisa", "avisar", "aviso", "notifica", "notificar", "notificacion", "notificación", "mensaje", "whatsapp", "recordatorio", "alerta", "alertas"],
   forestal: ["forestal", "madera", "troza", "trozas", "gtf", "guia", "guía", "serfor", "osinfor", "aserradero", "aserrio", "aserrío", "cubicacion", "cubicación", "especie", "especies", "libro", "ctp", "tablas", "paquete", "paquetes"],
-  documentos: ["documento", "documentos", "archivo", "archivos", "drive", "carpeta", "carpetas", "pdf", "contrato", "contratos", "vencer", "papeles"],
+  // «manda/pásale <papel> a <persona>»: el verbo de mandar a un tercero también trae el Archivo (documentos_mandar_papel).
+  documentos: ["documento", "documentos", "archivo", "archivos", "drive", "carpeta", "carpetas", "pdf", "contrato", "contratos", "vencer", "papel", "papeles", "resolucion", "resolución", "constancia", "manda", "mandale", "mándale", "mandales", "envia", "envía", "enviale", "envíale", "pasale", "pásale", "comparte", "compartele", "compártele"],
   n8n: ["n8n", "automatizacion", "automatización", "automatizaciones", "flujo", "flujos", "dispara", "disparar", "webhook", "integracion", "integración", "conecta", "correo", "email", "telegram", "sheets"],
   // Los días sueltos («el lunes») NO van acá a propósito: «el lunes cobré 300»
   // es plata, no agenda, y arrastraría estas tools a media conversación. Lo que

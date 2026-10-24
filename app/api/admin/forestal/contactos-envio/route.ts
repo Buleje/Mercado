@@ -4,24 +4,17 @@ import { applyRateLimit, applyRateLimitWithTenant, rateLimit } from "@/lib/rate-
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { checkPermission, type Role } from "@/lib/auth/role-permissions";
 import { AdminPreferencesDB } from "@/lib/db/admin-preferences.db";
-import { AdelantosDB } from "@/lib/db/adelantos.db";
-import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
-import { SuppliersDB } from "@/lib/db/purchases.db";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { ROLES_LECTURA_DOCS_PLAN } from "@/lib/forestal/plan-documentos-tipos";
+import { contactosDelNegocio } from "@/lib/forestal/contactos-envio.server";
 import {
   DIAS_ENLACE,
   TOPE_ENLACES_HORA,
   envioSchema,
-  guardadosVisibles,
   leerGuardados,
   normalizarTelefono,
   recordarContacto,
-  unirContactos,
-  type FuenteContacto,
-  type FuenteGuardada,
 } from "@/lib/forestal/contactos-envio";
 
 /**
@@ -63,8 +56,6 @@ async function entrar(req: NextRequest, limite: "GENEROUS" | "STRICT") {
   return auth;
 }
 
-type Otro = { nombre: string | null | undefined; telefono: string | null | undefined; fuente: Exclude<FuenteContacto, "envio"> };
-
 /**
  * Cobra `n` enlaces del balde del negocio (`TOPE_ENLACES_HORA` por hora). Un
  * envío de 20 papeles gasta 20, no 1. `null` = puede seguir; si no, el 429.
@@ -94,45 +85,13 @@ async function revocar(tenantId: string, role: string, shareIds: readonly string
   );
 }
 
-/** Una fuente que falla no deja sin contactos: se loguea y se sigue con las demás. */
-async function fuente(nombre: string, tenantId: string, leer: () => Promise<Otro[]>): Promise<Otro[]> {
-  try {
-    return await leer();
-  } catch (err) {
-    logger.warn(`[contactos-envio] no se pudo leer ${nombre}`, { error: String(err), tenantId });
-    return [];
-  }
-}
-
 export const GET = withApiHandler("forestal-contactos-envio-get", async (req: NextRequest) => {
   const auth = await entrar(req, "GENEROUS");
   if (auth instanceof Response) return auth;
   const tenantId = auth.tenantId;
-  /* Ley 29733: cada fuente de teléfonos, sólo si el rol ya la puede leer en su módulo. */
-  const veAdelantos = checkPermission(auth.role as Role, "adelantos", "read");
-  const veProveedores = checkPermission(auth.role as Role, "suppliers", "read");
-  /* Los números ya usados, con la MISMA regla: sólo los que salieron de fuentes que el rol lee. */
-  const puedeLeer = (f: FuenteGuardada) => (f === "adelantos" ? veAdelantos : f === "proveedor" ? veProveedores : true);
-  const adminODueno = auth.role === "admin" || auth.role === "owner";
   try {
-    const [prefs, adelantos, directorio, proveedores] = await Promise.all([
-      AdminPreferencesDB.read(tenantId),
-      veAdelantos
-        ? fuente("adelantos", tenantId, async () =>
-            (await AdelantosDB.listBeneficiarios(tenantId)).map((b) => ({ nombre: b.nombre, telefono: b.telefono, fuente: "adelantos" as const })),
-          )
-        : Promise.resolve([] as Otro[]),
-      fuente("directorio", tenantId, async () =>
-        (await ForestDirectorioDB.listarPartes(tenantId)).map((p) => ({ nombre: p.nombre, telefono: p.telefono, fuente: "directorio" as const })),
-      ),
-      veProveedores
-        ? fuente("proveedores", tenantId, async () =>
-            (await SuppliersDB.getAll(tenantId)).map((s) => ({ nombre: s.name, telefono: s.phone, fuente: "proveedor" as const })),
-          )
-        : Promise.resolve([] as Otro[]),
-    ]);
-    const guardados = guardadosVisibles(leerGuardados(prefs["contactosEnvio"]), { puedeLeer, adminODueno });
-    const contactos = unirContactos(guardados, [...adelantos, ...directorio, ...proveedores]);
+    /* Ley 29733: cada fuente de teléfonos, sólo si el rol ya la puede leer en su módulo (la regla vive en el helper). */
+    const contactos = await contactosDelNegocio(tenantId, auth.role);
     return NextResponse.json({ contactos });
   } catch (err) {
     logger.error("[contactos-envio.GET] failed", { error: String(err), tenantId });

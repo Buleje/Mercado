@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, Check, Loader2 } from "@buleje/design-system/icons";
+import { TOOL_MANDAR_PAPEL } from "@/lib/asistente/mandar-papel";
 import type { AprobacionPendiente, ResolverAprobacion } from "./tipos";
 
 /**
@@ -62,6 +63,9 @@ export function TarjetasDeAprobacion({
             </div>
           );
         }
+        /* Mandar un papel no cambia datos: sale a OTRA persona y no se
+           deshace. La tarjeta lo dice así y pregunta Sí / No. */
+        const esPapel = a.tool === TOOL_MANDAR_PAPEL;
         return (
           <div
             key={a.id}
@@ -69,7 +73,7 @@ export function TarjetasDeAprobacion({
           >
             <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-              {a.titulo} — esto cambia tus datos
+              {a.titulo} — {esPapel ? "sale a otra persona" : "esto cambia tus datos"}
             </p>
             {a.resumen && (
               <p className="mt-1.5 text-sm font-medium text-[var(--text-primary)]">{a.resumen}</p>
@@ -97,7 +101,7 @@ export function TarjetasDeAprobacion({
                 ) : (
                   <Check className="h-4 w-4" />
                 )}
-                Confirmar
+                {esPapel ? "Sí, mándalo" : "Confirmar"}
               </button>
               <button
                 type="button"
@@ -108,7 +112,7 @@ export function TarjetasDeAprobacion({
                 }}
                 className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
               >
-                Cancelar
+                {esPapel ? "No" : "Cancelar"}
               </button>
             </div>
           </div>

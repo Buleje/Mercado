@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { ProductsDB, OrdersDB, CustomersDB, SalesDB, PayablesDB, PurchasesDB, ReviewsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
@@ -8,7 +9,8 @@ import { getCachedLLMResponse, setCachedLLMResponse } from "@/lib/llm-cache";
 import { ALL_AGENT_TOOLS, resolveToolCall, isToolApprovalRequired } from "@/lib/agents/tool-definitions";
 import { toolsParaMensaje, tokensAproximados } from "@/lib/agents/tool-routing";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
-import { stashPendingApproval } from "@/lib/agents/pending-approvals";
+import { payloadsDelEnsayo, stashPendingApproval } from "@/lib/agents/pending-approvals";
+import { leerPedidoDeEnvio, respuestaDeAtajo, TOOL_MANDAR_PAPEL } from "@/lib/asistente/mandar-papel";
 import { callLLM } from "@/lib/llm-router";
 import type { LLMUsage } from "@/lib/llm-providers";
 import { checkTokenBudget, recordTokenUsage } from "@/lib/ai-usage-tracker";
@@ -247,6 +249,11 @@ Un gasto de una máquina (combustible, repuestos, operador, peaje) va al libro d
 ESA máquina, no al libro de gastos del negocio; el sistema te lo dice en el
 resumen y tú se lo repites al usuario, porque si no lo va a buscar donde no está.
 
+MANDAR UN PAPEL: «manda/envía/pásale <papel> a <persona>» va con
+documentos_mandar_papel (papel y persona tal como los dijo). El papel sale por
+WhatsApp con un enlace que vence en 7 días, SÓLO después de que apriete Sí en la
+tarjeta. Si la herramienta pregunta cuál papel o cuál persona, repite la pregunta.
+
 QUÉ NO PUEDES HACER TODAVÍA:
 No puedes cambiar precios, crear productos, mover pedidos ni registrar ventas de
 productos desde el chat (una venta descuenta stock y emite comprobante: va por el
@@ -403,6 +410,14 @@ export async function POST(req: NextRequest) {
     return respuestaJson(safetyCheck.reason, { mode: "blocked" as const });
   }
   const userMessage = safetyCheck.input;
+  /**
+   * «Manda la resolución de plantación a Alex» ya se entiende sin el modelo:
+   * se arma la llamada a `documentos_mandar_papel` a mano y sigue por el MISMO
+   * ensayo + tarjeta que cualquier acción. No gasta tokens ni depende de que el
+   * proveedor de IA esté arriba, y no se sirve de la caché (una respuesta
+   * guardada no deja tarjeta que confirmar).
+   */
+  const pedidoDePapel = leerPedidoDeEnvio(userMessage);
   const injectionCheck = detectPromptInjection(userMessage);
   if (injectionCheck.severity === "medium") {
     logger.warn("[ai-assistant] Possible injection attempt", { user: auth.username, pattern: injectionCheck.matchedPattern });
@@ -426,7 +441,7 @@ export async function POST(req: NextRequest) {
 
   // ── Token budget check — prevent overspending on AI ──────────────────────
   const budget = checkTokenBudget(auth.tenantId);
-  if (!budget.allowed) {
+  if (!budget.allowed && !pedidoDePapel) {
     return respuestaJson(budget.warning ?? "Se agotó el presupuesto de IA de este mes. Vuelve a intentar el mes que viene o sube el límite en Configuración.", {
       mode: "budget-exceeded" as const,
       usage: { percentUsed: budget.percentUsed, limit: budget.limit },
@@ -448,7 +463,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (isSimpleQuery) {
+  if (isSimpleQuery && !pedidoDePapel) {
     const cached = getCachedLLMResponse(auth.tenantId, "assistant", userMessage);
     if (cached) {
       return respuestaJson(cached.response, {
@@ -485,18 +500,20 @@ export async function POST(req: NextRequest) {
     // ── First LLM call (with tools) — ADR-010 balanced tier ────────────────
     // Router call, primera decisión con tools. Llama-3.3-70b por default,
     // fallback a llama-4-scout si cae.
-    const res = await callLLM("balanced", {
-      messages,
-      temperature: AI_TEMPERATURES.router,
-      maxTokens: 1500,
-      stream: false, // Function calling requires non-streaming first pass
-      // Sólo las herramientas que la frase menciona. El catálogo entero son
-      // 7.043 tokens de esquema por llamada y no entra en el límite POR MINUTO
-      // de la cuenta — ver lib/agents/tool-routing.ts.
-      tools: toolsElegidas,
-      toolChoice: "auto",
-      label: "ai-assistant",
-    });
+    const res = pedidoDePapel
+      ? respuestaDeAtajo(pedidoDePapel, randomUUID().slice(0, 8))
+      : await callLLM("balanced", {
+          messages,
+          temperature: AI_TEMPERATURES.router,
+          maxTokens: 1500,
+          stream: false, // Function calling requires non-streaming first pass
+          // Sólo las herramientas que la frase menciona. El catálogo entero son
+          // 7.043 tokens de esquema por llamada y no entra en el límite POR MINUTO
+          // de la cuenta — ver lib/agents/tool-routing.ts.
+          tools: toolsElegidas,
+          toolChoice: "auto",
+          label: "ai-assistant",
+        });
 
     let totalUsage: LLMUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
@@ -552,6 +569,8 @@ export async function POST(req: NextRequest) {
          * que responda la primera es pedirle que apruebe a ciegas.
          */
         let aprobacionesPendientes = 0;
+        /** El «no encontré el papel» / «¿a cuál Alex?» del ensayo, para el atajo. */
+        let errorDelEnsayo: string | null = null;
 
         // TransformStream pattern — Next 16 + undici compat (avoids
         // "controller[kState].transformAlgorithm is not a function" on ReadableStream).
@@ -609,11 +628,13 @@ export async function POST(req: NextRequest) {
                     actorRole: auth.role,
                   });
                   if (!ensayo.success) {
+                    errorDelEnsayo = ensayo.error ?? null;
                     toolResult = JSON.stringify({ error: ensayo.error });
                     toolsEjecutados.push({ nombre: toolName, resultado: toolResult });
                     logger.info("[ai-assistant] acción rechazada en la validación", {
                       tool: toolName,
-                      error: ensayo.error,
+                      // La pregunta de «mandar un papel» nombra contactos: no va al log (Ley 29733).
+                      error: toolName === TOOL_MANDAR_PAPEL ? "pregunta al usuario (sin datos)" : ensayo.error,
                     });
                     capturedMessages.push({
                       role: "tool" as const,
@@ -623,12 +644,17 @@ export async function POST(req: NextRequest) {
                     continue;
                   }
                   const resumenEnsayo = (ensayo.data as { resumen?: string } | undefined)?.resumen;
+                  // Lo que se ejecuta tras «Sí» es lo que el ensayo RESOLVIÓ
+                  // (el documento y el número exactos), no la frase: así no
+                  // cambia el destinatario entre la pregunta y el envío.
+                  const { payload: paraConfirmar, mostrar } = payloadsDelEnsayo(args, ensayo.data);
                   const approvalId = stashPendingApproval({
                     tenantId: auth.tenantId,
                     toolName,
                     domain: mapping.domain,
                     action: mapping.action,
-                    payload: args,
+                    payload: paraConfirmar,
+                    mostrar,
                     conversationId: activeConversationId,
                     requestedBy: auth.username,
                   });
@@ -649,7 +675,7 @@ export async function POST(req: NextRequest) {
                         // Lo que el usuario tiene que poder juzgar de un
                         // vistazo: "Stock de Tabla de tornillo: 3 → 4".
                         resumen: resumenEnsayo ?? null,
-                        payload: args,
+                        payload: mostrar ?? args,
                       },
                     })}\n\n`,
                   );
@@ -695,6 +721,24 @@ export async function POST(req: NextRequest) {
             };
 
             await ejecutarRonda(toolCalls);
+
+            /**
+             * Con el atajo de «manda X a Y» no hay nada que redactar: la
+             * tarjeta ya hace la pregunta, y si no hubo tarjeta, el ensayo dice
+             * qué falta («¿a cuál Alex?»). Otra llamada al modelo sólo podría
+             * contradecir a la tarjeta.
+             */
+            if (pedidoDePapel) {
+              const texto =
+                aprobacionesPendientes > 0
+                  ? "Revisa la tarjeta y confirma: recién ahí sale el WhatsApp."
+                  : (errorDelEnsayo ?? "No pude preparar el envío. Prueba de nuevo con el nombre del papel y de la persona.");
+              send(`data: ${JSON.stringify({ content: texto })}\n\n`);
+              send("data: [DONE]\n\n");
+              tsClosed = true;
+              writer.close().catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
+              return;
+            }
 
             /**
              * Segunda ronda — sólo cuando la primera fue una búsqueda que existe
@@ -841,6 +885,9 @@ export async function POST(req: NextRequest) {
       // Execute each tool call via the orchestrator
       const MAX_TOOL_CALLS = 5; // safety limit
       const toolCalls = assistantMessage.tool_calls.slice(0, MAX_TOOL_CALLS);
+      /** Para el atajo de «manda X a Y»: la pregunta del ensayo o su error. */
+      let pendienteDelPapel: { id: string; resumen: string | null } | null = null;
+      let errorDelPapel: string | null = null;
 
       for (const toolCall of toolCalls) {
         const toolName = toolCall.function?.name;
@@ -877,17 +924,26 @@ export async function POST(req: NextRequest) {
               actorRole: auth.role,
             });
             if (!ensayo.success) {
+              if (toolName === TOOL_MANDAR_PAPEL) errorDelPapel = ensayo.error ?? null;
               toolResult = JSON.stringify({ error: ensayo.error });
             } else {
+              const { payload: paraConfirmar, mostrar } = payloadsDelEnsayo(args, ensayo.data);
               const approvalId = stashPendingApproval({
                 tenantId: auth.tenantId,
                 toolName,
                 domain: mapping.domain,
                 action: mapping.action,
-                payload: args,
+                payload: paraConfirmar,
+                mostrar,
                 conversationId: activeConversationId,
                 requestedBy: auth.username,
               });
+              if (toolName === TOOL_MANDAR_PAPEL) {
+                pendienteDelPapel = {
+                  id: approvalId,
+                  resumen: (ensayo.data as { resumen?: string } | undefined)?.resumen ?? null,
+                };
+              }
               toolResult = JSON.stringify({
                 pendingApprovalId: approvalId,
                 requiresApproval: true,
@@ -916,6 +972,21 @@ export async function POST(req: NextRequest) {
           content: toolResult,
           tool_call_id: toolCall.id,
         });
+      }
+
+      // El atajo no redacta con el modelo (ver el camino con stream).
+      if (pedidoDePapel) {
+        return respuestaJson(
+          pendienteDelPapel
+            ? `${pendienteDelPapel.resumen ?? "Te dejé el envío listo."} Confirma la aprobación: recién ahí sale el WhatsApp.`
+            : (errorDelPapel ?? "No pude preparar el envío. Prueba de nuevo con el nombre del papel y de la persona."),
+          {
+            mode: "ai" as const,
+            conversationId: activeConversationId,
+            agentToolsUsed: [TOOL_MANDAR_PAPEL],
+            pendingApprovalId: pendienteDelPapel?.id ?? null,
+          },
+        );
       }
 
       // ── Second LLM call with tool results (ADR-010 balanced) ──────────
@@ -1099,6 +1170,7 @@ const TOOL_LABELS: Record<string, string> = {
   ui_abrir: "Preparando el acceso...",
   documentos_buscar: "Buscando en el drive...",
   documentos_por_vencer: "Revisando vencimientos de papeles...",
+  documentos_mandar_papel: "Mandar un papel por WhatsApp",
   caja_estado: "Mirando la caja...",
   planificacion_consultar: "Leyendo el plan de la empresa...",
   cobranzas_fiados: "Sumando lo que te deben...",

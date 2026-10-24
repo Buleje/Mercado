@@ -39,6 +39,7 @@ import {
   type BusquedaInterpretada,
   type CarpetaBuscable,
 } from "@/lib/documentos/busqueda-natural";
+import { leerPedidoDeEnvio } from "@/lib/asistente/mandar-papel";
 
 // ── Ruteo ───────────────────────────────────────────────────────────────────
 
@@ -207,6 +208,10 @@ const RELLENO_CORTO = new Set(["el", "la", "los", "las", "mi", "mis", "lo", "que
 export function leerPreguntaDePapeles(texto: string | null | undefined): PreguntaDePapeles | null {
   const crudo = (texto ?? "").trim();
   if (!crudo || crudo.length > 300) return null;
+  // «Manda la resolución a Alex» es para OTRA persona: va al asistente, que
+  // pregunta «¿Mando X a Alex (+51 9•• ••• 123)?» antes de mandar. Contestarle
+  // acá le devolvería el papel al dueño como si lo hubiera pedido para él.
+  if (leerPedidoDeEnvio(crudo)) return null;
   const tk = tokens(crudo);
   if (tk.length === 0 || tk.length > 25) return null;
 

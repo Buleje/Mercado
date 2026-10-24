@@ -40,6 +40,7 @@ import { getN8nConfig, tokenValido } from "@/lib/n8n/flows";
 import { conversar } from "@/lib/asistente/conversar";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { getPendingApproval, removePendingApproval } from "@/lib/agents/pending-approvals";
+import { siempreConfirma } from "@/lib/agents/tool-definitions";
 import { leerJson } from "@/lib/errores/sin-dato";
 
 const BodySchema = z.union([
@@ -124,6 +125,14 @@ export async function POST(req: NextRequest) {
       removePendingApproval(parsed.data.aprobacionId);
       return NextResponse.json({ estado: "rechazada", mensaje: "Listo, no se anotó nada." });
     }
+    // Lo que siempre pide a una PERSONA (mandar un papel) no lo aprueba una automatización:
+    // el mismo token pediría y aprobaría el envío sin que nadie lo vea (seguridad 24-10).
+    if (siempreConfirma(pendiente.toolName)) {
+      return NextResponse.json(
+        { estado: "requiere_persona", mensaje: "Eso se confirma en el panel o en WhatsApp, no desde una automatización." },
+        { status: 403 },
+      );
+    }
 
     await ensureAgentsRegistered();
     const res = await orchestrator.executeSync({
@@ -132,6 +141,7 @@ export async function POST(req: NextRequest) {
       payload: pendiente.payload,
       tenantId,
       actorRole: ROL,
+      actorId: pendiente.requestedBy,
     });
     removePendingApproval(parsed.data.aprobacionId);
     if (!res.success) {

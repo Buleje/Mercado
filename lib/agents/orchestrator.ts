@@ -216,6 +216,8 @@ class Orchestrator {
     actorRole?: Role;
     /** Solo para subtasks ya validadas en el padre. */
     bypassPermissionCheck?: boolean;
+    /** Quién lo pidió (username del panel o «whatsapp:<nombre>»): el autor en la auditoría. */
+    actorId?: string;
   }): Promise<{
     success: boolean;
     data?: unknown;
@@ -287,7 +289,7 @@ class Orchestrator {
       traceId,
     };
 
-    const ctx = { ...createAgentContext(task), actorRole: input.actorRole };
+    const ctx = { ...createAgentContext(task), actorRole: input.actorRole, actorId: input.actorId };
 
     try {
       const result = await withCircuitBreaker(
@@ -553,6 +555,16 @@ class Orchestrator {
 const globalForOrchestrator = global as typeof global & {
   __bulejeOrchestrator?: Orchestrator;
 };
+
+// En dev, Turbopack vuelve a evaluar este módulo tras cada cambio, pero el
+// `??=` conserva la instancia vieja con los métodos (y el mapa de permisos) de
+// antes: una acción nueva respondía «No permission mapping» en el panel hasta
+// reiniciar el servidor (24-10, mandar un papel). Se le pone el prototipo de la
+// clase recién evaluada y conserva sus tareas en curso.
+const orquestadorPrevio = globalForOrchestrator.__bulejeOrchestrator;
+if (orquestadorPrevio && process.env.NODE_ENV !== "production") {
+  Object.setPrototypeOf(orquestadorPrevio, Orchestrator.prototype);
+}
 
 export const orchestrator: Orchestrator =
   (globalForOrchestrator.__bulejeOrchestrator ??= new Orchestrator());

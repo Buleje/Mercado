@@ -364,6 +364,7 @@ async function manejarBoton(cb: TgCallback): Promise<void> {
     payload: pendiente.payload,
     tenantId,
     actorRole: ROL,
+    actorId: pendiente.requestedBy,
   });
   removePendingApproval(aprobacionId);
 

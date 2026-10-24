@@ -248,6 +248,12 @@ export function useChatIA(tono: Tono, onCambioAprobaciones?: () => void) {
         marcar("cancelada");
         return;
       }
+      /* La ruta responde 200 aunque la acción falle (`{ result: null, error }`):
+         sin esto, un WhatsApp que no salió se marcaba «hecha» y en blanco. */
+      if (body.error) {
+        marcar("error", body.error);
+        return;
+      }
       const datos = body.result as Record<string, unknown> | undefined;
       /**
        * Lo que se muestra al confirmar es la frase que escribió el agente

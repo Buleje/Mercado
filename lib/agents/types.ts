@@ -101,6 +101,12 @@ export interface AgentContext {
    * no mostrarle al cajero lo que su panel no le muestra.
    */
   actorRole?: string;
+  /**
+   * Quién pidió la tarea (username del panel o «whatsapp:<nombre>»). Lo usan
+   * las acciones que dejan rastro a nombre de alguien —el envío de un papel
+   * queda en la auditoría del documento con su autor—.
+   */
+  actorId?: string;
 }
 
 // ── Contract that every domain agent must satisfy ─────────────────────────────

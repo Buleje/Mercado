@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 
 /**
  * lib/asistente/conversar.ts
@@ -21,14 +22,15 @@ import "server-only";
  */
 
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
-import { resolveToolCall, isToolApprovalRequired } from "@/lib/agents/tool-definitions";
+import { resolveToolCall, isToolApprovalRequired, siempreConfirma } from "@/lib/agents/tool-definitions";
 import { toolsParaMensaje } from "@/lib/agents/tool-routing";
-import { stashPendingApproval } from "@/lib/agents/pending-approvals";
+import { payloadsDelEnsayo, stashPendingApproval } from "@/lib/agents/pending-approvals";
 import { callLLM } from "@/lib/llm-router";
 import { logger } from "@/lib/logger";
 import type { Role } from "@/lib/auth/role-permissions";
 import { recordar, anotarTurno, type MensajeTurno } from "./memoria";
 import { contextoDelNegocio } from "./contexto";
+import { leerPedidoDeEnvio, respuestaDeAtajo } from "./mandar-papel";
 
 /** Tres vueltas: buscar → escribir → rematar. Una cuarta ya es un loop. */
 const MAX_RONDAS = 3;
@@ -78,6 +80,9 @@ LO QUE HACES
 2. CONTESTÁS sobre el negocio con las herramientas de lectura que tengas a mano.
 3. Si no tienes la herramienta para algo, dilo en una línea y ofrece la pantalla
    donde se hace. No inventes que lo hiciste.
+4. MANDAS un papel del Archivo a otra persona por WhatsApp con
+   documentos_mandar_papel (papel y persona como te los dijeron). Sale recién
+   cuando el dueño confirma; si la herramienta pregunta cuál, repite su pregunta.
 
 CÓMO ANOTAS
 1. Si el id está en la lista de arriba, úsalo y ve derecho al paso 3.
@@ -185,17 +190,28 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
   const pendientes: Pendiente[] = [];
   const registradas: Array<{ resumen: string; pantalla?: string }> = [];
   let ultimoTexto: string | null = null;
+  /**
+   * «Manda la resolución a Alex» se entiende sin el modelo: la primera vuelta
+   * usa la llamada armada a mano y sigue por el mismo ensayo + confirmación.
+   * Si el ensayo pregunta («¿a cuál Alex?») o no encuentra el papel, esa frase
+   * es la respuesta: no se le da otra vuelta al modelo para que la reescriba.
+   */
+  const pedidoDePapel = leerPedidoDeEnvio(texto);
 
   for (let ronda = 0; ronda < MAX_RONDAS; ronda++) {
-    const res = await callLLM("balanced", {
-      messages: mensajes,
-      temperature: 0.2,
-      maxTokens: 900,
-      stream: false,
-      tools: herramientas,
-      toolChoice: "auto",
-      label: "asistente-conversar",
-    });
+    const esAtajo = ronda === 0 && pedidoDePapel !== null;
+    let cortarAtajo = false;
+    const res = esAtajo
+      ? respuestaDeAtajo(pedidoDePapel, randomUUID().slice(0, 8))
+      : await callLLM("balanced", {
+          messages: mensajes,
+          temperature: 0.2,
+          maxTokens: 900,
+          stream: false,
+          tools: herramientas,
+          toolChoice: "auto",
+          label: "asistente-conversar",
+        });
 
     if (!res.ok) {
       logger.error("[asistente] el modelo no respondió", { tenantId, canal, error: String(res.error) });
@@ -241,14 +257,24 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
           // El error vuelve al modelo, que puede corregir en la vuelta siguiente
           // (buscar bien la máquina, preguntar por el monto que no cuadra).
           mensajes.push({ role: "tool", tool_call_id: llamada.id, content: JSON.stringify({ error: errorParaLaPersona(ensayo.error) }) });
+          if (esAtajo) {
+            ultimoTexto = errorParaLaPersona(ensayo.error);
+            cortarAtajo = true;
+          }
           continue;
         }
         const resumen = (ensayo.data as { resumen?: string } | undefined)?.resumen ?? "Operación lista para confirmar.";
 
-        if (!confirmarAutomatico) {
+        /**
+         * `confirmarAutomatico` es para el canal que YA preguntó la operación;
+         * un papel que sale a un tercero se pregunta siempre, con el nombre y
+         * el número a la vista (`siempreConfirma`).
+         */
+        if (!confirmarAutomatico || siempreConfirma(nombre)) {
+          const { payload, mostrar } = payloadsDelEnsayo(args, ensayo.data);
           const id = stashPendingApproval({
             tenantId, toolName: nombre, domain: mapping.domain, action: mapping.action,
-            payload: args, requestedBy: solicitante,
+            payload, mostrar, requestedBy: solicitante,
           });
           pendientes.push({ id, resumen, tool: nombre });
           /**
@@ -306,6 +332,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
      * «además», «aparte», hay motivo para darle otra vuelta al modelo. Si no,
      * con una propuesta alcanza.
      */
+    if (cortarAtajo) break;
     const enumera = /\b(y (tambien|también|ademas|además|aparte|de paso)|tambien|también|ademas|además|aparte|,\s*y\b)/i.test(texto);
     const yaPropuso = pendientes.length > 0 || registradas.length > 0;
     if (!huboLectura && yaPropuso && !(enumera && pendientes.length + registradas.length < 2)) break;

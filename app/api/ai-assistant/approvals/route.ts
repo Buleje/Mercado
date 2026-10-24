@@ -44,13 +44,19 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const pending = listPendingApprovals(auth.tenantId);
+  // Los mismos que el POST deja aprobar (requireAdmin con ["admin"] = admin, dueño, encargado).
+  const puedeVer = auth.role === "admin" || auth.role === "owner" || auth.role === "manager";
   return NextResponse.json({
     pending: pending.map((p) => ({
       id: p.id,
       toolName: p.toolName,
       domain: p.domain,
       action: p.action,
-      payload: p.payload,
+      // La versión para leer si el ensayo la dejó (sin ids ni el número entero de un contacto).
+      // Sólo quien puede aprobar (como el POST) ve el contenido: un pendiente de
+      // «mandar un papel» puede traer el número entero de alguien fuera de los contactos.
+      // Los demás roles siguen viendo que hay pendientes (el banner sondea cada 5 s).
+      payload: puedeVer ? (p.mostrar ?? p.payload) : null,
       conversationId: p.conversationId,
       requestedBy: p.requestedBy,
       createdAt: p.createdAt,
@@ -126,6 +132,7 @@ export async function POST(req: NextRequest) {
       // SECURITY 2026-05-06 (audit AI #1): el approver autoriza con su rol;
       // semánticamente correcto porque el HITL gate ya filtró el flujo.
       actorRole: auth.role,
+      actorId: auth.username,
     });
 
     removePendingApproval(parsed.data.id);

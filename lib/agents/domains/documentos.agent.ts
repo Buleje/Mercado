@@ -9,13 +9,16 @@
  * etiquetas y el **texto OCR** del archivo — la misma búsqueda del módulo, sin
  * tildes.
  *
- * Solo lectura: subir, mover o borrar archivos se hace en el drive, donde se ve
- * qué se está tocando.
+ * Subir, mover o borrar archivos se hace en el drive, donde se ve qué se está
+ * tocando. Lo único que escribe es `mandar-papel` («manda la resolución a
+ * Alex»): siempre con la tarjeta de confirmación delante (`requiresApproval`) y
+ * la lógica en `lib/asistente/mandar-papel.server.ts`.
  */
 
 import type { DomainAgent, AgentTask, AgentResult, AgentContext } from "@/lib/agents/types";
 import { scopedLogger } from "@/lib/agents/context";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { mandarPapel, prepararEnvio } from "@/lib/asistente/mandar-papel.server";
 
 const texto = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
@@ -98,9 +101,9 @@ async function porVencer(task: AgentTask, ctx: AgentContext): Promise<AgentResul
 
 export const documentosAgent: DomainAgent = {
   domain: "documentos",
-  actions: ["buscar", "por-vencer"],
+  actions: ["buscar", "por-vencer", "mandar-papel"],
   description:
-    "Drive del negocio: busca documentos por nombre, etiqueta o texto dentro del archivo, y lista los que están por vencer. Solo lectura.",
+    "Drive del negocio: busca documentos por nombre, etiqueta o texto dentro del archivo, lista los que están por vencer y manda un papel por WhatsApp a un contacto (con confirmación).",
 
   async execute(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
     switch (task.action) {
@@ -108,6 +111,11 @@ export const documentosAgent: DomainAgent = {
         return buscar(task, ctx);
       case "por-vencer":
         return porVencer(task, ctx);
+      case "mandar-papel":
+        // Primero el ensayo (arma la pregunta, no manda nada); el envío, sólo tras el «Sí».
+        return task.payload.__validar === true
+          ? prepararEnvio(task.tenantId, task.payload, ctx)
+          : mandarPapel(task.tenantId, task.payload, ctx);
       default:
         return { success: false, error: `Acción desconocida de documentos: ${task.action}` };
     }

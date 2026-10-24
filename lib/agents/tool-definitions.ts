@@ -38,6 +38,17 @@ export function isToolApprovalRequired(toolName: string): boolean {
   );
 }
 
+/**
+ * Las que piden el «Sí» SIEMPRE, también cuando el canal confirma solo
+ * (n8n con `confirmar: true` ejecuta las demás sin tarjeta): mandar un papel a
+ * un tercero no se deshace — el WhatsApp ya salió.
+ */
+const TOOLS_SIEMPRE_CONFIRMAN = new Set(["documentos_mandar_papel"]);
+
+export function siempreConfirma(toolName: string): boolean {
+  return TOOLS_SIEMPRE_CONFIRMAN.has(toolName);
+}
+
 // Registry populado al final del archivo con `ALL_AGENT_TOOLS`. Se usa en
 // `isToolApprovalRequired` para lookup rápido. Declarado aquí como `let` para
 // permitir la inicialización tardía en el export default (evita circular imports).
@@ -782,6 +793,23 @@ const documentosTools = defineTools("documentos", [
         properties: { dias: { type: "number", description: "Ventana en días (por defecto 30)" } },
       },
     },
+  },
+  {
+    function: {
+      name: "documentos_mandar_papel",
+      description:
+        "Manda un papel del Archivo por WhatsApp a OTRA persona con un enlace que vence en 7 días: 'manda la resolución de plantación a Alex', 'pásale el contrato al ingeniero'. Busca el papel y el contacto; el usuario confirma antes de que salga.",
+      parameters: {
+        type: "object",
+        properties: {
+          papel: { type: "string", description: "Nombre del papel tal como lo dijo" },
+          persona: { type: "string", description: "A quién: nombre del contacto" },
+          telefono: { type: "string", description: "Sólo si escribió el número" },
+          documentoId: { type: "string", description: "Id exacto si ya lo tienes de documentos_buscar" },
+        },
+      },
+    },
+    requiresApproval: true,
   },
 ]);
 
