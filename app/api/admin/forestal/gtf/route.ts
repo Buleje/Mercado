@@ -113,6 +113,14 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
       const guias = marcarReemitidas(filas.map(guiaParaFormato), vigentes);
       return NextResponse.json({ guias, faltan: ids.data.length - guias.length });
     }
+    /* `?gtfNumber=&ficha=1` (Cubicador, 24-10): sólo lo que llena la ficha de una cubicación. */
+    if (gtfNumber && url.searchParams.get("ficha") === "1") {
+      const num = z.string().trim().min(1).max(60).safeParse(gtfNumber);
+      if (!num.success) return NextResponse.json({ error: "validation_error" }, { status: 400 });
+      const guia = await ForestGtfDB.fichaPorNumero(auth.tenantId, num.data);
+      if (!guia) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ guia });
+    }
     if (gtfNumber) {
       // Importar al ingreso CTP: buscar la guía emitida por su número.
       // El N° solo no identifica la guía: `titular`/`permiso` la eligen si hay

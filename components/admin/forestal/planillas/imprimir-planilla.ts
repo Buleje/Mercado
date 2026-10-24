@@ -32,14 +32,14 @@ function ponerBarra(w: Window): void {
 
 export async function imprimirPlanilla(
   planilla: PlanillaCampo,
-  opts: { negocio?: string; copias?: number; codigo?: string; lote?: string } = {},
+  opts: { negocio?: string; copias?: number; codigo?: string; lote?: string; ficha?: { etiqueta: string; valor: string }[] } = {},
 ): Promise<void> {
   const w = window.open("", "_blank", "width=980,height=760");
   if (!w) throw new Error("El navegador bloqueó la ventana. Permite ventanas emergentes para imprimir la hoja.");
   w.document.write(`<p style="font:16px system-ui;padding:24px">Armando la hoja…</p>`);
   try {
     const { htmlDePlanilla } = await import("@/lib/forestal/planillas/imprimir");
-    const html = htmlDePlanilla(planilla, { negocio: opts.negocio || undefined, copias: opts.copias, codigo: opts.codigo, lote: opts.lote });
+    const html = htmlDePlanilla(planilla, { negocio: opts.negocio || undefined, copias: opts.copias, codigo: opts.codigo, lote: opts.lote, ficha: opts.ficha });
     w.document.open();
     w.document.write(html);
     w.document.close();

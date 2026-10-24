@@ -9,11 +9,12 @@
  */
 import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Boxes, Coins, Layers, Ruler, Scale } from "@buleje/design-system/icons";
+import { Boxes, ChevronDown, Coins, Layers, Ruler, Scale } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { agruparOficial, resumenPorEspecie, type DimensionResumen } from "@/lib/forestal/cubicacion-resumen";
 import { formatNumber } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
 import { KpiResumen, TablaGrupos } from "./resumen-tabla";
 
 type Vista = Extract<DimensionResumen, "especie" | "tipo" | "largo" | "medida" | "dueno"> | "especie-tipo";
@@ -28,6 +29,7 @@ const VISTAS: { v: Vista; label: string; col: string }[] = [
 const CHIP = "h-10 rounded-xl border px-3 text-sm font-bold transition-colors";
 const CHIP_ON = "border-[var(--accent)] bg-[var(--accent)] text-white";
 const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+const PLEGAR = button({ variant: "secondary", className: "h-11 min-w-0 gap-2 rounded-xl px-3 text-sm font-bold tabular-nums lg:hidden" });
 const PILL = "rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[var(--text-secondary)]";
 
 export default function ResumenDeGuardar({ rows, precioDe, conValor }: {
@@ -44,12 +46,25 @@ export default function ResumenDeGuardar({ rows, precioDe, conValor }: {
   const bloques = useMemo(() => (vista === "especie-tipo" ? resumenPorEspecie(rows, precioDe) : []), [vista, rows, precioDe]);
   const { total } = porEspecie;
   const promedio = total.pieTablar > 0 ? total.valor / total.pieTablar : 0;
+  const [abierto, setAbierto] = useState(false);
   const col = VISTAS.find((x) => x.v === vista)?.col ?? "Grupo";
 
   return (
     /* En la PC el resumen queda a la vista mientras bajas por los datos y el precio. */
-    <section aria-labelledby="cubg-resumen" className="min-w-0 space-y-3 lg:sticky lg:top-0 lg:self-start">
-      <CardTitle as="h3" id="cubg-resumen">Resumen</CardTitle>
+    <section aria-labelledby="cubg-resumen" data-resumen-guardar className="order-first min-w-0 space-y-3 lg:order-none lg:sticky lg:top-0 lg:self-start">
+      {/* En el celular el resumen va ARRIBA y plegado: una línea; al tocarla se despliega. */}
+      <div className="flex items-center justify-between gap-2">
+        <CardTitle as="h3" id="cubg-resumen">Resumen</CardTitle>
+        <button type="button" aria-expanded={abierto} aria-controls="cubg-resumen-cuerpo" onClick={() => setAbierto((a) => !a)}
+          data-accion="resumen-plegable"
+          className={PLEGAR}>
+          <span className="truncate">
+            {formatNumber(total.cantidad)} pzas · {fmtPt(total.pieTablar)} PT · {conValor ? `S/ ${fmtSoles(total.valor)}` : "sin precio"}
+          </span>
+          <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
+        </button>
+      </div>
+      <div id="cubg-resumen-cuerpo" className={abierto ? "space-y-3" : "hidden space-y-3 lg:block"}>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <KpiResumen label="Piezas" value={formatNumber(total.cantidad)} icon={Boxes} />
         <KpiResumen label="Pie tablar" value={fmtPt(total.pieTablar)} unidad="PT" icon={Ruler} />
@@ -93,6 +108,7 @@ export default function ResumenDeGuardar({ rows, precioDe, conValor }: {
           ))}
         </div>
       )}
+      </div>
     </section>
   );
 }

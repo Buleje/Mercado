@@ -640,6 +640,25 @@ export class ForestGtfDB {
     );
   }
 
+  /**
+   * La guía EMITIDA con este N° para llenar la ficha de una cubicación
+   * (Brandon 24-10): la más reciente que no esté anulada, y sólo seis campos
+   * (nada de piezas ni datos internos).
+   */
+  static async fichaPorNumero(tenantId: string, gtfNumber: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const cola = colaDeGtf(gtfNumber);
+    if (!cola) return null;
+    const candidatas = await prisma.forestGtf.findMany({
+      where: { tenantId, deletedAt: null, status: { not: "anulada" }, gtfNumber: { endsWith: cola } },
+      orderBy: { createdAt: "desc" },
+      /* La cola del N° puede repetirse entre series: con 20 sobra para elegir la exacta. */
+      take: 20,
+      select: { gtfNumber: true, titularName: true, tituloHabilitante: true, placaVehiculo: true, conductor: true, destino: true },
+    });
+    return candidatas.find((g) => mismoNumeroGtf(g.gtfNumber, gtfNumber)) ?? null;
+  }
+
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");

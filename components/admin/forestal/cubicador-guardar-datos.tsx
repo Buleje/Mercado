@@ -13,6 +13,8 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { FICHA_MAX, type FichaCubicacion } from "@/lib/forestal/cubicacion-registro";
 import { CAMPO_CUENTA as CAMPO, ETIQUETA_CUENTA as ETIQUETA } from "./cubicacion-cuenta-persona";
 import type { DatosDeLaCubicacion } from "./cubicador-guardar-tipos";
+import AvisoDeLaGuia from "./cubicador-guardar-aviso-guia";
+import { useFichaDesdeGuia } from "./hooks/use-ficha-desde-guia";
 import type { useLibretaDeLaFicha } from "./hooks/use-libreta-de-la-ficha";
 
 type Libreta = ReturnType<typeof useLibretaDeLaFicha>;
@@ -44,6 +46,7 @@ export default function DatosDeGuardar({ datos, actualizar, nombreSugerido, libr
   libreta: Libreta;
 }) {
   const { ficha } = datos;
+  const guia = useFichaDesdeGuia(datos, actualizar, libreta);
   const ponerFicha = (patch: Partial<FichaCubicacion>) => actualizar((d) => ({ ...d, ficha: { ...d.ficha, ...patch } }));
   const texto = (k: keyof FichaCubicacion) => (e: { target: { value: string } }) => ponerFicha({ [k]: e.target.value });
 
@@ -86,8 +89,11 @@ export default function DatosDeGuardar({ datos, actualizar, nombreSugerido, libr
         </Campo>
         <Campo id="cubg-gtf" etiqueta="N° de GTF">
           <input id="cubg-gtf" className={CAMPO} value={datos.gtf} maxLength={60} placeholder="Ej.: 0012345"
-            onChange={(e) => { const v = e.target.value; actualizar((d) => ({ ...d, gtf: v })); }} />
+            onChange={(e) => { const v = e.target.value; actualizar((d) => ({ ...d, gtf: v })); }}
+            onBlur={(e) => void guia.buscar(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void guia.buscar(e.currentTarget.value); } }} />
         </Campo>
+        {guia.aviso && <div className="sm:col-span-2"><AvisoDeLaGuia aviso={guia.aviso} onDeshacer={guia.deshacer} /></div>}
         <Campo id="cubg-comprador" etiqueta="¿A quién se le vende?" ancho extra={ficha.clienteParteId ? <Atada /> : null}>
           <input id="cubg-comprador" className={CAMPO} value={datos.cliente} maxLength={120} list="cubg-compradores"
             placeholder="Elige del Directorio o escríbelo" autoComplete="off" onChange={(e) => alComprador(e.target.value)} />

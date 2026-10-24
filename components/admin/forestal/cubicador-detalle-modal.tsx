@@ -28,6 +28,7 @@ import { formatNumber } from "@/lib/format";
 import { Chip, KpiResumen, TablaGrupos } from "./resumen-tabla";
 import { ChipsDeLectura, FichaDeGuardada, datosDeLaGuardada } from "./cubicador-detalle-ficha";
 import { fechaDeLaGuardada } from "./cubicador-guardadas-tarjeta";
+import { AccionesWhatsAppDeGuardada } from "./cubicador-detalle-whatsapp";
 
 const DIMENSIONES_DETALLE = ["especie", "tipo", "largo", "medida", "seccion", "dueno"] as const satisfies readonly DimensionResumen[];
 type Lectura = "especie-tipo" | (typeof DIMENSIONES_DETALLE)[number];
@@ -83,6 +84,7 @@ export function DetalleCubicacionModal({ c, enLibro, aboveModals, puedeComparar,
       }
       footer={
         <ModalFooter>
+          <AccionesWhatsAppDeGuardada c={c} />
           <button type="button" onClick={onComparar} disabled={!puedeComparar} className={button({ variant: "secondary" })} title={puedeComparar ? undefined : "Guarda otra cubicación para poder comparar"}>
             <GitCompareArrows className="h-4 w-4" aria-hidden /> Comparar con otra…
           </button>

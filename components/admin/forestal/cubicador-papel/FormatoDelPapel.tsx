@@ -25,13 +25,16 @@ const ROTULO: Partial<Record<PlanillaId, string>> = {
 const BOTON = button({ variant: "secondary", className: "rounded-xl px-3" });
 const ERROR = "text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 
-export default function FormatoDelPapel({ tipo, formula, codigo, lote }: {
+export default function FormatoDelPapel({ tipo, formula, codigo, lote, ficha }: {
   tipo: TipoPapel;
   formula?: string | null;
   /** Código de la cubicación guardada: va impreso en la hoja. */
   codigo?: string | null;
   lote?: string;
+  /** Comprador, CCNN, permiso, GTF, placa…: va en la cabecera de la hoja (sólo lo que haya). `null` = leyéndose. */
+  ficha?: { etiqueta: string; valor: string }[] | null;
 }) {
+  const leyendoFicha = ficha === null;
   const { branding } = useTenant();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,12 +70,12 @@ export default function FormatoDelPapel({ tipo, formula, codigo, lote }: {
                 <button
                   type="button"
                   className={BOTON}
-                  disabled={ocupado !== null}
+                  disabled={ocupado !== null || leyendoFicha}
                   data-accion={`imprimir-${id}`}
-                  title={codigo ? `La hoja sale con el código ${codigo}` : "La hoja en blanco, lista para llenar a mano"}
-                  onClick={() => void correr(`imprimir:${id}`, () => imprimirPlanilla(p, { negocio: branding.name ?? undefined, codigo: codigo ?? undefined, lote }))}
+                  title={leyendoFicha ? "Leyendo el comprador, la CCNN y la placa para la hoja…" : codigo ? `La hoja sale con el código ${codigo}` : "La hoja en blanco, lista para llenar a mano"}
+                  onClick={() => void correr(`imprimir:${id}`, () => imprimirPlanilla(p, { negocio: branding.name ?? undefined, codigo: codigo ?? undefined, lote, ficha: ficha ?? undefined }))}
                 >
-                  {ocupado === `imprimir:${id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />} Imprimir o PDF
+                  {ocupado === `imprimir:${id}` || leyendoFicha ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />} Imprimir o PDF
                 </button>
                 <button
                   type="button"

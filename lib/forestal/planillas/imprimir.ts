@@ -33,9 +33,9 @@ const casillerosPorLinea = (p: PlanillaCampo) => (p.orientacion === "horizontal"
  * UNA hoja con la cabecera y el pie. Entre 6 y 10 mm: menos no se escribe a
  * mano; más, sobra papel.
  */
-export function altoDeRenglonMm(p: PlanillaCampo): number {
+export function altoDeRenglonMm(p: PlanillaCampo, extraMm = 0): number {
   const lineasCabecera = Math.ceil(p.cabecera.length / casillerosPorLinea(p));
-  const fijo = 15 /* título */ + lineasCabecera * 10 + 12 /* encabezado de la tabla */ + (p.metodo ? 18 : 12) /* pie */;
+  const fijo = 15 /* título */ + lineasCabecera * 10 + 12 /* encabezado de la tabla */ + (p.metodo ? 18 : 12) /* pie */ + extraMm;
   const alto = (UTIL[p.orientacion].alto - fijo) / (p.filasPorHoja + 1);
   return Math.max(6, Math.min(10, Math.floor(alto * 10) / 10));
 }
@@ -44,12 +44,17 @@ export function altoDeRenglonMm(p: PlanillaCampo): number {
 export interface HojaDeCubicacion {
   codigo?: string;
   lote?: string;
+  /** La ficha de la cubicación (comprador, CCNN, permiso, GTF, placa…): sólo lo que haya. */
+  ficha?: { etiqueta: string; valor: string }[];
 }
+
+/** Alto que ocupa la franja de la ficha (hasta dos líneas de 4 mm). */
+const ALTO_FICHA_MM = 9;
 
 function hoja(p: PlanillaCampo, negocio: string | undefined, ultima: boolean, de: HojaDeCubicacion): string {
   const total = ANCHO_NUMERO_MM + p.columnas.reduce((a, c) => a + c.anchoMm, 0);
   const pct = (mm: number) => `${((mm / total) * 100).toFixed(2)}%`;
-  const alto = altoDeRenglonMm(p);
+  const alto = altoDeRenglonMm(p, de.ficha?.length ? ALTO_FICHA_MM : 0);
 
   const cols = [`<col style="width:${pct(ANCHO_NUMERO_MM)}">`, ...p.columnas.map((c) => `<col style="width:${pct(c.anchoMm)}">`)].join("");
 
@@ -81,7 +86,11 @@ function hoja(p: PlanillaCampo, negocio: string | undefined, ultima: boolean, de
     <div class="derecha">${negocio ? `<div class="negocio">${esc(negocio)}</div>` : ""}${
       de.codigo ? `<div class="codigo"><span class="etq">Código de la hoja</span><b>${esc(de.codigo)}</b></div>` : ""
     }</div>
-  </header>
+  </header>${
+    de.ficha?.length
+      ? `\n  <p class="ficha">${de.ficha.map((f) => `<span><b>${esc(f.etiqueta)}:</b> ${esc(f.valor)}</span>`).join("")}</p>`
+      : ""
+  }
   <div class="cabecera" style="grid-template-columns:repeat(${casillerosPorLinea(p)},1fr)">${casilleros}</div>
   <table class="filas"><colgroup>${cols}</colgroup>
     <thead><tr><th class="n">N°</th>${encabezado}</tr></thead>
@@ -103,7 +112,9 @@ function hoja(p: PlanillaCampo, negocio: string | undefined, ultima: boolean, de
 export function htmlDePlanilla(planilla: PlanillaCampo, opts: { negocio?: string; copias?: number } & HojaDeCubicacion = {}): string {
   const copias = Math.max(1, Math.min(20, Math.trunc(opts.copias ?? 1) || 1));
   const negocio = opts.negocio?.trim() || undefined;
-  const de: HojaDeCubicacion = { codigo: opts.codigo?.trim().slice(0, 40) || undefined, lote: opts.lote?.trim().slice(0, 80) || undefined };
+  const de: HojaDeCubicacion = { codigo: opts.codigo?.trim().slice(0, 40) || undefined, lote: opts.lote?.trim().slice(0, 80) || undefined,
+    ficha: opts.ficha?.map((f) => ({ etiqueta: f.etiqueta.slice(0, 20), valor: f.valor.trim().slice(0, 80) })).filter((f) => f.valor).slice(0, 8),
+  };
   const hojas = Array.from({ length: copias }, (_, i) => hoja(planilla, negocio, i === copias - 1, de)).join("\n");
   const tamano = planilla.orientacion === "horizontal" ? "A4 landscape" : "A4 portrait";
   const { ancho, alto } = UTIL[planilla.orientacion];
@@ -126,6 +137,8 @@ export function htmlDePlanilla(planilla: PlanillaCampo, opts: { negocio?: string
   .codigo { border: 0.45mm solid #111827; padding: 0.5mm 2mm; text-align: center; line-height: 1.1; }
   .codigo .etq { display: block; font-size: 5.5pt; }
   .codigo b { font: bold 12pt "Courier New", monospace; letter-spacing: .6pt; }
+  .ficha { display: flex; flex-wrap: wrap; gap: 0 4mm; margin: 0 0 1mm; height: ${ALTO_FICHA_MM - 1}mm; overflow: hidden; font-size: 8pt; line-height: 4mm; }
+  .ficha b { font-weight: bold; }
   .cabecera { display: grid; gap: 1.5mm; margin-bottom: 2mm; }
   .casillero { border: 0.35mm solid #111827; height: 8.5mm; padding: 0.6mm 1.2mm; }
   .etq { font-size: 6.5pt; color: #374151; text-transform: uppercase; letter-spacing: .3pt; }

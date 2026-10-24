@@ -20,12 +20,14 @@ import { codigoDeHoja, filtrarPorHoja } from "@/components/admin/forestal/cubica
 import { usePapelesDeCubicaciones } from "@/components/admin/forestal/cubicador-papel/use-papel";
 import { corridasDeCubicacion, textosDeFicha, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { m3DesdePt } from "@/lib/forestal/cubicacion";
+import { agruparPorFicha, deLaFila, type PorFicha } from "@/lib/forestal/cubicacion-por-ficha";
 import { formatNumber } from "@/lib/format";
 import { logger } from "@/lib/logger";
 import { TarjetaGuardada, duenosDe, especiesDe } from "./cubicador-guardadas-tarjeta";
 import { useGuardadasDelCubicador } from "./hooks/use-guardadas-del-cubicador";
 import { DetalleCubicacionModal } from "./cubicador-detalle-modal";
 import { CompararCubicacionesModal } from "./cubicador-comparar-modal";
+import { ResumenPorFicha } from "./cubicador-guardadas-resumen";
 
 const TODAS = "";
 
@@ -62,10 +64,16 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
     const porTexto = filtrarPorHoja(lista, busqueda, camposDeBusqueda);
     return especie ? porTexto.filter((c) => especiesDe(c).includes(especie)) : porTexto;
   }, [lista, busqueda, especie]);
-  const filtrando = Boolean(busqueda.trim() || especie);
+  /* El resumen por comunidad/comprador es de lo visible; tocar una fila filtra las tarjetas. */
+  const [por, setPor] = useState<PorFicha>("comunidad");
+  const [claveFicha, setClaveFicha] = useState<string | null>(null);
+  const filasFicha = useMemo(() => agruparPorFicha(visibles, por), [visibles, por]);
+  const claveActiva = claveFicha && filasFicha.some((f) => f.clave === claveFicha) ? claveFicha : null;
+  const mostradas = useMemo(() => (claveActiva ? deLaFila(visibles, por, claveActiva) : visibles), [visibles, por, claveActiva]);
+  const filtrando = Boolean(busqueda.trim() || especie || claveActiva);
   const suma = useMemo(
-    () => visibles.reduce((a, c) => ({ pt: a.pt + c.totales.pieTablar, valor: a.valor + c.valor, piezas: a.piezas + c.totales.piezas }), { pt: 0, valor: 0, piezas: 0 }),
-    [visibles],
+    () => mostradas.reduce((a, c) => ({ pt: a.pt + c.totales.pieTablar, valor: a.valor + c.valor, piezas: a.piezas + c.totales.piezas }), { pt: 0, valor: 0, piezas: 0 }),
+    [mostradas],
   );
 
   const copiarCodigo = (c: CubicacionRegistro) => {
@@ -169,15 +177,25 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
         </p>
       ) : (
         <>
+          <ResumenPorFicha
+            por={por}
+            onPor={(p) => {
+              setPor(p);
+              setClaveFicha(null);
+            }}
+            filas={filasFicha}
+            elegida={claveActiva}
+            onElegir={setClaveFicha}
+          />
           <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-[var(--text-secondary)]">
-            {filtrando ? `Suma de las ${visibles.length} que se ven` : `Suma de las ${visibles.length}`}
+            {filtrando ? `Suma de las ${mostradas.length} que se ven` : `Suma de las ${mostradas.length}`}
             <span className="font-mono font-extrabold tabular-nums text-[var(--text-primary)]">
               {formatNumber(suma.pt, 2)} PT · {formatNumber(m3DesdePt(suma.pt), 3)} m³ · {formatNumber(suma.piezas)} pzas
               {suma.valor > 0 && <> · S/ {formatNumber(suma.valor, 2)}</>}
             </span>
           </p>
           <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-            {visibles.map((c) => (
+            {mostradas.map((c) => (
               <TarjetaGuardada
                 key={c.id}
                 c={c}

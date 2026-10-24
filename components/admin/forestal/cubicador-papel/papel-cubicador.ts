@@ -157,3 +157,23 @@ export function problemaDelArchivo(f: { type: string; size: number }): string | 
   if (f.size === 0) return "El archivo está vacío.";
   return null;
 }
+
+/* ── La ficha en la cabecera de la hoja ────────────────────────────────── */
+
+/**
+ * Lo que la hoja imprime de la ficha de la cubicación (Brandon 24-10):
+ * comprador, CCNN, permiso, GTF, placa, chofer, destino y lugar. Sólo lo que
+ * haya, en ese orden.
+ */
+export function lineasDeFichaParaPapel(c: {
+  cliente?: string | null;
+  gtfNumber?: string | null;
+  ficha?: { comunidad?: string; tituloHabilitante?: string; placa?: string; chofer?: string; destino?: string; lugar?: string } | null;
+}): { etiqueta: string; valor: string }[] {
+  const f = c.ficha ?? {};
+  const todas: [string, string | null | undefined][] = [
+    ["Comprador", c.cliente], ["CCNN", f.comunidad], ["Permiso", f.tituloHabilitante], ["GTF", c.gtfNumber],
+    ["Placa", f.placa], ["Chofer", f.chofer], ["Destino", f.destino], ["Lugar", f.lugar],
+  ];
+  return todas.flatMap(([etiqueta, v]) => (v?.trim() ? [{ etiqueta, valor: v.trim() }] : []));
+}

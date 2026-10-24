@@ -24,6 +24,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import FormatoDelPapel from "./FormatoDelPapel";
 import HojasDelPapel from "./HojasDelPapel";
+import { useFichaDelPapel } from "./use-ficha-del-papel";
 import { usePapelDeCubicacion, type PapelDeCubicacion } from "./use-papel";
 
 export type TipoCubicacionPapel = "aserrada" | "trozas";
@@ -41,6 +42,7 @@ export interface PapelDelCubicadorProps {
 const BOTON_BARRA = button({ variant: "secondary", className: "rounded-xl px-3" });
 
 function Contenido({ tipo, cubicacionId, etiqueta, papel }: { tipo: TipoCubicacionPapel; cubicacionId: string | null; etiqueta?: string; papel: PapelDeCubicacion }) {
+  const ficha = useFichaDelPapel(cubicacionId, tipo === "aserrada");
   return (
     <div className="space-y-4">
       {cubicacionId && papel.codigo && (
@@ -58,7 +60,7 @@ function Contenido({ tipo, cubicacionId, etiqueta, papel }: { tipo: TipoCubicaci
       )}
       <section className="space-y-2">
         <CardTitle as="h4" className="text-sm font-bold text-[var(--text-primary)]">Formato para llenar a mano</CardTitle>
-        <FormatoDelPapel tipo={tipo} formula={papel.formula} codigo={cubicacionId ? papel.codigo : null} lote={etiqueta || papel.persona || undefined} />
+        <FormatoDelPapel tipo={tipo} formula={papel.formula} codigo={cubicacionId ? papel.codigo : null} lote={etiqueta || papel.persona || undefined} ficha={ficha} />
       </section>
       <section className="space-y-2">
         <CardTitle as="h4" className="text-sm font-bold text-[var(--text-primary)]">Papel lleno</CardTitle>
