@@ -7,6 +7,9 @@ import type { ModeloArchivo } from "./use-archivo";
 export default function CarpetasInteligentes({ arch }: { arch: ModeloArchivo }) {
   const { setSmartModal, smartFolders, filterMode, activeSmartId, setFilterMode, setActiveSmartId, confirm,
     persistSmart } = arch;
+  // Brandon 24-10: sin ninguna no se dibuja (ni el título). Se crean con clic derecho en la barra
+  // lateral › «Nueva carpeta inteligente…» (`menu-lugares.ts`).
+  if (smartFolders.length === 0) return null;
   return (
     <>
           {/* Carpetas inteligentes (filtros guardados) */}
@@ -36,9 +39,6 @@ export default function CarpetasInteligentes({ arch }: { arch: ModeloArchivo }) 
                 </li>
               );
             })}
-            {smartFolders.length === 0 && (
-              <li className="px-3 py-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">Ej: “Facturas ≥ S/1000”, “Vence este mes”.</li>
-            )}
           </ul>
     </>
   );

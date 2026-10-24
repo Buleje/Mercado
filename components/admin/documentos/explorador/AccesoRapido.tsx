@@ -87,6 +87,8 @@ function FilaFijado({
 
 export default function AccesoRapido({ fijados, carpetaPorId, docPorId, activaId, onAbrir, onMenu, onReordenar }: Props) {
   const [sobre, setSobre] = useState<string | null>(null);
+  // Brandon 24-10: sin nada fijado no se dibuja (ni el título). Se fija con clic derecho › «Fijar en Acceso rápido».
+  if (fijados.length === 0) return null;
   return (
     <section aria-label="Acceso rápido" className="mb-1" data-qa="acceso-rapido">
       <div className="flex items-center gap-1 px-3 py-2">
@@ -99,46 +101,42 @@ export default function AccesoRapido({ fijados, carpetaPorId, docPorId, activaId
           example="Fija «Facturas 2026» y llegas en un clic desde cualquier vista."
         />
       </div>
-      {fijados.length === 0 ? (
-        <p className="px-3 pb-2 text-xs text-[var(--text-tertiary)]">Nada fijado todavía.</p>
-      ) : (
-        <ul className="space-y-0.5">
-          {fijados.map((f) => (
-            <li key={f.id}>
-              <FilaFijado
-                fijado={f}
-                carpeta={f.tipo === "carpeta" ? carpetaPorId.get(f.id) : undefined}
-                doc={f.tipo === "archivo" ? docPorId.get(f.id) : undefined}
-                activa={f.tipo === "carpeta" && activaId === f.id}
-                sobre={sobre === f.id}
-                onAbrir={() => onAbrir(f)}
-                onMenu={(p) => onMenu(f, p)}
-                onArrastre={{
-                  onDragStart: (e) => {
-                    e.dataTransfer.setData(TIPO_ARRASTRE, f.id);
-                    e.dataTransfer.effectAllowed = "move";
-                  },
-                  onDragOver: (e) => {
-                    if (!e.dataTransfer.types.includes(TIPO_ARRASTRE)) return;
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    setSobre(f.id);
-                  },
-                  onDragLeave: () => setSobre((s) => (s === f.id ? null : s)),
-                  onDrop: (e) => {
-                    if (!e.dataTransfer.types.includes(TIPO_ARRASTRE)) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setSobre(null);
-                    onReordenar(e.dataTransfer.getData(TIPO_ARRASTRE), f.id);
-                  },
-                  onDragEnd: () => setSobre(null),
-                }}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="space-y-0.5">
+        {fijados.map((f) => (
+          <li key={f.id}>
+            <FilaFijado
+              fijado={f}
+              carpeta={f.tipo === "carpeta" ? carpetaPorId.get(f.id) : undefined}
+              doc={f.tipo === "archivo" ? docPorId.get(f.id) : undefined}
+              activa={f.tipo === "carpeta" && activaId === f.id}
+              sobre={sobre === f.id}
+              onAbrir={() => onAbrir(f)}
+              onMenu={(p) => onMenu(f, p)}
+              onArrastre={{
+                onDragStart: (e) => {
+                  e.dataTransfer.setData(TIPO_ARRASTRE, f.id);
+                  e.dataTransfer.effectAllowed = "move";
+                },
+                onDragOver: (e) => {
+                  if (!e.dataTransfer.types.includes(TIPO_ARRASTRE)) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setSobre(f.id);
+                },
+                onDragLeave: () => setSobre((s) => (s === f.id ? null : s)),
+                onDrop: (e) => {
+                  if (!e.dataTransfer.types.includes(TIPO_ARRASTRE)) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSobre(null);
+                  onReordenar(e.dataTransfer.getData(TIPO_ARRASTRE), f.id);
+                },
+                onDragEnd: () => setSobre(null),
+              }}
+            />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
