@@ -2,6 +2,9 @@ import "server-only";
 import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { TAG_ESENCIAL, esEsencial } from "@/lib/documentos/esenciales";
+import { DIAS_AVISO_ESENCIALES } from "@/lib/documentos/esenciales-avisos";
+import { conSubcarpetas } from "@/lib/documentos/terceros-vinculo";
 import {
   canRoleSeeEnCadena,
   enlaceSigueSirviendo,
@@ -2027,6 +2030,8 @@ export class DocumentsDB {
     docs: { id: string; name: string; mimeType: string; size: number; uploadedAt: string }[];
     expiresAt: string;
     hasPassword: boolean;
+    /** Sólo para el servidor (la página junta carpetas de UN negocio); no se manda al navegador. */
+    tenantId: string;
   } | null> {
     const share = await prisma.documentFolderShare.findUnique({
       where: { token },
@@ -2045,6 +2050,7 @@ export class DocumentsDB {
       docs: docs.map((d) => ({ id: d.id, name: d.name, mimeType: d.mimeType, size: d.size, uploadedAt: d.uploadedAt.toISOString() })),
       expiresAt: share.expiresAt.toISOString(),
       hasPassword: !!share.password,
+      tenantId: share.tenantId,
     };
   }
 
@@ -2105,6 +2111,26 @@ export class DocumentsDB {
       data: { revokedAt: new Date() },
     });
     return r.count > 0;
+  }
+
+  /** Corta un enlace de carpeta por su token: deshacer un lote que quedó a medias. */
+  static async revokeFolderShareByToken(tenantId: string, token: string): Promise<boolean> {
+    const r = await prisma.documentFolderShare.updateMany({
+      where: { tenantId, token, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    return r.count > 0;
+  }
+
+  /** Cuáles de estas carpetas existen en el negocio (antes de crear un lote de enlaces). */
+  static async carpetasExistentes(tenantId: string, ids: readonly string[]): Promise<Set<string>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return new Set();
+    const filas = await prisma.documentFolder.findMany({
+      where: { tenantId, id: { in: [...ids] } },
+      select: { id: true },
+    });
+    return new Set(filas.map((f) => f.id));
   }
 
   // ── Centro de enlaces (documentos + carpetas en una sola lista) ─────────────
@@ -2352,6 +2378,29 @@ export class DocumentsDB {
     dias = 90,
     viewerRole?: string,
   ): Promise<Record<string, { vistas: number; ultima: string | null }>> {
+    const porDoc = await DocumentsDB.vistasPorDocumento(tenantId, dias, viewerRole);
+    const uso: Record<string, { vistas: number; ultima: string | null }> = {};
+    for (const d of Object.values(porDoc)) {
+      if (!d.folderId) continue;
+      const previo = uso[d.folderId] ?? { vistas: 0, ultima: null };
+      uso[d.folderId] = {
+        vistas: previo.vistas + d.vistas,
+        ultima: previo.ultima && d.ultima ? (previo.ultima > d.ultima ? previo.ultima : d.ultima) : (previo.ultima ?? d.ultima),
+      };
+    }
+    return uso;
+  }
+
+  /**
+   * Aperturas («view» del audit log) de los últimos `dias` por papel vivo que
+   * el rol ve: «lo más abierto» de la pestaña Esenciales. De un papel que el
+   * rol no ve no se dice ni que existe.
+   */
+  static async vistasPorDocumento(
+    tenantId: string,
+    dias = 90,
+    viewerRole?: string,
+  ): Promise<Record<string, { vistas: number; ultima: string | null; folderId: string | null }>> {
     if (!tenantId) throw new Error("tenantId is required");
     const desde = new Date(Date.now() - Math.max(1, dias) * 86_400_000);
     const grupos = await prisma.documentAuditLog.groupBy({
@@ -2362,23 +2411,57 @@ export class DocumentsDB {
     });
     if (grupos.length === 0) return {};
     const docs = await prisma.document.findMany({
-      where: { tenantId, id: { in: grupos.map((g) => g.documentId) }, deletedAt: null, folderId: { not: null } },
+      where: { tenantId, id: { in: grupos.map((g) => g.documentId) }, deletedAt: null },
       select: { id: true, folderId: true, allowedRoles: true },
     });
     const visibles = filtraPorRol(viewerRole) ? await soloVisibles(tenantId, docs, viewerRole) : docs;
-    const carpetaDe = new Map(visibles.map((d) => [d.id, d.folderId as string]));
-    const uso: Record<string, { vistas: number; ultima: string | null }> = {};
+    const carpetaDe = new Map(visibles.map((d) => [d.id, d.folderId]));
+    const uso: Record<string, { vistas: number; ultima: string | null; folderId: string | null }> = {};
     for (const g of grupos) {
-      const carpeta = carpetaDe.get(g.documentId);
-      if (!carpeta) continue;
-      const ultima = g._max.createdAt?.toISOString() ?? null;
-      const previo = uso[carpeta] ?? { vistas: 0, ultima: null };
-      uso[carpeta] = {
-        vistas: previo.vistas + g._count._all,
-        ultima: previo.ultima && ultima ? (previo.ultima > ultima ? previo.ultima : ultima) : (previo.ultima ?? ultima),
+      if (!carpetaDe.has(g.documentId)) continue;
+      uso[g.documentId] = {
+        vistas: g._count._all,
+        ultima: g._max.createdAt?.toISOString() ?? null,
+        folderId: carpetaDe.get(g.documentId) ?? null,
       };
     }
     return uso;
+  }
+
+  /** Negocios con alguna carpeta marcada Esencial (los recorre el cron de avisos). */
+  static async tenantsConEsenciales(): Promise<string[]> {
+    const filas = await prisma.documentFolder.findMany({
+      where: { tags: { has: TAG_ESENCIAL } },
+      distinct: ["tenantId"],
+      select: { tenantId: true },
+    });
+    return filas.map((f) => f.tenantId);
+  }
+
+  /**
+   * Lo que necesita el aviso de vencimientos de Esenciales: las carpetas del
+   * negocio (para armar el árbol y ver candados) y los papeles vivos que
+   * vencen en ≤30 días (o ya vencieron) dentro de las marcadas y sus
+   * descendientes. Dos idas a la base.
+   */
+  static async datosParaAvisosEsenciales(tenantId: string): Promise<{
+    carpetas: { id: string; name: string; parentId: string | null; tags: string[]; allowedRoles: string[] }[];
+    docs: { id: string; folderId: string | null; name: string; expiresAt: Date | null; uploadedAt: Date }[];
+  }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const carpetas = await prisma.documentFolder.findMany({
+      where: { tenantId },
+      select: { id: true, name: true, parentId: true, tags: true, allowedRoles: true },
+    });
+    const raices = carpetas.filter((c) => esEsencial(c)).map((c) => c.id);
+    if (raices.length === 0) return { carpetas: [], docs: [] };
+    const ids = [...conSubcarpetas(raices, carpetas)];
+    const limite = new Date(Date.now() + DIAS_AVISO_ESENCIALES * 86_400_000);
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null, folderId: { in: ids }, expiresAt: { not: null, lte: limite } },
+      select: { id: true, folderId: true, name: true, expiresAt: true, uploadedAt: true },
+    });
+    return { carpetas, docs };
   }
 
   /** Feed de actividad global del tenant (cross-documento), con nombre del doc. */

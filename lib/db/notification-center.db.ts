@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { TIPOS_AVISO_PLAN } from "@/lib/planificacion/avisos";
+import { TIPO_AVISO_ESENCIALES } from "@/lib/documentos/esenciales-avisos";
 import { ROLES_VEN_CAMARAS, TIPO_AVISO_CAMARAS } from "@/lib/camaras/avisar-push";
 
 /**
@@ -75,7 +76,7 @@ export interface ResultadoSincronizar {
  * cajero no le sirven. `Notification` no tiene destinatario por rol (ver el
  * TODO de `/api/notification-center`), así que el filtro va por `type`.
  */
-const TIPOS_SOLO_GESTION: readonly string[] = TIPOS_AVISO_PLAN;
+const TIPOS_SOLO_GESTION: readonly string[] = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES];
 
 /** Los roles que ven HIGH y los tipos de gestión. */
 const ROLES_VEN_HIGH: readonly string[] = ["admin", "owner", "manager"];

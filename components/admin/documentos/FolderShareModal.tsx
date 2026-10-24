@@ -147,7 +147,7 @@ export function FolderShareModal({
                 <Lock className="h-3.5 w-3.5" /> Pedir una clave para abrirla
               </label>
               <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-                Pasale la clave por otro lado, no en el mismo mensaje que el enlace.
+                Pásale la clave por otro lado, no en el mismo mensaje que el enlace.
               </p>
             </div>
           </div>
@@ -173,6 +173,11 @@ export function FolderShareModal({
                 )}
                 {link ? "Rehacer con clave" : "Generar el enlace"}
               </button>
+              {clave.trim().length > 0 && clave.trim().length < 4 && (
+                <p className="w-full text-xs font-bold text-[var(--data-warning-ink)]" role="status">
+                  La clave necesita 4 letras o números como mínimo.
+                </p>
+              )}
             </div>
           )}
         </div>

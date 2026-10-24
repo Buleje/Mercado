@@ -181,6 +181,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     // ningún rubro— y el hub, filtrado, mostraba sólo Contratos: el Archivo
     // desaparecía (Blas: Enterprise, rubro bodega y plantilla propia, 10-10).
     { key: "drive", label: "Archivo", hint: "Tus documentos en carpetas, con su vencimiento: contratos, licencias, facturas, fotos y planillas", origen: ["documentos", "contratos"] },
+    { key: "esenciales", label: "Esenciales", hint: "Las carpetas más valiosas y usadas que marcaste en el Archivo, con lo que tienen adentro y lo que vence", origen: ["documentos", "contratos"] },
     { key: "contratos", label: "Contratos", hint: "Contratos con plantillas peruanas, su firma y su vencimiento", origen: ["contratos", "documentos"] },
   ],
   clientes: [

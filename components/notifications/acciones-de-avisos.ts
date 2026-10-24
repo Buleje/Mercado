@@ -90,7 +90,7 @@ export const ACCIONES: readonly DefAccion[] = [
     como: "Renueva el que vence o apruébalo en el Archivo.",
     quien: "Quien lleva los papeles",
     destino: { tab: "documentos" },
-    tipos: ["DOCUMENTO_VENCIMIENTO", "DOCUMENTO_APROBACION"],
+    tipos: ["DOCUMENTO_VENCIMIENTO", "DOCUMENTO_APROBACION", "DOC_ESENCIAL_VENCE"],
     alertas: [],
   },
   {

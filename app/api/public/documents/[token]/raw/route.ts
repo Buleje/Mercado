@@ -5,12 +5,15 @@ import { DocumentsDB } from "@/lib/db/documents.db";
 import { downloadFromStorage, esInlineSeguro } from "@/lib/documents/storage";
 import { extensionDe } from "@/lib/documents/upload-limits";
 import { extensionDeMime } from "@/lib/grabadora/formato";
+import { COOKIE_ENLACE, cookieEnlaceValida } from "@/lib/documentos/clave-enlace";
 
 /**
  * GET /api/public/documents/[token]/raw — sirve el archivo compartido desde NUESTRO
  * origen (same-origin), para que la página pública `/firmar` o `/d` lo pueda mostrar
  * en un iframe. La URL firmada de Supabase llega con X-Frame-Options y el navegador la
- * bloquea; este proxy no. Validado por token de share (+ password si la tiene).
+ * bloquea; este proxy no. Validado por token de share (+ la cookie de acceso
+ * que deja `POST /api/public/documents/[token]` al acertar la clave: el iframe
+ * no manda cabeceras y la clave ya no va en la URL, 23-10).
  */
 type Ctx = { params: Promise<{ token: string }> };
 
@@ -24,9 +27,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (!found) return NextResponse.json({ error: "not_found_or_expired" }, { status: 404 });
 
     if (found.share.hasPassword) {
-      const password = req.nextUrl.searchParams.get("password") ?? "";
       const stored = await DocumentsDB.getShareRawPassword(token);
-      if (!DocumentsDB.verifySharePassword(stored, password)) {
+      if (!stored || !cookieEnlaceValida(req.cookies.get(COOKIE_ENLACE)?.value, "documento", token, stored)) {
         return NextResponse.json({ error: "password_required" }, { status: 401 });
       }
     }
@@ -49,7 +51,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         "Content-Type": found.doc.mimeType || "application/octet-stream",
         "Content-Disposition": `${disposition}; filename="${safeName}"`,
         "Content-Length": String(buf.length),
-        "Cache-Control": "private, max-age=60",
+        // Con clave nunca se cachea: el navegador lo serviría de nuevo sin la cookie.
+        "Cache-Control": found.share.hasPassword ? "private, no-store" : "private, max-age=60",
         "X-Frame-Options": "SAMEORIGIN",
         "X-Content-Type-Options": "nosniff",
       },

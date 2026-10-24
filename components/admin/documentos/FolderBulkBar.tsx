@@ -16,8 +16,9 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, Palette, Smile, Tag, Trash2, X } from "@buleje/design-system/icons";
+import { Check, Loader2, Palette, Smile, Star, Tag, Trash2, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { TAG_ESENCIAL } from "@/lib/documentos/esenciales";
 import { FOLDER_COLORS } from "./folder-visuals";
 import { ConfirmarBorrarCarpetas, type BorradoCarpetas } from "./ConfirmarBorrarCarpetas";
 import type { BulkFolderAccion } from "@/hooks/use-documents";
@@ -143,6 +144,16 @@ export default function FolderBulkBar({
           </button>
         )}
 
+        <button
+          type="button"
+          onClick={() => void correr("esencial", { action: "addTags", tags: [TAG_ESENCIAL] })}
+          disabled={ocupado === "esencial"}
+          title="Se ven juntas en Documentos › Esenciales"
+          className={cn(btn, "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
+        >
+          {ocupado === "esencial" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Star className="h-3.5 w-3.5" />}
+          A Esenciales
+        </button>
         <button
           type="button"
           onClick={() => setPanel(panel === "emoji" ? null : "emoji")}

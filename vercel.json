@@ -114,6 +114,10 @@
       "schedule": "15 9 * * *"
     },
     {
+      "path": "/api/cron/esenciales-avisos",
+      "schedule": "20 9 * * *"
+    },
+    {
       "path": "/api/cron/documentos-indexar",
       "schedule": "40 3 * * *"
     },

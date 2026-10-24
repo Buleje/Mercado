@@ -82,6 +82,7 @@ const TIPOS_POR_CATEGORIA: Record<CategoriaId, readonly string[]> = {
     "camaras",
     "DOCUMENTO_VENCIMIENTO",
     "DOCUMENTO_APROBACION",
+    "DOC_ESENCIAL_VENCE",
     "PLAN_LICENCIA",
     "PLAN_OBJETIVO",
     "PLAN_POLITICA",

@@ -459,7 +459,10 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
      * camino es «Restaurar» o maximizar, no pelearle al tope.
      */
     if (dy === 0 && r.height <= altoVista && r.bottom > altoVista - MARGEN_ESQUINA) {
-      dy = altoVista - MARGEN_ESQUINA - r.bottom;
+      /* …sin pasar el techo: un modal más alto que la pantalla menos 24 px
+         (un tamaño guardado de casi toda la altura) subía hasta esconder la
+         cabecera, que es justo de donde se lo agarra. Arriba manda (23-10). */
+      dy = Math.max(altoVista - MARGEN_ESQUINA - r.bottom, -r.top);
     }
     if (dx === 0 && dy === 0) return p;
     return { x: Math.round(p.x + dx), y: Math.round(p.y + dy) };

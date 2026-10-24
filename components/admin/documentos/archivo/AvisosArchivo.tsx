@@ -29,15 +29,13 @@ export default function AvisosArchivo({ arch }: { arch: ModeloArchivo }) {
         aplicandoTodas={aplicandoTodas}
         fechaCorta={fmtFechaCorta}
         orden={{ onRevisar: () => setOrdenando(true), version: ordenVersion }}
+        // Las fotos de las cámaras no se mezclan con tus papeles: la línea que dice
+        // cuántas hay va al final de la fila de avisos, no en una fila propia (23-10).
+        extra={vistaGeneral && MODOS_CON_LINEA_DE_FOTOS.has(filterMode) && (fotosEsc.conteo?.total ?? 0) > 0 ? (
+          <FotosEscondidas conteo={fotosEsc.conteo} onVerFotos={verFotosDeMaquina} />
+        ) : undefined}
       />
 
-      {/* Las fotos de las cámaras no se mezclan con tus papeles: una línea dice cuántas hay. */}
-      {vistaGeneral && MODOS_CON_LINEA_DE_FOTOS.has(filterMode) && (fotosEsc.conteo?.total ?? 0) > 0 && (
-        <FotosEscondidas
-          conteo={fotosEsc.conteo}
-          onVerFotos={verFotosDeMaquina}
-        />
-      )}
 
       {/* Resultado del escaneo IA */}
       {scanResult && (

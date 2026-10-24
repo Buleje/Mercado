@@ -24,6 +24,7 @@ import ActionMenu from "@/components/admin/shared/action-menu";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
+import { AccionesDeLaVista, ORDEN_ACCION, TextoDeAccion, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 
 export type SeccionContratos = "dashboard" | "plantillas" | "contratos" | "crear" | "editor";
 
@@ -112,46 +113,70 @@ export default function CabeceraContratos({ seccion, irA, cifras, plataVigente, 
     ],
   });
 
+  // Dentro de Documentos la ⓘ y los botones van a la fila de las pestañas y no hay fila
+  // de título propia (Brandon 23-10: «aprovechar mejor el espacio»). Fuera, como antes.
+  const enFila = useEnElLibro();
+  const ayuda = (
+    <InfoTip
+      title="Contratos"
+      side="bottom"
+      what="Los contratos del negocio armados con plantillas peruanas: alquiler, servicios, trabajo y compraventa, con su firma y su vencimiento."
+      affects="Un contrato por vencer te avisa antes de la fecha. Los de una persona del equipo se ven también en Equipo › Contratos."
+      example="Alquilas el local de Jr. Ucayali por un año: eliges la plantilla, completas los datos y lo mandas a firmar."
+    />
+  );
+  const nuevo = (
+    <button
+      type="button"
+      onClick={() => irA("plantillas")}
+      className={button({ variant: "primary", className: cn("rounded-xl", !enFila && "max-sm:w-12 max-sm:px-0") })}
+    >
+      <Plus className="h-4 w-4" aria-hidden />
+      {enFila ? <TextoDeAccion corto="Nuevo">Nuevo contrato</TextoDeAccion> : <span className="max-sm:sr-only">Nuevo contrato</span>}
+    </button>
+  );
+  const mas = (
+    <ActionMenu
+      label="Más"
+      icon={MoreHorizontal}
+      soloIcono
+      size="md"
+      className="w-12 shrink-0"
+      title="Plantillas, editor de plantillas, resumen y actualizar"
+      actions={[
+        { id: "lista", label: "Mis contratos", icon: FileText, onSelect: () => irA("contratos"), activo: seccion === "contratos" },
+        { id: "resumen", label: "Resumen con gráficos", hint: "Por tipo, por mes y los que vencen pronto", icon: BarChart3, onSelect: () => irA("dashboard"), activo: seccion === "dashboard" },
+        { id: "plantillas", label: "Plantillas", hint: "Los modelos con cláusulas peruanas", icon: BookOpen, onSelect: () => irA("plantillas"), activo: seccion === "plantillas" },
+        { id: "editor", label: "Editor de plantillas", hint: "Ajusta las cláusulas de un modelo", icon: Edit3, onSelect: () => irA("editor"), activo: seccion === "editor" },
+        { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: onActualizar },
+      ]}
+    />
+  );
+
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-        <div className="flex shrink-0 items-center gap-2">
-          <SectionTitle className="whitespace-nowrap">Contratos</SectionTitle>
-          <InfoTip
-            title="Contratos"
-            side="bottom"
-            what="Los contratos del negocio armados con plantillas peruanas: alquiler, servicios, trabajo y compraventa, con su firma y su vencimiento."
-            affects="Un contrato por vencer te avisa antes de la fecha. Los de una persona del equipo se ven también en Equipo › Contratos."
-            example="Alquilas el local de Jr. Ucayali por un año: eliges la plantilla, completas los datos y lo mandas a firmar."
-          />
-        </div>
-        <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+      {enFila ? (
+        <>
+          <AccionesDeLaVista orden={ORDEN_ACCION.info} fueraDelLibro={null}>{ayuda}</AccionesDeLaVista>
           {kpis.boton}
-          <button
-            type="button"
-            onClick={() => irA("plantillas")}
-            className={button({ variant: "primary", className: "rounded-xl max-sm:w-12 max-sm:px-0" })}
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            <span className="max-sm:sr-only">Nuevo contrato</span>
-          </button>
-          <ActionMenu
-            label="Más"
-            icon={MoreHorizontal}
-            soloIcono
-            size="md"
-            className="w-12 shrink-0"
-            title="Plantillas, editor de plantillas, resumen y actualizar"
-            actions={[
-              { id: "lista", label: "Mis contratos", icon: FileText, onSelect: () => irA("contratos"), activo: seccion === "contratos" },
-              { id: "resumen", label: "Resumen con gráficos", hint: "Por tipo, por mes y los que vencen pronto", icon: BarChart3, onSelect: () => irA("dashboard"), activo: seccion === "dashboard" },
-              { id: "plantillas", label: "Plantillas", hint: "Los modelos con cláusulas peruanas", icon: BookOpen, onSelect: () => irA("plantillas"), activo: seccion === "plantillas" },
-              { id: "editor", label: "Editor de plantillas", hint: "Ajusta las cláusulas de un modelo", icon: Edit3, onSelect: () => irA("editor"), activo: seccion === "editor" },
-              { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: onActualizar },
-            ]}
-          />
+          <AccionesDeLaVista orden={ORDEN_ACCION.principal} fueraDelLibro={null}>
+            {nuevo}
+            {mas}
+          </AccionesDeLaVista>
+        </>
+      ) : (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          <div className="flex shrink-0 items-center gap-2">
+            <SectionTitle className="whitespace-nowrap">Contratos</SectionTitle>
+            {ayuda}
+          </div>
+          <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+            {kpis.boton}
+            {nuevo}
+            {mas}
+          </div>
         </div>
-      </div>
+      )}
 
       {kpis.panel}
 

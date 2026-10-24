@@ -579,6 +579,11 @@
    "par": "metas-logros:semaforo",
    "porque": "Módulo nuevo para todos los negocios (ADR-508): semáforo de números dentro de Metas. Mismo pedido de Brandon del 20-10 («créalos; aplicará a todos los panel admin»). La ruta da 403 a cajero/almacenero.",
    "aprobo": "Brandon 2026-10-20"
+  },
+  {
+   "par": "documentos:esenciales",
+   "porque": "Pestaña nueva de Documentos al lado del Archivo (Brandon 23-10): «una página nueva al lado de Archivo… marcar carpetas y esa carpeta irá a la pestaña nueva… se selecciona y se verá qué tiene adentro en un sidebar lateral». Muestra sólo carpetas que el rol ya ve en el Archivo; marcar/quitar pasa por folders/bulk (sólo dueño/admin).",
+   "aprobo": "Brandon 2026-10-23"
   }
  ]
 }

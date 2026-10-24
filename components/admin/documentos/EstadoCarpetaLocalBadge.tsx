@@ -19,6 +19,7 @@
 import { useEffect, useState } from "react";
 import { FolderOpen, Link2Off, Pause } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { CLASE_TEXTO_ACCION } from "@/components/admin/shared/libro-acciones-vista";
 import { logger } from "@/lib/logger";
 import { leerVinculo } from "@/lib/documentos/carpeta-local/almacen";
 import { permisoDeEscritura, soportado } from "@/lib/documentos/carpeta-local/disco";
@@ -97,12 +98,14 @@ export default function EstadoCarpetaLocalBadge({
       title={m.titulo}
       className={cn(
         "inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-bold transition-colors max-sm:w-12 max-sm:justify-center max-sm:px-0",
+        // En la fila de pestañas de Documentos, angosta: sólo el ícono (el estado sigue en el `title`).
+        "@max-[80rem]/riel:w-12 @max-[80rem]/riel:justify-center @max-[80rem]/riel:px-0",
         m.cls,
       )}
     >
       <m.Icon className="h-4 w-4 shrink-0" aria-hidden />
       {/* A 400 px la fila del título no da para el texto: queda el ícono con su `title`. */}
-      <span className="max-sm:sr-only">{m.texto}</span>
+      <span className={cn("max-sm:sr-only", CLASE_TEXTO_ACCION)}>{m.texto}</span>
     </button>
   );
 }

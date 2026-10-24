@@ -1,4 +1,5 @@
 import { esTagDeMaquinaPlan } from "@/lib/forestal/plan-documentos-tipos";
+import { esTagDeMarca } from "@/lib/documentos/esenciales";
 import { formatDateNumeric, formatNumber } from "@/lib/format";
 import type { DbDocument } from "@/lib/types/documents";
 import { FileSpreadsheet, type Folder, FolderArchive, LayoutDashboard, Sparkles, Star, Clock, AlarmClock, CalendarDays, History, Link2, Copy, Monitor, Trash2, Users } from "@buleje/design-system/icons";
@@ -8,8 +9,10 @@ import { diasHasta } from "@/lib/documentos/aviso-vencimiento";
  * Las etiquetas que se muestran como chips. Las de máquina de «Documentos del
  * plan» (`plan:`, `plan-carpeta:`, `campo:`, ADR-467) no: son un id que nadie
  * lee, y quitarlas a mano saca el papel de su casillero. Siguen en el dato.
+ * Tampoco la marca de Esenciales (`marca:esencial`): se pone y se quita con su opción del menú.
  */
-export const tagsVisibles = (tags: readonly string[] | null | undefined): string[] => (tags ?? []).filter((t) => !esTagDeMaquinaPlan(t));
+export const tagsVisibles = (tags: readonly string[] | null | undefined): string[] =>
+  (tags ?? []).filter((t) => !esTagDeMaquinaPlan(t) && !esTagDeMarca(t));
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers

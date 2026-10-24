@@ -117,7 +117,11 @@ export function useModalAccesible(
     /* Foco adentro. `requestAnimationFrame` porque el contenido puede montarse
        en el mismo tick (un cubicador entero, por ejemplo). */
     const id = requestAnimationFrame(() => {
-      const lista = enfocables();
+      /* Sin la barra de la ventana movible (`data-ventana-asa`): con el foco ahí,
+         ← → movían la ventana de a 16 px en vez de pasar de documento en la vista
+         previa, y la dejaban «muy arriba y descuadrada» (Brandon 23-10). Con Tab
+         se sigue llegando a ella. */
+      const lista = enfocables().filter((el) => !el.hasAttribute("data-ventana-asa"));
       (lista[0] ?? caja).focus?.();
     });
 

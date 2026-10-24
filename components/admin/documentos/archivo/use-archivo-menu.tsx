@@ -9,6 +9,8 @@ import type { EstadoDoc } from "@/lib/documents/estados-doc";
 import { cn } from "@/lib/utils";
 import { Search } from "@buleje/design-system/icons";
 import type { HastaArchivoAcciones } from "./use-archivo-acciones";
+import { esEsencial } from "@/lib/documentos/esenciales";
+import { marcarEsenciales } from "../esenciales/marcar-esencial";
 export function useArchivoMenu(previo: HastaArchivoAcciones) {
   const { setFilterMode, setActiveFolderId, setExpandedFolders, vistaConDatos, filterMode, setSoloVencimiento,
     setPreview, handleAnalyze, handleDownload, startRename, setMovingDoc, setTagDocId, setWhatsappDoc,
@@ -18,7 +20,7 @@ export function useArchivoMenu(previo: HastaArchivoAcciones) {
     setSelectedIds, toggleSelect, prompt, createFolder, updateFolder, upload, moveFolder, deleteFolder,
     restoreMany, refresh, fileInputRef, setEditingFolder, setSharingFolder, setExpediente, setBorrandoCarpeta,
     zipAndDownload, bulkDownloadZip, bulkFavorite, bulkStatus, smartFolders, activeSmartId, setActiveSmartId,
-    setSmartModal, setShowTags, etiquetaFiltro, semantic, search, setSearch } = previo;
+    setSmartModal, setShowTags, etiquetaFiltro, semantic, search, setSearch, bulkFolders } = previo;
   const [menuEn, setMenuEn] = useState<({ id: string } & PuntoDeMenu) | null>(null);
   // «Vincular a un tercero…» (pestaña Terceros): el id, para releer la carpeta
   // de la lista tras cada vínculo (la etiqueta cambia y la ventana la muestra).
@@ -107,6 +109,7 @@ export function useArchivoMenu(previo: HastaArchivoAcciones) {
     compartir: setSharingFolder,
     armarExpediente: (f) => setExpediente({ tipo: "carpeta", folderId: f.id, nombre: f.name }),
     vincularTercero: setVinculando,
+    alternarEsencial: (f) => void marcarEsenciales(bulkFolders, [f], !esEsencial(f)),
     eliminarCarpetas: (fs) => { if (fs.length > 0) setBorrandoCarpeta(fs); },
     zip: zipAndDownload,
     verDoc: setPreview,

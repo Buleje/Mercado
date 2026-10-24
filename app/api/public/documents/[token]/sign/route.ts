@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { esPapelDeAdelanto } from "@/lib/adelantos/recibo-whatsapp";
 import { applySignature } from "@/lib/documents/sign-document";
+import { COOKIE_ENLACE, MAX_LARGO_CLAVE, claveCoincide, cookieEnlaceValida } from "@/lib/documentos/clave-enlace";
 import {
   estadoDeRonda, firmantePorToken, registrarFirma, type Ronda,
 } from "@/lib/documents/firma-multi";
@@ -18,7 +19,7 @@ const Body = z.object({
   signerName: z.string().min(2).max(120),
   signerRole: z.string().max(120).optional(),
   signatureImagePngBase64: z.string().max(2_500_000).optional(),
-  password: z.string().max(120).optional(),
+  password: z.string().max(MAX_LARGO_CLAVE).optional(),
 });
 
 type Ctx = { params: Promise<{ token: string }> };
@@ -44,10 +45,13 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: "no_firmable", mensaje: "Este documento es para ver: no se firma por este enlace." }, { status: 403 });
     }
 
-    // Si el share tiene contraseña, exigirla también para firmar.
+    // Si el share tiene contraseña, exigirla también para firmar: en el cuerpo
+    // o la cookie de acceso que dejó abrirlo (`POST /api/public/documents/[token]`).
     if (found.share.hasPassword) {
       const stored = await DocumentsDB.getShareRawPassword(token);
-      if (!DocumentsDB.verifySharePassword(stored, parsed.data.password ?? "")) {
+      const conCookie = !!stored && cookieEnlaceValida(req.cookies.get(COOKIE_ENLACE)?.value, "documento", token, stored);
+      const conClave = !!stored && !!parsed.data.password && claveCoincide(stored, parsed.data.password);
+      if (!conCookie && !conClave) {
         return NextResponse.json({ error: "password_required", requirePassword: true }, { status: 401 });
       }
     }

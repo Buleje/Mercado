@@ -36,6 +36,7 @@ const haceHoras = (h: number) => new Date(Date.now() - h * 60 * 60 * 1000);
 
 import { NotificationCenterDB, filtroVisible, visibilidadDeRol } from "@/lib/db/notification-center.db";
 import { TIPOS_AVISO_PLAN } from "@/lib/planificacion/avisos";
+import { TIPO_AVISO_ESENCIALES } from "@/lib/documentos/esenciales-avisos";
 
 describe("NotificationCenterDB.create", () => {
   beforeEach(() => {
@@ -189,16 +190,16 @@ describe("campana por rol: los avisos de Cámaras sólo para quien ve las fotos 
     expect(filtroVisible("t1", visibilidadDeRol("cashier"))).toEqual({
       tenantId: "t1",
       severity: { not: "HIGH" },
-      type: { notIn: [...TIPOS_AVISO_PLAN, "camaras"] },
+      type: { notIn: [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, "camaras"] },
     });
     expect(filtroVisible("t1", visibilidadDeRol("almacenero"))).toEqual({
       tenantId: "t1",
       severity: { not: "HIGH" },
-      type: { notIn: [...TIPOS_AVISO_PLAN] },
+      type: { notIn: [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES] },
     });
     for (const rol of ["admin", "owner", "manager"]) expect(filtroVisible("t1", visibilidadDeRol(rol))).toEqual({ tenantId: "t1" });
     /* Sin rol y sin ser gestión: lo más cerrado (tampoco Cámaras). */
-    expect(filtroVisible("t1", { canSeeHigh: false }).type).toEqual({ notIn: [...TIPOS_AVISO_PLAN, "camaras"] });
+    expect(filtroVisible("t1", { canSeeHigh: false }).type).toEqual({ notIn: [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, "camaras"] });
   });
 
   it("listar y contar usan el mismo filtro del rol", async () => {
@@ -217,7 +218,7 @@ describe("campana por rol: los avisos de Cámaras sólo para quien ve las fotos 
     expect(mockUpdateMany.mock.calls[1][0].where).toEqual({
       tenantId: "t1",
       severity: { not: "HIGH" },
-      type: { notIn: [...TIPOS_AVISO_PLAN, "camaras"] },
+      type: { notIn: [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, "camaras"] },
       readAt: null,
     });
   });

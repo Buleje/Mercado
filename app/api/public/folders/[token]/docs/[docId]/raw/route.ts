@@ -3,6 +3,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { downloadFromStorage, esInlineSeguro } from "@/lib/documents/storage";
+import { COOKIE_ENLACE, cookieEnlaceValida } from "@/lib/documentos/clave-enlace";
 
 /**
  * GET /api/public/folders/[token]/docs/[docId]/raw — sirve un documento que pertenece
@@ -18,13 +19,12 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const { token, docId } = await ctx.params;
 
     // La clave del enlace se valida TAMBIÉN acá: si sólo la pidiera el listado,
-    // bastaría con tener el id del documento para bajarlo sin clave.
+    // bastaría con tener el id del documento para bajarlo sin clave. Va en la
+    // cookie que dejó el POST al acertarla, no en la URL (`<iframe>`, `<img>` y
+    // `<a download>` no mandan cabeceras; la URL quedaba en el historial).
     const stored = await DocumentsDB.getFolderShareRawPassword(token);
-    if (stored) {
-      const intento = req.nextUrl.searchParams.get("password") ?? "";
-      if (!DocumentsDB.verifySharePassword(stored, intento)) {
-        return NextResponse.json({ error: "password_required" }, { status: 401 });
-      }
+    if (stored && !cookieEnlaceValida(req.cookies.get(COOKIE_ENLACE)?.value, "carpeta", token, stored)) {
+      return NextResponse.json({ error: "password_required" }, { status: 401 });
     }
 
     const doc = await DocumentsDB.getFolderShareDocPath(token, docId);

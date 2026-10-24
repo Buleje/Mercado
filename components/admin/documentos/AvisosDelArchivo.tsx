@@ -14,7 +14,7 @@
  * 22-10: «7 nombres para limpiar · Revisar» abre «Ordenar mi Archivo».
  */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AlarmClock, Check, ChevronDown, ChevronUp, Sparkles, TriangleAlert, X } from "@buleje/design-system/icons";
 import type { DbDocument } from "@/lib/types/documents";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -48,6 +48,8 @@ interface Props {
   fechaCorta: (iso: string) => string;
   /** «Ordenar mi Archivo»: `version` sube después de ordenar, para recontar. */
   orden?: { onRevisar: () => void; version: number };
+  /** Lo que va al final de la MISMA fila (la línea de fotos escondidas): una fila menos. */
+  extra?: ReactNode;
 }
 
 const SEGMENTO =
@@ -114,7 +116,7 @@ function PastillaVencimiento({ tono, icono: Icono, texto, titulo, items, detalle
 
 export default function AvisosDelArchivo({
   vencidos, porVencer, porVencerDescartado, onVerVencidos, onVerPorVencer, onDescartarPorVencer,
-  sugerencias, onAplicar, onDescartar, onAplicarTodas, aplicandoTodas, fechaCorta, orden,
+  sugerencias, onAplicar, onDescartar, onAplicarTodas, aplicandoTodas, fechaCorta, orden, extra,
 }: Props) {
   const [revisando, setRevisando] = useState(false);
   const ordenar = useConteoOrden(!!orden, orden?.version ?? 0);
@@ -123,7 +125,7 @@ export default function AvisosDelArchivo({
   const verVencer = porVencer.length > 0 && !porVencerDescartado;
   const verSugerencias = sugerencias.length > 0;
   const verOrden = !!orden && !!ordenar.conteo;
-  if (!verVencidos && !verVencer && !verSugerencias && !verOrden) return null;
+  if (!verVencidos && !verVencer && !verSugerencias && !verOrden) return extra ? <div className="flex flex-wrap items-center gap-2">{extra}</div> : null;
 
   return (
     <div className="space-y-2">
@@ -159,12 +161,13 @@ export default function AvisosDelArchivo({
             <span className="inline-flex items-center gap-2 pl-3 pr-2 text-sm font-bold">
               {/* A 400 px el ícono empujaba «2 por ordenar» debajo del ⓘ
                   (la pastilla con overflow-hidden se encoge y no avisa). */}
-              <Sparkles className="h-4 w-4 shrink-0 max-sm:hidden" aria-hidden />
-              {/* A 400 px la pastilla entera tiene que entrar en una línea con sus dos botones. */}
-              <span className="whitespace-nowrap max-sm:hidden">
+              <Sparkles className="h-4 w-4 shrink-0 max-2xl:hidden" aria-hidden />
+              {/* La frase entera sólo con pantalla ancha: a 1280 la fila de avisos
+                  se partía en dos (vencidos · IA · carpetas vacías, 23-10). */}
+              <span className="whitespace-nowrap max-2xl:hidden">
                 La IA sugiere ordenar {sugerencias.length === 1 ? "1 archivo" : `${sugerencias.length} archivos`}
               </span>
-              <span className="whitespace-nowrap sm:hidden">{sugerencias.length} por ordenar</span>
+              <span className="whitespace-nowrap 2xl:hidden">{sugerencias.length} por ordenar</span>
               <InfoTip
                 title="Sugerencias de la IA"
                 what={<span>Al leer cada archivo, la IA propone la carpeta donde va y la fecha en que vence.</span>}
@@ -198,6 +201,7 @@ export default function AvisosDelArchivo({
         {verOrden && ordenar.conteo && orden && (
           <PastillaOrdenar conteo={ordenar.conteo} onRevisar={orden.onRevisar} onOcultar={ordenar.ocultar} />
         )}
+        {extra}
       </div>
 
       {verSugerencias && revisando && (

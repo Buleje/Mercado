@@ -3,10 +3,17 @@
 import { DocumentPreviewModal } from "./perezosos";
 import { sucesorTrasBorrar } from "./compartido";
 import type { ModeloArchivo } from "./use-archivo";
-export default function VistaPreviaArchivo({ arch }: { arch: ModeloArchivo }) {
-  const { preview, displayDocs, documents, folders, setPreview, refresh, setWhatsappDoc, zipAndDownload, bulk,
+import type { DbDocument } from "@/lib/types/documents";
+export default function VistaPreviaArchivo({ arch, lista }: {
+  arch: ModeloArchivo;
+  /** Por qué papeles pasan las flechas. Sin esto, la lista que se ve en el Archivo;
+   *  Esenciales pasa la de la carpeta abierta, para no saltar a papeles de otras carpetas (23-10). */
+  lista?: DbDocument[];
+}) {
+  const { preview, displayDocs: listaDelArchivo, documents, folders, setPreview, refresh, setWhatsappDoc, zipAndDownload, bulk,
     patch, createFolder, updateFolder, deleteFolder, handleAnalyze, setStampTarget, handleRotate, handleSplit,
     setPageEditorDoc, setMovingDoc, setSignDoc, prompt, setTagDocId, confirm } = arch;
+  const displayDocs = lista ?? listaDelArchivo;
   return (
     <>
       {/* Modals */}

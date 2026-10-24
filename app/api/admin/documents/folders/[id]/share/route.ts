@@ -37,11 +37,21 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     }
     const body = await req.json().catch(() => ({}));
     const parsed = Body.safeParse(body);
+    // Un cuerpo que no pasa (una clave de 3 letras, 91 días) NO crea el enlace:
+    // antes se creaba SIN clave y sin avisar, abierto a quien tuviera el link
+    // (revisión de seguridad 23-10). Igual que compartir un documento.
+    if (!parsed.success) {
+      const clave = parsed.error.issues.some((i) => i.path[0] === "password");
+      return NextResponse.json(
+        { error: "invalid_body", message: clave ? "La clave necesita entre 4 y 120 caracteres." : "Datos del enlace no válidos." },
+        { status: 400 },
+      );
+    }
 
     const share = await DocumentsDB.createFolderShare(auth.tenantId, id, {
       createdById: auth.username,
-      expiresInDays: parsed.success ? parsed.data.expiresInDays : undefined,
-      password: parsed.success ? parsed.data.password : undefined,
+      expiresInDays: parsed.data.expiresInDays,
+      password: parsed.data.password,
     });
     if (!share) return NextResponse.json({ error: "not_found" }, { status: 404 });
 

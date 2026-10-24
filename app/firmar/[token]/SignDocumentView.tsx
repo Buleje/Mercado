@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileText, PenLine, Check, Lock, ShieldCheck, Loader2 } from "lucide-react";
+import { abrirDocumentoConClave, errorDeAperturaDocumento } from "@/app/d/[token]/abrir-con-clave";
 
 interface Props {
   token: string;
@@ -81,16 +82,13 @@ export function SignDocumentView({ token, doc, hasPassword, initialSignedUrl }: 
   async function unlock() {
     setUnlocking(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/public/documents/${encodeURIComponent(token)}?password=${encodeURIComponent(password)}`);
-      const data = await res.json();
-      if (!res.ok) { setError(data.error === "password_required" ? "Contraseña incorrecta" : "No se pudo abrir"); return; }
-      setSignedUrl(data.signedUrl);
-    } catch {
-      setError("Error de conexión");
-    } finally {
-      setUnlocking(false);
-    }
+    // La clave va en el cuerpo, no en la URL; la vista previa abre con la cookie
+    // que deja el servidor. La clave queda en memoria para la firma: si se lee
+    // el contrato más de 30 min, la cookie vence y la firma la vuelve a mandar.
+    const r = await abrirDocumentoConClave(token, password);
+    setUnlocking(false);
+    if (r.tipo !== "ok") { setError(errorDeAperturaDocumento(r.tipo)); return; }
+    setSignedUrl(r.signedUrl);
   }
 
   async function handleSign() {
@@ -152,7 +150,7 @@ export function SignDocumentView({ token, doc, hasPassword, initialSignedUrl }: 
             {/* Vista previa del PDF (proxy same-origin: la URL firmada de Supabase se bloquea en iframe). */}
             <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--rule-base,#e5e7eb)] bg-white shadow-sm">
               <iframe
-                src={`/api/public/documents/${encodeURIComponent(token)}/raw${hasPassword && password ? `?password=${encodeURIComponent(password)}` : ""}`}
+                src={`/api/public/documents/${encodeURIComponent(token)}/raw`}
                 title={doc.name}
                 className="h-[42vh] w-full"
               />

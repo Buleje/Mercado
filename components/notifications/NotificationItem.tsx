@@ -72,6 +72,7 @@ const ICONO_DE_TIPO: Record<string, LucideIcon> = {
   camaras: Camera,
   DOCUMENTO_VENCIMIENTO: FileText,
   DOCUMENTO_APROBACION: FileText,
+  DOC_ESENCIAL_VENCE: FileText,
   PLAN_LICENCIA: FileText,
   PLAN_OBJETIVO: Target,
   PLAN_POLITICA: FileText,

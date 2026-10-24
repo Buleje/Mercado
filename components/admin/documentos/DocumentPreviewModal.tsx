@@ -5,21 +5,21 @@ import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { esHojaEditable, esHojaLegible } from "@/lib/documentos/hoja-calculo";
-import { esTextoEditable, esTextoLegible } from "@/lib/documentos/texto-docx";
+import { esHojaLegible } from "@/lib/documentos/hoja-calculo";
+import { esTextoLegible } from "@/lib/documentos/texto-docx";
 import { esPresentacion } from "@/lib/documentos/presentacion";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import { reportarVelocidad } from "@/lib/documentos/reportar-velocidad";
 import BarraHerramientasDoc, { type AccionesDoc } from "./BarraHerramientasDoc";
-import UbicacionDoc from "./UbicacionDoc";
 import PanelCarpetasDoc, { type AccionesCarpeta } from "./PanelCarpetasDoc";
 import ExploradorDoc, { type AccionesEnLote } from "./ExploradorDoc";
 import ComentariosDoc from "./ComentariosDoc";
 import DescripcionDoc from "./DescripcionDoc";
 import ParecidosDoc from "./ParecidosDoc";
 import BuscarEnDocumento from "./BuscarEnDocumento";
+import CabeceraVistaPrevia, { type PestanaVisor } from "./vista-previa/CabeceraVistaPrevia";
 import { esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 import dynamic from "next/dynamic";
 
@@ -39,11 +39,10 @@ const TextoPreview = dynamic(() => import("./TextoPreview"), {
   loading: () => <p className="py-16 text-center text-sm text-[var(--text-tertiary)]">Abriendo el documento…</p>,
 });
 import {
-  X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check, Table, MessageCircle,
-  Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
-  ChevronLeft, ChevronRight, GitCompareArrows as GitCompare,
+  X, Download, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check,
+  Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck,
+  GitCompareArrows as GitCompare,
   FileSpreadsheet, Plus, Link as LinkChain, Save, Folder as FolderIcon,
-  Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { VisorImagen, VisorPdf } from "./VisorArchivo";
@@ -60,7 +59,7 @@ import type {
 } from "@/lib/types/documents";
 import { formatDate, formatDateShort, formatNumber } from "@/lib/format";
 
-type Tab = "preview" | "texto" | "details" | "versions" | "audit" | "share" | "sign" | "comentarios";
+type Tab = PestanaVisor;
 
 interface Props {
   docId: string;
@@ -110,6 +109,11 @@ function relativeTime(iso: string): string {
   return formatDateShort(iso);
 }
 
+/** Teclas que el panel deja llegar al atajo de la ventana (cerrar y pasar de documento). */
+const TECLAS_DEL_VISOR = new Set(["Escape", "ArrowLeft", "ArrowRight"]);
+/** Donde ← → ya significan otra cosa: ahí no se cambia de documento. */
+const CONTROLES_CON_FLECHAS = '[role="tree"], [role="treeitem"], [role="listbox"], [role="grid"], [role="slider"], [role="tablist"], [role="menu"], [role="radiogroup"]';
+
 export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position, herramientas, carpetas, lote, onAbrirOtro }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
@@ -138,9 +142,12 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
         setTab("texto");
         return;
       }
-      // No navegar entre documentos si el usuario está escribiendo en un campo.
+      // No navegar entre documentos si el usuario está escribiendo en un campo, ni
+      // si las flechas ya son de otro control (árbol de carpetas, lista, pestañas).
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.defaultPrevented) return;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (t?.closest?.(CONTROLES_CON_FLECHAS)) return;
       if (e.key === "ArrowLeft") onPrev?.();
       else if (e.key === "ArrowRight") onNext?.();
     };
@@ -246,13 +253,17 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
 
   return (
     <div
-      className="fixed inset-0 z-modal flex items-center justify-center p-2 sm:p-3 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-modal flex items-center justify-center p-2 sm:p-6 bg-black/60 backdrop-blur-sm"
       onClick={() => { if (!ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       {/* Casi toda la pantalla: un contrato o una planilla se leen mejor
           grandes, y la barra de herramientas de la derecha necesita su lugar
-          sin comerle ancho al documento. */}
+          sin comerle ancho al documento. El alto deja 24 px arriba y abajo:
+          con 96vh quedaba a 12 de arriba y 24 de abajo, porque la ventana
+          movible sube todo modal cuyo borde inferior pase de 24 px del fondo.
+          `overflow-clip` y no `-hidden`: un panel `hidden` igual se desplaza
+          por programa (foco, scrollIntoView) y escondía la cabecera arriba. */}
       <div
         ref={panelRef}
         role="dialog"
@@ -262,132 +273,33 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
         onClick={(e) => e.stopPropagation()}
         /* Escape tiene que llegar al listener global: antes lo tragaba este stopPropagation
            y no cerraba con el foco adentro (medido 08-10). */
-        onKeyDown={(e) => { if (e.key !== "Escape") e.stopPropagation(); }}
-        className="relative flex h-[96vh] w-full max-w-[1800px] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        /* …y las flechas también: con el foco adentro (lo normal al abrir) ← → no pasaban
+           de documento (medido 23-10). El atajo de abajo ya ignora campos, árboles y listas. */
+        onKeyDown={(e) => { if (!TECLAS_DEL_VISOR.has(e.key)) e.stopPropagation(); }}
+        className="@container relative flex h-[calc(100dvh-1rem)] w-full max-w-[1800px] flex-col overflow-clip rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:h-[calc(100dvh-3rem)]"
       >
-        {/* Header — en un celular los botones bajan a una segunda línea en vez
-            de aplastar el nombre del archivo hasta partirlo letra por letra. */}
-        <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
-          <div className="flex items-center gap-3 min-w-0 flex-1 basis-56">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-sunken)] shrink-0">
-              <FileText className="h-5 w-5 text-[var(--text-secondary)]" />
-            </span>
-            <div className="min-w-0">
-              <p id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] truncate">{doc.name}</p>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                {/* Dónde vive el archivo: se ve sin cambiar de pestaña y se
-                    puede mover desde acá mismo. */}
-                <UbicacionDoc
-                  compacto
-                  folderId={doc.folderId}
-                  folders={folders ?? []}
-                  onMover={async (destino) => {
-                    await patchDocument(docId, { folderId: destino });
-                    const r = await getDocumentDetail(docId);
-                    setDoc(r.document);
-                    onRefresh?.();
-                  }}
-                />
-                <p className="text-xs text-[var(--text-tertiary)] tabular-nums truncate">
-                  {formatBytes(doc.size)} · {formatDate(doc.uploadedAt)}
-                  {doc.versionCount ? ` · v${doc.versionCount + 1}` : ""}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {(onPrev || onNext) && (
-              <div className="mr-1 flex items-center gap-1">
-                <button
-                  onClick={onPrev}
-                  disabled={!onPrev}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="Documento anterior (←)"
-                  aria-label="Documento anterior"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                {position && <span className="text-xs font-bold tabular-nums text-[var(--text-tertiary)] min-w-[52px] text-center">{position.current} / {position.total}</span>}
-                <button
-                  onClick={onNext}
-                  disabled={!onNext}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="Documento siguiente (→)"
-                  aria-label="Documento siguiente"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-            {(isPdf || isImage || isVideo) && (
-              <a
-                href={rawUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
-                title="Abrir en una pestaña nueva"
-              >
-                <ExternalLink className="h-3.5 w-3.5" /> Abrir
-              </a>
-            )}
-            {/* Editar en el panel en vez de bajar → abrir Office → volver a
-                subir. Guarda como versión nueva del mismo documento. */}
-            {(esHojaEditable(doc.mimeType, doc.name) || esTextoEditable(doc.mimeType, doc.name)) && (
-              <a
-                href={`/admin/documentos/${docId}/editar`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Editar en una pestaña nueva y guardarlo acá mismo"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent)] text-xs font-bold text-white hover:bg-[var(--accent-600)] transition-colors"
-              >
-                {esHojaEditable(doc.mimeType, doc.name)
-                  ? <><Table className="h-3.5 w-3.5" /> Editar planilla</>
-                  : <><PencilLine className="h-3.5 w-3.5" /> Editar documento</>}
-              </a>
-            )}
-            {/* Mandar el archivo por WhatsApp sin cerrar la ficha: mirarlo y
-                mandarlo es el mismo gesto (llega el archivo, no un enlace). */}
-            <button
-              onClick={() => setEnviando(true)}
-              title="Mandar este archivo por WhatsApp"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
-            >
-              <MessageCircle className="h-3.5 w-3.5" /> Enviar
-            </button>
-            {/* Descarga vía nuestro proxy (?download=1): confiable y con auth, no
-                depende de la URL firmada que expira. */}
-            <a
-              href={`${rawUrl}?download=1`}
-              download={doc.name}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
-            >
-              <Download className="h-3.5 w-3.5" /> Descargar
-            </a>
-            <ControlesDeVentana ventana={ventana} />
-            <button
-              onClick={onClose}
-              className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-              aria-label="Cerrar"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </header>
-
-        {/* Tabs */}
-        <nav className="flex items-center gap-1 px-5 pt-3 border-b border-[var(--rule-base)] shrink-0 overflow-x-auto">
-          <TabBtn icon={Eye} active={tab === "preview"} onClick={() => setTab("preview")}>Vista previa</TabBtn>
-          {/* Buscar ADENTRO del documento (Ctrl+F). Sólo si hay texto leído:
-              ofrecer una búsqueda que no puede encontrar nada es peor que no
-              ofrecerla. */}
-          {!!doc.ocrText && <TabBtn icon={Search} active={tab === "texto"} onClick={() => setTab("texto")}>Buscar y preguntar</TabBtn>}
-          <TabBtn icon={Link2} active={tab === "details"} onClick={() => setTab("details")}>Detalles{doc.expiresAt || doc.customerId || doc.supplierId ? " •" : ""}</TabBtn>
-          <TabBtn icon={History} active={tab === "versions"} onClick={() => setTab("versions")}>Versiones{doc.versionCount ? ` (${(doc.versionCount ?? 0) + 1})` : ""}</TabBtn>
-          <TabBtn icon={Share2} active={tab === "share"} onClick={() => setTab("share")}>Compartir{doc.shareCount ? ` (${doc.shareCount})` : ""}</TabBtn>
-          {isPdf && <TabBtn icon={PencilLine} active={tab === "sign"} onClick={() => setTab("sign")}>Firmar</TabBtn>}
-          <TabBtn icon={MessageCircle} active={tab === "comentarios"} onClick={() => setTab("comentarios")}>Observaciones</TabBtn>
-          <TabBtn icon={Shield} active={tab === "audit"} onClick={() => setTab("audit")}>Auditoría</TabBtn>
-        </nav>
+        <CabeceraVistaPrevia
+          doc={doc}
+          titleId={titleId}
+          folders={folders ?? []}
+          onMover={async (destino) => {
+            await patchDocument(docId, { folderId: destino });
+            const r = await getDocumentDetail(docId);
+            setDoc(r.document);
+            onRefresh?.();
+          }}
+          tab={tab}
+          onTab={setTab}
+          onPrev={onPrev}
+          onNext={onNext}
+          position={position}
+          rawUrl={rawUrl}
+          isPdf={isPdf}
+          abrible={isPdf || isImage || isVideo}
+          ventana={ventana}
+          onEnviar={() => setEnviando(true)}
+          onClose={onClose}
+        />
 
         {/* Body — el documento a la izquierda, las herramientas siempre a la
             vista a la derecha (en pantallas chicas la barra se oculta y quedan
@@ -543,24 +455,6 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
         <SendWhatsAppModal docs={[doc]} onClose={() => { setEnviando(false); fetchAudit(docId).then(setAudit); }} />
       )}
     </div>
-  );
-}
-
-function TabBtn({
-  icon: Icon, children, active, onClick,
-}: { icon: typeof Eye; children: React.ReactNode; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        // `shrink-0`: la barra scrollea de costado en un celular en vez de
-        // apretar las pestañas hasta que se pisan entre ellas.
-        "px-3 py-2.5 text-sm font-bold inline-flex shrink-0 items-center gap-1.5 border-b-2 -mb-px transition-colors whitespace-nowrap",
-        active ? "border-primary text-primary" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-      )}
-    >
-      <Icon className="h-4 w-4" /> {children}
-    </button>
   );
 }
 

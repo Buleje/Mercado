@@ -48,6 +48,7 @@ export interface DepsMenus {
   compartir: (f: DbDocumentFolder) => void;
   armarExpediente?: (f: DbDocumentFolder) => void;
   vincularTercero?: (f: DbDocumentFolder) => void;
+  alternarEsencial?: (f: DbDocumentFolder) => void;
   /** Lo de siempre de un archivo (ver, descargar, firmar, sellar…). */
   accionesDoc: (doc: DbDocument) => AccionesDocumento;
   estados: readonly EstadoDelMenu[];
@@ -175,6 +176,7 @@ export function useMenusExplorador(d: DepsMenus) {
     descargar: (f) => void descargarCarpeta(f),
     armarExpediente: d.armarExpediente,
     vincularTercero: d.vincularTercero,
+    alternarEsencial: d.alternarEsencial,
     eliminar: (f) => void acc.eliminar([claveCarpeta(f.id)]),
     cortar: (f) => acc.cortar([claveCarpeta(f.id)]),
     hayCortado: acc.hayCortado,
