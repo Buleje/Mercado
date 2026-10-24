@@ -46,6 +46,9 @@
     "app/api/cron/documentos-indexar/route.ts": {
       "maxDuration": 300
     },
+    "app/api/cron/documentos-leer-noche/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/admin/documents/indexar-pendientes/route.ts": {
       "maxDuration": 300
     },
@@ -120,6 +123,10 @@
     {
       "path": "/api/cron/documentos-indexar",
       "schedule": "40 3 * * *"
+    },
+    {
+      "path": "/api/cron/documentos-leer-noche",
+      "schedule": "45 7 * * *"
     },
     {
       "path": "/api/cron/adelantos-recordatorios",

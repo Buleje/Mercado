@@ -87,6 +87,7 @@ const nextConfig: NextConfig = {
     "/api/admin/documents/[id]/analyze": ARCHIVOS_OCR,
     "/api/admin/documents/indexar-pendientes": ARCHIVOS_OCR,
     "/api/cron/documentos-indexar": ARCHIVOS_OCR,
+    "/api/cron/documentos-leer-noche": ARCHIVOS_OCR,
     "/api/whatsapp/webhook": ARCHIVOS_OCR,
     "/api/admin/forestal/guias/documentos": ARCHIVOS_OCR,
     "/api/admin/forestal/loth/medicion-carga/[id]/fotos": ARCHIVOS_OCR,

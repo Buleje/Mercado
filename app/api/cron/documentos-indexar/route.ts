@@ -40,6 +40,9 @@ export const GET = withCronAuth("documentos-indexar", async () => {
         maximo: POR_TENANT,
         presupuestoMs: Math.max(20_000, 240_000 - (Date.now() - arranque)),
         actorId: "cron-indexado",
+        // De noche nadie confirma: la fecha leída queda como sugerencia, igual
+        // que en `documentos-leer-noche` (anotada sola avisaba por WhatsApp).
+        soloSugerirVencimiento: true,
       });
       if (r.indexados > 0 || r.fallidos.length > 0) tocados.push(tenantId);
       indexados += r.indexados;

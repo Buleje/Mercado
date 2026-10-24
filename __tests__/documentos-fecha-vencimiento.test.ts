@@ -165,3 +165,69 @@ describe("esComprobanteDePago", () => {
     expect(esComprobanteDePago("SOAT Póliza N° 123 vigencia del 01/01/2026 al 01/01/2027")).toBe(false);
   });
 });
+
+// Textos inventados con la forma de los papeles peruanos (24-10): ninguno es
+// de una persona real.
+describe("leerVencimiento — papeles peruanos (lector v2)", () => {
+  const lee = (t: string) => {
+    const r = leerVencimiento(t);
+    return r ? { dia: dia(r.fecha), regla: r.regla } : null;
+  };
+
+  it("SOAT: «Vigencia: Desde … 12:00 horas Hasta …»", () => {
+    expect(lee("CERTIFICADO SOAT Placa ABC-123 Vigencia: Desde 15/03/2026 12:00 horas Hasta 15/03/2027 12:00 horas")).toEqual({ dia: "2027-03-15", regla: "rango" });
+    expect(lee("Vigencia de la póliza desde las 12:00 hrs del 01/02/2026 hasta las 12:00 hrs del 01/02/2027")).toEqual({ dia: "2027-02-01", regla: "rango" });
+  });
+
+  it("contrato: «rige desde el … hasta el …»", () => {
+    expect(lee("El presente contrato rige desde el 01/03/2025 hasta el 28/02/2027.")).toEqual({ dia: "2027-02-28", regla: "rango" });
+  });
+
+  it("formularios abreviados: «F. Venc.», «Fecha Vcto.», «Vto.»", () => {
+    expect(lee("Certificado de fumigación N° 0456 F. Emisión 02/05/2026 F. Venc. 02/11/2026")?.dia).toBe("2026-11-02");
+    expect(lee("Extintor PQS 6 kg · Fecha Vcto: 30/06/2027")?.dia).toBe("2027-06-30");
+    expect(lee("Carné de sanidad Vto. 10/01/2027")?.dia).toBe("2027-01-10");
+  });
+
+  it("licencia de conducir: «Fecha de Revalidación»", () => {
+    expect(lee("LICENCIA DE CONDUCIR Clase A Categoría IIb Fecha de Expedición 14/05/2024 Fecha de Revalidación 14/05/2032")?.dia).toBe("2032-05-14");
+  });
+
+  it("casillero de la GTF donde el OCR lee la barra como un 1", () => {
+    expect(lee("GUIA DE TRANSPORTE FORESTAL Fecha de vencimiento (20 108 1 26)")?.dia).toBe("2026-08-20");
+    // Pegado no es una fecha.
+    expect(lee("Fecha de vencimiento 20108126")).toBeNull();
+  });
+
+  it("«Vigencia: 2 años desde el 01/03/2025»", () => {
+    expect(lee("Constancia de inspección técnica. Vigencia: 2 años desde el 01/03/2025")).toEqual({ dia: "2027-03-01", regla: "plazo" });
+  });
+
+  it("«válido por un (01) año a partir de su emisión» con la fecha de emisión del papel", () => {
+    expect(lee("CERTIFICADO DE CAPACITACIÓN Fecha de emisión: 10/04/2026. Válido por un (01) año a partir de su emisión.")).toEqual({ dia: "2027-04-10", regla: "plazo" });
+  });
+
+  it("resolución de la ARFFS: el plazo corre desde la fecha del encabezado", () => {
+    const texto =
+      "GOBIERNO REGIONAL DE UCAYALI GERENCIA REGIONAL FORESTAL Y DE FAUNA SILVESTRE RESOLUCIÓN GERENCIAL N° 0123-2024-GRU-GRFFS " +
+      "Pucallpa, 12 de marzo de 2024 VISTO: el expediente… SE RESUELVE: ARTÍCULO PRIMERO.- OTORGAR el permiso forestal en predio privado " +
+      "por un periodo de cinco (05) años contados a partir de la fecha de su emisión.";
+    expect(lee(texto)).toEqual({ dia: "2029-03-12", regla: "plazo" });
+  });
+
+  it("plazo en días calendario desde una fecha escrita", () => {
+    expect(lee("Autorización provisional con vigencia de noventa (90) días calendario desde el 01/07/2026")).toEqual({ dia: "2026-09-29", regla: "plazo" });
+  });
+
+  it("lo que NO es un vencimiento leíble", () => {
+    // Días hábiles: dependen de los feriados.
+    expect(lee("Plazo de quince (15) días hábiles desde el 01/07/2026 para levantar observaciones")).toBeNull();
+    // Desde la notificación o el día siguiente: no hay fecha escrita.
+    expect(lee("vigencia de un (01) año contado desde su notificación")).toBeNull();
+    expect(lee("Resolución del 05/05/2026. La vigencia es de tres años a partir del día siguiente de su publicación.")).toBeNull();
+    // Periodo de un recibo: lo que se cobra.
+    expect(lee("Periodo: del 01/10/2026 al 31/10/2026 Total a pagar S/ 85.00")).toBeNull();
+    // Un rango al revés no es una vigencia.
+    expect(lee("vigencia del 31/12/2026 al 01/01/2026")).toBeNull();
+  });
+});

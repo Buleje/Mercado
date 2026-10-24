@@ -13,7 +13,12 @@ import {
   type ResultadoDescripcion,
   type StructuredData,
 } from "./descripcion-schema";
-import { esComprobanteDePago, leerVencimiento, type VencimientoLeido } from "@/lib/documentos/fecha-vencimiento";
+import {
+  esComprobanteDePago,
+  leerVencimiento,
+  VERSION_LECTOR_VENCIMIENTO,
+  type VencimientoLeido,
+} from "@/lib/documentos/fecha-vencimiento";
 import { motivoDeFalloIA } from "./aviso-ia";
 import { construirTextoBuscable } from "./texto-buscable";
 import { renderizarPaginaPdf } from "./pdf-a-imagen";
@@ -63,10 +68,29 @@ export type AnalyzeResult =
       aviso?: string;
       /** ISO: el vencimiento leído del papel que quedó anotado en el documento. */
       vencimientoAnotado?: string;
+      /** ISO: la fecha que quedó SÓLO como sugerencia (el papel no tenía una y no se anotó). */
+      vencimientoSugerido?: string;
     }
   | { ok: false; error: string; status: number };
 
 export { isAnalyzableMime };
+
+/**
+ * Cómo leer cuando nadie está mirando la pantalla (la lectura de la noche).
+ * Sin opciones, todo sigue como siempre: mira con la IA, describe y anota.
+ */
+export interface OpcionesAnalisis {
+  /**
+   * La fecha leída queda SÓLO como sugerencia (`ocrMetadata.sugerencias`):
+   * el dueño la confirma con un toque. Anotada sola, avisaba por WhatsApp de
+   * una fecha que nadie miró.
+   */
+  soloSugerirVencimiento?: boolean;
+  /** false = no pedirle a un modelo que mire la foto o el escaneo: directo al OCR del servidor, sin gasto. */
+  conVision?: boolean;
+  /** false = no describir con la IA de texto (sin gasto): queda el texto leído y la fecha. */
+  conIA?: boolean;
+}
 
 /** Normaliza el texto extraído: espacios colapsados y tope de contexto. */
 const normalizar = (s: string) => s.replace(/\s+/g, " ").trim().slice(0, 15000);
@@ -150,7 +174,9 @@ export async function analyzeDocumentContent(
   docId: string,
   actorId: string,
   viewerRole?: string,
+  opciones: OpcionesAnalisis = {},
 ): Promise<AnalyzeResult> {
+  const { soloSugerirVencimiento = false, conVision = true, conIA = true } = opciones;
   const doc = await DocumentsDB.getById(tenantId, docId, viewerRole);
   if (!doc) return { ok: false, error: "not_found", status: 404 };
 
@@ -175,13 +201,15 @@ export async function analyzeDocumentContent(
     // Se baja una sola vez aunque la pidan la visión y después el OCR.
     let bajada: Promise<Buffer | null> | null = null;
     const descargar = () => (bajada ??= downloadFromStorage(doc.storagePath));
-    const visto = await describirImagenConVision(
-      // Las dos formas de entregar la imagen: la URL para un modelo en la nube
-      // y los bytes para uno propio (Ollama local no puede bajar nada de acá).
-      { url, mimeType: doc.mimeType, descargar },
-      nombresCarpetas,
-    );
-    if (visto.ok) {
+    const visto = conVision
+      ? await describirImagenConVision(
+          // Las dos formas de entregar la imagen: la URL para un modelo en la nube
+          // y los bytes para uno propio (Ollama local no puede bajar nada de acá).
+          { url, mimeType: doc.mimeType, descargar },
+          nombresCarpetas,
+        )
+      : null;
+    if (visto?.ok) {
       ia = visto.datos;
       text = normalizar(ia.ocrText ?? "");
       via = "vision";
@@ -201,6 +229,7 @@ export async function analyzeDocumentContent(
         if (anterior) return anterior;
         // Falta configuración vs. se cayó el servicio: son dos problemas
         // distintos y quien mira la pantalla tiene que poder distinguirlos.
+        if (!visto) return { ok: false, error: "no_text", status: 422 };
         return visto.motivo === "falla"
           ? { ok: false, error: "vision_fail", status: 502 }
           : { ok: false, error: "vision_unavailable", status: 503 };
@@ -215,7 +244,7 @@ export async function analyzeDocumentContent(
     // nada. Es como llega media contabilidad peruana. En vez de rendirse, se
     // dibuja la página y se la MIRA, igual que a una foto de celular.
     if (!text && doc.mimeType === "application/pdf") {
-      const imagen = await renderizarPaginaPdf(buf, 1);
+      const imagen = conVision ? await renderizarPaginaPdf(buf, 1) : null;
       if (imagen) {
         const visto = await describirImagenConVision(
           { url: "", mimeType: "image/png", descargar: async () => imagen },
@@ -251,7 +280,7 @@ export async function analyzeDocumentContent(
   }
 
   // TEXTO (del archivo o del OCR del servidor): lo describe la IA de texto.
-  if (!ia) {
+  if (!ia && conIA) {
     if (getActiveProvider() !== "none") {
       try {
         const prompt = promptDeDescripcion({ modo: "texto", carpetas: nombresCarpetas, texto: text.slice(0, 10000) });
@@ -330,7 +359,10 @@ export async function analyzeDocumentContent(
     descripcionPropia,
   });
 
-  const vencimientoAnotado = lectura && !comprobante ? await anotarVencimiento(tenantId, docId, actorId, lectura) : false;
+  const vencimientoAnotado =
+    lectura && !comprobante && !soloSugerirVencimiento ? await anotarVencimiento(tenantId, docId, actorId, lectura) : false;
+  const vencimientoSugerido =
+    !vencimientoAnotado && !(fresco ?? doc).expiresAt && sugerencias?.expiresAt ? sugerencias.expiresAt : undefined;
 
   await DocumentsDB.update(tenantId, docId, {
     ocrText: searchable,
@@ -358,6 +390,9 @@ export async function analyzeDocumentContent(
       vencimientoLeido: lectura
         ? { ...lectura, anotado: vencimientoAnotado, ...(comprobante ? { motivo: "comprobante" } : {}) }
         : null,
+      // Con qué versión del lector se buscó la fecha: la lectura de la noche
+      // repasa el texto guardado cuando el lector aprende algo nuevo.
+      lectorVencimiento: VERSION_LECTOR_VENCIMIENTO,
     },
     aiTags: Array.from(new Set([...doc.aiTags, ...tags.map((t) => t.toLowerCase())])).slice(0, 14),
   });
@@ -378,5 +413,6 @@ export async function analyzeDocumentContent(
     source: summary ? "ai" : "text-only",
     ...(description ? {} : { aviso }),
     ...(vencimientoAnotado && lectura ? { vencimientoAnotado: lectura.fecha } : {}),
+    ...(vencimientoSugerido ? { vencimientoSugerido } : {}),
   };
 }

@@ -58,6 +58,11 @@ export async function indexarTanda(
     actorId?: string;
     /** Saltear lo que hay que MIRAR (fotos, escaneos): tarda minutos por archivo. */
     soloRapidos?: boolean;
+    /**
+     * La fecha leída queda sólo como sugerencia (sin escribir `expiresAt`): el
+     * cron de la noche no tiene a nadie mirando que la confirme (Brandon 24-10).
+     */
+    soloSugerirVencimiento?: boolean;
   } = {},
 ): Promise<ResultadoTanda> {
   const maximo = opciones.maximo ?? 25;
@@ -93,7 +98,9 @@ export async function indexarTanda(
     const inicioDoc = Date.now();
 
     try {
-      const r = await analyzeDocumentContent(tenantId, doc.id, actorId);
+      const r = await analyzeDocumentContent(tenantId, doc.id, actorId, undefined, {
+        soloSugerirVencimiento: opciones.soloSugerirVencimiento ?? false,
+      });
       if (r.ok && (r.description || r.summary)) {
         indexados += 1;
       } else if (r.ok) {

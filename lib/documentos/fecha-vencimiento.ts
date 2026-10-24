@@ -39,6 +39,13 @@ const MESES: Record<string, number> = {
   ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, set: 9, sep: 9, sept: 9, oct: 10, nov: 11, dic: 12,
 };
 
+/**
+ * Versión del lector. Sube cuando aprende a leer algo nuevo: la lectura de la
+ * noche (`lib/documents/leer-noche`) vuelve a pasar por el texto ya guardado
+ * los papeles revisados con una versión anterior, sin bajarlos de nuevo.
+ */
+export const VERSION_LECTOR_VENCIMIENTO = 2;
+
 /** Cómo se leyó: todas son reglas fuertes (palabra clave pegada o dígito de control). */
 export type ReglaVencimiento = "etiqueta" | "rango" | "plazo" | "mrz";
 
@@ -102,6 +109,10 @@ const FORMAS: { re: string; leer: (g: string[]) => string | null }[] = [
   },
   // 31 01 2030 — la caja del DNI escribe así; año de 4 cifras obligatorio.
   { re: "(\\d{1,2}) (\\d{1,2}) (\\d{4})(?!\\d)", leer: (g) => fecha(Number(g[0]), Number(g[1]), Number(g[2])) },
+  // «20 108 1 26» = 20/08/26: en el casillero de la GTF el OCR lee la barra
+  // como un 1 (GTF de Blas, 24-10: la IA lo tomó por 2021-08-26). Exige el
+  // espacio antes del primer «1»: «20108126» pegado no es una fecha.
+  { re: "(\\d{1,2}) 1(\\d{2}) ?1 ?(\\d{4}|\\d{2})(?!\\d)", leer: (g) => fecha(Number(g[0]), Number(g[1]), anio(g[2])) },
 ];
 const UNA_FECHA = `(?:${FORMAS.map((f) => f.re.replace(/\((?!\?)/g, "(?:")).join("|")})`;
 
@@ -130,7 +141,10 @@ function fechasDelTexto(t: string): Ficha[] {
  * ofertas y fechas de residencia también lo usan, y cada uno disparaba un aviso.
  */
 const VENCE =
-  "v[a4]l[i1]d[oa]s? hasta|validez:? hasta|vigentes? hasta|vigencia:? hasta|vence(?:n)?(?: el)?|vencimiento|caduca(?: el)?|caducidad|expira(?: el)?|expiracion";
+  "v[a4]l[i1]d[oa]s? hasta|validez:? hasta|vigentes? hasta|vigencia:? hasta|vence(?:n)?(?: el)?|vencimiento|caduca(?: el)?|caducidad|expira(?: el)?|expiracion" +
+  // La licencia de conducir dice «Fecha de Revalidación»; los formularios
+  // abrevian «F. Venc.», «Fecha Vcto.», «Vto.».
+  "|revalidacion|venc|vcto|vto";
 /** Anuncian OTRA fecha: ocupan su lugar en la fila para que no se la robe el vencimiento. */
 const OTRA =
   "emision|emitid[oa]s?|expedicion|expedid[oa]s?|nacimiento|inscripcion|inscrit[oa]|otorgamiento|otorgad[oa]|suscripcion|suscrit[oa]|desde(?: el)?|inicio|registrad[oa]|lugar y fecha";
@@ -198,14 +212,19 @@ function leerFechaAlInicio(s: string): string | null {
   return f && f.ini === 0 ? (f.iso ?? null) : null;
 }
 
+/** «12:00 horas», «a las 12:00 hrs» pegado a una fecha: así escribe la vigencia el SOAT. */
+const HORA = "(?:a )?(?:las )?\\d{1,2}[:.]\\d{2}(?: ?(?:horas|hrs?|h)\\b)?";
+
 /**
  * «vigencia del 01/01/2026 al 31/12/2026» → la segunda. Sólo con una palabra
  * de VALIDEZ delante: «Periodo: del 01/10/2026 al 31/10/2026» (un recibo, un
  * PDT) es lo que se cobra y antes pisaba hasta la fecha que leía la IA.
+ * También el SOAT («Vigencia: Desde 15/03/2026 12:00 horas Hasta 15/03/2027»)
+ * y el contrato («rige desde el 01/03/2025 hasta el 28/02/2027»).
  */
 function porRango(t: string): VencimientoLeido | null {
   const re = new RegExp(
-    `\\b(?:vigencia|vigente|valid[oa]|validez)\\b[^.;]{0,40}?\\b(?:del?|desde(?: el)?) (${UNA_FECHA}) ?(?:al|hasta(?: el)?|a|-) (${UNA_FECHA})`,
+    `\\b(?:vigencia|vigente|valid[oa]|validez|rige|regira|plazo|cobertura)\\b[^.;]{0,40}?\\b(?:del?|desde(?: el)?):? ?(?:${HORA} del? )?(${UNA_FECHA})(?:,? ${HORA})? ?(?:al|hasta(?: el)?|a|-):? ?(?:${HORA} del? )?(${UNA_FECHA})`,
     "g",
   );
   for (let m = re.exec(t); m; m = re.exec(t)) {
@@ -218,29 +237,66 @@ function porRango(t: string): VencimientoLeido | null {
 
 const NUMEROS: Record<string, number> = {
   un: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
-  doce: 12, quince: 15, dieciocho: 18, veinte: 20, veinticinco: 25, treinta: 30, cuarenta: 40, cincuenta: 50,
+  once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17, dieciocho: 18,
+  diecinueve: 19, veinte: 20, veinticinco: 25, treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60, noventa: 90,
 };
 
+/** Techo de cada unidad: más que esto es un número mal leído, no un plazo. */
+const TOPE_PLAZO: Record<"anos" | "meses" | "dias", number> = { anos: 99, meses: 240, dias: 3650 };
+
+/** El inicio más N años / meses / días (el 29 de febrero + 1 año es el 28). */
+function sumarPlazo(inicio: string, n: number, unidad: keyof typeof TOPE_PLAZO): string {
+  const base = new Date(inicio);
+  if (unidad === "dias") return new Date(base.getTime() + n * 86_400_000).toISOString();
+  const meses = unidad === "anos" ? n * 12 : n;
+  const destino = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + meses, 1, 12));
+  const ultimoDia = new Date(Date.UTC(destino.getUTCFullYear(), destino.getUTCMonth() + 1, 0)).getUTCDate();
+  destino.setUTCDate(Math.min(base.getUTCDate(), ultimoDia));
+  return destino.toISOString();
+}
+
 /**
- * «plazo de vigencia de cuarenta (40) años contados desde el 12/03/2021».
- * Sólo con la fecha de inicio ESCRITA: «desde la suscripción» sin fecha no da nada.
+ * La fecha del propio papel, para un plazo que corre «desde su emisión»: la
+ * que acompaña a «emisión / expedición / emitido» o, en una resolución, el
+ * lugar y fecha del encabezado («Pucallpa, 12 de marzo de 2024»). La primera.
+ */
+function fechaDelPapel(t: string): string | null {
+  const etiqueta = new RegExp(
+    `\\b(?:emision|expedicion|emitid[oa]|expedid[oa]|aprobad[oa]|otorgad[oa])\\b[^.;\\d]{0,24}?(${UNA_FECHA})`,
+  ).exec(t);
+  const deEtiqueta = etiqueta ? leerFechaAlInicio(etiqueta[1]) : null;
+  if (deEtiqueta) return deEtiqueta;
+  const encabezado = new RegExp(`\\b[a-z]{4,}(?: [a-z]{2,}){0,2}, (?:a )?(${UNA_FECHA})`).exec(t);
+  return encabezado ? leerFechaAlInicio(encabezado[1]) : null;
+}
+
+/**
+ * Plazos: «plazo de vigencia de cuarenta (40) años contados desde el
+ * 12/03/2021», «Vigencia: 2 años desde el 01/03/2025», «válido por un (01) año
+ * a partir de su emisión», «por un periodo de cinco (05) años contados a
+ * partir de la fecha de su emisión» (la resolución de la ARFFS: el inicio es
+ * la fecha del papel), «noventa (90) días calendario desde el …».
+ *
+ * Sólo con un inicio que se pueda LEER: «desde la suscripción», «desde su
+ * notificación» o «a partir del día siguiente…» no traen fecha y no dan nada.
+ * Los días hábiles tampoco (dependen de feriados).
  */
 function porPlazo(t: string): VencimientoLeido | null {
   const re = new RegExp(
-    `\\b(?:plazo|vigencia)\\b[^.;]{0,40}?\\b(?:de|por) (?:([a-z]+) )?\\(?(\\d{1,3})?\\)? ?(anos|meses)\\b[^.;]{0,60}?\\b(?:a partir del?|desde(?: el)?)(?: la fecha de [a-z]+,?)? (?:el )?(${UNA_FECHA})`,
+    "\\b(?:plazo|vigencia|periodo|validez|v[a4]l[i1]d[oa]s?|vigentes?)\\b[^.;]{0,40}?" +
+      "(?:\\b(?:de|por)\\b|:)? ?(?:([a-z]+) )?\\(?(\\d{1,3})?\\)? ?(anos?|mes(?:es)?|dias?)\\b(?! habiles)(?: (?:calendarios?|naturales))?" +
+      "[^.;]{0,60}?\\b(?:" +
+      `(?:a partir del?|desde(?: el)?)(?: la fecha de [a-z]+,?)? (?:el )?(${UNA_FECHA})` +
+      "|(?:a partir|desde|contad[oa]s?(?: a partir)?) (?:del? )?(?:la )?(?:fecha de )?(?:su |la |el )?(emision|expedicion|aprobacion|otorgamiento)\\b" +
+      ")",
     "g",
   );
   for (let m = re.exec(t); m; m = re.exec(t)) {
     const n = m[2] ? Number(m[2]) : NUMEROS[m[1] ?? ""];
-    const inicio = leerFechaAlInicio(m[4]);
-    if (!n || !inicio || n > 99) continue;
-    const base = new Date(inicio);
-    const meses = m[3] === "anos" ? n * 12 : n;
-    const destino = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + meses, 1, 12));
-    // El 29 de febrero + 1 año es el 28: el último día del mes destino si no existe.
-    const ultimoDia = new Date(Date.UTC(destino.getUTCFullYear(), destino.getUTCMonth() + 1, 0)).getUTCDate();
-    destino.setUTCDate(Math.min(base.getUTCDate(), ultimoDia));
-    return { fecha: destino.toISOString(), regla: "plazo", fragmento: m[0].slice(0, 160) };
+    const unidad = m[3].startsWith("ano") ? "anos" : m[3].startsWith("mes") ? "meses" : "dias";
+    const inicio = m[4] ? leerFechaAlInicio(m[4]) : m[5] ? fechaDelPapel(t) : null;
+    if (!n || !inicio || n > TOPE_PLAZO[unidad]) continue;
+    return { fecha: sumarPlazo(inicio, n, unidad), regla: "plazo", fragmento: m[0].slice(0, 160) };
   }
   return null;
 }
