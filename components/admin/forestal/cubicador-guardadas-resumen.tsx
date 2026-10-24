@@ -12,7 +12,8 @@ import { BarChart3, ChevronDown, ChevronUp, X } from "@buleje/design-system/icon
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { fmtM3, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import type { RendimientoDeFicha } from "@/lib/forestal/cubicacion-guia-resumen";
 import { totalDeFilas, type FilaPorFicha, type PorFicha } from "@/lib/forestal/cubicacion-por-ficha";
 import { formatNumber } from "@/lib/format";
 
@@ -22,14 +23,33 @@ const OPCIONES: readonly { id: PorFicha; label: string; plural: string }[] = [
 ];
 
 const NUM = "text-right font-mono tabular-nums";
+const TXT_OK = "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]";
+const TXT_AVISO = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]";
 
-export function ResumenPorFicha({ por, onPor, filas, elegida, onElegir }: {
+/** La celda «Rinde» de una comunidad: % con el color contra la meta, «—» si no hay guía de troza leída. */
+function CeldaRinde({ r, cargando }: { r: RendimientoDeFicha | undefined; cargando: boolean }) {
+  if (!r || r.pct === null) return <td className={NUM} title={cargando ? "Leyendo las guías…" : "Sin guardadas con GTF de troza"}>{cargando ? "…" : "—"}</td>;
+  const tono = r.veredicto === "bueno" ? TXT_OK : TXT_AVISO;
+  return (
+    <td
+      className={`${NUM} font-bold ${tono}`}
+      title={`${fmtM3(r.m3Aserrado)} m³ aserrados de ${fmtM3(r.m3Troza)} m³ de troza (${r.guias} ${r.guias === 1 ? "guía" : "guías"})`}
+    >
+      {fmtPct(r.pct)} %
+    </td>
+  );
+}
+
+export function ResumenPorFicha({ por, onPor, filas, elegida, onElegir, rinde, cargandoRinde = false }: {
   por: PorFicha;
   onPor: (p: PorFicha) => void;
   filas: FilaPorFicha[];
   /** La clave de la fila que filtra la lista (o null). */
   elegida: string | null;
   onElegir: (clave: string | null) => void;
+  /** Rendimiento por clave de fila (sólo «Por comunidad»); `null` = sin columna. */
+  rinde?: ReadonlyMap<string, RendimientoDeFicha> | null;
+  cargandoRinde?: boolean;
 }) {
   const [abierto, setAbierto] = useLocalStorage("cubicador-guardadas-resumen-abierto", true);
   const total = totalDeFilas(filas);
@@ -96,7 +116,7 @@ export function ResumenPorFicha({ por, onPor, filas, elegida, onElegir }: {
           </div>
 
           <div className="max-h-[22rem] overflow-auto rounded-xl border border-[var(--rule-base)]">
-            <DataTable className="w-full min-w-[520px]">
+            <DataTable className="w-full min-w-[600px]">
               <caption className="sr-only">Lo guardado {opcion.label.toLowerCase()}</caption>
               <thead className="sticky top-0 z-10">
                 <tr>
@@ -106,6 +126,18 @@ export function ResumenPorFicha({ por, onPor, filas, elegida, onElegir }: {
                   <th scope="col" className="text-right">PT</th>
                   <th scope="col" className="text-right">m³</th>
                   <th scope="col" className="text-right">S/</th>
+                  {rinde && (
+                    <th scope="col" className="text-right">
+                      <span className="inline-flex items-center gap-1">
+                        Rinde
+                        <InfoTip
+                          what="Cuánto rindió la comunidad: m³ aserrado (PT ÷ 424, sólo de las especies que trae cada guía) ÷ m³ de troza de sus guías GTF. Cada guía cuenta una vez."
+                          affects="Verde si llega a la meta de 56 %. «—» si ninguna guardada de la comunidad tiene GTF de troza. Es un derivado, no la corrida real (esa se declara en Producción)."
+                          example="2 guardadas de la guía 001-0000120 (2,761 m³ de troza) con 1 100 PT (2,594 m³) rinden 94 %."
+                        />
+                      </span>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -129,6 +161,7 @@ export function ResumenPorFicha({ por, onPor, filas, elegida, onElegir }: {
                       <td className={NUM}>{fmtPt(f.pieTablar)}</td>
                       <td className={NUM}>{fmtM3(f.m3)}</td>
                       <td className={NUM}>{f.valor > 0 ? fmtSoles(f.valor) : "—"}</td>
+                      {rinde && <CeldaRinde r={rinde.get(f.clave)} cargando={cargandoRinde} />}
                     </tr>
                   );
                 })}
@@ -141,6 +174,7 @@ export function ResumenPorFicha({ por, onPor, filas, elegida, onElegir }: {
                   <td className={NUM}>{fmtPt(total.pieTablar)}</td>
                   <td className={NUM}>{fmtM3(total.m3)}</td>
                   <td className={NUM}>{conValor ? fmtSoles(total.valor) : "—"}</td>
+                  {rinde && <td />}
                 </tr>
               </tfoot>
             </DataTable>

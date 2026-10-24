@@ -9,7 +9,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { auditLoth } from "@/lib/forestal/loth-audit";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { claveNumeroGtf, colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
-import { resumirVolumenDeGuia, type ItemDeGuiaVolumen, type TipoDeGuia } from "@/lib/forestal/cubicacion-rendimiento-guia";
+import { resumirVolumenDeGuia, type ItemDeGuiaVolumen, type TipoDeGuia, type VolumenDeGuia } from "@/lib/forestal/cubicacion-rendimiento-guia";
 import { chocanEnElLibro, elegirGuiaDelDueno, puedeSerDelDueno, type IdentidadDeGuiaBuscada } from "@/lib/forestal/loth-talonario";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FiltroPermiso } from "@/lib/forestal/loth-filtro-permiso";
@@ -682,6 +682,33 @@ export class ForestGtfDB {
     const items = Array.isArray(vigente.items) ? (vigente.items as ItemDeGuiaVolumen[]) : [];
     const tipo: TipoDeGuia = vigente.tipo === "producto" ? "producto" : "trozas";
     return { gtfNumber: vigente.gtfNumber, anulada: false as const, ...resumirVolumenDeGuia(tipo, items) };
+  }
+
+  /**
+   * `volumenPorNumero` para VARIAS guías en UNA consulta (Guardadas › «Rinde»,
+   * 24-10). Devuelve sólo las que existen y no están anuladas, cada una con el
+   * N° tal como se pidió (`numero`) para que el cliente la ate a su cubicación.
+   * Sin items crudos: sólo sumas por especie.
+   */
+  static async volumenesPorNumeros(tenantId: string, numeros: readonly string[]) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const colas = [...new Set(numeros.map((n) => colaDeGtf(n)).filter((c): c is string => Boolean(c)))];
+    if (colas.length === 0) return [];
+    const candidatas = await prisma.forestGtf.findMany({
+      where: { tenantId, deletedAt: null, status: { not: "anulada" }, OR: colas.map((c) => ({ gtfNumber: { endsWith: c } })) },
+      orderBy: { createdAt: "desc" },
+      take: 400,
+      select: { gtfNumber: true, tipo: true, items: true },
+    });
+    const salida: Array<{ numero: string; gtfNumber: string } & VolumenDeGuia> = [];
+    for (const numero of numeros) {
+      const g = candidatas.find((x) => mismoNumeroGtf(x.gtfNumber, numero));
+      if (!g) continue;
+      const items = Array.isArray(g.items) ? (g.items as ItemDeGuiaVolumen[]) : [];
+      const tipo: TipoDeGuia = g.tipo === "producto" ? "producto" : "trozas";
+      salida.push({ numero, gtfNumber: g.gtfNumber, ...resumirVolumenDeGuia(tipo, items) });
+    }
+    return salida;
   }
 
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {

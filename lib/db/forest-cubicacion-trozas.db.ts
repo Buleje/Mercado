@@ -771,20 +771,33 @@ export const ForestCubicacionTrozasDB = {
       origenId?: string;
       /** Las que salieron de UNA cubicación del Cubicador de madera (`cubicacionRefId`). */
       cubicacionRefId?: string;
+      /**
+       * Con `parteId`: también las guardadas sólo con el beneficiario de adelantos
+       * atado a esa ficha (`AdelantoBeneficiario.forestPartyId`). Opt-in (margen del
+       * camión, 24-10: 10 de 11 compras de main tenían sólo beneficiario y no salían).
+       */
+      conBeneficiarioDeLaParte?: boolean;
     } = {},
   ): Promise<CubicacionTrozasResumen[]> {
     if (!tenantId) throw new Error("tenantId is required");
     const material = filtros.material ?? "troza";
+    const beneficiariosDeLaParte = filtros.parteId && filtros.conBeneficiarioDeLaParte
+      ? (await prisma.adelantoBeneficiario.findMany({ where: { tenantId, forestPartyId: filtros.parteId }, select: { id: true } })).map((b) => b.id)
+      : [];
     const clave = [
       `${CACHE}:${tenantId}:list`, filtros.beneficiarioId ?? "", filtros.parteId ?? "", filtros.estado ?? "",
-      material, filtros.origen ?? "", filtros.origenId ?? "", filtros.cubicacionRefId ?? "",
+      material, filtros.origen ?? "", filtros.origenId ?? "", filtros.cubicacionRefId ?? "", beneficiariosDeLaParte.join(","),
     ].join(":");
     return getOrSet(clave, 20, async () => {
       const rows = await prisma.forestCubicacionTrozas.findMany({
         where: {
           tenantId, deletedAt: null,
           ...(filtros.beneficiarioId ? { beneficiarioId: filtros.beneficiarioId } : {}),
-          ...(filtros.parteId ? { parteId: filtros.parteId } : {}),
+          ...(filtros.parteId
+            ? beneficiariosDeLaParte.length > 0
+              ? { OR: [{ parteId: filtros.parteId }, { beneficiarioId: { in: beneficiariosDeLaParte } }] }
+              : { parteId: filtros.parteId }
+            : {}),
           ...(filtros.estado ? { estado: filtros.estado } : {}),
           ...(material === "todas" ? {} : { material }),
           ...(filtros.origen ? { origen: filtros.origen } : {}),

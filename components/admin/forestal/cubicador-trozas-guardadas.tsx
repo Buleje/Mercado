@@ -10,7 +10,7 @@
  * Un modal a la vez: abrir una guardada CIERRA la lista (no se apilan).
  */
 import { useEffect, useRef, useState } from "react";
-import { FileText, FolderOpen, Loader2, Save, Search } from "@buleje/design-system/icons";
+import { Eye, FileText, FolderOpen, GitCompareArrows, Loader2, Save, Search } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
@@ -20,7 +20,10 @@ import { fmtVolumen } from "@/lib/forestal/cubicacion-cuenta";
 import { fechaConDia } from "@/lib/forestal/loth-tablero-reporte";
 import type { DiametrosPorTroza, FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import type { MaterialCubicacion } from "@/lib/forestal/cubicacion-comercial-tipos";
+import { button } from "@/components/ui-system/button-variants";
 import { AccionLote } from "./cubicador-acciones";
+import { CompararTrozasModal } from "./cubicador-trozas-comparar-modal";
+import { DetalleTrozasModal } from "./cubicador-trozas-detalle-modal";
 import { ActionToasts, useActionToasts } from "./cubicador-toasts";
 import { BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
 import { cerrarAlNavegar } from "./enlace-cierra-ventana";
@@ -165,10 +168,27 @@ export function ListaGuardadasModal({ onAbrir, onCerrar, material }: { onAbrir: 
   /* Buscar por el código impreso en la hoja (ver «Papel»), la persona o la guía. */
   const vista = lista ? filtrarPorHoja(lista, q, (c) => ({ codigos: [c.codigo, c.gtfNumber], textos: [c.personaNombre, c.notas] })) : null;
   const { porId: papeles } = usePapelesDeCubicaciones(true);
+  /* Ver detalle y Comparar: sólo las de trozas (las de madera tienen los suyos). */
+  const deTrozas = !material;
+  const [detalle, setDetalle] = useState<string | null>(null);
+  const [comparar, setComparar] = useState<{ a: string | null } | null>(null);
+  const hayParaComparar = (lista?.length ?? 0) >= 2;
+  const detalleDe = detalle ? lista?.find((c) => c.id === detalle) : undefined;
+  const puedeComparar = !!detalleDe && (lista ?? []).some((c) => c.id !== detalleDe.id && c.formula === detalleDe.formula);
   return (
+    <>
     <AdminModal open onClose={onCerrar} title={material === "aserrada" ? "Madera a cuenta" : "Cubicaciones guardadas"} icon={FolderOpen}
       claveVentana={material === "aserrada" ? "cubicador-madera-a-cuenta" : "cubicador-trozas-guardadas"}
-      footer={<div className="flex justify-end"><button type="button" className={BOTON_SECUNDARIO} onClick={onCerrar}>Cerrar</button></div>}>
+      footer={
+        <div className="flex flex-wrap justify-end gap-2">
+          {deTrozas && (
+            <button type="button" className={button({ variant: "secondary" })} disabled={!hayParaComparar} onClick={() => setComparar({ a: null })}>
+              <GitCompareArrows className="h-4 w-4" aria-hidden /> Comparar dos
+            </button>
+          )}
+          <button type="button" className={BOTON_SECUNDARIO} onClick={onCerrar}>Cerrar</button>
+        </div>
+      }>
       <div className={`space-y-3 ${MODAL_BODY}`} data-vista="cubicaciones-guardadas">
         <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filtrar por estado">
           {FILTROS.map((f) => (
@@ -224,6 +244,14 @@ export function ListaGuardadasModal({ onAbrir, onCerrar, material }: { onAbrir: 
                       </span>
                     )}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${e.clase}`}>{e.label}</span>
+                    {deTrozas && (
+                      <button type="button" onClick={(ev) => { ev.stopPropagation(); setDetalle(c.id); }}
+                        onKeyDown={(ev) => ev.stopPropagation()}
+                        aria-label={`Ver detalle de ${c.codigo}`}
+                        className={button({ variant: "secondary" })}>
+                        <Eye className="h-4 w-4" aria-hidden /> Ver detalle
+                      </button>
+                    )}
                   </div>
                 </li>
               );
@@ -232,5 +260,12 @@ export function ListaGuardadasModal({ onAbrir, onCerrar, material }: { onAbrir: 
         )}
       </div>
     </AdminModal>
+    {detalle && (
+      <DetalleTrozasModal id={detalle} aboveModals puedeComparar={puedeComparar}
+        onClose={() => setDetalle(null)} onAbrir={() => { const id = detalle; setDetalle(null); onAbrir(id); }}
+        onComparar={() => { const a = detalle; setDetalle(null); setComparar({ a }); }} />
+    )}
+    {comparar && <CompararTrozasModal inicialA={comparar.a} aboveModals onClose={() => setComparar(null)} />}
+    </>
   );
 }

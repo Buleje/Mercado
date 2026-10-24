@@ -9,25 +9,25 @@
 import { useMemo } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { useRendimientoDeGuia } from "@/components/admin/forestal/hooks/use-rendimiento-de-guia";
+import type { EstadoDeLaGuia } from "@/components/admin/forestal/hooks/use-rendimiento-de-guia";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
-import { cruzarConGuia, type CruceConGuia, type FilaDelCruce } from "@/lib/forestal/cubicacion-rendimiento-guia";
+import { cruzarConGuia, type CruceConGuia, type FilaDelCruce, type PiezaParaCruce } from "@/lib/forestal/cubicacion-rendimiento-guia";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { fmtM3, fmtPct, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { conSigno } from "./cubicador-detalle-ficha";
 
-const OK = "border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]";
-const AVISO = "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]";
-const NEUTRO = "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
-const TXT_OK = "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]";
-const TXT_AVISO = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]";
+export const OK = "border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]";
+export const AVISO = "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]";
+export const NEUTRO = "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
+export const TXT_OK = "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]";
+export const TXT_AVISO = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]";
 
 const META_PCT = Math.round(RENDIMIENTO_META * 100);
 
 const tonoDelVeredicto = (v: FilaDelCruce["veredicto"]) => (v === "bueno" ? OK : v === null ? NEUTRO : AVISO);
 const txtDelVeredicto = (v: FilaDelCruce["veredicto"]) => (v === "bueno" ? TXT_OK : v === null ? "text-[var(--text-secondary)]" : TXT_AVISO);
 
-function Caja({ tono, children }: { tono: string; children: React.ReactNode }) {
+export function Caja({ tono, children }: { tono: string; children: React.ReactNode }) {
   return <p className={`rounded-lg border px-3 py-2 text-sm font-semibold ${tono}`}>{children}</p>;
 }
 
@@ -91,12 +91,16 @@ function TablaPorEspecie({ c }: { c: CruceConGuia }) {
   );
 }
 
-export function RendimientoContraLaGuia({ c }: { c: CubicacionRegistro }) {
-  const r = useRendimientoDeGuia(c.gtfNumber);
+/** `r` = la guía leída una sola vez en el detalle (`useRendimientoDeGuia`): la usa también el margen del camión. */
+/** Las piezas de todas las guardadas de la misma GTF (`piezasDeLaMismaGuia`): sin ellas, sólo las de `c`. */
+export type PiezasDeLaGuia = { piezas: readonly PiezaParaCruce[]; cubicaciones: readonly { id: string; nombre: string }[] };
+
+export function RendimientoContraLaGuia({ c, r, deLaGuia }: { c: CubicacionRegistro; r: EstadoDeLaGuia; deLaGuia?: PiezasDeLaGuia }) {
   const cruce = useMemo(
-    () => (r.estado === "lista" ? cruzarConGuia(r.guia, c.piezas, c.especie) : null),
-    [r, c.piezas, c.especie],
+    () => (r.estado === "lista" ? (deLaGuia ? cruzarConGuia(r.guia, deLaGuia.piezas) : cruzarConGuia(r.guia, c.piezas, c.especie)) : null),
+    [r, c.piezas, c.especie, deLaGuia],
   );
+  const otras = deLaGuia ? deLaGuia.cubicaciones.filter((x) => x.id !== c.id) : [];
   if (r.estado === "sin-guia") return null;
 
   const numero = r.estado === "lista" || r.estado === "anulada" ? r.numero : c.gtfNumber;
@@ -120,6 +124,11 @@ export function RendimientoContraLaGuia({ c }: { c: CubicacionRegistro }) {
 
       {cruce && frase && (
         <>
+          {otras.length > 0 && (
+            <p className="text-sm font-semibold text-[var(--text-secondary)]" data-guia-camiones={otras.length + 1}>
+              La guía salió en {otras.length + 1} cubicaciones: se suman esta y {otras.map((x) => `«${x.nombre}»`).join(", ")}.
+            </p>
+          )}
           <Caja tono={frase.tono}>{frase.texto}</Caja>
           {(cruce.filas.length > 1 || cruce.filas.some((f) => f.soloEnGuia || f.soloEnCubicacion)) && <TablaPorEspecie c={cruce} />}
           <p className="text-sm text-[var(--text-secondary)]">

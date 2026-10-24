@@ -8,6 +8,7 @@ import { ROLES_CUBICAR, esAserrada, guardCubicacion, invalido, leerJson, libroDe
 /**
  * /api/admin/forestal/cubicaciones-trozas (ADR-478, ADR-483)
  * GET  `?beneficiario=&parte=&estado=&material=troza|aserrada|todas&origen=&origenId=&ref=` → `{ cubicaciones }`
+ *      (`&conBeneficiario=1` con `parte=`: también las del beneficiario atado a esa ficha)
  *      (sin las medidas). Sin `material` = sólo trozas. `ref` = las de UNA cubicación del Cubicador de madera.
  * POST `guardarCubicacionSchema` (trozas, con `origen: "loth"` y descuentos) o, con `material: "aserrada"`,
  *      `guardarAserradaSchema` → 201 `{ cubicacion }` · 404 `PERSONA_NO_ENCONTRADA` / `ORIGEN_NO_ENCONTRADO`
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
       origen: origen as OrigenCubicacion | undefined,
       origenId: sp.get("origenId")?.trim().slice(0, 60) || undefined,
       cubicacionRefId: sp.get("ref")?.trim().slice(0, 60) || undefined,
+      conBeneficiarioDeLaParte: sp.get("conBeneficiario") === "1",
     });
     return NextResponse.json({ cubicaciones }, { headers: noStore });
   } catch (e) {

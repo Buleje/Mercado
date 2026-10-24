@@ -12,7 +12,7 @@
  */
 import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, FileText, GitCompareArrows, Loader2, RefreshCw, Search, UserCheck, X } from "@buleje/design-system/icons";
+import { AlertTriangle, FileText, GitCompareArrows, Loader2, RefreshCw, Search, X } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
@@ -20,7 +20,7 @@ import { codigoDeHoja, filtrarPorHoja } from "@/components/admin/forestal/cubica
 import { usePapelesDeCubicaciones } from "@/components/admin/forestal/cubicador-papel/use-papel";
 import { corridasDeCubicacion, textosDeFicha, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { m3DesdePt } from "@/lib/forestal/cubicacion";
-import { agruparPorFicha, deLaFila, type PorFicha } from "@/lib/forestal/cubicacion-por-ficha";
+import { agruparPorFicha, clasificar, deLaFila, type PorFicha } from "@/lib/forestal/cubicacion-por-ficha";
 import { formatNumber } from "@/lib/format";
 import { logger } from "@/lib/logger";
 import { TarjetaGuardada, duenosDe, especiesDe } from "./cubicador-guardadas-tarjeta";
@@ -29,7 +29,11 @@ import { DetalleCubicacionModal } from "./cubicador-detalle-modal";
 import { CompararCubicacionesModal } from "./cubicador-comparar-modal";
 import { ResumenPorFicha } from "./cubicador-guardadas-resumen";
 import AtarGuardadasModal from "./cubicador-atar-modal";
+import { AvisosDeGuardadas } from "./cubicador-guardadas-avisos";
+import { useRendimientoDeGuias } from "./hooks/use-rendimiento-de-guias";
 import { necesitaAtar } from "@/lib/forestal/cubicacion-atar";
+import { mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
+import { numerosDeGuia, rendimientoPorFicha, resumenSinGuia, sinGtf } from "@/lib/forestal/cubicacion-guia-resumen";
 
 const TODAS = "";
 
@@ -60,6 +64,11 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
   const [atarIds, setAtarIds] = useState<string[] | null>(null);
   const sinParte = useMemo(() => lista.filter(necesitaAtar), [lista]);
   const detalle = detalleId ? lista.find((c) => c.id === detalleId) ?? null : null;
+  /* Los otros camiones de la misma GTF: el rendimiento y el margen del detalle suman todos. */
+  const deLaMismaGuia = useMemo(
+    () => (detalle?.gtfNumber ? lista.filter((x) => x.id !== detalle.id && mismoNumeroGtf(x.gtfNumber, detalle.gtfNumber)) : []),
+    [lista, detalle],
+  );
   const puedeComparar = lista.length > 1;
   /* La lista dentro de «Producir sin lote» ya está en una ventana: las suyas van encima. */
   const dentroDeVentana = Boolean(onCerrar);
@@ -69,13 +78,21 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
     const porTexto = filtrarPorHoja(lista, busqueda, camposDeBusqueda);
     return especie ? porTexto.filter((c) => especiesDe(c).includes(especie)) : porTexto;
   }, [lista, busqueda, especie]);
+  /* «N sin GTF»: de lo visible; tocarlo deja sólo esas (y el resumen de abajo las sigue). */
+  const [soloSinGuia, setSoloSinGuia] = useState(false);
+  const sinGuia = useMemo(() => resumenSinGuia(visibles), [visibles]);
+  const filtraSinGuia = soloSinGuia && sinGuia.cantidad > 0;
+  const base = useMemo(() => (filtraSinGuia ? visibles.filter(sinGtf) : visibles), [visibles, filtraSinGuia]);
   /* El resumen por comunidad/comprador es de lo visible; tocar una fila filtra las tarjetas. */
   const [por, setPor] = useState<PorFicha>("comunidad");
   const [claveFicha, setClaveFicha] = useState<string | null>(null);
-  const filasFicha = useMemo(() => agruparPorFicha(visibles, por), [visibles, por]);
+  const filasFicha = useMemo(() => agruparPorFicha(base, por), [base, por]);
   const claveActiva = claveFicha && filasFicha.some((f) => f.clave === claveFicha) ? claveFicha : null;
-  const mostradas = useMemo(() => (claveActiva ? deLaFila(visibles, por, claveActiva) : visibles), [visibles, por, claveActiva]);
-  const filtrando = Boolean(busqueda.trim() || especie || claveActiva);
+  const mostradas = useMemo(() => (claveActiva ? deLaFila(base, por, claveActiva) : base), [base, por, claveActiva]);
+  const filtrando = Boolean(busqueda.trim() || especie || claveActiva || filtraSinGuia);
+  /* «Rinde» por comunidad: las guías de TODA la lista, pedidas juntas (no se repiden al filtrar). */
+  const { guias, cargando: cargandoGuias } = useRendimientoDeGuias(useMemo(() => numerosDeGuia(lista), [lista]));
+  const rinde = useMemo(() => (por === "comunidad" ? rendimientoPorFicha(base, clasificar(base, por), guias) : null), [base, por, guias]);
   const suma = useMemo(
     () => mostradas.reduce((a, c) => ({ pt: a.pt + c.totales.pieTablar, valor: a.valor + c.valor, piezas: a.piezas + c.totales.piezas }), { pt: 0, valor: 0, piezas: 0 }),
     [mostradas],
@@ -163,14 +180,15 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
         )}
       </div>
 
-      {!cargando && sinParte.length > 0 && (
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--text-secondary)]" data-aviso="guardadas-sin-comprador">
-          <UserCheck className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
-          <span>{sinParte.length} {sinParte.length === 1 ? "guardada sin comprador" : "guardadas sin comprador"} del Directorio</span>
-          <button type="button" onClick={() => setAtarIds(sinParte.map((c) => c.id))} className={button({ variant: "secondary", className: "px-4" })} data-accion="completar-guardadas">
-            Completar
-          </button>
-        </p>
+      {!cargando && (
+        <AvisosDeGuardadas
+          sinComprador={sinParte.length}
+          sinGuia={sinGuia}
+          filtrandoSinGuia={soloSinGuia}
+          onCompletarComprador={() => setAtarIds(sinParte.map((c) => c.id))}
+          onCompletarGuia={() => setAtarIds(sinGuia.ids)}
+          onFiltrarSinGuia={() => setSoloSinGuia((v) => !v)}
+        />
       )}
 
       {error && (
@@ -201,6 +219,8 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
             filas={filasFicha}
             elegida={claveActiva}
             onElegir={setClaveFicha}
+            rinde={rinde}
+            cargandoRinde={cargandoGuias}
           />
           <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-[var(--text-secondary)]">
             {filtrando ? `Suma de las ${mostradas.length} que se ven` : `Suma de las ${mostradas.length}`}
@@ -243,6 +263,7 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
       {detalle && (
         <DetalleCubicacionModal
           c={detalle}
+          deLaMismaGuia={deLaMismaGuia}
           enLibro={enLibro[detalle.id]}
           aboveModals={dentroDeVentana}
           puedeComparar={puedeComparar}

@@ -30,6 +30,10 @@ import { ChipsDeLectura, FichaDeGuardada, datosDeLaGuardada } from "./cubicador-
 import { fechaDeLaGuardada } from "./cubicador-guardadas-tarjeta";
 import { AccionesWhatsAppDeGuardada } from "./cubicador-detalle-whatsapp";
 import { RendimientoContraLaGuia } from "./cubicador-detalle-rendimiento";
+import { MargenDelCamionBloque } from "./cubicador-detalle-margen";
+import { useRendimientoDeGuia } from "./hooks/use-rendimiento-de-guia";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { piezasDeLaMismaGuia } from "@/lib/forestal/cubicacion-rendimiento-guia";
 
 const DIMENSIONES_DETALLE = ["especie", "tipo", "largo", "medida", "seccion", "dueno"] as const satisfies readonly DimensionResumen[];
 type Lectura = "especie-tipo" | (typeof DIMENSIONES_DETALLE)[number];
@@ -45,8 +49,10 @@ const primeraColDe = (d: DimensionResumen) => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
-export function DetalleCubicacionModal({ c, enLibro, aboveModals, puedeComparar, onClose, onAbrir, onComparar }: {
+export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveModals, puedeComparar, onClose, onAbrir, onComparar }: {
   c: CubicacionRegistro;
+  /** Las otras guardadas con la MISMA GTF (otros camiones de la guía): el rendimiento y el margen suman todas. */
+  deLaMismaGuia?: readonly CubicacionRegistro[];
   enLibro?: EnLibroDeGuardada;
   /** La lista vive dentro de otra ventana («Producir sin lote»): este va encima. */
   aboveModals?: boolean;
@@ -61,6 +67,12 @@ export function DetalleCubicacionModal({ c, enLibro, aboveModals, puedeComparar,
   const bloques = useMemo(() => (lectura === "especie-tipo" ? resumenPorEspecie(c.piezas, precioDe) : []), [c.piezas, lectura, precioDe]);
   const agrupado = useMemo(() => (lectura === "especie-tipo" ? null : agruparOficial(c.piezas, lectura, precioDe)), [c.piezas, lectura, precioDe]);
   const datos = useMemo(() => datosDeLaGuardada(c, { enLibro, completa: true }), [c, enLibro]);
+  /* La guía se lee UNA vez: la cruza «Contra la guía» y el margen la usa para pasar m³ de troza a PT. */
+  const guia = useRendimientoDeGuia(c.gtfNumber);
+  const deLaGuia = useMemo(() => piezasDeLaMismaGuia(c, deLaMismaGuia), [c, deLaMismaGuia]);
+  /* El margen dice lo que se pagó a la comunidad: como el rendimiento con plata del Libro, sólo admin y dueño (revisión 24-10). */
+  const rol = useMiRol();
+  const veMargen = rol === "admin" || rol === "owner" || rol === "superadmin";
 
   const pt = c.totales.pieTablar;
   const conValor = c.valor > 0;
@@ -79,7 +91,7 @@ export function DetalleCubicacionModal({ c, enLibro, aboveModals, puedeComparar,
       ayuda={
         <InfoTip
           what="Lo que se guardó, sin abrirlo en el cubicador: sus datos, sus cifras y el lote leído por especie, tipo, largo, medida, sección o dueño."
-          affects="Las cifras de arriba son las que se congelaron al guardar; las tablas, el volumen oficial de sus piezas (el de la GTF)."
+          affects="Las cifras de arriba son las que se congelaron al guardar; las tablas, el volumen oficial de sus piezas (el de la GTF). El margen del camión cruza la compra y la venta de las cuentas."
           example="«Especie × tipo» dice cuánto Tornillo comercial y cuánta paquetería tiene el lote."
         />
       }
@@ -106,7 +118,9 @@ export function DetalleCubicacionModal({ c, enLibro, aboveModals, puedeComparar,
           <KpiResumen label="S/ por PT" value={conValor && pt > 0 ? fmtSoles(c.valor / pt) : "—"} hint="Promedio del lote" />
         </div>
 
-        {c.gtfNumber?.trim() && <RendimientoContraLaGuia c={c} />}
+        {c.gtfNumber?.trim() && <RendimientoContraLaGuia c={c} r={guia} deLaGuia={deLaGuia} />}
+
+        {veMargen && <MargenDelCamionBloque c={c} guia={guia} deLaGuia={deLaGuia} />}
 
         <section aria-label="Resúmenes de la cubicación" className="space-y-3">
           <ChipsDeLectura opciones={LECTURAS} valor={lectura} onCambiar={setLectura} etiqueta="Cómo leer el lote" />

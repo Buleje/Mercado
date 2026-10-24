@@ -13,6 +13,7 @@
  */
 import { PT_POR_M3 } from "./cubicacion";
 import { juzgarRendimiento } from "./loctp-catalogos";
+import { mismoNumeroGtf } from "./gtf-talonario";
 
 export type TipoDeGuia = "trozas" | "producto";
 
@@ -146,4 +147,23 @@ export function cruzarConGuia(guia: VolumenDeGuia, piezas: readonly PiezaParaCru
   const ptDeLaGuia = [...porClave.values()].filter((f) => f.enGuia).reduce((a, f) => a + f.pt, 0);
   const ptDelTotal = guia.tipo === "trozas" ? ptDeLaGuia : ptTotal;
   return { tipo: guia.tipo, filas, total: armarFila("total", "Total", guia.m3Total, ptDelTotal, true, true) };
+}
+
+/**
+ * Las piezas de TODAS las cubicaciones guardadas con la misma GTF (revisión
+ * 24-10, ALTO): una guía de 20 m³ que salió en dos camiones de 2.000 PT rinde
+ * 47 %, pero un camión solo contra los 20 m³ daba 23,6 % y el margen del
+ * camión salía con el signo al revés. Cada pieza sin especie toma la de su
+ * cubicación (como `cruzarConGuia` con `especieDelLote`). `mismoNumeroGtf` es
+ * estricto: «65» no junta con «019-001-0000065».
+ */
+export function piezasDeLaMismaGuia<C extends { id: string; gtfNumber?: string; especie?: string; piezas: readonly PiezaParaCruce[] }>(
+  c: C,
+  otras: readonly C[],
+): { piezas: PiezaParaCruce[]; cubicaciones: C[] } {
+  const juntas = [c, ...otras.filter((o) => o.id !== c.id && mismoNumeroGtf(o.gtfNumber, c.gtfNumber))];
+  return {
+    piezas: juntas.flatMap((x) => x.piezas.map((p) => (p.especie?.trim() ? p : { ...p, especie: x.especie ?? null }))),
+    cubicaciones: juntas,
+  };
 }

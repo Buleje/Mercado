@@ -68,6 +68,10 @@ const idsSchema = z
   .array(z.string().min(1).max(60))
   .min(1, "Elige al menos una guía.")
   .max(200, "Hasta 200 guías por trámite.");
+const numerosSchema = z
+  .array(z.string().trim().min(1).max(60))
+  .min(1, "Pon al menos un N° de guía.")
+  .max(50, "Hasta 50 guías por pedido.");
 /* El motivo con la regla de `motivo.ts`: sin invisibles y con al menos 3 letras. */
 const patchSchema = z.object({
   id: z.string().trim().min(1),
@@ -120,6 +124,15 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
       const guia = await ForestGtfDB.fichaPorNumero(auth.tenantId, num.data);
       if (!guia) return NextResponse.json({ error: "not_found" }, { status: 404 });
       return NextResponse.json({ guia });
+    }
+    /* `?volumen=1&numeros=a,b,c` (Guardadas › «Rinde», 24-10): lo que declaran VARIAS guías, en una consulta. */
+    const numerosParam = url.searchParams.get("numeros");
+    if (numerosParam !== null && url.searchParams.get("volumen") === "1") {
+      const numeros = numerosSchema.safeParse([...new Set(numerosParam.split(",").map((s) => s.trim()).filter(Boolean))]);
+      if (!numeros.success) {
+        return NextResponse.json({ error: "validation_error", message: numeros.error.issues[0]?.message }, { status: 400 });
+      }
+      return NextResponse.json({ guias: await ForestGtfDB.volumenesPorNumeros(auth.tenantId, numeros.data) });
     }
     /* `?gtfNumber=&volumen=1` (Cubicador, 24-10): cuánto declara la guía, por especie, sin los items. */
     if (gtfNumber && url.searchParams.get("volumen") === "1") {
