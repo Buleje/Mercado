@@ -16,7 +16,9 @@
  * Desde 1024 px va en la columna de la derecha del panel (Brandon 24-10: «una
  * sola columna derecha»), arriba del panel de Esenciales si está abierto: el
  * corrimiento de la página y del «+» lo da la columna (`--columna-derecha`).
- * Más angosto, o fuera del panel, sigue como antes: fija encima, con su `<style>`.
+ * Entre 768 y 1023 px es un cajón desde la derecha con velo (clic afuera y
+ * Escape lo cierran; si está «fija», sólo lo minimizan). Debajo de 768 o fuera
+ * del panel sigue como antes: fija encima, con su `<style>`.
  */
 import { useEffect, useId, useLayoutEffect, useRef, useState, type PointerEvent as EventoPuntero, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -25,6 +27,7 @@ import { CardTitle } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
 import { useColumnaDerecha } from "@/components/admin/layout/columna-derecha";
 import { ANCHO_PANEL, anchoPanel, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -50,6 +53,8 @@ const ICONO = "size-5";
 const PASO_TECLADO = 32;
 /** Desde acá la barra achica la página (antes se montaba encima): es cuando entra a la columna. */
 const COLUMNA_DESDE = 1024;
+/** Entre 768 y 1023 px (tablet) se abre como cajón con velo, como el de Esenciales. */
+const CAJON_DESDE = 768;
 
 /**
  * Mientras la barra está abierta SUELTA (fuera de la columna: menos de 1024 px,
@@ -88,6 +93,10 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
   const columna = useColumnaDerecha();
   const hueco = ventana >= COLUMNA_DESDE ? (columna?.arriba ?? null) : null;
   const fijarAncho = columna?.fijarAncho;
+  /* Tablet sin columna: cajón con velo (el ancho no se arrastra: min(26rem, 90vw)). */
+  const cajon = !hueco && !minimizado && ventana >= CAJON_DESDE && ventana < COLUMNA_DESDE;
+  const refBarra = useRef<HTMLElement>(null);
+  useModalAccesible(refBarra, { activo: cajon, onCerrar: fija ? () => onMinimizar(true) : onCerrar });
   const pideAncho = !!hueco && !minimizado;
   /* Antes de pintar: si no, la columna se dibuja un cuadro en 26rem y salta al ancho guardado. */
   useLayoutEffect(() => {
@@ -137,21 +146,25 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
 
   const barra = (
     <aside
-      role="complementary"
+      ref={refBarra}
+      role={cajon ? "dialog" : "complementary"}
+      aria-modal={cajon ? true : undefined}
+      tabIndex={cajon ? -1 : undefined}
       aria-labelledby={tituloId}
       data-qa="aviso-lateral"
       data-modo={modo}
       data-en-columna={hueco ? "" : undefined}
+      data-cajon={cajon ? "" : undefined}
       className={cn(
-        "flex flex-col border-l border-[var(--rule-base)] bg-[var(--surface-raised)]",
+        "flex flex-col border-l border-[var(--rule-base)] bg-[var(--surface-raised)] outline-none",
         /* En la columna llena su hueco (el ancho lo pone la columna); suelta, va encima. */
-        hueco ? "relative min-h-0 flex-1" : "fixed inset-y-0 right-0 z-dropdown w-full",
+        hueco ? "relative min-h-0 flex-1" : cajon ? "relative h-full w-[min(26rem,90vw)] shadow-[var(--shadow-xl)]" : "fixed inset-y-0 right-0 z-dropdown w-full",
       )}
       onKeyDown={(e) => {
-        if (e.key === "Escape" && !fija) onCerrar();
+        if (e.key === "Escape" && !fija && !cajon) onCerrar();
       }}
     >
-      {!hueco && <style>{reglasAbierto(visible)}</style>}
+      {!hueco && !cajon && <style>{reglasAbierto(visible)}</style>}
       <div
         role="separator"
         aria-orientation="vertical"
@@ -173,7 +186,8 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
           onAncho(anchoPanel(visible + (e.key === "ArrowLeft" ? PASO_TECLADO : -PASO_TECLADO), window.innerWidth));
         }}
         className={cn(
-          "absolute inset-y-0 -left-1.5 z-10 hidden w-3 cursor-col-resize touch-none sm:block",
+          "absolute inset-y-0 -left-1.5 z-10 hidden w-3 cursor-col-resize touch-none",
+          !cajon && "sm:block",
           "after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent after:transition-colors",
           "hover:after:bg-[var(--accent)] focus-visible:outline-none focus-visible:after:bg-[var(--accent)]",
           arrastre !== null && "after:bg-[var(--accent)]",
@@ -216,5 +230,11 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
       <footer className="border-t border-[var(--rule-soft)] px-3 py-2">{pie}</footer>
     </aside>
   );
-  return hueco ? createPortal(barra, hueco) : barra;
+  if (hueco) return createPortal(barra, hueco);
+  if (!cajon) return barra;
+  return (
+    <div className="modal-backdrop !items-stretch !justify-end" data-qa="aviso-velo" onClick={(e) => e.target === e.currentTarget && (fija ? onMinimizar(true) : onCerrar())}>
+      {barra}
+    </div>
+  );
 }
