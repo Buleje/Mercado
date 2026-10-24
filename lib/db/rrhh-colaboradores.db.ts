@@ -17,7 +17,7 @@ import {
   tipoDocumentoPorFormato,
 } from "@/lib/rrhh/documento";
 import { dateDeFechaKey, etiquetaCorta, fechaKeyDeDate, mesDe, rangoDeDias, sumarDias } from "@/lib/rrhh/fechas";
-import { tarifaVigente as tarifaVigentePura } from "@/lib/rrhh/ganado";
+import { SALDO_DEL_SUELDO_VACIO, saldosDelSueldo, tarifaVigente as tarifaVigentePura } from "@/lib/rrhh/ganado";
 import {
   aAsistenciaDTO,
   aColaboradorDTO,
@@ -447,18 +447,22 @@ export const ColaboradoresDB = {
     if (nivel === "completo") {
       cuenta = null;
       if (row.beneficiarioId) {
-        const grupos = await AdelantosDB.saldosPorPersona(tenantId);
-        let adelantosAbiertosPen = 0;
-        let abiertos = 0;
+        // Sólo los de esta persona, partidos como en Lo ganado: lo de planilla
+        // sale del sueldo, la cuenta corriente no (decisión 7 de `lib/rrhh/ganado.ts`).
+        const grupos = await AdelantosDB.saldosAbiertosPorModalidad(tenantId, [row.beneficiarioId]);
+        const saldo = saldosDelSueldo(grupos).get(row.beneficiarioId) ?? SALDO_DEL_SUELDO_VACIO;
         const otrasMonedas: Record<string, number> = {};
         for (const g of grupos) {
-          if (g.beneficiarioId !== row.beneficiarioId || g.status !== "ABIERTO") continue;
-          abiertos += g.cantidad;
           const moneda = g.moneda || "PEN";
-          if (moneda === "PEN") adelantosAbiertosPen = r2(adelantosAbiertosPen + g.saldoPendiente);
-          else otrasMonedas[moneda] = r2((otrasMonedas[moneda] ?? 0) + g.saldoPendiente);
+          if (moneda !== "PEN") otrasMonedas[moneda] = r2((otrasMonedas[moneda] ?? 0) + g.saldoPendiente);
         }
-        cuenta = { adelantosAbiertosPen, abiertos, otrasMonedas };
+        cuenta = {
+          adelantosAbiertosPen: saldo.abiertosPen,
+          abiertos: saldo.abiertos,
+          otrasMonedas,
+          planillaPen: saldo.planillaPen,
+          cuentaCorrientePen: saldo.cuentaCorrientePen,
+        };
       }
     }
 

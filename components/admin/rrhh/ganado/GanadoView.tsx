@@ -11,8 +11,9 @@
  * el aviso sale en línea, junto a los campos, y el hook se queda con el
  * último rango válido — no se dispara el pedido que iba a fallar.
  *
- * «Queda por pagar» (ADR-417) = lo ganado del período − los adelantos abiertos,
- * sólo para quien tiene cuenta de Adelantos vinculada. El total sale de
+ * «Queda por pagar» (ADR-417) = lo ganado del período − los adelantos POR
+ * PLANILLA abiertos (la cuenta corriente va aparte, decisión 7 de
+ * `lib/rrhh/ganado.ts`), sólo para quien tiene cuenta de Adelantos vinculada. El total sale de
  * `totalQuedaPorPagar` (función pura, testeada), no de una suma en el JSX, y
  * abajo de la tabla se declara qué cubre: el saldo de adelantos es a HOY y el
  * total no incluye a las personas sin cuenta — dos cifras contiguas que no
@@ -27,7 +28,7 @@ import EncabezadoDeVista from "../EncabezadoDeVista";
 import { Wallet } from "@buleje/design-system/icons";
 import { useRrhhGanado } from "@/hooks/use-rrhh-ganado";
 import { diasDelMes, mesDe, semanaDe, sumarDias } from "@/lib/rrhh/fechas";
-import { totalQuedaPorPagar } from "@/lib/rrhh/ganado";
+import { margenParaDescontar, totalQuedaPorPagar } from "@/lib/rrhh/ganado";
 import { cn, limaDateKey } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import { AvisoRrhh, CLASE_CAMPO, claseChipFiltro } from "../rrhh-form";
@@ -224,7 +225,7 @@ export default function GanadoView() {
                   <th className="text-right">Horas</th>
                   <th>Tarifa</th>
                   <th className="text-right">Ganado (referencia)</th>
-                  <th className="text-right">Adelantos abiertos</th>
+                  <th className="text-right">Adelantos por planilla</th>
                   <th className="text-right">Queda por pagar</th>
                   <th>Avisos</th>
                 </tr>
@@ -232,15 +233,15 @@ export default function GanadoView() {
               <tbody>
                 {ganado.personas.map((p) => {
                   const benef = p.beneficiarioId;
-                  // Lo que queda de lo ganado para descontar: con todo ya
-                  // descontado (o nada ganado) no hay planilla de dónde sacar.
-                  const margen = Math.round((p.total - (p.adelantos?.descontadoPen ?? 0)) * 100) / 100;
+                  // Lo que queda de lo ganado para descontar (menos lo descontado y lo ya
+                  // PAGADO): con la semana pagada no hay planilla de dónde sacar.
+                  const margen = margenParaDescontar(p);
                   return (
                     <FilaGanado
                       key={p.colaboradorId}
                       persona={p}
                       descontando={benef != null && descuento.cargando === benef}
-                      onDescontar={benef != null && (p.adelantos?.abiertos ?? 0) > 0 && margen > 0
+                      onDescontar={benef != null && (p.adelantos?.planillaAbiertos ?? 0) > 0 && margen > 0
                         ? () => void descuento.descontar({ nombre: p.nombre, beneficiarioId: benef }, desde, hasta, margen)
                         : undefined}
                     />
@@ -267,6 +268,7 @@ export default function GanadoView() {
                 ? ` Nadie tiene cuenta de Adelantos vinculada (${pluralizar(ganado.personas.length, "persona", "personas")} en el período), así que no hay nada que restar: vincula su cuenta desde Personal.`
                 : ` El total suma ${pluralizar(queda.personas, "persona", "personas")} de ${ganado.personas.length}${queda.sinCuenta > 0 ? ` — ${pluralizar(queda.sinCuenta, "persona", "personas")} sin cuenta vinculada queda${queda.sinCuenta === 1 ? "" : "n"} en «—»` : ""}.`}
               {queda.conDeuda > 0 && ` ${queda.conDeuda === 1 ? "1 persona sigue debiendo" : `${queda.conDeuda} personas siguen debiendo`} ${formatearPEN(queda.deuda)} después de descontarle lo ganado: esa deuda no está en el total.`}
+              {queda.cuentaCorriente > 0 && ` La cuenta corriente (${formatearPEN(queda.cuentaCorriente)}) va aparte: no se descuenta del sueldo.`}
             </p>
           </>
         )

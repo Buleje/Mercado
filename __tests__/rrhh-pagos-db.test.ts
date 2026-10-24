@@ -204,7 +204,7 @@ describe("PagosSemanaDB.pagar", () => {
 describe("PagosSemanaDB.semana: lo ganado cambió después de pagar (revisión 24-10)", () => {
   const persona = (total: number, referencia: { modalidad: string; monto: number } | null) => ({
     colaboradorId: "c1", nombre: "Juan Pérez", puesto: null, beneficiarioId: "b1", referencia, total,
-    sinMarcar: [], avisos: [], adelantos: { abiertosPen: 0, abiertos: 0, descontadoPen: 50 },
+    sinMarcar: [], avisos: [], adelantos: { abiertosPen: 0, abiertos: 0, planillaPen: 0, planillaAbiertos: 0, cuentaCorrientePen: 0, descontadoPen: 50 },
   });
 
   beforeEach(() => {

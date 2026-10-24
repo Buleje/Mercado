@@ -1,7 +1,8 @@
 /**
  * Qué descuentos de planilla son de QUÉ período (RRHH › Lo ganado).
  *
- * «Queda por pagar» resta los adelantos ABIERTOS de hoy. Al descontar el
+ * «Queda por pagar» resta los adelantos POR PLANILLA abiertos de hoy (la
+ * cuenta corriente va aparte, decisión 7 de `ganado.ts`). Al descontar el
  * adelanto de la planilla, ese saldo baja a 0 y, sin restar también lo
  * descontado, la fila SUBÍA: ganó 1000 y debía 300 → 700; tras descontar
  * los 300 → 1000, y se le pagaba el sueldo entero (revisión del 09-10).

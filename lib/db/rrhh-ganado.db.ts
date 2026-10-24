@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { AsistenciaDB } from "@/lib/db/rrhh-asistencia.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
-import { calcularGanado } from "@/lib/rrhh/ganado";
+import { SALDO_DEL_SUELDO_VACIO, calcularGanado, saldosDelSueldo } from "@/lib/rrhh/ganado";
 import { dateDeFechaKey, fechaKeyDeDate, sumarDias } from "@/lib/rrhh/fechas";
 import { descuentoEsDelPeriodo } from "@/lib/rrhh/descuentos-planilla";
 import { entregadoDelPago, filtroDeMarcas, llaveDeMarca, marcaDelPago, semanasEnterasDelPeriodo } from "@/lib/rrhh/pago-semana";
@@ -49,7 +49,7 @@ export const GanadoDB = {
     const [tarifasPorId, marcas, saldos, descuentos, pagos] = await Promise.all([
       ColaboradoresDB.tarifasDe(tenantId, ids),
       AsistenciaDB.delPeriodo(tenantId, input.desde, input.hasta, ids),
-      AdelantosDB.saldosPorPersona(tenantId),
+      AdelantosDB.saldosAbiertosPorModalidad(tenantId, beneficiarioIds),
       // 45 días antes de `desde`: un descuento de este período anotado por
       // adelantado. El que se anota después (lo normal) no tiene tope.
       AdelantosDB.descuentosDePlanilla(tenantId, beneficiarioIds, dateDeFechaKey(sumarDias(input.desde, -45))),
@@ -70,15 +70,9 @@ export const GanadoDB = {
     }
 
     // Sólo ABIERTO en soles — mismo criterio que `agregarAdelantos` de
-    // `cuenta-unificada.ts`: es lo único que pesa como "te debe" hoy.
-    const saldosPorBeneficiario = new Map<string, { abiertosPen: number; abiertos: number }>();
-    for (const g of saldos) {
-      if (g.status !== "ABIERTO") continue;
-      const acc = saldosPorBeneficiario.get(g.beneficiarioId) ?? { abiertosPen: 0, abiertos: 0 };
-      acc.abiertos += g.cantidad;
-      if ((g.moneda || "PEN") === "PEN") acc.abiertosPen = r2(acc.abiertosPen + g.saldoPendiente);
-      saldosPorBeneficiario.set(g.beneficiarioId, acc);
-    }
+    // `cuenta-unificada.ts` — y partido: de lo ganado sólo se resta lo de
+    // planilla; la cuenta corriente va aparte (decisión 7 de `lib/rrhh/ganado.ts`).
+    const saldosPorBeneficiario = saldosDelSueldo(saldos);
 
     // Lo ya descontado por planilla PARA ESTE PERÍODO: el adelanto que se
     // descontó dejó de estar abierto, y sin sumarlo acá «Queda por pagar» subía
@@ -142,7 +136,7 @@ export const GanadoDB = {
         pagado: pagadoDe(c.id, c.beneficiarioId),
         adelantos: c.beneficiarioId
           ? {
-              ...(saldosPorBeneficiario.get(c.beneficiarioId) ?? { abiertosPen: 0, abiertos: 0 }),
+              ...(saldosPorBeneficiario.get(c.beneficiarioId) ?? SALDO_DEL_SUELDO_VACIO),
               descontadoPen: descontadoPorBeneficiario.get(c.beneficiarioId) ?? 0,
             }
           : null,

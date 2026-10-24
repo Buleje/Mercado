@@ -106,11 +106,11 @@
     },
     {
       "path": "/api/cron/documentos-vencimiento",
-      "schedule": "0 9 * * *"
+      "schedule": "2 13 * * *"
     },
     {
       "path": "/api/cron/contratos-vencimiento",
-      "schedule": "10 9 * * *"
+      "schedule": "7 13 * * *"
     },
     {
       "path": "/api/cron/planificacion-avisos",
@@ -450,11 +450,11 @@
     },
     {
       "path": "/api/cron/tramites-vencimiento",
-      "schedule": "50 8 * * *"
+      "schedule": "12 13 * * *"
     },
     {
       "path": "/api/cron/tramites-sin-respuesta",
-      "schedule": "5 9 * * *"
+      "schedule": "17 13 * * *"
     },
     {
       "path": "/api/cron/asistente-avisos",

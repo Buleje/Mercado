@@ -2412,6 +2412,33 @@ export const AdelantosDB = {
   },
 
   /**
+   * Lo ABIERTO y DADO de estas personas por (modalidad, moneda), agregado en
+   * la base como `saldosPorPersona` (sin tope de filas). RRHH lo parte en lo
+   * que sale del sueldo (planilla) y la cuenta corriente, que no se descuenta
+   * (`saldosDelSueldo`, decisión 7 de `lib/rrhh/ganado.ts`). Sólo lectura.
+   */
+  async saldosAbiertosPorModalidad(
+    tenantId: string,
+    beneficiarioIds: readonly string[],
+  ): Promise<{ beneficiarioId: string; modalidad: string; moneda: string; saldoPendiente: number; cantidad: number }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (beneficiarioIds.length === 0) return [];
+    const grupos = await prisma.adelanto.groupBy({
+      by: ["beneficiarioId", "modalidad", "moneda"],
+      where: { tenantId, beneficiarioId: { in: [...beneficiarioIds] }, status: "ABIERTO", ...whereDireccion("DADO") },
+      _sum: { saldoPendiente: true },
+      _count: true,
+    });
+    return grupos.map((g) => ({
+      beneficiarioId: g.beneficiarioId,
+      modalidad: g.modalidad,
+      moneda: g.moneda,
+      saldoPendiente: Math.round(toNum(g._sum.saldoPendiente) * 100) / 100,
+      cantidad: g._count,
+    }));
+  },
+
+  /**
    * Los descuentos de planilla en soles (entregas vivas cuyo concepto empieza
    * con «Descuento por planilla») de estas personas, anotados desde `desde`.
    * RRHH › Lo ganado los resta de «Queda por pagar»: sin eso, al descontar el

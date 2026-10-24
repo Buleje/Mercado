@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Link2, Link2Off, Loader2, Search, Wallet } from "@buleje/design-system/icons";
 import { BlockTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import CuentaCorrienteAparte from "../CuentaCorrienteAparte";
 import { AvisoRrhh, BOTON, CLASE_CAMPO } from "../rrhh-form";
 import { formatearPEN, pluralizar } from "../rrhh-ui";
 import type { FichaColaboradorDTO } from "@/lib/rrhh/tipos";
@@ -116,6 +117,15 @@ export default function FichaCuenta({ vinculo, cuenta, guardando, onVincular, on
           <div className="min-w-0">
             <p className="text-base font-bold tabular-nums text-[var(--text-primary)]">{formatearPEN(cuenta.adelantosAbiertosPen)} abiertos</p>
             <p className="text-xs text-[var(--text-tertiary)]">{pluralizar(cuenta.abiertos, "adelanto sin cerrar", "adelantos sin cerrar")}</p>
+            {/* El mismo corte que Lo ganado y el pago del sábado: lo de planilla
+                sale del sueldo, la cuenta corriente no (decisión 7 de `lib/rrhh/ganado.ts`). */}
+            {cuenta.cuentaCorrientePen > 0 && (
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                Se descuenta del sueldo: <span className="font-semibold tabular-nums text-[var(--text-primary)]">{formatearPEN(cuenta.planillaPen)}</span>
+              </p>
+            )}
+            {/* Sin enlace propio: la tarjeta ya tiene «Ver su cuenta» arriba. */}
+            <CuentaCorrienteAparte monto={cuenta.cuentaCorrientePen} beneficiarioId={null} className="mt-0.5 flex" />
           </div>
         </div>
       )}

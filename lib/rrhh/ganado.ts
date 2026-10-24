@@ -19,7 +19,7 @@
  *    dice en una línea: sin ese aviso la resta miente (`verificacion-de-verdad`
  *    §2, un derivado nunca se presenta como el dato).
  * 3. **Si el adelanto es mayor que lo ganado, no hay pago negativo.** Queda
- *    deuda: `aPagar = 0` y `deuda = adelantos − ganado`. Un «S/ -120.00» en una
+ *    deuda: `aPagar = 0` y `deuda` = lo de planilla que sigue abierto. Un «S/ -120.00» en una
  *    columna de pagos se lee como que hay que cobrarle, y no es eso.
  * 5. **Lo ya descontado por planilla para el período también se resta.** Al
  *    descontar, el adelanto deja de estar abierto: restando sólo lo abierto,
@@ -30,6 +30,14 @@
  *    seguía diciendo «Queda por pagar S/ 370» con los 370 ya en la mano. Resta
  *    lo ENTREGADO (lo pagado menos lo descontado para esa semana: los descuentos
  *    ya están en el punto 5) de las semanas que caen enteras en el período.
+ * 7. **Sólo se restan los adelantos POR PLANILLA** (revisión 24-10, Brandon
+ *    eligió «cuenta corriente aparte»). El pago del sábado descuenta sólo los
+ *    de planilla; la cuenta corriente (y las entregas pactadas) se cobran por
+ *    su lado. Restarla acá dejaba a Rosa en «0 por pagar» (debía S/ 573 de
+ *    cuenta corriente) mientras el pago le entregaba S/ 120. La resta es UNA
+ *    función, `restaDelSueldo`, que llaman esta columna y el pago
+ *    (`calcularPagoSemana`): no pueden diferir. Lo de cuenta corriente sale al
+ *    lado (`cuentaCorriente`), nunca restado.
  * 4. **Sin cuenta de Adelantos vinculada no se resta: da `null`.** No se asume
  *    cero — de esa persona no sabemos si debe algo, y un cero inventado se
  *    lee como «no debe nada». La celda queda «—» y la fila explica por qué.
@@ -42,7 +50,7 @@
  */
 
 import { diasDelMes, etiquetaCorta, mesDe, rangoDeDias, sumarDias } from "./fechas";
-import type { DiaGanado, EstadoAsistencia, FechaKey, GanadoPersona, Modalidad, TramoGanado } from "./tipos";
+import type { DiaGanado, EstadoAsistencia, FechaKey, GanadoPersona, Modalidad, SaldoDelSueldo, TramoGanado } from "./tipos";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -335,15 +343,107 @@ export function explicarGanado(g: GanadoPersona): string[] {
 
 // ── Queda por pagar (ADR-417) ────────────────────────────────────────────────
 
+/**
+ * La resta del sueldo, la MISMA para «Queda por pagar» y para el pago del
+ * sábado (decisión 7): de lo ganado se saca lo ya descontado y lo ya pagado, y
+ * de lo que queda, los adelantos POR PLANILLA hasta donde alcance.
+ */
+export interface EntradaRestaDelSueldo {
+  /** Lo ganado (o el monto del pago, si se escribe a mano). */
+  ganado: number;
+  /** Lo ya descontado por planilla para ese período. */
+  descontado: number;
+  /** Lo ya entregado en mano por el pago del sábado. */
+  pagado: number;
+  /** Saldo abierto de los adelantos POR PLANILLA: lo único que sale del sueldo. */
+  planilla: number;
+}
+
+export interface RestaDelSueldo {
+  /** `ganado − descontado − pagado`, nunca negativo: de dónde se descuenta. */
+  disponible: number;
+  /** Lo que se descuenta de planilla: lo menor entre lo disponible y lo abierto. */
+  aDescontar: number;
+  /** Lo que se le entrega. Nunca negativo. */
+  aPagar: number;
+  /** Lo de planilla que sigue abierto después de descontar. */
+  sigueDebiendo: number;
+  /** `ganado − descontado − pagado − planilla` con signo. */
+  neto: number;
+}
+
+export function restaDelSueldo(e: EntradaRestaDelSueldo): RestaDelSueldo {
+  const planilla = r2(Math.max(0, e.planilla));
+  const disponible = r2(Math.max(0, e.ganado - e.descontado - e.pagado));
+  const aDescontar = r2(Math.min(disponible, planilla));
+  return {
+    disponible,
+    aDescontar,
+    aPagar: r2(disponible - aDescontar),
+    sigueDebiendo: r2(planilla - aDescontar),
+    neto: r2(e.ganado - e.descontado - e.pagado - planilla),
+  };
+}
+
+/**
+ * Cuánto se puede descontar todavía por planilla de lo ganado en el período
+ * («Descontar» de Lo ganado): lo ganado menos lo ya descontado y lo ya PAGADO.
+ * Sin restar lo pagado, un adelanto dado después de pagar la semana se
+ * descontaba de una semana ya entregada y se perdía (reviewer 24-10).
+ */
+export function margenParaDescontar(p: { total: number; pagado?: number | null; adelantos?: { descontadoPen?: number } | null }): number {
+  return restaDelSueldo({ ganado: p.total, descontado: p.adelantos?.descontadoPen ?? 0, pagado: p.pagado ?? 0, planilla: 0 }).disponible;
+}
+
+/**
+ * Reparte lo abierto de cada persona entre lo que sale del sueldo (planilla) y
+ * lo que no (cuenta corriente y entregas pactadas). Sólo ABIERTO y DADO llegan
+ * acá (`AdelantosDB.saldosAbiertosPorModalidad`); los montos, sólo en soles.
+ * Lo usan Lo ganado y la ficha: el mismo corte en las dos.
+ */
+export function saldosDelSueldo(
+  grupos: readonly { beneficiarioId: string; modalidad: string; moneda: string | null; saldoPendiente: number; cantidad: number }[],
+): Map<string, SaldoDelSueldo> {
+  const porPersona = new Map<string, SaldoDelSueldo>();
+  for (const g of grupos) {
+    const acc = porPersona.get(g.beneficiarioId) ?? { ...SALDO_DEL_SUELDO_VACIO };
+    acc.abiertos += g.cantidad;
+    if ((g.moneda || "PEN") === "PEN") {
+      acc.abiertosPen = r2(acc.abiertosPen + g.saldoPendiente);
+      if (g.modalidad === MODALIDAD_DEL_SUELDO) {
+        acc.planillaPen = r2(acc.planillaPen + g.saldoPendiente);
+        acc.planillaAbiertos += g.cantidad;
+      } else {
+        acc.cuentaCorrientePen = r2(acc.cuentaCorrientePen + g.saldoPendiente);
+      }
+    }
+    porPersona.set(g.beneficiarioId, acc);
+  }
+  return porPersona;
+}
+
+/** La única modalidad que se descuenta del sueldo (la misma que filtra `proponerDescuentos`). */
+export const MODALIDAD_DEL_SUELDO = "DESCUENTO_PLANILLA";
+
+export const SALDO_DEL_SUELDO_VACIO: Readonly<SaldoDelSueldo> = {
+  abiertosPen: 0,
+  abiertos: 0,
+  planillaPen: 0,
+  planillaAbiertos: 0,
+  cuentaCorrientePen: 0,
+};
+
 /** Lo mínimo que hace falta de una persona para la resta: lo ganado y su saldo de Adelantos. */
 export interface PersonaParaNeto {
   /** Lo ganado del período (`GanadoPersona.total`). */
   total: number;
   /**
    * Saldo de Adelantos de la persona; `null` = sin cuenta vinculada (`beneficiarioId == null`).
+   * `planillaPen`: lo abierto POR PLANILLA (lo único que se resta, decisión 7).
+   * `cuentaCorrientePen`: lo abierto que no sale del sueldo; se muestra aparte.
    * `descontadoPen`: lo ya descontado por planilla PARA ESTE PERÍODO (decisión 5).
    */
-  adelantos: { abiertosPen: number; descontadoPen?: number } | null;
+  adelantos: { planillaPen: number; cuentaCorrientePen?: number; descontadoPen?: number } | null;
   /**
    * Lo ya entregado en mano por el pago del sábado de las semanas que caen
    * enteras en el período (decisión 6). Sin el dato (el PDF del pago, que es
@@ -355,7 +455,7 @@ export interface PersonaParaNeto {
 export interface QuedaPorPagar {
   /** Lo ganado del período, tal cual salió de `calcularGanado`. */
   ganado: number;
-  /** Saldo de adelantos ABIERTOS en soles, al día de HOY — no del período. */
+  /** Saldo de adelantos POR PLANILLA abiertos en soles, al día de HOY — no del período. */
   adelantos: number;
   /** Lo ya descontado por planilla para este período (ya no está en `adelantos`). */
   descontado: number;
@@ -365,31 +465,34 @@ export interface QuedaPorPagar {
   neto: number;
   /** Lo que queda por pagarle. Nunca negativo: si el adelanto fue mayor, es 0. */
   aPagar: number;
-  /** Lo que seguiría debiendo después de descontarle todo lo ganado. Nunca negativo. */
+  /** Lo de planilla que seguiría debiendo después de descontarle lo ganado. Nunca negativo. */
   deuda: number;
+  /** Lo que debe en cuenta corriente: APARTE, no se resta de lo ganado (decisión 7). */
+  cuentaCorriente: number;
 }
 
 /**
  * Lo que queda por pagarle a UNA persona: lo ganado del período menos lo ya
- * descontado por planilla para él y menos su saldo de adelantos abiertos.
- * `null` si no tiene cuenta de Adelantos vinculada — ver decisiones 1-5 en la
- * cabecera de este archivo.
+ * descontado por planilla, lo ya pagado y sus adelantos POR PLANILLA abiertos
+ * (`restaDelSueldo`, la misma del pago del sábado). `null` si no tiene cuenta
+ * de Adelantos vinculada — ver decisiones 1-7 en la cabecera de este archivo.
  */
 export function calcularQuedaPorPagar(persona: PersonaParaNeto): QuedaPorPagar | null {
   if (!persona.adelantos) return null;
   const ganado = r2(persona.total);
-  const adelantos = r2(persona.adelantos.abiertosPen);
+  const adelantos = r2(persona.adelantos.planillaPen);
   const descontado = r2(persona.adelantos.descontadoPen ?? 0);
   const pagado = r2(persona.pagado ?? 0);
-  const neto = r2(ganado - descontado - pagado - adelantos);
+  const resta = restaDelSueldo({ ganado, descontado, pagado, planilla: adelantos });
   return {
     ganado,
     adelantos,
     descontado,
     pagado,
-    neto,
-    aPagar: neto > 0 ? neto : 0,
-    deuda: neto < 0 ? r2(-neto) : 0,
+    neto: resta.neto,
+    aPagar: resta.aPagar,
+    deuda: resta.sigueDebiendo,
+    cuentaCorriente: r2(Math.max(0, persona.adelantos.cuentaCorrientePen ?? 0)),
   };
 }
 
@@ -404,6 +507,8 @@ export interface TotalQuedaPorPagar {
   sinCuenta: number;
   /** De las que entran, cuántas siguen debiendo (`deuda > 0`). */
   conDeuda: number;
+  /** Σ de lo que deben en cuenta corriente: APARTE, no está en `aPagar` ni en `deuda`. */
+  cuentaCorriente: number;
 }
 
 /**
@@ -415,7 +520,7 @@ export interface TotalQuedaPorPagar {
  * y parece un error de cuentas.
  */
 export function totalQuedaPorPagar(personas: readonly PersonaParaNeto[]): TotalQuedaPorPagar {
-  const total: TotalQuedaPorPagar = { aPagar: 0, deuda: 0, personas: 0, sinCuenta: 0, conDeuda: 0 };
+  const total: TotalQuedaPorPagar = { aPagar: 0, deuda: 0, personas: 0, sinCuenta: 0, conDeuda: 0, cuentaCorriente: 0 };
   for (const p of personas) {
     const q = calcularQuedaPorPagar(p);
     if (!q) {
@@ -425,6 +530,7 @@ export function totalQuedaPorPagar(personas: readonly PersonaParaNeto[]): TotalQ
     total.personas++;
     total.aPagar = r2(total.aPagar + q.aPagar);
     total.deuda = r2(total.deuda + q.deuda);
+    total.cuentaCorriente = r2(total.cuentaCorriente + q.cuentaCorriente);
     if (q.deuda > 0) total.conDeuda++;
   }
   return total;
@@ -434,8 +540,11 @@ export function totalQuedaPorPagar(personas: readonly PersonaParaNeto[]): TotalQ
 export function explicarQuedaPorPagar(q: QuedaPorPagar): string {
   const yaDescontado = q.descontado > 0 ? ` − S/ ${fmt(q.descontado)} ya descontado por planilla` : "";
   const yaPagado = q.pagado > 0 ? ` − S/ ${fmt(q.pagado)} ya pagado el sábado` : "";
-  const resta = `S/ ${fmt(q.ganado)} ganado${yaDescontado}${yaPagado} − S/ ${fmt(q.adelantos)} de adelantos abiertos`;
+  const resta = `S/ ${fmt(q.ganado)} ganado${yaDescontado}${yaPagado} − S/ ${fmt(q.adelantos)} de adelantos por planilla`;
+  const aparte = q.cuentaCorriente > 0
+    ? ` Aparte debe S/ ${fmt(q.cuentaCorriente)} de cuenta corriente: eso no se descuenta del sueldo.`
+    : "";
   return q.deuda > 0
-    ? `${resta}: el adelanto es mayor que lo ganado en este período, sigue debiendo S/ ${fmt(q.deuda)}.`
-    : `${resta} = S/ ${fmt(q.aPagar)} por pagar.`;
+    ? `${resta}: el adelanto es mayor que lo ganado en este período, sigue debiendo S/ ${fmt(q.deuda)}.${aparte}`
+    : `${resta} = S/ ${fmt(q.aPagar)} por pagar.${aparte}`;
 }

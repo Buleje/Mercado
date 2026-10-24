@@ -22,7 +22,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: { expense: { findMany: m.findMany } } }
 vi.mock("@/lib/db/rrhh-colaboradores.db", () => ({ ColaboradoresDB: { listar: m.listar, tarifasDe: m.tarifasDe } }));
 vi.mock("@/lib/db/rrhh-asistencia.db", () => ({ AsistenciaDB: { delPeriodo: m.delPeriodo } }));
 vi.mock("@/lib/db/adelantos.db", () => ({
-  AdelantosDB: { saldosPorPersona: m.saldos, descuentosDePlanilla: m.descuentos },
+  AdelantosDB: { saldosAbiertosPorModalidad: m.saldos, descuentosDePlanilla: m.descuentos },
 }));
 // Lo ganado fijo (420 la semana): acá se prueba la resta, no el cálculo del jornal.
 vi.mock("@/lib/rrhh/ganado", async (original) => ({
@@ -91,5 +91,32 @@ describe("GanadoDB.periodo: lo pagado el sábado", () => {
     const g = await GanadoDB.periodo("t1", { desde: LUNES, hasta: "2026-10-24", hoy: "2026-10-24" });
     expect(m.findMany).not.toHaveBeenCalled();
     expect(g.personas[0].pagado).toBe(0);
+  });
+});
+
+describe("GanadoDB.periodo: la cuenta corriente va aparte (Rosa, 24-10)", () => {
+  beforeEach(() => {
+    m.findMany.mockResolvedValue([]);
+    m.descuentos.mockResolvedValue([]);
+  });
+
+  it("debe S/ 573 de cuenta corriente y nada de planilla: queda por pagar lo ganado entero", async () => {
+    m.saldos.mockResolvedValue([
+      { beneficiarioId: "b1", modalidad: "CUENTA_CORRIENTE", moneda: "PEN", saldoPendiente: 573, cantidad: 2 },
+    ]);
+    const g = await GanadoDB.periodo("t1", { desde: LUNES, hasta: DOMINGO, hoy: DOMINGO });
+    expect(m.saldos).toHaveBeenCalledWith("t1", ["b1"]);
+    const p = g.personas[0];
+    expect(p.adelantos).toMatchObject({ planillaPen: 0, cuentaCorrientePen: 573, abiertosPen: 573, abiertos: 2 });
+    expect(calcularQuedaPorPagar(p)).toMatchObject({ ganado: 420, adelantos: 0, aPagar: 420, deuda: 0, cuentaCorriente: 573 });
+  });
+
+  it("con un adelanto de planilla de 20 además: resta sólo los 20", async () => {
+    m.saldos.mockResolvedValue([
+      { beneficiarioId: "b1", modalidad: "CUENTA_CORRIENTE", moneda: "PEN", saldoPendiente: 573, cantidad: 2 },
+      { beneficiarioId: "b1", modalidad: "DESCUENTO_PLANILLA", moneda: "PEN", saldoPendiente: 20, cantidad: 1 },
+    ]);
+    const g = await GanadoDB.periodo("t1", { desde: LUNES, hasta: DOMINGO, hoy: DOMINGO });
+    expect(calcularQuedaPorPagar(g.personas[0])).toMatchObject({ adelantos: 20, aPagar: 400, cuentaCorriente: 573 });
   });
 });

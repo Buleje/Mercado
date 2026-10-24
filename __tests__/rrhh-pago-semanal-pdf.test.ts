@@ -45,7 +45,7 @@ const base: DatosPagoSemanal = {
   total: 1320,
   comoSale: ["22 dias x S/ 60.00 = S/ 1,320.00"],
   conteo: { PRESENTE: 5, FALTA: 1, TARDANZA: 0 },
-  adelantos: { abiertosPen: 200, descontadoPen: 0 },
+  adelantos: { planillaPen: 200, cuentaCorrientePen: 0, descontadoPen: 0 },
   aPagar: 1120,
   deuda: 0,
 };
@@ -73,7 +73,7 @@ describe("pdfPagoSemanal", () => {
 
   it("si sigue debiendo tras descontar, lo dice en vez de «Queda por pagar»", async () => {
     const texto = textoDelPdf(
-      await pdfPagoSemanal({ ...base, total: 100, adelantos: { abiertosPen: 300, descontadoPen: 0 }, aPagar: 0, deuda: 200 }),
+      await pdfPagoSemanal({ ...base, total: 100, adelantos: { planillaPen: 300, cuentaCorrientePen: 0, descontadoPen: 0 }, aPagar: 0, deuda: 200 }),
     );
     expect(texto).toContain("Sigue debiendo");
     expect(texto).not.toContain("Queda por pagar");
@@ -83,7 +83,17 @@ describe("pdfPagoSemanal", () => {
     const texto = textoDelPdf(await pdfPagoSemanal({ ...base, adelantos: null, aPagar: null, deuda: null }));
     expect(texto).toContain("Juan Perez");
     expect(texto).not.toContain("Queda por pagar");
-    expect(texto).not.toContain("Adelantos abiertos");
+    expect(texto).not.toContain("Adelantos por planilla");
+  });
+
+  it("la cuenta corriente sale aparte y no cambia «Queda por pagar» (Rosa)", async () => {
+    const texto = textoDelPdf(
+      await pdfPagoSemanal({ ...base, total: 120, adelantos: { planillaPen: 0, cuentaCorrientePen: 573, descontadoPen: 0 }, aPagar: 120, deuda: 0 }),
+    );
+    expect(texto).toContain("Queda por pagar");
+    expect(texto).toContain("S/ 120.00");
+    expect(texto).toContain("Cuenta corriente aparte (no se descuenta del sueldo)");
+    expect(texto).toContain("debe S/ 573.00");
   });
 
   it("muestra sólo los estados con conteo > 0", async () => {

@@ -251,7 +251,9 @@ export const PagosSemanaDB = {
       }
 
       const calculo = calcularPagoSemana({ referencia: p.referencia, ganado: p.total, descontadoPrevio, adelantos: abiertos });
-      const otrasDeudas = r2(Math.max(0, (p.adelantos?.abiertosPen ?? 0) - abiertos.reduce((a, x) => a + x.saldoPendiente, 0)));
+      // Lo que debe en cuenta corriente: no se descuenta del sueldo, va aparte.
+      // Sale del mismo corte que «Queda por pagar» de Lo ganado (`saldosDelSueldo`).
+      const otrasDeudas = p.adelantos?.cuentaCorrientePen ?? 0;
       // Personal de paso sin nada esa semana: no se lista (ADR-506).
       if (c.eventual && p.total <= 0 && !gasto && suyos.length === 0) continue;
 

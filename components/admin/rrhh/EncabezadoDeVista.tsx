@@ -71,8 +71,8 @@ export const ENCABEZADOS_RRHH: Readonly<Record<string, Encabezado>> = {
     titulo: "Cuánto ganó cada uno",
     ayuda: {
       what: "Lo ganado por cada persona en el período, según su asistencia y su tarifa. Es de referencia: no es una planilla.",
-      affects: "«Queda por pagar» = lo ganado − lo ya descontado por planilla en el período − los adelantos abiertos. El saldo de adelantos es el de hoy: un adelanto dado antes del período igual se resta.",
-      example: "Ganó S/ 600, ya se le descontó S/ 100 y debe S/ 150 de adelantos: queda por pagar S/ 350.",
+      affects: "«Queda por pagar» = lo ganado − lo ya pagado el sábado − lo ya descontado por planilla − los adelantos por planilla abiertos: lo mismo que entrega el pago del sábado. La cuenta corriente se ve aparte y no se resta. El saldo de adelantos es el de hoy.",
+      example: "Ganó S/ 600, ya se le descontó S/ 100, debe S/ 150 por planilla y S/ 573 de cuenta corriente: queda por pagar S/ 350 y la cuenta corriente sigue en S/ 573.",
     },
     enlaces: [{ texto: "Comisiones de venta", tab: "ventas-caja", vista: "comisiones" }],
   },

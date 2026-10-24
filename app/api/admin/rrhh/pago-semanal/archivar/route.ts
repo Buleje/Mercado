@@ -76,7 +76,11 @@ export async function POST(req: NextRequest) {
           comoSale: explicarGanado(persona),
           conteo: persona.conteo,
           adelantos: persona.adelantos
-            ? { abiertosPen: persona.adelantos.abiertosPen, descontadoPen: persona.adelantos.descontadoPen }
+            ? {
+                planillaPen: persona.adelantos.planillaPen,
+                cuentaCorrientePen: persona.adelantos.cuentaCorrientePen,
+                descontadoPen: persona.adelantos.descontadoPen,
+              }
             : null,
           aPagar: queda?.aPagar ?? null,
           deuda: queda?.deuda ?? null,

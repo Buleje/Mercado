@@ -42,8 +42,12 @@ export interface DatosPagoSemanal {
   comoSale: readonly string[];
   /** Días por estado (`GanadoPersona.conteo`); se muestran los que tienen > 0. */
   conteo?: Readonly<Record<string, number>> | null;
-  /** Adelantos de la cuenta vinculada, ya calculados; `null` = sin cuenta. */
-  adelantos?: { abiertosPen: number; descontadoPen: number } | null;
+  /**
+   * Adelantos de la cuenta vinculada, ya calculados; `null` = sin cuenta.
+   * `planillaPen` se resta de lo ganado; `cuentaCorrientePen` va aparte
+   * (decisión 7 de `lib/rrhh/ganado.ts`).
+   */
+  adelantos?: { planillaPen: number; cuentaCorrientePen: number; descontadoPen: number } | null;
   /** `calcularQuedaPorPagar(...).aPagar`; `null` = sin cuenta vinculada. */
   aPagar?: number | null;
   /** `calcularQuedaPorPagar(...).deuda`; sigue debiendo tras descontar lo ganado. */
@@ -140,8 +144,8 @@ export async function pdfPagoSemanal(d: DatosPagoSemanal): Promise<Uint8Array> {
       derecha(`S/ ${num(d.adelantos.descontadoPen)}`, A4[0] - M, 9.5);
       y -= 14;
     }
-    texto("Adelantos abiertos (a hoy)", M, 9.5);
-    derecha(`S/ ${num(d.adelantos.abiertosPen)}`, A4[0] - M, 9.5);
+    texto("Adelantos por planilla abiertos (a hoy)", M, 9.5);
+    derecha(`S/ ${num(d.adelantos.planillaPen)}`, A4[0] - M, 9.5);
     y -= 16;
     if (d.deuda != null && d.deuda > 0) {
       texto("Sigue debiendo tras descontar lo ganado", M, 10.5, bold);
@@ -149,6 +153,11 @@ export async function pdfPagoSemanal(d: DatosPagoSemanal): Promise<Uint8Array> {
     } else if (d.aPagar != null) {
       texto("Queda por pagar", M, 10.5, bold);
       derecha(`S/ ${num(d.aPagar)}`, A4[0] - M, 11, bold);
+    }
+    if (d.adelantos.cuentaCorrientePen > 0) {
+      y -= 16;
+      texto("Cuenta corriente aparte (no se descuenta del sueldo)", M, 9.5, font, GRIS);
+      derecha(`debe S/ ${num(d.adelantos.cuentaCorrientePen)}`, A4[0] - M, 9.5);
     }
     y -= 8;
     linea();

@@ -15,6 +15,7 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import type { FilaPagoSemanaDTO } from "@/lib/rrhh/pago-semana";
+import CuentaCorrienteAparte from "../CuentaCorrienteAparte";
 import { BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
 import { formatearPEN, pluralizar } from "../rrhh-ui";
 import { calculoDeLaFila, type ComoPagas } from "./use-pago-semana";
@@ -182,11 +183,7 @@ export default function FilaPagoSemana({
               {pluralizar(fila.adelantosDeLaSemana.length, "adelanto", "adelantos")})
             </p>
           )}
-          {fila.otrasDeudas > 0 && (
-            <p className="text-xs text-[var(--text-secondary)]">
-              Cuenta corriente: {formatearPEN(fila.otrasDeudas)} (no se descuenta del sueldo)
-            </p>
-          )}
+          <CuentaCorrienteAparte monto={fila.otrasDeudas} beneficiarioId={fila.beneficiarioId} className="flex text-xs" />
         </div>
       </td>
       <td data-label="Ganado" className="text-right tabular-nums">

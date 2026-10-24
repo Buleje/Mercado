@@ -34,6 +34,7 @@
 
 import { proponerDescuentos, type AdelantoDePlanilla } from "@/lib/adelantos/planilla-lote";
 import { semanaDe, sumarDias } from "./fechas";
+import { restaDelSueldo } from "./ganado";
 import type { FechaKey, Modalidad } from "./tipos";
 
 /** El tipo de aviso del sábado en la campana (sólo la gestión lo ve). */
@@ -167,8 +168,12 @@ export function calcularPagoSemana(e: EntradaPago): CalculoPago {
   const descontables = adelantosDescontables(e.adelantos);
   const saldoTotal = r2(descontables.reduce((a, x) => a + x.saldoPendiente, 0));
 
+  // La misma resta que «Queda por pagar» de Lo ganado (decisión 7 de
+  // `lib/rrhh/ganado.ts`): lo que se descuenta y lo que se entrega no pueden
+  // diferir entre las dos pantallas. Acá sólo se reparte el descuento.
+  const resta = restaDelSueldo({ ganado: base ?? 0, descontado: descontadoPrevio, pagado: 0, planilla: saldoTotal });
   const lineas: LineaDelPago[] = [];
-  let restante = base == null ? 0 : r2(Math.max(0, base - descontadoPrevio));
+  let restante = resta.aDescontar;
   for (const a of descontables) {
     if (restante <= 0) break;
     const descuento = r2(Math.min(restante, a.saldoPendiente));
@@ -184,8 +189,8 @@ export function calcularPagoSemana(e: EntradaPago): CalculoPago {
     });
   }
   const aDescontar = r2(lineas.reduce((a, l) => a + l.descuento, 0));
-  const neto = base == null ? 0 : r2(Math.max(0, base - descontadoPrevio - aDescontar));
-  return { tipo, base, descontadoPrevio, lineas, aDescontar, neto, sigueDebiendo: r2(saldoTotal - aDescontar) };
+  const neto = base == null ? 0 : resta.aPagar;
+  return { tipo, base, descontadoPrevio, lineas, aDescontar, neto, sigueDebiendo: resta.sigueDebiendo };
 }
 
 /** Lo mínimo de una fila para sumar los totales de la semana. */

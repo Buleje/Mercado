@@ -149,8 +149,17 @@ export interface FichaColaboradorDTO {
     sugeridos: { id: string; nombre: string }[];
     adminUser: { id: string; username: string; role: string } | null;
   };
-  /** Sólo completo y con beneficiario vinculado. */
-  cuenta?: { adelantosAbiertosPen: number; abiertos: number; otrasMonedas: Record<string, number> } | null;
+  /**
+   * Sólo completo y con beneficiario vinculado. `planillaPen` sale del sueldo;
+   * `cuentaCorrientePen` no (decisión 7 de `lib/rrhh/ganado.ts`).
+   */
+  cuenta?: {
+    adelantosAbiertosPen: number;
+    abiertos: number;
+    otrasMonedas: Record<string, number>;
+    planillaPen: number;
+    cuentaCorrientePen: number;
+  } | null;
   contratos: ContratoDeColaboradorDTO[];
   contratosSugeridos: ContratoDeColaboradorDTO[];
   mes: { mes: string; conteo: Record<EstadoAsistencia, number>; sinMarcar: number };
@@ -260,6 +269,23 @@ export interface GanadoPersona {
   referencia: { modalidad: Modalidad; monto: number } | null;
 }
 
+/**
+ * Lo abierto de una persona en Adelantos, partido en lo que sale del sueldo y
+ * lo que no (decisión 7 de `lib/rrhh/ganado.ts`). Montos en soles, sólo DADO.
+ */
+export interface SaldoDelSueldo {
+  /** Todo lo abierto en soles (planilla + cuenta corriente). */
+  abiertosPen: number;
+  /** Cuántos adelantos abiertos tiene, de cualquier modalidad y moneda. */
+  abiertos: number;
+  /** Lo abierto POR PLANILLA: lo único que se resta de lo ganado y descuenta el pago del sábado. */
+  planillaPen: number;
+  /** Cuántos adelantos de planilla en soles siguen abiertos. */
+  planillaAbiertos: number;
+  /** Lo abierto que NO sale del sueldo (cuenta corriente, entregas pactadas): se muestra aparte. */
+  cuentaCorrientePen: number;
+}
+
 export interface GanadoDTO {
   desde: FechaKey;
   hasta: FechaKey;
@@ -271,7 +297,7 @@ export interface GanadoDTO {
     /** Lo ya entregado por el pago del sábado de las semanas enteras del período (decisión 6 de `lib/rrhh/ganado.ts`). */
     pagado: number;
     /** `descontadoPen`: descuentos de planilla de ESTE período (ya no están abiertos). */
-    adelantos: { abiertosPen: number; abiertos: number; descontadoPen: number } | null;
+    adelantos: (SaldoDelSueldo & { descontadoPen: number }) | null;
   })[];
   /** Σ personas[].total, exacta. */
   total: number;

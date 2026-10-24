@@ -11,7 +11,9 @@
  * avisos) y no había ninguna pista de que fuera clicable.
  *
  * «Queda por pagar» (ADR-417) sale de `calcularQuedaPorPagar`, la misma función
- * pura que suma el total del pie — nunca una resta escrita en el JSX.
+ * pura que suma el total del pie — nunca una resta escrita en el JSX. Resta
+ * sólo los adelantos por planilla (los mismos que descuenta el pago del
+ * sábado); la cuenta corriente sale aparte, bajo el nombre (decisión 7).
  */
 
 import { useState } from "react";
@@ -20,6 +22,7 @@ import { calcularQuedaPorPagar, explicarGanado, explicarQuedaPorPagar } from "@/
 import { CLASE_CHIP } from "../rrhh-form";
 import { CLASE_FOCUS_FILA, etiquetaModalidad, filaClicableProps, formatearPEN, pluralizar } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
+import CuentaCorrienteAparte from "../CuentaCorrienteAparte";
 import type { GanadoDTO } from "@/lib/rrhh/tipos";
 import { formatNumber } from "@/lib/format";
 
@@ -74,6 +77,11 @@ export default function FilaGanado({
             <span>
               {persona.nombre}
               {persona.puesto && <span className="block text-sm font-normal text-[var(--text-tertiary)]">{persona.puesto}</span>}
+              <CuentaCorrienteAparte
+                monto={queda?.cuentaCorriente ?? 0}
+                beneficiarioId={persona.beneficiarioId}
+                className="mt-0.5 flex font-normal"
+              />
             </span>
           </span>
         </td>
@@ -82,7 +90,7 @@ export default function FilaGanado({
         <td className="whitespace-nowrap">{tarifaTexto}</td>
         <td className="text-right font-bold tabular-nums">{formatearPEN(persona.total)}</td>
         <td className="text-right tabular-nums">
-          {persona.adelantos ? formatearPEN(persona.adelantos.abiertosPen) : "—"}
+          {persona.adelantos ? formatearPEN(persona.adelantos.planillaPen) : "—"}
           {(persona.adelantos?.descontadoPen ?? 0) > 0 && (
             <span className="block text-sm text-[var(--text-tertiary)]">
               ya descontado {formatearPEN(persona.adelantos?.descontadoPen ?? 0)}
