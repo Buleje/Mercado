@@ -61,6 +61,14 @@ export interface PiezaCubicada {
    * que mantiene la pantalla, el Excel y el Anexo 04 diciendo lo mismo.
    */
   tipo?: import("./cubicacion-tipo").TipoComercial;
+  /**
+   * S/ por pie tablar de ESTA pieza al guardar (24-10, modal «Guardar
+   * cubicación»): el cubicador precia por especie y por el trato de cada
+   * dueño, y un solo `precioPt` en la cubicación no lo dice. El valor guardado
+   * sale de acá (`construirRegistro`); ausente = el `precioPt` del lote. En
+   * la tabla no se lee: el precio vivo lo da `usePrecioCubicador`.
+   */
+  precio?: number;
   /** Pie tablar total (ya multiplicado por cantidad). */
   pieTablar: number;
   /** m³ total (ya multiplicado por cantidad). */

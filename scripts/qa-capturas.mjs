@@ -676,7 +676,10 @@ async function recorrido(t, primero) {
           await esperarQuietud({ quieto: 500, tope: 1500 });
         }
         else if (tipo === "marcar") await visible(page, valor).evaluate((el) => el.click()); else if (tipo === "eval") {
-          if (evalsTodos) {
+          /* Un eval que recarga o navega (el preset `cubicador-lote` siembra y hace
+             `location.reload()`) corre UNA vez: repetido por ancho dejaba el recorrido en Inicio
+             (24-10, 3 corridas perdidas). */
+          if (evalsTodos && !/location\.(reload|assign|replace)\b|location\.href\s*=/.test(String(valor))) {
             /* `--evals-todos` (10-10): el eval corre en CADA ancho y CADA tema y queda rotulado.
                4 carriles de la noche midieron a 400 con una corrida extra porque sólo se guardaba
                el 1.er tema y el 1.er ancho. */
@@ -691,13 +694,23 @@ async function recorrido(t, primero) {
         }
         else if (tipo === "evalDialogo") {
           const { texto, js } = valor;
-          const v = await page.evaluate(({ texto, js }) => {
+          const medir = () => page.evaluate(({ texto, js }) => {
             const re = new RegExp(texto, "i");
             const d = [...document.querySelectorAll("[role=dialog]")].find((x) => re.test(x.textContent || ""));
             if (!d) throw new Error(`evalDialogo: ningún [role=dialog] con «${texto}»`);
             return new Function("d", `return (${js});`)(d);
           }, { texto: String(texto), js: String(js) });
-          if (primero) evals.push({ paso: i, valor: v });
+          /* Con `--evals-todos` corre en cada ancho y tema, como {"eval"} (24-10: un carril
+             repitió la corrida a 400 porque evalDialogo sólo medía la primera combinación). */
+          if (evalsTodos) {
+            const vp = page.viewportSize();
+            for (const an of anchos) {
+              await page.setViewportSize({ width: an, height: vp?.height ?? 900 });
+              await page.waitForTimeout(400);
+              evals.push({ paso: i, tema: t, ancho: an, valor: await medir() });
+            }
+            if (vp) await page.setViewportSize(vp);
+          } else { const v = await medir(); if (primero) evals.push({ paso: i, valor: v }); }
         }
         else if (tipo === "elegirPrimera") {
           const [sel, excluir] = valor;

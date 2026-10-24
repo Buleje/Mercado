@@ -12,23 +12,26 @@
  */
 import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, FileText, Loader2, RefreshCw, Search, X } from "@buleje/design-system/icons";
+import { AlertTriangle, FileText, GitCompareArrows, Loader2, RefreshCw, Search, X } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { codigoDeHoja, filtrarPorHoja } from "@/components/admin/forestal/cubicador-papel/papel-cubicador";
 import { usePapelesDeCubicaciones } from "@/components/admin/forestal/cubicador-papel/use-papel";
-import { corridasDeCubicacion, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { corridasDeCubicacion, textosDeFicha, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { m3DesdePt } from "@/lib/forestal/cubicacion";
 import { formatNumber } from "@/lib/format";
 import { logger } from "@/lib/logger";
 import { TarjetaGuardada, duenosDe, especiesDe } from "./cubicador-guardadas-tarjeta";
 import { useGuardadasDelCubicador } from "./hooks/use-guardadas-del-cubicador";
+import { DetalleCubicacionModal } from "./cubicador-detalle-modal";
+import { CompararCubicacionesModal } from "./cubicador-comparar-modal";
 
 const TODAS = "";
 
 const camposDeBusqueda = (c: CubicacionRegistro) => ({
   codigos: [codigoDeHoja("aserrada", c.id), c.id, c.gtfNumber],
-  textos: [c.nombre, c.cliente, c.especie, c.fecha, c.notas, c.gtfNumber, ...especiesDe(c), ...duenosDe(c)],
+  textos: [c.nombre, c.cliente, c.especie, c.fecha, c.notas, c.gtfNumber, ...especiesDe(c), ...duenosDe(c), ...textosDeFicha(c.ficha)],
 });
 
 export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarToken, onCerrar }: {
@@ -46,6 +49,13 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
   const [busqueda, setBusqueda] = useState("");
   const [especie, setEspecie] = useState(TODAS);
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  /* Una ventana a la vez: «Comparar con otra…» desde el detalle lo cierra y abre el comparador. */
+  const [detalleId, setDetalleId] = useState<string | null>(null);
+  const [comparar, setComparar] = useState<{ aId: string | null } | null>(null);
+  const detalle = detalleId ? lista.find((c) => c.id === detalleId) ?? null : null;
+  const puedeComparar = lista.length > 1;
+  /* La lista dentro de «Producir sin lote» ya está en una ventana: las suyas van encima. */
+  const dentroDeVentana = Boolean(onCerrar);
 
   const especies = useMemo(() => [...new Set(lista.flatMap(especiesDe))].sort((a, b) => a.localeCompare(b, "es")), [lista]);
   const visibles = useMemo(() => {
@@ -98,8 +108,18 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
           affects="«Abrir en el cubicador» lo carga para cambiarlo; al guardar, se guarda encima de la misma."
           example="Buscas «MA-7K3» (el código impreso en su hoja) o «Tornillo» y sale el lote."
         />
+        {puedeComparar && (
+          <button
+            type="button"
+            onClick={() => setComparar({ aId: null })}
+            className={button({ variant: "secondary", className: "ml-auto gap-1.5 px-4" })}
+            data-accion="comparar-dos"
+          >
+            <GitCompareArrows className="h-4 w-4" aria-hidden /> Comparar dos
+          </button>
+        )}
         {onCerrar && (
-          <button type="button" onClick={onCerrar} aria-label="Cerrar las guardadas" className="ml-auto inline-flex min-h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+          <button type="button" onClick={onCerrar} aria-label="Cerrar las guardadas" className={`${puedeComparar ? "" : "ml-auto "}inline-flex min-h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)]`}>
             <X className="h-4 w-4" aria-hidden />
           </button>
         )}
@@ -167,6 +187,8 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
                 borrando={borrando === c.id}
                 copiado={copiadoId === c.id}
                 onAbrir={() => onAbrir(c)}
+                onVerDetalle={() => setDetalleId(c.id)}
+                onComparar={puedeComparar ? () => setComparar({ aId: c.id }) : undefined}
                 onDuplicar={() => duplicar(c)}
                 onCopiarCodigo={() => copiarCodigo(c)}
                 onBorrar={() => void pedirBorrar(c)}
@@ -174,6 +196,33 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
             ))}
           </div>
         </>
+      )}
+
+      {detalle && (
+        <DetalleCubicacionModal
+          c={detalle}
+          enLibro={enLibro[detalle.id]}
+          aboveModals={dentroDeVentana}
+          puedeComparar={puedeComparar}
+          onClose={() => setDetalleId(null)}
+          onAbrir={() => {
+            setDetalleId(null);
+            onAbrir(detalle);
+          }}
+          onComparar={() => {
+            setDetalleId(null);
+            setComparar({ aId: detalle.id });
+          }}
+        />
+      )}
+      {comparar && (
+        <CompararCubicacionesModal
+          key={comparar.aId ?? "dos"}
+          lista={lista}
+          inicialA={comparar.aId}
+          aboveModals={dentroDeVentana}
+          onClose={() => setComparar(null)}
+        />
       )}
     </section>
   );

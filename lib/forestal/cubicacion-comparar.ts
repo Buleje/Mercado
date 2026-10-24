@@ -41,9 +41,11 @@ export function compararLotes(
   b: PiezaCubicada[],
   dim: DimensionResumen = "tipo",
   precio: PrecioPt = 0,
+  /** El de `b` si no es el mismo: una guardada se valoriza con SUS precios, el lote en pantalla con los de hoy. */
+  precioB: PrecioPt = precio,
 ): Comparacion {
   const ra = agruparPor(a, dim, precio);
-  const rb = agruparPor(b, dim, precio);
+  const rb = agruparPor(b, dim, precioB);
   const mapA = new Map(ra.grupos.map((g) => [g.label, g]));
   const mapB = new Map(rb.grupos.map((g) => [g.label, g]));
 

@@ -9,7 +9,7 @@ import {
   CubicacionVinculoError,
   ForestCubicacionesDB,
 } from "@/lib/db/forest-cubicaciones.db";
-import { corridasDeCubicacion } from "@/lib/forestal/cubicacion-registro";
+import { corridasDeCubicacion, FICHA_MAX, normalizarFicha } from "@/lib/forestal/cubicacion-registro";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
@@ -51,7 +51,23 @@ const piezaSchema = z.object({
   tipo: z.enum(ORDEN_TIPO as [TipoComercial, ...TipoComercial[]]).nullish(),
   /** Nota de patio de esta pieza (candado o suelta, ver observacion-de-pieza.ts). */
   observacion: z.string().trim().max(OBSERVACION_MAX).nullish(),
+  /** S/ por PT de esta pieza (especie, trato del dueño). El valor lo suma el servidor. */
+  precio: z.coerce.number().nonnegative().max(999999).nullish(),
 });
+
+const textoFicha = z.string().trim().max(FICHA_MAX).nullish();
+const idFicha = z.string().trim().max(60).nullish();
+/** Comprador, comunidad de origen, permiso y camión (24-10). `null` entero = borrar la ficha. */
+const fichaSchema = z.object({
+  clienteParteId: idFicha,
+  comunidad: textoFicha,
+  comunidadParteId: idFicha,
+  tituloHabilitante: textoFicha,
+  placa: textoFicha,
+  chofer: textoFicha,
+  destino: textoFicha,
+  lugar: textoFicha,
+}).strict();
 
 const saveSchema = z.object({
   id: z.string().trim().max(60).optional(),
@@ -77,6 +93,8 @@ const saveSchema = z.object({
   /** `updatedAt` de la versión que se leyó (ADR-445): si la guardada es otra,
    *  409 en vez de reescribir piezas viejas. Opcional: sin él, como siempre. */
   updatedAt: z.string().trim().max(40).optional(),
+  /** Ausente = conserva la guardada (Vincular la reenvía sin ella); `null` = la borra. */
+  ficha: fichaSchema.nullish(),
   // Una cubicación de patio no pasa de unos cientos de filas; el tope protege
   // el KV (es un JSON) sin estorbar el uso real.
   piezas: z.array(piezaSchema).min(1).max(1000),
@@ -153,11 +171,10 @@ export const POST = withApiHandler("forestal-cubicaciones-post", async (req: Nex
       auth.tenantId,
       {
         ...datos,
-        cliente: parsed.data.cliente ?? undefined,
+        /* cliente, notas, GTF y ficha: `null` borra, ausente conserva (`datosQueSeConservan`). */
         especie: parsed.data.especie ?? undefined,
-        notas: parsed.data.notas ?? undefined,
         ctpEntryId: parsed.data.ctpEntryId ?? undefined,
-        gtfNumber: parsed.data.gtfNumber ?? undefined,
+        ficha: parsed.data.ficha === undefined ? undefined : parsed.data.ficha === null ? null : (normalizarFicha(parsed.data.ficha) ?? null),
         piezas: parsed.data.piezas as unknown as Record<string, unknown>[],
       },
       auth.username ?? "unknown",

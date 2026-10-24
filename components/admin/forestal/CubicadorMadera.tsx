@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Truck, Maximize2, Minimize2, ArrowUp, UserCheck } from "@buleje/design-system/icons";
+import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Truck, Maximize2, Minimize2, ArrowUp, UserCheck } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -44,6 +44,10 @@ import { TipoSelect } from "./tipo-badge";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import { AccionLote, MenuAcciones } from "./cubicador-acciones";
 import CuentaDeMadera from "./cubicador-madera-cuenta";
+import { ProveedorCuentaDeMadera } from "./cubicador-madera-cuenta-contexto";
+import GuardarCubicacionModal from "./cubicador-guardar-modal";
+import { cuerpoDeDatos, datosDeGuardada, datosVacios, type DatosDeLaCubicacion } from "./cubicador-guardar-tipos";
+import { preciosParejosPorEspecie } from "@/lib/forestal/precios-de-guardada";
 import { useTecladoGrilla, enfocarCelda } from "./celdas-excel";
 import {
   AsaRelleno,
@@ -102,7 +106,7 @@ import { PIE_COMO_TABLA } from "./loth-kardex-estilos";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 /** Los modales del cubicador que se abren sin redibujar la tabla. */
-type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar" | "variado" | "trasera";
+type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar" | "variado" | "trasera" | "guardar";
 import { formatNumber } from "@/lib/format";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -570,13 +574,13 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
   const [enviado, setEnviado] = useState(false); // ya quedó registrado en el Libro CTP
   /** Cubicación guardada que se está editando (null = lote nuevo sin guardar). */
   const [cubicacionActual, setCubicacionActual] = useState<{ id: string; nombre: string } | null>(null);
-  const [showGuardar, setShowGuardar] = useState(false);
   const [showHistorial, setShowHistorial] = useState(false);
   const [loteCreado, setLoteCreado] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [guardadoOk, setGuardadoOk] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
-  const [form, setForm] = useState({ nombre: "", fecha: hoyISO(), cliente: "", notas: "" });
+  /** Los datos con que se guarda (modal «Guardar cubicación»): nombre, comprador, CCNN, GTF, camión… */
+  const [form, setForm] = useState<DatosDeLaCubicacion>(datosVacios);
   /** La sección que se ve (`?sub=`). Dentro de «Producir sin lote» no hay
    *  secciones: el envoltorio le da una URL propia y se apila como antes. */
   const { seccion, irA, visitadas } = useSeccionDelCubicador();
@@ -2069,14 +2073,17 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             id: cubicacionActual?.id || undefined,
             nombre: cubicacionActual?.nombre
               || nombreSugerido(speciesCommon || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }),
+            /* Comprador, notas, GTF y ficha como están en pantalla (vacío = borrar, igual que «Guardar»). */
+            ...cuerpoDeDatos(form),
             fecha: form.fecha || hoyISO(),
-            cliente: form.cliente.trim() || undefined,
             especie: speciesCommon || undefined,
             precioPt: precio,
             /* El código de la troza es interno del cubicado: no sale al servidor. */
             /* En el orden del papel, no el de la tabla: con «más nuevas
-               primero» el Anexo 04 saldría al revés (`piezasParaVincular`). */
-            piezas: piezasParaVincular(filasVinculadas, ordenRef.current),
+               primero» el Anexo 04 saldría al revés (`piezasParaVincular`).
+               Una YA guardada no manda precios: el servidor conserva el de cada
+               pieza y el valor congelado no cambia sin apretar «Guardar». */
+            piezas: piezasParaVincular(filasVinculadas, ordenRef.current, cubicacionActual?.id ? undefined : precioDe),
             ctpEntryId: entryId,
           }),
         })
@@ -2109,8 +2116,13 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
    * «Cuenta ▾» lo guarda así antes de subirlo a la cuenta, en `silencioso`
    * (sin el aviso propio: el de la cuenta dice lo que pasó).
    */
-  const guardarCubicacion = async ({ silencioso = false }: { silencioso?: boolean } = {}): Promise<{ id: string; nombre: string } | null> => {
+  const guardarCubicacion = async (
+    { silencioso = false, datos }: { silencioso?: boolean; datos?: DatosDeLaCubicacion } = {},
+  ): Promise<{ id: string; nombre: string } | null> => {
     if (!rows.length || guardando) return null;
+    /* Los del modal pasan al lote (aunque falle, lo escrito no se pierde). */
+    const d = datos ?? form;
+    if (datos) setForm(datos);
     setGuardando(true);
     setErrMsg(null);
     try {
@@ -2120,14 +2132,14 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
         credentials: "include",
         body: JSON.stringify({
           id: cubicacionActual?.id || undefined,
-          nombre: form.nombre.trim() || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }),
-          fecha: form.fecha,
-          cliente: form.cliente.trim() || null,
+          nombre: d.nombre.trim() || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }),
+          /* Fecha, comprador, notas, GTF y la ficha (CCNN, permiso, camión): completos, vacío = se borra. */
+          ...cuerpoDeDatos(d),
           especie: especie || null,
-          notas: form.notas.trim() || null,
           precioPt: precio,
-          /* En el orden del papel: el Anexo 04 numera lo guardado tal cual llega. */
-          piezas: piezasParaGuardar(rows, ordenFilas),
+          /* En el orden del papel: el Anexo 04 numera lo guardado tal cual llega,
+             cada pieza con el precio con que se valorizó (el de su especie o su trato). */
+          piezas: piezasParaGuardar(rows, ordenFilas, precioDe),
           /* La trasera viaja con la cubicación: armada en la PC, se ve en el celular. */
           trasera: { ids: [...trasera.ids], anchoM: trasera.anchoM },
         }),
@@ -2143,7 +2155,6 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       const { cubicacion } = (await r.json()) as { cubicacion: CubicacionRegistro };
       setCubicacionActual({ id: cubicacion.id, nombre: cubicacion.nombre });
       marcarGuardado(rows);
-      setShowGuardar(false);
       setHistorialToken((v) => v + 1);
       if (!silencioso) {
         setGuardadoOk(cubicacion.nombre);
@@ -2180,7 +2191,16 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     trasera.restaurar(c.trasera?.ids ?? [], c.trasera?.anchoM);
     setEspecie(c.especie ?? "");
     precios.setPrecioPt(c.precioPt ? String(c.precioPt) : "");
-    setForm({ nombre: c.nombre, fecha: c.fecha, cliente: c.cliente ?? "", notas: c.notas ?? "" });
+    /* Cada pieza trae su precio (24-10): si es uno por especie y el cubicador
+       está «A mano», vuelven esos precios y el lote vale lo mismo que el día que
+       se guardó. Sólo se tocan SUS especies (las demás quedan como estaban) y
+       el modo no se cambia: con tratos por dueño, mandan los tratos. */
+    const parejos = precios.modo === "manual" ? preciosParejosPorEspecie(c.piezas, c.precioPt) : null;
+    if (parejos) {
+      const suyas = new Set(c.piezas.map((p) => p.especie?.trim().toLowerCase() ?? "").filter(Boolean));
+      for (const esp of suyas) precios.cambiarPrecioEspecie(esp, parejos[esp] ?? "");
+    }
+    setForm(datosDeGuardada(c));
     setCubicacionActual(c.id ? { id: c.id, nombre: c.nombre } : null);
     setShowHistorial(false);
     setLastAdded(null);
@@ -2203,7 +2223,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     }))) return;
     limpiar();
     setCubicacionActual(null);
-    setForm({ nombre: "", fecha: hoyISO(), cliente: "", notas: "" });
+    setForm(datosVacios());
     setEnviado(false);
   };
 
@@ -2243,6 +2263,19 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       .catch(() => { setErrMsg(err); pushToast({ tono: "error", msg: err }); });
 
   return (
+    /* La cuenta del lote, una vez: la leen «Cuenta ▾» y el modal «Guardar cubicación». */
+    <ProveedorCuentaDeMadera
+      activo={!onLote}
+      rows={rows}
+      especieDelLote={especie || null}
+      cliente={form.cliente}
+      fechaDelLote={form.fecha}
+      refId={cubicacionActual?.id ?? null}
+      precioDe={precioDe}
+      precioGeneral={precio}
+      guardarLote={() => guardarCubicacion({ silencioso: true })}
+      avisar={pushToast}
+    >
     <div ref={cubicadorRootRef} className="group relative space-y-4">
       {/* Secciones (Brandon 23-10: «ir en sección y sección; que no estén todas
           visibles en una pantalla»): Cargar · Lote · Guardadas · Grabaciones, una
@@ -2434,14 +2467,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                   label={cubicacionActual ? "Actualizar" : "Guardar"}
                   Icono={Save}
                   destacado
-                  hint="Guardar esta cubicación con nombre y fecha"
-                  onClick={() => {
-                    setForm((f) => ({
-                      ...f,
-                      nombre: f.nombre || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }),
-                    }));
-                    setShowGuardar((v) => !v);
-                  }}
+                  hint="Guardar esta cubicación: comprador, CCNN, GTF, precio y el resumen por especie"
+                  onClick={() => modales.abrir("guardar")}
                 />
                 <AccionLote
                   label={enviando ? "Registrando…" : "Enviar al Libro"}
@@ -2571,17 +2598,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               />
             )}
             {!onLote && (
-              <CuentaDeMadera
-                rows={rows}
-                especieDelLote={especie || null}
-                cliente={form.cliente}
-                fechaDelLote={form.fecha}
-                refId={cubicacionActual?.id ?? null}
-                precioDe={precioDe}
-                precioGeneral={precio}
-                guardarLote={() => guardarCubicacion({ silencioso: true })}
-                avisar={pushToast}
-              />
+              <CuentaDeMadera />
             )}
 
             {/* Cambiar de lote. «Vaciar» vive acá abajo y separada: borra el
@@ -2694,70 +2711,6 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               abiertaId={cubicacionActual?.id}
               recargarToken={historialToken}
             />
-          </div>
-        )}
-
-        {/* Formulario de guardado: nombre, fecha, cliente y notas */}
-        {showGuardar && (
-          <div className="mb-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-4">
-            <p className="mb-3 text-sm font-bold text-[var(--text-primary)]">
-              {cubicacionActual ? "Actualizar la cubicación" : "Guardar esta cubicación"}
-              <span className="ml-2 font-mono text-xs font-normal text-[var(--text-tertiary)]">
-                {totales.piezas} piezas · {fmtPt(totales.pt)} PT{conValor ? ` · S/ ${soles(valorLote)}` : ""}
-              </span>
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Nombre</span>
-                <input
-                  value={form.nombre}
-                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                  placeholder="Lote Tornillo · Sr. Pérez"
-                  maxLength={120}
-                  className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Fecha del trabajo</span>
-                <input
-                  type="date"
-                  value={form.fecha}
-                  onChange={(e) => setForm({ ...form, fecha: e.target.value || hoyISO() })}
-                  className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Cliente o destino (opcional)</span>
-                <input
-                  value={form.cliente}
-                  onChange={(e) => setForm({ ...form, cliente: e.target.value })}
-                  placeholder="Maderera del Centro"
-                  maxLength={120}
-                  className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Notas (opcional)</span>
-                <input
-                  value={form.notas}
-                  onChange={(e) => setForm({ ...form, notas: e.target.value })}
-                  placeholder="Entregado en camión, falta el saldo"
-                  maxLength={600}
-                  className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                />
-              </label>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => void guardarCubicacion()} disabled={guardando}
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50">
-                {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                {guardando ? "Guardando…" : cubicacionActual ? "Actualizar" : "Guardar"}
-              </button>
-              <button type="button" onClick={() => setShowGuardar(false)} className="h-12 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                Cancelar
-              </button>
-              <span className="text-xs text-[var(--text-tertiary)]">Queda en tu cuenta: la ves desde cualquier dispositivo.</span>
-            </div>
           </div>
         )}
 
@@ -3436,6 +3389,20 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 onCerrar={() => cerrar("enviar")}
               />
             )}
+
+            {abiertos.has("guardar") && (
+              <GuardarCubicacionModal
+                inicial={form}
+                nombreSugerido={nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 })}
+                actualizando={cubicacionActual?.nombre ?? null}
+                rows={rows}
+                precios={precios}
+                especiesLote={especiesLote}
+                especieDelLote={especie || null}
+                onGuardar={(datos, { silencioso }) => guardarCubicacion({ datos, silencioso })}
+                onCerrar={(datos) => { if (datos) setForm(datos); cerrar("guardar"); }}
+              />
+            )}
           </>
         )}
       </AnfitrionDeModales>
@@ -3451,6 +3418,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       {/* Toasts flotantes de acción (agregar / eliminar / guardar / importar…) */}
       <ActionToasts toasts={toasts} onDismiss={dismissToast} />
     </div>
+    </ProveedorCuentaDeMadera>
   );
 }
 

@@ -14,12 +14,14 @@
  */
 import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { BookOpen, ChevronDown, Copy, FileText, FolderOpen, Loader2, Trash2 } from "@buleje/design-system/icons";
+import { BookOpen, ChevronDown, Copy, Eye, FileText, FolderOpen, GitCompareArrows, Loader2, Trash2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import type { EnLibroDeGuardada } from "@/components/admin/forestal/hooks/use-guardadas-del-cubicador";
 import { PapelDelCubicador } from "@/components/admin/forestal/cubicador-papel/PapelDelCubicador";
 import { codigoDeHoja } from "@/components/admin/forestal/cubicador-papel/papel-cubicador";
+import { especiesDeCubicacion } from "@/lib/forestal/cubicacion-diferencias";
 import { corridasDeCubicacion, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { m3DesdePt } from "@/lib/forestal/cubicacion";
 import { formatNumber } from "@/lib/format";
@@ -38,19 +40,22 @@ export function fechaDeLaGuardada(iso: string, anioDeHoy = new Date().getUTCFull
 const distintos = (xs: readonly (string | null | undefined)[]): string[] =>
   [...new Set(xs.map((x) => (x ?? "").trim()).filter(Boolean))];
 
-/** Las especies del lote: las de sus piezas; si ninguna la tiene, la del lote. */
-export const especiesDe = (c: CubicacionRegistro): string[] => {
-  const dePiezas = distintos(c.piezas.map((p) => p.especie));
-  return dePiezas.length ? dePiezas : distintos([c.especie]);
-};
+/** Las especies del lote: las de sus piezas; si ninguna la tiene, la del lote (single source en `cubicacion-diferencias`). */
+export const especiesDe = (c: CubicacionRegistro): string[] => especiesDeCubicacion(c);
 
 /** De quién es la madera: los dueños de sus piezas y el cliente del lote. */
 export const duenosDe = (c: CubicacionRegistro): string[] => distintos([...c.piezas.map((p) => p.dueno), c.cliente]);
 
-const BOTON_ABRIR =
-  "inline-flex min-h-12 flex-[1_1_auto] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-4 text-base font-bold text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2";
+/** «CCNN Santa Rosa», «C.N. Puerto Nuevo», «Comunidad …»: si ya lo dice, no se antepone otro «CCNN». */
+const YA_DICE_CCNN = /^(ccnn|c\.\s?n\.?|cc\.?\s?nn\.?|comunidad)(\s|$)/i;
 
-export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiado, onAbrir, onDuplicar, onCopiarCodigo, onBorrar }: {
+/* Los botones del DS (48 px, ADR-489): la acción principal arriba, a lo ancho;
+   debajo «Ver detalle» y «Papel» parejos (los tres en una fila no entran en la
+   tarjeta y «Papel» quedaba solo en la segunda). */
+const BOTON_ABRIR = button({ variant: "accent", className: "basis-full px-4 text-base" });
+const BOTON_SECUNDARIO = button({ variant: "secondary", className: "min-w-0 flex-1 gap-1.5 px-4" });
+
+export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiado, onAbrir, onVerDetalle, onComparar, onDuplicar, onCopiarCodigo, onBorrar }: {
   c: CubicacionRegistro;
   /** Las líneas vivas del Libro que ampara (del servidor). Ausente = no está en el Libro. */
   enLibro?: EnLibroDeGuardada;
@@ -61,6 +66,10 @@ export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiad
   borrando: boolean;
   copiado: boolean;
   onAbrir: () => void;
+  /** El detalle en una ventana: datos, cifras y resúmenes, sin abrirla en el cubicador. */
+  onVerDetalle: () => void;
+  /** Comparar contra otra guardada; ausente = no hay otra. */
+  onComparar?: () => void;
   onDuplicar: () => void;
   onCopiarCodigo: () => void;
   onBorrar: () => void;
@@ -70,10 +79,15 @@ export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiad
   const yaNoEsta = !enLibro && corridasDeCubicacion(c).length > 0;
   const lineas = enLibro ? [...enLibro.lineas].sort((a, b) => a.lineNo - b.lineNo).map((l) => `N° ${l.lineNo}`).join(", ") : "";
   const especies = especiesDe(c);
-  const duenos = duenosDe(c);
+  /* El «De …» son los dueños de las piezas: el cliente va en su propia línea. */
+  const duenos = distintos(c.piezas.map((p) => p.dueno));
+  const comunidad = c.ficha?.comunidad;
   const pt = c.totales.pieTablar;
   const codigo = codigoDeHoja("aserrada", c.id);
   const acciones: MenuAccion[] = [
+    ...(onComparar
+      ? [{ id: "comparar", label: "Comparar con otra…", hint: "Diferencia en PT, m³, piezas y medidas contra otra guardada", icon: GitCompareArrows, onSelect: onComparar }]
+      : []),
     { id: "duplicar", label: "Duplicar", hint: "Abre una copia: la original queda como está", icon: Copy, onSelect: onDuplicar },
     {
       id: "codigo",
@@ -161,6 +175,14 @@ export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiad
         </div>
       </dl>
 
+      {(c.cliente || comunidad) && (
+        <p className="break-words text-sm text-[var(--text-secondary)]" data-dato="cliente-ccnn">
+          {c.cliente && <>Cliente <span className="font-semibold text-[var(--text-primary)]">{c.cliente}</span></>}
+          {c.cliente && comunidad && " · "}
+          {comunidad && <>{YA_DICE_CCNN.test(comunidad) ? "" : "CCNN "}<span className="font-semibold text-[var(--text-primary)]">{comunidad}</span></>}
+        </p>
+      )}
+
       {(duenos.length > 0 || c.valor > 0) && (
         <p className="text-sm text-[var(--text-secondary)]">
           {duenos.length > 0 && <>De <span className="font-semibold text-[var(--text-primary)]">{duenos.join(", ")}</span></>}
@@ -174,11 +196,14 @@ export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiad
           {borrando ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <FolderOpen className="h-5 w-5" aria-hidden />}
           {abierta ? "Volver a abrirla" : "Abrir en el cubicador"}
         </button>
+        <button type="button" onClick={onVerDetalle} className={BOTON_SECUNDARIO} data-accion="ver-detalle">
+          <Eye className="h-4 w-4" aria-hidden /> Ver detalle
+        </button>
         <button
           type="button"
           onClick={() => setConPapel((v) => !v)}
           aria-expanded={conPapel}
-          className="inline-flex min-h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+          className={BOTON_SECUNDARIO}
           title={`Formato para imprimir y la foto de la hoja llena · código ${codigo}`}
         >
           <FileText className="h-4 w-4" aria-hidden /> Papel

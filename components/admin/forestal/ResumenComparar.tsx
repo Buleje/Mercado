@@ -11,7 +11,7 @@ import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { ArrowLeftRight, Loader2, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
-import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { precioDeCubicacion, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import type { DimensionResumen, PrecioPt } from "@/lib/forestal/cubicacion-resumen";
 import { compararLotes, lecturaComparacion } from "@/lib/forestal/cubicacion-comparar";
 import { fmtPctSigno, fmtPt, fmtPtSigno, fmtSoles, fmtSolesSigno } from "@/lib/forestal/cubicacion-formato";
@@ -40,7 +40,8 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
 
   const contra = guardadas.find((g) => g.id === contraId);
   const comp = useMemo(
-    () => (contra ? compararLotes(contra.piezas, rows, dim, precioDe) : null),
+    /* La guardada vale lo que se guardó (el mismo importe que su detalle), no los precios de hoy. */
+    () => (contra ? compararLotes(contra.piezas, rows, dim, precioDeCubicacion(contra), precioDe) : null),
     [contra, rows, dim, precioDe],
   );
 

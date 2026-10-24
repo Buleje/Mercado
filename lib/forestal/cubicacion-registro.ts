@@ -29,6 +29,49 @@ export interface TraseraGuardada {
   anchoM: number;
 }
 
+/**
+ * Los datos del papel que no son medidas (Brandon 24-10, modal «Guardar
+ * cubicación»): a quién se vende, de qué comunidad salió la madera, con qué
+ * permiso y en qué camión. Todo opcional y texto libre; las fichas del
+ * Directorio (`*ParteId`) son sólo el enlace para abrirlas, nunca la fuente
+ * del origen legal (eso es la GTF y el Libro).
+ */
+export interface FichaCubicacion {
+  /** La ficha del Directorio del comprador (`cliente` es su nombre). */
+  clienteParteId?: string;
+  /** Comunidad nativa (CCNN) o predio de donde se extrajo la madera. */
+  comunidad?: string;
+  comunidadParteId?: string;
+  /** Título habilitante o permiso de origen («Permiso 25-UCA-…»). */
+  tituloHabilitante?: string;
+  placa?: string;
+  chofer?: string;
+  /** Adónde va la madera (ciudad, aserradero, depósito). */
+  destino?: string;
+  /** Dónde se cubicó (patio, puerto, playa del río). */
+  lugar?: string;
+}
+
+export const CAMPOS_FICHA = [
+  "clienteParteId", "comunidad", "comunidadParteId", "tituloHabilitante", "placa", "chofer", "destino", "lugar",
+] as const satisfies readonly (keyof FichaCubicacion)[];
+
+/** Tope de cada campo de la ficha (los `*ParteId` son ids: 60). */
+export const FICHA_MAX = 120;
+
+/** La ficha en forma canónica: sólo campos conocidos, recortados; vacía → `undefined`. */
+export function normalizarFicha(raw: unknown): FichaCubicacion | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const fuente = raw as Record<string, unknown>;
+  const ficha: FichaCubicacion = {};
+  for (const k of CAMPOS_FICHA) {
+    const v = fuente[k];
+    if (typeof v !== "string" || !v.trim()) continue;
+    ficha[k] = v.trim().slice(0, k.endsWith("ParteId") ? 60 : FICHA_MAX);
+  }
+  return Object.keys(ficha).length > 0 ? ficha : undefined;
+}
+
 export interface CubicacionRegistro {
   id: string;
   /** Nombre con el que el usuario la va a buscar ("Lote Tornillo · Pérez"). */
@@ -40,10 +83,12 @@ export interface CubicacionRegistro {
   /** Especie predominante del lote, si se trabajó con una sola. */
   especie?: string;
   notas?: string;
-  /** S/ por pie tablar al momento de guardar. */
+  /** S/ por pie tablar al momento de guardar (el de las piezas sin `precio` propio). */
   precioPt: number;
-  /** Valor del lote congelado (pieTablar × precioPt). */
+  /** Valor del lote congelado: Σ PT de cada pieza × su precio (o `precioPt`). */
   valor: number;
+  /** Comprador, comunidad de origen, permiso, camión… (sin el campo = cubicaciones viejas). */
+  ficha?: FichaCubicacion;
   totales: CubicacionTotales;
   piezas: PiezaCubicada[];
   /** Línea de PRODUCCIÓN del Libro CTP que se creó desde esta cubicación
@@ -146,10 +191,27 @@ function normalizarPieza(raw: Record<string, unknown>, i: number): PiezaCubicada
       typeof raw.observacion === "string" && raw.observacion.trim()
         ? raw.observacion.trim().slice(0, OBSERVACION_MAX)
         : undefined,
+    /* 0 es un precio válido («esta pieza no se cobra»); sólo lo que no es número se descarta. */
+    precio: precioValido(raw.precio),
     pieTablar,
     m3,
   };
 }
+
+/** S/ por PT de una pieza tal como llega (≥ 0, 2 decimales); lo que no es número → `undefined`. */
+function precioValido(v: unknown): number | undefined {
+  if (v === null || v === undefined || v === "") return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? r2(Math.min(n, 999999)) : undefined;
+}
+
+/**
+ * El precio por PT con que se valorizó cada pieza de una cubicación guardada:
+ * el suyo, o el del lote. Lo usan el detalle y el comparador para que el
+ * valor por especie sume EXACTO el `valor` guardado.
+ */
+export const precioDeCubicacion = (c: Pick<CubicacionRegistro, "precioPt">) => (p: PiezaCubicada): number =>
+  p.precio ?? c.precioPt ?? 0;
 
 /**
  * Arma el registro completo a partir de lo que hay en pantalla. Es la única
@@ -168,12 +230,14 @@ export function construirRegistro(input: {
   ctpEntryIds?: string[];
   gtfNumber?: string;
   trasera?: { ids: string[]; anchoM: number };
+  ficha?: FichaCubicacion | Record<string, unknown>;
   createdAt?: string;
   createdBy?: string;
 }): CubicacionRegistro {
   const piezas = input.piezas.map(normalizarPieza);
   const totales = totalesDe(piezas);
   const precioPt = Number.isFinite(Number(input.precioPt)) && Number(input.precioPt) > 0 ? r2(Number(input.precioPt)) : 0;
+  const precioDe = precioDeCubicacion({ precioPt });
   const ahora = new Date().toISOString();
   return {
     id: input.id ?? `cub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -183,7 +247,8 @@ export function construirRegistro(input: {
     especie: input.especie?.trim().slice(0, 60) || undefined,
     notas: input.notas?.trim().slice(0, 600) || undefined,
     precioPt,
-    valor: r2(totales.pieTablar * precioPt),
+    valor: r2(piezas.reduce((a, p) => a + p.pieTablar * precioDe(p), 0)),
+    ficha: normalizarFicha(input.ficha),
     totales,
     piezas,
     /* El primero de la lista manda como `ctpEntryId`: lo que ya leía un solo id
@@ -219,11 +284,15 @@ export function nombreSugerido(especie: string | undefined, totales: CubicacionT
   return `${especie ? `${especie} · ` : ""}${totales.piezas} pzas · ${fecha}`;
 }
 
-/** Filtra el historial por nombre, cliente, especie o fecha. */
+/** Los textos de la ficha que se buscan («Chinchihuani», la placa, el permiso). */
+export const textosDeFicha = (f: FichaCubicacion | undefined): string[] =>
+  f ? [f.comunidad, f.tituloHabilitante, f.placa, f.chofer, f.destino, f.lugar].filter((x): x is string => Boolean(x)) : [];
+
+/** Filtra el historial por nombre, cliente, especie, fecha o lo de su ficha. */
 export function filtrarCubicaciones(lista: CubicacionRegistro[], termino: string): CubicacionRegistro[] {
   const t = termino.trim().toLowerCase();
   if (!t) return lista;
   return lista.filter((c) =>
-    [c.nombre, c.cliente, c.especie, c.fecha, c.notas].some((campo) => (campo ?? "").toLowerCase().includes(t)),
+    [c.nombre, c.cliente, c.especie, c.fecha, c.notas, ...textosDeFicha(c.ficha)].some((campo) => (campo ?? "").toLowerCase().includes(t)),
   );
 }

@@ -39,7 +39,7 @@ import { useVariadoDelLote } from "./hooks/use-config-variado";
 import { useFilasOficialesDelReparto } from "./hooks/use-filas-oficiales-del-reparto";
 import { LecturaDelLote } from "./resumen-vistas";
 import { DondeEstaElVolumen, HeroResumen } from "./resumen-hero";
-import { SeccionResumen, TablaGrupos } from "./resumen-tabla";
+import { Chip, SeccionResumen, TablaGrupos } from "./resumen-tabla";
 import ResumenComparar from "./ResumenComparar";
 import ResumenMeta from "./ResumenMeta";
 import ResumenReparto from "./ResumenReparto";
@@ -477,16 +477,5 @@ export default function CubicacionResumenes() {
         />
       )}
     </div>
-  );
-}
-
-/** Cifra suelta del encabezado de una especie. */
-function Chip({ children, acento }: { children: React.ReactNode; acento?: boolean }) {
-  return (
-    <span className={`rounded-md px-1.5 py-0.5 ${acento
-      ? "bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
-      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
-      {children}
-    </span>
   );
 }

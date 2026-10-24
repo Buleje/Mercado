@@ -20,7 +20,7 @@ import type { PiezaCubicada } from "./cubicacion";
 import { sinCodigoDeTroza } from "./codigo-de-troza";
 
 /** Las piezas de «Guardar cubicación»: sólo lo que el servidor guarda, en el orden del papel. */
-export function piezasParaGuardar(rows: PiezaCubicada[], orden: OrdenFilas) {
+export function piezasParaGuardar(rows: PiezaCubicada[], orden: OrdenFilas, precioDe?: (p: PiezaCubicada) => number) {
   return enOrdenDelPapel(rows, orden).map((p) => ({
     id: p.id,
     cantidad: p.cantidad,
@@ -35,10 +35,13 @@ export function piezasParaGuardar(rows: PiezaCubicada[], orden: OrdenFilas) {
     duenoParteId: p.duenoParteId ?? null,
     tipo: p.tipo ?? null,
     observacion: p.observacion ?? null,
+    /* El precio de cada pieza (especie, trato del dueño): sin él, el valor guardado sería PT × un solo precio. */
+    ...(precioDe ? { precio: precioDe(p) } : {}),
   }));
 }
 
 /** Las piezas que se vinculan a la corrida al enviar al Libro: sin el código interno de la troza. */
-export function piezasParaVincular(rows: PiezaCubicada[], orden: OrdenFilas) {
-  return enOrdenDelPapel(rows, orden).map(sinCodigoDeTroza);
+export function piezasParaVincular(rows: PiezaCubicada[], orden: OrdenFilas, precioDe?: (p: PiezaCubicada) => number) {
+  const piezas = enOrdenDelPapel(rows, orden).map(sinCodigoDeTroza);
+  return precioDe ? piezas.map((p) => ({ ...p, precio: precioDe(p) })) : piezas;
 }

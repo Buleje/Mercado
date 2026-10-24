@@ -84,6 +84,17 @@ export function SeccionResumen({ id, icon: Icono, titulo, etiqueta, hint, ayuda,
   );
 }
 
+/** Cifra suelta del encabezado de una especie (Resúmenes y el detalle de una guardada). */
+export function Chip({ children, acento }: { children: React.ReactNode; acento?: boolean }) {
+  return (
+    <span className={`rounded-md px-1.5 py-0.5 ${acento
+      ? "bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+      {children}
+    </span>
+  );
+}
+
 /** KPI del encabezado: el número grande y, debajo, de qué está hecho. */
 export function KpiResumen({ label, value, unidad, hint, icon: Icono, destacado, tono }: {
   label: string;

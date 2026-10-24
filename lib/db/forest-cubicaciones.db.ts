@@ -8,8 +8,9 @@ import {
   corridasDeCubicacion,
   totalesDe,
   type CubicacionRegistro,
+  type FichaCubicacion,
 } from "@/lib/forestal/cubicacion-registro";
-import { recubicarPiezas } from "@/lib/forestal/cubicacion";
+import { recubicarPiezas, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import type { CubicacionParaVincular } from "@/lib/forestal/origen-y-salida-del-dia";
 
 /**
@@ -196,6 +197,60 @@ async function exigirCorridasLigables(
  * guardar —son el papel que se firmó—; acá sólo se corrige una unidad derivada,
  * que nunca debió guardarse con otra fórmula que la de la pantalla.
  */
+/**
+ * Lo que llega a `save`. Los textos del papel aceptan `null` = «borrarlo»;
+ * ausentes (`undefined`) = «dejar el que tenía» (ver `datosQueSeConservan`).
+ */
+export type EntradaGuardar = Omit<Parameters<typeof construirRegistro>[0], "cliente" | "notas" | "gtfNumber" | "ficha"> & {
+  cliente?: string | null;
+  notas?: string | null;
+  gtfNumber?: string | null;
+  ficha?: FichaCubicacion | null;
+};
+
+/**
+ * «Vincular» y «Enviar al Libro» reenvían la cubicación SIN las notas ni la
+ * ficha (24-10: las notas se borraban al enviar al Libro). Un campo ausente
+ * conserva el guardado; `null` lo borra; un valor lo reemplaza. Lo mismo el
+ * precio de cada pieza: si el pedido no trae ninguno, cada pieza conserva el
+ * suyo por id (si no, el valor congelado caería a PT × un solo precio).
+ */
+export function datosQueSeConservan(
+  input: EntradaGuardar,
+  existente: CubicacionRegistro | undefined,
+): {
+  cliente: string | undefined;
+  notas: string | undefined;
+  gtfNumber: string | undefined;
+  ficha: FichaCubicacion | undefined;
+  piezas: Record<string, unknown>[];
+} {
+  const tomar = <T,>(nuevo: T | null | undefined, viejo: T | undefined): T | undefined =>
+    nuevo === undefined ? viejo : (nuevo ?? undefined);
+  const traePrecio = input.piezas.some((p) => p.precio !== undefined && p.precio !== null);
+  /* Sólo si la pieza sigue siendo de la misma especie y del mismo dueño: una que pasó
+     de cedro a moena no se queda con los S/ 8 del cedro (va al precio del lote). */
+  const misma = (p: Record<string, unknown>, v: PiezaCubicada) =>
+    (typeof p.especie === "string" ? p.especie.trim() : "") === (v.especie ?? "").trim() &&
+    (typeof p.duenoParteId === "string" ? p.duenoParteId.trim() : "") === (v.duenoParteId ?? "").trim();
+  const viejas = new Map((existente?.piezas ?? []).filter((p) => p.precio !== undefined).map((p) => [p.id, p]));
+  const precioViejo = new Map(
+    input.piezas.flatMap((p) => {
+      const v = typeof p.id === "string" ? viejas.get(p.id) : undefined;
+      return v && misma(p, v) ? [[p.id as string, v.precio] as const] : [];
+    }),
+  );
+  return {
+    cliente: tomar(input.cliente, existente?.cliente),
+    notas: tomar(input.notas, existente?.notas),
+    gtfNumber: tomar(input.gtfNumber, existente?.gtfNumber),
+    ficha: tomar(input.ficha, existente?.ficha),
+    piezas: traePrecio || precioViejo.size === 0
+      ? input.piezas
+      : input.piezas.map((p) => (typeof p.id === "string" && precioViejo.has(p.id) ? { ...p, precio: precioViejo.get(p.id) } : p)),
+  };
+}
+
 function normalizarVolumen(c: CubicacionRegistro): CubicacionRegistro {
   const piezas = recubicarPiezas(c.piezas);
   if (piezas === c.piezas && c.totales?.m3 === totalesDe(piezas).m3) return c;
@@ -239,7 +294,7 @@ export const ForestCubicacionesDB = {
    */
   async save(
     tenantId: string,
-    input: Parameters<typeof construirRegistro>[0],
+    input: EntradaGuardar,
     user = "unknown",
     /**
      * `updatedAt` de la versión que la pantalla leyó. Si viene y la guardada es
@@ -266,6 +321,7 @@ export const ForestCubicacionesDB = {
         await exigirCorridasLigables(tx, tenantId, nuevas);
         const registro = construirRegistro({
           ...input,
+          ...datosQueSeConservan(input, existente),
           ctpEntryId: todas[0],
           ctpEntryIds: todas.length > 0 ? todas : undefined,
           /* Sin trasera en el pedido (Vincular, Enviar al Libro) se conserva la
