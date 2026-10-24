@@ -6,6 +6,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { logger } from "@/lib/logger";
 import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
+import { FOLDER_ICON_KEYS } from "@/lib/documentos/folder-icon-keys";
 
 /**
  * POST /api/admin/documents/folders/bulk — acciones sobre VARIAS carpetas.
@@ -36,6 +37,13 @@ const Body = z.discriminatedUnion("action", [
     action: z.literal("color"),
     ids: Ids,
     color: z.string().max(20).nullable(),
+  }),
+  z.object({
+    action: z.literal("icon"),
+    ids: Ids,
+    // Sólo las claves del selector (o null = volver a «carpeta»). Poner un ícono
+    // limpia el emoji de esas carpetas: en el glifo el emoji gana al ícono.
+    icon: z.enum(FOLDER_ICON_KEYS).nullable(),
   }),
   z.object({
     action: z.literal("addTags"),
@@ -104,7 +112,9 @@ export async function POST(req: NextRequest) {
       d.ids,
       d.action === "emoji"
         ? { tipo: "emoji", emoji: d.emoji?.trim() ? d.emoji.trim() : null }
-        : d.action === "color"
+        : d.action === "icon"
+          ? { tipo: "icon", icon: d.icon }
+          : d.action === "color"
           ? { tipo: "color", color: d.color?.trim() ? d.color.trim() : null }
           : d.action === "addTags"
             ? { tipo: "addTags", tags: d.tags }

@@ -29,26 +29,43 @@ const rotulo = "mb-2 block text-[length:var(--ts-2xs,11px)] font-bold uppercase 
  * mismos puntos del Archivo: ícono/color por el PATCH de la carpeta y el emoji
  * por `folders/bulk` (sólo dueño/admin; 403 → aviso).
  */
-export default function IconoCarpetaModal({ folder, updateFolder, bulkFolders, onClose }: {
-  folder: DbDocumentFolder;
-  updateFolder: (id: string, patch: { color?: string | null; icon?: string | null }) => Promise<void>;
+export default function IconoCarpetaModal({ folder, ids, updateFolder, bulkFolders, onClose }: {
+  /** Una carpeta (modo normal). Sin ella, `ids` = modo lote. */
+  folder?: DbDocumentFolder;
+  /** Modo lote: las carpetas marcadas; un solo POST por cada cosa que cambies. */
+  ids?: string[];
+  updateFolder?: (id: string, patch: { color?: string | null; icon?: string | null }) => Promise<void>;
   bulkFolders: (ids: string[], accion: BulkFolderAccion) => Promise<number>;
   onClose: () => void;
 }) {
-  const [emoji, setEmoji] = useState<string | null>(folder.emoji?.trim() || null);
-  const [icon, setIcon] = useState<string | null>(folder.icon);
-  const [color, setColor] = useState<string | null>(folder.color);
+  const lote = !folder && !!ids?.length;
+  const emoji0 = folder?.emoji?.trim() || null;
+  const [emoji, setEmoji] = useState<string | null>(emoji0);
+  const [icon, setIcon] = useState<string | null>(folder?.icon ?? null);
+  const [color, setColor] = useState<string | null>(folder?.color ?? null);
+  // En lote no hay valor de partida común: sólo se aplica lo que toques.
+  const [tocado, setTocado] = useState({ emoji: false, icon: false, color: false });
   const [saving, setSaving] = useState(false);
 
-  const cambio = emoji !== (folder.emoji?.trim() || null) || icon !== folder.icon || color !== folder.color;
+  const cambio = lote
+    ? tocado.emoji || tocado.icon || tocado.color
+    : emoji !== emoji0 || icon !== (folder?.icon ?? null) || color !== (folder?.color ?? null);
 
   const guardar = async () => {
     if (saving || !cambio) return;
     setSaving(true);
     try {
-      if (icon !== folder.icon || color !== folder.color) await updateFolder(folder.id, { icon, color });
-      if (emoji !== (folder.emoji?.trim() || null)) await bulkFolders([folder.id], { action: "emoji", emoji });
-      toast.success(`Listo: «${folder.name}» tiene su ícono nuevo.`);
+      if (lote && ids) {
+        // Elegir ícono ya limpia el emoji en el servidor: no hace falta otro POST.
+        if (tocado.icon) await bulkFolders(ids, { action: "icon", icon });
+        else if (tocado.emoji) await bulkFolders(ids, { action: "emoji", emoji });
+        if (tocado.color) await bulkFolders(ids, { action: "color", color });
+        toast.success(`Listo: ${ids.length} carpetas con su ícono nuevo.`);
+      } else if (folder && updateFolder) {
+        if (icon !== folder.icon || color !== folder.color) await updateFolder(folder.id, { icon, color });
+        if (emoji !== emoji0) await bulkFolders([folder.id], { action: "emoji", emoji });
+        toast.success(`Listo: «${folder.name}» tiene su ícono nuevo.`);
+      }
       onClose();
     } catch (err) {
       logger.warn("[documentos.esenciales] no se pudo cambiar el ícono", { error: String(err) });
@@ -59,7 +76,7 @@ export default function IconoCarpetaModal({ folder, updateFolder, bulkFolders, o
     }
   };
 
-  const quitar = () => { setEmoji(null); setIcon(null); setColor(null); };
+  const quitar = () => { setEmoji(null); setIcon(null); setColor(null); setTocado({ emoji: true, icon: true, color: true }); };
 
   return (
     <AdminModal
@@ -83,7 +100,7 @@ export default function IconoCarpetaModal({ folder, updateFolder, bulkFolders, o
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-3xl" data-qa="icono-previa">
             <FolderGlyph folder={{ icon, color, emoji }} className="h-8 w-8" />
           </span>
-          <span className="min-w-0 truncate text-base font-extrabold text-[var(--text-primary)]">{folder.name}</span>
+          <span className="min-w-0 truncate text-base font-extrabold text-[var(--text-primary)]">{lote ? `${ids?.length} carpetas` : folder?.name}</span>
         </div>
 
         <div>
@@ -93,7 +110,7 @@ export default function IconoCarpetaModal({ folder, updateFolder, bulkFolders, o
               <button
                 key={e}
                 type="button"
-                onClick={() => setEmoji(e)}
+                onClick={() => { setEmoji(e); setTocado((t) => ({ ...t, emoji: true })); }}
                 aria-label={`Emoji ${e}`}
                 aria-pressed={emoji === e}
                 className={cn("flex h-9 items-center justify-center rounded-lg border-2 text-lg transition-colors", emoji === e ? "border-primary bg-primary/10" : "border-transparent hover:bg-primary/10")}
@@ -113,7 +130,7 @@ export default function IconoCarpetaModal({ folder, updateFolder, bulkFolders, o
                 <button
                   key={o.key}
                   type="button"
-                  onClick={() => { setIcon(o.key); setEmoji(null); }}
+                  onClick={() => { setIcon(o.key); setEmoji(null); setTocado((t) => ({ ...t, icon: true })); }}
                   title={o.label}
                   aria-label={o.label}
                   aria-pressed={elegido}
@@ -131,7 +148,7 @@ export default function IconoCarpetaModal({ folder, updateFolder, bulkFolders, o
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setColor(null)}
+              onClick={() => { setColor(null); setTocado((t) => ({ ...t, color: true })); }}
               title="Sin color"
               aria-label="Sin color"
               className={cn("flex h-8 w-8 items-center justify-center rounded-full border-2", color === null ? "border-primary" : "border-[var(--rule-base)]")}
@@ -142,7 +159,7 @@ export default function IconoCarpetaModal({ folder, updateFolder, bulkFolders, o
               <button
                 key={c.key}
                 type="button"
-                onClick={() => setColor(c.value)}
+                onClick={() => { setColor(c.value); setTocado((t) => ({ ...t, color: true })); }}
                 style={{ backgroundColor: c.value }}
                 title={c.label}
                 aria-label={c.label}

@@ -80,6 +80,8 @@ async function http<T>(url: string, init?: RequestInit): Promise<T> {
 export type BulkFolderAccion =
   | { action: "emoji"; emoji: string | null }
   | { action: "color"; color: string | null }
+  /** Clave del set de íconos del Archivo; limpia el emoji de esas carpetas. */
+  | { action: "icon"; icon: string | null }
   | { action: "addTags"; tags: string[] }
   | { action: "removeTags"; tags: string[] }
   /** `conDocumentos` manda lo de adentro a la papelera; sin él va a la raíz. */
@@ -756,6 +758,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
         if (!marcadas.has(c.id)) return c;
         if (accion.action === "emoji") return { ...c, emoji: accion.emoji };
         if (accion.action === "color") return { ...c, color: accion.color };
+        if (accion.action === "icon") return { ...c, icon: accion.icon, emoji: null };
         const nuevas = accion.tags.map((t) => t.trim().toLowerCase()).filter(Boolean);
         const tags =
           accion.action === "addTags"

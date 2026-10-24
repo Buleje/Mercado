@@ -1724,6 +1724,7 @@ export class DocumentsDB {
     accion:
       | { tipo: "emoji"; emoji: string | null }
       | { tipo: "color"; color: string | null }
+      | { tipo: "icon"; icon: string | null }
       | { tipo: "addTags"; tags: string[] }
       | { tipo: "removeTags"; tags: string[] }
       | { tipo: "delete"; conDocumentos?: boolean },
@@ -1741,6 +1742,11 @@ export class DocumentsDB {
     }
     if (accion.tipo === "emoji") {
       const { count } = await prisma.documentFolder.updateMany({ where, data: { emoji: accion.emoji } });
+      return count;
+    }
+    if (accion.tipo === "icon") {
+      // El emoji gana al ícono al dibujar: elegir ícono lo limpia.
+      const { count } = await prisma.documentFolder.updateMany({ where, data: { icon: accion.icon, emoji: null } });
       return count;
     }
     if (accion.tipo === "color") {

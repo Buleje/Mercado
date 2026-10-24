@@ -16,12 +16,13 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, Palette, Smile, Star, Tag, Trash2, X } from "@buleje/design-system/icons";
+import { Check, Folder, Loader2, Palette, Smile, Star, Tag, Trash2, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { TAG_ESENCIAL } from "@/lib/documentos/esenciales";
 import { FOLDER_COLORS } from "./folder-visuals";
 import { ConfirmarBorrarCarpetas, type BorradoCarpetas } from "./ConfirmarBorrarCarpetas";
 import type { BulkFolderAccion } from "@/hooks/use-documents";
+import IconoCarpetaModal from "./esenciales/IconoCarpetaModal";
 
 /** Emojis que sirven para papeles y trámites, no un picker de 1800. */
 const EMOJIS = [
@@ -74,18 +75,20 @@ export default function FolderBulkBar({
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [hecho, setHecho] = useState<string | null>(null);
   const [confirmando, setConfirmando] = useState(false);
+  const [iconoAbierto, setIconoAbierto] = useState(false);
   const cajaRef = useRef<HTMLDivElement>(null);
 
   // Escape cierra el panel abierto y, si no hay ninguno, sale de la selección.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      // Con el selector de ícono abierto, Escape es suyo (no sale de la selección).
+      if (e.key !== "Escape" || iconoAbierto) return;
       if (panel) setPanel(null);
       else onSalir();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [panel, onSalir]);
+  }, [panel, onSalir, iconoAbierto]);
 
   // Click fuera cierra el panel (no la selección: perderla por un click al lado
   // sería peor que dejarla abierta).
@@ -161,6 +164,13 @@ export default function FolderBulkBar({
           className={cn(btn, panel === "emoji" ? "bg-[var(--surface-raised)] text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
         >
           <Smile className="h-3.5 w-3.5" /> Emoji
+        </button>
+        <button
+          type="button"
+          onClick={() => { setPanel(null); setIconoAbierto(true); }}
+          className={cn(btn, "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
+        >
+          <Folder className="h-3.5 w-3.5" /> Ícono
         </button>
         <button
           type="button"
@@ -318,6 +328,10 @@ export default function FolderBulkBar({
             Sin color
           </button>
         </div>
+      )}
+
+      {iconoAbierto && (
+        <IconoCarpetaModal ids={ids} bulkFolders={(lote, accion) => onAccion(accion, lote)} onClose={() => setIconoAbierto(false)} />
       )}
 
       {confirmando && (
