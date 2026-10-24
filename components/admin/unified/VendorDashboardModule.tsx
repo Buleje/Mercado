@@ -53,6 +53,8 @@ const ClientesDashboard = dynamic(() => import("@/components/admin/inicio/Client
 const ForestalDashboard = dynamic(() => import("@/components/admin/inicio/ForestalDashboard"), { ssr: false, loading: DashboardLoading });
 // Brandon 2026-06-07 (idea #2): tarjeta "Tu tienda pública" — puente admin↔tienda.
 const StorePublicCard = dynamic(() => import("@/components/admin/inicio/StorePublicCard"), { ssr: false });
+// Brandon 2026-10-24: «Esenciales en Inicio» — lo vencido de las carpetas esenciales y sus carpetas a un clic.
+const EsencialesInicio = dynamic(() => import("@/components/admin/vendor-dashboard/EsencialesInicio"), { ssr: false });
 
 // ADR-064 Ola B — TodayHub hero unificado (drop-in al tab "general")
 const TodayHub = dynamic(
@@ -326,6 +328,10 @@ export default function VendorDashboardModule() {
             {/* La venta del período y sus cuatro cifras. Sin saludo propio: vive en «Para hoy». */}
             <TodayHub dateRange={dateRange} hideAlerts greeting="" />
             <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} onSinVentas={(sin) => setVentas(sin ? "sin" : "con")} />
+            {/* Sólo la gestión y con Documentos en el plan; pide sus datos al asomar. Por el
+                plan y no por la plantilla: la plantilla esconde Documentos del menú por
+                defecto (en `main` también) aunque el negocio lo use. */}
+            {hasTab("documentos") && <EsencialesInicio />}
             {/* Brandon 2026-06-07 (idea #2): puente admin ↔ tienda pública. */}
             <StorePublicCard storeSlug={storeSlug} />
           </div>
