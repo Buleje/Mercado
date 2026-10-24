@@ -39,6 +39,7 @@ import { limpiarMotivo, motivoLegible } from "@/lib/forestal/motivo";
 import { formatCurrency } from "@/lib/currency";
 import { huellaDeAlta, huellaDeEntrega } from "@/lib/adelantos/idempotencia";
 import { CONCEPTO_PLANILLA } from "@/lib/adelantos/planilla-lote";
+import { PREFIJO_CLAVE_PAGO_RRHH } from "@/lib/rrhh/pago-semana";
 import { invalidateByPrefix } from "@/lib/cache";
 import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { enmascararDocumento, type PersonaEntregar } from "@/lib/adelantos/entregar-tipos";
@@ -320,6 +321,27 @@ export class DireccionNoCorregibleError extends Error {
   ) {
     super(message);
     this.name = "DireccionNoCorregibleError";
+  }
+}
+
+/**
+ * Un descuento de planilla que se descontaría dos veces (revisión 24-10 del
+ * pago de la semana). La ruta lo devuelve con `status` y `code`.
+ *
+ * - `descuento_excede_saldo` (400): más que el saldo del adelanto (con el pago
+ *   del sábado ya hecho, el saldo suele ser 0: el modal viejo lo repetía).
+ * - `semana_ya_pagada` (409): esa semana ya se pagó en RRHH y el pago ya
+ *   descontó lo suyo; otro descuento con el mismo concepto restaría lo mismo
+ *   de un sueldo que ya se entregó.
+ */
+export class DescuentoDePlanillaError extends Error {
+  constructor(
+    message: string,
+    readonly status: 400 | 409,
+    readonly code: "descuento_excede_saldo" | "semana_ya_pagada",
+  ) {
+    super(message);
+    this.name = "DescuentoDePlanillaError";
   }
 }
 
@@ -803,12 +825,17 @@ async function siguienteCodigoDeTenant(tenantId: string): Promise<string> {
 async function anularEntregasMarcadasEnTx(
   tx: Prisma.TransactionClient,
   tenantId: string,
-  marca: { liquidacionId: string } | { cubicacionId: string },
+  marca: { liquidacionId: string } | { cubicacionId: string } | { clavePrefijo: string },
 ): Promise<{ adelantoIds: string[] }> {
   if (!tenantId) throw new Error("tenantId is required");
   if (!Object.values(marca)[0]) throw new Error("falta la liquidación o la cubicación");
+  /* Un prefijo corto («», «rrhh-») anularía entregas de otros pagos: se exige el
+     prefijo entero de un pago (`rrhh-pago:<gastoId>:`). */
+  if ("clavePrefijo" in marca && marca.clavePrefijo.length < 16) throw new Error("prefijo de clave demasiado corto");
+  const filtro: Prisma.AdelantoEntregaWhereInput =
+    "clavePrefijo" in marca ? { idempotencyKey: { startsWith: marca.clavePrefijo } } : marca;
   const entregas = await tx.adelantoEntrega.findMany({
-    where: { ...marca, anuladaAt: null, adelanto: { tenantId } },
+    where: { ...filtro, anuladaAt: null, adelanto: { tenantId } },
     select: { adelantoId: true },
   });
   const adelantoIds = [...new Set(entregas.map((e) => e.adelantoId))].sort();
@@ -818,7 +845,7 @@ async function anularEntregasMarcadasEnTx(
     await tx.$queryRaw`SELECT "id" FROM "Adelanto" WHERE "id" = ${adelantoId} AND "tenantId" = ${tenantId} FOR UPDATE`;
   }
   await tx.adelantoEntrega.updateMany({
-    where: { ...marca, anuladaAt: null, adelanto: { tenantId } },
+    where: { ...filtro, anuladaAt: null, adelanto: { tenantId } },
     data: { anuladaAt: new Date() },
   });
   for (const adelantoId of adelantoIds) {
@@ -954,7 +981,36 @@ export const AdelantosDB = {
   },
 
   async createBeneficiario(tenantId: string, data: BeneficiarioInput): Promise<DbBeneficiario> {
-    const b = await prisma.adelantoBeneficiario.create({
+    return AdelantosDB.createBeneficiarioEnTx(prisma, tenantId, data);
+  },
+
+  /** Las personas con documento cargado, dentro de la tx de quien busca la cuenta de alguien por su DNI. */
+  async beneficiariosConDocumentoEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+  ): Promise<{ id: string; nombre: string; documento: string; activo: boolean }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await tx.adelantoBeneficiario.findMany({
+      where: { tenantId, documento: { not: null } },
+      select: { id: true, nombre: true, documento: true, activo: true },
+    });
+    return filas.flatMap((f) => (f.documento ? [{ id: f.id, nombre: f.nombre, documento: f.documento, activo: f.activo }] : []));
+  },
+
+  /** ¿Sigue existiendo esa persona en este negocio? (dentro de la tx de quien llama). */
+  async existeBeneficiarioEnTx(tx: Prisma.TransactionClient, tenantId: string, id: string): Promise<boolean> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return (await tx.adelantoBeneficiario.count({ where: { id, tenantId } })) > 0;
+  },
+
+  /** El alta de una persona dentro de la tx de quien llama (RRHH: la cuenta del trabajador al darle un adelanto). */
+  async createBeneficiarioEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    data: BeneficiarioInput,
+  ): Promise<DbBeneficiario> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const b = await tx.adelantoBeneficiario.create({
       data: {
         tenantId,
         nombre: data.nombre.trim(),
@@ -1574,6 +1630,41 @@ export const AdelantosDB = {
         "excede_saldo",
       );
     }
+    /* Un descuento de planilla en un DADO (revisión 24-10): nunca más que el
+       saldo (leído bajo el lock), y nunca otro para una semana que el pago del
+       sábado ya descontó. El modal viejo de «Descuentos de planilla» abierto
+       antes del pago lo repetía y el trabajador quedaba descontado dos veces. */
+    const concepto = input.descripcion?.trim() ?? "";
+    // Sin mayúsculas: «descuento por planilla …» escrito a mano es el mismo descuento.
+    if (!recibido && concepto.toLowerCase().startsWith(CONCEPTO_PLANILLA.toLowerCase())) {
+      if (valor > debe + 0.005) {
+        throw new DescuentoDePlanillaError(
+          debe > 0.005
+            ? `Debe ${formatCurrency(debe)} de este adelanto: no se le puede descontar más que eso.`
+            : "Este adelanto ya está descontado entero: no queda nada por descontar.",
+          400,
+          "descuento_excede_saldo",
+        );
+      }
+      if (!clave?.startsWith(PREFIJO_CLAVE_PAGO_RRHH)) {
+        const delPago = await tx.adelantoEntrega.findFirst({
+          where: {
+            anuladaAt: null,
+            descripcion: { equals: concepto, mode: "insensitive" },
+            idempotencyKey: { startsWith: PREFIJO_CLAVE_PAGO_RRHH },
+            adelanto: { tenantId, beneficiarioId: adelanto.beneficiarioId, ...whereDireccion("DADO") },
+          },
+          select: { id: true },
+        });
+        if (delPago) {
+          throw new DescuentoDePlanillaError(
+            "Esa semana ya se pagó en RRHH y el pago ya descontó sus adelantos. Si hay que cambiarlo, deshaz el pago en RRHH › Asistencia y vuelve a pagar.",
+            409,
+            "semana_ya_pagada",
+          );
+        }
+      }
+    }
 
     const entrega = await tx.adelantoEntrega.create({
       data: {
@@ -1654,6 +1745,178 @@ export const AdelantosDB = {
     cubicacionId: string,
   ): Promise<{ adelantoIds: string[] }> {
     return anularEntregasMarcadasEnTx(tx, tenantId, { cubicacionId });
+  },
+
+  /**
+   * Lo mismo para los descuentos de un pago de sueldo deshecho (RRHH › pago de
+   * la semana): sus entregas llevan la clave `rrhh-pago:<gastoId>:<adelantoId>`.
+   */
+  async anularEntregasPorClaveEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    clavePrefijo: string,
+  ): Promise<{ adelantoIds: string[] }> {
+    return anularEntregasMarcadasEnTx(tx, tenantId, { clavePrefijo });
+  },
+
+  /**
+   * Los adelantos de planilla ABIERTOS de una persona, bloqueados (`FOR UPDATE`,
+   * en orden de id) y releídos bajo el lock, dentro de la tx de quien paga el
+   * sueldo. Sin el lock, una entrega que entraba entre la lectura y el descuento
+   * dejaba descontar más que el saldo (EXCEDIDO). Sólo DADO en soles: lo mismo
+   * que filtra `proponerDescuentos`, más la moneda del sueldo.
+   */
+  async abiertosDePlanillaEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    beneficiarioId: string,
+  ): Promise<{ id: string; codigoOperacion: string | null; modalidad: string; status: string; saldoPendiente: number; moneda: string; direccion: string; fechaAdelanto: string }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const candidatos = await tx.adelanto.findMany({
+      where: { tenantId, beneficiarioId, modalidad: "DESCUENTO_PLANILLA", status: "ABIERTO", moneda: "PEN", ...whereDireccion("DADO") },
+      select: { id: true },
+      orderBy: { id: "asc" },
+    });
+    const ids = candidatos.map((c) => c.id).sort();
+    for (const id of ids) {
+      await tx.$queryRaw`SELECT "id" FROM "Adelanto" WHERE "id" = ${id} AND "tenantId" = ${tenantId} FOR UPDATE`;
+    }
+    if (ids.length === 0) return [];
+    const filas = await tx.adelanto.findMany({
+      where: { id: { in: ids }, tenantId, status: "ABIERTO", ...whereDireccion("DADO") },
+      select: { id: true, codigoOperacion: true, modalidad: true, status: true, saldoPendiente: true, moneda: true, direccion: true, fechaAdelanto: true },
+    });
+    return filas.map((f) => ({
+      id: f.id,
+      codigoOperacion: f.codigoOperacion,
+      modalidad: f.modalidad,
+      status: f.status,
+      saldoPendiente: toNum(f.saldoPendiente),
+      moneda: f.moneda,
+      direccion: f.direccion,
+      fechaAdelanto: f.fechaAdelanto.toISOString(),
+    }));
+  },
+
+  /**
+   * Los descuentos de planilla vivos de una persona desde `desde`, leídos en la
+   * tx de quien paga el sueldo DESPUÉS de bloquear sus adelantos: el descuento a
+   * mano que entró justo antes cuenta, y el `netoEsperado` lo detecta.
+   */
+  async descuentosDePlanillaEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    beneficiarioId: string,
+    desde: Date,
+  ): Promise<{ descripcion: string | null; fecha: Date; valor: number; idempotencyKey: string | null }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await tx.adelantoEntrega.findMany({
+      where: {
+        anuladaAt: null,
+        fecha: { gte: desde },
+        descripcion: { startsWith: CONCEPTO_PLANILLA },
+        adelanto: { tenantId, beneficiarioId, moneda: "PEN", status: { not: "CANCELADO" }, ...whereDireccion("DADO") },
+      },
+      select: { descripcion: true, fecha: true, valor: true, idempotencyKey: true },
+    });
+    return filas.map((f) => ({ descripcion: f.descripcion, fecha: f.fecha, valor: toNum(f.valor), idempotencyKey: f.idempotencyKey }));
+  },
+
+  /**
+   * Los adelantos de planilla DADOS de varias personas, para la tira del pago de
+   * la semana: los ABIERTOS (lo que se descuenta) y los dados entre `desde` y
+   * `hasta` aunque ya estén cerrados (lo que se le dio esa semana). Sin los
+   * anulados. Una consulta.
+   */
+  async planillaDePersonas(
+    tenantId: string,
+    beneficiarioIds: readonly string[],
+    rango: { desde: Date; hasta: Date },
+  ): Promise<{
+    id: string; beneficiarioId: string; codigoOperacion: string | null; modalidad: string; status: string;
+    saldoPendiente: number; montoAdelantado: number; moneda: string; direccion: string; fechaAdelanto: string; notas: string | null;
+  }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (beneficiarioIds.length === 0) return [];
+    const filas = await prisma.adelanto.findMany({
+      where: {
+        tenantId,
+        beneficiarioId: { in: [...beneficiarioIds] },
+        modalidad: "DESCUENTO_PLANILLA",
+        status: { not: "CANCELADO" },
+        ...whereDireccion("DADO"),
+        OR: [{ status: "ABIERTO" }, { fechaAdelanto: { gte: rango.desde, lte: rango.hasta } }],
+      },
+      select: {
+        id: true, beneficiarioId: true, codigoOperacion: true, modalidad: true, status: true, saldoPendiente: true,
+        montoAdelantado: true, moneda: true, direccion: true, fechaAdelanto: true, notas: true,
+      },
+      orderBy: [{ fechaAdelanto: "asc" }, { id: "asc" }],
+      take: 2000,
+    });
+    return filas.map((f) => ({
+      id: f.id,
+      beneficiarioId: f.beneficiarioId,
+      codigoOperacion: f.codigoOperacion,
+      modalidad: f.modalidad,
+      status: f.status,
+      saldoPendiente: toNum(f.saldoPendiente),
+      montoAdelantado: toNum(f.montoAdelantado),
+      moneda: f.moneda,
+      direccion: f.direccion,
+      fechaAdelanto: f.fechaAdelanto.toISOString(),
+      notas: f.notas,
+    }));
+  },
+
+  /**
+   * Las claves de los descuentos vivos hechos por un pago de sueldo con este
+   * concepto exacto (`rrhh-pago:<gastoId>:…`), por persona: así la tira del pago
+   * ve un pago cuyo gasto se borró a mano en Mi Plata.
+   */
+  async clavesDePagoDelConcepto(
+    tenantId: string,
+    beneficiarioIds: readonly string[],
+    concepto: string,
+  ): Promise<{ beneficiarioId: string; idempotencyKey: string }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (beneficiarioIds.length === 0) return [];
+    const filas = await prisma.adelantoEntrega.findMany({
+      where: {
+        anuladaAt: null,
+        descripcion: concepto,
+        idempotencyKey: { startsWith: "rrhh-pago:" },
+        adelanto: { tenantId, beneficiarioId: { in: [...beneficiarioIds] } },
+      },
+      select: { idempotencyKey: true, adelanto: { select: { beneficiarioId: true } } },
+    });
+    return filas.flatMap((f) => (f.idempotencyKey ? [{ beneficiarioId: f.adelanto.beneficiarioId, idempotencyKey: f.idempotencyKey }] : []));
+  },
+
+  /**
+   * Cuánto descontó cada pago de sueldo (Σ entregas vivas cuya clave empieza con
+   * el prefijo del pago). Un prefijo corto no se acepta: podría juntar entregas
+   * de otro pago.
+   */
+  async descontadoPorPrefijo(tenantId: string, prefijos: readonly string[]): Promise<Map<string, number>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const validos = [...new Set(prefijos)].filter((p) => p.trim().length >= 16);
+    const out = new Map<string, number>();
+    if (validos.length === 0) return out;
+    const filas = await prisma.adelantoEntrega.findMany({
+      where: {
+        anuladaAt: null,
+        OR: validos.map((p) => ({ idempotencyKey: { startsWith: p } })),
+        adelanto: { tenantId },
+      },
+      select: { idempotencyKey: true, valor: true },
+    });
+    for (const f of filas) {
+      const p = validos.find((x) => f.idempotencyKey?.startsWith(x));
+      if (!p) continue;
+      out.set(p, Math.round(((out.get(p) ?? 0) + toNum(f.valor)) * 100) / 100);
+    }
+    return out;
   },
 
   /** (ADR-478) Para quien escribe entregas con `registrarEntregaEnTx` en su tx: una vez, tras el commit. */

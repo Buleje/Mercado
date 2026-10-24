@@ -30,10 +30,12 @@ vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn(async () => undefin
 vi.mock("@/lib/db/gasto-con-caja.db", () => {
   class PagoExcedeSaldoError extends Error {}
   class RetiroEnCajaError extends Error {}
+  class GastoDePagoRrhhError extends Error {}
   return {
     GastoConCajaDB: { registrarGasto: h.registrarGasto, pagarCuenta: h.pagarCuenta, corregirGasto: h.corregirGasto, borrarGasto: h.borrarGasto },
     PagoExcedeSaldoError,
     RetiroEnCajaError,
+    GastoDePagoRrhhError,
   };
 });
 
@@ -211,6 +213,26 @@ describe("PUT / DELETE /api/expenses/[id]", () => {
     const res = await PUT(put({ paymentMethod: "yape" }), ctx);
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({ campo: "paymentMethod" });
+  });
+
+  it("el monto del pago de la semana de RRHH: 409 con el camino en el campo del monto", async () => {
+    const { GastoDePagoRrhhError } = await import("@/lib/db/gasto-con-caja.db");
+    h.getTpl.mockResolvedValue({ id: "g1", amount: 300, documentNumber: "RRHH-2026-10-19-c1" });
+    h.corregirGasto.mockRejectedValue(new GastoDePagoRrhhError("corrígelo con «Deshacer» en RRHH"));
+    const { PUT } = await import("@/app/api/expenses/[id]/route");
+    const res = await PUT(put({ amount: 310 }), ctx);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ campo: "amount", codigo: "pago_rrhh", error: expect.stringContaining("Deshacer") });
+  });
+
+  it("cambiar el comprobante del pago de RRHH (su marca): 409 y no escribe nada", async () => {
+    h.getTpl.mockResolvedValue({ id: "g1", amount: 300, documentType: "recibo", documentNumber: "RRHH-2026-10-19-c1" });
+    h.corregirGasto.mockClear();
+    const { PUT } = await import("@/app/api/expenses/[id]/route");
+    const res = await PUT(put({ documentNumber: "R-001" }), ctx);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ campo: "documentNumber", codigo: "pago_rrhh" });
+    expect(h.corregirGasto).not.toHaveBeenCalled();
   });
 });
 

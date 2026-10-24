@@ -25,6 +25,11 @@
  *    descontar, el adelanto deja de estar abierto: restando sólo lo abierto,
  *    la fila SUBÍA de 700 a 1000 y se pagaba el sueldo entero. Qué descuento
  *    es de qué período: `lib/rrhh/descuentos-planilla.ts`.
+ * 6. **Lo ya pagado el sábado también se resta** (revisión 24-10). Desde que
+ *    existe el pago de la semana (`lib/rrhh/pago-semana.ts`), una semana pagada
+ *    seguía diciendo «Queda por pagar S/ 370» con los 370 ya en la mano. Resta
+ *    lo ENTREGADO (lo pagado menos lo descontado para esa semana: los descuentos
+ *    ya están en el punto 5) de las semanas que caen enteras en el período.
  * 4. **Sin cuenta de Adelantos vinculada no se resta: da `null`.** No se asume
  *    cero — de esa persona no sabemos si debe algo, y un cero inventado se
  *    lee como «no debe nada». La celda queda «—» y la fila explica por qué.
@@ -339,6 +344,12 @@ export interface PersonaParaNeto {
    * `descontadoPen`: lo ya descontado por planilla PARA ESTE PERÍODO (decisión 5).
    */
   adelantos: { abiertosPen: number; descontadoPen?: number } | null;
+  /**
+   * Lo ya entregado en mano por el pago del sábado de las semanas que caen
+   * enteras en el período (decisión 6). Sin el dato (el PDF del pago, que es
+   * el recibo de lo que se paga) no se resta.
+   */
+  pagado?: number;
 }
 
 export interface QuedaPorPagar {
@@ -348,7 +359,9 @@ export interface QuedaPorPagar {
   adelantos: number;
   /** Lo ya descontado por planilla para este período (ya no está en `adelantos`). */
   descontado: number;
-  /** `ganado − descontado − adelantos` con signo. Negativo = el adelanto fue mayor que lo ganado. */
+  /** Lo ya entregado por el pago del sábado (decisión 6). */
+  pagado: number;
+  /** `ganado − descontado − pagado − adelantos` con signo. Negativo = el adelanto fue mayor que lo ganado. */
   neto: number;
   /** Lo que queda por pagarle. Nunca negativo: si el adelanto fue mayor, es 0. */
   aPagar: number;
@@ -367,11 +380,13 @@ export function calcularQuedaPorPagar(persona: PersonaParaNeto): QuedaPorPagar |
   const ganado = r2(persona.total);
   const adelantos = r2(persona.adelantos.abiertosPen);
   const descontado = r2(persona.adelantos.descontadoPen ?? 0);
-  const neto = r2(ganado - descontado - adelantos);
+  const pagado = r2(persona.pagado ?? 0);
+  const neto = r2(ganado - descontado - pagado - adelantos);
   return {
     ganado,
     adelantos,
     descontado,
+    pagado,
     neto,
     aPagar: neto > 0 ? neto : 0,
     deuda: neto < 0 ? r2(-neto) : 0,
@@ -418,7 +433,8 @@ export function totalQuedaPorPagar(personas: readonly PersonaParaNeto[]): TotalQ
 /** Una línea para el desplegable «Cómo sale»: la resta escrita, con su fecha de corte. */
 export function explicarQuedaPorPagar(q: QuedaPorPagar): string {
   const yaDescontado = q.descontado > 0 ? ` − S/ ${fmt(q.descontado)} ya descontado por planilla` : "";
-  const resta = `S/ ${fmt(q.ganado)} ganado${yaDescontado} − S/ ${fmt(q.adelantos)} de adelantos abiertos`;
+  const yaPagado = q.pagado > 0 ? ` − S/ ${fmt(q.pagado)} ya pagado el sábado` : "";
+  const resta = `S/ ${fmt(q.ganado)} ganado${yaDescontado}${yaPagado} − S/ ${fmt(q.adelantos)} de adelantos abiertos`;
   return q.deuda > 0
     ? `${resta}: el adelanto es mayor que lo ganado en este período, sigue debiendo S/ ${fmt(q.deuda)}.`
     : `${resta} = S/ ${fmt(q.aPagar)} por pagar.`;

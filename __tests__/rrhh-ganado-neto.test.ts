@@ -26,7 +26,7 @@ describe("calcularQuedaPorPagar — una persona", () => {
 
   it("el adelanto es MENOR que lo ganado: queda por pagar la diferencia", () => {
     const q = calcularQuedaPorPagar(persona(1320, 200));
-    expect(q).toEqual({ ganado: 1320, adelantos: 200, descontado: 0, neto: 1120, aPagar: 1120, deuda: 0 });
+    expect(q).toEqual({ ganado: 1320, adelantos: 200, descontado: 0, pagado: 0, neto: 1120, aPagar: 1120, deuda: 0 });
   });
 
   it("el adelanto es MAYOR que lo ganado: no hay pago negativo, queda deuda", () => {
@@ -39,7 +39,7 @@ describe("calcularQuedaPorPagar — una persona", () => {
 
   it("adelanto en cero (cuenta vinculada, nada abierto): queda por pagar todo lo ganado", () => {
     const q = calcularQuedaPorPagar(persona(1320, 0));
-    expect(q).toEqual({ ganado: 1320, adelantos: 0, descontado: 0, neto: 1320, aPagar: 1320, deuda: 0 });
+    expect(q).toEqual({ ganado: 1320, adelantos: 0, descontado: 0, pagado: 0, neto: 1320, aPagar: 1320, deuda: 0 });
   });
 
   it("el adelanto es EXACTAMENTE lo ganado: no queda nada por pagar y tampoco deuda", () => {
@@ -65,6 +65,18 @@ describe("calcularQuedaPorPagar — una persona", () => {
     const despues = calcularQuedaPorPagar({ total: 1000, adelantos: { abiertosPen: 0, descontadoPen: 300 } })!;
     expect(antes.aPagar).toBe(700);
     expect(despues).toMatchObject({ descontado: 300, adelantos: 0, aPagar: 700, deuda: 0 });
+  });
+
+  it("la semana ya pagada el sábado no sigue diciendo «Queda por pagar» (revisión 24-10)", () => {
+    // Ganó 420, el pago le descontó el adelanto de 50 y le entregó 370.
+    const q = calcularQuedaPorPagar({ total: 420, adelantos: { abiertosPen: 0, descontadoPen: 50 }, pagado: 370 })!;
+    expect(q).toMatchObject({ ganado: 420, descontado: 50, pagado: 370, neto: 0, aPagar: 0, deuda: 0 });
+    expect(explicarQuedaPorPagar(q)).toContain("S/ 370.00 ya pagado el sábado");
+    // Si después ganó más (marcó el sábado tras pagar), queda sólo la diferencia.
+    const despues = calcularQuedaPorPagar({ total: 470, adelantos: { abiertosPen: 0, descontadoPen: 50 }, pagado: 370 })!;
+    expect(despues.aPagar).toBe(50);
+    // Sin el dato (el PDF del pago, que es el recibo) no se resta.
+    expect(calcularQuedaPorPagar({ total: 420, adelantos: { abiertosPen: 0, descontadoPen: 50 } })!.aPagar).toBe(370);
   });
 
   it("descuento parcial: lo descontado y lo que sigue abierto se restan los dos", () => {

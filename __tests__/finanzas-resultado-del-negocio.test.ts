@@ -263,6 +263,33 @@ describe("costos", () => {
     expect(renglon(armarResultado("2026-09", e), "gastos").monto).toBe(950);
   });
 
+  it("el pago de la semana de RRHH («Personal», con mayúscula) tampoco se cuenta dos veces", () => {
+    const e = vacia();
+    e.gastos = [
+      { id: "g1", date: utc("2026-09-05"), paidAt: null, amount: 420, category: "Personal", description: "Pago de la semana · Juan", supplierName: "Juan" },
+      { id: "g2", date: utc("2026-09-12"), paidAt: null, amount: 380, category: " PERSONAL ", description: "Sueldo Juan", supplierName: null },
+      { id: "g3", date: utc("2026-09-05"), paidAt: null, amount: 50, category: "servicios", description: "Luz", supplierName: null },
+    ];
+    e.planillas = { "2026-09": { total: 900, personas: [{ id: "c1", nombre: "Juan", total: 900, diasSinMarcar: 0 }] } };
+    const r = armarResultado("2026-09", e);
+    expect(renglon(r, "gastos").monto).toBe(50);
+    expect(r.totalCostos).toBe(950);
+    expect(r.avisos.find((a) => a.codigo === "personal_con_planilla")?.cuantos).toBe(2);
+  });
+
+  it("el pago de RRHH al que le cambiaron la categoría se reconoce por su marca (segunda revisión 24-10)", () => {
+    const e = vacia();
+    e.gastos = [
+      { id: "g1", date: utc("2026-09-05"), paidAt: null, amount: 420, category: "otros", description: "Pago de la semana · Juan", supplierName: "Juan", documentNumber: "RRHH-2026-08-31-CMABC123" },
+      { id: "g2", date: utc("2026-09-05"), paidAt: null, amount: 50, category: "otros", description: "Luz", supplierName: null, documentNumber: "RRHH-ABC" },
+    ];
+    e.planillas = { "2026-09": { total: 900, personas: [{ id: "c1", nombre: "Juan", total: 900, diasSinMarcar: 0 }] } };
+    const r = armarResultado("2026-09", e);
+    // El de la marca no se resta (la planilla ya lo cuenta); un número que sólo se parece, sí.
+    expect(renglon(r, "gastos").monto).toBe(50);
+    expect(r.avisos.find((a) => a.codigo === "personal_con_planilla")?.cuantos).toBe(1);
+  });
+
   it("quien no ve RRHH: la planilla va sin monto y el detalle sin filas", () => {
     const e = vacia();
     e.planillas = { "2026-09": { total: 900, personas: [{ id: "c1", nombre: "Juan", total: 900, diasSinMarcar: 0 }] } };

@@ -268,6 +268,8 @@ export interface GanadoDTO {
     nombre: string;
     puesto: string | null;
     beneficiarioId: string | null;
+    /** Lo ya entregado por el pago del sábado de las semanas enteras del período (decisión 6 de `lib/rrhh/ganado.ts`). */
+    pagado: number;
     /** `descontadoPen`: descuentos de planilla de ESTE período (ya no están abiertos). */
     adelantos: { abiertosPen: number; abiertos: number; descontadoPen: number } | null;
   })[];

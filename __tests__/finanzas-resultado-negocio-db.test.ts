@@ -145,7 +145,7 @@ describe("planilla sólo para quien ve RRHH", () => {
 
     const v = await ResultadoNegocioDB.pendientes("t1", "2026-09-29");
     expect(v.planillaPorPagar).toBe("sin_permiso");
-    expect(de("expense", (w) => w.category === "personal")).toHaveLength(0);
+    expect(de("expense", (w) => (w.category as { equals?: string } | undefined)?.equals === "personal")).toHaveLength(0);
     expect(H.ganado).not.toHaveBeenCalled();
   });
 
@@ -153,6 +153,14 @@ describe("planilla sólo para quien ve RRHH", () => {
     H.ganado.mockResolvedValue({ personas: [{ total: 900 }], total: 900 });
     const v = await ResultadoNegocioDB.pendientes("t1", "2026-09-29", { verPlanilla: true });
     expect(v.planillaPorPagar).toEqual({ monto: 900, personas: 1 });
+  });
+
+  it("lo ya pagado resta aunque el gasto diga «Personal» (el pago de RRHH): el filtro no mira mayúsculas", async () => {
+    H.ganado.mockResolvedValue({ personas: [{ total: 900 }], total: 900 });
+    H.respuestas["expense.aggregate"] = () => ({ _sum: { amount: 300 } });
+    const v = await ResultadoNegocioDB.pendientes("t1", "2026-09-29", { verPlanilla: true });
+    expect(v.planillaPorPagar).toEqual({ monto: 600, personas: 1 });
+    expect(de("expense", (w) => w.recurring === false)[0]).toMatchObject({ tenantId: "t1", category: { equals: "personal", mode: "insensitive" } });
   });
 });
 

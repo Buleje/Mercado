@@ -96,6 +96,13 @@ export class BeneficiarioYaVinculadoError extends Error {
     this.name = "BeneficiarioYaVinculadoError";
   }
 }
+/** Hay más de una cuenta de Adelantos libre con su documento: no se adivina cuál (→ 409). */
+export class CuentaAmbiguaError extends Error {
+  constructor(public readonly cuantas: number) {
+    super(`Hay ${cuantas} cuentas en Adelantos con su documento: vincula la correcta desde su ficha.`);
+    this.name = "CuentaAmbiguaError";
+  }
+}
 export class UsuarioNoEncontradoError extends Error {
   constructor() {
     super("Ese usuario del panel no existe.");
@@ -963,6 +970,92 @@ export const ColaboradoresDB = {
         tenantId,
       ).catch(() => {});
       return mapColaborador(row);
+    } catch (e) {
+      if (isUniqueViolation(e)) throw new BeneficiarioYaVinculadoError();
+      throw e;
+    }
+  },
+
+  /**
+   * La cuenta de Adelantos del trabajador, para darle un adelanto (RRHH ›
+   * Asistencia, Brandon 24-10: «que se vinculen los sistemas para evitar
+   * confusiones»).
+   *
+   * Ya vinculada → esa. Si no: la persona de Adelantos con su MISMO documento
+   * que no es de otro trabajador (si hay dos, no se adivina: `CuentaAmbiguaError`);
+   * si no hay ninguna, se le abre una con su nombre, documento y celular. Nunca
+   * por nombre: dos «Juan Pérez» son dos personas.
+   *
+   * Bajo el lock de la fila del colaborador: dos adelantos a la vez no le abren
+   * dos cuentas.
+   */
+  async asegurarCuenta(
+    tenantId: string,
+    id: string,
+    usuario: string,
+  ): Promise<{ beneficiarioId: string; nombre: string; origen: "ya_tenia" | "vinculada" | "creada" } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    try {
+      const r = await prisma.$transaction(
+        async (tx) => {
+          const filas = await tx.$queryRaw<{ id: string }[]>`
+            SELECT "id" FROM "Colaborador" WHERE "id" = ${id} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL FOR UPDATE
+          `;
+          if (filas.length === 0) return null;
+          const c = await tx.colaborador.findFirst({
+            where: { id, tenantId, deletedAt: null },
+            select: { nombre: true, documento: true, tipoDocumento: true, celular: true, beneficiarioId: true },
+          });
+          if (!c) return null;
+          if (c.beneficiarioId && (await AdelantosDB.existeBeneficiarioEnTx(tx, tenantId, c.beneficiarioId))) {
+            return { beneficiarioId: c.beneficiarioId, nombre: c.nombre, origen: "ya_tenia" as const };
+          }
+
+          let elegida: string | null = null;
+          if (c.documento) {
+            const doc = c.documento;
+            const conDoc = (await AdelantosDB.beneficiariosConDocumentoEnTx(tx, tenantId)).filter((b) => mismoDocumento(b.documento, doc));
+            if (conDoc.length > 0) {
+              const ocupadas = await tx.colaborador.findMany({
+                where: { tenantId, deletedAt: null, id: { not: id }, beneficiarioId: { in: conDoc.map((b) => b.id) } },
+                select: { beneficiarioId: true },
+              });
+              const tomadas = new Set(ocupadas.map((o) => o.beneficiarioId));
+              const libres = conDoc.filter((b) => !tomadas.has(b.id));
+              const activas = libres.filter((b) => b.activo);
+              const pool = activas.length > 0 ? activas : libres;
+              if (pool.length > 1) throw new CuentaAmbiguaError(pool.length);
+              elegida = pool[0]?.id ?? null;
+            }
+          }
+          const origen = elegida ? ("vinculada" as const) : ("creada" as const);
+          if (!elegida) {
+            const nueva = await AdelantosDB.createBeneficiarioEnTx(tx, tenantId, {
+              nombre: c.nombre,
+              documento: c.documento ?? undefined,
+              telefono: c.celular ?? undefined,
+              tipoDocumento: c.documento ? (c.tipoDocumento ?? null) : null,
+              notas: "Trabajador del negocio (RRHH).",
+            });
+            elegida = nueva.id;
+          }
+          await tx.colaborador.update({ where: { id, tenantId }, data: { beneficiarioId: elegida } });
+          return { beneficiarioId: elegida, nombre: c.nombre, origen };
+        },
+        { maxWait: 10_000, timeout: 20_000 },
+      );
+      if (r && r.origen !== "ya_tenia") {
+        logActivity(
+          "rrhh_colaborador_editar",
+          "Colaborador",
+          r.origen === "creada" ? "Se le abrió su cuenta en Adelantos" : "Se vinculó su cuenta de Adelantos por documento",
+          id,
+          usuario,
+          undefined,
+          tenantId,
+        ).catch((err) => logger.error("[rrhh] logActivity de la cuenta falló", { error: String(err) }));
+      }
+      return r;
     } catch (e) {
       if (isUniqueViolation(e)) throw new BeneficiarioYaVinculadoError();
       throw e;

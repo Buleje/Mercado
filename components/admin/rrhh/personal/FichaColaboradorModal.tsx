@@ -9,7 +9,7 @@
  */
 
 import { useState } from "react";
-import { Ban, Pencil, RefreshCw, RotateCcw, Trash2, User } from "@buleje/design-system/icons";
+import { Ban, HandCoins, Pencil, RefreshCw, RotateCcw, Trash2, User } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { LoadingState } from "@buleje/design-system";
@@ -21,13 +21,12 @@ import BotonFotocheck from "./BotonFotocheck";
 import ColaboradorFormModal from "./ColaboradorFormModal";
 import CesarColaboradorModal from "./CesarColaboradorModal";
 import FichaCambioEstado from "./FichaCambioEstado";
-import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
+import DarAdelantoModal from "../pagos/DarAdelantoModal";
 import FichaContratos from "./FichaContratos";
-import FichaCuenta from "./FichaCuenta";
 import FichaDatos from "./FichaDatos";
 import FichaFoto from "./FichaFoto";
+import FichaSeccionCuenta from "./FichaSeccionCuenta";
 import FichaTarifas from "./FichaTarifas";
-import FichaUsuarioPanel from "./FichaUsuarioPanel";
 import type { NivelRrhh } from "@/lib/rrhh/tipos";
 
 type Seccion = "datos" | "tarifas" | "contratos" | "cuenta";
@@ -49,6 +48,7 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
   const [editando, setEditando] = useState(false);
   const [cesarAbierto, setCesarAbierto] = useState(false);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
+  const [dandoAdelanto, setDandoAdelanto] = useState(false);
   const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
 
   const puedeCompleto = nivel === "completo";
@@ -166,6 +166,9 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
                 </button>
                 {puedeGestionar && c.estado !== "CESADO" && (
                   <>
+                    <button type="button" onClick={() => setDandoAdelanto(true)} className={BOTON.chico}>
+                      <HandCoins className="h-4 w-4" /> Dar adelanto
+                    </button>
                     <button type="button" onClick={() => setCambiandoEstado((v) => !v)} aria-expanded={cambiandoEstado} className={BOTON.chico}>
                       <RefreshCw className="h-4 w-4" /> Cambiar estado
                     </button>
@@ -230,21 +233,7 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
                 <FichaContratos colaboradorId={colaboradorId} contratos={ficha.contratos} sugeridos={ficha.contratosSugeridos} onCambio={avisar} />
               )}
               {seccion === "cuenta" && puedeCompleto && (
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <FichaCuenta
-                    vinculo={ficha.vinculo}
-                    cuenta={ficha.cuenta ?? null}
-                    guardando={guardando}
-                    onVincular={(id) => accion({ action: "vincular_beneficiario", beneficiarioId: id })}
-                    onCambio={avisar}
-                  />
-                  <FichaUsuarioPanel adminUser={ficha.vinculo.adminUser} guardando={guardando} accion={accion} onCambio={avisar} />
-                  {/* ADR-502: sus pagos semanales archivados (carpeta Equipo/Pagos),
-                      sólo admin/dueño; excluye las fotos de asistencia del mismo tag. */}
-                  <div className="lg:col-span-2">
-                    <LinkedDocumentsSection entity="colaborador" id={colaboradorId} nombre={c.nombre} />
-                  </div>
-                </div>
+                <FichaSeccionCuenta colaboradorId={colaboradorId} ficha={ficha} guardando={guardando} accion={accion} onCambio={avisar} />
               )}
             </div>
           </>
@@ -261,6 +250,18 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
           aboveModals
           onGuardado={() => {
             setEditando(false);
+            avisar();
+          }}
+        />
+      )}
+      {dandoAdelanto && c && (
+        <DarAdelantoModal
+          personas={[{ id: colaboradorId, nombre: c.nombre }]}
+          colaboradorId={colaboradorId}
+          aboveModals
+          onClose={() => setDandoAdelanto(false)}
+          onDado={() => {
+            setDandoAdelanto(false);
             avisar();
           }}
         />

@@ -8,6 +8,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
+import { esGastoDePagoRrhh, MENSAJE_GASTO_DE_PAGO_RRHH } from "@/lib/rrhh/pago-semana";
 import {
   diaDeCaja, egresoDeCajaEnTx, etiquetaGasto, etiquetaGastoBorrado, etiquetaPagoAProveedor,
   idDevolucionDeGasto, idRetiroDeGasto,
@@ -61,6 +62,14 @@ export class RetiroEnCajaError extends Error {
   }
 }
 
+/** Corregir el monto del gasto de un pago de RRHH desde Mi Plata (ver `MENSAJE_GASTO_DE_PAGO_RRHH`). */
+export class GastoDePagoRrhhError extends Error {
+  constructor(mensaje: string = MENSAJE_GASTO_DE_PAGO_RRHH) {
+    super(mensaje);
+    this.name = "GastoDePagoRrhhError";
+  }
+}
+
 type CorreccionGasto = Parameters<typeof ExpensesDB.update>[2];
 
 const soles = (n: number) => `S/ ${n.toFixed(2)}`;
@@ -84,7 +93,7 @@ async function leerRetiro(tenantId: string, gastoId: string) {
 }
 
 /** Anota en la caja ABIERTA con un id elegido (el `moverCajaEnTx` de adelantos no lo acepta). */
-async function anotarEnCajaAbiertaEnTx(
+export async function anotarEnCajaAbiertaEnTx(
   tx: Prisma.TransactionClient,
   tenantId: string,
   mov: { id: string; monto: number; etiqueta: string },
@@ -134,7 +143,7 @@ function safeRevalidate(tag: string): void {
 }
 
 /** Lo mismo que invalida `ExpensesDB.add` (privado allá) + la caja. */
-function revalidarTrasEgreso(tenantId: string, gasto: boolean): void {
+export function revalidarTrasEgreso(tenantId: string, gasto: boolean): void {
   if (gasto) {
     revalidarGastosAlInstante(tenantId);
     safeRevalidate(`tenant:${tenantId}:cash-flow`);
@@ -237,9 +246,12 @@ export const GastoConCajaDB = {
 
   /**
    * Corrige un gasto. Si salió de la caja y cambia el monto: con la caja abierta
-   * el retiro se ajusta en la misma tx; con la caja cerrada no se toca y vuelve
-   * el aviso. Pasarlo a otro medio con la caja abierta = `RetiroEnCajaError`
-   * (la plata ya salió del cajón: se borra y se registra de nuevo).
+   * el retiro se ajusta en la misma tx POR LA DIFERENCIA (retiro + nuevo −
+   * anterior: igualarlo al monto nuevo descuadraba un retiro que no era el
+   * monto entero); con la caja cerrada no se toca y vuelve el aviso. Pasarlo a
+   * otro medio con la caja abierta = `RetiroEnCajaError` (la plata ya salió del
+   * cajón: se borra y se registra de nuevo). El monto del pago de la semana de
+   * RRHH no se corrige acá = `GastoDePagoRrhhError`.
    */
   async corregirGasto(
     tenantId: string,
@@ -247,9 +259,17 @@ export const GastoConCajaDB = {
     patch: CorreccionGasto,
   ): Promise<{ gasto: DbExpense | null; caja: CajaDelCambio | null }> {
     if (!tenantId) throw new Error("tenantId is required");
-    const retiro = await leerRetiro(tenantId, id);
+    const actual = await prisma.expense.findFirst({
+      where: { id, tenantId },
+      select: { amount: true, documentNumber: true, recurring: true, description: true, category: true },
+    });
+    if (!actual) return { gasto: null, caja: null };
+    const anterior = redondear(toNumOrZero(actual.amount));
     const nuevo = patch.amount !== undefined ? redondear(patch.amount) : null;
-    const cambiaMonto = retiro != null && nuevo != null && nuevo !== retiro.monto;
+    const otroMonto = nuevo != null && nuevo !== anterior;
+    if (otroMonto && esGastoDePagoRrhh(actual.documentNumber)) throw new GastoDePagoRrhhError();
+    const retiro = await leerRetiro(tenantId, id);
+    const cambiaMonto = retiro != null && otroMonto;
     const dejaEfectivo = retiro != null && patch.paymentMethod !== undefined
       && String(patch.paymentMethod ?? "").trim().toLowerCase() !== "efectivo";
     if (!retiro || (!cambiaMonto && !dejaEfectivo)) {
@@ -268,28 +288,52 @@ export const GastoConCajaDB = {
         `Este gasto sacó ${soles(retiro.monto)} del cajón en efectivo. Para cambiar el medio, bórralo (la plata vuelve a la caja) y regístralo de nuevo.`,
       );
     }
-    const actual = await prisma.expense.findFirst({ where: { id, tenantId }, select: { recurring: true, description: true, category: true } });
-    if (!actual || nuevo == null) return { gasto: null, caja: null };
+    if (nuevo == null) return { gasto: null, caja: null };
+    const retiroCon = (montoRetiro: number, montoAnterior: number): number => {
+      const r = redondear(montoRetiro + (nuevo - montoAnterior));
+      if (r <= 0) {
+        throw new RetiroEnCajaError(
+          `Con ${soles(nuevo)} el retiro de la caja quedaría en ${soles(r)}. Bórralo (la plata vuelve a la caja) y regístralo de nuevo.`,
+        );
+      }
+      return r;
+    };
+    retiroCon(retiro.monto, anterior); // sin abrir la tx si ya se sabe que no va
     const que = queDelGasto(patch.description ?? actual.description, patch.category ?? actual.category);
     const estado = await prisma.$transaction(async (tx) => {
+      /* Monto y retiro RELEÍDOS bajo lock (revisión 24-10): dos correcciones a
+         la vez calculaban la diferencia con lo leído antes de la tx y la
+         segunda pisaba el retiro con una cuenta vieja. Orden de locks igual
+         que antes: el gasto, la caja (ÚLTIMO lock de caja) y su retiro. */
+      const [fila] = await tx.$queryRaw<{ amount: Prisma.Decimal | null; documentNumber: string | null }[]>`
+        SELECT amount, "documentNumber" FROM "Expense" WHERE id = ${id} AND "tenantId" = ${tenantId} FOR UPDATE`;
+      if (!fila) return null;
+      const anteriorBajoLock = redondear(toNumOrZero(fila.amount));
+      if (anteriorBajoLock !== nuevo && esGastoDePagoRrhh(fila.documentNumber)) throw new GastoDePagoRrhhError();
       await tx.expense.updateMany({ where: { id, tenantId }, data: datosDeCorreccion(patch, actual.recurring) });
-      // La caja, ÚLTIMO lock; releída bajo el lock por si la cerraron recién.
       const caja = await CashRegistersMovementsDB.bloquearCajaParaAnotarEnTx(tx, tenantId, retiro.cajaId);
-      if (caja?.status !== "abierta") return "cerrada" as const;
+      if (caja?.status !== "abierta") return { estado: "cerrada" as const };
+      const [mov] = await tx.$queryRaw<{ amount: Prisma.Decimal | null }[]>`
+        SELECT amount FROM "CashMovement" WHERE id = ${idRetiroDeGasto(id)} AND "cashRegisterId" = ${retiro.cajaId} FOR UPDATE`;
+      if (!mov) return { estado: "sin_retiro" as const };
+      const desde = redondear(toNumOrZero(mov.amount));
+      const hasta = retiroCon(desde, anteriorBajoLock);
       await tx.cashMovement.updateMany({
         where: { id: idRetiroDeGasto(id), cashRegisterId: retiro.cajaId },
-        data: { amount: nuevo, description: etiquetaGasto(que) },
+        data: { amount: hasta, description: etiquetaGasto(que) },
       });
-      return "ajustado" as const;
+      return { estado: "ajustado" as const, desde, hasta };
     });
+    if (!estado) return { gasto: null, caja: null };
     revalidarTrasEgreso(tenantId, true);
-    if (estado === "ajustado") invalidarVentasOverview(tenantId);
+    if (estado.estado === "ajustado") invalidarVentasOverview(tenantId);
     const gasto = await ExpensesDB.getById(tenantId, id);
+    if (estado.estado === "sin_retiro") return { gasto, caja: null };
     return {
       gasto,
-      caja: estado === "cerrada" ? avisoCerrada() : {
+      caja: estado.estado === "cerrada" ? avisoCerrada() : {
         retiro: "ajustado",
-        aviso: `La caja abierta también se corrigió: el retiro pasó de ${soles(retiro.monto)} a ${soles(nuevo)}.`,
+        aviso: `La caja abierta también se corrigió: el retiro pasó de ${soles(estado.desde)} a ${soles(estado.hasta)}.`,
       },
     };
   },

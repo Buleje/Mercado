@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AdelantosDB, IdempotenciaDistintaError, ReglaDeRecibidoError } from "@/lib/db/adelantos.db";
+import { AdelantosDB, DescuentoDePlanillaError, IdempotenciaDistintaError, ReglaDeRecibidoError } from "@/lib/db/adelantos.db";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { requireAdmin } from "@/lib/require-admin";
 import { permisoAdelantos } from "@/lib/adelantos/permisos";
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         puedeSacarPlataDeRecibido: soloAdminODueno(auth.role) === null,
       });
     } catch (bizErr) {
-      if (bizErr instanceof ReglaDeRecibidoError || bizErr instanceof IdempotenciaDistintaError) {
+      if (bizErr instanceof ReglaDeRecibidoError || bizErr instanceof IdempotenciaDistintaError || bizErr instanceof DescuentoDePlanillaError) {
         return NextResponse.json({ error: bizErr.message, code: bizErr.code }, { status: bizErr.status });
       }
       // Errores de negocio (producto inexistente, valor 0, adelanto cancelado) → 400 claro.

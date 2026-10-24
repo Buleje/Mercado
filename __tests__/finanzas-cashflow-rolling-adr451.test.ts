@@ -14,6 +14,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Args = { where?: Record<string, unknown> } | undefined;
+/** Los gastos de sueldos se piden sin mayúsculas: `{ equals: "personal", mode: "insensitive" }`. */
+const esPersonal = (c: unknown) => (c as { equals?: string; mode?: string } | undefined)?.equals === "personal";
 
 const H = vi.hoisted(() => {
   const llamadas: { modelo: string; metodo: string; args: unknown }[] = [];
@@ -65,7 +67,7 @@ function sembrar() {
   r["treasuryCuenta.findMany"] = () => []; // sin tesorería → neto de 30 días
   r["sale.aggregate"] = () => ({ _sum: { total: 170 } });
   r["expense.aggregate"] = (w) =>
-    w.category === "personal" ? { _sum: { amount: 400 } } : w.recurring === true ? { _sum: { amount: 200 } } : { _sum: { amount: 620 } };
+    esPersonal(w.category) ? { _sum: { amount: 400 } } : w.recurring === true ? { _sum: { amount: 200 } } : { _sum: { amount: 620 } };
   r["order.findMany"] = () => [{ total: 50, createdAt: d("2026-10-06T15:00:00.000Z") }];
   r["fiado.findMany"] = () => [{ saldo: 30, fechaVence: d("2026-10-13T15:00:00.000Z") }];
   r["payable.findMany"] = (w) =>
@@ -174,7 +176,7 @@ describe("proyección de 13 semanas: la nómina sólo para quien ve RRHH", () =>
     expect(sin.weeks.slice(0, 4).map((w) => w.closingBalance)).toEqual([-580, -580, -600, -720]);
     // Ni lo ganado de RRHH ni los gastos de personal se consultan.
     expect(H.ganado).not.toHaveBeenCalled();
-    expect(H.llamadas.some((c) => c.modelo === "expense" && (c.args as Args)?.where?.category === "personal")).toBe(false);
+    expect(H.llamadas.some((c) => c.modelo === "expense" && esPersonal((c.args as Args)?.where?.category))).toBe(false);
   });
 });
 

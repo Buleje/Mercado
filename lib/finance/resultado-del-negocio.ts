@@ -42,6 +42,16 @@ import { limaDateKey } from "@/lib/utils";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
 import { destinoDe } from "@/lib/admin/enlaces-panel";
 import { DESTINO_ADELANTOS, destinoDeLaLiquidacion, destinoDelAdelanto } from "@/lib/adelantos/enlace-adelanto";
+import { esGastoDePagoRrhh } from "@/lib/rrhh/pago-semana";
+
+/**
+ * ¿El gasto es de sueldos? El catálogo guarda `personal`, pero un gasto escrito
+ * a mano o importado puede traer «Personal»: compararlo exacto contaba el sueldo
+ * dos veces (el gasto y la planilla de RRHH).
+ */
+export function esGastoDePersonal(category: string | null | undefined): boolean {
+  return (category ?? "").trim().toLowerCase() === "personal";
+}
 
 /**
  * El nombre del gasto, sin el bloque `\n---META---\n{json}` que los gastos
@@ -523,6 +533,8 @@ export interface GastoEntrada {
    * antes de pagarse: sin `paidAt` es devengado, todavía no plata que salió.
    */
   gtfNumber?: string | null;
+  /** El comprobante: el del pago de la semana de RRHH es su marca (`RRHH-<lunes>-<id>`). */
+  documentNumber?: string | null;
 }
 
 /** Lo ganado de referencia de RRHH en un mes (`GanadoDB.periodo`). */
@@ -935,7 +947,9 @@ function calcularResultado(mes: string, e: EntradaResultado): CalculoResultado {
   for (const g of e.gastos) {
     const dia = diaDeFecha(g.date);
     if (dia.slice(0, 7) !== mes) continue;
-    if (hayPlanilla && g.category === "personal") {
+    // El pago de la semana se reconoce también por su marca: si le cambiaron la
+    // categoría, el sueldo no puede volver a restarse junto a la planilla.
+    if (hayPlanilla && (esGastoDePersonal(g.category) || esGastoDePagoRrhh(g.documentNumber))) {
       personalExcluido += 1;
       personalMonto += num(g.amount);
       continue;

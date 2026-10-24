@@ -71,6 +71,8 @@ export interface OpcionesLectura {
 const SIN_PLANILLA: OpcionesLectura = { verPlanilla: false };
 const sufijo = (o: OpcionesLectura) => (o.verPlanilla ? "p1" : "p0");
 const DIA_MS = 86_400_000;
+/** Los gastos de sueldos, sin importar mayúsculas (`esGastoDePersonal` hace lo mismo en memoria). */
+const CATEGORIA_PERSONAL = { equals: "personal", mode: "insensitive" } as const;
 
 const n = (v: Parameters<typeof toNumOrZero>[0]) => toNumOrZero(v);
 const nOrNull = (v: Parameters<typeof toNumOrZero>[0] | null) => (v == null ? null : toNumOrZero(v));
@@ -79,7 +81,7 @@ const SELECT_MOV = {
   id: true, parteId: true, parteNombre: true, fecha: true, tipo: true, concepto: true, monto: true, moneda: true,
   referencia: true, ctpEntryId: true, liquidacionId: true, gtfNumber: true,
 } as const;
-const SELECT_GASTO = { id: true, date: true, paidAt: true, amount: true, category: true, description: true, supplierName: true, gtfNumber: true } as const;
+const SELECT_GASTO = { id: true, date: true, paidAt: true, amount: true, category: true, description: true, supplierName: true, gtfNumber: true, documentNumber: true } as const;
 const SELECT_COMPRA = { id: true, gtfNumber: true, entryDate: true, costoTotal: true, moneda: true, providerName: true, volumeM3: true } as const;
 
 /** Compras de madera: vivas, sin rechazadas/anuladas y sin la madera de servicio (ADR-437). */
@@ -433,7 +435,7 @@ export const ResultadoNegocioDB = {
       // Sueldos: sólo para quien ve lo ganado de RRHH.
       opciones.verPlanilla
         ? prisma.expense.aggregate({
-            where: { tenantId, recurring: false, category: "personal", date: { gte: v.gte, lt: v.lt } },
+            where: { tenantId, recurring: false, category: CATEGORIA_PERSONAL, date: { gte: v.gte, lt: v.lt } },
             _sum: { amount: true },
           })
         : Promise.resolve(null),
@@ -548,7 +550,7 @@ export const ResultadoNegocioDB = {
     /** Σ gastos de `personal` desde `desde` (la nómina estimada). */
     async gastoPersonalDesde(tenantId: string, desde: Date): Promise<number> {
       if (!tenantId) throw new Error("tenantId is required");
-      const agg = await prisma.expense.aggregate({ where: { tenantId, category: "personal", date: { gte: desde } }, _sum: { amount: true } });
+      const agg = await prisma.expense.aggregate({ where: { tenantId, category: CATEGORIA_PERSONAL, date: { gte: desde } }, _sum: { amount: true } });
       return toNumOrZero(agg._sum.amount);
     },
 
@@ -556,7 +558,7 @@ export const ResultadoNegocioDB = {
     async gastoRecurrenteDesde(tenantId: string, desde: Date): Promise<number> {
       if (!tenantId) throw new Error("tenantId is required");
       const agg = await prisma.expense.aggregate({
-        where: { tenantId, recurring: true, category: { notIn: ["personal"] }, date: { gte: desde } },
+        where: { tenantId, recurring: true, NOT: { category: CATEGORIA_PERSONAL }, date: { gte: desde } },
         _sum: { amount: true },
       });
       return toNumOrZero(agg._sum.amount);

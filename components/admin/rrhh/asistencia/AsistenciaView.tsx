@@ -15,6 +15,9 @@
  *
  * Día / Semana / Mes son `BarraDeSecciones` en la fila del título (noche
  * 11-10): el estado sigue siendo local, no va a la URL.
+ *
+ * Arriba, sólo para el dueño, la línea del pago del sábado (24-10): adelantos
+ * de la semana y el neto por persona (`../pagos/BarraPagoSemana`).
  */
 
 import { useState, type ReactNode } from "react";
@@ -25,6 +28,7 @@ import HojaDelDia from "./HojaDelDia";
 import HojaDelMes from "./HojaDelMes";
 import HojaDeLaSemana from "./HojaDeLaSemana";
 import MotivoCorreccionModal from "./MotivoCorreccionModal";
+import BarraPagoSemana from "../pagos/BarraPagoSemana";
 import { ID_PANEL_ASISTENCIA, type ModoAsistencia } from "./panel-asistencia";
 import type { NivelRrhh } from "@/lib/rrhh/tipos";
 
@@ -72,6 +76,7 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
 
   return (
     <>
+      {nivel === "completo" && <BarraPagoSemana />}
       {hoja}
       <MotivoCorreccionModal />
     </>

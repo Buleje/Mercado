@@ -102,14 +102,24 @@ export default function DescuentoPlanillaModal({
             // dejó de pagar. Anotarlo como ingreso inflaría el arqueo.
           }),
         });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) {
+          // El motivo del servidor (p. ej. «Esa semana ya se pagó en RRHH»), no el código.
+          let motivo = `HTTP ${r.status}`;
+          try {
+            const b = (await r.json()) as { error?: unknown };
+            if (typeof b.error === "string" && b.error) motivo = b.error;
+          } catch {
+            // Sin cuerpo JSON: queda el código HTTP.
+          }
+          throw new Error(motivo);
+        }
         hechos += 1;
       } catch (err) {
         logger.error("[adelantos] falló un descuento de planilla", {
           adelantoId: l.adelantoId,
           error: String(err),
         });
-        fallidos.push(l.persona);
+        fallidos.push(`${l.persona} (${err instanceof Error ? err.message : String(err)})`);
       }
     }
     setAplicando(false);
@@ -238,7 +248,7 @@ export default function DescuentoPlanillaModal({
               {resultado.fallidos.length > 0 && (
                 <p className="mt-1 flex items-start gap-1.5">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  No se pudo con: {resultado.fallidos.join(", ")}. Esos siguen debiendo lo mismo: ciérrala y
+                  No se pudo con: {resultado.fallidos.join("; ")}. Esos siguen debiendo lo mismo: ciérrala y
                   vuelve a abrirla para reintentarlos, con la lista al día.
                 </p>
               )}

@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { ExpensesDB } from "@/lib/jsondb";
-import { GastoConCajaDB, RetiroEnCajaError } from "@/lib/db/gasto-con-caja.db";
+import { GastoConCajaDB, GastoDePagoRrhhError, RetiroEnCajaError } from "@/lib/db/gasto-con-caja.db";
+import { camposBloqueadosDelPagoRrhh, esGastoDePagoRrhh, MENSAJE_GASTO_DE_PAGO_RRHH } from "@/lib/rrhh/pago-semana";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -120,6 +121,20 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
     if (!antes) {
       return NextResponse.json({ error: "Gasto no encontrado en este tenant" }, { status: 404 });
     }
+    // El gasto del pago de la semana de RRHH: su comprobante es la marca y su
+    // monto, lo pagado. Fuera de descripción, nota y foto, cualquier campo
+    // descuadra el pago o reescribe la marca (el papel la pasa a MAYÚSCULAS o la
+    // borra) y la semana se vería sin pagar: se podía pagar dos veces.
+    if (esGastoDePagoRrhh(antes.documentNumber)) {
+      // Sólo lo que CAMBIA: el formulario de Mi Plata manda todo el gasto aunque se toque la nota.
+      const actual = antes as unknown as Record<string, unknown>;
+      const bloqueados = camposBloqueadosDelPagoRrhh(parsed.data).filter(
+        (k) => !mismoValor((parsed.data as Record<string, unknown>)[k], actual[k]),
+      );
+      if (bloqueados.length > 0) {
+        return NextResponse.json({ error: MENSAJE_GASTO_DE_PAGO_RRHH, campo: bloqueados[0], codigo: "pago_rrhh" }, { status: 409 });
+      }
+    }
     const { documentType, documentNumber, supplierRuc, igvAmount, afectoIgv, attachmentUrl, ...base } = parsed.data;
     // El papel se revisa ANTES de escribir nada: un RUC mal tipeado no deja el
     // monto corregido a medias.
@@ -154,6 +169,9 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
     }
     return NextResponse.json(caja ? { ...expense, caja } : expense);
   } catch (err) {
+    if (err instanceof GastoDePagoRrhhError) {
+      return NextResponse.json({ error: err.message, campo: "amount", codigo: "pago_rrhh" }, { status: 409 });
+    }
     if (err instanceof RetiroEnCajaError) {
       return NextResponse.json({ error: err.message, campo: "paymentMethod" }, { status: 409 });
     }
@@ -199,4 +217,15 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });
   }
+}
+
+/** Igual a lo guardado: no cuenta como cambio (número, texto, null o fecha «2026-10-24» contra ISO). */
+function mismoValor(nuevo: unknown, guardado: unknown): boolean {
+  const a = nuevo instanceof Date ? nuevo.toISOString() : nuevo;
+  const b = guardado instanceof Date ? guardado.toISOString() : guardado;
+  if (a === b || ((a ?? null) === null && (b ?? null) === null)) return true;
+  if (typeof a === "number" || typeof b === "number") return Number(a) === Number(b);
+  const sa = String(a ?? "");
+  const sb = String(b ?? "");
+  return sa === sb || (sa.length === 10 && sb.startsWith(sa)) || (sb.length === 10 && sa.startsWith(sb));
 }
