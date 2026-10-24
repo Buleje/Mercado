@@ -135,3 +135,50 @@ Antes de reponerlos: que Blas revise su papelera (restaurar lo que sirva) y que 
 | MCP | `request_rollback` con `projectId=prj_J3LW8EWUie3GLvqSdYGVBvcqu7V5`, `deploymentId=dpl_EWnizDb4JVE2JPkqG7FYnmQ6VmM2` |
 
 Después del rollback: `curl -s https://mercado-brandon-luis-projects-9cf56555.vercel.app/api/health` (no `buleje.pe`, que no resuelve) y `vercel crons ls` para ver qué crons quedaron vivos. La base **no** vuelve atrás: las migraciones son aditivas y el código viejo las tolera. Mientras el rollback esté activo, Vercel no asigna el dominio a los deploys nuevos hasta volver a promover.
+
+## 8. Copia antes del pase (24-10)
+
+Supabase está en el plan **Free** (sin copias que se puedan bajar) y `backup-offsite.yml` no tiene ni un éxito. Por eso, **la noche del despliegue, antes de tocar nada**, se saca una copia completa a mano. Es sólo lectura contra la base.
+
+```bash
+bash scripts/copia-base.sh                  # ~1,5 min; la 1.ª vez en una PC nueva: --instalar-pg17
+```
+
+| Qué hace | Detalle |
+|---|---|
+| `pg_dump` 17 | El de Ubuntu es 16 y no copia un servidor 17. `--instalar-pg17` baja los paquetes oficiales de PGDG a `~/.local/pg17` (sha256 verificado, sin sudo, sin tocar apt ni el 16) |
+| Conexión | `DIRECT_URL` si se alcanza; desde WSL no (ese host es sólo IPv6), así que usa el pooler en **modo sesión** (`aws-1…pooler.supabase.com:5432`). **Nunca el 6543**: los `SET` de `pg_dump` se pegarían en conexiones de producción. Medido 24-10: el modo sesión resetea el estado entre clientes. La URL y la clave no se imprimen |
+| Salida | `~/copias-base/bsm-base-AAAA-MM-DD_HHMM.dump` (formato custom) + `.sha256` + `.txt` (resumen) y la misma terna en `/mnt/d/copias-base/` con el sha256 comprobado |
+| Verificación | `pg_restore --list` (tablas, bloques de datos, esquemas), filas contadas **dentro** de la copia tabla por tabla y `count(*)` en vivo de las 5 tablas más grandes |
+| Lo que NO trae | Los archivos de Supabase Storage (fotos, PDF del Archivo): sólo sus filas (`storage.objects`) |
+
+Primera corrida (24-10 12:50 Lima): 4,0 MB, sha256 `31253af8…abc881`, 322 tablas (283 en `public`), 47.488 filas; `Tenant` 15, `Order` 111, `Product` 272 iguales en la copia y en vivo. `node scripts/deploy-chequeo.mjs` marca «Copia manual de la base» en NO si la última tiene más de 24 h.
+
+**Restaurar** (siempre en una base **vacía**, nunca sobre la de producción):
+
+```bash
+export PATH="$HOME/.local/pg17/root/usr/lib/postgresql/17/bin:$PATH"
+export LD_LIBRARY_PATH="$HOME/.local/pg17/root/usr/lib/x86_64-linux-gnu"
+pg_restore --list ~/copias-base/<archivo>.dump | less                       # ver qué hay
+pg_restore --data-only -n public -t Order -f /tmp/order.sql ~/copias-base/<archivo>.dump   # una tabla a un archivo
+pg_restore --no-owner --no-privileges --schema=public -d "<URL de la base VACÍA>" ~/copias-base/<archivo>.dump
+```
+
+Esto **no** es el DR drill de la regla 14: el drill pide restaurar y comprobar. Se puede hacer local con el servidor de PGDG extraído igual que el cliente (sin sudo).
+
+## 9. Armado en GitHub, gratis (24-10)
+
+La máquina de Vercel Hobby (8 GB) muere por memoria armando la rama. El repo es público, así que `ubuntu-latest` de GitHub Actions (4 núcleos, 16 GB) es gratis: el job `deploy-preview` de `.github/workflows/ci.yml` arma con `vercel build` allí y sube el resultado con `vercel deploy --prebuilt` como **preview**.
+
+| Paso | Quién | Cómo |
+|---|---|---|
+| 1. Token | Brandon | vercel.com, logueado en la cuenta dueña del proyecto `mercado` (equipo `team_tZ6dsZ6AVoAQ9enqpd4kVRPK`, la URL `mercado-brandon-luis-projects-9cf56555.vercel.app`) → Account Settings → **Tokens** → Create; alcance = ese equipo; vencimiento 30 días |
+| 2. Secreto | Brandon | github.com/Buleje/Mercado → Settings → Secrets and variables → **Actions** → New repository secret → nombre `VERCEL_TOKEN`, valor el token. `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID` son opcionales: el workflow ya trae los ids de `.vercel/project.json` |
+| 3. Lanzar | hilo principal | la rama con este `ci.yml` tiene que estar en GitHub (commit + push); después `gh workflow run ci.yml --ref <rama>` y `gh run watch`. El botón «Run workflow» de la web aparece recién cuando este `ci.yml` llegue a `master` |
+| 4. Probar | Brandon | la URL sale en el resumen de la corrida; recorrer §6.4 |
+
+Qué hace el job a mano: no corre lint/tests/E2E (los corre el pre-commit), comprueba `VERCEL_TOKEN` y corta con el mensaje de qué cargar si falta, `vercel pull --environment=preview`, **oculta en el log todo valor sensible bajado** (los logs de un repo público son públicos), avisa si faltan `DATABASE_URL`/`DIRECT_URL`/`AUTH_SECRET` en Preview, `vercel build` (con 6 GB de swap extra) y `vercel deploy --prebuilt`. Nunca `--prod`.
+
+Ojo:
+- El build **necesita la base** (prerender, §1): si el `DATABASE_URL` de Preview sigue siendo el del ADR-114 (`app_user` @ `aws-0`), cae con `tenant/user app_user… not found` → corregirlo (§3.1).
+- **Promover un preview a producción lo vuelve a armar en Vercel** con las variables de producción (así lo describe la doc de Vercel; no medido acá), en la máquina de 8 GB: no sirve. Para producción se repite el armado en Actions con `vercel pull --environment=production`, `vercel build --prod` y `vercel deploy --prebuilt --prod --skip-domain` (sin dominio = el canario de §5), se prueba esa URL y recién ahí `vercel promote <url>`. Ese job no existe a propósito: lo decide Brandon.

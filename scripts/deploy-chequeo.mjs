@@ -222,6 +222,28 @@ if (!gh.ok) {
       const ok = rs.filter((r) => r.conclusion === "success").length;
       add("Workflow backup-offsite", `${ok} éxitos en las últimas ${rs.length}; la última: ${rs[0]?.conclusion ?? "ninguna"} (${rs[0]?.createdAt ?? "-"})`, rs.length > 0 && rs[0].conclusion === "success", "gh run list --workflow backup-offsite.yml");
     }
+    // Armado gratis en Actions (ci.yml → deploy-preview, `vercel build` + `--prebuilt`): sólo pide VERCEL_TOKEN.
+    const sec = await run("gh", ["secret", "list", "--json", "name", "--jq", ".[].name"]);
+    if (!sec.ok) add("Secreto VERCEL_TOKEN (armado en Actions)", `sin medir (${sec.out.replace(/\s+/g, " ")})`, null, "gh secret list");
+    else {
+      const nombres = sec.out.trim().split("\n").filter(Boolean);
+      const tiene = nombres.includes("VERCEL_TOKEN");
+      add("Secreto VERCEL_TOKEN (armado en Actions)", tiene ? `cargado (${nombres.length} secretos en el repo)` : `falta (el repo tiene ${nombres.length}: ${nombres.join(", ") || "ninguno"})`, tiene, "gh secret list (sólo nombres)");
+    }
+  }
+}
+
+/* ── 4b. Copia manual de la base (scripts/copia-base.sh) ───────────────── */
+{
+  const dir = `${process.env.HOME}/copias-base`;
+  const copias = existsSync(dir) ? readdirSync(dir).filter((f) => /^bsm-base-.*\.dump$/.test(f)).sort().reverse() : [];
+  if (!copias.length) add("Copia manual de la base (< 24 h)", "ninguna en ~/copias-base", false, "bash scripts/copia-base.sh");
+  else {
+    const m = /bsm-base-(\d{4}-\d{2}-\d{2})_(\d{2})(\d{2})\.dump/.exec(copias[0]);
+    const horas = m ? (Date.now() - Date.parse(`${m[1]}T${m[2]}:${m[3]}:00-05:00`)) / 3600000 : NaN;
+    const resumen = existsSync(`${dir}/${copias[0]}.txt`) ? readFileSync(`${dir}/${copias[0]}.txt`, "utf8") : "";
+    const nFilas = /Filas dentro de la copia: (\d+)/.exec(resumen)?.[1] ?? "?";
+    add("Copia manual de la base (< 24 h)", `${copias[0]} · hace ${Number.isFinite(horas) ? horas.toFixed(1) : "?"} h · ${nFilas} filas`, Number.isFinite(horas) && horas < 24, `~/copias-base/${copias[0]}.txt`);
   }
 }
 
@@ -259,5 +281,5 @@ console.log(`\nChequeo de despliegue — ${new Date().toISOString()} — base de
 console.log("| Freno | Hoy | OK/NO | Fuente |\n|---|---|---|---|");
 for (const f of filas) console.log(`| ${f.freno} | ${f.hoy} | ${marca(f.ok)} | ${f.fuente} |`);
 const no = filas.filter((f) => f.ok === false).length, sm = filas.filter((f) => f.ok === null).length;
-console.log(`\n${no === 0 && sm === 0 ? "Sin frenos medidos." : `${no} freno(s) en NO, ${sm} sin medir.`} Lo que este script no ve: causa del build, secretos cargados en Vercel, mensajes exactos de WhatsApp, Supabase Free sin copias.`);
+console.log(`\n${no === 0 && sm === 0 ? "Sin frenos medidos." : `${no} freno(s) en NO, ${sm} sin medir.`} Lo que este script no ve: causa del build, secretos cargados en Vercel, mensajes exactos de WhatsApp, archivos de Supabase Storage (la copia no los trae).`);
 process.exit(0);
