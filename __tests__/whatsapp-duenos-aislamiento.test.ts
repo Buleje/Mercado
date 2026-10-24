@@ -134,14 +134,14 @@ describe("el rol del teléfono es el ACTUAL de quien lo vinculó", () => {
   it("lee el rol de HOY en el negocio que recibió el mensaje (no el guardado al vincular)", async () => {
     mockFindUnique.mockResolvedValueOnce(conAutor("enc"));
     mockAdminFind.mockResolvedValueOnce({ id: "u1", name: "Enc", role: "manager", active: true });
-    expect(await WhatsAppDuenosDB.rolActual("t-a", "+51 987 000 111")).toEqual({ rol: "manager" });
+    expect(await WhatsAppDuenosDB.rolActual("t-a", "+51 987 000 111")).toEqual({ rol: "manager", usuario: "enc" });
     expect(mockAdminFind.mock.calls[0][0].where).toEqual({ tenantId: "t-a", username: "enc" });
   });
 
   it("si le bajaron el rol, el teléfono baja con ella", async () => {
     mockFindUnique.mockResolvedValueOnce(conAutor("enc"));
     mockAdminFind.mockResolvedValueOnce({ id: "u1", name: "Enc", role: "cajero", active: true });
-    expect(await WhatsAppDuenosDB.rolActual("t-a", TEL)).toEqual({ rol: "cajero" });
+    expect(await WhatsAppDuenosDB.rolActual("t-a", TEL)).toEqual({ rol: "cajero", usuario: "enc" });
   });
 
   it.each([

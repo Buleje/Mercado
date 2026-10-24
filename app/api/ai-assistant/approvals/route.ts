@@ -133,6 +133,7 @@ export async function POST(req: NextRequest) {
       // semánticamente correcto porque el HITL gate ya filtró el flujo.
       actorRole: auth.role,
       actorId: auth.username,
+      actorUsuario: auth.username,
     });
 
     removePendingApproval(parsed.data.id);

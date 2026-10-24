@@ -153,9 +153,11 @@ export async function manejarMensajeDeDueno(entrada: MensajeDueno): Promise<void
     return;
   }
   const rol = quien.rol;
+  /** Quien vinculó el teléfono, en el panel: el enlace de un papel sale a su nombre. */
+  const usuarioPanel = quien.usuario;
 
   if (entrada.botonId) {
-    await manejarBoton(entrada, rol);
+    await manejarBoton(entrada, rol, usuarioPanel);
     return;
   }
 
@@ -265,6 +267,7 @@ export async function manejarMensajeDeDueno(entrada: MensajeDueno): Promise<void
     texto: dictado,
     actorRole: rol,
     solicitante: `whatsapp:${msg.nombre}`,
+    usuarioPanel,
     canal: "whatsapp",
   });
 
@@ -393,7 +396,7 @@ async function guardarEnElArchivo(msg: MensajeDueno, archivo: NonNullable<Mensaj
 
 // ── Botones ──────────────────────────────────────────────────────────────────
 
-async function manejarBoton(msg: MensajeDueno, rol: Role): Promise<void> {
+async function manejarBoton(msg: MensajeDueno, rol: Role, usuarioPanel: string | undefined): Promise<void> {
   const { tenantId, telefono, cred } = msg;
   const [accion, aprobacionId] = (msg.botonId ?? "").split(":");
   const pendiente = aprobacionId ? getPendingApproval(aprobacionId) : null;
@@ -430,6 +433,7 @@ async function manejarBoton(msg: MensajeDueno, rol: Role): Promise<void> {
     tenantId,
     actorRole: rol,
     actorId: pendiente.requestedBy,
+    actorUsuario: usuarioPanel,
   });
   removePendingApproval(aprobacionId);
 

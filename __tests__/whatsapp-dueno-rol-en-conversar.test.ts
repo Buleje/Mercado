@@ -27,7 +27,8 @@ vi.mock("@/lib/agents", () => ({
   orchestrator: { executeSync: H.executeSync },
   ensureAgentsRegistered: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("@/lib/agents/pending-approvals", () => ({
+vi.mock("@/lib/agents/pending-approvals", async (real) => ({
+  payloadsDelEnsayo: (await real<typeof import("@/lib/agents/pending-approvals")>()).payloadsDelEnsayo,
   getPendingApproval: vi.fn(),
   removePendingApproval: vi.fn(),
   stashPendingApproval: vi.fn().mockReturnValue("pend-1"),
@@ -67,6 +68,7 @@ vi.mock("@/lib/whatsapp/bot-dueno", () => ({
 vi.mock("@/lib/ai/transcribir", () => ({ transcribirAudio: vi.fn() }));
 
 const { manejarMensajeDeDueno } = await import("@/lib/whatsapp/anotar");
+const { getPendingApproval } = await import("@/lib/agents/pending-approvals");
 
 const base = { tenantId: "t-a", telefono: "51911111111", nombre: "Juan", cred: { phoneNumberId: "pn-a", token: "tok" } };
 const PREGUNTA = "¿dónde está la planilla de sueldos de octubre?";
@@ -130,5 +132,83 @@ describe("conversar corre con el rol ACTUAL del teléfono", () => {
     expect(H.callLLM).not.toHaveBeenCalled();
     expect(H.executeSync).not.toHaveBeenCalled();
     expect(String(H.mandarTexto.mock.calls[0][2])).toContain("necesita volver a vincularse");
+  });
+});
+
+/**
+ * Mandar un papel: el enlace tiene que salir a nombre de QUIEN VINCULÓ el
+ * teléfono (usuario del panel), no de «whatsapp:<nombre>», que no es nadie y
+ * deja muerto el enlace de un papel con candado (revisión 24-10). El usuario
+ * llega a la herramienta en el ensayo y en el «Sí».
+ */
+describe("mandar un papel desde WhatsApp lleva el usuario del panel que vinculó el teléfono", () => {
+  it("el ensayo recibe `actorUsuario`", async () => {
+    H.rolActual.mockResolvedValue({ rol: "manager", usuario: "enc" });
+    H.callLLM
+      .mockResolvedValueOnce({
+        ok: true,
+        content: "",
+        toolCalls: [
+          { id: "call-1", type: "function", function: { name: "documentos_mandar_papel", arguments: '{"papel":"resolución","persona":"Alex"}' } },
+        ],
+      })
+      .mockResolvedValueOnce({ ok: true, content: "", toolCalls: [] });
+    H.executeSync.mockResolvedValueOnce({
+      success: true,
+      data: { resumen: "¿Mando \"R.pdf\" a Alex?", payloadConfirmado: { documentoId: "doc-1", telefono: "51987654123" }, mostrar: {} },
+    });
+
+    await manejarMensajeDeDueno({ ...base, texto: "manda la resolución a Alex" });
+
+    expect(H.executeSync.mock.calls[0][0]).toMatchObject({
+      domain: "documentos",
+      payload: expect.objectContaining({ __validar: true }),
+      actorRole: "manager",
+      actorUsuario: "enc",
+    });
+  });
+
+  it("el «Sí» (botón) ejecuta con `actorUsuario` y el canal sigue como autor del pedido", async () => {
+    H.rolActual.mockResolvedValue({ rol: "admin", usuario: "brandon" });
+    vi.mocked(getPendingApproval).mockReturnValue({
+      id: "pend-9",
+      tenantId: "t-a",
+      toolName: "documentos_mandar_papel",
+      domain: "documentos",
+      action: "mandar_papel",
+      payload: { documentoId: "doc-1", telefono: "51987654123" },
+      createdAt: Date.now(),
+      requestedBy: "whatsapp:Juan",
+    });
+    H.executeSync.mockResolvedValueOnce({ success: true, data: { confirmacion: "Listo" } });
+
+    await manejarMensajeDeDueno({ ...base, texto: "", botonId: "anotar-ok:pend-9" });
+
+    expect(H.executeSync).toHaveBeenCalledTimes(1);
+    expect(H.executeSync.mock.calls[0][0]).toMatchObject({
+      tenantId: "t-a",
+      actorRole: "admin",
+      actorId: "whatsapp:Juan",
+      actorUsuario: "brandon",
+    });
+  });
+
+  it("vínculo de antes del 22-10 (sin quién lo pidió): no inventa usuario", async () => {
+    H.rolActual.mockResolvedValue({ rol: "manager" });
+    vi.mocked(getPendingApproval).mockReturnValue({
+      id: "pend-8",
+      tenantId: "t-a",
+      toolName: "documentos_mandar_papel",
+      domain: "documentos",
+      action: "mandar_papel",
+      payload: {},
+      createdAt: Date.now(),
+      requestedBy: "whatsapp:Juan",
+    });
+    H.executeSync.mockResolvedValueOnce({ success: false, error: "tiene candado" });
+
+    await manejarMensajeDeDueno({ ...base, texto: "", botonId: "anotar-ok:pend-8" });
+
+    expect(H.executeSync.mock.calls[0][0].actorUsuario).toBeUndefined();
   });
 });

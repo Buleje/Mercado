@@ -626,6 +626,8 @@ export async function POST(req: NextRequest) {
                     payload: { ...args, __validar: true },
                     tenantId: auth.tenantId,
                     actorRole: auth.role,
+                    // El enlace de un papel con candado sale a su nombre (mandar-papel.server.ts).
+                    actorUsuario: auth.username,
                   });
                   if (!ensayo.success) {
                     errorDelEnsayo = ensayo.error ?? null;
@@ -922,6 +924,8 @@ export async function POST(req: NextRequest) {
               payload: { ...args, __validar: true },
               tenantId: auth.tenantId,
               actorRole: auth.role,
+              // El enlace de un papel con candado sale a su nombre (mandar-papel.server.ts).
+              actorUsuario: auth.username,
             });
             if (!ensayo.success) {
               if (toolName === TOOL_MANDAR_PAPEL) errorDelPapel = ensayo.error ?? null;

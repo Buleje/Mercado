@@ -218,6 +218,8 @@ class Orchestrator {
     bypassPermissionCheck?: boolean;
     /** Quién lo pidió (username del panel o «whatsapp:<nombre>»): el autor en la auditoría. */
     actorId?: string;
+    /** Username del panel detrás del pedido, si lo hay (ver `AgentContext.actorUsuario`). */
+    actorUsuario?: string;
   }): Promise<{
     success: boolean;
     data?: unknown;
@@ -289,7 +291,7 @@ class Orchestrator {
       traceId,
     };
 
-    const ctx = { ...createAgentContext(task), actorRole: input.actorRole, actorId: input.actorId };
+    const ctx = { ...createAgentContext(task), actorRole: input.actorRole, actorId: input.actorId, actorUsuario: input.actorUsuario };
 
     try {
       const result = await withCircuitBreaker(

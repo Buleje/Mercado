@@ -21,12 +21,20 @@ import "server-only";
  *
  * Ley 29733: el log del servidor lleva el número tapado y ningún nombre; el
  * número entero queda sólo en la auditoría del papel y en `NotificationLog`.
+ *
+ * Papel con candado (revisión de seguridad 24-10): el enlace sale a nombre del
+ * USUARIO DEL PANEL que está detrás del pedido (`ctx.actorUsuario`), porque al
+ * abrirlo `findByShareToken` le pide a su autor el rol de HOY. A nombre de
+ * «whatsapp:Brandon» o «n8n» (que no son usuarios) el dueño leía «Listo» y el
+ * tercero un 404. Sin usuario detrás (Telegram, n8n, un WhatsApp vinculado
+ * antes del 22-10) el papel restringido se rechaza ya en el ensayo.
  */
 
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { redactPhone } from "@/lib/logger-pii";
 import type { AgentContext, AgentResult } from "@/lib/agents/types";
+import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { MembreteDB } from "@/lib/db/membrete.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
@@ -90,6 +98,40 @@ const pedidoSchema = z.object({
 });
 
 const SIN_ROL = "No sé con qué permisos estás pidiendo esto: ábrelo desde el chat del panel.";
+
+/** Un papel con candado pedido desde un canal sin usuario del panel detrás. */
+export const CANDADO_SIN_USUARIO =
+  "tiene candado y este chat no está ligado a tu usuario del panel, así que el enlace no le abriría. Mándalo desde el panel (Archivo › Compartir).";
+
+interface UsuarioDelPanel {
+  username: string;
+  role: string;
+}
+
+/**
+ * El usuario del panel a cuyo nombre sale el enlace: el de `ctx.actorUsuario`
+ * si existe, está activo EN ESTE negocio y hoy tiene rol. `null` = no hay
+ * nadie del panel detrás (el enlace de un papel con candado no abriría).
+ */
+async function usuarioDelPanel(tenantId: string, ctx: AgentContext): Promise<UsuarioDelPanel | null> {
+  const username = ctx.actorUsuario?.trim();
+  if (!username) return null;
+  const u = await AdminUsersDB.getByUsername(tenantId, username);
+  return u && u.active && u.role ? { username, role: u.role } : null;
+}
+
+/**
+ * ¿Le abriría el enlace al tercero? Es la MISMA regla de `findByShareToken`:
+ * lo que no tiene roles (ni el papel ni su cadena de carpetas) abre siempre;
+ * lo restringido, sólo si el rol ACTUAL del autor lo ve. `null` = abre;
+ * texto = por qué no se manda.
+ */
+async function porQueNoAbriria(tenantId: string, doc: DbDocument, usuario: UsuarioDelPanel | null): Promise<string | null> {
+  if (!(await DocumentsDB.tieneRoles(tenantId, doc.id))) return null;
+  if (!usuario) return `«${doc.name}» ${CANDADO_SIN_USUARIO}`;
+  if (await DocumentsDB.puedeVer(tenantId, doc.id, usuario.role)) return null;
+  return `«${doc.name}» tiene candado y tu usuario del panel (${usuario.username}) ya no lo puede abrir, así que el enlace no le abriría.`;
+}
 
 /**
  * Los contactos que este rol ve: los mismos de «Documentos del permiso»
@@ -251,6 +293,10 @@ export async function prepararEnvio(tenantId: string, payload: Record<string, un
     doc = r.valor;
   }
 
+  // Antes de la pregunta: un «¿Mando X?» que termina en un enlace muerto no se ofrece.
+  const candado = await porQueNoAbriria(tenantId, doc, await usuarioDelPanel(tenantId, ctx));
+  if (candado) return { success: false, error: candado };
+
   const telefonoEscrito = p.telefono ? normalizarTelefono(p.telefono) : null;
   if (p.telefono && !telefonoEscrito) {
     return { success: false, error: "Ese número no es un celular: escribe 9 dígitos (o el número con su código de país)." };
@@ -335,6 +381,11 @@ export async function mandarPapel(tenantId: string, payload: Record<string, unkn
   const doc = await DocumentsDB.getById(tenantId, documentoId, role);
   if (!doc) return { success: false, error: "Ese papel ya no existe o no lo puedes ver en tu Archivo." };
 
+  // Se vuelve a mirar tras el «Sí»: el candado o el rol pudieron cambiar en los 10 minutos.
+  const usuario = await usuarioDelPanel(tenantId, ctx);
+  const candado = await porQueNoAbriria(tenantId, doc, usuario);
+  if (candado) return { success: false, error: candado };
+
   const contactos = await contactosParaMandar(tenantId, role);
   const contacto = contactos.find((c) => c.telefono === telefono);
   if (!contacto && numeroNuevo !== true) {
@@ -346,7 +397,10 @@ export async function mandarPapel(tenantId: string, payload: Record<string, unkn
     return { success: false, error: `Ya mandé ${TOPE_PAPELES_HORA} papeles de tu negocio en la última hora. Espera un rato y pídemelo de nuevo.` };
   }
 
-  const share = await DocumentsDB.createShare(tenantId, doc.id, { createdById: actorId, expiresInDays: DIAS_ENLACE, viewerRole: role });
+  /* El autor del enlace es el usuario del panel (su rol de hoy decide si abre);
+     sin él, quien lo pidió («whatsapp:…», «n8n»): sólo llega acá un papel sin candado. */
+  const autorDelEnlace = usuario?.username ?? actorId;
+  const share = await DocumentsDB.createShare(tenantId, doc.id, { createdById: autorDelEnlace, expiresInDays: DIAS_ENLACE, viewerRole: role });
   if (!share) return { success: false, error: "No pude crear el enlace de ese papel (su carpeta no está a tu alcance)." };
   const expiresAt = new Date(share.expiresAt).toISOString();
   const vence = venceEl(hoyEnLima(), DIAS_ENLACE);
@@ -368,6 +422,7 @@ export async function mandarPapel(tenantId: string, payload: Record<string, unkn
           detalle,
           token: share.token.slice(0, 8) + "…",
           expiresAt,
+          ...(autorDelEnlace !== actorId ? { enlaceANombreDe: autorDelEnlace } : {}),
           ...(numeroNuevo ? { numeroNuevo: true } : {}),
         },
       },

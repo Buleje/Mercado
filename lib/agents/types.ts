@@ -107,6 +107,13 @@ export interface AgentContext {
    * queda en la auditoría del documento con su autor—.
    */
   actorId?: string;
+  /**
+   * El username del PANEL a cuyo nombre corre la tarea, cuando hay uno: la
+   * sesión del panel, o quien vinculó el WhatsApp del dueño. Telegram, n8n y
+   * los vínculos de WhatsApp anteriores al 22-10 no lo tienen. Lo usa el envío
+   * de un papel: el enlace sale a su nombre para que abra con su rol de hoy.
+   */
+  actorUsuario?: string;
 }
 
 // ── Contract that every domain agent must satisfy ─────────────────────────────

@@ -52,7 +52,10 @@ export interface DuenoVinculado {
  * Con qué rol se atiende un teléfono. `revocado` = quien lo vinculó ya no está
  * activo en este negocio (o el vínculo desapareció): no se contesta nada.
  */
-export type RolDelTelefono = { rol: AdminRole } | { revocado: true };
+export type RolDelTelefono =
+  /** `usuario`: el username de quien lo vinculó (activo hoy). Sin él, el vínculo es de antes del 22-10. */
+  | { rol: AdminRole; usuario?: string }
+  | { revocado: true };
 
 /**
  * Vínculos sin `pedidoPor` (anteriores al 22-10): no se sabe quién los pidió,
@@ -188,7 +191,7 @@ export const WhatsAppDuenosDB = {
     if (!dueno.pedidoPor) return { rol: ROL_DE_VINCULO_SIN_AUTOR };
     const quien = await AdminUsersDB.getByUsername(tenantIdDelNumero, dueno.pedidoPor);
     if (!quien || !quien.active || !esRolDelPanel(quien.role)) return { revocado: true };
-    return { rol: quien.role };
+    return { rol: quien.role, usuario: dueno.pedidoPor };
   },
 
   /** Vincula un teléfono a un negocio. Idempotente: revincular sólo actualiza. */

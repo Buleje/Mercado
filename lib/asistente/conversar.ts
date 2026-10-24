@@ -138,6 +138,12 @@ export interface Turno {
   texto: string;
   actorRole: Role;
   solicitante: string;
+  /**
+   * Username del panel detrás del canal, si lo hay (quien vinculó el WhatsApp).
+   * Va a las herramientas como `actorUsuario`: un papel con candado sólo sale
+   * con un enlace a nombre de alguien del panel (ver `mandar-papel.server.ts`).
+   */
+  usuarioPanel?: string;
   canal?: string;
   /**
    * `true` = escribir sin pedir confirmación.
@@ -149,7 +155,7 @@ export interface Turno {
 }
 
 export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
-  const { tenantId, sesionId, texto, actorRole, solicitante, canal, confirmarAutomatico = false } = turno;
+  const { tenantId, sesionId, texto, actorRole, solicitante, usuarioPanel, canal, confirmarAutomatico = false } = turno;
 
   if (!texto.trim()) return { texto: "No me llegó nada. ¿Qué anoto?", pendientes: [], registradas: [] };
   if (texto.length > 2000) {
@@ -252,6 +258,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
           payload: { ...args, __validar: true },
           tenantId,
           actorRole,
+          actorUsuario: usuarioPanel,
         });
         if (!ensayo.success) {
           // El error vuelve al modelo, que puede corregir en la vuelta siguiente
@@ -292,6 +299,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
 
         const escritura = await orchestrator.executeSync({
           domain: mapping.domain, action: mapping.action, payload: args, tenantId, actorRole,
+          actorUsuario: usuarioPanel,
         });
         const datos = (escritura.data ?? {}) as Record<string, unknown>;
         if (escritura.success) {

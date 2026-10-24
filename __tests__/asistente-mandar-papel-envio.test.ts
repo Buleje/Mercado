@@ -9,7 +9,9 @@
  * - los colaboradores sólo entran para quien ve sus datos en RR.HH.;
  * - un número fuera de los contactos se avisa en la pregunta y no sale sin ese «Sí»;
  * - si el WhatsApp no sale, el enlace se anula; si no queda auditado, no sale;
- * - el log del servidor no lleva el número entero (Ley 29733).
+ * - el log del servidor no lleva el número entero (Ley 29733);
+ * - un papel con candado sale a nombre del usuario del panel que está detrás
+ *   (su rol de hoy decide si el enlace abre); sin usuario, ni se pregunta.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,6 +24,9 @@ const m = vi.hoisted(() => ({
   revokeShare: vi.fn(),
   logMany: vi.fn(),
   log: vi.fn(),
+  tieneRoles: vi.fn(),
+  puedeVer: vi.fn(),
+  getByUsername: vi.fn(),
   membrete: vi.fn(),
   addLog: vi.fn(),
   listarColab: vi.fn(),
@@ -41,8 +46,11 @@ vi.mock("@/lib/db/documents.db", () => ({
     revokeShare: m.revokeShare,
     logMany: m.logMany,
     log: m.log,
+    tieneRoles: m.tieneRoles,
+    puedeVer: m.puedeVer,
   },
 }));
+vi.mock("@/lib/db/admin-users.db", () => ({ AdminUsersDB: { getByUsername: m.getByUsername } }));
 vi.mock("@/lib/db/membrete.db", () => ({ MembreteDB: { del: m.membrete } }));
 vi.mock("@/lib/db/notifications.db", () => ({ NotificationLogsDB: { add: m.addLog } }));
 vi.mock("@/lib/db/rrhh-colaboradores.db", () => ({ ColaboradoresDB: { listar: m.listarColab } }));
@@ -74,6 +82,9 @@ beforeEach(() => {
   m.revokeShare.mockResolvedValue(true);
   m.logMany.mockResolvedValue(undefined);
   m.log.mockResolvedValue(undefined);
+  m.tieneRoles.mockResolvedValue(false);
+  m.puedeVer.mockResolvedValue(true);
+  m.getByUsername.mockResolvedValue({ id: "u-1", name: "Brandon", role: "admin", active: true });
   m.addLog.mockResolvedValue({ id: 1 });
   m.enviar.mockResolvedValue({ ok: true, via: "meta", modo: "plantilla", wamid: "wamid.X", puedeNoLlegar: false });
 });
@@ -286,5 +297,71 @@ describe("el envío tras el «Sí»", () => {
     expect(m.check).toHaveBeenCalledWith("t1");
     expect(m.createShare).not.toHaveBeenCalled();
     expect(m.enviar).not.toHaveBeenCalled();
+  });
+});
+
+describe("papel con candado: el enlace tiene que abrirle al tercero (revisión 24-10)", () => {
+  const pedido = { papel: "resolución de plantación", persona: "Alex" };
+  const confirmado = { documentoId: "doc-1", telefono: "51987654123", nombre: "Alex Ríos" };
+  /** Un canal: quién escribe («whatsapp:…») y, si lo hay, el usuario del panel detrás. */
+  const canal = (actorId: string, actorUsuario?: string) => ({ tenantId: "t1", traceId: "tr", actorRole: "admin", actorId, actorUsuario });
+
+  beforeEach(() => m.tieneRoles.mockResolvedValue(true));
+
+  it("sin usuario del panel detrás (Telegram, n8n, vínculo viejo): se rechaza en el ensayo, antes de preguntar", async () => {
+    const r = await prepararEnvio("t1", pedido, canal("telegram:Brandon"));
+    expect(r.success).toBe(false);
+    expect(r.error).toContain("tiene candado");
+    expect(r.error).toContain("desde el panel");
+    expect(m.tieneRoles).toHaveBeenCalledWith("t1", "doc-1");
+    expect(m.getByUsername).not.toHaveBeenCalled();
+    expect(m.contactos).not.toHaveBeenCalled();
+    noSalioNada();
+  });
+
+  it("con el WhatsApp vinculado a un usuario: pregunta, y el enlace sale a SU nombre (no «whatsapp:…»)", async () => {
+    const ensayo = await prepararEnvio("t1", pedido, canal("whatsapp:Brandon", "brandon"));
+    expect(ensayo.success).toBe(true);
+    expect(m.getByUsername).toHaveBeenCalledWith("t1", "brandon");
+    expect(m.puedeVer).toHaveBeenCalledWith("t1", "doc-1", "admin");
+
+    const r = await mandarPapel("t1", confirmado, canal("whatsapp:Brandon", "brandon"));
+    expect(r.success).toBe(true);
+    expect(m.createShare).toHaveBeenCalledWith("t1", "doc-1", { createdById: "brandon", expiresInDays: 7, viewerRole: "admin" });
+    // La auditoría sigue diciendo por dónde entró el pedido, y a nombre de quién quedó el enlace.
+    const [, , entrada] = m.logMany.mock.calls[0];
+    expect(entrada.actorId).toBe("whatsapp:Brandon");
+    expect(entrada.metadata.enlaceANombreDe).toBe("brandon");
+    expect(m.enviar).toHaveBeenCalledTimes(1);
+  });
+
+  it("el rol de HOY del usuario manda: si ya no ve el papel, no sale (el enlace daría 404)", async () => {
+    m.getByUsername.mockResolvedValue({ id: "u-2", name: "Karla", role: "manager", active: true });
+    m.puedeVer.mockResolvedValue(false);
+    const r = await mandarPapel("t1", confirmado, canal("whatsapp:Karla", "karla"));
+    expect(r.success).toBe(false);
+    expect(r.error).toContain("karla");
+    expect(m.puedeVer).toHaveBeenCalledWith("t1", "doc-1", "manager");
+    expect(m.createShare).not.toHaveBeenCalled();
+    expect(m.enviar).not.toHaveBeenCalled();
+  });
+
+  it("usuario desactivado = sin usuario: no se crea el enlace aunque el «Sí» ya esté dado", async () => {
+    m.getByUsername.mockResolvedValue({ id: "u-2", name: "Karla", role: "admin", active: false });
+    const r = await mandarPapel("t1", confirmado, canal("whatsapp:Karla", "karla"));
+    expect(r.success).toBe(false);
+    expect(r.error).toContain("desde el panel");
+    expect(m.createShare).not.toHaveBeenCalled();
+    expect(m.enviar).not.toHaveBeenCalled();
+  });
+
+  it("un papel sin candado sale igual desde n8n, a nombre del canal (abre sin mirar al autor)", async () => {
+    m.tieneRoles.mockResolvedValue(false);
+    const r = await mandarPapel("t1", confirmado, canal("n8n"));
+    expect(r.success).toBe(true);
+    expect(m.getByUsername).not.toHaveBeenCalled();
+    expect(m.puedeVer).not.toHaveBeenCalled();
+    expect(m.createShare).toHaveBeenCalledWith("t1", "doc-1", { createdById: "n8n", expiresInDays: 7, viewerRole: "admin" });
+    expect(m.logMany.mock.calls[0][2].metadata).not.toHaveProperty("enlaceANombreDe");
   });
 });
