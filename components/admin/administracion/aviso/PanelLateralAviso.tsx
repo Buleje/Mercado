@@ -20,12 +20,13 @@
  * Escape lo cierran; si está «fija», sólo lo minimizan). Debajo de 768 o fuera
  * del panel sigue como antes: fija encima, con su `<style>`.
  */
-import { useEffect, useId, useLayoutEffect, useRef, useState, type PointerEvent as EventoPuntero, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { BellRing, Maximize2, Minimize2, Pin, PinOff, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
 import { useColumnaDerecha } from "@/components/admin/layout/columna-derecha";
+import { BordeDeAncho } from "@/components/admin/layout/BordeDeAncho";
 import { ANCHO_PANEL, anchoPanel, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
@@ -50,7 +51,6 @@ interface Props {
 }
 
 const ICONO = "size-5";
-const PASO_TECLADO = 32;
 /** Desde acá la barra achica la página (antes se montaba encima): es cuando entra a la columna. */
 const COLUMNA_DESDE = 1024;
 /** Entre 768 y 1023 px (tablet) se abre como cajón con velo, como el de Esenciales. */
@@ -89,7 +89,6 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
   const ventana = useAnchoVentana();
   /* El ancho que se ve: el guardado (o el que se está arrastrando) dentro de lo que deja la pantalla. */
   const visible = anchoPanel(arrastre ?? ancho, ventana);
-  const inicio = useRef<{ x: number; ancho: number } | null>(null);
   const columna = useColumnaDerecha();
   const hueco = ventana >= COLUMNA_DESDE ? (columna?.arriba ?? null) : null;
   const fijarAncho = columna?.fijarAncho;
@@ -104,30 +103,6 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
     fijarAncho("arriba", visible);
     return () => fijarAncho("arriba", null);
   }, [pideAncho, fijarAncho, visible]);
-
-  const empezar = (e: EventoPuntero<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      /* puntero sintético (pruebas): se arrastra igual sin captura */
-    }
-    inicio.current = { x: e.clientX, ancho: visible };
-    document.body.style.userSelect = "none";
-  };
-  const mover = (e: EventoPuntero<HTMLDivElement>) => {
-    if (!inicio.current) return;
-    /* El borde está a la izquierda: ir a la izquierda ensancha. */
-    setArrastre(anchoPanel(inicio.current.ancho + (inicio.current.x - e.clientX), window.innerWidth));
-  };
-  const soltar = () => {
-    if (!inicio.current) return;
-    inicio.current = null;
-    document.body.style.userSelect = "";
-    if (arrastre !== null) onAncho(arrastre);
-    setArrastre(null);
-  };
 
   if (minimizado) {
     return (
@@ -165,33 +140,16 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
       }}
     >
       {!hueco && !cajon && <style>{reglasAbierto(visible)}</style>}
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Ancho de la barra: arrastra o usa las flechas"
-        aria-valuemin={ANCHO_PANEL.min}
-        aria-valuemax={ANCHO_PANEL.max}
-        aria-valuenow={visible}
-        tabIndex={0}
-        data-qa="aviso-borde"
-        title="Arrastra para cambiar el ancho · doble clic: ancho de fábrica"
-        onPointerDown={empezar}
-        onPointerMove={mover}
-        onPointerUp={soltar}
-        onPointerCancel={soltar}
-        onDoubleClick={() => onAncho(null)}
-        onKeyDown={(e) => {
-          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-          e.preventDefault();
-          onAncho(anchoPanel(visible + (e.key === "ArrowLeft" ? PASO_TECLADO : -PASO_TECLADO), window.innerWidth));
-        }}
-        className={cn(
-          "absolute inset-y-0 -left-1.5 z-10 hidden w-3 cursor-col-resize touch-none",
-          !cajon && "sm:block",
-          "after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent after:transition-colors",
-          "hover:after:bg-[var(--accent)] focus-visible:outline-none focus-visible:after:bg-[var(--accent)]",
-          arrastre !== null && "after:bg-[var(--accent)]",
-        )}
+      <BordeDeAncho
+        valor={visible}
+        min={ANCHO_PANEL.min}
+        max={ANCHO_PANEL.max}
+        acotar={(px) => anchoPanel(px, window.innerWidth)}
+        onArrastre={setArrastre}
+        onAncho={onAncho}
+        etiqueta="Ancho de la barra: arrastra o usa las flechas"
+        dataQa="aviso-borde"
+        className={cn("hidden", !cajon && "sm:block")}
       />
       <header className="flex items-start gap-2 border-b border-[var(--rule-soft)] py-2 pl-4 pr-2">
         <div className="min-w-0 flex-1">

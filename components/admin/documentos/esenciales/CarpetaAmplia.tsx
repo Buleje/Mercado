@@ -277,7 +277,7 @@ export default function CarpetaAmplia({ e, arch, uso, ahora, dentroDe, setDentro
           />
         </div>
 
-        <CarpetaAmpliaDetalles e={e} arbol={arbol} mirada={mirada} todos={todos} uso={uso} ahora={ahora} abrir={abrir} />
+        <CarpetaAmpliaDetalles e={e} arbol={arbol} mirada={mirada} todos={todos} documentos={documents} uso={uso} ahora={ahora} abrir={abrir} onLigar={() => setVinculando(e.carpeta)} />
       </div>
     </section>
   );

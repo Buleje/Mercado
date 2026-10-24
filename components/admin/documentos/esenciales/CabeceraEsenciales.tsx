@@ -1,15 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { Eye, Search, Share2, Star } from "@buleje/design-system/icons";
+import { ClipboardCheck, Eye, Search, Share2, Star } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { AccionesDeLaVista, ORDEN_ACCION, TextoDeAccion, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
+import FilaDeslizable from "@/components/admin/shared/FilaDeslizable";
 import { cn } from "@/lib/utils";
-import type { DbDocument } from "@/lib/types/documents";
+import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import type { OrdenEsenciales } from "@/lib/documentos/esenciales";
 import { getFileIcon } from "../archivo-visual";
 import { CAMPO_BUSCAR, SELECT, papeles } from "./compartido";
+import InspeccionEsencialesModal from "./InspeccionEsencialesModal";
 
 const ORDENES: { id: OrdenEsenciales; label: string }[] = [
   { id: "uso", label: "Más usadas" },
@@ -18,13 +22,17 @@ const ORDENES: { id: OrdenEsenciales; label: string }[] = [
   { id: "nombre", label: "Por nombre" },
 ];
 
+/** Fila de pestañas angosta (panel de una carpeta abierto): compartir e inspección van en un menú. */
+const ANGOSTO_OCULTO = "@max-[44rem]/riel:hidden";
+const ANGOSTO_VISIBLE = "hidden @max-[44rem]/riel:block";
+
 /**
  * Dentro de Documentos: la ⓘ, el buscador, el orden y «Elegir carpetas» van a
  * la fila de las pestañas (Brandon 23-10: «aprovechar mejor el espacio») y
  * acá queda una sola fila con las cifras y lo que más abres. Fuera (sin fila de
  * pestañas), la cabecera de siempre con su título.
  */
-export default function CabeceraEsenciales({ cifras, q, setQ, orden, setOrden, botonConTexto, onElegir, destacados, onAbrir, enGrande = false, onCompartir }: {
+export default function CabeceraEsenciales({ cifras, q, setQ, orden, setOrden, botonConTexto, onElegir, destacados, onAbrir, enGrande = false, onCompartir, paraInspeccion }: {
   cifras: { carpetas: number; papeles: number; vencidos: number; porVencer: number };
   q: string;
   setQ: (q: string) => void;
@@ -38,9 +46,14 @@ export default function CabeceraEsenciales({ cifras, q, setQ, orden, setOrden, b
   enGrande?: boolean;
   /** «Compartir con un enlace»: todas las esenciales en un solo enlace con vencimiento y clave. */
   onCompartir?: () => void;
+  /** «Para inspección» (24-10): hoja con el índice de las esenciales + QR. Sin esto, no sale el botón. */
+  paraInspeccion?: { carpetas: readonly DbDocumentFolder[]; folders: readonly DbDocumentFolder[]; docs: readonly DbDocument[] };
 }) {
   const enFila = useEnElLibro();
   const hay = cifras.carpetas > 0;
+  const [inspeccionando, setInspeccionando] = useState(false);
+  // Sólo se pliegan si existe el menú que los junta (si no, compartir desaparecería).
+  const plegar = enFila && hay && !!onCompartir && !!paraInspeccion;
 
   const ayuda = (
     <InfoTip
@@ -93,18 +106,56 @@ export default function CabeceraEsenciales({ cifras, q, setQ, orden, setOrden, b
       onClick={onCompartir}
       title="Compartir con un enlace"
       aria-label="Compartir tus esenciales con un enlace"
-      className={cn(button({ variant: "secondary" }), "gap-2", enFila && "@max-[80rem]/riel:w-12 @max-[80rem]/riel:px-0")}
+      className={cn(button({ variant: "secondary" }), "gap-2", enFila && "@max-[80rem]/riel:w-12 @max-[80rem]/riel:px-0", plegar && ANGOSTO_OCULTO)}
       data-qa="esenciales-compartir"
     >
       <Share2 className="h-4 w-4" />
       {enFila ? <TextoDeAccion>Compartir</TextoDeAccion> : "Compartir"}
     </button>
   );
+  const inspeccion = hay && paraInspeccion && (
+    <button
+      type="button"
+      onClick={() => setInspeccionando(true)}
+      title="Hoja para inspección: índice con vencimientos y un QR"
+      aria-label="Armar la hoja para inspección"
+      className={cn(button({ variant: "secondary" }), "gap-2", enFila && "@max-[80rem]/riel:w-12 @max-[80rem]/riel:px-0", plegar && ANGOSTO_OCULTO)}
+      data-qa="esenciales-inspeccion"
+    >
+      <ClipboardCheck className="h-4 w-4" />
+      {enFila ? <TextoDeAccion>Para inspección</TextoDeAccion> : "Para inspección"}
+    </button>
+  );
+  // Con el panel de una carpeta abierto (fila de ~548 px) los dos no entraban
+  // y la cabecera de Documentos bajaba a una tercera fila: van juntos en un menú.
+  const sacarAfuera = plegar && onCompartir && (
+    <div className={ANGOSTO_VISIBLE} data-qa="esenciales-sacar-afuera">
+      <ActionMenu
+        label="Compartir o armar la hoja para inspección"
+        icon={Share2}
+        soloIcono
+        actions={[
+          { id: "enlace", label: "Compartir con un enlace", hint: "Con vencimiento y clave", icon: Share2, onSelect: onCompartir },
+          { id: "inspeccion", label: "Hoja para inspección", hint: "Índice con vencimientos y un QR", icon: ClipboardCheck, onSelect: () => setInspeccionando(true) },
+        ]}
+      />
+    </div>
+  );
+  const modalInspeccion = inspeccionando && paraInspeccion && (
+    <InspeccionEsencialesModal {...paraInspeccion} onClose={() => setInspeccionando(false)} />
+  );
+  // Una fila que se desliza de lado (24-10): con el panel abierto ocupaba dos.
   const masAbierto = destacados.length > 0 && !q && (
-    <div className="flex flex-wrap items-center gap-2" aria-label="Lo que más abres">
-      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <Eye className="h-4 w-4" /> Lo que más abres
-      </span>
+    <FilaDeslizable
+      className="flex-[1_1_20rem]"
+      etiqueta="Lo que más abres"
+      qa="esenciales-mas-abiertos"
+      rotulo={
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <Eye className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Lo que más abres</span>
+        </span>
+      }
+    >
       {destacados.map((doc) => {
         const { Icon, tint } = getFileIcon(doc.mimeType, doc.name);
         return (
@@ -112,14 +163,15 @@ export default function CabeceraEsenciales({ cifras, q, setQ, orden, setOrden, b
             key={doc.id}
             type="button"
             onClick={() => onAbrir(doc)}
-            className="inline-flex h-10 max-w-[13rem] items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]"
+            title={doc.name}
+            className="inline-flex h-12 max-w-[13rem] shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]"
           >
             <Icon className={cn("h-4 w-4 shrink-0", tint)} />
             <span className="truncate">{doc.name}</span>
           </button>
         );
       })}
-    </div>
+    </FilaDeslizable>
   );
 
   if (enFila) {
@@ -129,6 +181,8 @@ export default function CabeceraEsenciales({ cifras, q, setQ, orden, setOrden, b
         <AccionesDeLaVista orden={ORDEN_ACCION.principal} fueraDelLibro={null}>
           {ordenar}
           {compartir}
+          {inspeccion}
+          {sacarAfuera}
           {elegir}
         </AccionesDeLaVista>
         {hay && !enGrande && (
@@ -138,6 +192,7 @@ export default function CabeceraEsenciales({ cifras, q, setQ, orden, setOrden, b
             {masAbierto}
           </div>
         )}
+        {modalInspeccion}
       </>
     );
   }
@@ -153,9 +208,11 @@ export default function CabeceraEsenciales({ cifras, q, setQ, orden, setOrden, b
         {buscador}
         {ordenar}
         {compartir}
+        {inspeccion}
         {elegir}
       </div>
       {masAbierto}
+      {modalInspeccion}
     </>
   );
 }

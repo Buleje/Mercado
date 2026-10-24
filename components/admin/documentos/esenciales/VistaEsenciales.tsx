@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { FolderOpen, Star } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -21,7 +20,8 @@ import CompartirEsencialesModal from "./CompartirEsencialesModal";
 import { EscanerModal } from "../archivo/perezosos";
 import IconoCarpetaModal from "./IconoCarpetaModal";
 import PanelEsencial from "./PanelEsencial";
-import CajonLateral from "./CajonLateral";
+import LadoEsencial from "./LadoEsencial";
+import { useAnchoPanelEsencial } from "./use-ancho-panel-esencial";
 import ElegirCarpetasModal from "./ElegirCarpetasModal";
 import { marcarEsenciales } from "./marcar-esencial";
 import CabeceraEsenciales from "./CabeceraEsenciales";
@@ -91,6 +91,7 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
   const anchoSeccion = useColumnaDerecha()?.anchoLibre ?? 0;
   const acoplado = !!lateral && anchoSeccion >= ANCHO_CON_COLUMNA;
   const conPanel = acoplado || (lateral === undefined && ancho >= ANCHO_CON_PANEL);
+  const medida = useAnchoPanelEsencial(anchoSeccion);
 
   const setElegida = useCallback((id: string | null) => {
     setElegidaEstado(id);
@@ -178,6 +179,7 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
       arch={arch}
       uso={uso}
       ahora={ahora}
+      medida={acoplado || !conPanel ? medida : undefined}
       onCerrar={() => setElegida(null)}
       onAbrirEnArchivo={(id) => onAbrirEnArchivo(id)}
       onQuitar={quitar}
@@ -209,6 +211,7 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
         onAbrir={(doc) => visor.abrir(doc, destacados)}
         enGrande={enGrande}
         onCompartir={() => setCompartiendo(true)}
+        paraInspeccion={{ carpetas: todas.map((e) => e.carpeta), folders, docs: vivos }}
       />
 
       {q.trim().length >= 2 && todas.length > 0 && (
@@ -268,23 +271,12 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
         </>
       )}
 
-      {acoplado && panel && lateral && createPortal(
-        <aside
-          // Pegada al borde, de arriba hasta abajo; con el aviso de la agenda abierto, él va arriba y esto abajo.
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-l border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
-          aria-label={`Lo que tiene ${elegida?.carpeta.name ?? ""}`}
-          data-qa="esencial-columna"
-        >
+      {/* En la columna derecha del panel o, si no entra, en un cajón. Sin medir todavía (primer
+          cuadro) el cajón no se abre: parpadearía antes del panel al costado. */}
+      {panel && (acoplado || (!conPanel && ancho > 0 && (lateral === undefined || anchoSeccion > 0))) && (
+        <LadoEsencial hueco={acoplado ? (lateral ?? null) : null} etiqueta={`Lo que tiene ${elegida?.carpeta.name ?? ""}`} medida={medida} onCerrar={() => setElegida(null)}>
           {panel}
-        </aside>,
-        lateral,
-      )}
-
-      {/* Sin medir todavía (primer cuadro) no se abre: el cajón parpadearía antes del panel al costado. */}
-      {!conPanel && ancho > 0 && (lateral === undefined || anchoSeccion > 0) && panel && (
-        <CajonLateral etiqueta={`Lo que tiene ${elegida?.carpeta.name ?? ""}`} onCerrar={() => setElegida(null)}>
-          {panel}
-        </CajonLateral>
+        </LadoEsencial>
       )}
 
       {compartiendo && <CompartirEsencialesModal carpetas={todas.map((e) => e.carpeta)} onClose={() => setCompartiendo(false)} />}

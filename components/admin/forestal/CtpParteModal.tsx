@@ -70,6 +70,7 @@ import CtpParteLogo from "./CtpParteLogo";
 import CtpPartePuntoAcopio from "./CtpPartePuntoAcopio";
 import CtpParteBitacora from "./CtpParteBitacora";
 import CtpParteAdjuntos from "./CtpParteAdjuntos";
+import CtpParteCarpeta from "./CtpParteCarpeta";
 import CtpPartePrecios from "./CtpPartePrecios";
 import { guardarPreciosPendientes, type PrecioPendiente } from "@/lib/forestal/precio-cliente-borrador";
 import CtpParteVinculos from "./CtpParteVinculos";
@@ -1150,6 +1151,11 @@ export default function CtpParteModal({
                 onCambio={(adjuntos) => set({ adjuntos })}
               />
             </Field>
+            {parte?.id && (
+              <Field label="Su carpeta en el Archivo" span={12} hint="Ábrela para ver lo que tiene en el sistema">
+                <CtpParteCarpeta parteId={parte.id} />
+              </Field>
+            )}
           </CampoGrid>
         </Seccion>
 

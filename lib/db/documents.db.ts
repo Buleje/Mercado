@@ -9,7 +9,6 @@ import {
   canRoleSeeEnCadena,
   enlaceSigueSirviendo,
   estaRestringido,
-  isPrivilegedRole,
   puedeBorrarCarpeta,
   puedeMoverPapel,
   rolesDeLaCadena,
@@ -1047,6 +1046,137 @@ export class DocumentsDB {
       data: { expiresAt, expiryReminderSentAt: null },
     });
     return r.count > 0;
+  }
+
+  // ── Lectura de la noche (cron `documentos-leer-noche`, Brandon 24-10) ──────
+  //
+  // Sólo SUGIERE el vencimiento (`ocrMetadata.sugerencias.expiresAt`): nunca
+  // escribe `expiresAt`. Las escrituras son un merge de jsonb en el UPDATE —
+  // sin leer-y-pisar— y no tocan `updatedAt`: el papel no cambió, y la ficha
+  // muestra esa fecha como «modificado».
+
+  /**
+   * Negocios con papeles para la lectura de la noche: sin texto todavía (y con
+   * menos de `maxIntentos` noches fallidas) o leídos con un lector de fechas
+   * más viejo que `version` y sin vencimiento puesto. Sin fotos de máquina.
+   */
+  static async tenantsParaLecturaNocturna(version: number, limite = 20, maxIntentos = 3): Promise<string[]> {
+    const filas = await prisma.$queryRaw<{ tenantId: string }[]>`
+      SELECT "tenantId" FROM "Document"
+      WHERE "deletedAt" IS NULL
+        AND NOT (tags && ${[...TAGS_FOTOS_DE_MAQUINA]}::text[])
+        AND (
+          ("ocrText" IS NULL
+            AND (CASE WHEN jsonb_typeof("ocrMetadata"->'lecturaIntentos') = 'number'
+                      THEN ("ocrMetadata"->>'lecturaIntentos')::numeric ELSE 0 END) < ${maxIntentos})
+          OR ("ocrText" IS NOT NULL AND "expiresAt" IS NULL
+            AND (CASE WHEN jsonb_typeof("ocrMetadata"->'lectorVencimiento') = 'number'
+                      THEN ("ocrMetadata"->>'lectorVencimiento')::numeric ELSE 0 END) < ${version})
+        )
+      GROUP BY "tenantId"
+      ORDER BY count(*) DESC
+      LIMIT ${limite}`;
+    return filas.map((f) => f.tenantId);
+  }
+
+  /**
+   * Papeles del negocio que todavía no tienen texto, con las noches que ya
+   * fallaron (`lecturaIntentos`, separado de `indexIntentos`: que la IA no
+   * describa no quiere decir que el OCR no pueda leer). El orden lo pone
+   * `ordenarParaLeer` (Esenciales primero); el tipo lo filtra el llamador
+   * (`isAnalyzableMime` no se puede consultar en SQL).
+   */
+  static async papelesSinLeer(
+    tenantId: string,
+    limite = 500,
+    maxIntentos = 3,
+  ): Promise<{ id: string; name: string; mimeType: string; folderId: string | null; uploadedAt: Date; intentos: number }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null, ocrText: null, NOT: { tags: { hasSome: [...TAGS_FOTOS_DE_MAQUINA] } } },
+      select: { id: true, name: true, mimeType: true, folderId: true, uploadedAt: true, ocrMetadata: true },
+      orderBy: { uploadedAt: "desc" },
+      take: limite,
+    });
+    return docs
+      .map(({ ocrMetadata, ...d }) => {
+        const meta = (ocrMetadata ?? {}) as Record<string, unknown>;
+        return { ...d, intentos: typeof meta.lecturaIntentos === "number" ? meta.lecturaIntentos : 0 };
+      })
+      .filter((d) => d.intentos < maxIntentos);
+  }
+
+  /** Papeles ya leídos, sin vencimiento puesto, que el lector `version` todavía no repasó. */
+  static async leidosParaRevisarVencimiento(
+    tenantId: string,
+    version: number,
+    limite = 200,
+  ): Promise<{ id: string; ocrText: string; ocrMetadata: unknown }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.$queryRaw<{ id: string; ocrText: string; ocrMetadata: unknown }[]>`
+      SELECT id, "ocrText", "ocrMetadata" FROM "Document"
+      WHERE "tenantId" = ${tenantId}
+        AND "deletedAt" IS NULL
+        AND "ocrText" IS NOT NULL
+        AND "expiresAt" IS NULL
+        AND NOT (tags && ${[...TAGS_FOTOS_DE_MAQUINA]}::text[])
+        AND (CASE WHEN jsonb_typeof("ocrMetadata"->'lectorVencimiento') = 'number'
+                  THEN ("ocrMetadata"->>'lectorVencimiento')::numeric ELSE 0 END) < ${version}
+      ORDER BY "uploadedAt" DESC
+      LIMIT ${limite}`;
+  }
+
+  /**
+   * Deja la fecha leída como SUGERENCIA: `sugerencias.expiresAt` (sin perder la
+   * carpeta sugerida), `vencimientoLeido` y la versión del lector. La condición
+   * `expiresAt IS NULL` va en el WHERE: si alguien puso la fecha mientras
+   * corría la noche, no se le sugiere otra encima. Devuelve si se escribió.
+   */
+  static async sugerirVencimientoLeido(
+    tenantId: string,
+    id: string,
+    datos: { expiresAt: string; vencimientoLeido: Record<string, unknown>; version: number },
+  ): Promise<boolean> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const n = await prisma.$executeRaw`
+      UPDATE "Document" SET "ocrMetadata" =
+        (CASE WHEN jsonb_typeof("ocrMetadata") = 'object' THEN "ocrMetadata" ELSE '{}'::jsonb END)
+        || jsonb_build_object(
+          'sugerencias',
+            (CASE WHEN jsonb_typeof("ocrMetadata"->'sugerencias') = 'object' THEN "ocrMetadata"->'sugerencias' ELSE '{}'::jsonb END)
+            || jsonb_build_object('expiresAt', ${datos.expiresAt}::text),
+          'vencimientoLeido', ${JSON.stringify(datos.vencimientoLeido)}::jsonb,
+          'lectorVencimiento', ${datos.version}::int
+        )
+      WHERE id = ${id} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL AND "expiresAt" IS NULL`;
+    return n > 0;
+  }
+
+  /** Sella que el lector `version` ya repasó estos papeles (una sola ida). */
+  static async marcarVencimientoRevisado(tenantId: string, ids: readonly string[], version: number): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return 0;
+    return prisma.$executeRaw`
+      UPDATE "Document" SET "ocrMetadata" =
+        (CASE WHEN jsonb_typeof("ocrMetadata") = 'object' THEN "ocrMetadata" ELSE '{}'::jsonb END)
+        || jsonb_build_object('lectorVencimiento', ${version}::int)
+      WHERE "tenantId" = ${tenantId} AND id = ANY(${[...ids]}::text[])`;
+  }
+
+  /** Una noche más sin poder leer el papel, y por qué (a las 3 deja de intentarse). */
+  static async marcarIntentoDeLectura(tenantId: string, id: string, motivo: string): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    await prisma.$executeRaw`
+      UPDATE "Document" SET "ocrMetadata" =
+        (CASE WHEN jsonb_typeof("ocrMetadata") = 'object' THEN "ocrMetadata" ELSE '{}'::jsonb END)
+        || jsonb_build_object(
+          'lecturaIntentos',
+            (CASE WHEN jsonb_typeof("ocrMetadata"->'lecturaIntentos') = 'number'
+                  THEN ("ocrMetadata"->>'lecturaIntentos')::int ELSE 0 END) + 1,
+          'lecturaUltimoMotivo', ${motivo.slice(0, 200)}::text,
+          'lecturaUltimoIntento', ${new Date().toISOString()}::text
+        )
+      WHERE id = ${id} AND "tenantId" = ${tenantId}`;
   }
 
   static async softDelete(tenantId: string, id: string): Promise<boolean> {

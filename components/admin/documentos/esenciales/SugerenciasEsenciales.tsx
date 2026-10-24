@@ -6,13 +6,14 @@ import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 import type { SugerenciaEsencial } from "@/lib/documentos/esenciales";
+import FilaDeslizable from "@/components/admin/shared/FilaDeslizable";
 import { FolderGlyph } from "../folder-visuals";
 import { veces } from "./compartido";
 
 /**
  * «Sumar a Esenciales» lo que más abres y todavía no está (Brandon 23-10: en
- * Blas había 1 esencial y otras carpetas abiertas seguido). Una fila; cada
- * sugerencia con su «Sumar» y su ✕ para que no vuelva a salir.
+ * Blas había 1 esencial y otras carpetas abiertas seguido). Una fila que se
+ * desliza; cada sugerencia con su «Sumar» y su ✕ para que no vuelva a salir.
  */
 export default function SugerenciasEsenciales({ sugerencias, onSumar, onDescartar }: {
   sugerencias: readonly SugerenciaEsencial<DbDocumentFolder>[];
@@ -20,20 +21,24 @@ export default function SugerenciasEsenciales({ sugerencias, onSumar, onDescarta
   onDescartar: (id: string) => void;
 }) {
   if (sugerencias.length === 0) return null;
+  const rotulo = (
+    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+      <Lightbulb className="h-4 w-4" /> <span className="max-2xl:sr-only">Sugeridas</span>
+      <InfoTip
+        title="Sugeridas"
+        what={<span>Carpetas cuyos papeles abriste varias veces en los últimos 90 días y que no están en Esenciales.</span>}
+        affects={<span>«Sumar» la lleva a Esenciales; la ✕ la deja de sugerir en este equipo. Si no entran todas, desliza la fila o usa las flechas.</span>}
+      />
+    </span>
+  );
+  // Una sola fila (24-10): con el panel abierto (588 px) las 3 se apilaban en 160 px.
   return (
-    <div className="flex flex-wrap items-center gap-2" aria-label="Carpetas que abres seguido" data-qa="esenciales-sugeridas">
-      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-        <Lightbulb className="h-4 w-4" /> <span className="max-2xl:sr-only">Sugeridas</span>
-        <InfoTip
-          title="Sugeridas"
-          what={<span>Carpetas cuyos papeles abriste varias veces en los últimos 90 días y que no están en Esenciales.</span>}
-          affects={<span>«Sumar» la lleva a Esenciales; la ✕ la deja de sugerir en este equipo.</span>}
-        />
-      </span>
+    <FilaDeslizable rotulo={rotulo} etiqueta="Carpetas que abres seguido" qa="esenciales-sugeridas">
       {sugerencias.map(({ carpeta, vistas, ruta }) => (
         <span
           key={carpeta.id}
-          className="inline-flex h-12 items-stretch overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
+          data-qa="esencial-sugerida"
+          className="inline-flex h-12 shrink-0 items-stretch overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
           title={`${carpeta.name} · abierta ${veces(vistas)} en 90 días · ${ruta.length > 0 ? `en ${ruta.join(" › ")}` : "en la raíz del Archivo"}`}
         >
           <span className="inline-flex min-w-0 items-center gap-2 pl-3 pr-2 text-sm">
@@ -64,6 +69,6 @@ export default function SugerenciasEsenciales({ sugerencias, onSumar, onDescarta
           </button>
         </span>
       ))}
-    </div>
+    </FilaDeslizable>
   );
 }

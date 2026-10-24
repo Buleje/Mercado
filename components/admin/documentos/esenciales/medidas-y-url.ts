@@ -37,3 +37,30 @@ export function useAnchoDelContenedor(): [(el: HTMLDivElement | null) => (() => 
   return [ref, ancho];
 }
 
+
+/**
+ * Alto visible del contenedor que se desliza alrededor de `el` (la columna de
+ * la derecha o el cajón). La columna de detalles del panel ancho va `sticky` y
+ * con este alto de tope: así se ve entera aunque la lista de papeles sea larga
+ * y aunque el aviso de la agenda ocupe la mitad de arriba de la columna.
+ */
+export function useAltoDelScroll(): [(el: HTMLDivElement | null) => (() => void) | undefined, number] {
+  const [alto, setAlto] = useState(0);
+  const ref = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return undefined;
+    let scroll: HTMLElement | null = el.parentElement;
+    while (scroll && !/(auto|scroll)/.test(getComputedStyle(scroll).overflowY)) scroll = scroll.parentElement;
+    if (!scroll) return undefined;
+    // Sin su relleno de arriba y abajo: así lo fijo entra entero cuando la columna llega al fondo.
+    const medir = (s: HTMLElement) => {
+      const cs = getComputedStyle(s);
+      setAlto(Math.max(0, s.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0)));
+    };
+    medir(scroll);
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(([e]) => medir(e.target as HTMLElement));
+    ro.observe(scroll);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, alto];
+}

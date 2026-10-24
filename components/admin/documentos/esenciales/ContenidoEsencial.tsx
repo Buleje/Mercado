@@ -37,8 +37,10 @@ const ORDENES: { id: OrdenDocsTercero; label: string }[] = [
  * 3 clics para llegar al 4.º) y los papeles de la que eliges en él. Los papeles
  * se arrastran a otra carpeta del árbol; los archivos del disco, también. Con
  * búsqueda, busca en toda la carpeta esencial, no sólo en la que estás.
+ * Con el panel ancho (`elegir`), un clic elige el papel (sus detalles salen al
+ * lado) y el doble clic lo abre.
  */
-export default function ContenidoEsencial({ raiz, dentroDe, setDentroDe, orden, setOrden, abrir, arch }: {
+export default function ContenidoEsencial({ raiz, dentroDe, setDentroDe, orden, setOrden, abrir, elegir, elegidoId, arch }: {
   raiz: DbDocumentFolder;
   dentroDe: string;
   setDentroDe: (id: string) => void;
@@ -47,6 +49,9 @@ export default function ContenidoEsencial({ raiz, dentroDe, setDentroDe, orden, 
   setOrden: (o: OrdenDocsTercero) => void;
   /** Abre la vista previa con las flechas por ESTA lista. */
   abrir: (doc: DbDocument, lista: readonly DbDocument[]) => void;
+  /** Panel ancho: el clic elige el papel en vez de abrirlo. */
+  elegir?: (doc: DbDocument, lista: readonly DbDocument[]) => void;
+  elegidoId?: string | null;
   arch: ModeloArchivo;
 }) {
   const { folders, documents, folderById, menuDe, abrirMenuEn, bulk, upload } = arch;
@@ -122,27 +127,41 @@ export default function ContenidoEsencial({ raiz, dentroDe, setDentroDe, orden, 
           {ordenados.map((doc) => {
             const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
             const donde = aguja && doc.folderId && doc.folderId !== raiz.id ? folderById.get(doc.folderId)?.name : null;
+            const elegido = !!elegir && doc.id === elegidoId;
             return (
               <li
                 key={doc.id}
-                className="flex items-center gap-2 pr-2"
+                className={cn("flex items-center gap-2 pr-2", elegido && "bg-[var(--accent-muted)]")}
                 onContextMenu={(e) => abrirMenuEn(e, doc.id)}
                 data-qa="esencial-papel"
                 // Se arrastra a otra carpeta del árbol de arriba.
                 draggable
                 onDragStart={(e) => { e.dataTransfer.setData(TIPO_ARRASTRE_PAPEL, JSON.stringify([doc.id])); e.dataTransfer.effectAllowed = "move"; }}
               >
-                <button type="button" onClick={() => abrir(doc, ordenados)} className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left hover:bg-[var(--surface-sunken)]">
+                <button
+                  type="button"
+                  onClick={() => (elegir ? elegir(doc, ordenados) : abrir(doc, ordenados))}
+                  onDoubleClick={elegir ? () => abrir(doc, ordenados) : undefined}
+                  title={elegir ? "Clic: ver sus detalles · doble clic: abrir" : undefined}
+                  aria-pressed={elegir ? elegido : undefined}
+                  className={cn(
+                    "flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left hover:bg-[var(--surface-sunken)]",
+                    elegido && "hover:bg-transparent",
+                  )}
+                >
                   <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", bg)}>
                     <Icon className={cn("h-5 w-5", tint)} />
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{doc.name}</span>
-                    <span className="block truncate text-xs text-[var(--text-tertiary)]">
-                      {formatDate(doc.uploadedAt)} · {formatBytes(doc.size)}{donde ? ` · en ${donde}` : ""}
+                  {/* Con la lista angosta (panel ancho en dos columnas) el «vence» baja bajo el nombre: si no, el nombre queda en «qa-oc…». */}
+                  <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="min-w-0 flex-[1_1_7rem]">
+                      <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{doc.name}</span>
+                      <span className="block truncate text-xs text-[var(--text-tertiary)]">
+                        {formatDate(doc.uploadedAt)} · {formatBytes(doc.size)}{donde ? ` · en ${donde}` : ""}
+                      </span>
                     </span>
+                    {doc.expiresAt && <ExpiryBadge expiresAt={doc.expiresAt} className="shrink-0" />}
                   </span>
-                  {doc.expiresAt && <ExpiryBadge expiresAt={doc.expiresAt} className="shrink-0" />}
                 </button>
                 {menuDe(doc)}
               </li>

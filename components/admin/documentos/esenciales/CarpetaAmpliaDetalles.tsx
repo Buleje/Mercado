@@ -2,16 +2,18 @@
 
 import { useMemo } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Eye, Lock, UserPlus } from "@buleje/design-system/icons";
+import { Eye, Lock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { masAbiertos, type CarpetaEsencial, type UsoDoc } from "@/lib/documentos/esenciales";
 import { aplanar, type NodoArbol } from "@/lib/documentos/arbol-esencial";
-import { esTagDeVinculo, vinculosDeCarpeta } from "@/lib/documentos/terceros-vinculo";
+import { esTagDeVinculo } from "@/lib/documentos/terceros-vinculo";
 import { formatBytes, getFileIcon } from "../archivo-visual";
 import { tagsVisibles } from "../archivo/compartido";
 import { haceCuanto, papeles, quienLaVe, subcarpetas, veces } from "./compartido";
+import LigadaA from "./LigadaA";
+import MovimientosCarpeta from "./MovimientosCarpeta";
 
 const CAJA = "grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl bg-[var(--surface-sunken)] p-3 text-sm";
 const CHIP = "inline-flex items-center gap-1 rounded-lg bg-[var(--surface-raised)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)]";
@@ -33,20 +35,23 @@ function Dato({ k, v, candado }: { k: string; v: string; candado?: boolean }) {
  * (los mismos del panel), los de la subcarpeta que estás mirando y lo que más se
  * abre adentro.
  */
-export default function CarpetaAmpliaDetalles({ e, arbol, mirada, todos, uso, ahora, abrir }: {
+export default function CarpetaAmpliaDetalles({ e, arbol, mirada, todos, documentos, uso, ahora, abrir, onLigar }: {
   e: CarpetaEsencial<DbDocumentFolder>;
   arbol: NodoArbol<DbDocumentFolder>;
   mirada: NodoArbol<DbDocumentFolder>;
   /** Los papeles de toda la carpeta esencial. */
   todos: readonly DbDocument[];
+  /** Todos los papeles del Archivo: «Movimientos» abre el papel de una fila. */
+  documentos: readonly DbDocument[];
   uso: Record<string, UsoDoc>;
   ahora: number;
   abrir: (doc: DbDocument, lista: readonly DbDocument[]) => void;
+  /** «Ligar a…»: la ventana de vincular a un tercero (ADR-502). */
+  onLigar: () => void;
 }) {
   const f = e.carpeta;
   const acceso = quienLaVe(f.allowedRoles);
   const etiquetas = tagsVisibles(f.tags).filter((t) => !esTagDeVinculo(t));
-  const terceros = vinculosDeCarpeta(f).length;
   const destacados = useMemo(() => masAbiertos(todos, uso, 5), [todos, uso]);
   const { nSub, niveles } = useMemo(() => {
     const nodos = aplanar(arbol);
@@ -79,17 +84,14 @@ export default function CarpetaAmpliaDetalles({ e, arbol, mirada, todos, uso, ah
               {e.porVencer > 0 && <span className="text-[var(--data-warning-ink)]">{e.porVencer} vence{e.porVencer === 1 ? "" : "n"} en 30 días</span>}
             </div>
           )}
-          {(etiquetas.length > 0 || terceros > 0) && (
+          {etiquetas.length > 0 && (
             <div className="col-span-2 flex flex-wrap gap-1">
-              {terceros > 0 && (
-                <span className={CHIP}>
-                  <UserPlus className="h-4 w-4" /> {terceros} tercero{terceros === 1 ? "" : "s"}
-                </span>
-              )}
               {etiquetas.map((t) => <span key={t} className={CHIP}>#{t}</span>)}
             </div>
           )}
         </dl>
+        {/* A quién está ligada (antes una pastilla «N terceros»), como en el panel. */}
+        <LigadaA carpeta={f} onLigar={onLigar} />
       </section>
 
       {enSub && (
@@ -130,6 +132,7 @@ export default function CarpetaAmpliaDetalles({ e, arbol, mirada, todos, uso, ah
           </ul>
         </section>
       )}
+      <MovimientosCarpeta carpetaId={f.id} marca={`${todos.length}:${e.ultima ?? ""}`} documentos={documentos} abrir={abrir} ahora={ahora} />
     </aside>
   );
 }
