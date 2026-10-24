@@ -140,3 +140,29 @@ describe("cambiosPorPieza · una duplicada de la otra", () => {
     expect(cambiosPorPieza(a, registro([pz("x", 1, 2, 8, 10, "Tornillo")]))).toBeNull();
   });
 });
+
+describe("las dos comparaciones dicen lo mismo (Resúmenes y Guardadas)", () => {
+  it("mismo par → mismo PT, m³ y piezas por grupo y en el total", async () => {
+    const { compararLotes } = await import("@/lib/forestal/cubicacion-comparar");
+    const { precioDeCubicacion } = await import("@/lib/forestal/cubicacion-registro");
+    const a = registro([pz("a1", 7, 1.5, 7, 9, "Tornillo"), pz("a2", 3, 2, 5, 13, "Cedro"), pz("a3", 11, 1, 4, 7, "Tornillo")]);
+    const b = registro([pz("b1", 9, 1.5, 7, 9, "Tornillo"), pz("b2", 2, 2, 5, 13, "Cedro"), pz("b3", 4, 3, 3, 10, "Capirona")]);
+    for (const dim of ["especie", "tipo", "medida"] as const) {
+      const r = compararLotes(a.piezas, b.piezas, dim, precioDeCubicacion(a), precioDeCubicacion(b));
+      const g = diferenciasPor(a, b, dim);
+      expect(r.total).toMatchObject({ ptA: g.total.ptA, ptB: g.total.ptB, m3A: g.total.m3A, m3B: g.total.m3B, deltaPiezas: g.total.deltaPiezas });
+      for (const f of g.filas) {
+        const x = r.filas.find((y) => y.label === f.label);
+        expect(x, `${dim} · ${f.label}`).toMatchObject({ ptA: f.ptA, ptB: f.ptB, m3A: f.m3A, m3B: f.m3B, deltaPiezas: f.deltaPiezas });
+      }
+    }
+  });
+});
+
+describe("lecturaComparacion · el mismo lote", () => {
+  it("no dice «0 PT más»", async () => {
+    const { compararLotes, lecturaComparacion } = await import("@/lib/forestal/cubicacion-comparar");
+    const a = registro([pz("a1", 7, 1.5, 7, 9, "Tornillo")]);
+    expect(lecturaComparacion(compararLotes(a.piezas, a.piezas, "medida"))).toMatch(/mismas piezas/);
+  });
+});

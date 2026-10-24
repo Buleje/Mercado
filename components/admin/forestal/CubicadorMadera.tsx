@@ -573,7 +573,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false); // ya quedó registrado en el Libro CTP
   /** Cubicación guardada que se está editando (null = lote nuevo sin guardar). */
-  const [cubicacionActual, setCubicacionActual] = useState<{ id: string; nombre: string } | null>(null);
+  /* `valor` = el importe con que quedó guardada: «Guardar cubicación» avisa si al actualizarla cambia. */
+  const [cubicacionActual, setCubicacionActual] = useState<{ id: string; nombre: string; valor?: number } | null>(null);
   const [showHistorial, setShowHistorial] = useState(false);
   const [loteCreado, setLoteCreado] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -2088,9 +2089,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           }),
         })
           .then((res) => res.json().catch(() => ({})))
-          .then((jc: { cubicacion?: { id: string; nombre: string } }) => {
+          .then((jc: { cubicacion?: { id: string; nombre: string; valor?: number } }) => {
             if (jc?.cubicacion) {
-              setCubicacionActual({ id: jc.cubicacion.id, nombre: jc.cubicacion.nombre });
+              setCubicacionActual({ id: jc.cubicacion.id, nombre: jc.cubicacion.nombre, valor: jc.cubicacion.valor });
               marcarGuardado(filasVinculadas);
             }
             setHistorialToken((t) => t + 1);
@@ -2153,7 +2154,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
         );
       }
       const { cubicacion } = (await r.json()) as { cubicacion: CubicacionRegistro };
-      setCubicacionActual({ id: cubicacion.id, nombre: cubicacion.nombre });
+      setCubicacionActual({ id: cubicacion.id, nombre: cubicacion.nombre, valor: cubicacion.valor });
       marcarGuardado(rows);
       setHistorialToken((v) => v + 1);
       if (!silencioso) {
@@ -2201,7 +2202,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       for (const esp of suyas) precios.cambiarPrecioEspecie(esp, parejos[esp] ?? "");
     }
     setForm(datosDeGuardada(c));
-    setCubicacionActual(c.id ? { id: c.id, nombre: c.nombre } : null);
+    setCubicacionActual(c.id ? { id: c.id, nombre: c.nombre, valor: c.valor } : null);
     setShowHistorial(false);
     setLastAdded(null);
     setEnviado(false);
@@ -3395,6 +3396,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 inicial={form}
                 nombreSugerido={nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 })}
                 actualizando={cubicacionActual?.nombre ?? null}
+                valorGuardado={cubicacionActual?.valor ?? null}
                 rows={rows}
                 precios={precios}
                 especiesLote={especiesLote}

@@ -14,6 +14,7 @@ import { FICHA_MAX, type FichaCubicacion } from "@/lib/forestal/cubicacion-regis
 import { CAMPO_CUENTA as CAMPO, ETIQUETA_CUENTA as ETIQUETA } from "./cubicacion-cuenta-persona";
 import type { DatosDeLaCubicacion } from "./cubicador-guardar-tipos";
 import AvisoDeLaGuia from "./cubicador-guardar-aviso-guia";
+import type { CelularDelComprador } from "./hooks/use-celular-del-comprador";
 import { useFichaDesdeGuia } from "./hooks/use-ficha-desde-guia";
 import type { useLibretaDeLaFicha } from "./hooks/use-libreta-de-la-ficha";
 
@@ -39,11 +40,13 @@ function Sugerencias({ id, opciones }: { id: string; opciones: readonly string[]
 
 const Atada = () => <span className={DEL_DIRECTORIO}><UserCheck className="h-3.5 w-3.5" /> Del Directorio</span>;
 
-export default function DatosDeGuardar({ datos, actualizar, nombreSugerido, libreta }: {
+export default function DatosDeGuardar({ datos, actualizar, nombreSugerido, libreta, celular }: {
   datos: DatosDeLaCubicacion;
   actualizar: Actualizar;
   nombreSugerido: string;
   libreta: Libreta;
+  /** Celular del comprador, si su ficha del Directorio no lo tiene. */
+  celular?: CelularDelComprador;
 }) {
   const { ficha } = datos;
   const guia = useFichaDesdeGuia(datos, actualizar, libreta);
@@ -99,6 +102,15 @@ export default function DatosDeGuardar({ datos, actualizar, nombreSugerido, libr
             placeholder="Elige del Directorio o escríbelo" autoComplete="off" onChange={(e) => alComprador(e.target.value)} />
           <Sugerencias id="cubg-compradores" opciones={libreta.nombresCompradores} />
         </Campo>
+        {celular?.visible && (
+          <Campo id="cubg-celular" etiqueta="Celular (para mandarle por WhatsApp)" ancho>
+            <input id="cubg-celular" type="tel" inputMode="tel" className={CAMPO} value={celular.valor} maxLength={20}
+              placeholder="Ej.: 987 654 321" autoComplete="off" aria-invalid={celular.invalido}
+              onChange={(e) => celular.setValor(e.target.value)} />
+            {celular.invalido && <p role="alert" className="mt-1 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">Son 9 dígitos y empieza en 9 (puedes poner +51).</p>}
+            {!celular.invalido && <p className="mt-1 text-sm text-[var(--text-tertiary)]">Se anota en su ficha del Directorio al guardar.</p>}
+          </Campo>
+        )}
         <Campo id="cubg-comunidad" etiqueta="CCNN o de dónde salió la madera" ancho extra={ficha.comunidadParteId ? <Atada /> : null}>
           <input id="cubg-comunidad" className={CAMPO} value={ficha.comunidad ?? ""} maxLength={FICHA_MAX} list="cubg-comunidades"
             placeholder="Ej.: Comunidad Nativa San Luis de Chinchihuani" autoComplete="off" onChange={(e) => alComunidad(e.target.value)} />

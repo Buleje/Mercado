@@ -12,7 +12,7 @@
  */
 import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, FileText, GitCompareArrows, Loader2, RefreshCw, Search, X } from "@buleje/design-system/icons";
+import { AlertTriangle, FileText, GitCompareArrows, Loader2, RefreshCw, Search, UserCheck, X } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
@@ -28,6 +28,8 @@ import { useGuardadasDelCubicador } from "./hooks/use-guardadas-del-cubicador";
 import { DetalleCubicacionModal } from "./cubicador-detalle-modal";
 import { CompararCubicacionesModal } from "./cubicador-comparar-modal";
 import { ResumenPorFicha } from "./cubicador-guardadas-resumen";
+import AtarGuardadasModal from "./cubicador-atar-modal";
+import { necesitaAtar } from "@/lib/forestal/cubicacion-atar";
 
 const TODAS = "";
 
@@ -54,6 +56,9 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
   /* Una ventana a la vez: «Comparar con otra…» desde el detalle lo cierra y abre el comparador. */
   const [detalleId, setDetalleId] = useState<string | null>(null);
   const [comparar, setComparar] = useState<{ aId: string | null } | null>(null);
+  /* «Completar»: las guardadas sin comprador del Directorio. La lista de la ventana se fija al abrirla. */
+  const [atarIds, setAtarIds] = useState<string[] | null>(null);
+  const sinParte = useMemo(() => lista.filter(necesitaAtar), [lista]);
   const detalle = detalleId ? lista.find((c) => c.id === detalleId) ?? null : null;
   const puedeComparar = lista.length > 1;
   /* La lista dentro de «Producir sin lote» ya está en una ventana: las suyas van encima. */
@@ -158,6 +163,16 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
         )}
       </div>
 
+      {!cargando && sinParte.length > 0 && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--text-secondary)]" data-aviso="guardadas-sin-comprador">
+          <UserCheck className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
+          <span>{sinParte.length} {sinParte.length === 1 ? "guardada sin comprador" : "guardadas sin comprador"} del Directorio</span>
+          <button type="button" onClick={() => setAtarIds(sinParte.map((c) => c.id))} className={button({ variant: "secondary", className: "px-4" })} data-accion="completar-guardadas">
+            Completar
+          </button>
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-sm font-semibold text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/12">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {error}
@@ -216,6 +231,15 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
         </>
       )}
 
+      {atarIds && (
+        <AtarGuardadasModal
+          cubicaciones={atarIds.map((id) => lista.find((x) => x.id === id)).filter((x): x is CubicacionRegistro => Boolean(x))}
+          aboveModals={dentroDeVentana}
+          onGuardada={recargar}
+          onRecargar={recargar}
+          onClose={() => setAtarIds(null)}
+        />
+      )}
       {detalle && (
         <DetalleCubicacionModal
           c={detalle}

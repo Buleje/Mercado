@@ -1,0 +1,5 @@
+[
+  {"esperar": 3000},
+  {"eval": "(async()=>{/* Siembra una guardada de prueba «ZZQA guardada» con ficha, GTF y precio por pieza (24-10: el mismo paso se escribió a mano 4 veces). Se borra con el preset cubicador-guardadas-qa-borrar. */const c=decodeURIComponent(document.cookie.match(/csrf-token=([^;]+)/)?.[1]||'');const r=await fetch('/api/admin/forestal/cubicaciones',{method:'POST',headers:{'content-type':'application/json','x-csrf-token':c},credentials:'include',body:JSON.stringify({nombre:'ZZQA guardada',fecha:'2026-10-24',cliente:'Maderera QA',precioPt:2,gtfNumber:'001-0000120',ficha:{comunidad:'CCNN QA',placa:'QA-777',tituloHabilitante:'25-QA-001',chofer:'Chofer QA'},piezas:[{id:'p1',cantidad:3,espesor:2,ancho:8,largo:10,especie:'Tornillo',precio:2.5},{id:'p2',cantidad:2,espesor:2,ancho:6,largo:10,especie:'Cumala'}]})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error('no se sembró la guardada: HTTP '+r.status);localStorage.setItem('zzqa-id',j.cubicacion.id);location.reload()})()"},
+  {"esperar": "article[aria-label='ZZQA guardada']"}
+]

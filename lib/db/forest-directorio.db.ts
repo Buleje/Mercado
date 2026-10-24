@@ -406,6 +406,29 @@ export const ForestDirectorioDB = {
   },
 
   /**
+   * Sólo el teléfono de una parte (Cubicador, 24-10: «Celular del comprador»).
+   * `guardarParte` reemplaza la ficha entera —lo que no viene queda en `null`—,
+   * así que anotar un celular desde otra pantalla no puede pasar por ahí.
+   * Devuelve la parte o `null` si no existe en este negocio.
+   */
+  async ponerTelefono(tenantId: string, id: string, telefono: string, usuario: string): Promise<Parte | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const vivo = await prisma.forestParty.findFirst({ where: { id, tenantId, deletedAt: null } });
+    if (!vivo) return null;
+    const row = await prisma.forestParty.update({ where: { id: vivo.id }, data: { telefono } });
+    auditCtp({
+      tenantId,
+      action: "ctp_parte_upsert",
+      entity: "ForestParty",
+      entityId: row.id,
+      detail: `Anotó el celular de ${row.nombre}`,
+      user: usuario,
+    });
+    this.invalidar(tenantId);
+    return aParte(row);
+  },
+
+  /**
    * Baja de una parte. Soft delete: las guías ya emitidas la nombran, y borrarla
    * de verdad dejaría huérfano el rastro que un fiscalizador va a cruzar.
    */

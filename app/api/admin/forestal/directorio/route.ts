@@ -6,6 +6,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
+import { celularPeru } from "@/lib/forestal/cubicacion-whatsapp";
 import { esRolValido, parteInputSchema, type RolParte } from "@/lib/forestal/directorio";
 
 /**
@@ -14,7 +15,8 @@ import { esRolValido, parteInputSchema, type RolParte } from "@/lib/forestal/dir
  * GET    lista (filtros: `rol`, `q`, `inactivos=1`)
  * POST   alta/edición (upsert por documento; `id` para editar una fila puntual)
  * DELETE baja lógica (`?id=`)
- * PATCH  marca uso — se llama cuando la parte entra en un documento real
+ * PATCH  marca uso — se llama cuando la parte entra en un documento real;
+ *        o `{ id, telefono }`: anota SÓLO el celular de esa parte (no toca el resto)
  *
  * Guard: `spec:forestal:ctp-libro` o `spec:forestal:loth-libro` · rate-limit GENEROUS bucket 'ctp'.
  */
@@ -137,6 +139,8 @@ const usoSchema = z.object({
   vehiculos: z.array(z.string().trim().max(40)).max(20).optional(),
 });
 
+const telefonoSchema = z.object({ id: z.string().trim().min(1).max(40), telefono: z.string().trim().max(40) });
+
 export const PATCH = withApiHandler("forestal-directorio-uso", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
@@ -151,6 +155,23 @@ export const PATCH = withApiHandler("forestal-directorio-uso", async (req: NextR
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
+  /* `{ id, telefono }` = anotar el celular (Cubicador). Sin reemplazar la ficha. */
+  if (body && typeof body === "object" && "telefono" in body) {
+    const t = telefonoSchema.safeParse(body);
+    if (!t.success) return NextResponse.json({ error: "validation_error" }, { status: 422 });
+    const celular = celularPeru(t.data.telefono);
+    if (!celular) {
+      return NextResponse.json({ error: "celular_invalido", message: "El celular son 9 dígitos y empieza en 9." }, { status: 422 });
+    }
+    try {
+      const parte = await ForestDirectorioDB.ponerTelefono(auth.tenantId, t.data.id, celular.slice(2), auth.username ?? "unknown");
+      return parte ? NextResponse.json({ parte }) : NextResponse.json({ error: "not_found" }, { status: 404 });
+    } catch (err) {
+      logger.error("[directorio.PATCH.telefono] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
+
   const parsed = usoSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error" }, { status: 422 });
 

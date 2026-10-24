@@ -14,7 +14,7 @@ import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { precioDeCubicacion, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import type { DimensionResumen, PrecioPt } from "@/lib/forestal/cubicacion-resumen";
 import { compararLotes, lecturaComparacion } from "@/lib/forestal/cubicacion-comparar";
-import { fmtPctSigno, fmtPt, fmtPtSigno, fmtSoles, fmtSolesSigno } from "@/lib/forestal/cubicacion-formato";
+import { fmtM3, fmtPctSigno, fmtPt, fmtPtSigno, fmtSoles, fmtSolesSigno } from "@/lib/forestal/cubicacion-formato";
 
 /** Mismas medidas que `resumen-tabla`: las dos tablas se leen igual. */
 const TH = "align-bottom";
@@ -22,6 +22,10 @@ const TD = "align-middle";
 const NUM = "text-right font-mono tabular-nums";
 
 /** Verde si subió, ámbar si bajó, neutro si no se movió — con dark explícito. */
+/** Δ con signo (+3 · −0,315): el m³ y las piezas, como el comparador de Guardadas. */
+const conSigno = (v: number, f: (n: number) => string) => (v > 0 ? `+${f(v)}` : v < 0 ? `−${f(-v)}` : f(0));
+const piezas = (n: number) => n.toLocaleString("es-PE");
+
 const tono = (v: number) =>
   v > 0 ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
     : v < 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
@@ -78,14 +82,16 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
             {lecturaComparacion(comp)}
           </p>
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <DataTable className="w-full min-w-[520px]">
+            <DataTable className="w-full min-w-[640px]">
               <caption className="sr-only">Este lote contra la cubicación guardada</caption>
               <thead className="sticky top-0 z-10">
                 <tr>
                   <th scope="col" className={TH}>Grupo</th>
+                  <th scope="col" className={`${TH} text-right`}>Δ piezas</th>
                   <th scope="col" className={`${TH} text-right`}>PT antes</th>
                   <th scope="col" className={`${TH} text-right`}>PT ahora</th>
                   <th scope="col" className={`${TH} text-right`}>Δ PT</th>
+                  <th scope="col" className={`${TH} text-right`}>Δ m³</th>
                   <th scope="col" className={`${TH} text-right`}>Δ mix</th>
                   {conValor && <th scope="col" className={`${TH} text-right`}>Δ valor</th>}
                 </tr>
@@ -94,6 +100,7 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
                 {comp.filas.map((f) => (
                   <tr key={f.label} className="even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5">
                     <td className={`${TD} font-bold`}>{f.label}</td>
+                    <td className={`${TD} ${NUM} ${tono(f.deltaPiezas)}`}>{conSigno(f.deltaPiezas, piezas)}</td>
                     <td className={`${TD} ${NUM} text-[var(--text-tertiary)]`}>{fmtPt(f.ptA)}</td>
                     <td className={`${TD} ${NUM}`}>{fmtPt(f.ptB)}</td>
                     <td className={`${TD} ${NUM} font-bold ${tono(f.deltaPt)}`}>
@@ -102,6 +109,7 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
                         {fmtPtSigno(f.deltaPt)}
                       </span>
                     </td>
+                    <td className={`${TD} ${NUM} ${tono(f.deltaM3)}`}>{conSigno(f.deltaM3, fmtM3)}</td>
                     <td className={`${TD} ${NUM} ${tono(f.deltaPct)}`}>{fmtPctSigno(f.deltaPct)} pts</td>
                     {conValor && <td className={`${TD} ${NUM} ${tono(f.deltaValor)}`}>S/ {fmtSolesSigno(f.deltaValor)}</td>}
                   </tr>
@@ -110,9 +118,11 @@ export default function ResumenComparar({ rows, precioDe, conValor, dim, guardad
               <tfoot className="sticky bottom-0 bg-[var(--surface-raised)]">
                 <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <th scope="row" className={`${TD} text-left`}>Total</th>
+                  <td className={`${TD} ${NUM} ${tono(comp.total.deltaPiezas)}`}>{conSigno(comp.total.deltaPiezas, piezas)}</td>
                   <td className={`${TD} ${NUM}`}>{fmtPt(comp.total.ptA)}</td>
                   <td className={`${TD} ${NUM}`}>{fmtPt(comp.total.ptB)}</td>
                   <td className={`${TD} ${NUM} ${tono(comp.total.deltaPt)}`}>{fmtPtSigno(comp.total.deltaPt)}</td>
+                  <td className={`${TD} ${NUM} ${tono(comp.total.deltaM3)}`}>{conSigno(comp.total.deltaM3, fmtM3)}</td>
                   <td className={`${TD} ${NUM} text-[var(--text-tertiary)]`}>—</td>
                   {conValor && <td className={`${TD} ${NUM} ${tono(comp.total.deltaValor)}`}>S/ {fmtSolesSigno(comp.total.deltaValor)}</td>}
                 </tr>

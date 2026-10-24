@@ -16,8 +16,14 @@ describe("preciosParejosPorEspecie (reabrir una guardada con sus precios)", () =
     expect(preciosParejosPorEspecie([p("Tornillo", 2.5), p("Tornillo", 3)], 2)).toBeNull();
   });
 
-  it("una pieza sin precio guardado (cubicación vieja) → null", () => {
-    expect(preciosParejosPorEspecie([p("Tornillo", 2.5), p("Cumala")], 2)).toBeNull();
+  it("una pieza sin precio propio vale el general (como su importe guardado), no apaga la reposición", () => {
+    expect(preciosParejosPorEspecie([p("Tornillo", 2.5), p("Cumala")], 2)).toEqual({ tornillo: "2.5" });
+    /* La misma especie con y sin precio propio no es pareja. */
+    expect(preciosParejosPorEspecie([p("Tornillo", 2.5), p("Tornillo")], 2)).toBeNull();
+  });
+
+  it("una cubicación vieja sin ningún precio por pieza → null (queda el general)", () => {
+    expect(preciosParejosPorEspecie([p("Tornillo"), p("Cumala")], 2)).toBeNull();
   });
 
   it("una pieza sin especie con otro precio que el general → null", () => {

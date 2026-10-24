@@ -29,16 +29,20 @@ export function preciosParejosPorEspecie(
   const general = Number.isFinite(precioGeneral) ? precioGeneral : 0;
   const porEspecie = new Map<string, number>();
   for (const p of piezas) {
-    if (p.precio === undefined || p.precio === null || !Number.isFinite(p.precio)) return null;
+    /* Una pieza sin precio propio se valorizó con el general (`precioDeCubicacion`):
+       cuenta como tal. Antes una sola así (guardada por otro camino) apagaba la
+       reposición entera y Tornillo a 2,5 volvía al general (medido 24-10). */
+    const precio = p.precio === undefined || p.precio === null ? general : p.precio;
+    if (!Number.isFinite(precio)) return null;
     const k = p.especie?.trim().toLowerCase() ?? "";
     /* Sin especie sólo puede ir al general: con otro precio, «A mano» no lo reproduce. */
     if (!k) {
-      if (cent(p.precio) !== cent(general)) return null;
+      if (cent(precio) !== cent(general)) return null;
       continue;
     }
     const previo = porEspecie.get(k);
-    if (previo === undefined) porEspecie.set(k, p.precio);
-    else if (cent(previo) !== cent(p.precio)) return null;
+    if (previo === undefined) porEspecie.set(k, precio);
+    else if (cent(previo) !== cent(precio)) return null;
   }
   const distintos = [...porEspecie].filter(([, v]) => cent(v) !== cent(general));
   if (distintos.length === 0) return null;

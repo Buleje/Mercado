@@ -121,6 +121,14 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
       if (!guia) return NextResponse.json({ error: "not_found" }, { status: 404 });
       return NextResponse.json({ guia });
     }
+    /* `?gtfNumber=&volumen=1` (Cubicador, 24-10): cuánto declara la guía, por especie, sin los items. */
+    if (gtfNumber && url.searchParams.get("volumen") === "1") {
+      const num = z.string().trim().min(1).max(60).safeParse(gtfNumber);
+      if (!num.success) return NextResponse.json({ error: "validation_error" }, { status: 400 });
+      const guia = await ForestGtfDB.volumenPorNumero(auth.tenantId, num.data);
+      if (!guia) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ guia });
+    }
     if (gtfNumber) {
       // Importar al ingreso CTP: buscar la guía emitida por su número.
       // El N° solo no identifica la guía: `titular`/`permiso` la eligen si hay

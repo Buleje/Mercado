@@ -64,5 +64,5 @@ export function useLibretaDeLaFicha(activo: boolean) {
     return suyos.length === 1 ? suyos[0].codigo : null;
   }, [contratos]);
 
-  return { ...libreta, buscar, permisoDe, cargando: dir.cargando };
+  return { ...libreta, buscar, permisoDe, cargando: dir.cargando, guardarParte: dir.guardarParte };
 }

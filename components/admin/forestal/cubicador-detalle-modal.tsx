@@ -29,6 +29,7 @@ import { Chip, KpiResumen, TablaGrupos } from "./resumen-tabla";
 import { ChipsDeLectura, FichaDeGuardada, datosDeLaGuardada } from "./cubicador-detalle-ficha";
 import { fechaDeLaGuardada } from "./cubicador-guardadas-tarjeta";
 import { AccionesWhatsAppDeGuardada } from "./cubicador-detalle-whatsapp";
+import { RendimientoContraLaGuia } from "./cubicador-detalle-rendimiento";
 
 const DIMENSIONES_DETALLE = ["especie", "tipo", "largo", "medida", "seccion", "dueno"] as const satisfies readonly DimensionResumen[];
 type Lectura = "especie-tipo" | (typeof DIMENSIONES_DETALLE)[number];
@@ -104,6 +105,8 @@ export function DetalleCubicacionModal({ c, enLibro, aboveModals, puedeComparar,
           <KpiResumen label="Valor" value={conValor ? `S/ ${fmtSoles(c.valor)}` : "—"} hint={conValor ? undefined : "Se guardó sin precio"} destacado={conValor} />
           <KpiResumen label="S/ por PT" value={conValor && pt > 0 ? fmtSoles(c.valor / pt) : "—"} hint="Promedio del lote" />
         </div>
+
+        {c.gtfNumber?.trim() && <RendimientoContraLaGuia c={c} />}
 
         <section aria-label="Resúmenes de la cubicación" className="space-y-3">
           <ChipsDeLectura opciones={LECTURAS} valor={lectura} onCambiar={setLectura} etiqueta="Cómo leer el lote" />

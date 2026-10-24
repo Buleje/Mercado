@@ -9,6 +9,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { auditLoth } from "@/lib/forestal/loth-audit";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { claveNumeroGtf, colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
+import { resumirVolumenDeGuia, type ItemDeGuiaVolumen, type TipoDeGuia } from "@/lib/forestal/cubicacion-rendimiento-guia";
 import { chocanEnElLibro, elegirGuiaDelDueno, puedeSerDelDueno, type IdentidadDeGuiaBuscada } from "@/lib/forestal/loth-talonario";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FiltroPermiso } from "@/lib/forestal/loth-filtro-permiso";
@@ -657,6 +658,30 @@ export class ForestGtfDB {
       select: { gtfNumber: true, titularName: true, tituloHabilitante: true, placaVehiculo: true, conductor: true, destino: true },
     });
     return candidatas.find((g) => mismoNumeroGtf(g.gtfNumber, gtfNumber)) ?? null;
+  }
+
+  /**
+   * El volumen que declara una guía, para cruzarlo con una cubicación guardada
+   * (Cubicador, 24-10): `tipo` y las sumas por especie, nunca los items.
+   * Prefiere la vigente más reciente; si sólo hay anuladas, lo dice.
+   */
+  static async volumenPorNumero(tenantId: string, gtfNumber: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const cola = colaDeGtf(gtfNumber);
+    if (!cola) return null;
+    const candidatas = await prisma.forestGtf.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: { endsWith: cola } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: { gtfNumber: true, status: true, tipo: true, items: true },
+    });
+    const exactas = candidatas.filter((g) => mismoNumeroGtf(g.gtfNumber, gtfNumber));
+    if (exactas.length === 0) return null;
+    const vigente = exactas.find((g) => g.status !== "anulada");
+    if (!vigente) return { gtfNumber: exactas[0].gtfNumber, anulada: true as const };
+    const items = Array.isArray(vigente.items) ? (vigente.items as ItemDeGuiaVolumen[]) : [];
+    const tipo: TipoDeGuia = vigente.tipo === "producto" ? "producto" : "trozas";
+    return { gtfNumber: vigente.gtfNumber, anulada: false as const, ...resumirVolumenDeGuia(tipo, items) };
   }
 
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
