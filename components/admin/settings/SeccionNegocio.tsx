@@ -9,6 +9,7 @@ import { Store, Phone, MapPin, Clock, AlignLeft, ShoppingCart, MessageCircle, Tr
 import { FieldLabel, TextInput, TextArea, SelectInput, SectionCard, Plegable } from "@/components/admin/settings/campos";
 import { TusDocumentos } from "@/components/admin/settings/TusDocumentos";
 import { TicketPie } from "@/components/admin/settings/TicketPie";
+import { AvisosCorreoTienda } from "@/components/admin/settings/AvisosCorreoTienda";
 import type { AjustesEstado } from "@/components/admin/settings/use-ajustes";
 import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
 import { useCodigoNegocio } from "@/hooks/use-codigo-negocio";
@@ -106,7 +107,7 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
               <InfoTip
                 title="Correo del negocio"
                 what="Sale en tu tienda y te llegan aquí los avisos de uso de tu plan."
-                affects="El reporte mensual y el semanal van al correo con el que creaste tu cuenta, no a éste: para cambiarlo, escríbele a soporte."
+                affects="Los avisos automáticos (pedidos, stock bajo, reportes) van al correo con el que creaste tu cuenta, no a éste: lo ves y los apagas en «Avisos por correo», aquí abajo."
               />
             </FieldLabel>
             <TextInput id="settings-businessEmail" value={businessEmail} onChange={setBusinessEmail} placeholder="ventas@bodega.pe" type="email" />
@@ -126,6 +127,8 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
           </div>
         </div>
       </SectionCard>
+
+      <AvisosCorreoTienda />
 
       <SectionCard title="Tu ticket" desc="Arriba salen tu nombre, razón social, RUC y dirección; abajo, el texto que escribas aquí. Lo usan tus tickets, recibos, cotizaciones, órdenes de compra y fiados.">
         <TicketPie

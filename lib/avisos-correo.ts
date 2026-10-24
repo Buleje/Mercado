@@ -7,7 +7,9 @@ import { AvisosCorreoDB, type FilaAvisosGuardada, type TiendaAvisosCorreo } from
 import {
   AVISO_CORREO_INFO,
   TIPOS_AVISO_CORREO,
+  enmascararCorreo,
   esCorreoGmail,
+  type AvisosCorreoDeLaTienda,
   type AvisosCorreoDetalle,
   type AvisosCorreoGuardado,
   type AvisosCorreoPatch,
@@ -47,7 +49,7 @@ const GuardadoSchema = z.object({
   apagados: z.array(z.string()),
 });
 
-/** Body del PATCH del superadmin: o el general, o un tipo. */
+/** Body del PATCH (superadmin y panel de la tienda): o el general, o un tipo. */
 export const AvisosCorreoPatchSchema = z.union([
   z.object({ pausado: z.boolean() }).strict(),
   z.object({ tipo: z.enum(TIPOS_AVISO_CORREO), activo: z.boolean() }).strict(),
@@ -228,5 +230,70 @@ export async function guardarAvisosCorreo(
       return { valor: nuevo, resultado: nuevo };
     },
     por,
+  );
+}
+
+/**
+ * Marca de quién cambió el interruptor desde el panel de la tienda (24-10): el superadmin
+ * ve «qaadmin (tienda)» en su «Último cambio» y el dueño distingue lo suyo de lo de la plataforma.
+ */
+export const SUFIJO_CAMBIO_DE_LA_TIENDA = " (tienda)";
+
+export function porDeLaTienda(username: string): string {
+  return `${username}${SUFIJO_CAMBIO_DE_LA_TIENDA}`;
+}
+
+/** Vista del dueño (pura: sin base). Exportada para los tests. */
+export function armarAvisosDeLaTienda(
+  correo: string | null | undefined,
+  guardado: AvisosCorreoGuardado,
+  aplicaForestal: boolean,
+  envios: Map<string, Date>,
+  fila: Pick<FilaAvisosGuardada, "updatedBy" | "updatedAt"> | undefined,
+  puedeCambiar: boolean,
+): AvisosCorreoDeLaTienda {
+  const resumen = armarResumenAvisos(correo, guardado, aplicaForestal, 0);
+  const quien = fila?.updatedBy ?? "";
+  return {
+    correo: puedeCambiar ? resumen.correo : enmascararCorreo(resumen.correo),
+    pausado: resumen.pausado,
+    activos: resumen.activos,
+    total: resumen.total,
+    tipos: tiposQueAplican(aplicaForestal).map((tipo) => ({
+      tipo,
+      nombre: AVISO_CORREO_INFO[tipo].nombre,
+      descripcion: AVISO_CORREO_INFO[tipo].descripcion,
+      activo: !guardado.apagados.includes(tipo),
+      ultimoEnvio: envios.get(TIPO_REGISTRO_CORREO[tipo])?.toISOString() ?? null,
+    })),
+    puedeCambiar,
+    cambio: fila?.updatedAt
+      ? {
+          en: fila.updatedAt.toISOString(),
+          por: quien.endsWith(SUFIJO_CAMBIO_DE_LA_TIENDA) ? quien.slice(0, -SUFIJO_CAMBIO_DE_LA_TIENDA.length) : null,
+        }
+      : null,
+  };
+}
+
+/** Lo que ve el dueño en su panel: 3 lecturas (fila, forestal, últimos envíos). */
+export async function avisosParaLaTienda(
+  tienda: TiendaAvisosCorreo,
+  puedeCambiar: boolean,
+): Promise<AvisosCorreoDeLaTienda> {
+  const ids = crudosDe(tienda);
+  const [filas, forestal, envios] = await Promise.all([
+    AvisosCorreoDB.filas([claveAvisosCorreo(tienda.id)]),
+    AvisosCorreoDB.conForestal(ids),
+    AvisosCorreoDB.ultimosEnvios(ids, Object.values(TIPO_REGISTRO_CORREO)),
+  ]);
+  const fila = filas[0];
+  return armarAvisosDeLaTienda(
+    tienda.ownerEmail,
+    leerAvisosGuardados(fila?.value, tienda.id),
+    ids.some((id) => forestal.has(id)),
+    envios,
+    fila,
+    puedeCambiar,
   );
 }

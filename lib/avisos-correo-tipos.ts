@@ -64,3 +64,41 @@ export type AvisosCorreoPatch = { pausado: boolean } | { tipo: TipoAvisoCorreo; 
 export function esCorreoGmail(correo: string | null | undefined): boolean {
   return !!correo && /@(gmail|googlemail)\.com$/i.test(correo.trim());
 }
+
+/** Un tipo de aviso tal como lo ve el dueño en su panel (sólo los que aplican a su negocio). */
+export interface AvisoCorreoDeLaTienda {
+  tipo: TipoAvisoCorreo;
+  nombre: string;
+  descripcion: string;
+  activo: boolean;
+  /** Último envío registrado (ISO) o null. */
+  ultimoEnvio: string | null;
+}
+
+/**
+ * GET/PATCH /api/admin/avisos-correo (24-10) → { ok: true, avisos: AvisosCorreoDeLaTienda }.
+ * Lo que el dueño ve en Configuración › Datos del negocio: sin las cuentas de Google,
+ * el servidor propio ni el usuario del superadmin que lo cambió.
+ */
+export interface AvisosCorreoDeLaTienda {
+  /** Completo para el dueño y el admin; enmascarado para el encargado. null = no hay correo. */
+  correo: string | null;
+  pausado: boolean;
+  /** Tipos que hoy saldrían de verdad: 0 si está pausado o no hay correo. */
+  activos: number;
+  total: number;
+  tipos: AvisoCorreoDeLaTienda[];
+  /** Sólo el dueño y el admin cambian los interruptores; el encargado los ve. */
+  puedeCambiar: boolean;
+  /** Último cambio: `por` = usuario del negocio, o null si lo cambió la plataforma. */
+  cambio: { en: string; por: string | null } | null;
+}
+
+/** «brandon@gmail.com» → «b•••@gmail.com»: el encargado ve a qué casilla llegan, no la dirección. */
+export function enmascararCorreo(correo: string | null | undefined): string | null {
+  const limpio = correo?.trim();
+  if (!limpio) return null;
+  const arroba = limpio.lastIndexOf("@");
+  if (arroba <= 0) return "•••";
+  return `${limpio[0]}•••${limpio.slice(arroba)}`;
+}

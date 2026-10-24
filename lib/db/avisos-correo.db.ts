@@ -37,6 +37,18 @@ export const AvisosCorreoDB = {
     });
   },
 
+  /**
+   * La tienda por su id EXACTO (el del JWT). El panel del dueño usa ésta y no
+   * `tienda()`: un slug igual al id de otro negocio haría leer y escribir su fila.
+   */
+  async tiendaPorId(id: string): Promise<TiendaAvisosCorreo | null> {
+    if (!id) return null;
+    return prisma.tenant.findUnique({
+      where: { id },
+      select: { id: true, slug: true, name: true, ownerEmail: true },
+    });
+  },
+
   /** Varias tiendas a partir de tenantIds mixtos (cuid o slug), en UNA consulta. */
   async tiendas(slugsOIds: string[]): Promise<TiendaAvisosCorreo[]> {
     const lista = [...new Set(slugsOIds.filter(Boolean))];

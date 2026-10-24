@@ -75,6 +75,12 @@ export const RUTAS_PANEL = {
      Plata del negocio → dueño, admin, dueño de tienda y encargado; cajero,
      almacenero y analista reciben 403 y la vista muestra «sin permiso». */
   "/api/admin/semaforo": ["admin", "owner", "tienda_owner", "manager"],
+  /* Avisos por correo de la tienda (24-10, Configuración › Datos del negocio):
+     llegan al correo del dueño (Tenant.ownerEmail). Cajero, almacenero y analista
+     → 403 por este array. El encargado entra por el management-tier y SÓLO lee
+     (correo enmascarado): el PATCH lo corta `soloAdminODueno`, porque apagar
+     «Pedidos» o «Stock bajo» le quitaría al dueño su forma de enterarse. */
+  "/api/admin/avisos-correo": ["admin", "owner"],
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type RutaPanel = keyof typeof RUTAS_PANEL;
