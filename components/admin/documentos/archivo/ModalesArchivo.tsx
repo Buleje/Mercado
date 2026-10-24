@@ -3,7 +3,7 @@
 import { Check, X, Clock, Loader2 } from "@buleje/design-system/icons";
 import {
   TemplateGenerator, MoveToFolderModal, ImportarCarpetaModal, SendWhatsAppModal, OrdenarArchivoModal, ExpedienteModal,
-  StampModal, EscanerModal, PageEditorModal, SmartFolderModal, FolderEditModal, FolderShareModal, ConfirmarBorrarCarpetas,
+  StampModal, EscanerModal, PageEditorModal, SmartFolderModal, IconoCarpetaModal, FolderShareModal, ConfirmarBorrarCarpetas,
   TagTaxonomyModal, BulkTagModal, TagEditModal, VincularTerceroModal,
 } from "./perezosos";
 import { descendantIds } from "@/lib/documentos/folder-tree";
@@ -152,9 +152,10 @@ export default function ModalesArchivo({ arch }: { arch: ModeloArchivo }) {
       )}
 
       {editingFolder && (
-        <FolderEditModal
+        <IconoCarpetaModal
           folder={editingFolder}
-          onSave={(patch) => updateFolder(editingFolder.id, patch)}
+          updateFolder={updateFolder}
+          bulkFolders={bulkFolders}
           onClose={() => setEditingFolder(null)}
         />
       )}

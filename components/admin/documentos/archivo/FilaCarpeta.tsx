@@ -161,8 +161,8 @@ export default function FilaCarpeta({ arch, f, depth, hasChildren }: { arch: Mod
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setEditingFolder(f); }}
                         className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
-                        aria-label={`Personalizar carpeta ${f.name}`}
-                        title="Color e ícono"
+                        aria-label={`Cambiar ícono de ${f.name}`}
+                        title="Cambiar ícono"
                       >
                         <Palette className="h-3 w-3" />
                       </button>

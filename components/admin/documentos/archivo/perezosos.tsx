@@ -39,7 +39,7 @@ const CARGAS = {
   escaner: () => import("../escaner/EscanerModal"),
   paginas: () => import("../PageEditorModal"),
   inteligente: () => import("../SmartFolderModal"),
-  editarCarpeta: () => import("../FolderEditModal"),
+  editarCarpeta: () => import("../esenciales/IconoCarpetaModal"),
   compartirCarpeta: () => import("../FolderShareModal"),
   borrarCarpetas: () => import("../ConfirmarBorrarCarpetas"),
   etiquetas: () => import("../TagTaxonomyModal"),
@@ -95,7 +95,7 @@ export const StampModal = dynamic(() => import("../StampModal").then((m) => m.St
 export const EscanerModal = dynamic(() => import("../escaner/EscanerModal").then((m) => m.EscanerModal), { ssr: false });
 export const PageEditorModal = dynamic(() => import("../PageEditorModal").then((m) => m.PageEditorModal), { ssr: false });
 export const SmartFolderModal = dynamic(() => import("../SmartFolderModal").then((m) => m.SmartFolderModal), { ssr: false });
-export const FolderEditModal = dynamic(() => import("../FolderEditModal").then((m) => m.FolderEditModal), { ssr: false });
+export const IconoCarpetaModal = dynamic(() => import("../esenciales/IconoCarpetaModal"), { ssr: false });
 export const FolderShareModal = dynamic(() => import("../FolderShareModal").then((m) => m.FolderShareModal), { ssr: false });
 export const ConfirmarBorrarCarpetas = dynamic(() => import("../ConfirmarBorrarCarpetas").then((m) => m.ConfirmarBorrarCarpetas), { ssr: false });
 export const TagTaxonomyModal = dynamic(() => import("../TagTaxonomyModal").then((m) => m.TagTaxonomyModal), { ssr: false });
