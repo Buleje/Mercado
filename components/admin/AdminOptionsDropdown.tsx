@@ -145,10 +145,11 @@ export default function AdminOptionsDropdown({
         )}
       >
         <Settings2 className="h-5 w-5 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Opciones</span>
+        {/* Rótulo sólo con encabezado ancho (24-10, «más compacta»): si no, el engranaje solo. */}
+        <span className="hidden @min-[64rem]:inline">Opciones</span>
         <ChevronDown
           className={cn(
-            "hidden md:block h-3.5 w-3.5 transition-transform duration-200",
+            "hidden @min-[64rem]:block h-3.5 w-3.5 transition-transform duration-200",
             open && "rotate-180",
           )}
         />

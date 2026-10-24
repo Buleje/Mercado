@@ -23,11 +23,13 @@
  *   visitantes de hoy, sonido…).
  */
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGrid } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { useRecientes } from "@/hooks/use-recientes-panel";
+import { leerContadorDeUso } from "@/hooks/use-uso-de-pestanas";
+import { masUsadas as calcularMasUsadas, recientesSinRepetidos } from "@/lib/admin/mas-usadas";
 import { entradaDeUrl } from "@/lib/admin/recientes-panel";
 import { cn } from "@/lib/utils";
 import { etiquetaDeTab } from "@/components/admin/buscador/indice-modulos";
@@ -72,6 +74,11 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
     if (a.id === "camaras") marcarVistosAvisosCamaras();
     setEnModalCrudo(a);
   }, []);
+  /* Se lee al abrir (no mientras clicas): el contador vive en el navegador. */
+  const usadas = useMemo(
+    () => (abierto ? calcularMasUsadas(leerContadorDeUso(), etiquetaDeTab, [aca]) : []),
+    [abierto, aca],
+  );
   const camaras = permitidos.find((a) => a.id === "camaras") ?? null;
   const cam = useCamarasCabecera(camaras, setEnModal);
   /* Cámaras va a la vista en todo ancho: si está en la barra, el contador es suyo. */
@@ -196,8 +203,9 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
             opcionesDeCamaras={camaras !== null && !camarasEnBarra}
             onElegirDeCamaras={elegirDeCamaras}
             recientes={
-              listo ? { lista: recientes.filter((r) => r.href !== aca), hayGuardados: recientes.length > 0 } : null
+              listo ? { lista: recientesSinRepetidos(recientes.filter((r) => r.href !== aca), usadas), hayGuardados: recientes.length > 0 } : null
             }
+            masUsadas={usadas}
             onVolverA={volverA}
             onBorrarRecientes={borrarRecientes}
           />

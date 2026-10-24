@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import type { Reciente } from "@/lib/admin/recientes-panel";
 import type { AccesoId, AccesoRapido } from "./accesos-rapidos";
 import { FilasCamarasAccesos, TONO_CONTADOR } from "./AvisosCamarasUI";
+import type { MasUsada } from "@/lib/admin/mas-usadas";
+import MasUsadasDelMenu from "./MenuMasUsadas";
 import RecientesDelMenu from "./MenuRecientes";
 import type { OpcionCamaras } from "./opciones-camaras";
 import type { CamarasCabecera } from "./use-camaras-cabecera";
@@ -30,6 +32,8 @@ interface Props {
   onElegirDeCamaras: (o: OpcionCamaras) => void;
   /** `null` = sin sesión (o sin poder guardar): no hay recientes que mostrar. */
   recientes: { lista: readonly Reciente[]; hayGuardados: boolean } | null;
+  /** Las páginas que más abre esta persona (ya sin el lugar donde está). */
+  masUsadas: readonly MasUsada[];
   onVolverA: (href: string) => void;
   onBorrarRecientes: () => void;
 }
@@ -45,6 +49,7 @@ export default function PanelAccesos({
   opcionesDeCamaras,
   onElegirDeCamaras,
   recientes,
+  masUsadas,
   onVolverA,
   onBorrarRecientes,
 }: Props) {
@@ -60,7 +65,7 @@ export default function PanelAccesos({
       <p className="px-2 pb-2 pt-1 text-sm font-bold text-[var(--text-primary)]">
         {eligiendo ? "Elige los de la barra" : "Accesos directos"}
       </p>
-      {permitidos.length > 0 && (
+      {permitidos.length > 0 && eligiendo && (
         <div className="grid grid-cols-2 gap-1">
           {permitidos.map((a) => {
             const anclado = anclados.has(a.id);
@@ -104,6 +109,7 @@ export default function PanelAccesos({
           })}
         </div>
       )}
+      {!eligiendo && <MasUsadasDelMenu lista={masUsadas} alVolver={onVolverA} />}
       {opcionesDeCamaras && !eligiendo && <FilasCamarasAccesos cam={cam} alElegir={onElegirDeCamaras} />}
       {recientes && !eligiendo && (
         <RecientesDelMenu

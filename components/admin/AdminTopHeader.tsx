@@ -6,22 +6,23 @@
  * Header sticky del panel admin (escritorio + mobile). Contiene:
  *  - Botón hamburger (mobile)
  *  - Buscador EN LÍNEA (`GlobalSearch`: resultados debajo del campo, Ctrl+K lo enfoca)
- *  - Cámaras + «Accesos directos» (abren su módulo en un modal; adentro, «Recientes»)
+ *  - Cámaras + «Accesos directos» (lo más usado y lo reciente)
  *  - NotificationBell (todos los anchos; abre el centro como modal central)
  *  - Botón "Cerrar día"
  *  - Toggle focus mode (desktop only)
  *  - Toggle presentation mode (desktop only)
  *  - AdminUserDropdown (logo, nombre y rubro del negocio + menú del negocio y la cuenta)
  *
- * Se oculta cuando `presentationMode === true` y se pega 56 px más abajo
+ * «Ver mi tienda» salió de la barra el 24-10 (Brandon: «quita ver mi tienda»):
+ * ahora es una fila del menú del negocio (`AdminUserDropdown`). Se oculta con el botón al lado del logo de la barra
+ * lateral, cuando `presentationMode === true`, y se pega 56 px más abajo
  * (`top-14`) si está la franja de la vista de tienda del superadmin.
  *
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
 import { memo, useEffect, useState } from "react";
-import { Menu, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
-import Link from "next/link";
+import { Menu } from "@buleje/design-system/icons";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
@@ -30,6 +31,7 @@ import GlobalSearch from "@/components/admin/GlobalSearch";
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useRegistrarRecientes } from "@/hooks/use-recientes-panel";
+import { useCabeceraOculta } from "@/hooks/use-cabecera-oculta";
 import { cn } from "@/lib/utils";
 
 type HeaderThemingEvent = {
@@ -66,6 +68,7 @@ export interface AdminTopHeaderProps {
   themeMode: "light" | "dark" | "system";
   userName: string;
   userRole: string;
+  /** Para «Ver mi tienda», que vive en el menú del negocio (24-10). */
   tenantSlug?: string | null;
   /** Nombre y logo del tenant: respaldo del botón de identidad mientras llega el membrete. */
   activeTenantName?: string | null;
@@ -105,6 +108,8 @@ export const AdminTopHeader = memo(function AdminTopHeader({
 }: AdminTopHeaderProps) {
   /* Anota cada lugar que abres para «Recientes» (menú de accesos directos). */
   useRegistrarRecientes();
+  /* Se oculta desde el botón al lado del logo de la barra lateral (sólo desde md). */
+  const oculta = useCabeceraOculta();
 
   // Theming reactivo desde el sidebar
   const [theming, setTheming] = useState<HeaderThemingEvent>(readInitialHeaderTheming);
@@ -149,12 +154,13 @@ export const AdminTopHeader = memo(function AdminTopHeader({
         // en cel. Anulamos también el bg-image (bg-none) para que no quede el
         // gradient encima. En sm+ se respeta el theme configurado.
         "max-sm:bg-[var(--surface-raised)]! max-sm:bg-none! max-sm:text-[var(--text-primary)]! max-sm:border-[var(--rule-base)]!",
-        "@container border-b px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
+        "@container border-b px-3 sm:px-4 py-1.5 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
         headerThemeClasses,
         // Franja de la vista de tienda (AdminImpersonationBanner, h-14) arriba: el
         // header se pega debajo de ella para que las dos queden fijas al bajar.
         isSuperAdminImpersonating && "top-14",
-        presentationMode && "hidden!"
+        presentationMode && "hidden!",
+        oculta && "md:hidden!"
       )}
     >
       {/* Left: hamburger (mobile) + search */}
@@ -188,31 +194,6 @@ export const AdminTopHeader = memo(function AdminTopHeader({
 
       {/* Right: actions */}
       <div className="flex min-w-0 items-center gap-1">
-        {/* Ver mi tienda — CTA explícito que abre el storefront público en pestaña
-            nueva (Brandon 2026-06-07). El dueño salta de administrar a ver lo que
-            ve el cliente. Siempre visible (ícono en mobile, +label en sm+). */}
-        {tenantSlug && (
-          <Link
-            href={`/t/${tenantSlug}/tienda`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Ver mi tienda (abre en pestaña nueva)"
-            // Brandon 2026-06-14: botón branded theme-aware. Antes era
-            // text-[var(--text-primary)] fijo → en header oscuro (buleje/ejecutivo)
-            // quedaba texto oscuro sobre oscuro (ilegible). Ahora chip de acento
-            // con buen contraste en claro y oscuro.
-            className={cn(
-              "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-sm font-bold transition-colors sm:px-3",
-              isAutoDarkTheme
-                ? "border-[color-mix(in_oklab,var(--accent)_30%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[color-mix(in_oklab,var(--accent)_65%,white)] hover:bg-[color-mix(in_oklab,var(--accent)_20%,transparent)]"
-                : "border-[color-mix(in_oklab,var(--accent)_25%,transparent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[color-mix(in_oklab,var(--accent)_14%,var(--surface-raised))]"
-            )}
-          >
-            <StoreIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-            <span className="hidden @min-[56rem]:inline">Ver mi tienda</span>
-            <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
-          </Link>
-        )}
         {/* Chat con clientes + mensajes de la plataforma en UN botón con el
             total sin leer. Eran dos íconos sueltos con badges que competían
             entre sí y llenaban la barra (ADR-132 + Messenger 2026-06-06). */}
@@ -239,6 +220,7 @@ export const AdminTopHeader = memo(function AdminTopHeader({
           userRole={userRole}
           tenantName={activeTenantName}
           tenantLogo={activeTenantLogo}
+          tenantSlug={tenantSlug}
           onDarkHeader={isAutoDarkTheme}
           onNavigate={onNavigate}
           onLogout={onLogout}

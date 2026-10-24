@@ -32,6 +32,7 @@ import { hayModalEncima } from "@/lib/keyboard-guards";
 import { EVENTO_ENFOCAR_BUSCADOR } from "./enfocar-buscador";
 import type { SearchResult } from "./indice-modulos";
 import { useBusquedaPanel } from "./use-busqueda-panel";
+import { cabeceraOcultaAhora, fijarCabeceraOculta } from "@/hooks/use-cabecera-oculta";
 
 export type NavegarAlModulo = (tab: string, vista?: string, sub?: string) => void;
 
@@ -182,6 +183,12 @@ export function useBuscadorEnLinea(onNavigate: NavegarAlModulo = navegarPorEvent
       if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== "k") return;
       if (hayModalEncima(raizRef.current)) return;
       e.preventDefault();
+      /* Encabezado oculto (botón de la barra lateral): se muestra y se enfoca en la vuelta siguiente. */
+      if (cabeceraOcultaAhora() && window.matchMedia?.("(min-width: 768px)").matches) {
+        fijarCabeceraOculta(false);
+        window.setTimeout(enfocar, 0);
+        return;
+      }
       enfocar();
     };
     /* Puede llegar desde un efecto (el puente de `AdminGlobalModals`): flushSync

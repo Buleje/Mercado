@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
-import { Settings, CreditCard, UserCircle, LogOut, ChevronDown } from "@buleje/design-system/icons";
+import { Settings, CreditCard, UserCircle, LogOut, ChevronDown, Store, ExternalLink } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BotonSoporte } from "@/components/admin/BotonSoporte";
 import { useIdentidadNegocio } from "@/hooks/use-identidad-negocio";
@@ -15,6 +15,8 @@ interface AdminUserDropdownProps {
   /** Respaldo mientras llega el membrete (o si el rol no lo puede leer). */
   tenantName?: string | null;
   tenantLogo?: string | null;
+  /** «Ver mi tienda» (salió de la barra del encabezado el 24-10 y vive acá). */
+  tenantSlug?: string | null;
   /** Encabezado con tema oscuro (Buleje/Ejecutivo): el nombre va en blanco. */
   onDarkHeader?: boolean;
   onNavigate: (tab: string) => void;
@@ -26,7 +28,7 @@ interface AdminUserDropdownProps {
  * rubro del negocio —antes arriba de la barra lateral— y, al abrirlo, la
  * tarjeta del negocio arriba y la cuenta del usuario abajo. Un solo botón.
  */
-export default function AdminUserDropdown({ userName, userRole, tenantName, tenantLogo, onDarkHeader = false, onNavigate, onLogout }: AdminUserDropdownProps) {
+export default function AdminUserDropdown({ userName, userRole, tenantName, tenantLogo, tenantSlug, onDarkHeader = false, onNavigate, onLogout }: AdminUserDropdownProps) {
   const [open, setOpen] = useState(false);
   const [verRubro, setVerRubro] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -77,7 +79,7 @@ export default function AdminUserDropdown({ userName, userRole, tenantName, tena
         data-qa="menu-identidad"
         onClick={() => setOpen(v => !v)}
         className={cn(
-          "flex h-11 items-center gap-2 rounded-xl pl-1 pr-1.5 transition-colors duration-[var(--dur-base)]",
+          "flex h-11 items-center gap-1.5 rounded-xl pl-1 pr-1.5 transition-colors duration-[var(--dur-base)]",
           onDarkHeader ? "max-sm:hover:bg-[var(--surface-sunken)] sm:hover:bg-white/10" : "hover:bg-[var(--surface-sunken)]",
           open && (onDarkHeader ? "max-sm:bg-[var(--surface-sunken)] sm:bg-white/10" : "bg-[var(--surface-sunken)]")
         )}
@@ -86,13 +88,15 @@ export default function AdminUserDropdown({ userName, userRole, tenantName, tena
         aria-haspopup="true"
       >
         <LogoNegocio nombre={identidad.nombre} logoUrl={identidad.logoUrl} />
-        <span className="hidden min-w-0 max-w-[12rem] flex-col items-start text-left leading-tight @min-[56rem]:flex">
-          <span className={cn("max-w-full truncate text-sm font-semibold", onDarkHeader ? "text-[var(--text-primary)] sm:text-white" : "text-[var(--text-primary)]")}>
-            {identidad.nombre}
-          </span>
-          <span className={cn("max-w-full truncate text-xs", onDarkHeader ? "text-[var(--text-secondary)] sm:text-white/70" : "text-[var(--text-secondary)]")}>
-            {identidad.rubro}
-          </span>
+        {/* Brandon 24-10 «más corto»: sólo el nombre, en una línea; el rubro está en la tarjeta de adentro. */}
+        <span
+          title={identidad.nombre}
+          className={cn(
+            "hidden max-w-[8rem] truncate text-sm font-semibold @min-[56rem]:block",
+            onDarkHeader ? "text-[var(--text-primary)] sm:text-white" : "text-[var(--text-primary)]",
+          )}
+        >
+          {identidad.nombre}
         </span>
         <ChevronDown className={cn(
           "h-3.5 w-3.5 transition-transform duration-[var(--dur-base)] hidden sm:block",
@@ -143,6 +147,19 @@ export default function AdminUserDropdown({ userName, userRole, tenantName, tena
                   </button>
                 );
               })}
+              {tenantSlug && (
+                <a
+                  href={`/t/${tenantSlug}/tienda`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setOpen(false)}
+                  className="w-full flex items-center gap-3 px-3 min-h-12 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                >
+                  <Store className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" />
+                  <span className="flex-1">Ver mi tienda</span>
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" aria-label="Se abre en una pestaña nueva" />
+                </a>
+              )}
               <BotonSoporte variante="menu" alNavegar={() => setOpen(false)} />
             </div>
 

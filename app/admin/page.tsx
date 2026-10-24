@@ -32,6 +32,7 @@ import {
 
 import { LastLoginToast } from "@/components/admin/LastLoginToast";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
+import { ProveedorColumnaDerecha } from "@/components/admin/layout/columna-derecha";
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { useSuplantacionActiva } from "./_hooks/useSuplantacionActiva";
 // TrialExpiredGuard se mantiene estático: es un gate de negocio que bloquea el
@@ -385,6 +386,8 @@ function AdminPage() {
         subir un escalón la escala tipográfica en monitores ≥1728px. Va acá y
         no en el <main> porque el selector es `:root:has([data-area="admin"])`
         — así los modales que van por portal a <body> escalan igual. */}
+    {/* `--columna-derecha` (lo define `ProveedorColumnaDerecha` sólo con algo en la columna, Brandon
+        24-10): el encabezado y el contenido se corren ese ancho. */}
     <div className="admin-mobile-cards min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-area="admin" data-dark-fallback>
       {/* B3: aviso "Último acceso" al entrar (lee sessionStorage del login) */}
       <LastLoginToast />
@@ -404,10 +407,14 @@ function AdminPage() {
 
       <AdminNavigation shared={sharedNav} drawer={drawerNav} sidebar={sidebarNav} />
 
+      <ProveedorColumnaDerecha>
       <div
         data-dark-fallback
+        data-admin-contenido=""
         className={cn(
         "flex flex-col min-h-screen transition-[margin] duration-[var(--dur-base)]",
+        /* La columna de la derecha (detalles de Esenciales) va de arriba hasta abajo: todo se corre. */
+        "md:mr-[var(--columna-derecha,0px)]",
         /* El margin debe alinearse con el breakpoint REAL del sidebar fixed
            (`hidden md:flex` → aparece en md/768px). Antes usaba `sm:` (640px),
            reservando 260px de gutter fantasma en el rango 640–767px donde el
@@ -539,6 +546,7 @@ function AdminPage() {
         />
         </MosaicoGlobalProvider>
       </div>
+      </ProveedorColumnaDerecha>
 
       {/* Aviso amable antes de cerrar por inactividad (30 min). Se re-arma con
           la actividad del usuario y con el "modo mantener sesión activa" (switch

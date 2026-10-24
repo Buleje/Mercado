@@ -113,10 +113,10 @@ describe("AccesoEnModal", () => {
 });
 
 describe("AccesosRapidos", () => {
-  it("un acceso del menú abre su modal ahí mismo: la URL de la pantalla no cambia", () => {
+  it("un acceso anclado en la barra abre su modal ahí mismo: la URL de la pantalla no cambia", () => {
+    localStorage.setItem(CLAVE_ANCLADOS, JSON.stringify(["camaras", "asistencia"]));
     render(<AccesosRapidos />);
-    fireEvent.click(screen.getByRole("button", { name: "Accesos directos" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: /Asistencia/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Asistencia" }));
     expect(screen.getByRole("dialog", { name: "Asistencia" })).toBeInTheDocument();
     expect(screen.getByTestId("modulo")).toHaveTextContent("vista=asistencia");
     expect(window.location.search).toBe("?tab=vendor-dashboard&vista=resumen");
@@ -149,9 +149,11 @@ describe("AccesosRapidos (20-10): barra con sólo Cámaras", () => {
     expect(localStorage.getItem("admin_header_accesos")).toContain("asistencia");
 
     fireEvent.click(screen.getByRole("button", { name: "Accesos directos" }));
+    // 24-10: el menú abre en «Más usadas» y «Recientes»; la grilla sale con «Elegir los de la barra».
+    fireEvent.click(screen.getByRole("menuitem", { name: /Elegir los de la barra/ }));
     const menu = screen.getByRole("menu", { name: "Accesos directos" });
-    expect(within(menu).getByRole("menuitem", { name: /Asistencia/ })).toBeInTheDocument();
-    expect(within(menu).getByRole("menuitem", { name: /^Caja/ })).toBeInTheDocument();
+    expect(within(menu).getByRole("menuitemcheckbox", { name: /Asistencia/ })).toBeInTheDocument();
+    expect(within(menu).getByRole("menuitemcheckbox", { name: /^Caja/ })).toBeInTheDocument();
   });
 
   it("«Recientes» va dentro del menú, sin la pantalla donde estás", () => {

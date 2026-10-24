@@ -22,6 +22,7 @@ import { SidebarEnlacesSueltos } from "@/components/admin/layout/SidebarEnlacesS
 import { coloresDeIconos } from "@/components/admin/layout/sidebar-colores-iconos";
 import { COLOR_DE_ACENTO, DENSIDADES, estiloDeTema, guardarTema, leerTema } from "@/components/admin/layout/sidebar-temas";
 import { PieDeBarra } from "@/components/admin/layout/PieDeBarra";
+import { BotonCabecera } from "@/components/admin/layout/BotonCabecera";
 import { TiradorAncho } from "@/components/admin/layout/TiradorAncho";
 import { BulejeMark, BulejeWordmark } from "@/components/ui-system/illustrations";
 import { useTenant } from "@/contexts/tenant-context";
@@ -719,7 +720,8 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             (`AdminUserDropdown`), y la ventana «Tipo de negocio» se abre desde su
             tarjeta. Compactar y Configurar siguen en el pie (`PieDeBarra`). */}
         <>
-        <div className={cn("flex h-14 shrink-0 items-center", effectiveCompact ? "justify-center px-1.5" : "px-4")}>
+        {/* Al lado del logo, ocultar/mostrar el encabezado (Brandon 24-10). Compacta, va debajo. */}
+        <div className={cn("flex shrink-0 items-center", effectiveCompact ? "flex-col justify-center gap-1 px-1.5 py-2" : "h-14 justify-between gap-2 pl-4 pr-2")}>
           <button
             type="button"
             onClick={() => navigateTab("inicio" as Tab)}
@@ -732,6 +734,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               <BulejeWordmark size={32} textSize={19} forceDark={isDarkTheme} className={isDarkTheme ? "text-white" : undefined} />
             )}
           </button>
+          <BotonCabecera oscuro={isDarkTheme} />
         </div>
         {/* Sin buscador acá — Brandon 2026-08-03. El encabezado ya tiene el
             suyo (⌘K / el pill "Buscar módulos, productos, clientes…"), que
