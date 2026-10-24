@@ -53,3 +53,19 @@ export const fmtPctSigno = (v: number): string => (v > 0 ? `+${fmtPct(v)}` : fmt
  */
 export const fmtPiezas = (v: number): string =>
   Number.isInteger(v) ? v.toLocaleString("es-PE") : `≈ ${v.toLocaleString("es-PE", { maximumFractionDigits: 2 })}`;
+
+/**
+ * «18/10/26 7.28 am» / «18/10/26 4.00 pm»: cuándo se registró una medida
+ * (columna «Fecha (hora)» del cubicador, Brandon 24-10). En la hora de
+ * Pucallpa (UTC−5, el Perú no cambia de hora) y a mano, sin `Intl`: su
+ * formato cambia con la versión de ICU. Sin fecha o ilegible → «—».
+ */
+export function fechaHoraDeRegistro(iso: string | null | undefined): string {
+  const t = iso ? Date.parse(iso) : NaN;
+  if (!Number.isFinite(t)) return "—";
+  const d = new Date(t - 5 * 3600 * 1000);
+  const dos = (n: number) => String(n).padStart(2, "0");
+  const h = d.getUTCHours();
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${dos(d.getUTCDate())}/${dos(d.getUTCMonth() + 1)}/${dos(d.getUTCFullYear() % 100)} ${h12}.${dos(d.getUTCMinutes())} ${h < 12 ? "am" : "pm"}`;
+}

@@ -166,3 +166,20 @@ describe("lecturaComparacion · el mismo lote", () => {
     expect(lecturaComparacion(compararLotes(a.piezas, a.piezas, "medida"))).toMatch(/mismas piezas/);
   });
 });
+
+describe("fecha (hora) de registro de cada medida", () => {
+  it("«18/10/26 7.28 am» y «4.00 pm» en la hora de Pucallpa; sin fecha «—»", async () => {
+    const { fechaHoraDeRegistro } = await import("@/lib/forestal/cubicacion-formato");
+    expect(fechaHoraDeRegistro("2026-10-18T12:28:00Z")).toBe("18/10/26 7.28 am");
+    expect(fechaHoraDeRegistro("2026-10-18T21:00:00Z")).toBe("18/10/26 4.00 pm");
+    expect(fechaHoraDeRegistro("2026-10-19T04:30:00Z")).toBe("18/10/26 11.30 pm");
+    expect(fechaHoraDeRegistro("2026-10-18T17:05:00Z")).toBe("18/10/26 12.05 pm");
+    expect(fechaHoraDeRegistro(undefined)).toBe("—");
+  });
+
+  it("el servidor guarda la hora de cada pieza y descarta lo ilegible", () => {
+    const c = registro([pz("a", 1, 2, 8, 10, "Tornillo", { registradoAt: "2026-10-18T12:28:00.000Z" }), pz("b", 1, 2, 8, 10, "Tornillo", { registradoAt: "ayer" })]);
+    expect(c.piezas[0]?.registradoAt).toBe("2026-10-18T12:28:00.000Z");
+    expect(c.piezas[1]?.registradoAt).toBeUndefined();
+  });
+});

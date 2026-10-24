@@ -12,9 +12,11 @@
 import { ChevronDown, ChevronUp, Columns3, GripVertical, RotateCcw } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
-export type ColOpcional = "numero" | "cant" | "espesor" | "ancho" | "largo" | "medida" | "tipo" | "codigo" | "especie" | "dueno" | "observacion" | "apartado" | "pt" | "m3";
+export type ColOpcional = "fecha" | "numero" | "cant" | "espesor" | "ancho" | "largo" | "medida" | "tipo" | "codigo" | "especie" | "dueno" | "observacion" | "apartado" | "pt" | "m3";
 
 export const COLS_OPCIONALES: { key: ColOpcional; label: string }[] = [
+  /* Cuándo se anotó cada medida (Brandon, 2026-10-24): «18/10/26 7.28 am». Interna: no va al papel. */
+  { key: "fecha", label: "Fecha (hora)" },
   { key: "numero", label: "N°" },
   { key: "cant", label: "Cant." },
   { key: "espesor", label: "Espesor" },
@@ -34,13 +36,20 @@ export const COLS_OPCIONALES: { key: ColOpcional; label: string }[] = [
 const ETIQUETA = Object.fromEntries(COLS_OPCIONALES.map((c) => [c.key, c.label])) as Record<ColOpcional, string>;
 
 export const COLS_DEFAULT: Record<ColOpcional, boolean> = {
-  numero: true, cant: true, espesor: true, ancho: true, largo: true,
+  fecha: true, numero: true, cant: true, espesor: true, ancho: true, largo: true,
   medida: true, tipo: true, codigo: true, especie: true, dueno: true, observacion: true, apartado: true, pt: true, m3: true,
 };
 
-/** El orden de fábrica, el de siempre: m³ antes que PT (Piezas · m³ · PT en todo el módulo). */
+/**
+ * El orden de fábrica (Brandon, 2026-10-24): la fecha pegada a la casilla,
+ * antes del N°; la especie al lado de la cantidad (se dicta junto con ella) y
+ * la observación al final, a la derecha del pie tablar. m³ antes que PT, como
+ * en todo el módulo (Piezas · m³ · PT). Cambiar este orden pide subir la
+ * versión de la clave de guardado en `CubicadorMadera` (`-cols-orden-vN`):
+ * `normalizarOrden` respeta lo guardado y no reordena a quien ya movió algo.
+ */
 export const COLS_ORDEN_DEFAULT: readonly ColOpcional[] = [
-  "numero", "cant", "espesor", "ancho", "largo", "medida", "tipo", "codigo", "especie", "dueno", "observacion", "apartado", "m3", "pt",
+  "fecha", "numero", "cant", "especie", "espesor", "ancho", "largo", "medida", "tipo", "codigo", "dueno", "apartado", "m3", "pt", "observacion",
 ];
 
 /**

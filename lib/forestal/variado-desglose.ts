@@ -420,6 +420,8 @@ export function desglosarVariado(
           ...(p.duenoParteId !== undefined ? { duenoParteId: p.duenoParteId } : {}),
           ...(p.codigo !== undefined ? { codigo: p.codigo } : {}),
           ...(p.observacion !== undefined ? { observacion: p.observacion } : {}),
+          /* Las filas abiertas son la MISMA medida del paquete: conservan su hora. */
+          ...(p.registradoAt !== undefined ? { registradoAt: p.registradoAt } : {}),
           tipo: m.tipo,
           pieTablar,
           m3,

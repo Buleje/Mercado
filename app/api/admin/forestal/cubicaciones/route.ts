@@ -53,6 +53,8 @@ const piezaSchema = z.object({
   observacion: z.string().trim().max(OBSERVACION_MAX).nullish(),
   /** S/ por PT de esta pieza (especie, trato del dueño). El valor lo suma el servidor. */
   precio: z.coerce.number().nonnegative().max(999999).nullish(),
+  /** Cuándo se registró la medida (ISO): la columna «Fecha (hora)» del cubicador. */
+  registradoAt: z.string().trim().max(40).nullish(),
 });
 
 const textoFicha = z.string().trim().max(FICHA_MAX).nullish();

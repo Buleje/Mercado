@@ -35,6 +35,7 @@ export function piezasParaGuardar(rows: PiezaCubicada[], orden: OrdenFilas, prec
     duenoParteId: p.duenoParteId ?? null,
     tipo: p.tipo ?? null,
     observacion: p.observacion ?? null,
+    ...(p.registradoAt ? { registradoAt: p.registradoAt } : {}),
     /* El precio de cada pieza (especie, trato del dueño): sin él, el valor guardado sería PT × un solo precio. */
     ...(precioDe ? { precio: precioDe(p) } : {}),
   }));

@@ -87,6 +87,8 @@ import {
 import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import { useMarcarFilas } from "./hooks/use-marcar-filas";
 import { BarraFilasMarcadas, MarcarFilasPorRango } from "./cubicador-marcar-filas";
+import { EspecieEnLoteModal, MenuEspecieEnLote, usePonerEspecieEnLote, type BlancoEspecie } from "./cubicador-especie-en-lote";
+import { fechaHoraDeRegistro } from "@/lib/forestal/cubicacion-formato";
 import { AnfitrionDeModales, useModalAislado } from "./hooks/use-modal-aislado";
 import { useImportarFotoPendiente } from "./planillas/importar-pendiente";
 import type { PlanillaId } from "@/lib/forestal/planillas/tipos";
@@ -630,7 +632,10 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     desplazar: desplazarColumna,
     restablecer: restablecerOrdenColumnas,
     deFabrica: ordenColumnasDeFabrica,
-  } = useOrdenColumnas<ColOpcional>(`${claveLote}-cols-orden`, COLS_ORDEN_DEFAULT);
+  } = useOrdenColumnas<ColOpcional>(`${claveLote}-cols-orden-v2`, COLS_ORDEN_DEFAULT);
+  /* `-v2` (24-10): el orden de fábrica cambió (Fecha antes del N°, Especie junto
+     a Cant., Observación al final) y `normalizarOrden` no reordena lo guardado:
+     con la clave vieja, quien ya había movido una columna no veía el orden nuevo. */
   /**
    * La parte trasera del camión (Brandon, 2026-10-03): filas marcadas como
    * las que se ven al abrir la compuerta. Se guarda aparte del lote.
@@ -837,7 +842,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     observacion?: string;
   }) => {
     const { pieTablar, m3 } = cubicarPieza(p);
-    const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3 };
+    const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3, registradoAt: new Date().toISOString() };
     /* Con el orden por especie, la pieza nueva cae al final de SU bloque. */
     setRows((prev) => { const next = acomodarFilas([...prev, row], ordenRef.current); saveLocal(next, espacio); return next; });
     setLastAdded(row);
@@ -849,7 +854,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     if (nuevas.length === 0) return;
     // El Excel importado trae su propio pieTablar/m³: se re-cubica desde las
     // medidas para que ninguna planilla ajena imponga otra fórmula.
-    const conId = recubicarPiezas(nuevas).map((p) => ({ ...p, id: nuevoId() }));
+    /* Entran al lote AHORA (Fecha (hora)); la que ya trae su hora la conserva. */
+    const ahora = new Date().toISOString();
+    const conId = recubicarPiezas(nuevas).map((p) => ({ ...p, id: nuevoId(), registradoAt: p.registradoAt ?? ahora }));
     setRows((prev) => { const next = acomodarFilas([...prev, ...conId], ordenRef.current); saveLocal(next, espacio); return next; });
     setLastAdded(conId[conId.length - 1]);
     const piezas = nuevas.reduce((a, p) => a + p.cantidad, 0);
@@ -1506,7 +1513,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     const rowsNow = rowsRef.current;
     const i = rowsNow.findIndex((r) => r.id === id);
     if (i < 0) return;
-    const copia: PiezaCubicada = { ...rowsNow[i], id: nuevoId() };
+    /* La copia es una medida nueva: lleva la hora de ahora, no la de la original. */
+    const copia: PiezaCubicada = { ...rowsNow[i], id: nuevoId(), registradoAt: new Date().toISOString() };
     const next = [...rowsNow.slice(0, i + 1), copia, ...rowsNow.slice(i + 1)];
     persist(next);
     setLastAdded(copia);
@@ -1673,6 +1681,16 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     marcadas, setMarcadas, persist, pushToast,
     alQuitar: (ids) => setLastAdded((prev) => (prev && ids.has(prev.id) ? null : prev)),
   });
+  /* Una especie a todas, a un tramo «de la N° 12 a la 48» o a las marcadas
+     (Brandon, 2026-10-24). La ventanita y la cuenta viven aparte. */
+  const [especieEnLote, setEspecieEnLote] = useState<BlancoEspecie | null>(null);
+  const leerFilasAhora = useCallback(() => rowsRef.current, []);
+  const ponerEspecieEnLote = usePonerEspecieEnLote({ leerFilas: leerFilasAhora, persist, pushToast });
+  const filasConNumero = useMemo(
+    () => (especieEnLote ? filasVisibles.map(({ r, indice }) => ({ r, numero: numeroDeFila(indice, rows.length, ordenFilas) })) : []),
+    [especieEnLote, filasVisibles, rows.length, ordenFilas],
+  );
+  const filasMarcadas = useMemo(() => (especieEnLote === "marcadas" ? rows.filter((r) => marcadas.has(r.id)) : []), [especieEnLote, rows, marcadas]);
 
   /**
    * Ventaneo de la tabla (memoria `cubicador-freeze-lotes-grandes`): con
@@ -1832,6 +1850,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     const arr = arrastreCols.claseTh(key);
     const filas = filasVisibles.length;
     switch (key) {
+      case "fecha": return <th key={key} {...th} className={`whitespace-nowrap px-2 py-2 ${arr}`}><AsaColumna />Fecha (hora)</th>;
       case "numero": return <th key={key} {...th} className={`px-2 py-2 text-center ${arr}`}><AsaColumna />N°</th>;
       /* Click en el título = columna entera marcada, como en una planilla. Sólo
          en las que aportan una cuenta: marcar "Medida" no suma nada y el gesto
@@ -1844,7 +1863,13 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       case "medida": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Medida</th>;
       case "tipo": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Tipo</th>;
       case "codigo": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Código</th>;
-      case "especie": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Especie</th>;
+      /* El ▾ pone una especie a todas, a un tramo o a las marcadas (24-10). */
+      case "especie": return (
+        <th key={key} {...th} className={`whitespace-nowrap px-3 py-2 ${arr}`}>
+          <AsaColumna />Especie
+          <MenuEspecieEnLote filas={filas} marcadas={marcadas.size} filtrando={filtrando} onAbrir={setEspecieEnLote} />
+        </th>
+      );
       case "dueno": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Dueño</th>;
       case "observacion": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Observación</th>;
       case "apartado": return <th key={key} {...th} className={`px-3 py-2 ${arr}`}><AsaColumna />Apartado</th>;
@@ -2996,7 +3021,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               <tbody>
                 {filasVisibles.length === 0 && (
                   <tr>
-                    <td colSpan={16} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
+                    <td colSpan={17} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
                       Ninguna pieza coincide con el filtro.{" "}
                       <button type="button" onClick={limpiarFiltros} className="font-bold text-[var(--accent)] underline">Limpiar filtros</button>
                     </td>
@@ -3004,7 +3029,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 )}
                 {virtualizarTabla && colchonSuperior > 0 && (
                   <tr aria-hidden="true">
-                    <td colSpan={16} style={{ height: colchonSuperior, padding: 0, border: 0 }} />
+                    <td colSpan={17} style={{ height: colchonSuperior, padding: 0, border: 0 }} />
                   </tr>
                 )}
                 {filasEnVentana.map(({ r, indice }, i) => {
@@ -3073,6 +3098,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                     </td>
                     {ordenVisible.map((key): React.ReactNode => {
                       switch (key) {
+                      case "fecha": return <td key="fecha" className="whitespace-nowrap px-2 py-2 font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{fechaHoraDeRegistro(r.registradoAt)}</td>;
                       case "numero": return <td key="numero" className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{numeroDeFila(indice, rows.length, ordenFilas)}</td>;
                       case "cant": return (
                       <td key="cant" {...sel.props(pos, colSel.cant ?? -1)} className={`px-3 py-2 ${sel.seleccionada(pos, colSel.cant ?? -1) ? CELDA_SELECCIONADA : ""}`}><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} fila={pos} col={COL_CANT} onKeyDown={teclasTabla} /></td>
@@ -3203,7 +3229,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 })}
                 {virtualizarTabla && colchonInferior > 0 && (
                   <tr aria-hidden="true">
-                    <td colSpan={16} style={{ height: colchonInferior, padding: 0, border: 0 }} />
+                    <td colSpan={17} style={{ height: colchonInferior, padding: 0, border: 0 }} />
                   </tr>
                 )}
               </tbody>
@@ -3414,7 +3440,19 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       <BarraSeleccion rango={sel.rango} columnas={columnasSel} onLimpiar={sel.limpiar} />
       {/* Dentro de «Producir sin lote» (un modal) la barra fija quedaría detrás. */}
       {!onLote && marcadas.size > 0 && !sel.rango && (
-        <BarraFilasMarcadas resumen={marcar.resumen} onEliminar={marcar.eliminar} onQuitar={marcar.quitarMarcas} />
+        <BarraFilasMarcadas resumen={marcar.resumen} onEliminar={marcar.eliminar} onQuitar={marcar.quitarMarcas} onPonerEspecie={() => setEspecieEnLote("marcadas")} />
+      )}
+      {especieEnLote && (
+        <EspecieEnLoteModal
+          blanco={especieEnLote}
+          filas={filasConNumero}
+          total={rows.length}
+          marcadas={filasMarcadas}
+          especies={especiesDelSelector}
+          filtrando={filtrando}
+          onAplicar={ponerEspecieEnLote}
+          onCerrar={() => setEspecieEnLote(null)}
+        />
       )}
 
       {/* Toasts flotantes de acción (agregar / eliminar / guardar / importar…) */}

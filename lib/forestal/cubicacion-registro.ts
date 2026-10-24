@@ -193,9 +193,18 @@ function normalizarPieza(raw: Record<string, unknown>, i: number): PiezaCubicada
         : undefined,
     /* 0 es un precio válido («esta pieza no se cobra»); sólo lo que no es número se descarta. */
     precio: precioValido(raw.precio),
+    registradoAt: fechaHoraValida(raw.registradoAt),
     pieTablar,
     m3,
   };
+}
+
+/** Una fecha-hora ISO que se puede leer (y no del futuro lejano); si no, `undefined`. */
+function fechaHoraValida(v: unknown): string | undefined {
+  if (typeof v !== "string" || v.length > 40) return undefined;
+  const t = Date.parse(v);
+  if (!Number.isFinite(t) || t > Date.now() + 24 * 3600 * 1000) return undefined;
+  return new Date(t).toISOString();
 }
 
 /** S/ por PT de una pieza tal como llega (≥ 0, 2 decimales); lo que no es número → `undefined`. */

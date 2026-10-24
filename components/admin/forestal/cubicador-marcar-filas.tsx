@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ListChecks, Trash2 } from "@buleje/design-system/icons";
+import { Leaf, ListChecks, Trash2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import type { ResumenDeMarcadas } from "@/lib/forestal/seleccion-filas";
@@ -115,11 +115,13 @@ export function MarcarFilasPorRango({ total, onMarcar }: {
 const fmtM3 = (v: number) => formatNumber(v, 3);
 const fmtPt = (v: number) => formatNumber(v, 2);
 
-/** La cuenta de lo marcado, al pie, con «Eliminar» y «Quitar marcas». */
-export function BarraFilasMarcadas({ resumen, onEliminar, onQuitar }: {
+/** La cuenta de lo marcado, al pie, con «Eliminar», «Poner especie» y «Quitar marcas». */
+export function BarraFilasMarcadas({ resumen, onEliminar, onQuitar, onPonerEspecie }: {
   resumen: ResumenDeMarcadas;
   onEliminar: () => void;
   onQuitar: () => void;
+  /** Abre la ventanita de «Poner especie» sobre lo marcado (24-10). */
+  onPonerEspecie?: () => void;
 }) {
   const { filas, piezas, pt, m3, especies } = resumen;
   return (
@@ -134,6 +136,7 @@ export function BarraFilasMarcadas({ resumen, onEliminar, onQuitar }: {
       accionIcon={Trash2}
       accionPeligro
       onAccion={onEliminar}
+      accionesSecundarias={onPonerEspecie ? [{ label: "Poner especie", icon: Leaf, onClick: onPonerEspecie }] : undefined}
       onLimpiar={onQuitar}
       limpiarLabel="Quitar marcas"
       detalle={

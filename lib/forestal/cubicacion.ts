@@ -69,6 +69,12 @@ export interface PiezaCubicada {
    * la tabla no se lee: el precio vivo lo da `usePrecioCubicador`.
    */
   precio?: number;
+  /**
+   * Cuándo se registró esta medida (ISO, 24-10: columna «Fecha (hora)» del
+   * cubicador: «18/10/26 7.28 am»). La pone quien AGREGA la fila (dictado,
+   * a mano, importar); editar la medida no la cambia. Ausente = filas de antes.
+   */
+  registradoAt?: string;
   /** Pie tablar total (ya multiplicado por cantidad). */
   pieTablar: number;
   /** m³ total (ya multiplicado por cantidad). */
@@ -230,6 +236,8 @@ export function unificarPorMedida(piezas: PiezaCubicada[]): PiezaCubicada[] {
       acc.pieTablar = r2(acc.pieTablar + p.pieTablar);
       acc.m3 = r4(acc.m3 + p.m3);
       if (p.variadoPiezas) acc.variadoPiezas = (acc.variadoPiezas ?? 0) + p.variadoPiezas;
+      /* La fila unida lleva la hora de la medida MÁS antigua: es cuándo empezó a cargarse. */
+      if (p.registradoAt && (!acc.registradoAt || p.registradoAt < acc.registradoAt)) acc.registradoAt = p.registradoAt;
     } else {
       /* El código de la troza NO va en la clave (es interno del cubicado,
          Brandon 2026-09-14) y tampoco sobrevive a la unión: una fila que junta
