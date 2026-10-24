@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
 import { mergeToPdf, type MergeItem } from "@/lib/documents/pdf-merge";
+import { analyzeDocumentContent } from "@/lib/documents/analyze-document";
+import { enColaDeAnalisis } from "@/lib/documents/cola-analisis";
 
 /**
  * POST /api/admin/documents/scan-to-pdf — recibe varias imágenes (fotos de las
@@ -68,6 +70,13 @@ export async function POST(req: NextRequest) {
       metadata: { via: "scan-to-pdf", pages: merged.pageCount },
       ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
     }).catch((err) => logger.warn("documents.scan_to_pdf.audit_fail", { err: String(err) }));
+
+    // Leerlo ya, como al subir: el escaneo es el papel que más necesita su texto
+    // (buscarlo, su vencimiento y la carpeta que se le propone al toque).
+    after(() =>
+      enColaDeAnalisis(draft.id, () => analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role))
+        .catch((err) => logger.warn("documents.scan_to_pdf.autoanalyze_fail", { err: String(err) })),
+    );
 
     return NextResponse.json({ document: { ...draft, storagePath }, pageCount: merged.pageCount });
   } catch (e) {
