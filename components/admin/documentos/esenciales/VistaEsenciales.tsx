@@ -270,8 +270,8 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
 
       {acoplado && panel && lateral && createPortal(
         <aside
-          // Pegada al borde, como la barra izquierda: de arriba hasta abajo, con su línea.
-          className="h-full overflow-y-auto overscroll-contain border-l border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+          // Pegada al borde, de arriba hasta abajo; con el aviso de la agenda abierto, él va arriba y esto abajo.
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-l border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
           aria-label={`Lo que tiene ${elegida?.carpeta.name ?? ""}`}
           data-qa="esencial-columna"
         >

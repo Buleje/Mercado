@@ -9,7 +9,7 @@
 
 import type { ElementType } from "react";
 import {
-  AlertTriangle, FileText, History, LayoutDashboard, Package, ShoppingCart, Users, Zap,
+  AlertTriangle, FileText, History, LayoutDashboard, Package, ShoppingCart, TrendingUp, Users, Zap,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { FilaResultado, ResultSkeleton } from "./FilaResultado";
@@ -17,6 +17,7 @@ import type { GroupedResults, SearchResult } from "./indice-modulos";
 import { hrefDe } from "./use-buscador-en-linea";
 
 export const GROUP_META: Record<keyof GroupedResults, { label: string; icon: ElementType; color: string }> = {
+  masUsadas: { label: "Más usadas",        icon: TrendingUp,    color: "text-[var(--text-secondary)]" },
   recientes: { label: "Abriste hace poco", icon: History,       color: "text-[var(--text-secondary)]" },
   modulos:   { label: "Módulos",           icon: LayoutDashboard, color: "text-primary" },
   productos: { label: "Productos",         icon: Package,       color: "text-[var(--data-success-500)]" },

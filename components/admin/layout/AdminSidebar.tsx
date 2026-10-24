@@ -734,7 +734,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               <BulejeWordmark size={32} textSize={19} forceDark={isDarkTheme} className={isDarkTheme ? "text-white" : undefined} />
             )}
           </button>
-          <BotonCabecera oscuro={isDarkTheme} />
+          <BotonCabecera oscuro={isDarkTheme} compacto={effectiveCompact} />
         </div>
         {/* Sin buscador acá — Brandon 2026-08-03. El encabezado ya tiene el
             suyo (⌘K / el pill "Buscar módulos, productos, clientes…"), que

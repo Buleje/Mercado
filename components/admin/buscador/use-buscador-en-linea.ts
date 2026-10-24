@@ -10,6 +10,7 @@
  * cada resultado.
  *
  *  - ↑/↓ mueven la selección, Enter abre (Ctrl/⌘+Enter, en otra pestaña).
+ *  - Campo vacío: la lista trae «Más usadas» (y recientes), navegable igual.
  *  - Esc: primero cierra la lista; con la lista cerrada, borra lo escrito; con
  *    el campo vacío, suelta el foco (y en celular pliega el campo).
  *  - Ctrl/⌘+K enfoca el campo desde cualquier lado (aunque estés escribiendo
@@ -59,7 +60,9 @@ export function useBuscadorEnLinea(onNavigate: NavegarAlModulo = navegarPorEvent
 
   const planos = useMemo(() => orden.flatMap((g) => grouped[g]), [orden, grouped]);
   const buscando = query.trim().length >= 2;
-  const mostrarLista = abierto && buscando;
+  /** Campo vacío con «Más usadas» que ofrecer: la lista se abre sola al enfocar. */
+  const hayInicio = query.trim() === "" && planos.length > 0;
+  const mostrarLista = abierto && (buscando || hayInicio);
   /** La selección nunca apunta fuera de la lista (llegan resultados del servidor y cambia el largo). */
   const activo = planos.length === 0 ? -1 : Math.min(seleccion, planos.length - 1);
 
@@ -121,7 +124,7 @@ export function useBuscadorEnLinea(onNavigate: NavegarAlModulo = navegarPorEvent
 
   const alTeclear = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      if (!buscando) return;
+      if (!buscando && !hayInicio) return;
       e.preventDefault();
       if (!mostrarLista) {
         setAbierto(true);

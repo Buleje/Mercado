@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { masUsadas, recientesSinRepetidos } from "@/lib/admin/mas-usadas";
+import { inicioDelBuscador, masUsadas, recientesSinRepetidos } from "@/lib/admin/mas-usadas";
 import { CLAVE_DESDE, type ContadorDeUso } from "@/lib/admin/orden-por-uso";
 import type { Reciente } from "@/lib/admin/recientes-panel";
 
@@ -31,5 +31,18 @@ describe("recientesSinRepetidos", () => {
     const rec = [{ href: "/admin?tab=plata" }, { href: "/admin?tab=clientes" }] as Reciente[];
     const u = masUsadas(c({ "plata:": [1, 1] }), etiqueta);
     expect(recientesSinRepetidos(rec, u).map((r) => r.href)).toEqual(["/admin?tab=clientes"]);
+  });
+});
+
+describe("inicioDelBuscador", () => {
+  const rec = (href: string): Reciente => ({ href, titulo: href, camino: "", ts: 1 }) as unknown as Reciente;
+  it("saca el lugar actual, lo no permitido y no repite entre usadas y recientes", () => {
+    const k = c({ "plata:": [5, 1], "clientes:": [3, 1], "compras:": [1, 1] });
+    const r = inicioDelBuscador(k, [rec("/admin?tab=plata"), rec("/admin?tab=clientes"), rec("/admin?tab=otro")], etiqueta, "/admin?tab=plata", (h) => h !== "/admin?tab=compras");
+    expect(r.usadas.map((x) => x.tab)).toEqual(["clientes"]);
+    expect(r.recientes.map((x) => x.href)).toEqual(["/admin?tab=otro"]);
+  });
+  it("persona nueva: todo vacío", () => {
+    expect(inicioDelBuscador(null, [], etiqueta, null)).toEqual({ usadas: [], recientes: [] });
   });
 });

@@ -12,11 +12,18 @@
  * - `lateral` se cierra con la X o Escape; `fija` además vuelve al recargar.
  * - Minimizado: queda una burbuja abajo a la derecha y la página vuelve entera.
  * En el celular ocupa el ancho entero; minimizarla devuelve la pantalla.
+ *
+ * Desde 1024 px va en la columna de la derecha del panel (Brandon 24-10: «una
+ * sola columna derecha»), arriba del panel de Esenciales si está abierto: el
+ * corrimiento de la página y del «+» lo da la columna (`--columna-derecha`).
+ * Más angosto, o fuera del panel, sigue como antes: fija encima, con su `<style>`.
  */
-import { useEffect, useId, useRef, useState, type PointerEvent as EventoPuntero, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type PointerEvent as EventoPuntero, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { BellRing, Maximize2, Minimize2, Pin, PinOff, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
+import { useColumnaDerecha } from "@/components/admin/layout/columna-derecha";
 import { ANCHO_PANEL, anchoPanel, type ModoAviso } from "@/lib/agenda/aviso-pantalla";
 import { cn } from "@/lib/utils";
 
@@ -41,10 +48,13 @@ interface Props {
 
 const ICONO = "size-5";
 const PASO_TECLADO = 32;
+/** Desde acá la barra achica la página (antes se montaba encima): es cuando entra a la columna. */
+const COLUMNA_DESDE = 1024;
 
 /**
- * Mientras la barra está abierta: la página se achica su ancho (≥1024 px), la
- * barra toma ese ancho (≥640 px; abajo ocupa todo) y el «+» de acciones rápidas
+ * Mientras la barra está abierta SUELTA (fuera de la columna: menos de 1024 px,
+ * o fuera del panel): toma su ancho (≥640 px; abajo ocupa todo), la página se
+ * achica (≥1024 px, sólo fuera del panel) y el «+» de acciones rápidas
  * (`QuickActionsFab`, `data-fab-rapido`) se corre a su izquierda (en el celular
  * se esconde). Van acá y no en globals.css: existen sólo con la barra abierta.
  */
@@ -56,15 +66,14 @@ function reglasAbierto(px: number): string {
   ].join("");
 }
 
-/** El ancho que se ve: el guardado (o el que se está arrastrando) dentro de lo que deja la pantalla. */
-function useAnchoVisible(pedido: number | null): number {
+function useAnchoVentana(): number {
   const [ventana, setVentana] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
   useEffect(() => {
     const alCambiar = () => setVentana(window.innerWidth);
     window.addEventListener("resize", alCambiar);
     return () => window.removeEventListener("resize", alCambiar);
   }, []);
-  return anchoPanel(pedido, ventana);
+  return ventana;
 }
 
 export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, minimizado, onMinimizar, onCambiarModo, onCerrar, ancho, onAncho, pie, children }: Props) {
@@ -72,8 +81,20 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
   const fija = modo === "fija";
   /* Mientras arrastras, el ancho vive acá (se ve al instante); al soltar se guarda una vez. */
   const [arrastre, setArrastre] = useState<number | null>(null);
-  const visible = useAnchoVisible(arrastre ?? ancho);
+  const ventana = useAnchoVentana();
+  /* El ancho que se ve: el guardado (o el que se está arrastrando) dentro de lo que deja la pantalla. */
+  const visible = anchoPanel(arrastre ?? ancho, ventana);
   const inicio = useRef<{ x: number; ancho: number } | null>(null);
+  const columna = useColumnaDerecha();
+  const hueco = ventana >= COLUMNA_DESDE ? (columna?.arriba ?? null) : null;
+  const fijarAncho = columna?.fijarAncho;
+  const pideAncho = !!hueco && !minimizado;
+  /* Antes de pintar: si no, la columna se dibuja un cuadro en 26rem y salta al ancho guardado. */
+  useLayoutEffect(() => {
+    if (!pideAncho || !fijarAncho) return undefined;
+    fijarAncho("arriba", visible);
+    return () => fijarAncho("arriba", null);
+  }, [pideAncho, fijarAncho, visible]);
 
   const empezar = (e: EventoPuntero<HTMLDivElement>) => {
     if (e.button !== 0) return;
@@ -105,7 +126,7 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
         type="button"
         data-qa="aviso-burbuja"
         onClick={() => onMinimizar(false)}
-        className="fixed bottom-7 right-24 z-dropdown inline-flex h-12 items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] shadow-[var(--shadow-xl)] hover:border-[var(--accent)]"
+        className="fixed bottom-7 right-24 z-dropdown inline-flex md:right-[calc(var(--columna-derecha,0px)+6rem)] h-12 items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] shadow-[var(--shadow-xl)] hover:border-[var(--accent)]"
         title="Abrir lo que te falta hacer"
       >
         <BellRing className="size-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden="true" />
@@ -114,18 +135,23 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
     );
   }
 
-  return (
+  const barra = (
     <aside
       role="complementary"
       aria-labelledby={tituloId}
       data-qa="aviso-lateral"
       data-modo={modo}
-      className="fixed inset-y-0 right-0 z-dropdown flex w-full flex-col border-l border-[var(--rule-base)] bg-[var(--surface-raised)]"
+      data-en-columna={hueco ? "" : undefined}
+      className={cn(
+        "flex flex-col border-l border-[var(--rule-base)] bg-[var(--surface-raised)]",
+        /* En la columna llena su hueco (el ancho lo pone la columna); suelta, va encima. */
+        hueco ? "relative min-h-0 flex-1" : "fixed inset-y-0 right-0 z-dropdown w-full",
+      )}
       onKeyDown={(e) => {
         if (e.key === "Escape" && !fija) onCerrar();
       }}
     >
-      <style>{reglasAbierto(visible)}</style>
+      {!hueco && <style>{reglasAbierto(visible)}</style>}
       <div
         role="separator"
         aria-orientation="vertical"
@@ -190,4 +216,5 @@ export function PanelLateralAviso({ modo, titulo, descripcion, burbuja, arriba, 
       <footer className="border-t border-[var(--rule-soft)] px-3 py-2">{pie}</footer>
     </aside>
   );
+  return hueco ? createPortal(barra, hueco) : barra;
 }

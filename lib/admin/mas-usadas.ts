@@ -62,3 +62,26 @@ export function recientesSinRepetidos(recientes: readonly Reciente[], usadas: re
   const ya = new Set(usadas.map((m) => m.href));
   return recientes.filter((r) => !ya.has(r.href));
 }
+
+export interface InicioDelBuscador {
+  usadas: MasUsada[];
+  recientes: Reciente[];
+}
+
+/**
+ * Lo que ofrece el buscador de la cabecera con el campo vacío (Brandon 24-10):
+ * «Más usadas» y, debajo, los recientes que no salieron ya arriba. Sin el lugar
+ * donde estás (`aca`) y sólo lo que este rol ve (`permitido`, por href).
+ */
+export function inicioDelBuscador(
+  contador: ContadorDeUso | null,
+  recientes: readonly Reciente[],
+  etiquetaTab: (tab: string) => string | null,
+  aca: string | null,
+  permitido: (href: string) => boolean = () => true,
+  topeRecientes = 3,
+): InicioDelBuscador {
+  const usadas = masUsadas(contador, etiquetaTab, [aca], TOPE_MAS_USADAS * 2).filter((m) => permitido(m.href)).slice(0, TOPE_MAS_USADAS);
+  const sinAca = recientes.filter((r) => r.href !== aca && permitido(r.href));
+  return { usadas, recientes: recientesSinRepetidos(sinAca, usadas).slice(0, topeRecientes) };
+}

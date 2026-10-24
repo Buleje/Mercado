@@ -46,3 +46,24 @@ export function fijarCabeceraOculta(oculta: boolean): void {
 export function useCabeceraOculta(): boolean {
   return useSyncExternalStore(suscribir, cabeceraOcultaAhora, () => false);
 }
+
+const DESDE_MD = "(min-width: 768px)";
+/* Sin `matchMedia` (jsdom) cuenta como celular: la campana se queda en el encabezado. */
+const desdeMd = () => typeof window.matchMedia === "function" && window.matchMedia(DESDE_MD).matches;
+function suscribirMd(avisar: () => void): () => void {
+  if (typeof window.matchMedia !== "function") return () => undefined;
+  const mql = window.matchMedia(DESDE_MD);
+  mql.addEventListener("change", avisar);
+  return () => mql.removeEventListener("change", avisar);
+}
+
+/**
+ * La campana va en la barra lateral mientras el encabezado está oculto (Brandon
+ * 24-10: «que no se pierdan los avisos»). Una sola campana montada a la vez:
+ * tiene sonido, avisos flotantes y la tecla N, y dos se pisarían.
+ */
+export function useCampanaEnBarra(): boolean {
+  const oculta = useCabeceraOculta();
+  const md = useSyncExternalStore(suscribirMd, desdeMd, () => false);
+  return oculta && md;
+}

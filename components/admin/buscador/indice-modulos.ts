@@ -45,6 +45,8 @@ export interface SearchResult {
 }
 
 export interface GroupedResults {
+  /** Con el campo vacío: las páginas que más abres. */
+  masUsadas: SearchResult[];
   recientes: SearchResult[];
   modulos: SearchResult[];
   productos: SearchResult[];
@@ -58,7 +60,7 @@ export interface GroupedResults {
 }
 
 export const SIN_RESULTADOS: GroupedResults = {
-  recientes: [], modulos: [], productos: [], clientes: [], pedidos: [], papeles: [], acciones: [], relacionados: [],
+  masUsadas: [], recientes: [], modulos: [], productos: [], clientes: [], pedidos: [], papeles: [], acciones: [], relacionados: [],
 };
 
 // ── Índice de módulos ─────────────────────────────────────────────────────────

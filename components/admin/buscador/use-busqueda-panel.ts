@@ -16,7 +16,9 @@ import { useEffect, useMemo, useState } from "react";
 import { logger } from "@/lib/logger";
 import { useContextoPermiso } from "@/hooks/use-vistas-permitidas";
 import { useRecientes } from "@/hooks/use-recientes-panel";
-import { recienteCoincide, type Reciente } from "@/lib/admin/recientes-panel";
+import { entradaDeUrl, recienteCoincide, type Reciente } from "@/lib/admin/recientes-panel";
+import { leerContadorDeUso } from "@/hooks/use-uso-de-pestanas";
+import { inicioDelBuscador, type MasUsada } from "@/lib/admin/mas-usadas";
 import {
   buscarComandos,
   comandoConPersona,
@@ -31,6 +33,7 @@ import {
 import { ICONOS_COMANDO } from "./iconos-comandos";
 import { usePapelesDelArchivo } from "./use-papeles-del-archivo";
 import {
+  MODULE_INDEX,
   SIN_RESULTADOS,
   etiquetaDeTab,
   nivelDeNombre,
@@ -45,6 +48,9 @@ export type GrupoBusqueda = keyof GroupedResults;
 const ORDEN_NORMAL: GrupoBusqueda[] = ["modulos", "acciones", "recientes", "papeles", "relacionados", "productos", "clientes", "pedidos"];
 /** «cobrar a Juan», «nueva cotización»: lo que se pide HACER va primero. */
 const ORDEN_ACCION: GrupoBusqueda[] = ["acciones", "clientes", "recientes", "papeles", "modulos", "relacionados", "productos", "pedidos"];
+
+/** Campo vacío. */
+const ORDEN_INICIO: GrupoBusqueda[] = ["masUsadas", "recientes"];
 
 function resultadoDeComando(c: ComandoPanel, persona?: string): SearchResult {
   const verbo = c.accion.split(" ")[0];
@@ -101,6 +107,27 @@ function localesDe(
   return { acciones, modulos, relacionados, recientes: vistos };
 }
 
+/** Con el campo vacío: «Más usadas» y los recientes que no salieron arriba (Brandon 24-10). */
+function inicioDe(ctx: ReturnType<typeof useContextoPermiso>, recientes: readonly Reciente[]): Pick<GroupedResults, "masUsadas" | "recientes"> {
+  if (!ctx || typeof window === "undefined") return { masUsadas: [], recientes: [] };
+  const aca = entradaDeUrl(window.location.pathname + window.location.search, etiquetaDeTab)?.href ?? null;
+  const permitido = (href: string) => {
+    const q = new URL(href, window.location.origin).searchParams;
+    const tab = q.get("tab");
+    return tab ? destinoPermitido(ctx, tab, q.get("vista") ?? undefined) : true;
+  };
+  const { usadas, recientes: vistos } = inicioDelBuscador(leerContadorDeUso(), recientes, etiquetaDeTab, aca, permitido);
+  const deUsada = (m: MasUsada): SearchResult => ({
+    id: `usada-${m.href}`,
+    type: "modulo",
+    title: m.titulo,
+    subtitle: m.camino || "Módulo",
+    href: m.href,
+    icono: MODULE_INDEX.find((x) => x.tab === m.tab)?.icon,
+  });
+  return { masUsadas: usadas.map(deUsada), recientes: vistos.map(resultadoDeReciente) };
+}
+
 export function useBusquedaPanel(open: boolean) {
   const [query, setQuery] = useState("");
   /** Lo que trajo el servidor y para qué consulta: mientras llega lo nuevo, queda lo anterior. */
@@ -119,6 +146,10 @@ export function useBusquedaPanel(open: boolean) {
      de permisos puede cambiar de identidad en cada render y un efecto que
      dependiera de él se realimentaba («Maximum update depth», 17-10). */
   const locales = useMemo(() => (q.length < 2 ? null : localesDe(q, ctx, recientes)), [q, ctx, recientes]);
+
+  /* Campo vacío: se lee al volver a vaciarse o al cambiar los recientes (el contador vive en el navegador). */
+  const vacio = query === "";
+  const inicio = useMemo(() => (vacio ? inicioDe(ctx, recientes) : null), [vacio, ctx, recientes]);
 
   useEffect(() => {
     if (q.length < 2) {
@@ -154,8 +185,10 @@ export function useBusquedaPanel(open: boolean) {
 
   const grouped: GroupedResults = locales
     ? { ...SIN_RESULTADOS, ...remotos?.grupos, ...locales, papeles: filasDePapeles }
-    : SIN_RESULTADOS;
+    : inicio
+      ? { ...SIN_RESULTADOS, ...inicio }
+      : SIN_RESULTADOS;
   const loading = locales !== null && (remotos?.q !== q || (archivoVisible && papeles?.q !== q));
-  const orden = esConsultaDeAccion(query) ? ORDEN_ACCION : ORDEN_NORMAL;
+  const orden = vacio ? ORDEN_INICIO : esConsultaDeAccion(query) ? ORDEN_ACCION : ORDEN_NORMAL;
   return { query, setQuery, grouped, loading, orden };
 }

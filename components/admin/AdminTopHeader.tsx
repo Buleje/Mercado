@@ -31,7 +31,7 @@ import GlobalSearch from "@/components/admin/GlobalSearch";
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useRegistrarRecientes } from "@/hooks/use-recientes-panel";
-import { useCabeceraOculta } from "@/hooks/use-cabecera-oculta";
+import { useCabeceraOculta, useCampanaEnBarra } from "@/hooks/use-cabecera-oculta";
 import { cn } from "@/lib/utils";
 
 type HeaderThemingEvent = {
@@ -110,6 +110,8 @@ export const AdminTopHeader = memo(function AdminTopHeader({
   useRegistrarRecientes();
   /* Se oculta desde el botón al lado del logo de la barra lateral (sólo desde md). */
   const oculta = useCabeceraOculta();
+  /* Oculto desde md, la campana vive en la barra lateral (una sola montada: sonido, tecla N). */
+  const campanaEnBarra = useCampanaEnBarra();
 
   // Theming reactivo desde el sidebar
   const [theming, setTheming] = useState<HeaderThemingEvent>(readInitialHeaderTheming);
@@ -200,7 +202,7 @@ export const AdminTopHeader = memo(function AdminTopHeader({
         <AdminMensajesMenu onDarkHeader={isAutoDarkTheme} />
         {/* En todos los anchos (10-10): escondida bajo 44 rem, en el celular
             no había por dónde llegar a las notificaciones. */}
-        <NotificationBell onDarkHeader={isAutoDarkTheme} />
+        {!campanaEnBarra && <NotificationBell onDarkHeader={isAutoDarkTheme} />}
 
         <AdminOptionsDropdown
           focusMode={focusMode}
