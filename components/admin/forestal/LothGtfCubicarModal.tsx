@@ -65,7 +65,8 @@ export default function LothGtfCubicarModal({
   g,
   onClose,
 }: {
-  g: Pick<Gtf, "id" | "gtfNumber" | "titularName" | "items">;
+  /** El camión de la guía (si viene) se ofrece al guardar en la cuenta. */
+  g: Pick<Gtf, "id" | "gtfNumber" | "titularName" | "items"> & Partial<Pick<Gtf, "placaVehiculo" | "conductor">>;
   onClose: () => void;
 }) {
   const { prefill, error: errorCarga, recargar } = usePrefillLoth(g.id);
@@ -345,6 +346,8 @@ export default function LothGtfCubicarModal({
             descuentos: c.descuentoLote,
             descuentosPorTroza: guardar.descuentosPorTroza,
             sentidoInicial: "compra",
+            placa: g.placaVehiculo,
+            chofer: g.conductor,
           }}
           onGuardada={(cub) => {
             setGuardando(false);

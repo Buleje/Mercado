@@ -32,6 +32,7 @@ import { UNIDADES_FORMULA, totalesSegun, type DiametrosPorTroza, type FormulaTro
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
 import { CAMPO_CUENTA, CampoPersonaCuenta, CampoSentidoCuenta, ETIQUETA_CUENTA as ETIQUETA, usePersonasOrdenadas } from "./cubicacion-cuenta-persona";
 import type { FilaTroza } from "./cubicador-trozas-tabla";
+import { CamposDelCamion, placaInicial } from "./cubicador-trozas-camion";
 import {
   guardarCubicacionTrozas, leerCubicacionTrozas, trozasParaGuardar, usePersonasDeLaCuenta,
   type CubicacionTrozas, type GuardarCubicacionInput, type SentidoCubicacion,
@@ -49,6 +50,9 @@ export interface VinculoCubicacion {
   descuentos: DescuentoLote | null;
   descuentosPorTroza: Array<DescuentoTroza | null>;
   sentidoInicial: SentidoCubicacion;
+  /** El camión de la guía, para no tipearlo de nuevo (se puede cambiar). */
+  placa?: string | null;
+  chofer?: string | null;
 }
 
 /** Cada troza con su descuento (mismo índice que `rows`). */
@@ -77,6 +81,8 @@ export default function GuardarEnLaCuentaModal({
   const [fecha, setFecha] = useState(() => limaDateKey());
   const [gtf, setGtf] = useState(vinculo?.gtfNumber ?? "");
   const [notas, setNotas] = useState("");
+  const [placa, setPlaca] = useState(() => placaInicial(vinculo?.placa));
+  const [chofer, setChofer] = useState(vinculo?.chofer?.trim() ?? "");
   const [especieFaltante, setEspecieFaltante] = useState("");
   const [previa, setPrevia] = useState<CubicacionTrozas | null>(null);
   const guiaFija = !!vinculo;
@@ -94,6 +100,9 @@ export default function GuardarEnLaCuentaModal({
       setPrevia(r.data);
       setSentido(r.data.sentido);
       if (!guiaFija) setGtf(r.data.gtfNumber ?? "");
+      /* Lo que ya se tipeó manda sobre lo guardado (la lectura llega tarde). */
+      setPlaca((v) => v || (r.data.placa ?? ""));
+      setChofer((v) => v || (r.data.chofer ?? ""));
       if (r.data.beneficiarioId) setClave(`benef:${r.data.beneficiarioId}`);
       else if (r.data.parteId) setClave(`parte:${r.data.parteId}`);
     });
@@ -150,6 +159,9 @@ export default function GuardarEnLaCuentaModal({
       ...(persona.parteId ? { parteId: persona.parteId } : {}),
       ...(gtf.trim() ? { gtfNumber: gtf.trim() } : {}),
       ...(notas.trim() ? { notas: notas.trim() } : {}),
+      /* Siempre van: vacío = null, y al actualizar un borrador eso borra el que tenía. */
+      placa: placa.trim() || null,
+      chofer: chofer.trim() || null,
       ...(actualiza && previa ? { version: previa.version } : {}),
     };
     const r = await guardarCubicacionTrozas(input, actualiza && previa ? previa.id : undefined);
@@ -219,6 +231,7 @@ export default function GuardarEnLaCuentaModal({
               <datalist id="cub-especies">{especies.map((e) => <option key={e} value={e} />)}</datalist>
             </div>
           )}
+          <CamposDelCamion placa={placa} chofer={chofer} onPlaca={setPlaca} onChofer={setChofer} />
           <div className="sm:col-span-2">
             <label htmlFor="cub-notas" className={ETIQUETA}>Nota (opcional)</label>
             <input id="cub-notas" className={CAMPO_CUENTA} value={notas} maxLength={500} placeholder="Ej.: llegó en la camioneta de Wilmer" onChange={(e) => setNotas(e.target.value)} />

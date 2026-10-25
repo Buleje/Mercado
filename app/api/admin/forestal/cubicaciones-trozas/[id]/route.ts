@@ -13,6 +13,7 @@ import { ROLES_CUBICAR, ROLES_PLATA, esAserrada, guardCubicacion, invalido, leer
  *          no salen por acá si `/api/adelantos` se los niega.
  * PATCH  `editarCubicacionSchema` (con `version`), o `editarAserradaSchema` con `material: "aserrada"` (ADR-483)
  *        → `{ cubicacion }` · 409 `DESACTUALIZADA` / `YA_APLICADA` / `ANULADA` / `MATERIAL_DISTINTO` (la fila manda el material).
+ *        `placa`/`chofer` sin mandar = se conservan; `null` o "" = se borran (sólo en borrador, como el resto).
  * DELETE → 204 (sólo borrador) · 409 `YA_APLICADA`. Borrar: admin y dueño.
  */
 

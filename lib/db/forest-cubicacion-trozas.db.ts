@@ -15,6 +15,7 @@ import {
   FaltaPrecioError,
   MedidaFueraDeRangoError,
   PREFIJO_CUBICACION,
+  camionParaGuardar,
   decimalesDe,
   descripcionEntregaMadera,
   direccionDelSentido,
@@ -177,7 +178,7 @@ const SELECT_RESUMEN = {
   imputacion: true, idempotencyKey: true, idempotencyHuella: true, anuladaAt: true, anuladaPor: true,
   motivoAnulacion: true, notas: true, createdBy: true, createdAt: true, updatedAt: true, deletedAt: true,
   material: true, origen: true, origenId: true, modo: true, volumenBruto: true, descuentos: true,
-  referenciaSmalianM3: true, cubicacionRefId: true,
+  referenciaSmalianM3: true, cubicacionRefId: true, placa: true, chofer: true,
 } satisfies Prisma.ForestCubicacionTrozasSelect;
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
@@ -217,6 +218,7 @@ function aResumen(r: RowResumen): CubicacionTrozasResumen {
     monto: r.monto == null ? null : Number(r.monto), moneda: r.moneda, estado: estadoDe(r.estado), version: r.version,
     aplicadaAt: iso(r.aplicadaAt), aplicadaPor: r.aplicadaPor, ...imputacionDe(r.imputacion),
     anuladaAt: iso(r.anuladaAt), anuladaPor: r.anuladaPor, motivoAnulacion: r.motivoAnulacion, notas: r.notas,
+    placa: r.placa ?? null, chofer: r.chofer ?? null,
     createdBy: r.createdBy, createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(),
     material: materialDe(r.material), origen: esOrigen(r.origen) ? r.origen : null, origenId: r.origenId,
     modo: r.modo === "total" ? "total" : "pieza", volumenBruto: decimalONull(r.volumenBruto),
@@ -748,6 +750,8 @@ export function auditar(action: CtpAuditAction, tenantId: string, row: RowResume
     row.volumenBruto != null ? `bruto ${fmtVolumen(Number(row.volumenBruto), formula)}` : null,
     row.monto != null ? `S/ ${Number(row.monto).toFixed(2)}` : null,
     row.gtfNumber ? `guía ${row.gtfNumber}` : null,
+    row.placa ? `placa ${row.placa}` : null,
+    row.chofer ? `chofer ${row.chofer}` : null,
     row.origen === "loth" || row.origen === "despacho" ? `de ${row.origen === "loth" ? "la GTF del Libro TH" : "el despacho"} ${row.origenId ?? ""}`.trim() : null,
     extra || null,
     actor.ip ? `IP ${actor.ip}` : null,
@@ -883,6 +887,7 @@ export const ForestCubicacionTrozasDB = {
       nTrozas: trozas.length,
       volumen: new Prisma.Decimal(c.neto.toFixed(4)),
       notas: input.notas || null,
+      ...camionParaGuardar(input),
       createdBy: actor.usuario || "unknown",
     });
     invalidar(tenantId);
@@ -901,6 +906,8 @@ export const ForestCubicacionTrozasDB = {
     const guia = await guiaDelOrigen(tenantId, input);
     const c = cubicar(input);
     const trozas = conM3DeGuia(c.trozas, guia.m3PorCodigo);
+    /* El camión: ausente = se conserva lo guardado (quien corrige sin esos campos no los borra); null o "" = se borra. */
+    const camion = camionParaGuardar(input);
     const res = await prisma.forestCubicacionTrozas.updateMany({
       /* La fila manda el material: una de aserrada no se pisa con trozas (409 `MATERIAL_DISTINTO`). */
       where: { id, tenantId, estado: "borrador", version: input.version, deletedAt: null, material: "troza" },
@@ -923,6 +930,8 @@ export const ForestCubicacionTrozasDB = {
         nTrozas: trozas.length,
         volumen: new Prisma.Decimal(c.neto.toFixed(4)),
         notas: input.notas || null,
+        ...(input.placa !== undefined ? { placa: camion.placa } : {}),
+        ...(input.chofer !== undefined ? { chofer: camion.chofer } : {}),
         version: { increment: 1 },
       },
     });

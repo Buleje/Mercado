@@ -29,6 +29,7 @@ import {
   type TrozaCongeladaComercial,
 } from "./cubicacion-comercial-tipos";
 import type { CuentaDeCubicacion, ValorVentaDeCubicacion } from "./cubicacion-a-cuenta";
+import { leerPlaca } from "./placa-peru";
 
 export const PREFIJO_CUBICACION = "CUB";
 export type EstadoCubicacion = "borrador" | "aplicada" | "anulada";
@@ -56,6 +57,40 @@ export type TrozaEntrada = z.infer<typeof trozaEntradaComercialSchema>;
 const idOpcional = z.string().trim().max(40).nullish().transform((v) => v || undefined).optional();
 const textoOpcional = (max: number) => z.string().trim().max(max).nullish().transform((v) => v || undefined).optional();
 
+// ── El camión que trajo (o se llevó) las trozas (24-10) ─────────────────────
+export const MAX_PLACA = 20;
+export const MAX_CHOFER = 120;
+const unEspacio = (v: string) => v.replace(/\s+/g, " ").trim();
+/**
+ * «w2d 853» → «W2D-853» (como en el papel, la misma lectura del Directorio y de
+ * la guía); lo que no es una placa peruana va en mayúsculas con un espacio
+ * («SIN PLACA», una chata). Vacío → null (no se anotó). No recorta: el tope lo
+ * pone Zod (422) o `camionParaGuardar`.
+ */
+export function normalizarPlacaCamion(v: string | null | undefined): string | null {
+  const lectura = leerPlaca(v);
+  if (lectura.estado === "valida") return lectura.formateada;
+  return unEspacio(v ?? "").toUpperCase() || null;
+}
+/** «  juan   pérez » → «juan pérez» (se guarda como se escribió); vacío → null. */
+export const normalizarChofer = (v: string | null | undefined): string | null => unEspacio(v ?? "") || null;
+/** Lo que se escribe en la fila: normalizado y recortado al tope de la columna. */
+export function camionParaGuardar(c: { placa?: string | null; chofer?: string | null }): { placa: string | null; chofer: string | null } {
+  return {
+    placa: normalizarPlacaCamion(c.placa)?.slice(0, MAX_PLACA).trimEnd() || null,
+    chofer: normalizarChofer(c.chofer)?.slice(0, MAX_CHOFER).trimEnd() || null,
+  };
+}
+/** Ausente = no se toca (el PATCH conserva lo guardado) · "" o null = se borra · texto = normalizado. */
+const textoDelCamion = (normalizar: (v: string) => string | null, max: number, mensaje: string) =>
+  z
+    .string()
+    .max(400)
+    .nullish()
+    .transform((v) => (v === undefined ? undefined : v === null ? null : normalizar(v)))
+    .refine((v) => v == null || v.length <= max, mensaje)
+    .optional();
+
 const cuerpoCubicacion = z.object({
   fecha: z
     .string()
@@ -72,6 +107,8 @@ const cuerpoCubicacion = z.object({
   contratoId: idOpcional,
   trozas: z.array(trozaEntradaComercialSchema).min(1, "La cubicación no tiene trozas.").max(2000),
   notas: textoOpcional(500),
+  placa: textoDelCamion(normalizarPlacaCamion, MAX_PLACA, `La placa va con ${MAX_PLACA} caracteres como mucho.`),
+  chofer: textoDelCamion(normalizarChofer, MAX_CHOFER, `El nombre del chofer va con ${MAX_CHOFER} caracteres como mucho.`),
   /* ADR-483: de dónde salen las trozas (`loth` = una GTF del Libro TH) y el descuento del lote. */
   ...origenTrozaCampos,
 });
@@ -194,6 +231,9 @@ export interface CubicacionTrozasResumen extends CamposComerciales {
   anuladaPor: string | null;
   motivoAnulacion: string | null;
   notas: string | null;
+  /** El camión (24-10): null = no se anotó (las de antes, y siempre la aserrada). */
+  placa: string | null;
+  chofer: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

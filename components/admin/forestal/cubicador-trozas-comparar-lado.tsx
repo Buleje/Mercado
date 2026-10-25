@@ -2,7 +2,7 @@
 
 /**
  * Un lado del comparador de trozas: el selector de la guardada y su tarjetita
- * con lo que la identifica (persona, fecha, GTF, estado) y sus cifras
+ * con lo que la identifica (persona, fecha, GTF, camión, estado) y sus cifras
  * congeladas al guardar. Las dos van lado a lado; en el celular, una debajo de
  * la otra.
  */
@@ -18,8 +18,9 @@ import type { CubicacionTrozas } from "./hooks/use-cubicaciones-trozas";
 const textoVol = (c: CubicacionTrozas) =>
   esDeTrozas(c.formula) ? `${numeroVolumen(c.volumen, c.formula)} ${UNIDADES_FORMULA[c.formula].volumen}` : String(c.volumen);
 
+/* Con la placa, dos viajes del mismo proveedor el mismo día se distinguen en el selector. */
 const opcion = (c: CubicacionTrozas) =>
-  `${c.codigo} · ${c.personaNombre ?? "sin persona"} · ${fechaDeLaGuardada(c.fecha)} · ${textoVol(c)}`;
+  `${c.codigo} · ${c.personaNombre ?? "sin persona"} · ${fechaDeLaGuardada(c.fecha)} · ${textoVol(c)}${c.placa ? ` · ${c.placa}` : ""}`;
 
 export function LadoDeLasTrozas({ letra, elegida, opciones, onElegir }: {
   letra: "A" | "B";

@@ -4,9 +4,9 @@
  * la madera aserrada (`datosDeLaGuardada`): sale sólo lo que haya, nunca una
  * fila «—» por cada campo vacío.
  *
- * Datos del camión (placa, chofer): la cubicación de trozas no los guarda
- * (sólo la de madera aserrada tiene `ficha`); cuando se agreguen al registro
- * salen acá, en la misma lista.
+ * Datos del camión (placa, chofer, 24-10): se anotan al guardar y salen acá,
+ * en el detalle y en los dos lados del comparador; las de antes no los tienen
+ * y no muestran fila.
  */
 import { formatCurrency } from "@/lib/currency";
 import { UNIDADES_FORMULA } from "@/lib/forestal/cubicacion-trozas-formula";
@@ -31,6 +31,8 @@ export function datosDeTrozas(c: CubicacionTrozas, opciones: { cuenta?: CuentaDe
     { id: "sentido", etiqueta: "Operación", valor: c.sentido === "venta" ? "Venta (entregas madera)" : "Compra (recibes madera)" },
     { id: "formula", etiqueta: "Fórmula", valor: esDeTrozas(c.formula) ? UNIDADES_FORMULA[c.formula].nombre : c.formula },
     Boolean(c.gtfNumber) && { id: "gtf", etiqueta: "GTF", valor: c.gtfNumber ?? "", mono: true },
+    Boolean(c.placa) && { id: "placa", etiqueta: "Placa", valor: c.placa ?? "", mono: true },
+    Boolean(c.chofer) && { id: "chofer", etiqueta: "Chofer", valor: c.chofer ?? "" },
     { id: "estado", etiqueta: "Estado de la cuenta", valor: c.estado === "anulada" && c.motivoAnulacion ? `${estado} · ${c.motivoAnulacion}` : estado },
     completa && opciones.cuenta != null && { id: "saldo", etiqueta: `Cuenta de ${opciones.cuenta.nombre}`, valor: textoDeSaldo(opciones.cuenta.saldo) },
     completa && Boolean(c.createdBy) && { id: "guardo", etiqueta: "La guardó", valor: c.createdBy },

@@ -506,3 +506,36 @@ describe("revisión M (08-10)", () => {
     expect(H.db.forestCubicacionTrozas[0].estado).toBe("aplicada");
   });
 });
+
+describe("el camión de la cubicación (placa y chofer, 24-10)", () => {
+  it("guardar sin placa ni chofer sigue igual: mismo código y volumen, las dos columnas en null", async () => {
+    const c = await ForestCubicacionTrozasDB.guardar(T, entrada, actor);
+    expect([c.codigo, c.nTrozas, c.placa, c.chofer]).toEqual(["CUB-2026-0001", 3, null, null]);
+    expect(c.volumen).toBeCloseTo(604.73, 2);
+    expect(H.db.forestCubicacionTrozas[0]).toMatchObject({ placa: null, chofer: null });
+  });
+
+  it("guardar normaliza (placa como en el papel, chofer con un espacio) y la lista los devuelve: están en la whitelist del resumen", async () => {
+    await ForestCubicacionTrozasDB.guardar(T, { ...entrada, placa: " w2d  853 ", chofer: "  Wilmer   Ramírez " }, actor);
+    expect(H.db.forestCubicacionTrozas[0]).toMatchObject({ placa: "W2D-853", chofer: "Wilmer Ramírez" });
+    const delegado = H.prisma.forestCubicacionTrozas as { findMany: (a: unknown) => Promise<unknown> };
+    const findMany = vi.spyOn(delegado, "findMany");
+    const [fila] = await ForestCubicacionTrozasDB.list(T);
+    expect([fila.placa, fila.chofer]).toEqual(["W2D-853", "Wilmer Ramírez"]);
+    /* El mock no aplica el `select`: se mira que lo pida (sin esto el JSON real los omite). */
+    expect((findMany.mock.calls[0]?.[0] as { select?: Record<string, boolean> }).select).toMatchObject({ placa: true, chofer: true });
+    findMany.mockRestore();
+  });
+
+  it("editar: sin los campos se conservan, null los borra, texto los cambia; una fila de antes (sin columnas) lee null", async () => {
+    const c = await ForestCubicacionTrozasDB.guardar(T, { ...entrada, placa: "W2D-853", chofer: "Wilmer" }, actor);
+    const v2 = await ForestCubicacionTrozasDB.editar(T, c.id, { ...entrada, notas: "otra nota", version: 1 }, actor);
+    expect([v2.placa, v2.chofer]).toEqual(["W2D-853", "Wilmer"]);
+    const v3 = await ForestCubicacionTrozasDB.editar(T, c.id, { ...entrada, placa: "abc123", chofer: null, version: 2 }, actor);
+    expect([v3.placa, v3.chofer]).toEqual(["ABC-123", null]);
+    delete H.db.forestCubicacionTrozas[0].placa;
+    delete H.db.forestCubicacionTrozas[0].chofer;
+    const vieja = await ForestCubicacionTrozasDB.get(T, c.id);
+    expect([vieja?.placa, vieja?.chofer]).toEqual([null, null]);
+  });
+});

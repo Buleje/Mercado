@@ -6120,6 +6120,10 @@ model ForestCubicacionTrozas {
   anuladaPor          String?
   motivoAnulacion     String?
   notas               String?
+  /// El camión que trajo (o se llevó) las trozas (24-10). Placa en mayúsculas, ≤ 20; null = no se anotó.
+  placa               String?
+  /// Nombre del chofer, ≤ 120. null = no se anotó. La aserrada no los usa (su camión va en ForestCubicacion.ficha).
+  chofer              String?
   createdBy           String
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

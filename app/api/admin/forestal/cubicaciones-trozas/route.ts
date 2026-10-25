@@ -15,6 +15,7 @@ import { ROLES_CUBICAR, esAserrada, guardCubicacion, invalido, leerJson, libroDe
  *      / `CUBICACION_REF_NO_ENCONTRADA` · 422 `MEDIDA_FUERA_DE_RANGO {troza}` / `DESCUENTO_INVALIDO`
  *      / `GUIA_ANULADA` / `validation_error`.
  * Guardar: almacenero, admin y dueño. El servidor re-cubica: nunca toma el volumen del cliente.
+ * El camión (24-10): `placa` (≤ 20, «W2D-853») y `chofer` (≤ 120), opcionales; sólo trozas.
  */
 
 const ESTADOS = new Set(["borrador", "aplicada", "anulada"]);
