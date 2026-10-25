@@ -52,6 +52,5 @@ export const presetsRecetario = (): PresetsFiltros => [
   { id: "ocultas", nombre: "Ocultas", ayuda: "No se muestran en la tienda", estado: f({ estado: ["Oculta"] }) },
 ];
 
-export const presetsABC = (): PresetsFiltros => [
-  { id: "clase-a", nombre: "Clase A", ayuda: "El 70 % de tus ingresos", estado: f({ acum: { min: null, max: 70 } }) },
-];
+/* ABC sin vista de fábrica: las tarjetas A/B/C de arriba ya filtran la clase exacta; una vista por
+   «acumulado ≤ 70» la aproximaba (un 70,04 de clase B entraba por el redondeo del servidor). */

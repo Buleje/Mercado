@@ -1,3 +1,17 @@
+# SESSION HANDOFF — 2026-10-25 (autónomo, sigue hasta que Brandon diga «para»): filtros tipo Excel en todo el admin
+
+**Estado:** ~55 commits desde `78798b6fa` (más 3 de plata de otra sesión, mercado-f5, que además subió la rama y abrió el PR #19). Typecheck completo verde a las 12:40; guardianes 354 verdes. Detalle y receta: memoria `filtros-excel-todo-el-admin-2026-10-25`.
+
+**Hecho:** filtros en el encabezado + orden por columna en ~93 tablas (antes 32): ventas, caja, pedidos, compras, proveedores, inventario, recetas, documentos, comprobantes, contratos, clientes, marketplace, equipo, reparto, cacao, planificación (forestal NO, por el foco). Piezas nuevas comunes: `vistas=` (guardar filtros con nombre, 71 tablas), `presets` (vistas de fábrica: Fiados, caja, compras, plata…), `excel=` (bajar lo que ves, 47 tablas), atajos al mismo estado («Por cobrar», «Sin costo», «Stock bajo», «Debes», «Con aviso»). Servidor: auto-reorden acepta `productIds` («Pedir lo que ves»), lista de comprobantes acepta cliente/serie/monto/orden. Compactado: modal duplicado de stock borrado (320), Acopio 1.198→875, Contratos 1.730→1.618, tabla y tarjetas de contratos aparte.
+
+**En curso al escribir esto (13:20):** carril de vistas de fábrica de documentos/comprobantes/inventario (creó `shared/vistas-de-fabrica.ts` + `shared/fechas-de-vistas.ts`) y carril que parte `DocumentPreviewModal.tsx` (1.490 líneas) con `scripts/partir-en-piezas.mjs` y test temporal `__tests__/tmp-preview-mismo-dom.test.tsx` (borrarlo si quedó).
+
+**Siguiente:** partir `ContratosModule.tsx` (1.618) cuando cierre documentos; `FiadoModals.tsx` (865, plata) y `SendWhatsAppModal.tsx` (858); último movimiento por producto desde el servidor (la pantalla trae sólo 200 movimientos; hoy dice «Sin movimiento desde dd/mm» cuando la lista llega cortada).
+
+**Decide Brandon:** nada nuevo. Pendiente de antes: deploy bloqueado (ver entradas de abajo).
+
+---
+
 # SESSION HANDOFF — 2026-10-23: 31 commits — correos, cubicador, cámaras, GTF, adelantos, membrete, panel
 
 **Estado:** commits `bc4d88f12` → `e1c9d494e` (31), **sin subir** (deploy bloqueado). Árbol limpio salvo `.claude/workflows/panel-ola.js` (ajeno). El «Archivo más liviano» de la sesión anterior quedó CERRADO en `e1c9d494e`.
