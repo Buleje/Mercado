@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { ChevronLeft, ChevronRight, Coins, Download, MoreHorizontal, Plus, Search, TrendingUp, Users, Wallet } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -22,14 +23,16 @@ import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
 import { button } from "@/components/ui-system/button-variants";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { paginar } from "@/lib/adelantos/ordenar-lista";
-import { cumpleFiltro, ordenarPersonas, type FiltroPersonas, type OrdenPersonas } from "@/lib/adelantos/ordenar-personas";
+import { FILTROS, cumpleFiltro, ordenarPersonas, type FiltroPersonas, type OrdenPersonas } from "@/lib/adelantos/ordenar-personas";
 import { descargarCsvPersonas } from "@/lib/adelantos/exportar-csv";
 import { cuentaDePersona } from "@/lib/adelantos/modos-alta";
+import { faltaTelefono, faltanDatos } from "@/lib/adelantos/datos-persona";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import CrearAdelantoModal from "../CrearAdelantoModal";
 import DetalleAdelantoModal from "../detalle/DetalleAdelantoModal";
 import { EmptyState, SkeletonGrid, fmtMonedas, sinTildes } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
+import CompletarDatosModal from "./CompletarDatosModal";
 import CrearPersonaModal from "./CrearPersonaModal";
 import EliminarPersonaModal from "./EliminarPersonaModal";
 import FichaPersonaModal from "./FichaPersonaModal";
@@ -65,7 +68,15 @@ export default function PersonasView({
   const [detalleAdelanto, setDetalleAdelanto] = useState<DbAdelanto | null>(null);
   const [q, setQ] = useState("");
   const [orden, setOrden] = useState<OrdenPersonas>("saldo");
-  const [filtro, setFiltro] = useState<FiltroPersonas>("todas");
+  /* `?filtro=sin-telefono` (lo enlaza el Resumen) abre la libreta ya filtrada. */
+  const filtroUrl = useSearchParams().get("filtro");
+  const [filtro, setFiltro] = useState<FiltroPersonas>(
+    (FILTROS as readonly string[]).includes(filtroUrl ?? "") ? (filtroUrl as FiltroPersonas) : "todas",
+  );
+  useEffect(() => {
+    if (filtroUrl && (FILTROS as readonly string[]).includes(filtroUrl)) setFiltro(filtroUrl as FiltroPersonas);
+  }, [filtroUrl]);
+  const [completar, setCompletar] = useState<BeneficiarioConSaldo | null>(null);
   const [pagina, setPagina] = useState(1);
 
   /**
@@ -115,7 +126,14 @@ export default function PersonasView({
   );
   const conSaldo = beneficiarios.filter((b) => Object.values(b.saldoPendiente).some((v) => v > 0)).length;
   const enRiesgo = beneficiarios.filter((b) => requiereAtencion(estadoDeCredito(b.limiteCredito, saldoParaLimite(b.saldoPendiente)))).length;
+  const sinTelefono = beneficiarios.filter(faltaTelefono).length;
+  const conDatosFaltantes = beneficiarios.filter(faltanDatos).length;
   const hayTopes = beneficiarios.some((b) => (b.limiteCredito ?? 0) > 0);
+
+  /** Si ya no queda nadie sin teléfono/datos, el filtro se apaga solo (no deja la lista vacía). */
+  useEffect(() => {
+    if (beneficiarios.length > 0 && ((filtro === "sin-telefono" && sinTelefono === 0) || (filtro === "faltan-datos" && conDatosFaltantes === 0))) setFiltro("todas");
+  }, [filtro, sinTelefono, conDatosFaltantes, beneficiarios.length]);
   const hayLeDebes = Object.values(tot.aFavor).some((v) => v > 0);
 
   const kpis = useKpisPlegables({
@@ -213,6 +231,17 @@ export default function PersonasView({
                 Sin margen {enRiesgo}
               </button>
             )}
+            {/* Sólo si falta alguien: un filtro que da cero enseña a no confiar. */}
+            {sinTelefono > 0 && (
+              <button type="button" aria-pressed={filtro === "sin-telefono"} className={button({ variant: "secondary", className: chip(filtro === "sin-telefono") })} onClick={() => setFiltro("sin-telefono")}>
+                Sin teléfono {sinTelefono}
+              </button>
+            )}
+            {conDatosFaltantes > 0 && (
+              <button type="button" aria-pressed={filtro === "faltan-datos"} className={button({ variant: "secondary", className: chip(filtro === "faltan-datos") })} onClick={() => setFiltro("faltan-datos")}>
+                Faltan datos {conDatosFaltantes}
+              </button>
+            )}
           </div>
           {/* El orden, en un desplegable: las mismas seis opciones de siempre. */}
           <select
@@ -261,6 +290,7 @@ export default function PersonasView({
                   onEliminar={() => setDeletePersona(b)}
                   onAdelanto={() => setAdelantoPara(b.id)}
                   onEntregar={onEntregar ? () => onEntregar(b) : undefined}
+                  onCompletar={() => setCompletar(b)}
                 />
               ))}
             </tbody>
@@ -313,6 +343,9 @@ export default function PersonasView({
           onCreated={() => { setEditPersona(null); onChange(); }}
         />
       )}
+      {completar && (
+        <CompletarDatosModal persona={completar} onClose={() => setCompletar(null)} onGuardado={() => { setCompletar(null); onChange(); }} />
+      )}
       {deletePersona && (
         <EliminarPersonaModal persona={deletePersona} onClose={() => setDeletePersona(null)} onDeleted={() => { setDeletePersona(null); onChange(); }} />
       )}
@@ -330,7 +363,8 @@ export default function PersonasView({
       )}
       {ficha && (
         <FichaPersonaModal
-          persona={ficha}
+          persona={beneficiarios.find((b) => b.id === ficha.id) ?? ficha}
+          onCambio={onChange}
           adelantos={adelantos}
           onClose={() => setFicha(null)}
           onEditar={() => { setEditPersona(ficha); setFicha(null); }}

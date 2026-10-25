@@ -9,14 +9,15 @@
  * el resto en «⋯». Tocar el nombre abre su ficha, como antes la tarjeta.
  */
 
-import { CheckCircle, Eye, HandCoins, MessageCircle, MoreHorizontal, Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
+import { CheckCircle, Eye, HandCoins, MessageCircle, MoreHorizontal, Pencil, Phone, Plus, Trash2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { button } from "@/components/ui-system/button-variants";
-import { formatCurrency } from "@/lib/currency";
-import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
+import { estadoDeCredito, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { cumplimientoDe } from "@/lib/adelantos/saldo-persona";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
 import { cuentaDePersona, hayDeuda } from "@/lib/adelantos/modos-alta";
+import { queFalta } from "@/lib/adelantos/datos-persona";
+import { textoDeTope } from "@/lib/adelantos/tope";
 import { MontosEnLineas, fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 
@@ -39,6 +40,7 @@ export default function FilaPersona({
   onEliminar,
   onAdelanto,
   onEntregar,
+  onCompletar,
 }: {
   persona: BeneficiarioConSaldo;
   onVerFicha: () => void;
@@ -48,6 +50,8 @@ export default function FilaPersona({
   onAdelanto: () => void;
   /** «Entregar» (ADR-491) con la persona ya elegida; sin él, la acción es el formulario. */
   onEntregar?: () => void;
+  /** Abre el mini-modal para escribir el teléfono y el DNI/RUC que faltan. */
+  onCompletar?: () => void;
 }) {
   /* `saldoPendiente` es lo DADO abierto: gobierna el tope, la cobranza y el
      recordatorio. «Te debe» / «Le debes» son las dos direcciones (ADR-448). */
@@ -56,6 +60,8 @@ export default function FilaPersona({
   const leDebes = hayDeuda(cuenta.leDebes);
   const credito = estadoDeCredito(b.limiteCredito, saldoParaLimite(b.saldoPendiente));
   const cumplimiento = cumplimientoDe(b);
+  const topeTxt = textoDeTope(credito);
+  const falta = queFalta(b);
   /* Sólo lo DADO: a quien te pagó antes no se le recuerda «tu saldo pendiente». */
   const wa = enlaceWhatsAppConTexto(
     b.telefono,
@@ -69,6 +75,9 @@ export default function FilaPersona({
     ...(onEntregar ? [{ id: "nuevo", label: "Nuevo adelanto (formulario)", hint: "Plan de cuotas, permiso o lo que te adelantan a ti", icon: Plus, onSelect: onAdelanto }] : []),
     ...(wa
       ? [{ id: "wa", label: debe ? "Recordarle el saldo" : "Escribirle", hint: `WhatsApp · ${b.telefono}`, icon: MessageCircle, onSelect: () => void window.open(wa, "_blank", "noopener,noreferrer") }]
+      : []),
+    ...(onCompletar && falta.length > 0
+      ? [{ id: "completar", label: "Completar datos", hint: `Falta: ${falta.join(" y ")}`, icon: Phone, onSelect: onCompletar }]
       : []),
     { id: "editar", label: "Editar", hint: "Nombre, documento, teléfono, tope", icon: Pencil, onSelect: onEditar },
     { id: "eliminar", label: "Eliminar", icon: Trash2, onSelect: onEliminar },
@@ -88,6 +97,17 @@ export default function FilaPersona({
             )}
           </span>
         </button>
+        {/* Sin teléfono no hay WhatsApp ni recordatorios: se completa acá mismo. */}
+        {falta.length > 0 && onCompletar && (
+          <button
+            type="button"
+            onClick={onCompletar}
+            title="Escribir lo que falta"
+            className={button({ variant: "ghost", className: "mt-1 h-8 gap-1 rounded-full bg-[var(--data-warning)]/15 px-2.5 text-sm font-bold text-[var(--data-warning-ink)] hover:bg-[var(--data-warning)]/25" })}
+          >
+            <Phone className="h-4 w-4" aria-hidden /> Falta {falta.join(" y ")}
+          </button>
+        )}
       </td>
       <td className="text-right font-semibold tabular-nums">
         <MontosEnLineas map={b.totalAdelantado} />
@@ -119,12 +139,12 @@ export default function FilaPersona({
         ) : (
           <span className="text-sm text-[var(--text-tertiary)]">—</span>
         )}
-        {credito.estado !== "sin-limite" && (
+        {topeTxt && (
           <span
-            title={`Tope de ${formatCurrency(credito.limite)}; debe ${formatCurrency(credito.usado)}`}
-            className={`block whitespace-nowrap text-sm font-semibold tabular-nums ${requiereAtencion(credito) ? "text-[var(--data-error-ink)]" : "text-[var(--text-tertiary)]"}`}
+            title={topeTxt.detalle}
+            className={`block text-sm font-semibold tabular-nums ${topeTxt.tono === "atencion" ? "text-[var(--data-error-ink)]" : "text-[var(--text-tertiary)]"}`}
           >
-            {credito.disponible > 0 ? `Le queda ${formatCurrency(credito.disponible)}` : "Sin margen"}
+            {topeTxt.texto}
           </span>
         )}
       </td>

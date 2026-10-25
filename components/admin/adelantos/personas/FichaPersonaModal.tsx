@@ -37,6 +37,9 @@ import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 import { Aviso, Kpi } from "./FichaPiezas";
 import SusAdelantos from "./SusAdelantos";
 import PasskeysDeLaPersona from "./PasskeysDeLaPersona";
+import TopeSugeridoFicha from "./TopeSugeridoFicha";
+import { UnirConDirectorio } from "./UnirConDirectorio";
+import { soles, textoDeTope } from "@/lib/adelantos/tope";
 import { formatDate } from "@/lib/format";
 import { LinkedDocumentsSection } from "@/components/admin/documentos/LinkedDocumentsSection";
 
@@ -51,6 +54,7 @@ export default function FichaPersonaModal({
   onEditar,
   onNuevoAdelanto,
   onVerAdelanto,
+  onCambio,
 }: {
   persona: BeneficiarioConSaldo;
   /** Todos los del tenant: acá se filtran los suyos. */
@@ -59,6 +63,8 @@ export default function FichaPersonaModal({
   onEditar: () => void;
   onNuevoAdelanto: () => void;
   onVerAdelanto: (a: DbAdelanto) => void;
+  /** Se guardó un cambio en la ficha (el tope sugerido): refrescar la lista. */
+  onCambio?: () => void;
 }) {
   const [pestana, setPestana] = useState<Pestana>("cuenta");
 
@@ -73,6 +79,7 @@ export default function FichaPersonaModal({
 
   const credito = estadoDeCredito(persona.limiteCredito, saldoParaLimite(persona.saldoPendiente));
   const cumplimiento = cumplimientoDe(persona);
+  const topeTxt = textoDeTope(credito);
   /* `saldoPendiente` = lo DADO abierto (tope, cobranza, recordatorio). Las
      dos direcciones van aparte: «Te debe» y «Le debes» (ADR-448 §2.6). */
   const debeAlgo = Object.values(persona.saldoPendiente).some((v) => v > 0);
@@ -191,17 +198,25 @@ export default function FichaPersonaModal({
           pie={cumplimiento == null ? "sin historial" : `${cumplimiento}% de lo que sacó`}
         />
         <Kpi
-          label="Le queda de tope"
-          valor={credito.estado === "sin-limite" ? "sin tope" : formatCurrency(Math.max(0, credito.disponible))}
+          label="Tope"
+          valor={credito.estado === "sin-limite" ? "Sin tope" : formatCurrency(credito.limite)}
           tono={credito.estado === "sin-limite" ? "neutro" : requiereAtencion(credito) ? "error" : "neutro"}
-          pie={credito.estado === "sin-limite" ? "no tiene límite cargado" : `de ${formatCurrency(credito.limite)}`}
+          pie={
+            credito.estado === "sin-limite"
+              ? "no tiene límite cargado"
+              : credito.estado === "holgado"
+                ? `puede pedir ${soles(credito.disponible)} más`
+                : (topeTxt?.texto.split(" · ")[0] ?? "")
+          }
         />
       </div>
+
+      {onCambio && <TopeSugeridoFicha persona={persona} suyos={suyos} onCambio={onCambio} />}
 
       {/* Lo que no cabe en un KPI pero cambia la decisión. */}
       <div className="flex flex-wrap items-center gap-2">
         {requiereAtencion(credito) && (
-          <Aviso tono="error">{credito.aviso}</Aviso>
+          <Aviso tono="error">{topeTxt?.detalle ?? credito.aviso}</Aviso>
         )}
         {Object.values(persona.saldoAFavor).some((v) => v > 0) && !hayDeuda(persona.recibidoPendiente ?? {}) && (
           <Aviso tono="info">Te entregó {fmtMonedas(persona.saldoAFavor)} de más.</Aviso>
@@ -333,6 +348,7 @@ export default function FichaPersonaModal({
           </div>
           )}
           <LinkedDocumentsSection entity="tercero" id={persona.id} nombre={persona.nombre} estadoDeCuenta />
+          <UnirConDirectorio beneficiarioId={persona.id} nombre={persona.nombre} forestPartyId={persona.forestPartyId ?? null} onCambio={onCambio} />
           <PasskeysDeLaPersona personaId={persona.id} nombre={persona.nombre} />
         </div>
       ) : suyos.length === 0 ? (

@@ -7,17 +7,20 @@
 
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { cumplimientoDe, type ResumenPersona } from "@/lib/adelantos/saldo-persona";
+import { faltaTelefono, faltanDatos } from "@/lib/adelantos/datos-persona";
 
 /** Lo mínimo para ordenar y filtrar: no hace falta el registro entero. */
 export type PersonaOrdenable = ResumenPersona & {
   nombre: string;
   limiteCredito?: number | null;
+  telefono?: string | null;
+  documento?: string | null;
 };
 
 export const ORDENES = ["saldo", "riesgo", "nombre", "adelantado", "cumplimiento", "reciente"] as const;
 export type OrdenPersonas = (typeof ORDENES)[number];
 
-export const FILTROS = ["todas", "deben", "al-dia", "riesgo"] as const;
+export const FILTROS = ["todas", "deben", "al-dia", "riesgo", "sin-telefono", "faltan-datos"] as const;
 export type FiltroPersonas = (typeof FILTROS)[number];
 
 /** Total crudo cruzando monedas — SÓLO para comparar/ordenar, nunca para mostrar: sin tipo de cambio cargado, es la mejor aproximación disponible (misma idea que "% de la cartera" en Cobranza). */
@@ -29,6 +32,8 @@ export function cumpleFiltro(p: PersonaOrdenable, filtro: FiltroPersonas): boole
     case "deben": return debeAlgo(p);
     case "al-dia": return !debeAlgo(p);
     case "riesgo": return requiereAtencion(estadoDeCredito(p.limiteCredito, saldoParaLimite(p.saldoPendiente)));
+    case "sin-telefono": return faltaTelefono(p);
+    case "faltan-datos": return faltanDatos(p);
     case "todas": return true;
   }
 }
