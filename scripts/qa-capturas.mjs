@@ -256,7 +256,10 @@ try {
   /* `--preset a,b` antepone recorridos guardados en `scripts/qa-pasos/<nombre>.json`
      (sembrar el cubicador se tipeó a mano 6 veces el 03-10: ahora es un preset). */
   const dePresets = presetsPedidos.flatMap((n) => leerPreset(n).pasos);
-  const crudo = arg("pasos-archivo") ? readFileSync(arg("pasos-archivo"), "utf8") : arg("pasos", "[]");
+  /* `--pasos <ruta>` también vale (25-10: un carril le pasó un archivo a --pasos y perdió la corrida). */
+  const pasosArg = arg("pasos", "[]");
+  const pasosEsRuta = !/^\s*[[{]/.test(pasosArg) && existsSync(pasosArg);
+  const crudo = arg("pasos-archivo") ? readFileSync(arg("pasos-archivo"), "utf8") : pasosEsRuta ? readFileSync(pasosArg, "utf8") : pasosArg;
   const propios = JSON.parse(crudo);
   if (!Array.isArray(propios)) throw new Error("los pasos van en un array");
   // Un {"preset": "x"} dentro de --pasos/--pasos-archivo también se abre (15-10: sólo lo hacía --preset).
