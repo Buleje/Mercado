@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { withApiHandler } from "@/lib/api-handler";
 import { ForestLothGuiaPermisoDB } from "@/lib/db/forest-loth-guia-permiso.db";
+import { ForestLothGuiaDesatarDB } from "@/lib/db/forest-loth-guia-desatar.db";
 import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 
@@ -21,6 +22,9 @@ import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
  *                            de sus trozas (`ForestLothGuiaPermisoDB.asignar`).
  *                            Re-chequea T7/T6 en la transacción: 422 con el
  *                            mismo mensaje del despacho si no entra.
+ *   DELETE ?gtfId=…        → «Desatar»: la guía y lo que se ató con ella vuelven
+ *                            a sin plan (`ForestLothGuiaDesatarDB.desatar`); 422
+ *                            si toca un mes cerrado o trozas de la tala del plan.
  *
  * Cambia el saldo de un permiso: sólo admin/dueño (como «atar líneas sin permiso»).
  * Las lecturas, los mismos roles que leen el despacho con guía.
@@ -86,5 +90,28 @@ export const POST = withApiHandler("forestal-loth-guia-permiso-post", async (req
     return NextResponse.json(r);
   } catch (err) {
     return lothErrorResponse(err, "loth.guia-permiso.POST", auth.tenantId);
+  }
+});
+
+const deleteSchema = z.object({ gtfId: id });
+
+export const DELETE = withApiHandler("forestal-loth-guia-permiso-delete", async (req: NextRequest) => {
+  const auth = await requireAdmin(req, ["admin", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+  const prohibido = soloAdminODueno(auth.role, "desatar una guía de su permiso");
+  if (prohibido) return prohibido;
+  const rl = await applyRateLimit(req, "GENEROUS", "loth");
+  if (rl) return rl;
+  if (!(await isSpecializationEnabled(auth.tenantId, "spec:forestal:loth-libro"))) {
+    return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
+  }
+  const parsed = deleteSchema.safeParse(Object.fromEntries(new URL(req.url).searchParams));
+  if (!parsed.success) return lothValidationResponse(parsed.error);
+  try {
+    const r = await ForestLothGuiaDesatarDB.desatar(auth.tenantId, parsed.data.gtfId, auth.username ?? "unknown");
+    if (!r) return NextResponse.json({ error: "not_found", message: "No encontramos esa guía." }, { status: 404 });
+    return NextResponse.json(r);
+  } catch (err) {
+    return lothErrorResponse(err, "loth.guia-permiso.DELETE", auth.tenantId);
   }
 });

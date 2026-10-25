@@ -38,14 +38,20 @@ export default function LothGtfAsignarPermiso({
   gtf,
   onClose,
   onHecho,
+  planInicial,
+  aboveModals = false,
 }: {
   gtf: { id: string; gtfNumber: string; piezasTotal: number | null };
   onClose: () => void;
   onHecho: () => void;
+  /** El permiso con que abre (el sugerido por «Atar lo que no tiene plan»); sin él, el del libro. */
+  planInicial?: string | null;
+  /** Se abre desde otra ventana (24-10: «Atar lo que no tiene plan»). */
+  aboveModals?: boolean;
 }) {
   const delLibro = useLothPermiso();
   const [planes, setPlanes] = useState<readonly PlanTablero[] | null>(delLibro?.planes.length ? delLibro.planes : null);
-  const [planId, setPlanId] = useState(delLibro?.plan?.id ?? "");
+  const [planId, setPlanId] = useState(planInicial ?? delLibro?.plan?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const medida = useSaldoDelPermiso(gtf.id, planId);
@@ -93,6 +99,7 @@ export default function LothGtfAsignarPermiso({
 
   return (
     <AdminModal
+      aboveModals={aboveModals}
       size="lg"
       open
       onClose={onClose}

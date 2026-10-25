@@ -54,14 +54,16 @@ describe("compararGuiaConPermiso", () => {
     ]);
   });
 
-  it("pasa: bloquea con el mismo mensaje T6 del despacho", () => {
-    const s = compararGuiaConPermiso([troza("1-0001", "Capirona", 3)], PLAN, medidas({ Capirona: { autorizado: 10, movilizado: 11 } }), false);
+  it("pasa: bloquea con el mismo mensaje T6 del despacho, con el plan nombrado como en el 422", () => {
+    const s = compararGuiaConPermiso([troza("1-0001", "Capirona", 3)], PLAN, medidas({ Capirona: { autorizado: 10, movilizado: 11 } }), false, "PO-2026-001");
     expect(s.especies[0]).toMatchObject({ estado: "pasa", yaSalioM3: 8, quedaM3: -1 });
     expect(s.bloqueo).toEqual({
       codigo: "T6_EXCESO_AUTORIZADO",
       especie: "Capirona",
-      mensaje: mensajeT6("Capirona", { autorizado: 10, movilizado: 8 }, 3, false),
+      /* La misma llamada que hace `enforceT6EnLote` para el 422 (con el nombre del plan). */
+      mensaje: mensajeT6("Capirona", { autorizado: 10, movilizado: 8 }, 3, false, "PO-2026-001"),
     });
+    expect(s.bloqueo?.mensaje).toMatch(/^Te pasas por 1\.000 m³ de Capirona: el plan PO-2026-001 tiene 2\.000 m³ de saldo\./);
     expect(s.bloqueo?.mensaje).toContain("ya se movilizaron 8 m³; este despacho de 3 m³ excede lo autorizado");
   });
 

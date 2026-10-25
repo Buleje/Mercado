@@ -29,6 +29,8 @@ import {
 } from "@/lib/forestal/loth-guia-despacho";
 import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
 import { useDespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
+import { useFrenoSaldoDespacho } from "./hooks/use-freno-saldo-despacho";
+import LothFrenoSaldoAviso from "./LothFrenoSaldoAviso";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import LothGuiaDatos from "./LothGuiaDatos";
@@ -84,6 +86,8 @@ export default function LothDespachoGuiaModal({
   const catalogo = useEspeciesConCatalogo();
   const g = useDespachoGuiaLoth({ onRegistrada: alRegistrar, catalogo });
   const avisoDeAntes = useTrozasDeAntes(g, trozasIniciales); // después del hook: su siembra corre antes
+  /* «Te pasas por 3,200 m³ de Tornillo…» antes de registrar; el 422 del servidor decide. */
+  const freno = useFrenoSaldoDespacho(g.prep ? g.planId : undefined, g.piezas);
   const cientificoDe = useCallback((comun: string) => catalogo.cientificoDe(comun), [catalogo]);
   const [tab, setTab] = useState<Pestana>("trozas");
   const [borrador, setBorrador] = useState<{ docs: DocumentoImprimible[]; activo: number } | null>(
@@ -186,6 +190,7 @@ export default function LothDespachoGuiaModal({
                 {g.faltan[0]?.campo}
               </span>
             )}
+            <LothFrenoSaldoAviso freno={freno} />
           </span>
         }
       >

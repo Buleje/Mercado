@@ -58,6 +58,7 @@ import {
   type VentanaExtraccion,
 } from "./loth-extraccion-tipos";
 import { piezasPorTrozado, trozadoEnPlanta, type PiezaCtp } from "./loth-trace-aserradero";
+import { excedeTechoM3 } from "./loth-t6";
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
@@ -744,7 +745,9 @@ export function cadenaPorEspecie(
  * `pct` = operación ÷ base × 100 (lo que se lleva usado; el aviso mira 80 y
  * 100). `nivel`: pasarse del AUTORIZADO es `exceso` (rojo); pasarse del CENSO
  * es `tope` (ámbar: el censo estima en pie, la tala mide con cinta). Sin base
- * conocida (`null`) → `sin_base`. Tolerancia: 0,01 m³.
+ * conocida (`null`) → `sin_base`. Tolerancia: contra lo AUTORIZADO, el redondeo
+ * de T6 (`excedeTechoM3`, 25-10: lo que no pasa a 3 decimales no es exceso y un
+ * litro más, sí); contra el censo, 0,01 m³ (la cinta).
  */
 export function saldoContra(base: number | null, operacion: number, contra: BaseDelTope): SaldoContra {
   if (base == null) return { m3: r4(-operacion), pct: null, nivel: "sin_base" };
@@ -754,7 +757,8 @@ export function saldoContra(base: number | null, operacion: number, contra: Base
     return { m3: saldo, pct: null, nivel: contra === "autorizado" ? "exceso" : "tope" };
   }
   const pct = r2((operacion / base) * 100);
-  if (saldo < -TOLERANCIA_M3) return { m3: saldo, pct, nivel: contra === "autorizado" ? "exceso" : "tope" };
+  const pasa = contra === "autorizado" ? excedeTechoM3(operacion, base) : saldo < -TOLERANCIA_M3;
+  if (pasa) return { m3: saldo, pct, nivel: contra === "autorizado" ? "exceso" : "tope" };
   if (saldo <= TOLERANCIA_M3 || pct >= UMBRAL_TOPE_PCT) return { m3: saldo, pct, nivel: "tope" };
   if (pct >= UMBRAL_AVISO_PCT) return { m3: saldo, pct, nivel: "atencion" };
   return { m3: saldo, pct, nivel: "ok" };
@@ -1467,7 +1471,7 @@ export function avisosDeExtraccion(detalles: readonly DetalleDePermiso[], op: Op
       const excesoAut = !e.fueraDelPlan && (e.saldoAutorizado?.nivel === "exceso" || (autorizado && e.avance.nivel === "exceso"));
       if (excesoAut) {
         const aut = e.censo.autorizadoM3 ?? 0;
-        const talaPasa = e.talado.m3 > aut + TOLERANCIA_M3;
+        const talaPasa = excedeTechoM3(e.talado.m3, aut);
         const cifra = r4(Math.max(e.talado.m3, e.movilizadoM3) - aut);
         // En una plantación nadie «autoriza»: el volumen es el que se registró (ADR-459).
         const techo = p.poa.plantacion ? `el registro tiene ${m3(aut)} m³` : `el plan autoriza ${m3(aut)} m³`;

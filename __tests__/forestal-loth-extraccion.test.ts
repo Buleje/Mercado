@@ -455,6 +455,10 @@ describe("saldoContra", () => {
     [100, 99.995, "autorizado", { m3: 0.005, pct: 100, nivel: "tope" }],
     [100, 101, "autorizado", { m3: -1, pct: 101, nivel: "exceso" }],
     [100, 101, "censo", { m3: -1, pct: 101, nivel: "tope" }],
+    // Contra lo AUTORIZADO, el redondeo de T6 (excedeTechoM3, 25-10); contra el censo, la cinta de 0,01.
+    [3, 3.0004, "autorizado", { m3: -0.0004, pct: 100.01, nivel: "tope" }],
+    [3, 3.002, "autorizado", { m3: -0.002, pct: 100.07, nivel: "exceso" }],
+    [3, 3.002, "censo", { m3: -0.002, pct: 100.07, nivel: "tope" }],
     [0, 0, "autorizado", { m3: 0, pct: null, nivel: "sin_base" }],
     [0, 2, "autorizado", { m3: -2, pct: null, nivel: "exceso" }],
     [null, 3, "censo", { m3: -3, pct: null, nivel: "sin_base" }],
@@ -478,6 +482,19 @@ describe("avisos al 80 % y al 100 %", () => {
     expect(conTala(10, 10)).toContain("avance_100:error");
     expect(conTala(12, 10)).toContain("exceso_autorizado:error");
     expect(conTala(5, 10).filter((t) => t.startsWith("avance"))).toEqual([]);
+  });
+
+  it("el exceso de lo talado usa el redondeo de T6: 3,0004 de 3 no es exceso; 3,002 sí y dice «se talaron»", () => {
+    expect(conTala(3.0004, 3)).not.toContain("exceso_autorizado:error");
+    expect(conTala(3.002, 3)).toContain("exceso_autorizado:error");
+    const r = armarExtraccion(
+      entrada({
+        planes: [plan({ especies: [{ speciesCommon: "Lupuna", cites: false, volumenAutorizadoM3: 3, arbolesAutorizados: null }] })],
+        arboles: [arbol("x", "1", "Lupuna", 50, { dapM: 1 })],
+        lineas: [linea("tala", { treeCode: "1", speciesCommon: "Lupuna", volumeM3: 3.002 })],
+      }),
+    );
+    expect(r.avisos.find((a) => a.tipo === "exceso_autorizado")?.texto).toMatch(/se talaron 3[.,]002 m³/);
   });
 
   it("sin autorizado, el tope es el censo aprovechable (ámbar)", () => {

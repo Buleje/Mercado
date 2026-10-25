@@ -23,12 +23,15 @@
  * Sí se guarda el título del plan en `tituloHabilitante` (columna «Permiso»,
  * Documentos del permiso). Mes cerrado → no se toca nada y se dice cuál.
  *
+ * La vuelta atrás («Desatar», 25-10): `ForestLothGuiaDesatarDB`.
+ *
  * tenantId 1er parámetro · auditoría `loth_linea_atar_plan` · caché invalidada.
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 import { ForestLothDB, LOTH_TX_OPTS, LothInvariantError } from "@/lib/db/forest-loth.db";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
@@ -47,7 +50,29 @@ import {
 } from "@/lib/forestal/loth-guia-permiso-saldo";
 
 type Db = Prisma.TransactionClient | typeof prisma;
-type PlanDelPermiso = { id: string } & PlanParaPoa;
+/** El plan al que se ata (lo que `cargar` lee, o el recién creado). */
+export type PlanDelPermiso = { id: string; planNumber: string | null; tituloHabilitante: string | null; parcelaCorta: string | null } & PlanParaPoa;
+
+/** La guía que se ata: lo que `cargar` lee de `ForestGtf`. */
+export interface GuiaParaAtar {
+  id: string;
+  gtfNumber: string;
+  items: Prisma.JsonValue;
+  planId: string | null;
+  titularName: string | null;
+  status: string;
+  tipo: string;
+  tituloHabilitante: string | null;
+  parcelaCorta: string | null;
+}
+
+export interface LineasAAtar {
+  despachos: { id: string; entryDate: Date }[];
+  trozados: { id: string; entryDate: Date }[];
+}
+
+/** Las columnas de la guía que `cargar` lee (las mismas para «Crear el plan desde la guía»). */
+export const SELECT_GUIA_PARA_ATAR = { id: true, gtfNumber: true, items: true, planId: true, titularName: true, status: true, tipo: true, tituloHabilitante: true, parcelaCorta: true } as const;
 
 const natural = (a: string, b: string) => a.localeCompare(b, "es", { numeric: true });
 
@@ -64,7 +89,7 @@ export class ForestLothGuiaPermisoDB {
     const [gtf, plan] = await Promise.all([
       prisma.forestGtf.findFirst({
         where: { tenantId, id: gtfId, deletedAt: null },
-        select: { id: true, gtfNumber: true, items: true, planId: true, titularName: true, status: true, tipo: true, tituloHabilitante: true, parcelaCorta: true },
+        select: SELECT_GUIA_PARA_ATAR,
       }),
       prisma.forestPlan.findFirst({
         where: { tenantId, id: planId, deletedAt: null },
@@ -75,6 +100,13 @@ export class ForestLothGuiaPermisoDB {
     if (!plan) {
       throw new LothInvariantError("Ese plan de manejo no existe en este negocio o está dado de baja: elige otro permiso.", "PLAN_NO_EXISTE", { planId });
     }
+    ForestLothGuiaPermisoDB.exigirSinPermiso(gtf);
+    return { gtf, plan, codigos: ForestLothGuiaPermisoDB.codigosDe(gtf) };
+  }
+
+  /** Los «no» de la guía: anulada, ya con permiso o de producto (también para «Crear el plan desde la guía»). */
+  static exigirSinPermiso(gtf: GuiaParaAtar): void {
+    const gtfId = gtf.id;
     if (gtf.status === "anulada") {
       throw new LothInvariantError(`La GTF ${gtf.gtfNumber} está anulada: ya no se le asigna permiso.`, "GUIA_PERMISO_NO_APLICA", { gtfId });
     }
@@ -84,8 +116,11 @@ export class ForestLothGuiaPermisoDB {
     if (gtf.tipo !== "trozas") {
       throw new LothInvariantError("Sólo se asigna permiso a guías de trozas.", "GUIA_PERMISO_NO_APLICA", { gtfId });
     }
-    const codigos = [...new Set(piezasDeItems(gtf.items).map((p) => p.codigo).filter(Boolean))].sort();
-    return { gtf, plan, codigos };
+  }
+
+  /** Los códigos de troza que imprime la guía (su foto en `items`). */
+  static codigosDe(gtf: Pick<GuiaParaAtar, "items">): string[] {
+    return [...new Set(piezasDeItems(gtf.items).map((p) => p.codigo).filter(Boolean))].sort();
   }
 
   /**
@@ -171,7 +206,9 @@ export class ForestLothGuiaPermisoDB {
     }
     const medidas = new Map<string, MedidaT6>();
     for (const clave of claves) medidas.set(clave, await ForestLothDB.medidaT6(db, tenantId, plan.id, delPlan, clave));
-    return compararGuiaConPermiso(trozas, delPlan, medidas, esPlanDePlantacion(plan));
+    /* El plan con el nombre del 422 del despacho (`enforceT6EnLote`): N°, si no el título. */
+    const nombre = plan.planNumber?.trim() || plan.tituloHabilitante?.trim() || null;
+    return compararGuiaConPermiso(trozas, delPlan, medidas, esPlanDePlantacion(plan), nombre);
   }
 
   /** La vista previa de «Asignar permiso»: por especie, la guía contra lo autorizado. Sin lock ni escritura. */
@@ -216,6 +253,19 @@ export class ForestLothGuiaPermisoDB {
     const c = await ForestLothGuiaPermisoDB.cargar(tenantId, gtfId, planId);
     if (!c) return null;
     const { gtf, plan, codigos } = c;
+    const lineas = await ForestLothGuiaPermisoDB.lineasAAtar(tenantId, gtf, codigos);
+    const r = await prisma.$transaction((tx) => ForestLothGuiaPermisoDB.atarEnTx(tx, tenantId, gtf, plan, codigos, lineas), LOTH_TX_OPTS);
+    ForestLothGuiaPermisoDB.despuesDeAtar(tenantId, gtf, plan, r, actor, "(antes: sin permiso)");
+    return { gtfId: gtf.id, planId: plan.id, ...r };
+  }
+
+  /**
+   * Lo que se ata con la guía (fuera de la tx): sus líneas de Despacho
+   * (`lineasDeLaGuia`) y los trozados sin plan NI árbol de sus trozas. Mes
+   * cerrado → 422 `PERIODO_CERRADO` con cuál, y no se toca nada.
+   */
+  static async lineasAAtar(tenantId: string, gtf: GuiaParaAtar, codigos: readonly string[]): Promise<LineasAAtar> {
+    if (!tenantId) throw new Error("tenantId is required");
     const [despachos, trozados, cierres] = await Promise.all([
       ForestLothDB.lineasDeLaGuia(tenantId, gtf),
       codigos.length === 0
@@ -224,7 +274,7 @@ export class ForestLothGuiaPermisoDB {
             /* Sólo las SIN árbol: una del libro con árbol se ata con su tala
                («Atar líneas sin permiso»); atarla acá la dejaría con plan y a
                su tala sin él (revisión 15-10). */
-            where: { tenantId, section: "trozado", status: "registrado", deletedAt: null, planId: null, treeCode: null, trozaCode: { in: codigos } },
+            where: { tenantId, section: "trozado", status: "registrado", deletedAt: null, planId: null, treeCode: null, trozaCode: { in: [...codigos] } },
             select: { id: true, entryDate: true },
           }),
       ForestLothCierreDB.list(tenantId),
@@ -237,65 +287,89 @@ export class ForestLothGuiaPermisoDB {
         { periodos: cerrados },
       );
     }
+    return { despachos, trozados };
+  }
 
+  /**
+   * El atado DENTRO de una transacción (la de `asignar` o la que además crea
+   * el plan): bloquea las filas del libro, re-mide T7/T6 bajo el lock de las
+   * especies y escribe guía, despachos y trozados con la condición en el WHERE.
+   */
+  static async atarEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    gtf: GuiaParaAtar,
+    plan: PlanDelPermiso,
+    codigos: readonly string[],
+    lineas: LineasAAtar,
+  ): Promise<{ despachos: number; trozados: number }> {
     const ids = (xs: readonly { id: string }[]) => xs.map((x) => x.id);
-    const r = await prisma.$transaction(async (tx) => {
-      /* Primero las filas del libro (las líneas de la guía y el Trozado de sus
-         trozas), después las especies (en `medir`): el orden del despacho y de
-         «Atar líneas sin permiso» (sin abrazo mortal), y nadie ata esas trozas a
-         otro permiso entre la medida y la escritura. */
-      const despachoIds = ids(despachos);
-      await tx.$queryRaw`
-        SELECT "id" FROM "ForestLothEntry"
-        WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
-          AND ("id" = ANY(${despachoIds}::text[])
-            OR ("section" = 'trozado' AND ("trozaCode" = ANY(${[...codigos]}::text[])
-              OR "trozaCode" IN (SELECT d."trozaCode" FROM "ForestLothEntry" d WHERE d."tenantId" = ${tenantId} AND d."id" = ANY(${despachoIds}::text[])))))
-        ORDER BY "id" FOR UPDATE`;
-      /* El cruce de permisos, T7 y T6 contra ESTE permiso, releídos bajo los locks:
-         la ventana sólo lo mostró; si en el medio cambió algo, decide esto. */
-      const saldo = await ForestLothGuiaPermisoDB.medir(tx, tenantId, despachoIds, plan, true);
-      if (saldo.bloqueo) {
-        throw new LothInvariantError(saldo.bloqueo.mensaje, saldo.bloqueo.codigo, { gtfId, planId: plan.id, species: saldo.bloqueo.especie });
-      }
-      /* La condición va en el WHERE: si otra persona la ató o la anuló entre la lectura y acá, no se pisa. */
-      const g = await tx.forestGtf.updateMany({
-        where: { tenantId, id: gtf.id, planId: null, deletedAt: null, status: { not: "anulada" } },
-        data: {
-          planId: plan.id,
-          tituloHabilitante: plan.tituloHabilitante?.trim() || gtf.tituloHabilitante,
-          parcelaCorta: gtf.parcelaCorta ?? plan.parcelaCorta,
-        },
-      });
-      if (g.count === 0) {
-        throw new LothInvariantError(`La GTF ${gtf.gtfNumber} cambió mientras tanto (ya tiene permiso o se anuló). Recarga la lista.`, "GUIA_PERMISO_NO_APLICA", { gtfId });
-      }
-      /* Sin cruce (lo midió `medir` bajo el lock): cada una de estas líneas tiene
-         su Trozado sin permiso o con ÉSTE. */
-      const d = await tx.forestLothEntry.updateMany({
-        where: { tenantId, id: { in: despachoIds }, planId: null, status: "registrado", deletedAt: null },
-        data: { planId: plan.id },
-      });
-      const t = await tx.forestLothEntry.updateMany({
-        where: { tenantId, id: { in: ids(trozados) }, planId: null, deletedAt: null },
-        data: { planId: plan.id },
-      });
-      return { despachos: d.count, trozados: t.count };
-    }, LOTH_TX_OPTS);
+    /* Primero las filas del libro (las líneas de la guía y el Trozado de sus
+       trozas), después las especies (en `medir`): el orden del despacho y de
+       «Atar líneas sin permiso» (sin abrazo mortal), y nadie ata esas trozas a
+       otro permiso entre la medida y la escritura. */
+    const despachoIds = ids(lineas.despachos);
+    await tx.$queryRaw`
+      SELECT "id" FROM "ForestLothEntry"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        AND ("id" = ANY(${despachoIds}::text[])
+          OR ("section" = 'trozado' AND ("trozaCode" = ANY(${[...codigos]}::text[])
+            OR "trozaCode" IN (SELECT d."trozaCode" FROM "ForestLothEntry" d WHERE d."tenantId" = ${tenantId} AND d."id" = ANY(${despachoIds}::text[])))))
+      ORDER BY "id" FOR UPDATE`;
+    /* El cruce de permisos, T7 y T6 contra ESTE permiso, releídos bajo los locks:
+       la ventana sólo lo mostró; si en el medio cambió algo, decide esto. */
+    const saldo = await ForestLothGuiaPermisoDB.medir(tx, tenantId, despachoIds, plan, true);
+    if (saldo.bloqueo) {
+      throw new LothInvariantError(saldo.bloqueo.mensaje, saldo.bloqueo.codigo, { gtfId: gtf.id, planId: plan.id, species: saldo.bloqueo.especie });
+    }
+    /* La condición va en el WHERE: si otra persona la ató o la anuló entre la lectura y acá, no se pisa. */
+    const g = await tx.forestGtf.updateMany({
+      where: { tenantId, id: gtf.id, planId: null, deletedAt: null, status: { not: "anulada" } },
+      data: {
+        planId: plan.id,
+        tituloHabilitante: plan.tituloHabilitante?.trim() || gtf.tituloHabilitante,
+        parcelaCorta: gtf.parcelaCorta ?? plan.parcelaCorta,
+      },
+    });
+    if (g.count === 0) {
+      throw new LothInvariantError(`La GTF ${gtf.gtfNumber} cambió mientras tanto (ya tiene permiso o se anuló). Recarga la lista.`, "GUIA_PERMISO_NO_APLICA", { gtfId: gtf.id });
+    }
+    /* Sin cruce (lo midió `medir` bajo el lock): cada una de estas líneas tiene
+       su Trozado sin permiso o con ÉSTE. */
+    const d = await tx.forestLothEntry.updateMany({
+      where: { tenantId, id: { in: despachoIds }, planId: null, status: "registrado", deletedAt: null },
+      data: { planId: plan.id },
+    });
+    const t = await tx.forestLothEntry.updateMany({
+      where: { tenantId, id: { in: ids(lineas.trozados) }, planId: null, deletedAt: null },
+      data: { planId: plan.id },
+    });
+    return { despachos: d.count, trozados: t.count };
+  }
 
+  /** Lo que sigue al commit del atado: el renglón del libro y la caché del saldo y de las guías. */
+  static despuesDeAtar(
+    tenantId: string,
+    gtf: Pick<GuiaParaAtar, "id" | "gtfNumber">,
+    plan: Pick<PlanDelPermiso, "id" | "planNumber" | "tituloHabilitante">,
+    r: { despachos: number; trozados: number },
+    actor: string,
+    antes: string,
+  ): void {
     auditLoth({
       tenantId,
       action: "loth_linea_atar_plan",
       entity: "ForestGtf",
       entityId: gtf.id,
-      detail: `Asignó el permiso ${plan.tituloHabilitante ?? plan.planNumber ?? plan.id} a la GTF ${gtf.gtfNumber} (antes: sin permiso): la guía, ${r.despachos} línea(s) de despacho y ${r.trozados} de trozado.`,
+      detail: `Asignó el permiso ${plan.tituloHabilitante ?? plan.planNumber ?? plan.id} a la GTF ${gtf.gtfNumber} ${antes}: la guía, ${r.despachos} línea(s) de despacho y ${r.trozados} de trozado.`,
       user: actor,
     });
     try {
       /* Los prefijos de `ForestLothDB` y `ForestGtfDB`: saldos, secciones y la lista de guías. */
       invalidateByPrefix(`forest-loth:${tenantId}`);
       invalidateByPrefix(`forest-gtf:${tenantId}`);
-    } catch { /* cache best-effort */ }
-    return { gtfId: gtf.id, planId: plan.id, ...r };
+    } catch (err) {
+      logger.error("[forest-loth-guia-permiso] no se pudo invalidar la caché tras atar", { error: String(err), tenantId, gtfId: gtf.id });
+    }
   }
 }

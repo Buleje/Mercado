@@ -104,6 +104,14 @@ describe("cupoPorEspecie — cupo y tolerancia", () => {
     expect(con(6.211).veredicto).toBe("excedido");
   });
 
+  it("contra lo AUTORIZADO, el redondeo de T6 (excedeTechoM3): 3,0004 de 3 no es exceso; 3,002 sí (la cinta del censo, no)", () => {
+    const con = (v: number) =>
+      cupoPorEspecie({ censo, talas: [{ treeCode: "1", speciesCommon: "Tornillo", volumeM3: v }], autorizadas: [{ speciesCommon: "Tornillo", volumenAutorizadoM3: 3 }] })[0];
+    expect(con(3.0004)).toMatchObject({ fuente: "autorizado", veredicto: "cerca" });
+    expect(con(3.002)).toMatchObject({ fuente: "autorizado", veredicto: "excedido" });
+    expect(con(3.009).veredicto).toBe("excedido"); // con 0,01 m³ callaba 9 litros que el saldo ya marcaba
+  });
+
   it("cerca desde el 90 %", () => {
     const con = (v: number) => cupoPorEspecie({ censo, talas: [{ treeCode: "1", speciesCommon: "Tornillo", volumeM3: v }] })[0].veredicto;
     expect(con(5.57)).toBe("ok"); // 89,8 %

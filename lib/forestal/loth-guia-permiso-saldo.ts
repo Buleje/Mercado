@@ -126,12 +126,15 @@ const ORDEN: Record<EstadoEspecieEnElPermiso, number> = { fuera_del_permiso: 0, 
  * @param trozas  las trozas de la guía que SALEN (con despacho vivo) y su Trozado.
  * @param delPlan las especies del permiso (`ForestLothDB.especiesT6DelPlan`).
  * @param medidas `ForestLothDB.medidaT6` por clave, de HOY: ya cuentan esta guía.
+ * @param plan    el N° del permiso (si no, su título), como lo nombra el 422 del
+ *                despacho: el «Te pasas por…» de la vista previa es el mismo.
  */
 export function compararGuiaConPermiso(
   trozas: readonly TrozaParaElPermiso[],
   delPlan: readonly EspecieReconocible[],
   medidas: ReadonlyMap<string, MedidaT6>,
   plantacion: boolean,
+  plan?: string | null,
 ): SaldoDeLaGuiaEnElPermiso {
   const sinEspecie: string[] = [];
   const deOtroPermiso: TrozaDeOtroPermiso[] = [];
@@ -186,7 +189,7 @@ export function compararGuiaConPermiso(
     if (pasa && !bloqueoT6) {
       bloqueoT6 = {
         codigo: "T6_EXCESO_AUTORIZADO",
-        mensaje: mensajeT6(g.especie, { autorizado: m.autorizado, movilizado: m.movilizado }, g.m3, plantacion),
+        mensaje: mensajeT6(g.especie, { autorizado: m.autorizado, movilizado: m.movilizado }, g.m3, plantacion, plan),
         especie: g.especie,
       };
     }

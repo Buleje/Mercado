@@ -26,8 +26,9 @@ import { fmtM3 } from "./cubicacion-formato";
 import type { ArbolParaElegir } from "./loth-censo-uso";
 import { claveEspecie } from "./loth-constants";
 import { talasDelPlan, type TalaConPlan } from "./loth-cupo-vista";
+import { excedeTechoM3 } from "./loth-t6";
 
-/** Pasarse de esto no es un exceso: es la cinta (10 litros). */
+/** Pasarse de esto no es un exceso: es la cinta (10 litros). Sólo contra lo censado; contra lo autorizado, `excedeTechoM3`. */
 export const TOLERANCIA_CUPO_M3 = 0.01;
 
 /** Desde este % de uso la especie está «cerca» de su cupo. */
@@ -162,9 +163,15 @@ interface Acum {
   arbolesAutorizados: number | null;
 }
 
-function veredictoDe(cupo: number | null, talado: number, pct: number | null): VeredictoCupo {
+/**
+ * Contra lo AUTORIZADO, el mismo redondeo que T6 (`excedeTechoM3`, 25-10): lo
+ * que no pasa a 3 decimales no es exceso y un litro más, sí; con 0,01 m³ el
+ * cupo callaba hasta 9 litros que el saldo ya marcaba. Contra lo CENSADO (no es
+ * techo legal: el cuadre con el censo) sigue la cinta, `TOLERANCIA_CUPO_M3`.
+ */
+function veredictoDe(cupo: number | null, talado: number, pct: number | null, fuente: FuenteCupo | null): VeredictoCupo {
   if (cupo == null || pct == null) return "sin_cupo";
-  if (talado > cupo + TOLERANCIA_CUPO_M3) return "excedido";
+  if (fuente === "autorizado" ? excedeTechoM3(talado, cupo) : talado > cupo + TOLERANCIA_CUPO_M3) return "excedido";
   if (pct >= UMBRAL_CERCA_PCT) return "cerca";
   return "ok";
 }
@@ -225,7 +232,7 @@ export function cupoPorEspecie(entrada: EntradaCupo): CupoEspecie[] {
     const fuente: FuenteCupo | null = autorizado != null ? "autorizado" : censado > 0 ? "censo" : null;
     const cupo = fuente === "autorizado" ? autorizado : fuente === "censo" ? censado : null;
     const pct = cupo != null && cupo > 0 ? Math.round((talado / cupo) * 1000) / 10 : null;
-    const veredicto = veredictoDe(cupo, talado, pct);
+    const veredicto = veredictoDe(cupo, talado, pct, fuente);
     filas.push({
       clave,
       especie: a.especie,

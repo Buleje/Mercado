@@ -39,7 +39,9 @@ const runId = Math.random().toString(36).slice(2, 8);
 const P = `TEST-LOTH-${runId}`;
 // Especies únicas por corrida: T6 agrega el volumen movilizado tenant-wide POR
 // ESPECIE, así que usar una especie real (SP) chocaría con los datos del
-// tenant. `SP` no lo autoriza ningún plan (T6 se salta); `SP6` sí, sólo en su test.
+// tenant. `SP` la autoriza el plan de la corrida con un techo que nadie alcanza
+// (25-10: lo que sale sin plan se mide contra cada vigente que tenga la especie; si
+// ninguno la autoriza, pasa); `SP6` tiene techo de verdad, sólo en su test.
 const SP = `Especie-${runId}`;
 const SP6 = `EspecieT6-${runId}`;
 // T7 — SP7ok autorizada en su plan; SP7bad fuera del POA (debe frenar al movilizar).
@@ -84,6 +86,13 @@ const HAS_DB: boolean = await prisma
 beforeAll(async () => {
   if (!HAS_DB) return;
   await purgar();
+  // El plan que autoriza `SP`: los despachos sin plan de la corrida se miden contra él.
+  const plan = await prisma.forestPlan.create({
+    data: { tenantId: TENANT, titularName: `${P} titular SP`, createdBy: P, estado: "vigente" },
+  });
+  await prisma.forestPlanSpecies.create({
+    data: { tenantId: TENANT, planId: plan.id, speciesCommon: SP, volumenAutorizadoM3: 100_000 },
+  });
 }, 30_000);
 
 afterAll(async () => {
@@ -272,8 +281,10 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     expect(desp.status).toBe("registrado");
   }, 30_000);
 
-  it("T7 — sin plan atado (código libre) NO bloquea, aunque la especie no figure", async () => {
-    // Un despacho sin planId es "código libre": no se juzga contra ningún POA.
+  it("T7 — sin plan atado y ningún plan vigente la autoriza: pasa (segunda revisión 25-10)", async () => {
+    // T7 juzga sólo la línea con plan. Lo sin plan de una especie que ningún vigente
+    // tiene no se frena en el servidor (la pantalla del despacho lo avisa): frenarlo
+    // rechazaba la madera de un título sin su plan cargado.
     const free = `${P}-T7free`;
     await crear({ section: "tala", treeCode: free, speciesCommon: SP7bad, volumeM3: 5 });
     await crear({ section: "trozado", treeCode: free, trozaCode: `${free}-A`, speciesCommon: SP7bad, volumeM3: 4 });

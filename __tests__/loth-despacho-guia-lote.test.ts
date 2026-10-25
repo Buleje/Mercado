@@ -326,9 +326,10 @@ describe("T6 por especie con la suma de la guía", () => {
     const e = await error(despachar(["L-001", "L-002", "L-003"]));
     expect(e.code).toBe("T6_EXCESO_AUTORIZADO");
     expect(e.message).toBe(
-      "El POA autoriza 5 m³ de Tornillo y ya se movilizaron 0 m³; este despacho de 6 m³ excede lo autorizado en 1 m³. Es la infracción que sanciona OSINFOR.",
+      "Te pasas por 1.000 m³ de Tornillo: el plan PO-1 tiene 5.000 m³ de saldo. " +
+        "El POA autoriza 5 m³ de Tornillo y ya se movilizaron 0 m³; este despacho de 6 m³ excede lo autorizado en 1 m³. Es la infracción que sanciona OSINFOR.",
     );
-    expect(e.detail).toEqual({ species: "Tornillo", autorizado: 5, movilizado: 0, pedido: 6, excesoM3: 1 });
+    expect(e.detail).toEqual({ species: "Tornillo", autorizado: 5, movilizado: 0, pedido: 6, excesoM3: 1, planId: PLAN, plan: "PO-1" });
     expect(despachos()).toHaveLength(0);
   });
 
@@ -337,7 +338,7 @@ describe("T6 por especie con la suma de la guía", () => {
     for (const c of ["L-001", "L-002", "L-003"]) trozado(c, 2);
     await despachar(["L-001"], { gtfNumber: "019-001-0000100" });
     const e = await error(despachar(["L-002", "L-003"]));
-    expect(e.detail).toEqual({ species: "Tornillo", autorizado: 5, movilizado: 2, pedido: 4, excesoM3: 1 });
+    expect(e.detail).toEqual({ species: "Tornillo", autorizado: 5, movilizado: 2, pedido: 4, excesoM3: 1, planId: PLAN, plan: "PO-1" });
   });
 
   it("justo en el techo pasa (≤, nunca ==)", async () => {
@@ -353,7 +354,7 @@ describe("T6 por especie con la suma de la guía", () => {
     trozado("C-001", 2, { speciesCommon: CAP.comun, speciesScientific: CAP.cientifico });
     trozado("C-002", 2, { speciesCommon: CAP.comun, speciesScientific: CAP.cientifico });
     const e = await error(despachar(["C-001", "C-002", "L-001"]));
-    expect(e.detail).toEqual({ species: CAP.comun, autorizado: 3, movilizado: 0, pedido: 4, excesoM3: 1 });
+    expect(e.detail).toEqual({ species: CAP.comun, autorizado: 3, movilizado: 0, pedido: 4, excesoM3: 1, planId: PLAN, plan: "PO-1" });
     expect(e.message).toContain("de Capirona");
   });
 
@@ -389,6 +390,118 @@ describe("T6 por especie con la suma de la guía", () => {
     const excepcion = new Map<string, DespachoT6DeLaEspecie>();
     await despachar(["L-001", "L-002", "L-003"], {}, { excepcionT6: excepcion });
     expect([...excepcion.values()]).toEqual([expect.objectContaining({ especie: "Tornillo", autorizado: 5, antes: 1, despacha: 6 })]);
+    expect(despachos()).toHaveLength(3);
+  });
+});
+
+describe("T6 de lo SIN plan: contra todos los planes vigentes que le ponen techo (revisión 25-10)", () => {
+  /** Un plan vigente más; `tor: undefined` = sin Tornillo, `null` = sin especies. */
+  function otroPlan(id: string, numero: string, creado: string, especies: Array<{ comun: string; cientifico: string; m3: number | null }>) {
+    H.db.planes.push({ id, tenantId: T, deletedAt: null, estado: "vigente", planType: "PO", planNumber: numero, tituloHabilitante: null, parcelaCorta: null, createdAt: new Date(creado) });
+    especies.forEach((e, i) =>
+      H.db.especies.push({ id: `${id}-esp-${i}`, tenantId: T, planId: id, deletedAt: null, speciesCommon: e.comun, speciesScientific: e.cientifico, volumenAutorizadoM3: e.m3 }),
+    );
+  }
+  const sinPlan = (codes: string[], m3: number) => codes.forEach((c) => trozado(c, m3, { planId: null }));
+  const capturarLock = () => {
+    const llamadas: unknown[][] = [];
+    const original = H.tx.$queryRaw;
+    (H.tx as { $queryRaw: unknown }).$queryRaw = async (...a: unknown[]) => {
+      llamadas.push(a);
+      return original.call(H.tx, ...(a as []));
+    };
+    return { llamadas, soltar: () => ((H.tx as { $queryRaw: unknown }).$queryRaw = original) };
+  };
+
+  it("plan A con Tornillo 5 + plan B más nuevo SIN la especie: 6 m³ sin plan se frenan contra A", async () => {
+    sembrarPlan({ tor: 5 }); // A = PO-1, creado el 16-10
+    otroPlan("plan-b", "PO-B", "2026-10-20T00:00:00Z", [{ ...CAP, m3: 100 }]);
+    sinPlan(["S-001", "S-002", "S-003"], 2);
+    const e = await error(despachar(["S-001", "S-002", "S-003"]));
+    expect(e.code).toBe("T6_EXCESO_AUTORIZADO");
+    expect(e.message).toMatch(/^Te pasas por 1\.000 m³ de Tornillo: el plan PO-1 tiene 5\.000 m³ de saldo\./);
+    expect(e.detail).toMatchObject({ species: "Tornillo", autorizado: 5, movilizado: 0, pedido: 6, excesoM3: 1, planId: PLAN, plan: "PO-1" });
+    expect(despachos()).toHaveLength(0);
+  });
+
+  it("también con el plan más nuevo SIN especies cargadas (no es referencia)", async () => {
+    sembrarPlan({ tor: 5 });
+    otroPlan("plan-b", "PO-B", "2026-10-20T00:00:00Z", []);
+    sinPlan(["S-001", "S-002", "S-003"], 2);
+    const e = await error(despachar(["S-001", "S-002", "S-003"]));
+    expect(e.detail).toMatchObject({ planId: PLAN, excesoM3: 1 });
+  });
+
+  it("dos planes con Tornillo: el que no se pasa deja pasar, el segundo que se pasa frena y se nombra", async () => {
+    sembrarPlan({ tor: 100 }); // PO-1: sobra
+    otroPlan("plan-b", "PO-B", "2026-10-20T00:00:00Z", [{ ...TOR, m3: 5 }]); // PO-B: 6 de 5
+    sinPlan(["S-001", "S-002", "S-003"], 2);
+    const e = await error(despachar(["S-001", "S-002", "S-003"]));
+    expect(e.code).toBe("T6_EXCESO_AUTORIZADO");
+    expect(e.message).toContain("el plan PO-B tiene 5.000 m³ de saldo");
+    expect(e.message).not.toContain("PO-1");
+    expect(e.detail).toMatchObject({ planId: "plan-b", plan: "PO-B", autorizado: 5, excesoM3: 1 });
+  });
+
+  it("los dos se pasan: UN rechazo que nombra los dos planes", async () => {
+    sembrarPlan({ tor: 4 });
+    otroPlan("plan-b", "PO-B", "2026-10-20T00:00:00Z", [{ ...TOR, m3: 5 }]);
+    sinPlan(["S-001", "S-002", "S-003"], 2);
+    const e = await error(despachar(["S-001", "S-002", "S-003"]));
+    expect(e.message).toMatch(/^Se pasa de lo autorizado en 2 planes: lo despachado sin plan cuenta en el saldo de cada uno\./);
+    expect(e.message).toContain("el plan PO-1 tiene 4.000 m³");
+    expect(e.message).toContain("el plan PO-B tiene 5.000 m³");
+    expect((e.detail as { especies: Array<{ plan: string; excesoM3: number }> }).especies.map((x) => [x.plan, x.excesoM3]).sort()).toEqual([["PO-1", 2], ["PO-B", 1]]);
+  });
+
+  it("si caben en todos, pasa y el lock cubre las filas de TODOS los planes, ordenadas", async () => {
+    sembrarPlan({ tor: 100 });
+    otroPlan("plan-b", "PO-B", "2026-10-20T00:00:00Z", [{ ...TOR, m3: 50 }]);
+    sinPlan(["S-001", "S-002"], 2);
+    const lock = capturarLock();
+    try {
+      await despachar(["S-001", "S-002"]);
+    } finally {
+      lock.soltar();
+    }
+    expect(despachos()).toHaveLength(2);
+    const sobreEspecies = lock.llamadas.find((a) => String((a[0] as readonly string[]).join("?")).includes('"ForestPlanSpecies"'));
+    const valores = (sobreEspecies?.slice(1) ?? []).flatMap((v) => (v && typeof v === "object" && "values" in v ? (v as { values: unknown[] }).values : [v]));
+    expect(valores).toEqual(expect.arrayContaining(["esp-tor", "plan-b-esp-0"]));
+    const ids = valores.filter((v) => v === "esp-tor" || v === "plan-b-esp-0");
+    expect(ids).toEqual([...ids].sort());
+  });
+
+  it("hay planes vigentes pero ninguno autoriza la especie: lo sin plan se despacha sin 422 (segunda revisión 25-10; la pantalla avisa)", async () => {
+    sembrarPlan(); // Tornillo y Capirona
+    trozado("X-001", 1, { planId: null, speciesCommon: "Cedro", speciesScientific: "Cedrela odorata" });
+    await despachar(["X-001"]);
+    expect(despachos()).toHaveLength(1);
+  });
+
+  it("la especie que ningún plan autoriza no apaga el T6 de la otra: Cedro pasa, el Tornillo que se pasa frena", async () => {
+    sembrarPlan({ tor: 1 });
+    trozado("X-001", 1, { planId: null, speciesCommon: "Cedro", speciesScientific: "Cedrela odorata" });
+    sinPlan(["S-001"], 2);
+    const e = await error(despachar(["X-001", "S-001"]));
+    expect(e.code).toBe("T6_EXCESO_AUTORIZADO");
+    expect(e.detail).toMatchObject({ species: "Tornillo", planId: PLAN, excesoM3: 1 });
+    expect(despachos()).toHaveLength(0);
+  });
+
+  it("sin ningún plan vigente no hay contra qué medir: pasa, como siempre", async () => {
+    sinPlan(["S-001", "S-002"], 50);
+    await despachar(["S-001", "S-002"]);
+    expect(despachos()).toHaveLength(2);
+  });
+
+  it("con `excepcionT6` (importador) anota UNA vez por especie —el plan que más se pasa— y nunca rechaza", async () => {
+    sembrarPlan({ tor: 5 });
+    otroPlan("plan-b", "PO-B", "2026-10-20T00:00:00Z", [{ ...TOR, m3: 4 }]);
+    sinPlan(["S-001", "S-002", "S-003"], 2);
+    const excepcion = new Map<string, DespachoT6DeLaEspecie>();
+    await despachar(["S-001", "S-002", "S-003"], {}, { excepcionT6: excepcion });
+    expect([...excepcion.values()]).toEqual([expect.objectContaining({ especie: "Tornillo", autorizado: 4, despacha: 6 })]);
     expect(despachos()).toHaveLength(3);
   });
 });

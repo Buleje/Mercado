@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cascadaDeFila, cascadaDelPlan } from "@/lib/forestal/loth-saldo-cascada";
 import { computeBalance } from "@/lib/forestal/loth-constants";
+import { excedeT6 } from "@/lib/forestal/loth-t6";
 
 const fila = (o: Partial<Parameters<typeof cascadaDeFila>[0]> = {}) => ({
   species: "Bolaina", cites: false, autorizado: 100, talado: 0, trozado: 0, movilizado: 0, consumido: 0, ...o,
@@ -34,8 +35,20 @@ describe("cascadaDeFila — dónde está el volumen registrado", () => {
     expect(c.excedido).toBe(true);
   });
 
-  it("una diferencia de redondeo bajo 0,01 m³ no es exceso", () => {
-    expect(cascadaDeFila(fila({ talado: 100.004 })).excedido).toBe(false);
+  it("lo talado se juzga con la misma regla del techo que lo movilizado (excedeTechoM3, 3 decimales)", () => {
+    /* Bajo el litro no pasa; desde el litro, sí (antes la tala toleraba 10 litros y la guía, ninguno). */
+    expect(cascadaDeFila(fila({ autorizado: 3, talado: 3.0004 })).excedido).toBe(false);
+    expect(cascadaDeFila(fila({ autorizado: 3, talado: 3.002 })).excedido).toBe(true);
+    expect(cascadaDeFila(fila({ autorizado: 3, talado: 3 })).excedido).toBe(false);
+  });
+
+  it("lo movilizado se juzga con la regla del freno de la guía (excedeTechoM3, 3 decimales)", () => {
+    /* 161,265 sobre 161,258: la tolerancia de 0,01 lo dejaba en verde y la guía se frenaba. */
+    expect(cascadaDeFila(fila({ autorizado: 161.258, movilizado: 161.265 })).excedido).toBe(true);
+    /* 2,0003 sobre 2,000 no pasa a litros: ni la cascada ni el freno lo marcan. */
+    expect(cascadaDeFila(fila({ autorizado: 2, movilizado: 2.0003 })).excedido).toBe(false);
+    expect(excedeT6({ autorizado: 161.258, movilizado: 161.265 }, 0)).toBe(true);
+    expect(excedeT6({ autorizado: 2, movilizado: 2 }, 0.0003)).toBe(false);
   });
 
   it("sin base no inventa un porcentaje", () => {

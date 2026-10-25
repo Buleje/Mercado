@@ -35,7 +35,11 @@ const H = vi.hoisted(() => {
     conteos: { especies: 3, censo: 4, asientos: 11, guias: 0, contratos: 0 },
     /** Suma de `volumenAutorizadoM3`; `null` = plan sin especies cargadas. */
     sumaAutorizada: null as number | null,
+    /** Lo que `bajaDelPlan` desata de sus guías (25-10) y las que deja por mes cerrado. */
+    desatado: { guias: 0, despachos: 0, trozados: 0, avisos: [] as string[] },
+    enMesCerrado: [] as string[],
   };
+  const bajas: { tenantId: string; planId: string }[] = [];
   const wheres: Record<string, unknown>[] = [];
   const updates: { where: unknown; data: Record<string, unknown> }[] = [];
   const deletes: unknown[] = [];
@@ -49,7 +53,7 @@ const H = vi.hoisted(() => {
       return estado.conteos[clave];
     };
 
-  return { estado, wheres, updates, deletes, audits, invalidados, contar };
+  return { estado, wheres, updates, deletes, audits, invalidados, contar, bajas };
 });
 
 vi.mock("@/lib/prisma", () => ({
@@ -88,6 +92,17 @@ vi.mock("@/lib/cache", () => ({
   },
 }));
 
+/* La baja corre dentro de la tx de `bajaDelPlan`, que primero desata sus guías: acá, la tx es el mock de prisma. */
+vi.mock("@/lib/db/forest-loth-guia-desatar.db", () => ({
+  ForestLothGuiaDesatarDB: {
+    bajaDelPlan: async (tenantId: string, planId: string, darDeBaja: (tx: unknown) => Promise<unknown>) => {
+      H.bajas.push({ tenantId, planId });
+      const { prisma } = await import("@/lib/prisma");
+      return { resultado: await darDeBaja(prisma), desatado: H.estado.desatado, enMesCerrado: H.estado.enMesCerrado };
+    },
+  },
+}));
+
 vi.mock("@/lib/forestal/ctp-audit", () => ({
   auditCtp: (p: Record<string, unknown>) => {
     H.audits.push(p);
@@ -108,6 +123,9 @@ beforeEach(() => {
   H.estado.plan = { ...PLAN };
   H.estado.conteos = { especies: 3, censo: 4, asientos: 11, guias: 0, contratos: 0 };
   H.estado.sumaAutorizada = 185;
+  H.estado.desatado = { guias: 0, despachos: 0, trozados: 0, avisos: [] };
+  H.estado.enMesCerrado = [];
+  H.bajas.length = 0;
   H.wheres.length = 0;
   H.updates.length = 0;
   H.deletes.length = 0;
@@ -182,12 +200,36 @@ describe("eliminarPlan — baja lógica auditada", () => {
     expect(String(H.audits[0].detail)).toContain("11 asientos");
   });
 
+  it("sus guías vuelven a sin plan en la MISMA transacción, y el rastro dice cuáles quedan", async () => {
+    H.estado.desatado = {
+      guias: 2,
+      despachos: 14,
+      trozados: 3,
+      avisos: ["Con esto el plan PO 9 queda pasado por 1,500 m³ de Shihuahuaco: lo sin plan cuenta en su saldo hasta que lo ates."],
+    };
+    H.estado.enMesCerrado = ["001-0000123"];
+    await ForestPlanDB.eliminarPlan("t-main", PLAN.id, "qaadmin");
+    expect(H.bajas).toEqual([{ tenantId: "t-main", planId: PLAN.id }]);
+    expect(H.updates).toHaveLength(1); // el update del plan corrió dentro de bajaDelPlan
+    const detalle = String(H.audits[0].detail);
+    expect(detalle).toContain("Vuelven a sin plan: 2 guía(s), 14 línea(s) de despacho y 3 de trozado");
+    expect(detalle).toContain("Quedan atadas por mes cerrado: GTF 001-0000123");
+    expect(detalle).toContain("PO 9 queda pasado por 1,500 m³");
+  });
+
+  it("sin guías atadas el rastro no inventa un desatado", async () => {
+    await ForestPlanDB.eliminarPlan("t-main", PLAN.id, "qaadmin");
+    expect(String(H.audits[0].detail)).not.toContain("Vuelven a sin plan");
+    expect(String(H.audits[0].detail)).not.toContain("mes cerrado");
+  });
+
   it("un plan de otro tenant devuelve null y no escribe nada (404, no update a ciegas)", async () => {
     H.estado.plan = null; // el findFirst lleva tenantId en el WHERE
     const r = await ForestPlanDB.eliminarPlan("t-otro", PLAN.id, "qaadmin");
     expect(r).toBeNull();
     expect(H.updates).toHaveLength(0);
     expect(H.audits).toHaveLength(0);
+    expect(H.bajas).toHaveLength(0); // ni siquiera se desata nada
     expect(H.wheres[0]).toMatchObject({ modelo: "planFindFirst", tenantId: "t-otro", deletedAt: null });
   });
 

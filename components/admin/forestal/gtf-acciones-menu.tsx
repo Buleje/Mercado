@@ -9,26 +9,20 @@
  * de trozas está por ingresar. Todo lo demás va en el menú ⋯ (`ActionMenu`,
  * que se dibuja en un portal: el `overflow-x-auto` de la tabla no lo corta),
  * con las MISMAS condiciones que tenían los botones de la fila:
- *   · Datos           → sólo si la guía guardó su ficha de SERFOR (importada)
- *   · Hoja SERFOR     → siempre (anulada: con su sello)
- *   · Resumen interno → siempre (R1-R4, `gtf-resumen-interno`)
- *   · Imprimir en talonario → viva: sólo los valores, en su lugar, sobre el
- *     talonario preimpreso de la matricial (15-10, `GtfMatricialModal`)
- *   · Enviar al monte → viva: a la cola «Por imprimir» del celular del monte
- *     + WhatsApp (16-10, `GtfEnviarAlMonteModal`). Si ya salió del talonario
- *     dice «Ya impresa en la hoja N° …» y abre el mismo modal, que sólo deja
- *     «Reimprimir en otra hoja» con motivo (otra hoja numerada = a propósito)
- *   · Documentos del permiso → siempre; sin permiso sólo los papeles de la guía (ADR-482)
- *     (ADR-467: las carpetas del plan, por `planId`; ver, descargar,
- *     imprimir y enviar por WhatsApp — 08-10)
- *   · Cubicar en Oxapampina → viva y de trozas (K7 · ADR-483: con descuentos, a la cuenta de una persona)
- *   · Ver ingresos    → la guía ya entró al Libro CTP
- *   · Asignar permiso → viva, de trozas y sin permiso (15-10: las trozas a mano
- *     nacen sin él); además va a la vista como botón, igual que «Ingresar al CTP»
- *   · Pedir corrección → viva (ADR-512): la guía emitida no se edita; el pedido va
- *     a la plataforma. Con uno abierto queda deshabilitada y la fila lleva su chip
- *   · Deshacer la importación → viva e importada
- *   · Anular          → viva
+ *   · Datos → sólo si guardó su ficha de SERFOR (importada) · Hoja SERFOR y
+ *     Resumen interno (R1-R4) → siempre (anulada: con su sello)
+ *   · Imprimir en talonario → viva: sólo los valores sobre el talonario
+ *     preimpreso de la matricial (15-10, `GtfMatricialModal`)
+ *   · Enviar al monte → viva: a la cola «Por imprimir» del celular + WhatsApp
+ *     (16-10); ya impresa dice «Ya impresa en la hoja N° …» y sólo deja
+ *     «Reimprimir en otra hoja» con motivo
+ *   · Documentos del permiso → siempre; sin permiso, sólo los de la guía (ADR-467/482)
+ *   · Cubicar en Oxapampina → viva y de trozas (K7 · ADR-483)
+ *   · Ver ingresos → ya entró al Libro CTP
+ *   · Asignar permiso → viva, de trozas y sin permiso (15-10); también como botón
+ *   · Desatar del permiso → viva, de trozas y con permiso (25-10): vuelve a sin plan
+ *   · Pedir corrección → viva (ADR-512); con uno abierto, deshabilitada y con chip
+ *   · Deshacer la importación → viva e importada · Anular → viva
  * `soloLectura` (la pestaña «Anuladas y otras»): sólo Datos, Hoja, Resumen y
  * Documentos del permiso.
  *
@@ -36,7 +30,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Ban, CheckCircle2, Eye, FileText, FileWarning, FolderOpen, Link2, LogIn, Printer, ReceiptText, Ruler, Send, Undo2 } from "@buleje/design-system/icons";
+import { Ban, CheckCircle2, Eye, FileText, FileWarning, FolderOpen, Link2, Link2Off, LogIn, Printer, ReceiptText, Ruler, Send, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
@@ -48,6 +42,7 @@ import { verIngresosDelCtp } from "./LothGtfCtp";
 import GtfDocumentosModal from "./GtfDocumentosModal";
 import LothGtfCubicarModal from "./LothGtfCubicarModal";
 import LothGtfAsignarPermiso from "./LothGtfAsignarPermiso";
+import LothGtfDesatarPermiso from "./LothGtfDesatarPermiso";
 import GtfMatricialModal from "./GtfMatricialModal";
 import GtfEnviarAlMonteModal from "./GtfEnviarAlMonteModal";
 import { useColaMonteCtx } from "./cola-monte-contexto";
@@ -87,6 +82,7 @@ export function opcionesGtf(
     abrirDocumentos,
     abrirCubicar,
     abrirPermiso,
+    abrirDesatar,
     abrirTalonario,
     abrirMonte,
     abrirCorreccion,
@@ -102,6 +98,7 @@ export function opcionesGtf(
     abrirDocumentos?: () => void;
     abrirCubicar?: () => void;
     abrirPermiso?: () => void;
+    abrirDesatar?: () => void;
     abrirTalonario?: () => void;
     abrirMonte?: () => void;
     abrirCorreccion?: () => void;
@@ -177,6 +174,9 @@ export function opcionesGtf(
   if (viva && abrirPermiso && pideAsignarPermiso(g)) {
     a.push({ id: "permiso", label: "Asignar permiso", hint: "Salió sin permiso: ata la guía, sus trozas y sus despachos al permiso que elijas", icon: Link2, onSelect: abrirPermiso });
   }
+  if (viva && abrirDesatar && g.planId && g.tipo === "trozas") {
+    a.push({ id: "desatar", label: "Desatar del permiso", hint: "La guía y sus líneas vuelven a sin plan: cuentan en el saldo de cada plan vigente", icon: Link2Off, tone: "danger", onSelect: abrirDesatar });
+  }
   if (viva && g.ctp === "ingresada") {
     a.push({ id: "ingresos", label: "Ver sus ingresos en el CTP", hint: "Abre Ingresos del Libro CTP", icon: LogIn, onSelect: verIngresosDelCtp });
   }
@@ -211,7 +211,13 @@ export function opcionesGtf(
 export default function AccionesGtf({
   g, porIngresar = false, soloLectura = false, onIngresarCtp, onHoja, onResumen, onAnular, onRecargar,
 }: AccionesGtfProps) {
-  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | "permiso" | "talonario" | "monte" | null>(null);
+  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | "cubicar" | "permiso" | "desatar" | "talonario" | "monte" | null>(null);
+  const cerrar = () => setAbierto(null);
+  /* Se escribió algo (permiso, desatar, deshacer): se cierra y la lista se relee. */
+  const hecho = () => {
+    setAbierto(null);
+    onRecargar?.();
+  };
   /* La pastilla de la fila (vivo o, si no hay, la última confirmada): ya impresa = otro envío gastaría otra hoja. */
   const monteImpresa = etiquetaMonteImpresa(useColaMonteCtx()?.porGuia.get(g.id));
   /* ADR-512: el pedido de corrección de la guía (una sola llamada para toda la lista, en el proveedor). */
@@ -225,6 +231,7 @@ export default function AccionesGtf({
         abrirDocumentos: () => setAbierto("documentos"),
         abrirCubicar: () => setAbierto("cubicar"),
         abrirPermiso: () => setAbierto("permiso"),
+        abrirDesatar: () => setAbierto("desatar"),
         abrirTalonario: () => setAbierto("talonario"),
         abrirMonte: () => setAbierto("monte"),
         abrirCorreccion: corr.puede ? () => corr.abrir("fila") : undefined,
@@ -273,28 +280,9 @@ export default function AccionesGtf({
       {abierto === "cubicar" && <LothGtfCubicarModal g={g} onClose={() => setAbierto(null)} />}
       {abierto === "talonario" && <GtfMatricialModal g={g} onClose={() => setAbierto(null)} />}
       {abierto === "monte" && <GtfEnviarAlMonteModal g={g} onClose={() => setAbierto(null)} />}
-      {abierto === "permiso" && (
-        <LothGtfAsignarPermiso
-          gtf={g}
-          onClose={() => setAbierto(null)}
-          onHecho={() => {
-            setAbierto(null);
-            onRecargar?.();
-          }}
-        />
-      )}
-      {abierto === "deshacer" && (
-        <ModalDeshacer
-          gtfId={g.id}
-          gtfNumber={g.gtfNumber}
-          aboveModals={false}
-          onClose={() => setAbierto(null)}
-          onHecho={() => {
-            setAbierto(null);
-            onRecargar?.();
-          }}
-        />
-      )}
+      {abierto === "permiso" && <LothGtfAsignarPermiso gtf={g} onClose={cerrar} onHecho={hecho} />}
+      {abierto === "desatar" && <LothGtfDesatarPermiso gtf={g} permiso={permisoDeLaGuiaGtf(g)} onClose={cerrar} onHecho={hecho} />}
+      {abierto === "deshacer" && <ModalDeshacer gtfId={g.id} gtfNumber={g.gtfNumber} aboveModals={false} onClose={cerrar} onHecho={hecho} />}
     </div>
   );
 }

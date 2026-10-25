@@ -160,3 +160,26 @@ describe("opcionesGtf · «Cubicar en Oxapampina»", () => {
     expect(etiquetaMonteImpresa({ ...t, estado: "impresa" })).toBe("Ya impresa: falta el N° de la hoja");
   });
 });
+
+describe("opcionesGtf · «Desatar del permiso» (25-10)", () => {
+  const g = (extra: Partial<Gtf> = {}): Gtf => ({
+    id: "g1", gtfNumber: "019-001-0000001", gtfDate: "2025-10-09", tipo: "trozas",
+    titularName: "Titular", tituloHabilitante: "PO-2026-001", parcelaCorta: null, transportista: null, transportistaDoc: null,
+    conductor: null, conductorLicencia: null, placaVehiculo: null, origen: null, destino: null,
+    items: null, volumenTotalM3: "20.3030", piezasTotal: 22, observations: null, status: "emitida", annulledReason: null,
+    planId: "plan-P",
+    ...extra,
+  });
+  const nada = () => undefined;
+  const desatar = (x: Gtf, soloLectura = false) =>
+    opcionesGtf(x, { soloLectura, abrirDatos: nada, abrirDeshacer: nada, abrirDesatar: nada, abrirPermiso: nada, onHoja: nada, onResumen: nada }).find((o) => o.id === "desatar");
+
+  it("sólo en una guía de trozas viva CON permiso, en rojo; la sin permiso ofrece asignar", () => {
+    expect(desatar(g())).toMatchObject({ label: "Desatar del permiso", tone: "danger" });
+    expect(desatar(g({ planId: null }))).toBeUndefined();
+    expect(desatar(g({ status: "anulada" }))).toBeUndefined();
+    expect(desatar(g({ deletedAt: "2026-10-01" }))).toBeUndefined();
+    expect(desatar(g(), true)).toBeUndefined();
+    expect(desatar(g({ tipo: "madera_aserrada" }))).toBeUndefined();
+  });
+});

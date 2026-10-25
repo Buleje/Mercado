@@ -39,24 +39,83 @@ export interface MedidaT6 {
   movilizado: number;
 }
 
-/** ¿Despachar `nuevo` m³ más pasa el techo? (a 4 decimales, como siempre). */
+/** A litros (3 decimales): lo que se escribe en la guía y en el libro, y lo que dice `fmtM3`. */
+const r3 = (n: number) => Math.round(n * 1000) / 1000;
+
+/**
+ * LA regla del techo en m³ (25-10, revisión del freno): `usado` pasa `techo`
+ * sólo si lo pasa a 3 decimales. Una sola para el freno de la guía, el 422, la
+ * cascada y el semáforo: con 4 decimales, 2,0003 sobre 2,000 frenaba con «Te
+ * pasas por 0,000 m³»; con la tolerancia de 0,01 de la cascada, 161,265 sobre
+ * 161,258 se veía en verde y la guía se frenaba. Siempre `≤`: en el borde, pasa.
+ */
+export const excedeTechoM3 = (usado: number, techo: number): boolean => r3(usado) > r3(techo);
+
+/** ¿Despachar `nuevo` m³ más pasa el techo? (`excedeTechoM3`). */
 export const excedeT6 = (m: MedidaT6, nuevo: number): boolean =>
-  m.autorizado != null && r4(m.movilizado + nuevo) > r4(m.autorizado);
+  m.autorizado != null && excedeTechoM3(m.movilizado + nuevo, m.autorizado);
 
-/** Cuánto pasa el techo `movilizado + nuevo` (a 4 decimales, como `excedeT6`); ≤ 0 = no pasa. */
+/** Cuánto pasa el techo `movilizado + nuevo`, a 3 decimales como `excedeTechoM3`; ≤ 0 = no pasa. */
 export const excesoT6 = (m: { autorizado: number; movilizado: number }, nuevo: number): number =>
-  r4(r4(m.movilizado + nuevo) - r4(m.autorizado));
+  r3(r3(m.movilizado + nuevo) - r3(m.autorizado));
 
-/** El rechazo `T6_EXCESO_AUTORIZADO` del servidor, palabra por palabra (16-10: con cuánto se pasa). */
-export function mensajeT6(species: string, m: { autorizado: number; movilizado: number }, nuevo: number, plantacion: boolean): string {
+/**
+ * La frase que abre el rechazo (24-10, Brandon: «te pasas por 3,2 m³»):
+ * «Te pasas por 3,200 m³ de Tornillo: el plan 096 tiene 2,000 m³ de saldo.»
+ * La misma en la pantalla (antes de enviar, `frenoDeSaldo`) y en el 422 del
+ * servidor. Con el saldo ya en cero o debajo, dice que no queda.
+ */
+export function tePasasT6(species: string, m: { autorizado: number; movilizado: number }, nuevo: number, plan: string | null): string {
+  const exceso = excesoT6(m, nuevo);
+  const saldo = r3(r3(m.autorizado) - r3(m.movilizado));
+  const delPlan = plan?.trim() ? `el plan ${plan.trim()}` : "el plan";
+  return saldo > 0
+    ? `Te pasas por ${fmtM3(exceso)} m³ de ${species}: ${delPlan} tiene ${fmtM3(saldo)} m³ de saldo.`
+    : `Te pasas por ${fmtM3(exceso)} m³ de ${species}: ${delPlan} ya no tiene saldo de ${species}.`;
+}
+
+/**
+ * El rechazo `T6_EXCESO_AUTORIZADO` del servidor, palabra por palabra (16-10: con cuánto se pasa).
+ * Con `plan` (su N° o título; `null` = sin nombre), abre con `tePasasT6`.
+ */
+export function mensajeT6(
+  species: string,
+  m: { autorizado: number; movilizado: number },
+  nuevo: number,
+  plantacion: boolean,
+  plan?: string | null,
+): string {
   const [techo, exceso] = plantacion
     ? [`El registro de la plantación tiene ${r4(m.autorizado)} m³ de ${species}`, "excede lo registrado"]
     : [`El POA autoriza ${r4(m.autorizado)} m³ de ${species}`, "excede lo autorizado"];
   const pasa = excesoT6(m, nuevo);
+  const abre = plan !== undefined && pasa > 0 ? `${tePasasT6(species, m, nuevo, plan)} ` : "";
   return (
-    `${techo} y ya se movilizaron ${r4(m.movilizado)} m³; ` +
+    `${abre}${techo} y ya se movilizaron ${r4(m.movilizado)} m³; ` +
     `este despacho de ${r4(nuevo)} m³ ${exceso}${pasa > 0 ? ` en ${pasa} m³` : ""}. Es la infracción que sanciona OSINFOR.`
   );
+}
+
+/**
+ * Lo que sale SIN plan y ningún plan vigente lo autoriza (25-10, segunda
+ * revisión del freno): con planes vigentes que tienen especies cargadas y
+ * ninguno con ésta, no hay saldo contra qué medirla. Es un AVISO de la pantalla
+ * del despacho (`frenoSinPlan`), no un rechazo: el servidor no lo frena (T7
+ * sólo juzga la línea con plan; en Blas todos los planes son sólo Tornillo y
+ * frenar rechazaba la madera de un título sin su plan cargado).
+ */
+export const ningunPlanAutorizaT6 = (species: string): string =>
+  `Ningún plan vigente autoriza ${species}. Si es de un título tuyo, crea su plan en Planes.`;
+
+/**
+ * La cabecera del rechazo con VARIOS saldos que se pasan: lo sin plan cuenta en
+ * el saldo de cada plan vigente (ADR-459) y puede pasar a más de uno a la vez.
+ */
+export function cabeceraT6(excesos: readonly { planId: string; species: string }[]): string {
+  const planes = new Set(excesos.map((e) => e.planId)).size;
+  return planes > 1
+    ? `Se pasa de lo autorizado en ${planes} planes: lo despachado sin plan cuenta en el saldo de cada uno.`
+    : `${excesos.length} especies se pasan de lo autorizado.`;
 }
 
 /** T6 de un plan para la vista previa: sus especies y la medida de cada clave que traen las guías. */
@@ -113,7 +172,7 @@ export function despachoT6DeLaGuia(
       autorizadoM3: r4(m.autorizado),
       yaSalioM3: yaSalio,
       despachaM3: r4(suma),
-      excesoM3: r4(yaSalio + suma - m.autorizado),
+      excesoM3: excesoT6({ autorizado: m.autorizado, movilizado: yaSalio }, suma),
       plantacion,
       mensaje,
     });
@@ -176,7 +235,7 @@ export function excesosDelDespacho(acc: ReadonlyMap<string, DespachoT6DeLaEspeci
   return [...acc.values()]
     .filter((e) => excedeT6({ autorizado: e.autorizado, movilizado: e.antes }, e.despacha))
     .map((e) => {
-      const excesoM3 = r4(e.antes + e.despacha - e.autorizado);
+      const excesoM3 = excesoT6({ autorizado: e.autorizado, movilizado: e.antes }, e.despacha);
       return { ...e, excesoM3, aporteM3: r4(Math.min(e.despacha, excesoM3)) };
     });
 }

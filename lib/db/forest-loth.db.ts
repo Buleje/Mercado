@@ -42,7 +42,7 @@ import { closedPeriodOf } from "@/lib/forestal/loth-cierre-types";
 import type { AtarSinPlanConteo, AtarSinPlanResultado, AtarSeccion } from "@/lib/forestal/loth-atar-sin-plan";
 import { avisoCupoAlTalar, entradaDelPlan, motivoCupoValido, notaSobreCupo, MOTIVO_CUPO_MIN, type AvisoCupo, type EntradaCupo } from "@/lib/forestal/loth-cupo-especie";
 import { resolverTalaContraCenso } from "@/lib/forestal/loth-tala-del-censo";
-import { anotarDespachoT6, claveT6, excedeT6, excesoT6, mensajeT6, type DespachoT6DeLaEspecie, type MedidaT6 } from "@/lib/forestal/loth-t6";
+import { anotarDespachoT6, cabeceraT6, claveT6, excedeT6, excesoT6, mensajeT6, type DespachoT6DeLaEspecie, type MedidaT6 } from "@/lib/forestal/loth-t6";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { logger } from "@/lib/logger";
 import {
@@ -162,7 +162,15 @@ export class LothInvariantError extends Error {
       // El árbol elegido para una troza a mano (15-10): no está en el censo vivo
       // del negocio, o la guía va sin permiso (el árbol es de uno: se elige ése).
       | "ARBOL_NO_EXISTE"
-      | "GUIA_SIN_PERMISO_CON_ARBOL",
+      | "GUIA_SIN_PERMISO_CON_ARBOL"
+      // «Crear el plan desde la guía» (24-10): la guía no cita título, falta el
+      // titular, una especie que no trae, lo autorizado de sólo algunas, o el
+      // plan de ese título ya existe (→ 409: se ata a ése).
+      | "GUIA_SIN_TITULO"
+      | "TITULAR_REQUERIDO"
+      | "ESPECIE_NO_ESTA_EN_LA_GUIA"
+      | "FALTA_VOLUMEN_AUTORIZADO"
+      | "PLAN_YA_EXISTE",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -1970,7 +1978,8 @@ export class ForestLothDB {
    * (`computeBalance.exceso`); acá se IMPIDE al escribir el despacho.
    *
    * Aplica sólo cuando el plan define un volumen para esa especie (si no, es
-   * código libre sin techo → se salta, mismo criterio que T4 sin tala).
+   * código libre sin techo → se salta, mismo criterio que T4 sin tala). Lo que
+   * sale SIN plan se mide contra cada vigente que la tenga (`enforceT6EnLote`).
    *
    * La especie se reconoce con `resolverEspecie` (clave común; si no, el
    * científico), la MISMA regla que T7 y `computeBalance`: el plan anota
@@ -2016,16 +2025,29 @@ export class ForestLothDB {
    * sii lo pasaría alguna troza asentada de a una (cada una veía las
    * anteriores ya escritas); el rechazo nombra la especie, lo que despacha y
    * cuánto se pasa — el mismo de la vista previa (`compararGuiaConPermiso`).
-   * Con `excepcion`, anota la suma de la especie (`anotarDespachoT6`): lo
-   * mismo que anotar troza por troza.
+   *
+   * Lo que sale SIN plan (25-10, revisión del freno): cuenta en el saldo de
+   * CADA plan vigente (ADR-459, `medidasT6`), así que se mide contra TODOS los
+   * vigentes que le ponen techo a su especie y se frena si deja a cualquiera
+   * por encima (el rechazo nombra el plan que se pasa). Antes se medía sólo
+   * contra el vigente más nuevo: con un plan nuevo sin la especie, lo sin plan
+   * no se frenaba y pasaba el techo de otro. Un plan que no tiene la especie
+   * (o no tiene especies cargadas) no es referencia. Si NINGÚN vigente
+   * autoriza la especie, pasa (25-10, segunda revisión): lo sin plan no tiene
+   * plan contra el cual juzgar la especie —T7 sólo mira la línea con plan— y
+   * frenarlo rechazaba madera de un título que todavía no tiene su plan cargado
+   * (en Blas todos los planes son sólo Tornillo). La pantalla del despacho lo
+   * avisa sin frenar (`frenoSinPlan` → `ningunPlanAutorizaT6`). Sin ningún
+   * plan vigente, tampoco hay contra qué medir: pasa, como siempre.
    *
    * Lock: UNA sentencia sobre las filas de autorización de TODAS las especies
-   * en juego, ordenada por id; después se mide bajo el lock.
+   * en juego —de todos los planes que se miden—, ordenada por id; después se
+   * mide bajo el lock.
    *
-   * Un solo plan por llamada en la práctica: la guía rechaza trozas de dos
-   * planes (o de un plan y sin plan) antes de llegar acá. Si algún día no, una
-   * troza SIN plan también cuenta en el movilizado del otro plan (`medidasT6`)
-   * y habría que sumarla a ese grupo.
+   * `excepcion` (sólo el importador, ADR-468): misma medida y mismo lock; en
+   * vez de rechazar, anota la suma de cada especie (`anotarDespachoT6`) UNA
+   * vez: contra el plan de la línea si lo trae, si no contra el plan que más
+   * se pasa. Nunca rechaza.
    */
   private static async enforceT6EnLote(
     tx: Prisma.TransactionClient,
@@ -2039,35 +2061,49 @@ export class ForestLothDB {
     });
     if (medibles.length === 0) return;
 
-    // Plan de referencia: el de la línea, o el vigente del tenant (leído una vez).
-    let vigente: string | null | undefined;
+    type InfoPlan = { planType: string | null; planNumber: string | null; tituloHabilitante: string | null };
+    const infoDe = new Map<string, InfoPlan | null>();
+    let vigentes: string[] | undefined;
     const delPlanDe = new Map<string, Awaited<ReturnType<typeof ForestLothDB.especiesT6DelPlan>>>();
-    const grupos = new Map<string, { planId: string; clave: string; species: string; total: number }>();
-    for (const d of medibles) {
-      let planId = d.planId;
-      if (!planId) {
-        if (vigente === undefined) {
-          vigente =
-            (await tx.forestPlan.findFirst({
-              where: { tenantId, deletedAt: null, estado: "vigente" },
-              orderBy: { createdAt: "desc" },
-              select: { id: true },
-            }))?.id ?? null;
-        }
-        planId = vigente;
-      }
-      if (!planId) continue;
-      // La especie del plan que le corresponde (común o científico).
+    // En serie: la tx es UNA conexión.
+    const especiesDe = async (planId: string) => {
       let delPlan = delPlanDe.get(planId);
       if (!delPlan) {
         delPlan = await ForestLothDB.especiesT6DelPlan(tx, tenantId, planId);
         delPlanDe.set(planId, delPlan);
       }
-      const clave = claveT6(delPlan, d.species, d.speciesScientific);
-      if (!clave) continue; // sin techo declarado → no se bloquea
+      return delPlan;
+    };
+    type Grupo = { planId: string; clave: string; species: string; total: number; atado: boolean };
+    const grupos = new Map<string, Grupo>();
+    const sumar = (planId: string, clave: string, species: string, volumen: number, atado: boolean) => {
       const k = `${planId}\u0000${clave}`;
-      const g = grupos.get(k) ?? { planId, clave, species: d.species, total: 0 };
-      grupos.set(k, { ...g, total: r4(g.total + d.volumen) });
+      const g = grupos.get(k) ?? { planId, clave, species, total: 0, atado: false };
+      grupos.set(k, { ...g, total: r4(g.total + volumen), atado: g.atado || atado });
+    };
+    for (const d of medibles) {
+      if (d.planId) {
+        // La especie del plan que le corresponde (común o científico).
+        const clave = claveT6(await especiesDe(d.planId), d.species, d.speciesScientific);
+        if (clave) sumar(d.planId, clave, d.species, d.volumen, true); // sin clave: sin techo declarado → no se bloquea
+        continue;
+      }
+      if (vigentes === undefined) {
+        const filas = await tx.forestPlan.findMany({
+          where: { tenantId, deletedAt: null, estado: "vigente" },
+          orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+          select: { id: true, planType: true, planNumber: true, tituloHabilitante: true },
+        });
+        for (const { id, ...info } of filas) infoDe.set(id, info);
+        vigentes = filas.map((p) => p.id);
+      }
+      for (const planId of vigentes) {
+        const delPlan = await especiesDe(planId);
+        if (delPlan.length === 0) continue; // a medio configurar: no juzga (como T7)
+        const clave = claveT6(delPlan, d.species, d.speciesScientific);
+        if (!clave) continue; // el plan no tiene la especie: no es referencia (si ninguno la tiene, pasa)
+        sumar(planId, clave, d.species, d.volumen, false);
+      }
     }
     if (grupos.size === 0) return;
 
@@ -2089,36 +2125,47 @@ export class ForestLothDB {
       const delPlan = delPlanDe.get(planId) ?? [];
       for (const [clave, m] of await ForestLothDB.medidasT6(tx, tenantId, planId, delPlan, claves)) medidas.set(`${planId}\u0000${clave}`, m);
     }
+    const conTecho = [...grupos].flatMap(([k, g]) => {
+      const m = medidas.get(k);
+      return m && m.autorizado != null ? [{ g, m: { autorizado: m.autorizado, movilizado: m.movilizado } }] : [];
+    });
 
-    /* Todas las especies que se pasan van en UN rechazo (revisión 16-10: con
-       dos que se pasaban, se corregía una y recién ahí aparecía la otra). */
-    type Grupo = typeof grupos extends Map<string, infer G> ? G : never;
-    const excesos: Array<{ g: Grupo; m: { autorizado: number; movilizado: number } }> = [];
-    for (const [k, g] of grupos) {
-      const medida = medidas.get(k) ?? { autorizado: null, movilizado: 0 };
-      if (excepcion && medida.autorizado != null) {
-        anotarDespachoT6(excepcion, g.clave, g.species, { autorizado: medida.autorizado, movilizado: medida.movilizado }, g.total);
-        continue;
+    if (excepcion) {
+      // Una anotación por especie: el plan de la línea; si no trae, el que más se pasa.
+      const elegido = new Map<string, (typeof conTecho)[number]>();
+      const cuantoPasa = (x: (typeof conTecho)[number]) => x.m.movilizado + x.g.total - x.m.autorizado;
+      for (const x of conTecho) {
+        const previo = elegido.get(x.g.clave);
+        if (!previo || (x.g.atado && !previo.g.atado) || (x.g.atado === previo.g.atado && cuantoPasa(x) > cuantoPasa(previo))) {
+          elegido.set(x.g.clave, x);
+        }
       }
-      if (medida.autorizado == null || !excedeT6(medida, g.total)) continue;
-      excesos.push({ g, m: { autorizado: medida.autorizado, movilizado: medida.movilizado } });
+      for (const { g, m } of elegido.values()) anotarDespachoT6(excepcion, g.clave, g.species, m, g.total);
+      return;
     }
+
+    /* Todas las que se pasan van en UN rechazo (revisión 16-10: con dos que se
+       pasaban, se corregía una y recién ahí aparecía la otra). */
+    const excesos = conTecho.filter(({ g, m }) => excedeT6(m, g.total));
     if (excesos.length === 0) return;
 
     // En una plantación no hay POA que autorice: el techo es lo REGISTRADO (ADR-459).
-    const esPlantacion = new Map<string | null, boolean>();
     for (const { g } of excesos) {
-      if (esPlantacion.has(g.planId)) continue;
-      const plan = await tx.forestPlan.findFirst({
-        where: { tenantId, id: g.planId },
-        select: { planType: true, planNumber: true, tituloHabilitante: true },
-      });
-      esPlantacion.set(g.planId, esPlanDePlantacion(plan));
+      if (infoDe.has(g.planId)) continue;
+      infoDe.set(
+        g.planId,
+        await tx.forestPlan.findFirst({
+          where: { tenantId, id: g.planId },
+          select: { planType: true, planNumber: true, tituloHabilitante: true },
+        }),
+      );
     }
-    const mensajes = excesos.map(({ g, m }) => mensajeT6(g.species, m, g.total, esPlantacion.get(g.planId) ?? false));
+    /* Y su N° (o título): el rechazo abre con «Te pasas por X m³ de Tornillo: el plan N tiene S m³ de saldo» (24-10). */
+    const nombreDe = (planId: string) => infoDe.get(planId)?.planNumber?.trim() || infoDe.get(planId)?.tituloHabilitante?.trim() || null;
+    const mensajes = excesos.map(({ g, m }) => mensajeT6(g.species, m, g.total, esPlanDePlantacion(infoDe.get(g.planId) ?? null), nombreDe(g.planId)));
     const [primero] = excesos;
     throw new LothInvariantError(
-      mensajes.length === 1 ? mensajes[0] : `${mensajes.length} especies se pasan de lo autorizado. ${mensajes.join(" ")}`,
+      mensajes.length === 1 ? mensajes[0] : `${cabeceraT6(excesos.map(({ g }) => g))} ${mensajes.join(" ")}`,
       "T6_EXCESO_AUTORIZADO",
       {
         species: primero.g.species,
@@ -2126,8 +2173,18 @@ export class ForestLothDB {
         movilizado: r4(primero.m.movilizado),
         pedido: r4(primero.g.total),
         excesoM3: excesoT6(primero.m, primero.g.total),
+        planId: primero.g.planId,
+        plan: nombreDe(primero.g.planId),
         ...(excesos.length > 1
-          ? { especies: excesos.map(({ g, m }) => ({ species: g.species, pedido: r4(g.total), excesoM3: excesoT6(m, g.total) })) }
+          ? {
+              especies: excesos.map(({ g, m }) => ({
+                species: g.species,
+                pedido: r4(g.total),
+                excesoM3: excesoT6(m, g.total),
+                planId: g.planId,
+                plan: nombreDe(g.planId),
+              })),
+            }
           : {}),
       },
     );
@@ -2204,7 +2261,13 @@ export class ForestLothDB {
       }
       return acc;
     };
-    //  (a) trozas ya despachadas → su volumen según Trozado, de la especie
+    //  (a) trozas ya despachadas → su volumen según Trozado, de la especie.
+    //  A qué plan cuenta lo decide el DESPACHO (su planId, o sin plan); el
+    //  volumen sale del Trozado de esa troza sea cual sea su plan (25-10): al dar
+    //  de baja un plan con tala (`ForestLothGuiaDesatarDB`), lo despachado vuelve
+    //  a sin plan pero sus trozados con árbol siguen en el plan dado de baja, y
+    //  filtrarlos por alcance dejaba esos m³ fuera de todo saldo (Blas: los 22 del
+    //  096, 20,303 m³). El código de troza es único por tienda (T1/T2).
     const despachadas = await db.forestLothEntry.findMany({
       where: { ...delAlcance, section: "despacho_troza" },
       select: { trozaCode: true },
@@ -2214,7 +2277,7 @@ export class ForestLothDB {
     if (codes.length > 0) {
       const trozados = await db.forestLothEntry.groupBy({
         by: ["speciesCommon", "speciesScientific"],
-        where: { ...delAlcance, section: "trozado", trozaCode: { in: codes } },
+        where: { tenantId, status: "registrado", deletedAt: null, section: "trozado", trozaCode: { in: codes } },
         _sum: { volumeM3: true },
       });
       movTrozas = sumarPorClave(trozados.map((t) => ({ ...t, cuanto: Number(t._sum.volumeM3 ?? 0) })));
@@ -2247,8 +2310,11 @@ export class ForestLothDB {
    *    tala la juzga el censo y el DMC (T8).
    *
    * Se aplica SÓLO cuando la línea declara su plan (`planId`): sin plan atado
-   * (código libre) no hay contra qué validar. A diferencia de T6, NO cae al plan
-   * vigente por defecto — eso bloquearía movimientos legítimos de otros planes.
+   * (código libre) no hay contra qué validar. A diferencia de T6 —que mide lo sin
+   * plan contra CADA vigente con techo (`enforceT6EnLote`, 25-10)—, NO cae a los
+   * planes vigentes: eso bloquearía movimientos legítimos de otros planes. Que lo
+   * sin plan no lo autorice ningún vigente NO frena en el servidor (25-10): es un
+   * aviso de la pantalla del despacho (`frenoSinPlan` → `ningunPlanAutorizaT6`).
    * Sin especie, o sin especies cargadas todavía (plan a medio configurar, como
    * la plantación 19-SEC de Blas: 0 especies) → no bloquea. Pasarse del volumen
    * en la tala tampoco: eso lo frena T6 al despachar.

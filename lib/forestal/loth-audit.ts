@@ -57,6 +57,8 @@ export type LothAuditAction =
   | "loth_linea_delete"
   // Líneas sin plan atadas a un permiso (ADR-459, 02-10-2026)
   | "loth_linea_atar_plan"
+  // Guía desatada de su permiso: ella y sus líneas vuelven a sin plan (25-10)
+  | "loth_linea_desatar_plan"
   // Tala registrada por encima del cupo de su especie, con su motivo (T9)
   | "loth_tala_sobre_cupo"
   // Tala que pasa lo CENSADO de su especie (sin autorizado en el plan): aviso, sin freno

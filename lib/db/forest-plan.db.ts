@@ -306,18 +306,34 @@ export class ForestPlanDB {
     return tx.forestPlan.create({ data: ForestPlanDB.datosDelPlan(tenantId, input, contratoId) });
   }
 
-  /** Lo que sigue al commit de un `crearPlanEnTx`: caché del plan y el renglón del alta. */
+  /**
+   * Las especies de un plan recién creado DENTRO de la misma transacción (24-10:
+   * «Crear el plan desde la guía» crea plan, registro y el atado de la guía —
+   * o todo o nada). La misma fila y el mismo «no se repite» que el alta con
+   * especies; un `createManyAndReturn` (una ida al pooler).
+   */
+  static async crearEspeciesEnTx(tx: Prisma.TransactionClient, tenantId: string, planId: string, especies: readonly EspecieDelAlta[]) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (especies.length === 0) return [];
+    ForestPlanDB.exigirSinRepetir(especies.map((e) => e.speciesCommon));
+    return tx.forestPlanSpecies.createManyAndReturn({
+      data: especies.map((e) => ForestPlanDB.datosDeEspecie(tenantId, planId, e)),
+    });
+  }
+
+  /** Lo que sigue al commit de un `crearPlanEnTx`: caché del plan y el renglón del alta (con sus especies, si entraron). */
   static despuesDelAlta(
     tenantId: string,
     plan: { id: string; planType: string; planNumber: string | null; titularName: string },
     actor: string,
+    especies: readonly { speciesCommon: string; volumenAutorizadoM3: Prisma.Decimal }[] = [],
   ): void {
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch (err) {
       logger.error("[forest-plan] no se pudo invalidar la caché tras el alta", { error: String(err), tenantId, planId: plan.id });
     }
-    ForestPlanDB.auditarAlta(tenantId, plan, [], actor);
+    ForestPlanDB.auditarAlta(tenantId, plan, especies, actor);
   }
 
   /** El renglón del alta: qué plan y, si vino con su registro, qué especies y cuántos m³. */
@@ -470,8 +486,14 @@ export class ForestPlanDB {
    *
    * **Baja lógica** (`deletedAt`), nunca borrado físico: los asientos del
    * LO-TH y las guías que lo citan siguen existiendo —son lo que se declara
-   * ante la ARFFS— y su `planId` apunta acá. El plan desaparece del selector y
-   * deja de ser el activo; la historia que se firmó bajo él, no.
+   * ante la ARFFS—. El plan desaparece del selector y deja de ser el activo;
+   * la historia que se firmó bajo él, no.
+   *
+   * Sus guías de trozas vivas vuelven a sin plan en la MISMA transacción
+   * (25-10, `ForestLothGuiaDesatarDB.bajaDelPlan`): atadas a un plan de baja se
+   * esfumarían del saldo de todos; sin plan cuentan en el de cada vigente
+   * (ADR-459). Las de un mes cerrado se quedan y se dicen en el rastro. Las
+   * líneas de la tala (Trozado con árbol) siguen apuntando acá.
    *
    * Devuelve `null` si no existe (o ya estaba de baja) para que la ruta
    * responda 404 en vez de fabricar un update sobre nada. Lo que colgaba se
@@ -487,10 +509,14 @@ export class ForestPlanDB {
     if (!existe) return null;
 
     const usos = await ForestPlanDB.usosDelPlan(tenantId, planId);
-    const plan = await prisma.forestPlan.update({
-      where: { id: planId, tenantId } satisfies Prisma.ForestPlanWhereUniqueInput,
-      data: { deletedAt: new Date(), isActive: false },
-    });
+    /* Dinámico: forest-loth.db importa esta clase (ciclo). */
+    const { ForestLothGuiaDesatarDB } = await import("@/lib/db/forest-loth-guia-desatar.db");
+    const { resultado: plan, desatado, enMesCerrado } = await ForestLothGuiaDesatarDB.bajaDelPlan(tenantId, planId, (tx) =>
+      tx.forestPlan.update({
+        where: { id: planId, tenantId } satisfies Prisma.ForestPlanWhereUniqueInput,
+        data: { deletedAt: new Date(), isActive: false },
+      }),
+    );
     try {
       invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
     } catch (err) {
@@ -500,6 +526,12 @@ export class ForestPlanDB {
         planId,
       });
     }
+    const vuelven =
+      desatado.guias > 0
+        ? ` Vuelven a sin plan: ${desatado.guias} guía(s), ${desatado.despachos} línea(s) de despacho y ${desatado.trozados} de trozado.`
+        : "";
+    const quedan = enMesCerrado.length > 0 ? ` Quedan atadas por mes cerrado: GTF ${enMesCerrado.join(", ")}.` : "";
+    const avisos = desatado.avisos.length > 0 ? ` ${desatado.avisos.join(" ")}` : "";
     auditCtp({
       tenantId,
       action: "ctp_plan_baja",
@@ -508,7 +540,8 @@ export class ForestPlanDB {
       detail:
         `Baja del plan ${plan.planType} ${plan.planNumber ?? "(sin N°)"} — ${plan.titularName}. ` +
         `Colgaban: ${usos.especies} especies, ${usos.censo} árboles del censo, ` +
-        `${usos.asientos} asientos del LO-TH, ${usos.guias} guías, ${usos.contratos} permisos`,
+        `${usos.asientos} asientos del LO-TH, ${usos.guias} guías, ${usos.contratos} permisos.` +
+        vuelven + quedan + avisos,
       user: actor,
     });
     return plan;
@@ -519,7 +552,9 @@ export class ForestPlanDB {
    * censo, las líneas y el permiso, y se creó otro vacío con el mismo N° para
    * corregir el titular). Espejo de `eliminarPlan`: acotado al tenant, sólo
    * sobre un plan que ESTÁ de baja (si no, `null` → 404), invalida la caché y
-   * deja rastro con lo que vuelve a colgar de él.
+   * deja rastro con lo que vuelve a colgar de él. Las guías que la baja desató
+   * (25-10) siguen sin plan: se vuelven a atar con «Asignar permiso» o «Atar
+   * lo que no tiene plan» (el rastro de la baja dice cuáles).
    */
   static async reactivarPlan(tenantId: string, planId: string, actor: string) {
     if (!tenantId) throw new Error("tenantId is required");
