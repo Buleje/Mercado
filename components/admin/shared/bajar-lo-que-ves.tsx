@@ -60,7 +60,9 @@ export function BajarLoQueVes<T>({ f, nombre, filas }: { f: FiltrosTabla<T>; nom
       disabled={bajando || lista.length === 0}
       title={`Bajar a Excel lo que ves (${lista.length} fila${lista.length === 1 ? "" : "s"})`}
       aria-label={`Bajar a Excel lo que ves: ${lista.length} filas`}
-      className={button({ variant: "secondary", size: "icon", className: "shrink-0" })}
+      /* Sin la píldora del DS: el panel es de esquinas rectas (globals.css, «BORDES RECTOS — ADMIN»)
+         salvo `rounded-full`; así queda igual al menú «Vista» que va al lado. */
+      className={button({ variant: "secondary", size: "icon", className: "shrink-0 rounded-xl" })}
     >
       {bajando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileSpreadsheet className="h-4 w-4" aria-hidden />}
     </button>

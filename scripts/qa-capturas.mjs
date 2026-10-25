@@ -619,6 +619,9 @@ async function recorrido(t, primero) {
           /* {"embudo": "Estado"}: abre el filtro tipo Excel de esa columna, sea lista, rango o
              lupa (25-10: tres carriles adivinaron el selector y perdieron capturas). */
           const sel = [`summary[aria-label^="Filtrar por ${valor}"]`, `summary[aria-label="Filtrar ${valor} por rango"]`, `summary[aria-label="Buscar en ${valor}"]`].join(", ");
+          /* A <640 px no hay <thead>: los filtros viven en el plegable «Filtros por columna». */
+          const plegable = page.locator("details:not([open]) > summary", { hasText: "Filtros por columna" });
+          if ((await page.locator(sel).filter({ visible: true }).count()) === 0 && (await plegable.count()) > 0) await plegable.first().click();
           await visible(page, sel).click({ timeout: 15_000 });
         }
         else if (tipo === "abrir") {
