@@ -1,7 +1,7 @@
 "use client";
 
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
-import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import ActionMenu from "@/components/admin/shared/action-menu";
@@ -40,17 +40,18 @@ import {
   estadoVisible,
   diasParaVencer,
 } from "@/lib/types/contracts";
-import type { DbContract, EstadoVisible } from "@/lib/types/contracts";
-import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
-import { ThColumna } from "@/components/admin/shared/th-columna";
+import type { DbContract } from "@/lib/types/contracts";
+import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
 import { COLUMNAS_CONTRATOS, ORDEN_CONTRATOS } from "@/components/admin/contratos/columnas-filtro-contratos";
 import PanelFirmantes from "@/components/admin/contratos/PanelFirmantes";
 import PanelRevision from "@/components/admin/contratos/PanelRevision";
 import VinculoContraparte from "@/components/admin/contratos/VinculoContraparte";
-import { formatDateNumeric, formatDateTime, formatNumber } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { enlaceDeContraparte } from "./contratos/enlace-contraparte";
+import { TablaContratos } from "./contratos/TablaContratos";
+import { ESTADO_STYLES, formatDatePeru, formatMoney } from "./contratos/formato-contratos";
 
 const ContratosChart = dynamic(() => import("./ContratosChart"), {
   ssr: false,
@@ -86,31 +87,6 @@ function TemplateIcon({ icon, className }: { icon: string; className?: string })
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────
-
-/** Respeta la moneda del contrato: un contrato en dólares se mostraba en soles. */
-function formatMoney(n: number, moneda: "PEN" | "USD" = "PEN") {
-  const simbolo = moneda === "USD" ? "US$" : "S/";
-  return `${simbolo} ${formatNumber(n, 2)}`;
-}
-
-function formatDatePeru(iso: string | null | undefined) {
-  if (!iso) return "---";
-  try {
-    const d = new Date(iso.includes("T") ? iso : iso + "T00:00:00");
-    return formatDateNumeric(d);
-  } catch { return iso; }
-}
-
-const ESTADO_STYLES: Record<EstadoVisible, string> = {
-  VIGENTE: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
-  POR_VENCER: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
-  VENCIDO: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-  PENDIENTE_FIRMA: "bg-[color-mix(in_oklch,var(--accent)_14%,transparent)] text-[var(--accent-ink)] dark:text-[var(--accent)]",
-  RENOVADO: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-  TERMINADO: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-  ANULADO: "bg-[var(--rule-soft)] text-[var(--text-tertiary)]",
-  BORRADOR: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-};
 
 const PER_PAGE = 12;
 
@@ -903,62 +879,16 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     })}
                   </div>
                 ) : (
-                  <DataTable>
-                      <thead>
-                        <tr>
-                          <ThColumna label="N.o" ids={["numero"]} f={fCols} orden={ordCols} ordenId="numero" />
-                          <ThColumna label="Cliente" ids={["cliente"]} f={fCols} orden={ordCols} ordenId="cliente" />
-                          <ThColumna label="Tipo" f={fCols} orden={ordCols} ordenId="tipo" className="hidden align-top sm:table-cell" />
-                          <ThColumna label="Monto" ids={["monto"]} f={fCols} derecha orden={ordCols} ordenId="monto" />
-                          <ThColumna label="Fecha" ids={["fecha"]} f={fCols} orden={ordCols} ordenId="fecha" className="hidden md:table-cell" />
-                          <ThColumna label="Estado" className="align-top" f={fCols} orden={ordCols} ordenId="estado" />
-                          <th><span className="sr-only">Acciones</span></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredContratos.length > 0 && verContratos.length === 0 && <SinCoincidenciasFila colSpan={7} />}
-                        {filteredContratos.length === 0 && (
-                          <tr>
-                            <td colSpan={7} className="text-center">
-                              <p className="text-sm font-semibold text-[var(--text-secondary)]">Ningún contrato coincide con el filtro.</p>
-                              <button type="button" onClick={clearContratosFilters} className="mt-2 h-12 rounded-xl px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]">Quitar filtros</button>
-                            </td>
-                          </tr>
-                        )}
-                        {paginated.map(c => {
-                          const estado = estadoVisible(c);
-                          return (
-                            <tr
-                              key={c.id}
-                              onClick={() => setSelected(c)}
-                              tabIndex={0}
-                              role="button"
-                              aria-label={`Ver contrato ${c.numero}`}
-                              onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(c); } }}
-                              className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
-                            >
-                              <td className="font-mono text-[var(--text-secondary)]">{c.numero}</td>
-                              <td>
-                                {/* Un div: en las tarjetas del celular la celda es flex y partía nombre y documento en dos columnas. */}
-                                <div className="min-w-0">
-                                  <p className="font-medium text-[var(--text-primary)] truncate"><EnlacePanel {...enlaceDeContraparte(c)}>{c.clienteNombre}</EnlacePanel></p>
-                                  <p className="text-sm text-[var(--text-tertiary)]">{c.clienteDoc}</p>
-                                </div>
-                              </td>
-                              <td className="hidden sm:table-cell">
-                                <span className="text-sm text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
-                              </td>
-                              <td className="text-right font-bold">{formatMoney(c.monto, c.moneda)}</td>
-                              <td className="text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaInicio || c.createdAt)}</td>
-                              <td>
-                                <span className={cn("inline-flex whitespace-nowrap px-2.5 py-0.5 rounded-full text-sm font-bold", ESTADO_STYLES[estado])}>{ESTADO_VISIBLE_LABELS[estado]}</span>
-                              </td>
-                              <td className="w-14 text-right">{menuDeContrato(c)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </DataTable>
+                  <TablaContratos
+                    filtrados={filteredContratos}
+                    visibles={verContratos}
+                    paginados={paginated}
+                    fCols={fCols}
+                    ordCols={ordCols}
+                    onAbrir={setSelected}
+                    onQuitarFiltros={clearContratosFilters}
+                    menuDe={menuDeContrato}
+                  />
                 )}
 
                 {/* Pagination */}
