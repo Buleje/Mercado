@@ -162,7 +162,7 @@ export default function RecetarioAdminTab() {
         </div>
       </div>
       {kpis.panel}
-      {recetas.length > 0 && <BarraFiltrosTabla f={f} />}
+      {recetas.length > 0 && <BarraFiltrosTabla vistas="recetario" excel="Recetario" f={f} />}
 
       {loading ? (
         <LoadingState />

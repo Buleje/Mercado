@@ -95,7 +95,7 @@ export function VistaProduccion({ lotes, loading, onIrARecetas }: Props) {
         </div>
       </div>
 
-      <BarraFiltrosTabla f={f} />
+      <BarraFiltrosTabla vistas="produccion-recetas" excel="Producción de recetas" f={f} />
       <DataTable>
         <thead>
           <tr>

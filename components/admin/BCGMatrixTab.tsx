@@ -176,7 +176,7 @@ export default function BCGMatrixTab() {
         <div className="pb-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Productos ({filtered.length})</CardTitle>
         </div>
-        <BarraFiltrosTabla f={f} className="pb-2" />
+        <BarraFiltrosTabla vistas="bcg" f={f} className="pb-2" />
         <DataTable stickyHeader wrapperClassName="max-h-[26rem] overflow-y-auto" className="min-w-[600px]">
             <thead><tr>
               <ThColumna label="Producto" f={f} orden={ord} ordenId="producto" />

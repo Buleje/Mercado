@@ -18,18 +18,24 @@ for intento in $(seq 1 10); do
   [ ${#ARR[@]} -eq 0 ] && { echo "$(date +%H:%M) $1/$P sin archivos"; exit 0; }
   if [ -z "$(git status --porcelain -- "${ARR[@]}")" ]; then echo "$(date +%H:%M) $1/$P ya commiteado"; exit 0; fi
   FILES=$(printf '%q ' "${ARR[@]}")
+  # `git add -N` sólo con lo que existe: un borrado en la lista daba «pathspec did not match» (exit 128)
+  # en CADA intento y el carril de inventario reintentó 40 min creyendo que era el index.lock (25-10).
+  mapfile -t EXISTEN < <(for f in "${ARR[@]}"; do [ -e "$f" ] && echo "$f"; done)
+  ADD=""; [ ${#EXISTEN[@]} -gt 0 ] && ADD="git add -N $(printf '%q ' "${EXISTEN[@]}") && "
   MSG=$(printf '%q' "$D/msg-$P.txt")
-  HUSKY_SKIP_POSTCOMMIT=1 flock /tmp/bsm-pesado.lock bash -c "git add -N $FILES && git commit -F $MSG -- $FILES" > $LOG 2>&1
+  for _ in $(seq 1 90); do [ -f .git/index.lock ] || break; sleep 2; done
+  HUSKY_SKIP_POSTCOMMIT=1 flock /tmp/bsm-pesado.lock bash -c "${ADD}git commit -F $MSG -- $FILES" > $LOG 2>&1
   r=$?; echo "$(date +%H:%M) $1/$P intento $intento exit $r"
   [ $r -eq 0 ] && { git log --oneline -1; exit 0; }
-  sed 's/\x1b\[[0-9;]*m//g' $LOG | grep -hE "error TS|×|FAIL|✗|✖" | head -5
+  sed 's/\x1b\[[0-9;]*m//g' $LOG | grep -hE "error TS|×|FAIL|✗|✖|^fatal:|^error:" | head -5
+  if [ $r -eq 128 ] && ! grep -q "index.lock" $LOG; then echo "NO REINTENTA: git fatal (ver $LOG)"; exit 1; fi
   if sed 's/\x1b\[[0-9;]*m//g' $LOG | grep -qE "commit-msg script failed|eslint --max-warnings [0-9]+ \[FAILED\]"; then echo "NO REINTENTA: lint/mensaje"; exit 1; fi
   # Sólo cayó el gate de tipos: ¿los errores son de otro carril a medio construir?
   # Sólo cayeron tipos y/o tests: ¿por archivos de otro carril a medio construir?
   OTROS=$(sed 's/\x1b\[[0-9;]*m//g' $LOG | grep '^❌' | grep -vcE 'TypeScript errors detected|Tests related to staged changes failed')
   if [ "$OTROS" = "0" ] && grep -qE "TypeScript errors detected|Tests related to staged changes failed" $LOG; then
     if flock /tmp/bsm-pesado.lock node scripts/dev-helpers/tsc-ajenos.mjs $D/files-$P.txt $LOG; then
-      HUSKY_SKIP_POSTCOMMIT=1 SKIP_TSC_GATE=1 SKIP_VITEST_GATE=1 flock /tmp/bsm-pesado.lock bash -c "git add -N $FILES && git commit -F $MSG -- $FILES" > $LOG 2>&1 \
+      HUSKY_SKIP_POSTCOMMIT=1 SKIP_TSC_GATE=1 SKIP_VITEST_GATE=1 flock /tmp/bsm-pesado.lock bash -c "${ADD}git commit -F $MSG -- $FILES" > $LOG 2>&1 \
         && { echo "$(date +%H:%M) $1/$P commit con tipos/tests ajenos rojos"; git log --oneline -1; exit 0; }
     fi
   fi

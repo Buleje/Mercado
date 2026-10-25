@@ -165,7 +165,7 @@ export default function SimpleExpiryTab() {
           <CampoBuscar className="basis-56 sm:max-w-sm" valor={busca} onCambiar={setBusca} placeholder="Producto, lote o proveedor…" etiqueta="Buscar lotes" />
           <Chips opciones={chips} valor={filtro} onCambiar={setFiltro} etiqueta="Estado del lote" />
         </div>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="vencimientos" f={f} />
         {cargando && lotes.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-secondary)]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Cargando vencimientos…</p>
         ) : delaBarra.length === 0 ? (

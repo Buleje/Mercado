@@ -133,7 +133,7 @@ export function ListaRecetas({ recetas, productos, loading, error, onReintentar,
         </p>
       ) : (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="recetas" excel="Recetas" f={f} />
         <DataTable>
           <thead>
             <tr>

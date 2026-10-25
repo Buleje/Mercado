@@ -111,7 +111,7 @@ export default function ABCAnalysisTab() {
         </label>
       </div>
 
-      <BarraFiltrosTabla f={f} />
+      <BarraFiltrosTabla vistas="abc" excel="Análisis ABC" f={f} />
       <DataTable stickyHeader wrapperClassName="max-h-[26rem] overflow-y-auto" className="min-w-[600px]">
         <thead>
           <tr>

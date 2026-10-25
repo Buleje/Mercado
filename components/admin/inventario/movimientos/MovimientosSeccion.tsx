@@ -141,7 +141,7 @@ export function MovimientosSeccion({ titulo, secciones, panel, productos, recarg
           <FiltroColumnaMulti label="Tipo" value={tipos} options={opcionesTipo} etiqueta={(v) => metaDeTipo(v).label} onChange={(v) => { setTipos(v); setVisibles(DE_A); }} placeholder="Tipo: todos" className={FILTRO_EN_FILA} />
         </div>
 
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="entradas-salidas" f={f} />
 
         {datos.cargando && datos.movimientos.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-secondary)]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Cargando movimientos…</p>

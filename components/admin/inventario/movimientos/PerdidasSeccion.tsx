@@ -131,7 +131,7 @@ export function PerdidasSeccion({ titulo, secciones, panel, productos, recargarP
           <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} className="h-12!" />
         </div>
 
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="perdidas" f={f} />
 
         {datos.cargando && datos.perdidas.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-secondary)]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Cargando pérdidas…</p>
