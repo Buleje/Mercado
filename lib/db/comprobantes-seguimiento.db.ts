@@ -30,6 +30,11 @@ export interface FiltrosLista {
   estados: string[];
   origen: OrigenComprobante | null;
   limite: number;
+  /** Del encabezado de la tabla (todos opcionales): sin ellos la lista es la de siempre. */
+  cliente?: string;
+  serieNumero?: string;
+  montoMin?: number;
+  montoMax?: number;
 }
 
 const VIVOS = ["accepted", "pending", "retrying"];
@@ -58,6 +63,21 @@ function filtroDeBusqueda(b: CriteriosBusqueda): Prisma.SunatInvoiceWhereInput {
   return { OR: o };
 }
 
+/** «B001», «B001-12» o «12»: la serie contiene el texto y el número, si se escribió, es exacto. */
+function filtroSerieNumero(texto: string): Prisma.SunatInvoiceWhereInput {
+  const [parteSerie, parteNumero] = texto.includes("-") ? texto.split("-", 2).map((x) => x.trim()) : [texto.trim(), ""];
+  const num = /^\d{1,8}$/.test(texto.includes("-") ? parteNumero : parteSerie) ? Number(texto.includes("-") ? parteNumero : parteSerie) : null;
+  if (texto.includes("-")) {
+    const y: Prisma.SunatInvoiceWhereInput[] = [];
+    if (parteSerie) y.push({ series: { contains: parteSerie, mode: "insensitive" } });
+    if (parteNumero) y.push(num != null ? { number: num } : { id: "" });
+    return { AND: y };
+  }
+  const o: Prisma.SunatInvoiceWhereInput[] = [{ series: { contains: parteSerie, mode: "insensitive" } }];
+  if (num != null) o.push({ number: num });
+  return { OR: o };
+}
+
 function whereLista(tenantId: string, f: Omit<FiltrosLista, "limite">): Prisma.SunatInvoiceWhereInput {
   const and: Prisma.SunatInvoiceWhereInput[] = [];
   const fechas = limitesDelRango(f.rango);
@@ -67,6 +87,15 @@ function whereLista(tenantId: string, f: Omit<FiltrosLista, "limite">): Prisma.S
   if (f.origen === "pedido") and.push({ orderId: { not: null } });
   if (f.origen === "sin-pedido") and.push({ orderId: null });
   if (f.busqueda) and.push(filtroDeBusqueda(f.busqueda));
+  const cliente = f.cliente?.trim();
+  if (cliente) {
+    and.push({ OR: [{ customerName: { contains: cliente, mode: "insensitive" } }, { customerRuc: { contains: cliente } }] });
+  }
+  const sn = f.serieNumero?.trim();
+  if (sn) and.push(filtroSerieNumero(sn));
+  if (f.montoMin != null || f.montoMax != null) {
+    and.push({ total: { ...(f.montoMin != null ? { gte: f.montoMin } : {}), ...(f.montoMax != null ? { lte: f.montoMax } : {}) } });
+  }
   return { tenantId, AND: and };
 }
 

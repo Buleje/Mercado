@@ -15,9 +15,16 @@ export interface FiltrosComprobantes {
   tipos: DocType[];
   estados: DocStatus[];
   origen: OrigenFiltro;
+  /** Del encabezado de la tabla (se resuelven en el servidor). */
+  cliente: string;
+  serie: string;
+  montoMin: number | null;
+  montoMax: number | null;
 }
 
-export const FILTROS_INICIALES: FiltrosComprobantes = { q: "", periodo: "mes", tipos: [], estados: [], origen: "" };
+export const FILTROS_INICIALES: FiltrosComprobantes = {
+  q: "", periodo: "mes", tipos: [], estados: [], origen: "", cliente: "", serie: "", montoMin: null, montoMax: null,
+};
 
 /** Tipos que se pueden filtrar (la base no guarda notas de débito todavía). */
 export const TIPOS_FILTRABLES: readonly DocType[] = ["boleta", "factura", "nota-credito", "baja"];
@@ -47,6 +54,10 @@ export function aParams(f: FiltrosComprobantes, limite: number): URLSearchParams
   const estados = [...new Set(f.estados.flatMap((e) => ESTADO_API[e] ?? []))];
   if (estados.length) p.set("estado", estados.join(","));
   if (f.origen) p.set("origen", f.origen);
+  if (f.cliente.trim()) p.set("cliente", f.cliente.trim().slice(0, 80));
+  if (f.serie.trim()) p.set("serie", f.serie.trim().slice(0, 20));
+  if (f.montoMin != null) p.set("montoMin", String(f.montoMin));
+  if (f.montoMax != null) p.set("montoMax", String(f.montoMax));
   p.set("limite", String(limite));
   return p;
 }
@@ -67,6 +78,13 @@ export function chipsDe(f: FiltrosComprobantes): ChipFiltro[] {
   for (const t of f.tipos) chips.push({ clave: `tipo:${t}`, rotulo: TYPE_META[t].label, quitar: (x) => ({ ...x, tipos: x.tipos.filter((y) => y !== t) }) });
   for (const e of f.estados) chips.push({ clave: `estado:${e}`, rotulo: STATUS_META[e].label, quitar: (x) => ({ ...x, estados: x.estados.filter((y) => y !== e) }) });
   if (f.origen) chips.push({ clave: "origen", rotulo: ROTULO_ORIGEN[f.origen], quitar: (x) => ({ ...x, origen: "" }) });
+  if (f.cliente.trim()) chips.push({ clave: "cliente", rotulo: `Cliente «${f.cliente.trim()}»`, quitar: (x) => ({ ...x, cliente: "" }) });
+  if (f.serie.trim()) chips.push({ clave: "serie", rotulo: `Serie-Nro «${f.serie.trim()}»`, quitar: (x) => ({ ...x, serie: "" }) });
+  if (f.montoMin != null || f.montoMax != null) {
+    const { montoMin: a, montoMax: b } = f;
+    const rotulo = a != null && b != null ? `Total S/ ${a} – ${b}` : a != null ? `Total desde S/ ${a}` : `Total hasta S/ ${b}`;
+    chips.push({ clave: "monto", rotulo, quitar: (x) => ({ ...x, montoMin: null, montoMax: null }) });
+  }
   return chips;
 }
 
@@ -90,6 +108,10 @@ export function normalizarFiltros(v: unknown): FiltrosComprobantes | null {
     tipos,
     estados,
     origen: o.origen === "pedido" || o.origen === "sin-pedido" ? o.origen : "",
+    cliente: typeof o.cliente === "string" ? o.cliente.slice(0, 80) : "",
+    serie: typeof o.serie === "string" ? o.serie.slice(0, 20) : "",
+    montoMin: typeof o.montoMin === "number" && o.montoMin >= 0 ? o.montoMin : null,
+    montoMax: typeof o.montoMax === "number" && o.montoMax >= 0 ? o.montoMax : null,
   };
 }
 

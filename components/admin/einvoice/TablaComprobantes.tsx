@@ -3,6 +3,10 @@
 import { DataTable } from "@buleje/design-system";
 import { Eye } from "@buleje/design-system/icons";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
+import { FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { EmbudoTextoCabecera } from "./EmbudoTextoCabecera";
+import type { FiltrosComprobantes } from "./filtros-comprobantes";
 import { cn } from "@/lib/utils";
 import { fmt, STATUS_META, TYPE_META, type EDocument } from "./tipos";
 
@@ -10,10 +14,13 @@ interface Props {
   docs: readonly EDocument[];
   orden: { orden: readonly string[]; refCabecera: (el: HTMLTableSectionElement | null) => void };
   onVer: (d: EDocument) => void;
+  /** El alcance: serie, cliente y total se filtran desde el encabezado y se resuelven en la base. */
+  filtros: FiltrosComprobantes;
+  onCambiar: (f: FiltrosComprobantes) => void;
 }
 
 /** La tabla de comprobantes. Tipo y Estado se filtran desde la fila de arriba (una sola vez, también en el celular). */
-export function TablaComprobantes({ docs, orden, onVer }: Props) {
+export function TablaComprobantes({ docs, orden, onVer, filtros, onCambiar }: Props) {
   return (
     <DataTable className="min-w-[640px]">
       <thead ref={orden.refCabecera}>
@@ -21,11 +28,30 @@ export function TablaComprobantes({ docs, orden, onVer }: Props) {
           <EnOrden
             orden={orden.orden}
             celdas={{
-              serieNro: <th data-col="serieNro">Serie-Nro</th>,
+              serieNro: (
+                <ThColumna label="Serie-Nro" dataCol="serieNro">
+                  <EmbudoTextoCabecera label="Serie-Nro" value={filtros.serie} onChange={(serie) => onCambiar({ ...filtros, serie })} />
+                </ThColumna>
+              ),
               fecha: <th data-col="fecha">Fecha</th>,
               tipo: <th data-col="tipo">Tipo</th>,
-              cliente: <th data-col="cliente">Cliente</th>,
-              total: <th data-col="total">Total</th>,
+              cliente: (
+                <ThColumna label="Cliente" dataCol="cliente">
+                  <EmbudoTextoCabecera label="Cliente (nombre o RUC/DNI)" value={filtros.cliente} onChange={(cliente) => onCambiar({ ...filtros, cliente })} />
+                </ThColumna>
+              ),
+              total: (
+                <ThColumna label="Total" dataCol="total">
+                  <FiltroColumnaRango
+                    label="Total"
+                    unidad="S/"
+                    paso={1}
+                    compacto
+                    valor={{ min: filtros.montoMin, max: filtros.montoMax }}
+                    onChange={(r) => onCambiar({ ...filtros, montoMin: (r.min as number | null) ?? null, montoMax: (r.max as number | null) ?? null })}
+                  />
+                </ThColumna>
+              ),
               estado: <th data-col="estado">Estado</th>,
             }}
           />
@@ -33,6 +59,13 @@ export function TablaComprobantes({ docs, orden, onVer }: Props) {
         </tr>
       </thead>
       <tbody>
+        {docs.length === 0 && (
+          <tr>
+            <td colSpan={7} className="py-8 text-center text-sm font-semibold text-[var(--text-tertiary)]" data-qa="comprobantes-sin-coincidencias">
+              Ningún comprobante con esos filtros de columna.
+            </td>
+          </tr>
+        )}
         {docs.map(d => {
           const StatusIcon = STATUS_META[d.status].icon;
           return (

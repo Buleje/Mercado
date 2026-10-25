@@ -142,6 +142,8 @@ export default function EInvoiceTab({ accionesExtra = [] }: Props) {
   const rechazados = facetas?.rechazados ?? 0;
   const soloRechazados = filtros.estados.length === 1 && filtros.estados[0] === "rechazado";
   const inicial = esAlcanceInicial(filtros);
+  /* Con un filtro de columna puesto la tabla queda (con su encabezado) aunque no haya filas: si no, no hay dónde quitarlo. */
+  const deColumna = !!(filtros.cliente || filtros.serie || filtros.montoMin != null || filtros.montoMax != null);
 
   return (
     <div ref={raiz} className="space-y-3 sm:space-y-4">
@@ -222,9 +224,9 @@ export default function EInvoiceTab({ accionesExtra = [] }: Props) {
       )}
 
       <div className="overflow-hidden rounded-xl bg-[var(--surface-raised)]" aria-busy={lista.cargando}>
-        {lista.cargando && lista.docs.length === 0 ? (
+        {lista.cargando && lista.docs.length === 0 && !deColumna ? (
           <LoadingState message="Trayendo los comprobantes…" />
-        ) : lista.docs.length === 0 ? (
+        ) : lista.docs.length === 0 && !deColumna ? (
           <div className="rounded-xl border border-[var(--rule-base)] py-10 text-center text-sm text-[var(--text-tertiary)]" data-qa="comprobantes-vacio">
             <Receipt className="mx-auto mb-2 h-8 w-8 opacity-30" aria-hidden />
             <p className="font-semibold">{inicial ? "Sin comprobantes este mes" : "Ningún comprobante en este alcance"}</p>
@@ -238,7 +240,7 @@ export default function EInvoiceTab({ accionesExtra = [] }: Props) {
           </div>
         ) : (
           <div className={lista.cargando ? "opacity-60 transition-opacity" : undefined}>
-            <TablaComprobantes docs={lista.docs} orden={orden} onVer={setDetail} />
+            <TablaComprobantes docs={lista.docs} orden={orden} onVer={setDetail} filtros={filtros} onCambiar={setFiltros} />
             {total > lista.docs.length && (
               <p className="px-3 py-2 text-sm text-[var(--text-secondary)]">
                 Se ven los {lista.docs.length} más recientes de {total}: afina el filtro o baja el Excel (hasta {FILAS_EXCEL}).

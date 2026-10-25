@@ -58,8 +58,17 @@ describe("chips y «Restablecer alcance»", () => {
 describe("vistas guardadas: lo leído del navegador no se confía", () => {
   it("descarta tipos, estados y períodos inventados", () => {
     const v = normalizarFiltros({ q: 5, periodo: "siglo", tipos: ["factura", "cheque"], estados: ["emitido", "anulado"], origen: "x" });
-    expect(v).toEqual({ q: "", periodo: "mes", tipos: ["factura"], estados: ["anulado"], origen: "" });
+    expect(v).toEqual({ q: "", periodo: "mes", tipos: ["factura"], estados: ["anulado"], origen: "", cliente: "", serie: "", montoMin: null, montoMax: null });
     expect(normalizarFiltros(null)).toBeNull();
+  });
+
+  it("los filtros del encabezado viajan a la base y dejan su chip", () => {
+    const f = { ...FILTROS_INICIALES, cliente: " Pérez ", serie: "B001", montoMin: 10, montoMax: 50 };
+    const p = aParams(f, 200);
+    expect([p.get("cliente"), p.get("serie"), p.get("montoMin"), p.get("montoMax")]).toEqual(["Pérez", "B001", "10", "50"]);
+    expect(aParams(FILTROS_INICIALES, 200).has("cliente")).toBe(false);
+    expect(chipsDe(f).map((c) => c.clave)).toEqual(["cliente", "serie", "monto"]);
+    expect(chipsDe(f).find((c) => c.clave === "monto")?.quitar(f)).toMatchObject({ montoMin: null, montoMax: null });
   });
 
   it("dos alcances iguales tienen la misma huella; otro período, otra", () => {

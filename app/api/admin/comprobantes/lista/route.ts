@@ -4,7 +4,8 @@
  *
  * Query: `desde`/`hasta` (días de Lima), `q` (serie-número, cliente, RUC,
  * #pedido, importe o estado), `tipo` y `estado` (separados por coma), `origen`
- * (pedido | sin-pedido), `limite` (≤ 2000, por defecto 200).
+ * (pedido | sin-pedido), `limite` (≤ 2000, por defecto 200). Opcionales del encabezado de la tabla: `cliente` (nombre o RUC/DNI),
+ * `serie` (serie y/o número), `montoMin`/`montoMax` (total).
  * → `{ data, total, resumen }`: `resumen` sale del MISMO filtro que `data`,
  * contado en la base (antes las cifras eran de los 100 que traía la lista).
  *
@@ -38,6 +39,10 @@ const ParamsSchema = z.object({
   estado: csv(ESTADOS),
   origen: z.enum(["pedido", "sin-pedido"]).optional(),
   limite: z.coerce.number().int().min(1).max(2000).optional(),
+  cliente: z.string().max(80).optional(),
+  serie: z.string().max(20).optional(),
+  montoMin: z.coerce.number().min(0).max(1e9).optional(),
+  montoMax: z.coerce.number().min(0).max(1e9).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -54,6 +59,10 @@ export async function GET(req: NextRequest) {
     estado: sp.get("estado") ?? undefined,
     origen: sp.get("origen") ?? undefined,
     limite: sp.get("limite") ?? undefined,
+    cliente: sp.get("cliente") || undefined,
+    serie: sp.get("serie") || undefined,
+    montoMin: sp.get("montoMin") || undefined,
+    montoMax: sp.get("montoMax") || undefined,
   });
   if (!rango || !parsed.success) {
     return NextResponse.json({ error: "Filtros inválidos: revisa las fechas, el tipo o el estado." }, { status: 400 });
@@ -66,6 +75,10 @@ export async function GET(req: NextRequest) {
       estados: parsed.data.estado,
       origen: parsed.data.origen ?? null,
       limite: parsed.data.limite ?? 200,
+      cliente: parsed.data.cliente,
+      serieNumero: parsed.data.serie,
+      montoMin: parsed.data.montoMin,
+      montoMax: parsed.data.montoMax,
     });
     return NextResponse.json(r, { headers: { "X-Total-Count": String(r.total) } });
   } catch (e) {
