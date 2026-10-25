@@ -10,7 +10,7 @@ import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import { formatTime } from "@/lib/format";
 import { FiltroEnCabecera, SinCoincidenciasFila, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import type { OrdenColumna } from "@/components/admin/shared/use-orden-columna";
-import { ThCelda } from "../th-celda";
+import { ThColumna } from "@/components/admin/shared/th-columna";
 import { cn } from "@/lib/utils";
 import { soles } from "./use-indicadores";
 import { CAUSA, causaDe, diaDelMovimiento, type Movimiento } from "./tipos";
@@ -37,12 +37,12 @@ export function TablaPerdidas({ filas, hoy, orden, onVer, f, ord }: Props) {
           <EnOrden
             orden={orden.orden}
             celdas={{
-              fecha: <ThCelda col="fecha" label="Cuándo" orden={ord} ordenId="fecha" />,
-              producto: <ThCelda col="producto" label="Producto" orden={ord} ordenId="producto" />,
-              cantidad: <ThCelda col="cantidad" label="Cantidad" derecha orden={ord} ordenId="cantidad"><FiltroEnCabecera id="cantidad" f={f} compacto /></ThCelda>,
-              costo: <ThCelda col="costo" label="Costo u." derecha title="Costo de hoy del producto" orden={ord} ordenId="costo"><FiltroEnCabecera id="costo" f={f} compacto /></ThCelda>,
-              perdida: <ThCelda col="perdida" label="Pérdida" derecha orden={ord} ordenId="perdida"><FiltroEnCabecera id="perdida" f={f} compacto /></ThCelda>,
-              motivo: <ThCelda col="motivo" label="Causa" orden={ord} ordenId="motivo" />,
+              fecha: <ThColumna dataCol="fecha" label="Cuándo" orden={ord} ordenId="fecha" />,
+              producto: <ThColumna dataCol="producto" label="Producto" orden={ord} ordenId="producto" />,
+              cantidad: <ThColumna dataCol="cantidad" label="Cantidad" derecha orden={ord} ordenId="cantidad"><FiltroEnCabecera id="cantidad" f={f} compacto /></ThColumna>,
+              costo: <ThColumna dataCol="costo" label="Costo u." derecha title="Costo de hoy del producto" orden={ord} ordenId="costo"><FiltroEnCabecera id="costo" f={f} compacto /></ThColumna>,
+              perdida: <ThColumna dataCol="perdida" label="Pérdida" derecha orden={ord} ordenId="perdida"><FiltroEnCabecera id="perdida" f={f} compacto /></ThColumna>,
+              motivo: <ThColumna dataCol="motivo" label="Causa" orden={ord} ordenId="motivo" />,
             }}
           />
         </tr>

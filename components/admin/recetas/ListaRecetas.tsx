@@ -76,6 +76,9 @@ export function ListaRecetas({ recetas, productos, loading, error, onReintentar,
   }, [recetas, productos, estado, textoFiltro]);
   const f = useFiltrosTabla(base, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
+  const conFaltantes = useMemo(() => base.filter((x) => x.total > 0 && x.faltan > 0).length, [base]);
+  const valorInsumos = f.facetas.insumos;
+  const faltanActivo = Array.isArray(valorInsumos) && valorInsumos.length === 1 && valorInsumos[0] === "Les falta algo";
   const filas = useMemo(() => {
     const lista = ord.ordenar(f.filtradas);
     return ord.activa ? lista : [...lista].sort((a, b) => a.r.nombre.localeCompare(b.r.nombre));
@@ -115,6 +118,12 @@ export function ListaRecetas({ recetas, productos, loading, error, onReintentar,
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
+          {/* Atajo al filtro de la columna «Insumos de hoy» (el mismo estado, no otro). */}
+          {conFaltantes > 0 && (
+            <button type="button" aria-pressed={faltanActivo} onClick={() => f.setFaceta("insumos", faltanActivo ? undefined : ["Les falta algo"])} className={cn(CHIP, faltanActivo ? CHIP_ON : CHIP_OFF)}>
+              Les faltan insumos hoy ({conFaltantes})
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import {
-  Download, FileSpreadsheet, LayoutGrid, LayoutList, Layers, Maximize2, RefreshCw, RotateCcw,
+  Download, FileSpreadsheet, LayoutGrid, LayoutList, Layers, RefreshCw, RotateCcw,
   ScanBarcode, Sparkles, Timer, TrendingUp, Upload,
 } from "@buleje/design-system/icons";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
@@ -41,7 +41,7 @@ function descargarExcel(lista: DbProduct[]) {
 export function menuDeInventario(inv: Inventario, { conFoco }: { conFoco: (accion: () => void) => () => void }): MenuAccion[] {
   const {
     headerActions, view, setView, viewMode, setViewMode, showExtendedCols, setShowExtendedCols, orden,
-    setShowExpandedTable, setBulkField, setBulkValue, setBulkModal, setShowBulkImageAssign, noImageCount,
+    setBulkField, setBulkValue, setBulkModal, setShowBulkImageAssign, noImageCount,
     filteredProducts, csvImportRef, csvImporting, setCsvResult, setShowScanner, scanLoading, load, loading,
     autoActivo, alternarAuto,
   } = inv;
@@ -72,7 +72,6 @@ export function menuDeInventario(inv: Inventario, { conFoco }: { conFoco: (accio
       onSelect: () => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch { /* cuota */ } },
     },
     ...(orden.cambiado ? [{ id: "orden", label: "Restablecer el orden de columnas", icon: RotateCcw, onSelect: orden.restablecer }] : []),
-    { id: "expandir", label: "Tabla a pantalla completa", icon: Maximize2, onSelect: conFoco(() => setShowExpandedTable(true)) },
     { id: "actualizar", label: loading ? "Actualizando…" : "Actualizar", hint: "Trae otra vez productos y stock", icon: RefreshCw, busy: loading, onSelect: () => { void load(); }, seccion: "Datos" },
     { id: "auto", label: "Actualizar solo cada 5 min", hint: autoActivo ? "Encendido: las ventas del día bajan el stock sin recargar" : "Apagado", icon: Timer, activo: autoActivo, onSelect: alternarAuto },
   ];

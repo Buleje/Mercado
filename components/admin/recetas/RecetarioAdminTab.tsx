@@ -18,7 +18,7 @@ import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { BarraFiltrosTabla, FiltroEnCabecera, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
-import { ThCelda } from "@/components/admin/inventario/th-celda";
+import { ThColumna } from "@/components/admin/shared/th-columna";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { ModalRecetario } from "./ModalRecetario";
@@ -180,11 +180,11 @@ export default function RecetarioAdminTab() {
               <EnOrden
                 orden={ordenRecetario.orden}
                 celdas={{
-                  receta: <ThCelda col="receta" label="Receta" orden={ord} ordenId="receta"><FiltroEnCabecera id="receta" f={f} compacto /></ThCelda>,
-                  categoria: <ThCelda col="categoria" label="Categoría" className="hidden sm:table-cell" orden={ord} ordenId="categoria"><FiltroEnCabecera id="categoria" f={f} compacto /></ThCelda>,
-                  ingredientes: <ThCelda col="ingredientes" label="Ingredientes" derecha className="hidden md:table-cell" orden={ord} ordenId="ingredientes"><FiltroEnCabecera id="ingredientes" f={f} compacto /></ThCelda>,
-                  costo: <ThCelda col="costo" label="Costo" derecha orden={ord} ordenId="costo"><FiltroEnCabecera id="costo" f={f} compacto /></ThCelda>,
-                  estado: <ThCelda col="estado" label="Estado" orden={ord} ordenId="estado"><FiltroEnCabecera id="estado" f={f} compacto /></ThCelda>,
+                  receta: <ThColumna dataCol="receta" label="Receta" orden={ord} ordenId="receta"><FiltroEnCabecera id="receta" f={f} compacto /></ThColumna>,
+                  categoria: <ThColumna dataCol="categoria" label="Categoría" className="hidden sm:table-cell" orden={ord} ordenId="categoria"><FiltroEnCabecera id="categoria" f={f} compacto /></ThColumna>,
+                  ingredientes: <ThColumna dataCol="ingredientes" label="Ingredientes" derecha className="hidden md:table-cell" orden={ord} ordenId="ingredientes"><FiltroEnCabecera id="ingredientes" f={f} compacto /></ThColumna>,
+                  costo: <ThColumna dataCol="costo" label="Costo" derecha orden={ord} ordenId="costo"><FiltroEnCabecera id="costo" f={f} compacto /></ThColumna>,
+                  estado: <ThColumna dataCol="estado" label="Estado" orden={ord} ordenId="estado"><FiltroEnCabecera id="estado" f={f} compacto /></ThColumna>,
                 }}
               />
               <th className={TH}><span className="sr-only">Acciones</span></th>

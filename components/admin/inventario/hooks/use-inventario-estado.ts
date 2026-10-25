@@ -411,8 +411,6 @@ export function useInventarioEstado() {
     }
   });
 
-  // Expanded table modal
-  const [showExpandedTable, setShowExpandedTable] = useState(false);
   const orden = useOrdenColumnas("inventario-productos", COLS_INVENTARIO);
 
   // CSV Import
@@ -574,8 +572,6 @@ export function useInventarioEstado() {
     ventanaQR,
     showExtendedCols,
     setShowExtendedCols,
-    showExpandedTable,
-    setShowExpandedTable,
     orden,
     csvImportRef,
     csvImporting,

@@ -1,10 +1,39 @@
+"use client";
+
 import { DataTable } from "@buleje/design-system";
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { resumenPorCategoria, type DeclaracionAnterior, type DeclaracionData } from "./declaracion-tipos";
+
+interface Fila { cat: string; antes: number; ahora: number; d: number; p: number }
+
+/** Sin orden elegido, llega la que más descuadra primero; «Diferencia» ordena por cuánto se movió (sube o baja). */
+const ACCESORES: Record<string, AccesorOrden<Fila>> = {
+  cat: { valor: (f) => f.cat, texto: true },
+  antes: { valor: (f) => f.antes },
+  ahora: { valor: (f) => f.ahora },
+  dif: { valor: (f) => Math.abs(f.d) },
+};
 
 /** Esta declaración contra la anterior, categoría por categoría. */
 export function DeclaracionComparativa({ data, prev }: { data: DeclaracionData; prev: DeclaracionAnterior | null }) {
+  const orden = useOrdenColumna(ACCESORES);
+  const filas = useMemo<Fila[]>(() => {
+    if (!prev) return [];
+    const actuales = resumenPorCategoria(data);
+    const cats = Array.from(new Set([...Object.keys(actuales), ...Object.keys(prev.categorias)]));
+    return cats
+      .map((cat) => {
+        const antes = prev.categorias[cat]?.unidades ?? 0;
+        const ahora = actuales[cat]?.unidades ?? 0;
+        const d = ahora - antes;
+        return { cat, antes, ahora, d, p: antes > 0 ? (d / antes) * 100 : ahora > 0 ? 100 : 0 };
+      })
+      .sort((a, b) => Math.abs(b.d) - Math.abs(a.d) || a.cat.localeCompare(b.cat));
+  }, [data, prev]);
   if (!prev) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 text-center">
@@ -12,8 +41,6 @@ export function DeclaracionComparativa({ data, prev }: { data: DeclaracionData; 
       </div>
     );
   }
-  const actuales = resumenPorCategoria(data);
-  const todas = Array.from(new Set([...Object.keys(actuales), ...Object.keys(prev.categorias)]));
   const total = data.valorCosto ?? 0;
   const totalPrev = prev.valorTotal ?? 0;
   const dif = total - totalPrev;
@@ -27,27 +54,23 @@ export function DeclaracionComparativa({ data, prev }: { data: DeclaracionData; 
       <DataTable>
         <thead>
           <tr>
-            <th>Categoría</th>
-            <th className="text-right">Antes</th>
-            <th className="text-right">Ahora</th>
-            <th className="text-right">Diferencia</th>
+            <ThColumna label="Categoría" orden={orden} ordenId="cat" />
+            <ThColumna label="Antes" derecha orden={orden} ordenId="antes" />
+            <ThColumna label="Ahora" derecha orden={orden} ordenId="ahora" />
+            <ThColumna label="Diferencia" derecha orden={orden} ordenId="dif" />
             <th className="text-center">Tendencia</th>
           </tr>
         </thead>
         <tbody>
-          {todas.map((cat) => {
-            const antes = prev.categorias[cat] ?? { unidades: 0, valorCosto: 0 };
-            const ahora = actuales[cat] ?? { unidades: 0, valorCosto: 0 };
-            const d = ahora.unidades - antes.unidades;
-            const p = antes.unidades > 0 ? (d / antes.unidades) * 100 : ahora.unidades > 0 ? 100 : 0;
+          {orden.ordenar(filas).map(({ cat, antes, ahora, d, p }) => {
             const sube = d > 0;
             const baja = d < 0;
             const caidaFuerte = p < -20;
             return (
               <tr key={cat}>
                 <td className="font-medium">{cat}</td>
-                <td className="text-right text-[var(--text-secondary)]">{antes.unidades} uds</td>
-                <td className="text-right font-medium">{ahora.unidades} uds</td>
+                <td className="text-right text-[var(--text-secondary)]">{antes} uds</td>
+                <td className="text-right font-medium">{ahora} uds</td>
                 <td className={cn("text-right font-bold", caidaFuerte ? "text-[var(--data-error-ink)]" : sube ? "text-[var(--data-success-ink)]" : baja ? "text-[var(--data-warning-ink)]" : "text-[var(--text-secondary)]")}>
                   {sube ? "+" : ""}{d} ({p > 0 ? "+" : ""}{p.toFixed(0)}%)
                 </td>

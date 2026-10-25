@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { FiltroEnCabecera, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { IconoOrden } from "@/components/admin/adelantos/lista/tabla-controles";
 
@@ -27,6 +28,9 @@ export function ThColumna<T>({
   className = "",
   orden,
   ordenId,
+  dataCol,
+  title,
+  children,
 }: {
   label: string;
   /** Una o más columnas de filtro que viven bajo este título. */
@@ -36,11 +40,18 @@ export function ThColumna<T>({
   className?: string;
   orden?: OrdenDeColumnas;
   ordenId?: string;
+  /** Columnas movibles (`EnOrden` busca `th[data-col]`). */
+  dataCol?: string;
+  title?: string;
+  /** Embudos propios, conectados a un estado que no es `FiltrosTabla`. */
+  children?: ReactNode;
 }) {
   const ordena = orden && ordenId;
   return (
     <th
+      data-col={dataCol}
       data-label={label}
+      title={title}
       className={`${derecha ? "text-right" : "text-left"} ${className}`.trim()}
       aria-sort={ordena ? orden.ariaSort(ordenId) : undefined}
     >
@@ -64,6 +75,7 @@ export function ThColumna<T>({
             ))}
           </span>
         )}
+        {children && <span className="inline-flex items-center gap-1 [&>span]:ml-0">{children}</span>}
       </span>
     </th>
   );

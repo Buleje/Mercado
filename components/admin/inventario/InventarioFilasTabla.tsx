@@ -103,7 +103,17 @@ export default function InventarioFilasTabla({ inv }: { inv: Inventario }) {
                     {catLabelOf(p.category)}
                   </td>
                 ),
-                precio: <td className="whitespace-nowrap font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{formatCurrency(Number(p.price))}</td>,
+                precio: (
+                  <td className="whitespace-nowrap font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                    {formatCurrency(Number(p.price))}
+                    {/* Margen sólo con costo (sin él no hay margen: ni 100 % falso). Sale con la columna Costo. */}
+                    {verColumnaCosto && p.type !== "service" && (
+                      Number(p.costPrice) > 0 && Number(p.price) > 0
+                        ? <span className="block text-sm font-normal text-[var(--text-secondary)]">Margen {Math.round(((Number(p.price) - Number(p.costPrice)) / Number(p.price)) * 100)} %</span>
+                        : <span className="block text-sm font-normal text-[var(--text-tertiary)]" title="Falta el costo">Margen —</span>
+                    )}
+                  </td>
+                ),
                 historial: (
                   <td className={cn(!showExtendedCols && "hidden")}>
                     <PriceSparkline productId={p.id} />

@@ -15,19 +15,18 @@ import { formatCurrency } from "@/lib/format";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 import dynamic from "next/dynamic";
 
-const ExpandedStockModal = dynamic(() => import("@/components/admin/inventario/ExpandedStockModal"), { ssr: false });
 const DemandForecast = dynamic(() => import("@/components/admin/inventario/DemandForecast"), { ssr: false });
 const BulkImageAssignModal = dynamic(() => import("@/components/admin/inventario/BulkImageAssignModal"), { ssr: false });
 
 /** Kardex, adicionales, fotos, QR, auto-reorden, tabla ampliada y menú contextual. Pieza de InventoryTab: recibe `useInventario` entero. */
 export default function InventarioVentanas({ inv }: { inv: Inventario }) {
   const {
-    products, setProducts, movements, view, editModalProduct, editForm, setEditForm, showAdd,
+    products, setProducts, view, editModalProduct, editForm, setEditForm, showAdd,
     setAddForm, setImgInfo, setImgError, showImageBank, setShowImageBank,
     showBulkImageAssign, setShowBulkImageAssign, showAutoReorder, setShowAutoReorder, arThreshold,
     setArThreshold, arQty, setArQty, autoReorderPanelRef, autoReorderTitleId, ventanaAutoReorder,
-    showQRProduct, setShowQRProduct, qrDataUrl, qrPanelRef, qrTitleId, ventanaQR, showExpandedTable,
-    setShowExpandedTable, kardexProduct, setKardexProduct, modifiersProduct, setModifiersProduct,
+    showQRProduct, setShowQRProduct, qrDataUrl, qrPanelRef, qrTitleId, ventanaQR,
+    kardexProduct, setKardexProduct, modifiersProduct, setModifiersProduct,
     ctxMenu, setCtxMenu, autoSaveImage, saveAutoReorder, autoReorderCount, accionesDeProducto,
     pronostico, setPronostico,
   } = inv;
@@ -217,11 +216,6 @@ export default function InventarioVentanas({ inv }: { inv: Inventario }) {
             {autoReorderCount} producto{autoReorderCount > 1 ? "s" : ""} con reorden automatico configurado
           </p>
         </div>
-      )}
-
-      {/* Expanded table modal */}
-      {showExpandedTable && (
-        <ExpandedStockModal products={products} movements={movements} onClose={() => setShowExpandedTable(false)} />
       )}
 
       {/* Pronóstico de demanda de un producto (el ⋯ de la fila). Antes vivía en el

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Search, ScanBarcode, Camera } from "@buleje/design-system/icons";
+import { AlertTriangle, Coins, Search, ScanBarcode, Camera } from "@buleje/design-system/icons";
 import { useEffect, useState } from "react";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,7 @@ import { rangoActivo, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-
 import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 import { FiltrosEnBoton } from "@/components/admin/shared";
 import type { ChipFiltroActivo } from "@/components/admin/shared";
-import { ETIQUETA_FALTA } from "@/lib/inventario/catalogo-incompleto";
+import { ETIQUETA_FALTA, leFalta } from "@/lib/inventario/catalogo-incompleto";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 
 const TONO_ACENTO = "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
@@ -53,6 +53,7 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
   const estadoPuesto = !(estadoFiltro.length === 1 && estadoFiltro[0] === "Activo") && !(showInactive && estadoFiltro.length === 0);
   const avanzados = (estadoPuesto ? 1 : 0) + (rangoActivo(stockRango) ? 1 : 0) + (rangoActivo(vencRango) ? 1 : 0) + (rangoActivo(precioRango) ? 1 : 0) + (rangoActivo(costoRango) ? 1 : 0);
   const activos = (lowOnly ? 1 : 0) + (noImageOnly ? 1 : 0) + (faltaDato ? 1 : 0) + (catFilter.length > 0 ? 1 : 0) + avanzados;
+  const sinCostoCount = products.filter(p => p.active && leFalta(p, "sin-costo")).length;
   const textoRango = (r: { min: unknown; max: unknown }) => `${r.min ?? "…"} – ${r.max ?? "…"}`;
   const chips: ChipFiltroActivo[] = [
     ...catFilter.map(id => ({ id: `cat-${id}`, label: dynamicCategories.find(c => c.id === id)?.label ?? id, onQuitar: () => setCatFilter(catFilter.filter(x => x !== id)) })),
@@ -138,6 +139,10 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
             </button>
             <button type="button" aria-pressed={noImageOnly} onClick={() => setNoImageOnly(!noImageOnly)} className={chip(noImageOnly)}>
               <Camera className="h-4 w-4" aria-hidden /> Sin foto ({noImageCount})
+            </button>
+            {/* Escribe en el mismo estado que el chip y el aviso de Inicio (`faltaDato`). */}
+            <button type="button" aria-pressed={faltaDato === "sin-costo"} onClick={() => setFaltaDato(faltaDato === "sin-costo" ? null : "sin-costo")} className={chip(faltaDato === "sin-costo", TONO_AVISO)}>
+              <Coins className="h-4 w-4" aria-hidden /> Sin costo ({sinCostoCount})
             </button>
           </div>
         </div>
