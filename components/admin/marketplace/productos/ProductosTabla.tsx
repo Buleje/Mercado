@@ -5,8 +5,10 @@ import { DataTable } from "@buleje/design-system";
 import { ExternalLink, Eye, EyeOff, ImageOff, Megaphone, MoreHorizontal, Pencil, Sparkles, Tag, Users, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import type { MarketplaceProduct } from "@/components/admin/marketplace/hooks/use-marketplace-products";
-import { STOCK_CRITICO, type ClaveProducto, type ProductosVista, type useEdicionPrecio } from "@/components/admin/marketplace/hooks/use-productos-vista";
-import { SortIcon } from "@/components/admin/marketplace/shared";
+import { STOCK_CRITICO, type ProductosVista, type useEdicionPrecio } from "@/components/admin/marketplace/hooks/use-productos-vista";
+import { useOrdenDeVista, useSoltarSeleccionOculta } from "@/components/admin/marketplace/orden-de-vista";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
 import { CompetitionChip, OfertaCell, PriceCell } from "@/components/admin/marketplace/productos/celdas-precio";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -14,15 +16,12 @@ import { Casilla } from "@/components/ui-system/Casilla";
 
 const TH = "px-3 py-3 text-sm font-semibold text-[var(--text-secondary)]";
 
-function Encabezado({ clave, rotulo, v, className }: { clave: ClaveProducto; rotulo: string; v: ProductosVista; className?: string }) {
-  return (
-    <th className={cn(TH, className)} data-label={rotulo}>
-      <button type="button" onClick={() => v.ordenarPor(clave)} className="inline-flex min-h-12 items-center gap-1 transition-colors hover:text-[var(--text-primary)]">
-        {rotulo} <SortIcon k={clave} currentKey={v.sortKey} currentDir={v.sortDir} />
-      </button>
-    </th>
-  );
-}
+/* Filtros de columna con rango. Estado, stock bajo y categoría ya tienen sus selectores arriba. */
+const COLUMNAS: readonly ColumnaFiltro<MarketplaceProduct>[] = [
+  { id: "precio", label: "Precio", tipo: "rango", numero: (p) => p.retailPrice, unidad: "S/", paso: 0.01 },
+  { id: "mayorista", label: "Mayorista", tipo: "rango", numero: (p) => (p.wholesalePrice > 0 ? p.wholesalePrice : null), unidad: "S/", paso: 0.01 },
+  { id: "stock", label: "Stock", tipo: "rango", numero: (p) => p.stock },
+];
 
 /** Publicar/Despublicar a la vista (48 px) y en «⋯» destacar y ver en el marketplace. */
 function AccionesProducto({
@@ -103,7 +102,23 @@ export function ProductosTabla({
   onQuitarOferta: (id: string) => void;
   onDestacar: (p: MarketplaceProduct) => void;
 }) {
+  const f = useFiltrosTabla(v.filtrados, COLUMNAS);
+  const filas = f.filtradas;
+  const orden = useOrdenDeVista(v.sortKey, v.sortDir, v.ordenarPor);
+  useSoltarSeleccionOculta(f.activos > 0, filas, v.seleccion, v.setSeleccion);
+  const todos = filas.length > 0 && filas.every((p) => v.seleccion.has(p.id));
+  const algunos = filas.some((p) => v.seleccion.has(p.id));
+  const alternarTodos = () => {
+    const next = new Set(v.seleccion);
+    for (const p of filas) {
+      if (todos) next.delete(p.id);
+      else next.add(p.id);
+    }
+    v.setSeleccion(next);
+  };
   return (
+    <>
+    <BarraFiltrosTabla f={f} />
     <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="max-h-[calc(100vh-20rem)] overflow-x-auto">
         <DataTable className="w-full">
@@ -111,23 +126,24 @@ export function ProductosTabla({
             <tr>
               <th className="w-12" data-label="Elegir">
                 <Casilla
-                  checked={v.todos}
+                  checked={todos}
                   ref={(el) => {
-                    if (el) el.indeterminate = !v.todos && v.algunos;
+                    if (el) el.indeterminate = !todos && algunos;
                   }}
-                  onChange={v.alternarTodos}
+                  onChange={alternarTodos}
                   aria-label="Elegir todos los productos de la lista" />
               </th>
-              <Encabezado clave="name" rotulo="Producto" v={v} className="text-left" />
-              <Encabezado clave="retailPrice" rotulo="Precio" v={v} className="text-right" />
+              <ThColumna label="Producto" orden={orden} ordenId="name" />
+              <ThColumna label="Precio" ids={["precio"]} f={f} derecha orden={orden} ordenId="retailPrice" />
               <th className={cn(TH, "text-right")}>Oferta</th>
-              <Encabezado clave="wholesalePrice" rotulo="Mayorista" v={v} className="hidden text-right lg:table-cell" />
-              <Encabezado clave="stock" rotulo="Stock" v={v} className="text-right" />
+              <ThColumna label="Mayorista" ids={["mayorista"]} f={f} derecha orden={orden} ordenId="wholesalePrice" className="hidden lg:table-cell" />
+              <ThColumna label="Stock" ids={["stock"]} f={f} derecha orden={orden} ordenId="stock" />
               <th className={cn(TH, "text-right")}>En el marketplace</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
-            {v.filtrados.map((p) => {
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+            {filas.map((p) => {
               const elegido = v.seleccion.has(p.id);
               const tono = p.stock <= 0 ? "error" : p.stock <= STOCK_CRITICO ? "warning" : "success";
               const ocupado = pricingId === p.id;
@@ -207,5 +223,6 @@ export function ProductosTabla({
         </DataTable>
       </div>
     </div>
+    </>
   );
 }

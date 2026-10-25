@@ -21,7 +21,10 @@ import { useMarketplaceCommissions, type CommissionEntry } from "@/components/ad
 import { TableSkeleton } from "@/components/admin/marketplace/shared";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { formatCurrency } from "@/lib/format";
-import { cn, exportToCSV } from "@/lib/utils";
+import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { diaDe, ENCABEZADOS_14, ErrorDeCarga, FilaDeVista, SelectFiltro, VacioDeUnaFrase, type OpcionFiltro } from "./cabecera-vista";
@@ -37,12 +40,27 @@ const ESTADO_FILA: Record<CommissionEntry["status"], { rotulo: string; clase: st
   /* La venta se devolvió: la comisión no se cobra. Antes decía «Pagada» y no sumaba en «Pagadas». */
   reembolsado: { rotulo: "Reembolsada", clase: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
 };
+/* Filtros de columna: el ledger llega entero. «Estado» ya tiene sus chips arriba: aquí sólo ordena. */
+const COLUMNAS: readonly ColumnaFiltro<CommissionEntry>[] = [
+  { id: "orden", label: "Orden", tipo: "texto", valor: (e) => e.orderId.slice(-8).toUpperCase() },
+  { id: "comision", label: "Comisión", tipo: "rango", numero: (e) => e.amount, unidad: "S/", paso: 0.01 },
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (e) => limaDateKey(e.createdAt) || null },
+];
+const ORDEN: Record<string, AccesorOrden<CommissionEntry>> = {
+  orden: { valor: (e) => e.orderId.slice(-8).toUpperCase(), texto: true },
+  comision: { valor: (e) => e.amount },
+  estado: { valor: (e) => ROTULO[e.status], texto: true },
+  fecha: { valor: (e) => e.createdAt },
+};
 const HREF_COMISIONES_VENDEDORES = "/admin?tab=ventas-caja&vista=comisiones";
 
 export function MarketplaceComisionesTab() {
   const { entries, filtered, summary, loading, error, filterStatus, setFilterStatus, markingPaid, load, handleMarkPaid, handleBulkPay } =
     useMarketplaceCommissions();
   const pendientes = entries.filter((e) => e.status === "pendiente");
+  const f = useFiltrosTabla(filtered, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
 
   const kpis = useKpisPlegables({
     claveMemoria: "marketplace-comisiones",
@@ -74,12 +92,12 @@ export function MarketplaceComisionesTab() {
     {
       id: "csv",
       label: "Exportar a Excel",
-      hint: `${filtered.length} comisiones, con el filtro de abajo`,
+      hint: `${filas.length} comisiones, lo que ves en la tabla`,
       icon: Download,
-      disabled: filtered.length === 0,
+      disabled: filas.length === 0,
       onSelect: () =>
         exportToCSV(
-          filtered.map((e) => ({ orden: e.orderId, comision: e.amount, estado: ROTULO[e.status], fecha: e.createdAt.slice(0, 10) })),
+          filas.map((e) => ({ orden: e.orderId, comision: e.amount, estado: ROTULO[e.status], fecha: e.createdAt.slice(0, 10) })),
           "comisiones-marketplace",
         ),
     },
@@ -119,18 +137,21 @@ export function MarketplaceComisionesTab() {
           {filterStatus !== "all" ? `No hay comisiones ${ROTULO[filterStatus as CommissionEntry["status"]]?.toLowerCase() ?? ""}.` : "Sin comisiones todavía: aparecen con tu primera venta en el marketplace."}
         </VacioDeUnaFrase>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable className={ENCABEZADOS_14}>
           <thead>
             <tr>
-              <th>Orden</th>
-              <th className="text-right">Comisión</th>
-              <th>Estado</th>
-              <th>Fecha</th>
-              <th />
+              <ThColumna label="Orden" ids={["orden"]} f={f} orden={ord} ordenId="orden" />
+              <ThColumna label="Comisión" ids={["comision"]} f={f} derecha orden={ord} ordenId="comision" />
+              <ThColumna label="Estado" orden={ord} ordenId="estado" />
+              <ThColumna label="Fecha" ids={["fecha"]} f={f} orden={ord} ordenId="fecha" />
+              <th data-label="Acciones"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((e) => {
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+            {filas.map((e) => {
               const sc = ESTADO_FILA[e.status] ?? ESTADO_FILA.pendiente;
               return (
                 <tr key={e.id}>
@@ -168,6 +189,7 @@ export function MarketplaceComisionesTab() {
             })}
           </tbody>
         </DataTable>
+        </>
       )}
     </div>
   );

@@ -1,9 +1,12 @@
 "use client";
 
+import { useOrdenDeVista, useSoltarSeleccionOculta } from "@/components/admin/marketplace/orden-de-vista";
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
 import type { MarketplaceOrder, OrderTargetStatus } from "@/components/admin/marketplace/hooks/use-marketplace-orders";
-import type { ClaveOrden, OrdenesVista } from "@/components/admin/marketplace/hooks/use-ordenes-vista";
-import { ORDER_STATUS_CONFIG, SortIcon } from "@/components/admin/marketplace/shared";
+import type { OrdenesVista } from "@/components/admin/marketplace/hooks/use-ordenes-vista";
+import { ORDER_STATUS_CONFIG } from "@/components/admin/marketplace/shared";
 import { OrdenesAccionesFila } from "@/components/admin/marketplace/ordenes/OrdenesAccionesFila";
 import { idCorto } from "@/components/admin/marketplace/ordenes/ordenes-util";
 import { diaConNombre } from "@/components/admin/inventario/movimientos/tipos";
@@ -14,19 +17,11 @@ import { Casilla } from "@/components/ui-system/Casilla";
 const TH = "px-3 py-3 text-sm font-semibold text-[var(--text-secondary)]";
 const NO_ABRE = "button, input, a, [data-no-row-click]";
 
-function Encabezado({ clave, rotulo, v, alinear = "left" }: { clave: ClaveOrden; rotulo: string; v: OrdenesVista; alinear?: "left" | "right" | "center" }) {
-  return (
-    <th className={cn(TH, alinear === "right" ? "text-right" : alinear === "center" ? "text-center" : "text-left")} data-label={rotulo}>
-      <button
-        type="button"
-        onClick={() => v.ordenarPor(clave)}
-        className={cn("inline-flex min-h-12 items-center gap-1 transition-colors hover:text-[var(--text-primary)]", alinear === "right" && "ml-auto", alinear === "center" && "mx-auto")}
-      >
-        {rotulo} <SortIcon k={clave} currentKey={v.sortKey} currentDir={v.sortDir} />
-      </button>
-    </th>
-  );
-}
+/* Filtros de columna: Total y Fecha. Cliente, #, dirección y estado ya los cubren el buscador y los chips de arriba. */
+const COLUMNAS: readonly ColumnaFiltro<MarketplaceOrder>[] = [
+  { id: "total", label: "Total", tipo: "rango", numero: (o) => o.total, unidad: "S/", paso: 0.01 },
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (o) => limaDateKey(o.createdAt) || null },
+];
 
 /**
  * Una orden = una fila: #, cliente, dirección (pantallas anchas), total, estado,
@@ -46,9 +41,15 @@ export function OrdenesTabla({
   onDetalle: (id: string) => void;
   onWhatsApp: (o: MarketplaceOrder) => void;
 }) {
-  const filas = v.filtradas;
+  const f = useFiltrosTabla(v.filtradas, COLUMNAS);
+  const filas = f.filtradas;
   const todas = filas.length > 0 && v.seleccion.size === filas.length;
+  const orden = useOrdenDeVista(v.sortKey, v.sortDir, v.ordenarPor);
+  const { seleccion, setSeleccion } = v;
+  useSoltarSeleccionOculta(f.activos > 0, filas, seleccion, setSeleccion);
   return (
+    <>
+    <BarraFiltrosTabla f={f} />
     <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="max-h-[calc(100vh-20rem)] overflow-x-auto">
         <DataTable className="w-full">
@@ -58,20 +59,21 @@ export function OrdenesTabla({
                 <Casilla
                   checked={todas}
                   indeterminada={v.seleccion.size > 0 && !todas}
-                  onChange={v.alternarTodas}
+                  onChange={() => v.setSeleccion(todas ? new Set() : new Set(filas.map((o) => o.id)))}
                   aria-label="Elegir todas las órdenes de la lista"
                 />
               </th>
               <th className={cn(TH, "text-left")}>Orden</th>
               <th className={cn(TH, "text-left")}>Cliente</th>
               <th className={cn(TH, "hidden text-left 2xl:table-cell")}>Dirección</th>
-              <Encabezado clave="total" rotulo="Total" v={v} alinear="right" />
-              <Encabezado clave="status" rotulo="Estado" v={v} alinear="center" />
-              <Encabezado clave="createdAt" rotulo="Fecha" v={v} alinear="right" />
+              <ThColumna label="Total" ids={["total"]} f={f} derecha orden={orden} ordenId="total" />
+              <ThColumna label="Estado" orden={orden} ordenId="status" />
+              <ThColumna label="Fecha" ids={["fecha"]} f={f} derecha orden={orden} ordenId="createdAt" />
               <th className={cn(TH, "text-right")}>Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={8} />}
             {filas.map((o) => {
               const estado = ORDER_STATUS_CONFIG[o.status] ?? { label: o.status, className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" };
               const creada = new Date(o.createdAt);
@@ -146,5 +148,6 @@ export function OrdenesTabla({
         </DataTable>
       </div>
     </div>
+    </>
   );
 }
