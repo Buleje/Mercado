@@ -9,15 +9,29 @@ import type { ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-fo
 import type { DbOrder } from "@/lib/jsondb";
 import { plataSinMonto } from "./columnas-filtro-archivados";
 import { cobroDe } from "./siguiente-paso";
-import { msEnEstado, nivelDeEspera, type NivelDeEspera } from "./tiempo-en-estado";
+import { msEnEstado } from "./tiempo-en-estado";
 
-const NIVEL: Record<NivelDeEspera, string> = {
-  "al-dia": "Menos de 1 h",
-  aviso: "De 1 a 2 h",
-  tarde: "2 h o más",
-};
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Lo que «Por cobrar» pone en el embudo «Plata»: se cobra al entregar o ya se
+ * debe. No incluye Yape por verificar (eso se verifica, no se cobra) ni fiado
+ * (ya está en la cuenta del cliente). Son los textos de `cobroDe` sin monto.
+ */
+export const PLATA_POR_COBRAR: readonly string[] = ["Cobrar al entregar", "Debe"];
+
+/** ¿Falta cobrarle plata a este pedido? (la misma lectura que la columna «Plata»). */
+export const faltaCobrar = (o: DbOrder) => PLATA_POR_COBRAR.includes(plataSinMonto(cobroDe(o).texto));
+
+/**
+ * «Sin avanzar» en días: en `main` los 18 pedidos en marcha llevan de 56 a 200
+ * días, así que los niveles «menos de 1 h / 2 h o más» los dejaban a todos en
+ * el mismo (25-10). Un rango en días sí separa «de hoy» de «de hace meses».
+ * El reloj se lee al filtrar: se recalcula cuando cambian las filas.
+ */
+const diasSinAvanzar = (o: DbOrder) => Math.floor(msEnEstado(o, Date.now()) / DIA_MS);
 
 export const COLUMNAS_PEDIDOS: readonly ColumnaFiltro<DbOrder>[] = [
-  { id: "espera", label: "Sin avanzar", tipo: "multi", valor: (o) => NIVEL[nivelDeEspera(msEnEstado(o, Date.now()))], soloConVarios: true },
+  { id: "espera", label: "Sin avanzar", tipo: "rango", numero: diasSinAvanzar, unidad: "días", paso: 1 },
   { id: "plata", label: "Plata", tipo: "multi", valor: (o) => plataSinMonto(cobroDe(o).texto), soloConVarios: true },
 ];

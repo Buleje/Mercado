@@ -210,6 +210,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
                 onRepartidor={r.setSelectedDriverFilter}
                 onAbrirFiltros={() => p.setFiltrosAbiertos(true)}
                 conCuentas={vista === "lista"}
+                porCobrar={vista === "lista" ? p.porCobrar : undefined}
                 extremo={
                   vista === "lista" && p.elegidosVisibles.length > 0 ? (
                     <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -259,8 +260,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
                   loading={cargando}
                   vacio={vacio}
                   embudos={p.embudos}
-                  orden={p.orden}
-                  onOrden={p.setOrden}
+                  orden={p.ordenLista}
                   elegidos={bulk.selectedOrderIds}
                   onElegir={bulk.toggleOrderSelect}
                   onElegirTodos={bulk.setOrderSelection}

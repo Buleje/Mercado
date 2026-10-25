@@ -148,7 +148,7 @@ export function firmaVistaPedidos(e: EstadoVistaPedidos, hoy: string): string {
   return JSON.stringify([capturarVista(filters, repartidor, hoy), e.orden.columna, e.orden.sentido]);
 }
 
-const COLUMNAS: readonly ColumnaOrden[] = ["cliente", "estado", "espera", "fecha", "total"];
+const COLUMNAS: readonly ColumnaOrden[] = ["cliente", "estado", "espera", "fecha", "total", "plata"];
 const PAGOS: readonly string[] = ["", "yape", "efectivo"];
 const ORIGENES: readonly string[] = ["", "direct", "marketplace"];
 const TEXTOS = ["desde", "hasta", "minimo", "maximo", "busqueda", "repartidor"] as const;

@@ -15,32 +15,26 @@
  *
  * En el celular la tabla se vuelve tarjetas sola (`useMobileTableCards`).
  */
-import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown } from "@buleje/design-system/icons";
+import { AlertTriangle } from "@buleje/design-system/icons";
 import {
   BarraFiltrosTabla,
-  FiltroEnCabecera,
   SinCoincidenciasFila,
   type FiltrosTabla,
 } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import type { OrdenColumna } from "@/components/admin/shared/use-orden-columna";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import type { DbOrder } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
-import {
-  ordenarPedidos,
-  siguienteOrden,
-  type ColumnaOrden,
-  type Orden,
-} from "./orden-pedidos";
 import { msEnEstado, nivelDeEspera, textoDeEspera } from "./tiempo-en-estado";
 import { TINTA_COBRO, cobroDe, responsableDe } from "./siguiente-paso";
 import { STATUS_COLORS, STATUS_LABELS } from "./types";
 import { Casilla } from "@/components/ui-system/Casilla";
 
-const TH = "px-3 text-left text-sm font-semibold text-[var(--text-secondary)]";
 const TD = "px-3 py-2.5";
 
 interface ListaPedidosProps {
@@ -50,58 +44,12 @@ interface ListaPedidosProps {
   vacio: ReactNode;
   /** Los embudos de la cabeza; su estado vive en `usePedidos` (hoja, «elegir todos» y KPIs lo comparten). */
   embudos: FiltrosTabla<DbOrder>;
-  /** Vive en `usePedidos`: lo guardan las vistas (P08) y lo sigue la hoja impresa (P12). */
-  orden: Orden;
-  onOrden: Dispatch<SetStateAction<Orden>>;
+  /** La pieza común, en modo controlado desde `usePedidos`: lo guardan las vistas (P08) y lo sigue la hoja impresa (P12). */
+  orden: OrdenColumna<DbOrder>;
   elegidos: ReadonlySet<string>;
   onElegir: (id: string) => void;
   onElegirTodos: (ids: string[]) => void;
   onSelectOrder: (order: DbOrder) => void;
-}
-
-function CabezaOrden({
-  columna,
-  orden,
-  onOrdenar,
-  children,
-  derecha = false,
-  embudo,
-}: {
-  columna: ColumnaOrden;
-  orden: Orden;
-  onOrdenar: (c: ColumnaOrden) => void;
-  children: string;
-  derecha?: boolean;
-  /** Id del embudo que vive bajo este título. */
-  embudo?: { id: string; f: FiltrosTabla<DbOrder> };
-}) {
-  const activa = orden.columna === columna;
-  const Flecha = !activa ? ArrowUpDown : orden.sentido === "asc" ? ArrowUp : ArrowDown;
-  return (
-    <th
-      /* `py-0!`: el botón ya mide 48 px; con el py-2.5 del DataTable la cabeza medía 68. */
-      className={cn(TH, !embudo && "py-0!", derecha && "text-right")}
-      aria-sort={activa ? (orden.sentido === "asc" ? "ascending" : "descending") : "none"}
-      data-label={children}
-    >
-      <span className={cn("inline-flex flex-col", derecha ? "items-end" : "items-start")}>
-      <button
-        type="button"
-        onClick={() => onOrdenar(columna)}
-        className={cn(
-          /* Mismo aspecto que las cabezas del DataTable (mayúsculas): el botón no hereda text-transform. */
-          "inline-flex h-12 items-center gap-1 rounded-lg hover:text-[var(--text-primary)]",
-          derecha && "flex-row-reverse",
-          activa && "text-[var(--text-primary)]",
-        )}
-      >
-        {children}
-        <Flecha className={cn("h-3.5 w-3.5 shrink-0", !activa && "opacity-40")} aria-hidden />
-      </button>
-      {embudo && <FiltroEnCabecera id={embudo.id} f={embudo.f} compacto />}
-      </span>
-    </th>
-  );
 }
 
 const ESPERA = {
@@ -116,7 +64,6 @@ export function ListaPedidos({
   vacio,
   embudos,
   orden,
-  onOrden,
   elegidos,
   onElegir,
   onElegirTodos,
@@ -133,11 +80,10 @@ export function ListaPedidos({
   /* Con un embudo puesto la tabla queda (si no, no habría dónde quitarlo); el vacío de arriba es de la barra. */
   if (pedidos.length === 0 && embudos.activos === 0) return vacio;
 
-  const filas = ordenarPedidos(pedidos, orden);
+  const filas = orden.ordenar(pedidos);
   const conRepartidor = pedidos.some((o) => responsableDe(o));
   const todos = pedidos.every((o) => elegidos.has(o.id));
   const algunos = !todos && pedidos.some((o) => elegidos.has(o.id));
-  const ordenar = (c: ColumnaOrden) => onOrden((o) => siguienteOrden(o, c));
 
   return (
     <>
@@ -146,7 +92,7 @@ export function ListaPedidos({
       <DataTable className="w-full">
         <thead className="dark:border-card-border">
           <tr>
-            <th className="w-12 py-0!" data-label="Elegir">
+            <th className="w-12 py-0! align-top" data-label="Elegir">
               <label className="flex h-12 w-12 cursor-pointer items-center justify-center">
                 <Casilla
                   checked={todos}
@@ -161,28 +107,13 @@ export function ListaPedidos({
                   } />
               </label>
             </th>
-            <CabezaOrden columna="cliente" orden={orden} onOrdenar={ordenar}>
-              Cliente
-            </CabezaOrden>
-            <CabezaOrden columna="estado" orden={orden} onOrdenar={ordenar}>
-              Estado
-            </CabezaOrden>
-            <CabezaOrden columna="espera" orden={orden} onOrdenar={ordenar} embudo={{ id: "espera", f: embudos }}>
-              Sin avanzar
-            </CabezaOrden>
-            <th className={TH} data-label="Plata">
-              <span className="inline-flex flex-col items-start">
-                Plata
-                <FiltroEnCabecera id="plata" f={embudos} compacto />
-              </span>
-            </th>
-            {conRepartidor && <th className={TH}>Repartidor</th>}
-            <CabezaOrden columna="fecha" orden={orden} onOrdenar={ordenar}>
-              Pedido el
-            </CabezaOrden>
-            <CabezaOrden columna="total" orden={orden} onOrdenar={ordenar} derecha>
-              Total
-            </CabezaOrden>
+            <ThColumna className="align-top" label="Cliente" f={embudos} orden={orden} ordenId="cliente" />
+            <ThColumna className="align-top" label="Estado" f={embudos} orden={orden} ordenId="estado" />
+            <ThColumna className="align-top" label="Sin avanzar" ids={["espera"]} f={embudos} orden={orden} ordenId="espera" />
+            <ThColumna className="align-top" label="Plata" ids={["plata"]} f={embudos} orden={orden} ordenId="plata" />
+            {conRepartidor && <th className="align-top" data-label="Repartidor">Repartidor</th>}
+            <ThColumna className="align-top" label="Pedido el" f={embudos} orden={orden} ordenId="fecha" />
+            <ThColumna className="align-top" label="Total" f={embudos} derecha orden={orden} ordenId="total" />
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">

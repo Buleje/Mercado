@@ -15,13 +15,14 @@
  */
 import { useCallback, useState } from "react";
 import { useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
-import { COLUMNAS_PEDIDOS } from "../columnas-filtro-pedidos";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_PEDIDOS, PLATA_POR_COBRAR, faltaCobrar } from "../columnas-filtro-pedidos";
 import { flushSync } from "react-dom";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { filtrosEnTexto, filtrosPuestos, pedidosArchivados, pedidosEnMarcha } from "../filtrar-pedidos";
 import { imprimirEnClaro, nombreDelPdf } from "../imprimir-pedidos";
-import { ORDEN_INICIAL, ordenarPedidos, type Orden } from "../orden-pedidos";
+import { ORDEN_INICIAL, ORDEN_PEDIDOS, aOrdenFijo, deOrdenFijo, type Orden } from "../orden-pedidos";
 import { permisosDePedidos } from "../permisos-pedidos";
 import type { VarianteImpresion } from "../ResumenImpresion";
 import { STATUS_LABELS } from "../types";
@@ -50,6 +51,11 @@ export function usePedidos(conEmbudos = false) {
   const reparto = useDeliveryDriver({ patchOrder: acciones.patchOrder });
   const bulk = useOrderBulkActions({ onComplete: load });
   const [orden, setOrden] = useState<Orden>(ORDEN_INICIAL);
+  /* La pieza común ordena; el estado es de acá porque las vistas lo ponen y lo guardan. */
+  const ordenLista = useOrdenColumna(ORDEN_PEDIDOS, {
+    valor: aOrdenFijo(orden),
+    onCambio: (v) => setOrden(deOrdenFijo(v)),
+  });
   const repartidor = reparto.selectedDriverFilter;
   const vistas = useVistasPedidos({
     filters,
@@ -85,6 +91,15 @@ export function usePedidos(conEmbudos = false) {
   const sinEmbudos = conNotas ? candidatos.filter((o) => conNotas.has(o.id)) : candidatos;
   /* UN solo estado: lo que se ve, se imprime, se elige con «todos» y cuentan los indicadores. */
   const embudos = useFiltrosTabla(sinEmbudos, COLUMNAS_PEDIDOS);
+  /* «Por cobrar (N)»: escribe en el embudo «Plata» (el mismo estado), no en otro filtro. */
+  const plataPuesta = embudos.facetas.plata;
+  const porCobrarActivo =
+    Array.isArray(plataPuesta) &&
+    plataPuesta.length === PLATA_POR_COBRAR.length &&
+    PLATA_POR_COBRAR.every((v) => plataPuesta.includes(v));
+  const porCobrarCuenta = sinEmbudos.filter(faltaCobrar).length;
+  const alternarPorCobrar = () =>
+    embudos.setFaceta("plata", porCobrarActivo ? undefined : [...PLATA_POR_COBRAR]);
   const enMarchaFiltrados = conEmbudos ? embudos.filtradas : sinEmbudos;
 
   const archivados = pedidosArchivados(orders);
@@ -124,6 +139,8 @@ export function usePedidos(conEmbudos = false) {
     vistas,
     orden,
     setOrden,
+    ordenLista,
+    porCobrar: { cuenta: porCobrarCuenta, activo: porCobrarActivo, alternar: alternarPorCobrar },
     filtrosAbiertos,
     setFiltrosAbiertos,
     impresionAbierta,
@@ -133,7 +150,7 @@ export function usePedidos(conEmbudos = false) {
     enMarchaFiltrados,
     embudos,
     /** En el orden de la Lista: lo que sale en la hoja impresa. */
-    pedidosOrdenados: ordenarPedidos(enMarchaFiltrados, orden),
+    pedidosOrdenados: ordenLista.ordenar(enMarchaFiltrados),
     /** Los filtros puestos en palabras (encabezado de la hoja). */
     filtrosTexto: [
       ...filtrosEnTexto(filters, repartidor, (s) => STATUS_LABELS[s]),

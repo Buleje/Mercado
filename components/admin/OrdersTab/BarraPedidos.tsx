@@ -89,6 +89,8 @@ interface BarraPedidosProps {
   onAbrirFiltros: () => void;
   /** La cuenta en cada chip de estado (Lista). En el Tablero la dice su columna. */
   conCuentas?: boolean;
+  /** Atajo «Por cobrar (N)» (Lista): escribe en el embudo «Plata» de la cabeza. */
+  porCobrar?: { cuenta: number; activo: boolean; alternar: () => void };
   /** Lo que la vista pone a la derecha de la misma fila (acciones en bloque). */
   extremo?: ReactNode;
 }
@@ -101,6 +103,7 @@ export function BarraPedidos({
   onRepartidor,
   onAbrirFiltros,
   conCuentas = false,
+  porCobrar,
   extremo,
 }: BarraPedidosProps) {
   const puestos = filtrosPuestos(filters, repartidor);
@@ -194,6 +197,13 @@ export function BarraPedidos({
             );
           })}
         </div>
+
+        {porCobrar && (porCobrar.cuenta > 0 || porCobrar.activo) && (
+          <Chip activo={porCobrar.activo} onClick={porCobrar.alternar}>
+            Por cobrar
+            <span className="text-sm font-bold tabular-nums opacity-80">({porCobrar.cuenta})</span>
+          </Chip>
+        )}
 
         <button
           type="button"

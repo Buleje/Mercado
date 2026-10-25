@@ -4,7 +4,7 @@
  * sin avanzar» a un pedido de 177 días; ahora se dice y se ordena el real.
  */
 import { createElement } from "react";
-import { render } from "@testing-library/react";
+import { act, render, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { nombreDelPago } from "@/components/admin/OrdersTab/types";
 import { OrdersPrintPreview } from "@/components/admin/OrdersTab/OrdersPrintPreview";
@@ -18,10 +18,16 @@ import {
   UNA_HORA,
 } from "@/components/admin/OrdersTab/tiempo-en-estado";
 import {
-  ordenarPedidos,
-  siguienteOrden,
+  aOrdenFijo,
+  deOrdenFijo,
   ORDEN_INICIAL,
+  ORDEN_PEDIDOS,
+  type Orden,
 } from "@/components/admin/OrdersTab/orden-pedidos";
+import { ordenarFilas, useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+
+const ordenarPedidos = (pedidos: readonly DbOrder[], o: Orden) =>
+  ordenarFilas(pedidos, ORDEN_PEDIDOS[o.columna], o.sentido);
 
 const AHORA = Date.parse("2026-10-10T15:00:00Z");
 const hace = (ms: number) => new Date(AHORA - ms).toISOString();
@@ -126,13 +132,23 @@ describe("orden de la Lista", () => {
     expect(ids({ columna: "espera", sentido: "desc" })).toEqual(["Beto", "Carla", "ana"]);
   });
 
-  it("tocar la misma cabeza da vuelta el sentido; otra arranca en su sentido útil", () => {
-    expect(siguienteOrden(ORDEN_INICIAL, "fecha")).toEqual({ columna: "fecha", sentido: "asc" });
-    expect(siguienteOrden(ORDEN_INICIAL, "espera")).toEqual({ columna: "espera", sentido: "desc" });
-    expect(siguienteOrden(ORDEN_INICIAL, "cliente")).toEqual({
-      columna: "cliente",
-      sentido: "asc",
-    });
+  it("controlado: tocar la misma cabeza da vuelta el sentido, otra arranca en el suyo y la tercera vuelve al inicio", () => {
+    let orden: Orden = ORDEN_INICIAL;
+    const { result, rerender } = renderHook(() =>
+      useOrdenColumna(ORDEN_PEDIDOS, { valor: aOrdenFijo(orden), onCambio: (v) => (orden = deOrdenFijo(v)) }),
+    );
+    const tocar = (c: string) => {
+      act(() => result.current.alternar(c));
+      rerender();
+    };
+    tocar("fecha");
+    expect(orden).toEqual({ columna: "fecha", sentido: "asc" });
+    tocar("fecha");
+    expect(orden).toEqual(ORDEN_INICIAL);
+    tocar("espera");
+    expect(orden).toEqual({ columna: "espera", sentido: "desc" });
+    tocar("cliente");
+    expect(orden).toEqual({ columna: "cliente", sentido: "asc" });
   });
 
   it("no toca la lista que recibe", () => {
