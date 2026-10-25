@@ -26,6 +26,7 @@ import type { usePagoDeGuia } from "@/hooks/use-plata-de-guia";
 import { Btn } from "../ctp-shared";
 import { Bloque, ChipPago, diaCorto, soles } from "./comun";
 import FormPago from "./FormPago";
+import AvisoDescontarAdelanto from "./AvisoDescontarAdelanto";
 
 type Pago = ReturnType<typeof usePagoDeGuia>;
 
@@ -54,11 +55,14 @@ export default function SeccionPago({
   dto,
   pago,
   onPagado,
+  onRecargar,
 }: {
   dto: PlataDeGuiaDTO;
   pago: Pago;
-  /** Tras un pago bueno: releer la guía (el estado es derivado). */
-  onPagado: (codigo?: string) => void;
+  /** Tras un pago bueno: releer la guía (el estado es derivado). `mensaje` = el aviso ya armado. */
+  onPagado: (codigo?: string, mensaje?: string) => void;
+  /** Tras unir la ficha con su persona de Adelantos: releer la guía. */
+  onRecargar: () => void;
 }) {
   const [abierto, setAbierto] = useState(false);
   const est = dto.pago;
@@ -156,6 +160,8 @@ export default function SeccionPago({
           )}
         </div>
       )}
+
+      {!abierto && <AvisoDescontarAdelanto dto={dto} pago={pago} onPagado={onPagado} onRecargar={onRecargar} />}
 
       {persona && (
         <p className="mt-2 border-t border-[var(--rule-soft)] pt-2 text-sm text-[var(--text-secondary)]">

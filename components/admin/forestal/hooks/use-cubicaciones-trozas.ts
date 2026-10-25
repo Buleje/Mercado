@@ -10,7 +10,7 @@
  * usuario tiene que hacer. Contrato: `.claude/autonomo/contratos-2026-10-08/cubicacion-cuenta.md` §3.4.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatCurrency } from "@/lib/format";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
@@ -252,17 +252,36 @@ const leerPersonas = (j: unknown): PersonaCuenta[] => {
 export function usePersonasDeLaCuenta(activo: boolean) {
   const [personas, setPersonas] = useState<PersonaCuenta[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /* `vuelta` sube cuando alguien une una persona con su ficha (`avisarPersonasCambiaron`):
+     la fila pasa a tener las dos libretas y hay que releerla. `leida` evita pedirlas
+     de nuevo al prender y apagar `activo`. */
+  const [vuelta, setVuelta] = useState(0);
+  const leida = useRef<number | null>(null);
   useEffect(() => {
-    if (!activo || personas) return;
+    const f = () => setVuelta((v) => v + 1);
+    avisosDePersonas.add(f);
+    return () => { avisosDePersonas.delete(f); };
+  }, []);
+  useEffect(() => {
+    if (!activo || leida.current === vuelta) return;
     let vivo = true;
     void pedir(`${RUTA_CUBICACIONES_TROZAS}/personas`, {}, leerPersonas).then((r) => {
       if (!vivo) return;
-      if (r.ok) setPersonas(r.data);
-      else { setPersonas([]); setError(r.mensaje); }
+      leida.current = vuelta;
+      if (r.ok) { setPersonas(r.data); setError(null); }
+      else { setPersonas((p) => p ?? []); setError(r.mensaje); }
     });
     return () => { vivo = false; };
-  }, [activo, personas]);
+  }, [activo, vuelta]);
   return { personas, cargando: activo && personas === null, error };
+}
+
+/** Quienes leen «¿De quién es la madera?»: se les avisa cuando una persona se une a su ficha. */
+const avisosDePersonas = new Set<() => void>();
+
+/** Tras unir (o soltar) a una persona con su ficha del directorio: las pantallas abiertas releen las filas. */
+export function avisarPersonasCambiaron(): void {
+  for (const f of avisosDePersonas) f();
 }
 
 const direccionDeAdelantos = (sentido: SentidoCubicacion) => (sentido === "venta" ? "RECIBIDO" : "DADO");

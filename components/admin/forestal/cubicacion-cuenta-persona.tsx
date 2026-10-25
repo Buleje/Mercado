@@ -7,9 +7,15 @@
  * el orden (primero quien tiene adelantos abiertos del lado que toca: compra
  * paga lo DADO, venta lo RECIBIDO) y para la etiqueta con su saldo.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Link2 } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { sugerirPersonaDeAdelantos } from "@/lib/adelantos/madera-adelanto";
+import { unirConFicha } from "@/lib/adelantos/unir-con-ficha";
+import { formatCurrency } from "@/lib/currency";
 import { etiquetaPersonaCubicacion } from "@/lib/forestal/cubicacion-a-cuenta";
-import type { PersonaCuenta, SentidoCubicacion } from "./hooks/use-cubicaciones-trozas";
+import { avisarPersonasCambiaron, type PersonaCuenta, type SentidoCubicacion } from "./hooks/use-cubicaciones-trozas";
 
 export const CAMPO_CUENTA =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -52,8 +58,61 @@ export function CampoPersonaCuenta({
       </select>
       {error && <p className="mt-1 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
       {persona && !persona.beneficiarioId && (
-        <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tiene adelantos: al valorizarla, todo va a su cuenta.</p>
+        <SugerirUnirConAdelantos persona={persona} ordenadas={ordenadas} onUnida={(id) => onClave(`benef:${id}`)} />
       )}
+    </div>
+  );
+}
+
+/**
+ * Elegiste la ficha del directorio («WASACO») y en Adelantos está «Wasaco» con
+ * adelantos abiertos: sin unirlas, su madera no baja de su adelanto. Se ofrece
+ * unirlas (una vez, como en su ficha de Adelantos); al unirlas queda elegida
+ * la persona de Adelantos, que ya trae su ficha. Sólo admin o dueño unen.
+ */
+function SugerirUnirConAdelantos({
+  persona, ordenadas, onUnida,
+}: {
+  persona: PersonaCuenta;
+  ordenadas: readonly PersonaCuenta[];
+  onUnida: (beneficiarioId: string) => void;
+}) {
+  const rol = useMiRol();
+  const [guardando, setGuardando] = useState(false);
+  const [fallo, setFallo] = useState<string | null>(null);
+  const sugerida = useMemo(
+    () => (persona.parteId ? sugerirPersonaDeAdelantos({ nombre: persona.nombre }, ordenadas)?.candidata.fila ?? null : null),
+    [persona, ordenadas],
+  );
+  if (!sugerida?.beneficiarioId || !persona.parteId || !(rol === "admin" || rol === "owner")) {
+    return <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tiene adelantos: al valorizarla, todo va a su cuenta.</p>;
+  }
+  const beneficiarioId = sugerida.beneficiarioId;
+  const parteId = persona.parteId;
+  return (
+    <div className="mt-1 space-y-1 rounded-xl bg-[var(--data-info)]/10 px-3 py-2 text-sm" data-vista="unir-con-adelantos">
+      <p className="text-[var(--text-primary)]">
+        ¿Es <b>{sugerida.nombre}</b> de Adelantos (mismo nombre)? Tiene{" "}
+        <b className="tabular-nums">{formatCurrency(sugerida.adelantos?.teDebe ?? 0)}</b> de adelanto: únelas y esta madera baja de ahí.
+      </p>
+      <button
+        type="button"
+        className={button({ variant: "secondary" })}
+        disabled={guardando}
+        onClick={async () => {
+          setGuardando(true);
+          setFallo(null);
+          const r = await unirConFicha(beneficiarioId, parteId);
+          setGuardando(false);
+          if (!r.ok) { setFallo(r.mensaje); return; }
+          avisarPersonasCambiaron();
+          onUnida(beneficiarioId);
+        }}
+        data-accion="unir-con-adelantos"
+      >
+        <Link2 className="h-4 w-4" aria-hidden /> {guardando ? "Uniendo…" : "Sí, únelas"}
+      </button>
+      {fallo && <p role="alert" className="font-medium text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{fallo}</p>}
     </div>
   );
 }

@@ -22,6 +22,7 @@ import {
 } from "@/lib/forestal/cubicacion-cuenta";
 import { aplicarDescuentoLote, lineasDeEspecie } from "@/lib/forestal/cubicacion-comercial";
 import { preciosParaAplicar, valorizarConSugeridos, type PreciosSugeridos, type VistaValorizada } from "@/lib/forestal/cubicacion-madera-cuenta";
+import { fmtPt, precioPromedio, ptEquivalente } from "@/lib/adelantos/madera-adelanto";
 import { BOTON_PRIMARIO } from "./ctp-lotes-modal-marco";
 import { ACuentaPrevia } from "./cubicador-trozas-a-cuenta";
 import {
@@ -106,6 +107,14 @@ export default function ValorizarPrecios({
   const partes = reparto?.partes ?? null;
   const aCuenta = reparto?.aCuenta ?? null;
   const persona = cub.personaNombre ?? "esta persona";
+  /* «Tiene S/ 2,442 de adelanto ≈ 977 pt a S/ 2.50»: el pt sale del precio de
+     ESTE lote (monto ÷ volumen neto) y sólo cuando el lote se cuenta en pt. */
+  const enPt = useMemo(() => {
+    const teDebe = abiertos.reduce((t, a) => t + a.saldo, 0);
+    const baja = (partes ?? []).reduce((t, p) => t + p.monto, 0);
+    const precio = unidad === "PT" ? precioPromedio(monto, lineas.reduce((t, l) => t + l.volumen, 0)) : null;
+    return { teDebe, baja, queda: Math.max(0, Math.round((teDebe - baja) * 100) / 100), precio, pt: ptEquivalente(teDebe, precio) };
+  }, [abiertos, partes, unidad, monto, lineas]);
   const sePuede = !!reparto && (!aCuenta || !!cuenta);
   const listo = monto != null && monto > 0 && sePuede && confirmado && !enviando;
   const verbo = !aCuenta ? "Descontar" : partes?.length ? "Aplicar" : "Anotar en su cuenta";
@@ -212,7 +221,18 @@ export default function ValorizarPrecios({
         <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Buscando sus adelantos…</p>
       ) : (
         <div>
-          <p className="mb-1.5 text-sm font-semibold text-[var(--text-secondary)]">Se descuenta de (el más antiguo primero)</p>
+          {abiertos.length > 0 && (
+            <p className="mb-1.5 text-sm text-[var(--text-secondary)]" data-vista="adelanto-en-pt">
+              <span className="font-semibold text-[var(--text-primary)]">
+                {cub.sentido === "venta" ? `${persona} te adelantó ` : `${persona} tiene `}
+                <span className="tabular-nums">{formatCurrency(enPt.teDebe)}</span>
+                {cub.sentido === "venta" ? "" : " de adelanto"}
+              </span>
+              {enPt.pt != null && enPt.precio != null && <> ≈ {fmtPt(enPt.pt)} a {formatCurrency(enPt.precio)} el pt</>}
+              {partes?.length ? <> · baja {formatCurrency(enPt.baja)}, le queda {formatCurrency(enPt.queda)}</> : null}
+              <span className="text-[var(--text-tertiary)]"> · se descuenta del más antiguo primero</span>
+            </p>
+          )}
           {abiertos.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">No tiene adelantos abiertos de este lado: todo va a su cuenta.</p>
           ) : (

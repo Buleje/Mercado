@@ -304,12 +304,13 @@ export default function CtpCostoGuiaModal({
                 <SeccionPago
                   dto={dto}
                   pago={pago}
-                  onPagado={(codigo) => {
+                  onPagado={(codigo, mensaje) => {
                     void plata.cargar();
                     onGuardado(
-                      `Pago registrado${codigo ? ` · ${codigo}` : ""} · guía ${guia.gtfNumber}`,
+                      mensaje ?? `Pago registrado${codigo ? ` · ${codigo}` : ""} · guía ${guia.gtfNumber}`,
                     );
                   }}
+                  onRecargar={() => void plata.cargar()}
                 />
               )}
 
