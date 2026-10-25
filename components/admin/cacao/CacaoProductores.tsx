@@ -36,6 +36,7 @@ const COLUMNAS: readonly ColumnaFiltro<Producer>[] = [
   { id: "sector", label: "Sector", tipo: "multi", valor: (p) => p.sector, soloConVarios: true },
   { id: "cert", label: "Certificación", tipo: "multi", valor: (p) => (p.certificacion ? (CERT_LABEL[p.certificacion] ?? p.certificacion) : "Sin declarar"), soloConVarios: true },
   { id: "kg", label: "Kg comprados", tipo: "rango", numero: (p) => (p.stats.lotes ? p.stats.kg : null), unidad: "kg", paso: 0.01 },
+  { id: "deuda", label: "Deuda", tipo: "multi", valor: (p) => (p.stats.saldo > 0 ? "Debes" : "Al día"), soloConVarios: true },
   { id: "pagado", label: "A pagar", tipo: "rango", numero: (p) => (p.stats.lotes ? p.stats.pagado : null), unidad: "S/", paso: 0.01 },
   { id: "lotes", label: "Lotes", tipo: "rango", numero: (p) => p.stats.lotes, paso: 1 },
   { id: "ultima", label: "Última", tipo: "fecha", numero: (p) => dia(p.stats.lastFecha) },
@@ -83,6 +84,9 @@ export default function CacaoProductores() {
   // Orden de llegada = el de siempre («Más pagado»); el clic en un título lo cambia.
   const base = useMemo(() => [...producers].sort((a, b) => b.stats.pagado - a.stats.pagado), [producers]);
   const f = useFiltrosTabla(base, COLUMNAS);
+  const debes = useMemo(() => base.filter((p) => p.stats.saldo > 0).length, [base]);
+  const deudaSel = f.facetas.deuda as string[] | undefined;
+  const debesOn = deudaSel?.length === 1 && deudaSel[0] === "Debes";
   const ord = useOrdenColumna(ORDEN);
   const view = ord.ordenar(f.filtradas);
 
@@ -139,6 +143,9 @@ export default function CacaoProductores() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
+        <button type="button" aria-pressed={debesOn} onClick={() => f.setFaceta("deuda", debesOn ? undefined : ["Debes"])} className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${debesOn ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"}`}>
+          Debes <span className="tabular-nums">({debes})</span>
+        </button>
         <div className="min-w-0 flex-1" />
         <button type="button" onClick={() => setIncludeInactive((v) => !v)} className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold ${includeInactive ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}>{includeInactive ? "Todos" : "Activos"}</button>
         <button type="button" onClick={exportCsv} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Download className="h-4 w-4" />CSV</button>
@@ -154,7 +161,7 @@ export default function CacaoProductores() {
               <ThColumna label="Productor" ids={["productor"]} f={f} orden={ord} ordenId="productor" />
               <ThColumna label="Sector" ids={["sector", "cert"]} f={f} orden={ord} ordenId="sector" />
               <ThColumna label="Kg comprados" ids={["kg"]} f={f} derecha orden={ord} ordenId="kg" />
-              <ThColumna label="A pagar" ids={["pagado"]} f={f} derecha orden={ord} ordenId="pagado" />
+              <ThColumna label="A pagar" ids={["pagado", "deuda"]} f={f} derecha orden={ord} ordenId="pagado" />
               <ThColumna label="Lotes" ids={["lotes"]} f={f} derecha orden={ord} ordenId="lotes" />
               <ThColumna label="Calidad I" f={f} derecha orden={ord} ordenId="calidad" />
               <ThColumna label="Última" ids={["ultima"]} f={f} derecha orden={ord} ordenId="ultima" />
