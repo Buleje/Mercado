@@ -40,6 +40,8 @@ async function montar() {
     </ConfirmDialogProvider>,
   );
   fireEvent.change(screen.getByPlaceholderText("Maderera ... SAC"), { target: { value: "QA TITULAR DOCS" } });
+  // El alta va por pasos (24-10): las carpetas viven en «Archivos».
+  fireEvent.click(within(screen.getByRole("navigation", { name: "Pasos del plan" })).getByRole("button", { name: /Archivos/ }));
   // La plantilla del negocio se lee al abrir (vacía acá → la sugerida).
   await screen.findByRole("navigation", { name: "Carpetas del plan" });
   return { ...utils, onSaved };

@@ -16,7 +16,8 @@ import {
   type PasoGuardado,
   type PendientesDocumentos,
 } from "./plan-documentos/pendientes";
-import { aEspecieParaGuardar, agregarVarias, type FilaEspecie } from "./loth-plan-especies-api";
+import { agregarVarias, type EspecieParaGuardar } from "./loth-plan-especies-api";
+import type { BloqueDelPlan } from "@/lib/forestal/loth-plan-bloques";
 import type { Plan } from "./loth-plan-shared";
 import { pideCampo } from "@/lib/forestal/loth-tipos-plan";
 import { FORMULARIO, type FormularioPlan } from "./loth-plan-form-shared";
@@ -28,7 +29,10 @@ export interface ContextoEnvioPlan {
   creadoId: string | null;
   puedeGuardar: boolean;
   especiesMal: boolean;
-  especiesConDatos: FilaEspecie[];
+  /** Las especies del alta: una por fila, o la suma por especie si va por bloques. */
+  especiesParaGuardar: EspecieParaGuardar[];
+  /** El reparto por bloque o zona del alta (null = sin bloques). */
+  bloques: BloqueDelPlan[] | null;
   permiso: Contrato | null;
   camposPendientes: PendientesCampos;
   docsPend: PendientesDocumentos;
@@ -45,7 +49,7 @@ export interface ContextoEnvioPlan {
 
 export async function enviarPlan(e: FormEvent, ctx: ContextoEnvioPlan) {
   const {
-    f, plan, creadoId, puedeGuardar, especiesMal, especiesConDatos, permiso, camposPendientes, docsPend,
+    f, plan, creadoId, puedeGuardar, especiesMal, especiesParaGuardar, bloques, permiso, camposPendientes, docsPend,
     actualizarPermiso, onSaved, setErr, setBusy, setIntentoGuardar, setCreadoId, setCamposPendientes,
     setDocsPend, setPasoDocs,
   } = ctx;
@@ -74,7 +78,7 @@ export async function enviarPlan(e: FormEvent, ctx: ContextoEnvioPlan) {
        transacción, y una plantación nunca queda a medias sin su base. */
     /* En el reintento ya entraron con el POST (el PATCH las ignora y
        agregarlas de nuevo daba «ya existe»). */
-    const paraGuardar = idExistente ? [] : especiesConDatos.map(aEspecieParaGuardar);
+    const paraGuardar = idExistente ? [] : especiesParaGuardar;
     if (paraGuardar.length > 0) body.species = paraGuardar;
     const r = await fetch("/api/admin/forestal/plan", {
       method: idExistente ? "PATCH" : "POST",
@@ -97,6 +101,28 @@ export async function enviarPlan(e: FormEvent, ctx: ContextoEnvioPlan) {
       const { errores } = await agregarVarias(creado.plan.id, paraGuardar);
       if (errores.length > 0) {
         setErr(`El registro se creó, pero ${errores.length === 1 ? "una especie no entró" : `${errores.length} especies no entraron`}: ${errores.join(" · ")}. Agrégalas en la pestaña Registro y saldo.`);
+        setBusy(false);
+        return;
+      }
+    }
+    /* El reparto por bloque o zona: el detalle de dónde está cada especie. Va
+       DESPUÉS de las especies (que ya entraron sumadas) y se repite entero en
+       el reintento: un reparto igual al guardado no escribe nada. */
+    if (idPlan && !plan && bloques && bloques.length > 0) {
+      let rb: Response | null = null;
+      try {
+        rb = await fetch("/api/admin/forestal/plan/bloques", {
+          method: "PUT",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify({ planId: idPlan, bloques }),
+        });
+      } catch {
+        rb = null;
+      }
+      if (!rb?.ok) {
+        const cuerpo = rb ? ((await rb.json().catch(() => ({}))) as { message?: string }) : {};
+        setErr(`El registro y sus especies se guardaron, pero el reparto por bloques no${cuerpo.message ? `: ${cuerpo.message}` : rb ? ` (error ${rb.status})` : " (revisa tu conexión)"}. Toca «Reintentar lo que faltó».`);
         setBusy(false);
         return;
       }

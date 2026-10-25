@@ -35,7 +35,9 @@ export type LothAuditEntity =
   // KV: referencias y accesos del plano (contexto cartográfico).
   | "ForestLothCartografia"
   // KV: parámetros del Plan Operativo (DMC por especie, % de semilleros).
-  | "ForestLothPoa";
+  | "ForestLothPoa"
+  // KV: reparto de las especies de una plantación por bloque o zona.
+  | "ForestLothPlanBloques";
 
 /**
  * De dónde vino el pedido (IP y navegador), para los eventos que el titular
@@ -92,6 +94,8 @@ export type LothAuditAction =
   | "loth_cartografia_update"
   // Parámetros del POA: DMC por especie y semilleros (KV)
   | "loth_poa_config_update"
+  // Reparto de las especies del plan por bloque o zona (KV)
+  | "loth_plan_bloques_update"
   // ¿Asierra dentro del TH o la madera va a una planta? (KV, por carátula)
   | "loth_transformacion_update";
 

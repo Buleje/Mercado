@@ -8,7 +8,7 @@
  * PO que de pronto manda especies o cambia de rótulos.
  */
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CATALOGO_VACIO } from "@/lib/forestal/especies-catalogo";
 import type { Plan } from "@/components/admin/forestal/loth-plan-shared";
@@ -50,12 +50,17 @@ function fetchQueResponde(respuestaDelPlan: Record<string, unknown>) {
 
 const escribir = (el: HTMLElement, v: string) => fireEvent.change(el, { target: { value: v } });
 
+/** El alta va por pasos (24-10): lo que no está en el paso de la vista va `hidden` y los `*ByRole` no lo ven. */
+const irAlPaso = (nombre: RegExp) =>
+  fireEvent.click(within(screen.getByRole("navigation", { name: "Pasos del plan" })).getByRole("button", { name: nombre }));
+
 function cargarDosEspecies() {
   fireEvent.click(screen.getByRole("button", { name: /^Plantación/ }));
   escribir(screen.getByLabelText("Titular"), "Agroforestal QA SAC");
   escribir(screen.getByLabelText("Código del registro de plantación"), "Plantación QA-459");
   escribir(screen.getAllByLabelText("Especie *")[0], "Bolaina");
   escribir(screen.getAllByLabelText("Volumen (m³) *")[0], "120");
+  irAlPaso(/Especies/);
   fireEvent.click(screen.getByRole("button", { name: "Agregar especie" }));
   escribir(screen.getAllByLabelText("Especie *")[1], "Capirona");
   escribir(screen.getAllByLabelText("Volumen (m³) *")[1], "80");
@@ -80,6 +85,7 @@ describe("alta de una plantación con sus especies", () => {
     expect(screen.getByLabelText("Superficie total (ha)")).toBeTruthy();
     expect(screen.queryByLabelText("N° resolución")).toBeNull();
     expect(screen.queryByLabelText("Vigencia hasta")).toBeNull();
+    irAlPaso(/Dónde/);
     fireEvent.click(screen.getByRole("button", { name: /Período de aprovechamiento/ }));
     expect(screen.getByLabelText("Aprovechamiento hasta")).toBeTruthy();
     expect(screen.getByText("Especies registradas")).toBeTruthy();
@@ -136,6 +142,91 @@ describe("alta de una plantación con sus especies", () => {
   });
 });
 
+describe("alta por bloques o zonas (24-10)", () => {
+  /** Bolaina en el Bloque 1 (30 árboles, 12 m³) y en el 2 (18 árboles, 7,5 m³) + Capirona sólo en el 2. */
+  function cargarPorBloques(container: HTMLElement) {
+    fireEvent.click(screen.getByRole("button", { name: /^Plantación/ }));
+    escribir(screen.getByLabelText("Titular"), "Agroforestal QA SAC");
+    escribir(screen.getByLabelText("Código del registro de plantación"), "Plantación QA-BLOQUES");
+    irAlPaso(/Especies/);
+    escribir(screen.getAllByLabelText("Especie *")[0], "Bolaina");
+    escribir(screen.getAllByLabelText("N° de árboles")[0], "30");
+    escribir(screen.getAllByLabelText("Volumen (m³) *")[0], "12");
+    fireEvent.click(screen.getByRole("button", { name: "Por bloques o zonas" }));
+    const dos = container.querySelector<HTMLElement>('[data-bloque="Bloque 2"]');
+    if (!dos) throw new Error("no se abrió el Bloque 2");
+    escribir(within(dos).getByLabelText("Especie *"), "Bolaina");
+    escribir(within(dos).getByLabelText("N° de árboles"), "18");
+    escribir(within(dos).getByLabelText("Volumen (m³) *"), "7.5");
+    fireEvent.click(within(dos).getByRole("button", { name: "Agregar especie a «Bloque 2»" }));
+    escribir(within(dos).getAllByLabelText("Especie *")[1], "Capirona");
+    escribir(within(dos).getAllByLabelText("Volumen (m³) *")[1], "4");
+  }
+
+  it("registra cada especie sumada de sus bloques y DESPUÉS guarda el reparto", async () => {
+    const llamadas = fetchQueResponde({ plan: { id: "p1" }, species: [{ id: "s1" }, { id: "s2" }] });
+    const onSaved = vi.fn();
+    const { container } = render(<LothPlanForm onClose={() => {}} onSaved={onSaved} />);
+    cargarPorBloques(container);
+    const suma = screen.getByRole("region", { name: "Lo que se registra por especie" });
+    expect(within(suma).getByText(/en 2 bloques/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Crear Plantación" }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith("p1"));
+
+    const escrituras = llamadas.filter((l) => l.method !== "GET").map((l) => `${l.method} ${l.url}`);
+    expect(escrituras).toEqual(["POST /api/admin/forestal/plan", "PUT /api/admin/forestal/plan/bloques"]);
+    expect(llamadas.find((l) => l.method === "POST")!.body!.species).toEqual([
+      expect.objectContaining({ speciesCommon: "Bolaina", volumenAutorizadoM3: 19.5, arbolesAutorizados: 48 }),
+      expect.objectContaining({ speciesCommon: "Capirona", volumenAutorizadoM3: 4 }),
+    ]);
+    const reparto = llamadas.find((l) => l.method === "PUT")!.body!;
+    expect(reparto.planId).toBe("p1");
+    expect(reparto.bloques).toEqual([
+      { nombre: "Bloque 1", especies: [expect.objectContaining({ speciesCommon: "Bolaina", volumenM3: 12, arboles: 30 })] },
+      {
+        nombre: "Bloque 2",
+        especies: [
+          expect.objectContaining({ speciesCommon: "Bolaina", volumenM3: 7.5, arboles: 18 }),
+          expect.objectContaining({ speciesCommon: "Capirona", volumenM3: 4 }),
+        ],
+      },
+    ]);
+  });
+
+  it("si el reparto no entra, el plan ya existe: «Reintentar» repite sólo el reparto", async () => {
+    const llamadas = fetchQueResponde({ plan: { id: "p1" }, species: [{ id: "s1" }, { id: "s2" }] });
+    const base = globalThis.fetch as unknown as (url: string, init?: RequestInit) => Promise<Response>;
+    let fallas = 1;
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      const r = await base(url, init);
+      if (String(url).endsWith("/plan/bloques") && fallas-- > 0) return new Response("{}", { status: 500 });
+      return r;
+    }));
+    const onSaved = vi.fn();
+    const { container } = render(<LothPlanForm onClose={() => {}} onSaved={onSaved} />);
+    cargarPorBloques(container);
+    fireEvent.click(screen.getByRole("button", { name: "Crear Plantación" }));
+    const reintentar = await screen.findByRole("button", { name: /Reintentar lo que faltó/ });
+    expect(screen.getByText(/el reparto por bloques no \(error 500\)/)).toBeTruthy();
+    expect(onSaved).not.toHaveBeenCalled();
+    fireEvent.click(reintentar);
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith("p1"));
+    expect(llamadas.filter((l) => l.method === "POST")).toHaveLength(1);
+    expect(llamadas.filter((l) => l.method === "PUT")).toHaveLength(2);
+  });
+
+  it("dos bloques con el mismo nombre frenan el alta y lo dicen", () => {
+    const llamadas = fetchQueResponde({ plan: { id: "p1" } });
+    const { container } = render(<LothPlanForm onClose={() => {}} onSaved={() => {}} />);
+    cargarPorBloques(container);
+    escribir(screen.getByLabelText("Nombre del bloque 2"), "bloque 1");
+    expect(screen.getByRole("alert").textContent).toMatch(/Hay dos bloques que se llaman «Bloque 1»/);
+    fireEvent.click(screen.getByRole("button", { name: "Crear Plantación" }));
+    expect(llamadas.filter((l) => l.method === "POST")).toHaveLength(0);
+  });
+});
+
 describe("lo que NO cambia", () => {
   it("un PO no ofrece especies ni manda `species`, y sigue diciendo resolución", async () => {
     const llamadas = fetchQueResponde({ plan: { id: "p2" } });
@@ -161,6 +252,7 @@ describe("lo que NO cambia", () => {
     const onSaved = vi.fn();
     render(<LothPlanForm plan={plan} onClose={() => {}} onSaved={onSaved} onIrARegistro={onIr} />);
     expect(screen.queryAllByLabelText("Especie *")).toHaveLength(0);
+    irAlPaso(/Especies/);
     fireEvent.click(screen.getByRole("button", { name: /Ir a Registro y saldo/ }));
     expect(onIr).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));

@@ -9,7 +9,7 @@
  *    vencido que sigue vigente y agrega frases rápidas.
  */
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CATALOGO_VACIO } from "@/lib/forestal/especies-catalogo";
 import type { Plan } from "@/components/admin/forestal/loth-plan-shared";
@@ -132,7 +132,8 @@ describe("el formulario", () => {
     render(<LothPlanForm onClose={() => {}} onSaved={() => {}} />);
     fireEvent.change(screen.getByLabelText("Fecha resolución"), { target: { value: "2025-03-10" } });
     fireEvent.change(screen.getByLabelText("Vigencia hasta"), { target: { value: "2020-01-15" } });
-    fireEvent.click(screen.getByRole("button", { name: /^Costeo, estado y observaciones/ }));
+    // El alta va por pasos (24-10): en «Costeo y más» el costeo ya viene abierto.
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Pasos del plan" })).getByRole("button", { name: /Costeo y más/ }));
 
     escribir(screen.getByLabelText("UIT de referencia (S/)"), "5000");
     fireEvent.click(screen.getByRole("button", { name: /Usar la UIT de 2025/ }));

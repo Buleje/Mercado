@@ -68,12 +68,15 @@ export default function LothPlanFormCosteo({
   valores,
   onCambio,
   contexto,
+  abiertoDeEntrada = false,
 }: {
   valores: CamposDeCosteo;
   onCambio: (k: keyof CamposDeCosteo, v: string) => void;
   contexto?: ContextoDeCosteo;
+  /** En su propio paso del formulario se ve abierto: el paso ya es el pliegue. */
+  abiertoDeEntrada?: boolean;
 }) {
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState(abiertoDeEntrada);
   const hoy = limaDateKey();
   const costos = COSTOS.map((c) => valores[c.k]);
   const cargados = costos.filter((v) => v.trim()).length;

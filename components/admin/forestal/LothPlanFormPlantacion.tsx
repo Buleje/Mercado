@@ -18,37 +18,16 @@
  */
 
 import { useId, useMemo, useState } from "react";
-import { ArrowRight, Coins, Plus, ScanText, Trash2 } from "@buleje/design-system/icons";
+import { ArrowRight, Coins, LayoutGrid, Plus } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
-import { especiesDisponibles } from "@/lib/forestal/especies-catalogo";
+import { especiesDisponibles, type EspecieDisponible } from "@/lib/forestal/especies-catalogo";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
-import { CitesToggle, cls } from "./loth-plan-ui";
-import {
-  conCites,
-  conNombre,
-  especiesRepetidas,
-  filaEnBlanco,
-  filaVacia,
-  problemaDeFila,
-  totalM3,
-  type FilaEspecie,
-} from "./loth-plan-especies-api";
+import { COLUMNAS_CON_PRECIO, COLUMNAS_SIN_PRECIO, FilaDeEspecie, RotulosDeColumnas } from "./LothPlanFormEspecieFila";
+import { conNombre, especiesRepetidas, filaEnBlanco, filaVacia, totalM3, type FilaEspecie } from "./loth-plan-especies-api";
+import { button } from "@/components/ui-system/button-variants";
 
-/* Las dos plantillas van escritas enteras: Tailwind sólo genera las clases que
-   encuentra literales en el código. */
-const COLUMNAS_SIN_PRECIO = "sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_5.5rem_7.5rem_5.5rem_6rem_2.75rem]";
-const COLUMNAS_CON_PRECIO = "sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1.2fr)_5rem_7rem_5rem_5.5rem_6rem_2.75rem]";
-
-const ROTULO = "mb-1 block text-xs font-medium text-[var(--text-secondary)] sm:sr-only";
-
-export default function LothPlanFormPlantacion({
-  filas,
-  onFilas,
-  mostrarErrores = false,
-  yaRegistradas = [],
-  leidas,
-}: {
+export interface PropsDeEspecies {
   filas: FilaEspecie[];
   onFilas: (filas: FilaEspecie[]) => void;
   /** Después del primer intento de guardar: antes, marcar en rojo lo que todavía se está escribiendo molesta. */
@@ -57,10 +36,32 @@ export default function LothPlanFormPlantacion({
   yaRegistradas?: readonly string[];
   /** Filas (por `uid`) que entraron leyendo la constancia: llevan una marca para revisarlas contra el papel. */
   leidas?: ReadonlySet<string>;
-}) {
-  const lista = useId();
+  /** «Por bloques o zonas» (sólo el alta del plan): reparte lo escrito en bloques (`LothPlanFormBloques`). */
+  onPorBloques?: () => void;
+}
+
+/** El editor con su catálogo. Los bloques usan `EditorDeEspecies` con UN catálogo para todos. */
+export default function LothPlanFormPlantacion(props: PropsDeEspecies) {
   const { catalogo } = useEspeciesCatalogo();
   const disponibles = useMemo(() => especiesDisponibles(catalogo), [catalogo]);
+  return <EditorDeEspecies {...props} disponibles={disponibles} />;
+}
+
+export function EditorDeEspecies({
+  filas,
+  onFilas,
+  mostrarErrores = false,
+  yaRegistradas = [],
+  leidas,
+  onPorBloques,
+  disponibles,
+  enBloque,
+}: PropsDeEspecies & {
+  disponibles: readonly EspecieDisponible[];
+  /** El nombre del bloque o zona en el que está este editor: el total pasa a ser del bloque. */
+  enBloque?: string;
+}) {
+  const lista = useId();
   const cientificoDe = useMemo(() => new Map(disponibles.map((e) => [e.clave, e.cientifico ?? null])), [disponibles]);
   const [conPrecio, setConPrecio] = useState(() => filas.some((f) => f.precioM3.trim()));
 
@@ -96,114 +97,30 @@ export default function LothPlanFormPlantacion({
         ))}
       </datalist>
 
-      {/* Los rótulos de columna, una vez. En el celular cada campo lleva el suyo. */}
-      <div
-        aria-hidden="true"
-        className={`hidden gap-2 px-1 text-xs font-semibold text-[var(--text-secondary)] sm:grid ${columnas}`}
-      >
-        <span>Especie *</span>
-        <span>Nombre científico</span>
-        <span className="text-right">N° árboles</span>
-        <span className="text-right">Volumen (m³) *</span>
-        <span className="text-right">Año inst.</span>
-        <span className="text-right">Sup. (ha)</span>
-        {conPrecio && <span className="text-right">S/ por m³</span>}
-        <span />
-      </div>
+      <RotulosDeColumnas columnas={columnas} conPrecio={conPrecio} />
 
       <ul className="space-y-2">
-        {filas.map((f, i) => {
-          const problema = mostrarErrores && !filaEnBlanco(f) ? problemaDeFila(f) : null;
-          const errorId = `${f.uid}-error`;
-          const nombreFila = f.speciesCommon.trim() || `fila ${i + 1}`;
-          return (
-            <li
-              key={f.uid}
-              className={`rounded-xl border p-2 sm:border-0 sm:p-0 ${problema ? "border-[var(--data-error-500)]/60" : "border-[var(--rule-base)]"}`}
-            >
-              <div className={`grid grid-cols-2 items-start gap-2 ${columnas}`}>
-                <label className="col-span-2 block sm:col-span-1">
-                  <span className={ROTULO}>Especie *</span>
-                  <span className="relative block">
-                    <input
-                      id={`${f.uid}-especie`}
-                      list={lista}
-                      value={f.speciesCommon}
-                      onChange={(e) => elegirNombre(f, e.target.value)}
-                      placeholder="Ej. Bolaina"
-                      autoComplete="off"
-                      aria-invalid={problema === "Falta la especie" || undefined}
-                      aria-describedby={problema ? errorId : undefined}
-                      className={`${cls} ${leidas?.has(f.uid) ? "pr-8" : ""}`}
-                    />
-                    {/* Leída de la constancia: la cifra la puso la IA, se revisa contra el papel. */}
-                    {leidas?.has(f.uid) && (
-                      <span
-                        title="Leída de la constancia: revisa los m³ contra el papel"
-                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
-                      >
-                        <ScanText className="h-4 w-4" aria-hidden="true" />
-                        <span className="sr-only">Leída de la constancia</span>
-                      </span>
-                    )}
-                  </span>
-                </label>
-                <label className="col-span-2 block sm:col-span-1">
-                  <span className={ROTULO}>Nombre científico</span>
-                  <span className="relative block">
-                    <input
-                      value={f.speciesScientific}
-                      onChange={(e) => cambiar(f.uid, (x) => ({ ...x, speciesScientific: e.target.value, cientificoAuto: false }))}
-                      placeholder="Se completa solo"
-                      className={`${cls} italic pr-20`}
-                    />
-                    <CitesToggle
-                      activo={f.cites}
-                      onCambiar={(v) => cambiar(f.uid, (x) => conCites(x, v))}
-                      especie={f.speciesCommon}
-                      className="absolute right-2 top-1/2 -translate-y-1/2"
-                    />
-                  </span>
-                </label>
-                <Numero rotulo="N° de árboles" valor={f.arboles} paso="1" ejemplo="0" onCambio={(v) => cambiar(f.uid, (x) => ({ ...x, arboles: v }))} />
-                <Numero
-                  rotulo="Volumen (m³) *"
-                  valor={f.volumenM3}
-                  paso="0.001"
-                  ejemplo="0.000"
-                  invalido={problema != null && /volumen/i.test(problema)}
-                  describe={problema ? errorId : undefined}
-                  onCambio={(v) => cambiar(f.uid, (x) => ({ ...x, volumenM3: v }))}
-                />
-                <Numero rotulo="Año de instalación" valor={f.anioInstalacion} paso="1" ejemplo="aaaa" onCambio={(v) => cambiar(f.uid, (x) => ({ ...x, anioInstalacion: v }))} />
-                <Numero rotulo="Superficie (ha)" valor={f.superficieHa} paso="0.01" ejemplo="0.00" onCambio={(v) => cambiar(f.uid, (x) => ({ ...x, superficieHa: v }))} />
-                {conPrecio && (
-                  <Numero rotulo="Precio S/ por m³" valor={f.precioM3} paso="0.01" ejemplo="0.00" onCambio={(v) => cambiar(f.uid, (x) => ({ ...x, precioM3: v }))} />
-                )}
-                <button
-                  type="button"
-                  onClick={() => quitar(f.uid)}
-                  aria-label={`Quitar ${nombreFila}`}
-                  title={`Quitar ${nombreFila}`}
-                  className="col-span-2 inline-flex h-12 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold text-[var(--data-error-700)] transition-colors hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12 sm:col-span-1"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  <span className="sm:sr-only">Quitar</span>
-                </button>
-              </div>
-              {problema && (
-                <p id={errorId} className="mt-1 px-1 text-xs font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                  {problema}
-                </p>
-              )}
-            </li>
-          );
-        })}
+        {filas.map((f, i) => (
+          <FilaDeEspecie
+            key={f.uid}
+            f={f}
+            i={i}
+            columnas={columnas}
+            lista={lista}
+            conPrecio={conPrecio}
+            mostrarErrores={mostrarErrores}
+            leida={leidas?.has(f.uid) ?? false}
+            onCambiar={cambiar}
+            onNombre={elegirNombre}
+            onQuitar={quitar}
+          />
+        ))}
       </ul>
 
       {repetidas.length > 0 && (
         <p role="alert" className="text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-          {repetidas.join(", ")} {repetidas.length === 1 ? "está" : "están"} dos veces: el saldo se lleva por especie, deja una sola fila.
+          {repetidas.join(", ")} {repetidas.length === 1 ? "está" : "están"} dos veces
+          {enBloque ? ` en «${enBloque}»: deja una sola fila por especie en cada bloque.` : ": el saldo se lleva por especie, deja una sola fila."}
         </p>
       )}
 
@@ -211,6 +128,7 @@ export default function LothPlanFormPlantacion({
         <button
           type="button"
           onClick={agregar}
+          aria-label={enBloque ? `Agregar especie a «${enBloque}»` : undefined}
           className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
         >
           <Plus className="h-4 w-4" aria-hidden="true" /> Agregar especie
@@ -227,52 +145,41 @@ export default function LothPlanFormPlantacion({
         >
           <Coins className="h-4 w-4" aria-hidden="true" /> Precio de venta (opcional)
         </button>
-        <InfoTip
-          title="Especies registradas"
-          what="Las especies y los m³ que dice tu registro de plantación. La tala, el trozado y el despacho descuentan de estos m³."
-          affects="Una tala de una especie que no está acá se frena: agrégala primero."
-          example="Bolaina · 450 árboles · 120 m³ · instalada en 2018 · 12,5 ha."
-        />
-        {/* El total en vivo: es la cifra que se compara contra el papel. */}
-        <p className="ml-auto text-sm text-[var(--text-secondary)]" aria-live="polite">
-          Total registrado{" "}
-          <b className="font-mono tabular-nums text-[var(--text-primary)]">{formatNumber(total, 3)} m³</b>
-          {conDatos.length > 0 && (
-            <span className="text-[var(--text-tertiary)]">
-              {" "}· {conDatos.length} {conDatos.length === 1 ? "especie" : "especies"}
-            </span>
-          )}
-        </p>
+        {onPorBloques && (
+          <button
+            type="button"
+            onClick={onPorBloques}
+            className={button({ variant: "ghost", className: "rounded-xl" })}
+          >
+            <LayoutGrid className="h-4 w-4" aria-hidden="true" /> Por bloques o zonas
+          </button>
+        )}
+        {!enBloque && (
+          <InfoTip
+            title="Especies registradas"
+            what="Las especies y los m³ que dice tu registro de plantación. La tala, el trozado y el despacho descuentan de estos m³."
+            affects={
+              onPorBloques
+                ? "Una tala de una especie que no está acá se frena: agrégala primero. Si el registro viene por bloques o zonas, toca «Por bloques o zonas»: la misma especie puede ir en varios bloques con sus árboles, ha y m³."
+                : "Una tala de una especie que no está acá se frena: agrégala primero."
+            }
+            example="Bolaina · 450 árboles · 120 m³ · instalada en 2018 · 12,5 ha."
+          />
+        )}
+        {/* El total en vivo: es la cifra que se compara contra el papel. En un
+            bloque ya está al lado de su nombre (m³ · árboles · ha): no se repite. */}
+        {!enBloque && (
+          <p className="ml-auto text-sm text-[var(--text-secondary)]" aria-live="polite">
+            Total registrado <b className="font-mono tabular-nums text-[var(--text-primary)]">{formatNumber(total, 3)} m³</b>
+            {conDatos.length > 0 && (
+              <span className="text-[var(--text-tertiary)]">
+                {" "}· {conDatos.length} {conDatos.length === 1 ? "especie" : "especies"}
+              </span>
+            )}
+          </p>
+        )}
       </div>
     </div>
-  );
-}
-
-function Numero({ rotulo, valor, paso, ejemplo, onCambio, invalido, describe }: {
-  rotulo: string;
-  valor: string;
-  paso: string;
-  ejemplo: string;
-  onCambio: (v: string) => void;
-  invalido?: boolean;
-  describe?: string;
-}) {
-  return (
-    <label className="block min-w-0">
-      <span className={ROTULO}>{rotulo}</span>
-      <input
-        type="number"
-        inputMode="decimal"
-        min="0"
-        step={paso}
-        value={valor}
-        onChange={(e) => onCambio(e.target.value)}
-        placeholder={ejemplo}
-        aria-invalid={invalido || undefined}
-        aria-describedby={describe}
-        className={`${cls} text-right font-mono tabular-nums`}
-      />
-    </label>
   );
 }
 

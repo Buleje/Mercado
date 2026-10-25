@@ -104,7 +104,16 @@ export function irAlEsencial(e: Esencial | null) {
 }
 
 /** «Te faltan 2 de 4 esenciales»: junto al botón Crear, y lleva al primero que falta. */
-export function ContadorEsenciales({ resumen, intento }: { resumen: ResumenEsenciales; intento: boolean }) {
+export function ContadorEsenciales({
+  resumen,
+  intento,
+  onIr = irAlEsencial,
+}: {
+  resumen: ResumenEsenciales;
+  intento: boolean;
+  /** Cómo llegar al que falta: el formulario por pasos abre primero su paso. */
+  onIr?: (e: Esencial | null) => void;
+}) {
   if (resumen.total === 0) return null;
   const completo = resumen.faltan === 0;
   const tono = completo
@@ -134,7 +143,7 @@ export function ContadorEsenciales({ resumen, intento }: { resumen: ResumenEsenc
   return (
     <button
       type="button"
-      onClick={() => irAlEsencial(resumen.primero)}
+      onClick={() => onIr(resumen.primero)}
       title={resumen.primero ? `Ir a «${resumen.primero.rotulo}»` : undefined}
       aria-live="polite"
       className={`mr-auto inline-flex min-h-11 items-center gap-1.5 rounded-xl px-2 text-left text-sm font-semibold underline-offset-2 transition-colors hover:bg-[var(--surface-sunken)] hover:underline ${tono}`}

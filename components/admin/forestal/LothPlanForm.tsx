@@ -52,6 +52,9 @@ import LothPlanFormArea from "./LothPlanFormArea";
 import LothPlanFormPie from "./LothPlanFormPie";
 import { idEsencial } from "@/lib/forestal/loth-plan-esenciales";
 import { totalM3 } from "./loth-plan-especies-api";
+import { partirEnBloques } from "./loth-plan-bloques-filas";
+import LothPlanFormBloques from "./LothPlanFormBloques";
+import { AnteriorSiguiente, BarraDePasos } from "./LothPlanFormPasos";
 
 /* El formulario vacío y el plan vuelto formulario viven en `loth-plan-form-shared`;
    se siguen exportando desde acá para quien ya los importaba (el test de edición). */
@@ -91,12 +94,23 @@ export default function LothPlanForm({
 }) {
   const form = useLothPlanForm({ plan, planesPrevios, onSaved, onEstadoCierre });
   const {
-    f, set, err, esPlantacion, llevaEspecies, especies, setEspecies, intentoGuardar, filasLeidas,
-    docsPend, setDocsPend, setSubiendoEnEdicion, camposPendientes, setCamposPendientes, submit, rot,
+    f, set, err, esPlantacion, llevaEspecies, especies, setEspecies, intentoGuardar, filasLeidas, docsPend,
+    setDocsPend, setSubiendoEnEdicion, camposPendientes, setCamposPendientes, submit, rot, bloques,
+    setBloques, paso,
   } = form;
+  /* Un paso a la vez (Brandon 24-10: «ir bloque a bloque»): los otros quedan
+     montados y escondidos, así no se pierde nada de lo escrito al ir y volver. */
+  const oculto = (p: typeof paso) => paso !== p;
+  function porBloques() {
+    const r = partirEnBloques(especies);
+    setBloques(r.bloques);
+    setEspecies(r.filas);
+  }
 
   return (
     <form onSubmit={submit} className="space-y-5 p-5">
+      <BarraDePasos form={form} />
+
       {err && (
         <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
           {err}
@@ -104,91 +118,118 @@ export default function LothPlanForm({
       )}
 
       {/* 1 · Qué documento es: decide todo lo demás */}
-      <LothPlanFormTipo form={form} planesPrevios={planesPrevios} />
+      <div data-paso="tipo" hidden={oculto("tipo")}>
+        <LothPlanFormTipo form={form} planesPrevios={planesPrevios} />
+      </div>
 
       {/* 2 · El documento aprobado (o el registro, si es plantación: mismos
           campos de la base, otro papel en la mano — `rotulosDe`) */}
-      <LothPlanFormDocumento form={form} />
+      <div data-paso="documento" hidden={oculto("documento")}>
+        <LothPlanFormDocumento form={form} />
+      </div>
 
       {/* 3 · Plantación: las especies y sus m³ registrados — la base del saldo (ADR-459) */}
       {esPlantacion && (
-        <div id={idEsencial("especies")}>
+        <div id={idEsencial("especies")} data-paso="especies" hidden={oculto("especies")}>
           <Bloque
             n={3}
-            titulo="Especies registradas"
+            titulo={
+              bloques && llevaEspecies
+                ? "Especies registradas por bloque o zona"
+                : "Especies registradas"
+            }
             ayuda={{
               what: "Con estas especies y sus m³ trabaja el libro: la tala, el trozado y el despacho descuentan de acá. No hace falta censo.",
               example: "Bolaina 120 m³ y Capirona 80 m³: el saldo arranca en 200 m³.",
             }}
           >
-            {llevaEspecies ? (
-              <LothPlanFormPlantacion filas={especies} onFilas={setEspecies} mostrarErrores={intentoGuardar} leidas={filasLeidas} />
-            ) : (
+            {!llevaEspecies ? (
               <EspeciesSeCorrigenEnRegistro onIr={onIrARegistro} />
+            ) : bloques ? (
+              <LothPlanFormBloques form={form} />
+            ) : (
+              <LothPlanFormPlantacion
+                filas={especies}
+                onFilas={setEspecies}
+                mostrarErrores={intentoGuardar}
+                leidas={filasLeidas}
+                onPorBloques={porBloques}
+              />
             )}
           </Bloque>
         </div>
       )}
 
       {/* 3 (4 en plantación) · Quién responde: titular y regente */}
-      <LothPlanFormTitular form={form} />
+      <div data-paso="titular" hidden={oculto("titular")}>
+        <LothPlanFormTitular form={form} />
+      </div>
 
       {/* 4 · Dónde y hasta cuándo (en una plantación: dónde, y la vigencia opcional) */}
-      <LothPlanFormArea form={form} />
+      <div data-paso="area" hidden={oculto("area")}>
+        <LothPlanFormArea form={form} />
+      </div>
 
-      {/* 5 · Lo que el plan ya guardaba y nadie preguntaba */}
-      <LothPlanFormCosteo
-        valores={{
-          uitRef: f.uitRef,
-          costoExtraccionM3: f.costoExtraccionM3,
-          costoTransformacionM3: f.costoTransformacionM3,
-          costoFleteM3: f.costoFleteM3,
-          estado: f.estado,
-          notes: f.notes,
-        }}
-        onCambio={(k: keyof CamposDeCosteo, v: string) => set(k, v)}
-        contexto={{
-          resolucionDate: f.resolucionDate,
-          vigenciaHasta: f.vigenciaHasta,
-          // El volumen sólo lo conoce el alta de una plantación (sus especies);
-          // en un plan de bosque está en el censo, que no vive en este formulario.
-          volumenM3: llevaEspecies ? totalM3(especies) : null,
-          base: rot.base,
-        }}
-      />
-
-      {/* Los papeles del plan, en sus carpetas del Drive (ADR-467). El costeo
-          de arriba no lleva número: éste sigue al de la vigencia. */}
-      <Bloque
-        n={esPlantacion ? 6 : 5}
-        titulo="Documentos"
-        ayuda={{
-          what: "Resolución o registro de plantación, papeles del jefe, títulos y lo que necesites: cada uno en su carpeta. Quedan en Documentos, dentro de «Libro TH».",
-          example: "La vigencia de poder vence en marzo: ponle la fecha al archivo y te avisa antes.",
-        }}
-      >
-        <PlanDocumentosEnFormulario
-          planId={plan?.id ?? null}
-          pendientes={docsPend}
-          onPendientes={setDocsPend}
-          onOcupado={setSubiendoEnEdicion}
-          delPlan={{
-            resolucionNumber: f.resolucionNumber || null,
-            resolucionDate: f.resolucionDate || null,
-            representanteLegal: f.representanteLegal || null,
-            propietarioNombre: f.propietarioNombre || null,
+      {/* 5 · Lo que el plan ya guardaba y nadie preguntaba, y los campos propios del negocio */}
+      <div data-paso="mas" hidden={oculto("mas")} className="space-y-5">
+        <LothPlanFormCosteo
+          abiertoDeEntrada
+          valores={{
+            uitRef: f.uitRef,
+            costoExtraccionM3: f.costoExtraccionM3,
+            costoTransformacionM3: f.costoTransformacionM3,
+            costoFleteM3: f.costoFleteM3,
+            estado: f.estado,
+            notes: f.notes,
+          }}
+          onCambio={(k: keyof CamposDeCosteo, v: string) => set(k, v)}
+          contexto={{
+            resolucionDate: f.resolucionDate,
+            vigenciaHasta: f.vigenciaHasta,
+            // El volumen sólo lo conoce el alta de una plantación (sus especies);
+            // en un plan de bosque está en el censo, que no vive en este formulario.
+            volumenM3: llevaEspecies ? totalM3(especies) : null,
+            base: rot.base,
           }}
         />
-      </Bloque>
 
-      {/* Lo que este negocio necesita y el formulario no previó (ADR-427) */}
-      <CamposPersonalizados
-        formulario={FORMULARIO}
-        registroId={plan?.id ?? null}
-        etiquetaFormulario="planes de manejo"
-        pendientes={camposPendientes}
-        onPendientes={setCamposPendientes}
-      />
+        {/* Lo que este negocio necesita y el formulario no previó (ADR-427) */}
+        <CamposPersonalizados
+          formulario={FORMULARIO}
+          registroId={plan?.id ?? null}
+          etiquetaFormulario="planes de manejo"
+          pendientes={camposPendientes}
+          onPendientes={setCamposPendientes}
+        />
+      </div>
+
+      {/* Los papeles del plan, en sus carpetas del Drive (ADR-467): el último paso. */}
+      <div data-paso="archivos" hidden={oculto("archivos")}>
+        <Bloque
+          n={esPlantacion ? 7 : 6}
+          titulo="Documentos"
+          ayuda={{
+            what: "Resolución o registro de plantación, papeles del jefe, títulos y lo que necesites: cada uno en su carpeta. Quedan en Documentos, dentro de «Libro TH».",
+            example:
+              "La vigencia de poder vence en marzo: ponle la fecha al archivo y te avisa antes.",
+          }}
+        >
+          <PlanDocumentosEnFormulario
+            planId={plan?.id ?? null}
+            pendientes={docsPend}
+            onPendientes={setDocsPend}
+            onOcupado={setSubiendoEnEdicion}
+            delPlan={{
+              resolucionNumber: f.resolucionNumber || null,
+              resolucionDate: f.resolucionDate || null,
+              representanteLegal: f.representanteLegal || null,
+              propietarioNombre: f.propietarioNombre || null,
+            }}
+          />
+        </Bloque>
+      </div>
+
+      <AnteriorSiguiente form={form} />
 
       <LothPlanFormPie form={form} onClose={onClose} />
     </form>

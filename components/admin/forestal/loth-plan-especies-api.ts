@@ -42,6 +42,11 @@ export interface FilaEspecie {
   anioInstalacion: string;
   superficieHa: string;
   precioM3: string;
+  /**
+   * El bloque o zona de la plantación al que pertenece la fila (su `uid`), si
+   * el alta va por bloques (`loth-plan-bloques-filas.ts`). Sin bloques, no va.
+   */
+  bloque?: string;
 }
 
 /** Lo que se manda al servidor (POST del plan con `species`, o POST/PATCH de una especie). */

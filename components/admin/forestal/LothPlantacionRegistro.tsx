@@ -14,6 +14,8 @@
  *      corregible en la misma fila.
  *   3. ¿Falta algo?                 → si no hay especies, lo dice en una frase
  *      y ofrece las que ya aparecen en los árboles marcados, sin tipearlas.
+ *   4. ¿En qué bloque está cada una? → el reparto por bloque o zona, si lo hay,
+ *      y si su suma cuadra con lo registrado (`LothPlantacionBloques`).
  */
 
 import { useState } from "react";
@@ -27,6 +29,7 @@ import type { CascadaEspecie, CascadaPlan } from "@/lib/forestal/loth-saldo-casc
 import { Btn } from "./ctp-shared";
 import LothPlanFormPlantacion from "./LothPlanFormPlantacion";
 import LothPlantacionTabla, { cambiosDeFila } from "./LothPlantacionTabla";
+import LothPlantacionBloques from "./LothPlantacionBloques";
 import { BloquePlan } from "./loth-plan-ui";
 import { AvisoTaladoSinRegistrar, SugeridasRegistroVacio, type EspecieSugerida } from "./LothPlantacionSugeridas";
 import { fmtFecha, fmtRange, type Plan, type Species } from "./loth-plan-shared";
@@ -160,6 +163,9 @@ export default function LothPlantacionRegistro({ plan, species, cascada, sugerid
           )}
         </div>
       </BloquePlan>
+
+      {/* Dónde está cada especie: por bloque o zona (Brandon 24-10). El saldo de arriba no cambia. */}
+      <LothPlantacionBloques planId={plan.id} species={species} />
 
       <AdminModal
         open={agregando != null}
