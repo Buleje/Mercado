@@ -3,9 +3,8 @@
 import { DataTable } from "@buleje/design-system";
 import { Eye } from "@buleje/design-system/icons";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
-import { FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { FiltroColumnaRango, FiltroColumnaTexto } from "@/components/admin/shared/filtros-columna";
 import { ThColumna } from "@/components/admin/shared/th-columna";
-import { EmbudoTextoCabecera } from "./EmbudoTextoCabecera";
 import type { FiltrosComprobantes } from "./filtros-comprobantes";
 import { cn } from "@/lib/utils";
 import { fmt, STATUS_META, TYPE_META, type EDocument } from "./tipos";
@@ -30,14 +29,14 @@ export function TablaComprobantes({ docs, orden, onVer, filtros, onCambiar }: Pr
             celdas={{
               serieNro: (
                 <ThColumna label="Serie-Nro" dataCol="serieNro">
-                  <EmbudoTextoCabecera label="Serie-Nro" value={filtros.serie} onChange={(serie) => onCambiar({ ...filtros, serie })} />
+                  <FiltroColumnaTexto label="Serie-Nro" placeholder="Buscar" value={filtros.serie} onChange={(serie) => onCambiar({ ...filtros, serie })} />
                 </ThColumna>
               ),
               fecha: <th data-col="fecha">Fecha</th>,
               tipo: <th data-col="tipo">Tipo</th>,
               cliente: (
                 <ThColumna label="Cliente" dataCol="cliente">
-                  <EmbudoTextoCabecera label="Cliente (nombre o RUC/DNI)" value={filtros.cliente} onChange={(cliente) => onCambiar({ ...filtros, cliente })} />
+                  <FiltroColumnaTexto label="Cliente" placeholder="Nombre o RUC" value={filtros.cliente} onChange={(cliente) => onCambiar({ ...filtros, cliente })} />
                 </ThColumna>
               ),
               total: (
