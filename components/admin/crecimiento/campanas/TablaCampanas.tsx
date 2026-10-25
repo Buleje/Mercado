@@ -12,7 +12,10 @@ import { Ban, Loader2, MoreHorizontal, Trash2 } from "@buleje/design-system/icon
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { rotuloDeGrupo } from "@/lib/admin/grupos-mensaje";
 import { formatNumber } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { CHANNEL_META, STATUS_META, cuandoCorto, sePuedeCancelar, type Campaign } from "./tipos";
 
 function Resultado({ c }: { c: Campaign }) {
@@ -36,6 +39,25 @@ function Resultado({ c }: { c: Campaign }) {
   );
 }
 
+const cuando = (c: Campaign) => c.sentAt ?? c.scheduledAt;
+
+/** La lista llega entera de /api/campaigns: los filtros son de cliente. */
+const COLUMNAS: readonly ColumnaFiltro<Campaign>[] = [
+  { id: "campana", label: "Campaña", tipo: "texto", valor: (c) => [c.name, c.message] },
+  { id: "para", label: "Para quién", tipo: "multi", valor: (c) => rotuloDeGrupo(c.segment), soloConVarios: true },
+  { id: "canal", label: "Canal", tipo: "multi", valor: (c) => (CHANNEL_META[c.channel] ?? CHANNEL_META.whatsapp).label, soloConVarios: true },
+  { id: "estado", label: "Estado", tipo: "multi", valor: (c) => (STATUS_META[c.status] ?? STATUS_META.borrador).label, soloConVarios: true },
+  { id: "envio", label: "Envío", tipo: "fecha", numero: (c) => (cuando(c) ? limaDateKey(cuando(c) as string) : null) },
+];
+const ORDEN: Record<string, AccesorOrden<Campaign>> = {
+  campana: { valor: (c) => c.name, texto: true },
+  para: { valor: (c) => rotuloDeGrupo(c.segment), texto: true },
+  canal: { valor: (c) => (CHANNEL_META[c.channel] ?? CHANNEL_META.whatsapp).label, texto: true },
+  estado: { valor: (c) => (STATUS_META[c.status] ?? STATUS_META.borrador).label, texto: true },
+  envio: { valor: (c) => cuando(c) },
+  resultado: { valor: (c) => (c.sentAt ? c.delivered || 0 : null) },
+};
+
 export function TablaCampanas({
   campaigns,
   busyId,
@@ -47,21 +69,27 @@ export function TablaCampanas({
   onCancelar: (id: string) => void;
   onEliminar: (id: string) => void;
 }) {
+  const f = useFiltrosTabla(campaigns, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
   return (
+    <>
+    <BarraFiltrosTabla f={f} className="px-3 pt-3" />
     <DataTable>
       <thead>
         <tr>
-          <th>Campaña</th>
-          <th>Para quién</th>
-          <th>Canal</th>
-          <th>Estado</th>
-          <th>Envío</th>
-          <th>Resultado</th>
-          <th className="w-14"><span className="sr-only">Acciones</span></th>
+          <ThColumna label="Campaña" ids={["campana"]} f={f} orden={ord} ordenId="campana" />
+          <ThColumna label="Para quién" ids={["para"]} f={f} orden={ord} ordenId="para" />
+          <ThColumna label="Canal" ids={["canal"]} f={f} orden={ord} ordenId="canal" />
+          <ThColumna label="Estado" ids={["estado"]} f={f} orden={ord} ordenId="estado" />
+          <ThColumna label="Envío" ids={["envio"]} f={f} orden={ord} ordenId="envio" />
+          <ThColumna label="Resultado" orden={ord} ordenId="resultado" />
+          <th className="w-14" data-label="Acciones"><span className="sr-only">Acciones</span></th>
         </tr>
       </thead>
       <tbody>
-        {campaigns.map((c) => {
+        {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+        {filas.map((c) => {
           const estado = STATUS_META[c.status] ?? STATUS_META.borrador;
           const canal = CHANNEL_META[c.channel] ?? CHANNEL_META.whatsapp;
           const ocupada = busyId === c.id;
@@ -98,5 +126,6 @@ export function TablaCampanas({
         })}
       </tbody>
     </DataTable>
+    </>
   );
 }

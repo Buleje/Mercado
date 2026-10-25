@@ -24,7 +24,26 @@ import { button } from "@/components/ui-system/button-variants";
 import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { PERIODOS_RFM, grupoRfm, type RFMCustomer, type RFMSegment } from "./rfm-grupos";
+
+/* Los grupos ya son los chips de arriba: «Grupo» sólo ordena. */
+const COLUMNAS: readonly ColumnaFiltro<RFMCustomer>[] = [
+  { id: "cliente", label: "Cliente", tipo: "texto", valor: (c) => [c.name, c.phone] },
+  { id: "ultima", label: "Última compra", tipo: "rango", numero: (c) => c.recencyDays, unidad: "días", paso: 1 },
+  { id: "compras", label: "Compras", tipo: "rango", numero: (c) => c.frequency, paso: 1 },
+  { id: "gasto", label: "Gastó", tipo: "rango", numero: (c) => c.monetary, unidad: "S/" },
+];
+const ORDEN: Record<string, AccesorOrden<RFMCustomer>> = {
+  cliente: { valor: (c) => c.name, texto: true },
+  grupo: { valor: (c) => grupoRfm(c.segment).rotulo, texto: true },
+  // «Última compra»: lo más reciente primero = menos días primero.
+  ultima: { valor: (c) => -c.recencyDays },
+  compras: { valor: (c) => c.frequency },
+  gasto: { valor: (c) => c.monetary },
+};
 
 export default function RFMTab() {
   const [days, setDays] = useState(90);
@@ -56,6 +75,9 @@ export default function RFMTab() {
   useEffect(() => { void load(); }, [load]);
 
   const shown = activeSeg ? customers.filter((c) => c.segment === activeSeg) : customers;
+  const f = useFiltrosTabla(shown, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
   const activo = activeSeg ? segments.find((s) => s.segment === activeSeg) : undefined;
   const periodo = PERIODOS_RFM.find((p) => p.days === days)?.label ?? `${days} días`;
 
@@ -147,19 +169,21 @@ export default function RFMTab() {
             </p>
           )}
 
+          <BarraFiltrosTabla f={f} />
           <div className="max-h-[32rem] overflow-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
             <DataTable>
               <thead>
                 <tr>
-                  <th>Cliente</th>
-                  <th>Grupo</th>
-                  <th className="text-right">Última compra</th>
-                  <th className="text-right">Compras</th>
-                  <th className="text-right">Gastó</th>
+                  <ThColumna label="Cliente" ids={["cliente"]} f={f} orden={ord} ordenId="cliente" />
+                  <ThColumna label="Grupo" orden={ord} ordenId="grupo" />
+                  <ThColumna label="Última compra" ids={["ultima"]} f={f} derecha orden={ord} ordenId="ultima" />
+                  <ThColumna label="Compras" ids={["compras"]} f={f} derecha orden={ord} ordenId="compras" />
+                  <ThColumna label="Gastó" ids={["gasto"]} f={f} derecha orden={ord} ordenId="gasto" />
                 </tr>
               </thead>
               <tbody>
-                {shown.slice(0, 200).map((c) => (
+                {filas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+                {filas.slice(0, 200).map((c) => (
                   <tr key={c.phone}>
                     <td>
                       <p className="max-w-[14rem] truncate font-semibold text-[var(--text-primary)]">{c.name}</p>
@@ -176,7 +200,7 @@ export default function RFMTab() {
               </tbody>
             </DataTable>
           </div>
-          {shown.length > 200 && <p className="text-sm text-[var(--text-tertiary)]">Se ven los primeros 200 de {shown.length}.</p>}
+          {filas.length > 200 && <p className="text-sm text-[var(--text-tertiary)]">Se ven los primeros 200 de {filas.length}.</p>}
         </>
       )}
     </div>

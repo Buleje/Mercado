@@ -11,7 +11,10 @@ import { ArrowRight, Loader2, MoreHorizontal, RotateCcw, XCircle } from "@buleje
 import { DataTable } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { ESTADOS, SIGUIENTE, estadoDe, llegoEl, rotuloCanal, rotuloTipo, type EstadoLead, type LeadRow } from "./tipos";
 
 interface Props {
@@ -80,24 +83,44 @@ function Acciones({ l, moviendo, onEstado }: { l: LeadRow; moviendo: string | nu
   );
 }
 
+/* Canal y estado ya son chips de la vista, y el buscador cubre nombre y negocio: en el encabezado, lo que falta. */
+const COLUMNAS: readonly ColumnaFiltro<LeadRow>[] = [
+  { id: "tipo", label: "Tipo de negocio", tipo: "multi", valor: (l) => rotuloTipo(l.businessType), soloConVarios: true },
+  { id: "ciudad", label: "Ciudad", tipo: "multi", valor: (l) => l.city || "Sin ciudad", soloConVarios: true },
+  { id: "llego", label: "Llegó", tipo: "fecha", numero: (l) => limaDateKey(l.createdAt) || null },
+];
+const ORDEN: Record<string, AccesorOrden<LeadRow>> = {
+  nombre: { valor: (l) => l.name, texto: true },
+  negocio: { valor: (l) => l.businessName || rotuloTipo(l.businessType), texto: true },
+  canal: { valor: (l) => rotuloCanal(l.source), texto: true },
+  estado: { valor: (l) => ESTADOS[estadoDe(l.status)].rotulo, texto: true },
+  llego: { valor: (l) => l.createdAt },
+};
+
 export function TablaLeads({ filas, moviendo, onEstado }: Props) {
+  const f = useFiltrosTabla(filas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const vistas = ord.ordenar(f.filtradas);
   return (
-    /* Encabezados a 14 px y sin versalitas: el DataTable los trae a 12. */
+    <>
+    <BarraFiltrosTabla f={f} className="px-3 pt-3" />
+    {/* Encabezados a 14 px y sin versalitas: el DataTable los trae a 12. */}
     <DataTable>
       <thead>
         <tr>
-          <th>Interesado</th>
-          <th>Negocio</th>
-          <th>Canal</th>
-          <th>Estado</th>
-          <th>Llegó</th>
-          <th className="text-right">
+          <ThColumna label="Interesado" orden={ord} ordenId="nombre" />
+          <ThColumna label="Negocio" ids={["tipo", "ciudad"]} f={f} orden={ord} ordenId="negocio" />
+          <ThColumna label="Canal" orden={ord} ordenId="canal" />
+          <ThColumna label="Estado" orden={ord} ordenId="estado" />
+          <ThColumna label="Llegó" ids={["llego"]} f={f} orden={ord} ordenId="llego" />
+          <th className="text-right" data-label="Acciones">
             <span className="sr-only">Acciones</span>
           </th>
         </tr>
       </thead>
       <tbody>
-        {filas.map((l) => {
+        {vistas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+        {vistas.map((l) => {
           const e = ESTADOS[estadoDe(l.status)];
           return (
             <tr key={l.entityId}>
@@ -137,5 +160,6 @@ export function TablaLeads({ filas, moviendo, onEstado }: Props) {
         })}
       </tbody>
     </DataTable>
+    </>
   );
 }

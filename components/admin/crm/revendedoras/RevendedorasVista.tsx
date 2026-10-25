@@ -13,6 +13,9 @@ import { limaDateKey } from "@/lib/utils";
 import type { RevendedoraFila } from "@/lib/revendedoras/reglas";
 import { useRevendedoras } from "./use-revendedoras";
 import { diaDeLima, fechaCorta, nombreDelMes, pct, soles } from "./formato";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import ConfigRevendedorasModal from "./ConfigRevendedorasModal";
 import AgregarRevendedoraModal from "./AgregarRevendedoraModal";
 import PedidoRevendedoraModal from "./PedidoRevendedoraModal";
@@ -21,6 +24,23 @@ type Abierto = { que: "reglas" } | { que: "agregar" } | { que: "pedido"; custome
 
 const INPUT =
   "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+
+const sinFiadoHoy = (r: RevendedoraFila, hoy: string) => !!r.sinCreditoHasta && r.sinCreditoHasta > hoy;
+
+/* El buscador de arriba sigue buscando nombre, celular y pueblo; en el encabezado van pueblo, montos y fiado. */
+const columnasDe = (hoy: string): readonly ColumnaFiltro<RevendedoraFila>[] => [
+  { id: "pueblo", label: "Pueblo", tipo: "multi", valor: (r) => r.pueblo || "Sin pueblo", soloConVarios: true },
+  { id: "mes", label: "Este mes", tipo: "rango", numero: (r) => r.compradoMes, unidad: "S/" },
+  { id: "descuento", label: "Descuento", tipo: "rango", numero: (r) => r.nivel.descuento, unidad: "%" },
+  { id: "fiado", label: "Fiado", tipo: "multi", valor: (r) => (sinFiadoHoy(r, hoy) ? "Paga al contado" : "Puede fiar"), soloConVarios: true },
+];
+const ORDEN: Record<string, AccesorOrden<RevendedoraFila>> = {
+  nombre: { valor: (r) => r.nombre, texto: true },
+  mes: { valor: (r) => r.compradoMes },
+  descuento: { valor: (r) => r.nivel.descuento },
+  falta: { valor: (r) => r.nivel.siguiente?.falta ?? null },
+  fiado: { valor: (r) => r.sinCreditoHasta, texto: true },
+};
 
 const sinTildes = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -43,6 +63,11 @@ export default function RevendedorasVista() {
     if (!q) return lista;
     return lista.filter((r) => sinTildes(`${r.nombre} ${r.celular} ${r.pueblo}`).includes(q));
   }, [datos, buscar]);
+
+  const columnas = useMemo(() => columnasDe(hoy), [hoy]);
+  const tabla = useFiltrosTabla(filas, columnas);
+  const ord = useOrdenColumna(ORDEN);
+  const vistas = ord.ordenar(tabla.filtradas);
 
   async function quitarRevendedora(r: RevendedoraFila) {
     const ok = await confirm({
@@ -127,20 +152,23 @@ export default function RevendedorasVista() {
           {buscar ? "Ninguna revendedora con ese nombre, celular o pueblo." : "Todavía no tienes revendedoras: agrega una clienta con «Agregar revendedora»."}
         </div>
       ) : (
+        <>
+        <BarraFiltrosTabla f={tabla} />
         <div className="rounded-xl border border-[var(--rule-base)]">
           <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full" data-testid="tabla-revendedoras">
             <thead>
               <tr>
-                <th>Revendedora</th>
-                <th className="text-right">Este mes</th>
-                <th className="text-right">Descuento</th>
-                <th>Para subir de nivel</th>
-                <th>Fiado</th>
+                <ThColumna label="Revendedora" ids={["pueblo"]} f={tabla} orden={ord} ordenId="nombre" />
+                <ThColumna label="Este mes" ids={["mes"]} f={tabla} derecha orden={ord} ordenId="mes" />
+                <ThColumna label="Descuento" ids={["descuento"]} f={tabla} derecha orden={ord} ordenId="descuento" />
+                <ThColumna label="Para subir de nivel" orden={ord} ordenId="falta" />
+                <ThColumna label="Fiado" ids={["fiado"]} f={tabla} orden={ord} ordenId="fiado" />
                 <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)]">
-              {filas.map((f) => (
+              {vistas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+              {vistas.map((f) => (
                 <FilaRevendedora
                   key={f.customerId}
                   f={f}
@@ -152,6 +180,7 @@ export default function RevendedorasVista() {
             </tbody>
           </DataTable>
         </div>
+        </>
       )}
 
       {datos && abierto?.que === "reglas" && (
