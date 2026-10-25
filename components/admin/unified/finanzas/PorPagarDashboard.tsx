@@ -231,7 +231,7 @@ export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}
 
           {/* `sm:pr-14`: el mismo corredor libre que «Por cobrar» le deja al
               botón flotante de acciones rápidas. */}
-          <BarraFiltrosTabla vistas="por-pagar-todo" f={fc} />
+          <BarraFiltrosTabla excel="Lo que debo todo" vistas="por-pagar-todo" f={fc} />
           <DataTable zebra wrapperClassName="sm:pr-14">
             <thead>
               <tr>

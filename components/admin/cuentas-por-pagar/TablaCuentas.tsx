@@ -61,7 +61,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
   const filas = ord.ordenar(f.filtradas);
   return (
     <>
-    <BarraFiltrosTabla vistas="por-pagar" f={f} />
+    <BarraFiltrosTabla excel="Lo que debo" vistas="por-pagar" f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>

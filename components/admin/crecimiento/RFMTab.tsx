@@ -169,7 +169,7 @@ export default function RFMTab() {
             </p>
           )}
 
-          <BarraFiltrosTabla vistas="rfm" f={f} />
+          <BarraFiltrosTabla excel="Mejores clientes" vistas="rfm" f={f} />
           <div className="max-h-[32rem] overflow-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
             <DataTable>
               <thead>

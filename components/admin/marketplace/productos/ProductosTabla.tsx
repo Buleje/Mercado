@@ -118,7 +118,7 @@ export function ProductosTabla({
   };
   return (
     <>
-    <BarraFiltrosTabla vistas="marketplace-productos" f={f} />
+    <BarraFiltrosTabla excel="Productos del marketplace" vistas="marketplace-productos" f={f} />
     <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="max-h-[calc(100vh-20rem)] overflow-x-auto">
         <DataTable className="w-full">

@@ -74,7 +74,7 @@ export function TablaCampanas({
   const filas = ord.ordenar(f.filtradas);
   return (
     <>
-    <BarraFiltrosTabla vistas="campanas" f={f} className="px-3 pt-3" />
+    <BarraFiltrosTabla excel="Campañas" vistas="campanas" f={f} className="px-3 pt-3" />
     <DataTable>
       <thead>
         <tr>

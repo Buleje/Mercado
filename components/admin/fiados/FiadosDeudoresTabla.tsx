@@ -118,7 +118,7 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
         <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">Ningún fiado con ese filtro.</p>
       ) : (
         <>
-            <BarraFiltrosTabla vistas="fiados" f={f} className="px-3 py-2" sinConteo />
+            <BarraFiltrosTabla excel="Fiados" vistas="fiados" f={f} className="px-3 py-2" sinConteo />
             <div className="max-h-[65vh] overflow-x-auto overflow-y-auto">
               {/* ds-ignore-table — caso legítimo: thead clickable con
                   sort indicators, mobile-aware (hidden sm:table-cell),

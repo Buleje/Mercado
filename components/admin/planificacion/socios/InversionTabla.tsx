@@ -106,7 +106,7 @@ export function InversionTabla() {
         </div>
       ) : (
         <>
-        <BarraFiltrosTabla vistas="inversion" f={f} />
+        <BarraFiltrosTabla excel="Inversión" vistas="inversion" f={f} />
         <DataTable aria-label="Gastos de la inversión inicial">
           <thead>
             <tr>

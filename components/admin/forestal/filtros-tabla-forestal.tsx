@@ -35,6 +35,7 @@ import {
 } from "@/components/admin/shared/filtros-columna";
 
 import { VistasDeFiltros } from "@/components/admin/shared/vistas-de-filtros";
+import { BajarLoQueVes } from "@/components/admin/shared/bajar-lo-que-ves";
 
 export type { ColumnaFiltro } from "@/components/admin/shared/filtros-columna";
 
@@ -219,6 +220,7 @@ export function BarraFiltrosTabla<T>({
   sinConteo = false,
   plegableSiempre = false,
   vistas,
+  excel,
 }: {
   f: FiltrosTabla<T>;
   className?: string;
@@ -226,6 +228,8 @@ export function BarraFiltrosTabla<T>({
   plegableSiempre?: boolean;
   /** Módulo de las vistas guardadas de esta tabla (`vistas:tabla.<modulo>`): guardar los filtros con un nombre. */
   vistas?: string;
+  /** Nombre del Excel de «Bajar lo que ves» (aparece con filtros puestos). */
+  excel?: string;
 }) {
   const conControl = f.columnas.filter((c) => f.conAutofiltro[c.id]);
   if (conControl.length === 0) return null;
@@ -246,11 +250,12 @@ export function BarraFiltrosTabla<T>({
           ))}
         </div>
       </details>
-      {vistas ? (
+      {vistas || excel ? (
         <div className="flex items-start gap-2">
           <ChipsDeFiltros chips={f.chips} onQuitar={f.quitar} onLimpiarTodo={f.limpiar} className="min-w-0 flex-1" />
-          <span className="ml-auto shrink-0">
-            <VistasDeFiltros f={f} modulo={vistas} />
+          <span className="ml-auto inline-flex shrink-0 gap-2">
+            {excel && <BajarLoQueVes f={f} nombre={excel} />}
+            {vistas && <VistasDeFiltros f={f} modulo={vistas} />}
           </span>
         </div>
       ) : (

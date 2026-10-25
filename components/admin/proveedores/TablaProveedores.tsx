@@ -72,7 +72,7 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
 
   return (
     <>
-    <BarraFiltrosTabla vistas="proveedores" f={f} />
+    <BarraFiltrosTabla excel="Proveedores" vistas="proveedores" f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>

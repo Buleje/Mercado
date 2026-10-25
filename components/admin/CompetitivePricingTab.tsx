@@ -208,7 +208,7 @@ export default function CompetitivePricingTab() {
         <VacioDeUnaFrase>Ningún producto coincide con esa búsqueda.</VacioDeUnaFrase>
       ) : (
         <>
-        <BarraFiltrosTabla vistas="precios-competencia" f={f} />
+        <BarraFiltrosTabla excel="Precios de la competencia" vistas="precios-competencia" f={f} />
         <DataTable className={ENCABEZADOS_14}>
           <thead>
             <tr>

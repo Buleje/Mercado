@@ -815,7 +815,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   </div>
                 </div>
 
-                {contratos.length > 0 && <BarraFiltrosTabla vistas="contratos" f={fCols} plegableSiempre={viewMode === "cards"} />}
+                {contratos.length > 0 && <BarraFiltrosTabla excel="Contratos" vistas="contratos" f={fCols} plegableSiempre={viewMode === "cards"} />}
 
                 {contratos.length === 0 ? (
                   // El vacío de "no hay nada" se decide por el total SIN

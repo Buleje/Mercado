@@ -102,7 +102,7 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
         </div>
       </div>
 
-      {vista === "lista" && <BarraFiltrosTabla vistas="caja-movimientos" f={f} className="px-3 sm:px-4 py-2" />}
+      {vista === "lista" && <BarraFiltrosTabla excel="Movimientos de caja" vistas="caja-movimientos" f={f} className="px-3 sm:px-4 py-2" />}
 
       {vista === "tiempo" ? (
         <CajaLineaDeTiempo items={timeline} efectivoActual={efectivoActual} />

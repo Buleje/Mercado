@@ -192,7 +192,7 @@ export default function OcPresupuesto({ barra }: { barra?: ReactNode }) {
           ) : (
             <section className="space-y-2">
               <BlockTitle>Por proveedor · {data.proveedores.length}</BlockTitle>
-              <BarraFiltrosTabla vistas="oc-presupuesto" f={f} />
+              <BarraFiltrosTabla excel="Presupuesto de compras" vistas="oc-presupuesto" f={f} />
               <DataTable>
                 <thead>
                   <tr>

@@ -49,7 +49,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
   }, [f.activos, filas, base, selectedIds, setSelectedIds]);
   return (
     <>
-      <BarraFiltrosTabla vistas="archivo" f={f} plegableSiempre className="mb-2" />
+      <BarraFiltrosTabla excel="Archivo" vistas="archivo" f={f} plegableSiempre className="mb-2" />
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
               <DataTable className="w-full">
                 <thead>

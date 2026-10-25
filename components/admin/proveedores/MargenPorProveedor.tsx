@@ -111,7 +111,7 @@ export default function MargenPorProveedor() {
         <p className="p-4 text-sm text-[var(--text-secondary)]">No vendiste nada en estos {datos.periodDays} días.</p>
       ) : (
         <>
-        <BarraFiltrosTabla vistas="margen-proveedor" f={fl} />
+        <BarraFiltrosTabla excel="Margen por proveedor" vistas="margen-proveedor" f={fl} />
         <div className={cn("overflow-x-auto rounded-xl border border-[var(--rule-base)] transition-opacity", cargando && "opacity-60")} aria-busy={cargando}>
           <DataTable>
             <thead>

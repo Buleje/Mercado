@@ -59,7 +59,7 @@ export default function ReceivablesView({ onChanged }: { onChanged: () => void }
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between rounded-xl bg-[var(--data-warning-100)] px-4 py-2.5 dark:bg-amber-950/20"><span className="text-sm font-bold text-[var(--text-secondary)]">Total por cobrar ({rows.length})</span><span className="font-mono text-lg font-bold tabular-nums text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">{fmt(total)}</span></div>
-      <BarraFiltrosTabla vistas="activos-por-cobrar" f={f} />
+      <BarraFiltrosTabla excel="Activos por cobrar" vistas="activos-por-cobrar" f={f} />
       <DataTable>
         <thead className="[&_th]:align-top">
           <tr>

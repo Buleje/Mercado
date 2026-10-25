@@ -158,7 +158,7 @@ export default function ScoringCrediticioTab({ enMeDeben = false }: { enMeDeben?
         </p>
       ) : (
         <>
-        <BarraFiltrosTabla vistas="scoring" f={tabla} />
+        <BarraFiltrosTabla excel="Scoring de clientes" vistas="scoring" f={tabla} />
         <DataTable zebra wrapperClassName="sm:pr-14">
           <thead>
             <tr>

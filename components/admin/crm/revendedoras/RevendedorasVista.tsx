@@ -153,7 +153,7 @@ export default function RevendedorasVista() {
         </div>
       ) : (
         <>
-        <BarraFiltrosTabla vistas="revendedoras" f={tabla} />
+        <BarraFiltrosTabla excel="Revendedoras" vistas="revendedoras" f={tabla} />
         <div className="rounded-xl border border-[var(--rule-base)]">
           <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full" data-testid="tabla-revendedoras">
             <thead>

@@ -132,7 +132,7 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
             {state.reorder.length > 0 && (
               /* Tabla responsive — scroll horizontal en mobile */
               <>
-              <BarraFiltrosTabla vistas="reorden" f={ft} />
+              <BarraFiltrosTabla excel="Sugerencias de compra" vistas="reorden" f={ft} />
               <div className="overflow-x-auto -mx-1">
                 <DataTable className="w-full min-w-[540px]">
                   <thead>
