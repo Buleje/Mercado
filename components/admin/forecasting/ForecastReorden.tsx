@@ -13,12 +13,36 @@
  */
 
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { RefreshCw, ShoppingCart, Loader2, CheckCircle } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useForecasting, type Forecasting, type PanelForecast } from "./use-forecasting";
 import { PanelCard } from "./ForecastPiezas";
 
 const PANELES: readonly PanelForecast[] = ["reorder"];
+
+type Item = Forecasting["state"]["reorder"][number];
+const esCritico = (i: Item) => i.currentStock < i.demandDuringLeadTime;
+
+/** La lista de reorden llega entera del servidor: se filtra y ordena aquí. */
+const COLUMNAS: readonly ColumnaFiltro<Item>[] = [
+  { id: "producto", label: "Producto", tipo: "texto", valor: (i) => [i.productName, i.supplierName] },
+  { id: "proveedor", label: "Proveedor", tipo: "multi", valor: (i) => i.supplierName || "Sin proveedor", soloConVarios: true },
+  { id: "stock", label: "Stock actual", tipo: "rango", numero: (i) => i.currentStock },
+  { id: "pedir", label: "Pedir", tipo: "rango", numero: (i) => i.suggestedQuantity },
+  { id: "total", label: "Total est.", tipo: "rango", numero: (i) => i.estimatedTotal, unidad: "S/", paso: 0.01 },
+  { id: "aviso", label: "Aviso", tipo: "multi", valor: (i) => [esCritico(i) ? "Crítico" : null, i.confidence < 0.5 ? "Baja confianza" : null].filter((x): x is string => !!x), soloConVarios: true },
+];
+const ORDEN: Record<string, AccesorOrden<Item>> = {
+  producto: { valor: (i) => i.productName, texto: true },
+  stock: { valor: (i) => i.currentStock },
+  demanda: { valor: (i) => i.demandDuringLeadTime },
+  pedir: { valor: (i) => i.suggestedQuantity },
+  total: { valor: (i) => i.estimatedTotal },
+  aviso: { valor: (i) => (esCritico(i) ? 2 : 0) + (i.confidence < 0.5 ? 1 : 0) },
+};
 
 export default function ForecastReorden() {
   const f = useForecasting(PANELES);
@@ -28,6 +52,9 @@ export default function ForecastReorden() {
 /** El panel B (ocupa las dos columnas de la grilla del tablero). */
 export function ForecastReordenPanel({ f }: { f: Forecasting }) {
   const { state, autoReordering, autoReorderMsg, ejecutarAutoReorder } = f;
+  const ft = useFiltrosTabla(state.reorder, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(ft.filtradas);
   return (
         <div className="lg:col-span-2">
           <PanelCard
@@ -50,6 +77,7 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
                     "h-12", // touch target del panel (48 px)
                   )}
                   aria-label="Ejecutar reorden automática"
+                  title={ft.activos > 0 ? `Pide TODO lo sugerido (${state.reorder.length}), no sólo lo que ves filtrado` : "Crea las órdenes de compra de lo sugerido"}
                 >
                   {autoReordering
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -75,21 +103,24 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
 
             {state.reorder.length > 0 && (
               /* Tabla responsive — scroll horizontal en mobile */
+              <>
+              <BarraFiltrosTabla f={ft} />
               <div className="overflow-x-auto -mx-1">
                 <DataTable className="w-full min-w-[540px]">
                   <thead>
                     <tr>
-                      <th>Producto</th>
-                      <th className="text-right">Stock actual</th>
-                      <th className="text-right">Demanda LT</th>
-                      <th className="text-right">Pedir</th>
-                      <th className="text-right">Total est.</th>
-                      <th></th>
+                      <ThColumna label="Producto" ids={["producto", "proveedor"]} f={ft} orden={ord} ordenId="producto" />
+                      <ThColumna label="Stock actual" ids={["stock"]} f={ft} derecha orden={ord} ordenId="stock" />
+                      <ThColumna label="Demanda LT" derecha orden={ord} ordenId="demanda" />
+                      <ThColumna label="Pedir" ids={["pedir"]} f={ft} derecha orden={ord} ordenId="pedir" />
+                      <ThColumna label="Total est." ids={["total"]} f={ft} derecha orden={ord} ordenId="total" />
+                      <ThColumna label="Aviso" ids={["aviso"]} f={ft} derecha orden={ord} ordenId="aviso" />
                     </tr>
                   </thead>
                   <tbody>
-                    {state.reorder.map((item) => {
-                      const critico = item.currentStock < item.demandDuringLeadTime;
+                    {filas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+                    {filas.map((item) => {
+                      const critico = esCritico(item);
                       return (
                         <tr
                           key={item.productId}
@@ -162,6 +193,7 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
                   </tbody>
                 </DataTable>
               </div>
+              </>
             )}
           </PanelCard>
         </div>

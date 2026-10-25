@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { BlockTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { PackageCheck, RefreshCw } from "@buleje/design-system/icons";
 import CabeceraOrdenes from "@/components/admin/ordenes-compra/CabeceraOrdenes";
@@ -12,6 +12,9 @@ import { claveDeDia, diaCorto, lineasDeSeguimiento, listarCorto, type GrupoEntre
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { OrdenOC } from "@/components/admin/ordenes-compra/oc-compartido";
+import { BarraFiltrosTabla, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { useEntregasOc } from "@/components/admin/ordenes-compra/hooks/use-entregas-oc";
 
 const OCRecepcionModal = dynamic(() => import("@/components/admin/compras/OCRecepcionModal"), { ssr: false });
@@ -32,6 +35,20 @@ const TONO_GRUPO: Record<GrupoEntrega, string> = {
   sin_fecha: "text-[var(--text-secondary)]",
 };
 
+/** Los filtros miran TODAS las órdenes que esperan (llegan enteras): cada día-grupo muestra las que pasan. */
+const COLUMNAS: readonly ColumnaFiltro<OrdenOC>[] = [
+  { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (o) => [o.supplierName || "Sin proveedor"] },
+  { id: "prometida", label: "Prometida", tipo: "fecha", numero: (o) => claveDeDia(o.deliveryDate) || null },
+  { id: "llega", label: "Qué llega", tipo: "texto", valor: (o) => [queFalta(o)] },
+  { id: "total", label: "Total", tipo: "rango", numero: (o) => Number(o.total), unidad: "S/", paso: 0.01 },
+];
+
+const ORDEN: Record<string, AccesorOrden<OrdenOC>> = {
+  proveedor: { valor: (o) => o.supplierName, texto: true },
+  prometida: { valor: (o) => claveDeDia(o.deliveryDate) || null },
+  total: { valor: (o) => Number(o.total) },
+};
+
 /** «Faltan 3 arroz, 2 atún» si ya llegó una parte; si no, lo pedido. */
 function queFalta(o: OrdenOC): string {
   const lineas = lineasDeSeguimiento(o.items, o.seguimiento);
@@ -49,6 +66,10 @@ function queFalta(o: OrdenOC): string {
  */
 export default function OcEntregas({ barra }: { barra?: ReactNode }) {
   const { grupos, cargando, error, aviso, hoy, recibiendo, setRecibiendo, alRecibir, cambiarFecha, guardandoFecha, cargar } = useEntregasOc();
+  const todas = useMemo(() => grupos.flatMap((g) => g.ordenes), [grupos]);
+  const f = useFiltrosTabla(todas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const pasan = useMemo(() => new Set(f.filtradas.map((o) => o.id)), [f.filtradas]);
 
   return (
     <div className="space-y-4">
@@ -72,16 +93,19 @@ export default function OcEntregas({ barra }: { barra?: ReactNode }) {
       ) : grupos.length === 0 ? (
         !error && <p className="text-sm text-[var(--text-secondary)]">No hay órdenes esperando mercadería.</p>
       ) : (
-        grupos.map((g) => (
+        <>
+        <BarraFiltrosTabla f={f} />
+        {f.activos > 0 && pasan.size === 0 && <p className="text-sm text-[var(--text-secondary)]">Ninguna orden coincide con los filtros.</p>}
+        {grupos.map((g) => ({ ...g, ordenes: ord.ordenar(g.ordenes.filter((o) => pasan.has(o.id))) })).filter((g) => g.ordenes.length > 0).map((g) => (
           <section key={g.id} aria-label={g.rotulo} className="space-y-2" data-qa={`entregas-${g.id}`}>
             <BlockTitle className={TONO_GRUPO[g.id]}>{g.rotulo} · {g.ordenes.length}</BlockTitle>
             <DataTable className="[&_thead_th]:py-0">
               <thead>
                 <tr>
-                  <th>Proveedor</th>
-                  <th>Prometida</th>
-                  <th>Qué llega</th>
-                  <th className="text-right">Total</th>
+                  <ThColumna label="Proveedor" ids={["proveedor"]} f={f} orden={ord} ordenId="proveedor" />
+                  <ThColumna label="Prometida" ids={["prometida"]} f={f} orden={ord} ordenId="prometida" />
+                  <ThColumna label="Qué llega" ids={["llega"]} f={f} />
+                  <ThColumna label="Total" ids={["total"]} f={f} derecha orden={ord} ordenId="total" />
                   <th className="text-right"><span className="sr-only">Recibir</span></th>
                 </tr>
               </thead>
@@ -118,7 +142,8 @@ export default function OcEntregas({ barra }: { barra?: ReactNode }) {
               </tbody>
             </DataTable>
           </section>
-        ))
+        ))}
+        </>
       )}
 
       {recibiendo && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { BlockTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { RefreshCw, Wallet } from "@buleje/design-system/icons";
 import CabeceraOrdenes from "@/components/admin/ordenes-compra/CabeceraOrdenes";
@@ -13,6 +13,9 @@ import {
   categoriaDeProveedor,
   type LineaPresupuestoCompras,
 } from "@/lib/compras/presupuesto-compras";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { usePresupuestoCompras } from "@/components/admin/ordenes-compra/hooks/use-presupuesto-compras";
 
 /**
@@ -31,6 +34,20 @@ const AYUDA = {
 };
 
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
+
+const SIN_LINEAS: readonly LineaPresupuestoCompras[] = [];
+const COLUMNAS: readonly ColumnaFiltro<LineaPresupuestoCompras>[] = [
+  { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (l) => [l.nombre] },
+  { id: "comprado", label: "Comprado", tipo: "rango", numero: (l) => l.comprado, unidad: "S/", paso: 0.01 },
+  { id: "queda", label: "Te queda", tipo: "rango", numero: (l) => l.quedan, unidad: "S/", paso: 0.01 },
+];
+const ORDEN: Record<string, AccesorOrden<LineaPresupuestoCompras>> = {
+  proveedor: { valor: (l) => l.nombre, texto: true },
+  comprado: { valor: (l) => l.comprado },
+  presupuesto: { valor: (l) => l.presupuesto },
+  queda: { valor: (l) => l.quedan },
+};
+
 const nombreMes = (clave: string) => MESES[Number(clave.slice(5, 7)) - 1] ?? clave;
 
 function tono(l: LineaPresupuestoCompras): string {
@@ -104,6 +121,9 @@ function FijarTecho({
 export default function OcPresupuesto({ barra }: { barra?: ReactNode }) {
   const { data, cargando, error, aviso, guardando, cargar, guardar } = usePresupuestoCompras();
   const [editando, setEditando] = useState<string | null>(null);
+  const f = useFiltrosTabla(data?.proveedores ?? SIN_LINEAS, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = useMemo(() => ord.ordenar(f.filtradas), [ord, f.filtradas]);
 
   const fijar = async (category: string, nombre: string, monto: number) => {
     if (await guardar(category, monto, nombre)) setEditando(null);
@@ -172,17 +192,19 @@ export default function OcPresupuesto({ barra }: { barra?: ReactNode }) {
           ) : (
             <section className="space-y-2">
               <BlockTitle>Por proveedor · {data.proveedores.length}</BlockTitle>
+              <BarraFiltrosTabla f={f} />
               <DataTable>
                 <thead>
                   <tr>
-                    <th>Proveedor</th>
-                    <th className="text-right">Comprado</th>
-                    <th>Presupuesto</th>
-                    <th className="text-right">Te queda</th>
+                    <ThColumna label="Proveedor" ids={["proveedor"]} f={f} orden={ord} ordenId="proveedor" />
+                    <ThColumna label="Comprado" ids={["comprado"]} f={f} derecha orden={ord} ordenId="comprado" />
+                    <ThColumna label="Presupuesto" orden={ord} ordenId="presupuesto" />
+                    <ThColumna label="Te queda" ids={["queda"]} f={f} derecha orden={ord} ordenId="queda" />
                   </tr>
                 </thead>
                 <tbody>
-                  {data.proveedores.map((l) => {
+                  {filas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+                  {filas.map((l) => {
                     const cat = categoriaDeProveedor(l.supplierId ?? "");
                     return (
                       <tr key={l.supplierId ?? l.nombre}>

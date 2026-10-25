@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { ArrowDownRight, ArrowUpRight, Download, MoreHorizontal, TrendingDown, TrendingUp, Repeat } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -10,7 +10,9 @@ import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useHistorialPrecios } from "@/components/admin/precios/hooks/use-historial-precios";
 import PreciosFiltros from "@/components/admin/precios/PreciosFiltros";
-import { FILAS_VISIBLES, fmtFecha, variacionPct } from "@/components/admin/precios/precios-compartido";
+import { FILAS_VISIBLES, fmtFecha, variacionPct, type PriceRecord } from "@/components/admin/precios/precios-compartido";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 interface PriceHistoryTabProps {
   /** Si se pasa, carga sólo el historial de ese producto (modo "editor de producto") */
@@ -25,7 +27,18 @@ export default function PriceHistoryTab({ productId, accionesExtra = [] }: Price
   const h = useHistorialPrecios(productId);
   /* La tabla muestra las primeras FILAS_VISIBLES; «Ver los N restantes» abre el resto. */
   const [verTodos, setVerTodos] = useState(false);
-  const { cuentas, filas, nombres, filtros } = h;
+  const { cuentas, nombres, filtros } = h;
+  /* Los filtros viven en la fila de arriba (PreciosFiltros); aquí sólo el orden por título. */
+  const accesores = useMemo<Record<string, AccesorOrden<PriceRecord>>>(() => ({
+    fecha: { valor: (r) => r.changedAt },
+    producto: { valor: (r) => nombres[r.productId] ?? "", texto: true },
+    antes: { valor: (r) => r.oldPrice },
+    ahora: { valor: (r) => r.newPrice },
+    cambio: { valor: (r) => variacionPct(r) },
+    quien: { valor: (r) => r.changedBy, texto: true },
+  }), [nombres]);
+  const ord = useOrdenColumna(accesores);
+  const filas = ord.ordenar(h.filas);
   const lista = verTodos ? filas : filas.slice(0, FILAS_VISIBLES);
   const sinFiltro = productId != null;
 
@@ -124,12 +137,12 @@ export default function PriceHistoryTab({ productId, accionesExtra = [] }: Price
           <DataTable className="min-w-[600px]">
             <thead>
               <tr>
-                <th>Fecha</th>
-                {!sinFiltro && <th>Producto</th>}
-                <th className="text-right">Antes</th>
-                <th className="text-right">Ahora</th>
-                <th className="text-right">Cambio</th>
-                <th className="hidden sm:table-cell">Lo cambió</th>
+                <ThColumna label="Fecha" orden={ord} ordenId="fecha" />
+                {!sinFiltro && <ThColumna label="Producto" orden={ord} ordenId="producto" />}
+                <ThColumna label="Antes" derecha orden={ord} ordenId="antes" />
+                <ThColumna label="Ahora" derecha orden={ord} ordenId="ahora" />
+                <ThColumna label="Cambio" derecha orden={ord} ordenId="cambio" />
+                <ThColumna label="Lo cambió" className="hidden sm:table-cell" orden={ord} ordenId="quien" />
               </tr>
             </thead>
             <tbody>

@@ -15,6 +15,9 @@ import { button } from "@/components/ui-system/button-variants";
 import type { FilaProveedor } from "@/lib/analytics/margen-por-proveedor";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { useMargenProveedor, type DiasMargen } from "./use-margen-proveedor";
 
 const PERIODOS: { value: DiasMargen; label: string }[] = [
@@ -24,6 +27,27 @@ const PERIODOS: { value: DiasMargen; label: string }[] = [
 ];
 
 const pct = (n: number) => `${formatNumber(n, { max: 1 })} %`;
+
+const SIN_FILAS: readonly FilaProveedor[] = [];
+
+/** Las filas llegan enteras del servidor (una por proveedor): se filtran y ordenan aquí. */
+const COLUMNAS: readonly ColumnaFiltro<FilaProveedor>[] = [
+  { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (f) => [f.proveedor, ...f.top.map((t) => t.nombre)] },
+  { id: "productos", label: "Productos", tipo: "rango", numero: (f) => f.productos },
+  { id: "ventas", label: "Ventas", tipo: "rango", numero: (f) => f.ventas, unidad: "S/", paso: 0.01 },
+  { id: "costo", label: "Costo", tipo: "rango", numero: (f) => f.costo, unidad: "S/", paso: 0.01 },
+  { id: "ganancia", label: "Ganancia", tipo: "rango", numero: (f) => f.ganancia, unidad: "S/", paso: 0.01 },
+  { id: "margen", label: "Margen", tipo: "rango", numero: (f) => (f.ventas > 0 ? f.margenPct : null), unidad: "%", paso: 0.1 },
+];
+
+const ORDEN: Record<string, AccesorOrden<FilaProveedor>> = {
+  proveedor: { valor: (f) => f.proveedor, texto: true },
+  productos: { valor: (f) => f.productos },
+  ventas: { valor: (f) => f.ventas },
+  costo: { valor: (f) => f.costo },
+  ganancia: { valor: (f) => f.ganancia },
+  margen: { valor: (f) => (f.ventas > 0 ? f.margenPct : null) },
+};
 
 function Fila({ f, apagada = false }: { f: FilaProveedor; apagada?: boolean }) {
   const productos = f.top.slice(0, 3).map((t) => t.nombre).join(", ") + (f.productos > 3 ? ` y ${f.productos - 3} más` : "");
@@ -51,6 +75,9 @@ function Fila({ f, apagada = false }: { f: FilaProveedor; apagada?: boolean }) {
 export default function MargenPorProveedor() {
   const [dias, setDias] = useState<DiasMargen>("30");
   const { datos, cargando, error, reintentar } = useMargenProveedor(dias);
+  const fl = useFiltrosTabla(datos?.filas ?? SIN_FILAS, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(fl.filtradas);
   const hayEstimado = !!datos && [...datos.filas, ...(datos.sinProveedor ? [datos.sinProveedor] : [])].some((f) => f.costoEstimado);
 
   return (
@@ -83,20 +110,23 @@ export default function MargenPorProveedor() {
       ) : datos.filas.length === 0 && !datos.sinProveedor ? (
         <p className="p-4 text-sm text-[var(--text-secondary)]">No vendiste nada en estos {datos.periodDays} días.</p>
       ) : (
+        <>
+        <BarraFiltrosTabla f={fl} />
         <div className={cn("overflow-x-auto rounded-xl border border-[var(--rule-base)] transition-opacity", cargando && "opacity-60")} aria-busy={cargando}>
           <DataTable>
             <thead>
               <tr>
-                <th>Proveedor</th>
-                <th className="text-right">Productos</th>
-                <th className="text-right">Ventas</th>
-                <th className="text-right">Costo</th>
-                <th className="text-right">Ganancia</th>
-                <th className="text-right">Margen</th>
+                <ThColumna label="Proveedor" ids={["proveedor"]} f={fl} orden={ord} ordenId="proveedor" />
+                <ThColumna label="Productos" ids={["productos"]} f={fl} derecha orden={ord} ordenId="productos" />
+                <ThColumna label="Ventas" ids={["ventas"]} f={fl} derecha orden={ord} ordenId="ventas" />
+                <ThColumna label="Costo" ids={["costo"]} f={fl} derecha orden={ord} ordenId="costo" />
+                <ThColumna label="Ganancia" ids={["ganancia"]} f={fl} derecha orden={ord} ordenId="ganancia" />
+                <ThColumna label="Margen" ids={["margen"]} f={fl} derecha orden={ord} ordenId="margen" />
               </tr>
             </thead>
             <tbody>
-              {datos.filas.map((f) => <Fila key={f.supplierId ?? "sin"} f={f} />)}
+              {fl.activos > 0 && filas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+              {filas.map((f) => <Fila key={f.supplierId ?? "sin"} f={f} />)}
               {datos.sinProveedor && <Fila f={datos.sinProveedor} apagada />}
             </tbody>
           </DataTable>
@@ -106,6 +136,7 @@ export default function MargenPorProveedor() {
             </p>
           )}
         </div>
+        </>
       )}
     </div>
   );

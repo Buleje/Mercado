@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { Plus, Trash2, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
 import {
@@ -17,6 +17,9 @@ import { diaCorto } from "@/lib/compras/ciclo-oc";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { CasillaMercado } from "./PrecioVistoModal";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 const CHIP = "inline-flex items-center gap-0.5 whitespace-nowrap rounded-full px-1.5 py-0.5 text-sm font-semibold";
 const CHIP_AMBAR = "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/15";
@@ -78,6 +81,23 @@ interface Props {
  */
 export default function TablaMercado({ productos, competidores, hoy, onCasilla, onMiPrecio, onQuitarProducto }: Props) {
   const [editando, setEditando] = useState<{ id: string; valor: string } | null>(null);
+  /* Una columna de rango por competidor (sólo precios en soles: los dólares no se comparan). */
+  const columnas = useMemo<readonly ColumnaFiltro<ProductoMercado>[]>(() => [
+    { id: "producto", label: "Producto", tipo: "texto", valor: (p) => [p.productName] },
+    { id: "mio", label: "Tu precio", tipo: "rango", numero: (p) => (p.myPrice > 0 ? p.myPrice : null), unidad: "S/", paso: 0.01 },
+    ...competidores.map((c): ColumnaFiltro<ProductoMercado> => ({
+      id: `c-${c.id}`, label: c.name, tipo: "rango", unidad: "S/", paso: 0.01,
+      numero: (p) => { const v = p.prices[c.id]; return v && v.moneda !== "USD" ? v.precio : null; },
+    })),
+  ], [competidores]);
+  const accesores = useMemo<Record<string, AccesorOrden<ProductoMercado>>>(() => ({
+    producto: { valor: (p) => p.productName, texto: true },
+    mio: { valor: (p) => (p.myPrice > 0 ? p.myPrice : null) },
+    ...Object.fromEntries(competidores.map((c) => [`c-${c.id}`, { valor: (p: ProductoMercado) => { const v = p.prices[c.id]; return v && v.moneda !== "USD" ? v.precio : null; } }])),
+  }), [competidores]);
+  const f = useFiltrosTabla(productos, columnas);
+  const ord = useOrdenColumna(accesores);
+  const filas = ord.ordenar(f.filtradas);
 
   const cerrarEdicion = (guardar: boolean) => {
     if (guardar && editando) {
@@ -88,18 +108,21 @@ export default function TablaMercado({ productos, competidores, hoy, onCasilla, 
   };
 
   return (
+    <>
+    <BarraFiltrosTabla f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
           <tr>
-            <th>Producto</th>
-            <th className="text-right">Tu precio</th>
-            {competidores.map((c) => <th key={c.id} className="text-right">{c.name}</th>)}
+            <ThColumna label="Producto" ids={["producto"]} f={f} orden={ord} ordenId="producto" />
+            <ThColumna label="Tu precio" ids={["mio"]} f={f} derecha orden={ord} ordenId="mio" />
+            {competidores.map((c) => <ThColumna key={c.id} label={c.name} ids={[`c-${c.id}`]} f={f} derecha orden={ord} ordenId={`c-${c.id}`} />)}
             <th className="w-12"><span className="sr-only">Quitar</span></th>
           </tr>
         </thead>
         <tbody>
-          {productos.map((p) => (
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={competidores.length + 3} />}
+          {filas.map((p) => (
             <tr key={p.productId}>
               <td className="font-medium">{p.productName}</td>
               <td className="text-right">
@@ -160,5 +183,6 @@ export default function TablaMercado({ productos, competidores, hoy, onCasilla, 
         </tbody>
       </DataTable>
     </div>
+    </>
   );
 }

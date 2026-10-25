@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Award, BarChart3, History, Mail, MapPin, MessageCircle, MoreHorizontal, Pencil, Phone, Trash2 } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
@@ -14,6 +14,9 @@ import {
   type CompraDeProveedor, type CuentaDeProveedor,
 } from "./datos-proveedores";
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 interface Props {
   proveedores: readonly DbSupplier[];
@@ -51,20 +54,38 @@ function mensajeWhatsApp(debe: number): string {
  */
 export default function TablaProveedores({ proveedores, cuentas, compras, hoy, ahora, duplicados, resaltado, onFicha, onEditar, onEliminar }: Props) {
   const [comprasDe, setComprasDe] = useState<string | null>(null);
+  /* Lo que debe cada uno, calculado una vez para filtrar y ordenar por «Le debes». */
+  const debe = useMemo(() => new Map(proveedores.map((s) => [s.id, deudaDe(cuentas, s.id, hoy).total])), [proveedores, cuentas, hoy]);
+  const columnas = useMemo<readonly ColumnaFiltro<DbSupplier>[]>(() => [
+    { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (s) => [s.name, s.documento || s.ruc || ""] },
+    { id: "contacto", label: "Contacto", tipo: "texto", valor: (s) => [s.phone ?? "", s.email ?? "", s.address ?? ""] },
+    { id: "debe", label: "Le debes", tipo: "rango", numero: (s) => debe.get(s.id) ?? 0, unidad: "S/", paso: 0.01 },
+  ], [debe]);
+  const accesores = useMemo<Record<string, AccesorOrden<DbSupplier>>>(() => ({
+    proveedor: { valor: (s) => s.name, texto: true },
+    contacto: { valor: (s) => s.phone || s.email || s.address || null, texto: true },
+    debe: { valor: (s) => debe.get(s.id) ?? 0 },
+  }), [debe]);
+  const f = useFiltrosTabla(proveedores, columnas);
+  const ord = useOrdenColumna(accesores);
+  const filas = ord.ordenar(f.filtradas);
 
   return (
+    <>
+    <BarraFiltrosTabla f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
           <tr>
-            <th>Proveedor</th>
-            <th>Contacto</th>
-            <th className="text-right">Le debes</th>
+            <ThColumna label="Proveedor" ids={["proveedor"]} f={f} orden={ord} ordenId="proveedor" />
+            <ThColumna label="Contacto" ids={["contacto"]} f={f} orden={ord} ordenId="contacto" />
+            <ThColumna label="Le debes" ids={["debe"]} f={f} derecha orden={ord} ordenId="debe" />
             <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
-          {proveedores.map((s) => {
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+          {filas.map((s) => {
             const deuda = deudaDe(cuentas, s.id, hoy);
             const sinComprar = diasSinComprar(compras, s.id, ahora);
             const sinContacto = !s.phone && !s.email && !s.address;
@@ -140,6 +161,7 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
         </tbody>
       </DataTable>
     </div>
+    </>
   );
 }
 
