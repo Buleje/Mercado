@@ -166,10 +166,18 @@ async function baseQueResponde() {
   const candidatos = ["http://localhost:3000", "http://localhost:3001"];
   // 15-10: con el dev apagado esperaba 260 s; en este WSL un puerto cerrado no rechaza, tarda 10,5 s
   // en «timeout». Se pregunta a `ss` si alguien escucha y, si nadie, se corta ya.
+  /* 24-10: dos carriles perdieron una corrida porque el dev se estaba REINICIANDO (otro lo
+     relanzó): se espera hasta 90 s a que alguien escuche antes de rendirse. */
   try {
-    const escuchando = execSync("ss -ltnH", { encoding: "utf8" });
-    if (!/:300[01]\s/.test(escuchando)) {
-      console.error("[qa-capturas] no hay servidor en :3000 ni :3001 — levantalo con `npm run dev` (log en /tmp/dev-server.log)");
+    const escucha = () => /:300[01]\s/.test(execSync("ss -ltnH", { encoding: "utf8" }));
+    let ok = escucha();
+    for (let t = 0; !ok && t < 30; t++) {
+      if (t === 0) console.error("[qa-capturas] el dev no escucha todavía: espero hasta 90 s por si se está reiniciando…");
+      await new Promise((r) => setTimeout(r, 3000));
+      ok = escucha();
+    }
+    if (!ok) {
+      console.error("[qa-capturas] no hay servidor en :3000 ni :3001 — levantalo con `nohup npm run dev > /tmp/dev-server.log 2>&1 &`");
       process.exit(2);
     }
   } catch { /* sin `ss`: sigue la prueba por fetch */ }
