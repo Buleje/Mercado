@@ -2,12 +2,39 @@
 
 import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Calculator, CheckCircle2, Eye, Search } from "@buleje/design-system/icons";
+import { Calculator, CheckCircle2, Eye } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { FILTROS, STATUS_MAP, dentroDeTolerancia, fmt, fmtSigno, horaLima, lecturaDelConteo, type CashAudit, type FiltroCuadre } from "./arqueo-shared";
 
 const PAGINA = 20;
+
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+const conteoDe = (a: CashAudit) => lecturaDelConteo(a);
+
+/** Filtros de columna (como Adelantos › Lista) sobre lo que pasan los chips de estado: los cuadres llegan enteros. */
+const COLUMNAS: readonly ColumnaFiltro<CashAudit>[] = [
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (a) => a.openedAt ? limaDateKey(a.openedAt) || null : null, formatearValor: ddmm },
+  { id: "turno", label: "Turno", tipo: "multi", valor: (a) => a.turno, soloConVarios: true },
+  { id: "cajero", label: "Cajero/a", tipo: "texto", valor: (a) => [a.cajero, a.cerro ?? "", a.notes ?? ""] },
+  { id: "esperado", label: "Esperado", tipo: "rango", numero: (a) => a.expectedAmount, unidad: "S/", paso: 0.01 },
+  { id: "contado", label: "Contado", tipo: "rango", numero: (a) => conteoDe(a).contado, unidad: "S/", paso: 0.01 },
+  { id: "diferencia", label: "Diferencia", tipo: "rango", numero: (a) => conteoDe(a).diferencia, unidad: "S/", paso: 0.01 },
+  { id: "estado", label: "Estado", tipo: "multi", valor: (a) => STATUS_MAP[a.status].label, soloConVarios: true },
+];
+
+const ORDEN: Record<string, AccesorOrden<CashAudit>> = {
+  fecha: { valor: (a) => (a.openedAt ? new Date(a.openedAt).getTime() : null) },
+  turno: { valor: (a) => a.turno, texto: true },
+  cajero: { valor: (a) => a.cajero, texto: true },
+  esperado: { valor: (a) => a.expectedAmount },
+  contado: { valor: (a) => conteoDe(a).contado },
+  diferencia: { valor: (a) => conteoDe(a).diferencia },
+  estado: { valor: (a) => STATUS_MAP[a.status].label, texto: true },
+};
 
 /** Celda sin medir: palabra en gris, nunca «S/ 0». */
 function SinDato({ texto, porque }: { texto: string | null; porque: string | null }) {
@@ -37,14 +64,15 @@ export default function TablaCuadres({
 }) {
   const [filtro, setFiltro] = useState<FiltroCuadre>("todos");
   const [visibles, setVisibles] = useState(PAGINA);
-  const [busca, setBusca] = useState("");
 
   const cuenta = useMemo(() => Object.fromEntries(FILTROS.map((f) => [f.id, audits.filter(f.pasa).length])) as Record<FiltroCuadre, number>, [audits]);
-  const filas = useMemo(() => {
-    const q = busca.trim().toLowerCase();
-    const pasa = FILTROS.find((f) => f.id === filtro)!.pasa;
-    return audits.filter((a) => pasa(a) && (!q || [a.fecha, a.turno, a.cajero, a.cerro, a.notes].some((t) => (t ?? "").toLowerCase().includes(q))));
-  }, [audits, filtro, busca]);
+  const delChip = useMemo(() => {
+    const pasa = FILTROS.find((x) => x.id === filtro)!.pasa;
+    return audits.filter(pasa);
+  }, [audits, filtro]);
+  const fc = useFiltrosTabla(delChip, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(fc.filtradas);
 
   if (audits.length === 0) {
     return (
@@ -80,31 +108,27 @@ export default function TablaCuadres({
           </button>
         ))}
         </div>
-        <label className="relative ml-auto w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]" aria-hidden />
-          <input
-            type="search"
-            value={busca}
-            onChange={(e) => { setBusca(e.target.value); setVisibles(PAGINA); }}
-            placeholder="Buscar fecha, cajero o nota…"
-            aria-label="Buscar en los cuadres"
-            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-          />
-        </label>
       </div>
 
-      {filas.length === 0 ? (
-        <p className="p-6 text-center text-sm text-[var(--text-secondary)]">{busca ? "Ningún cuadre con esa búsqueda." : "Ningún cuadre con ese filtro."}</p>
+      <BarraFiltrosTabla f={fc} className="px-3 py-2" />
+      {delChip.length === 0 ? (
+        <p className="p-6 text-center text-sm text-[var(--text-secondary)]">Ningún cuadre con ese filtro.</p>
       ) : (
         <DataTable className="min-w-[640px]">
           <thead>
             <tr>
-              <th>Fecha</th><th>Turno</th><th>Cajero/a</th>
-              <th className="text-right">Esperado</th><th className="text-right">Contado</th><th className="text-right">Diferencia</th>
-              <th>Estado</th><th><span className="sr-only">Ver</span></th>
+              <ThColumna label="Fecha" ids={["fecha"]} f={fc} orden={ord} ordenId="fecha" />
+              <ThColumna label="Turno" ids={["turno"]} f={fc} orden={ord} ordenId="turno" />
+              <ThColumna label="Cajero/a" ids={["cajero"]} f={fc} orden={ord} ordenId="cajero" />
+              <ThColumna label="Esperado" ids={["esperado"]} f={fc} derecha orden={ord} ordenId="esperado" />
+              <ThColumna label="Contado" ids={["contado"]} f={fc} derecha orden={ord} ordenId="contado" />
+              <ThColumna label="Diferencia" ids={["diferencia"]} f={fc} derecha orden={ord} ordenId="diferencia" />
+              <ThColumna label="Estado" ids={["estado"]} f={fc} orden={ord} ordenId="estado" />
+              <th data-label="Ver"><span className="sr-only">Ver</span></th>
             </tr>
           </thead>
           <tbody>
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={8} />}
             {filas.slice(0, visibles).map((a) => {
               const s = STATUS_MAP[a.status];
               const SIcon = s.icon;

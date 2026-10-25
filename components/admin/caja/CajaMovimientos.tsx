@@ -7,10 +7,10 @@
  * cabecera, y cómo verlos + los filtros (medio y origen) van en UNA fila
  * pegada a la tabla. Cada fila dice de dónde vino: venta, adelanto, gasto…
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { medioCorregible } from "@/lib/caja/cambiar-medio";
-import { ETIQUETA_ORIGEN, ORDEN_ORIGEN, origenDeMovimiento, type OrigenClave } from "@/lib/caja/origen-movimiento";
+import { origenDeMovimiento, type OrigenClave } from "@/lib/caja/origen-movimiento";
 import { medioDeMovimiento } from "@/lib/caja/saldo-esperado";
 import { fechaCortaLima } from "@/lib/caja/caja-abierta";
 import { formatTime } from "@/lib/format";
@@ -18,10 +18,32 @@ import { cn, limaDateKey } from "@/lib/utils";
 import { CambiarMedioMovimiento } from "../cash-register/CambiarMedioMovimiento";
 import { CajaLineaDeTiempo } from "./CajaLineaDeTiempo";
 import type { ItemLineaDeTiempo } from "./use-caja-registradora";
-import { COLOR_SIGNO, acortarIds, fmt, signoDe, type CashRegister, type MethodFilter } from "./tipos";
+import { COLOR_SIGNO, acortarIds, fmt, signoDe, type CashRegister } from "./tipos";
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
-const MEDIOS: MethodFilter[] = ["all", "efectivo", "yape", "plin", "tarjeta", "transferencia"];
+type Fila = { m: CashRegister["movements"][number]; origen: ReturnType<typeof origenDeMovimiento> };
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+const MEDIO_CAP = (m: string) => m.charAt(0).toUpperCase() + m.slice(1);
+
+/** Filtros de columna (como Adelantos › Lista): los movimientos de la caja llegan enteros. */
+const COLUMNAS: readonly ColumnaFiltro<Fila>[] = [
+  { id: "dia", label: "Día", tipo: "fecha", numero: ({ m }) => limaDateKey(m.createdAt), formatearValor: ddmm, soloConVarios: true },
+  { id: "origen", label: "Origen", tipo: "multi", valor: ({ origen }) => origen.etiqueta, soloConVarios: true },
+  { id: "detalle", label: "Detalle", tipo: "texto", valor: ({ m, origen }) => [m.description, origen.etiqueta, String(m.amount)] },
+  { id: "medio", label: "Medio", tipo: "multi", valor: ({ m }) => MEDIO_CAP(medioDeMovimiento(m.method)), soloConVarios: true },
+  { id: "monto", label: "Monto", tipo: "rango", numero: ({ m }) => Number(m.amount), unidad: "S/", paso: 0.01 },
+];
+
+const ORDEN: Record<string, AccesorOrden<Fila>> = {
+  hora: { valor: ({ m }) => new Date(m.createdAt).getTime() },
+  origen: { valor: ({ origen }) => origen.etiqueta, texto: true },
+  detalle: { valor: ({ m }) => m.description, texto: true },
+  medio: { valor: ({ m }) => medioDeMovimiento(m.method), texto: true },
+  monto: { valor: ({ m }) => Number(m.amount) },
+};
 
 const COLOR_ORIGEN: Partial<Record<OrigenClave, string>> = {
   venta: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
@@ -43,9 +65,6 @@ interface Props {
 
 export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMedio, onCambiado, buscarInicial = "" }: Props) {
   const [vista, setVista] = useLocalStorage<"lista" | "tiempo">("caja:movimientos-vista", "lista");
-  const [medio, setMedio] = useState<MethodFilter>("all");
-  const [origen, setOrigen] = useState<OrigenClave | "todos">("todos");
-  const [buscar, setBuscar] = useState(buscarInicial);
   /* La búsqueda sólo se ve en la lista: si llega un egreso buscado, se abre ahí. */
   useEffect(() => {
     if (buscarInicial) setVista("lista");
@@ -53,15 +72,15 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
   /* Sesión de varios días: la hora sola no dice cuándo (M24, caja abierta en junio). */
   const variosDias = limaDateKey(caja.openedAt) !== limaDateKey();
 
-  const conOrigen = useMemo(() => caja.movements.map((m) => ({ m, origen: origenDeMovimiento(m) })), [caja.movements]);
-  const origenesPresentes = useMemo(() => ORDEN_ORIGEN.filter((o) => conOrigen.some((x) => x.origen.clave === o)), [conOrigen]);
-  const q = buscar.trim().toLowerCase().replace(/^#/, "");
-  const filas = conOrigen.filter(
-    ({ m, origen: o }) =>
-      (medio === "all" || medioDeMovimiento(m.method) === medio) &&
-      (origen === "todos" || o.clave === origen) &&
-      (!q || `${m.description} ${o.etiqueta} ${m.amount}`.toLowerCase().includes(q)),
-  );
+  const conOrigen = useMemo<Fila[]>(() => caja.movements.map((m) => ({ m, origen: origenDeMovimiento(m) })), [caja.movements]);
+  const f = useFiltrosTabla(conOrigen, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
+  /* Llega buscado desde «El esperado da negativo»: cae en el filtro de Detalle. */
+  const { setTexto } = f;
+  useEffect(() => {
+    if (buscarInicial) setTexto("detalle", buscarInicial.trim().replace(/^#/, ""));
+  }, [buscarInicial, setTexto]);
 
   return (
     <section aria-label={`Movimientos de la caja · ${caja.movements.length}`} className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden">
@@ -81,68 +100,30 @@ export function CajaMovimientos({ caja, timeline, efectivoActual, puedeCambiarMe
             </button>
           ))}
         </div>
-        {vista === "lista" && (
-          <>
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-none" role="group" aria-label="Filtrar por medio">
-              {MEDIOS.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  aria-pressed={medio === m}
-                  onClick={() => setMedio(m)}
-                  className={cn(
-                    "shrink-0 px-3 min-h-12 rounded-xl border text-sm font-semibold transition-colors",
-                    medio === m ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-transparent bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  {m === "all" ? "Todos" : m.charAt(0).toUpperCase() + m.slice(1)}
-                </button>
-              ))}
-            </div>
-            <input
-              type="search"
-              value={buscar}
-              onChange={(e) => setBuscar(e.target.value)}
-              placeholder="Buscar código o concepto"
-              aria-label="Buscar movimiento por código, concepto o monto"
-              className="ml-auto min-h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] sm:w-56"
-            />
-            <select
-              value={origen}
-              onChange={(e) => setOrigen(e.target.value as OrigenClave | "todos")}
-              aria-label="Filtrar por origen"
-              className="min-h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
-            >
-              <option value="todos">Todo origen</option>
-              {origenesPresentes.map((o) => (
-                <option key={o} value={o}>
-                  {ETIQUETA_ORIGEN[o]}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
       </div>
+
+      {vista === "lista" && <BarraFiltrosTabla f={f} className="px-3 sm:px-4 py-2" />}
 
       {vista === "tiempo" ? (
         <CajaLineaDeTiempo items={timeline} efectivoActual={efectivoActual} />
       ) : (
         <>
-          {filas.length === 0 ? (
-            <p className="py-8 text-center text-sm font-semibold text-[var(--text-secondary)]">{q ? `Nada con «${buscar.trim()}».` : "Sin movimientos con ese filtro."}</p>
+          {conOrigen.length === 0 ? (
+            <p className="py-8 text-center text-sm font-semibold text-[var(--text-secondary)]">Sin movimientos en esta caja.</p>
           ) : (
             <div className="max-h-[70vh] overflow-y-auto">
               <DataTable className="w-full">
                 <thead className="sticky top-0">
                   <tr>
-                    <th>{variosDias ? "Día y hora" : "Hora"}</th>
-                    <th>Origen</th>
-                    <th>Detalle</th>
-                    <th>Medio</th>
-                    <th className="text-right">Monto</th>
+                    <ThColumna label={variosDias ? "Día y hora" : "Hora"} ids={["dia"]} f={f} orden={ord} ordenId="hora" />
+                    <ThColumna label="Origen" ids={["origen"]} f={f} orden={ord} ordenId="origen" />
+                    <ThColumna label="Detalle" ids={["detalle"]} f={f} orden={ord} ordenId="detalle" />
+                    <ThColumna label="Medio" ids={["medio"]} f={f} orden={ord} ordenId="medio" />
+                    <ThColumna label="Monto" ids={["monto"]} f={f} derecha orden={ord} ordenId="monto" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft)]">
+                  {filas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
                   {filas.map(({ m, origen: o }) => {
                     const signo = signoDe(m.type);
                     return (

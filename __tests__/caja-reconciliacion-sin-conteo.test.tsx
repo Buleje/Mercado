@@ -124,7 +124,7 @@ describe("Caja › Por día", () => {
 
     permiso.ventas = true;
     render(<CajaReconciliacion {...props(cerradas)} />);
-    expect(await screen.findByText("Vendido")).toBeTruthy();
+    expect((await screen.findAllByText("Vendido")).length).toBeGreaterThan(0);
     expect((await filaDe(/1 caja/)).textContent).toContain("1 venta · ticket S/ 30.00");
     expect(screen.getByText("Sin caja cerrada")).toBeTruthy();
   });
