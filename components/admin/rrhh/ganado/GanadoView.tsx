@@ -40,7 +40,7 @@ import { useDescontarAdelantos } from "./use-descontar-adelantos";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
-import { COLUMNAS_GANADO, ORDEN_GANADO, type PersonaGanada } from "./columnas-filtro-ganado";
+import { COLUMNAS_GANADO, CON_AVISO, ORDEN_GANADO, tieneAviso, type PersonaGanada } from "./columnas-filtro-ganado";
 
 const SIN_PERSONAS: readonly PersonaGanada[] = [];
 
@@ -93,13 +93,15 @@ export default function GanadoView() {
 
   const personasConAvisos = useMemo(() => {
     if (!ganado) return 0;
-    return ganado.personas.filter((p) => p.avisos.length > 0 || p.sinMarcar.length > 0 || p.sinTarifa.length > 0).length;
+    return ganado.personas.filter(tieneAviso).length;
   }, [ganado]);
 
   const queda = useMemo(() => totalQuedaPorPagar(ganado?.personas ?? []), [ganado]);
   const descuento = useDescontarAdelantos();
   const f = useFiltrosTabla(ganado?.personas ?? SIN_PERSONAS, COLUMNAS_GANADO);
   const ord = useOrdenColumna(ORDEN_GANADO);
+  const avisosPuestos = (f.facetas.avisos as string[] | undefined) ?? [];
+  const atajoAviso = avisosPuestos.length === CON_AVISO.length && CON_AVISO.every((x) => avisosPuestos.includes(x));
   const filas = ord.ordenar(f.filtradas);
   /* El pie suma lo que se ve (con filtros), no el período entero. */
   const vistoQueda = useMemo(() => totalQuedaPorPagar(f.filtradas), [f.filtradas]);
@@ -229,6 +231,18 @@ export default function GanadoView() {
           <EmptyState icon={Wallet} title="Sin personal activo en este período" />
         ) : (
           <>
+            {personasConAvisos > 0 && (
+              <div className="mb-2">
+              <button
+                type="button"
+                aria-pressed={atajoAviso}
+                onClick={() => f.setFaceta("avisos", atajoAviso ? undefined : [...CON_AVISO])}
+                className={claseChipFiltro(atajoAviso)}
+              >
+                Con aviso <span className="tabular-nums">({personasConAvisos})</span>
+              </button>
+              </div>
+            )}
             <BarraFiltrosTabla vistas="lo-ganado" f={f} />
             <DataTable zebra>
               <thead>
@@ -240,7 +254,7 @@ export default function GanadoView() {
                   <ThColumna label="Ganado (referencia)" ids={["ganado"]} f={f} derecha orden={ord} ordenId="ganado" />
                   <ThColumna label="Adelantos por planilla" derecha orden={ord} ordenId="adelantos" />
                   <ThColumna label="Queda por pagar" ids={["queda"]} f={f} derecha orden={ord} ordenId="queda" />
-                  <th>Avisos</th>
+                  <ThColumna label="Avisos" ids={["avisos"]} f={f} />
                 </tr>
               </thead>
               <tbody>
