@@ -12,11 +12,13 @@ import { ETIQUETA_FALTA, leFalta } from "@/lib/inventario/catalogo-incompleto";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 
 const TONO_ACENTO = "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
-const TONO_AVISO = "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)]";
 
 /** Chip de filtro: botón secundario del DS (48 px) a 14 px; encendido toma su tono. */
 const chip = (activo: boolean, tono: string = TONO_ACENTO) =>
   button({ variant: "secondary", className: cn("shrink-0 gap-1.5 rounded-xl px-3 text-sm", activo ? tono : "text-[var(--text-secondary)]") });
+
+/** Atajo de la barra, como el de Pedidos: pulsado = primario del DS. */
+const atajo = (activo: boolean) => button({ variant: activo ? "primary" : "secondary", className: "shrink-0 gap-1.5 rounded-xl px-3 text-sm" });
 
 /** El desplegable de la fila a 48 px (mismo arreglo que Facturas y boletas). */
 const FILTRO_EN_FILA = "mt-0! min-w-0 w-full [&_summary]:h-12 [&_summary]:rounded-xl";
@@ -101,6 +103,18 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
           <ScanBarcode className="h-5 w-5" aria-hidden />
         </button>
       </div>
+      {/* Atajos a la vista (como «Por cobrar» en Pedidos): escriben en el mismo estado que el
+          panel «Filtros» (`lowOnly`, `faltaDato`) y se ocultan en 0, salvo que estén puestos. */}
+      {(lowStockCount > 0 || lowOnly) && (
+        <button type="button" aria-pressed={lowOnly} onClick={() => setLowOnly(!lowOnly)} className={atajo(lowOnly)}>
+          <AlertTriangle className="h-4 w-4" aria-hidden /> Stock bajo ({lowStockCount})
+        </button>
+      )}
+      {(sinCostoCount > 0 || faltaDato === "sin-costo") && (
+        <button type="button" aria-pressed={faltaDato === "sin-costo"} onClick={() => setFaltaDato(faltaDato === "sin-costo" ? null : "sin-costo")} className={atajo(faltaDato === "sin-costo")}>
+          <Coins className="h-4 w-4" aria-hidden /> Sin costo ({sinCostoCount})
+        </button>
+      )}
       <FiltrosEnBoton activos={activos} chips={chips} onLimpiar={limpiar}>
         <div className="flex flex-col gap-2">
           {/* Con la tabla a la vista (desde sm) estos cuatro viven en su encabezado;
@@ -134,15 +148,8 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
           </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <button type="button" aria-pressed={lowOnly} onClick={() => setLowOnly(!lowOnly)} className={chip(lowOnly, TONO_AVISO)}>
-              <AlertTriangle className="h-4 w-4" aria-hidden /> Bajo stock{lowStockCount > 0 ? ` (${lowStockCount})` : ""}
-            </button>
             <button type="button" aria-pressed={noImageOnly} onClick={() => setNoImageOnly(!noImageOnly)} className={chip(noImageOnly)}>
               <Camera className="h-4 w-4" aria-hidden /> Sin foto ({noImageCount})
-            </button>
-            {/* Escribe en el mismo estado que el chip y el aviso de Inicio (`faltaDato`). */}
-            <button type="button" aria-pressed={faltaDato === "sin-costo"} onClick={() => setFaltaDato(faltaDato === "sin-costo" ? null : "sin-costo")} className={chip(faltaDato === "sin-costo", TONO_AVISO)}>
-              <Coins className="h-4 w-4" aria-hidden /> Sin costo ({sinCostoCount})
             </button>
           </div>
         </div>
