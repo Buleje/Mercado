@@ -39,6 +39,8 @@ import {
 } from "@/lib/forestal/lote-por-escaneo";
 import { LoteCreadoSinPiezasError, type EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { usePilaEscaneada } from "./hooks/use-pila-escaneada";
+import { useVaciarConConfirmar } from "./hooks/use-vaciar-con-confirmar";
+import { avisoVaciarPila } from "@/lib/forestal/cubicador-vaciar";
 import EscanerTrozas, { nombreDeTroza } from "./EscanerTrozas";
 import {
   AvisoSacadas,
@@ -76,6 +78,11 @@ export default function CtpArmarLoteEscaneando({
   const [notas, setNotas] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [errores, setErrores] = useState<Record<string, string>>({});
+  /* Vaciar pregunta antes (24-10): un toque sin querer se llevaba la pila entera. */
+  const vaciarPila = useVaciarConConfirmar(() => {
+    setPila([]);
+    setErrores({});
+  });
   const [sacadas, setSacadas] = useState<TrozaSacada[]>([]);
 
   const porId = useMemo(() => new Map(estado.trozas.map((t) => [t.id, t])), [estado.trozas]);
@@ -297,10 +304,7 @@ export default function CtpArmarLoteEscaneando({
           <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap justify-end gap-2 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-1 py-2">
             <button
               type="button"
-              onClick={() => {
-                setPila([]);
-                setErrores({});
-              }}
+              onClick={() => void vaciarPila(pila.length > 0 && avisoVaciarPila({ trozas: pila.length, m3: fmtM3(resumen.m3) }))}
               disabled={guardando}
               className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >

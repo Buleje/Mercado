@@ -6,7 +6,7 @@
  * callar que se pierde algo que no lo está.
  */
 import { describe, expect, it } from "vitest";
-import { avisoVaciarLecturas, avisoVaciarLote, avisoVaciarPatio, avisoVaciarTrasera } from "@/lib/forestal/cubicador-vaciar";
+import { avisoVaciarLecturas, avisoVaciarLote, avisoVaciarPatio, avisoVaciarPila, avisoVaciarTrasera } from "@/lib/forestal/cubicador-vaciar";
 
 describe("avisoVaciarLote", () => {
   it("sin guardar avisa que se pierde", () => {
@@ -70,5 +70,14 @@ describe("avisoVaciarLecturas", () => {
 
   it("una sola lectura en singular", () => {
     expect(avisoVaciarLecturas({ trozas: 1, m3: "0.512" }).description).toContain("Se borra la troza leída (0.512 m³)");
+  });
+});
+
+describe("avisoVaciarPila", () => {
+  it("dice cuántas trozas salen de la pila y que siguen en el patio", () => {
+    const a = avisoVaciarPila({ trozas: 12, m3: "8.410" });
+    expect(a.description).toMatch(/12 trozas escaneadas \(8\.410 m³\)/);
+    expect(a.description).toMatch(/Siguen en el patio/);
+    expect(avisoVaciarPila({ trozas: 1, m3: "0.700" }).description).toMatch(/^Se saca la troza escaneada/);
   });
 });

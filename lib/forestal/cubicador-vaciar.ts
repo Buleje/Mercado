@@ -83,3 +83,16 @@ export function avisoVaciarLecturas(d: { trozas: number; m3: string }): AvisoVac
     confirmLabel: "Sí, vaciar",
   };
 }
+
+/**
+ * Vaciar la pila de «Armar lote escaneando»: saca las trozas de la pila, no del
+ * patio, y el lote todavía no se creó (sin pregunta se perdía la pila con un toque).
+ */
+export function avisoVaciarPila(d: { trozas: number; m3: string }): AvisoVaciar {
+  return {
+    title: "¿Vaciar la pila?",
+    description: `${d.trozas === 1 ? "Se saca la troza escaneada" : `Se sacan las ${cuenta(d.trozas, "troza escaneada", "trozas escaneadas")}`} (${d.m3} m³) de la pila. Siguen en el patio y el lote todavía no se crea.`,
+    intent: "danger",
+    confirmLabel: "Sí, vaciar",
+  };
+}

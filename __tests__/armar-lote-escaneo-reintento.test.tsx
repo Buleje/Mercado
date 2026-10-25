@@ -7,6 +7,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CtpArmarLoteEscaneando from "@/components/admin/forestal/CtpArmarLoteEscaneando";
+/* «Vaciar la pila» pregunta antes (`useConfirm`): en /admin el proveedor lo pone `app/admin/providers.tsx`. */
+import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
 import { useLotesAserrio } from "@/components/admin/forestal/hooks/use-lotes-aserrio";
 
 const T1 = {
@@ -61,7 +63,7 @@ describe("Armar escaneando · el PATCH falla después del POST", () => {
       if (url.includes("/trozas/patio")) return new Response(JSON.stringify({ trozas: [T1] }), { status: 200 });
       return new Response(JSON.stringify({ lotes }), { status: 200 });
     });
-    render(<Arnes />);
+    render(<Arnes />, { wrapper: ConfirmDialogProvider });
     fireEvent.click(await screen.findByRole("button", { name: /Crear el lote con 1 troza/ }));
     expect(await screen.findByText(/Se abrió el lote LA-2026-001 pero las trozas no entraron/)).toBeTruthy();
     expect(posts).toBe(1);
