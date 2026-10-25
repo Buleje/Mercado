@@ -18,7 +18,8 @@
  * inventar un segundo lenguaje visual para lo mismo.
  */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { SectionTitle } from "@buleje/design-system";
 import {
   TrendingDown,
   TrendingUp,
@@ -29,7 +30,8 @@ import {
   ArrowUpFromLine,
 } from "@buleje/design-system/icons";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { fmtMon, fmtMonedas, EmptyState, SkeletonGrid } from "./shared";
+import { fmtMon, EmptyState, SkeletonGrid } from "./shared";
+import { LineaMontos, movimientosTexto, sumar, textoMontos, totalesVacios, type TotalesActividad } from "./actividad-montos";
 import { formatDateNumeric } from "@/lib/format";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { cajaAlCrear, cajaAlDevolver, ETIQUETA_CONCEPTO, type AdelantoDireccion, type AdelantoConceptoRecibido } from "@/lib/adelantos/direccion";
@@ -46,34 +48,7 @@ type ActEvento = {
   desc?: string;
 };
 
-/** Por moneda, nunca cruzado: un adelanto en soles y una entrega en dólares
- *  del mismo período no son la misma plata. */
-const sumar = (map: Record<string, number>, moneda: string | null | undefined, monto: number) => {
-  const m = moneda || "PEN";
-  map[m] = (map[m] ?? 0) + monto;
-};
-const tieneAlgo = (map: Record<string, number>) => Object.values(map).some((v) => v > 0);
-
-/** Línea "+X · −Y · +Z" con sólo los montos que existen, cada uno con su color. */
-function LineaMontos({ partes }: { partes: { map: Record<string, number>; signo: "+" | "−"; cls: string }[] }) {
-  const activas = partes.filter((p) => tieneAlgo(p.map));
-  if (activas.length === 0) return null;
-  return (
-    <>
-      {activas.map((p, i) => (
-        <span key={i}>
-          {i > 0 && " · "}
-          <span className={`font-bold ${p.cls}`}>
-            {p.signo}
-            {fmtMonedas(p.map)}
-          </span>
-        </span>
-      ))}
-    </>
-  );
-}
-
-export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
+export function ActividadView({ adelantos, loading, selector }: { adelantos: DbAdelanto[]; loading: boolean; selector?: ReactNode }) {
   const [tipo, setTipo] = useState<"todo" | "adelanto" | "entrega">("todo");
   const [dir, setDir] = useState<"todo" | AdelantoDireccion>("todo");
   const [rango, setRango] = useState<"hoy" | "semana" | "mes" | "todo">("mes");
@@ -111,7 +86,7 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
       }
       return a;
     },
-    { diste: {} as Record<string, number>, recuperado: {} as Record<string, number>, recibiste: {} as Record<string, number>, devolviste: {} as Record<string, number> },
+    totalesVacios(),
   );
 
   // Agrupar por día (local)
@@ -119,11 +94,11 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
   const hoyK = localKey(new Date().toISOString());
   const ayerK = localKey(new Date(Date.now() - 86_400_000).toISOString());
   const dayLabel = (k: string) => (k === hoyK ? "Hoy" : k === ayerK ? "Ayer" : new Date(k + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "long" }));
-  const grupos: { key: string; eventos: ActEvento[]; diste: Record<string, number>; recuperado: Record<string, number>; recibiste: Record<string, number>; devolviste: Record<string, number> }[] = [];
+  const grupos: ({ key: string; eventos: ActEvento[] } & TotalesActividad)[] = [];
   for (const e of filtrados) {
     const k = localKey(e.fecha);
     let g = grupos[grupos.length - 1];
-    if (!g || g.key !== k) { g = { key: k, eventos: [], diste: {}, recuperado: {}, recibiste: {}, devolviste: {} }; grupos.push(g); }
+    if (!g || g.key !== k) { g = { key: k, eventos: [], ...totalesVacios() }; grupos.push(g); }
     g.eventos.push(e);
     if (e.direccion === "DADO") {
       if (e.tipo === "adelanto") sumar(g.diste, e.moneda, e.monto); else sumar(g.recuperado, e.moneda, e.monto);
@@ -135,7 +110,7 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
   const exportarPdf = async () => {
     const { abrirPapel } = await import("@/lib/documentos/membrete-papel");
     const papel = await abrirPapel({ tipo: "Historial de actividad" });
-    papel.linea(`${filtrados.length} movimientos · +${fmtMonedas(resumen.diste)} diste · −${fmtMonedas(resumen.recuperado)} recuperado`, { tam: 10, alto: 6 });
+    papel.linea(`${movimientosTexto(filtrados.length)} · ${textoMontos(resumen)}`, { tam: 10, alto: 6 });
     papel.tabla({
       head: [["Fecha", "Movimiento", "Persona", "Detalle", "Monto"]],
       body: filtrados.map((e) => {
@@ -150,8 +125,14 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
     papel.cerrar(`actividad-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
-  if (loading) return <SkeletonGrid />;
-  if (eventos.length === 0) return <EmptyState icon={Activity} title="Sin actividad" hint="Acá aparecen adelantos y entregas a medida que ocurren." />;
+  const cabecera = selector && (
+    <div className="flex flex-wrap items-center gap-2">
+      <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Adelantos</SectionTitle>
+      {selector}
+    </div>
+  );
+  if (loading) return <div className="space-y-4">{cabecera}<SkeletonGrid /></div>;
+  if (eventos.length === 0) return <div className="space-y-4">{cabecera}<EmptyState icon={Activity} title="Sin actividad" hint="Acá aparecen adelantos y entregas a medida que ocurren." /></div>;
 
   const selectCls =
     "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base font-semibold text-[var(--text-primary)] outline-none focus:border-primary";
@@ -160,6 +141,7 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
 
   return (
     <div className="space-y-4">
+      {cabecera}
       {/* Rango + resumen del periodo */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
         <div className="flex items-center gap-1.5">
@@ -168,15 +150,8 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
           ))}
         </div>
         <span className="inline-flex items-center gap-1.5 text-base text-[var(--text-secondary)]">
-          <LineaMontos
-            partes={[
-              { map: resumen.diste, signo: "+", cls: "text-[var(--data-warning)]" },
-              { map: resumen.recuperado, signo: "−", cls: "text-[var(--data-success)]" },
-              { map: resumen.recibiste, signo: "+", cls: "text-[var(--data-info-ink)]" },
-              { map: resumen.devolviste, signo: "−", cls: "text-[var(--data-info-ink)]" },
-            ]}
-          />
-          {" "}· <span className="font-bold text-[var(--text-primary)]">{filtrados.length}</span> movs
+          <LineaMontos totales={resumen} />
+          {" "}· <span className="font-bold text-[var(--text-primary)]">{movimientosTexto(filtrados.length)}</span>
           {hayRecibido && (
             <InfoTip
               title="Diste / recibiste"
@@ -241,14 +216,7 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
               <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2">
                 <span className="text-sm font-extrabold uppercase tracking-wide text-[var(--text-secondary)]">{dayLabel(g.key)}</span>
                 <span className="text-sm tabular-nums text-[var(--text-tertiary)]">
-                  <LineaMontos
-                    partes={[
-                      { map: g.diste, signo: "+", cls: "text-[var(--data-warning)]" },
-                      { map: g.recuperado, signo: "−", cls: "text-[var(--data-success)]" },
-                      { map: g.recibiste, signo: "+", cls: "text-[var(--data-info-ink)]" },
-                      { map: g.devolviste, signo: "−", cls: "text-[var(--data-info-ink)]" },
-                    ]}
-                  />
+                  <LineaMontos totales={g} />
                 </span>
               </div>
               <ul>

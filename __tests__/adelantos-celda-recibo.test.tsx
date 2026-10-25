@@ -1,6 +1,6 @@
 /**
  * La celda «Recibo» de la tabla de adelantos (23-10): cada ícono es un botón de
- * 48 px que registra lo que falta (firmar, la huella, la foto) o muestra lo que
+ * 36 px que registra lo que falta (firmar, la huella, la foto) o muestra lo que
  * ya está; en un anulado lo que falta no se puede tocar; el clic no abre la ficha.
  */
 import { describe, expect, it, vi } from "vitest";
@@ -21,8 +21,8 @@ describe("CeldaRecibo", () => {
       ["Tomar foto", "foto"],
     ] as const) {
       const b = screen.getByRole("button", { name: nombre });
-      expect(b.className).toMatch(/\bh-12\b/);
-      expect(b.className).toMatch(/\bw-12\b/);
+      expect(b.className).toMatch(/\bh-9\b/);
+      expect(b.className).toMatch(/\bw-9\b/);
       fireEvent.click(b);
       expect(onMarca).toHaveBeenLastCalledWith(tipo, false);
     }

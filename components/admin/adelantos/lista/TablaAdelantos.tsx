@@ -33,6 +33,7 @@ import { imprimirComprobante } from "../detalle/comprobante-del-adelanto";
 import CeldaRecibo from "./CeldaRecibo";
 import FilaAcciones, { type AccionFila } from "./FilaAcciones";
 import ModalesDeLaFila, { type AccionAbierta } from "./ModalesDeLaFila";
+import { esDeuda, etiquetaEstado } from "./estado-visible";
 import { BotonPagina, IconoOrden, ariaSort } from "./tabla-controles";
 import type { useEstadoRecibos } from "./use-estado-recibos";
 
@@ -77,11 +78,14 @@ export default function TablaAdelantos({
 }) {
   const ordenados = ordenarAdelantos(adelantos, orden.columna, orden.direccion);
   const pag = paginar(ordenados, pagina, porPagina);
+  /* La etiqueta de modalidad sólo dice algo cuando lo visible mezcla modalidades: con 8 filas
+     «Cta. corriente» era la misma palabra ocho veces (Brandon 25-10). */
+  const variasModalidades = new Set(adelantos.map((x) => x.modalidad)).size > 1;
 
   /** Cuál fila tiene abierto qué acción — un solo modal a la vez. */
   const [abierta, setAbierta] = useState<AccionAbierta | null>(null);
   /** Firma, huella, foto y envío por WhatsApp de cada fila (columna «Recibo», 23-10). */
-  const { estados, carga, recargar } = recibos;
+  const { estados, hojas, carga, recargar } = recibos;
   /* El encargado no entra a la carpeta privada de la persona: «Enviar recibo» le sale apagado con el motivo. */
   const rol = useMiRol();
   const mandaRecibo = rol == null || puedeMandarRecibo(rol);
@@ -186,17 +190,17 @@ export default function TablaAdelantos({
             <colgroup className="max-sm:hidden">
               <col style={{ width: 148 }} />
               <col />
-              <col style={{ width: 96 }} />
+              <col style={{ width: 112 }} />
               <col className="hidden 2xl:table-column" style={{ width: 128 }} />
-              <col style={{ width: 98 }} />
+              <col style={{ width: 104 }} />
               {/* Avance sólo desde 2xl; antes va como «40% pagado» bajo el saldo (en las tarjetas del celular Avance sale en su fila).
                   Estado 120 (el chip «Cancelado» mide 93 + relleno) y Recibo 160
                   (tres botones de 48): con 72/112 el recibo se montaba sobre el
                   estado (medido 23-10: 33 px a 1280). */}
               <col className="hidden 2xl:table-column" style={{ width: 88 }} />
-              <col style={{ width: 98 }} />
-              <col style={{ width: 120 }} />
-              <col style={{ width: 160 }} />
+              <col style={{ width: 104 }} />
+              <col style={{ width: 100 }} />
+              <col className="w-[132px] 2xl:w-[188px]" />
               <col style={{ width: 96 }} />
             </colgroup>
             {/* Los títulos parejos arriba aunque Recibo no tenga embudo. */}
@@ -223,6 +227,7 @@ export default function TablaAdelantos({
               {pag.items.length === 0 && <SinCoincidenciasFila colSpan={10} />}
               {pag.items.map((a) => {
                 const badge = STATUS_BADGE[a.status];
+                const deuda = esDeuda(a.status);
                 const pct = avanceDe(a);
                 const cumplidas = a.entregasPactadas.filter((p) => p.cumplidaEn).length;
                 /* ADR-448: lo recibido se marca; lo dado (todo lo de antes) no lleva chip. */
@@ -270,7 +275,7 @@ export default function TablaAdelantos({
                       {/* Liquidación bajó de columna propia a chip acá (Brandon
                           2026-08-28): la modalidad se lee junto al código, no en
                           una columna aparte que sólo repetía info de la fila. */}
-                      <span className="mt-1 flex flex-wrap items-center gap-1">
+                      <span className="flex flex-wrap items-center gap-1 empty:hidden">
                         {dir.direccion === "RECIBIDO" && (
                           <span
                             title={dir.concepto ? ETIQUETA_CONCEPTO[dir.concepto] : "Plata que recibiste"}
@@ -279,6 +284,7 @@ export default function TablaAdelantos({
                             <ArrowDownToLine className="h-3 w-3" aria-hidden /> {dir.concepto === "PRESTAMO" ? "Te prestaron" : "Te pagaron antes"}
                           </span>
                         )}
+                        {(variasModalidades || a.entregasPactadas.length > 0) && (
                         <span
                           title={MODALIDAD_LABEL[a.modalidad] ?? a.modalidad}
                           className="inline-block whitespace-nowrap rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-sm font-bold text-[var(--text-secondary)]"
@@ -286,6 +292,7 @@ export default function TablaAdelantos({
                           {MODALIDAD_CHIP[a.modalidad] ?? a.modalidad}
                           {a.entregasPactadas.length > 0 && ` · ${cumplidas}/${a.entregasPactadas.length}`}
                         </span>
+                        )}
                         {a.piesTablares != null && a.piesTablaresTipo && (
                           <span
                             title={`${PT_TIPO_LABEL[a.piesTablaresTipo] ?? a.piesTablaresTipo} · ${fmtPt(a.piesTablares)}`}
@@ -298,14 +305,14 @@ export default function TablaAdelantos({
                     </td>
                     <td>
                       {/* El motivo también en el `title`: su columna sólo entra desde 2xl (la de Recibo le ganó el lugar). */}
-                      <span className="block truncate font-bold text-[var(--text-primary)]" title={[a.beneficiario?.nombre, a.notas].filter(Boolean).join(" — ") || undefined}>
+                      <span className="line-clamp-2 break-words font-bold leading-tight text-[var(--text-primary)]" title={[a.beneficiario?.nombre, a.notas].filter(Boolean).join(" — ") || undefined}>
                         {a.beneficiario?.nombre ?? "—"}
                       </span>
                       {a.beneficiario?.telefono && (
                         <span className="block truncate text-sm tabular-nums text-[var(--text-tertiary)]">{a.beneficiario.telefono}</span>
                       )}
                     </td>
-                    <td className="truncate tabular-nums text-[var(--text-secondary)]">
+                    <td className="whitespace-nowrap tabular-nums text-[var(--text-secondary)]">
                       {fechaCelda(a.fechaAdelanto)}
                     </td>
                     {/* El motivo con el que se dio la plata: sigue en el `title`
@@ -322,23 +329,32 @@ export default function TablaAdelantos({
                       {fmtMon(a.montoAdelantado, a.moneda)}
                     </td>
                     <td className="hidden 2xl:table-cell">
-                      <div className="flex items-center justify-end gap-1.5">
+                      {deuda ? <div className="flex items-center justify-end gap-1.5">
                         <div className="h-2.5 w-10 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                           <div className="h-full rounded-full bg-[var(--data-success)]" style={{ width: `${pct}%` }} />
                         </div>
                         <span className="w-8 text-right text-sm font-semibold tabular-nums text-[var(--text-tertiary)]">{pct}%</span>
-                      </div>
+                      </div> : <span className="block text-right text-[var(--text-tertiary)]">—</span>}
                     </td>
                     <td className="whitespace-nowrap text-right font-bold tabular-nums">
-                      {fmtMon(a.saldoPendiente, a.moneda)}
-                      {debe === "le-debes" && (
-                        <span className="block text-sm font-semibold text-[var(--data-info-ink)]">le debes</span>
+                      {deuda ? (
+                        <>
+                          {fmtMon(a.saldoPendiente, a.moneda)}
+                          {debe === "le-debes" && (
+                            <span className="block text-sm font-semibold text-[var(--data-info-ink)]">le debes</span>
+                          )}
+                          {a.status === "ABIERTO" && pct > 0 && (
+                            <span className="block text-sm font-semibold text-[var(--text-tertiary)] max-sm:hidden 2xl:hidden">{pct}% pagado</span>
+                          )}
+                        </>
+                      ) : (
+                        /* Un anulado no se cobra: sin saldo ni %. */
+                        <span className="font-semibold text-[var(--text-tertiary)]">—</span>
                       )}
-                      <span className="block text-sm font-semibold text-[var(--text-tertiary)] max-sm:hidden 2xl:hidden">{pct}% pagado</span>
                     </td>
                     <td>
                       <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-bold ${badge?.className ?? ""}`}>
-                        {badge?.label ?? a.status}
+                        {etiquetaEstado(a.status, badge?.label)}
                       </span>
                     </td>
                     <td>
@@ -346,11 +362,12 @@ export default function TablaAdelantos({
                         adelanto={a}
                         estado={estados[a.id] ?? ESTADO_VACIO}
                         carga={carga}
+                        hoja={hojas[a.id]}
                         onMarca={(tipo, hay) => setAbierta(hay ? { accion: "ver", adelanto: a, tipo } : { accion: tipo === "firma" ? "firmar" : tipo, adelanto: a })}
                       />
                     </td>
                     <td className="text-right">
-                      <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         {a.status === "ABIERTO" && (
                           /* Ícono + tooltip (ley de la vista, 6): la fila
                              entera ya abre la ficha; esto es el atajo visible
@@ -359,7 +376,7 @@ export default function TablaAdelantos({
                             onClick={() => onVerDetalle(a)}
                             title="Registrar una entrega"
                             aria-label={`Registrar una entrega de ${a.beneficiario?.nombre ?? "este adelanto"}`}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 border-primary text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-primary text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
                           >
                             <Plus className="h-4 w-4" />
                           </button>

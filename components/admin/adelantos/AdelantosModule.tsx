@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
-import { leerJson } from "@/lib/errores/sin-dato";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { SectionTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
@@ -12,17 +11,14 @@ import {
   Users,
   Plus,
   Wallet,
-  CheckCircle,
-  Ban,
   Search,
-  Trash2,
   BarChart3,
-  Activity,
   AlertTriangle,
   Repeat,
   Download,
   HandCoins,
   MoreHorizontal,
+  FileText,
   TrendingUp,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -31,6 +27,10 @@ import ActionMenu from "@/components/admin/shared/action-menu";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
 import { ActividadView } from "./ActividadView";
+import SelectorListaHistorial, { type SeccionAdelantos } from "./lista/SelectorListaHistorial";
+import { esDeuda, etiquetaEstado } from "./lista/estado-visible";
+import { HojaDeFirmasModal } from "./firma/HojaDeFirmasModal";
+import AdelantosFijosModal from "./recurrentes/AdelantosFijosModal";
 import CrearAdelantoModal from "./CrearAdelantoModal";
 import DescuentoPlanillaModal from "./DescuentoPlanillaModal";
 import DetalleAdelantoModal from "./detalle/DetalleAdelantoModal";
@@ -40,6 +40,7 @@ import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/
 import FiltrosRecibo from "./lista/FiltrosRecibo";
 import { useEstadoRecibos } from "./lista/use-estado-recibos";
 import { useFiltroRecibos } from "./lista/use-filtro-recibos";
+import { ESTADO_VACIO } from "@/lib/adelantos/recibo-whatsapp";
 import { SIN_FILTRO_RECIBOS, contarRecibos, pasaFiltroRecibos } from "@/lib/adelantos/filtro-recibos";
 import PersonasView from "./personas/PersonasView";
 import CobranzaView from "./cobranza/CobranzaView";
@@ -52,19 +53,13 @@ import { adelantosDe } from "@/lib/adelantos/sugerencias";
 import type { PersonaEntregar } from "@/lib/adelantos/entregar-tipos";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { PARAM_ADELANTO } from "@/lib/adelantos/enlace-adelanto";
-import { fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, STATUS_BADGE } from "./shared";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { fmtMonedas, EmptyState, SkeletonGrid } from "./shared";
 import { normalizarBusquedaCodigo } from "@/lib/adelantos/codigo-operacion";
 import { descargarCsvAdelantos } from "@/lib/adelantos/exportar-csv";
 import { type ColumnaOrden, type Direccion } from "@/lib/adelantos/ordenar-lista";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import type { BeneficiarioConSaldo as BeneficiarioConSaldoBase } from "./crear-adelanto/tipos";
-import type {
-  DbAdelanto,
-  DbRecurrente,
-  RecurrenteFrecuencia,
-} from "@/lib/db/adelantos.db";
-import { formatDateShort } from "@/lib/format";
+import type { DbAdelanto } from "@/lib/db/adelantos.db";
 
 /** Single source: la misma forma que consume el alta (ver crear-adelanto/tipos). */
 type BeneficiarioConSaldo = BeneficiarioConSaldoBase;
@@ -89,21 +84,16 @@ function personaParaEntregar(b: BeneficiarioConSaldo, adelantos: readonly DbAdel
 /**
  * Filas por página del listado.
  *
- * 18 dejaba la lista en 2,14 pantallas a 1280×900 (medido 11-10); el patrón
- * del panel pide ≤ 1,5: con 12 filas (~67 px cada una) entra. Antes: con 25
- * eran 2,98 y con 20, 2,52. Más alto vuelve al muro que esto vino a resolver.
+ * 25-10: filas de ~52 px (antes ~86), así que 20 por página caben en menos de
+ * dos pantallas a 1280×900. Más alto vuelve al muro que esto vino a resolver.
  */
-const POR_PAGINA = 12;
-
-
+const POR_PAGINA = 20;
 
 const TABS = [
   { id: "resumen", label: "Resumen", icon: Wallet },
   { id: "lista", label: "Adelantos", icon: Coins },
   { id: "personas", label: "Personas", icon: Users },
   { id: "cobranza", label: "Cobranza", icon: AlertTriangle },
-  { id: "recurrentes", label: "Recurrentes", icon: Repeat },
-  { id: "actividad", label: "Actividad", icon: Activity },
   { id: "analisis", label: "Análisis", icon: BarChart3 },
 ];
 
@@ -120,11 +110,27 @@ const TABS_EN_EL_HUB = TABS.map((t) =>
   t.id === "resumen" ? { ...t, label: "Resumen de adelantos", angosto: "Resumen" } : t,
 );
 
-const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
+/** Las pestañas que se fundieron (25-10): «Actividad» es el Historial de Adelantos; «Recurrentes», la ventana Adelantos fijos. */
+const ALIAS_PESTAÑAS = { actividad: "lista", recurrentes: "lista" } as const;
 
-// ── Multi-moneda (ADR-118): formato por moneda + totales segmentados ───────────
-const MONEDAS = ["PEN", "USD"] as const;
-// fmtMon, sumByMoneda, fmtMonedas → movidos a ./shared (ADR-121 refactor).
+/** `?estado=abierto|liquidado|excedido|cancelado|todos`; sin el parámetro, «Abiertos». */
+function estadoDeUrl(): string {
+  if (typeof window === "undefined") return "ABIERTO";
+  const v = new URLSearchParams(window.location.search).get("estado")?.toLowerCase();
+  if (v === "todos" || v === "todo") return "TODOS";
+  const mapa: Record<string, string> = { abierto: "ABIERTO", liquidado: "LIQUIDADO", pagado: "LIQUIDADO", excedido: "EXCEDIDO", cancelado: "CANCELADO", anulado: "CANCELADO" };
+  return (v && mapa[v]) || "ABIERTO";
+}
+
+function escribirEstadoEnUrl(estado: string) {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("estado", estado.toLowerCase());
+    window.history.replaceState(null, "", url.toString());
+  } catch {
+    // history no disponible: el filtro igual funciona
+  }
+}
 
 export default function AdelantosModule() {
   /**
@@ -133,7 +139,34 @@ export default function AdelantosModule() {
    * `useState` pelado — ni se compartía por link, ni recordaba, ni el atrás la
    * recorría.
    */
-  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
+  const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], undefined, { alias: ALIAS_PESTAÑAS });
+  /* Un link viejo (`sub=actividad`, `sub=recurrentes`) se lee UNA vez, antes de que el hook reescriba la URL. */
+  const [subViejo] = useState(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("sub")));
+  const [seccion, setSeccion] = useState<SeccionAdelantos>(subViejo === "actividad" ? "historial" : "lista");
+  const [fijosAbierto, setFijosAbierto] = useState(subViejo === "recurrentes");
+  /* «Imprimir hoja de firmas»: del menú ⋯ o de `?accion=hoja-de-firmas` (el Resumen). Al cerrar, la URL se limpia. */
+  /* Firma, huella, hoja y envío de cada fila: UNA llamada para la tabla, los chips y el modal de la hoja. */
+  const recibos = useEstadoRecibos();
+  const recargarRecibos = recibos.recargar;
+  const [hojaAbierta, setHojaAbierta] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("accion") === "hoja-de-firmas");
+  const cerrarHoja = useCallback(() => {
+    setHojaAbierta(false);
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("accion") === "hoja-de-firmas") {
+        url.searchParams.delete("accion");
+        window.history.replaceState(null, "", url.toString());
+      }
+    } catch {
+      // sin history: la ventana igual se cierra
+    }
+  }, []);
+  /* El Resumen manda a la lista con la acción ya en la URL. */
+  useEffect(() => {
+    const onPop = () => setHojaAbierta(new URLSearchParams(window.location.search).get("accion") === "hoja-de-firmas");
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   const enHub = useRanuraDelSegundoNivel();
   /* `?accion=liquidar` (la Caja de Mi Plata): Liquidar vive en «Cuenta por
      persona», que está en Resumen. Desde otra sub-vista, primero se va ahí. */
@@ -145,7 +178,10 @@ export default function AdelantosModule() {
      ficha abierta, ir a Resumen no te devuelve a la lista. */
   const adelantoPedido = useFichaEnUrl(PARAM_ADELANTO).id;
   useEffect(() => {
-    if (adelantoPedido) setTab("lista");
+    if (adelantoPedido) {
+      setTab("lista");
+      setSeccion("lista");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adelantoPedido]);
   const [resumen, setResumen] = useState<Resumen | null>(null);
@@ -264,12 +300,37 @@ export default function AdelantosModule() {
       <button type="button" onClick={() => setEntregando({ persona: null })} className={button({ variant: "primary", className: "h-12 rounded-xl px-4" })} data-abrir-entregar>
         <HandCoins className="h-4 w-4" aria-hidden /> Entregar
       </button>
+      {/* El menú ⋯ del módulo: aquí van las cosas que no se usan todos los días. */}
+      <ActionMenu
+        label="Más de Adelantos"
+        icon={MoreHorizontal}
+        soloIcono
+        size="md"
+        className="w-12 shrink-0"
+        title="Adelantos fijos y más"
+        actions={[
+          {
+            id: "fijos",
+            label: "Adelantos fijos",
+            hint: "Los que se crean solos cada semana, quincena o mes",
+            icon: Repeat,
+            onSelect: () => setFijosAbierto(true),
+          },
+          {
+            id: "hoja-de-firmas",
+            label: "Imprimir hoja de firmas",
+            hint: "Una hoja con los adelantos que esperan firma, para firmar en papel y subir la foto",
+            icon: FileText,
+            onSelect: () => setHojaAbierta(true),
+          },
+        ]}
+      />
     </div>
   );
 
   const vistas = (
     <VistasDeAdelantos
-      tab={tab} setTab={setTab} error={error} resumen={resumen} adelantos={adelantos} dados={dados}
+      recibos={recibos} tab={tab} setTab={setTab} seccion={seccion} setSeccion={setSeccion} error={error} resumen={resumen} adelantos={adelantos} dados={dados}
       recibidos={recibidos} beneficiarios={beneficiarios} admiteRecibido={admiteRecibido} loading={loading}
       reload={reload} creando={creando} setCreando={setCreando} recienId={recienId} onRegistrado={alRegistrar}
       onEntregar={(persona) => setEntregando({ persona })}
@@ -302,6 +363,8 @@ export default function AdelantosModule() {
           <div className="pt-5 lg:pt-6">{vistas}</div>
         </AdminTabBar>
       )}
+      {hojaAbierta && <HojaDeFirmasModal open onClose={cerrarHoja} onListo={() => { void cargar(true); recargarRecibos(); }} />}
+      {fijosAbierto && <AdelantosFijosModal beneficiarios={beneficiarios} onClose={() => setFijosAbierto(false)} onChange={reload} />}
       {entregando && (
         <EntregarAdelantoModal personaInicial={entregando.persona} onClose={() => setEntregando(null)} onEntregado={(r) => alRegistrar(r?.adelanto?.id ?? null)} />
       )}
@@ -309,12 +372,15 @@ export default function AdelantosModule() {
   );
 }
 
-/** Las siete vistas de Adelantos (dentro o fuera de Mi Plata, son las mismas). */
+/** Las cinco vistas de Adelantos (dentro o fuera de Mi Plata, son las mismas). */
 function VistasDeAdelantos({
-  tab, setTab, error, resumen, adelantos, dados, recibidos, beneficiarios, admiteRecibido, loading, reload, creando, setCreando, recienId, onRegistrado, onEntregar,
+  recibos, tab, setTab, seccion, setSeccion, error, resumen, adelantos, dados, recibidos, beneficiarios, admiteRecibido, loading, reload, creando, setCreando, recienId, onRegistrado, onEntregar,
 }: {
+  recibos: ReturnType<typeof useEstadoRecibos>;
   tab: string;
   setTab: (v: string) => void;
+  seccion: SeccionAdelantos;
+  setSeccion: (v: SeccionAdelantos) => void;
   error: string | null;
   resumen: Resumen | null;
   adelantos: DbAdelanto[];
@@ -342,8 +408,15 @@ function VistasDeAdelantos({
           {tab === "resumen" && (
             <ResumenView resumen={resumen} adelantos={dados} recibidos={recibidos} loading={loading} onGoTab={setTab} onChange={reload} />
           )}
-          {tab === "lista" && (
+          {tab === "lista" && seccion === "historial" && (
+            /* Un HISTORIAL, no un saldo: a diferencia de Resumen/Cobranza/Análisis
+               (que sólo ven `dados`) tiene que mostrar todo con su dirección. */
+            <ActividadView adelantos={adelantos} loading={loading} selector={<SelectorListaHistorial valor={seccion} onCambio={setSeccion} />} />
+          )}
+          {tab === "lista" && seccion === "lista" && (
             <AdelantosView
+              recibos={recibos}
+              selector={<SelectorListaHistorial valor={seccion} onCambio={setSeccion} />}
               adelantos={adelantos}
               beneficiarios={beneficiarios}
               admiteRecibido={admiteRecibido}
@@ -370,12 +443,6 @@ function VistasDeAdelantos({
               onRecordado={() => void reload()}
             />
           )}
-          {tab === "recurrentes" && <RecurrentesView beneficiarios={beneficiarios} onChange={reload} />}
-          {/* Actividad es un HISTORIAL, no un saldo: a diferencia de Resumen/
-              Cobranza/Análisis (que cuentan «lo que te deben» y por eso sólo
-              ven `dados`), acá tiene que aparecer todo con su dirección — ver
-              ActividadView.tsx. */}
-          {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
           {tab === "analisis" && <AnalisisView adelantos={dados} recibidos={recibidos} loading={loading} />}
         </div>
   );
@@ -392,7 +459,12 @@ function AdelantosView({
   onCreando,
   recienId,
   onRegistrado,
+  selector,
+  recibos,
 }: {
+  recibos: ReturnType<typeof useEstadoRecibos>;
+  /** «Lista | Historial», junto al título. */
+  selector: React.ReactNode;
   adelantos: DbAdelanto[];
   beneficiarios: BeneficiarioConSaldo[];
   admiteRecibido: boolean;
@@ -407,7 +479,19 @@ function AdelantosView({
 }) {
   /** Los descuentos de planilla del período, en una pasada. */
   const [planilla, setPlanilla] = useState(false);
-  const [filtro, setFiltro] = useState<string>("TODOS");
+  /* Abre en «Abiertos» (25-10): es lo que se viene a mirar. `?estado=` lo manda
+     (`todos` y los demás estados también); «Todos» sigue a un clic. */
+  const [filtroElegido, setFiltroElegido] = useState<string>(() => estadoDeUrl());
+  /* El link copiado dice qué se ve: si la URL no trae `?estado=`, se escribe el de hoy. */
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("estado")) escribirEstadoEnUrl(filtroElegido);
+    // Sólo al montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const setFiltro = useCallback((v: string) => {
+    setFiltroElegido(v);
+    escribirEstadoEnUrl(v);
+  }, []);
   const [q, setQ] = useState("");
   /** Lo más reciente primero: es lo que uno viene a mirar al abrir la lista. */
   const [orden, setOrden] = useState<{ columna: ColumnaOrden; direccion: Direccion }>({
@@ -421,9 +505,10 @@ function AdelantosView({
     return acc;
   }, {});
   const estadosPresentes = (["ABIERTO", "LIQUIDADO", "EXCEDIDO", "CANCELADO"] as const).filter((e) => counts[e]);
+  /* Sin ningún abierto, «Abiertos» sería una tabla vacía: se muestra todo. */
+  const filtro = filtroElegido !== "TODOS" && adelantos.length > 0 && !counts[filtroElegido] ? "TODOS" : filtroElegido;
 
   /* Firma, huella y envío de cada fila: UNA llamada para la tabla y para los chips «Sin firma» / «Sin enviar». */
-  const recibos = useEstadoRecibos();
   const [filtroRecibos, cambiarFiltroRecibos] = useFiltroRecibos();
 
   const conEstadoYBusqueda = adelantos.filter((a) => {
@@ -445,8 +530,14 @@ function AdelantosView({
         : (a.codigoOperacion ?? "").toLowerCase().includes(texto));
     return okEstado && okQ;
   });
-  const cuentaRecibos = contarRecibos(conEstadoYBusqueda, recibos.estados, filtroRecibos);
-  const conRecibos = conEstadoYBusqueda.filter((a) => pasaFiltroRecibos(a, recibos.estados, filtroRecibos));
+  /* Firmado en una hoja (foto) cuenta como firmado: «Sin firma» no lo persigue. */
+  const estadosParaFiltro = useMemo(() => {
+    const m = { ...recibos.estados };
+    for (const [id, h] of Object.entries(recibos.hojas)) m[id] = { ...(m[id] ?? ESTADO_VACIO), firma: m[id]?.firma ?? h.en };
+    return m;
+  }, [recibos.estados, recibos.hojas]);
+  const cuentaRecibos = contarRecibos(conEstadoYBusqueda, estadosParaFiltro, filtroRecibos);
+  const conRecibos = conEstadoYBusqueda.filter((a) => pasaFiltroRecibos(a, estadosParaFiltro, filtroRecibos));
   /* Autofiltros de Excel en la cabecera de la tabla (Brandon 23-10): van DESPUÉS
      de chips y buscador, y los totales y el CSV salen de lo que queda a la vista. */
   const ft = useFiltrosTabla(conRecibos, COLUMNAS_FILTRO_ADELANTOS);
@@ -478,6 +569,8 @@ function AdelantosView({
   // cobrar la plata que el negocio debe.
   const tot = filtrados.reduce(
     (acc, a) => {
+      /* Un anulado no se cobra: no suma a lo adelantado ni a lo recuperado. */
+      if (!esDeuda(a.status)) return acc;
       const cur = a.moneda || "PEN";
       if (leerDireccion(a).direccion === "RECIBIDO") {
         if (a.status === "ABIERTO") acc.leDebes[cur] = (acc.leDebes[cur] ?? 0) + a.saldoPendiente;
@@ -533,6 +626,7 @@ function AdelantosView({
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Adelantos</SectionTitle>
+          {selector}
           <InfoTip
             title="Adelantos"
             what="Cada adelanto que diste o te dieron, con su código, cuánto se recuperó y su estado. Toca una fila para ver su ficha, registrar una entrega o firmar."
@@ -602,7 +696,7 @@ function AdelantosView({
             <button type="button" aria-pressed={filtro === "TODOS"} className={chipCls(filtro === "TODOS")} onClick={() => setFiltro("TODOS")}>Todos {adelantos.length}</button>
             {estadosPresentes.map((e) => (
               <button key={e} type="button" aria-pressed={filtro === e} className={chipCls(filtro === e)} onClick={() => setFiltro(e)}>
-                {STATUS_BADGE[e].label} {counts[e]}
+                {etiquetaEstado(e)}{e === "ABIERTO" ? "s" : ""} {counts[e]}
               </button>
             ))}
             <FiltrosRecibo filtro={filtroRecibos} onCambio={cambiarFiltroRecibos} cuenta={cuentaRecibos} carga={recibos.carga} chipCls={chipCls} />
@@ -683,130 +777,6 @@ function AdelantosView({
         />
       )}
     </div>
-  );
-}
-
-// ── Personas ─────────────────────────────────────────────────────────────────
-// ── Recurrentes (ADR-118): plantillas de adelantos automáticos ────────────────
-const FREC_LABEL: Record<RecurrenteFrecuencia, string> = { semanal: "Semanal", quincenal: "Quincenal", mensual: "Mensual" };
-
-function RecurrentesView({ beneficiarios, onChange }: { beneficiarios: BeneficiarioConSaldo[]; onChange: () => void }) {
-  const [recs, setRecs] = useState<DbRecurrente[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    const r = await fetch("/api/adelantos/recurrentes", { credentials: "include" }).then((x) => (x.ok ? x.json() : [])).catch(() => []);
-    setRecs(Array.isArray(r) ? r : []);
-    setLoading(false);
-  }, []);
-  useEffect(() => { reload(); }, [reload]);
-
-  const toggle = async (r: DbRecurrente) => {
-    await fetch(`/api/adelantos/recurrentes/${r.id}`, { method: "PATCH", headers: jsonHeaders(), credentials: "include", body: JSON.stringify({ activo: !r.activo }) });
-    reload();
-  };
-  const borrar = async (r: DbRecurrente) => {
-    await fetch(`/api/adelantos/recurrentes/${r.id}`, { method: "DELETE", headers: jsonHeaders(), credentials: "include" });
-    reload();
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{recs.length} recurrente{recs.length === 1 ? "" : "s"}</CardTitle>
-        <button onClick={() => setShowCreate(true)} disabled={beneficiarios.length === 0} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50">
-          <Plus className="h-5 w-5" /> Nueva recurrente
-        </button>
-      </div>
-      <p className="text-base text-[var(--text-secondary)]">Plantillas que crean un adelanto automáticamente cada cierto tiempo (un cron diario las materializa).</p>
-
-      {loading ? (
-        <SkeletonGrid />
-      ) : recs.length === 0 ? (
-        <EmptyState icon={Repeat} title="Sin recurrentes" hint={beneficiarios.length === 0 ? "Primero crea una persona." : "Programa un adelanto que se repita solo."} />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {recs.map((r) => (
-            <div key={r.id} className={`rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ${!r.activo ? "opacity-60" : ""}`}>
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{r.beneficiarioNombre ?? "—"}</p>
-                <button onClick={() => borrar(r)} title="Eliminar" className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"><Trash2 className="h-4 w-4" /></button>
-              </div>
-              <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{fmtMon(r.monto, r.moneda)}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"><Repeat className="h-3.5 w-3.5" /> {FREC_LABEL[r.frecuencia]}</span>
-                {r.proximaEjecucion && <span className="text-[var(--text-tertiary)]">Próx.: {formatDateShort(r.proximaEjecucion)}</span>}
-              </div>
-              <button onClick={() => toggle(r)} className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${r.activo ? "bg-[var(--data-success)]/15 text-[var(--data-success)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
-                {r.activo ? <><CheckCircle className="h-4 w-4" /> Activo</> : <><Ban className="h-4 w-4" /> Pausado</>}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {showCreate && (
-        <CrearRecurrenteModal beneficiarios={beneficiarios} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); reload(); onChange(); }} />
-      )}
-    </div>
-  );
-}
-
-function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficiarios: BeneficiarioConSaldo[]; onClose: () => void; onCreated: () => void }) {
-  const [beneficiarioId, setBeneficiarioId] = useState(beneficiarios[0]?.id ?? "");
-  const [monto, setMonto] = useState("");
-  const [moneda, setMoneda] = useState<"PEN" | "USD">("PEN");
-  const [frecuencia, setFrecuencia] = useState<RecurrenteFrecuencia>("mensual");
-  const [diaMes, setDiaMes] = useState("1");
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const submit = async () => {
-    setErr(null);
-    const m = Number(monto);
-    if (!beneficiarioId || !m || m <= 0) { setErr("Elige persona y un monto válido."); return; }
-    setSaving(true);
-    const res = await fetch("/api/adelantos/recurrentes", {
-      method: "POST", headers: jsonHeaders(), credentials: "include",
-      body: JSON.stringify({ beneficiarioId, monto: m, moneda, frecuencia, diaMes: frecuencia === "mensual" ? Number(diaMes) : undefined }),
-    });
-    setSaving(false);
-    if (res.ok) onCreated();
-    else { const j = await leerJson<{ error?: string }>(res); setErr(j?.error ?? "No se pudo crear la recurrente."); }
-  };
-
-  return (
-    <ModalShell title="Nueva recurrente" onClose={onClose}>
-      <Field label="Persona">
-        <select value={beneficiarioId} onChange={(e) => setBeneficiarioId(e.target.value)} className={inputCls}>
-          {beneficiarios.map((b) => <option key={b.id} value={b.id}>{b.nombre}</option>)}
-        </select>
-      </Field>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <div className="col-span-2">
-          <Field label="Monto"><input type="number" min={1} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="200.00" className={inputCls + " tabular-nums"} /></Field>
-        </div>
-        <Field label="Moneda">
-          <select value={moneda} onChange={(e) => setMoneda(e.target.value as "PEN" | "USD")} className={inputCls}>
-            {MONEDAS.map((m) => <option key={m} value={m}>{m === "PEN" ? "S/" : "$"}</option>)}
-          </select>
-        </Field>
-      </div>
-      <Field label="Frecuencia">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {(["semanal", "quincenal", "mensual"] as const).map((f) => (
-            <button key={f} type="button" onClick={() => setFrecuencia(f)} className={`h-12 rounded-2xl border-2 text-base font-semibold transition-colors ${frecuencia === f ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>{FREC_LABEL[f]}</button>
-          ))}
-        </div>
-      </Field>
-      {frecuencia === "mensual" && (
-        <Field label="Día del mes (1-28)"><input type="number" min={1} max={28} value={diaMes} onChange={(e) => setDiaMes(e.target.value)} className={inputCls + " tabular-nums"} /></Field>
-      )}
-      {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
-      <ModalActions onClose={onClose} onSubmit={submit} saving={saving} label="Crear recurrente" />
-    </ModalShell>
   );
 }
 
