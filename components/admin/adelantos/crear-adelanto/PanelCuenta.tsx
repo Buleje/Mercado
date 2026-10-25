@@ -13,7 +13,8 @@ import { AlertTriangle, ArrowRight, Phone } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/currency";
-import { requiereAtencion } from "@/lib/adelantos/limite-credito";
+import { estadoDeCredito, requiereAtencion } from "@/lib/adelantos/limite-credito";
+import { textoDeTope } from "@/lib/adelantos/tope";
 import { hayDeuda } from "@/lib/adelantos/modos-alta";
 import type { AltaAdelanto } from "../hooks/use-alta-adelanto";
 import { MontosEnLineas, fmtMon } from "../shared";
@@ -66,11 +67,10 @@ export default function PanelCuenta({ alta }: { alta: AltaAdelanto }) {
                 <span className="font-semibold text-[var(--text-secondary)]">Sin tope de crédito</span>
               ) : (
                 <>
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="font-semibold text-[var(--text-secondary)]">Le queda de tope</span>
-                    <strong className="tabular-nums text-[var(--text-primary)]">
-                      {formatCurrency(Math.max(0, credito.disponible))} de {formatCurrency(credito.limite)}
-                    </strong>
+                  {/* La misma frase y la misma cifra que la pestaña Personas
+                      (`textoDeTope`): lo que tenía ANTES de este adelanto. */}
+                  <span className="block font-semibold tabular-nums text-[var(--text-primary)]">
+                    {textoDeTope(estadoDeCredito(credito.limite, credito.usado))?.texto}
                   </span>
                   {requiereAtencion(credito) && (
                     <span className="mt-1.5 flex items-start gap-1.5 font-semibold text-[var(--data-error-ink)]">

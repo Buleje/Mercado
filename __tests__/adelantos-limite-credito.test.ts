@@ -43,7 +43,8 @@ describe("estadoDeCredito", () => {
     const e = estadoDeCredito(1000, 800, 500);
     expect(e.estado).toBe("excede");
     expect(e.estado === "excede" && e.exceso).toBe(300);
-    expect(requiereAtencion(e) && e.aviso).toMatch(/pasa su límite de S\/ 1,000\.00 por S\/ 300\.00/);
+    /* La palabra y la cifra de Personas: «tope», sin «.00». */
+    expect(requiereAtencion(e) && e.aviso).toBe("Pasa su tope de S/ 1,000 por S/ 300.");
   });
 
   /** Justo en el tope no es "holgado": es el último que entra. */
@@ -56,7 +57,7 @@ describe("estadoDeCredito", () => {
   it("sin monto nuevo, describe la situación actual", () => {
     const e = estadoDeCredito(1000, 1200);
     expect(e.estado).toBe("excede");
-    expect(requiereAtencion(e) && e.aviso).toMatch(/Ya debe S\/ 1,200\.00/);
+    expect(requiereAtencion(e) && e.aviso).toBe("Ya debe S/ 1,200 y su tope es S/ 1,000.");
   });
 
   /** Un saldo negativo (adelanto a favor) no puede inflar el disponible. */

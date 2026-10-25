@@ -99,16 +99,40 @@ async function ampliar(imagen: Blob): Promise<Blob> {
 export async function leerTextoDeImagen(
   imagen: Blob,
   onProgreso?: (p: ProgresoOcr) => void,
+  opciones?: {
+    /**
+     * Una sola columna con letras de tamaños muy distintos: la captura de
+     * Yape/Plin, con «S/ 500» tres veces más grande que el resto. Con la
+     * página automática el motor se saltaba el monto entero (25-10, medido:
+     * leía nombre, fecha y N° de operación, y del «S/ 500» nada).
+     */
+    columna?: boolean;
+  },
 ): Promise<{ texto: string; confianza: number }> {
   avisarProgreso = onProgreso ?? null;
+  let columna: Worker | null = null;
   try {
     onProgreso?.({ etapa: "Preparando la imagen", progreso: 0 });
     const lista = await ampliar(imagen);
     const worker = await obtenerWorker();
+    if (opciones?.columna) {
+      const { PSM } = await import("tesseract.js");
+      await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_COLUMN });
+      columna = worker;
+    }
     const { data } = await worker.recognize(lista);
     return { texto: data.text ?? "", confianza: data.confidence ?? 0 };
   } finally {
     avisarProgreso = null;
+    /* El worker es uno para todo el panel: se deja en la página automática. */
+    if (columna) {
+      try {
+        const { PSM } = await import("tesseract.js");
+        await columna.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
+      } catch {
+        /* El worker murió: el próximo se crea de cero, con la página automática. */
+      }
+    }
   }
 }
 

@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { useAltaAdelanto } from "./hooks/use-alta-adelanto";
+import { useLeerVoucher } from "./hooks/use-leer-voucher";
 import { ModalShell } from "./shared";
 import BloqueAbono from "./crear-adelanto/BloqueAbono";
 import BloqueDevolucion from "./crear-adelanto/BloqueDevolucion";
@@ -30,10 +31,14 @@ import BloqueMonto from "./crear-adelanto/BloqueMonto";
 import BloquePersona from "./crear-adelanto/BloquePersona";
 import BloqueRespaldo from "./crear-adelanto/BloqueRespaldo";
 import FirmarReciboModal from "./firma/FirmarReciboModal";
+import { AvisoDictado } from "./crear-adelanto/AvisoLlenado";
+import { AvisoVoucher } from "./crear-adelanto/LeerVoucher";
+import LlenarDesde from "./crear-adelanto/LlenarDesde";
 import PanelCuenta from "./crear-adelanto/PanelCuenta";
 import PieAlta from "./crear-adelanto/PieAlta";
 import QuienPone from "./crear-adelanto/QuienPone";
 import type { BeneficiarioConSaldo } from "./crear-adelanto/tipos";
+import { useDictarAdelanto } from "./crear-adelanto/use-dictar-adelanto";
 
 export type { BeneficiarioConSaldo } from "./crear-adelanto/tipos";
 
@@ -102,6 +107,17 @@ export default function CrearAdelantoModal({
         }
       : onClose;
 
+  /* «Llenar desde: Foto · Dictar» (25-10): prellenan, nunca guardan. */
+  const voucher = useLeerVoucher(alta, vista.beneficiarios);
+  const dictado = useDictarAdelanto(alta, vista.beneficiarios, admiteRecibido);
+  const personasDelAviso = { beneficiarios: vista.beneficiarios, beneficiarioId: alta.beneficiarioId, onPersonaCreada };
+  const marca =
+    voucher.estado.fase === "leido" && alta.monto === voucher.estado.montoPuesto
+      ? ("foto" as const)
+      : dictado.estado.fase === "lleno" && dictado.estado.montoPuesto && alta.monto === dictado.estado.montoPuesto
+        ? ("dictado" as const)
+        : null;
+
   /* Con la persona ya elegida, el foco va al monto — sin `autoFocus`
      (jsx-a11y/no-autofocus). En un rAF: el hook del modal enfoca la X en el
      suyo, que se programa antes. */
@@ -117,14 +133,20 @@ export default function CrearAdelantoModal({
       {/* Una grilla, no dos columnas anidadas: así en el celular «La cuenta»
           cae en su lugar del orden (después del bloque 2) y desde `lg` se va a
           la columna derecha ocupando el alto de los cinco bloques, pegada
-          arriba mientras se baja. */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-5">
+          arriba mientras se baja. La franja «Llenar desde» y sus avisos van
+          ENCIMA de la grilla, a todo el ancho: llenan los bloques 1 a 5. */}
+      <div className="space-y-3">
+        <LlenarDesde voucher={voucher} dictado={dictado} />
+        <AvisoVoucher voucher={voucher} personas={personasDelAviso} />
+        <AvisoDictado dictado={dictado} personas={personasDelAviso} />
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-5">
         <QuienPone modo={alta.modo} onCambiar={alta.setModo} />
         <BloquePersona alta={alta} beneficiarios={vista.beneficiarios} onPersonaCreada={onPersonaCreada} />
         <aside aria-label="La cuenta de la persona" className="lg:sticky lg:top-0 lg:col-start-2 lg:row-span-5 lg:row-start-1 lg:self-start">
           <PanelCuenta alta={alta} />
         </aside>
-        <BloqueMonto alta={alta} montoRef={montoRef} />
+        <BloqueMonto alta={alta} montoRef={montoRef} marca={marca} />
         {alta.modo === "abono" ? <BloqueAbono alta={alta} /> : <BloqueDevolucion alta={alta} />}
         <BloqueRespaldo alta={alta} firmar={firmar} onFirmar={setFirmar} />
       </div>

@@ -37,8 +37,8 @@ export default function PieAlta({ alta, onClose }: { alta: AltaAdelanto; onClose
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            <span className="hidden sm:inline">{requiereAtencion(credito) ? credito.aviso : ""}</span>
-            <span className="sm:hidden">Pasa su tope de crédito.</span>
+            {/* «Pasa su tope de S/ 500 por S/ 50.»: ya entra entera a 400 px. */}
+            {requiereAtencion(credito) ? credito.aviso : "Pasa su tope."}
             {confirmandoTope && " Queda anotado que se autorizó por encima."}
           </span>
         </p>

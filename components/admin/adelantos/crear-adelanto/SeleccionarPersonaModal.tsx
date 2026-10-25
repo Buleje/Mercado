@@ -30,16 +30,18 @@ export default function SeleccionarPersonaModal({
   beneficiarioId,
   onElegir,
   onPersonaCreada,
-  onClose,
+  onClose, qInicial = "", crearInicial = false,
 }: {
   beneficiarios: BeneficiarioConSaldo[];
   beneficiarioId: string;
   onElegir: (id: string) => void;
   onPersonaCreada?: () => void;
   onClose: () => void;
+  /** El nombre leído de la foto o del dictado: ya escrito en el buscador (y en el alta, con `crearInicial`). */
+  qInicial?: string; crearInicial?: boolean;
 }) {
-  const [q, setQ] = useState("");
-  const [creando, setCreando] = useState(false);
+  const [q, setQ] = useState(qInicial);
+  const [creando, setCreando] = useState(crearInicial);
   /* Foco en el buscador al abrir, sin `autoFocus` (jsx-a11y/no-autofocus).
      En un rAF: useModalAccesible (en ModalShell) enfoca la X en el suyo,
      que se programa antes (mismo arreglo que ActivosModule). */

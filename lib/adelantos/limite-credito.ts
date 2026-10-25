@@ -22,7 +22,13 @@ export type EstadoCredito =
   | { estado: "excede"; limite: number; usado: number; disponible: number; exceso: number; aviso: string };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-const money = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/* «S/ 500» o «S/ 1,000.50»: la misma cifra que dice Personas (`tope.ts`), sin
+   los «.00» que la hacían parecer otra (25-10: el alta decía «S/ 500.00» y la
+   pestaña «S/ 500»). Sin el ICU del servidor, como allá. */
+function money(n: number): string {
+  const [ent, dec] = Math.abs(r2(n)).toFixed(2).split(".");
+  return `${n < 0 ? "-" : ""}S/ ${ent.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${dec === "00" ? "" : `.${dec}`}`;
+}
 
 /**
  * Qué parte de la deuda cuenta para el tope.
@@ -65,8 +71,8 @@ export function estadoDeCredito(
       exceso,
       aviso:
         montoNuevo > 0
-          ? `Con este adelanto pasa su límite de ${money(limite)} por ${money(exceso)}.`
-          : `Ya debe ${money(usado)} y su límite es ${money(limite)}.`,
+          ? `Pasa su tope de ${money(limite)} por ${money(exceso)}.`
+          : `Ya debe ${money(usado)} y su tope es ${money(limite)}.`,
     };
   }
 
@@ -77,7 +83,7 @@ export function estadoDeCredito(
       limite,
       usado,
       disponible,
-      aviso: `Queda exactamente en su límite de ${money(limite)}.`,
+      aviso: `Queda justo en su tope de ${money(limite)}: ya no podrá pedir más.`,
     };
   }
 
