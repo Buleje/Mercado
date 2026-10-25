@@ -11,6 +11,7 @@ import { Search } from "@buleje/design-system/icons";
 import type { HastaArchivoAcciones } from "./use-archivo-acciones";
 import { esEsencial } from "@/lib/documentos/esenciales";
 import { marcarEsenciales } from "../esenciales/marcar-esencial";
+import { extrasRegistrado } from "../menu-registrado";
 export function useArchivoMenu(previo: HastaArchivoAcciones) {
   const { setFilterMode, setActiveFolderId, setExpandedFolders, vistaConDatos, filterMode, setSoloVencimiento,
     setPreview, handleAnalyze, handleDownload, startRename, setMovingDoc, setTagDocId, setWhatsappDoc,
@@ -20,7 +21,7 @@ export function useArchivoMenu(previo: HastaArchivoAcciones) {
     setSelectedIds, toggleSelect, prompt, createFolder, updateFolder, upload, moveFolder, deleteFolder,
     restoreMany, refresh, fileInputRef, setEditingFolder, setSharingFolder, setExpediente, setBorrandoCarpeta,
     zipAndDownload, bulkDownloadZip, bulkFavorite, bulkStatus, smartFolders, activeSmartId, setActiveSmartId,
-    setSmartModal, setShowTags, etiquetaFiltro, semantic, search, setSearch, bulkFolders } = previo;
+    setSmartModal, setShowTags, etiquetaFiltro, semantic, search, setSearch, bulkFolders, marcarCodigoFisico } = previo;
   const [menuEn, setMenuEn] = useState<({ id: string } & PuntoDeMenu) | null>(null);
   // «Vínculos con el sistema…» (Archivo, Terceros y Esenciales): el id, para releer la carpeta
   // de la lista tras cada vínculo (la etiqueta cambia y la ventana la muestra).
@@ -114,6 +115,7 @@ export function useArchivoMenu(previo: HastaArchivoAcciones) {
     zip: zipAndDownload,
     verDoc: setPreview,
     accionesDoc: accionesDe,
+    extrasCodigo: (doc) => extrasRegistrado(doc, marcarCodigoFisico),
     estados: ESTADOS_DEL_MENU,
     lote: {
       zip: () => void bulkDownloadZip(),

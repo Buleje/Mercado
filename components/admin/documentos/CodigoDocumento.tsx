@@ -34,11 +34,31 @@ function useCopiar(texto: string | null) {
   return { copiado, copiar };
 }
 
-/** Cuándo y quién lo marcó, en una frase. */
+/** Cuándo y quién lo registró, en una frase («Registrado el 25 oct · ana»). */
 export function textoCodigoPuesto(doc: ConCodigo): string {
-  if (!doc.codigoFisicoAt) return "Todavía no está en el papel físico";
+  if (!doc.codigoFisicoAt) return "Por registrar: todavía no está en el papel físico";
   const quien = doc.codigoFisicoPor ? ` · ${doc.codigoFisicoPor}` : "";
-  return `En el papel físico desde el ${fechaLarga(doc.codigoFisicoAt)}${quien}`;
+  return `Registrado el ${fechaLarga(doc.codigoFisicoAt)}${quien}`;
+}
+
+/** Estilo de la pastilla verde «Registrado» (tokens de éxito del DS, claro y oscuro). */
+export const CLASE_REGISTRADO =
+  "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]";
+
+/** La etiqueta verde «Registrado» (sólo se dibuja si el código ya está en el papel). */
+export function EtiquetaRegistrado({ doc, className }: { doc: ConCodigo; className?: string }) {
+  if (!formatoCodigoDocumento(doc.codigo) || codigoFisicoPendiente(doc)) return null;
+  const texto = textoCodigoPuesto(doc);
+  return (
+    <span
+      title={texto}
+      aria-label={texto}
+      data-qa="etiqueta-registrado"
+      className={cn("inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold", CLASE_REGISTRADO, className)}
+    >
+      <Check className="h-3.5 w-3.5" aria-hidden /> Registrado
+    </span>
+  );
 }
 
 /**
@@ -51,12 +71,13 @@ export function CodigoChip({ doc, className }: { doc: ConCodigo; className?: str
   if (!codigo) return null;
   const pendiente = codigoFisicoPendiente(doc);
   return (
+    <>
     <button
       type="button"
       onClick={(e) => { e.stopPropagation(); e.preventDefault(); copiar(); }}
       onDoubleClick={(e) => e.stopPropagation()}
-      title={`${codigo} — ${pendiente ? "falta anotarlo en el papel físico" : textoCodigoPuesto(doc)}. Clic para copiarlo.`}
-      aria-label={`Código ${codigo}${pendiente ? ", falta anotarlo en el papel físico" : ", ya está en el papel físico"}. Copiar`}
+      title={`${codigo} — ${pendiente ? "por registrar: falta anotarlo en el papel" : textoCodigoPuesto(doc)}. Clic para copiarlo.`}
+      aria-label={`Código ${codigo}${pendiente ? ", por registrar" : ", registrado"}. Copiar`}
       data-qa="codigo-doc"
       data-pendiente={pendiente || undefined}
       className={button({
@@ -71,9 +92,11 @@ export function CodigoChip({ doc, className }: { doc: ConCodigo; className?: str
         ),
       })}
     >
-      {copiado ? <Check className="h-3.5 w-3.5" aria-hidden /> : pendiente ? <Hash className="h-3.5 w-3.5" aria-hidden /> : <Check className="h-3.5 w-3.5 text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" aria-hidden />}
+      {copiado ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Hash className="h-3.5 w-3.5" aria-hidden />}
       {copiado ? "Copiado" : codigo}
     </button>
+    <EtiquetaRegistrado doc={doc} />
+    </>
   );
 }
 
@@ -123,33 +146,39 @@ export function CodigoFisicoControl({ doc, onMarcar, className }: {
         >
           {copiado ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
         </button>
+        {!pendiente && <EtiquetaRegistrado doc={doc} className="text-sm" />}
         {pendiente ? (
           <button
             type="button"
             onClick={() => void marcar(true)}
             disabled={guardando}
-            title="Ya le escribiste este código al papel físico"
+            title="Ya escribiste este código, con la palabra Registrado, en el papel"
             className={cn(button({ variant: "primary" }), "ml-auto gap-2")}
             data-qa="codigo-fisico-marcar"
           >
-            <Check className="h-4 w-4 shrink-0" aria-hidden /> {guardando ? "Guardando…" : "Ya lo puse en el físico"}
+            <Check className="h-4 w-4 shrink-0" aria-hidden /> {guardando ? "Guardando…" : "Marcar como registrado"}
           </button>
         ) : (
           <button
             type="button"
             onClick={() => void marcar(false)}
             disabled={guardando}
-            title="Volver a dejarlo como pendiente"
+            title="Volver a dejarlo por registrar"
             className={cn(button({ variant: "ghost" }), "ml-auto gap-2")}
             data-qa="codigo-fisico-deshacer"
           >
-            <Undo2 className="h-4 w-4 shrink-0" aria-hidden /> {guardando ? "Guardando…" : "Deshacer"}
+            <Undo2 className="h-4 w-4 shrink-0" aria-hidden /> {guardando ? "Guardando…" : "Quitar registrado"}
           </button>
         )}
       </div>
       <p className={cn("text-sm", pendiente ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>
-        {pendiente ? "Falta escribirlo en el papel físico." : textoCodigoPuesto(doc)}
+        {pendiente ? "Por registrar: falta escribirlo en el papel." : textoCodigoPuesto(doc)}
       </p>
+      {pendiente && (
+        <p className="text-sm text-[var(--text-secondary)]">
+          Copia el código, escríbelo en el papel con la palabra Registrado y márcalo aquí.
+        </p>
+      )}
       {error && <p role="alert" className="text-sm font-bold text-[var(--data-error-600)] dark:text-[var(--data-error-500)]">{error}</p>}
     </section>
   );

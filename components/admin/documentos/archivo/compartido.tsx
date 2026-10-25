@@ -122,7 +122,7 @@ export const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "recent", label: "Recientes", icon: Clock, color: "text-[var(--text-secondary)]" },
   { id: "expiring", label: "Vencimientos", icon: AlarmClock, color: "text-[var(--data-warning)]" },
   // ADR-516 — papeles con código que todavía no se anotó en el físico.
-  { id: "codigo", label: "Código por poner", icon: Hash, color: "text-[var(--data-warning)]" },
+  { id: "codigo", label: "Por registrar", icon: Hash, color: "text-[var(--data-warning)]" },
   { id: "calendar", label: "Calendario", icon: CalendarDays, color: "text-primary" },
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
   { id: "enlaces", label: "Enlaces", icon: Link2, color: "text-[var(--accent)]" },

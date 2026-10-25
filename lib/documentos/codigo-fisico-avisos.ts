@@ -37,11 +37,11 @@ export function avisoCodigoFisico(args: { pendientes: number; atrasados: number;
     {
       type: TIPO_AVISO_CODIGO_FISICO,
       severity: "MEDIUM",
-      title: `${papeles(pendientes)} sin el código puesto en el físico`,
+      title: `${papeles(pendientes)} por registrar`,
       body:
         atrasados === pendientes
-          ? `Anótale su código (DOC-…) al papel y márcalo como puesto en el Archivo.`
-          : `${papeles(atrasados)} llevan ${DIAS_AVISO_CODIGO_FISICO} días o más. Anótales su código (DOC-…) y márcalos como puestos.`,
+          ? `Escríbele su código (DOC-…) al papel con la palabra Registrado y márcalo en el Archivo.`
+          : `${papeles(atrasados)} llevan ${DIAS_AVISO_CODIGO_FISICO} días o más. Escríbeles su código (DOC-…) con la palabra Registrado y márcalos como registrados.`,
       actionUrl: URL_CODIGO_PENDIENTE,
       actionLabel: "Ver pendientes",
       entityId: `pendientes:${diaDeLima(hoy)}`,

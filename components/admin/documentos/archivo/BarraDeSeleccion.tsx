@@ -47,10 +47,10 @@ export default function BarraDeSeleccion({ arch }: { arch: ModeloArchivo }) {
                   type="button"
                   onClick={() => bulkCodigoFisico(true)}
                   className={BOTON_DE_LA_BARRA}
-                  title="Ya escribiste su código en cada papel físico"
+                  title="Ya escribiste su código, con la palabra Registrado, en cada papel"
                   data-qa="bulk-codigo-fisico"
                 >
-                  <Hash className="h-3 w-3" /> Código puesto
+                  <Hash className="h-3 w-3" /> Marcar registrado
                 </button>
               )}
 
@@ -135,7 +135,7 @@ export default function BarraDeSeleccion({ arch }: { arch: ModeloArchivo }) {
                       onClick={() => { setBulkMoreOpen(false); bulkCodigoFisico(false); }}
                       className={OPCION_DEL_MENU}
                     >
-                      <Undo2 className="h-4 w-4 shrink-0" /> Volver a «código por poner»
+                      <Undo2 className="h-4 w-4 shrink-0" /> Quitar registrado
                     </button>
                   )}
                   {/* Mandar la selección entera por WhatsApp: un enlace por

@@ -109,11 +109,11 @@ describe("aviso de la campana", () => {
   it("uno por día (la fecha de Lima en el entityId) y lleva a la vista de pendientes", () => {
     const [a] = avisoCodigoFisico({ pendientes: 5, atrasados: 2, hoy });
     expect(a).toMatchObject({ type: TIPO_AVISO_CODIGO_FISICO, entityId: "pendientes:2026-10-24", actionUrl: URL_CODIGO_PENDIENTE });
-    expect(a.title).toBe("5 papeles sin el código puesto en el físico");
+    expect(a.title).toBe("5 papeles por registrar");
     // 23:30 en Lima del 24 ya es 25 en UTC: sigue siendo el aviso del 24.
     const [noche] = avisoCodigoFisico({ pendientes: 1, atrasados: 1, hoy: new Date("2026-10-25T04:30:00Z") });
     expect(noche.entityId).toBe("pendientes:2026-10-24");
-    expect(noche.title).toBe("1 papel sin el código puesto en el físico");
+    expect(noche.title).toBe("1 papel por registrar");
   });
 
   it("la URL del aviso abre la subvista «codigo» del drive", () => {

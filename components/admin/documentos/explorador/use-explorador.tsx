@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import type { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
-import type { AccionesDocumento, EstadoDelMenu } from "../MenuDocumento";
+import type { AccionesDocumento, EstadoDelMenu, ExtraDelMenu } from "../MenuDocumento";
 import type { ObjetoPropiedades } from "./PropiedadesExplorador";
 import type { PropsVistaExplorador } from "./VistaExplorador";
 import { claveCarpeta, claveDoc, contenidoExplorador } from "./contenido-explorador";
@@ -74,6 +74,8 @@ export interface DepsExplorador {
   vincularTercero?: (f: DbDocumentFolder) => void;
   /** «Llevar a Esenciales»: la carpeta pasa a verse en Documentos › Esenciales (etiqueta `marca:esencial`). */
   alternarEsencial?: (f: DbDocumentFolder) => void;
+  /** «Copiar código» / «Marcar como registrado» (ADR-516). */
+  extrasCodigo?: (doc: DbDocument) => ExtraDelMenu[];
   eliminarCarpetas: (fs: DbDocumentFolder[]) => void;
   zip: (docs: DbDocument[], nombre: string) => Promise<void>;
   verDoc: (d: DbDocument) => void;
@@ -184,7 +186,7 @@ export function useExplorador(d: DepsExplorador) {
   const menus = useMenusExplorador({
     acceso, acc, sel, porId, hijos, totalCarpetas: carpetas.length, docPorId,
     irACarpeta: d.irACarpeta, verDoc: d.verDoc, updateFolder: d.updateFolder, upload: d.upload, zip: d.zip,
-    personalizar: d.personalizar, compartir: d.compartir, armarExpediente: d.armarExpediente, vincularTercero: d.vincularTercero, alternarEsencial: d.alternarEsencial, accionesDoc: d.accionesDoc, estados: d.estados, lote: d.lote,
+    personalizar: d.personalizar, compartir: d.compartir, armarExpediente: d.armarExpediente, vincularTercero: d.vincularTercero, alternarEsencial: d.alternarEsencial, extrasCodigo: d.extrasCodigo, accionesDoc: d.accionesDoc, estados: d.estados, lote: d.lote,
     etiquetaEstado, seleccionDocs: d.seleccion, alternarSeleccion: d.alternarSeleccion,
     fondo: () => ({
       vista: d.vista,

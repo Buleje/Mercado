@@ -11,7 +11,7 @@ export interface ConteoCodigoPendiente {
 }
 
 /**
- * ADR-516 — La cifra de «Código por poner» de la cabecera. La cuenta el
+ * ADR-516 — La cifra de «Por registrar» de la cabecera. La cuenta el
  * servidor (la lista a la vista puede ser una sola carpeta) y se vuelve a pedir
  * cuando la lista cambia lo que sabe de los códigos: subir, borrar o marcar.
  * `null` = todavía no se sabe (no se dibuja nada).
@@ -29,7 +29,7 @@ export function useConteoCodigoPendiente(documents: DbDocument[]): ConteoCodigoP
     const t = setTimeout(() => {
       fetchConteoCodigoPendiente()
         .then((c) => { if (vivo) setConteo(c); })
-        .catch((err) => console.warn("[documentos] no pude contar los códigos por poner", err));
+        .catch((err) => console.warn("[documentos] no pude contar los códigos por registrar", err));
     }, 400);
     return () => { vivo = false; clearTimeout(t); };
   }, [huella]);

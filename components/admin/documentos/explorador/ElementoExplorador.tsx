@@ -15,7 +15,8 @@
  */
 
 import { useState, type DragEvent } from "react";
-import { Star } from "@buleje/design-system/icons";
+import { Check, Star } from "@buleje/design-system/icons";
+import { CLASE_REGISTRADO, EtiquetaRegistrado, textoCodigoPuesto } from "../CodigoDocumento";
 import { cn } from "@/lib/utils";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { formatBytes } from "../archivo-visual";
@@ -118,7 +119,7 @@ export default function ElementoExplorador({
       data-clave={clave}
       data-qa={esCarpeta ? "explorador-carpeta" : "explorador-archivo"}
       data-cortado={cortado || undefined}
-      title={codigo ? `${nombre} · ${codigo}${codigoPendiente ? " (falta anotarlo en el físico)" : ""}` : nombre}
+      title={codigo ? `${nombre} · ${codigo}${codigoPendiente ? " (por registrar)" : " (registrado)"}` : nombre}
       {...pulsacion.handlers}
       {...origen}
       {...destino}
@@ -159,6 +160,18 @@ export default function ElementoExplorador({
           {!esCarpeta && objeto.doc.favorite && (
             <Star className="absolute right-0 top-0 h-4 w-4 fill-yellow-400 text-yellow-500" aria-label="Favorito" />
           )}
+          {/* ADR-516 — registrado: el visto verde sobre el ícono (la etiqueta con texto no cabe). */}
+          {codigo && !codigoPendiente && !esCarpeta && (
+            <span
+              data-qa="etiqueta-registrado"
+              title={textoCodigoPuesto(objeto.doc)}
+              role="img"
+              aria-label={textoCodigoPuesto(objeto.doc)}
+              className={cn("absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border border-[var(--rule-base)]", CLASE_REGISTRADO)}
+            >
+              <Check className="h-3.5 w-3.5" aria-hidden />
+            </span>
+          )}
           {/* Sobre el ícono, no al lado del nombre: el nombre sigue con sus 3 líneas. */}
           {esCarpeta && (
             <MarcasCarpeta
@@ -190,6 +203,7 @@ export default function ElementoExplorador({
           {codigo}
         </span>
       )}
+      {lista && !esCarpeta && <EtiquetaRegistrado doc={objeto.doc} />}
       {vista === "grandes" && <span className="text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>}
     </div>
   );

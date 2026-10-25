@@ -14,7 +14,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getDocumentDetail } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
-import type { AccionesDocumento, EstadoDelMenu } from "../MenuDocumento";
+import type { AccionesDocumento, EstadoDelMenu, ExtraDelMenu } from "../MenuDocumento";
 import { PREFIJO_ICONO_DOC } from "../folder-visuals";
 import ElegirImagenCarpeta from "./ElegirImagenCarpeta";
 import MenuEnPunto from "./MenuEnPunto";
@@ -49,6 +49,8 @@ export interface DepsMenus {
   armarExpediente?: (f: DbDocumentFolder) => void;
   vincularTercero?: (f: DbDocumentFolder) => void;
   alternarEsencial?: (f: DbDocumentFolder) => void;
+  /** «Copiar código» / «Marcar como registrado» (ADR-516): opciones extra de un archivo. */
+  extrasCodigo?: (doc: DbDocument) => ExtraDelMenu[];
   /** Lo de siempre de un archivo (ver, descargar, firmar, sellar…). */
   accionesDoc: (doc: DbDocument) => AccionesDocumento;
   estados: readonly EstadoDelMenu[];
@@ -191,7 +193,7 @@ export function useMenusExplorador(d: DepsMenus) {
       seleccionado: d.seleccionDocs.has(doc.id),
       alternarSeleccion: d.alternarSeleccion,
       usarComoIcono: (x) => { if (x.folderId) void ponerImagen(x.folderId, x.id); },
-    });
+    }).concat(d.extrasCodigo?.(doc) ?? []);
 
   const itemsDoc = (doc: DbDocument) =>
     itemsDelDoc(d.accionesDoc(doc), {

@@ -6,7 +6,7 @@ import { avisoCodigoFisico, TIPO_AVISO_CODIGO_FISICO } from "@/lib/documentos/co
 import { logger } from "@/lib/logger";
 
 /**
- * ADR-516 — «N papeles sin el código puesto en el físico» en la campana de la
+ * ADR-516 — «N papeles por registrar» en la campana de la
  * gestión. Una vez al día, por negocio con pendientes; sólo si alguno lleva
  * `DIAS_AVISO_CODIGO_FISICO` días o más. Sin WhatsApp ni correo. La fecha va
  * en el `entityId`: máximo uno por día y el de ayer queda resuelto solo.

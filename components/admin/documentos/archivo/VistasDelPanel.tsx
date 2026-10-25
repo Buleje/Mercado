@@ -7,7 +7,7 @@ import type { ModeloArchivo } from "./use-archivo";
 import { precargarArchivo } from "./perezosos";
 export default function VistasDelPanel({ arch }: { arch: ModeloArchivo }) {
   const { vistaConDatos, filterMode, otrosAbierto, setFilterMode, setActiveFolderId, setOtrosAbierto, conteoCodigo } = arch;
-  // ADR-516 — con papeles por anotar, «Código por poner» sube a la vista con su cifra.
+  // ADR-516 — con papeles por anotar, «Por registrar» sube a la vista con su cifra.
   const porPoner = conteoCodigo?.pendientes ?? 0;
   const esPrincipal = (id: BuiltinCategory["id"]) => id === "all" || id === "terceros" || (id === "codigo" && porPoner > 0);
   return (

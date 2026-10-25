@@ -128,15 +128,15 @@ export function useArchivoSubidas(previo: HastaArchivoCarpetas) {
     if (selectedIds.size === 0) return;
     await correrLote(() => bulk("favorite", Array.from(selectedIds), { favorite: fav }));
   };
-  /** ADR-516 — «Ya les puse el código en el físico» a toda la pila de una. */
+  /** ADR-516 — «Marcar como registrado» a toda la pila de una. */
   const bulkCodigoFisico = async (puesto: boolean) => {
     if (selectedIds.size === 0) return;
     await correrLote(async () => {
       const n = await marcarCodigoFisico(Array.from(selectedIds), puesto);
-      if (n === 0) toast.info(puesto ? "No había nada por marcar: ya estaban puestos o no tienen código." : "Ninguno estaba marcado como puesto.");
+      if (n === 0) toast.info(puesto ? "No había nada por marcar: ya estaban registrados o no tienen código." : "Ninguno estaba registrado.");
       else toast.success(puesto
-        ? `${n} ${n === 1 ? "papel marcado" : "papeles marcados"} con el código en el físico.`
-        : `${n} ${n === 1 ? "papel vuelve" : "papeles vuelven"} a «código por poner».`);
+        ? `${n} ${n === 1 ? "papel registrado" : "papeles registrados"}.`
+        : `${n} ${n === 1 ? "papel vuelve" : "papeles vuelven"} a «por registrar».`);
     });
   };
   const bulkMove = async (folderId: string | null) => {

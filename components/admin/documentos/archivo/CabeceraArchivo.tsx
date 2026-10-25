@@ -103,7 +103,7 @@ export default function CabeceraArchivo({ arch }: { arch: ModeloArchivo }) {
         {/* Los indicadores del drive: el botón va solo a la fila (orden «indicadores»). */}
         {filterMode !== "trash" && kpis.boton}
         <AccionesDeLaVista fueraDelLibro={null}>{escritorio}</AccionesDeLaVista>
-        {/* ADR-516 — «N por poner código»: no se dibuja si estás al día. */}
+        {/* ADR-516 — «N por registrar»: no se dibuja si estás al día. */}
         <AccionesDeLaVista fueraDelLibro={null}><AvisoCodigoPendiente arch={arch} /></AccionesDeLaVista>
         <AccionesDeLaVista orden={ORDEN_ACCION.principal} fueraDelLibro={null}>
           <span className="flex items-center gap-2" {...precargar}>

@@ -16,6 +16,7 @@ import { StatusControl } from "./estado-doc";
 import { tagsVisibles } from "./compartido";
 import { formatDateShort } from "@/lib/format";
 import { CodigoChip } from "../CodigoDocumento";
+import { codigoFisicoPendiente } from "@/lib/documentos/codigo-documento";
 import type { ModeloArchivo } from "./use-archivo";
 export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
   const { selectedIds, setSelectedIds, displayDocs, clearSelection, sortBy, setSortBy, colsVisibles,
@@ -30,6 +31,8 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
     { id: "etiquetas", label: "Etiquetas", tipo: "multi", valor: (d) => tagsVisibles(d.tags), visible: colsVisibles.etiquetas },
     { id: "vencimiento", label: "Vencimiento", tipo: "fecha", numero: (d) => diaDeVigencia(d.expiresAt), visible: colsVisibles.vencimiento },
     { id: "tamano", label: "Tamaño", tipo: "rango", numero: (d) => Math.round(((d.size ?? 0) / 1048576) * 100) / 100, unidad: "MB", paso: 0.1, visible: colsVisibles.tamano },
+    // ADR-516 — faceta Registrado / Por registrar (sin columna propia: vive en el panel de filtros).
+    { id: "registro", label: "Registro del código", tipo: "multi", valor: (d) => (d.codigo == null ? null : codigoFisicoPendiente(d) ? "Por registrar" : "Registrado"), visible: false, soloConVarios: true },
     { id: "subido", label: "Subido", tipo: "fecha", numero: (d) => diaDeVigencia(d.uploadedAt), visible: colsVisibles.subido },
   ], [colsVisibles]);
   const f = useFiltrosTabla(base, columnas);
