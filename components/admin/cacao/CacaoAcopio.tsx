@@ -20,19 +20,14 @@ import {
   RotateCcw,
   AlertTriangle,
   Wallet,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
-  Trees,
-  Ban,
 } from "@buleje/design-system/icons";
-import { DataTable, StatCard } from "@buleje/design-system";
+import { StatCard } from "@buleje/design-system";
 import { FiltrosEnBoton } from "@/components/admin/shared";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
-import { useOrdenColumnas, EnOrden } from "@/components/admin/shared/columnas-ordenables";
+import { useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
 import LibroChrome, { type LibroAction } from "@/components/admin/shared/libro-chrome";
-import { IconAction, TablaSkeleton } from "@/components/admin/shared/module-primitives";
+import { TablaSkeleton } from "@/components/admin/shared/module-primitives";
 import CacaoLoteCardMobile from "./CacaoLoteCardMobile";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -65,56 +60,9 @@ import CacaoCierrePanel from "./CacaoCierrePanel";
 import CacaoCampo from "./CacaoCampo";
 import CacaoVentas from "./CacaoVentas";
 import CacaoAlertsBell from "./CacaoAlertsBell";
-import { formatCurrency, formatDate } from "@/lib/format";
+import TablaAcopio, { GradoBadge, PagoBadge } from "./acopio/TablaAcopio";
+import { QUICK_CHIPS, SIN_GRADO, fdate, n2, saldoDe, tienePendiente, type Lote, type Quick, type SortKey } from "./acopio/columnas-filtro-acopio";
 import CampoBuscar from "@/components/ui-system/CampoBuscar";
-
-interface Lote {
-  id: string;
-  loteCode: string;
-  fecha: string;
-  productorId: string | null;
-  productorNombre: string | null;
-  parcelaCodigo: string | null;
-  variedad: string | null;
-  tipoGrano: string;
-  pesoKg: string;
-  humedadPct: string | null;
-  precioPorKg: string | null;
-  totalPagado: string | null;
-  montoPagado: string | null;
-  estadoPago: string;
-  indiceFermentacion: string | null;
-  grado: string | null;
-  status: string;
-  annulledReason: string | null;
-}
-
-/** Saldo que aún se le debe al productor por un lote (liquidación − abonado). */
-const saldoDe = (l: Lote) => Math.max(0, Number(l.totalPagado ?? 0) - Number(l.montoPagado ?? 0));
-const tienePendiente = (l: Lote) => l.estadoPago !== "pagado" && saldoDe(l) > 0;
-
-/** Filtros rápidos client-side sobre los lotes ya cargados. «Grado I» y
- *  «Variedad» vivían acá Y en el panel «Filtros» de abajo (dos controles para
- *  el mismo dato) — ahora es sólo el autofiltro de su propia columna. */
-type Quick = "todos" | "saldo" | "sin_vincular" | "humedo";
-type SortKey = "fecha" | "pesoKg" | "totalPagado";
-const QUICK_CHIPS: { key: Quick; label: string }[] = [
-  { key: "todos", label: "Todos" },
-  { key: "saldo", label: "Con saldo" },
-  { key: "sin_vincular", label: "Sin vincular" },
-  { key: "humedo", label: "Húmedo" },
-];
-/** Bucket para lotes sin grado evaluado — un valor real de columna, no "todos". */
-const SIN_GRADO = "__sin_grado__";
-
-const fdate = (iso: string) => {
-  try {
-    return formatDate(iso, { soloFecha: true });
-  } catch {
-    return iso;
-  }
-};
-const n2 = (v: string | number | null) => (v == null ? "—" : Number(v).toFixed(2));
 
 export default function CacaoAcopio() {
   const [view, setView] = useState<CacaoView>(DEFAULT_CACAO_VIEW);
@@ -599,208 +547,12 @@ export default function CacaoAcopio() {
           {/* Desktop: tabla. Móvil: cards a medida (abajo) — la conversión
               automática `.admin-mobile-cards` dejaba tarjetas de 120px de ancho
               con la fecha partida en tres líneas. */}
-          <div className="hidden overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
-            <DataTable filtrable className="w-full">
-              <thead ref={ordenAcopio.refCabecera}>
-                <tr>
-                  <EnOrden
-                    orden={ordenAcopio.orden}
-                    celdas={{
-                      lote: <Th col="lote">Lote</Th>,
-                      fecha: <SortTh label="Fecha" col="fecha" sort={sort} onSort={toggleSort} className="hidden sm:table-cell" />,
-                      productor: <Th col="productor">Productor</Th>,
-                      variedad: (
-                        <Th col="variedad" className="hidden md:table-cell">
-                          <span className="block">Variedad</span>
-                          <FiltroColumnaMulti
-                            label="Variedad"
-                            value={varFilter}
-                            options={varOptions}
-                            onChange={setVarFilter}
-                            placeholder="Todas"
-                          />
-                        </Th>
-                      ),
-                      pesoKg: <SortTh label="Peso (kg)" col="pesoKg" sort={sort} onSort={toggleSort} align="right" />,
-                      humedad: <Th col="humedad" className="hidden text-right sm:table-cell">Humedad</Th>,
-                      grado: (
-                        <Th col="grado" className="hidden md:table-cell">
-                          <span className="block">Grado</span>
-                          <FiltroColumnaMulti
-                            label="Grado"
-                            value={gradoFilter}
-                            options={gradoOptions}
-                            etiqueta={(v) => (v === SIN_GRADO ? "Sin clasificar" : GRADO_LABEL[v as CacaoGrado] ?? v)}
-                            onChange={setGradoFilter}
-                            placeholder="Todos"
-                          />
-                        </Th>
-                      ),
-                      totalPagado: <SortTh label="Liquidación" col="totalPagado" sort={sort} onSort={toggleSort} align="right" />,
-                    }}
-                  />
-                  <Th className="text-right">Acción</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((l) => {
-                  const annul = l.status === "anulado";
-                  return (
-                    <tr
-                      key={l.id}
-                      onClick={() => setLoteDrawerId(l.id)}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`Ver lote ${l.loteCode}`}
-                      onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLoteDrawerId(l.id); } }}
-                      className={`cursor-pointer transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${annul ? "opacity-50" : ""}`}
-                    >
-                      <EnOrden
-                        orden={ordenAcopio.orden}
-                        celdas={{
-                          lote: (
-                            <Td>
-                              <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
-                                {l.loteCode}
-                              </span>
-                              {annul && (
-                                <span className="ml-2 rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
-                                  ANULADO
-                                </span>
-                              )}
-                            </Td>
-                          ),
-                          fecha: <Td className="hidden text-[var(--text-secondary)] sm:table-cell">{fdate(l.fecha)}</Td>,
-                          productor: (
-                            <Td className="font-medium text-[var(--text-primary)]">
-                              {l.productorNombre ?? "—"}
-                              {l.productorNombre && !l.productorId && (
-                                <span
-                                  title="Productor no vinculado al padrón"
-                                  className="ml-1.5 inline-flex rounded bg-[var(--data-warning-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"
-                                >
-                                  sin vincular
-                                </span>
-                              )}
-                              {l.parcelaCodigo && (
-                                <span
-                                  title={`Origen: sección ${l.parcelaCodigo} (Campo)`}
-                                  className="ml-1.5 inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
-                                >
-                                  <Trees className="h-3 w-3" />origen {l.parcelaCodigo}
-                                </span>
-                              )}
-                            </Td>
-                          ),
-                          variedad: (
-                            <Td className="hidden text-[var(--text-secondary)] md:table-cell">
-                              {l.variedad ?? "—"}{" "}
-                              <span className="text-xs text-[var(--text-tertiary)]">
-                                {l.tipoGrano === "humedo" ? "(húmedo)" : ""}
-                              </span>
-                            </Td>
-                          ),
-                          pesoKg: <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n2(l.pesoKg)}</Td>,
-                          humedad: (
-                            <Td className="hidden text-right font-mono tabular-nums sm:table-cell">
-                              <span
-                                className={
-                                  l.humedadPct && Number(l.humedadPct) > 7
-                                    ? "text-[var(--data-warning-700)]"
-                                    : "text-[var(--text-secondary)]"
-                                }
-                              >
-                                {l.humedadPct ? `${Number(l.humedadPct).toFixed(1)}%` : "—"}
-                              </span>
-                            </Td>
-                          ),
-                          grado: (
-                            <Td className="hidden md:table-cell">
-                              <GradoBadge grado={l.grado} />
-                            </Td>
-                          ),
-                          totalPagado: (
-                            <Td className="text-right">
-                              <div className="flex flex-col items-end gap-1">
-                                <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                                  {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
-                                </span>
-                                {l.totalPagado && <PagoBadge estado={l.estadoPago} saldo={saldoDe(l)} />}
-                              </div>
-                            </Td>
-                          ),
-                        }}
-                      />
-                      <Td className="text-right">
-                        {annul ? (
-                          <span className="text-xs text-[var(--text-tertiary)]">—</span>
-                        ) : (
-                          // Íconos: la columna de acciones no debe pesar más que
-                          // las ocho de datos (mismo criterio que los libros).
-                          <div className="flex items-center justify-end gap-1">
-                            {tienePendiente(l) && (
-                              <IconAction
-                                icon={Wallet}
-                                tone="accent"
-                                label={`Pagar al productor (debe S/ ${n2(saldoDe(l))})`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openPay(l);
-                                }}
-                              />
-                            )}
-                            <IconAction
-                              icon={Ban}
-                              tone="danger"
-                              label="Anular el lote (queda visible con su motivo)"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setAnnulId(l.id);
-                                setAnnulReason("");
-                              }}
-                            />
-                          </div>
-                        )}
-                      </Td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              {rows.length > 0 && (
-                <tfoot>
-                  <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
-                    <EnOrden
-                      orden={ordenAcopio.orden}
-                      celdas={{
-                        lote: <Td className="font-bold text-[var(--text-secondary)]">Total · {rows.length} lote{rows.length === 1 ? "" : "s"}</Td>,
-                        fecha: <Td className="hidden sm:table-cell" />,
-                        productor: <Td />,
-                        variedad: <Td className="hidden md:table-cell" />,
-                        pesoKg: <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n2(rowTotals.kg)}</Td>,
-                        humedad: <Td className="hidden sm:table-cell" />,
-                        grado: <Td className="hidden md:table-cell" />,
-                        totalPagado: (
-                          <Td className="text-right">
-                            <div className="flex flex-col items-end gap-0.5">
-                              <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                                S/ {n2(rowTotals.liquidacion)}
-                              </span>
-                              {rowTotals.saldo > 0 && (
-                                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
-                                  S/ {n2(rowTotals.saldo)} por pagar
-                                </span>
-                              )}
-                            </div>
-                          </Td>
-                        ),
-                      }}
-                    />
-                    <Td />
-                  </tr>
-                </tfoot>
-              )}
-            </DataTable>
-          </div>
+          <TablaAcopio
+            rows={rows} rowTotals={rowTotals} sort={sort} onSort={toggleSort} ordenAcopio={ordenAcopio}
+            varFilter={varFilter} onVarFilter={setVarFilter} varOptions={varOptions}
+            gradoFilter={gradoFilter} onGradoFilter={setGradoFilter} gradoOptions={gradoOptions}
+            onOpenLote={setLoteDrawerId} onPagar={openPay} onAnular={(id) => { setAnnulId(id); setAnnulReason(""); }}
+          />
 
           {/* Móvil: una card por lote (dual-render del DS). */}
           {rows.length > 0 && (
@@ -1072,81 +824,6 @@ export default function CacaoAcopio() {
   );
 }
 
-function Th({ children, className, col }: { children: React.ReactNode; className?: string; col?: string }) {
-  return (
-    <th data-col={col} className={`font-bold ${className ?? ""}`}>
-      {children}
-    </th>
-  );
-}
-function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <td className={`${className ?? ""}`}>{children}</td>;
-}
-function SortTh({
-  label,
-  col,
-  sort,
-  onSort,
-  align,
-  className,
-}: {
-  label: string;
-  col: SortKey;
-  sort: { key: SortKey; dir: "asc" | "desc" };
-  onSort: (k: SortKey) => void;
-  align?: "right";
-  className?: string;
-}) {
-  const active = sort.key === col;
-  const Icon = active ? (sort.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
-  return (
-    <th data-col={col} className={`${align === "right" ? "text-right" : ""} ${className ?? ""}`}>
-      <button
-        type="button"
-        onClick={() => onSort(col)}
-        className={`inline-flex items-center gap-1 font-bold ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-[var(--accent)]" : "text-[var(--text-primary)] hover:text-[var(--accent)]"}`}
-        aria-label={`Ordenar por ${label}`}
-      >
-        {label}
-        <Icon className={`h-3.5 w-3.5 ${active ? "" : "opacity-40"}`} />
-      </button>
-    </th>
-  );
-}
-function PagoBadge({ estado, saldo }: { estado: string; saldo: number }) {
-  const cls =
-    estado === "pagado"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
-      : estado === "parcial"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
-        : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]";
-  const label = ESTADO_PAGO_LABEL[estado as CacaoEstadoPago] ?? estado;
-  return (
-    <span className="inline-flex items-center gap-1">
-      <span className={`rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${cls}`}>{label}</span>
-      {estado !== "pagado" && saldo > 0 && (
-        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
-          debe {formatCurrency(saldo)}
-        </span>
-      )}
-    </span>
-  );
-}
-function GradoBadge({ grado }: { grado: string | null }) {
-  if (!grado) return <span className="text-xs text-[var(--text-tertiary)]">sin clasificar</span>;
-  const g = grado as CacaoGrado;
-  const cls =
-    g === "I"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
-      : g === "II"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
-        : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
-  return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>
-      {GRADO_LABEL[g] ?? grado}
-    </span>
-  );
-}
 function EmptyOrLoading({
   loading,
   empty,
