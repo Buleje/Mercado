@@ -37,6 +37,12 @@ import FilaGanado from "./FilaGanado";
 import DescuentoPlanillaModal from "@/components/admin/adelantos/DescuentoPlanillaModal";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { useDescontarAdelantos } from "./use-descontar-adelantos";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_GANADO, ORDEN_GANADO, type PersonaGanada } from "./columnas-filtro-ganado";
+
+const SIN_PERSONAS: readonly PersonaGanada[] = [];
 
 
 type Chip = "esta-semana" | "semana-pasada" | "este-mes" | "mes-pasado" | "rango";
@@ -92,6 +98,12 @@ export default function GanadoView() {
 
   const queda = useMemo(() => totalQuedaPorPagar(ganado?.personas ?? []), [ganado]);
   const descuento = useDescontarAdelantos();
+  const f = useFiltrosTabla(ganado?.personas ?? SIN_PERSONAS, COLUMNAS_GANADO);
+  const ord = useOrdenColumna(ORDEN_GANADO);
+  const filas = ord.ordenar(f.filtradas);
+  /* El pie suma lo que se ve (con filtros), no el período entero. */
+  const vistoQueda = useMemo(() => totalQuedaPorPagar(f.filtradas), [f.filtradas]);
+  const vistoGanado = useMemo(() => f.filtradas.reduce((s, p) => s + p.total, 0), [f.filtradas]);
 
   /* Las cuatro cifras, plegadas (patrón del panel): el pie de la tabla ya
      suma Ganado y Queda por pagar; el titular dice lo que falta pagar. */
@@ -217,21 +229,23 @@ export default function GanadoView() {
           <EmptyState icon={Wallet} title="Sin personal activo en este período" />
         ) : (
           <>
+            <BarraFiltrosTabla f={f} />
             <DataTable zebra>
               <thead>
                 <tr>
-                  <th>Persona</th>
-                  <th className="text-right">Días pagados</th>
-                  <th className="text-right">Horas</th>
+                  <ThColumna label="Persona" ids={["persona"]} f={f} orden={ord} ordenId="persona" />
+                  <ThColumna label="Días pagados" derecha orden={ord} ordenId="dias" />
+                  <ThColumna label="Horas" derecha orden={ord} ordenId="horas" />
                   <th>Tarifa</th>
-                  <th className="text-right">Ganado (referencia)</th>
-                  <th className="text-right">Adelantos por planilla</th>
-                  <th className="text-right">Queda por pagar</th>
+                  <ThColumna label="Ganado (referencia)" ids={["ganado"]} f={f} derecha orden={ord} ordenId="ganado" />
+                  <ThColumna label="Adelantos por planilla" derecha orden={ord} ordenId="adelantos" />
+                  <ThColumna label="Queda por pagar" ids={["queda"]} f={f} derecha orden={ord} ordenId="queda" />
                   <th>Avisos</th>
                 </tr>
               </thead>
               <tbody>
-                {ganado.personas.map((p) => {
+                {filas.length === 0 && <SinCoincidenciasFila colSpan={8} />}
+                {filas.map((p) => {
                   const benef = p.beneficiarioId;
                   // Lo que queda de lo ganado para descontar (menos lo descontado y lo ya
                   // PAGADO): con la semana pagada no hay planilla de dónde sacar.
@@ -250,10 +264,10 @@ export default function GanadoView() {
               </tbody>
               <tfoot>
                 <tr>
-                  <th colSpan={4} className="text-right">Total</th>
-                  <th className="text-right tabular-nums">{formatearPEN(ganado.total)}</th>
+                  <th colSpan={4} className="text-right">{f.activos > 0 ? "Total de lo que se ve" : "Total"}</th>
+                  <th className="text-right tabular-nums">{formatearPEN(f.activos > 0 ? vistoGanado : ganado.total)}</th>
                   <th />
-                  <th className="text-right tabular-nums">{queda.personas === 0 ? "—" : formatearPEN(queda.aPagar)}</th>
+                  <th className="text-right tabular-nums">{(f.activos > 0 ? vistoQueda : queda).personas === 0 ? "—" : formatearPEN((f.activos > 0 ? vistoQueda : queda).aPagar)}</th>
                   <th />
                 </tr>
               </tfoot>
