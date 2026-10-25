@@ -32,27 +32,12 @@ import {
 } from "@/lib/cacao/cacao-quality";
 import { printCacaoVentasReporte } from "@/lib/cacao/cacao-liquidacion";
 import CacaoVentaForm from "./CacaoVentaForm";
+import { CANAL_LABEL, COLUMNAS_VENTAS, ORDEN_VENTAS, type Venta } from "./columnas-filtro-ventas";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
 import { formatCurrency, formatDate } from "@/lib/format";
 
-interface Venta {
-  id: string;
-  ventaCode: string;
-  fecha: string;
-  compradorNombre: string | null;
-  canal: string | null;
-  loteCode: string | null;
-  pesoKg: string;
-  moneda: string;
-  precioPorKg: string | null;
-  tipoCambio: string | null;
-  totalPen: string | null;
-  montoCobrado: string | null;
-  estadoPago: string;
-  esFob: boolean;
-  variedad: string | null;
-  grado: string | null;
-  status: string;
-}
 interface Stats {
   ventas: number;
   kgVendido: number;
@@ -72,19 +57,11 @@ const fdate = (iso: string) => {
     return iso;
   }
 };
-const CANAL_LABEL: Record<string, string> = {
-  cooperativa: "Cooperativa",
-  exportador: "Exportador",
-  mercado_local: "Mercado local",
-  otro: "Otro",
-};
-
 export default function CacaoVentas() {
   const [items, setItems] = useState<Venta[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulBusy, setAnnulBusy] = useState(false);
@@ -162,16 +139,17 @@ export default function CacaoVentas() {
     }
   }
 
-  const view = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return q
-      ? items.filter(
-          (v) =>
-            v.ventaCode.toLowerCase().includes(q) ||
-            (v.compradorNombre ?? "").toLowerCase().includes(q),
-        )
-      : items;
-  }, [items, search]);
+  const f = useFiltrosTabla(items, COLUMNAS_VENTAS);
+  const ord = useOrdenColumna(ORDEN_VENTAS);
+  const view = ord.ordenar(f.filtradas);
+  // «Total de lo que se ve»: sólo ventas no anuladas, sobre las filas tras filtros.
+  const visto = useMemo(() => {
+    const vivas = view.filter((v) => v.status !== "anulado");
+    const por = (fn: (v: Venta) => number) => vivas.reduce((a, v) => a + fn(v), 0);
+    const tot = por((v) => (v.totalPen == null ? 0 : Number(v.totalPen)));
+    const cob = por((v) => (v.montoCobrado == null ? 0 : Number(v.montoCobrado)));
+    return { n: vivas.length, kg: por((v) => Number(v.pesoKg)), total: tot, saldo: Math.max(0, tot - cob) };
+  }, [view]);
 
   function exportCsv() {
     const head = [
@@ -264,15 +242,7 @@ export default function CacaoVentas() {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por código o comprador…"
-            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-          />
-        </div>
+        <div className="min-w-0 flex-1" />
         <button
           type="button"
           onClick={exportCsv}
@@ -307,21 +277,23 @@ export default function CacaoVentas() {
         </button>
       </div>
 
+      <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full">
           <thead>
             <tr>
-              <Th>Venta</Th>
-              <Th>Fecha</Th>
-              <Th>Comprador</Th>
-              <Th>Canal</Th>
-              <Th className="text-right">Kg</Th>
-              <Th className="text-right">Total S/</Th>
-              <Th>Pago</Th>
-              <Th className="text-right">Acción</Th>
+              <ThColumna label="Venta" ids={["venta"]} f={f} orden={ord} ordenId="venta" />
+              <ThColumna label="Fecha" ids={["fecha"]} f={f} orden={ord} ordenId="fecha" />
+              <ThColumna label="Comprador" ids={["comprador"]} f={f} orden={ord} ordenId="comprador" />
+              <ThColumna label="Canal" ids={["canal"]} f={f} orden={ord} ordenId="canal" />
+              <ThColumna label="Kg" ids={["kg"]} f={f} derecha orden={ord} ordenId="kg" />
+              <ThColumna label="Total S/" ids={["total"]} f={f} derecha orden={ord} ordenId="total" />
+              <ThColumna label="Pago" ids={["pago"]} f={f} orden={ord} ordenId="pago" />
+              <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
+            {items.length > 0 && view.length === 0 && <SinCoincidenciasFila colSpan={8} />}
             {view.map((v) => {
               const total = v.totalPen == null ? 0 : Number(v.totalPen);
               const { saldo } = cacaoEstadoPago(
@@ -396,13 +368,8 @@ export default function CacaoVentas() {
             <p className="mt-2 text-sm">Cargando…</p>
           </div>
         ) : (
-          view.length === 0 &&
-          (search ? (
-            <div className="p-12 text-center text-[var(--text-tertiary)]">
-              <Search className="mx-auto mb-3 h-10 w-10 opacity-30" />
-              <p className="text-base font-medium">Sin resultados.</p>
-            </div>
-          ) : (
+          items.length === 0 &&
+          (
             <div className="p-12 text-center text-[var(--text-tertiary)]">
               <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <Coins className="h-7 w-7" />
@@ -423,7 +390,14 @@ export default function CacaoVentas() {
                 Registrar venta
               </button>
             </div>
-          ))
+          )
+        )}
+        {view.length > 0 && (
+          <p className="border-t border-[var(--rule-soft)] px-4 py-3 text-sm text-[var(--text-secondary)]" data-testid="ventas-total-visto">
+            <strong className="text-[var(--text-primary)]">{f.activos > 0 ? "Total de lo que se ve" : "Total"}:</strong>{" "}
+            {visto.n} venta{visto.n === 1 ? "" : "s"} · {n2(visto.kg)} kg · S/ {n2(visto.total)}
+            {visto.saldo > 0 && <> · por cobrar S/ {n2(visto.saldo)}</>}
+          </p>
         )}
       </div>
 
@@ -554,13 +528,6 @@ export default function CacaoVentas() {
   );
 }
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th className={`font-bold ${className ?? ""}`}>
-      {children}
-    </th>
-  );
-}
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={`${className ?? ""}`}>{children}</td>;
 }

@@ -3,11 +3,11 @@
 /**
  * CacaoProductores — analítica de proveedores de cacao (ADR-128 v2).
  * Self-fetch de productores CON agregados de compra (kg, pagado, lotes, última,
- * calidad). KPIs + búsqueda + orden + filtro activo + export CSV + ficha drawer.
+ * calidad). KPIs + filtros y orden en el encabezado + filtro activo + export CSV + ficha drawer.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Users, Plus, Search, RefreshCw, Coins, Scale, Award, Download, AlertCircle, Trophy, AlertTriangle, Link2,
+  Users, Plus, RefreshCw, Coins, Scale, Award, Download, AlertCircle, Trophy, AlertTriangle, Link2,
 } from "@buleje/design-system/icons";
 import { DataTable, StatCard } from "@buleje/design-system";
 import CacaoProducerForm from "./CacaoProducerForm";
@@ -15,6 +15,9 @@ import CacaoProducerDrawer from "./CacaoProducerDrawer";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoReconcileModal from "./CacaoReconcileModal";
 import { formatDate, formatNumber } from "@/lib/format";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 interface PStats { kg: number; pagado: number; abonado: number; saldo: number; lotes: number; lastFecha: string | null; gradoI: number }
 interface Producer {
@@ -25,18 +28,32 @@ interface Producer {
 const n2 = (v: number | null) => (v == null ? "—" : formatNumber(v, 2));
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return formatDate(iso, { soloFecha: true }); } catch { return iso; } };
 const CERT_LABEL: Record<string, string> = { organico: "Orgánico", comercio_justo: "Comercio justo", convencional: "Convencional" };
-type Sort = "pagado" | "kg" | "lotes" | "reciente" | "nombre";
-const SORTS: { v: Sort; label: string }[] = [
-  { v: "pagado", label: "Más pagado" }, { v: "kg", label: "Más kg" }, { v: "lotes", label: "Más lotes" },
-  { v: "reciente", label: "Compra reciente" }, { v: "nombre", label: "Nombre A-Z" },
+const dia = (iso: string | null) => (iso ? iso.slice(0, 10) : null);
+
+/** Filtros de columna (como Adelantos › Lista): la lista llega entera del servidor. */
+const COLUMNAS: readonly ColumnaFiltro<Producer>[] = [
+  { id: "productor", label: "Productor", tipo: "texto", valor: (p) => [p.nombre, p.codigo ?? "", p.dni ?? "", p.variedad ?? ""] },
+  { id: "sector", label: "Sector", tipo: "multi", valor: (p) => p.sector, soloConVarios: true },
+  { id: "cert", label: "Certificación", tipo: "multi", valor: (p) => (p.certificacion ? (CERT_LABEL[p.certificacion] ?? p.certificacion) : "Sin declarar"), soloConVarios: true },
+  { id: "kg", label: "Kg comprados", tipo: "rango", numero: (p) => (p.stats.lotes ? p.stats.kg : null), unidad: "kg", paso: 0.01 },
+  { id: "pagado", label: "A pagar", tipo: "rango", numero: (p) => (p.stats.lotes ? p.stats.pagado : null), unidad: "S/", paso: 0.01 },
+  { id: "lotes", label: "Lotes", tipo: "rango", numero: (p) => p.stats.lotes, paso: 1 },
+  { id: "ultima", label: "Última", tipo: "fecha", numero: (p) => dia(p.stats.lastFecha) },
 ];
+const ORDEN: Record<string, AccesorOrden<Producer>> = {
+  productor: { valor: (p) => p.nombre, texto: true },
+  sector: { valor: (p) => p.sector, texto: true },
+  kg: { valor: (p) => p.stats.kg },
+  pagado: { valor: (p) => p.stats.pagado },
+  lotes: { valor: (p) => p.stats.lotes },
+  calidad: { valor: (p) => (p.stats.lotes ? p.stats.gradoI / p.stats.lotes : null) },
+  ultima: { valor: (p) => dia(p.stats.lastFecha) },
+};
 
 export default function CacaoProductores() {
   const [producers, setProducers] = useState<Producer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<Sort>("pagado");
   const [includeInactive, setIncludeInactive] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
@@ -63,16 +80,11 @@ export default function CacaoProductores() {
   }, [includeInactive]);
   useEffect(() => { load(); }, [load]);
 
-  const view = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const list = q ? producers.filter((p) => p.nombre.toLowerCase().includes(q) || (p.codigo ?? "").toLowerCase().includes(q) || (p.sector ?? "").toLowerCase().includes(q)) : [...producers];
-    list.sort((a, b) => {
-      if (sort === "nombre") return a.nombre.localeCompare(b.nombre);
-      if (sort === "reciente") return (b.stats.lastFecha ?? "").localeCompare(a.stats.lastFecha ?? "");
-      return b.stats[sort] - a.stats[sort];
-    });
-    return list;
-  }, [producers, search, sort]);
+  // Orden de llegada = el de siempre («Más pagado»); el clic en un título lo cambia.
+  const base = useMemo(() => [...producers].sort((a, b) => b.stats.pagado - a.stats.pagado), [producers]);
+  const f = useFiltrosTabla(base, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const view = ord.ordenar(f.filtradas);
 
   // KPIs derivados de lo que se ve (respeta búsqueda/filtro), no del total global
   // del server — así el header no contradice la lista filtrada.
@@ -127,28 +139,29 @@ export default function CacaoProductores() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre, código o sector…" className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
-        </div>
-        <select aria-label="Ordenar por" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none">
-          {SORTS.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
-        </select>
+        <div className="min-w-0 flex-1" />
         <button type="button" onClick={() => setIncludeInactive((v) => !v)} className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold ${includeInactive ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}>{includeInactive ? "Todos" : "Activos"}</button>
         <button type="button" onClick={exportCsv} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Download className="h-4 w-4" />CSV</button>
         <button type="button" onClick={() => setShowNew(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nuevo productor</button>
       </div>
 
       {/* Tabla */}
+      <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full">
           <thead>
             <tr>
-              <Th>Productor</Th><Th>Sector</Th><Th className="text-right">Kg comprados</Th><Th className="text-right">A pagar</Th>
-              <Th className="text-right">Lotes</Th><Th className="text-right">Calidad I</Th><Th className="text-right">Última</Th>
+              <ThColumna label="Productor" ids={["productor"]} f={f} orden={ord} ordenId="productor" />
+              <ThColumna label="Sector" ids={["sector", "cert"]} f={f} orden={ord} ordenId="sector" />
+              <ThColumna label="Kg comprados" ids={["kg"]} f={f} derecha orden={ord} ordenId="kg" />
+              <ThColumna label="A pagar" ids={["pagado"]} f={f} derecha orden={ord} ordenId="pagado" />
+              <ThColumna label="Lotes" ids={["lotes"]} f={f} derecha orden={ord} ordenId="lotes" />
+              <ThColumna label="Calidad I" f={f} derecha orden={ord} ordenId="calidad" />
+              <ThColumna label="Última" ids={["ultima"]} f={f} derecha orden={ord} ordenId="ultima" />
             </tr>
           </thead>
           <tbody>
+            {producers.length > 0 && view.length === 0 && <SinCoincidenciasFila colSpan={7} />}
             {view.map((p) => (
               <tr key={p.id} role="button" tabIndex={0} aria-label={`Ver ficha de ${p.nombre}`} onClick={() => setDrawerId(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrawerId(p.id); } }} className={`cursor-pointer transition focus:outline-none focus-visible:bg-[var(--surface-sunken)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${p.status === "inactivo" ? "opacity-50" : ""}`}>
                 <Td>
@@ -161,7 +174,7 @@ export default function CacaoProductores() {
                 </Td>
                 <Td className="text-[var(--text-secondary)]">{p.sector ?? "—"}</Td>
                 <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{p.stats.lotes ? `${n2(p.stats.kg)}` : "—"}</Td>
-                <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{p.stats.lotes ? `S/ ${n2(p.stats.pagado)}` : "—"}</Td>
+                <Td className="whitespace-nowrap text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{p.stats.lotes ? `S/ ${n2(p.stats.pagado)}` : "—"}</Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{p.stats.lotes || "—"}</Td>
                 <Td className="text-right">{p.stats.lotes ? <span className="font-mono text-xs font-bold tabular-nums text-[var(--data-success-700)]">{p.stats.gradoI}/{p.stats.lotes}</span> : <span className="text-xs text-[var(--text-tertiary)]">—</span>}</Td>
                 <Td className="text-right text-xs text-[var(--text-tertiary)]">{fdate(p.stats.lastFecha)}</Td>
@@ -171,9 +184,8 @@ export default function CacaoProductores() {
         </DataTable>
         {loading && producers.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
-        ) : view.length === 0 && (
-          search ? <div className="p-12 text-center text-[var(--text-tertiary)]"><Search className="mx-auto mb-3 h-10 w-10 opacity-30" /><p className="text-base font-medium">Sin resultados para tu búsqueda.</p></div>
-          : <div className="p-12 text-center text-[var(--text-tertiary)]">
+        ) : producers.length === 0 && (
+          <div className="p-12 text-center text-[var(--text-tertiary)]">
               <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-7 w-7" /></span>
               <p className="text-base font-bold text-[var(--text-primary)]">Aún no tienes productores</p>
               <p className="mx-auto mt-1 max-w-sm text-sm">Registra a tus proveedores para vincularlos a los lotes y ver su historial de compras y calidad.</p>
@@ -190,5 +202,4 @@ export default function CacaoProductores() {
   );
 }
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) { return <th className={`font-bold ${className ?? ""}`}>{children}</th>; }
 function Td({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={`${className ?? ""}`}>{children}</td>; }

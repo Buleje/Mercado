@@ -35,25 +35,10 @@ import {
 import CacaoBeneficioForm from "./CacaoBeneficioForm";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoBitacoraModal from "./CacaoBitacoraModal";
-
-interface Beneficio {
-  id: string;
-  loteId: string | null;
-  loteCode: string | null;
-  estado: string;
-  fermDias: number | null;
-  fermVolteos: number | null;
-  tipoFermentador: string | null;
-  secDias: number | null;
-  metodoSecado: string | null;
-  humedadFinal: string | null;
-  pesoHumedoKg: string | null;
-  pesoSecoKg: string | null;
-  mermaPct: string | null;
-  fermInicio: string | null;
-  secInicio: string | null;
-  createdAt: string;
-}
+import { COLUMNAS_BENEFICIO, ORDEN_BENEFICIO, type Beneficio } from "./columnas-filtro-beneficio";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
 
 const daysSince = (iso: string | null | undefined) =>
   iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)) : null;
@@ -97,7 +82,6 @@ export default function CacaoBeneficio() {
   const [items, setItems] = useState<Beneficio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("todos");
   const [showNew, setShowNew] = useState(false);
   const [loteDrawerId, setLoteDrawerId] = useState<string | null>(null);
@@ -217,15 +201,14 @@ export default function CacaoBeneficio() {
     };
   }, [items]);
 
-  const view = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return items.filter(
-      (b) =>
-        (filter === "todos" ||
-          (filter === "atencion" ? alertaOf(b).nivel !== "ok" : b.estado === filter)) &&
-        (!q || (b.loteCode ?? "").toLowerCase().includes(q)),
-    );
-  }, [items, search, filter]);
+  const porEstado = useMemo(
+    () => items.filter((b) => filter === "todos" || (filter === "atencion" ? alertaOf(b).nivel !== "ok" : b.estado === filter)),
+    [items, filter],
+  );
+  const fc = useFiltrosTabla(porEstado, COLUMNAS_BENEFICIO);
+  const ord = useOrdenColumna(ORDEN_BENEFICIO);
+  const view = ord.ordenar(fc.filtradas);
+  const seFiltra = fc.activos > 0 || filter !== "todos";
 
   // Totales del set visible (pie de tabla): kg húmedo/seco + merma y rendimiento
   // promedio de las filas con ambos pesos.
@@ -383,15 +366,7 @@ export default function CacaoBeneficio() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[180px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por código de lote…"
-            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-          />
-        </div>
+        <div className="min-w-0 flex-1" />
         <div className="inline-flex rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
           {FILTERS.map((f) => (
             <button
@@ -425,22 +400,24 @@ export default function CacaoBeneficio() {
       </div>
 
       {/* Tabla */}
+      <BarraFiltrosTabla f={fc} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full">
           <thead>
             <tr>
-              <Th>Lote</Th>
-              <Th>Estado</Th>
-              <Th>Fermentación</Th>
-              <Th>Secado</Th>
-              <Th className="text-right">Hum. final</Th>
-              <Th className="text-right">Húmedo→Seco</Th>
-              <Th className="text-right">Merma</Th>
-              <Th className="text-right">Rend.</Th>
-              <Th className="text-right">Acción</Th>
+              <ThColumna label="Lote" ids={["lote"]} f={fc} orden={ord} ordenId="lote" />
+              <ThColumna label="Estado" f={fc} orden={ord} ordenId="estado" />
+              <ThColumna label="Fermentación" ids={["ferm"]} f={fc} orden={ord} ordenId="ferm" />
+              <ThColumna label="Secado" ids={["sec"]} f={fc} orden={ord} ordenId="sec" />
+              <ThColumna label="Hum. final" ids={["hum"]} f={fc} derecha orden={ord} ordenId="hum" />
+              <ThColumna label="Húmedo→Seco" ids={["seco"]} f={fc} derecha orden={ord} ordenId="seco" />
+              <ThColumna label="Merma" ids={["merma"]} f={fc} derecha orden={ord} ordenId="merma" />
+              <ThColumna label="Rend." ids={["rend"]} f={fc} derecha orden={ord} ordenId="rend" />
+              <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
+            {porEstado.length > 0 && view.length === 0 && <SinCoincidenciasFila colSpan={9} />}
             {view.map((b) => {
               const est = ESTADO[b.estado] ?? {
                 label: b.estado,
@@ -563,7 +540,7 @@ export default function CacaoBeneficio() {
             <tfoot>
               <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
                 <Td className="font-bold text-[var(--text-secondary)]">
-                  Total · {view.length}
+                  {seFiltra ? "Total de lo que se ve" : "Total"} · {view.length}
                 </Td>
                 <Td />
                 <Td />
@@ -589,8 +566,8 @@ export default function CacaoBeneficio() {
             <p className="mt-2 text-sm">Cargando…</p>
           </div>
         ) : (
-          view.length === 0 &&
-          (search || filter !== "todos" ? (
+          porEstado.length === 0 &&
+          (filter !== "todos" ? (
             <div className="p-12 text-center text-[var(--text-tertiary)]">
               <Search className="mx-auto mb-3 h-10 w-10 opacity-30" />
               <p className="text-base font-medium">Sin beneficios para ese filtro.</p>
@@ -845,13 +822,6 @@ export default function CacaoBeneficio() {
   );
 }
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th className={`font-bold ${className ?? ""}`}>
-      {children}
-    </th>
-  );
-}
 function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
   return <td className={`${className ?? ""}`}>{children}</td>;
 }

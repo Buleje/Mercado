@@ -9,10 +9,13 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ShieldCheck, Leaf, Globe, Award, FileCheck, Search, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle, MapPin,
+  ShieldCheck, Leaf, Globe, Award, FileCheck, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle, MapPin,
 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
 import { formatNumber } from "@/lib/format";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 interface PStats { kg: number; pagado: number; lotes: number }
 interface Producer {
@@ -36,11 +39,24 @@ const CERTS = [
 const certKey = (c: string | null) => (c === "organico" || c === "comercio_justo" || c === "convencional" ? c : "__none__");
 const CERT_LABEL: Record<string, string> = { organico: "Orgánico", comercio_justo: "Comercio justo", convencional: "Convencional" };
 
+/** Filtros de columna (como Adelantos › Lista): el padrón llega entero del servidor. */
+const COLUMNAS: readonly ColumnaFiltro<Producer>[] = [
+  { id: "productor", label: "Productor", tipo: "texto", valor: (p) => [p.nombre, p.codigo ?? "", p.sector ?? ""] },
+  { id: "cert", label: "Certificación", tipo: "multi", valor: (p) => (p.certificacion ? (CERT_LABEL[p.certificacion] ?? p.certificacion) : "Sin declarar"), soloConVarios: true },
+  { id: "geo", label: "Geolocalización", tipo: "multi", valor: (p) => (hasGeo(p) ? "Cargada" : "Falta"), soloConVarios: true },
+  { id: "kg", label: "Kg acopiado", tipo: "rango", numero: (p) => (p.stats.lotes ? p.stats.kg : null), unidad: "kg", paso: 0.01 },
+];
+const ORDEN: Record<string, AccesorOrden<Producer>> = {
+  productor: { valor: (p) => p.nombre, texto: true },
+  cert: { valor: (p) => CERT_LABEL[p.certificacion ?? ""] ?? "Sin declarar", texto: true },
+  geo: { valor: (p) => (hasGeo(p) ? 1 : 0) },
+  kg: { valor: (p) => p.stats.kg },
+};
+
 export default function CacaoCertificacion() {
   const [producers, setProducers] = useState<Producer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -54,11 +70,9 @@ export default function CacaoCertificacion() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const view = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return producers;
-    return producers.filter((p) => p.nombre.toLowerCase().includes(q) || (p.codigo ?? "").toLowerCase().includes(q) || (p.sector ?? "").toLowerCase().includes(q));
-  }, [producers, search]);
+  const f = useFiltrosTabla(producers, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const view = ord.ordenar(f.filtradas);
 
   const stats = useMemo(() => {
     const total = producers.length;
@@ -135,21 +149,26 @@ export default function CacaoCertificacion() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar productor por nombre, código o sector…" className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
-        </div>
+        <div className="min-w-0 flex-1" />
         <button type="button" onClick={exportDDS} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><FileCheck className="h-4 w-4" />Export DDS</button>
         <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
       </div>
 
       {/* Tabla */}
+      <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full">
           <thead>
-            <tr><Th>Productor</Th><Th>Certificación</Th><Th>Geolocalización</Th><Th className="text-right">Kg acopiado</Th><Th className="text-right">Estado export</Th></tr>
+            <tr>
+              <ThColumna label="Productor" ids={["productor"]} f={f} orden={ord} ordenId="productor" />
+              <ThColumna label="Certificación" ids={["cert"]} f={f} orden={ord} ordenId="cert" />
+              <ThColumna label="Geolocalización" ids={["geo"]} f={f} orden={ord} ordenId="geo" />
+              <ThColumna label="Kg acopiado" ids={["kg"]} f={f} derecha orden={ord} ordenId="kg" />
+              <ThColumna label="Estado export" f={f} derecha orden={ord} ordenId="geo" />
+            </tr>
           </thead>
           <tbody>
+            {producers.length > 0 && view.length === 0 && <SinCoincidenciasFila colSpan={5} />}
             {view.map((p) => {
               const geo = hasGeo(p);
               return (
@@ -181,11 +200,11 @@ export default function CacaoCertificacion() {
         </DataTable>
         {loading && producers.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
-        ) : view.length === 0 && (
+        ) : producers.length === 0 && (
           <div className="p-12 text-center text-[var(--text-tertiary)]">
             <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><ShieldCheck className="h-7 w-7" /></span>
-            <p className="text-base font-bold text-[var(--text-primary)]">{search ? "Sin resultados" : "Aún no tienes productores"}</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm">{search ? "Ningún productor coincide con tu búsqueda." : "Registra productores y carga su certificación y ubicación para preparar tu exportación."}</p>
+            <p className="text-base font-bold text-[var(--text-primary)]">Aún no tienes productores</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm">Registra productores y carga su certificación y ubicación para preparar tu exportación.</p>
           </div>
         )}
       </div>
@@ -193,5 +212,4 @@ export default function CacaoCertificacion() {
   );
 }
 
-function Th({ children, className }: { children: React.ReactNode; className?: string }) { return <th className={`font-bold ${className ?? ""}`}>{children}</th>; }
 function Td({ children, className }: { children: React.ReactNode; className?: string }) { return <td className={`align-top ${className ?? ""}`}>{children}</td>; }
