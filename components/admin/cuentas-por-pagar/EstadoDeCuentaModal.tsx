@@ -14,6 +14,26 @@ import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
 import { CAMPO, ROTULO } from "./OrigenCuentaCampos";
 import { fechaConDia } from "./resumen-cuentas";
 import { useEstadoDeCuenta } from "./use-estado-de-cuenta";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "./use-orden-columna";
+
+type Movimiento = NonNullable<ReturnType<typeof useEstadoDeCuenta>["estado"]>["movimientos"][number];
+const SIN_MOVIMIENTOS: Movimiento[] = [];
+const ORDEN: Record<string, AccesorOrden<Movimiento>> = {
+  fecha: { valor: (m) => m.fecha },
+  detalle: { valor: (m) => m.detalle, texto: true },
+  cargo: { valor: (m) => m.cargo || null },
+  abono: { valor: (m) => m.abono || null },
+};
+/** Filtros de columna: los movimientos los arma el servidor enteros hasta el corte. El saldo es el corrido real. */
+const COLUMNAS: readonly ColumnaFiltro<Movimiento>[] = [
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (m) => m.fecha },
+  { id: "detalle", label: "Detalle", tipo: "texto", valor: (m) => m.detalle },
+  { id: "tipo", label: "Movimiento", tipo: "multi", valor: (m) => (m.tipo === "cargo" ? "Cargo" : "Abono") },
+  { id: "cargo", label: "Cargo", tipo: "rango", numero: (m) => m.cargo || null, unidad: "S/", paso: 0.01 },
+  { id: "abono", label: "Abono", tipo: "rango", numero: (m) => m.abono || null, unidad: "S/", paso: 0.01 },
+];
 
 /** «distribuidora-ucayali» para el nombre del archivo. */
 const slug = (s: string) =>
@@ -33,6 +53,10 @@ export default function EstadoDeCuentaModal({ proveedores, inicial, onCerrar }: 
   const [proveedorId, setProveedorId] = useState(inicial ?? proveedores[0]?.id ?? "");
   const [corte, setCorte] = useState(limaDateKey());
   const { estado, cargando, error } = useEstadoDeCuenta(proveedorId, corte);
+
+  const f = useFiltrosTabla(estado?.movimientos ?? SIN_MOVIMIENTOS, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const vistas = ord.ordenar(f.filtradas);
 
   const descargar = () => {
     if (!estado) return;
@@ -125,19 +149,22 @@ export default function EstadoDeCuentaModal({ proveedores, inicial, onCerrar }: 
                 Sin movimientos con este proveedor hasta el {fechaConDia(estado.corte)}.
               </p>
             ) : (
+              <>
+              <BarraFiltrosTabla f={f} />
               <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                 <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
                   <thead>
                     <tr>
-                      <th>Fecha</th>
-                      <th>Detalle</th>
-                      <th className="text-right">Cargo</th>
-                      <th className="text-right">Abono</th>
+                      <ThColumna label="Fecha" ids={["fecha"]} f={f} orden={ord} ordenId="fecha" />
+                      <ThColumna label="Detalle" ids={["detalle", "tipo"]} f={f} orden={ord} ordenId="detalle" />
+                      <ThColumna label="Cargo" ids={["cargo"]} f={f} derecha orden={ord} ordenId="cargo" />
+                      <ThColumna label="Abono" ids={["abono"]} f={f} derecha orden={ord} ordenId="abono" />
                       <th className="text-right">Saldo</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--rule-soft)]">
-                    {estado.movimientos.map((m, i) => (
+                    {vistas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+                    {vistas.map((m, i) => (
                       <tr key={`${m.cuentaId}-${m.tipo}-${i}`}>
                         <td className="whitespace-nowrap">{fechaConDia(m.fecha)}</td>
                         <td>{m.detalle}</td>
@@ -149,6 +176,7 @@ export default function EstadoDeCuentaModal({ proveedores, inicial, onCerrar }: 
                   </tbody>
                 </DataTable>
               </div>
+              </>
             )}
           </>
         ) : null}

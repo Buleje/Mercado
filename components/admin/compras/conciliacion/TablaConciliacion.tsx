@@ -7,6 +7,9 @@ import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { diaCorto } from "@/lib/compras/ciclo-oc";
 import type { EstadoConciliacion, FilaConciliacion } from "@/lib/compras/conciliacion";
 import { cn, formatCurrency } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/cuentas-por-pagar/use-orden-columna";
 import DetalleConciliacion from "./DetalleConciliacion";
 
 export const CHIP_ESTADO: Record<EstadoConciliacion, { texto: string; clase: string }> = {
@@ -17,6 +20,24 @@ export const CHIP_ESTADO: Record<EstadoConciliacion, { texto: string; clase: str
 };
 
 const TIPO_SUELTO: Record<FilaConciliacion["tipo"], string | null> = { orden: null, cuenta: "Cuenta sin orden", recepcion: "Llegó sin orden" };
+
+/** Filtros de columna: las filas llegan todas del servidor (un período), no se paginan. */
+const COLUMNAS: readonly ColumnaFiltro<FilaConciliacion>[] = [
+  { id: "orden", label: "Orden o documento", tipo: "texto", valor: (f) => [f.codigo, f.documento ?? ""] },
+  { id: "proveedor", label: "Proveedor", tipo: "multi", valor: (f) => f.proveedor || "Sin proveedor" },
+  { id: "pedido", label: "Pedido", tipo: "rango", numero: (f) => f.pedido?.monto ?? null, unidad: "S/", paso: 0.01 },
+  { id: "llego", label: "Llegó y se aceptó", tipo: "rango", numero: (f) => f.llego?.valor ?? null, unidad: "S/", paso: 0.01 },
+  { id: "factura", label: "Factura y cuenta", tipo: "texto", valor: (f) => [f.documento ?? "", f.cuenta?.texto ?? ""] },
+  { id: "estado", label: "Estado", tipo: "multi", valor: (f) => CHIP_ESTADO[f.estado].texto },
+];
+
+const ORDEN: Record<string, AccesorOrden<FilaConciliacion>> = {
+  orden: { valor: (f) => f.codigo, texto: true },
+  pedido: { valor: (f) => f.pedido?.monto ?? null },
+  llego: { valor: (f) => f.llego?.valor ?? null },
+  factura: { valor: (f) => f.documento, texto: true },
+  estado: { valor: (f) => CHIP_ESTADO[f.estado].texto, texto: true },
+};
 
 /** La diferencia que se ve en la fila: la primera que pide acción; si no hay, la primera nota. */
 function principal(f: FilaConciliacion) {
@@ -36,21 +57,27 @@ export default function TablaConciliacion({ filas, abierta, setAbierta, onVerCue
   onVerCuenta: (cuentaId: string) => void;
   onVincular: (cuentaId: string) => void;
 }) {
+  const fil = useFiltrosTabla(filas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const vistas = ord.ordenar(fil.filtradas);
   return (
+    <>
+    <BarraFiltrosTabla f={fil} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
           <tr>
-            <th>Orden o documento</th>
-            <th className="text-right">Pedido</th>
-            <th className="text-right">Llegó y se aceptó</th>
-            <th>Factura y cuenta</th>
-            <th>Qué no cuadra</th>
+            <ThColumna label="Orden o documento" ids={["orden", "proveedor"]} f={fil} orden={ord} ordenId="orden" />
+            <ThColumna label="Pedido" ids={["pedido"]} f={fil} derecha orden={ord} ordenId="pedido" />
+            <ThColumna label="Llegó y se aceptó" ids={["llego"]} f={fil} derecha orden={ord} ordenId="llego" />
+            <ThColumna label="Factura y cuenta" ids={["factura"]} f={fil} orden={ord} ordenId="factura" />
+            <ThColumna label="Qué no cuadra" ids={["estado"]} f={fil} orden={ord} ordenId="estado" />
             <th className="text-right" data-label="Detalle"><span className="sr-only">Detalle</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
-          {filas.map((f) => {
+          {vistas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+          {vistas.map((f) => {
             const chip = CHIP_ESTADO[f.estado];
             const dif = principal(f);
             const otras = f.diferencias.filter((d) => d !== dif && d.tono !== "info").length;
@@ -132,5 +159,6 @@ export default function TablaConciliacion({ filas, abierta, setAbierta, onVerCue
         </tbody>
       </DataTable>
     </div>
+    </>
   );
 }

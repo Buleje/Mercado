@@ -31,9 +31,27 @@ import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-me
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
 import { usePorPagar } from "@/hooks/use-por-pagar";
-import { ENLACE_FUENTE, ETIQUETA_FUENTE, FUENTES_POR_PAGAR, type EnlacePorPagar, type FuentePorPagar } from "@/lib/finance/por-pagar";
+import { ENLACE_FUENTE, ETIQUETA_FUENTE, FUENTES_POR_PAGAR, type EnlacePorPagar, type FuentePorPagar, type PersonaPorPagar } from "@/lib/finance/por-pagar";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/cuentas-por-pagar/use-orden-columna";
 import FilaPorPagar from "./por-pagar/FilaPorPagar";
 import { BUSCADOR, CHIP, CHIP_OFF, CHIP_ON, ESTILO, enMonedas } from "./por-pagar/estilo";
+
+/** Filtros de columna: `/api/finanzas/por-pagar` entrega todas las personas, sin paginar.
+ *  El total filtra por los soles (cada moneda va aparte y un rango mezclado mentiría). */
+const COLUMNAS: readonly ColumnaFiltro<PersonaPorPagar>[] = [
+  { id: "nombre", label: "A quién le debes", tipo: "texto", valor: (p) => p.nombre },
+  { id: "fuente", label: "De qué", tipo: "multi", valor: (p) => [...new Set(p.partidas.map((x) => ETIQUETA_FUENTE[x.fuente].label))] },
+  { id: "total", label: "Total", tipo: "rango", unidad: "S/", paso: 0.01, numero: (p) => p.debes.find((d) => d.moneda === "PEN")?.monto ?? null },
+  { id: "vence", label: "Vence", tipo: "fecha", numero: (p) => p.vence },
+];
+
+const ORDEN: Record<string, AccesorOrden<PersonaPorPagar>> = {
+  nombre: { valor: (p) => p.nombre, texto: true },
+  total: { valor: (p) => p.debes.find((d) => d.moneda === "PEN")?.monto ?? null },
+  vence: { valor: (p) => p.vence },
+};
 
 interface Props {
   /** Cambia de vista dentro de Mi Plata, sin recargar. */
@@ -65,6 +83,9 @@ export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}
     });
   }, [data.personas, filtro, q]);
 
+  const fc = useFiltrosTabla(filas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const vistas = ord.ordenar(fc.filtradas);
   const deFuente = (f: FuentePorPagar) => data.porFuente.filter((x) => x.fuente === f);
   const total = enMonedas(data.totales.map((t) => ({ moneda: t.moneda, monto: t.total }))) || montoEnMoneda(0, "PEN");
   const vencido = data.totales.filter((t) => t.vencido > 0).map((t) => ({ moneda: t.moneda, monto: t.vencido }));
@@ -210,18 +231,20 @@ export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}
 
           {/* `sm:pr-14`: el mismo corredor libre que «Por cobrar» le deja al
               botón flotante de acciones rápidas. */}
+          <BarraFiltrosTabla f={fc} />
           <DataTable zebra wrapperClassName="sm:pr-14">
             <thead>
               <tr>
-                <th>A quién le debes</th>
-                <th>De qué</th>
-                <th className="text-right">Total</th>
-                <th>Vence</th>
+                <ThColumna label="A quién le debes" ids={["nombre"]} f={fc} orden={ord} ordenId="nombre" />
+                <ThColumna label="De qué" ids={["fuente"]} f={fc} />
+                <ThColumna label="Total" ids={["total"]} f={fc} derecha orden={ord} ordenId="total" />
+                <ThColumna label="Vence" ids={["vence"]} f={fc} orden={ord} ordenId="vence" />
                 <th><span className="sr-only">Acciones</span></th>
               </tr>
             </thead>
             <tbody>
-              {filas.map((p) => (
+              {filas.length > 0 && vistas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+              {vistas.map((p) => (
                 <FilaPorPagar key={p.clave} persona={p} hoy={data.hoy} onAbrir={abrir} />
               ))}
               {filas.length === 0 && (

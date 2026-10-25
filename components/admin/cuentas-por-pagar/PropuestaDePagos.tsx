@@ -11,6 +11,22 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { diaDeVencimiento, estaPagada, fechaConDia, ordenar, saldo, vencimiento, type CuentaPorPagar } from "./resumen-cuentas";
 import { CHIP_VENCE } from "./TablaCuentas";
 import { Casilla } from "@/components/ui-system/Casilla";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "./use-orden-columna";
+
+const ORDEN: Record<string, AccesorOrden<CuentaPorPagar>> = {
+  proveedor: { valor: (c) => c.supplierName, texto: true },
+  vence: { valor: (c) => diaDeVencimiento(c.dueDate) || null },
+  falta: { valor: (c) => saldo(c) },
+};
+
+/** Filtros de columna: la lista son todas las cuentas con saldo, enteras en el cliente. */
+const COLUMNAS: readonly ColumnaFiltro<CuentaPorPagar>[] = [
+  { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (c) => [c.supplierName, descripcionALaVista(c.description, c.purchaseOrderId)] },
+  { id: "vence", label: "Vence", tipo: "fecha", numero: (c) => diaDeVencimiento(c.dueDate) || null },
+  { id: "falta", label: "Te falta pagar", tipo: "rango", numero: (c) => saldo(c), unidad: "S/", paso: 0.01 },
+];
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -30,7 +46,12 @@ export default function PropuestaDePagos({ cuentas, hoy, elegidas, setElegidas, 
   const marcadas = abiertas.filter((c) => elegidas.has(c.id));
   const total = r2(marcadas.reduce((s, c) => s + saldo(c), 0));
   const proveedores = new Set(marcadas.map((c) => c.supplierId)).size;
-  const todas = abiertas.length > 0 && marcadas.length === abiertas.length;
+  const f = useFiltrosTabla(abiertas, COLUMNAS);
+  /* «Marcar todas» manda sobre lo que se ve: con un filtro puesto no marca lo escondido. */
+  const ord = useOrdenColumna(ORDEN);
+  const visibles = ord.ordenar(f.filtradas);
+  const escondidas = f.activos > 0 ? marcadas.filter((c) => !f.filtradas.includes(c)).length : 0;
+  const todas = visibles.length > 0 && visibles.every((c) => elegidas.has(c.id));
 
   const alternar = (id: string) => {
     const s = new Set(elegidas);
@@ -59,6 +80,7 @@ export default function PropuestaDePagos({ cuentas, hoy, elegidas, setElegidas, 
           {marcadas.length === 0 ? "Marca las cuentas que vas a pagar" : (
             <>
               Vas a pagar <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(total)}</strong> en {marcadas.length} cuenta{marcadas.length === 1 ? "" : "s"} a {proveedores} proveedor{proveedores === 1 ? "" : "es"}
+              {escondidas > 0 && <strong className="ml-1 text-[var(--data-warning-ink)]"> · incluye {escondidas} que el filtro esconde</strong>}
             </>
           )}
         </p>
@@ -72,6 +94,7 @@ export default function PropuestaDePagos({ cuentas, hoy, elegidas, setElegidas, 
           <Download className="h-4 w-4" aria-hidden /> Descargar lista
         </button>
       </div>
+      <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
           <thead>
@@ -79,17 +102,22 @@ export default function PropuestaDePagos({ cuentas, hoy, elegidas, setElegidas, 
               <th data-label="Marcar">
                 <Casilla
                   checked={todas}
-                  onChange={() => setElegidas(todas ? new Set() : new Set(abiertas.map((c) => c.id)))}
+                  onChange={() => {
+                    const s = new Set(elegidas);
+                    for (const c of visibles) { if (todas) s.delete(c.id); else s.add(c.id); }
+                    setElegidas(s);
+                  }}
                   aria-label={todas ? "Desmarcar todas" : "Marcar todas"} />
               </th>
-              <th>Proveedor</th>
-              <th>Vence</th>
-              <th className="text-right">Te falta pagar</th>
+              <ThColumna label="Proveedor" ids={["proveedor"]} f={f} orden={ord} ordenId="proveedor" />
+              <ThColumna label="Vence" ids={["vence"]} f={f} orden={ord} ordenId="vence" />
+              <ThColumna label="Te falta pagar" ids={["falta"]} f={f} derecha orden={ord} ordenId="falta" />
               <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
-            {abiertas.map((c) => {
+            {visibles.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+            {visibles.map((c) => {
               const v = vencimiento(c, hoy);
               const marcada = elegidas.has(c.id);
               return (

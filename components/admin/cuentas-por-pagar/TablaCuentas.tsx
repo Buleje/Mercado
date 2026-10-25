@@ -11,12 +11,28 @@ import PagarCuentaForm, { METODOS } from "./PagarCuentaForm";
 import { diaDeVencimiento, estaPagada, fechaConDia, saldo, vencimiento, type CuentaPorPagar, type TonoVence } from "./resumen-cuentas";
 import type { MetodoPago, PagoCuenta, ResultadoPago } from "./use-cuentas-por-pagar";
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "./use-orden-columna";
 
 export const CHIP_VENCE: Record<TonoVence, string> = {
   vencida: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]",
   pronto: "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]",
   "al-dia": "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
   pagada: "bg-primary/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+};
+
+/** Filtros de columna (como Adelantos › Lista): la lista llega entera, no se pagina en el servidor. */
+const COLUMNAS: readonly ColumnaFiltro<CuentaPorPagar>[] = [
+  { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (c) => [c.supplierName, descripcionALaVista(c.description, c.purchaseOrderId)] },
+  { id: "falta", label: "Te falta pagar", tipo: "rango", numero: (c) => saldo(c), unidad: "S/", paso: 0.01 },
+  { id: "vence", label: "Vence", tipo: "fecha", numero: (c) => diaDeVencimiento(c.dueDate) || null },
+];
+
+const ORDEN: Record<string, AccesorOrden<CuentaPorPagar>> = {
+  proveedor: { valor: (c) => c.supplierName, texto: true },
+  falta: { valor: (c) => saldo(c) },
+  vence: { valor: (c) => diaDeVencimiento(c.dueDate) || null },
 };
 
 export type Abierto = { id: string; que: "pagar" | "pagos" } | null;
@@ -40,19 +56,25 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
   onEstadoDeCuenta: (supplierId: string) => void;
   onVincular: (c: CuentaPorPagar) => void;
 }) {
+  const f = useFiltrosTabla(cuentas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
   return (
+    <>
+    <BarraFiltrosTabla f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
           <tr>
-            <th>Proveedor</th>
-            <th className="text-right">Te falta pagar</th>
-            <th>Vence</th>
+            <ThColumna label="Proveedor" ids={["proveedor"]} f={f} orden={ord} ordenId="proveedor" />
+            <ThColumna label="Te falta pagar" ids={["falta"]} f={f} derecha orden={ord} ordenId="falta" />
+            <ThColumna label="Vence" ids={["vence"]} f={f} orden={ord} ordenId="vence" />
             <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
-          {cuentas.map((c) => {
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+          {filas.map((c) => {
             const falta = saldo(c);
             const v = vencimiento(c, hoy);
             const pagada = estaPagada(c);
@@ -138,6 +160,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
         </tbody>
       </DataTable>
     </div>
+    </>
   );
 }
 
