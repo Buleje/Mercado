@@ -14,6 +14,10 @@ import { cn } from "@/lib/utils";
 import { toNum } from "@/components/admin/delivery-partners/shared";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+import { limaDateKey } from "@/lib/utils";
 
 export interface AsignacionFila {
   id: string;
@@ -45,22 +49,51 @@ export const ESTADO_ASIGNACION: Record<string, { label: string; className: strin
 
 const nombreDe = (a: AsignacionFila) => a.partner?.name?.trim() || a.partnerName?.trim() || "Repartidor sin nombre";
 
+const etiquetaEstado = (a: AsignacionFila) => ESTADO_ASIGNACION[a.status]?.label ?? a.status;
+const diaDe = (a: AsignacionFila) => {
+  const fecha = a.createdAt ?? a.assignedAt;
+  return fecha ? limaDateKey(fecha) || null : null;
+};
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+
+/** La lista llega entera de `/api/delivery/assignments`: se filtra en el cliente. */
+const COLUMNAS: readonly ColumnaFiltro<AsignacionFila>[] = [
+  { id: "pedido", label: "Pedido", tipo: "texto", valor: (a) => [a.orderId, a.order?.customerName ?? ""] },
+  { id: "repartidor", label: "Repartidor", tipo: "multi", valor: (a) => nombreDe(a) },
+  { id: "tarifa", label: "Tarifa", tipo: "rango", numero: (a) => toNum(a.fee), unidad: "S/", paso: 0.01 },
+  { id: "estado", label: "Estado", tipo: "multi", valor: etiquetaEstado, soloConVarios: true },
+  { id: "asignado", label: "Asignado", tipo: "fecha", numero: diaDe, formatearValor: ddmm },
+];
+
+const ORDEN: Record<string, AccesorOrden<AsignacionFila>> = {
+  pedido: { valor: (a) => a.orderId.slice(-8), texto: true },
+  repartidor: { valor: nombreDe, texto: true },
+  tarifa: { valor: (a) => toNum(a.fee) },
+  estado: { valor: etiquetaEstado, texto: true },
+  asignado: { valor: (a) => a.createdAt ?? a.assignedAt ?? null },
+};
+
 export function TablaAsignaciones({ asignaciones, canceladas }: { asignaciones: AsignacionFila[]; canceladas: number }) {
+  const f = useFiltrosTabla(asignaciones, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
   return (
     <>
+      <BarraFiltrosTabla f={f} className="px-4 pt-2" />
       <div className="overflow-x-auto">
         <DataTable className="w-full">
           <thead>
             <tr>
-              <th>Pedido</th>
-              <th>Repartidor</th>
-              <th className="text-right">Tarifa</th>
-              <th className="text-center">Estado</th>
-              <th className="text-right hidden sm:table-cell">Asignado</th>
+              <ThColumna label="Pedido" ids={["pedido"]} f={f} orden={ord} ordenId="pedido" />
+              <ThColumna label="Repartidor" ids={["repartidor"]} f={f} orden={ord} ordenId="repartidor" />
+              <ThColumna label="Tarifa" ids={["tarifa"]} f={f} derecha orden={ord} ordenId="tarifa" />
+              <ThColumna label="Estado" ids={["estado"]} f={f} orden={ord} ordenId="estado" />
+              <ThColumna label="Asignado" ids={["asignado"]} f={f} derecha className="hidden sm:table-cell" orden={ord} ordenId="asignado" />
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
-            {asignaciones.map((a) => {
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+            {filas.map((a) => {
               const sc = ESTADO_ASIGNACION[a.status] ?? {
                 label: a.status,
                 className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",

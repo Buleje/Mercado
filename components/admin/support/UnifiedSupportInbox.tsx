@@ -22,6 +22,9 @@ import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import type { SupportInboxItem } from "@/app/api/admin/support/inbox/route";
 
 type SourceFilter = "all" | "whatsapp" | "review";
@@ -34,6 +37,22 @@ const FUENTE: Record<SupportInboxItem["source"], { rotulo: string; donde: string
 const CHIP = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";
 const CHIP_ON = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+
+/** La fuente ya tiene sus botones arriba: acá van cliente, mensaje y fecha. */
+const COLUMNAS: readonly ColumnaFiltro<SupportInboxItem>[] = [
+  { id: "cliente", label: "Cliente", tipo: "texto", valor: (i) => i.customer },
+  { id: "mensaje", label: "Mensaje", tipo: "texto", valor: (i) => i.message },
+  { id: "recibido", label: "Recibido", tipo: "fecha", numero: (i) => i.receivedAt?.slice(0, 10) ?? null, formatearValor: ddmm },
+];
+
+const ORDEN: Record<string, AccesorOrden<SupportInboxItem>> = {
+  fuente: { valor: (i) => FUENTE[i.source]?.rotulo ?? i.source, texto: true },
+  cliente: { valor: (i) => i.customer, texto: true },
+  mensaje: { valor: (i) => i.message, texto: true },
+  recibido: { valor: (i) => i.receivedAt },
+};
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -76,7 +95,10 @@ export function UnifiedSupportInbox() {
     const pend = (items ?? []).filter((i) => i.status === "pending");
     return { all: pend.length, whatsapp: pend.filter((i) => i.source === "whatsapp").length, review: pend.filter((i) => i.source === "review").length };
   }, [items]);
-  const filas = (items ?? []).filter((i) => sourceFilter === "all" || i.source === sourceFilter);
+  const deLaFuente = useMemo(() => (items ?? []).filter((i) => sourceFilter === "all" || i.source === sourceFilter), [items, sourceFilter]);
+  const f = useFiltrosTabla(deLaFuente, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
 
   return (
     <div className="space-y-3">
@@ -111,9 +133,11 @@ export function UnifiedSupportInbox() {
         </p>
       ) : !items ? (
         <p className="flex items-center gap-2 py-8 text-sm text-[var(--text-secondary)]"><Loader2 className="h-4 w-4 animate-spin" aria-hidden />Cargando la bandeja…</p>
-      ) : filas.length === 0 ? (
+      ) : deLaFuente.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nada espera respuesta.</p>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable className="table-fixed">
           <colgroup className="max-sm:hidden">
             <col className="w-28" />
@@ -124,14 +148,15 @@ export function UnifiedSupportInbox() {
           </colgroup>
           <thead>
             <tr>
-              <th>Fuente</th>
-              <th>Cliente</th>
-              <th>Mensaje</th>
-              <th>Recibido</th>
-              <th aria-label="Dónde se atiende" />
+              <ThColumna label="Fuente" orden={ord} ordenId="fuente" />
+              <ThColumna label="Cliente" ids={["cliente"]} f={f} orden={ord} ordenId="cliente" />
+              <ThColumna label="Mensaje" ids={["mensaje"]} f={f} orden={ord} ordenId="mensaje" />
+              <ThColumna label="Recibido" ids={["recibido"]} f={f} orden={ord} ordenId="recibido" />
+              <th data-label="Dónde se atiende" aria-label="Dónde se atiende" />
             </tr>
           </thead>
           <tbody>
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
             {filas.map((item) => (
               <tr key={item.id}>
                 <td className="font-semibold">{FUENTE[item.source]?.rotulo ?? item.source}</td>
@@ -151,6 +176,7 @@ export function UnifiedSupportInbox() {
             ))}
           </tbody>
         </DataTable>
+        </>
       )}
     </div>
   );

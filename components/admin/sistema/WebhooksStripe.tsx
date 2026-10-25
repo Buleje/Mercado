@@ -17,6 +17,9 @@ import { IconAction } from "@/components/admin/shared/module-primitives";
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { button } from "@/components/ui-system/button-variants";
 import { formatDateTime } from "@/lib/format";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { useWebhooksStripe, type QueueItem, type WebhooksStripe } from "./use-webhooks-stripe";
 
 /** Zona Lima y 24 h, como todo el panel; «—» sin fecha. */
@@ -46,6 +49,25 @@ function StatusBadge({ item }: { item: QueueItem }) {
   );
 }
 
+const estadoDe = (i: QueueItem) => (i.processedAt ? "Procesado" : i.attempts >= 6 ? "Abandonado" : "Pendiente");
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+
+/** La cola llega entera: se filtra en el cliente. */
+const COLUMNAS: readonly ColumnaFiltro<QueueItem>[] = [
+  { id: "estado", label: "Estado", tipo: "multi", valor: estadoDe, soloConVarios: true },
+  { id: "tipo", label: "Tipo de evento", tipo: "multi", valor: (i) => i.eventType, soloConVarios: true },
+  { id: "creado", label: "Creado", tipo: "fecha", numero: (i) => i.createdAt?.slice(0, 10) ?? null, formatearValor: ddmm },
+];
+
+const ORDEN: Record<string, AccesorOrden<QueueItem>> = {
+  estado: { valor: estadoDe, texto: true },
+  tipo: { valor: (i) => i.eventType, texto: true },
+  intentos: { valor: (i) => i.attempts },
+  proximo: { valor: (i) => i.nextRetryAt },
+  creado: { valor: (i) => i.createdAt },
+  error: { valor: (i) => i.lastError, texto: true },
+};
+
 /** «Actualizar» + «Reintentar ahora (N)». */
 export function WebhooksStripeAcciones({ w }: { w: WebhooksStripe }) {
   return (
@@ -69,6 +91,9 @@ export function WebhooksStripeAcciones({ w }: { w: WebhooksStripe }) {
 
 export function WebhooksStripeContenido({ w }: { w: WebhooksStripe }) {
   const { items, loading, deletingId, error, replayResult, pending, abandoned, processed } = w;
+  const f = useFiltrosTabla(items, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
   return (
     <>
       {replayResult && (
@@ -98,19 +123,23 @@ export function WebhooksStripeContenido({ w }: { w: WebhooksStripe }) {
         <EmptyState icon={<CheckCircle2 aria-hidden />} title="Ningún aviso de Stripe espera reintento." className="py-8" />
       ) : (
         <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
+          <BarraFiltrosTabla f={f} className="px-4 pt-2" />
           <div className="overflow-x-auto">
             <DataTable className="w-full">
               <thead>
                 <tr>
-                  {["Estado", "Tipo de evento", "Intentos", "Próximo intento", "Creado", "Último error", ""].map((h) => (
-                    <th key={h}>
-                      {h}
-                    </th>
-                  ))}
+                  <ThColumna label="Estado" ids={["estado"]} f={f} orden={ord} ordenId="estado" />
+                  <ThColumna label="Tipo de evento" ids={["tipo"]} f={f} orden={ord} ordenId="tipo" />
+                  <ThColumna label="Intentos" orden={ord} ordenId="intentos" />
+                  <ThColumna label="Próximo intento" orden={ord} ordenId="proximo" />
+                  <ThColumna label="Creado" ids={["creado"]} f={f} orden={ord} ordenId="creado" />
+                  <ThColumna label="Último error" orden={ord} ordenId="error" />
+                  <th data-label="Acciones"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
-                {items.map((item) => (
+                {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+                {filas.map((item) => (
                   <tr key={item.id}>
                     <td>
                       <StatusBadge item={item} />

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { DataTable } from "@buleje/design-system";
 import { CheckCircle, Clock, DollarSign, Star, Trophy, Users, Crown, Wallet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,10 @@ import { fechaConDia } from "@/lib/admin/inicio/formato-tablero";
 import { MUESTRA_CHICA, type FilaRanking, type ResumenRanking } from "@/lib/delivery/ranking-reparto";
 import { TasaCompletadas, tonoTasa } from "../TasaCompletadas";
 import { FichaRepartidor } from "../FichaRepartidor";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_RANKING, ORDEN_RANKING } from "./columnas-filtro-ranking";
 
 interface PagadoRanking {
   total: { cantidad: number; monto: number };
@@ -27,6 +31,12 @@ export function RankingTab() {
   const [period, setPeriod] = useState<"week" | "month" | "all">("month");
   const [pagado, setPagado] = useState<PagadoRanking | null>(null);
   const [ficha, setFicha] = useState<{ id: string; nombre: string } | null>(null);
+
+  const f = useFiltrosTabla(data, COLUMNAS_RANKING);
+  const ord = useOrdenColumna(ORDEN_RANKING);
+  const filas = ord.ordenar(f.filtradas);
+  /* La posición (#) es la del ranking, no la de la fila tras ordenar o filtrar. */
+  const puesto = useMemo(() => new Map(data.map((d, i) => [d.id, i])), [data]);
 
   const fetchRanking = useCallback((p: string) => {
     setLoading(true);
@@ -144,23 +154,26 @@ export function RankingTab() {
               {data.length} {data.length === 1 ? "repartidor" : "repartidores"}
             </p>
           </div>
+          <BarraFiltrosTabla f={f} className="px-4 pt-2" />
           <div className="overflow-x-auto">
             <DataTable className="w-full">
               <thead>
                 <tr>
-                  <th className="w-16">#</th>
-                  <th>Repartidor</th>
-                  <th className="text-center">Rating</th>
-                  <th className="text-center">Aceptación</th>
-                  <th className="text-center">Entregas</th>
-                  <th className="text-center">Cancelados</th>
-                  <th className="text-center">Min. promedio</th>
-                  <th className="text-right">Ganado</th>
-                  <th className="text-center">Completadas</th>
+                  <th className="w-16" data-label="Puesto">#</th>
+                  <ThColumna label="Repartidor" ids={["repartidor"]} f={f} orden={ord} ordenId="repartidor" />
+                  <ThColumna label="Rating" orden={ord} ordenId="rating" />
+                  <ThColumna label="Aceptación" orden={ord} ordenId="aceptacion" />
+                  <ThColumna label="Entregas" ids={["entregas"]} f={f} orden={ord} ordenId="entregas" />
+                  <ThColumna label="Cancelados" orden={ord} ordenId="cancelados" />
+                  <ThColumna label="Min. promedio" orden={ord} ordenId="minutos" />
+                  <ThColumna label="Ganado" ids={["ganado"]} f={f} derecha orden={ord} ordenId="ganado" />
+                  <ThColumna label="Completadas" orden={ord} ordenId="completadas" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
-                {data.map((entry, idx) => {
+                {filas.length === 0 && <SinCoincidenciasFila colSpan={9} />}
+                {filas.map((entry) => {
+                  const idx = puesto.get(entry.id) ?? 0;
                   const isPodium = idx < 3;
                   const medalBg = idx === 0
                     ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
