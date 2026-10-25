@@ -8,6 +8,9 @@
 import { DataTable } from "@buleje/design-system";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import { formatTime } from "@/lib/format";
+import { FiltroEnCabecera, SinCoincidenciasFila, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { OrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { ThCelda } from "../th-celda";
 import { cn } from "@/lib/utils";
 import { soles } from "./use-indicadores";
 import { CAUSA, causaDe, diaDelMovimiento, type Movimiento } from "./tipos";
@@ -21,9 +24,12 @@ interface Props {
   hoy: string;
   orden: { orden: readonly string[]; refCabecera: (el: HTMLTableSectionElement | null) => void };
   onVer: (p: FilaPerdida) => void;
+  /** Filtros y orden de las columnas (la causa, el período y el buscador siguen en la barra). */
+  f: FiltrosTabla<FilaPerdida>;
+  ord: OrdenColumna<FilaPerdida>;
 }
 
-export function TablaPerdidas({ filas, hoy, orden, onVer }: Props) {
+export function TablaPerdidas({ filas, hoy, orden, onVer, f, ord }: Props) {
   return (
     <DataTable className="min-w-[640px] [&_tbody_td]:py-1.5! [&_tbody_td]:align-top">
       <thead ref={orden.refCabecera}>
@@ -31,17 +37,18 @@ export function TablaPerdidas({ filas, hoy, orden, onVer }: Props) {
           <EnOrden
             orden={orden.orden}
             celdas={{
-              fecha: <th data-col="fecha">Cuándo</th>,
-              producto: <th data-col="producto">Producto</th>,
-              cantidad: <th data-col="cantidad" className="text-right">Cantidad</th>,
-              costo: <th data-col="costo" className="text-right" title="Costo de hoy del producto">Costo u.</th>,
-              perdida: <th data-col="perdida" className="text-right">Pérdida</th>,
-              motivo: <th data-col="motivo">Causa</th>,
+              fecha: <ThCelda col="fecha" label="Cuándo" orden={ord} ordenId="fecha" />,
+              producto: <ThCelda col="producto" label="Producto" orden={ord} ordenId="producto" />,
+              cantidad: <ThCelda col="cantidad" label="Cantidad" derecha orden={ord} ordenId="cantidad"><FiltroEnCabecera id="cantidad" f={f} compacto /></ThCelda>,
+              costo: <ThCelda col="costo" label="Costo u." derecha title="Costo de hoy del producto" orden={ord} ordenId="costo"><FiltroEnCabecera id="costo" f={f} compacto /></ThCelda>,
+              perdida: <ThCelda col="perdida" label="Pérdida" derecha orden={ord} ordenId="perdida"><FiltroEnCabecera id="perdida" f={f} compacto /></ThCelda>,
+              motivo: <ThCelda col="motivo" label="Causa" orden={ord} ordenId="motivo" />,
             }}
           />
         </tr>
       </thead>
       <tbody>
+        {filas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
         {filas.map((p) => {
           const causa = CAUSA[causaDe(p.lossType)];
           return (

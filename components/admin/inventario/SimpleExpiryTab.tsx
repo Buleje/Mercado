@@ -28,6 +28,9 @@ import { diaConNombre } from "./movimientos/tipos";
 import { useIndicadoresLotes } from "./movimientos/use-indicadores";
 import { conDias, contarLotes, fraseDeDias, type Lote, type LoteConDias, type Urgencia } from "./movimientos/vencimientos";
 import CampoBuscar from "@/components/ui-system/CampoBuscar";
+import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_LOTES, ORDEN_LOTES } from "./movimientos/columnas-filtro";
 
 type Producto = { id: number; name: string; unit: string };
 type Filtro = Urgencia | "todos";
@@ -103,13 +106,18 @@ export default function SimpleExpiryTab() {
   const cuentas = useMemo(() => contarLotes(enriquecidos), [enriquecidos]);
   const kpis = useIndicadoresLotes(cuentas, enriquecidos.length, cargando && lotes.length === 0);
 
-  const filtrados = useMemo(() => {
+  const delaBarra = useMemo(() => {
     let lista = enriquecidos;
     if (filtro !== "todos") lista = lista.filter((b) => b.urgencia === filtro);
     const q = busca.trim().toLowerCase();
     if (q) lista = lista.filter((b) => [b.productName, b.lote, b.supplierName].some((t) => (t ?? "").toLowerCase().includes(q)));
     return lista;
   }, [enriquecidos, busca, filtro]);
+
+  // Filtros de columna (cantidad, vence, valor) y orden, encima del estado y el buscador.
+  const f = useFiltrosTabla(delaBarra, COLUMNAS_LOTES);
+  const ord = useOrdenColumna(ORDEN_LOTES);
+  const filtrados = useMemo(() => ord.ordenar(f.filtradas), [ord, f.filtradas]);
 
   const chips = [
     { v: "todos" as const, label: "Todos", cuenta: enriquecidos.length },
@@ -157,15 +165,16 @@ export default function SimpleExpiryTab() {
           <CampoBuscar className="basis-56 sm:max-w-sm" valor={busca} onCambiar={setBusca} placeholder="Producto, lote o proveedor…" etiqueta="Buscar lotes" />
           <Chips opciones={chips} valor={filtro} onCambiar={setFiltro} etiqueta="Estado del lote" />
         </div>
+        <BarraFiltrosTabla f={f} />
         {cargando && lotes.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-secondary)]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Cargando vencimientos…</p>
-        ) : filtrados.length === 0 ? (
+        ) : delaBarra.length === 0 ? (
           <p className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] py-10 text-center text-sm text-[var(--text-secondary)]">
             <CheckCircle className="h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
             {filtro !== "todos" || busca.trim() ? "Ningún lote coincide con esos filtros." : "Sin lotes con vencimiento: con «Registrar lote» anotas el primero."}
           </p>
         ) : (
-          <TablaLotes lotes={filtrados} revisados={revisados} confirmando={confirmando} onConfirmar={setConfirmando} onBaja={(b) => void darDeBaja(b)} onRevisado={marcarRevisado} />
+          <TablaLotes lotes={filtrados} revisados={revisados} confirmando={confirmando} onConfirmar={setConfirmando} onBaja={(b) => void darDeBaja(b)} onRevisado={marcarRevisado} f={f} ord={ord} />
         )}
       </CuerpoDeSeccion>
 

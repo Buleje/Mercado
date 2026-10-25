@@ -29,6 +29,9 @@ import { CAUSA, CAUSAS, EN_EL_PERIODO, PERIODOS, causaDe, desdeDe, diaDelMovimie
 import { usePerdidas } from "./use-datos";
 import { useIndicadoresPerdidas } from "./use-indicadores";
 import CampoBuscar from "@/components/ui-system/CampoBuscar";
+import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_PERDIDAS_FILTRO, ORDEN_PERDIDAS } from "./columnas-filtro";
 
 interface Props {
   titulo: string;
@@ -55,7 +58,7 @@ export function PerdidasSeccion({ titulo, secciones, panel, productos, recargarP
     return desde == null ? datos.perdidas : datos.perdidas.filter((p) => Date.parse(p.createdAt) >= desde);
   }, [datos.perdidas, periodo]);
 
-  const filas = useMemo<FilaPerdida[]>(() => {
+  const delaBarra = useMemo<FilaPerdida[]>(() => {
     const q = busca.trim().toLowerCase();
     return delPeriodo
       .map((p) => {
@@ -66,6 +69,11 @@ export function PerdidasSeccion({ titulo, secciones, panel, productos, recargarP
       .filter((p) => causas.length === 0 || causas.includes(causaDe(p.lossType)))
       .filter((p) => !q || [p.productName, p.categoria, p.notes, p.createdBy].some((t) => (t ?? "").toLowerCase().includes(q)));
   }, [delPeriodo, porId, causas, busca]);
+
+  // Filtros de columna (cantidad, costo, pérdida) y orden, encima de lo que dejó la barra.
+  const f = useFiltrosTabla(delaBarra, COLUMNAS_PERDIDAS_FILTRO);
+  const ord = useOrdenColumna(ORDEN_PERDIDAS);
+  const filas = useMemo(() => ord.ordenar(f.filtradas), [ord, f.filtradas]);
 
   // Las cifras son de lo que se está viendo (período + causa + búsqueda), como en Movimientos.
   const resumen = useMemo(() => resumirPerdidas(filas, (id) => porId.get(id)?.costPrice ?? 0), [filas, porId]);
@@ -88,7 +96,7 @@ export function PerdidasSeccion({ titulo, secciones, panel, productos, recargarP
     },
     { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => { void datos.recargar(); recargarProductos(); } },
   ];
-  const filtrosActivos = causas.length > 0 || busca.trim() !== "";
+  const filtrosActivos = causas.length > 0 || busca.trim() !== "" || f.activos > 0;
   const parcial = datos.totalServidor != null && datos.perdidas.length < datos.totalServidor;
 
   return (
@@ -123,14 +131,16 @@ export function PerdidasSeccion({ titulo, secciones, panel, productos, recargarP
           <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} className="h-12!" />
         </div>
 
+        <BarraFiltrosTabla f={f} />
+
         {datos.cargando && datos.perdidas.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-secondary)]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Cargando pérdidas…</p>
-        ) : filas.length === 0 ? (
+        ) : delaBarra.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] py-10 text-center text-sm text-[var(--text-secondary)]">
             {filtrosActivos ? "Ninguna pérdida coincide con esos filtros." : `Sin pérdidas ${EN_EL_PERIODO[periodo]}.`}
           </p>
         ) : (
-          <TablaPerdidas filas={filas} hoy={hoy} orden={orden} onVer={setDetalle} />
+          <TablaPerdidas filas={filas} hoy={hoy} orden={orden} onVer={setDetalle} f={f} ord={ord} />
         )}
       </CuerpoDeSeccion>
 

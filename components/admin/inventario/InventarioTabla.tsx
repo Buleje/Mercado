@@ -5,6 +5,9 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import { cn } from "@/lib/utils";
 import { Paginator } from "@/hooks/use-pagination";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
+import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import type { Rango } from "@/lib/admin/filtros-columna";
+import { ThCelda } from "@/components/admin/inventario/th-celda";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 import InventarioAltaRapida from "@/components/admin/inventario/InventarioAltaRapida";
 import InventarioFilasTabla from "@/components/admin/inventario/InventarioFilasTabla";
@@ -13,7 +16,9 @@ import InventarioFilasTabla from "@/components/admin/inventario/InventarioFilasT
 export default function InventarioTabla({ inv }: { inv: Inventario }) {
   const {
     products, viewMode, selectedIds, showExtendedCols, orden, verColumnaCosto, filteredProducts, pgProducts,
-    toggleSelectAll,
+    toggleSelectAll, ordenCol, catFilter, setCatFilter, dynamicCategories, estadoFiltro, setEstadoFiltro,
+    activeProducts, totalProducts, stockRango, setStockRango, vencRango, setVencRango,
+    precioRango, setPrecioRango, costoRango, setCostoRango,
   } = inv;
   return (
     <>
@@ -35,17 +40,48 @@ export default function InventarioTabla({ inv }: { inv: Inventario }) {
                   orden={orden.orden}
                   celdas={{
                     img: <th data-col="img" className="w-12">Foto</th>,
-                    producto: <th data-col="producto">Producto</th>,
-                    categoria: <th data-col="categoria">Categoría</th>,
-                    precio: <th data-col="precio">Precio</th>,
+                    producto: <ThCelda col="producto" label="Producto" orden={ordenCol} ordenId="producto" />,
+                    categoria: (
+                      <ThCelda col="categoria" label="Categoría" orden={ordenCol} ordenId="categoria">
+                        <FiltroColumnaMulti
+                          compacto label="Categoría" value={catFilter} onChange={setCatFilter}
+                          options={dynamicCategories.filter(c => c.id !== "todos").map(c => ({ value: c.id, count: c.count }))}
+                          etiqueta={(id) => dynamicCategories.find(c => c.id === id)?.label ?? id}
+                        />
+                      </ThCelda>
+                    ),
+                    precio: (
+                      <ThCelda col="precio" label="Precio" orden={ordenCol} ordenId="precio">
+                        <FiltroColumnaRango compacto label="Precio" unidad="S/" paso={0.01} valor={precioRango} onChange={(r) => setPrecioRango(r as Rango<number>)} />
+                      </ThCelda>
+                    ),
                     historial: <th data-col="historial" className={cn(!showExtendedCols && "hidden")}>Historial</th>,
                     badge: <th data-col="badge" className={cn(!showExtendedCols && "hidden")}>Badge</th>,
-                    stock: <th data-col="stock">Stock</th>,
-                    costoProm: <th data-col="costoProm" className={cn(!verColumnaCosto && "hidden")} title="Lo que te cuesta cada unidad; con él sale el margen. Enter guarda, Esc cancela">Costo</th>,
+                    stock: (
+                      <ThCelda col="stock" label="Stock" orden={ordenCol} ordenId="stock">
+                        <FiltroColumnaRango compacto label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} />
+                      </ThCelda>
+                    ),
+                    costoProm: (
+                      <ThCelda col="costoProm" label="Costo" className={cn(!verColumnaCosto && "hidden")} title="Lo que te cuesta cada unidad; con él sale el margen. Enter guarda, Esc cancela" orden={ordenCol} ordenId="costoProm">
+                        <FiltroColumnaRango compacto label="Costo" unidad="S/" paso={0.01} valor={costoRango} onChange={(r) => setCostoRango(r as Rango<number>)} />
+                      </ThCelda>
+                    ),
                     rotacion: <th data-col="rotacion" className={cn(!showExtendedCols && "hidden")}>Rotación</th>,
                     cambio30d: <th data-col="cambio30d" className={cn(!showExtendedCols && "hidden")}>Cambio 30d</th>,
-                    vence: <th data-col="vence" className={cn(!showExtendedCols && "hidden")}>Vence</th>,
-                    estado: <th data-col="estado">Estado</th>,
+                    vence: (
+                      <ThCelda col="vence" label="Vence" className={cn(!showExtendedCols && "hidden")} orden={ordenCol} ordenId="vence">
+                        <FiltroColumnaRango compacto esFecha label="Vence" valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} />
+                      </ThCelda>
+                    ),
+                    estado: (
+                      <ThCelda col="estado" label="Estado" orden={ordenCol} ordenId="estado">
+                        <FiltroColumnaMulti
+                          compacto label="Estado" value={estadoFiltro} onChange={setEstadoFiltro}
+                          options={[{ value: "Activo", count: activeProducts }, { value: "Inactivo", count: totalProducts - activeProducts }]}
+                        />
+                      </ThCelda>
+                    ),
                   }}
                 />
                 <th className="text-right">Acciones</th>

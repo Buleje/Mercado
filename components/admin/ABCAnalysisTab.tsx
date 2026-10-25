@@ -9,11 +9,31 @@ import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import type { ABCProduct } from "@/app/api/analytics/abc/route";
 import { formatCurrency } from "@/lib/format";
 import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 const CLASS_STYLES: Record<"A" | "B" | "C", { label: string; variant: BadgeVariant }> = {
   A: { label: "Crítico", variant: "success" },
   B: { label: "Importante", variant: "warning" },
   C: { label: "Bajo impacto", variant: "error" },
+};
+
+/* Filtros y orden de la tabla (las tres tarjetas de clase de arriba siguen filtrando por clase). */
+const COLUMNAS: readonly ColumnaFiltro<ABCProduct>[] = [
+  { id: "categoria", label: "Categoría", tipo: "multi", valor: (p) => p.category, soloConVarios: true },
+  { id: "ingresos", label: "Ingresos", tipo: "rango", numero: (p) => p.revenue, unidad: "S/", paso: 0.01 },
+  { id: "unidades", label: "Unidades", tipo: "rango", numero: (p) => p.units, paso: 1 },
+  { id: "acum", label: "Acum. %", tipo: "rango", numero: (p) => p.cumulativePct, unidad: "%", paso: 1 },
+];
+const ORDEN: Record<string, AccesorOrden<ABCProduct>> = {
+  puesto: { valor: (p) => p.cumulativePct },
+  producto: { valor: (p) => p.name, texto: true },
+  categoria: { valor: (p) => p.category, texto: true },
+  ingresos: { valor: (p) => p.revenue },
+  unidades: { valor: (p) => p.units },
+  acum: { valor: (p) => p.cumulativePct },
+  clase: { valor: (p) => p.class, texto: true },
 };
 
 function fmt(n: number) { return `${formatCurrency(n)}`; }
@@ -31,11 +51,14 @@ export default function ABCAnalysisTab() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = data.filter(p => {
+  const delaBarra = data.filter(p => {
     if (filter !== "all" && p.class !== filter) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+  const f = useFiltrosTabla(delaBarra, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filtered = ord.ordenar(f.filtradas);
 
   const counts = { A: data.filter(p => p.class === "A").length, B: data.filter(p => p.class === "B").length, C: data.filter(p => p.class === "C").length };
   const revenue = { A: data.filter(p => p.class === "A").reduce((s, p) => s + p.revenue, 0), B: data.filter(p => p.class === "B").reduce((s, p) => s + p.revenue, 0), C: data.filter(p => p.class === "C").reduce((s, p) => s + p.revenue, 0) };
@@ -88,16 +111,17 @@ export default function ABCAnalysisTab() {
         </label>
       </div>
 
+      <BarraFiltrosTabla f={f} />
       <DataTable stickyHeader wrapperClassName="max-h-[26rem] overflow-y-auto" className="min-w-[600px]">
         <thead>
           <tr>
-            <th className="w-8">#</th>
-            <th>Producto</th>
-            <th className="hidden sm:table-cell">Categoría</th>
-            <th className="text-right">Ingresos</th>
-            <th className="hidden text-right md:table-cell">Unidades</th>
-            <th className="hidden text-right md:table-cell">Acum. %</th>
-            <th className="text-center">Clase</th>
+            <ThColumna label="#" className="w-8" f={f} orden={ord} ordenId="puesto" />
+            <ThColumna label="Producto" f={f} orden={ord} ordenId="producto" />
+            <ThColumna label="Categoría" ids={["categoria"]} f={f} className="hidden sm:table-cell" orden={ord} ordenId="categoria" />
+            <ThColumna label="Ingresos" ids={["ingresos"]} f={f} derecha orden={ord} ordenId="ingresos" />
+            <ThColumna label="Unidades" ids={["unidades"]} f={f} derecha className="hidden md:table-cell" orden={ord} ordenId="unidades" />
+            <ThColumna label="Acum. %" ids={["acum"]} f={f} derecha className="hidden md:table-cell" orden={ord} ordenId="acum" />
+            <ThColumna label="Clase" f={f} orden={ord} ordenId="clase" />
           </tr>
         </thead>
         <tbody>
@@ -114,11 +138,7 @@ export default function ABCAnalysisTab() {
               </td>
             </tr>
           ))}
-          {filtered.length === 0 && (
-            <tr>
-              <td colSpan={7} className="text-center text-[var(--text-secondary)]">No se encontraron productos</td>
-            </tr>
-          )}
+          {filtered.length === 0 && <SinCoincidenciasFila colSpan={7} />}
         </tbody>
       </DataTable>
     </div>

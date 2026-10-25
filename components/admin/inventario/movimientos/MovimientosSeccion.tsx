@@ -28,6 +28,9 @@ import { CAUSA, EN_EL_PERIODO, PERIODOS, causaDe, desdeDe, diaDelMovimiento, met
 import { useMovimientos } from "./use-datos";
 import { useIndicadoresMovimientos } from "./use-indicadores";
 import CampoBuscar from "@/components/ui-system/CampoBuscar";
+import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_MOVIMIENTOS, ORDEN_MOVIMIENTOS } from "./columnas-filtro";
 
 const DE_A = 15;
 
@@ -73,7 +76,7 @@ export function MovimientosSeccion({ titulo, secciones, panel, productos, recarg
     return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([value, count]) => ({ value, count }));
   }, [delPeriodo]);
 
-  const filtradas = useMemo(() => {
+  const delaBarra = useMemo(() => {
     let lista = delPeriodo;
     if (tipos.length > 0) lista = lista.filter((m) => tipos.includes(m.type));
     const q = busca.trim().toLowerCase();
@@ -85,9 +88,15 @@ export function MovimientosSeccion({ titulo, secciones, panel, productos, recarg
     return lista;
   }, [delPeriodo, tipos, busca]);
 
+  /* Filtros de columna (cantidad y stock) y orden: encima de lo que ya dejó la barra.
+     Las cifras, el CSV y el «X de Y» son de lo que se ve. */
+  const f = useFiltrosTabla(delaBarra, COLUMNAS_MOVIMIENTOS);
+  const ord = useOrdenColumna(ORDEN_MOVIMIENTOS);
+  const filtradas = useMemo(() => ord.ordenar(f.filtradas), [ord, f.filtradas]);
+
   const totales = useMemo(() => totalesDe(filtradas), [filtradas]);
   const kpis = useIndicadoresMovimientos(totales, periodo, datos.cargando && datos.movimientos.length === 0);
-  const filtrosActivos = tipos.length > 0 || busca.trim() !== "";
+  const filtrosActivos = tipos.length > 0 || busca.trim() !== "" || f.activos > 0;
 
   const acciones: MenuAccion[] = [
     {
@@ -132,16 +141,18 @@ export function MovimientosSeccion({ titulo, secciones, panel, productos, recarg
           <FiltroColumnaMulti label="Tipo" value={tipos} options={opcionesTipo} etiqueta={(v) => metaDeTipo(v).label} onChange={(v) => { setTipos(v); setVisibles(DE_A); }} placeholder="Tipo: todos" className={FILTRO_EN_FILA} />
         </div>
 
+        <BarraFiltrosTabla f={f} />
+
         {datos.cargando && datos.movimientos.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-secondary)]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Cargando movimientos…</p>
-        ) : filtradas.length === 0 ? (
+        ) : delaBarra.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--rule-base)] py-10 text-center text-sm text-[var(--text-secondary)]">
             <Package className="mx-auto mb-2 h-7 w-7 opacity-40" aria-hidden />
             {filtrosActivos ? "Ningún movimiento coincide con esos filtros." : `Sin movimientos ${EN_EL_PERIODO[periodo]}.`}
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl bg-[var(--surface-raised)]">
-            <TablaMovimientos filas={mostradas} hoy={hoy} onVer={setDetalle} />
+            <TablaMovimientos filas={mostradas} hoy={hoy} onVer={setDetalle} f={f} ord={ord} />
             <div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-2 text-sm text-[var(--text-secondary)]">
               {/* «X de Y» de lo que se está viendo; y si el servidor tiene más de lo traído, se dice. */}
               <span>

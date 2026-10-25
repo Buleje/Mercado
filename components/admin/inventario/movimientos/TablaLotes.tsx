@@ -13,6 +13,9 @@ import { soles } from "./use-indicadores";
 import { diaConNombre } from "./tipos";
 import { fraseDeDias, type LoteConDias, type Urgencia } from "./vencimientos";
 import { button } from "@/components/ui-system/button-variants";
+import { SinCoincidenciasFila, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import type { OrdenColumna } from "@/components/admin/shared/use-orden-columna";
 
 export const URGENCIA: Record<Urgencia, { label: string; chip: string; Icon: typeof AlertTriangle }> = {
   vencido: { label: "Vencidos", chip: "bg-[var(--data-error-100)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]", Icon: AlertTriangle },
@@ -31,21 +34,25 @@ interface Props {
   onConfirmar: (id: string | null) => void;
   onBaja: (l: LoteConDias) => void;
   onRevisado: (id: string) => void;
+  /** Filtros y orden de cantidad, vencimiento y valor (el estado del lote y el buscador siguen arriba). */
+  f: FiltrosTabla<LoteConDias>;
+  ord: OrdenColumna<LoteConDias>;
 }
 
-export function TablaLotes({ lotes, revisados, confirmando, onConfirmar, onBaja, onRevisado }: Props) {
+export function TablaLotes({ lotes, revisados, confirmando, onConfirmar, onBaja, onRevisado, f, ord }: Props) {
   return (
     <DataTable className="min-w-[680px] [&_tbody_td]:py-1.5! [&_tbody_td]:align-middle">
       <thead>
         <tr>
-          <th>Producto</th>
-          <th className="text-right">Cantidad</th>
-          <th>Vence</th>
-          <th className="text-right">Valor</th>
+          <ThColumna label="Producto" f={f} orden={ord} ordenId="producto" />
+          <ThColumna label="Cantidad" ids={["cantidad"]} f={f} derecha orden={ord} ordenId="cantidad" />
+          <ThColumna label="Vence" ids={["vence"]} f={f} orden={ord} ordenId="vence" />
+          <ThColumna label="Valor" ids={["valor"]} f={f} derecha orden={ord} ordenId="valor" />
           <th className="text-right"><span className="sr-only">Acciones</span></th>
         </tr>
       </thead>
       <tbody>
+        {lotes.length === 0 && <SinCoincidenciasFila colSpan={5} />}
         {lotes.map((b) => {
           const u = URGENCIA[b.urgencia];
           const revisado = revisados.has(b.id);

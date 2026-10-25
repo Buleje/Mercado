@@ -1,9 +1,10 @@
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useState } from "react";
 import { leFalta } from "@/lib/inventario/catalogo-incompleto";
 import type { DbProduct } from "@/lib/jsondb";
 import { usePagination } from "@/hooks/use-pagination";
 import { formatDateShort } from "@/lib/format";
-import { enRango, rangoActivo, textoDeRango, type ChipFiltro } from "@/lib/admin/filtros-columna";
+import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type Rango } from "@/lib/admin/filtros-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { realCategories, claveCategoria, coincideBusqueda, textoDeCategoria } from "@/components/admin/inventario/inventario-compartido";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { useInventarioCarga } from "@/components/admin/inventario/hooks/use-inventario-carga";
@@ -156,7 +157,22 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
     return fecha ? fecha.slice(0, 10) : null;
   };
 
-  const filteredProducts = products.filter(p => {
+  /* Precio y costo: rangos de la cabecera (viven aquí, no en el estado de la vista). */
+  const [precioRango, setPrecioRango] = useState<Rango<number>>({ min: null, max: null });
+  const [costoRango, setCostoRango] = useState<Rango<number>>({ min: null, max: null });
+  /* Orden por columna (título clicable). Sin elegir, queda el orden con que llegan. */
+  const accesoresOrden = useMemo<Record<string, AccesorOrden<DbProduct>>>(() => ({
+    producto: { valor: p => p.name, texto: true },
+    categoria: { valor: p => catLabelOf(p.category), texto: true },
+    precio: { valor: p => Number(p.price) },
+    stock: { valor: p => p.stock ?? null },
+    costoProm: { valor: p => (p.type === "service" ? null : p.costPrice ?? null) },
+    vence: { valor: p => expiryOf(p) },
+    estado: { valor: p => (p.active ? "Activo" : "Inactivo"), texto: true },
+  }), [catLabelOf]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ordenCol = useOrdenColumna(accesoresOrden);
+
+  const filtrados = products.filter(p => {
     // Único filtro de Estado (antes: booleano `showInactive` + este mismo
     // chequeo por separado). `estadoFiltro` vacío = todos, como cualquier
     // otro autofiltro de columna.
@@ -165,11 +181,15 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
     if (lowOnly && !isLowStock(p)) return false;
     if (!enRango(p.stock ?? null, stockRango)) return false;
     if (!enRango(expiryOf(p), vencRango)) return false;
+    if (!enRango(Number(p.price), precioRango)) return false;
+    if (!enRango(p.type === "service" ? null : p.costPrice ?? null, costoRango)) return false;
     // Mejora 8R2: Filtro sin imagen
     if (noImageOnly && p.image && p.image !== "") return false;
     if (faltaDato && !leFalta(p, faltaDato)) return false;
     return coincideBusqueda(p, search);
   });
+
+  const filteredProducts = ordenCol.ordenar(filtrados);
 
   const filteredMovements = movements.filter(m => {
     if (search) {
@@ -203,23 +223,27 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
       : []),
     ...(rangoActivo(stockRango) ? [{ id: "stock", label: "Stock", texto: textoDeRango("Stock", stockRango) }] : []),
     ...(rangoActivo(vencRango) ? [{ id: "vence", label: "Vence", texto: textoDeRango("Vence", vencRango, { formatear: fechaCorta }) }] : []),
+    ...(rangoActivo(precioRango) ? [{ id: "precio", label: "Precio", texto: textoDeRango("Precio", precioRango, { unidad: "S/" }) }] : []),
+    ...(rangoActivo(costoRango) ? [{ id: "costo", label: "Costo", texto: textoDeRango("Costo", costoRango, { unidad: "S/" }) }] : []),
   ];
   const quitarChip = (id: string) => {
     if (id === "categoria") setCatFilter([]);
     else if (id === "estado") setEstadoFiltro(["Activo"]);
     else if (id === "stock") setStockRango({ min: null, max: null });
     else if (id === "vence") setVencRango({ min: null, max: null });
+    else if (id === "precio") setPrecioRango({ min: null, max: null });
+    else if (id === "costo") setCostoRango({ min: null, max: null });
   };
 
   const pgProducts = usePagination(filteredProducts, 50);
   const pgMovements = usePagination(filteredMovements, 50);
 
   // Reset pagination when filters change
-  useEffect(() => { pgProducts.reset(); }, [search, catFilter, estadoFiltro, stockRango, vencRango, lowOnly, noImageOnly, faltaDato]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { pgProducts.reset(); }, [search, catFilter, estadoFiltro, stockRango, vencRango, precioRango, costoRango, ordenCol.activa, ordenCol.direccion, lowOnly, noImageOnly, faltaDato]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { pgMovements.reset(); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
   return {
     dynamicCategories, CATEGORIAS_A_LA_VISTA, chipsVisibles, chipsEnMenu, formCategories, catLabelOf, opcionDeCategoria,
     noImageCount, expiryOf, filteredProducts, filteredMovements, fechaCorta, chipsDeColumna,
-    quitarChip, pgProducts, pgMovements,
+    quitarChip, pgProducts, pgMovements, precioRango, setPrecioRango, costoRango, setCostoRango, ordenCol,
   };
 }

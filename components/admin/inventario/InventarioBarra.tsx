@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Search, ScanBarcode, Camera } from "@buleje/design-system/icons";
+import { useEffect, useState } from "react";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { rangoActivo, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
@@ -29,17 +30,28 @@ const FILTRO_EN_FILA = "mt-0! min-w-0 w-full [&_summary]:h-12 [&_summary]:rounde
  * «Nuevo» y el «⋯» se mudaron a la cabecera de la vista.
  */
 export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inventario; onBuscarConEscaner: () => void }) {
+  // Con tabla a la vista (≥ sm) esos filtros viven en su encabezado: no se dibujan dos veces.
+  const [angosto, setAngosto] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mql = window.matchMedia("(max-width: 639px)");
+    const poner = () => setAngosto(mql.matches);
+    poner();
+    mql.addEventListener("change", poner);
+    return () => mql.removeEventListener("change", poner);
+  }, []);
   const {
     search, setSearch, searchPlaceholders, phIndex, catFilter, setCatFilter, dynamicCategories,
     lowOnly, setLowOnly, estadoFiltro, setEstadoFiltro, showInactive, stockRango, setStockRango, vencRango,
     setVencRango, noImageOnly, setNoImageOnly, faltaDato, setFaltaDato,
+    viewMode, precioRango, setPrecioRango, costoRango, setCostoRango,
     noImageCount, lowStockCount, filteredProducts, products, activeProducts, totalProducts,
   } = inv;
   /* Lo que vive dentro de «Filtros»: se cuenta en el botón para que un filtro
      puesto no quede escondido con el panel cerrado. El Estado por defecto
      («Activo») no cuenta: es lo de siempre. */
   const estadoPuesto = !(estadoFiltro.length === 1 && estadoFiltro[0] === "Activo") && !(showInactive && estadoFiltro.length === 0);
-  const avanzados = (estadoPuesto ? 1 : 0) + (rangoActivo(stockRango) ? 1 : 0) + (rangoActivo(vencRango) ? 1 : 0);
+  const avanzados = (estadoPuesto ? 1 : 0) + (rangoActivo(stockRango) ? 1 : 0) + (rangoActivo(vencRango) ? 1 : 0) + (rangoActivo(precioRango) ? 1 : 0) + (rangoActivo(costoRango) ? 1 : 0);
   const activos = (lowOnly ? 1 : 0) + (noImageOnly ? 1 : 0) + (faltaDato ? 1 : 0) + (catFilter.length > 0 ? 1 : 0) + avanzados;
   const textoRango = (r: { min: unknown; max: unknown }) => `${r.min ?? "…"} – ${r.max ?? "…"}`;
   const chips: ChipFiltroActivo[] = [
@@ -50,6 +62,8 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
     ...(estadoPuesto ? [{ id: "estado", label: showInactive && estadoFiltro.length === 0 ? "Todos los estados" : estadoFiltro.join(" / "), onQuitar: () => setEstadoFiltro(["Activo"]) }] : []),
     ...(rangoActivo(stockRango) ? [{ id: "stock", label: `Stock ${textoRango(stockRango)}`, onQuitar: () => setStockRango({ min: null, max: null }) }] : []),
     ...(rangoActivo(vencRango) ? [{ id: "venc", label: `Vence ${textoRango(vencRango)}`, onQuitar: () => setVencRango({ min: null, max: null }) }] : []),
+    ...(rangoActivo(precioRango) ? [{ id: "precio", label: `Precio ${textoRango(precioRango)}`, onQuitar: () => setPrecioRango({ min: null, max: null }) }] : []),
+    ...(rangoActivo(costoRango) ? [{ id: "costo", label: `Costo ${textoRango(costoRango)}`, onQuitar: () => setCostoRango({ min: null, max: null }) }] : []),
   ];
   const hayFiltros = lowOnly || showInactive || noImageOnly || Boolean(faltaDato) || catFilter.length > 0 || avanzados > 0;
   const limpiar = () => {
@@ -60,6 +74,8 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
     setCatFilter([]);
     setStockRango({ min: null, max: null });
     setVencRango({ min: null, max: null });
+    setPrecioRango({ min: null, max: null });
+    setCostoRango({ min: null, max: null });
   };
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -86,6 +102,10 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
       </div>
       <FiltrosEnBoton activos={activos} chips={chips} onLimpiar={limpiar}>
         <div className="flex flex-col gap-2">
+          {/* Con la tabla a la vista (desde sm) estos cuatro viven en su encabezado;
+              aquí quedan para el celular y las tarjetas, donde no hay encabezado. */}
+          {(viewMode === "cards" || angosto) && (
+          <div className="contents">
           {dynamicCategories.length > 1 && (
             <FiltroColumnaMulti
               label="Categoría"
@@ -110,6 +130,8 @@ export default function InventarioBarra({ inv, onBuscarConEscaner }: { inv: Inve
           />
           <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} placeholder="Stock: cualquiera" className={FILTRO_EN_FILA} />
           <FiltroColumnaRango label="Vence" esFecha valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} placeholder="Vence: cuando sea" className={FILTRO_EN_FILA} />
+          </div>
+          )}
           <div className="flex flex-wrap gap-2">
             <button type="button" aria-pressed={lowOnly} onClick={() => setLowOnly(!lowOnly)} className={chip(lowOnly, TONO_AVISO)}>
               <AlertTriangle className="h-4 w-4" aria-hidden /> Bajo stock{lowStockCount > 0 ? ` (${lowStockCount})` : ""}

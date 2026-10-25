@@ -7,6 +7,9 @@
  */
 import { DataTable } from "@buleje/design-system";
 import { formatTime } from "@/lib/format";
+import { SinCoincidenciasFila, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import type { OrdenColumna } from "@/components/admin/shared/use-orden-columna";
 import { cn } from "@/lib/utils";
 import { CAUSA, causaDe, diaDelMovimiento, type Direccion, type Movimiento } from "./tipos";
 import type { LucideIcon } from "@buleje/design-system/icons";
@@ -28,19 +31,24 @@ export function rotuloDe(m: FilaMovimiento): string {
   return m.type === "merma" ? `Pérdida · ${CAUSA[causaDe(m.lossType)].label.toLowerCase()}` : m.label;
 }
 
-export function TablaMovimientos({ filas, hoy, onVer }: { filas: readonly FilaMovimiento[]; hoy: string; onVer: (m: FilaMovimiento) => void }) {
+/** `f` y `ord`: los filtros y el orden de las columnas de cantidad y stock (el período y el tipo siguen en la barra). */
+export function TablaMovimientos({ filas, hoy, onVer, f, ord }: {
+  filas: readonly FilaMovimiento[]; hoy: string; onVer: (m: FilaMovimiento) => void;
+  f: FiltrosTabla<FilaMovimiento>; ord: OrdenColumna<FilaMovimiento>;
+}) {
   return (
     <DataTable className="min-w-[640px] [&_tbody_td]:py-1.5! [&_tbody_td]:align-top">
       <thead>
         <tr>
-          <th>Cuándo</th>
-          <th>Producto</th>
-          <th>Movimiento</th>
-          <th className="text-right">Cantidad</th>
-          <th className="text-right">Stock</th>
+          <ThColumna label="Cuándo" f={f} orden={ord} ordenId="cuando" />
+          <ThColumna label="Producto" f={f} orden={ord} ordenId="producto" />
+          <ThColumna label="Movimiento" f={f} orden={ord} ordenId="movimiento" />
+          <ThColumna label="Cantidad" ids={["cantidad"]} f={f} derecha orden={ord} ordenId="cantidad" />
+          <ThColumna label="Stock" ids={["stock"]} f={f} derecha orden={ord} ordenId="stock" />
         </tr>
       </thead>
       <tbody>
+        {filas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
         {filas.map((m) => (
           <tr
             key={m.id}

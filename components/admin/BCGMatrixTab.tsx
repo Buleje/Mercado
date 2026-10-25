@@ -13,6 +13,9 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 import type { BCGProduct } from "@/app/api/analytics/bcg/route";
 import { formatNumber } from "@/lib/format";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 /* ── Types ── */
 type Quadrant = "estrella" | "vaca" | "interrogante" | "perro";
@@ -27,6 +30,22 @@ const Q_CONFIG: Record<Quadrant, { label: string; Icon: LucideIcon; color: strin
   vaca: { label: "Vacas Lecheras", Icon: Coins, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
   interrogante: { label: "Interrogantes", Icon: HelpCircle, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
   perro: { label: "Perros", Icon: TrendingDown, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-canvas)]/20 border-[var(--rule-base)]", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
+};
+
+/* Filtros y orden de la tabla (los cuatro cuadrantes de arriba siguen filtrando por cuadrante). */
+const COLUMNAS: readonly ColumnaFiltro<Product>[] = [
+  { id: "categoria", label: "Categoría", tipo: "multi", valor: (p) => p.category, soloConVarios: true },
+  { id: "ingreso", label: "Ingreso", tipo: "rango", numero: (p) => p.revenue, unidad: "S/", paso: 0.01 },
+  { id: "crecimiento", label: "Crecimiento", tipo: "rango", numero: (p) => p.growth, unidad: "%", paso: 1 },
+  { id: "participacion", label: "Participación", tipo: "rango", numero: (p) => p.marketShare, unidad: "%", paso: 0.1 },
+];
+const ORDEN: Record<string, AccesorOrden<Product>> = {
+  producto: { valor: (p) => p.name, texto: true },
+  categoria: { valor: (p) => p.category, texto: true },
+  ingreso: { valor: (p) => p.revenue },
+  crecimiento: { valor: (p) => p.growth },
+  participacion: { valor: (p) => p.marketShare },
+  cuadrante: { valor: (p) => Q_CONFIG[p.quadrant].label, texto: true },
 };
 
 const fmt = (n: number) => `S/ ${formatNumber(n, { min: 2 })}`;
@@ -76,7 +95,10 @@ export default function BCGMatrixTab() {
     return g;
   }, [PRODUCTS]);
 
-  const filtered = selectedQ === "todas" ? PRODUCTS : PRODUCTS.filter(p => p.quadrant === selectedQ);
+  const delCuadrante = selectedQ === "todas" ? PRODUCTS : PRODUCTS.filter(p => p.quadrant === selectedQ);
+  const f = useFiltrosTabla(delCuadrante, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filtered = ord.ordenar(f.filtradas);
   const totalRevenue = PRODUCTS.reduce((s, p) => s + p.revenue, 0);
 
   if (loading) return <LoadingState />;
@@ -107,7 +129,7 @@ export default function BCGMatrixTab() {
             </button>
           );
         })}
-        <button type="button" onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]">
+        <button type="button" onClick={() => exportToCSV(filtered.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -154,17 +176,19 @@ export default function BCGMatrixTab() {
         <div className="pb-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Productos ({filtered.length})</CardTitle>
         </div>
+        <BarraFiltrosTabla f={f} className="pb-2" />
         <DataTable stickyHeader wrapperClassName="max-h-[26rem] overflow-y-auto" className="min-w-[600px]">
             <thead><tr>
-              <th>Producto</th>
-              <th>Categoría</th>
-              <th className="text-right">Ingreso</th>
-              <th className="text-right">Crecimiento</th>
-              <th className="text-right">Participación</th>
-              <th>Cuadrante</th>
-              <th className="text-center">Acción</th>
+              <ThColumna label="Producto" f={f} orden={ord} ordenId="producto" />
+              <ThColumna label="Categoría" ids={["categoria"]} f={f} orden={ord} ordenId="categoria" />
+              <ThColumna label="Ingreso" ids={["ingreso"]} f={f} derecha orden={ord} ordenId="ingreso" />
+              <ThColumna label="Crecimiento" ids={["crecimiento"]} f={f} derecha orden={ord} ordenId="crecimiento" />
+              <ThColumna label="Participación" ids={["participacion"]} f={f} derecha orden={ord} ordenId="participacion" />
+              <ThColumna label="Cuadrante" f={f} orden={ord} ordenId="cuadrante" />
+              <th className="text-center" data-label="Acción">Acción</th>
             </tr></thead>
             <tbody>
+              {filtered.length === 0 && <SinCoincidenciasFila colSpan={7} />}
               {filtered.map(p => {
                 const c = Q_CONFIG[p.quadrant];
                 return (
