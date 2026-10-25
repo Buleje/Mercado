@@ -132,6 +132,13 @@ export function enRango<V extends number | string>(
 }
 
 /** Cómo se lee un rango puesto: «≥ 0.5 m³», «≤ 10/09», «0.5 – 2 m³». */
+/** «2026-10-24» → «24/10» (25-10: el chip de una fecha sin formato propio salía en ISO; las demás
+ *  tablas ya decían 24/10). Lo que no es una fecha ISO queda como está. */
+export function fechaCorta(v: number | string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
+  return m ? `${m[3]}/${m[2]}` : String(v);
+}
+
 export function textoDeRango<V extends number | string>(
   label: string,
   r: Rango<V>,
@@ -271,7 +278,7 @@ export function facetasPuestas<T>(
         label: columna.label,
         texto: textoDeRango(columna.label, v as Rango<never>, {
           unidad: columna.unidad,
-          formatear: columna.formatearValor as ((v: never) => string) | undefined,
+          formatear: (columna.formatearValor ?? (columna.tipo === "fecha" ? fechaCorta : undefined)) as ((v: never) => string) | undefined,
         }),
       });
       continue;

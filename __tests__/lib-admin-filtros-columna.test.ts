@@ -286,6 +286,12 @@ describe("contarFacetas / facetasPuestas / columnasOcultasConFiltro", () => {
     expect(largos[0]?.texto).toBe("Permiso: 2 elegidos");
   });
 
+  it("una fecha sin formato propio sale como 24/10, no en ISO", () => {
+    const colVence = { id: "vence", label: "Vence", tipo: "fecha" as const, numero: () => null };
+    expect(facetasPuestas([colVence], { vence: { min: null, max: "2026-10-24" } })[0]?.texto).toBe("Vence ≤ 24/10");
+    expect(facetasPuestas([colVence], { vence: { min: "2026-10-01", max: "2026-10-31" } })[0]?.texto).toBe("Vence 01/10 – 31/10");
+  });
+
   it("un rango sin topes no genera chip", () => {
     expect(facetasPuestas(columnas, { cantidad: { min: null, max: null } })).toEqual([]);
   });
