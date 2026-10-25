@@ -3,226 +3,120 @@
 /**
  * AnalisisView — Análisis del módulo Adelantos (ADR-121).
  *
- * Mejoras sobre la versión inline anterior:
- *  • KPIs arriba (adelantado / liquidado / pendiente / % recuperado / personas).
- *  • Segmentación por MONEDA (fix bug: antes sumaba S/ y US$ juntos). Toggle si
- *    hay >1 moneda; default a la de mayor volumen.
- *  • Tramos de atraso (mismos 5 de Cobranza, vía `deudoresDeCobranza`/TRAMOS) —
- *    antes bucketeaba por antigüedad del adelanto (`daysSince(fechaAdelanto)`),
- *    el mismo error que `urgencia-cobranza.ts` documenta como el bug que
- *    vino a corregir: un adelanto de 45 días con entrega pactada para el mes
- *    que viene contaba como "vencido" acá aunque en Cobranza no lo fuera.
- *  • Tasa de recuperación + velocidad media de liquidación (días).
- *  • Bloque «Lo que recibiste» (ADR-448, 2026-09-28): lo dado y lo recibido
- *    son plata que se mueve al REVÉS (te deben vs. le debes), así que nunca se
- *    mezclan — el resto de la vista sigue calculando SÓLO sobre `adelantos`
- *    (lo dado); `recibidos` sólo alimenta este bloque nuevo, en la MISMA
- *    moneda elegida arriba (nunca sumar PEN+USD).
+ * 25-10 («Análisis que sí dice algo»): todo llega YA SUMADO del servidor
+ * (`GET /api/adelantos/analisis`, cálculo puro en `lib/adelantos/analisis.ts`);
+ * la pantalla no suma plata. Los gráficos de antes no decían nada: barras de
+ * atraso sin su monto, una curva suavizada que inventaba una «montaña» entre
+ * dos meses, un «Top 5» con el nombre cortado y sin montos, y una dona que
+ * contaba adelantos (no plata) aun con una sola modalidad. Ahora:
+ *  • Atraso con el monto encima de cada barra (misma regla que Cobranza).
+ *  • «Cuánto de lo que diste ya volvió», por persona: % recuperado, nombre
+ *    completo, lo que te debe y su parte del total (reemplaza al Top 5: quién
+ *    debe más va primero).
+ *  • «Quién tarda más en devolver»: días promedio por persona.
+ *  • «Diste vs Te devolvieron» por mes, en barras con su cifra.
+ *  • La modalidad sólo si hay más de una, en plata.
+ *  • «Lo que recibiste» (ADR-448) sigue aparte, en la misma moneda elegida.
+ * Cada moneda va aparte (toggle si hay más de una; nunca se suman S/ y US$).
  */
 
-import { useMemo, useState } from "react";
-import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
+import { useState } from "react";
+import { SectionTitle, ErrorAlert } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
-import { BarChart3, TrendingDown, TrendingUp, Coins, Clock, FileText, Gauge, MoreHorizontal, PartyPopper, ArrowDownToLine, Wrench, Landmark } from "@buleje/design-system/icons";
-import {
-  ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip,
-} from "recharts";
+import { BarChart3, TrendingDown, TrendingUp, Coins, Clock, FileText, Gauge, MoreHorizontal, PartyPopper, Timer, Layers, ArrowDownToLine } from "@buleje/design-system/icons";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { button } from "@/components/ui-system/button-variants";
 import { fmtMon, EmptyState, SkeletonGrid } from "./shared";
-import { deudoresDeCobranza } from "@/lib/adelantos/urgencia-cobranza";
-import { TRAMOS, tramoDe, type TramoId } from "@/lib/adelantos/gestion-cobranza";
-import { formatMonth } from "@/lib/format";
-import type { AdelantoConceptoRecibido } from "@/lib/adelantos/direccion";
+import { useAnalisisAdelantos } from "./analisis/use-analisis";
+import { Tarjeta, Muestra } from "./analisis/Tarjeta";
+import { AtrasoBarras } from "./analisis/Atraso";
+import { PorMes, COLOR_DISTE, COLOR_VOLVIO } from "./analisis/PorMes";
+import { VolvioPorPersona, TardaPorPersona } from "./analisis/PorPersona";
+import { PorModalidad, LoQueRecibiste } from "./analisis/ModalidadYRecibido";
+
+const ICONO = "h-5 w-5 shrink-0";
+const monedaLabel = (c: string) => (c === "USD" ? "US$ Dólares" : c === "PEN" ? "S/ Soles" : c);
+
+/** CSV de los movimientos (todas las monedas, con su columna): es un listado, no un total. */
+function exportarCsv(adelantos: DbAdelanto[]) {
+  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const rows: (string | number)[][] = [["Fecha", "Tipo", "Persona", "Modalidad", "Detalle", "Monto", "Moneda"]];
+  for (const a of adelantos) {
+    const persona = a.beneficiario?.nombre ?? "—";
+    // 2026-05-26 (P2-3): fallback PEN si una fila antigua tiene moneda null.
+    const mon = a.moneda || "PEN";
+    if (a.status !== "CANCELADO") rows.push([a.fechaAdelanto.slice(0, 10), "Adelanto", persona, a.modalidad === "CUENTA_CORRIENTE" ? "Cuenta corriente" : "Entregas pactadas", a.notas ?? "", a.montoAdelantado.toFixed(2), mon]);
+    for (const e of a.entregas) rows.push([e.fecha.slice(0, 10), "Entrega", persona, "", e.descripcion ?? "", (-e.valor).toFixed(2), mon]);
+  }
+  const csv = "﻿" + rows.map((r) => r.map(esc).join(",")).join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url; link.download = `adelantos-movimientos-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click(); URL.revokeObjectURL(url);
+}
 
 export function AnalisisView({
   adelantos,
-  recibidos,
   loading,
 }: {
-  /** Sólo lo DADO: todo lo de esta vista (salvo el bloque «Lo que recibiste») es «lo que diste». */
+  /** Sólo lo DADO. Para el CSV y para saber cuándo recargar: los totales vienen del servidor. */
   adelantos: DbAdelanto[];
-  /** Lo RECIBIDO (ADR-448): sólo alimenta el bloque nuevo, nunca los totales de arriba. */
-  recibidos: DbAdelanto[];
+  /** Lo RECIBIDO (ADR-448): el servidor ya lo trae aparte; se acepta para no cambiar al módulo. */
+  recibidos?: DbAdelanto[];
   loading: boolean;
 }) {
-  // Monedas presentes (por volumen, dado + recibido), para el toggle — un
-  // tenant que sólo RECIBE en una moneda no debía perder ese botón.
-  const monedas = useMemo(() => {
-    const vol: Record<string, number> = {};
-    for (const a of [...adelantos, ...recibidos]) {
-      if (a.status === "CANCELADO") continue;
-      const c = a.moneda || "PEN";
-      vol[c] = (vol[c] ?? 0) + a.montoAdelantado;
-    }
-    return Object.keys(vol).sort((x, y) => vol[y] - vol[x]);
-  }, [adelantos, recibidos]);
+  const { datos, cargando, error, reintentar } = useAnalisisAdelantos(adelantos, !loading);
+  const monedas = datos?.monedas ?? [];
+  /* Sin elegir = la de mayor volumen (el servidor las manda ordenadas). */
+  const [moneda, setMoneda] = useState<string | null>(null);
+  const cur = moneda && monedas.includes(moneda) ? moneda : (monedas[0] ?? "PEN");
+  const a = datos?.porMoneda[cur] ?? null;
 
-  const [moneda, setMoneda] = useState<string>(monedas[0] ?? "PEN");
-  const cur = monedas.includes(moneda) ? moneda : (monedas[0] ?? "PEN");
-
-  // Adelantos de la moneda seleccionada (no cancelados).
-  const scoped = useMemo(
-    () => adelantos.filter((a) => (a.moneda || "PEN") === cur && a.status !== "CANCELADO"),
-    [adelantos, cur],
-  );
-
-  // ── Recibido (ADR-448), misma moneda, nunca mezclado con lo dado ───────────
-  const recibidoScoped = useMemo(
-    () => recibidos.filter((a) => (a.moneda || "PEN") === cur && a.status !== "CANCELADO"),
-    [recibidos, cur],
-  );
-  const recibidoKpi = useMemo(() => {
-    let total = 0, porDevolver = 0;
-    const porConcepto: Record<AdelantoConceptoRecibido, number> = { SERVICIO: 0, PRESTAMO: 0 };
-    const topMap: Record<string, number> = {};
-    for (const a of recibidoScoped) {
-      total += a.montoAdelantado;
-      if (a.status === "ABIERTO" && a.saldoPendiente > 0) {
-        porDevolver += a.saldoPendiente;
-        const k = (a.beneficiario?.nombre ?? "—").slice(0, 14);
-        topMap[k] = (topMap[k] ?? 0) + a.saldoPendiente;
-      }
-      if (a.conceptoRecibido) porConcepto[a.conceptoRecibido] += a.montoAdelantado;
-    }
-    const topPersonas = Object.entries(topMap).map(([name, monto]) => ({ name, monto })).sort((x, y) => y.monto - x.monto).slice(0, 5);
-    return { total, porDevolver, porConcepto, topPersonas };
-  }, [recibidoScoped]);
-  const hayRecibido = recibidoScoped.length > 0;
-
-  // ── KPIs ──────────────────────────────────────────────────────────────────
-  const kpi = useMemo(() => {
-    let adelantado = 0, liquidado = 0, pendiente = 0;
-    const deudores = new Set<string>();
-    for (const a of scoped) {
-      adelantado += a.montoAdelantado;
-      for (const e of a.entregas) liquidado += e.valor;
-      if (a.status === "ABIERTO" && a.saldoPendiente > 0) {
-        pendiente += a.saldoPendiente;
-        deudores.add(a.beneficiarioId);
-      }
-    }
-    const pct = adelantado > 0 ? Math.min(100, Math.round((liquidado / adelantado) * 100)) : 0;
-    return { adelantado, liquidado, pendiente, pct, deudores: deudores.size };
-  }, [scoped]);
-
-  // ── Velocidad media de liquidación (días) sobre adelantos LIQUIDADOS ────────
-  const velocidad = useMemo(() => {
-    const tiempos: number[] = [];
-    for (const a of scoped) {
-      if (a.status !== "LIQUIDADO" || a.entregas.length === 0) continue;
-      const ultima = a.entregas.reduce((max, e) => (e.fecha > max ? e.fecha : max), a.entregas[0].fecha);
-      const dias = Math.max(0, Math.floor((new Date(ultima).getTime() - new Date(a.fechaAdelanto).getTime()) / 86_400_000));
-      tiempos.push(dias);
-    }
-    if (tiempos.length === 0) return null;
-    return Math.round(tiempos.reduce((s, d) => s + d, 0) / tiempos.length);
-  }, [scoped]);
-
-  /**
-   * Atraso de saldos pendientes — por DEUDOR, no por adelanto suelto.
-   *
-   * Misma regla que Cobranza (`deudoresDeCobranza` + `tramoDe`): el atraso se
-   * mide contra la pactada/vencimiento incumplido más viejo de la persona, y
-   * sólo cae a antigüedad cuando no hay fecha comprometida. Si una persona
-   * debe por dos adelantos, el peor de los dos arrastra el saldo de ambos al
-   * mismo tramo — es la misma convención de riesgo que usa Cobranza para
-   * decidir a quién llamar primero.
-   */
-  const aging = useMemo(() => {
-    const abiertos = scoped.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0);
-    const buckets = Object.fromEntries(TRAMOS.map((t) => [t.id, 0])) as Record<TramoId, number>;
-    for (const d of deudoresDeCobranza(abiertos)) buckets[tramoDe(d.dias)] += d.saldo;
-    return TRAMOS.map((t) => ({ key: t.id, label: t.label, color: t.tono, monto: buckets[t.id] }));
-  }, [scoped]);
-  const hayAging = aging.some((b) => b.monto > 0);
-
-  // ── Evolución mensual (6 meses) — moneda seleccionada ───────────────────────
-  const meses = useMemo(() => {
-    const out: { mes: string; adelantado: number; liquidado: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(); d.setMonth(d.getMonth() - i);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = formatMonth(d);
-      let adelantado = 0, liquidado = 0;
-      for (const a of scoped) {
-        if (a.fechaAdelanto.startsWith(key)) adelantado += a.montoAdelantado;
-        for (const e of a.entregas) if (e.fecha.startsWith(key)) liquidado += e.valor;
-      }
-      out.push({ mes: label, adelantado, liquidado });
-    }
-    return out;
-  }, [scoped]);
-  const hayMov = meses.some((m) => m.adelantado > 0 || m.liquidado > 0);
-
-  // ── Por modalidad ───────────────────────────────────────────────────────────
-  const porModalidad = useMemo(() => [
-    { name: "Cuenta corriente", value: scoped.filter((a) => a.modalidad === "CUENTA_CORRIENTE").length, color: "var(--accent)" },
-    { name: "Entregas pactadas", value: scoped.filter((a) => a.modalidad === "ENTREGAS_PACTADAS").length, color: "var(--data-warning)" },
-  ].filter((d) => d.value > 0), [scoped]);
-
-  // ── Top deudores ────────────────────────────────────────────────────────────
-  const topDeudores = useMemo(() => {
-    const map = scoped.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0)
-      .reduce<Record<string, number>>((acc, a) => { const k = (a.beneficiario?.nombre ?? "—").slice(0, 14); acc[k] = (acc[k] ?? 0) + a.saldoPendiente; return acc; }, {});
-    return Object.entries(map).map(([name, monto]) => ({ name, monto })).sort((a, b) => b.monto - a.monto).slice(0, 5);
-  }, [scoped]);
-
-  // ── Export CSV (todas las monedas; incluye columna Moneda) ──────────────────
-  const exportarCsv = () => {
-    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-    const rows: (string | number)[][] = [["Fecha", "Tipo", "Persona", "Modalidad", "Detalle", "Monto", "Moneda"]];
-    for (const a of adelantos) {
-      const persona = a.beneficiario?.nombre ?? "—";
-      // 2026-05-26 (P2-3): fallback PEN si una fila antigua tiene moneda null —
-      // evita el literal "null" en la columna Moneda del CSV.
-      const mon = a.moneda || "PEN";
-      if (a.status !== "CANCELADO") rows.push([a.fechaAdelanto.slice(0, 10), "Adelanto", persona, a.modalidad === "CUENTA_CORRIENTE" ? "Cuenta corriente" : "Entregas pactadas", a.notas ?? "", a.montoAdelantado.toFixed(2), mon]);
-      for (const e of a.entregas) rows.push([e.fecha.slice(0, 10), "Entrega", persona, "", e.descripcion ?? "", (-e.valor).toFixed(2), mon]);
-    }
-    const csv = "﻿" + rows.map((r) => r.map(esc).join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url; link.download = `adelantos-movimientos-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click(); URL.revokeObjectURL(url);
-  };
-
-  /* Indicadores plegables (patrón del panel, 11-10): las cinco tarjetas
-     repetían las cifras de Indicadores del Resumen. Plegadas dicen lo propio
+  /* Indicadores plegables (patrón del panel, 11-10): plegados dicen lo propio
      del análisis: el % recuperado y en cuántos días vuelve la plata. */
   const kpis = useKpisPlegables({
     claveMemoria: "adelantos-analisis",
     alto: "md",
     compactoEnMovil: true,
     anchoFijo: true,
-    sinDatosAun: loading,
-    resumen: `${kpi.pct}% recuperado`,
-    tarjetas: [
-      <TarjetaIndicador key="pct" rotulo="% recuperado" valor={`${kpi.pct}%`} detalle={velocidad !== null ? `vuelve en ~${velocidad} días en promedio` : "Sin liquidaciones"} icono={Gauge} tono="destacado" />,
-      <TarjetaIndicador key="adelantado" rotulo="Adelantado" valor={fmtMon(kpi.adelantado, cur)} detalle="Plata que diste" icono={TrendingDown} />,
-      <TarjetaIndicador key="liquidado" rotulo="Liquidado" valor={fmtMon(kpi.liquidado, cur)} detalle="Recuperado" icono={TrendingUp} />,
-      <TarjetaIndicador key="pendiente" rotulo="Pendiente" valor={fmtMon(kpi.pendiente, cur)} detalle={`${kpi.deudores} persona${kpi.deudores === 1 ? "" : "s"} con saldo abierto`} icono={Coins} />,
-    ],
+    sinDatosAun: loading || !a,
+    resumen: `${a?.kpi.pct ?? 0}% recuperado`,
+    tarjetas: a ? [
+      <TarjetaIndicador key="pct" rotulo="% recuperado" valor={`${a.kpi.pct}%`} detalle={a.kpi.diasParaVolver !== null ? `vuelve en ~${a.kpi.diasParaVolver} días en promedio` : "Sin liquidaciones"} icono={Gauge} tono="destacado" />,
+      <TarjetaIndicador key="adelantado" rotulo="Diste" valor={fmtMon(a.kpi.adelantado, cur)} detalle="Plata que adelantaste" icono={TrendingDown} />,
+      <TarjetaIndicador key="liquidado" rotulo="Te devolvieron" valor={fmtMon(a.kpi.liquidado, cur)} detalle="Recuperado" icono={TrendingUp} />,
+      <TarjetaIndicador key="pendiente" rotulo="Te deben" valor={fmtMon(a.kpi.pendiente, cur)} detalle={`${a.kpi.deudores} persona${a.kpi.deudores === 1 ? "" : "s"} con saldo abierto`} icono={Coins} />,
+    ] : [],
   });
 
-  if (loading) return <SkeletonGrid />;
-  if (adelantos.length === 0 && recibidos.length === 0) return <EmptyState icon={BarChart3} title="Sin datos" hint="Los gráficos aparecen cuando registres adelantos." />;
+  if (loading || (cargando && !datos)) return <SkeletonGrid />;
+  if (error && !datos) {
+    return (
+      <ErrorAlert
+        title="No se pudo armar el análisis"
+        description="Revisa tu conexión y vuelve a intentar."
+        action={<button type="button" onClick={reintentar} className={button({ variant: "secondary" })}>Reintentar</button>}
+      />
+    );
+  }
+  if (!a) return <EmptyState icon={BarChart3} title="Sin datos" hint="Los gráficos aparecen cuando registres adelantos." />;
 
-  const monedaLabel = (c: string) => (c === "USD" ? "US$ Dólares" : c === "PEN" ? "S/ Soles" : c);
+  const hayAtraso = a.atraso.some((t) => t.monto > 0);
+  const hayMov = a.meses.some((m) => m.diste > 0 || m.devolvieron > 0);
 
   return (
-    <div className="space-y-5">
+    <div className="@container space-y-5">
       {/* Título · moneda · Indicadores · «⋯» en UNA fila (patrón del panel). */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Análisis</SectionTitle>
           <InfoTip
             title="Análisis de adelantos"
-            what="Cómo vuelve la plata que adelantas: atraso de lo que te deben, adelantado contra liquidado por mes, por modalidad y quién debe más."
-            affects={monedas.length > 1 ? `Mostrando ${monedaLabel(cur)}: cada moneda va aparte.` : "Sólo lo que diste; lo que te dieron está en «Lo que recibiste», al pie."}
+            what="Cómo vuelve la plata que adelantas: cuánto te deben y con cuánto atraso, cuánto te devolvió cada persona, quién tarda más y lo que diste contra lo que volvió, mes a mes."
+            affects={monedas.length > 1 ? `Mostrando ${monedaLabel(cur)}: cada moneda va aparte.` : "Sólo lo que diste; lo que te dieron está en «Lo que recibiste», al pie. Los adelantos anulados no cuentan."}
             example="Si el % recuperado baja mes a mes, estás adelantando más rápido de lo que vuelve."
           />
         </div>
@@ -249,126 +143,89 @@ export function AnalisisView({
             soloIcono
             size="md"
             className="w-12 shrink-0"
-            actions={[{ id: "csv", label: "Exportar CSV", hint: "El análisis, mes por mes", icon: FileText, onSelect: exportarCsv }]}
+            actions={[{ id: "csv", label: "Exportar CSV", hint: "Cada adelanto y cada devolución", icon: FileText, onSelect: () => exportarCsv(adelantos) }]}
           />
         </div>
       </div>
 
       {kpis.panel}
 
-      {/* Aging de saldos */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1 inline-flex items-center gap-2">
-          <Clock className="h-5 w-5 text-[var(--data-warning)]" /> Atraso de lo que te deben
-        </CardTitle>
-        <p className="text-sm text-[var(--text-tertiary)] mb-4">A quién hay que cobrarle primero — mientras más atrasado, más prioridad.</p>
-        {hayAging ? (
-          <ResponsiveContainer minWidth={0} width="100%" height={220}>
-            <BarChart data={aging}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={(v: number) => fmtMon(v, cur)} tick={{ fontSize: 11 }} width={70} axisLine={false} tickLine={false} />
-              <Tooltip formatter={((v: number) => [fmtMon(Number(v), cur), "Saldo"]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} />
-              <Bar dataKey="monto" radius={[6, 6, 0, 0]}>{aging.map((b) => <Cell key={b.key} fill={b.color} />)}</Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        ) : <p className="flex items-center justify-center gap-1.5 py-8 text-center text-base text-[var(--text-tertiary)]"><PartyPopper className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" aria-hidden /> Nadie te debe nada en {monedaLabel(cur)}.</p>}
-      </div>
+      {datos?.truncado && <p className="text-sm text-[var(--text-secondary)]">Se cuentan los 500 adelantos más recientes.</p>}
 
-      {/* Evolución mensual */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Adelantado vs Liquidado (6 meses)</CardTitle>
-        {hayMov ? (
-          <ResponsiveContainer minWidth={0} width="100%" height={240}>
-            <AreaChart data={meses}>
-              <defs>
-                <linearGradient id="adelGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data-warning)" stopOpacity={0.3} /><stop offset="100%" stopColor="var(--data-warning)" stopOpacity={0} /></linearGradient>
-                <linearGradient id="liqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data-success)" stopOpacity={0.3} /><stop offset="100%" stopColor="var(--data-success)" stopOpacity={0} /></linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
-              <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={(v: number) => fmtMon(v, cur)} tick={{ fontSize: 12 }} width={70} />
-              <Tooltip formatter={((v: number, name: string) => [fmtMon(Number(v), cur), name === "adelantado" ? "Adelantado" : "Liquidado"]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} />
-              <Area type="monotone" dataKey="adelantado" stroke="var(--data-warning)" fill="url(#adelGrad)" strokeWidth={2} />
-              <Area type="monotone" dataKey="liquidado" stroke="var(--data-success)" fill="url(#liqGrad)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Sin movimiento en los últimos 6 meses.</p>}
-      </div>
+      {a.hayDado ? (
+        <>
+          <Tarjeta
+            titulo="Atraso de lo que te deben"
+            icono={<Clock className={`${ICONO} text-[var(--data-warning)]`} aria-hidden />}
+            que="Lo que te deben hoy, por cuántos días lleva atrasado. Se mide igual que en Cobranza: contra la fecha que se pactó; si no hay fecha, desde que se dio."
+            ejemplo="«61 a 90 días · S/ 19,442.00 · 2 personas»: a esas dos hay que cobrarles primero."
+          >
+            {hayAtraso ? (
+              <AtrasoBarras atraso={a.atraso} moneda={cur} />
+            ) : (
+              <p className="flex items-center justify-center gap-1.5 py-8 text-center text-base text-[var(--text-tertiary)]">
+                <PartyPopper className="h-5 w-5 shrink-0 text-[var(--data-success-500)]" aria-hidden /> Nadie te debe nada en {monedaLabel(cur)}.
+              </p>
+            )}
+          </Tarjeta>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-2">Por modalidad</CardTitle>
-          {porModalidad.length > 0 ? (
-            <>
-              <ResponsiveContainer minWidth={0} width="100%" height={170}>
-                <PieChart><Pie data={porModalidad} cx="50%" cy="50%" innerRadius={45} outerRadius={72} dataKey="value" stroke="none" paddingAngle={2}>{porModalidad.map((d, i) => <Cell key={i} fill={d.color} />)}</Pie><Tooltip formatter={((v: number, n: string) => [v, n]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} /></PieChart>
-              </ResponsiveContainer>
-              <div className="mt-2 flex flex-wrap gap-3">
-                {porModalidad.map((d) => (<span key={d.name} className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: d.color }} />{d.name}: <strong>{d.value}</strong></span>))}
-              </div>
-            </>
-          ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Sin datos.</p>}
-        </div>
-
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-2">Top 5 deudores</CardTitle>
-          {topDeudores.length > 0 ? (
-            <ResponsiveContainer minWidth={0} width="100%" height={200}>
-              <BarChart data={topDeudores} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" horizontal={false} />
-                <XAxis type="number" tickFormatter={(v: number) => fmtMon(v, cur)} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip formatter={((v: number) => [fmtMon(Number(v), cur), "Saldo"]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} />
-                <Bar dataKey="monto" radius={[0, 6, 6, 0]}>{topDeudores.map((_, i) => <Cell key={i} fill={i === 0 ? "var(--data-warning)" : "var(--text-tertiary)"} />)}</Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie debe nada.</p>}
-        </div>
-      </div>
-
-      {/* Lo que recibiste (ADR-448): separado de todo lo de arriba — es plata
-          que el negocio recibió y le debe a otro, lo opuesto de un adelanto. */}
-      {hayRecibido && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Lo que recibiste</CardTitle>
-          <p className="text-sm text-[var(--text-tertiary)] mb-4">
-            Plata que te prestaron o te pagaron antes de un servicio — la devuelves tú, no al revés.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard
-              label="Total recibido"
-              value={fmtMon(recibidoKpi.total, cur)}
-              icon={ArrowDownToLine}
-              subValue={monedaLabel(cur)}
-            />
-            <StatCard
-              label="Por devolver"
-              value={fmtMon(recibidoKpi.porDevolver, cur)}
-              icon={Coins}
-              emphasis={recibidoKpi.porDevolver > 0 ? "warning" : "neutral"}
-              subValue={recibidoKpi.porDevolver > 0 ? "Le debes" : "Al día"}
-            />
-            <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]"><Wrench className="h-4 w-4 shrink-0" /> Servicio: <strong className="text-[var(--text-primary)]">{fmtMon(recibidoKpi.porConcepto.SERVICIO, cur)}</strong></span>
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]"><Landmark className="h-4 w-4 shrink-0" /> Préstamo: <strong className="text-[var(--text-primary)]">{fmtMon(recibidoKpi.porConcepto.PRESTAMO, cur)}</strong></span>
-            </div>
+          <div className="grid gap-5 @4xl:grid-cols-2">
+            <Tarjeta
+              titulo="Cuánto de lo que diste ya volvió"
+              icono={<Gauge className={`${ICONO} text-[var(--data-success-500)]`} aria-hidden />}
+              que="Por persona: qué parte de lo que le diste ya te devolvió, lo que te debe y qué parte es de todo lo que te deben. Quien más te debe va primero."
+              ejemplo="«Te debe S/ 17,000.00 · 0 % volvió · 66 % de lo que te deben»."
+            >
+              <VolvioPorPersona personas={a.personas} moneda={cur} />
+            </Tarjeta>
+            <Tarjeta
+              titulo="Quién tarda más en devolver"
+              icono={<Timer className={`${ICONO} text-[var(--data-warning)]`} aria-hidden />}
+              que="Días promedio por persona: en lo que ya pagó, cuánto tardó desde que se le dio; en lo que sigue abierto, cuántos días lleva sin moverse (desde su última devolución o, si no devolvió nada, desde que se le dio)."
+              ejemplo="«82 días · 1 abierto, sin moverse hace 82 días»."
+            >
+              <TardaPorPersona tardanza={a.tardanza} />
+            </Tarjeta>
           </div>
-          {recibidoKpi.topPersonas.length > 0 && (
-            <div className="mt-4">
-              <p className="mb-2 text-sm font-bold text-[var(--text-secondary)]">A quién le debes más</p>
-              <ResponsiveContainer minWidth={0} width="100%" height={Math.max(80, recibidoKpi.topPersonas.length * 36)}>
-                <BarChart data={recibidoKpi.topPersonas} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.1)" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v: number) => fmtMon(v, cur)} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={((v: number) => [fmtMon(Number(v), cur), "Le debes"]) as never} contentStyle={{ borderRadius: "12px", fontSize: "13px" }} />
-                  <Bar dataKey="monto" radius={[0, 6, 6, 0]} fill="var(--data-info-500)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+
+          <Tarjeta
+            titulo="Diste vs Te devolvieron"
+            icono={<BarChart3 className={`${ICONO} text-[var(--text-secondary)]`} aria-hidden />}
+            que="Cada mes de los últimos 6: cuánto adelantaste y cuánto te devolvieron, con la cifra encima de cada barra. Los anulados no cuentan."
+            ejemplo="Si la barra de «Diste» crece y la de «Te devolvieron» no, se te está acumulando lo que te deben."
+            pie={
+              <>
+                <Muestra color={COLOR_DISTE}>Diste <strong className="font-bold text-[var(--text-primary)]">{fmtMon(a.totalMeses.diste, cur)}</strong></Muestra>
+                <Muestra color={COLOR_VOLVIO}>Te devolvieron <strong className="font-bold text-[var(--text-primary)]">{fmtMon(a.totalMeses.devolvieron, cur)}</strong></Muestra>
+              </>
+            }
+          >
+            {hayMov ? <PorMes meses={a.meses} moneda={cur} /> : <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Sin movimiento en los últimos 6 meses.</p>}
+          </Tarjeta>
+
+          {a.modalidades.length > 1 && (
+            <Tarjeta
+              titulo="Por modalidad"
+              icono={<Layers className={`${ICONO} text-[var(--text-secondary)]`} aria-hidden />}
+              que="Cuánta plata diste en cada forma de cobro y cuánto te deben en cada una."
+            >
+              <PorModalidad modalidades={a.modalidades} moneda={cur} />
+            </Tarjeta>
           )}
-        </div>
+        </>
+      ) : (
+        <p className="py-6 text-center text-base text-[var(--text-tertiary)]">No diste adelantos en {monedaLabel(cur)}.</p>
+      )}
+
+      {/* Lo que recibiste (ADR-448): plata que el negocio recibió y le debe a otro, lo opuesto de un adelanto. */}
+      {a.recibido && (
+        <Tarjeta
+          titulo="Lo que recibiste"
+          icono={<ArrowDownToLine className={`${ICONO} text-[var(--data-info-500)]`} aria-hidden />}
+          que="Plata que te prestaron o te pagaron antes de un servicio: la devuelves tú, no al revés. No se mezcla con lo que diste."
+        >
+          <LoQueRecibiste recibido={a.recibido} moneda={cur} monedaLabel={monedaLabel(cur)} />
+        </Tarjeta>
       )}
     </div>
   );
