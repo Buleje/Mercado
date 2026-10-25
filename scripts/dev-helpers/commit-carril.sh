@@ -6,6 +6,9 @@
 cd "$(dirname "$0")/../.."
 D=$(realpath "$CARRILES")/$1
 P=$2; LOG=$D/commit-$P.log
+# commitlint corta en 100 por línea (asunto y cuerpo): frenarlo acá ahorra un pre-commit de ~70 s (25-10).
+LARGAS=$(awk '!/^(Co-Authored-By|Claude-Session):/ && length > 100 { print "línea "NR": "length" caracteres" }' "$D/msg-$P.txt")
+[ -n "$LARGAS" ] && { echo "NO COMMITEA: líneas de más de 100 en msg-$P.txt"; echo "$LARGAS"; exit 1; }
 for intento in $(seq 1 10); do
   # Array + `printf %q` (17-10): `app/(store)/zona/[ciudad]/…` rompía el `bash -c` («syntax error near `('»)
   # y el commit del cargador reintentó 20 min sin decir por qué; los corchetes además son comodines sin comillas.

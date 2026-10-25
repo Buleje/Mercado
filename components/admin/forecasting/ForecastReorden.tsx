@@ -20,6 +20,10 @@ import { RefreshCw, ShoppingCart, Loader2, CheckCircle } from "@buleje/design-sy
 import { cn, formatCurrency } from "@/lib/utils";
 import { useForecasting, type Forecasting, type PanelForecast } from "./use-forecasting";
 import { PanelCard } from "./ForecastPiezas";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+
+/** Tope de `productIds` del POST /api/forecasting/auto-reorder (su schema Zod). */
+const MAX_PEDIR = 500;
 
 const PANELES: readonly PanelForecast[] = ["reorder"];
 
@@ -55,11 +59,25 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
   const ft = useFiltrosTabla(state.reorder, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(ft.filtradas);
-  const pedir = () => {
+  const { confirm, notice } = useConfirm();
+  const pedir = async () => {
     const filtrado = ft.activos > 0;
     const n = filtrado ? ft.filtradas.length : state.reorder.length;
-    if (n === 0) return;
-    if (!window.confirm(`Se crearán órdenes de compra de ${n} producto(s)${filtrado ? " (los que ves)" : ""}. ¿Continuar?`)) return;
+    if (n === 0) {
+      await notice({ title: "El filtro no deja ningún producto", description: "Quita o cambia un filtro para elegir qué pedir." });
+      return;
+    }
+    // El servidor recibe hasta MAX_PEDIR ids: más que eso, pedir todo sin filtro.
+    if (filtrado && n > MAX_PEDIR) {
+      await notice({ title: `Son ${n} productos: el tope es ${MAX_PEDIR}`, description: "Ajusta el filtro, o quítalo para pedir todo lo sugerido." });
+      return;
+    }
+    const ok = await confirm({
+      title: `¿Crear órdenes de compra de ${n} producto(s)${filtrado ? " (los que ves)" : ""}?`,
+      description: "Se arma una orden por proveedor con la cantidad sugerida.",
+      confirmLabel: "Crear órdenes",
+    });
+    if (!ok) return;
     void ejecutarAutoReorder(filtrado ? ft.filtradas.map((r) => String(r.productId)) : undefined);
   };
   return (
