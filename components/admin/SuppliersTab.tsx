@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { ErrorAlert } from "@buleje/design-system";
-import { MoreHorizontal, Plus, RefreshCw, Search } from "@buleje/design-system/icons";
+import { MoreHorizontal, Plus, RefreshCw } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import ActionMenu from "@/components/admin/shared/action-menu";
@@ -49,7 +49,7 @@ export default function SuppliersTab({ barra, onNuevaOrden }: Props = {}) {
   const [form, setForm] = useState<{ supplier: DbSupplier | null } | null>(null);
   /** Estado de cuenta del proveedor de la ficha (se abre en su lugar y vuelve). */
   const [cuentaDe, setCuentaDe] = useState<DbSupplier | null>(null);
-  const { filtro, setFiltro, texto, setTexto } = useListaRecordada();
+  const { filtro, setFiltro } = useListaRecordada();
   const [porBorrar, setPorBorrar] = useState<DbSupplier | null>(null);
   const [borrando, setBorrando] = useState(false);
   /** Lo que dijo el servidor cuando no se pudo borrar. Antes se perdía. */
@@ -62,7 +62,7 @@ export default function SuppliersTab({ barra, onNuevaOrden }: Props = {}) {
   // «Hoy» en Lima, no en UTC del servidor/navegador.
   const hoy = limaDateKey();
   const ahora = useMemo(() => new Date(), []);
-  const visibles = useMemo(() => filtrarProveedores(proveedores, cuentas, filtro, texto), [proveedores, cuentas, filtro, texto]);
+  const visibles = useMemo(() => filtrarProveedores(proveedores, cuentas, filtro, ""), [proveedores, cuentas, filtro]);
   const cuenta = useMemo(() => {
     const deben = conDeuda(cuentas);
     return {
@@ -121,14 +121,6 @@ export default function SuppliersTab({ barra, onNuevaOrden }: Props = {}) {
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="relative min-w-[14rem] flex-1">
-                <span className="sr-only">Buscar proveedor</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-                <input
-                  type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar por nombre, RUC, DNI, contacto o teléfono"
-                  className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
-                />
-              </label>
               <div role="group" aria-label="Qué proveedores ver" className="inline-flex flex-wrap gap-2">
                 {FILTROS.map((f) => (
                   <button
@@ -143,7 +135,7 @@ export default function SuppliersTab({ barra, onNuevaOrden }: Props = {}) {
             {visibles.length === 0 ? (
               <div className="rounded-xl border border-dashed border-[var(--rule-base)] py-8 text-center">
                 <p className="text-sm font-semibold text-[var(--text-secondary)]">Ningún proveedor coincide.</p>
-                <button type="button" onClick={() => { setFiltro("todos"); setTexto(""); }} className="mt-2 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">Ver todos</button>
+                <button type="button" onClick={() => { setFiltro("todos"); }} className="mt-2 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">Ver todos</button>
               </div>
             ) : (
               <TablaProveedores

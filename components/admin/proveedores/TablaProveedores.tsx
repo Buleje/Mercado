@@ -57,8 +57,8 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
   /* Lo que debe cada uno, calculado una vez para filtrar y ordenar por «Le debes». */
   const debe = useMemo(() => new Map(proveedores.map((s) => [s.id, deudaDe(cuentas, s.id, hoy).total])), [proveedores, cuentas, hoy]);
   const columnas = useMemo<readonly ColumnaFiltro<DbSupplier>[]>(() => [
-    { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (s) => [s.name, s.documento || s.ruc || ""] },
-    { id: "contacto", label: "Contacto", tipo: "texto", valor: (s) => [s.phone ?? "", s.email ?? "", s.address ?? ""] },
+    { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (s) => [s.name, s.razonSocial ?? "", s.documento || s.ruc || ""] },
+    { id: "contacto", label: "Contacto", tipo: "texto", valor: (s) => [s.personaContacto ?? "", s.phone ?? "", s.whatsappSecundario ?? "", s.email ?? "", s.address ?? ""] },
     { id: "debe", label: "Le debes", tipo: "rango", numero: (s) => debe.get(s.id) ?? 0, unidad: "S/", paso: 0.01 },
   ], [debe]);
   const accesores = useMemo<Record<string, AccesorOrden<DbSupplier>>>(() => ({
