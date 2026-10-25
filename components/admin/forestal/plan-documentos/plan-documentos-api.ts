@@ -169,6 +169,9 @@ export async function crearCasilleroArchivo(input: {
 
 // ── El Drive ────────────────────────────────────────────────────────────────
 
+/** Tope de etiquetas por archivo del PATCH del Drive. */
+const MAX_ETIQUETAS_DRIVE = 20;
+
 /** `2026-10-12` → medianoche UTC, como lo guarda el visor del Drive. */
 export const vencimientoIso = (fecha: string | null): string | null => (fecha ? `${fecha.slice(0, 10)}T00:00:00.000Z` : null);
 
@@ -179,10 +182,16 @@ export const vencimientoIso = (fecha: string | null): string | null => (fecha ? 
  */
 export async function etiquetarDocumento(
   doc: Pick<DbDocument, "id" | "tags">,
-  cambios: { campoId: string | null; expiresAt?: string | null },
+  cambios: { campoId: string | null; expiresAt?: string | null; etiquetas?: readonly string[] },
 ): Promise<DbDocument | null> {
   const body: Record<string, unknown> = {};
-  if (cambios.campoId) body.tags = [...new Set([...(doc.tags ?? []), tagCampo(cambios.campoId)])].slice(0, 20);
+  /* El Drive guarda hasta 20: si no entran, se cortan las de la subida, nunca
+     las de máquina (casillero, papel del permiso), que van al final. */
+  const suyas = [...new Set([...(cambios.campoId ? [tagCampo(cambios.campoId)] : []), ...(cambios.etiquetas ?? [])])];
+  if (suyas.length > 0) {
+    const previas = (doc.tags ?? []).filter((t) => !suyas.includes(t));
+    body.tags = [...previas.slice(0, Math.max(0, MAX_ETIQUETAS_DRIVE - suyas.length)), ...suyas];
+  }
   if (cambios.expiresAt !== undefined) body.expiresAt = vencimientoIso(cambios.expiresAt);
   if (Object.keys(body).length === 0) return null;
   const r = await fetch(`${RUTA_DRIVE}/${encodeURIComponent(doc.id)}`, {

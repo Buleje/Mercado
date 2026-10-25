@@ -19,7 +19,8 @@ export const TIPO_ARCHIVO = "archivo" as const; // sólo bajo PREFIJO_FORMULARIO
 export const tagRaizPlan = (planId: string): string => `plan:${planId}`;
 export const tagCarpetaPlan = (clave: string): string => `plan-carpeta:${clave}`;
 export const tagCampo = (campoId: string): string => `campo:${campoId}`;
-export const PREFIJOS_TAG_MAQUINA_PLAN = ["plan:", "plan-carpeta:", "campo:"] as const;
+/** `papel:` = qué papel del permiso es (lista «Papeles», `loth-plan-papeles.ts`). */
+export const PREFIJOS_TAG_MAQUINA_PLAN = ["plan:", "plan-carpeta:", "campo:", "papel:"] as const;
 export const esTagDeMaquinaPlan = (t: string): boolean => PREFIJOS_TAG_MAQUINA_PLAN.some((p) => t.startsWith(p));
 
 export const RAIZ_DRIVE_LOTH = "Libro TH";
@@ -40,12 +41,29 @@ export interface ArchivoDelPlan {
   uploadedAt: string;
   /** El casillero `archivo` al que pertenece (etiqueta `campo:`), o null = suelto en la carpeta. */
   campoId: string | null;
+  /** Qué papel del permiso es (etiqueta `papel:<clave>`), o null. Opcional: lo agregó «Papeles». */
+  papel?: string | null;
+}
+
+/**
+ * Un archivo que el rol que mira NO puede abrir (roles o candado del
+ * documento o de su carpeta): cuenta para el estado del casillero y para los
+ * Papeles, pero viaja sin nombre ni id (security 25-10: el almacenero veía el
+ * nombre de un papel con candado de dueño).
+ */
+export interface ArchivoConCandado {
+  campoId: string | null;
+  papel?: string | null;
+  expiresAt: string | null;
+  uploadedAt: string;
 }
 
 export interface CasilleroArchivo {
   campo: Omit<CampoPersonalizado, "tipo"> & { tipo: typeof TIPO_ARCHIVO }; // no depende de ampliar TipoCampo
   estado: EstadoCasillero;
   archivos: ArchivoDelPlan[];
+  /** Los que el rol no ve (sólo viene si hay alguno). */
+  conCandado?: ArchivoConCandado[];
   /** El vencimiento más próximo entre sus archivos (ISO) o null. */
   venceEl: string | null;
 }
@@ -62,6 +80,8 @@ export interface CarpetaDelPlan {
   orden: number;
   casilleros: CasilleroArchivo[];
   sueltos: ArchivoDelPlan[];
+  /** Sueltos que el rol no ve (sólo viene si hay alguno). */
+  sueltosConCandado?: ArchivoConCandado[];
   /** Subcarpetas más hondas: se abren en Documentos, no acá. */
   subcarpetas: number;
 }

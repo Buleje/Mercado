@@ -11,7 +11,7 @@
  */
 
 import { useRef, useState, type DragEvent, type ReactNode } from "react";
-import { Camera, FileUp } from "@buleje/design-system/icons";
+import { Camera, FileUp, Lock } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { PastillaEstado } from "./estados";
@@ -41,6 +41,7 @@ export default function CasilleroArchivos({
   onVence,
   onDescartarSubida,
   extra,
+  conCandado = 0,
 }: {
   domId: string;
   titulo: string;
@@ -57,6 +58,8 @@ export default function CasilleroArchivos({
   onDescartarSubida: (key: string) => void;
   /** Algo al lado del título (el «sólo este plan»). */
   extra?: ReactNode;
+  /** Archivos que tu rol no ve (candado de la carpeta): se cuentan, sin nombre. */
+  conCandado?: number;
 }) {
   const archivoRef = useRef<HTMLInputElement>(null);
   const camaraRef = useRef<HTMLInputElement>(null);
@@ -124,8 +127,15 @@ export default function CasilleroArchivos({
         </ul>
       )}
 
+      {conCandado > 0 && (
+        <p className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+          <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {conCandado === 1 ? "1 archivo con candado: tu rol no lo ve." : `${conCandado} archivos con candado: tu rol no los ve.`}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
-        {n === 0 && subidas.length === 0 && <p className="w-full text-xs text-[var(--text-tertiary)]">{vacio}</p>}
+        {n === 0 && subidas.length === 0 && conCandado === 0 && <p className="w-full text-xs text-[var(--text-tertiary)]">{vacio}</p>}
         <button type="button" onClick={() => camaraRef.current?.click()} disabled={ocupado} className={cn(BOTON, `grow basis-24 whitespace-nowrap sm:hidden`)}>
           <Camera className="h-4 w-4" aria-hidden="true" /> Foto
         </button>

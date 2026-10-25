@@ -16,7 +16,9 @@
  * se edita desde acá.
  */
 import { claveDesdeNombre } from "@/lib/campos-personalizados";
+import { canRoleSeeEnCadena, rolesDeLaCadena, veTodoElDrive, type CarpetaConRoles } from "@/lib/documents/doc-access";
 import { SIN_TITULAR, segmentoDeCarpeta } from "@/lib/forestal/documentos-guia";
+import { papelDeEtiquetas } from "@/lib/forestal/loth-plan-papeles";
 import {
   FORMULARIO_CARPETAS_PLAN,
   RAIZ_DRIVE_LOTH,
@@ -24,6 +26,7 @@ import {
   TIPO_CARPETA,
   estadoDeCasillero,
   formularioDeCarpeta,
+  type ArchivoConCandado,
   type ArchivoDelPlan,
   type CarpetaDelPlan,
   type CarpetaSemilla,
@@ -236,6 +239,24 @@ export interface DocumentoFila {
   uploadedAt: Date;
   folderId: string | null;
   tags: readonly string[];
+  /** El rol que mira no lo puede abrir: entra sin nombre ni id (`ArchivoConCandado`). */
+  conCandado?: boolean;
+}
+
+/**
+ * Marca los documentos que `viewerRole` no ve por toda la cadena de carpetas
+ * (el mismo filtro del Drive, `canRoleSeeEnCadena`): entran a la vista con
+ * `conCandado`, sin nombre ni id. Dueño/admin o sin rol: tal cual (security 25-10).
+ */
+export function marcarLosQueNoVe<T extends DocumentoFila & { allowedRoles?: readonly string[] | null }>(
+  documentos: readonly T[],
+  viewerRole: string | undefined,
+  carpetas: ReadonlyMap<string, CarpetaConRoles>,
+): DocumentoFila[] {
+  if (!viewerRole || veTodoElDrive(viewerRole)) return [...documentos];
+  return documentos.map((d) =>
+    canRoleSeeEnCadena(viewerRole, [...(d.allowedRoles ?? [])], rolesDeLaCadena(d.folderId, carpetas)) ? d : { ...d, conCandado: true },
+  );
 }
 
 /** La clave de una carpeta leída de su etiqueta `plan-carpeta:`, o null. */
@@ -269,6 +290,16 @@ function aArchivo(d: DocumentoFila, campoId: string | null): ArchivoDelPlan {
     expiresAt: d.expiresAt ? d.expiresAt.toISOString() : null,
     uploadedAt: d.uploadedAt.toISOString(),
     campoId,
+    papel: papelDeEtiquetas(d.tags),
+  };
+}
+
+function aConCandado(d: DocumentoFila, campoId: string | null): ArchivoConCandado {
+  return {
+    campoId,
+    papel: papelDeEtiquetas(d.tags),
+    expiresAt: d.expiresAt ? d.expiresAt.toISOString() : null,
+    uploadedAt: d.uploadedAt.toISOString(),
   };
 }
 
@@ -335,29 +366,31 @@ export function armarCarpetas(e: EntradaArmado): CarpetaDelPlan[] {
     const docs = o.carpeta ? (docsPorCarpeta.get(o.carpeta.id) ?? []) : [];
     const campos = casillerosDe(o.clave);
     const ids = new Set(campos.map((c) => c.id));
+    const nuevoPrimero = (a: { uploadedAt: string }, b: { uploadedAt: string }) => b.uploadedAt.localeCompare(a.uploadedAt);
     const casilleros: CasilleroArchivo[] = campos.map((campo) => {
-      const archivos = docs
-        .filter((d) => campoDeEtiquetas(d.tags) === campo.id)
-        .map((d) => aArchivo(d, campo.id))
-        .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
-      const vencimientos = archivos
+      const suyos = docs.filter((d) => campoDeEtiquetas(d.tags) === campo.id);
+      const archivos = suyos.filter((d) => !d.conCandado).map((d) => aArchivo(d, campo.id)).sort(nuevoPrimero);
+      const conCandado = suyos.filter((d) => d.conCandado).map((d) => aConCandado(d, campo.id)).sort(nuevoPrimero);
+      /* El estado cuenta también lo que el rol no ve: el papel ESTÁ. */
+      const todos = [...archivos, ...conCandado];
+      const vencimientos = todos
         .map((a) => a.expiresAt)
         .filter((x): x is string => Boolean(x))
         .sort();
       return {
         campo,
-        estado: estadoDeCasillero(archivos, e.hoy),
+        estado: estadoDeCasillero(todos, e.hoy),
         archivos,
+        ...(conCandado.length ? { conCandado } : {}),
         venceEl: vencimientos[0] ?? null,
       };
     });
-    const sueltos = docs
-      .filter((d) => {
-        const campoId = campoDeEtiquetas(d.tags);
-        return !campoId || !ids.has(campoId);
-      })
-      .map((d) => aArchivo(d, null))
-      .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
+    const deLaCarpeta = docs.filter((d) => {
+      const campoId = campoDeEtiquetas(d.tags);
+      return !campoId || !ids.has(campoId);
+    });
+    const sueltos = deLaCarpeta.filter((d) => !d.conCandado).map((d) => aArchivo(d, null)).sort(nuevoPrimero);
+    const sueltosConCandado = deLaCarpeta.filter((d) => d.conCandado).map((d) => aConCandado(d, null)).sort(nuevoPrimero);
     return {
       clave: o.clave,
       nombre: o.nombre,
@@ -367,6 +400,7 @@ export function armarCarpetas(e: EntradaArmado): CarpetaDelPlan[] {
       orden: o.orden,
       casilleros,
       sueltos,
+      ...(sueltosConCandado.length ? { sueltosConCandado } : {}),
       subcarpetas: o.carpeta ? (e.subcarpetasPorCarpeta.get(o.carpeta.id) ?? 0) : 0,
     };
   };

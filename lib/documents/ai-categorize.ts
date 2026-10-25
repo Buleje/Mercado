@@ -129,8 +129,12 @@ export async function aiCategorize(input: AiCategorizeInput): Promise<AiCategori
     const tags: string[] = Array.isArray(parsed.tags)
       ? parsed.tags
           .filter((t: unknown) => typeof t === "string")
-          .slice(0, 5)
           .map((t: string) => t.trim().toLowerCase())
+          /* Con «:» es una etiqueta que el sistema lee (`papel:`, `gtf:`, `marca:`…):
+             la IA no la pone, aunque el nombre o el texto del archivo se lo pidan
+             (security 25-10: un papel plantado se volvía la resolución del plan). */
+          .filter((t: string) => t.length > 0 && !t.includes(":"))
+          .slice(0, 5)
       : [];
 
     return { category, tags, source: "ai" };

@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { logger } from "@/lib/logger";
+import { etiquetaVedada } from "@/lib/documents/etiquetas-de-maquina";
 
 /**
  * GET  /api/admin/documents/tags — taxonomía de etiquetas del tenant (con conteo).
@@ -43,6 +44,12 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
+
+    /* Renombrar «x» a `papel:resolucion` (o borrar una `gtf:`) cambia papeles
+       de una guía o de un plan en todos los documentos a la vez. */
+    const tocadas = parsed.data.action === "rename" ? [parsed.data.from, parsed.data.to] : [parsed.data.tag];
+    const vedado = tocadas.map((t) => etiquetaVedada(auth.role, t)).find(Boolean);
+    if (vedado) return NextResponse.json({ error: "forbidden", message: vedado }, { status: 403 });
 
     const affected =
       parsed.data.action === "rename"

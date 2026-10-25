@@ -28,6 +28,7 @@ import CartelEtiqueta from "./archivo/CartelEtiqueta";
 import PanelLateralArchivo from "./archivo/PanelLateralArchivo";
 import BarraDeHerramientas from "./archivo/BarraDeHerramientas";
 import RutaDeCarpeta from "./archivo/RutaDeCarpeta";
+import EnlacePapelesDelPlan from "./archivo/EnlacePapelesDelPlan";
 import BarraDeSeleccion from "./archivo/BarraDeSeleccion";
 import AvisosDeLista from "./archivo/AvisosDeLista";
 import VistasArchivo from "./archivo/VistasArchivo";
@@ -100,6 +101,8 @@ export default function DocumentosModule() {
           <BarraDeHerramientas arch={arch} />
 
           <RutaDeCarpeta arch={arch} />
+
+          <EnlacePapelesDelPlan ruta={arch.activePath} />
 
           <BarraDeSeleccion arch={arch} />
 

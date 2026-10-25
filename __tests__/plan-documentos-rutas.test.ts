@@ -114,7 +114,13 @@ describe("quién entra", () => {
   it("el negocio es el del JWT aunque el header diga otro", async () => {
     como("admin", "t1");
     await GET(pedir(`${BASE}?planId=p1`, { headers: { "x-tenant-id": "otro-negocio" } }));
-    expect(H.vista).toHaveBeenCalledWith("t1", "p1");
+    expect(H.vista).toHaveBeenCalledWith("t1", "p1", "admin");
+  });
+
+  it("la vista se arma con el rol de la sesión (lo que tiene candado sale sin nombre)", async () => {
+    como("almacenero", "t1");
+    await GET(pedir(`${BASE}?planId=p1`));
+    expect(H.vista).toHaveBeenCalledWith("t1", "p1", "almacenero");
   });
 
   it("un almacenero con el header de OTRO negocio → 403 (no lee el ajeno)", async () => {

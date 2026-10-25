@@ -26,7 +26,8 @@ export const GET = withApiHandler("forestal-plan-documentos-get", async (req: Ne
     return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   }
   try {
-    const vista = await ForestPlanDocumentosDB.vista(auth.tenantId, parsed.data.planId);
+    // Con el rol: un archivo con candado viaja sin nombre ni id (security 25-10).
+    const vista = await ForestPlanDocumentosDB.vista(auth.tenantId, parsed.data.planId, auth.role);
     // `null` = el plan no es de ESTE negocio (el WHERE lleva tenantId): 404.
     if (!vista) {
       return NextResponse.json(

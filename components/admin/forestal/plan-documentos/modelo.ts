@@ -44,6 +44,8 @@ export interface CasilleroVista {
   estado: EstadoCasillero;
   archivos: ArchivoVista[];
   pendiente: boolean;
+  /** Archivos que este rol no ve por el candado de su carpeta: cuentan, sin nombre. */
+  conCandado?: number;
 }
 
 export interface CarpetaVista {
@@ -55,6 +57,8 @@ export interface CarpetaVista {
   orden: number;
   casilleros: CasilleroVista[];
   sueltos: ArchivoVista[];
+  /** Sueltos con candado para este rol (sin nombre). */
+  sueltosConCandado?: number;
   subcarpetas: number;
   /** Carpeta creada en esta alta: todavía no existe. */
   pendiente: boolean;
@@ -112,6 +116,7 @@ export function carpetasDelServidor(carpetas: readonly CarpetaDelPlan[]): Carpet
       pendiente: false,
       enLaLista: c.plantillaId != null,
       sueltos: c.sueltos.map(deServidor),
+      ...(c.sueltosConCandado?.length ? { sueltosConCandado: c.sueltosConCandado.length } : {}),
       casilleros: c.casilleros.map((k) => ({
         campoId: k.campo.id,
         clave: k.campo.clave,
@@ -121,6 +126,7 @@ export function carpetasDelServidor(carpetas: readonly CarpetaDelPlan[]): Carpet
         estado: k.estado,
         archivos: k.archivos.map(deServidor),
         pendiente: false,
+        ...(k.conCandado?.length ? { conCandado: k.conCandado.length } : {}),
       })),
     }));
 }

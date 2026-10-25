@@ -204,6 +204,7 @@ export default function CarpetaPanel({
               onQuitar={acciones.quitar}
               onVence={acciones.cambiarVence}
               onDescartarSubida={acciones.descartarSubida}
+              conCandado={k.conCandado}
             />
           ))}
         </div>
@@ -232,6 +233,7 @@ export default function CarpetaPanel({
         titulo={carpeta.casilleros.length > 0 ? "Otros archivos de la carpeta" : "Archivos de la carpeta"}
         casillero={null}
         archivos={carpeta.sueltos}
+        conCandado={carpeta.sueltosConCandado}
         subidas={subidasDe(null)}
         ocupado={false}
         vacio={carpeta.subcarpetas > 0 ? `Tiene ${carpeta.subcarpetas} subcarpeta${carpeta.subcarpetas === 1 ? "" : "s"}: se abren en Documentos.` : "Sin archivos sueltos."}

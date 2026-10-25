@@ -219,6 +219,7 @@ import { GET as CARPETAS, POST as CREAR_CARPETA } from "@/app/api/admin/document
 import { POST as LOTE } from "@/app/api/admin/documents/bulk/route";
 import { POST as PAPELERA } from "@/app/api/admin/documents/trash/route";
 import { DELETE as BORRAR_DOC, PATCH as EDITAR_DOC } from "@/app/api/admin/documents/[id]/route";
+import { POST as ETIQUETAS } from "@/app/api/admin/documents/tags/route";
 import { GET as VERSIONES } from "@/app/api/admin/documents/[id]/versions/route";
 import { GET as VERSION_RAW } from "@/app/api/admin/documents/[id]/versions/[versionId]/raw/route";
 import { GET as PAGINAS } from "@/app/api/admin/documents/[id]/pages/route";
@@ -236,6 +237,7 @@ const ctx = <T extends Record<string, string>>(p: T) => ({ params: Promise.resol
 const comoCajero = () => Object.assign(H.payload, { username: "qacajero", role: "cajero" });
 const comoAdmin = () => Object.assign(H.payload, { username: "qaadmin", role: "admin" });
 const comoEncargado = () => Object.assign(H.payload, { username: "qaencargado", role: "manager" });
+const comoAlmacenero = () => Object.assign(H.payload, { username: "qaalmacenero", role: "almacenero" });
 const docDe = (id: string) => H.db.docs.find((d) => d.id === id)!;
 const carpetaDe = (id: string) => H.db.carpetas.find((c) => c.id === id);
 
@@ -565,5 +567,52 @@ describe("7 · subir a una carpeta que no ve (BAJO)", () => {
     expect((await subir("f-caja")).status).toBe(200);
     comoAdmin();
     expect((await subir("f-sec")).status).toBe(200);
+  });
+});
+
+/* Security 25-10: `papel:resolucion` es lo que lee «Llenar desde la resolución»;
+   quien la plantaba podía proponer el volumen autorizado del plan. */
+describe("8 · etiquetas que el plan lee (MEDIO, 25-10)", () => {
+  const etiquetar = (id: string, tags: string[]) => EDITAR_DOC(pedir(`/${id}`, { method: "PATCH", body: { tags } }), ctx({ id }));
+
+  it("almacenero pone papel:resolucion → 403 y el papel no cambia; el admin sí", async () => {
+    comoAlmacenero();
+    const antes = [...docDe("d-libre").tags];
+    for (const tag of ["papel:resolucion", "Papel:Resolucion", " plan:po1"]) {
+      const r = await etiquetar("d-libre", [...antes, tag]);
+      expect(r.status).toBe(403);
+      expect((await r.json()).message).toMatch(/dueño o un admin/);
+    }
+    expect(docDe("d-libre").tags).toEqual(antes);
+    comoAdmin();
+    expect((await etiquetar("d-libre", [...antes, "papel:resolucion"])).status).toBe(200);
+    expect(docDe("d-libre").tags).toContain("papel:resolucion");
+  });
+
+  it("tampoco se la saca a un papel que ya la tiene; sus etiquetas humanas, sí", async () => {
+    comoAdmin();
+    await etiquetar("d-libre", ["papel:resolucion"]);
+    comoAlmacenero();
+    expect((await etiquetar("d-libre", [])).status).toBe(403);
+    expect((await etiquetar("d-libre", ["papel:resolucion", "revisar"])).status).toBe(200);
+    expect(docDe("d-libre").tags).toEqual(["papel:resolucion", "revisar"]);
+  });
+
+  it("ni por el lote ni renombrando una etiqueta en todos (encargado tampoco)", async () => {
+    for (const rol of [comoAlmacenero, comoEncargado]) {
+      rol();
+      const lote = await LOTE(pedir("/bulk", { method: "POST", body: { action: "tag", ids: ["d-libre"], tag: "papel:resolucion" } }));
+      expect(lote.status).toBe(403);
+      const renombrar = await ETIQUETAS(pedir("/tags", { method: "POST", body: { action: "rename", from: "revisar", to: "campo:abc" } }));
+      expect(renombrar.status).toBe(403);
+      const borrar = await ETIQUETAS(pedir("/tags", { method: "POST", body: { action: "delete", tag: "papel:resolucion" } }));
+      expect(borrar.status).toBe(403);
+    }
+    expect(docDe("d-libre").tags).not.toContain("papel:resolucion");
+  });
+
+  it("las de guía siguen abiertas al almacenero (ADR-438)", async () => {
+    comoAlmacenero();
+    expect((await etiquetar("d-libre", [...docDe("d-libre").tags, "gtf:g1"])).status).toBe(200);
   });
 });

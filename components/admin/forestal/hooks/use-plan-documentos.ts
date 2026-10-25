@@ -126,10 +126,17 @@ export function usePlanDocumentos({ planId, activo = true }: { planId: string | 
   /**
    * Sube al Drive con el mismo pipeline del módulo Documentos y, después, pone
    * cada archivo en su casillero. Si el plan todavía no tenía carpetas, las
-   * prepara primero.
+   * prepara primero. `extra.etiquetas` se suman a cada archivo (la pestaña
+   * Papeles marca así de qué papel del permiso es: `papel:<clave>`) y
+   * `extra.vence` (AAAA-MM-DD) le pone el vencimiento en el mismo PATCH.
    */
   const subir = useCallback(
-    async (files: File[], carpeta: CarpetaVista, casillero: CasilleroVista | null): Promise<void> => {
+    async (
+      files: File[],
+      carpeta: CarpetaVista,
+      casillero: CasilleroVista | null,
+      extra?: { etiquetas?: readonly string[]; vence?: string | null },
+    ): Promise<void> => {
       if (!planId || files.length === 0) return;
       const keys = new Map(files.map((f) => [f, `sub-${(secuencia += 1)}`]));
       setSubidas((prev) => [
@@ -167,7 +174,9 @@ export function usePlanDocumentos({ planId, activo = true }: { planId: string | 
         for (const [f, doc] of llegaron) {
           const key = keys.get(f) ?? "";
           try {
-            if (campoId) await etiquetarDocumento(doc, { campoId });
+            if (campoId || extra?.etiquetas?.length || extra?.vence) {
+              await etiquetarDocumento(doc, { campoId, etiquetas: extra?.etiquetas, ...(extra?.vence ? { expiresAt: extra.vence } : {}) });
+            }
             actualizarSubida(key, { estado: "listo" });
           } catch (e) {
             actualizarSubida(key, { estado: "error", motivo: `subió, pero no quedó en su casillero: ${mensaje(e)}` });

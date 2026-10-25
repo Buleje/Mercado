@@ -7,8 +7,11 @@
  *   · «Especies»      — ¿de qué especie queda saldo, cuánto es aprovechable por
  *                       DMC, y dónde corrijo lo que autorizó la resolución?
  *   · «Censo»         — el detalle árbol por árbol, en tabla y en el croquis.
- *   · «Documentos»    — resolución, papeles del jefe, títulos: ¿qué falta o
- *                       vence? (ADR-467). La tienen los dos tipos de plan.
+ *   · «Papeles»       — lo que la norma pide para este tipo de plan
+ *                       (resolución, título, acta de la comunidad, regente…)
+ *                       y sus carpetas del Archivo: ¿qué falta o vence?
+ *                       (ADR-467). La tienen los dos tipos de plan; su id
+ *                       sigue siendo `documentos` (la pestaña recordada).
  *
  * Una PLANTACIÓN (ADR-459) tiene otras dos: «Registro y saldo» —sus especies y
  * m³ registrados, y dónde está hoy ese volumen— y «Árboles marcados», que es el

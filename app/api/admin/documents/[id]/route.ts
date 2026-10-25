@@ -10,8 +10,8 @@ import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
 import { conDescripcionPropia } from "@/lib/documents/texto-buscable";
 import { isPrivilegedRole } from "@/lib/documents/doc-access";
 import { ROLES_PAPELES_GUIA } from "@/lib/forestal/documentos-guia";
+import { cambioDeEtiquetasVedado } from "@/lib/documents/etiquetas-de-maquina";
 
-const ROLES_ETIQUETAS_DE_GUIA = new Set<string>(ROLES_PAPELES_GUIA);
 const esEtiquetaDeGuia = (t: string) => /^(gtf|casillero):/i.test(t);
 
 
@@ -111,18 +111,14 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       }
     }
 
-    /* Las etiquetas `gtf:`/`casillero:` meten o sacan un papel del casillero de
-       una guía (ADR-438): sólo los roles que manejan esos documentos pueden
-       tocarlas desde el Drive general. */
+    /* Las etiquetas de máquina: `gtf:`/`casillero:` meten o sacan un papel del
+       casillero de una guía (ADR-438) y `plan:`/`campo:`/`papel:`… de la
+       carpeta o los Papeles de un plan (ADR-467; `papel:resolucion` es lo que
+       lee «Llenar desde la resolución», security 25-10). Sólo los roles que
+       manejan esos documentos las ponen o las sacan desde el Drive general. */
     if (parsed.data.tags) {
-      const antes = (before.tags ?? []).filter(esEtiquetaDeGuia).sort().join("|");
-      const despues = parsed.data.tags.filter(esEtiquetaDeGuia).sort().join("|");
-      if (antes !== despues && !ROLES_ETIQUETAS_DE_GUIA.has(auth.role)) {
-        return NextResponse.json(
-          { error: "forbidden", message: "Solo admin, dueño o almacenero cambian a qué guía pertenece un documento." },
-          { status: 403 },
-        );
-      }
+      const vedado = cambioDeEtiquetasVedado(auth.role, before.tags ?? [], parsed.data.tags);
+      if (vedado) return NextResponse.json({ error: "forbidden", message: vedado }, { status: 403 });
     }
 
     /* Un papel que queda en el casillero de una guía (factura, GTF, lista…) se

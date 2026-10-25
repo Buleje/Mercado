@@ -5,7 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
 import { DocumentsDB } from "@/lib/db/documents.db";
-import { isPrivilegedRole } from "@/lib/documents/doc-access";
+import { isPrivilegedRole, veTodoElDrive } from "@/lib/documents/doc-access";
 import { invalidarCamposPersonalizados } from "@/lib/db/campos-personalizados.db";
 import { segmentoDeCarpeta } from "@/lib/forestal/documentos-guia";
 import {
@@ -31,10 +31,12 @@ import {
   claveDeEtiquetas,
   filasDeSemilla,
   folderIdDeClaveSuelta,
+  marcarLosQueNoVe,
   nombreCarpetaDesambiguada,
   resumirCarpetas,
   rutaPropuestaDelPlan,
   type CampoArchivoFila,
+  type DocumentoFila,
   type PlanParaCarpeta,
 } from "@/lib/forestal/plan-documentos-semilla";
 
@@ -398,6 +400,24 @@ async function controlarTope(db: Db, tenantId: string): Promise<void> {
 
 // ── API ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Marca los documentos que `viewerRole` no ve (`marcarLosQueNoVe`, puro).
+ * Dueño/admin o sin rol: nada que marcar y sin consulta.
+ */
+async function marcarConCandado<T extends DocumentoFila & { allowedRoles: string[] }>(
+  tenantId: string,
+  documentos: T[],
+  viewerRole: string | undefined,
+): Promise<DocumentoFila[]> {
+  if (!viewerRole || veTodoElDrive(viewerRole) || documentos.length === 0) return documentos;
+  const filas = await prisma.documentFolder.findMany({
+    where: { tenantId },
+    select: { id: true, parentId: true, allowedRoles: true },
+  });
+  const mapa = new Map(filas.map((f) => [f.id, { parentId: f.parentId ?? null, allowedRoles: f.allowedRoles ?? [] }]));
+  return marcarLosQueNoVe(documentos, viewerRole, mapa);
+}
+
 export const ForestPlanDocumentosDB = {
   /**
    * La sección entera de un plan: carpetas (de la plantilla + las hechas a mano
@@ -405,8 +425,14 @@ export const ForestPlanDocumentosDB = {
    *
    * Sólo lee: un plan sin preparar vuelve con `preparada:false` y las carpetas
    * de la plantilla con `folderId:null`. `null` = el plan no es de este negocio.
+   *
+   * `viewerRole`: un archivo que ese rol no ve (roles o candado del documento
+   * o de su cadena de carpetas) viaja sin nombre ni id, en `conCandado` /
+   * `sueltosConCandado`, y sigue contando para el estado (security 25-10). Sin
+   * rol = todo, como antes: lo usan las escrituras de admin/dueño que devuelven
+   * la vista recién armada.
    */
-  async vista(tenantId: string, planId: string): Promise<PlanDocumentosVista | null> {
+  async vista(tenantId: string, planId: string, viewerRole?: string): Promise<PlanDocumentosVista | null> {
     if (!tenantId) throw new Error("tenantId is required");
     const plan = await leerPlan(prisma, tenantId, planId, false);
     if (!plan) return null;
@@ -462,6 +488,7 @@ export const ForestPlanDocumentosDB = {
               uploadedAt: true,
               folderId: true,
               tags: true,
+              allowedRoles: true,
             },
             orderBy: { uploadedAt: "desc" },
             take: MAX_DOCUMENTOS_VISTA,
@@ -485,7 +512,7 @@ export const ForestPlanDocumentosDB = {
       plantilla,
       camposArchivo,
       carpetasDrive,
-      documentos,
+      documentos: await marcarConCandado(tenantId, documentos, viewerRole),
       subcarpetasPorCarpeta,
     });
 

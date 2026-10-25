@@ -18,6 +18,8 @@ import type { PedidoEspecie, PedidoLote } from "../LothPlanEspecies";
 import { PESTANAS_PLAN, PESTANAS_PLANTACION, type PestanaPlan } from "../LothPlanPestanas";
 import { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION, opcionesDelPlan, pestanasDelPlan } from "../loth-plan-view-shared";
 import { loQueFalta } from "../plan-documentos/modelo";
+import { archivosDeVista, papelesDePlan, resumenParaSemaforo } from "@/lib/forestal/loth-plan-papeles";
+import { limaDateKey } from "@/lib/utils";
 import { useImportarFotoPendiente } from "../planillas/importar-pendiente";
 import { useAutorizarDesdeUrl } from "./use-autorizar-desde-url";
 import { useLothPlan } from "./use-loth-plan";
@@ -58,6 +60,28 @@ export function useLothPlanView(reloadSignal?: number, onCambioDelLibro?: () => 
   /* Documentos del plan (ADR-467): una sola instancia para la pestaña y su cifra. */
   const docs = usePlanDocumentos({ planId: plan?.id ?? null, activo: plan != null });
   const faltaDocs = useMemo(() => loQueFalta(docs.carpetas), [docs.carpetas]);
+  /* «Papeles del permiso»: lo que la norma pide para este tipo de plan contra
+     las mismas carpetas (la cifra de la pestaña y su lista dicen lo mismo).
+     Sólo con la vista de ESTE plan: al cambiar de plan, la del anterior queda
+     un momento y contaría sus papeles en éste. */
+  const papeles = useMemo(
+    () =>
+      plan && docs.vista && docs.vista.planId === plan.id
+        ? papelesDePlan(
+            { planType: plan.planType, titularName: plan.titularName, propietarioNombre: plan.propietarioNombre, vigenciaHasta: plan.vigenciaHasta?.slice(0, 10) ?? null },
+            archivosDeVista(docs.vista),
+            limaDateKey(),
+          )
+        : null,
+    [plan, docs.vista],
+  );
+  /* Al semáforo: sin Archivo, no se juzga; si la lectura falló, «No pude leer
+     los papeles» (null), nunca un verde. */
+  const papelesSemaforo = useMemo(() => {
+    if (!plan || !docs.disponible) return undefined;
+    if (papeles) return resumenParaSemaforo(papeles);
+    return docs.error && !docs.cargando ? null : undefined;
+  }, [plan, docs.disponible, docs.error, docs.cargando, papeles]);
   /* Un valor viejo o tocado a mano en el navegador no deja la vista sin panel
      (tampoco «documentos» en un despliegue donde esa pestaña no está). */
   const pestana: PestanaPlan =
@@ -172,14 +196,14 @@ export function useLothPlanView(reloadSignal?: number, onCambioDelLibro?: () => 
   const opciones = opcionesDelPlan({
     d, plan, esPlantacion, borrandoPlan, setErrorPlan, setPestana, setImportarSignal, setEditandoPlan, setBorrandoOperaciones, eliminarPlan,
   });
-  const { pestanas, pestanasPlantacion } = pestanasDelPlan({ d, docs, faltaDocs });
+  const { pestanas, pestanasPlantacion } = pestanasDelPlan({ d, docs, faltaDocs, papeles });
   const conPeriodo = zafra.estado !== "sin_vigencia";
 
   return {
     d, trees, zafra, plan, cargando, esPlantacion, pestana, setPestana, setPestanaPlantacion,
     pedidoEspecie, pedirEspecie, pedidoLote, importarSignal, editandoPlan, setEditandoPlan, errorPlan,
     borrandoOperaciones, setBorrandoOperaciones, onCambioDelLibro,
-    docs, cerrarFormulario, onEstadoCierre, opciones, pestanas, pestanasPlantacion, conPeriodo,
+    docs, papeles, papelesSemaforo, cerrarFormulario, onEstadoCierre, opciones, pestanas, pestanasPlantacion, conPeriodo,
   };
 }
 

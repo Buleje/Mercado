@@ -7,6 +7,7 @@ import { DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
 import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
+import { etiquetaVedada } from "@/lib/documents/etiquetas-de-maquina";
 
 // El cliente parte la selección en lotes de IDS_POR_LOTE y los manda uno tras
 // otro (hooks/use-documents.ts). Validar contra la MISMA constante evita que
@@ -57,6 +58,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
     const data = parsed.data;
+    /* Una etiqueta de máquina (guía o plan) en lote = la misma puerta que el PATCH de uno. */
+    const vedado = data.action === "tag" ? etiquetaVedada(auth.role, data.tag) : null;
+    if (vedado) return NextResponse.json({ error: "forbidden", message: vedado }, { status: 403 });
 
     // Sólo los ids que este rol VE (revisión de seguridad 04-10: el lote movía,
     // borraba y etiquetaba papeles restringidos con sólo mandar su id). Para

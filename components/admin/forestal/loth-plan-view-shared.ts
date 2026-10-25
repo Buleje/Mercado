@@ -15,14 +15,11 @@ import type { PestanaDef, PestanaPlan } from "./LothPlanPestanas";
 import { printInforme } from "./loth-plan-informe";
 import type { useLothPlan } from "./hooks/use-loth-plan";
 import type { loQueFalta } from "./plan-documentos/modelo";
+import type { PapelesDelPlan } from "@/lib/forestal/loth-plan-papeles";
 
-/** Clave de la pestaña elegida. Exportada: la prueba en navegador la lee. */
-export const CLAVE_PESTANA_PLAN = "loth:plan:pestana";
-/**
- * La de una plantación va aparte: quien miraba el censo de un PO no tiene que
- * caer en «Árboles marcados» al abrir una plantación — ahí manda el registro.
- */
-export const CLAVE_PESTANA_PLANTACION = "loth:plan:pestana-plantacion";
+/* Las claves de la pestaña viven en `plan-papeles/abrir-papeles` (el Archivo
+   las escribe para abrir «Papeles» sin cargar el libro). */
+export { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION } from "./plan-papeles/abrir-papeles";
 
 type DatosPlan = ReturnType<typeof useLothPlan>;
 type PlanElegido = DatosPlan["plan"];
@@ -139,27 +136,43 @@ export function pestanasDelPlan({
   d,
   docs,
   faltaDocs,
+  papeles,
 }: {
   d: DatosPlan;
   docs: { disponible: boolean };
   faltaDocs: ReturnType<typeof loQueFalta>;
+  /** «Papeles del permiso»: lo que la norma pide contra lo que hay. Sin vista todavía, null. */
+  papeles?: Pick<PapelesDelPlan, "requeridos" | "presentes" | "vencidos" | "vencenPronto" | "faltan"> | null;
 }): { pestanas: PestanaDef[]; pestanasPlantacion: PestanaDef[] } {
   const { zafra } = d;
-  /* «Documentos» (ADR-467): la tienen el bosque natural y la plantación —la
-     resolución o la constancia de registro también vencen y se piden—. Sin
-     las rutas en el despliegue, no aparece. */
-  const pestanaDocumentos: PestanaDef[] = docs.disponible
-    ? [{
-        id: "documentos",
-        label: "Documentos",
-        cuenta: faltaDocs.esperados > 0 ? `${faltaDocs.cargados}/${faltaDocs.esperados}` : undefined,
-        alerta: faltaDocs.vencidos > 0 ? "danger" : faltaDocs.faltan > 0 || faltaDocs.vencenPronto > 0 ? "warn" : undefined,
-        alertaTexto:
-          faltaDocs.vencidos > 0 ? `${faltaDocs.vencidos} ${faltaDocs.vencidos === 1 ? "documento vencido" : "documentos vencidos"}`
-            : faltaDocs.faltan > 0 ? `${faltaDocs.faltan} ${faltaDocs.faltan === 1 ? "documento falta" : "documentos faltan"}`
-              : faltaDocs.vencenPronto > 0 ? `${faltaDocs.vencenPronto} por vencer` : undefined,
-      }]
-    : [];
+  /* «Papeles» (ADR-467 + papeles del permiso): la tienen el bosque natural y
+     la plantación —la resolución o la constancia de registro también vencen y
+     se piden—. La cifra es la de la norma («2/4 papeles»); mientras la vista
+     no llega, la de los casilleros. Sin las rutas en el despliegue, no aparece. */
+  const faltanPapeles = papeles?.faltan.length ?? 0;
+  const pestanaDocumentos: PestanaDef[] = !docs.disponible
+    ? []
+    : papeles && papeles.requeridos > 0
+      ? [{
+          id: "documentos",
+          label: "Papeles",
+          cuenta: `${papeles.presentes}/${papeles.requeridos}`,
+          alerta: papeles.vencidos > 0 ? "danger" : faltanPapeles > 0 || papeles.vencenPronto > 0 ? "warn" : undefined,
+          alertaTexto:
+            papeles.vencidos > 0 ? `${papeles.vencidos} ${papeles.vencidos === 1 ? "papel vencido" : "papeles vencidos"}`
+              : faltanPapeles > 0 ? `${faltanPapeles} ${faltanPapeles === 1 ? "papel falta" : "papeles faltan"}`
+                : papeles.vencenPronto > 0 ? `${papeles.vencenPronto} por vencer` : undefined,
+        }]
+      : [{
+          id: "documentos",
+          label: "Papeles",
+          cuenta: faltaDocs.esperados > 0 ? `${faltaDocs.cargados}/${faltaDocs.esperados}` : undefined,
+          alerta: faltaDocs.vencidos > 0 ? "danger" : faltaDocs.faltan > 0 || faltaDocs.vencenPronto > 0 ? "warn" : undefined,
+          alertaTexto:
+            faltaDocs.vencidos > 0 ? `${faltaDocs.vencidos} ${faltaDocs.vencidos === 1 ? "documento vencido" : "documentos vencidos"}`
+              : faltaDocs.faltan > 0 ? `${faltaDocs.faltan} ${faltaDocs.faltan === 1 ? "documento falta" : "documentos faltan"}`
+                : faltaDocs.vencenPronto > 0 ? `${faltaDocs.vencenPronto} por vencer` : undefined,
+        }];
   const peligro = d.fichasEspecie.filter((f) => f.tone === "danger").length;
   const atencion = d.fichasEspecie.filter((f) => f.tone === "warn").length;
   const pestanas: PestanaDef[] = [
