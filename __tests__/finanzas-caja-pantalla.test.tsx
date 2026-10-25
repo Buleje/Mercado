@@ -205,7 +205,7 @@ describe("la proyección de 13 semanas", () => {
     responder();
     enSeccion("por-concepto");
     const { container } = render(<CashflowRollingTable />);
-    const fila = (await screen.findByText("Planilla", { selector: "th span" })).closest("tr") as HTMLElement;
+    const fila = (await screen.findByText("Planilla", { selector: "tbody th span" })).closest("tr") as HTMLElement;
     expect(within(fila).getAllByText("—")).toHaveLength(13);
     expect(container.textContent).not.toMatch(/NaN/);
     expect(screen.getByText("Saldo de hoy, estimado")).toBeTruthy();

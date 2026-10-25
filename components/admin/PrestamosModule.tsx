@@ -24,9 +24,10 @@ import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBa
 import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
 import { Field } from "@/components/admin/shared/Field";
 import { FiltrosEnBoton } from "@/components/admin/shared";
-import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import TablaCuotasPrestamo from "@/components/admin/prestamos/TablaCuotasPrestamo";
+import { COLUMNAS_CARTERA, saldoDe } from "@/components/admin/prestamos/filtros-cartera";
 import { useOrdenColumnas, EnOrden } from "@/components/admin/shared/columnas-ordenables";
-import type { Rango } from "@/lib/admin/filtros-columna";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
@@ -173,10 +174,8 @@ export default function PrestamosModule() {
   // 2026-09-24). Lo que no es columna (fecha, tipo, dirección) se queda afuera.
   const [filterFechaFrom, setFilterFechaFrom] = useState("");
   const [filterFechaTo, setFilterFechaTo] = useState("");
-  const [montoRango, setMontoRango] = useState<Rango<number>>({ min: null, max: null });
   const [filterTipo, setFilterTipo] = useState<"" | PrestamoTipo>("");
   const [filterDireccion, setFilterDireccion] = useState<"" | PrestamoDireccion>("");
-  const [filterSistema, setFilterSistema] = useState<SistemaAmortizacion[]>([]);
 
   // Sort por columnas (mejora 8)
   const [sortKey, setSortKey] = useState<"monto" | "tasaInteres" | "numeroCuotas" | "createdAt" | "">("");
@@ -558,11 +557,8 @@ export default function PrestamosModule() {
     // Filtros avanzados (mejora 7) + autofiltro de columna (Monto, Sys)
     if (filterFechaFrom) list = list.filter(p => p.createdAt >= filterFechaFrom);
     if (filterFechaTo) list = list.filter(p => p.createdAt <= filterFechaTo + "T23:59:59");
-    if (montoRango.min != null) list = list.filter(p => p.monto >= (montoRango.min as number));
-    if (montoRango.max != null) list = list.filter(p => p.monto <= (montoRango.max as number));
     if (filterTipo) list = list.filter(p => p.tipo === filterTipo);
     if (filterDireccion) list = list.filter(p => p.direccion === filterDireccion);
-    if (filterSistema.length > 0) list = list.filter(p => filterSistema.includes(p.sistemaAmortizacion));
     // Sort (mejora 8)
     if (sortKey) {
       list = [...list].sort((a, b) => {
@@ -573,31 +569,31 @@ export default function PrestamosModule() {
     }
     return list;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prestamos, activeTab, prestamoStatusFilter, searchQuery, filterFechaFrom, filterFechaTo, montoRango, filterTipo, filterDireccion, filterSistema, sortKey, sortDir]);
+  }, [prestamos, activeTab, prestamoStatusFilter, searchQuery, filterFechaFrom, filterFechaTo, filterTipo, filterDireccion, sortKey, sortDir]);
 
   // Cuenta TODO lo que el panel «Filtros» muestra: Monto y Sistema viven ahí
   // también (ocultos salvo < sm, el mismo atajo del `<th>`), así que el
   // número del botón sigue siendo "lo que este panel puede acotar".
-  const activeFilterCount = [filterFechaFrom, filterFechaTo, filterTipo, filterDireccion].filter(Boolean).length
-    + (montoRango.min != null || montoRango.max != null ? 1 : 0)
-    + (filterSistema.length > 0 ? 1 : 0);
+  const activeFilterCount = [filterFechaFrom, filterFechaTo, filterTipo, filterDireccion].filter(Boolean).length;
 
   const chipsFiltros = [
     filterFechaFrom && { id: "desde", label: `Desde ${filterFechaFrom}`, onQuitar: () => { setFilterFechaFrom(""); setPage(1); } },
     filterFechaTo && { id: "hasta", label: `Hasta ${filterFechaTo}`, onQuitar: () => { setFilterFechaTo(""); setPage(1); } },
     filterTipo && { id: "tipo", label: TIPO_META[filterTipo]?.label ?? filterTipo, onQuitar: () => { setFilterTipo(""); setPage(1); } },
     filterDireccion && { id: "dir", label: filterDireccion === "DADO" ? "Dado" : "Recibido", onQuitar: () => { setFilterDireccion(""); setPage(1); } },
-    (montoRango.min != null || montoRango.max != null) && { id: "monto", label: `Monto ${montoRango.min ?? "…"}–${montoRango.max ?? "…"}`, onQuitar: () => { setMontoRango({ min: null, max: null }); setPage(1); } },
-    filterSistema.length > 0 && { id: "sis", label: filterSistema.join(", "), onQuitar: () => { setFilterSistema([]); setPage(1); } },
   ].filter((c): c is { id: string; label: string; onQuitar: () => void } => !!c);
 
   const clearFilters = () => {
-    setFilterFechaFrom(""); setFilterFechaTo(""); setMontoRango({ min: null, max: null });
-    setFilterTipo(""); setFilterDireccion(""); setFilterSistema([]); setSearchQuery("");
+    setFilterFechaFrom(""); setFilterFechaTo("");
+    setFilterTipo(""); setFilterDireccion(""); setSearchQuery(""); f.limpiar();
   };
 
-  const totalPages = Math.max(1, Math.ceil(displayList.length / PER_PAGE));
-  const paginated = displayList.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  // Autofiltros de Excel de la tabla (Cliente, Sys, Monto, Tasa, Cuotas, Saldo, Status): sobre lo que ya dejó la búsqueda.
+  const f = useFiltrosTabla(displayList, COLUMNAS_CARTERA);
+  useEffect(() => { setPage(1); }, [f.facetas, f.textos]);
+  const lista = f.filtradas;
+  const totalPages = Math.max(1, Math.ceil(lista.length / PER_PAGE));
+  const paginated = lista.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const saldoPendiente = activos.reduce((s, p) => {
     const cuotasPendientes = p.cuotas.filter(c => !c.pagadoEn);
@@ -722,13 +718,6 @@ export default function PrestamosModule() {
                     <Field label="Hasta"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
                     <Field label="Tipo"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
                     <Field label="Dirección"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
-                    <Field label="Monto (S/)" className="sm:hidden">
-                      <div className="flex items-center gap-1.5">
-                        <input type="number" step={10} min={0} value={montoRango.min ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, min: v })); setPage(1); }} placeholder="Desde" aria-label="Monto desde" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
-                        <input type="number" step={10} min={0} value={montoRango.max ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, max: v })); setPage(1); }} placeholder="Hasta" aria-label="Monto hasta" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
-                      </div>
-                    </Field>
-                    <Field label="Sistema amort." className="sm:hidden"><select value={filterSistema[0] ?? ""} onChange={e => { setFilterSistema(e.target.value ? [e.target.value as SistemaAmortizacion] : []); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
               </div>
             </FiltrosEnBoton>
             <ActionMenu
@@ -776,6 +765,7 @@ export default function PrestamosModule() {
             </div>
           ) : (
             <>
+              <BarraFiltrosTabla f={f} className="px-4 pt-3" />
               <div className="-mx-4 sm:mx-0">
                 <DataTable className="min-w-[600px] sm:min-w-0">
                   <thead ref={ordenCartera.refCabecera}>
@@ -786,48 +776,40 @@ export default function PrestamosModule() {
                       <EnOrden
                         orden={ordenCartera.orden}
                         celdas={{
-                          cliente: <th data-col="cliente">Cliente</th>,
+                          cliente: <th data-col="cliente">Cliente<FiltroEnCabecera id="cliente" f={f} compacto /></th>,
                           sistema: (
                             <th data-col="sistema" className="text-center hidden sm:table-cell">
-                              <span className="block">Sys</span>
-                              <FiltroColumnaMulti
-                                label="Sistema"
-                                value={filterSistema}
-                                options={(["FRANCES", "ALEMAN", "AMERICANO"] as SistemaAmortizacion[]).map((s) => ({ value: s, count: prestamos.filter((p) => p.sistemaAmortizacion === s).length }))}
-                                etiqueta={(v) => SISTEMA_LABELS[v as SistemaAmortizacion] ?? v}
-                                onChange={(v) => { setFilterSistema(v as SistemaAmortizacion[]); setPage(1); }}
-                                placeholder="Todos"
-                                className="mx-auto"
-                              />
+                              Sys<FiltroEnCabecera id="sistema" f={f} compacto />
                             </th>
                           ),
                           monto: (
                             <th data-col="monto" className="text-right cursor-pointer select-none" onClick={() => handleSort("monto")}>
-                              <span className="flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                              <span className="inline-flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
                               {/* `role="presentation"` corta la burbuja del click del filtro antes
                                   de que llegue al onClick de ordenar del `<th>` padre. */}
-                              <div role="presentation" onClick={(e) => e.stopPropagation()}>
-                                <FiltroColumnaRango label="Monto" unidad="S/" paso={10} valor={montoRango} onChange={(r) => { setMontoRango(r as Rango<number>); setPage(1); }} placeholder="Todos" className="ml-auto" />
-                              </div>
+                              <span role="presentation" onClick={(e) => e.stopPropagation()}><FiltroEnCabecera id="monto" f={f} compacto /></span>
                             </th>
                           ),
                           tasa: (
                             <th data-col="tasa" className="text-right hidden sm:table-cell cursor-pointer select-none" onClick={() => handleSort("tasaInteres")}>
-                              <span className="flex items-center justify-end gap-1">Tasa mensual {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                              <span className="inline-flex items-center justify-end gap-1">Tasa mensual {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                              <span role="presentation" onClick={(e) => e.stopPropagation()}><FiltroEnCabecera id="tasa" f={f} compacto /></span>
                             </th>
                           ),
                           cuotas: (
                             <th data-col="cuotas" className="text-right hidden sm:table-cell cursor-pointer select-none" onClick={() => handleSort("numeroCuotas")}>
-                              <span className="flex items-center justify-end gap-1">Cuotas {sortKey === "numeroCuotas" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                              <span className="inline-flex items-center justify-end gap-1">Cuotas {sortKey === "numeroCuotas" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                              <span role="presentation" onClick={(e) => e.stopPropagation()}><FiltroEnCabecera id="cuotas" f={f} compacto /></span>
                             </th>
                           ),
-                          saldo: <th data-col="saldo" className="text-right">Saldo</th>,
-                          status: <th data-col="status">Status</th>,
+                          saldo: <th data-col="saldo" className="text-right">Saldo<FiltroEnCabecera id="saldo" f={f} compacto /></th>,
+                          status: <th data-col="status">Status<FiltroEnCabecera id="status" f={f} compacto /></th>,
                         }}
                       />
                     </tr>
                   </thead>
                   <tbody>
+                    {displayList.length > 0 && lista.length === 0 && <SinCoincidenciasFila colSpan={8} />}
                     {displayList.length === 0 && (
                       <tr>
                         <td colSpan={8} className="text-center py-12">
@@ -843,7 +825,7 @@ export default function PrestamosModule() {
                       const meta = STATUS_META[p.status];
                       const StatusIcon = meta.icon;
                       const cuotasPagadas = p.cuotas.filter(c => c.pagadoEn).length;
-                      const saldoPend = p.cuotas.filter(c => !c.pagadoEn).reduce((s, c) => s + c.monto, 0);
+                      const saldoPend = saldoDe(p);
                       const proxVence = p.cuotas.find(c => !c.pagadoEn);
                       // Mejora 11: Indicador visual de riesgo (semáforo)
                       const rowNow = new Date(); const rowSemana = new Date(); rowSemana.setDate(rowNow.getDate() + 7);
@@ -917,7 +899,7 @@ export default function PrestamosModule() {
               </div>
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
-                  <p className="text-sm text-[var(--text-secondary)]">{displayList.length} préstamo{displayList.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{lista.length} préstamo{lista.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}</p>
                   <div className="flex gap-1">
                     <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30">
                       <ChevronLeft className="h-4 w-4" />
@@ -1404,64 +1386,7 @@ export default function PrestamosModule() {
                       )}
 
                       {/* Vista Tabla de Amortización */}
-                      {detailView === "amortizacion" && (() => {
-                        let saldoVivo = selected.monto;
-                        const rows = selected.cuotas.map(c => {
-                          const row = { ...c, saldo: Math.max(0, saldoVivo - c.capital) };
-                          saldoVivo = row.saldo;
-                          return row;
-                        });
-                        const totalCapital = selected.cuotas.reduce((s, c) => s + c.capital, 0);
-                        const totalInteres = selected.cuotas.reduce((s, c) => s + c.interes, 0);
-                        const totalCuota = selected.cuotas.reduce((s, c) => s + c.monto, 0);
-                        return (
-                          <div className="-mx-1">
-                            <DataTable>
-                              <thead>
-                                <tr className="border-b border-[var(--rule-base)]">
-                                  <th>#</th>
-                                  <th>Fecha</th>
-                                  <th className="text-right">Capital</th>
-                                  <th className="text-right">Interés</th>
-                                  <th className="text-right">Cuota</th>
-                                  <th className="text-right">Saldo</th>
-                                  <th className="text-center">Estado</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {rows.map(c => (
-                                  <tr key={c.id} className={c.pagadoEn ? "bg-primary/10" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : undefined}>
-                                    <td className="font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
-                                    <td className="text-[var(--text-secondary)]">{formatDateShort(c.fechaVence)}</td>
-                                    <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
-                                    <td className="text-right font-mono text-[var(--data-error-500)]/70">{formatCurrency(c.interes)}</td>
-                                    <td className="text-right font-mono font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</td>
-                                    <td className="text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
-                                    <td className="text-center">
-                                      {c.pagadoEn ? (
-                                        <span className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1.5 py-0.5 rounded">PAGADA</span>
-                                      ) : new Date(c.fechaVence) < new Date() ? (
-                                        <span className="text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
-                                      ) : (
-                                        <span className="text-sm font-bold text-[var(--data-warning-500)] bg-[var(--data-warning-100)] px-1.5 py-0.5 rounded">PEND.</span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
-                                <tr className="border-t-2 border-[var(--rule-base)] font-bold">
-                                  <td colSpan={2} className="text-[var(--text-secondary)]">TOTAL</td>
-                                  <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCapital)}</td>
-                                  <td className="text-right font-mono text-[var(--data-error-500)]">{formatCurrency(totalInteres)}</td>
-                                  <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCuota)}</td>
-                                  <td colSpan={2}></td>
-                                </tr>
-                              </tfoot>
-                            </DataTable>
-                          </div>
-                        );
-                      })()}
+                      {detailView === "amortizacion" && <TablaCuotasPrestamo cuotas={selected.cuotas} monto={selected.monto} />}
 
                       {/* Pago anticipado total — solo si hay cuotas pendientes */}
                       {selected.status === "ACTIVO" && (() => {

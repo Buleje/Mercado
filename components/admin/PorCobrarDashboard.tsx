@@ -42,6 +42,8 @@ import { usePorCobrar } from "@/hooks/use-por-cobrar";
 import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
 import { ACCION_LIQUIDAR, PARAM_ACCION, PARAM_PERSONA } from "@/components/admin/adelantos/cuentas/liquidar-por-url";
 import type { PorCobrarTipo } from "@/lib/db/por-cobrar.db";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PorCobrarFila } from "@/lib/db/por-cobrar.db";
 import FilaPorCobrar from "./por-cobrar/FilaPorCobrar";
 import TarjetaIndicador from "./por-cobrar/TarjetaIndicador";
 import { ME_DEBEN } from "./por-cobrar/FiadosEnVentasYCaja";
@@ -75,6 +77,18 @@ const DONDE_SE_COBRA: Record<PorCobrarTipo, string> = {
    entera. */
 const FIADO_SIN_NOMBRE = "Cliente sin nombre";
 
+/** El texto de un día `YYYY-MM-DD` como «10/09» en los chips del filtro. */
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+
+/* Autofiltro de Excel en cada título (Brandon 25-10). Constante de módulo: el hook la pide estable. */
+const COLUMNAS_FILTRO: readonly ColumnaFiltro<PorCobrarFila>[] = [
+  { id: "tipo", label: "Tipo", tipo: "multi", valor: (f) => TIPOS[f.tipo].plural },
+  { id: "quien", label: "Quién te debe", tipo: "multi", valor: (f) => f.quien },
+  { id: "monto", label: "Monto", tipo: "rango", numero: (f) => f.monto, paso: 1 },
+  { id: "desde", label: "Desde", tipo: "fecha", numero: (f) => f.desde, formatearValor: ddmm },
+  { id: "vence", label: "Vence", tipo: "fecha", numero: (f) => f.vence, formatearValor: ddmm },
+];
+
 export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) => void } = {}) {
   const { data, loading, error, recargar } = usePorCobrar();
   const [filtro, setFiltro] = useState<PorCobrarTipo | "todo">("todo");
@@ -89,6 +103,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
       return `${f.quien} ${f.nota ?? ""}`.toLowerCase().includes(texto);
     });
   }, [data.items, filtro, q]);
+  const f = useFiltrosTabla(filas, COLUMNAS_FILTRO);
   const crucePorClave = useMemo(() => new Map(data.cruces.map((c) => [c.clave, c])), [data.cruces]);
 
   /* Las cifras SIEMPRE salen del backend: nunca se re-suma en el navegador.
@@ -225,29 +240,31 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
           {/* `sm:pr-14`: el botón flotante «Abrir acciones rápidas» es fixed en
               x 1200-1256 y se comía el «Cobrar» de la fila que quedara a esa
               altura (medido con `elementFromPoint`): ese corredor queda libre. */}
+          <BarraFiltrosTabla f={f} />
           <DataTable zebra wrapperClassName="sm:pr-14">
             <thead>
               <tr>
-                <th>Tipo</th>
-                <th>Quién te debe</th>
-                <th className="text-right">Monto</th>
-                <th>Desde</th>
-                <th>Vence</th>
+                <th>Tipo<FiltroEnCabecera id="tipo" f={f} compacto /></th>
+                <th>Quién te debe<FiltroEnCabecera id="quien" f={f} compacto /></th>
+                <th className="text-right">Monto<FiltroEnCabecera id="monto" f={f} compacto /></th>
+                <th>Desde<FiltroEnCabecera id="desde" f={f} compacto /></th>
+                <th>Vence<FiltroEnCabecera id="vence" f={f} compacto /></th>
                 <th className="text-right">Acción</th>
               </tr>
             </thead>
             <tbody>
-              {filas.map((f) => (
+              {f.filtradas.map((fila) => (
                 <FilaPorCobrar
-                  key={`${f.tipo}-${f.id}-${f.moneda}`}
-                  fila={f}
+                  key={`${fila.tipo}-${fila.id}-${fila.moneda}`}
+                  fila={fila}
                   hoy={hoy}
-                  cruce={(f.cruce && crucePorClave.get(f.cruce)) || null}
-                  onCobrar={() => (f.tipo === "fiado" ? cobrarFiado(f.quien) : irASeccion(TIPOS[f.tipo].destino, TIPOS[f.tipo].externo, TIPOS[f.tipo].vista))}
+                  cruce={(fila.cruce && crucePorClave.get(fila.cruce)) || null}
+                  onCobrar={() => (fila.tipo === "fiado" ? cobrarFiado(fila.quien) : irASeccion(TIPOS[fila.tipo].destino, TIPOS[fila.tipo].externo, TIPOS[fila.tipo].vista))}
                   onScoring={aQuienFiarle}
                   onLiquidar={irALiquidar}
                 />
               ))}
+              {filas.length > 0 && f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
               {filas.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-center">

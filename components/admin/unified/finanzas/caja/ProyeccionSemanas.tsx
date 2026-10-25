@@ -11,12 +11,20 @@
  *  - lo que no tiene fecha no se reparte en semanas: va en una línea aparte.
  */
 
+import { useMemo } from "react";
 import { DataTable } from "@buleje/design-system";
 import { TrendingDown } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fechaCorta } from "@/lib/forestal/plazo-de-apartado";
 import { cn, limaDateKey } from "@/lib/utils";
 import type { ProyeccionDeCaja, SemanaProyectada } from "@/hooks/use-caja-del-negocio";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "@/components/admin/forestal/filtros-tabla-forestal";
 import { montoTexto } from "@/components/admin/unified/finanzas/resultado/fuentes";
 
 export type Clave =
@@ -87,6 +95,11 @@ export const valor = (w: SemanaProyectada, c: Clave): number | null => {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 };
 
+/* Matriz de conceptos × semanas: el filtro útil es elegir qué conceptos ver. */
+const COLUMNAS_FILTRO: readonly ColumnaFiltro<Fila>[] = [
+  { id: "concepto", label: "Concepto", tipo: "multi", valor: (f) => f.label },
+];
+
 /**
  * El detalle por concepto: un renglón por concepto, una columna por semana.
  * Vive plegado debajo de «Semana a semana» (la lista compacta): es para quien
@@ -97,12 +110,17 @@ export default function ProyeccionSemanas({ d }: { d: ProyeccionDeCaja }) {
      de tabla»). Lo único propio: la 1.ª columna queda fija al desplazar las 13
      semanas (sticky + su fondo, o se transparenta) y el color de cada cifra,
      que dice si entra o sale, va en el texto y no en la celda. */
+  const todas = useMemo(() => filas(d), [d]);
+  const f = useFiltrosTabla(todas, COLUMNAS_FILTRO);
   return (
+    <>
+    <BarraFiltrosTabla f={f} />
     <DataTable className="w-max min-w-full">
       <thead>
         <tr>
-          <th scope="col" className="sticky left-0 z-10">
+          <th scope="col" className="sticky left-0 z-30">
             Concepto
+            <FiltroEnCabecera id="concepto" f={f} compacto />
           </th>
           {d.weeks.map((w) => (
             <th scope="col" key={w.weekNumber} className="text-right whitespace-nowrap">
@@ -114,27 +132,28 @@ export default function ProyeccionSemanas({ d }: { d: ProyeccionDeCaja }) {
         </tr>
       </thead>
       <tbody>
-        {filas(d).map((f) => {
-          const total = f.tono === "total";
+        {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={d.weeks.length + 1} />}
+        {f.filtradas.map((fila) => {
+          const total = fila.tono === "total";
           return (
-            <tr key={f.clave}>
+            <tr key={fila.clave}>
               <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-[var(--surface-raised)] text-left">
-                <span className={cn("inline-flex items-center gap-1", total && "font-bold", f.tono === "informa" && "italic")}>
-                  <span className="text-[var(--text-tertiary)]">{f.signo}</span>
-                  <span>{f.label}</span>
-                  {f.ayuda && <InfoTip title={f.label} what={f.ayuda} />}
+                <span className={cn("inline-flex items-center gap-1", total && "font-bold", fila.tono === "informa" && "italic")}>
+                  <span className="text-[var(--text-tertiary)]">{fila.signo}</span>
+                  <span>{fila.label}</span>
+                  {fila.ayuda && <InfoTip title={fila.label} what={fila.ayuda} />}
                 </span>
               </th>
               {d.weeks.map((w) => {
-                const v = valor(w, f.clave);
+                const v = valor(w, fila.clave);
                 const rojo = total && w.closingBalance < 0;
                 return (
                   <td key={w.weekNumber} className="text-right tabular-nums whitespace-nowrap">
                     <span
                       className={cn(
-                        f.tono === "entra" && "text-[var(--data-success-ink)]",
-                        f.tono === "sale" && "text-[var(--data-error-ink)]",
-                        (f.tono === "neutro" || f.tono === "informa") && "text-[var(--text-secondary)]",
+                        fila.tono === "entra" && "text-[var(--data-success-ink)]",
+                        fila.tono === "sale" && "text-[var(--data-error-ink)]",
+                        (fila.tono === "neutro" || fila.tono === "informa") && "text-[var(--text-secondary)]",
                         total && "font-bold",
                         rojo && "text-[var(--data-error-ink)]",
                       )}
@@ -150,5 +169,6 @@ export default function ProyeccionSemanas({ d }: { d: ProyeccionDeCaja }) {
         })}
       </tbody>
     </DataTable>
+    </>
   );
 }

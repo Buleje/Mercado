@@ -113,7 +113,7 @@ describe("la pantalla de Tesorería", () => {
     expect(await screen.findByText("− S/ 5,000.00")).toBeTruthy();
     expect(screen.getByText("+ S/ 5,000.00")).toBeTruthy();
     expect(screen.getAllByText("reponer caja chica")).toHaveLength(2);
-    expect(screen.getByRole("columnheader", { name: "Cuenta" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /^Cuenta/ })).toBeTruthy();
   });
 
   it("tocar una cuenta filtra sus movimientos y se pide al servidor; «Ver todas» la suelta", async () => {
@@ -125,7 +125,7 @@ describe("la pantalla de Tesorería", () => {
     expect(await screen.findByText("Movimientos de BCP Corriente")).toBeTruthy();
     expect(mockFetch.mock.calls.some(([u]) => String(u).includes("/api/treasury/movimientos?limit=100&cuentaId=c-bcp"))).toBe(true);
     await waitFor(() => expect(screen.queryByText("+ S/ 5,000.00")).toBeNull());
-    expect(screen.queryByRole("columnheader", { name: "Cuenta" })).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: /^Cuenta/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Ver todas las cuentas" }));
     expect(await screen.findByText("+ S/ 5,000.00")).toBeTruthy();
     expect(bcp.getAttribute("aria-pressed")).toBe("false");
