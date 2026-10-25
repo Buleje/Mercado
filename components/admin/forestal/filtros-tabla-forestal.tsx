@@ -34,7 +34,7 @@ import {
   type UseFiltrosDeColumnaResult,
 } from "@/components/admin/shared/filtros-columna";
 
-import { VistasDeFiltros } from "@/components/admin/shared/vistas-de-filtros";
+import { VistasDeFiltros, type PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { BajarLoQueVes } from "@/components/admin/shared/bajar-lo-que-ves";
 
 export type { ColumnaFiltro } from "@/components/admin/shared/filtros-columna";
@@ -220,6 +220,7 @@ export function BarraFiltrosTabla<T>({
   sinConteo = false,
   plegableSiempre = false,
   vistas,
+  presets,
   excel,
 }: {
   f: FiltrosTabla<T>;
@@ -228,6 +229,8 @@ export function BarraFiltrosTabla<T>({
   plegableSiempre?: boolean;
   /** Módulo de las vistas guardadas de esta tabla (`vistas:tabla.<modulo>`): guardar los filtros con un nombre. */
   vistas?: string;
+  /** Vistas de fábrica de la tabla («Vencidos»…), debajo de «Sin filtros» en el menú «Vista». Necesita `vistas`. */
+  presets?: PresetsFiltros;
   /** Nombre del Excel de «Bajar lo que ves» (aparece con filtros puestos). */
   excel?: string;
 }) {
@@ -255,7 +258,7 @@ export function BarraFiltrosTabla<T>({
           <ChipsDeFiltros chips={f.chips} onQuitar={f.quitar} onLimpiarTodo={f.limpiar} className="min-w-0 flex-1" />
           <span className="ml-auto inline-flex shrink-0 gap-2">
             {excel && <BajarLoQueVes f={f} nombre={excel} />}
-            {vistas && <VistasDeFiltros f={f} modulo={vistas} />}
+            {vistas && <VistasDeFiltros f={f} modulo={vistas} presets={presets} />}
           </span>
         </div>
       ) : (

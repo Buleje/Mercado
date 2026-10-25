@@ -11,14 +11,18 @@
  * Sin filtros puestos ni vistas tuyas no dibuja nada: no suma una fila vacía.
  */
 
+import { useMemo } from "react";
 import { useVistasGuardadas } from "@/hooks/use-vistas-guardadas";
 import type { VistaDelSistema } from "@/lib/admin/vistas-guardadas";
 import { MenuVistasGuardadas } from "./MenuVistasGuardadas";
 import type { EstadoFiltros, FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 
-const SISTEMA: readonly VistaDelSistema<EstadoFiltros>[] = [
-  { id: "sin-filtros", nombre: "Sin filtros", ayuda: "La tabla entera", estado: { facetas: {}, textos: {} } },
-];
+const SIN_FILTROS: VistaDelSistema<EstadoFiltros> = { id: "sin-filtros", nombre: "Sin filtros", ayuda: "La tabla entera", estado: { facetas: {}, textos: {} } };
+
+/** Las vistas de fábrica de una tabla («Vencidos», «Atrasadas»): van debajo de «Sin filtros». Si dependen
+ *  de hoy, la tabla las arma con `useMemo` sobre la fecha (no una constante que envejece). */
+export type PresetsFiltros = readonly VistaDelSistema<EstadoFiltros>[];
+const SIN_PRESETS: PresetsFiltros = [];
 
 const esObjeto = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
@@ -30,14 +34,16 @@ export function esEstadoFiltros(e: unknown): e is EstadoFiltros {
   return Object.values(e.facetas).every(facetaValida) && Object.values(e.textos).every((t) => typeof t === "string");
 }
 
-export function VistasDeFiltros<T>({ f, modulo }: { f: FiltrosTabla<T>; modulo: string }) {
+export function VistasDeFiltros<T>({ f, modulo, presets = SIN_PRESETS }: { f: FiltrosTabla<T>; modulo: string; presets?: PresetsFiltros }) {
+  const sistema = useMemo(() => [SIN_FILTROS, ...presets], [presets]);
   const vistas = useVistasGuardadas<EstadoFiltros>({
     modulo: `tabla.${modulo}`,
     estado: f.estado,
     aplicar: f.aplicarEstado,
-    sistema: SISTEMA,
+    sistema,
     valida: esEstadoFiltros,
   });
-  if (f.activos === 0 && vistas.guardadas.length === 0) return null;
+  /* Con vistas de fábrica el menú está siempre: es la puerta a ellas. */
+  if (f.activos === 0 && vistas.guardadas.length === 0 && presets.length === 0) return null;
   return <MenuVistasGuardadas vistas={vistas} queGuarda="Los filtros de las columnas de esta tabla" ejemplo="Ej.: Vencidos de este mes" />;
 }

@@ -9,7 +9,7 @@
 import { LoadingState, DataTable } from "@buleje/design-system";
 import { AlertTriangle, ChevronLeft, ChevronRight, MessageCircle, Search } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { FiadoAvatar, FiadoReliabilityBadge, FiadoSemaphore, FiadoStreakBadge } from "./FiadoBadges";
 import { diasDeAtraso, useRecordarPorWhatsApp } from "./recordar";
@@ -20,6 +20,7 @@ import { diaLeido } from "./fechas";
 import { PER_PAGE, STATUS_META, estaAbierto, type Fiado, type FiadoStatus } from "./tipos";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { ThColumna } from "@/components/admin/shared/th-columna";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import type { EstadoFiados } from "./use-fiados";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
@@ -64,6 +65,14 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
   const recordarPorWhatsApp = useRecordarPorWhatsApp(gestiones);
   // «Último contacto: martes 14/10 por WhatsApp · prometió pagar…» de las gestiones del fiado; sin gestiones, nada.
   const contactos = useMemo(() => ultimosContactos(gestiones ?? []), [gestiones]);
+  /* Vistas de fábrica (25-10): un clic a lo que se cobra primero. «Vencidos» = pasó su día y aún debe. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    const ayer = limaDateKey(Date.now() - 86_400_000);
+    return [
+      { id: "vencidos", nombre: "Vencidos", ayuda: "Pasó su día y aún debe", estado: { facetas: { vence: { min: null, max: ayer }, saldo: { min: 0.01, max: null } }, textos: {} } },
+      { id: "mas-de-100", nombre: "Deben más de S/ 100", ayuda: "Saldo desde S/ 100", estado: { facetas: { saldo: { min: 100, max: null } }, textos: {} } },
+    ];
+  }, []);
   const { loading, error, fiados, densidad } = estado;
   /* El buscador y los chips de estado siguen en el hook; los embudos de columna, orden y páginas, acá. */
   /* Sin orden elegido, por nombre (el de siempre en esta tabla). */
@@ -118,7 +127,7 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
         <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">Ningún fiado con ese filtro.</p>
       ) : (
         <>
-            <BarraFiltrosTabla excel="Fiados" vistas="fiados" f={f} className="px-3 py-2" sinConteo />
+            <BarraFiltrosTabla excel="Fiados" vistas="fiados" presets={presets} f={f} className="px-3 py-2" sinConteo />
             <div className="max-h-[65vh] overflow-x-auto overflow-y-auto">
               {/* ds-ignore-table — caso legítimo: thead clickable con
                   sort indicators, mobile-aware (hidden sm:table-cell),
