@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { DataTable } from "@buleje/design-system";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
@@ -34,6 +34,19 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
   const f = useFiltrosTabla(base, columnas);
   const filas = f.filtradas;
   const todosLocal = filas.length > 0 && filas.every((d) => selectedIds.has(d.id));
+  // Elegir y después filtrar: lo que el filtro de columna esconde deja de estar elegido, así
+  // mover, etiquetar o mandar a la papelera nunca toca un papel que no se ve.
+  useEffect(() => {
+    if (f.activos === 0) return;
+    const visibles = new Set(filas.map((d) => d.id));
+    const escondidos = base.filter((d) => selectedIds.has(d.id) && !visibles.has(d.id)).map((d) => d.id);
+    if (escondidos.length === 0) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of escondidos) next.delete(id);
+      return next;
+    });
+  }, [f.activos, filas, base, selectedIds, setSelectedIds]);
   return (
     <>
       <BarraFiltrosTabla f={f} plegableSiempre className="mb-2" />
