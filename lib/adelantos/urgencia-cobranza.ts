@@ -17,6 +17,8 @@
  */
 
 import { esRecibido } from "@/lib/adelantos/direccion";
+import { diaCorto } from "@/lib/adelantos/control-edicion";
+import { limaDateKey } from "@/lib/utils";
 
 /** Una entrega que se pactó para una fecha. `cumplidaEn` la saca de la cuenta. */
 export interface PactadaParaCobranza {
@@ -26,6 +28,9 @@ export interface PactadaParaCobranza {
 }
 
 export interface AdelantoParaCobranza {
+  /** Opcional: con él la fila sabe qué adelantos tocar al ponerles fecha en lote. */
+  id?: string;
+  modalidad?: string | null;
   beneficiarioId: string;
   saldoPendiente: number;
   /** PEN si no viene — mismo default que el resto del módulo (shared.tsx). */
@@ -67,6 +72,12 @@ export interface DeudorCobranza {
   pactadasVencidas: number;
   /** La fecha que se está usando como referencia, para poder mostrarla. */
   referencia: Date | null;
+  /** Los adelantos de esta fila (para ponerles fecha de cobro en lote). */
+  adelantoIds: string[];
+  /** Hay saldo abierto sin fecha de cobro ni cuotas pactadas con fecha. */
+  sinFecha: boolean;
+  /** La próxima fecha de cobro que todavía no llega (la más cercana), si hay. */
+  proximoCobro: Date | null;
 }
 
 export type BucketCobranza = "d0" | "d30" | "d60";
@@ -110,6 +121,9 @@ export function deudoresDeCobranza(
       vencimientoMasViejo: Date | null;
       /** El adelanto más viejo, de respaldo. */
       adelantoMasViejo: number;
+      adelantoIds: string[];
+      sinFecha: boolean;
+      proximoCobro: Date | null;
     }
   >();
 
@@ -140,7 +154,11 @@ export function deudoresDeCobranza(
         pactadasVencidas: 0,
         vencimientoMasViejo: null,
         adelantoMasViejo: Number.POSITIVE_INFINITY,
+        adelantoIds: [],
+        sinFecha: false,
+        proximoCobro: null,
       };
+    if (a.id) acc.adelantoIds.push(a.id);
 
     acc.saldo += a.saldoPendiente;
     const dado = fecha(a.fechaAdelanto)?.getTime() ?? ahora;
@@ -152,6 +170,10 @@ export function deudoresDeCobranza(
     if (vence && vence.getTime() <= ahora && (!acc.vencimientoMasViejo || vence < acc.vencimientoMasViejo)) {
       acc.vencimientoMasViejo = vence;
     }
+
+    if (vence && vence.getTime() > ahora && (!acc.proximoCobro || vence < acc.proximoCobro)) acc.proximoCobro = vence;
+    const tienePactadasConFecha = (a.entregasPactadas ?? []).some((p) => !p.cumplidaEn && fecha(p.fechaEsperada));
+    if (!vence && !tienePactadasConFecha) acc.sinFecha = true;
 
     for (const p of a.entregasPactadas ?? []) {
       // Una entrega ya cumplida no debe nada, por tarde que se haya cumplido.
@@ -187,6 +209,9 @@ export function deudoresDeCobranza(
       base,
       pactadasVencidas: d.pactadasVencidas,
       referencia,
+      adelantoIds: d.adelantoIds,
+      sinFecha: d.sinFecha,
+      proximoCobro: d.proximoCobro,
     };
   });
 }
@@ -203,6 +228,9 @@ export function ordenarPorUrgencia(deudores: readonly DeudorCobranza[]): DeudorC
   const peso: Record<BaseDeAtraso, number> = { pactada: 0, vencimiento: 1, antiguedad: 2 };
   return [...deudores].sort((a, b) => {
     if (a.base !== b.base) return peso[a.base] - peso[b.base];
+    /* Entre los que sólo tienen antigüedad: primero los que nadie fijó (hay que
+       ponerles fecha), después los que ya tienen su día de cobro. */
+    if (a.base === "antiguedad" && a.sinFecha !== b.sinFecha) return a.sinFecha ? -1 : 1;
     if (a.dias !== b.dias) return b.dias - a.dias;
     return b.saldo - a.saldo;
   });
@@ -218,5 +246,6 @@ export function explicarAtraso(d: DeudorCobranza): string {
   if (d.base === "vencimiento") {
     return `Se tenía que devolver hace ${d.dias} día${d.dias === 1 ? "" : "s"}`;
   }
-  return `Sin fecha pactada: ${d.dias} día${d.dias === 1 ? "" : "s"} desde que se dio el adelanto`;
+  if (d.proximoCobro && !d.sinFecha) return `Se cobra el ${diaCorto(limaDateKey(d.proximoCobro))}`;
+  return `Sin fecha de cobro · hace ${d.dias} día${d.dias === 1 ? "" : "s"}`;
 }

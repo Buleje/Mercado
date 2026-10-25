@@ -58,10 +58,9 @@ export default function FilaDeudor({
       <input
         type="checkbox"
         checked={enTanda}
-        disabled={!d.telefono}
         onChange={(e) => onTanda(e.target.checked)}
-        aria-label={`Sumar a ${d.nombre} a la ronda`}
-        className="h-5 w-5 shrink-0 disabled:opacity-30"
+        aria-label={`Marcar a ${d.nombre}`}
+        className="h-5 w-5 shrink-0"
       />
 
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">
@@ -91,8 +90,10 @@ export default function FilaDeudor({
 
         <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
           {/* El atraso sólo se enuncia cuando LO HAY. */}
-          {d.dias > 0 && (
-            <span className={d.dias > 60 ? "font-semibold text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}>
+          {/* Rojo sólo para lo vencido de verdad (cuota o fecha de cobro pasada);
+              «sin fecha» y «se cobra el…» van en gris. */}
+          {(d.dias > 0 || d.base === "antiguedad") && (
+            <span className={d.base !== "antiguedad" ? "font-semibold text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}>
               {explicarAtraso(d)}
             </span>
           )}

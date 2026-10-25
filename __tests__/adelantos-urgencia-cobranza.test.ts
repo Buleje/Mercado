@@ -33,7 +33,7 @@ describe("a quién hay que cobrarle", () => {
     const [d] = deudoresDeCobranza([adelanto({ fechaAdelanto: diasAtras(45) })], HOY);
     expect(d.base).toBe("antiguedad");
     expect(d.dias).toBe(45);
-    expect(explicarAtraso(d)).toMatch(/Sin fecha pactada/);
+    expect(explicarAtraso(d)).toMatch(/Sin fecha de cobro/);
   });
 
   /**

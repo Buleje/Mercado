@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, CalendarClock, CheckCircle, CheckSquare, FileText, MessageCircle, MoreHorizontal, Phone, Search, Settings2, Target, Wallet } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
@@ -50,6 +51,7 @@ import AnotarGestion from "./AnotarGestion";
 import PlantillasModal from "./PlantillasModal";
 import MetaModal from "./MetaModal";
 import ModoLlamada from "./ModoLlamada";
+import BarraFechaCobro from "./BarraFechaCobro";
 import { formatDateNumeric } from "@/lib/format";
 
 /**
@@ -82,6 +84,12 @@ export default function CobranzaView({
 }) {
   const [tramo, setTramo] = useState<TramoId | "todos">("todos");
   const [q, setQ] = useState("");
+  /* `filtro=sin-fecha` lo enlaza el Resumen: abre con «Sin fecha» activo. */
+  const filtroUrl = useSearchParams().get("filtro");
+  const [soloSinFecha, setSoloSinFecha] = useState(filtroUrl === "sin-fecha");
+  useEffect(() => setSoloSinFecha(filtroUrl === "sin-fecha"), [filtroUrl]);
+  /* Las marcadas sirven para poner fecha de cobro (todas) y para la ronda de
+     WhatsApp (solo las que tienen teléfono). */
   const [tanda, setTanda] = useState<Set<string>>(new Set());
   const [gestiones, setGestiones] = useState<Gestion[]>([]);
   const [anotando, setAnotando] = useState<DeudorCobranza | null>(null);
@@ -167,16 +175,20 @@ export default function CobranzaView({
     const t = sinTildes(q);
     const base = deudores.filter((d) => {
       if (tramo !== "todos" && tramoDe(d.dias) !== tramo) return false;
+      if (soloSinFecha && !d.sinFecha) return false;
       return !t || sinTildes(d.nombre).includes(t);
     });
     return ordenarPorUrgencia(base);
-  }, [deudores, tramo, q]);
-  /* «Marcar a todos» = los que tienen teléfono y se ven (mismo criterio que el
-     botón que vivía suelto antes de pasar al «⋯»). */
-  const conTelefonoVisibles = filtrados.filter((d) => d.telefono).map(claveFila);
-  const todosMarcados = tanda.size > 0 && tanda.size >= conTelefonoVisibles.length;
+  }, [deudores, tramo, q, soloSinFecha]);
+  const cantSinFecha = deudores.filter((d) => d.sinFecha).length;
+  /* «Marcar a todos» = todos los que se ven. */
+  const visibles = filtrados.map(claveFila);
+  const todosMarcados = tanda.size > 0 && tanda.size >= visibles.length;
+  const marcados = filtrados.filter((d) => tanda.has(claveFila(d)));
+  const marcadosConTelefono = marcados.filter((d) => d.telefono);
+  const idsMarcados = marcados.flatMap((d) => d.adelantoIds);
 
-  useEffect(() => setTanda(new Set()), [tramo, q]);
+  useEffect(() => setTanda(new Set()), [tramo, q, soloSinFecha]);
 
   /** El texto que le toca a cada uno según su tramo de atraso. */
   const mensajeDe = useCallback(
@@ -212,7 +224,7 @@ export default function CobranzaView({
   const mandarLaRonda = async () => {
     setEnviandoRonda(true);
     try {
-      for (const d of filtrados.filter((x) => tanda.has(claveFila(x)))) {
+      for (const d of marcadosConTelefono) {
         const url = enlaceWhatsAppConTexto(d.telefono, mensajeDe(d));
         if (!url) continue;
         window.open(url, "_blank", "noopener,noreferrer");
@@ -321,10 +333,10 @@ export default function CobranzaView({
               {
                 id: "marcar",
                 label: todosMarcados ? "Desmarcar a todos" : "Marcar a todos",
-                hint: "Los que tienen teléfono, para escribirles en una ronda",
+                hint: "Para ponerles fecha de cobro o escribirles en una ronda",
                 icon: CheckSquare,
-                disabled: conTelefonoVisibles.length === 0,
-                onSelect: () => setTanda(todosMarcados ? new Set() : new Set(conTelefonoVisibles)),
+                disabled: visibles.length === 0,
+                onSelect: () => setTanda(todosMarcados ? new Set() : new Set(visibles)),
               },
               { id: "mensajes", label: "Mensajes", hint: "Qué se le escribe a cada tramo", icon: Settings2, onSelect: () => setVerPlantillas(true) },
               { id: "pdf", label: "Descargar PDF", hint: "La lista de deudores para imprimir", icon: FileText, onSelect: () => void exportarPdf() },
@@ -367,6 +379,11 @@ export default function CobranzaView({
             </button>
           ))}
         </div>
+        {cantSinFecha > 0 && (
+          <button type="button" onClick={() => setSoloSinFecha((v) => !v)} aria-pressed={soloSinFecha} className={chip(soloSinFecha)} title="Sin fecha de cobro: no sabemos cuál está vencido. Márcalos y ponles fecha.">
+            Sin fecha {cantSinFecha}
+          </button>
+        )}
         {sinTelefono > 0 && (
           <span className="inline-flex h-12 items-center rounded-xl bg-[var(--data-warning)]/10 px-3 text-sm font-semibold text-[var(--data-warning-ink)]">
             {sinTelefono} sin teléfono
@@ -376,6 +393,38 @@ export default function CobranzaView({
 
       {/* ── La lista ──────────────────────────────────────────────────── */}
       <div className="rounded-xl bg-[var(--surface-raised)] p-3 ring-1 ring-[var(--rule-soft)]">
+        {tanda.size > 0 && (
+          <div className="mb-3 space-y-3 rounded-xl bg-primary/8 px-4 py-3 ring-1 ring-primary/25">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-base font-semibold text-[var(--text-secondary)]">
+                <strong className="text-[var(--text-primary)]">{tanda.size}</strong> marcada{tanda.size === 1 ? "" : "s"} ·{" "}
+                <strong className="tabular-nums text-[var(--data-warning)]">
+                  {fmtMonedas(sumByMoneda(marcados.map((d) => ({ monto: d.saldo, moneda: d.moneda }))))}
+                </strong>{" "}
+                por cobrar
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setTanda(new Set())}
+                  className="h-12 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
+                >
+                  Vaciar
+                </button>
+                {marcadosConTelefono.length > 0 && (
+                  <button
+                    onClick={() => void mandarLaRonda()}
+                    disabled={enviandoRonda}
+                    className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {enviandoRonda ? "Abriendo chats…" : `Escribirle a los ${marcadosConTelefono.length} con teléfono`}
+                  </button>
+                )}
+              </div>
+            </div>
+            <BarraFechaCobro ids={idsMarcados} onGuardado={() => { setTanda(new Set()); onRecordado?.(); }} />
+          </div>
+        )}
         {filtrados.length === 0 ? (
           <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie en este tramo.</p>
         ) : (
@@ -404,33 +453,6 @@ export default function CobranzaView({
           </ul>
         )}
 
-        {tanda.size > 0 && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-primary/8 px-4 py-3 ring-1 ring-primary/25">
-            <p className="text-base font-semibold text-[var(--text-secondary)]">
-              <strong className="text-[var(--text-primary)]">{tanda.size}</strong> en la ronda ·{" "}
-              <strong className="tabular-nums text-[var(--data-warning)]">
-                {fmtMonedas(sumByMoneda(filtrados.filter((d) => tanda.has(claveFila(d))).map((d) => ({ monto: d.saldo, moneda: d.moneda }))))}
-              </strong>{" "}
-              por cobrar
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setTanda(new Set())}
-                className="h-12 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
-              >
-                Vaciar
-              </button>
-              <button
-                onClick={() => void mandarLaRonda()}
-                disabled={enviandoRonda}
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
-              >
-                <MessageCircle className="h-4 w-4" />
-                {enviandoRonda ? "Abriendo chats…" : `Escribirle a los ${tanda.size}`}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {anotando && (
