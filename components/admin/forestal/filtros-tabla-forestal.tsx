@@ -29,11 +29,20 @@ import {
   useFiltrosDeColumna,
   type ChipFiltro,
   type ColumnaFiltro,
+  type FacetasEstado,
   type Rango,
   type UseFiltrosDeColumnaResult,
 } from "@/components/admin/shared/filtros-columna";
 
+import { VistasDeFiltros } from "@/components/admin/shared/vistas-de-filtros";
+
 export type { ColumnaFiltro } from "@/components/admin/shared/filtros-columna";
+
+/** Todo lo puesto en los encabezados de una tabla: lo que guarda una vista. */
+export interface EstadoFiltros {
+  facetas: FacetasEstado;
+  textos: Record<string, string>;
+}
 
 export interface FiltrosTabla<T> extends UseFiltrosDeColumnaResult<T> {
   columnas: readonly ColumnaFiltro<T>[];
@@ -43,6 +52,9 @@ export interface FiltrosTabla<T> extends UseFiltrosDeColumnaResult<T> {
   quitar: (id: string) => void;
   /** Filas antes de filtrar (para «N de M»). */
   total: number;
+  estado: EstadoFiltros;
+  /** Pone una vista entera; lo de columnas que ya no existen se descarta. */
+  aplicarEstado: (e: EstadoFiltros) => void;
 }
 
 /** Minúsculas sin tildes: «Pucallpa» y «pucallpá» son la misma búsqueda. */
@@ -83,7 +95,7 @@ export function useFiltrosTabla<T>(filas: readonly T[], columnas: readonly Colum
     });
   }, []);
 
-  const { setFaceta, limpiar: limpiarFacetas } = h;
+  const { setFaceta, limpiar: limpiarFacetas, reemplazar } = h;
   const quitar = useCallback(
     (id: string) => {
       if (id in textos) setTexto(id, "");
@@ -95,6 +107,16 @@ export function useFiltrosTabla<T>(filas: readonly T[], columnas: readonly Colum
     limpiarFacetas();
     setTextos({});
   }, [limpiarFacetas]);
+
+  const estado = useMemo<EstadoFiltros>(() => ({ facetas: h.facetas, textos }), [h.facetas, textos]);
+  const aplicarEstado = useCallback(
+    (e: EstadoFiltros) => {
+      const tipo = new Map(columnas.map((c) => [c.id, c.tipo]));
+      reemplazar(Object.fromEntries(Object.entries(e.facetas).filter(([id]) => tipo.has(id) && tipo.get(id) !== "texto")));
+      setTextos(Object.fromEntries(Object.entries(e.textos).filter(([id, v]) => tipo.get(id) === "texto" && v.trim())));
+    },
+    [columnas, reemplazar],
+  );
 
   const chips = useMemo<ChipFiltro[]>(() => {
     const deTexto = columnas
@@ -113,6 +135,8 @@ export function useFiltrosTabla<T>(filas: readonly T[], columnas: readonly Colum
     chips,
     activos: h.activos + Object.keys(textos).length,
     total: filas.length,
+    estado,
+    aplicarEstado,
   };
 }
 
@@ -194,11 +218,14 @@ export function BarraFiltrosTabla<T>({
   className = "",
   sinConteo = false,
   plegableSiempre = false,
+  vistas,
 }: {
   f: FiltrosTabla<T>;
   className?: string;
   sinConteo?: boolean;
   plegableSiempre?: boolean;
+  /** Módulo de las vistas guardadas de esta tabla (`vistas:tabla.<modulo>`): guardar los filtros con un nombre. */
+  vistas?: string;
 }) {
   const conControl = f.columnas.filter((c) => f.conAutofiltro[c.id]);
   if (conControl.length === 0) return null;
@@ -219,7 +246,16 @@ export function BarraFiltrosTabla<T>({
           ))}
         </div>
       </details>
-      <ChipsDeFiltros chips={f.chips} onQuitar={f.quitar} onLimpiarTodo={f.limpiar} />
+      {vistas ? (
+        <div className="flex items-start gap-2">
+          <ChipsDeFiltros chips={f.chips} onQuitar={f.quitar} onLimpiarTodo={f.limpiar} className="min-w-0 flex-1" />
+          <span className="ml-auto shrink-0">
+            <VistasDeFiltros f={f} modulo={vistas} />
+          </span>
+        </div>
+      ) : (
+        <ChipsDeFiltros chips={f.chips} onQuitar={f.quitar} onLimpiarTodo={f.limpiar} />
+      )}
       {f.activos > 0 && !sinConteo && (
         <p className="text-sm text-[var(--text-tertiary)]" aria-live="polite" data-testid="filtros-conteo">
           Mostrando {f.filtradas.length} de {f.total}

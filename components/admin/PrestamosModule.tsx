@@ -765,7 +765,7 @@ export default function PrestamosModule() {
             </div>
           ) : (
             <>
-              <BarraFiltrosTabla f={f} className="px-4 pt-3" />
+              <BarraFiltrosTabla vistas="prestamos" f={f} className="px-4 pt-3" />
               <div className="-mx-4 sm:mx-0">
                 <DataTable className="min-w-[600px] sm:min-w-0">
                   <thead ref={ordenCartera.refCabecera}>

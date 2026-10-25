@@ -240,7 +240,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
           {/* `sm:pr-14`: el botón flotante «Abrir acciones rápidas» es fixed en
               x 1200-1256 y se comía el «Cobrar» de la fila que quedara a esa
               altura (medido con `elementFromPoint`): ese corredor queda libre. */}
-          <BarraFiltrosTabla f={f} />
+          <BarraFiltrosTabla vistas="por-cobrar" f={f} />
           <DataTable zebra wrapperClassName="sm:pr-14">
             <thead>
               <tr>

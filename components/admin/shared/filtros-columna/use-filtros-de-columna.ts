@@ -35,6 +35,8 @@ export interface UseFiltrosDeColumnaResult<T> {
   /** Las filas que pasan TODAS las facetas activas. */
   filtradas: T[];
   setFaceta: (id: string, valor: ValorFaceta | undefined) => void;
+  /** Pone todas las columnas de una vez (una vista guardada). */
+  reemplazar: (facetas: FacetasEstado) => void;
   limpiar: () => void;
   /** Cuántas columnas están acotando — el badge del botón «Filtros». */
   activos: number;
@@ -78,6 +80,7 @@ export function useFiltrosDeColumna<T>(
     });
   }, []);
 
+  const reemplazar = useCallback((nuevas: FacetasEstado) => setFacetas(nuevas), []);
   const limpiar = useCallback(() => setFacetas({}), []);
 
   const activos = useMemo(() => contarFacetas(facetas), [facetas]);
@@ -87,5 +90,5 @@ export function useFiltrosDeColumna<T>(
     [columnas],
   );
 
-  return { facetas, opciones, filtradas, setFaceta, limpiar, activos, chips, enCabecera, conAutofiltro };
+  return { facetas, opciones, filtradas, setFaceta, reemplazar, limpiar, activos, chips, enCabecera, conAutofiltro };
 }

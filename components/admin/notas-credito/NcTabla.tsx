@@ -59,7 +59,7 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
     <>
       {/* ── Table / Cards View ─────────────────────────────────────────── */}
       {viewMode !== "kanban" && filteredNotas.length > 0 && !loading && !error && (
-        <BarraFiltrosTabla f={f} plegableSiempre={viewMode === "cards"} />
+        <BarraFiltrosTabla vistas="notas-credito" f={f} plegableSiempre={viewMode === "cards"} />
       )}
       {viewMode !== "kanban" && (
       <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">

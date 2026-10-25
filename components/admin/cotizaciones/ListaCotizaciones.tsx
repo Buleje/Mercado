@@ -103,7 +103,7 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
 
   return (
     <div className="space-y-3">
-      <BarraFiltrosTabla f={f} plegableSiempre={vista === "cards"} />
+      <BarraFiltrosTabla vistas="cotizaciones" f={f} plegableSiempre={vista === "cards"} />
       {vista === "cards" ? (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {visibles.length === 0 && <p className="col-span-full text-center text-[var(--text-tertiary)]">Ninguna cotización coincide con los filtros de columna.</p>}

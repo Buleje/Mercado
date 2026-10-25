@@ -120,7 +120,7 @@ export function CajaPorDiaTabla({ dias, totales, tolerancia, veVentas, onVer, ca
           <span>Diferencia neta <b className="text-[var(--text-primary)] tabular-nums">{fmt(vistoDif)}</b></span>
         </div>
       )}
-      <BarraFiltrosTabla f={f} className="px-4 sm:px-5 py-2" />
+      <BarraFiltrosTabla vistas="caja-por-dia" f={f} className="px-4 sm:px-5 py-2" />
       {base.length === 0 ? (
         <EmptyState icon={History} title="Sin cajas cerradas" description="No hay cierres en el rango seleccionado." className="p-6" />
       ) : (

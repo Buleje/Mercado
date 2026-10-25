@@ -202,7 +202,7 @@ export function BandejaPendientes({ carga, ahora }: { carga: CargaPendientes; ah
 
       <PorCausa lista={f.filtradas} />
 
-      <BarraFiltrosTabla f={f} />
+      <BarraFiltrosTabla vistas="comprobantes-pendientes" f={f} />
 
       <DataTable className="min-w-[720px]">
         <thead>

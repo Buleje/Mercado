@@ -183,7 +183,7 @@ export default function ListaGastos({ gastos, desde, hasta, onDesde, onHasta, bu
         </div>
       ) : (
         <>
-          <BarraFiltrosTabla f={filtros} />
+          <BarraFiltrosTabla vistas="gastos" f={filtros} />
           <TablaGastos filtros={filtros} borrando={borrando} onBorrar={borrar} />
         </>
       )}

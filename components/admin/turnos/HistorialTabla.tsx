@@ -98,7 +98,7 @@ export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setP
   useEffect(() => { setPage(1); }, [f.filtradas.length]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
-      <BarraFiltrosTabla f={f} className="px-3 py-2" />
+      <BarraFiltrosTabla vistas="turnos" f={f} className="px-3 py-2" />
       <DataTable>
         <thead>
           <tr>

@@ -74,7 +74,7 @@ export function TablaArchivados({
   const filas = ord.ordenar(f.filtradas);
   return (
     <>
-    <BarraFiltrosTabla f={f} />
+    <BarraFiltrosTabla vistas="pedidos-archivados" f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
       <DataTable className="w-full">
         <thead className="dark:border-card-border">

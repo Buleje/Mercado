@@ -113,7 +113,7 @@ export default function TablaCuadres({
         </div>
       </div>
 
-      <BarraFiltrosTabla f={fc} className="px-3 py-2" />
+      <BarraFiltrosTabla vistas="cuadres" f={fc} className="px-3 py-2" />
       {delChip.length === 0 ? (
         <p className="p-6 text-center text-sm text-[var(--text-secondary)]">Ningún cuadre con ese filtro.</p>
       ) : (

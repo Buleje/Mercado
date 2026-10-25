@@ -48,7 +48,7 @@ export function GuiasTabla({ guias, page, onPage, onAbrir }: Props) {
   const pagina = filas.slice((actual - 1) * POR_PAGINA, actual * POR_PAGINA);
   return (
     <>
-      <BarraFiltrosTabla f={f} className="px-3 pt-2" />
+      <BarraFiltrosTabla vistas="guias" f={f} className="px-3 pt-2" />
       <div className="admin-mobile-cards">
         <DataTable>
           <thead>
