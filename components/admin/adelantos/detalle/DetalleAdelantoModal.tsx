@@ -30,6 +30,7 @@ import FichaAdelanto from "./FichaAdelanto";
 import HistorialEntregas from "./HistorialEntregas";
 import PlanPactado from "./PlanPactado";
 import RegistroFirmas from "./RegistroFirmas";
+import { fmtPt as fmtPtEntero, ptYPrecioDelAdelanto } from "@/lib/adelantos/madera-adelanto";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 
 /** Id estable de este formulario para los campos personalizados (ADR-427):
@@ -83,6 +84,7 @@ export default function DetalleAdelantoModal({
   const dir = a ? leerDireccion(a) : { direccion: "DADO" as const, concepto: null };
   const recibido = dir.direccion === "RECIBIDO";
   /* El signo lo dice el rótulo: «Le debes −S/ 50» en un recibido excedido era al revés. */
+  const madera = a ? ptYPrecioDelAdelanto(a) : null;
   const q = a ? quienDebe({ direccion: dir.direccion, status: a.status, saldoPendiente: a.saldoPendiente }) : null;
   /* WASACO: su aserrío ya se cobra solo en cada corrida (ADR-448 §2.7). */
   const aserrioSeCobraSolo = recibido && dir.concepto === "SERVICIO" && !!a?.beneficiario?.forestPartyId;
@@ -151,6 +153,13 @@ export default function DetalleAdelantoModal({
                   tone={q ? "warning" : "neutral"}
                 />
               </div>
+
+              {madera && (
+                <p className="text-sm text-[var(--text-secondary)]" data-madera-pt>
+                  ≈ <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmtPtEntero(madera.pt)}</span> a {fmtMon(madera.precioPt)} el pt
+                  {" "}(los pt que dice el adelanto)
+                </p>
+              )}
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`inline-block rounded-full px-3 py-1 text-sm font-bold ${badge?.className ?? ""}`}>{badge?.label}</span>

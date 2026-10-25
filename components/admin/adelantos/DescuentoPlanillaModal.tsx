@@ -16,6 +16,9 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, Check, Users } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { COLUMNAS_FILTRO_DESCUENTO } from "./filtros-columnas-tablas";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -72,6 +75,8 @@ export default function DescuentoPlanillaModal({
   const lineas: LineaDescuento[] = base.map((l) =>
     ajustes[l.adelantoId] != null ? ajustarLinea(l, ajustes[l.adelantoId]) : l,
   );
+  /* Los filtros sólo cambian lo que ves: el total y lo que se aplica siguen siendo de TODAS las líneas. */
+  const ft = useFiltrosTabla(lineas, COLUMNAS_FILTRO_DESCUENTO);
   const conMonto = lineas.filter((l) => l.descuento > 0);
   const totales = totalPorMoneda(lineas);
 
@@ -165,18 +170,20 @@ export default function DescuentoPlanillaModal({
             </label>
           </div>
 
+          <BarraFiltrosTabla f={ft} />
           <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)]">
             <DataTable className="w-full">
-              <thead>
+              <thead className="[&_th]:align-top">
                 <tr>
-                  <th>Persona</th>
-                  <th className="text-right">Debe</th>
+                  <ThColumna ids={["persona"]} label="Persona" f={ft} />
+                  <ThColumna ids={["debe"]} label="Debe" f={ft} derecha />
                   <th className="text-right">Se descuenta</th>
-                  <th>Queda</th>
+                  <ThColumna ids={["queda"]} label="Queda" f={ft} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
-                {lineas.map((l) => (
+                {ft.filtradas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+                {ft.filtradas.map((l) => (
                   <tr key={l.adelantoId}>
                     <td>
                       <span className="block font-bold text-[var(--text-primary)]">{l.persona}</span>

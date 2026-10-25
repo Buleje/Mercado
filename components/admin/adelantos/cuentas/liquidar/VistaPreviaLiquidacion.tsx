@@ -12,7 +12,7 @@ import { AlertTriangle } from "@buleje/design-system/icons";
 import { leerNeto } from "@/lib/adelantos/cuenta-unificada";
 import type { ResultadoPlan } from "@/lib/cuentas/liquidacion";
 import { fmtMon } from "../../shared";
-import { DataTable } from "@buleje/design-system";
+import TablaPreviaLiquidacion from "./TablaPreviaLiquidacion";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -100,44 +100,7 @@ export default function VistaPreviaLiquidacion({
           Cruzar {fmtMon(cruceRecibido)} de su adelanto contra sus aserríos
         </p>
       )}
-      <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] admin-mobile-cards">
-        <DataTable className="w-full">
-          <thead>
-            <tr>
-              <th>Libreta</th>
-              <th>Qué se escribe</th>
-              <th>Referencia</th>
-              <th className="text-right">Monto</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--rule-soft)]">
-            {filas.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="text-center text-[var(--text-tertiary)]">
-                  No se va a escribir nada todavía.
-                </td>
-              </tr>
-            ) : (
-              filas.map((f, i) => (
-                <tr key={i}>
-                  <td data-label="Libreta">{f.libreta}</td>
-                  <td data-label="Qué se escribe" className="text-[var(--text-secondary)]">{f.concepto}</td>
-                  <td data-label="Referencia" className="text-[var(--text-tertiary)]">{f.referencia ?? "—"}</td>
-                  <td
-                    data-label="Monto"
-                    className={`whitespace-nowrap text-right font-bold tabular-nums ${
-                      f.monto >= 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                    }`}
-                  >
-                    {f.monto >= 0 ? "+" : "−"}
-                    {fmtMon(Math.abs(f.monto))}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </DataTable>
-      </div>
+      <TablaPreviaLiquidacion filas={filas} />
 
       <div
         className={`grid gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ${

@@ -14,15 +14,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { DataTable, SectionTitle } from "@buleje/design-system";
-import { ChevronLeft, ChevronRight, Coins, Download, MoreHorizontal, Plus, Search, TrendingUp, Users, Wallet } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
+import { Coins, Download, MoreHorizontal, Plus, Search, TrendingUp, Users, Wallet } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
 import { button } from "@/components/ui-system/button-variants";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
-import { paginar } from "@/lib/adelantos/ordenar-lista";
+import { useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { COLUMNAS_FILTRO_PERSONAS } from "../filtros-columnas-tablas";
 import { FILTROS, cumpleFiltro, ordenarPersonas, type FiltroPersonas, type OrdenPersonas } from "@/lib/adelantos/ordenar-personas";
 import { descargarCsvPersonas } from "@/lib/adelantos/exportar-csv";
 import { cuentaDePersona } from "@/lib/adelantos/modos-alta";
@@ -36,10 +37,7 @@ import CompletarDatosModal from "./CompletarDatosModal";
 import CrearPersonaModal from "./CrearPersonaModal";
 import EliminarPersonaModal from "./EliminarPersonaModal";
 import FichaPersonaModal from "./FichaPersonaModal";
-import FilaPersona from "./FilaPersona";
-
-/** Personas por página: 12 filas entran en una pantalla y media a 1280×900. */
-const PERSONAS_POR_PAGINA = 12;
+import TablaPersonas from "./TablaPersonas";
 
 export default function PersonasView({
   beneficiarios,
@@ -77,7 +75,6 @@ export default function PersonasView({
     if (filtroUrl && (FILTROS as readonly string[]).includes(filtroUrl)) setFiltro(filtroUrl as FiltroPersonas);
   }, [filtroUrl]);
   const [completar, setCompletar] = useState<BeneficiarioConSaldo | null>(null);
-  const [pagina, setPagina] = useState(1);
 
   /**
    * Se busca por nombre, documento Y teléfono, sin tildes: antes sólo por
@@ -99,10 +96,8 @@ export default function PersonasView({
   }, [beneficiarios, q, filtro]);
 
   const ordenados = useMemo(() => ordenarPersonas(filtradas, orden), [filtradas, orden]);
-  const pag = paginar(ordenados, pagina, PERSONAS_POR_PAGINA);
-
-  /** Cambiar de filtro con la página 4 abierta dejaba una grilla en blanco. */
-  useEffect(() => setPagina(1), [q, orden, filtro]);
+  /* Los filtros tipo Excel del encabezado afinan lo que dejan el buscador y los chips. */
+  const ft = useFiltrosTabla(ordenados, COLUMNAS_FILTRO_PERSONAS);
 
   /**
    * Los totales de la cartera, con la MISMA definición que la pestaña
@@ -186,10 +181,10 @@ export default function PersonasView({
               {
                 id: "csv",
                 label: "Descargar CSV",
-                hint: `Las ${ordenados.length} personas que ves (con filtro y búsqueda)`,
+                hint: `Las ${ft.filtradas.length} personas que ves (con filtro y búsqueda)`,
                 icon: Download,
-                disabled: ordenados.length === 0,
-                onSelect: () => descargarCsvPersonas(ordenados, `personas-${new Date().toISOString().slice(0, 10)}.csv`),
+                disabled: ft.filtradas.length === 0,
+                onSelect: () => descargarCsvPersonas(ft.filtradas, `personas-${new Date().toISOString().slice(0, 10)}.csv`),
               },
             ]}
           />
@@ -269,62 +264,16 @@ export default function PersonasView({
         <EmptyState icon={Search} title="Sin resultados" hint="Prueba con otro nombre, documento o filtro." />
       ) : (
         <>
-          <DataTable zebra className="[&_tbody_td]:py-1.5">
-            <thead>
-              <tr>
-                <th>Persona</th>
-                <th className="text-right">Adelantado</th>
-                <th className="text-right">Te debe</th>
-                <th>Cumplimiento</th>
-                <th>Estado</th>
-                <th><span className="sr-only">Acciones</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {pag.items.map((b) => (
-                <FilaPersona
-                  key={b.id}
-                  persona={b}
-                  onVerFicha={() => setFicha(b)}
-                  onEditar={() => setEditPersona(b)}
-                  onEliminar={() => setDeletePersona(b)}
-                  onAdelanto={() => setAdelantoPara(b.id)}
-                  onEntregar={onEntregar ? () => onEntregar(b) : undefined}
-                  onCompletar={() => setCompletar(b)}
-                />
-              ))}
-            </tbody>
-          </DataTable>
-          {pag.totalPaginas > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-semibold tabular-nums text-[var(--text-secondary)]">
-                {pag.desde}–{pag.hasta} de {pag.total}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setPagina(pag.pagina - 1)}
-                  disabled={pag.pagina <= 1}
-                  aria-label="Página anterior"
-                  className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="px-2 text-sm font-bold tabular-nums text-[var(--text-secondary)]">
-                  {pag.pagina} / {pag.totalPaginas}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPagina(pag.pagina + 1)}
-                  disabled={pag.pagina >= pag.totalPaginas}
-                  aria-label="Página siguiente"
-                  className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
+          <TablaPersonas
+            ft={ft}
+            reinicio={JSON.stringify([q, orden, filtro, ft.facetas, ft.textos])}
+            onVerFicha={setFicha}
+            onEditar={setEditPersona}
+            onEliminar={setDeletePersona}
+            onAdelanto={(b) => setAdelantoPara(b.id)}
+            onEntregar={onEntregar}
+            onCompletar={setCompletar}
+          />
         </>
       )}
 

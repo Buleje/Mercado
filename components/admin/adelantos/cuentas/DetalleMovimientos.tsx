@@ -7,6 +7,9 @@
  */
 
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { COLUMNAS_FILTRO_MOV_FORESTAL, type FilaMovimientoForestal } from "../filtros-columnas-tablas";
 import { ExternalLink } from "@buleje/design-system/icons";
 import { corridaDeSaldos, CONCEPTO_LABEL, type MovimientoCuenta } from "@/lib/forestal/cuenta-corriente";
 import { fmtMon } from "../shared";
@@ -24,39 +27,48 @@ export default function DetalleMovimientos({
   onGoTab: (tab: string) => void;
 }) {
   const corrida = corridaDeSaldos(movimientos);
+  const filas: FilaMovimientoForestal[] = corrida.map((m) => ({
+    ...m,
+    concepto: CONCEPTO_LABEL[m.concepto] ?? m.concepto,
+    monto: m.tipo === "cargo" ? m.monto : -m.monto,
+  }));
+  const ft = useFiltrosTabla(filas, COLUMNAS_FILTRO_MOV_FORESTAL);
   return (
     <div className="mt-3 space-y-2 border-t border-[var(--rule-soft)] pt-3">
       {corrida.length === 0 ? (
         <p className="py-3 text-center text-sm text-[var(--text-tertiary)]">Sin movimientos en la cuenta forestal todavía.</p>
       ) : (
+        <>
+        <BarraFiltrosTabla f={ft} />
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
           {/* minWidth inline: min-w-* es clase muerta acá (memoria min-width-utilities-muertas). */}
           <DataTable className="w-full" style={{ minWidth: 480 }}>
-            <thead>
+            <thead className="[&_th]:align-top">
               <tr>
-                <th>Fecha</th>
-                <th>Concepto</th>
-                <th>Referencia</th>
-                <th className="text-right">Monto</th>
-                <th className="text-right">Saldo</th>
+                <ThColumna ids={["fecha"]} label="Fecha" f={ft} />
+                <ThColumna ids={["concepto"]} label="Concepto" f={ft} />
+                <ThColumna ids={["referencia"]} label="Referencia" f={ft} />
+                <ThColumna ids={["monto"]} label="Monto" f={ft} derecha />
+                <ThColumna ids={["saldo"]} label="Saldo" f={ft} derecha />
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)]">
-              {corrida.map((m) => (
+              {ft.filtradas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+              {ft.filtradas.map((m) => (
                 <tr key={m.id}>
                   <td className="whitespace-nowrap tabular-nums text-[var(--text-secondary)]">{diaUtc(m.fecha)}</td>
-                  <td>{CONCEPTO_LABEL[m.concepto] ?? m.concepto}</td>
+                  <td>{m.concepto}</td>
                   <td className="text-[var(--text-tertiary)]">{m.referencia ?? "—"}</td>
                   <td
                     className={`whitespace-nowrap text-right font-bold tabular-nums ${
                       // -700/-500: mismo patrón AA que CtpCuentaCorriente.tsx (el token base no pasa).
-                      m.tipo === "cargo"
+                      m.monto >= 0
                         ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                         : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                     }`}
                   >
-                    {m.tipo === "cargo" ? "+" : "−"}
-                    {fmtMon(m.monto, m.moneda)}
+                    {m.monto >= 0 ? "+" : "−"}
+                    {fmtMon(Math.abs(m.monto), m.moneda)}
                   </td>
                   <td className="whitespace-nowrap text-right font-bold tabular-nums">
                     {fmtMon(m.acumulado, m.moneda)}
@@ -66,6 +78,7 @@ export default function DetalleMovimientos({
             </tbody>
           </DataTable>
         </div>
+        </>
       )}
       <button
         type="button"

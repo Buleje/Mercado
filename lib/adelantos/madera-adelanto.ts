@@ -165,6 +165,21 @@ export function ptDelSaldoDelAdelanto(a: {
   return r2((a.saldoPendiente * a.piesTablares) / a.montoAdelantado);
 }
 
+/**
+ * «≈ N pt a S/ p el pt» de UN adelanto de madera comprada: los pt que el propio
+ * adelanto guarda y el precio que sale de monto ÷ pt. Sin pt declarados (o de
+ * otro lado: vendido, servicio) no hay nada que decir: el precio no se inventa.
+ */
+export function ptYPrecioDelAdelanto(a: {
+  montoAdelantado: number;
+  piesTablares?: number | null;
+  piesTablaresTipo?: string | null;
+}): { pt: number; precioPt: number } | null {
+  if (a.piesTablaresTipo !== "COMPRADO" || a.piesTablares == null || !(a.piesTablares > 0)) return null;
+  const precioPt = precioPromedio(a.montoAdelantado, a.piesTablares);
+  return precioPt == null ? null : { pt: a.piesTablares, precioPt };
+}
+
 /** Una cubicación aplicada (`CubicacionTrozasResumen`, sólo lo que hace falta). */
 export interface CubicacionParaPrecio {
   codigo: string;

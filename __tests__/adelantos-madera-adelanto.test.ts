@@ -286,3 +286,12 @@ describe("armarUnionDirectorio", () => {
     expect(armarUnionDirectorio(persona(), partes, new Map(), "12").resultados).toEqual([]);
   });
 });
+
+describe("ptYPrecioDelAdelanto", () => {
+  it("saca el precio de soles ÷ pt sólo si es madera comprada con pt", async () => {
+    const { ptYPrecioDelAdelanto } = await import("@/lib/adelantos/madera-adelanto");
+    expect(ptYPrecioDelAdelanto({ montoAdelantado: 3642, piesTablares: 1200, piesTablaresTipo: "COMPRADO" })).toEqual({ pt: 1200, precioPt: 3.04 });
+    expect(ptYPrecioDelAdelanto({ montoAdelantado: 3642, piesTablares: null, piesTablaresTipo: null })).toBeNull();
+    expect(ptYPrecioDelAdelanto({ montoAdelantado: 3642, piesTablares: 1200, piesTablaresTipo: "VENDIDO" })).toBeNull();
+  });
+});

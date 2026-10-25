@@ -23,6 +23,7 @@ import {
   siguienteOrden,
 } from "@/lib/adelantos/ordenar-lista";
 import { ETIQUETA_CONCEPTO, quienDebe } from "@/lib/adelantos/direccion";
+import { fmtPt as fmtPtEntero, ptYPrecioDelAdelanto } from "@/lib/adelantos/madera-adelanto";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { MODALIDAD_LABEL, PT_TIPO_LABEL, STATUS_BADGE, fmtMon, fmtPt } from "../shared";
 import { formatDate } from "@/lib/format";
@@ -232,6 +233,7 @@ export default function TablaAdelantos({
                 const cumplidas = a.entregasPactadas.filter((p) => p.cumplidaEn).length;
                 /* ADR-448: lo recibido se marca; lo dado (todo lo de antes) no lleva chip. */
                 const dir = leerDireccion(a);
+                const madera = ptYPrecioDelAdelanto(a);
                 const debe = quienDebe({ direccion: dir.direccion, status: a.status, saldoPendiente: a.saldoPendiente });
                 return (
                   <tr
@@ -327,6 +329,11 @@ export default function TablaAdelantos({
                     </td>
                     <td className="whitespace-nowrap text-right tabular-nums text-[var(--text-secondary)]">
                       {fmtMon(a.montoAdelantado, a.moneda)}
+                      {madera && (
+                        <span className="block text-sm font-semibold text-[var(--text-tertiary)]" title="Los pt que dice el adelanto y el precio que sale de dividir los soles entre los pt">
+                          ≈ {fmtPtEntero(madera.pt)} a {fmtMon(madera.precioPt)} el pt
+                        </span>
+                      )}
                     </td>
                     <td className="hidden 2xl:table-cell">
                       {deuda ? <div className="flex items-center justify-end gap-1.5">
