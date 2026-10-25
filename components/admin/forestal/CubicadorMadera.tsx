@@ -49,6 +49,7 @@ import GuardarCubicacionModal from "./cubicador-guardar-modal";
 import { cuerpoDeDatos, datosDeGuardada, datosVacios, type DatosDeLaCubicacion } from "./cubicador-guardar-tipos";
 import { preciosParejosPorEspecie } from "@/lib/forestal/precios-de-guardada";
 import { useTecladoGrilla, enfocarCelda } from "./celdas-excel";
+import CeldaEspecie from "./celda-especie";
 import {
   AsaRelleno,
   BarraSeleccion,
@@ -161,6 +162,8 @@ const ALTO_CHROME_NORMAL = 150;
 const AIRE_BAJO_VISOR = 12;
 /** Orden de tabulación de la fila de carga: Cant → Espesor → Ancho → Largo. */
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
+/** La especie también se recorre con las flechas (24-10: antes se la saltaba). */
+const COL_ESPECIE = 4;
 /**
  * Qué columna de la TABLA es cada campo navegable con flechas. El orden de la
  * navegación sale del orden VISIBLE de las columnas (que se puede cambiar
@@ -168,7 +171,7 @@ const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
  * la que está a la derecha EN PANTALLA, no a la de fábrica. La fila de carga de
  * arriba sigue con sus 4 fijas.
  */
-const COL_NAV: Partial<Record<ColOpcional, number>> = { cant: COL_CANT, espesor: COL_ESPESOR, ancho: COL_ANCHO, largo: COL_LARGO };
+const COL_NAV: Partial<Record<ColOpcional, number>> = { cant: COL_CANT, espesor: COL_ESPESOR, ancho: COL_ANCHO, largo: COL_LARGO, especie: COL_ESPECIE };
 /** Las columnas con total en el pie de la tabla. */
 const COLS_CON_TOTAL: ReadonlySet<ColOpcional> = new Set<ColOpcional>(["m3", "pt"]);
 
@@ -3183,22 +3186,14 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                       );
                       case "especie": return (
                       <td key="especie" className="group/celda relative px-3 py-2">
-                        <select
-                          value={r.especie ?? ""}
-                          onChange={(e) => { editarEspecie(r.id, e.target.value); avisarVariadoNo6x6(r, e.target.value); }}
-                          aria-label="Especie de la pieza"
-                          className="max-w-[110px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
-                        >
-                          <option value="">—</option>
-                          {especiesDelSelector.map((s) => <option key={s} value={s}>{s}</option>)}
-                          {/* Una pieza cargada con una especie que el catálogo ya
-                              no ofrece conserva la suya: sin esta opción el
-                              <select> se vería vacío y el primer toque en la
-                              fila la borraría sin que nadie lo pidiera. */}
-                          {r.especie && !especiesDelSelector.includes(r.especie) && (
-                            <option value={r.especie}>{r.especie}</option>
-                          )}
-                        </select>
+                        <CeldaEspecie
+                          valor={r.especie ?? ""}
+                          opciones={especiesDelSelector}
+                          onCommit={(v) => { editarEspecie(r.id, v); avisarVariadoNo6x6(r, v); }}
+                          fila={pos}
+                          col={COL_ESPECIE}
+                          onTeclaGrilla={teclasTabla}
+                        />
                         <AsaRelleno onTomar={() => rellenoEspecie.iniciar(pos)} titulo="Arrastra hacia abajo para poner esta especie en las filas siguientes" />
                       </td>
                       );

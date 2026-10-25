@@ -20,6 +20,8 @@ import { acomodarCroquis, ANCHO_CAMION_M_MAX, ANCHO_CAMION_M_MIN, formatoTrasera
 import { exportarTraseraPDF } from "@/lib/forestal/camion-croquis-pdf";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { avisoVaciarTrasera } from "@/lib/forestal/cubicador-vaciar";
+import { useVaciarConConfirmar } from "./hooks/use-vaciar-con-confirmar";
 
 const fmtPt = (v: number) => formatNumber(v, 2);
 const TD = "";
@@ -50,6 +52,9 @@ export function TraseraCamionModal({
   const croquis = useMemo(() => acomodarCroquis(piezas, { anchoM, catalogo }), [piezas, anchoM, catalogo]);
   const formato = useMemo(() => formatoTrasera(piezas, catalogo), [piezas, catalogo]);
   const { totales } = formato;
+  /* Pregunta antes, como «Vaciar el lote» (24-10): un toque sin querer
+     deshacía el armado de toda la carga. */
+  const vaciarConConfirmar = useVaciarConConfirmar(onVaciar);
 
   const cambiarAncho = (txt: string) => {
     setAnchoTxt(txt);
@@ -79,7 +84,7 @@ export function TraseraCamionModal({
       footer={
         <ModalFooter>
           {piezas.length > 0 && (
-            <Btn variant="secondary" onClick={onVaciar}>
+            <Btn variant="secondary" onClick={() => void vaciarConConfirmar(avisoVaciarTrasera({ piezas: totales.piezas, pt: fmtPt(totales.pt) }))}>
               <Trash2 className="h-4 w-4" aria-hidden /> Vaciar la trasera
             </Btn>
           )}

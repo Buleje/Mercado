@@ -10,7 +10,7 @@ import { useCallback } from "react";
  * es lo que hace que la gente prefiera el papel. Acá se tipea el número, se pasa con
  * la flecha y se confirma con Enter.
  *
- * Cómo se ubican las celdas: cada input lleva `data-fila` y `data-col` y vive dentro
+ * Cómo se ubican las celdas: cada input (o `<select>`) lleva `data-fila` y `data-col` y vive dentro
  * de un contenedor con `data-grilla="<id>"`. La navegación busca por selector en vez
  * de mantener un árbol de refs — así sobrevive al filtrado y reordenado de la tabla,
  * donde los índices cambian bajo los pies.
@@ -18,24 +18,28 @@ import { useCallback } from "react";
 
 export type CoordCelda = { fila: number; col: number };
 
-/** Busca el input de una coordenada dentro de su grilla. */
-function celdaEn(grilla: string, fila: number, col: number): HTMLInputElement | null {
-  return document.querySelector<HTMLInputElement>(
-    `[data-grilla="${grilla}"] input[data-fila="${fila}"][data-col="${col}"]`
+/** Una celda es un input de número o un `<select>` (la especie, Brandon 24-10). */
+type Celda = HTMLInputElement | HTMLSelectElement;
+const CELDA = ":is(input, select)";
+
+/** Busca la celda de una coordenada dentro de su grilla. */
+function celdaEn(grilla: string, fila: number, col: number): Celda | null {
+  return document.querySelector<Celda>(
+    `[data-grilla="${grilla}"] ${CELDA}[data-fila="${fila}"][data-col="${col}"]`
   );
 }
 
 /** Cuántas filas tiene la grilla ahora mismo (puede cambiar al filtrar). */
 function filasDe(grilla: string): number[] {
-  const nodos = document.querySelectorAll<HTMLInputElement>(`[data-grilla="${grilla}"] input[data-fila]`);
+  const nodos = document.querySelectorAll<Celda>(`[data-grilla="${grilla}"] ${CELDA}[data-fila]`);
   const set = new Set<number>();
   nodos.forEach((n) => set.add(Number(n.dataset.fila)));
   return [...set].sort((a, b) => a - b);
 }
 
 function columnasDe(grilla: string, fila: number): number[] {
-  const nodos = document.querySelectorAll<HTMLInputElement>(
-    `[data-grilla="${grilla}"] input[data-fila="${fila}"][data-col]`
+  const nodos = document.querySelectorAll<Celda>(
+    `[data-grilla="${grilla}"] ${CELDA}[data-fila="${fila}"][data-col]`
   );
   const cols = [...nodos].map((n) => Number(n.dataset.col));
   return cols.sort((a, b) => a - b);
@@ -46,6 +50,8 @@ export function enfocarCelda(grilla: string, fila: number, col: number): boolean
   const el = celdaEn(grilla, fila, col);
   if (!el) return false;
   el.focus();
+  // Un <select> no tiene texto que seleccionar: con el foco basta.
+  if (!(el instanceof HTMLInputElement)) return true;
   // Sincrónico a propósito: con un `requestAnimationFrame` el select() puede caer
   // DESPUÉS de que la persona ya empezó a tipear, dejando el texto reseleccionado y
   // el cursor en 0 — y ahí la flecha derecha dejaba de avanzar de celda.
@@ -70,7 +76,9 @@ function todoSeleccionado(el: HTMLInputElement): boolean {
  * Con el valor entero seleccionado también cuenta como borde — es el estado en el que
  * queda una celda recién enfocada, y ahí la flecha tiene que seguir avanzando.
  */
-function cursorAlFinal(el: HTMLInputElement): boolean {
+function cursorAlFinal(el: Celda): boolean {
+  // Un <select> no tiene cursor: la flecha siempre sale de la celda.
+  if (!(el instanceof HTMLInputElement)) return true;
   // Los input[type=number] no exponen selectionStart: se los trata como "siempre al borde",
   // que es el comportamiento útil para navegar entre medidas.
   if (el.type === "number") return true;
@@ -78,7 +86,8 @@ function cursorAlFinal(el: HTMLInputElement): boolean {
   return el.selectionStart === null || el.selectionStart >= el.value.length;
 }
 
-function cursorAlInicio(el: HTMLInputElement): boolean {
+function cursorAlInicio(el: Celda): boolean {
+  if (!(el instanceof HTMLInputElement)) return true;
   if (el.type === "number") return true;
   if (todoSeleccionado(el)) return true;
   return el.selectionStart === null || el.selectionStart <= 0;
@@ -132,7 +141,7 @@ export function useTecladoGrilla(op: OpcionesGrilla) {
   const { grilla, onConfirmar, enterSiempreConfirma, onEliminarFila, onDuplicarFila, onMarcarFila, totalFilas, columnas, envolver } = op;
 
   return useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: React.KeyboardEvent<Celda>) => {
       const el = e.currentTarget;
       const fila = Number(el.dataset.fila);
       const col = Number(el.dataset.col);

@@ -6,7 +6,7 @@
  * callar que se pierde algo que no lo está.
  */
 import { describe, expect, it } from "vitest";
-import { avisoVaciarLote, avisoVaciarPatio } from "@/lib/forestal/cubicador-vaciar";
+import { avisoVaciarLecturas, avisoVaciarLote, avisoVaciarPatio, avisoVaciarTrasera } from "@/lib/forestal/cubicador-vaciar";
 
 describe("avisoVaciarLote", () => {
   it("sin guardar avisa que se pierde", () => {
@@ -41,5 +41,34 @@ describe("avisoVaciarPatio", () => {
     const a = avisoVaciarPatio({ trozas: 12, volumen: "4.250", unidad: "m³" });
     expect(a.title).toBe("¿Vaciar el patio?");
     expect(a.description).toContain("12 trozas (4.250 m³)");
+  });
+});
+
+describe("avisoVaciarTrasera", () => {
+  it("cuenta las piezas y aclara que siguen en el lote", () => {
+    const a = avisoVaciarTrasera({ piezas: 70, pt: "1,520.00" });
+    expect(a.title).toBe("¿Vaciar la trasera?");
+    expect(a.description).toContain("70 piezas (1,520.00 PT)");
+    expect(a.description).toContain("Las piezas siguen en el lote.");
+    expect(a).toMatchObject({ intent: "danger", confirmLabel: "Sí, vaciar" });
+  });
+
+  it("una pieza en singular", () => {
+    const d = avisoVaciarTrasera({ piezas: 1, pt: "10" }).description;
+    expect(d).toContain("Se quita su pieza (10 PT)");
+    expect(d).toContain("La pieza sigue en el lote.");
+  });
+});
+
+describe("avisoVaciarLecturas", () => {
+  it("cuenta las lecturas y dice que el libro no se toca", () => {
+    const a = avisoVaciarLecturas({ trozas: 8, m3: "3.214" });
+    expect(a.title).toBe("¿Vaciar la lista?");
+    expect(a.description).toContain("8 trozas leídas (3.214 m³)");
+    expect(a.description).toContain("Las trozas del libro no se tocan");
+  });
+
+  it("una sola lectura en singular", () => {
+    expect(avisoVaciarLecturas({ trozas: 1, m3: "0.512" }).description).toContain("Se borra la troza leída (0.512 m³)");
   });
 });

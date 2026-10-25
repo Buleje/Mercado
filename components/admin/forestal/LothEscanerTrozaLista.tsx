@@ -9,9 +9,12 @@
 import type { ReactNode } from "react";
 import { Download, Trash2 } from "@buleje/design-system/icons";
 import { ESTADOS_META } from "@/lib/forestal/loth-tablero-trozas";
-import { csvRafaga, type LecturaRafaga } from "@/lib/forestal/loth-qr-troza";
+import { csvRafaga, resumirRafaga, type LecturaRafaga } from "@/lib/forestal/loth-qr-troza";
+import { avisoVaciarLecturas } from "@/lib/forestal/cubicador-vaciar";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { limaDateKey } from "@/lib/utils";
 import { TONO } from "./loth-tablero-partes";
+import { useVaciarConConfirmar } from "./hooks/use-vaciar-con-confirmar";
 
 export function bajarCsv(lista: readonly LecturaRafaga[], titulo?: string | null) {
   /* BOM: sin él, Excel abre el CSV en ANSI y «Árbol» sale «Ãrbol». */
@@ -37,6 +40,11 @@ export default function LothEscanerTrozaLista({
   onCsv: () => void;
   onVaciar: () => void;
 }) {
+  /* Pregunta antes, como «Vaciar el lote» del cubicador (24-10): la lista de
+     un conteo de patio entero se iba con un toque. */
+  const vaciarConConfirmar = useVaciarConConfirmar(onVaciar);
+  const pedirVaciar = () =>
+    void vaciarConConfirmar(avisoVaciarLecturas({ trozas: lista.length, m3: fmtM3(resumirRafaga(lista).m3) }));
   return (
     <div className="space-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -53,7 +61,7 @@ export default function LothEscanerTrozaLista({
           </button>
           <button
             type="button"
-            onClick={onVaciar}
+            onClick={pedirVaciar}
             disabled={lista.length === 0}
             aria-label="Vaciar la lista"
             title="Vaciar la lista"

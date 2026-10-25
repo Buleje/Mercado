@@ -57,3 +57,29 @@ export function avisoVaciarPatio(d: { trozas: number; volumen: string; unidad: s
     confirmLabel: "Sí, vaciar",
   };
 }
+
+/**
+ * Vaciar la trasera del camión: las piezas sólo se sacan del dibujo de la
+ * carga, siguen en el lote. Decirlo evita que alguien no se anime a usarlo.
+ */
+export function avisoVaciarTrasera(d: { piezas: number; pt: string }): AvisoVaciar {
+  return {
+    title: "¿Vaciar la trasera?",
+    description: `${d.piezas === 1 ? "Se quita su pieza" : `Se quitan sus ${cuenta(d.piezas, "pieza", "piezas")}`} (${d.pt} PT) de la trasera del camión. ${d.piezas === 1 ? "La pieza sigue" : "Las piezas siguen"} en el lote.`,
+    intent: "danger",
+    confirmLabel: "Sí, vaciar",
+  };
+}
+
+/**
+ * Vaciar la lista del escáner de trozas (ráfaga): son las lecturas de esta
+ * pantalla; las trozas del libro no se tocan. Lo que sí se pierde es la lista.
+ */
+export function avisoVaciarLecturas(d: { trozas: number; m3: string }): AvisoVaciar {
+  return {
+    title: "¿Vaciar la lista?",
+    description: `${d.trozas === 1 ? "Se borra la troza leída" : `Se borran las ${cuenta(d.trozas, "troza leída", "trozas leídas")}`} (${d.m3} m³) de esta lista. Las trozas del libro no se tocan; bájala en CSV antes si la necesitas.`,
+    intent: "danger",
+    confirmLabel: "Sí, vaciar",
+  };
+}

@@ -8,6 +8,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import LothTableroTrozas from "@/components/admin/forestal/LothTableroTrozas";
+/* La lista de lecturas pregunta antes de vaciar (`useConfirm`): en /admin el
+   proveedor lo pone `app/admin/providers.tsx`; acá, el `wrapper`. */
+import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { textoFichaDeTrozaLoth } from "@/lib/forestal/ficha-texto-troza";
 
@@ -54,7 +57,7 @@ afterEach(() => {
 
 describe("Control del permiso · Escanear troza", () => {
   it("sin cámara: el botón abre la entrada manual con el foco y lo dice", () => {
-    render(<LothTableroTrozas entries={ENTRIES} />);
+    render(<LothTableroTrozas entries={ENTRIES} />, { wrapper: ConfirmDialogProvider });
     fireEvent.click(screen.getByRole("button", { name: /Escanear troza/ }));
     const campo = screen.getByPlaceholderText("Código de troza o árbol + Enter");
     expect(document.activeElement).toBe(campo);
@@ -63,7 +66,7 @@ describe("Control del permiso · Escanear troza", () => {
   });
 
   it("el QR grande (ficha en texto) muestra la tarjeta con estado, GTF, placa y salida", async () => {
-    render(<LothTableroTrozas entries={ENTRIES} />);
+    render(<LothTableroTrozas entries={ENTRIES} />, { wrapper: ConfirmDialogProvider });
     await waitFor(() => expect(screen.getAllByText("W2D-835").length).toBeGreaterThan(0));
     fireEvent.click(screen.getByRole("button", { name: /Escanear troza/ }));
     escanear(textoFichaDeTrozaLoth(T111A));
@@ -79,7 +82,7 @@ describe("Control del permiso · Escanear troza", () => {
   });
 
   it("una disponible ofrece «Registrar su despacho», que lleva a la sección Despacho", () => {
-    render(<LothTableroTrozas entries={ENTRIES} />);
+    render(<LothTableroTrozas entries={ENTRIES} />, { wrapper: ConfirmDialogProvider });
     fireEvent.click(screen.getByRole("button", { name: /Escanear troza/ }));
     escanear("https://blas.buleje.pe/verificar/002-TOR-A");
     const t = within(screen.getByRole("article", { name: "Troza 002-TOR-A" }));
@@ -95,7 +98,7 @@ describe("Control del permiso · Escanear troza", () => {
   });
 
   it("una troza de otro permiso lo dice, sin tarjeta", () => {
-    render(<LothTableroTrozas entries={ENTRIES} />);
+    render(<LothTableroTrozas entries={ENTRIES} />, { wrapper: ConfirmDialogProvider });
     fireEvent.click(screen.getByRole("button", { name: /Escanear troza/ }));
     escanear("999-Z");
     expect(screen.getByText(/999-Z: esta troza no es de este permiso o no está registrada/)).toBeTruthy();
@@ -103,7 +106,7 @@ describe("Control del permiso · Escanear troza", () => {
   });
 
   it("«Ver en la tabla» deja la tabla filtrada en esa troza", () => {
-    const { container } = render(<LothTableroTrozas entries={ENTRIES} />);
+    const { container } = render(<LothTableroTrozas entries={ENTRIES} />, { wrapper: ConfirmDialogProvider });
     fireEvent.click(screen.getByRole("button", { name: /Escanear troza/ }));
     escanear("002-tor-a");
     fireEvent.click(screen.getByRole("button", { name: /Ver en la tabla/ }));
@@ -112,7 +115,7 @@ describe("Control del permiso · Escanear troza", () => {
   });
 
   it("contar el patio: lista sin duplicados, líneas de la ficha calladas, resumen", () => {
-    render(<LothTableroTrozas entries={ENTRIES} />);
+    render(<LothTableroTrozas entries={ENTRIES} />, { wrapper: ConfirmDialogProvider });
     fireEvent.click(screen.getByRole("button", { name: /Escanear troza/ }));
     fireEvent.click(screen.getByRole("button", { name: /Contar el patio/ }));
     escanear("TROZA 111-A");
@@ -124,5 +127,23 @@ describe("Control del permiso · Escanear troza", () => {
     expect(lista.getAllByRole("listitem")).toHaveLength(3);
     expect(lista.getByText("No es de este permiso")).toBeTruthy();
     expect(screen.getByRole("button", { name: /CSV/ }).hasAttribute("disabled")).toBe(false);
+  });
+
+  it("Vaciar la lista pregunta cuántas se van; Cancelar la deja, «Sí, vaciar» la borra (Brandon 24-10)", async () => {
+    render(<LothTableroTrozas entries={ENTRIES} />, { wrapper: ConfirmDialogProvider });
+    fireEvent.click(screen.getByRole("button", { name: /Escanear troza/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Contar el patio/ }));
+    escanear("TROZA 111-A");
+    escanear("002-TOR-A");
+    fireEvent.click(screen.getByRole("button", { name: "Vaciar la lista" }));
+    const pregunta = await screen.findByRole("alertdialog");
+    expect(within(pregunta).getByText(/Se borran las 2 trozas leídas/)).toBeTruthy();
+    fireEvent.click(within(pregunta).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(within(screen.getByRole("list", { name: "Trozas leídas" })).getAllByRole("listitem")).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Vaciar la lista" }));
+    fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Sí, vaciar" }));
+    await waitFor(() => expect(screen.queryByRole("list", { name: "Trozas leídas" })).toBeNull());
   });
 });
