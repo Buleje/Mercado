@@ -400,7 +400,7 @@ export default function CacaoBeneficio() {
       </div>
 
       {/* Tabla */}
-      <BarraFiltrosTabla f={fc} />
+      <BarraFiltrosTabla vistas="cacao-beneficio" f={fc} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full">
           <thead>

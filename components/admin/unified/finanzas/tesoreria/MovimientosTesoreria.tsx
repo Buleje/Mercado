@@ -59,7 +59,7 @@ export default function MovimientosTesoreria({ movimientos, monedaDe, notaDe, co
   const f = useFiltrosTabla(movimientos, columnas);
   return (
     <>
-    <BarraFiltrosTabla f={f} />
+    <BarraFiltrosTabla vistas="tesoreria" f={f} />
     <DataTable zebra>
       <thead>
         <tr>

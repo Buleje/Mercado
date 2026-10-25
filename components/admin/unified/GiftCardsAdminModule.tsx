@@ -266,7 +266,7 @@ export default function GiftCardsAdminModule() {
         <Vacio>{cards.length === 0 ? "Aún no hay tarjetas: aparecerán cuando un cliente compre una o emitas una." : "Ninguna tarjeta coincide con los filtros."}</Vacio>
       ) : (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="tarjetas-regalo" f={f} />
         <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="overflow-x-auto">
             <DataTable className={CLASE_TABLA}>

@@ -103,7 +103,7 @@ export function TablaLeads({ filas, moviendo, onEstado }: Props) {
   const vistas = ord.ordenar(f.filtradas);
   return (
     <>
-    <BarraFiltrosTabla f={f} className="px-3 pt-3" />
+    <BarraFiltrosTabla vistas="leads" f={f} className="px-3 pt-3" />
     {/* Encabezados a 14 px y sin versalitas: el DataTable los trae a 12. */}
     <DataTable>
       <thead>

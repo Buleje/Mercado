@@ -115,7 +115,7 @@ export function LicenciasTabla() {
         </div>
       ) : (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="licencias" f={f} />
         <DataTable aria-label="Licencias y permisos">
           <thead>
             <tr>

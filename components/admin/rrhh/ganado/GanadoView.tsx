@@ -229,7 +229,7 @@ export default function GanadoView() {
           <EmptyState icon={Wallet} title="Sin personal activo en este período" />
         ) : (
           <>
-            <BarraFiltrosTabla f={f} />
+            <BarraFiltrosTabla vistas="lo-ganado" f={f} />
             <DataTable zebra>
               <thead>
                 <tr>

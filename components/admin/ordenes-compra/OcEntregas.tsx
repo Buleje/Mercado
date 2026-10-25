@@ -94,7 +94,7 @@ export default function OcEntregas({ barra }: { barra?: ReactNode }) {
         !error && <p className="text-sm text-[var(--text-secondary)]">No hay órdenes esperando mercadería.</p>
       ) : (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="oc-entregas" f={f} />
         {f.activos > 0 && pasan.size === 0 && <p className="text-sm text-[var(--text-secondary)]">Ninguna orden coincide con los filtros.</p>}
         {grupos.map((g) => ({ ...g, ordenes: ord.ordenar(g.ordenes.filter((o) => pasan.has(o.id))) })).filter((g) => g.ordenes.length > 0).map((g, i) => (
           <section key={g.id} aria-label={g.rotulo} className="space-y-2" data-qa={`entregas-${g.id}`}>

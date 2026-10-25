@@ -138,7 +138,7 @@ export function MarketplaceComisionesTab() {
         </VacioDeUnaFrase>
       ) : (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="marketplace-comisiones" f={f} />
         <DataTable className={ENCABEZADOS_14}>
           <thead>
             <tr>

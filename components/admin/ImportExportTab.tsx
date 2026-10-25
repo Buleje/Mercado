@@ -89,7 +89,7 @@ export default function ImportExportTab() {
 
       {/* Una fila por módulo: qué trae y UN botón «Bajar» con sus dos formatos
           (antes dos botones por fila: 14 a la vista). */}
-      <BarraFiltrosTabla f={f} />
+      <BarraFiltrosTabla vistas="importar-exportar" f={f} />
       <DataTable>
         <thead className="[&_th]:align-top">
           <tr>

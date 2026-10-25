@@ -213,7 +213,7 @@ export default function BasketAnalysisTab({ period: periodoExterno }: { period?:
           </div>
         ) : (
           <>
-          <BarraFiltrosTabla f={f} />
+          <BarraFiltrosTabla vistas="canastas" f={f} />
           <DataTable className="min-w-[600px]">
               <thead>
                 <tr>

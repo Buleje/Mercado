@@ -81,7 +81,7 @@ export default function ActividadesVista() {
         !error && <EmptyState title="Todavía no hay actividades" description="Agrega una sugerida o crea la tuya con «Nueva actividad»." />
       ) : (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="actividades" f={f} />
         <DataTable zebra aria-busy={recargando}>
           <thead>
             <tr>

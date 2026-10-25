@@ -62,7 +62,7 @@ export default function TablaConciliacion({ filas, abierta, setAbierta, onVerCue
   const vistas = ord.ordenar(fil.filtradas);
   return (
     <>
-    <BarraFiltrosTabla f={fil} />
+    <BarraFiltrosTabla vistas="conciliacion-compras" f={fil} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>

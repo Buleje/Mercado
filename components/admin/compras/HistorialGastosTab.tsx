@@ -350,7 +350,7 @@ export default function HistorialGastosTab() {
         </div>
       ) : (
         <>
-        <BarraFiltrosTabla f={vista.f} />
+        <BarraFiltrosTabla vistas="historial-compras" f={vista.f} />
         <HistorialTabla
           grupos={vista.grupos}
           filtros={vista.f}

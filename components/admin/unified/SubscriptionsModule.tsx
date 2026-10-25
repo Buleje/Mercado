@@ -247,7 +247,7 @@ export default function SubscriptionsModule() {
           <Vacio>{subs.length === 0 ? "Aún no hay suscripciones: aparecerán cuando un cliente contrate Bodega al Mes." : "Ninguna suscripción coincide con los filtros."}</Vacio>
         ) : (
           <>
-          <BarraFiltrosTabla f={f} />
+          <BarraFiltrosTabla vistas="suscripciones" f={f} />
           <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
             <div className="overflow-x-auto">
               <DataTable className={CLASE_TABLA}>

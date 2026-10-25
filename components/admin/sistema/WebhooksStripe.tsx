@@ -123,7 +123,7 @@ export function WebhooksStripeContenido({ w }: { w: WebhooksStripe }) {
         <EmptyState icon={<CheckCircle2 aria-hidden />} title="Ningún aviso de Stripe espera reintento." className="py-8" />
       ) : (
         <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
-          <BarraFiltrosTabla f={f} className="px-4 pt-2" />
+          <BarraFiltrosTabla vistas="webhooks" f={f} className="px-4 pt-2" />
           <div className="overflow-x-auto">
             <DataTable className="w-full">
               <thead>

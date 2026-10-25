@@ -48,7 +48,7 @@ export default function TablaPersonas({
 
   return (
     <>
-      <BarraFiltrosTabla f={ft} sinConteo />
+      <BarraFiltrosTabla vistas="adelantos-personas" f={ft} sinConteo />
       <DataTable zebra className="[&_tbody_td]:py-1.5">
         <thead className="[&_th]:align-top">
           <tr>

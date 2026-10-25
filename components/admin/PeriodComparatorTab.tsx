@@ -229,7 +229,7 @@ export default function PeriodComparatorTab() {
 
       {!error && mostrado && (
         <div aria-busy={cargando || !vigente} className={cn("space-y-2", !vigente && "opacity-60")}>
-          <BarraFiltrosTabla f={filtros} />
+          <BarraFiltrosTabla vistas="comparar-periodos" f={filtros} />
           <ListaMovil
             filas={visibles}
             etiquetaActual={mostrado.actual.etiqueta}

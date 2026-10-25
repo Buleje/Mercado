@@ -736,7 +736,7 @@ function AdelantosView({
         <div>
         {/* En el celular las columnas no entran: «Filtros por columna» + chips con ×.
             En un <div> propio: suelta en el space-y-3, la barra vacía sumaba 12 px. */}
-        <BarraFiltrosTabla f={ft} sinConteo className="max-sm:mb-2 has-[[role=list]]:mb-2" />
+        <BarraFiltrosTabla vistas="adelantos" f={ft} sinConteo className="max-sm:mb-2 has-[[role=list]]:mb-2" />
         <TablaAdelantos
           adelantos={filtrados}
           filtros={ft}

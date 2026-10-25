@@ -81,7 +81,7 @@ export default function TablaPersonal({ filas, onAbrir, contratos, puedeHacerCon
   return (
     <>
     {/* Sin chips, en escritorio la barra no ocupa nada: el margen sólo cuando hay algo. */}
-    <BarraFiltrosTabla f={ft} sinConteo className="max-sm:mb-2 has-[[role=list]]:mb-2" />
+    <BarraFiltrosTabla vistas="personal" f={ft} sinConteo className="max-sm:mb-2 has-[[role=list]]:mb-2" />
     <DataTable zebra>
       <thead className="[&_th]:align-top">
         <tr>

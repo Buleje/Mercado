@@ -102,7 +102,7 @@ export default function CarpetaAmpliaPapeles({ lista, modo, arbol, desde, mostra
       {/* La etiqueta que acompaña al puntero al arrastrar varios (fuera de la pantalla hasta que se usa). */}
       <div ref={fantasma} aria-hidden className="pointer-events-none fixed -left-[100rem] top-0 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-sm font-bold text-[var(--text-inverse)]" />
 
-      <BarraFiltrosTabla f={f} plegableSiempre={modo !== "lista"} />
+      <BarraFiltrosTabla vistas="esenciales" f={f} plegableSiempre={modo !== "lista"} />
 
       {modo === "lista" ? (
         <DataTable aria-label="Papeles" data-qa="amplia-tabla">

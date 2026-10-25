@@ -154,7 +154,7 @@ export function RankingTab() {
               {data.length} {data.length === 1 ? "repartidor" : "repartidores"}
             </p>
           </div>
-          <BarraFiltrosTabla f={f} className="px-4 pt-2" />
+          <BarraFiltrosTabla vistas="ranking-repartidores" f={f} className="px-4 pt-2" />
           <div className="overflow-x-auto">
             <DataTable className="w-full">
               <thead>

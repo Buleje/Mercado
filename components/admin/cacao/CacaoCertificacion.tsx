@@ -155,7 +155,7 @@ export default function CacaoCertificacion() {
       </div>
 
       {/* Tabla */}
-      <BarraFiltrosTabla f={f} />
+      <BarraFiltrosTabla vistas="cacao-certificacion" f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full">
           <thead>

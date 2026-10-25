@@ -49,7 +49,7 @@ export function OrdenesTabla({
   useSoltarSeleccionOculta(f.activos > 0, filas, seleccion, setSeleccion);
   return (
     <>
-    <BarraFiltrosTabla f={f} />
+    <BarraFiltrosTabla vistas="marketplace-ordenes" f={f} />
     <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="max-h-[calc(100vh-20rem)] overflow-x-auto">
         <DataTable className="w-full">

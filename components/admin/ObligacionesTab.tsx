@@ -106,7 +106,7 @@ export default function ObligacionesTab({ anio: anioDeFuera }: { anio?: number }
         </p>
       ) : (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="obligaciones" f={f} />
         <DataTable>
           <thead className="[&_th]:align-top">
             <tr>

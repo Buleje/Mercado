@@ -277,7 +277,7 @@ export default function CacaoVentas() {
         </button>
       </div>
 
-      <BarraFiltrosTabla f={f} />
+      <BarraFiltrosTabla vistas="cacao-ventas" f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full">
           <thead>

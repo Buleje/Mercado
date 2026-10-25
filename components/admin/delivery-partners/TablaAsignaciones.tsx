@@ -79,7 +79,7 @@ export function TablaAsignaciones({ asignaciones, canceladas }: { asignaciones: 
   const filas = ord.ordenar(f.filtradas);
   return (
     <>
-      <BarraFiltrosTabla f={f} className="px-4 pt-2" />
+      <BarraFiltrosTabla vistas="asignaciones" f={f} className="px-4 pt-2" />
       <div className="overflow-x-auto">
         <DataTable className="w-full">
           <thead>

@@ -160,7 +160,7 @@ export default function ComparativeReportsTab() {
 
       {!error && vigente && (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="reportes-comparativos" f={f} />
         <DataTable zebra aria-busy={cargando}>
           <thead className="[&_th]:align-top">
             <tr>

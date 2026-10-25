@@ -114,7 +114,7 @@ export default function ProyeccionSemanas({ d }: { d: ProyeccionDeCaja }) {
   const f = useFiltrosTabla(todas, COLUMNAS_FILTRO);
   return (
     <>
-    <BarraFiltrosTabla f={f} />
+    <BarraFiltrosTabla vistas="proyeccion-caja" f={f} />
     <DataTable className="w-max min-w-full">
       <thead>
         <tr>

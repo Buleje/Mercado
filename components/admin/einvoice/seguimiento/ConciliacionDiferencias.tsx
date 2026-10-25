@@ -90,7 +90,7 @@ export function ConciliacionDiferencias({ c, tipo, onTipo }: Props) {
         </div>
       )}
 
-      {porTipo.length > 0 && <BarraFiltrosTabla f={f} />}
+      {porTipo.length > 0 && <BarraFiltrosTabla vistas="conciliacion-comprobantes" f={f} />}
 
       {porTipo.length > 0 && (
         <DataTable className="min-w-[720px]">

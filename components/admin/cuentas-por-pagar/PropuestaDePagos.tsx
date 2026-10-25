@@ -94,7 +94,7 @@ export default function PropuestaDePagos({ cuentas, hoy, elegidas, setElegidas, 
           <Download className="h-4 w-4" aria-hidden /> Descargar lista
         </button>
       </div>
-      <BarraFiltrosTabla f={f} />
+      <BarraFiltrosTabla vistas="propuesta-pagos" f={f} />
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
           <thead>

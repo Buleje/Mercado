@@ -137,7 +137,7 @@ export function UnifiedSupportInbox() {
         <p className="py-8 text-center text-sm text-[var(--text-secondary)]">Nada espera respuesta.</p>
       ) : (
         <>
-        <BarraFiltrosTabla f={f} />
+        <BarraFiltrosTabla vistas="soporte" f={f} />
         <DataTable className="table-fixed">
           <colgroup className="max-sm:hidden">
             <col className="w-28" />
