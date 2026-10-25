@@ -107,7 +107,7 @@ export default function CacaoLiquidaciones() {
         </div>
       ) : (
         <>
-          <BarraFiltrosTabla vistas="cacao-liquidaciones" f={f} />
+          <BarraFiltrosTabla excel="Liquidaciones de cacao" vistas="cacao-liquidaciones" f={f} />
           <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
             <DataTable className="w-full">
               <thead>

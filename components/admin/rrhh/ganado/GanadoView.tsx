@@ -243,7 +243,7 @@ export default function GanadoView() {
               </button>
               </div>
             )}
-            <BarraFiltrosTabla vistas="lo-ganado" f={f} />
+            <BarraFiltrosTabla excel="Lo ganado" vistas="lo-ganado" f={f} />
             <DataTable zebra>
               <thead>
                 <tr>
