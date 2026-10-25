@@ -72,9 +72,12 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
       await notice({ title: `Son ${n} productos: el tope es ${MAX_PEDIR}`, description: "Ajusta el filtro, o quítalo para pedir todo lo sugerido." });
       return;
     }
+    const lista = filtrado ? ft.filtradas : state.reorder;
+    const suma = lista.reduce((t, r) => t + (Number(r.estimatedTotal) || 0), 0);
+    const proveedores = new Set(lista.map((r) => r.supplierId)).size;
     const ok = await confirm({
       title: `¿Crear órdenes de compra de ${n} producto(s)${filtrado ? " (los que ves)" : ""}?`,
-      description: "Se arma una orden por proveedor con la cantidad sugerida.",
+      description: `Unos ${formatCurrency(suma)} en ${proveedores} orden(es), una por proveedor, con la cantidad sugerida. El monto final lo calcula el sistema.`,
       confirmLabel: "Crear órdenes",
     });
     if (!ok) return;
