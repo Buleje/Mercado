@@ -13,7 +13,7 @@ import { CHIP_VENCE } from "./TablaCuentas";
 import { Casilla } from "@/components/ui-system/Casilla";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { ThColumna } from "@/components/admin/shared/th-columna";
-import { useOrdenColumna, type AccesorOrden } from "./use-orden-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 const ORDEN: Record<string, AccesorOrden<CuentaPorPagar>> = {
   proveedor: { valor: (c) => c.supplierName, texto: true },

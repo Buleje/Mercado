@@ -9,7 +9,7 @@ import type { EstadoConciliacion, FilaConciliacion } from "@/lib/compras/concili
 import { cn, formatCurrency } from "@/lib/utils";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { ThColumna } from "@/components/admin/shared/th-columna";
-import { useOrdenColumna, type AccesorOrden } from "@/components/admin/cuentas-por-pagar/use-orden-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import DetalleConciliacion from "./DetalleConciliacion";
 
 export const CHIP_ESTADO: Record<EstadoConciliacion, { texto: string; clase: string }> = {

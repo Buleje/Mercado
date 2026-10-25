@@ -3,7 +3,7 @@
 import { FiltroEnCabecera, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { IconoOrden } from "@/components/admin/adelantos/lista/tabla-controles";
 
-/** El orden de la tabla tal como lo arma `use-orden-columna` (cuentas por pagar) u otro hook con la misma forma. */
+/** El orden de la tabla tal como lo arma `shared/use-orden-columna` u otro hook con la misma forma. */
 export interface OrdenDeColumnas {
   alternar: (id: string) => void;
   activa: string | null;

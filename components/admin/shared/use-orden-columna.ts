@@ -15,7 +15,7 @@ export type OrdenColumna<T> = {
 };
 
 /**
- * Orden por columna de las tablas de Lo que debo, como Adelantos › Lista. Primer
+ * Orden por columna de las tablas del panel (nació en Lo que debo), como Adelantos › Lista. Primer
  * clic: texto de la A a la Z, números y fechas de mayor a menor; segundo, al
  * revés; tercero, vuelve al orden con que llegan las filas. Lo vacío va al final.
  * `accesores` tiene que ser estable (constante de módulo).

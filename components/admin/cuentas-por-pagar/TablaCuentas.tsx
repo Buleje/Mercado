@@ -13,7 +13,7 @@ import type { MetodoPago, PagoCuenta, ResultadoPago } from "./use-cuentas-por-pa
 import { DataTable } from "@buleje/design-system";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { ThColumna } from "@/components/admin/shared/th-columna";
-import { useOrdenColumna, type AccesorOrden } from "./use-orden-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 export const CHIP_VENCE: Record<TonoVence, string> = {
   vencida: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]",

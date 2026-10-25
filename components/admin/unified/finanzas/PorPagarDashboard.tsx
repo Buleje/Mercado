@@ -34,7 +34,7 @@ import { usePorPagar } from "@/hooks/use-por-pagar";
 import { ENLACE_FUENTE, ETIQUETA_FUENTE, FUENTES_POR_PAGAR, type EnlacePorPagar, type FuentePorPagar, type PersonaPorPagar } from "@/lib/finance/por-pagar";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { ThColumna } from "@/components/admin/shared/th-columna";
-import { useOrdenColumna, type AccesorOrden } from "@/components/admin/cuentas-por-pagar/use-orden-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import FilaPorPagar from "./por-pagar/FilaPorPagar";
 import { BUSCADOR, CHIP, CHIP_OFF, CHIP_ON, ESTILO, enMonedas } from "./por-pagar/estilo";
 

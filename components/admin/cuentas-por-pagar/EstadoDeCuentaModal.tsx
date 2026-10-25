@@ -16,7 +16,7 @@ import { fechaConDia } from "./resumen-cuentas";
 import { useEstadoDeCuenta } from "./use-estado-de-cuenta";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { ThColumna } from "@/components/admin/shared/th-columna";
-import { useOrdenColumna, type AccesorOrden } from "./use-orden-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 type Movimiento = NonNullable<ReturnType<typeof useEstadoDeCuenta>["estado"]>["movimientos"][number];
 const SIN_MOVIMIENTOS: Movimiento[] = [];
