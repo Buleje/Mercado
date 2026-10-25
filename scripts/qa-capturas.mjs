@@ -29,6 +29,7 @@
  * Pasos (array JSON, una clave por paso; los selectores son de Playwright,
  * p. ej. `text=Guardar`, `role=button[name="Dueños"]`, `#id`):
  *   {"click": "<sel>"} {"hover": "<sel>"} {"activar": "<sel>"} (sólo si aria-pressed≠true) {"llenar": ["<sel>", "texto"]}
+ *   {"embudo": "Estado"}          (abre el filtro tipo Excel de la columna «Estado»: lista, rango o lupa)
  *   {"dobleClic": "<sel>"} {"clicDerecho": "<sel>"}  → mouse REAL (16-10: explorador del Archivo, entrar y menú contextual)
  *   {"abrir": "<sel>"}            → click sólo si su aria-expanded no es "true" (plegables recordados)
  *   {"tecla": "Enter"}            {"elegir": ["<sel>", "valor o etiqueta"]}
@@ -613,6 +614,12 @@ async function recorrido(t, primero) {
              «Fijar» y desfijaba la especie que dejó la clara (15-10, despacho a mano). */
           const el = visible(page, valor);
           if ((await el.getAttribute("aria-pressed", { timeout: 15_000 })) !== "true") await el.click({ timeout: 15_000 });
+        }
+        else if (tipo === "embudo") {
+          /* {"embudo": "Estado"}: abre el filtro tipo Excel de esa columna, sea lista, rango o
+             lupa (25-10: tres carriles adivinaron el selector y perdieron capturas). */
+          const sel = [`summary[aria-label^="Filtrar por ${valor}"]`, `summary[aria-label="Filtrar ${valor} por rango"]`, `summary[aria-label="Buscar en ${valor}"]`].join(", ");
+          await visible(page, sel).click({ timeout: 15_000 });
         }
         else if (tipo === "abrir") {
           /* Como click, pero sólo si está cerrado (aria-expanded ≠ true): un plegable que se
