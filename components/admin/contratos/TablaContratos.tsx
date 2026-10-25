@@ -24,8 +24,24 @@ interface Props {
   menuDe: (c: DbContract) => ReactNode;
 }
 
+/** Lo que sigue en pie: la misma regla de «Monto vigente» de las cifras de arriba (sin anulados ni vencidos). */
+const EN_PIE = new Set(["VIGENTE", "POR_VENCER", "PENDIENTE_FIRMA"]);
+
+/** Suma de lo que se ve, por moneda y sin lo que ya no cuenta. */
+function totalesVisibles(visibles: readonly DbContract[]): { pen: number; usd: number } {
+  let pen = 0;
+  let usd = 0;
+  for (const c of visibles) {
+    if (!EN_PIE.has(estadoVisible(c))) continue;
+    if (c.moneda === "USD") usd += c.monto || 0;
+    else pen += c.monto || 0;
+  }
+  return { pen, usd };
+}
+
 /** La lista de contratos en tabla (escritorio). Las tarjetas del celular siguen en el módulo. */
 export function TablaContratos({ filtrados, visibles, paginados, fCols, ordCols, onAbrir, onQuitarFiltros, menuDe }: Props) {
+  const tot = totalesVisibles(visibles);
   return (
     <DataTable>
         <thead>
@@ -82,6 +98,18 @@ export function TablaContratos({ filtrados, visibles, paginados, fCols, ordCols,
             );
           })}
         </tbody>
+        {visibles.length > 0 && (
+          <tfoot className="hidden sm:table-footer-group" data-qa="contratos-total">
+            <tr className="font-bold">
+              <td colSpan={3} className="text-right">Total de lo que se ve (sin anulados ni vencidos)</td>
+              <td className="text-right">
+                {formatMoney(tot.pen)}
+                {tot.usd > 0 && <span className="block">{formatMoney(tot.usd, "USD")}</span>}
+              </td>
+              <td colSpan={3} />
+            </tr>
+          </tfoot>
+        )}
       </DataTable>
   );
 }
