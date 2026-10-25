@@ -144,8 +144,18 @@ const GRILLA_TABLA = "cub-tabla";
  * número, así que fijarlo no cambia nada de lo que se ve.
  */
 const ALTO_VISOR_TABLA = 600;
-/** Lo que ocupan cabecera, filtros y pie cuando la tabla toma la pantalla. */
+/** Lo que ocupan cabecera, filtros y pie cuando la tabla toma la pantalla (si no se puede medir). */
 const ALTO_CHROME_EXPANDIDA = 250;
+/**
+ * Lo que queda arriba de la tabla en la página aunque se baje: la cabecera del
+ * panel (64) y la barra de secciones pegada (~60), más aire. Con una pantalla
+ * baja (laptop de 650 px de alto) el visor de 600 no entraba y el TOTAL quedaba
+ * debajo del borde (Brandon 24-10: «al ir a la última fila se regresa y no se
+ * puede ver el total»).
+ */
+const ALTO_CHROME_NORMAL = 150;
+/** Aire bajo el visor en pantalla completa, para que el total no toque el borde. */
+const AIRE_BAJO_VISOR = 12;
 /** Orden de tabulación de la fila de carga: Cant → Espesor → Ancho → Largo. */
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
 /**
@@ -671,12 +681,28 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
    */
   const [altoVisor, setAltoVisor] = useState(ALTO_VISOR_TABLA);
   useEffect(() => {
-    const calcular = () =>
-      setAltoVisor(tablaExpandida ? Math.max(320, window.innerHeight - ALTO_CHROME_EXPANDIDA) : ALTO_VISOR_TABLA);
+    /* Pantalla completa: hasta el borde de abajo MEDIDO desde donde empieza la
+       caja (con la barra en dos filas empezaba en 259 y no en 250: el total
+       quedaba 9 px debajo del borde, medido 24-10). Normal: nunca más alta que
+       lo que se ve. Depende sólo del alto de la ventana y de lo que hay ARRIBA
+       de la caja, nunca de su propio scroll: no hay lazo de vuelta. */
+    const calcular = () => {
+      if (tablaExpandida) {
+        const top = document.querySelector<HTMLElement>(`[data-grilla="${GRILLA_TABLA}"]`)?.getBoundingClientRect().top;
+        const chrome = top != null && top > 0 ? top + AIRE_BAJO_VISOR : ALTO_CHROME_EXPANDIDA;
+        setAltoVisor(Math.max(320, Math.floor(window.innerHeight - chrome)));
+      } else {
+        setAltoVisor(Math.max(320, Math.min(ALTO_VISOR_TABLA, window.innerHeight - ALTO_CHROME_NORMAL)));
+      }
+    };
     calcular();
-    if (!tablaExpandida) return;
+    /* La caja ya está dibujada en el cuadro siguiente: ahí se mide de verdad. */
+    const raf = requestAnimationFrame(calcular);
     window.addEventListener("resize", calcular);
-    return () => window.removeEventListener("resize", calcular);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", calcular);
+    };
   }, [tablaExpandida]);
   useEffect(() => {
     if (!tablaExpandida) return;
@@ -3234,7 +3260,15 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 )}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                {/* Con la tabla en su propia caja (lote largo) el total queda PEGADO
+                    abajo, siempre a la vista: antes había que llegar a la última fila
+                    para verlo. El fondo es opaco (el tinte sobre la superficie): si no,
+                    las filas se ven a través al pasar por debajo. */}
+                <tr className={`border-t-2 border-[var(--rule-base)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] ${
+                  virtualizarTabla
+                    ? "sticky bottom-0 z-10 bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--surface-raised))] shadow-[0_-1px_0_var(--rule-base)]"
+                    : "bg-primary/10"
+                }`} data-pie-total="">
                   {segmentosPie.map((seg, i) => {
                     const t = filtrando ? totalesVisibles : totales;
                     if (seg.tipo === "resto") {

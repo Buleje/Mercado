@@ -17,6 +17,7 @@
  *       guía entera en QA-ui con 1 troza a mano, registrada y ANULADA al final: escribe → --anchos 1280 --temas claro) \
  *       un preset puede ser {"tenant","ruta","pasos"} (sus --tenant/--ruta por defecto) y un paso {"preset":"otro"} lo incluye entero \
  *     [--media-falso]   (micrófono/cámara falsos de Chromium con permiso: grabadora, getUserMedia)
+ *     [--alto 650]      (alto de la ventana; 900 por defecto)
  *     [--evals-todos]   (cada {"eval"} corre en todos los anchos y temas; el reporte trae {tema, ancho, valor})
  *     [--resumen]   (stdout sólo con lo esencial —los evals recortados a 400 caracteres—; el JSON completo igual queda en <salida>/reporte.json) \
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
@@ -216,6 +217,8 @@ const prefijoHora = sinNombre ? new Date().toTimeString().slice(0, 8).replaceAll
 const hoy = new Date().toISOString().slice(0, 10);
 const salida = arg("salida", `reports/visual-verify/${hoy}-qa-capturas`);
 const anchos = arg("anchos", "1280,400").split(",").map(Number).filter(Boolean);
+/* `--alto 650` (24-10): una laptop baja. Con 900 fijo no se veía que el total de la tabla quedaba bajo el borde. */
+const altoVentana = Number(arg("alto", "900")) || 900;
 const temas = arg("temas", "claro,oscuro").split(",");
 const completa = bandera("completa");
 const evalsTodos = bandera("evals-todos");
@@ -300,7 +303,7 @@ const browser = await chromium.launch({
   ...(mediaFalso ? { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] } : {}),
 });
 const ctx = await browser.newContext({
-  viewport: { width: anchos[0] ?? 1280, height: 900 },
+  viewport: { width: anchos[0] ?? 1280, height: altoVentana },
   ...(mediaFalso ? { permissions: ["microphone", "camera"] } : {}),
   ...(sesionSa ? { userAgent: sesionSa.userAgent } : { extraHTTPHeaders: { "x-tenant-id": tenant } }),
 });
@@ -367,7 +370,7 @@ async function fondoCentro(page) {
 
 async function matriz(page, nombre, t) {
   for (const ancho of anchos) {
-    await page.setViewportSize({ width: ancho, height: 900 });
+    await page.setViewportSize({ width: ancho, height: altoVentana });
     await page.waitForTimeout(200);
     const base = path.join(salida, `${prefijoHora}${nombre}-${t}-${ancho}`);
     let archivo = `${base}.png`;
@@ -401,7 +404,7 @@ async function matriz(page, nombre, t) {
     }
     capturas.push({ archivo, fondoCentro: await fondoCentro(page) });
   }
-  await page.setViewportSize({ width: anchos[0] ?? 1280, height: 900 });
+  await page.setViewportSize({ width: anchos[0] ?? 1280, height: altoVentana });
 }
 
 /**
@@ -685,7 +688,7 @@ async function recorrido(t, primero) {
                el 1.er tema y el 1.er ancho. */
             const vp = page.viewportSize();
             for (const an of anchos) {
-              await page.setViewportSize({ width: an, height: vp?.height ?? 900 });
+              await page.setViewportSize({ width: an, height: vp?.height ?? altoVentana });
               await page.waitForTimeout(400);
               evals.push({ paso: i, tema: t, ancho: an, valor: await page.evaluate(valor) });
             }
@@ -705,7 +708,7 @@ async function recorrido(t, primero) {
           if (evalsTodos) {
             const vp = page.viewportSize();
             for (const an of anchos) {
-              await page.setViewportSize({ width: an, height: vp?.height ?? 900 });
+              await page.setViewportSize({ width: an, height: vp?.height ?? altoVentana });
               await page.waitForTimeout(400);
               evals.push({ paso: i, tema: t, ancho: an, valor: await medir() });
             }
