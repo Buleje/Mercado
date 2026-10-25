@@ -16,12 +16,31 @@ import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-me
 import { button } from "@/components/ui-system/button-variants";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { BarraFiltrosTabla, FiltroEnCabecera, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+import { ThCelda } from "@/components/admin/inventario/th-celda";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { ModalRecetario } from "./ModalRecetario";
 import { CATEGORIAS, type ProductSearch, type RecetaPublica } from "./recetario-tipos";
 
 const CAJA = "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+const COLUMNAS: readonly ColumnaFiltro<RecetaPublica>[] = [
+  { id: "receta", label: "Receta", tipo: "texto", valor: (r) => r.nombre },
+  { id: "categoria", label: "Categoría", tipo: "multi", valor: (r) => r.categoria, soloConVarios: true },
+  { id: "ingredientes", label: "Ingredientes", tipo: "rango", numero: (r) => r.ingredientes?.length || 0, paso: 1 },
+  { id: "costo", label: "Costo", tipo: "rango", numero: (r) => r.totalIngredientes || 0, unidad: "S/", paso: 0.01 },
+  { id: "estado", label: "Estado", tipo: "multi", valor: (r) => (r.activa !== false ? "Publicada" : "Oculta"), soloConVarios: true },
+];
+
+const ORDEN: Record<string, AccesorOrden<RecetaPublica>> = {
+  receta: { valor: (r) => r.nombre, texto: true },
+  categoria: { valor: (r) => r.categoria, texto: true },
+  ingredientes: { valor: (r) => r.ingredientes?.length || 0 },
+  costo: { valor: (r) => r.totalIngredientes || 0 },
+  estado: { valor: (r) => (r.activa !== false ? 1 : 0) },
+};
+
 const TH = "px-4 py-3 text-sm font-semibold text-[var(--text-secondary)]";
 
 async function mensajeDeError(res: Response, porDefecto: string) {
@@ -33,7 +52,6 @@ export default function RecetarioAdminTab() {
   const [recetas, setRecetas] = useState<RecetaPublica[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCat, setFilterCat] = useState("");
   // Columnas de la tabla: arrastrar el título para reordenarlas.
   const ordenRecetario = useOrdenColumnas("recetario-lista", ["receta", "categoria", "ingredientes", "costo", "estado"]);
   const [form, setForm] = useState<{ abierto: boolean; receta: RecetaPublica | null; clave: number }>({ abierto: false, receta: null, clave: 0 });
@@ -94,9 +112,10 @@ export default function RecetarioAdminTab() {
     }
   };
 
-  const filtered = useMemo(() => recetas.filter(r =>
-    (!searchTerm || r.nombre.toLowerCase().includes(searchTerm.toLowerCase())) && (!filterCat || r.categoria === filterCat),
-  ), [recetas, searchTerm, filterCat]);
+  const porTexto = useMemo(() => recetas.filter(r => !searchTerm || r.nombre.toLowerCase().includes(searchTerm.toLowerCase())), [recetas, searchTerm]);
+  const f = useFiltrosTabla(porTexto, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filtered = ord.ordenar(f.filtradas);
 
   const activas = recetas.filter(r => r.activa !== false).length;
   const avgIng = recetas.length > 0 ? Math.round(recetas.reduce((s, r) => s + (r.ingredientes?.length || 0), 0) / recetas.length) : 0;
@@ -134,10 +153,6 @@ export default function RecetarioAdminTab() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
           <input type="search" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar receta…" className={cn(CAJA, "w-full pl-9 pr-3 placeholder:text-[var(--text-tertiary)]")} />
         </label>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} aria-label="Filtrar por categoría" className={cn(CAJA, "shrink-0 px-3")}>
-          <option value="">Todas las categorías</option>
-          {CATEGORIAS.map(c => <option key={c} value={c}>{c} ({recetas.filter(r => r.categoria === c).length})</option>)}
-        </select>
         <BotonRestablecerColumnas cambiado={ordenRecetario.cambiado} onRestablecer={ordenRecetario.restablecer} />
         <div className="ml-auto flex items-center gap-2">
           {kpis.boton}
@@ -147,6 +162,7 @@ export default function RecetarioAdminTab() {
         </div>
       </div>
       {kpis.panel}
+      {recetas.length > 0 && <BarraFiltrosTabla f={f} />}
 
       {loading ? (
         <LoadingState />
@@ -164,11 +180,11 @@ export default function RecetarioAdminTab() {
               <EnOrden
                 orden={ordenRecetario.orden}
                 celdas={{
-                  receta: <th data-col="receta" className={TH}>Receta</th>,
-                  categoria: <th data-col="categoria" className={cn(TH, "hidden sm:table-cell")}>Categoría</th>,
-                  ingredientes: <th data-col="ingredientes" className={cn(TH, "hidden text-center md:table-cell")}>Ingredientes</th>,
-                  costo: <th data-col="costo" className={cn(TH, "text-right")}>Costo</th>,
-                  estado: <th data-col="estado" className={cn(TH, "text-center")}>Estado</th>,
+                  receta: <ThCelda col="receta" label="Receta" orden={ord} ordenId="receta"><FiltroEnCabecera id="receta" f={f} compacto /></ThCelda>,
+                  categoria: <ThCelda col="categoria" label="Categoría" className="hidden sm:table-cell" orden={ord} ordenId="categoria"><FiltroEnCabecera id="categoria" f={f} compacto /></ThCelda>,
+                  ingredientes: <ThCelda col="ingredientes" label="Ingredientes" derecha className="hidden md:table-cell" orden={ord} ordenId="ingredientes"><FiltroEnCabecera id="ingredientes" f={f} compacto /></ThCelda>,
+                  costo: <ThCelda col="costo" label="Costo" derecha orden={ord} ordenId="costo"><FiltroEnCabecera id="costo" f={f} compacto /></ThCelda>,
+                  estado: <ThCelda col="estado" label="Estado" orden={ord} ordenId="estado"><FiltroEnCabecera id="estado" f={f} compacto /></ThCelda>,
                 }}
               />
               <th className={TH}><span className="sr-only">Acciones</span></th>
@@ -179,7 +195,7 @@ export default function RecetarioAdminTab() {
               <tr>
                 <td colSpan={6} className="text-center">
                   <p className="text-sm text-[var(--text-secondary)]">Ninguna receta coincide con el filtro.</p>
-                  <button type="button" onClick={() => { setSearchTerm(""); setFilterCat(""); }} className={button({ variant: "secondary", className: "mt-2 rounded-xl" })}>Quitar filtros</button>
+                  <button type="button" onClick={() => { setSearchTerm(""); f.limpiar(); }} className={button({ variant: "secondary", className: "mt-2 rounded-xl" })}>Quitar filtros</button>
                 </td>
               </tr>
             )}

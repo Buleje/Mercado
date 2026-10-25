@@ -13,10 +13,12 @@ import { button } from "@/components/ui-system/button-variants";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { disponibilidadDe, margenDe, type ProductInfo, type Receta } from "./tipos";
 
 type Estado = "todas" | "activas" | "inactivas";
-type Orden = "nombre" | "costo-asc" | "costo-desc" | "recientes";
 
 interface Props {
   recetas: readonly Receta[];
@@ -34,39 +36,50 @@ const CHIP = "inline-flex h-12 shrink-0 items-center rounded-xl border px-3 text
 const CHIP_ON = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
-function ordenar(lista: Receta[], orden: Orden) {
-  return [...lista].sort((a, b) => {
-    switch (orden) {
-      case "nombre": return a.nombre.localeCompare(b.nombre);
-      case "costo-asc": return a.costoTotal - b.costoTotal;
-      case "costo-desc": return b.costoTotal - a.costoTotal;
-      case "recientes": return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }
-  });
-}
+type Fila = { r: Receta; margen: number | null; total: number; faltan: number };
+
+const INSUMOS = (f: Fila) => (f.total === 0 ? "Sin ingredientes" : f.faltan === 0 ? "Completos" : "Les falta algo");
+
+const COLUMNAS: readonly ColumnaFiltro<Fila>[] = [
+  { id: "receta", label: "Receta", tipo: "texto", valor: (f) => f.r.nombre },
+  { id: "insumos", label: "Insumos de hoy", tipo: "multi", valor: (f) => INSUMOS(f), soloConVarios: true },
+  { id: "costo", label: "Costo", tipo: "rango", numero: (f) => f.r.costoTotal, unidad: "S/", paso: 0.01 },
+  { id: "margen", label: "Margen", tipo: "rango", numero: (f) => f.margen, unidad: "%", paso: 1 },
+];
+
+const ORDEN: Record<string, AccesorOrden<Fila>> = {
+  receta: { valor: (f) => f.r.nombre, texto: true },
+  insumos: { valor: (f) => f.faltan },
+  costo: { valor: (f) => f.r.costoTotal },
+  margen: { valor: (f) => f.margen },
+};
 
 export function ListaRecetas({ recetas, productos, loading, error, onReintentar, onDetalle, onProducir, onNueva }: Props) {
   const [texto, setTexto] = useState("");
   const [textoFiltro, setTextoFiltro] = useState("");
   const [estado, setEstado] = useState<Estado>("todas");
-  const [orden, setOrden] = useState<Orden>("nombre");
 
   useEffect(() => {
     const t = setTimeout(() => setTextoFiltro(texto), 200);
     return () => clearTimeout(t);
   }, [texto]);
 
-  const filas = useMemo(() => {
+  const base = useMemo<Fila[]>(() => {
     const q = textoFiltro.trim().toLowerCase();
-    return ordenar(
-      recetas.filter((r) => {
+    return recetas
+      .filter((r) => {
         if (estado === "activas" && !r.activa) return false;
         if (estado === "inactivas" && r.activa) return false;
         return !q || r.nombre.toLowerCase().includes(q);
-      }),
-      orden,
-    );
-  }, [recetas, estado, textoFiltro, orden]);
+      })
+      .map((r) => ({ r, margen: margenDe(r, productos), ...disponibilidadDe(r, productos) }));
+  }, [recetas, productos, estado, textoFiltro]);
+  const f = useFiltrosTabla(base, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = useMemo(() => {
+    const lista = ord.ordenar(f.filtradas);
+    return ord.activa ? lista : [...lista].sort((a, b) => a.r.nombre.localeCompare(b.r.nombre));
+  }, [ord, f.filtradas]);
 
   if (loading) return <LoadingState />;
   if (error) {
@@ -103,33 +116,28 @@ export function ListaRecetas({ recetas, productos, loading, error, onReintentar,
             </button>
           ))}
         </div>
-        <select aria-label="Ordenar recetas" value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className={cn(CAJA, "shrink-0 px-3 font-semibold")}>
-          <option value="nombre">Nombre A-Z</option>
-          <option value="costo-asc">Costo menor</option>
-          <option value="costo-desc">Costo mayor</option>
-          <option value="recientes">Más recientes</option>
-        </select>
       </div>
 
-      {filas.length === 0 ? (
+      {base.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
           No hay recetas {textoFiltro ? `con «${textoFiltro}»` : estado}.
         </p>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable>
           <thead>
             <tr>
-              <th>Receta</th>
-              <th>Insumos de hoy</th>
-              <th className="text-right">Costo</th>
-              <th className="text-right">Margen</th>
+              <ThColumna label="Receta" ids={["receta"]} f={f} orden={ord} ordenId="receta" />
+              <ThColumna label="Insumos de hoy" ids={["insumos"]} f={f} orden={ord} ordenId="insumos" />
+              <ThColumna label="Costo" ids={["costo"]} f={f} derecha orden={ord} ordenId="costo" />
+              <ThColumna label="Margen" ids={["margen"]} f={f} derecha orden={ord} ordenId="margen" />
               <th data-label="Acciones"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            {filas.map((r) => {
-              const margen = margenDe(r, productos);
-              const { total, faltan } = disponibilidadDe(r, productos);
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={5} />}
+            {filas.map(({ r, margen, total, faltan }) => {
               return (
                 <tr key={r.id} className={cn(!r.activa && "opacity-70")}>
                   <td>
@@ -166,6 +174,7 @@ export function ListaRecetas({ recetas, productos, loading, error, onReintentar,
             })}
           </tbody>
         </DataTable>
+        </>
       )}
     </div>
   );

@@ -11,6 +11,10 @@ import { ChevronLeft, ChevronRight, Layers } from "@buleje/design-system/icons";
 import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { limaDateKey } from "@/lib/utils";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { lotesPorSemana, masProducidas } from "./produccion-calculos";
 import { PER_PAGE, type LoteProducido } from "./tipos";
 
@@ -20,12 +24,29 @@ interface Props {
   onIrARecetas: () => void;
 }
 
+const COLUMNAS: readonly ColumnaFiltro<LoteProducido>[] = [
+  { id: "receta", label: "Receta", tipo: "texto", valor: (l) => l.recetaNombre ?? l.recetaId },
+  { id: "cantidad", label: "Cantidad", tipo: "rango", numero: (l) => l.cantidad, paso: 1 },
+  { id: "costo", label: "Costo real", tipo: "rango", numero: (l) => l.costoReal, unidad: "S/", paso: 0.01 },
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (l) => limaDateKey(l.producidoEn) },
+];
+
+const ORDEN: Record<string, AccesorOrden<LoteProducido>> = {
+  receta: { valor: (l) => l.recetaNombre ?? l.recetaId, texto: true },
+  cantidad: { valor: (l) => l.cantidad },
+  costo: { valor: (l) => l.costoReal },
+  fecha: { valor: (l) => new Date(l.producidoEn).getTime() },
+};
+
 const TICK = { fontSize: 14, fill: "var(--text-secondary)" };
 
 export function VistaProduccion({ lotes, loading, onIrARecetas }: Props) {
   const [pagina, setPagina] = useState(1);
   const semanas = useMemo(() => lotesPorSemana(lotes), [lotes]);
   const top = useMemo(() => masProducidas(lotes), [lotes]);
+  const f = useFiltrosTabla(lotes, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
 
   if (loading) return <LoadingState />;
   if (lotes.length === 0) {
@@ -38,9 +59,9 @@ export function VistaProduccion({ lotes, loading, onIrARecetas }: Props) {
     );
   }
 
-  const paginas = Math.max(1, Math.ceil(lotes.length / PER_PAGE));
+  const paginas = Math.max(1, Math.ceil(filas.length / PER_PAGE));
   const actual = Math.min(pagina, paginas);
-  const visibles = lotes.slice((actual - 1) * PER_PAGE, actual * PER_PAGE);
+  const visibles = filas.slice((actual - 1) * PER_PAGE, actual * PER_PAGE);
 
   return (
     <div className="space-y-4">
@@ -74,16 +95,18 @@ export function VistaProduccion({ lotes, loading, onIrARecetas }: Props) {
         </div>
       </div>
 
+      <BarraFiltrosTabla f={f} />
       <DataTable>
         <thead>
           <tr>
-            <th>Receta</th>
-            <th className="text-right">Cantidad</th>
-            <th className="text-right">Costo real</th>
-            <th>Fecha</th>
+            <ThColumna label="Receta" ids={["receta"]} f={f} orden={ord} ordenId="receta" />
+            <ThColumna label="Cantidad" ids={["cantidad"]} f={f} derecha orden={ord} ordenId="cantidad" />
+            <ThColumna label="Costo real" ids={["costo"]} f={f} derecha orden={ord} ordenId="costo" />
+            <ThColumna label="Fecha" ids={["fecha"]} f={f} orden={ord} ordenId="fecha" />
           </tr>
         </thead>
         <tbody>
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
           {visibles.map((l) => (
             <tr key={l.id}>
               <td className="font-medium">{l.recetaNombre ?? l.recetaId}</td>
@@ -96,7 +119,7 @@ export function VistaProduccion({ lotes, loading, onIrARecetas }: Props) {
       </DataTable>
       {paginas > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-[var(--text-secondary)]">{lotes.length} lotes — pág. {actual}/{paginas}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{filas.length} lotes — pág. {actual}/{paginas}</p>
           <div className="flex gap-2">
             <button type="button" aria-label="Anterior" disabled={actual <= 1} onClick={() => setPagina(actual - 1)} className={button({ variant: "secondary", className: "w-12 rounded-xl px-0" })}><ChevronLeft className="h-4 w-4" /></button>
             <button type="button" aria-label="Siguiente" disabled={actual >= paginas} onClick={() => setPagina(actual + 1)} className={button({ variant: "secondary", className: "w-12 rounded-xl px-0" })}><ChevronRight className="h-4 w-4" /></button>
