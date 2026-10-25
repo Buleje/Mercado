@@ -32,3 +32,6 @@ export const STATUS_META: Record<string, { label: string; chip: string }> = {
 
 export function typeIcon(type: string) { return type === "camion" ? Truck : Construction; }
 export function typeLabel(type: string) { return TYPES.find(t => t.v === type)?.label ?? (type ? type.charAt(0).toUpperCase() + type.slice(1) : type); }
+
+export interface IncomeMov { id: string; assetId: string; date: string; client: string | null; quantity: number | null; unit: string; rate: number; amount: number; hourStart: number | null; hourEnd: number | null; paid: boolean; dueDate: string | null; startDate: string | null; endDate: string | null; notes: string | null }
+export interface Receivable extends IncomeMov { assetName: string }

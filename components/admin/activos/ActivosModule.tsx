@@ -22,9 +22,9 @@ import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import {
-  Construction, Plus, X, Loader2, TrendingUp, Fuel, MoreHorizontal,
+  Construction, Plus, X, Loader2, TrendingUp, Fuel,
   Wrench, Receipt, Download, FileText,
-  ClipboardCheck, CheckCircle, Calendar, CreditCard, Clock,
+  ClipboardCheck, CheckCircle, Calendar, CreditCard,
   Upload, BarChart3, Trophy, Store,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -38,14 +38,15 @@ import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admi
 import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
 import { formatDate, formatDateLong } from "@/lib/format";
-import { fmt, STATUS_META, TYPES, typeIcon, typeLabel, type AssetStats } from "./tipos";
+import { fmt, STATUS_META, TYPES, typeIcon, typeLabel, type AssetStats, type IncomeMov } from "./tipos";
+import { Center } from "./Centrado";
+import ReceivablesView from "./ActivosPorCobrar";
+import CalendarView from "./ActivosCalendario";
 import AssetCard from "./AssetCard";
 import { useIndicadoresActivos } from "./use-indicadores-activos";
 
-interface IncomeMov { id: string; assetId: string; date: string; client: string | null; quantity: number | null; unit: string; rate: number; amount: number; hourStart: number | null; hourEnd: number | null; paid: boolean; dueDate: string | null; startDate: string | null; endDate: string | null; notes: string | null }
 interface ExpenseMov { id: string; date: string; amount: number; notes: string | null; category: string; gallons: number | null; unitPrice: number | null }
 interface Maintenance { id: string; assetId: string; title: string; intervalHours: number | null; intervalDays: number | null; lastDoneHours: number | null; lastDoneAt: string | null; notes: string | null; active: boolean; state: "ok" | "soon" | "due"; detail: string }
-interface Receivable extends IncomeMov { assetName: string }
 
 const dStr = (s: string) => formatDate(s);
 
@@ -522,10 +523,6 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
   );
 }
 
-function Center({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center justify-center gap-2 py-10 text-sm font-bold text-[var(--text-tertiary)]">{children}</div>;
-}
-
 // ── Mantenimiento (dentro del drawer) ───────────────────────────────────────
 function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged: () => void }) {
   const [items, setItems] = useState<Maintenance[] | null>(null);
@@ -592,113 +589,6 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
         <button type="button" onClick={() => setAdding(true)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"><Plus className="h-4 w-4" /> Programar mantenimiento</button>
       )}
     </div>
-  );
-}
-
-// ── Cuentas por cobrar ──────────────────────────────────────────────────────
-function ReceivablesView({ onChanged }: { onChanged: () => void }) {
-  const [rows, setRows] = useState<Receivable[] | null>(null);
-  const load = useCallback(() => {
-    fetch("/api/admin/assets/receivables", { credentials: "include" }).then(r => r.ok ? r.json() : { data: [] }).then(j => setRows(j.data)).catch(() => setRows([]));
-  }, []);
-  useEffect(() => { load(); }, [load]);
-
-  const markPaid = async (r: Receivable) => {
-    const res = await fetch("/api/admin/assets/receivables", { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify({ incomeId: r.id, paid: true }) });
-    if (res.ok) { toast.success("Marcado como cobrado"); load(); onChanged(); } else toast.error("No se pudo");
-  };
-  const remind = (r: Receivable) => {
-    const msg = `Hola${r.client ? ` ${r.client}` : ""}, te recuerdo el pago pendiente del alquiler de *${r.assetName}* por ${fmt(r.amount)}${r.dueDate ? ` (vence ${dStr(r.dueDate)})` : ""}. ¡Gracias!`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-  };
-
-  if (rows == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>;
-  if (rows.length === 0) return (
-    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
-      <p className="text-base font-extrabold text-[var(--text-primary)]">Todo cobrado</p>
-      <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tienes alquileres pendientes de pago.</p>
-    </div>
-  );
-  const total = rows.reduce((s, r) => s + r.amount, 0);
-  const overdue = (r: Receivable) => r.dueDate && new Date(r.dueDate).getTime() < Date.now();
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between rounded-xl bg-[var(--data-warning-100)] px-4 py-2.5 dark:bg-amber-950/20"><span className="text-sm font-bold text-[var(--text-secondary)]">Total por cobrar ({rows.length})</span><span className="font-mono text-lg font-bold tabular-nums text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">{fmt(total)}</span></div>
-      <DataTable>
-        <thead>
-          <tr><th>Cliente</th><th className="hidden sm:table-cell">Máquina</th><th>Fecha</th><th className="text-right">Monto</th><th className="w-40 text-right"><span className="sr-only">Acciones</span></th></tr>
-        </thead>
-        <tbody>
-          {rows.map(r => (
-            <tr key={r.id}>
-              <td className="font-bold">{r.client ?? "Cliente"}</td>
-              <td className="hidden sm:table-cell">{r.assetName}</td>
-              <td>
-                {dStr(r.date)}
-                {r.dueDate && <span className={cn("ml-1", overdue(r) ? "font-bold text-[var(--data-error-ink)]" : undefined)}>· vence {dStr(r.dueDate)}{overdue(r) ? " (vencido)" : ""}</span>}
-              </td>
-              <td className="text-right font-bold tabular-nums">{fmt(r.amount)}</td>
-              <td className="text-right">
-                <span className="inline-flex items-center gap-2">
-                  <button type="button" onClick={() => markPaid(r)} className={button({ variant: "primary", className: "rounded-xl px-4" })}><CheckCircle className="h-4 w-4" aria-hidden /> Cobrado</button>
-                  <ActionMenu
-                    label={`Más de ${r.client ?? "este alquiler"}`}
-                    icon={MoreHorizontal}
-                    soloIcono
-                    size="md"
-                    className="w-12 shrink-0"
-                    actions={[{ id: "recordar", label: "Recordar por WhatsApp", hint: "Le escribe el monto y la fecha", icon: Clock, onSelect: () => remind(r) }]}
-                  />
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </DataTable>
-    </div>
-  );
-}
-
-// ── Calendario (agenda de alquileres) ───────────────────────────────────────
-function CalendarView({ assets }: { assets: AssetStats[] }) {
-  const [items, setItems] = useState<(IncomeMov & { assetName: string })[] | null>(null);
-  useEffect(() => {
-    if (assets.length === 0) { setItems([]); return; }
-    Promise.all(assets.map(a => fetch(`/api/admin/assets/${a.id}/movements`, { credentials: "include" }).then(r => r.ok ? r.json() : { data: { incomes: [] } }).then(j => (j.data.incomes as IncomeMov[]).map(i => ({ ...i, assetName: a.name }))).catch(() => [])))
-      .then(arr => setItems(arr.flat().sort((a, b) => ((a.startDate ?? a.date) < (b.startDate ?? b.date) ? 1 : -1))));
-  }, [assets]);
-
-  if (items == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando agenda…</Center>;
-  if (items.length === 0) return (
-    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Calendar className="h-6 w-6" /></span>
-      <p className="text-base font-extrabold text-[var(--text-primary)]">Sin alquileres aún</p>
-      <p className="mt-1 text-sm text-[var(--text-tertiary)]">Registra alquileres con fecha de inicio/fin y aparecerán acá en orden.</p>
-    </div>
-  );
-  const now = Date.now();
-  return (
-    <DataTable>
-      <thead>
-        <tr><th>Desde</th><th>Máquina</th><th className="hidden sm:table-cell">Cliente</th><th className="hidden sm:table-cell">Hasta</th><th className="text-right">Monto</th></tr>
-      </thead>
-      <tbody>
-        {items.map(i => {
-          const start = i.startDate ?? i.date;
-          const active = i.startDate && i.endDate && new Date(i.startDate).getTime() <= now && new Date(i.endDate).getTime() >= now;
-          return (
-            <tr key={i.id}>
-              <td className="whitespace-nowrap">{dStr(start)}</td>
-              <td className="font-bold">{i.assetName}{active && <span className="ml-2 text-sm font-semibold text-[var(--accent-ink)]">· en uso</span>}</td>
-              <td className="hidden sm:table-cell">{i.client ?? "Alquiler"}{!i.paid && <span className="text-[var(--data-warning-ink)]"> · pendiente</span>}</td>
-              <td className="hidden whitespace-nowrap sm:table-cell">{i.startDate && i.endDate ? dStr(i.endDate) : "—"}</td>
-              <td className="text-right font-bold tabular-nums">{fmt(i.amount)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </DataTable>
   );
 }
 
