@@ -39,6 +39,8 @@ const DEBUG = process.env.BSM_HOOKS_DEBUG === "1";
 // ─────────────────────────────────────────────────────────────────────────────
 const MIN_FREE_MB = 500;
 const MAX_TSC = 3;
+/** Por encima de esto, varios tsc vivos no frenan lecturas ni Edit (ver memGuard). */
+const RAM_HOLGADA_MB = 3000;
 const MAX_ORPHAN_CHROMIUM = 4;
 const MAX_LOAD_1MIN = 28; // 12 núcleos; 28 ≈ 2.3× cores (Brandon 2026-06-02)
 const CACHE_PATH = "/tmp/bsm-mem-guard.cache";
@@ -147,7 +149,10 @@ function memGuard(tool, toolInput) {
 
   const problemas = [];
   if (mem && mem.avail < MIN_FREE_MB) problemas.push(`RAM libre ${mem.avail}MB < ${MIN_FREE_MB}MB`);
-  if (tsc >= MAX_TSC) problemas.push(`${tsc} procs tsc apilados (max ${MAX_TSC})`);
+  // 25-10: 16 bloqueos en un día, todos «tsc apilados» con la RAM sana (0 por RAM): frenaban `cat` y Edit
+  // de carriles que sólo leían. Con RAM de sobra, los tsc apilados sólo frenan lo que lanzaría OTRO tsc.
+  const lanzaTipado = tool === "Bash" && /\b(tsc|typecheck|vitest|git commit|next build|tsc7)\b/.test(String(toolInput?.command ?? ""));
+  if (tsc >= MAX_TSC && (lanzaTipado || !mem || mem.avail < RAM_HOLGADA_MB)) problemas.push(`${tsc} procs tsc apilados (max ${MAX_TSC})`);
   if (orphanChromium >= MAX_ORPHAN_CHROMIUM) problemas.push(`${orphanChromium} chromium huérfanos (max ${MAX_ORPHAN_CHROMIUM})`);
   if (load.l1 > MAX_LOAD_1MIN) problemas.push(`load 1min ${load.l1.toFixed(1)} > ${MAX_LOAD_1MIN}`);
 
