@@ -133,7 +133,7 @@ export function BarraPedidos({
         aria-label="Filtrar pedidos"
         className="flex min-w-0 grow flex-wrap items-center gap-2 max-sm:basis-0"
       >
-        <div className="relative min-w-0 flex-1 sm:w-60 sm:flex-none">
+        <div className="relative min-w-0 flex-1 sm:w-52 sm:flex-none 2xl:w-60">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
             aria-hidden
@@ -142,7 +142,7 @@ export function BarraPedidos({
             type="search"
             value={filters.customerSearch}
             onChange={(e) => dispatch({ type: "SET_CUSTOMER_SEARCH", value: e.target.value })}
-            placeholder="Cliente, teléfono o #pedido"
+            placeholder="Cliente o #pedido"
             aria-label="Buscar pedidos por cliente, teléfono o número"
             className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
@@ -212,13 +212,14 @@ export function BarraPedidos({
           title="Repartidor, fechas, montos, deuda y notas"
           className={button({
             variant: "secondary",
-            className: "relative gap-1.5 rounded-xl px-3 max-sm:w-12 max-sm:px-0",
+            /* Ícono con su número hasta 1536 px: con «Por cobrar» la palabra bajaba a otra fila a 1280 (25-10). */
+            className: "relative gap-1.5 rounded-xl px-3 max-2xl:w-12 max-2xl:px-0",
           })}
         >
           <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          <span className="max-sm:sr-only">Filtros</span>
+          <span className="max-2xl:sr-only">Filtros</span>
           {puestos > 0 && (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent-dark)] px-1 text-sm font-bold tabular-nums text-white max-sm:absolute max-sm:-right-1 max-sm:-top-1">
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent-dark)] px-1 text-sm font-bold tabular-nums text-white max-2xl:absolute max-2xl:-right-1 max-2xl:-top-1">
               {puestos}
             </span>
           )}

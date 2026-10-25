@@ -277,8 +277,13 @@ describe("contarFacetas / facetasPuestas / columnasOcultasConFiltro", () => {
       cantidad: { min: 5, max: null },
     });
     expect(chips.find((c) => c.id === "especie")?.texto).toBe("Tornillo");
-    expect(chips.find((c) => c.id === "permisos")?.texto).toBe("Permiso: 2 elegidos");
+    /* Dos cortos se nombran (25-10: «Plata: 2 elegidos» no decía cuáles); tres o más, se cuentan. */
+    expect(chips.find((c) => c.id === "permisos")?.texto).toBe("Permiso: CONC-1 o CONC-2");
     expect(chips.find((c) => c.id === "cantidad")?.texto).toBe("Cantidad ≥ 5 m³");
+    const tres = facetasPuestas(columnas, { permisos: ["CONC-1", "CONC-2", "CONC-3"] });
+    expect(tres[0]?.texto).toBe("Permiso: 3 elegidos");
+    const largos = facetasPuestas(columnas, { permisos: ["Concesión forestal del río Abujao", "Bosque local Tahuayo"] });
+    expect(largos[0]?.texto).toBe("Permiso: 2 elegidos");
   });
 
   it("un rango sin topes no genera chip", () => {

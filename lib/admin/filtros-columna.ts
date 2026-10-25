@@ -280,7 +280,9 @@ export function facetasPuestas<T>(
     const texto =
       lista.length === 1
         ? lista[0]
-        : `${columna.label}: ${lista.length} elegidos`;
+        : lista.length === 2 && lista.join("").length <= 40
+          ? `${columna.label}: ${lista.join(" o ")}` /* 25-10: «Plata: 2 elegidos» no decía cuáles */
+          : `${columna.label}: ${lista.length} elegidos`;
     chips.push({ id: columna.id, label: columna.label, texto });
   }
   return chips;
