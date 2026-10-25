@@ -227,3 +227,20 @@ describe("construirAvisoTh — el aviso completo", () => {
     expect(a.grupos).toEqual([]);
   });
 });
+
+describe("construirAvisoTh — el plan por vencer lo avisa su propio cron (24-10)", () => {
+  it("por vencer o sin fecha: se cuenta, pero solo no interrumpe (loth-plan-vencimiento avisa por escalón)", () => {
+    const a = construirAvisoTh(
+      { ...vacio, planes: [plan("p", { vigenciaHasta: "2026-12-01T00:00:00.000Z" }), plan("s")] },
+      AHORA,
+    );
+    expect(a.grupos.map((g) => [g.clave, g.dispara])).toEqual([["planes", false]]);
+    expect(a.hayQueAvisar).toBe(false);
+  });
+
+  it("vencido: sigue insistiendo cada día", () => {
+    const a = construirAvisoTh({ ...vacio, planes: [plan("p", { vigenciaHasta: "2026-09-20T00:00:00.000Z" })] }, AHORA);
+    expect(a.grupos.map((g) => [g.clave, g.dispara])).toEqual([["planes", true]]);
+    expect(a.hayQueAvisar).toBe(true);
+  });
+});

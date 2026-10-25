@@ -14,11 +14,14 @@ import { AnteriorSiguiente as AnteriorSiguienteComun, BarraDePasos as BarraComun
 
 /** Arriba del formulario, pegada al borde: queda a la vista aunque el paso sea largo. */
 export function BarraDePasos({ form }: { form: LothPlanFormEstado }) {
-  const { pasos, paso, setPaso, esenciales, intentoGuardar } = form;
+  const { pasos, paso, setPaso, esenciales, intentoGuardar, pasosConRelleno } = form;
+  /* Un paso con relleno («ERERER») queda en «falta» tras intentar guardar: ahí está lo que se rechazó. */
+  const estado = (id: (typeof pasos)[number]["id"]) =>
+    intentoGuardar && pasosConRelleno.has(id) ? ("falta" as const) : estadoDelPaso(id, esenciales, intentoGuardar);
   return (
     <BarraComun
       etiqueta="Pasos del plan"
-      pasos={pasos.map((p) => ({ ...p, estado: estadoDelPaso(p.id, esenciales, intentoGuardar) }))}
+      pasos={pasos.map((p) => ({ ...p, estado: estado(p.id) }))}
       actual={paso}
       onIr={setPaso}
     />

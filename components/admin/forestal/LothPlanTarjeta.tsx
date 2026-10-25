@@ -20,6 +20,8 @@ import type { PlanConFicha } from "@/lib/forestal/loth-planes-varios";
 import type { Plan } from "./loth-plan-shared";
 import { ETIQUETA_FICHA, TONO_FICHA } from "./LothFichaPermiso";
 import type { ResumenPlan } from "./hooks/use-loth-planes-varios";
+import type { SemaforoDeLaPantalla } from "./hooks/use-loth-semaforo-libro";
+import { LothPlanSemaforoLinea } from "./LothPlanSemaforo";
 
 const m3 = (v: number) => `${formatNumber(v, Math.abs(v) < 10 ? 2 : Math.abs(v) < 1000 ? 1 : 0)} m³`;
 
@@ -84,9 +86,11 @@ const TONO_CIFRA = {
   danger: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
 } as const;
 
-export default function LothPlanTarjeta({ item, resumen, elegido, onElegir }: {
+export default function LothPlanTarjeta({ item, resumen, semaforo, elegido, onElegir }: {
   item: PlanConFicha<Plan>;
   resumen: ResumenPlan | undefined;
+  /** Semáforo + ficha (sin los plazos del libro); llega con el avance. */
+  semaforo?: SemaforoDeLaPantalla;
   /** El plan elegido en el libro: se marca para no perderlo de vista. */
   elegido: boolean;
   onElegir: (id: string) => void;
@@ -165,6 +169,8 @@ export default function LothPlanTarjeta({ item, resumen, elegido, onElegir }: {
           </span>
         )}
       </span>
+
+      {semaforo && <LothPlanSemaforoLinea semaforo={semaforo.semaforo} ficha={semaforo.ficha} />}
 
       <span className="mt-auto flex items-end gap-2 text-xs text-[var(--text-secondary)]">
         <span className="min-w-0 flex-1">

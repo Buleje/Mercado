@@ -5,6 +5,7 @@
 import { Check, Loader2, Plus } from "@buleje/design-system/icons";
 import type { LothPlanFormEstado } from "./hooks/use-loth-plan-form";
 import { ContadorEsenciales } from "./LothPlanFormEsencial";
+import LothPlanFormFicha from "./LothPlanFormFicha";
 
 export default function LothPlanFormPie({ form, onClose }: { form: LothPlanFormEstado; onClose: () => void }) {
   const { pasoDocs, busy, editando, creadoId, meta, resumenEsenciales, intentoGuardar, irAEsencial } = form;
@@ -22,6 +23,7 @@ export default function LothPlanFormPie({ form, onClose }: { form: LothPlanFormE
                 : "Guardando los datos de las carpetas…"}
         </p>
       )}
+      {!pasoDocs && <LothPlanFormFicha form={form} />}
       {!pasoDocs && <ContadorEsenciales resumen={resumenEsenciales} intento={intentoGuardar} onIr={irAEsencial} />}
       <button type="button" onClick={onClose} disabled={busy} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50">
         Cancelar

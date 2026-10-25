@@ -27,7 +27,10 @@ import { completarPlanDesdeConstancia, sumarEspeciesLeidas } from "@/lib/foresta
 import { aEspecieParaGuardar, especiesRepetidas, filaEnBlanco, filaVacia, problemaDeFila, type FilaEspecie } from "../loth-plan-especies-api";
 import { bloquesParaGuardar, especiesDeLosBloques, problemaDeLosBloques, type BloqueEnEdicion } from "../loth-plan-bloques-filas";
 import { esencialesDe, resumirEsenciales, type CampoEsencial, type Esencial } from "@/lib/forestal/loth-plan-esenciales";
-import { PASO_DEL_ESENCIAL, pasoVisible, pasosDelPlan, type PasoPlan } from "@/lib/forestal/loth-plan-pasos";
+import { PASO_DEL_ESENCIAL, PASO_DEL_RELLENO, pasoVisible, pasosDelPlan, type PasoPlan } from "@/lib/forestal/loth-plan-pasos";
+import { mensajeDeRelleno, rellenoEnPlan } from "@/lib/forestal/loth-plan-relleno";
+import { fichaDelFormulario } from "./loth-plan-form-ficha";
+import { pasoPedidoAlAbrir, soltarPasoPedido } from "./loth-plan-paso-pedido";
 import { irAlEsencial } from "../LothPlanFormEsencial";
 import type { Plan } from "../loth-plan-shared";
 import { esTipoPlantacion, especialidadSugerida, metaDe, rotulosDe, type TipoPlan } from "@/lib/forestal/loth-tipos-plan";
@@ -39,11 +42,14 @@ export function useLothPlanForm({
   planesPrevios,
   onSaved,
   onEstadoCierre,
+  especiesConVolumen: especiesGuardadas = null,
 }: {
   plan?: Plan | null;
   planesPrevios: readonly PlanPrevio[];
   onSaved: (planId?: string) => void;
   onEstadoCierre?: (e: { pendientes: boolean; ocupado: boolean; creado: boolean }) => void;
+  /** Al editar: las especies con volumen que ya tiene el plan (las cuenta la ficha, como la cabecera). */
+  especiesConVolumen?: number | null;
 }) {
   const editando = Boolean(plan);
   const [f, setF] = useState<FormularioPlan>(() => (plan ? desdePlan(plan) : formularioVacio()));
@@ -89,7 +95,9 @@ export function useLothPlanForm({
   /** Los bloques o zonas del alta (Brandon 24-10); null = una sola lista de especies. */
   const [bloques, setBloques] = useState<BloqueEnEdicion[] | null>(null);
   /** El paso que se ve (`loth-plan-pasos`): una cosa a la vez. */
-  const [pasoElegido, setPaso] = useState<PasoPlan>("tipo");
+  /* «Completar la ficha» (aviso del plan) abre en el paso del primer dato que falta. */
+  const [pasoElegido, setPaso] = useState<PasoPlan>(() => pasoPedidoAlAbrir() ?? "tipo");
+  useEffect(() => soltarPasoPedido(), []);
   /** Recién después del primer «Crear» se marcan en rojo las filas a medias. */
   const [intentoGuardar, setIntentoGuardar] = useState(false);
   /** Las filas que entraron leyendo la constancia: se marcan para revisarlas contra el papel. */
@@ -162,11 +170,16 @@ export function useLothPlanForm({
   /* Los esenciales de ESTE tipo de documento (`loth-plan-esenciales`): el
      único obligatorio es el titular —lo único que exige el servidor—; el
      resto es recomendado y no frena el alta. */
-  const esenciales = esencialesDe(f, {
-    llevaEspecies,
-    especiesConVolumen: especiesConDatos.filter((x) => problemaDeFila(x) == null).length,
-  });
+  const especiesValidas = especiesConDatos.filter((x) => problemaDeFila(x) == null).length;
+  const esenciales = esencialesDe(f, { llevaEspecies, especiesConVolumen: especiesValidas });
   const resumenEsenciales = resumirEsenciales(esenciales);
+  /* Relleno («ERERER», «xxx», «S/N»): se frena acá y en el servidor. */
+  const rellenos = useMemo(() => rellenoEnPlan(f), [f]);
+  const pasosConRelleno = new Set(rellenos.map((r) => PASO_DEL_RELLENO[r.campo]));
+  const ficha = fichaDelFormulario(f, {
+    plan, permiso, contratos,
+    especiesConVolumen: llevaEspecies ? especiesValidas : editando ? especiesGuardadas : null,
+  });
   const esencial = (c: CampoEsencial) => esenciales.find((x) => x.campo === c);
   /* La vigencia de una plantación es opcional y va plegada; abierta si ya trae fechas. */
   const [vigenciaAbierta, setVigenciaAbierta] = useState(() => Boolean(f.vigenciaDesde || f.vigenciaHasta));
@@ -248,6 +261,13 @@ export function useLothPlanForm({
       irAEsencial(resumenEsenciales.primero);
       return;
     }
+    if (!busy && rellenos.length > 0) {
+      e.preventDefault();
+      setErr(mensajeDeRelleno(rellenos));
+      setIntentoGuardar(true);
+      abrirPaso(PASO_DEL_RELLENO[rellenos[0].campo]);
+      return;
+    }
     /* Las especies a medias frenan el alta: se muestra su paso, con lo que falta marcado. */
     if (puedeGuardar && especiesMal) setPaso("especies");
     return enviarPlan(e, {
@@ -265,6 +285,7 @@ export function useLothPlanForm({
     setPropuestaDescartada, arffsUsadas, meta, rot, esPlantacion, llevaEspecies, lector, faltaRegente,
     puedeGuardar, esenciales, esencial, resumenEsenciales, vigenciaAbierta, setVigenciaAbierta, traerDelDirectorio, copiarDe, usarPermisoDelLibro,
     soltarPermiso, elegirTipo, submit, bloques, setBloques, porBloques, problemaBloques, pasos, paso, setPaso, irAEsencial,
+    rellenos, pasosConRelleno, ficha,
   };
 }
 

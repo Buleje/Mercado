@@ -19,6 +19,7 @@ import { ChevronDown, Link2Off, Loader2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { formatNumber } from "@/lib/format";
 import type { SaldoDeEspecieConGuias, SaldoPlanRespuesta, UsoConGuia } from "@/lib/forestal/loth-saldo-plan-tipos";
 import LothGtfDesatarPermiso from "./LothGtfDesatarPermiso";
 
@@ -119,7 +120,7 @@ function TarjetaEspecie({ e, techo, onVerGuia, onDesatar }: { e: SaldoDeEspecieC
             <div className={`h-full rounded-full ${t.barra}`} style={{ width: `${Math.min(100, Math.max(0, e.pctUsado ?? 0))}%` }} />
           </div>
           <p className={`${NUM} text-sm text-[var(--text-secondary)]`}>
-            {techo} {fmtM3(e.autorizadoM3 as number)} · usado {fmtM3(e.usadoM3)} m³{e.pctUsado != null ? ` (${e.pctUsado.toLocaleString("es-PE")} %)` : ""}
+            {techo} {fmtM3(e.autorizadoM3 as number)} · usado {fmtM3(e.usadoM3)} m³{e.pctUsado != null ? ` (${formatNumber(e.pctUsado, { max: 1 })} %)` : ""}
           </p>
         </>
       ) : (

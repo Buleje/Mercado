@@ -18,6 +18,7 @@ import { areaDelPermiso, habilitaPlanDeManejo } from "@/lib/forestal/permisos-de
 import { TIPO_LABEL } from "./contratos-ui";
 import { Field, cls } from "./loth-plan-ui";
 import LothPlanFormPermisoDelLibro from "./LothPlanFormPermisoDelLibro";
+import LothPlanFormTitularParecido from "./LothPlanFormTitularParecido";
 import { nombreDelPlan } from "@/lib/forestal/loth-tablero-permiso";
 import { ESPECIALIDADES_REGENTE } from "@/lib/forestal/loth-tipos-plan";
 import Bloque from "./LothPlanFormBloque";
@@ -28,7 +29,7 @@ import type { LothPlanFormEstado } from "./hooks/use-loth-plan-form";
 export default function LothPlanFormTitular({ form }: { form: LothPlanFormEstado }) {
   const {
     f, set, esPlantacion, meta, faltaRegente, contratos, traerDelDirectorio, contratoDelLibro, planDelLibro,
-    usarPermisoDelLibro, setPropuestaDescartada, permiso, soltarPermiso, traidos, esencial, intentoGuardar,
+    usarPermisoDelLibro, setPropuestaDescartada, permiso, soltarPermiso, traidos, esencial, intentoGuardar, paso,
   } = form;
   const eTitular = esencial("titularName");
   const eRegente = esencial("regenteName");
@@ -98,6 +99,11 @@ export default function LothPlanFormTitular({ form }: { form: LothPlanFormEstado
             className={clsEsencial(eTitular, intentoGuardar)}
           />
         </CampoPlan>
+        <LothPlanFormTitularParecido
+          escrito={f.titularName}
+          activo={paso === "titular" && f.titularName.trim().length >= 3}
+          onUsar={(nombre) => set("titularName", nombre)}
+        />
         <Field label="Representante legal">
           <input value={f.representanteLegal} onChange={(e) => set("representanteLegal", e.target.value)} placeholder="Si el titular es empresa" className={cls} />
         </Field>

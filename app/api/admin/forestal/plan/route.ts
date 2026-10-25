@@ -8,6 +8,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
+import { mensajeDeRelleno, rellenoEnPlan } from "@/lib/forestal/loth-plan-relleno";
 
 /**
  * /api/admin/forestal/plan — Plan de Manejo Forestal (ADR-126)
@@ -127,6 +128,20 @@ export const GET = withApiHandler("forestal-plan-get", async (req: NextRequest) 
   }
 });
 
+/**
+ * «ERERER» o «-» en vez del dato (medido en Blas, 24-10): se rechaza con la
+ * MISMA función que usa el formulario, así un cliente viejo o un script no lo
+ * cuela. `campos` dice cuáles, para marcarlos.
+ */
+function rechazarRelleno(datos: Record<string, unknown>): NextResponse | null {
+  const relleno = rellenoEnPlan(datos);
+  if (relleno.length === 0) return null;
+  return NextResponse.json(
+    { error: "relleno", message: mensajeDeRelleno(relleno), campos: relleno.map((r) => r.campo) },
+    { status: 400 },
+  );
+}
+
 export const POST = withApiHandler("forestal-plan-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
@@ -142,6 +157,8 @@ export const POST = withApiHandler("forestal-plan-post", async (req: NextRequest
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+  const conRelleno = rechazarRelleno(parsed.data);
+  if (conRelleno) return conRelleno;
   try {
     const { species = [], ...datos } = parsed.data;
     const { plan, species: creadas } = await ForestPlanDB.crearPlanConEspecies(
@@ -177,6 +194,8 @@ export const PATCH = withApiHandler("forestal-plan-patch", async (req: NextReque
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+  const conRelleno = rechazarRelleno(parsed.data);
+  if (conRelleno) return conRelleno;
   try {
     const { id, ...patch } = parsed.data;
     const plan = await ForestPlanDB.updatePlan(auth.tenantId, id, patch);

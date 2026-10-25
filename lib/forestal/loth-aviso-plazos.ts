@@ -33,7 +33,9 @@
  *  · Plan vivo por vencer (≤ 90 días), vencido, o SIN vigencia cargada. La
  *    cuenta es la de la ficha del permiso (`construirFichaPermiso` → mismo
  *    `estadoVigencia` y el «hoy» de Lima): el aviso y la ficha no pueden contar
- *    distinto el mismo vencimiento.
+ *    distinto el mismo vencimiento. Desde el 24-10 sólo el VENCIDO dispara
+ *    solo; por vencer y sin fecha los avisa `loth-plan-vencimiento` una vez
+ *    por escalón (antes salía el mismo WhatsApp 90 días seguidos).
  *  · Guías que el libro cita y no existen entre las emitidas
  *    (`citada_sin_registrar` de `cuadrarGuias`): el documento de origen no está.
  */
@@ -328,7 +330,10 @@ function grupoPlanes(ps: PlanEnAviso[]): GrupoAvisoTh | null {
     titulo,
     resumen: ps.map((p) => `${p.nombre} — ${frasePlan(p)}`).join(" · "),
     accion: ACCION_PLAN,
-    dispara: true,
+    // Sólo el plan YA vencido insiste cada día (eso se arregla hoy). El que está
+    // por vencer o sin fecha lo avisa el cron `loth-plan-vencimiento` UNA vez por
+    // escalón (90, 30, 7 y el día): acá se cuenta, pero no interrumpe solo.
+    dispara: ps.some((p) => p.estado === "vencido"),
   };
 }
 

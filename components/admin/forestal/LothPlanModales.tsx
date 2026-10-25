@@ -11,6 +11,7 @@ import { permisoConSigla } from "@/lib/forestal/loth-tipos-plan";
 import LothBorrarOperacionesModal from "./LothBorrarOperacionesModal";
 import LothPlanForm from "./LothPlanForm";
 import type { VistaPlan } from "./hooks/use-loth-plan-view";
+import { especiesConVolumenDe } from "./hooks/use-loth-semaforo-libro";
 
 export default function LothPlanModales({ v }: { v: VistaPlan }) {
   const {
@@ -66,6 +67,7 @@ export default function LothPlanModales({ v }: { v: VistaPlan }) {
             onSaved={() => { setEditandoPlan(false); d.loadPlans(); void docs.recargar(); }}
             onEstadoCierre={onEstadoCierre}
             planesPrevios={d.plans}
+            especiesConVolumen={especiesConVolumenDe(d.species)}
             onIrARegistro={() => { setEditandoPlan(false); void docs.recargar(); setPestanaPlantacion("registro"); }}
           />
         )}

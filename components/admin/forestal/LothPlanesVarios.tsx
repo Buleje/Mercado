@@ -23,6 +23,7 @@ import {
 import type { Plan } from "./loth-plan-shared";
 import { TONO_FICHA } from "./LothFichaPermiso";
 import LothPlanTarjeta from "./LothPlanTarjeta";
+import { semaforoDeLaPantalla, useSemaforoDelLibro } from "./hooks/use-loth-semaforo-libro";
 import { useResumenPlanes } from "./hooks/use-loth-planes-varios";
 
 /** Exportada: la prueba en navegador la lee. */
@@ -56,6 +57,28 @@ export default function LothPlanesVarios({
   const grupos = useMemo(() => clasificarPlanes(plans, modo), [plans, modo]);
   const ids = useMemo(() => plans.map((p) => p.id), [plans]);
   const resumen = useResumenPlanes(ids, true, reloadSignal);
+  const libro = useSemaforoDelLibro(reloadSignal);
+  /* El semáforo de cada tarjeta, con su saldo por especie, la ficha y los
+     papeles: igual que la cabecera del plan abierto. Los plazos de 15 días no
+     van (son del libro entero; repetidos en cada tarjeta dirían que cada plan
+     tiene el despacho). Si el balance falló, el saldo es «No pude leer», no verde. */
+  const semaforos = useMemo(() => {
+    const out: Record<string, ReturnType<typeof semaforoDeLaPantalla>> = {};
+    for (const p of plans) {
+      const r = resumen[p.id];
+      if (r?.estado === "ok") {
+        out[p.id] = semaforoDeLaPantalla(p, {
+          especies: r.porEspecie,
+          papeles: r.papeles,
+          especiesConVolumen: r.porEspecie.filter((e) => e.baseM3 > 0).length,
+          libro,
+        });
+      } else if (r?.estado === "error") {
+        out[p.id] = semaforoDeLaPantalla(p, { especies: null, especiesConVolumen: null, libro });
+      }
+    }
+    return out;
+  }, [plans, resumen, libro]);
 
   return (
     <section
@@ -121,6 +144,7 @@ export default function LothPlanesVarios({
                   <LothPlanTarjeta
                     item={item}
                     resumen={resumen[item.plan.id]}
+                    semaforo={semaforos[item.plan.id]}
                     elegido={item.plan.id === planId}
                     onElegir={onElegir}
                   />

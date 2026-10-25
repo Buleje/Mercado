@@ -10,7 +10,9 @@
  *   · la VIGENCIA del plan venció o está por vencer;
  *   · una especie censada que NO figura en la resolución (tala no autorizada);
  *   · una especie con más árboles censados que los autorizados;
- *   · el plan y un permiso tienen el MISMO código y no están unidos (un clic).
+ *   · el plan y un permiso tienen el MISMO código y no están unidos (un clic);
+ *   · el SEMÁFORO (Brandon 24-10): saldo casi usado o pasado, despachos sin
+ *     asentar y la ficha incompleta, con «Completar la ficha».
  *
  * Cuando todo cuadra queda una sola línea, sin caja: «todo en regla» no es un
  * aviso y no debe pesar como uno.
@@ -26,6 +28,9 @@ import { Btn } from "./ctp-shared";
 import { unirPlanConPermiso } from "./loth-plan-unir";
 import type { ControlRow } from "./loth-plan-shared";
 import { formatNumber } from "@/lib/format";
+import type { PasoPlan } from "@/lib/forestal/loth-plan-pasos";
+import LothPlanSemaforoAviso, { razonesDelAviso } from "./LothPlanSemaforoAviso";
+import type { SemaforoDeLaPantalla } from "./hooks/use-loth-semaforo-libro";
 
 /** Lo que el aviso de «unir» necesita del plan en pantalla. */
 interface PlanEnPantalla {
@@ -111,7 +116,7 @@ function UnirConPermiso({ plan, onUnido }: { plan: PlanEnPantalla & { id: string
   );
 }
 
-export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPlanUnido, plantacion = false }: {
+export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPlanUnido, plantacion = false, semaforo, onCompletarFicha, onVerPapeles }: {
   rows: ControlRow[];
   /** Registro de plantación (ADR-459): se habla de registro y árboles marcados, no de resolución y censo. */
   plantacion?: boolean;
@@ -129,6 +134,11 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
   plan?: ({ codigo?: string | null; vigenciaHasta?: string | null; estado?: string | null } & PlanEnPantalla) | null;
   /** Después de unir el plan con su permiso: recargar el plan. */
   onPlanUnido?: () => void;
+  /** El semáforo del plan (`semaforoDeLaPantalla`): lo que no dicen los otros avisos. */
+  semaforo?: SemaforoDeLaPantalla | null;
+  /** «Completar la ficha»: abre el formulario del plan en ese paso. */
+  onCompletarFicha?: (paso: PasoPlan | null) => void;
+  onVerPapeles?: () => void;
 }) {
   const [, setVersion] = useState(0);
   const hasCenso = rows.some((r) => r.censadoCount > 0);
@@ -153,7 +163,8 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
   const recien = plan?.id ? unidosEnLaSesion.get(plan.id) ?? null : null;
   // Si después alguien lo soltó o lo cambió de permiso, la línea ya no es cierta.
   const unidoAca = recien && (!plan?.contratoId || plan.contratoId === recien.contratoId) ? recien : null;
-  if (!truncado && !hasCenso && !vigencia && !planSinPermiso && !unidoAca) return null;
+  const conSemaforo = semaforo != null && razonesDelAviso(semaforo.semaforo, vigencia != null).length > 0;
+  if (!truncado && !hasCenso && !vigencia && !planSinPermiso && !unidoAca && !conSemaforo) return null;
 
   return (
     <div className="space-y-2">
@@ -190,6 +201,10 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
             <span className="font-medium">{vigencia.detalle}</span>
           </span>
         </p>
+      )}
+
+      {semaforo && (
+        <LothPlanSemaforoAviso semaforo={semaforo.semaforo} ficha={semaforo.ficha} vigenciaDicha={vigencia != null} onCompletarFicha={onCompletarFicha} onVerPapeles={onVerPapeles} />
       )}
 
       {/* Unir va después de lo que bloquea (censo cortado, vigencia): es un

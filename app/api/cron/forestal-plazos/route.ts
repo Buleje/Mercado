@@ -6,6 +6,7 @@ import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
 import { describirEnvioWhatsApp, sufijoDeFallo } from "@/lib/whatsapp/aviso-plantilla";
@@ -55,13 +56,12 @@ async function tenantsForestales(): Promise<string[]> {
 /**
  * El tenant de una fila forestal. `tenantId` en esas tablas viene MIXTO: unas
  * filas guardan el cuid del tenant y otras el slug ("main"). Buscar sólo por
- * `id` dejaba a esos tenants sin teléfono y, por lo tanto, sin WhatsApp.
+ * `id` dejaba a esos tenants sin teléfono y, por lo tanto, sin WhatsApp. Lo
+ * busca `TenantsDB.contactoDelDueno` (id primero, después slug), el mismo que
+ * usa el aviso de vencimiento del plan.
  */
 function tenantDelLibro(tenantId: string) {
-  return prisma.tenant.findFirst({
-    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-    select: { id: true, ownerPhone: true, ownerEmail: true, name: true },
-  });
+  return TenantsDB.contactoDelDueno(tenantId);
 }
 
 /**

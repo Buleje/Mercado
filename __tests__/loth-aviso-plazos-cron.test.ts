@@ -18,8 +18,10 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     forestGtf: { findMany: async () => [] },
     forestCtpEntry: { findMany: async () => [] },
-    tenant: { findFirst: async () => ({ id: "cuid-blas", ownerPhone: "+51 987 654 675", ownerEmail: null, name: "Blas" }) },
   },
+}));
+vi.mock("@/lib/db/tenants.db", () => ({
+  TenantsDB: { contactoDelDueno: async () => ({ id: "cuid-blas", ownerPhone: "+51 987 654 675", ownerEmail: null, name: "Blas" }) },
 }));
 vi.mock("@/lib/db/forest-gtf.db", () => ({ ForestGtfDB: {} }));
 vi.mock("@/lib/db/forest-ctp.db", () => ({ ForestCtpDB: {} }));

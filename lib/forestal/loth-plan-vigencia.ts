@@ -63,15 +63,21 @@ export function estadoVigencia(
   if (declarado === "suspendido") {
     return { nivel: "suspendido", diasRestantes: null, texto: "Suspendido", tono: "danger" };
   }
+  // DECLARADO vencido (25-10): gana a la fecha. Si la fecha todavía no pasó (o
+  // no hay), el papel manda: un plan que la ARFFS dio por vencido no se tala
+  // aunque la cuenta diga «quedan 30 días». Si la fecha ya pasó, se dice hace
+  // cuánto, como siempre.
+  if (declarado === "vencido") {
+    const finDeclarado = vigenciaHasta ? new Date(vigenciaHasta) : null;
+    const valida = finDeclarado != null && !Number.isNaN(finDeclarado.getTime());
+    if (!valida || diasEntre(hoy, finDeclarado) >= 0) {
+      return { nivel: "vencido", diasRestantes: null, texto: "Vencido", tono: "danger" };
+    }
+  }
 
   if (!vigenciaHasta) {
     // Sin fecha de fin no se puede decir «vigente» sin inventar: se dice que falta.
-    return {
-      nivel: "sin_fecha",
-      diasRestantes: null,
-      texto: declarado === "vencido" ? "Vencido" : "Sin fecha de vencimiento cargada",
-      tono: declarado === "vencido" ? "danger" : "warn",
-    };
+    return { nivel: "sin_fecha", diasRestantes: null, texto: "Sin fecha de vencimiento cargada", tono: "warn" };
   }
 
   const fin = new Date(vigenciaHasta);

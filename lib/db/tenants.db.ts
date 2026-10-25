@@ -70,6 +70,27 @@ export const TenantsDB = {
   },
 
   /**
+   * A quién avisarle: el WhatsApp y el correo del dueño, por id o por slug.
+   * Las tablas forestales guardan `tenantId` MIXTO (cuid o slug «main»): buscar
+   * sólo por id dejaba a esos negocios sin aviso. Sin caché: lo leen los crons,
+   * una vez al día por negocio.
+   *
+   * Primero por id y después por slug (B1, 25-10): con un `OR` en `findFirst`,
+   * un slug que fuera el id de OTRO negocio podía traer al que no era, sin
+   * orden que decida. Los dos son únicos.
+   */
+  async contactoDelDueno(
+    idOSlug: string,
+  ): Promise<{ id: string; name: string; ownerPhone: string | null; ownerEmail: string | null } | null> {
+    if (!idOSlug) return null;
+    const select = { id: true, name: true, ownerPhone: true, ownerEmail: true } as const;
+    return (
+      (await prisma.tenant.findUnique({ where: { id: idOSlug }, select })) ??
+      (await prisma.tenant.findUnique({ where: { slug: idOSlug }, select }))
+    );
+  },
+
+  /**
    * El negocio por slug, id o dominio propio (`custom--<host>`) para lo
    * PÚBLICO: la portada `/t/<negocio>` y `GET /api/tenants/resolve`, que se
    * piden en cada visita. Cacheado 60 s (16-10, carril velocidad: era una ida

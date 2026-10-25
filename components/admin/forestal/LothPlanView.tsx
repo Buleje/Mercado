@@ -42,6 +42,7 @@ import { usePlanesVarios } from "./hooks/use-loth-planes-varios";
 import { useLothPlanView } from "./hooks/use-loth-plan-view";
 import { useLothAprovechamientoHechos } from "./hooks/use-loth-aprovechamiento-hechos";
 import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
+import { useSemaforoDelPlanAbierto } from "./hooks/use-loth-semaforo-libro";
 
 /* Exportadas: la prueba en navegador las lee. */
 export { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION } from "./loth-plan-view-shared";
@@ -49,10 +50,13 @@ export { CLAVE_PESTANA_PLAN, CLAVE_PESTANA_PLANTACION } from "./loth-plan-view-s
 export default function LothPlanView({
   reloadSignal,
   onCambioDelLibro,
+  onVerGuia,
 }: {
   reloadSignal?: number;
   /** Se borraron líneas del libro desde el plan: la página relee lista, contadores y paneles. */
   onCambioDelLibro?: () => void;
+  /** Abre una guía en «Guías» por su N° (el saldo por especie y «Atar lo que no tiene plan»). */
+  onVerGuia?: (gtfNumber: string) => void;
 } = {}) {
   const v = useLothPlanView(reloadSignal, onCambioDelLibro);
   const { d, trees, plan, cargando, esPlantacion, errorPlan, opciones } = v;
@@ -120,6 +124,16 @@ export default function LothPlanView({
     [plan, esPlantacion, d.cascada, d.autorizadoTotal, d.taladoSinRegistrarM3, hechos.hechos, hechos.estado],
   );
 
+  /* Semáforo antimulta + ficha al X % (Brandon 24-10). */
+  const semaforo = useSemaforoDelPlanAbierto(verVarios ? null : plan, {
+    // El balance que no se pudo leer es «No pude leer el saldo», no cero especies (M2).
+    especies: d.saldoFallo ? null : d.cascada.especies,
+    papeles: v.papelesSemaforo,
+    species: d.species,
+    listo: !cargando,
+    firma: reloadSignal,
+  });
+
   return (
     <div data-vista-plan className="space-y-4">
       {errorPlan && (
@@ -136,6 +150,7 @@ export default function LothPlanView({
         plan={plan}
         opciones={opcionesVista}
         aprovechamiento={aprovechamiento}
+        semaforo={semaforo}
         kpis={
           plan
             ? {
@@ -187,7 +202,7 @@ export default function LothPlanView({
         </div>
       )}
 
-      {!verVarios && !cargando && plan && <LothPlanPaneles v={v} plan={plan} />}
+      {!verVarios && !cargando && plan && <LothPlanPaneles v={v} plan={plan} reloadSignal={reloadSignal} onVerGuia={onVerGuia} />}
 
       {!cargando && d.plans.length === 0 && !d.showPlanForm && (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">

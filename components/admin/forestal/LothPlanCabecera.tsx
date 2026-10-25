@@ -14,7 +14,9 @@
  *     (`VistaHeader` + `useKpisPlegables`): la vista no gasta una fila en
  *     decir cómo se llama;
  *   · la carátula, una línea con «Ver ficha» (`LothPlanIdentidadLinea`);
- *   · los indicadores, plegables y recordados como en el resto del libro.
+ *   · los indicadores, plegables y recordados como en el resto del libro;
+ *   · el SEMÁFORO del plan con «Ficha al X %» (Brandon 24-10, opciones A y B),
+ *     primero en el riel: es lo que se mira antes que las cifras.
  *
  * Fuera del libro (sin chip) queda el selector de siempre, con «Varios».
  *
@@ -37,6 +39,8 @@ import { agruparPlanesPorTitular } from "@/lib/forestal/loth-planes-por-titular"
 import { type Plan } from "./loth-plan-shared";
 import { useKpisPlegables } from "./kpis-plegables";
 import LothAprovechamientoBanda from "./LothAprovechamientoBanda";
+import LothPlanSemaforo from "./LothPlanSemaforo";
+import type { SemaforoDeLaPantalla } from "./hooks/use-loth-semaforo-libro";
 import { LothPlanIdentidadLinea } from "./LothPlanIdentidad";
 import { CifraLinea } from "./loth-plan-ui";
 import { resumenPlan, useTarjetasPlan, type KpisPlan } from "./LothPlanIndicadores";
@@ -64,7 +68,7 @@ const OPCION_VARIOS = "__varios__";
 const AYUDA =
   "El permiso aprobado: lo autorizado por especie, el censo y el avance de la tala. El permiso se elige en el chip de arriba; con «Todos los permisos» ves la grilla de todos los planes.";
 
-export default function LothPlanCabecera({ plans, planId, onPlan, varios = false, onVarios, plan, kpis, kpisPlantacion, aprovechamiento, opciones }: {
+export default function LothPlanCabecera({ plans, planId, onPlan, varios = false, onVarios, plan, kpis, kpisPlantacion, aprovechamiento, opciones, semaforo }: {
   plans: Plan[];
   planId: string | null;
   onPlan: (id: string | null) => void;
@@ -79,6 +83,8 @@ export default function LothPlanCabecera({ plans, planId, onPlan, varios = false
   /** La banda «Aprovechamiento» (`analizarAprovechamiento`): barra, ritmo, exceso y especies. */
   aprovechamiento?: Aprovechamiento | null;
   opciones: MenuAccion[];
+  /** Semáforo + ficha del plan elegido (`semaforoDeLaPantalla`). Con la grilla, nada. */
+  semaforo?: SemaforoDeLaPantalla | null;
 }) {
   const enLibro = useEnElLibro();
   const a = aprovechamiento ?? null;
@@ -97,6 +103,7 @@ export default function LothPlanCabecera({ plans, planId, onPlan, varios = false
     <section aria-label="Plan de manejo" className="space-y-3">
       <VistaHeader titulo="Plan de manejo" meta={varios ? `${plans.length} planes` : undefined} hint={AYUDA}>
         {!enLibro && <SelectorFueraDelLibro plans={plans} planId={planId} onPlan={onPlan} varios={varios} onVarios={onVarios} />}
+        {!varios && plan && semaforo && <LothPlanSemaforo semaforo={semaforo.semaforo} ficha={semaforo.ficha} />}
         {indicadores.boton}
         <ActionMenu
           label="Opciones"

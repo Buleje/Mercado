@@ -65,6 +65,9 @@ export function useLothPlan(reloadSignal?: number) {
   const [error, setError] = useState<string | null>(null);
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [balance, setBalance] = useState<Balance | null>(null);
+  /* El balance de este plan no se pudo leer: el semáforo dice «No pude leer el
+     saldo» en vez de un verde con cero especies (M2, 25-10). */
+  const [saldoFallo, setSaldoFallo] = useState(false);
   /**
    * De qué plan es el detalle que hay en pantalla. Mientras no coincide con el
    * elegido, la vista dice que está cargando en vez de «0 m³ autorizados»:
@@ -130,6 +133,7 @@ export function useLothPlan(reloadSignal?: number) {
       /* Si el balance de ESTE plan no llegó, se vacía: quedarse con el del
          plan anterior pintaba sus m³ en los indicadores de éste. */
       setBalance(b.ok ? ((await b.json()).balance ?? null) : null);
+      setSaldoFallo(!b.ok);
       /* Si el GET del POA falla, el respaldo es el defecto DEL PLAN (una
          plantación no vuelve a 10 %), no un 10 % fijo. */
       const cfg: PoaConfig = poa.ok
@@ -138,7 +142,10 @@ export function useLothPlan(reloadSignal?: number) {
       setPoaConfig(cfg);
       setPoaGuardado(cfg);
       if (u.ok) setUsoCenso(((await u.json()).usos ?? []) as UsoDelLibro[]);
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      if (pedido === ultimoPedido.current) setSaldoFallo(true);
+    }
     /* También si falló: el error ya está a la vista y la carga no queda
        girando para siempre. */
     finally { if (pedido === ultimoPedido.current) setDetalleDe(id); }
@@ -406,7 +413,7 @@ export function useLothPlan(reloadSignal?: number) {
     poaSucio,
     detalleListo,
     plans, planId, setPlanId: elegirPlanVista, mostrarPlanNuevo, plan, species, trees, censoTotal, censoTruncado, censusStat,
-    especieFuera, setEspecieFuera, loading, error, showPlanForm, setShowPlanForm, balance,
+    especieFuera, setEspecieFuera, loading, error, showPlanForm, setShowPlanForm, balance, saldoFallo,
     poaConfig, setPoaConfig, poaSaving, savePoaConfig, loadPlans, loadDetail,
     autorizadoTotal, controlRows, fichasEspecie, movilizadoTotal, aprovechamientoPct, saldoTotal,
     georrefPct, noAutorizadas, okCount, authorizedSet, poa, categoriaPorArbol, semillerosDeclarados,

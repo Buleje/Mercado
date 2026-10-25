@@ -89,6 +89,7 @@ import type { EspecieDelPlanFila, EspecieDelRegistro } from "@/lib/forestal/loth
 import { restanteTrozado, siguienteCodigoDeTroza } from "@/lib/forestal/loth-restante";
 import LothTalaDatosInternos from "./LothTalaDatosInternos";
 import { olvidarCensoDeTala, useCensoDeTala } from "./hooks/use-censo-de-tala";
+import { olvidarSemaforoDelLibro } from "./hooks/use-loth-semaforo-libro";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import { arbolDeTroza, type ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import LothAvisoTransformacion from "./LothAvisoTransformacion";
@@ -1156,11 +1157,12 @@ export default function LothEntryForm({
       payload.gpsLng = gpsLng ?? null;
       payload.gpsOrigen = gpsLat != null && gpsLng != null ? gpsOrigen : null;
       payload.photoUrl = photoUrl ?? null;
-      if (section === "tala") {
+      // Quién tuvo la motosierra: en la tala y en el trozado (Brandon 24-10). La hora, sólo en la tala.
+      if (section === "tala" || section === "trozado") {
         payload.motosierrista = motosierrista.trim() || null;
         payload.motosierristaId = motosierrista.trim() ? motosierristaId : null;
-        payload.horaTala = horaTala || null;
       }
+      if (section === "tala") payload.horaTala = horaTala || null;
 
       const res = await fetch("/api/admin/forestal/loth", {
         method: "POST",
@@ -1210,6 +1212,7 @@ export default function LothEntryForm({
       // Lo recordado del censo y del árbol ya no vale: cambió lo que el libro dice de él.
       olvidarCensoDeTala();
       olvidarArbolEnElLibro();
+      olvidarSemaforoDelLibro();
       olvidarRegistroPlantacion();
       setT7(null);
       // La vista ofrece «Trozarlo ahora» con el árbol recién tumbado.
@@ -2239,8 +2242,10 @@ export default function LothEntryForm({
               />
             )}
 
-            {section === "tala" && (
+            {(section === "tala" || section === "trozado") && (
               <LothTalaDatosInternos
+                seccion={section}
+                proponerUltimo={corrigeLineNo == null && !plantilla?.motosierrista}
                 motosierrista={motosierrista}
                 onMotosierrista={(nombre, id) => {
                   setMotosierrista(nombre);
@@ -2248,6 +2253,7 @@ export default function LothEntryForm({
                 }}
                 hora={horaTala}
                 onHora={setHoraTala}
+                arbol={{ planId, treeCode }}
               />
             )}
 

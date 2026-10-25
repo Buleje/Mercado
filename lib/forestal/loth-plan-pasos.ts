@@ -9,6 +9,7 @@
  * cada esencial y cómo está cada paso.
  */
 import type { CampoEsencial, Esencial } from "./loth-plan-esenciales";
+import type { CampoPlanRelleno } from "./loth-plan-relleno";
 
 export type PasoPlan = "tipo" | "documento" | "especies" | "titular" | "area" | "mas" | "archivos";
 
@@ -25,6 +26,24 @@ export const PASO_DEL_ESENCIAL: Record<CampoEsencial, PasoPlan> = {
   planNumber: "documento",
   vigenciaHasta: "area",
   especies: "especies",
+};
+
+/** Dónde se escribe cada campo que se revisa por relleno: «Crear» lleva al paso del primero. */
+export const PASO_DEL_RELLENO: Record<CampoPlanRelleno, PasoPlan> = {
+  planNumber: "documento",
+  tituloHabilitante: "documento",
+  resolucionNumber: "documento",
+  arffs: "documento",
+  titularName: "titular",
+  representanteLegal: "titular",
+  regenteName: "titular",
+  regenteRegistro: "titular",
+  propietarioNombre: "titular",
+  propietarioDoc: "titular",
+  alias: "titular",
+  parcelaCorta: "area",
+  sector: "area",
+  cuenca: "area",
 };
 
 /** Los pasos de este tipo de documento, en orden. Las especies, sólo en una plantación. */

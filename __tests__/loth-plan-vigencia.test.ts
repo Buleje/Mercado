@@ -45,6 +45,14 @@ describe("estadoVigencia", () => {
     expect(e.tono).toBe("danger");
   });
 
+  it("DECLARADO vencido gana a una fecha que todavía no pasó (M3, 25-10)", () => {
+    const e = estadoVigencia("2026-10-21", "vencido", HOY);
+    expect(e).toMatchObject({ nivel: "vencido", texto: "Vencido", tono: "danger", diasRestantes: null });
+    expect(estadoVigencia(null, "vencido", HOY)).toMatchObject({ nivel: "vencido", texto: "Vencido" });
+    // Con la fecha ya pasada, se dice hace cuánto, como siempre.
+    expect(estadoVigencia("2026-09-01", "vencido", HOY).texto).toBe("Vencido hace 20 días");
+  });
+
   it("cerrado y suspendido son decisiones administrativas: no se discuten con el calendario", () => {
     expect(estadoVigencia("2028-03-20", "cerrado", HOY).nivel).toBe("cerrado");
     expect(estadoVigencia("2028-03-20", "suspendido", HOY).nivel).toBe("suspendido");

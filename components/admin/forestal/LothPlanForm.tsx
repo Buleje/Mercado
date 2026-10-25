@@ -67,6 +67,7 @@ export default function LothPlanForm({
   plan,
   onIrARegistro,
   onEstadoCierre,
+  especiesConVolumen,
 }: {
   onClose: () => void;
   /** `planId` del plan recién creado o editado: la vista lo deja elegido. */
@@ -91,8 +92,10 @@ export default function LothPlanForm({
    * todavía no se subieron, o algo está subiendo ahora mismo (ADR-467).
    */
   onEstadoCierre?: (e: { pendientes: boolean; ocupado: boolean; creado: boolean }) => void;
+  /** Al editar: especies con volumen que ya tiene el plan, para que la ficha cuente como la cabecera. */
+  especiesConVolumen?: number | null;
 }) {
-  const form = useLothPlanForm({ plan, planesPrevios, onSaved, onEstadoCierre });
+  const form = useLothPlanForm({ plan, planesPrevios, onSaved, onEstadoCierre, especiesConVolumen });
   const {
     f, set, err, esPlantacion, llevaEspecies, especies, setEspecies, intentoGuardar, filasLeidas, docsPend,
     setDocsPend, setSubiendoEnEdicion, camposPendientes, setCamposPendientes, submit, rot, bloques,
@@ -112,7 +115,7 @@ export default function LothPlanForm({
       <BarraDePasos form={form} />
 
       {err && (
-        <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+        <div role="alert" className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/12">
           {err}
         </div>
       )}

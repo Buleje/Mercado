@@ -172,9 +172,8 @@ export function construirFichaPermiso(
   const resolucionFecha = fechaDelPermiso(resDeCaratula ? c?.resolucionDate : p?.resolucionDate);
 
   const hoy = hoyDelLibro(ahora);
+  // Lo DECLARADO vencido ya llega como «vencido» (`estadoVigencia`), con fecha o sin ella.
   const vigencia = p ? estadoVigencia(claveUtc(p.vigenciaHasta), p.estado, hoy) : null;
-  // Sin fecha pero DECLARADO vencido: manda lo declarado (misma regla que la cabecera del Plan).
-  const vencidoSinFecha = vigencia?.nivel === "sin_fecha" && vigencia.tono === "danger";
 
   return {
     titulo,
@@ -190,10 +189,8 @@ export function construirFichaPermiso(
     vigenciaDesde: fechaDelPermiso(p?.vigenciaDesde),
     vigenciaHasta: fechaDelPermiso(p?.vigenciaHasta),
     diasQuedan: vigencia?.diasRestantes ?? null,
-    estado: !vigencia ? "sin_vigencia" : vencidoSinFecha ? "vencido" : ESTADO_DE_NIVEL[vigencia.nivel],
-    estadoTexto: !vigencia
-      ? "Sin plan de manejo"
-      : vigencia.nivel === "sin_fecha" && !vencidoSinFecha ? "Sin vigencia cargada" : vigencia.texto,
+    estado: !vigencia ? "sin_vigencia" : ESTADO_DE_NIVEL[vigencia.nivel],
+    estadoTexto: !vigencia ? "Sin plan de manejo" : vigencia.nivel === "sin_fecha" ? "Sin vigencia cargada" : vigencia.texto,
     avancePct: p ? avanceDelPeriodo(claveUtc(p.vigenciaDesde), claveUtc(p.vigenciaHasta), hoy) : null,
     faltantes,
   };

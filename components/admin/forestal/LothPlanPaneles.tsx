@@ -6,7 +6,7 @@
  * plan. Salió tal cual de la vista.
  */
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ExternalLink } from "@buleje/design-system/icons";
 import { mismaEspecie } from "@/lib/forestal/loth-constants";
 import LothPoaPanel from "./LothPoaPanel";
@@ -21,16 +21,60 @@ import LothPlanCroquis from "./LothPlanCroquis";
 import LothPlanPestanas, { idPanel, idTab, type PestanaPlan } from "./LothPlanPestanas";
 import LothPlantacionRegistro from "./LothPlantacionRegistro";
 import PlanDocumentosDelPlan from "./plan-documentos/PlanDocumentosDelPlan";
+import PapelesDelPlan from "./plan-papeles/PapelesDelPlan";
 import { enlaceAlDrive } from "./plan-documentos/plan-documentos-api";
 import type { VistaPlan } from "./hooks/use-loth-plan-view";
+import { useSaldoDelPlan } from "./hooks/use-loth-saldo-plan";
+import LothPlanSinPlan from "./LothPlanSinPlan";
+import LothPlanSaldoGrande from "./LothPlanSaldoGrande";
+import { useSemaforoDelPlanAbierto } from "./hooks/use-loth-semaforo-libro";
+import LothPlazosDelLibroAviso from "./LothPlazosDelLibroAviso";
+import { PESTANA_PAPELES } from "./plan-papeles/abrir-papeles";
+import { pedirPasoAlAbrir } from "./hooks/loth-plan-paso-pedido";
 
-export default function LothPlanPaneles({ v, plan }: { v: VistaPlan; plan: NonNullable<VistaPlan["plan"]> }) {
+export default function LothPlanPaneles({
+  v,
+  plan,
+  reloadSignal = 0,
+  onVerGuia,
+}: {
+  v: VistaPlan;
+  plan: NonNullable<VistaPlan["plan"]>;
+  reloadSignal?: number;
+  /** Abre una guía en «Guías» (por su N°). */
+  onVerGuia?: (gtfNumber: string) => void;
+}) {
   const {
     d, trees, zafra, esPlantacion, pestana, setPestana, pestanas, pestanasPlantacion, setEditandoPlan,
-    conPeriodo, pedirEspecie, pedidoEspecie, pedidoLote, importarSignal, docs,
+    conPeriodo, pedirEspecie, pedidoEspecie, pedidoLote, importarSignal, docs, onCambioDelLibro,
   } = v;
+  /* «Saldo que no se pasa» (24-10): se relee con el libro y tras atar o crear un plan. */
+  const [atados, setAtados] = useState(0);
+  const version = reloadSignal * 1000 + atados;
+  const saldo = useSaldoDelPlan(plan.id, version);
+  const saldoGrande = <LothPlanSaldoGrande lectura={saldo} onVerGuia={onVerGuia} onCambio={() => trasAtar()} />;
+  /* El semáforo (Brandon 24-10): el mismo de la cabecera; acá, lo que se arregla. */
+  const semaforo = useSemaforoDelPlanAbierto(plan, {
+    especies: d.saldoFallo ? null : d.cascada.especies,
+    papeles: v.papelesSemaforo,
+    species: d.species,
+    listo: true,
+    firma: reloadSignal,
+  });
+  const hayPapeles = (esPlantacion ? pestanasPlantacion : pestanas).some((p) => p.id === PESTANA_PAPELES);
+  const trasAtar = () => {
+    void d.loadPlans();
+    /* Dentro del libro, releerlo sube `reloadSignal`: eso ya relee el detalle y el saldo. */
+    if (onCambioDelLibro) onCambioDelLibro();
+    else {
+      setAtados((n) => n + 1);
+      void d.loadDetail(plan.id);
+    }
+  };
   return (
     <>
+      {/* El plazo de 15 días es del libro entero, no de este plan (B5): va aparte, arriba. */}
+      <LothPlazosDelLibroAviso firma={reloadSignal} />
       <LothPlanAvisos
         /* Una plantación SIN especies todavía no tiene contra qué cruzar sus
            árboles marcados: todos saldrían «fuera del plan» en rojo, cuando
@@ -48,12 +92,29 @@ export default function LothPlanPaneles({ v, plan }: { v: VistaPlan; plan: NonNu
           id: plan.id, contratoId: plan.contratoId, planNumber: plan.planNumber, tituloHabilitante: plan.tituloHabilitante,
         } : null}
         onPlanUnido={d.loadPlans}
+        semaforo={semaforo}
+        onCompletarFicha={(paso) => {
+          pedirPasoAlAbrir(paso);
+          setEditandoPlan(true);
+        }}
+        /* «Ver papeles» del aviso: la pestaña Papeles, con el foco en ella. */
+        onVerPapeles={hayPapeles ? () => {
+          setPestana(PESTANA_PAPELES);
+          requestAnimationFrame(() => {
+            const tab = document.getElementById(idTab(PESTANA_PAPELES));
+            tab?.focus({ preventScroll: true });
+            tab?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          });
+        } : undefined}
       />
+
+      <LothPlanSinPlan version={version} onCambio={trasAtar} onVerGuia={onVerGuia} />
 
       <LothPlanPestanas pestanas={esPlantacion ? pestanasPlantacion : pestanas} activa={pestana} onCambiar={setPestana} />
 
       {esPlantacion && (
         <Panel id="registro" activa={pestana}>
+          {saldoGrande}
           <LothPlantacionRegistro
             plan={plan}
             species={d.species}
@@ -77,6 +138,7 @@ export default function LothPlanPaneles({ v, plan }: { v: VistaPlan; plan: NonNu
       {!esPlantacion && (
         <>
           <Panel id="avance" activa={pestana}>
+            {saldoGrande}
             <LothZafraPanel zafra={zafra} />
             {/* Y el paso que faltaba: con qué árboles se llega a ese ritmo. */}
             <LothPlanTalaPanel
@@ -150,6 +212,17 @@ export default function LothPlanPaneles({ v, plan }: { v: VistaPlan; plan: NonNu
 
       {docs.disponible && (
         <Panel id="documentos" activa={pestana}>
+          {/* Papeles del permiso: lo que la norma pide, arriba; las carpetas, abajo. */}
+          <PapelesDelPlan
+            planId={plan.id}
+            esPlantacion={esPlantacion}
+            vigenciaHasta={plan.vigenciaHasta}
+            papeles={v.papeles}
+            docs={docs}
+            onPlanCambiado={async () => {
+              await Promise.all([d.loadPlans(), d.loadDetail(plan.id)]);
+            }}
+          />
           {docs.vista?.preparada && docs.vista.carpetaRaizId && (
             <p className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-tertiary)]">
               <span className="min-w-0 truncate" title={docs.vista.rutaRaiz}>

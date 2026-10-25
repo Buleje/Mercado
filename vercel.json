@@ -441,6 +441,10 @@
       "schedule": "20 12 * * *"
     },
     {
+      "path": "/api/cron/loth-plan-vencimiento",
+      "schedule": "22 12 * * *"
+    },
+    {
       "path": "/api/cron/camaras-resumen",
       "schedule": "0 0 * * *"
     },
