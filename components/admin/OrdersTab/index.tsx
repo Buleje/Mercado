@@ -106,7 +106,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
     window.history.replaceState(window.history.state, "", url.toString());
   }, [vista]);
 
-  const p = usePedidos();
+  const p = usePedidos(vista === "lista");
   const { datos, acciones: a, reparto: r, bulk } = p;
 
   const cargando = datos.loading || p.notas.cargando;
@@ -120,6 +120,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
       conFiltros={p.puestos > 0}
       onQuitarFiltros={() => {
         p.dispatch({ type: "CLEAR" });
+        p.embudos.limpiar();
         r.setSelectedDriverFilter("");
       }}
       onVerArchivados={() => irA("archivados")}
@@ -257,6 +258,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
                   pedidos={p.enMarchaFiltrados}
                   loading={cargando}
                   vacio={vacio}
+                  embudos={p.embudos}
                   orden={p.orden}
                   onOrden={p.setOrden}
                   elegidos={bulk.selectedOrderIds}

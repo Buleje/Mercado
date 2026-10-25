@@ -18,6 +18,12 @@
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown } from "@buleje/design-system/icons";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  SinCoincidenciasFila,
+  type FiltrosTabla,
+} from "@/components/admin/forestal/filtros-tabla-forestal";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
@@ -42,6 +48,8 @@ interface ListaPedidosProps {
   loading: boolean;
   /** Lo que se ve sin pedidos (`VacioPedidos`: dice si es por los filtros y qué hacer). */
   vacio: ReactNode;
+  /** Los embudos de la cabeza; su estado vive en `usePedidos` (hoja, «elegir todos» y KPIs lo comparten). */
+  embudos: FiltrosTabla<DbOrder>;
   /** Vive en `usePedidos`: lo guardan las vistas (P08) y lo sigue la hoja impresa (P12). */
   orden: Orden;
   onOrden: Dispatch<SetStateAction<Orden>>;
@@ -57,22 +65,26 @@ function CabezaOrden({
   onOrdenar,
   children,
   derecha = false,
+  embudo,
 }: {
   columna: ColumnaOrden;
   orden: Orden;
   onOrdenar: (c: ColumnaOrden) => void;
   children: string;
   derecha?: boolean;
+  /** Id del embudo que vive bajo este título. */
+  embudo?: { id: string; f: FiltrosTabla<DbOrder> };
 }) {
   const activa = orden.columna === columna;
   const Flecha = !activa ? ArrowUpDown : orden.sentido === "asc" ? ArrowUp : ArrowDown;
   return (
     <th
       /* `py-0!`: el botón ya mide 48 px; con el py-2.5 del DataTable la cabeza medía 68. */
-      className={cn(TH, "py-0!", derecha && "text-right")}
+      className={cn(TH, !embudo && "py-0!", derecha && "text-right")}
       aria-sort={activa ? (orden.sentido === "asc" ? "ascending" : "descending") : "none"}
       data-label={children}
     >
+      <span className={cn("inline-flex flex-col", derecha ? "items-end" : "items-start")}>
       <button
         type="button"
         onClick={() => onOrdenar(columna)}
@@ -86,6 +98,8 @@ function CabezaOrden({
         {children}
         <Flecha className={cn("h-3.5 w-3.5 shrink-0", !activa && "opacity-40")} aria-hidden />
       </button>
+      {embudo && <FiltroEnCabecera id={embudo.id} f={embudo.f} compacto />}
+      </span>
     </th>
   );
 }
@@ -100,6 +114,7 @@ export function ListaPedidos({
   pedidos,
   loading,
   vacio,
+  embudos,
   orden,
   onOrden,
   elegidos,
@@ -115,7 +130,8 @@ export function ListaPedidos({
   }, []);
 
   if (loading) return <TableSkeleton rows={6} cols={7} />;
-  if (pedidos.length === 0) return vacio;
+  /* Con un embudo puesto la tabla queda (si no, no habría dónde quitarlo); el vacío de arriba es de la barra. */
+  if (pedidos.length === 0 && embudos.activos === 0) return vacio;
 
   const filas = ordenarPedidos(pedidos, orden);
   const conRepartidor = pedidos.some((o) => responsableDe(o));
@@ -124,6 +140,8 @@ export function ListaPedidos({
   const ordenar = (c: ColumnaOrden) => onOrden((o) => siguienteOrden(o, c));
 
   return (
+    <>
+    <BarraFiltrosTabla f={embudos} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
       <DataTable className="w-full">
         <thead className="dark:border-card-border">
@@ -149,10 +167,15 @@ export function ListaPedidos({
             <CabezaOrden columna="estado" orden={orden} onOrdenar={ordenar}>
               Estado
             </CabezaOrden>
-            <CabezaOrden columna="espera" orden={orden} onOrdenar={ordenar}>
+            <CabezaOrden columna="espera" orden={orden} onOrdenar={ordenar} embudo={{ id: "espera", f: embudos }}>
               Sin avanzar
             </CabezaOrden>
-            <th className={TH}>Plata</th>
+            <th className={TH} data-label="Plata">
+              <span className="inline-flex flex-col items-start">
+                Plata
+                <FiltroEnCabecera id="plata" f={embudos} compacto />
+              </span>
+            </th>
             {conRepartidor && <th className={TH}>Repartidor</th>}
             <CabezaOrden columna="fecha" orden={orden} onOrdenar={ordenar}>
               Pedido el
@@ -163,6 +186,7 @@ export function ListaPedidos({
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={conRepartidor ? 8 : 7} />}
           {filas.map((o) => {
             const repartidor = responsableDe(o);
             const cobro = cobroDe(o);
@@ -261,5 +285,6 @@ export function ListaPedidos({
         </tbody>
       </DataTable>
     </div>
+    </>
   );
 }

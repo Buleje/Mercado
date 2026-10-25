@@ -23,7 +23,7 @@ export function diaLima(v: string | Date | null | undefined): string | null {
 const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
 
 /** «Debe S/ 42.50» y «Debe S/ 10.00» son la misma opción: «Debe». */
-const plataSinMonto = (t: string) => t.replace(/S\/\s?[\d.,]+\s?/g, "").replace(/\s+/g, " ").trim();
+export const plataSinMonto = (t: string) => t.replace(/S\/\s?[\d.,]+\s?/g, "").replace(/\s+/g, " ").trim();
 
 export const filasDeArchivados = (
   pedidos: readonly DbOrder[],

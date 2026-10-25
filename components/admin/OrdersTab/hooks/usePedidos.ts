@@ -14,6 +14,8 @@
  * hoja impresa, P12) y la versión de la hoja que se imprime.
  */
 import { useCallback, useState } from "react";
+import { useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { COLUMNAS_PEDIDOS } from "../columnas-filtro-pedidos";
 import { flushSync } from "react-dom";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -35,7 +37,11 @@ import { useVistasPedidos } from "./useVistasPedidos";
 /** Lo que el historial revisa por vez (`MAX_PEDIDOS_HISTORIAL`). */
 const TOPE_NOTAS = 200;
 
-export function usePedidos() {
+/**
+ * `conEmbudos`: los embudos de la cabeza sólo existen en la Lista; en el Tablero no se
+ * aplican (un filtro invisible escondería pedidos sin que se pueda quitar).
+ */
+export function usePedidos(conEmbudos = false) {
   const permisos = permisosDePedidos(useMiRol());
   const datos = useOrdersData();
   const { orders, loading, load, setOrders, setDetailOrder, detailOrder } = datos;
@@ -76,10 +82,13 @@ export function usePedidos() {
             .map(([id]) => id),
         )
       : null;
-  const enMarchaFiltrados = conNotas ? candidatos.filter((o) => conNotas.has(o.id)) : candidatos;
+  const sinEmbudos = conNotas ? candidatos.filter((o) => conNotas.has(o.id)) : candidatos;
+  /* UN solo estado: lo que se ve, se imprime, se elige con «todos» y cuentan los indicadores. */
+  const embudos = useFiltrosTabla(sinEmbudos, COLUMNAS_PEDIDOS);
+  const enMarchaFiltrados = conEmbudos ? embudos.filtradas : sinEmbudos;
 
   const archivados = pedidosArchivados(orders);
-  const puestos = filtrosPuestos(filters, repartidor);
+  const puestos = filtrosPuestos(filters, repartidor) + (conEmbudos ? embudos.activos : 0);
   /* Lo elegido que todavía se ve: un filtro puesto después no arrastra a los ocultos al «Aplicar». */
   const elegidosVisibles = enMarchaFiltrados
     .filter((o) => bulk.selectedOrderIds.has(o.id))
@@ -122,10 +131,14 @@ export function usePedidos() {
     varianteImpresion,
     imprimirLista,
     enMarchaFiltrados,
+    embudos,
     /** En el orden de la Lista: lo que sale en la hoja impresa. */
     pedidosOrdenados: ordenarPedidos(enMarchaFiltrados, orden),
     /** Los filtros puestos en palabras (encabezado de la hoja). */
-    filtrosTexto: filtrosEnTexto(filters, repartidor, (s) => STATUS_LABELS[s]),
+    filtrosTexto: [
+      ...filtrosEnTexto(filters, repartidor, (s) => STATUS_LABELS[s]),
+      ...(conEmbudos ? embudos.chips.map((c) => c.texto) : []),
+    ],
     /** «Con notas»: si todavía no se sabe o falló, el filtro no se aplica y se avisa. */
     notas: {
       activo: filters.hasAdminNotes,
