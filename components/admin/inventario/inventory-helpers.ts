@@ -39,6 +39,18 @@ export function computeStockChange(productId: number, movements: DbInventoryMove
   return net;
 }
 
+/** Días desde el último movimiento de cualquier tipo; `null` = nunca se movió. Vivía en el modal
+ *  «Tabla a pantalla completa» (borrado 25-10, `e8dab0ef6`) y volvió a la columna Rotación. */
+export function diasDesdeUltimoMovimiento(productId: number, movements: DbInventoryMovement[], ahora = Date.now()): number | null {
+  let ultimo = 0;
+  for (const m of movements) {
+    if (m.productId !== productId) continue;
+    const ts = new Date(m.createdAt).getTime();
+    if (ts > ultimo) ultimo = ts;
+  }
+  return ultimo === 0 ? null : Math.floor((ahora - ultimo) / 86_400_000);
+}
+
 // Ventas por semana desde movimientos (últimos 30 días).
 export function computeSalesPerWeek(productId: number, movements: DbInventoryMovement[]): number {
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;

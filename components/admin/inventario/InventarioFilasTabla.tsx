@@ -5,7 +5,7 @@ import StatusBadge from "@/components/admin/shared/StatusBadge";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { StockLevelBar } from "@/components/admin/inventario/StockLevelBar";
-import { getRotationInfo, computeStockChange, computeSalesPerWeek } from "@/components/admin/inventario/inventory-helpers";
+import { getRotationInfo, computeStockChange, computeSalesPerWeek, diasDesdeUltimoMovimiento } from "@/components/admin/inventario/inventory-helpers";
 import PriceSparkline from "@/components/admin/inventario/PriceSparkline";
 import ImageWarningBadge from "@/components/admin/inventario/ImageWarningBadge";
 import { formatCurrency, formatDateNumeric } from "@/lib/format";
@@ -153,11 +153,20 @@ export default function InventarioFilasTabla({ inv }: { inv: Inventario }) {
                     {(() => {
                       const spw = computeSalesPerWeek(p.id, movements);
                       const info = getRotationInfo(spw, p.stock ?? 0);
-                      if (!info) return <span className="text-sm text-[var(--text-tertiary)]">Normal</span>;
+                      const dias = diasDesdeUltimoMovimiento(p.id, movements);
                       return (
-                        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-bold", info.className)}>
-                          {info.level === "rápido" && <TrendingUp className="h-2.5 w-2.5" />}
-                          {info.label}
+                        <span className="inline-flex flex-col items-start gap-0.5">
+                          {info ? (
+                            <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-bold", info.className)}>
+                              {info.level === "rápido" && <TrendingUp className="h-2.5 w-2.5" />}
+                              {info.label}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-[var(--text-tertiary)]">Normal</span>
+                          )}
+                          <span className={cn("text-xs", dias === null || dias > 30 ? "text-[var(--data-error-ink)]" : "text-[var(--text-tertiary)]")}>
+                            {dias === null ? "Nunca se movió" : dias > 30 ? `Sin movimiento hace ${dias} d` : `Se movió hace ${dias} d`}
+                          </span>
                         </span>
                       );
                     })()}
