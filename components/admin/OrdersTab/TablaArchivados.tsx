@@ -16,12 +16,16 @@ import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { googleMapsUrl } from "@/lib/order-utils";
 import type { DbOrder } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_ARCHIVADOS, ORDEN_ARCHIVADOS, filasDeArchivados } from "./columnas-filtro-archivados";
 import { ultimoCambio, type EventoPedido } from "./hooks/useHistorialPedidos";
 import { usePermisosPedidos } from "./permisos-pedidos";
 import { TINTA_COBRO, cobroDe } from "./siguiente-paso";
 import { STATUS_COLORS, STATUS_LABELS } from "./types";
 
-const TH = "text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted";
 const ACCION =
   "grid h-12 w-12 place-items-center rounded-xl text-[var(--text-tertiary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
 
@@ -64,22 +68,29 @@ export function TablaArchivados({
 }: Props) {
   /* Borrar es sólo de gestión (DELETE /api/orders/[id]): al resto le daba 403. */
   const { borrar } = usePermisosPedidos();
+  const base = useMemo(() => filasDeArchivados(pedidos, historial), [pedidos, historial]);
+  const f = useFiltrosTabla(base, COLUMNAS_ARCHIVADOS);
+  const ord = useOrdenColumna(ORDEN_ARCHIVADOS);
+  const filas = ord.ordenar(f.filtradas);
   return (
+    <>
+    <BarraFiltrosTabla f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
       <DataTable className="w-full">
         <thead className="dark:border-card-border">
           <tr>
-            <th className={TH}>Cliente</th>
-            <th className={TH}>Estado</th>
-            <th className={TH}>Plata</th>
-            <th className={cn(TH, "text-right")}>Total</th>
-            <th className={TH}>Pedido el</th>
-            <th className={TH}>Cierre</th>
-            <th aria-label="Acciones" />
+            <ThColumna label="Cliente" ids={["cliente"]} f={f} orden={ord} ordenId="cliente" />
+            <ThColumna label="Estado" ids={["estado"]} f={f} orden={ord} ordenId="estado" />
+            <ThColumna label="Plata" ids={["plata"]} f={f} orden={ord} ordenId="plata" />
+            <ThColumna label="Total" ids={["total"]} f={f} derecha orden={ord} ordenId="total" />
+            <ThColumna label="Pedido el" ids={["fecha"]} f={f} orden={ord} ordenId="fecha" />
+            <ThColumna label="Cierre" ids={["cierre"]} f={f} orden={ord} ordenId="cierre" />
+            <th data-label="Acciones"><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--rule-soft)]">
-          {pedidos.map((o) => {
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+          {filas.map(({ o }) => {
             const cobro = cobroDe(o);
             return (
               <tr
@@ -175,5 +186,6 @@ export function TablaArchivados({
         </tbody>
       </DataTable>
     </div>
+    </>
   );
 }

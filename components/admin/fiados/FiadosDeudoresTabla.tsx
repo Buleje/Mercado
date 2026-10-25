@@ -7,7 +7,7 @@
  * las plantillas de Cobranza y queda anotado en la bitácora.
  */
 import { LoadingState, DataTable } from "@buleje/design-system";
-import { AlertTriangle, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MessageCircle, Search } from "@buleje/design-system/icons";
+import { AlertTriangle, ChevronLeft, ChevronRight, MessageCircle, Search } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
@@ -15,9 +15,12 @@ import { FiadoAvatar, FiadoReliabilityBadge, FiadoSemaphore, FiadoStreakBadge } 
 import { diasDeAtraso, useRecordarPorWhatsApp } from "./recordar";
 import type { Gestion } from "@/lib/fiados/gestion-cobranza";
 import { ultimosContactos } from "@/lib/fiados/ultimo-contacto";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { diaLeido } from "./fechas";
-import { STATUS_META, estaAbierto, type ColumnaOrden, type Fiado, type FiadoStatus } from "./tipos";
+import { PER_PAGE, STATUS_META, estaAbierto, type Fiado, type FiadoStatus } from "./tipos";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import type { EstadoFiados } from "./use-fiados";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import PonerPlazo from "./PonerPlazo";
@@ -40,24 +43,42 @@ type Props = {
   gestiones?: readonly Gestion[];
 };
 
-function Cabecera({ col, label, estado, alinear = "left" }: { col: ColumnaOrden; label: string; estado: EstadoFiados; alinear?: "left" | "right" }) {
-  const activa = estado.sortBy === col;
-  return (
-    <th aria-sort={activa ? (estado.sortDir === "asc" ? "ascending" : "descending") : undefined} onClick={() => estado.toggleSort(col)}
-      className={cn("cursor-pointer select-none font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]", alinear === "right" && "text-right")}>
-      <div className={cn("flex items-center gap-1", alinear === "right" && "justify-end")}>
-        {label} {activa && (estado.sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
-      </div>
-    </th>
-  );
-}
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+
+/** Filtros de columna (como Adelantos › Lista) sobre lo que ya pasó el buscador y el estado: los fiados llegan enteros. */
+const COLUMNAS: readonly ColumnaFiltro<Fiado>[] = [
+  { id: "total", label: "Total", tipo: "rango", numero: (f) => f.total, unidad: "S/", paso: 0.01 },
+  { id: "saldo", label: "Saldo", tipo: "rango", numero: (f) => f.saldo, unidad: "S/", paso: 0.01 },
+  { id: "vence", label: "Vencimiento", tipo: "fecha", numero: (f) => f.fechaVence?.slice(0, 10) ?? null, formatearValor: ddmm },
+];
+
+const ORDEN: Record<string, AccesorOrden<Fiado>> = {
+  name: { valor: (f) => f.customerName || f.customerId, texto: true },
+  total: { valor: (f) => f.total },
+  saldo: { valor: (f) => f.saldo },
+  vence: { valor: (f) => f.fechaVence?.slice(0, 10) ?? null },
+  estado: { valor: (f) => STATUS_META[f.status].label, texto: true },
+};
 
 export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect, openDetail, onNuevo, onRecordado, gestiones }: Props) {
   const recordarPorWhatsApp = useRecordarPorWhatsApp(gestiones);
   // «Último contacto: martes 14/10 por WhatsApp · prometió pagar…» de las gestiones del fiado; sin gestiones, nada.
   const contactos = useMemo(() => ultimosContactos(gestiones ?? []), [gestiones]);
-  const { loading, error, fiados, filtrados, paginated, page, setPage, totalPages, densidad } = estado;
-  const saldoFiltrado = filtrados.reduce((s, f) => s + (estaAbierto(f) ? f.saldo : 0), 0);
+  const { loading, error, fiados, densidad } = estado;
+  /* El buscador y los chips de estado siguen en el hook; los embudos de columna, orden y páginas, acá. */
+  /* Sin orden elegido, por nombre (el de siempre en esta tabla). */
+  const porNombre = useMemo(
+    () => [...estado.filtrados].sort((a, b) => (a.customerName || a.customerId).localeCompare(b.customerName || b.customerId, "es", { sensitivity: "base" })),
+    [estado.filtrados],
+  );
+  const f = useFiltrosTabla(porNombre, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filtrados = ord.ordenar(f.filtradas);
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(filtrados.length / PER_PAGE));
+  const paginated = filtrados.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  useEffect(() => { setPage(1); }, [estado.search, estado.statusFilter, f.filtradas.length]);
+  const saldoFiltrado = filtrados.reduce((s, x) => s + (estaAbierto(x) ? x.saldo : 0), 0);
   return (
     <div className={cn("overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]", densidad === "compact" ? "table-compact" : densidad === "wide" ? "table-wide" : "")}>
       {/* Filtros pegados a la tabla */}
@@ -68,17 +89,17 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
             className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-4 text-base outline-none transition-all focus:border-primary/40 focus:ring-1 focus:ring-primary/30" />
         </div>
         <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Filtrar por estado">
-          {STATUS_FILTERS.map((f) => (
-            <button key={f.key} type="button" aria-pressed={estado.statusFilter === f.key} onClick={() => estado.setStatusFilter(f.key)}
+          {STATUS_FILTERS.map((sf) => (
+            <button key={sf.key} type="button" aria-pressed={estado.statusFilter === sf.key} onClick={() => estado.setStatusFilter(sf.key)}
               className={cn("inline-flex min-h-12 items-center rounded-xl border px-3.5 text-sm font-semibold transition-colors",
-                estado.statusFilter === f.key ? "border-[var(--accent)] bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]")}>
-              {f.label}
+                estado.statusFilter === sf.key ? "border-[var(--accent)] bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]")}>
+              {sf.label}
             </button>
           ))}
         </div>
         {/* Lo de lo filtrado: «Te deben» del total ya está en Indicadores (10-10). */}
         <span className="ml-auto text-sm tabular-nums text-[var(--text-secondary)]">
-          {filtrados.length} {filtrados.length === 1 ? "fiado" : "fiados"}
+          {f.activos > 0 && "Total de lo que se ve: "}{filtrados.length} {filtrados.length === 1 ? "fiado" : "fiados"}
           {saldoFiltrado > 0 && <> · saldo <b className="font-mono text-[var(--text-primary)]">{formatCurrency(saldoFiltrado)}</b></>}
         </span>
       </div>
@@ -93,10 +114,11 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
         </div>
       ) : fiados.length === 0 ? (
         <EmptyState illustration="generic" title="Sin fiados registrados" description="Los créditos a clientes aparecerán aquí." action={{ label: "Crear primer fiado", onClick: onNuevo }} />
-      ) : filtrados.length === 0 ? (
+      ) : estado.filtrados.length === 0 ? (
         <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">Ningún fiado con ese filtro.</p>
       ) : (
         <>
+            <BarraFiltrosTabla f={f} className="px-3 py-2" sinConteo />
             <div className="max-h-[65vh] overflow-x-auto overflow-y-auto">
               {/* ds-ignore-table — caso legítimo: thead clickable con
                   sort indicators, mobile-aware (hidden sm:table-cell),
@@ -108,15 +130,16 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                     <th className="w-8">
                       <span className="sr-only">Seleccionar</span>
                     </th>
-                    <Cabecera col="name" label="Cliente" estado={estado} />
-                    <Cabecera col="total" label="Total" estado={estado} alinear="right" />
-                    <Cabecera col="saldo" label="Saldo" estado={estado} alinear="right" />
-                    <th className="hidden sm:table-cell">Vencimiento</th>
-                    <th>Estado</th>
+                    <ThColumna label="Cliente" f={f} orden={ord} ordenId="name" />
+                    <ThColumna label="Total" ids={["total"]} f={f} derecha orden={ord} ordenId="total" />
+                    <ThColumna label="Saldo" ids={["saldo"]} f={f} derecha orden={ord} ordenId="saldo" />
+                    <ThColumna label="Vencimiento" ids={["vence"]} f={f} className="hidden sm:table-cell" orden={ord} ordenId="vence" />
+                    <ThColumna label="Estado" f={f} orden={ord} ordenId="estado" />
                     <th className="text-center hidden sm:table-cell">Recordar</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {paginated.length === 0 && <SinCoincidenciasFila colSpan={7} />}
                   {paginated.map(f => {
                     const meta = STATUS_META[f.status];
                     const StatusIcon = meta.icon;
@@ -172,8 +195,8 @@ export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect,
                             </div>
                           </div>
                         </td>
-                        <td className="text-right font-medium">{formatCurrency(f.total)}</td>
-                        <td className={cn("text-right font-bold font-mono", f.status === "PAGADO" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{formatCurrency(f.saldo)}</td>
+                        <td className="whitespace-nowrap text-right font-medium">{formatCurrency(f.total)}</td>
+                        <td className={cn("whitespace-nowrap text-right font-bold font-mono", f.status === "PAGADO" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{formatCurrency(f.saldo)}</td>
                         <td className="text-[var(--text-secondary)] hidden sm:table-cell" onClick={f.fechaVence ? undefined : (e) => e.stopPropagation()} data-no-row-click={f.fechaVence ? undefined : true}>
                           {f.fechaVence ? diaLeido(f.fechaVence) : estaAbierto(f) ? <PonerPlazo fiadoId={f.id} creado={f.createdAt} onGuardado={estado.fetchFiados} /> : "—"}
                         </td>
