@@ -5,7 +5,7 @@
  * (la caja que se cerró con el turno); sin caja vinculada se muestra «—».
  * Tocar un turno abre su resumen (medio de pago, más vendidos, corte).
  */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type MutableRefObject } from "react";
 import { DataTable } from "@buleje/design-system";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { ThColumna } from "@/components/admin/shared/th-columna";
@@ -23,6 +23,8 @@ type Props = {
   page: number;
   setPage: (p: number) => void;
   porPagina: number;
+  /** Las filas que dejan los embudos, en el orden de la tabla (todas las páginas): lo que exporta «Exportar historial». */
+  visiblesRef?: MutableRefObject<Turno[] | null>;
 };
 
 const dia = (v: string | null | undefined) => (v ? limaDateKey(v) || null : null);
@@ -75,11 +77,20 @@ function Marca({ t }: { t: Turno }) {
   return null;
 }
 
-export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setPage, porPagina }: Props) {
+export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setPage, porPagina, visiblesRef }: Props) {
   const base = useMemo<Fila[]>(() => turnos.map((t) => ({ t, quien: nombreDe(t) })), [turnos, nombreDe]);
   const f = useFiltrosTabla(base, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(f.filtradas);
+  useEffect(() => {
+    if (!visiblesRef) return;
+    visiblesRef.current = filas.map(({ t }) => t);
+    return () => { visiblesRef.current = null; };
+  }, [filas, visiblesRef]);
+  /* Lo que se ve (todas las páginas): la diferencia suma sólo los turnos con caja contada. */
+  const totalVentas = filas.reduce((n, { t }) => n + t.ventasTotal, 0);
+  const conDiferencia = filas.filter(({ t }) => t.diferencia != null);
+  const totalDiferencia = conDiferencia.reduce((n, { t }) => n + (t.diferencia ?? 0), 0);
   const totalPages = Math.max(1, Math.ceil(filas.length / porPagina));
   const pg = Math.min(page, totalPages);
   const pagina = filas.slice((pg - 1) * porPagina, pg * porPagina);
@@ -125,6 +136,18 @@ export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setP
             </tr>
           ))}
         </tbody>
+        {filas.length > 0 && (
+          <tfoot className="max-sm:hidden">
+            <tr className="border-t-2 border-[var(--rule-base)] font-bold">
+              <td colSpan={4}>{f.activos > 0 ? "Total de lo que se ve" : "Total"} · {filas.length} {filas.length === 1 ? "turno" : "turnos"}</td>
+              <td className="text-right tabular-nums text-[var(--data-success-ink)]">{formatCurrency(totalVentas)}</td>
+              <td />
+              <td className="text-right tabular-nums" title={conDiferencia.length < filas.length ? `Suma de los ${conDiferencia.length} turnos con caja contada` : undefined}>
+                {conDiferencia.length === 0 ? "—" : `${totalDiferencia > 0 ? "+" : ""}${formatCurrency(totalDiferencia)}`}
+              </td>
+            </tr>
+          </tfoot>
+        )}
       </DataTable>
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-2 border-t border-[var(--rule-soft)]">

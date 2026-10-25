@@ -73,6 +73,9 @@ export default function TablaCuadres({
   const fc = useFiltrosTabla(delChip, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(fc.filtradas);
+  /* Diferencia acumulada de lo que se ve (todas las filas, no sólo las 20 de la página): sólo cuentan las cajas con conteo. */
+  const difs = filas.map((a) => conteoDe(a).diferencia).filter((d): d is number => d != null);
+  const difAcumulada = difs.reduce((n, d) => n + d, 0);
 
   if (audits.length === 0) {
     return (
@@ -166,6 +169,17 @@ export default function TablaCuadres({
               );
             })}
           </tbody>
+          {filas.length > 0 && (
+            <tfoot className="max-sm:hidden">
+              <tr className="border-t-2 border-[var(--rule-base)] font-bold">
+                <td colSpan={5}>{fc.activos > 0 ? "Total de lo que se ve" : "Total"} · {filas.length} {filas.length === 1 ? "cuadre" : "cuadres"}</td>
+                <td className="text-right tabular-nums" title={difs.length < filas.length ? `Suma de los ${difs.length} cuadres con conteo` : undefined}>
+                  {difs.length === 0 ? "—" : fmtSigno(difAcumulada)}
+                </td>
+                <td colSpan={2} />
+              </tr>
+            </tfoot>
+          )}
         </DataTable>
       )}
 

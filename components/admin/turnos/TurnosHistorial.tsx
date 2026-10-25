@@ -7,6 +7,7 @@
  * Lista (los mismos turnos, menos columnas, sólo diez) y «Por cajero» era la
  * misma tabla del ranking de Cajeros; se fueron. La Semana es su propia sección.
  */
+import type { MutableRefObject } from "react";
 import { Clock } from "@buleje/design-system/icons";
 import { HistorialTabla } from "./HistorialTabla";
 import { PER_PAGE, type Cajero, type FiltrosHistorial, type PeriodoHistorial, type Turno } from "./tipos";
@@ -24,6 +25,7 @@ type Props = {
   cargandoId: string | null;
   page: number;
   setPage: (p: number) => void;
+  visiblesRef?: MutableRefObject<Turno[] | null>;
 };
 
 export function TurnosHistorial(p: Props) {
@@ -62,7 +64,7 @@ export function TurnosHistorial(p: Props) {
       ) : p.filtrados.length === 0 ? (
         <p className="p-6 text-center text-sm text-[var(--text-secondary)]">Ningún turno con esos filtros.</p>
       ) : (
-        <HistorialTabla turnos={p.filtrados} nombreDe={p.nombreDe} onVer={p.onVer} cargandoId={p.cargandoId} page={p.page} setPage={p.setPage} porPagina={PER_PAGE} />
+        <HistorialTabla turnos={p.filtrados} nombreDe={p.nombreDe} onVer={p.onVer} cargandoId={p.cargandoId} page={p.page} setPage={p.setPage} porPagina={PER_PAGE} visiblesRef={p.visiblesRef} />
       )}
     </section>
   );

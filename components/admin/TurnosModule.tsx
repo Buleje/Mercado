@@ -19,7 +19,7 @@
  * Partido el 08-10 de 2.244 líneas en `components/admin/turnos/` (datos en
  * use-turnos, cierre en use-cierre-turno, cuentas puras en tipos.ts).
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, Download, MoreHorizontal, RefreshCw, Scale, Trophy, UserPlus, Wallet } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
@@ -79,6 +79,8 @@ export default function TurnosModule() {
   const [showMeta, setShowMeta] = useState(false);
   const [filtros, setFiltros] = useState(FILTROS_INICIALES);
   const [page, setPage] = useState(1);
+  /* Lo que dejan los embudos de la tabla del historial (la tabla lo escribe): lo que exporta «Exportar historial». */
+  const visiblesRef = useRef<Turno[] | null>(null);
 
   const nombreDe = useCallback((t: Turno) => nombreCajero(t, cajeros), [cajeros]);
   const operador = turnoActivo ? nombreDe(turnoActivo) : "";
@@ -154,7 +156,7 @@ export default function TurnosModule() {
   }
 
   const acciones: MenuAccion[] = [
-    { id: "excel", label: "Exportar historial", hint: `${filtrados.length} turnos, con los filtros del historial`, icon: Download, onSelect: () => exportarTurnos(filtrados, nombreDe), disabled: filtrados.length === 0 },
+    { id: "excel", label: "Exportar historial", hint: "Los turnos que ves en la tabla, con sus filtros y su orden", icon: Download, onSelect: () => exportarTurnos(visiblesRef.current ?? filtrados, nombreDe), disabled: filtrados.length === 0 },
     ...(turnoActivo ? [{ id: "contar", label: "Contar la caja ahora", hint: "Arqueo a mitad del turno, en Caja › Cuadrar", icon: Scale, onSelect: () => irACaja("cuadrar") }] : []),
     { id: "cuadres", label: "Cuadres en Caja", hint: "El conteo de cada caja cerrada (Caja › Historial)", icon: Wallet, onSelect: () => irACaja("historial") },
     { id: "cajera", label: "Nueva cajera", icon: UserPlus, onSelect: () => setShowNuevaCajera(true) },
@@ -212,6 +214,7 @@ export default function TurnosModule() {
         )}
         {seccion === "historial" && (
           <TurnosHistorial
+            visiblesRef={visiblesRef}
             historial={historial}
             filtrados={filtrados}
             cajeros={cajeros}
