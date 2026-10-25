@@ -151,7 +151,10 @@ function memGuard(tool, toolInput) {
   if (mem && mem.avail < MIN_FREE_MB) problemas.push(`RAM libre ${mem.avail}MB < ${MIN_FREE_MB}MB`);
   // 25-10: 16 bloqueos en un día, todos «tsc apilados» con la RAM sana (0 por RAM): frenaban `cat` y Edit
   // de carriles que sólo leían. Con RAM de sobra, los tsc apilados sólo frenan lo que lanzaría OTRO tsc.
-  const lanzaTipado = tool === "Bash" && /\b(tsc|typecheck|vitest|git commit|next build|tsc7)\b/.test(String(toolInput?.command ?? ""));
+  const cmdBash = tool === "Bash" ? String(toolInput?.command ?? "") : "";
+  /* El tsc ACOTADO de un carril (tsconfig en /tmp, ~600 MB) pasa con RAM de sobra; el completo (~7 GB) no (25-10). */
+  const acotado = /typescript-linux-x64\/lib\/tsc -p \/tmp\//.test(cmdBash) && !/\b(typecheck|git commit|next build|tsc7)\b/.test(cmdBash);
+  const lanzaTipado = !acotado && /\b(tsc|typecheck|vitest|git commit|next build|tsc7)\b/.test(cmdBash);
   if (tsc >= MAX_TSC && (lanzaTipado || !mem || mem.avail < RAM_HOLGADA_MB)) problemas.push(`${tsc} procs tsc apilados (max ${MAX_TSC})`);
   if (orphanChromium >= MAX_ORPHAN_CHROMIUM) problemas.push(`${orphanChromium} chromium huérfanos (max ${MAX_ORPHAN_CHROMIUM})`);
   if (load.l1 > MAX_LOAD_1MIN) problemas.push(`load 1min ${load.l1.toFixed(1)} > ${MAX_LOAD_1MIN}`);
