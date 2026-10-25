@@ -153,6 +153,10 @@
       "schedule": "30 6 * * *"
     },
     {
+      "path": "/api/cron/adelantos-hoy-toca",
+      "schedule": "0 12 * * 1"
+    },
+    {
       "path": "/api/cron/dlq-retry",
       "schedule": "0 7 * * *"
     },

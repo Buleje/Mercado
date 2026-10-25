@@ -77,7 +77,7 @@ const DESTRUCTIVOS = [
   },
 ];
 /** Crons que mandan WhatsApp/correo/Telegram; no hay SELECT de alcance fiable → sin medir. */
-const AVISAN = /^(documentos-vencimiento|contratos-vencimiento|tramites-vencimiento|tramites-sin-respuesta|forestal-plazos|loth-plan-vencimiento|camaras-resumen|cacao-precio-diario|asistente-avisos|ia-salud)$/;
+const AVISAN = /^(documentos-vencimiento|contratos-vencimiento|tramites-vencimiento|tramites-sin-respuesta|forestal-plazos|loth-plan-vencimiento|adelantos-hoy-toca|camaras-resumen|cacao-precio-diario|asistente-avisos|ia-salud)$/;
 
 let db = null;
 try {

@@ -55,6 +55,7 @@ const TIPOS_POR_CATEGORIA: Record<CategoriaId, readonly string[]> = {
     "FIADO_REMINDER",
     "FIADO_VENCIDO",
     "ADELANTO_VENCIDO",
+    "ADELANTOS_SEMANA",
     "DIFERENCIA_CAJA",
     "TURNO_SIN_CERRAR",
     "FLUJO_CAJA_CRITICO",

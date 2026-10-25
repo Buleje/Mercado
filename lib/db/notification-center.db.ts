@@ -79,7 +79,8 @@ export interface ResultadoSincronizar {
  * cajero no le sirven. `Notification` no tiene destinatario por rol (ver el
  * TODO de `/api/notification-center`), así que el filtro va por `type`.
  */
-const TIPOS_SOLO_GESTION: readonly string[] = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, TIPO_AVISO_CODIGO_FISICO];
+// ADELANTOS_SEMANA (25-10): el «hoy toca» de los lunes nombra la plata de adelantos; el cajero no lo ve.
+const TIPOS_SOLO_GESTION: readonly string[] = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, TIPO_AVISO_CODIGO_FISICO, "ADELANTOS_SEMANA"];
 
 /**
  * El aviso del pago del sábado lleva la plata del sueldo (neto y adelantos a

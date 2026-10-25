@@ -41,7 +41,8 @@ import { TIPO_AVISO_ESENCIALES } from "@/lib/documentos/esenciales-avisos";
 import { TIPO_AVISO_CODIGO_FISICO } from "@/lib/documentos/codigo-fisico-avisos";
 
 /** Los tipos que sólo ve la gestión (plan, esenciales, código físico del papel). */
-const GESTION = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, TIPO_AVISO_CODIGO_FISICO];
+// ADELANTOS_SEMANA (25-10): el «hoy toca» de los lunes de Adelantos también es sólo de gestión.
+const GESTION = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, TIPO_AVISO_CODIGO_FISICO, "ADELANTOS_SEMANA"];
 
 describe("NotificationCenterDB.create", () => {
   beforeEach(() => {
