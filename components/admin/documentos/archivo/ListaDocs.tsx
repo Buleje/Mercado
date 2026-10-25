@@ -1,6 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
+import type { DbDocument } from "@/lib/types/documents";
 import { cn } from "@/lib/utils";
 import { ArrowUpDown, Star } from "@buleje/design-system/icons";
 import FilaCarpetaDetalles from "../explorador/FilaCarpetaDetalles";
@@ -13,12 +17,26 @@ import { formatDateShort } from "@/lib/format";
 import { CodigoChip } from "../CodigoDocumento";
 import type { ModeloArchivo } from "./use-archivo";
 export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
-  const { selectedIds, displayDocs, selectAll, clearSelection, sortBy, setSortBy, colsVisibles,
+  const { selectedIds, setSelectedIds, displayDocs, clearSelection, sortBy, setSortBy, colsVisibles,
     explorandoVista, ex, abrirCarpetaExp, dropDocOnFolder, abrirMenuEn, setPreview, toggleSelect, renaming,
     setRenaming, commitRename, startRename, terminosBusqueda, patch, filterMode, folderById, setFilterMode,
     setActiveFolderId, menuDe } = arch;
+  const base = explorandoVista ? ex.contenido.docs : displayDocs;
+  // Filtros de columna sobre lo que ya dejaron la búsqueda y los filtros de arriba; el orden sigue siendo el de «Ordenar por».
+  const columnas = useMemo<readonly ColumnaFiltro<DbDocument>[]>(() => [
+    { id: "nombre", label: "Nombre", tipo: "texto", valor: (d) => d.name },
+    { id: "categoria", label: "Categoría", tipo: "multi", valor: (d) => d.category || null, visible: colsVisibles.categoria, soloConVarios: true },
+    { id: "etiquetas", label: "Etiquetas", tipo: "multi", valor: (d) => tagsVisibles(d.tags), visible: colsVisibles.etiquetas },
+    { id: "vencimiento", label: "Vencimiento", tipo: "fecha", numero: (d) => diaDeVigencia(d.expiresAt), visible: colsVisibles.vencimiento },
+    { id: "tamano", label: "Tamaño", tipo: "rango", numero: (d) => Math.round(((d.size ?? 0) / 1048576) * 100) / 100, unidad: "MB", paso: 0.1, visible: colsVisibles.tamano },
+    { id: "subido", label: "Subido", tipo: "fecha", numero: (d) => diaDeVigencia(d.uploadedAt), visible: colsVisibles.subido },
+  ], [colsVisibles]);
+  const f = useFiltrosTabla(base, columnas);
+  const filas = f.filtradas;
+  const todosLocal = filas.length > 0 && filas.every((d) => selectedIds.has(d.id));
   return (
     <>
+      <BarraFiltrosTabla f={f} plegableSiempre className="mb-2" />
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
               <DataTable className="w-full">
                 <thead>
@@ -27,8 +45,8 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                       <input
                         type="checkbox"
                         aria-label="Seleccionar todos"
-                        checked={selectedIds.size > 0 && selectedIds.size === displayDocs.length}
-                        onChange={(e) => (e.target.checked ? selectAll() : clearSelection())}
+                        checked={todosLocal}
+                        onChange={(e) => (e.target.checked ? setSelectedIds(new Set(filas.map((d) => d.id))) : clearSelection())}
                         className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                       />
                     </th>
@@ -39,12 +57,14 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                       const sortTh = (
                         label: string,
                         value: "name" | "size" | "expiry" | "recent",
+                        filtro: string,
                         opts: { align?: "left" | "right"; extraClass?: string } = {},
                       ) => {
                         const { align = "left", extraClass } = opts;
                         const active = sortBy === value;
                         return (
                           <th className={cn("", align === "right" ? "text-right" : "text-left", extraClass)}>
+                            <span className={cn("inline-flex flex-col gap-1", align === "right" ? "items-end" : "items-start")}>
                             <button
                               type="button"
                               onClick={() => setSortBy(value)}
@@ -58,17 +78,19 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                               {label}
                               <ArrowUpDown className={cn("h-3 w-3 shrink-0", active ? "opacity-100" : "opacity-40")} />
                             </button>
+                            <FiltroEnCabecera id={filtro} f={f} compacto />
+                            </span>
                           </th>
                         );
                       };
                       return (
                         <>
-                          {sortTh("Nombre", "name")}
-                          {colsVisibles.categoria && <th className="hidden sm:table-cell">Categoría</th>}
-                          {colsVisibles.etiquetas && <th className="hidden lg:table-cell">Etiquetas</th>}
-                          {colsVisibles.vencimiento && sortTh("Vencimiento", "expiry", { extraClass: "hidden lg:table-cell" })}
-                          {colsVisibles.tamano && sortTh("Tamaño", "size", { align: "right", extraClass: "hidden md:table-cell" })}
-                          {colsVisibles.subido && sortTh("Subido", "recent", { align: "right", extraClass: "hidden md:table-cell" })}
+                          {sortTh("Nombre", "name", "nombre")}
+                          {colsVisibles.categoria && <th className="hidden sm:table-cell">Categoría <FiltroEnCabecera id="categoria" f={f} compacto /></th>}
+                          {colsVisibles.etiquetas && <th className="hidden lg:table-cell">Etiquetas <FiltroEnCabecera id="etiquetas" f={f} compacto /></th>}
+                          {colsVisibles.vencimiento && sortTh("Vencimiento", "expiry", "vencimiento", { extraClass: "hidden lg:table-cell" })}
+                          {colsVisibles.tamano && sortTh("Tamaño", "size", "tamano", { align: "right", extraClass: "hidden md:table-cell" })}
+                          {colsVisibles.subido && sortTh("Subido", "recent", "subido", { align: "right", extraClass: "hidden md:table-cell" })}
                         </>
                       );
                     })()}
@@ -87,7 +109,8 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                       onSoltarDoc={(docId) => void dropDocOnFolder(docId, f.id)}
                     />
                   ))}
-                  {(explorandoVista ? ex.contenido.docs : displayDocs).map((doc) => {
+                  {filas.length === 0 && f.activos > 0 && <SinCoincidenciasFila colSpan={8} />}
+                  {filas.map((doc) => {
                     const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
                     return (
                       <tr

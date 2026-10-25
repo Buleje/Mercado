@@ -41,6 +41,10 @@ import {
   diasParaVencer,
 } from "@/lib/types/contracts";
 import type { DbContract, EstadoVisible } from "@/lib/types/contracts";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_CONTRATOS, ORDEN_CONTRATOS } from "@/components/admin/contratos/columnas-filtro-contratos";
 import PanelFirmantes from "@/components/admin/contratos/PanelFirmantes";
 import PanelRevision from "@/components/admin/contratos/PanelRevision";
 import VinculoContraparte from "@/components/admin/contratos/VinculoContraparte";
@@ -351,9 +355,13 @@ export default function ContratosModule() {
     return list;
   }, [contratos, debouncedSearch, filterTipo, filterEstado]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredContratos.length / PER_PAGE));
-  const paginated = filteredContratos.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  useEffect(() => { setPage(1); }, [debouncedSearch, filterTipo, filterEstado]);
+  // Filtros y orden por columna del encabezado, encima de la búsqueda/tipo/estado de la barra.
+  const fCols = useFiltrosTabla(filteredContratos, COLUMNAS_CONTRATOS);
+  const ordCols = useOrdenColumna(ORDEN_CONTRATOS);
+  const verContratos = ordCols.ordenar(fCols.filtradas);
+  const totalPages = Math.max(1, Math.ceil(verContratos.length / PER_PAGE));
+  const paginated = verContratos.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  useEffect(() => { setPage(1); }, [debouncedSearch, filterTipo, filterEstado, fCols.facetas]);
 
   /** Vacía los 3 filtros de golpe (búsqueda, tipo, estado) — el botón «Quitar
    *  filtros» del vacío filtrado. Se limpia `debouncedSearch` directo, sin
@@ -832,6 +840,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   </div>
                 </div>
 
+                {contratos.length > 0 && <BarraFiltrosTabla f={fCols} plegableSiempre={viewMode === "cards"} />}
+
                 {contratos.length === 0 ? (
                   // El vacío de "no hay nada" se decide por el total SIN
                   // filtrar — si hay contratos pero el filtro los deja todos
@@ -851,6 +861,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   </div>
                 ) : viewMode === "cards" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {paginated.length === 0 && <p className="col-span-full text-center text-[var(--text-tertiary)]">Ningún contrato coincide con los filtros de columna.</p>}
                     {paginated.map(c => {
                       const estado = estadoVisible(c);
                       const dias = diasParaVencer(c.fechaVencimiento);
@@ -895,16 +906,17 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <DataTable>
                       <thead>
                         <tr>
-                          <th>N.o</th>
-                          <th>Cliente</th>
-                          <th className="hidden sm:table-cell">Tipo</th>
-                          <th className="text-right">Monto</th>
-                          <th className="hidden md:table-cell">Fecha</th>
-                          <th>Estado</th>
+                          <ThColumna label="N.o" ids={["numero"]} f={fCols} orden={ordCols} ordenId="numero" />
+                          <ThColumna label="Cliente" ids={["cliente"]} f={fCols} orden={ordCols} ordenId="cliente" />
+                          <ThColumna label="Tipo" f={fCols} orden={ordCols} ordenId="tipo" className="hidden align-top sm:table-cell" />
+                          <ThColumna label="Monto" ids={["monto"]} f={fCols} derecha orden={ordCols} ordenId="monto" />
+                          <ThColumna label="Fecha" ids={["fecha"]} f={fCols} orden={ordCols} ordenId="fecha" className="hidden md:table-cell" />
+                          <ThColumna label="Estado" className="align-top" f={fCols} orden={ordCols} ordenId="estado" />
                           <th><span className="sr-only">Acciones</span></th>
                         </tr>
                       </thead>
                       <tbody>
+                        {filteredContratos.length > 0 && verContratos.length === 0 && <SinCoincidenciasFila colSpan={7} />}
                         {filteredContratos.length === 0 && (
                           <tr>
                             <td colSpan={7} className="text-center">
@@ -952,7 +964,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-[var(--text-secondary)]">{filteredContratos.length} contrato{filteredContratos.length !== 1 ? "s" : ""} · página {page} de {totalPages}</p>
+                    <p className="text-sm text-[var(--text-secondary)]">{verContratos.length} contrato{verContratos.length !== 1 ? "s" : ""} · página {page} de {totalPages}</p>
                     <div className="flex gap-1">
                       <button type="button" aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
                       <button type="button" aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>

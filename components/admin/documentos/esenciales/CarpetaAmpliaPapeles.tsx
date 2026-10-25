@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { Eye } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
@@ -8,6 +8,10 @@ import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import type { UsoDoc } from "@/lib/documentos/esenciales";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
 import { rutaRelativa, type NodoArbol } from "@/lib/documentos/arbol-esencial";
 import DocThumb from "../DocThumb";
 import { formatBytes, getFileIcon } from "../archivo-visual";
@@ -44,9 +48,29 @@ export default function CarpetaAmpliaPapeles({ lista, modo, arbol, desde, mostra
   const { menuDe, abrirMenuEn } = arch;
   const [cuantos, setCuantos] = useState(PAGINA);
   const fantasma = useRef<HTMLDivElement>(null);
-  const visibles = lista.slice(0, cuantos);
-  const quedan = lista.length - visibles.length;
-  const todos = lista.length > 0 && lista.every((d) => sel.has(d.id));
+  // Filtros y orden por columna (la carpeta llega entera; «Mostrar más» sólo recorta lo dibujado).
+  const columnas = useMemo<readonly ColumnaFiltro<DbDocument>[]>(() => [
+    { id: "nombre", label: "Nombre", tipo: "texto", valor: (d) => d.name },
+    { id: "donde", label: "Dónde", tipo: "multi", valor: (d) => (d.folderId ? rutaRelativa(arbol, d.folderId, desde) || "aquí" : "aquí"), visible: mostrarDonde, soloConVarios: true },
+    { id: "subido", label: "Subido", tipo: "fecha", numero: (d) => diaDeVigencia(d.uploadedAt) },
+    { id: "vence", label: "Vence", tipo: "fecha", numero: (d) => diaDeVigencia(d.expiresAt) },
+    { id: "tamano", label: "Tamaño", tipo: "rango", numero: (d) => (d.size ? Math.round((d.size / 1048576) * 100) / 100 : 0), unidad: "MB", paso: 0.1 },
+    { id: "aperturas", label: "Aperturas", tipo: "rango", numero: (d) => uso[d.id]?.vistas ?? 0, paso: 1 },
+  ], [arbol, desde, mostrarDonde, uso]);
+  const accesores = useMemo<Record<string, AccesorOrden<DbDocument>>>(() => ({
+    nombre: { valor: (d) => d.name, texto: true },
+    donde: { valor: (d) => (d.folderId ? rutaRelativa(arbol, d.folderId, desde) : ""), texto: true },
+    subido: { valor: (d) => diaDeVigencia(d.uploadedAt) },
+    vence: { valor: (d) => diaDeVigencia(d.expiresAt) },
+    tamano: { valor: (d) => d.size },
+    aperturas: { valor: (d) => uso[d.id]?.vistas ?? 0 },
+  }), [arbol, desde, uso]);
+  const f = useFiltrosTabla(lista, columnas);
+  const ord = useOrdenColumna(accesores);
+  const filas = ord.ordenar(f.filtradas);
+  const visibles = filas.slice(0, cuantos);
+  const quedan = filas.length - visibles.length;
+  const todos = filas.length > 0 && filas.every((d) => sel.has(d.id));
 
   const alternar = (id: string) =>
     setSel((s) => {
@@ -56,7 +80,7 @@ export default function CarpetaAmpliaPapeles({ lista, modo, arbol, desde, mostra
       return n;
     });
   const arrastrar = (e: React.DragEvent, doc: DbDocument) => {
-    const ids = sel.has(doc.id) ? lista.filter((d) => sel.has(d.id)).map((d) => d.id) : [doc.id];
+    const ids = sel.has(doc.id) ? filas.filter((d) => sel.has(d.id)).map((d) => d.id) : [doc.id];
     e.dataTransfer.setData(TIPO_ARRASTRE_PAPEL, JSON.stringify(ids));
     e.dataTransfer.effectAllowed = "move";
     const g = fantasma.current;
@@ -65,8 +89,6 @@ export default function CarpetaAmpliaPapeles({ lista, modo, arbol, desde, mostra
       e.dataTransfer.setDragImage(g, 16, 16);
     }
   };
-  const donde = (doc: DbDocument) => (doc.folderId ? rutaRelativa(arbol, doc.folderId, desde) : "");
-
   if (lista.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-8 text-center text-sm text-[var(--text-tertiary)]" data-qa="amplia-vacia">
@@ -80,34 +102,37 @@ export default function CarpetaAmpliaPapeles({ lista, modo, arbol, desde, mostra
       {/* La etiqueta que acompaña al puntero al arrastrar varios (fuera de la pantalla hasta que se usa). */}
       <div ref={fantasma} aria-hidden className="pointer-events-none fixed -left-[100rem] top-0 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-sm font-bold text-[var(--text-inverse)]" />
 
+      <BarraFiltrosTabla f={f} plegableSiempre={modo !== "lista"} />
+
       {modo === "lista" ? (
         <DataTable aria-label="Papeles" data-qa="amplia-tabla">
           <thead>
             <tr>
               <th className="w-12">
-                <input type="checkbox" aria-label="Elegir todos" checked={todos} onChange={() => setSel(todos ? new Set() : new Set(lista.map((d) => d.id)))} className={CASILLA} />
+                <input type="checkbox" aria-label="Elegir todos" checked={todos} onChange={() => setSel(todos ? new Set() : new Set(filas.map((d) => d.id)))} className={CASILLA} />
               </th>
-              <th>Nombre</th>
-              {mostrarDonde && <th className="hidden @min-[40rem]:table-cell">Dónde</th>}
-              <th className="hidden whitespace-nowrap @min-[50rem]:table-cell">Subido</th>
-              <th className="whitespace-nowrap">Vence</th>
-              <th className="hidden text-right @min-[50rem]:table-cell">Tamaño</th>
-              <th className="hidden text-right @min-[34rem]:table-cell">Aperturas</th>
+              <ThColumna label="Nombre" ids={["nombre"]} f={f} orden={ord} ordenId="nombre" />
+              {mostrarDonde && <ThColumna label="Dónde" ids={["donde"]} f={f} orden={ord} ordenId="donde" className="hidden @min-[40rem]:table-cell" />}
+              <ThColumna label="Subido" ids={["subido"]} f={f} orden={ord} ordenId="subido" className="hidden whitespace-nowrap @min-[50rem]:table-cell" />
+              <ThColumna label="Vence" ids={["vence"]} f={f} orden={ord} ordenId="vence" className="whitespace-nowrap" />
+              <ThColumna label="Tamaño" ids={["tamano"]} f={f} derecha orden={ord} ordenId="tamano" className="hidden @min-[50rem]:table-cell" />
+              <ThColumna label="Aperturas" ids={["aperturas"]} f={f} derecha orden={ord} ordenId="aperturas" className="hidden @min-[34rem]:table-cell" />
               <th className="w-12"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
+            {visibles.length === 0 && <SinCoincidenciasFila colSpan={8} />}
             {visibles.map((doc) => {
               const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
               const elegido = sel.has(doc.id);
-              const d = mostrarDonde ? donde(doc) : "";
+              const d = mostrarDonde && doc.folderId ? rutaRelativa(arbol, doc.folderId, desde) : "";
               const vistas = uso[doc.id]?.vistas ?? 0;
               return (
                 <tr
                   key={doc.id}
                   draggable
                   onDragStart={(e) => arrastrar(e, doc)}
-                  onClick={() => abrir(doc, lista)}
+                  onClick={() => abrir(doc, filas)}
                   onContextMenu={(e) => abrirMenuEn(e, doc.id)}
                   className={cn("cursor-pointer", elegido && "bg-[var(--accent-soft)]")}
                   data-qa="amplia-papel"
@@ -168,11 +193,11 @@ export default function CarpetaAmpliaPapeles({ lista, modo, arbol, desde, mostra
                 data-qa="amplia-papel"
                 data-id={doc.id}
               >
-                <button type="button" tabIndex={-1} aria-hidden onClick={() => abrir(doc, lista)} className="block aspect-[4/3] w-full overflow-hidden bg-[var(--surface-sunken)]">
+                <button type="button" tabIndex={-1} aria-hidden onClick={() => abrir(doc, filas)} className="block aspect-[4/3] w-full overflow-hidden bg-[var(--surface-sunken)]">
                   <DocThumb doc={doc} Icon={Icon} tint={tint} bg={bg} iconClassName="h-10 w-10" />
                 </button>
                 <div className="flex items-center gap-1 p-2">
-                  <button type="button" onClick={() => abrir(doc, lista)} className="min-w-0 flex-1 text-left">
+                  <button type="button" onClick={() => abrir(doc, filas)} className="min-w-0 flex-1 text-left">
                     <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{doc.name}</span>
                     <span className="block truncate text-xs text-[var(--text-tertiary)]">{formatDate(doc.uploadedAt)} · {formatBytes(doc.size)}</span>
                   </button>
