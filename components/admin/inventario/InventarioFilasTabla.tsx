@@ -5,7 +5,7 @@ import StatusBadge from "@/components/admin/shared/StatusBadge";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { StockLevelBar } from "@/components/admin/inventario/StockLevelBar";
-import { getRotationInfo, computeStockChange, computeSalesPerWeek, diasDesdeUltimoMovimiento } from "@/components/admin/inventario/inventory-helpers";
+import { getRotationInfo, computeStockChange, computeSalesPerWeek, diasDesdeUltimoMovimiento, horizonteDeMovimientos } from "@/components/admin/inventario/inventory-helpers";
 import PriceSparkline from "@/components/admin/inventario/PriceSparkline";
 import ImageWarningBadge from "@/components/admin/inventario/ImageWarningBadge";
 import { formatCurrency, formatDateNumeric } from "@/lib/format";
@@ -13,6 +13,7 @@ import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import CostoEnFila from "@/components/admin/inventario/CostoEnFila";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 import InventarioAccionesProducto from "@/components/admin/inventario/InventarioAccionesProducto";
+import { formatDateShort } from "@/lib/format";
 
 /** Filas de la tabla de productos. Pieza de InventoryTab: recibe `useInventario` entero. */
 export default function InventarioFilasTabla({ inv }: { inv: Inventario }) {
@@ -20,6 +21,8 @@ export default function InventarioFilasTabla({ inv }: { inv: Inventario }) {
     movements, selectedIds, showExtendedCols, orden, setCtxMenu, toggleActive, toggleSelect,
     isLowStock, isExpiringSoon, topRentables, catLabelOf, expiryOf, pgProducts, guardarCosto, verColumnaCosto,
   } = inv;
+  /* Con la lista de movimientos cortada (tope 200), sin movimiento en ella = «desde» la fecha más vieja, no «nunca». */
+  const horizonte = horizonteDeMovimientos(movements);
   return (
     <>
       {pgProducts.items.map(p => {
@@ -165,7 +168,9 @@ export default function InventarioFilasTabla({ inv }: { inv: Inventario }) {
                             <span className="text-sm text-[var(--text-tertiary)]">Normal</span>
                           )}
                           <span className={cn("text-xs", dias === null || dias > 30 ? "text-[var(--data-error-ink)]" : "text-[var(--text-tertiary)]")}>
-                            {dias === null ? "Nunca se movió" : dias > 30 ? `Sin movimiento hace ${dias} d` : `Se movió hace ${dias} d`}
+                            {dias === null
+                              ? horizonte ? `Sin movimiento desde ${formatDateShort(horizonte)}` : "Nunca se movió"
+                              : dias > 30 ? `Sin movimiento hace ${dias} d` : `Se movió hace ${dias} d`}
                           </span>
                         </span>
                       );
