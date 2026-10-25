@@ -55,6 +55,13 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
   const ft = useFiltrosTabla(state.reorder, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(ft.filtradas);
+  const pedir = () => {
+    const filtrado = ft.activos > 0;
+    const n = filtrado ? ft.filtradas.length : state.reorder.length;
+    if (n === 0) return;
+    if (!window.confirm(`Se crearán órdenes de compra de ${n} producto(s)${filtrado ? " (los que ves)" : ""}. ¿Continuar?`)) return;
+    void ejecutarAutoReorder(filtrado ? ft.filtradas.map((r) => String(r.productId)) : undefined);
+  };
   return (
         <div className="lg:col-span-2">
           <PanelCard
@@ -67,7 +74,7 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
             headerExtra={
               state.reorder.length > 0 ? (
                 <button
-                  onClick={ejecutarAutoReorder}
+                  onClick={pedir}
                   disabled={autoReordering}
                   className={cn(
                     "flex items-center gap-1.5 px-3 rounded-xl text-sm font-bold",
@@ -77,13 +84,13 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
                     "h-12", // touch target del panel (48 px)
                   )}
                   aria-label="Ejecutar reorden automática"
-                  title={ft.activos > 0 ? `Pide TODO lo sugerido (${state.reorder.length}), no sólo lo que ves filtrado` : "Crea las órdenes de compra de lo sugerido"}
+                  title={ft.activos > 0 ? `Pide sólo los ${ft.filtradas.length} productos que ves` : "Crea las órdenes de compra de lo sugerido"}
                 >
                   {autoReordering
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     : <RefreshCw className="w-3.5 h-3.5" />
                   }
-                  Auto-reorden
+                  {ft.activos > 0 ? `Pedir lo que ves (${ft.filtradas.length})` : "Auto-reorden"}
                 </button>
               ) : undefined
             }

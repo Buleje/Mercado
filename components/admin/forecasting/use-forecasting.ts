@@ -38,7 +38,7 @@ export interface Forecasting {
   /** Auto-reorden (panel de reorden). */
   autoReordering: boolean;
   autoReorderMsg: string | null;
-  ejecutarAutoReorder: () => Promise<void>;
+  ejecutarAutoReorder: (productIds?: string[]) => Promise<void>;
   /** Aplicar un precio sugerido (panel de precios). */
   applyingPrice: number | null;
   appliedPrices: Set<number>;
@@ -187,14 +187,14 @@ export function useForecasting(paneles: readonly PanelForecast[] = TODOS_LOS_PAN
   }, [clave]);
 
   /** Ejecuta auto-reorder (Panel B) */
-  const ejecutarAutoReorder = async () => {
+  const ejecutarAutoReorder = async (productIds?: string[]) => {
     setAutoReordering(true);
     setAutoReorderMsg(null);
     try {
       const res = await fetch("/api/forecasting/auto-reorder", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ usePrecalculated: false }),
+        body: JSON.stringify(productIds ? { productIds } : { usePrecalculated: false }),
       });
       const data = await res.json() as { message?: string; error?: string };
       setAutoReorderMsg(data.message ?? data.error ?? "Reorden ejecutado");
