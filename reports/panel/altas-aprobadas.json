@@ -584,6 +584,11 @@
    "par": "documentos:esenciales",
    "porque": "Pestaña nueva de Documentos al lado del Archivo (Brandon 23-10): «una página nueva al lado de Archivo… marcar carpetas y esa carpeta irá a la pestaña nueva… se selecciona y se verá qué tiene adentro en un sidebar lateral». Muestra sólo carpetas que el rol ya ve en el Archivo; marcar/quitar pasa por folders/bulk (sólo dueño/admin).",
    "aprobo": "Brandon 2026-10-23"
+  },
+  {
+   "par": "camaras:espejo",
+   "porque": "Vista nueva de Cámaras (24-10): «vincular mi celular con admin para ver duplicada mi pantalla en una página». El celular se duplica con scrcpy en la PC y la vista captura esa ventana con getDisplayMedia; sin servidor ni datos nuevos. La ven los mismos que ya ven Cámaras.",
+   "aprobo": "Brandon 2026-10-24"
   }
  ]
 }

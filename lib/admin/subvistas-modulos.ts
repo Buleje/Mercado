@@ -258,6 +258,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "patio", label: "Hoy en el patio", hint: "Lo que pasó hoy en el patio, hora por hora" },
     { key: "personas", label: "Personas", hint: "Las personas que vio la cámara" },
     { key: "camaras", label: "Cámaras", hint: "Las cámaras conectadas y su señal en vivo" },
+    { key: "espejo", label: "Espejo del celular", hint: "Tu celular duplicado en la PC, en vivo (scrcpy)" },
   ],
   // «Sugerencias IA» se fundió el 10-10: lo que no se vende → Comandos ›
   // Precios en bloque; a quién ofrecerle → Comandos › A quién escribir; qué

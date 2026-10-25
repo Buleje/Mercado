@@ -9,13 +9,15 @@
  * pantalla no es un monitor de video: es **el historial de lo que pasó**, que es
  * lo que sirve a la mañana siguiente — quién entró, a qué hora, y la foto.
  *
- * Cuatro vistas (`?vista=`), por la pregunta que responden:
+ * Cinco vistas (`?vista=`), por la pregunta que responden:
  *  · **Fotos** — cada foto con lo que leyó la IA: chalecos, placa con su guía,
  *    actividad y la pila. La placa y el chaleco son propuestas que se confirman.
  *  · **Hoy en el patio** — el día entero en una pantalla, de cualquier fecha.
  *  · **Personas** — las fotos del detector local del mosaico (van al Drive).
  *  · **Cámaras** — alta, dirección para copiar, avisos, pila y chalecos: lo que
  *    se configura una vez.
+ *  · **Espejo del celular** — el celular duplicado con scrcpy en la PC, en vivo
+ *    (`components/admin/camaras-espejo/`, 24-10).
  *
  * Arriba, en todas, sólo lo que hace que la cámara funcione o no: el túnel
  * cerrado, la IA sin clave, la cámara que dejó de mandar — en UNA línea, el
@@ -32,7 +34,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, Camera, Image as ImageIcon, MoreHorizontal, Plus, RefreshCw, Tv, Users } from "@buleje/design-system/icons";
+import dynamic from "next/dynamic";
+import { CalendarDays, Camera, Image as ImageIcon, MoreHorizontal, Plus, RefreshCw, Smartphone, Tv, Users } from "@buleje/design-system/icons";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { button } from "@/components/ui-system/button-variants";
@@ -58,7 +61,8 @@ import { VisorNubeProvider } from "./camaras/VisorNubeContexto";
 import { faltaClaveIa, porQueNoSeCopia } from "./camaras/camaras-ui";
 
 const MODULE_ID = "camaras";
-const VISTAS = ["fotos", "patio", "personas", "camaras"] as const;
+const VISTAS = ["fotos", "patio", "personas", "camaras", "espejo"] as const;
+const EspejoCelular = dynamic(() => import("@/components/admin/camaras-espejo/EspejoCelular"), { ssr: false });
 type Vista = (typeof VISTAS)[number];
 
 /** «Ver en otra pantalla» abierto (Modo TV), y en qué pestaña. */
@@ -148,6 +152,7 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
     { id: "patio", label: "Hoy en el patio", icon: CalendarDays },
     { id: "personas", label: "Personas", icon: Users },
     { id: "camaras", label: "Cámaras", icon: Camera },
+    { id: "espejo", label: "Espejo del celular", shortLabel: "Celular", icon: Smartphone },
   ];
   /* Banda del panel (Brandon 10-10): título · pestañas · acción principal · «Más». */
   const acciones = (
@@ -188,7 +193,7 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
           title: "Cámaras",
           icon: Camera,
           description:
-            "Lo que mandó la cámara del patio con su hora y lo que se ve en cada foto (Fotos), el día entero (Hoy en el patio), las fotos del detector de personas (Personas) y el alta y la conexión de cada cámara (Cámaras).",
+            "Lo que mandó la cámara del patio con su hora y lo que se ve en cada foto (Fotos), el día entero (Hoy en el patio), las fotos del detector de personas (Personas) y el alta y la conexión de cada cámara (Cámaras) y tu celular duplicado en la PC (Espejo del celular).",
           actions: acciones,
         }}
         tabs={tabs}
@@ -198,7 +203,7 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
       >
         <div className="space-y-3" data-vista="camaras">
           {/* Los avisos en UNA línea, el más grave primero; en «Cámaras» también la dirección en verde. */}
-          <AvisosEnUnaLinea estado={dir.estado} calladas={calladas} sinIa={sinIa} conDireccionOk={vista === "camaras"} />
+          {vista !== "espejo" && <AvisosEnUnaLinea estado={dir.estado} calladas={calladas} sinIa={sinIa} conDireccionOk={vista === "camaras"} />}
           <MensajeAccion error={chalecos || agregando ? null : d.error} aviso={chalecos ? null : d.aviso} />
 
           {vista === "fotos" && (
@@ -232,6 +237,7 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
             <HoyEnElPatio activo recarga={recarga} onAsignarChaleco={abrirChalecos} />
           )}
           {vista === "personas" && <VistaPersonas activo recarga={recarga} camaras={d.camaras} />}
+          {vista === "espejo" && <EspejoCelular />}
           {vista === "camaras" && (
             <VistaCamaras
               datos={d}
