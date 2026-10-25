@@ -37,6 +37,14 @@ export function QuotationComparator({ orders, suppliers, abierto, onCerrar }: {
     else setOpenPropio(v);
   };
   const [selectedOCIds, setSelectedOCIds] = useState<string[]>([]);
+  const [buscar, setBuscar] = useState("");
+  const q = buscar.trim().toLowerCase();
+  const coinciden = orders.filter((oc) => {
+    if (!q) return true;
+    const nombre = suppliers.find((s) => s.id === oc.supplierId)?.name ?? oc.supplierName ?? "";
+    return `${nombre} ${formatDateShort(oc.createdAt)} ${oc.createdAt.slice(0, 10)}`.toLowerCase().includes(q);
+  });
+  const visiblesOC = coinciden.slice(0, 20);
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: () => setOpen(false), activo: open });
@@ -122,8 +130,13 @@ export function QuotationComparator({ orders, suppliers, abierto, onCerrar }: {
         {/* Step 1: Select OCs */}
         <div>
           <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-2">Selecciona 2-3 OCs para comparar</p>
+          <input
+            type="search" value={buscar} onChange={(e) => setBuscar(e.target.value)}
+            placeholder="Buscar por proveedor o fecha" aria-label="Buscar orden por proveedor o fecha"
+            className="mb-2 h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-            {orders.slice(0, 20).map(oc => {
+            {visiblesOC.map(oc => {
               const sup = suppliers.find(s => s.id === oc.supplierId);
               const isSelected = selectedOCIds.includes(oc.id);
               return (
@@ -145,6 +158,10 @@ export function QuotationComparator({ orders, suppliers, abierto, onCerrar }: {
               );
             })}
           </div>
+          {coinciden.length > visiblesOC.length && (
+            <p className="mt-1 text-xs text-[var(--text-tertiary)]">Se ven {visiblesOC.length} de {coinciden.length}: buscá por proveedor o fecha para ver las demás.</p>
+          )}
+          {coinciden.length === 0 && <p className="mt-1 text-xs text-[var(--text-tertiary)]">Ninguna orden coincide.</p>}
         </div>
 
         {/* Step 2: Comparison Table */}

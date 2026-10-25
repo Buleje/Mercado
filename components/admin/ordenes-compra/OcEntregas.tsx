@@ -96,11 +96,12 @@ export default function OcEntregas({ barra }: { barra?: ReactNode }) {
         <>
         <BarraFiltrosTabla f={f} />
         {f.activos > 0 && pasan.size === 0 && <p className="text-sm text-[var(--text-secondary)]">Ninguna orden coincide con los filtros.</p>}
-        {grupos.map((g) => ({ ...g, ordenes: ord.ordenar(g.ordenes.filter((o) => pasan.has(o.id))) })).filter((g) => g.ordenes.length > 0).map((g) => (
+        {grupos.map((g) => ({ ...g, ordenes: ord.ordenar(g.ordenes.filter((o) => pasan.has(o.id))) })).filter((g) => g.ordenes.length > 0).map((g, i) => (
           <section key={g.id} aria-label={g.rotulo} className="space-y-2" data-qa={`entregas-${g.id}`}>
             <BlockTitle className={TONO_GRUPO[g.id]}>{g.rotulo} · {g.ordenes.length}</BlockTitle>
             <DataTable className="[&_thead_th]:py-0">
-              <thead>
+              {/* Un solo encabezado con embudos: el del primer grupo; los demás lo llevan sólo para lectores de pantalla. */}
+              <thead className={i > 0 ? "sr-only" : undefined}>
                 <tr>
                   <ThColumna label="Proveedor" ids={["proveedor"]} f={f} orden={ord} ordenId="proveedor" />
                   <ThColumna label="Prometida" ids={["prometida"]} f={f} orden={ord} ordenId="prometida" />
