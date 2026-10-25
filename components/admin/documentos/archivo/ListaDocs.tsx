@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { DataTable } from "@buleje/design-system";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsPapeles } from "@/components/admin/shared/vistas-de-fabrica";
 import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
 import type { DbDocument } from "@/lib/types/documents";
 import { cn } from "@/lib/utils";
@@ -49,7 +50,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
   }, [f.activos, filas, base, selectedIds, setSelectedIds]);
   return (
     <>
-      <BarraFiltrosTabla excel="Archivo" vistas="archivo" f={f} plegableSiempre className="mb-2" />
+      <BarraFiltrosTabla excel="Archivo" vistas="archivo" presets={presetsPapeles("vencimiento")} f={f} plegableSiempre className="mb-2" />
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
               <DataTable className="w-full">
                 <thead>

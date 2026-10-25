@@ -9,6 +9,7 @@ import { BOTON_ICONO } from "./estilos";
 import { GuiaHoverRow, GuiaPreview } from "./GuiaPreview";
 import { MOTIVO_ROTULO, POR_PAGINA, STATUS_META, type GuiaRemision } from "./tipos";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsGuias } from "@/components/admin/shared/vistas-de-fabrica";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
@@ -48,7 +49,7 @@ export function GuiasTabla({ guias, page, onPage, onAbrir }: Props) {
   const pagina = filas.slice((actual - 1) * POR_PAGINA, actual * POR_PAGINA);
   return (
     <>
-      <BarraFiltrosTabla excel="Guías de remisión" vistas="guias" f={f} className="px-3 pt-2" />
+      <BarraFiltrosTabla excel="Guías de remisión" vistas="guias" presets={presetsGuias()} f={f} className="px-3 pt-2" />
       <div className="admin-mobile-cards">
         <DataTable>
           <thead>

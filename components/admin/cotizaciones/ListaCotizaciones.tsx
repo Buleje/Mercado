@@ -10,6 +10,7 @@ import { AlertTriangle, ChevronLeft, ChevronRight, MessageCircle } from "@buleje
 import { DataTable, LoadingState } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsCotizaciones } from "@/components/admin/shared/vistas-de-fabrica";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
@@ -103,7 +104,7 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
 
   return (
     <div className="space-y-3">
-      <BarraFiltrosTabla excel="Cotizaciones" vistas="cotizaciones" f={f} plegableSiempre={vista === "cards"} />
+      <BarraFiltrosTabla excel="Cotizaciones" vistas="cotizaciones" presets={presetsCotizaciones()} f={f} plegableSiempre={vista === "cards"} />
       {vista === "cards" ? (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {visibles.length === 0 && <p className="col-span-full text-center text-[var(--text-tertiary)]">Ninguna cotización coincide con los filtros de columna.</p>}

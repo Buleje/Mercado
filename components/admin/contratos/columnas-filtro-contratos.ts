@@ -15,6 +15,7 @@ export const COLUMNAS_CONTRATOS: readonly ColumnaFiltro<DbContract>[] = [
   { id: "cliente", label: "Cliente", tipo: "texto", valor: (c) => [c.clienteNombre, c.clienteDoc ?? ""] },
   { id: "monto", label: "Monto", tipo: "rango", numero: (c) => c.monto, paso: 0.01 },
   { id: "fecha", label: "Fecha", tipo: "fecha", numero: fechaDe },
+  { id: "vence", label: "Vence", tipo: "fecha", numero: (c) => diaDeVigencia(c.fechaVencimiento) },
 ];
 
 export const ORDEN_CONTRATOS: Record<string, AccesorOrden<DbContract>> = {

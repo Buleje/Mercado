@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { ArrowRight, CheckCircle2, FolderOpen } from "@buleje/design-system/icons";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsPendientes } from "@/components/admin/shared/vistas-de-fabrica";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
@@ -202,7 +203,7 @@ export function BandejaPendientes({ carga, ahora }: { carga: CargaPendientes; ah
 
       <PorCausa lista={f.filtradas} />
 
-      <BarraFiltrosTabla excel="Comprobantes pendientes" vistas="comprobantes-pendientes" f={f} />
+      <BarraFiltrosTabla excel="Comprobantes pendientes" vistas="comprobantes-pendientes" presets={presetsPendientes()} f={f} />
 
       <DataTable className="min-w-[720px]">
         <thead>

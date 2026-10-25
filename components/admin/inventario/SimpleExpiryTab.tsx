@@ -29,6 +29,7 @@ import { useIndicadoresLotes } from "./movimientos/use-indicadores";
 import { conDias, contarLotes, fraseDeDias, type Lote, type LoteConDias, type Urgencia } from "./movimientos/vencimientos";
 import CampoBuscar from "@/components/ui-system/CampoBuscar";
 import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsVencimientos } from "@/components/admin/shared/vistas-de-fabrica";
 import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
 import { COLUMNAS_LOTES, ORDEN_LOTES } from "./movimientos/columnas-filtro";
 
@@ -165,7 +166,7 @@ export default function SimpleExpiryTab() {
           <CampoBuscar className="basis-56 sm:max-w-sm" valor={busca} onCambiar={setBusca} placeholder="Producto, lote o proveedor…" etiqueta="Buscar lotes" />
           <Chips opciones={chips} valor={filtro} onCambiar={setFiltro} etiqueta="Estado del lote" />
         </div>
-        <BarraFiltrosTabla vistas="vencimientos" f={f} />
+        <BarraFiltrosTabla vistas="vencimientos" presets={presetsVencimientos()} f={f} />
         {cargando && lotes.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-secondary)]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Cargando vencimientos…</p>
         ) : delaBarra.length === 0 ? (

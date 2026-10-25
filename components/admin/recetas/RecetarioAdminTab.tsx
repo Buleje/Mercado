@@ -17,6 +17,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { BarraFiltrosTabla, FiltroEnCabecera, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsRecetario } from "@/components/admin/shared/vistas-de-fabrica";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { cn } from "@/lib/utils";
@@ -162,7 +163,7 @@ export default function RecetarioAdminTab() {
         </div>
       </div>
       {kpis.panel}
-      {recetas.length > 0 && <BarraFiltrosTabla vistas="recetario" excel="Recetario" f={f} />}
+      {recetas.length > 0 && <BarraFiltrosTabla vistas="recetario" presets={presetsRecetario()} excel="Recetario" f={f} />}
 
       {loading ? (
         <LoadingState />

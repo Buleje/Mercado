@@ -30,6 +30,7 @@ import { usePerdidas } from "./use-datos";
 import { useIndicadoresPerdidas } from "./use-indicadores";
 import CampoBuscar from "@/components/ui-system/CampoBuscar";
 import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsPerdidas } from "@/components/admin/shared/vistas-de-fabrica";
 import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
 import { COLUMNAS_PERDIDAS_FILTRO, ORDEN_PERDIDAS } from "./columnas-filtro";
 
@@ -131,7 +132,7 @@ export function PerdidasSeccion({ titulo, secciones, panel, productos, recargarP
           <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} className="h-12!" />
         </div>
 
-        <BarraFiltrosTabla vistas="perdidas" f={f} />
+        <BarraFiltrosTabla vistas="perdidas" presets={presetsPerdidas()} f={f} />
 
         {datos.cargando && datos.perdidas.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--text-secondary)]"><Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Cargando pérdidas…</p>

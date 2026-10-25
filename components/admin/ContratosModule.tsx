@@ -40,6 +40,7 @@ import {
 } from "@/lib/types/contracts";
 import type { DbContract } from "@/lib/types/contracts";
 import { BarraFiltrosTabla, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsContratos } from "@/components/admin/shared/vistas-de-fabrica";
 import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
 import { COLUMNAS_CONTRATOS, ORDEN_CONTRATOS } from "@/components/admin/contratos/columnas-filtro-contratos";
 import PanelFirmantes from "@/components/admin/contratos/PanelFirmantes";
@@ -815,7 +816,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   </div>
                 </div>
 
-                {contratos.length > 0 && <BarraFiltrosTabla excel="Contratos" vistas="contratos" f={fCols} plegableSiempre={viewMode === "cards"} />}
+                {contratos.length > 0 && <BarraFiltrosTabla excel="Contratos" vistas="contratos" presets={presetsContratos()} f={fCols} plegableSiempre={viewMode === "cards"} />}
 
                 {contratos.length === 0 ? (
                   // El vacío de "no hay nada" se decide por el total SIN

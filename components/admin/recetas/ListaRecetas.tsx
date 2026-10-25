@@ -14,6 +14,7 @@ import ActionMenu from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsRecetas } from "@/components/admin/shared/vistas-de-fabrica";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { disponibilidadDe, margenDe, type ProductInfo, type Receta } from "./tipos";
@@ -133,7 +134,7 @@ export function ListaRecetas({ recetas, productos, loading, error, onReintentar,
         </p>
       ) : (
         <>
-        <BarraFiltrosTabla vistas="recetas" excel="Recetas" f={f} />
+        <BarraFiltrosTabla vistas="recetas" presets={presetsRecetas()} excel="Recetas" f={f} />
         <DataTable>
           <thead>
             <tr>

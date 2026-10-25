@@ -10,6 +10,7 @@ import type { ABCProduct } from "@/app/api/analytics/abc/route";
 import { formatCurrency } from "@/lib/format";
 import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { presetsABC } from "@/components/admin/shared/vistas-de-fabrica";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
@@ -111,7 +112,7 @@ export default function ABCAnalysisTab() {
         </label>
       </div>
 
-      <BarraFiltrosTabla vistas="abc" excel="Análisis ABC" f={f} />
+      <BarraFiltrosTabla vistas="abc" presets={presetsABC()} excel="Análisis ABC" f={f} />
       <DataTable stickyHeader wrapperClassName="max-h-[26rem] overflow-y-auto" className="min-w-[600px]">
         <thead>
           <tr>
