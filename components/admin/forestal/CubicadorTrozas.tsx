@@ -14,6 +14,9 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle } from "@buleje/design-system/icons";
+import { formatNumber } from "@/lib/format";
+import { avisoVaciarPatio } from "@/lib/forestal/cubicador-vaciar";
+import { useVaciarConConfirmar } from "./hooks/use-vaciar-con-confirmar";
 import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import {
   claveDiametrosTrozas, claveFormulaTrozas, claveLoteTrozas, conVolumen, diametroUnico, DIAMETROS_POR_DEFECTO,
@@ -179,6 +182,8 @@ export default function CubicadorTrozas() {
   const cotejo = useCotejoGtf(storageKey(), formula === "smalian" ? totales.volumen : 0);
   const u = UNIDADES_FORMULA[formula];
   const ox = formula === "oxapampina";
+  /* «Vaciar el patio» pregunta antes (24-10): el patio vive sólo en este dispositivo y no tiene deshacer. */
+  const vaciarConConfirmar = useVaciarConConfirmar(limpiar);
 
   /**
    * Leer el patio en voz alta, troza por troza — la misma mecánica que el
@@ -297,7 +302,7 @@ export default function CubicadorTrozas() {
           leyendo={!!lectura.leyendoId}
           onLeer={leerPatio}
           onCsv={exportarCSV}
-          onVaciar={limpiar}
+          onVaciar={() => { void vaciarConConfirmar(rows.length > 0 && avisoVaciarPatio({ trozas: totales.trozas, volumen: formatNumber(totales.volumen, u.decimales), unidad: u.volumen })); }}
         />
 
         {sospechosas > 0 && (

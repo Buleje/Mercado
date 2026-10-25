@@ -139,7 +139,7 @@ export default function PanelEntradaVoz({
     columnas: CARGA_COLUMNAS,
   });
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="@container/voz min-w-0 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           {numero != null && <NumeroDeBloque n={numero} />}
@@ -376,14 +376,16 @@ export default function PanelEntradaVoz({
           padding: en el modal de producción se comían media pantalla antes de
           llegar a la tabla, que es donde se mira si lo cargado está bien.
 
-          Se apilan igual por debajo de 1280 px: en una tablet, las dos en
-          línea dejan cada campo en 90 px y se vuelve intipeable.
+          Se apilan cuando el PANEL mide menos de 56rem (~900 px de adentro),
+          no la pantalla: en una tablet, las dos en línea dejan cada campo en
+          90 px y se vuelve intipeable, y en el cubicador por secciones el
+          panel comparte la fila con las Últimas desde 1280 px (24-10).
 
           La sección «lo que se le pega» salió además de adentro del `supported`
           de la voz: sin dictado —cualquier navegador que no sea Chrome— no se
           dibujaba, y entonces la carga a mano no tenía dónde elegir la especie.
           Se cargaba todo «Sin especie» y nadie veía por qué. */}
-      <div className={`mt-3 grid items-start gap-3 ${codigoTroza ? "xl:grid-cols-[minmax(17rem,36rem)_minmax(0,1fr)]" : "xl:grid-cols-[minmax(17rem,24rem)_minmax(0,1fr)]"}`}>
+      <div className={`mt-3 grid items-start gap-3 ${codigoTroza ? "@4xl/voz:grid-cols-[minmax(17rem,36rem)_minmax(0,1fr)]" : "@4xl/voz:grid-cols-[minmax(17rem,24rem)_minmax(0,1fr)]"}`}>
           {/* ── 2. CON QUÉ ENTRA ───────────────────────────────────────────
             Especie, dueño y medidas fijas eran tres controles de formas y
             alturas distintas apilados en una columna. Son la misma cosa —lo

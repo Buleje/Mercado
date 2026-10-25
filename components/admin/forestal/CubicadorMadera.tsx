@@ -98,7 +98,10 @@ import { useTraseraCamion } from "./hooks/use-trasera-camion";
 import { TraseraCamionModal } from "./cubicador-trasera-camion";
 import { segmentosDelPie } from "@/lib/forestal/cubicador-orden-columnas";
 import { BloqueGrabaciones, TiraPlegada } from "./cubicador-bloques";
-import { BarraDelCubicador, UltimasDelLote, useSeccionDelCubicador, panelDeSeccion } from "./cubicador-secciones";
+import { BarraDelCubicador, useSeccionDelCubicador, panelDeSeccion } from "./cubicador-secciones";
+import { UltimasDelLote } from "./cubicador-ultimas";
+import { avisoVaciarLote } from "@/lib/forestal/cubicador-vaciar";
+import { useVaciarConConfirmar } from "./hooks/use-vaciar-con-confirmar";
 import { GuardadasDelCubicador } from "./cubicador-guardadas";
 import { useCambiosSinGuardar } from "./hooks/use-cambios-sin-guardar";
 import { PapelDelCubicador } from "@/components/admin/forestal/cubicador-papel/PapelDelCubicador";
@@ -2279,6 +2282,12 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     setEnviado(false);
   };
 
+  /* «Vaciar» pregunta antes (24-10); el aviso con «Deshacer» sigue después. */
+  const vaciarConConfirmar = useVaciarConConfirmar(limpiar);
+  const vaciarLote = (enElLibro = false) => vaciarConConfirmar(rows.length > 0 && avisoVaciarLote({
+    piezas: totales.piezas, pt: fmtPt(totales.pt), guardada: cubicacionActual?.nombre ?? null, cambiosSinGuardar: hayCambios, enElLibro,
+  }));
+
   /**
    * Manda el resumen por WhatsApp: en el patio se cierra el trato por chat, y
    * el comprador quiere el detalle por medida, el total en PT y el precio.
@@ -2313,6 +2322,15 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
   const descargarConAviso = (p: Promise<void>, ok: string, err: string) =>
     p.then(() => pushToast({ tono: "success", msg: ok }))
       .catch(() => { setErrMsg(err); pushToast({ tono: "error", msg: err }); });
+
+  /* «Lo que llevas medido»: el MISMO arriba de Cargar y de Lote (24-10), un «Ocultar». */
+  const propsKpis = {
+    oculto: plegados.kpis,
+    onOcultar: () => setPlegados((v) => ({ ...v, kpis: true })),
+    onMostrar: () => setPlegados((v) => ({ ...v, kpis: false })),
+    rows, totales, totalesVisibles, filtrando, valorLote, conValor,
+    hayPreciosEspecie: precioVariable, precio, rotuloPrecio, avisarRaras, fmtPt, fmtM3,
+  };
 
   return (
     /* La cuenta del lote, una vez: la leen «Cuenta ▾» y el modal «Guardar cubicación». */
@@ -2353,6 +2371,14 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
       <div {...(enSecciones ? panelDeSeccion(seccion) : {})} className="space-y-4">
       {/* Cargar: dictar y cargar, con lo último que entró al lote debajo. */}
       <div id="cub-bloque-cargar" hidden={enSecciones && seccion !== "cargar"} className="space-y-3">
+        {enSecciones && seccion === "cargar" && (
+          <CubicadorKpis
+            {...propsKpis}
+            onFiltrarTipo={(t) => { setFiltroTipo(t); irA("lote"); }}
+          />
+        )}
+        {/* Las Últimas a la DERECHA de Dictar y cargar desde 1280 px (24-10); más angosto, debajo. */}
+        <div className={enSecciones ? "grid items-start gap-3 xl:grid-cols-2" : undefined}>
         {/* Panel de voz. Plegado deja una tira con su nombre y el botón para
             traerlo de vuelta: si desapareciera del todo, la función se perdería. */}
         {plegados.voz && !enSecciones ? (
@@ -2418,10 +2444,15 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
         {enSecciones && (
           <UltimasDelLote
             rows={rows}
-            totales={totales}
+            columnas={ordenVisible}
+            ordenFilas={ordenFilas}
+            asignados={asignados}
+            nombresApartado={nombresApartado}
+            avisarRaras={avisarRaras}
             fmtPt={fmtPt}
             fmtM3={fmtM3}
             onVerLote={() => irA("lote")}
+            onBorrar={borrar}
             apartado={totalCandidatasAp.piezas > 0 ? {
               letra: String(siguienteApartado(asignados)),
               piezas: totalCandidatasAp.piezas,
@@ -2430,6 +2461,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             } : undefined}
           />
         )}
+        </div>
       </div>
 
       {/* Tabla acumulada. Expandida se despega del flujo y toma la pantalla:
@@ -2681,7 +2713,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 ...(rows.length > 0
                   ? [
                       { key: "nueva", label: "Empezar un lote nuevo", Icono: Plus, hint: "Lo guardado no se pierde", onClick: nuevaCubicacion },
-                      { key: "vaciar", label: "Vaciar este lote", peligro: true, hint: "Borra las piezas cargadas de este dispositivo", onClick: limpiar },
+                      { key: "vaciar", label: "Vaciar este lote", peligro: true, hint: "Borra las piezas cargadas de este dispositivo (pregunta antes)", onClick: () => { void vaciarLote(); } },
                     ]
                   : []),
               ]}
@@ -2699,23 +2731,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               el módulo (m³, pie tablar, piezas) estaban sólo abajo de la tabla o
               detrás del panel de Resumen, y se carga mirando acá arriba. */}
           <CubicadorKpis
-            oculto={plegados.kpis}
-            onOcultar={() => setPlegados((v) => ({ ...v, kpis: true }))}
-            onMostrar={() => setPlegados((v) => ({ ...v, kpis: false }))}
-            rows={rows}
-            totales={totales}
-            totalesVisibles={totalesVisibles}
-            filtrando={filtrando}
-            valorLote={valorLote}
-            conValor={conValor}
-            hayPreciosEspecie={precioVariable}
-            precio={precio}
-            rotuloPrecio={rotuloPrecio}
-            avisarRaras={avisarRaras}
-            fmtPt={fmtPt}
-            fmtM3={fmtM3}
-            /* Tocar un tipo del mix filtra la tabla por él: la pregunta que sigue a
-               «el 60 % es Comercial» es «¿cuáles?». */
+            {...propsKpis}
             onFiltrarTipo={(t) => {
               setFiltroTipo((actual) => (actual === t ? "" : t));
               document.getElementById(`cub-tabla-ancla`)?.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -2791,7 +2807,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               <a href="/admin?tab=ctp-libro-operaciones" className="rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
                 Ver en el Libro
               </a>
-              <button type="button" onClick={() => { limpiar(); setEnviado(false); }} className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <button type="button" onClick={async () => { if (rows.length === 0 || await vaciarLote(true)) setEnviado(false); }} className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 Vaciar el lote
               </button>
             </span>
