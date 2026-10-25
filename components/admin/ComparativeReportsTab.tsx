@@ -21,6 +21,7 @@
 import { DataTable } from "@buleje/design-system";
 import { useCallback, useEffect, useState } from "react";
 import { Minus, MoreHorizontal, RefreshCw, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -37,6 +38,13 @@ const METRICAS: { key: Clave; label: string; tipo: "plata" | "numero" | "pct"; s
   { key: "margen", label: "Margen bruto", tipo: "pct", subirEsBueno: true },
   { key: "clientesNuevos", label: "Clientes nuevos", tipo: "numero", subirEsBueno: true },
   { key: "fiadoDado", label: "Fiado dado", tipo: "plata", subirEsBueno: false },
+];
+
+type Metrica = (typeof METRICAS)[number];
+
+/** Autofiltros de Excel (25-10): matriz fija de 6 indicadores, así que sólo la métrica. */
+const COLUMNAS_FILTRO: readonly ColumnaFiltro<Metrica>[] = [
+  { id: "metrica", label: "Métrica", tipo: "multi", valor: (m) => m.label },
 ];
 
 const OPCIONES: { value: Contra; label: string }[] = [
@@ -115,6 +123,7 @@ export default function ComparativeReportsTab() {
   }, [cargar]);
 
   const vigente = datos?.contra === contra ? datos : null;
+  const f = useFiltrosTabla(METRICAS, COLUMNAS_FILTRO);
 
   return (
     <div className="space-y-3">
@@ -150,17 +159,20 @@ export default function ComparativeReportsTab() {
       {!error && cargando && !vigente && <p className="py-6 text-sm text-[var(--text-secondary)]">Cargando la comparación…</p>}
 
       {!error && vigente && (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable zebra aria-busy={cargando}>
-          <thead>
+          <thead className="[&_th]:align-top">
             <tr>
-              <th>Métrica</th>
+              <th>Métrica<FiltroEnCabecera id="metrica" f={f} compacto /></th>
               <th className="text-right">{nombreMes(vigente.actual.mes)}</th>
               <th className="text-right">{nombreMes(vigente.base.mes)}</th>
               <th className="text-right">Cambio</th>
             </tr>
           </thead>
           <tbody>
-            {METRICAS.map((m) => {
+            {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+            {f.filtradas.map((m) => {
               const a = vigente.actual[m.key];
               const b = vigente.base[m.key];
               return (
@@ -176,6 +188,7 @@ export default function ComparativeReportsTab() {
             })}
           </tbody>
         </DataTable>
+        </>
       )}
     </div>
   );

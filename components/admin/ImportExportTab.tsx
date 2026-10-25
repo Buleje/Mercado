@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { BookOpen, Download, FileSpreadsheet, History, MoreHorizontal, Upload } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { exportToCSV } from "@/lib/utils";
@@ -24,10 +25,19 @@ import { EXPORT_MODULES, downloadExcel, fetchModuleData } from "./importar-expor
 import SubirProductosModal from "./importar-exportar/SubirProductosModal";
 import HistorialImportacionesModal from "./importar-exportar/HistorialImportacionesModal";
 
+type Modulo = (typeof EXPORT_MODULES)[number];
+
+/** Autofiltros de Excel (25-10): el módulo se busca por nombre; «Qué trae» por lo que contiene. */
+const COLUMNAS_FILTRO: readonly ColumnaFiltro<Modulo>[] = [
+  { id: "modulo", label: "Módulo", tipo: "texto", valor: (m) => m.label },
+  { id: "trae", label: "Qué trae", tipo: "texto", valor: (m) => m.hint },
+];
+
 export default function ImportExportTab() {
   const [exportando, setExportando] = useState<string | null>(null);
   const [subir, setSubir] = useState(false);
   const [historial, setHistorial] = useState(false);
+  const f = useFiltrosTabla(EXPORT_MODULES, COLUMNAS_FILTRO);
 
   const exportar = async (id: string, formato: "csv" | "excel") => {
     if (exportando) return;
@@ -79,16 +89,18 @@ export default function ImportExportTab() {
 
       {/* Una fila por módulo: qué trae y UN botón «Bajar» con sus dos formatos
           (antes dos botones por fila: 14 a la vista). */}
+      <BarraFiltrosTabla f={f} />
       <DataTable>
-        <thead>
+        <thead className="[&_th]:align-top">
           <tr>
-            <th>Módulo</th>
-            <th className="hidden sm:table-cell">Qué trae</th>
+            <th>Módulo<FiltroEnCabecera id="modulo" f={f} compacto /></th>
+            <th className="hidden sm:table-cell">Qué trae<FiltroEnCabecera id="trae" f={f} compacto /></th>
             <th className="w-32 text-right">Bajar</th>
           </tr>
         </thead>
         <tbody>
-          {EXPORT_MODULES.map(({ id, label, hint, icon: Icono }) => (
+          {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={3} />}
+          {f.filtradas.map(({ id, label, hint, icon: Icono }) => (
             <tr key={id}>
               <td>
                 <span className="inline-flex items-center gap-2 font-semibold">

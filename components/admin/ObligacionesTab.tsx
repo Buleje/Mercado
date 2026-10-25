@@ -10,15 +10,16 @@
  * con su propia cabecera, un aviso de estimación, tarjetas por tributo y la
  * lista PLAME / Renta anual en párrafos. Lo del mes vive arriba; acá, el año.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Loader2 } from "@buleje/design-system/icons";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/format";
 import { cn, limaDateKey } from "@/lib/utils";
 import { MESES } from "./impuestos/impuestos-del-mes";
 import { useConfigTributaria, useDeclaraciones, type EstadoDeclaracion } from "./impuestos/use-impuestos";
-import { useAnioTributario } from "./impuestos/use-anio-tributario";
+import { useAnioTributario, type MesDelAnio } from "./impuestos/use-anio-tributario";
 
 const ESTADO: Record<EstadoDeclaracion, { rotulo: string; clase: string }> = {
   pendiente: { rotulo: "Pendiente", clase: "text-[var(--data-warning-ink)]" },
@@ -27,6 +28,28 @@ const ESTADO: Record<EstadoDeclaracion, { rotulo: string; clase: string }> = {
 };
 
 const NUM = "text-right tabular-nums";
+
+type Fila = MesDelAnio & { rotulo: string };
+
+/** Autofiltros de Excel (25-10): el mes y la declaración se eligen; los montos, de–a. */
+const COLUMNAS_FILTRO: readonly ColumnaFiltro<Fila>[] = [
+  { id: "mes", label: "Mes", tipo: "multi", valor: (m) => MESES[Number(m.mes.slice(5, 7)) - 1] },
+  { id: "ingresos", label: "Ingresos", tipo: "rango", numero: (m) => m.ingresos, paso: 1 },
+  { id: "igv", label: "IGV", tipo: "rango", numero: (m) => (m.calculo.lecturaIgv?.tipo === "registrado" ? m.calculo.igvAPagar : null), paso: 1 },
+  { id: "renta", label: "Renta", tipo: "rango", numero: (m) => (m.calculo.esNrus ? null : m.calculo.renta), paso: 1 },
+  { id: "total", label: "A pagar", tipo: "rango", numero: (m) => m.calculo.total, paso: 1 },
+  { id: "declaracion", label: "Declaración", tipo: "multi", valor: (m) => m.rotulo },
+];
+
+/** Título + embudo, uno al lado del otro. */
+function Th({ id, label, f, right = false }: { id: string; label: string; f: FiltrosTabla<Fila>; right?: boolean }) {
+  return (
+    <th className={right ? "text-right" : undefined}>
+      {label}
+      <FiltroEnCabecera id={id} f={f} compacto />
+    </th>
+  );
+}
 
 /**
  * `anio` lo pasa «Impuestos › El año» (su selector va en la fila del título);
@@ -41,8 +64,15 @@ export default function ObligacionesTab({ anio: anioDeFuera }: { anio?: number }
   const declaraciones = useDeclaraciones(anio);
   const estado = useAnioTributario(anio, hoy, regimen);
 
+  const filas = useMemo<Fila[]>(
+    () => (estado.fase === "lista" ? estado.meses.map((m) => ({ ...m, rotulo: ESTADO[declaraciones.estadoDe(m.mes)].rotulo })) : []),
+    [estado, declaraciones],
+  );
+  const f = useFiltrosTabla(filas, COLUMNAS_FILTRO);
+
+  /* Con filtros, el total es el de lo que se ve (la fila lo dice). */
   const totales = estado.fase === "lista"
-    ? estado.meses.reduce((t, m) => ({ ingresos: t.ingresos + m.ingresos, igv: t.igv + m.calculo.igvAPagar, renta: t.renta + m.calculo.renta, total: t.total + m.calculo.total }), { ingresos: 0, igv: 0, renta: 0, total: 0 })
+    ? f.filtradas.reduce((t, m) => ({ ingresos: t.ingresos + m.ingresos, igv: t.igv + m.calculo.igvAPagar, renta: t.renta + m.calculo.renta, total: t.total + m.calculo.total }), { ingresos: 0, igv: 0, renta: 0, total: 0 })
     : null;
 
   return (
@@ -75,19 +105,22 @@ export default function ObligacionesTab({ anio: anioDeFuera }: { anio?: number }
           <AlertTriangle className="h-4 w-4" aria-hidden /> No se pudieron leer los ingresos del año.
         </p>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable>
-          <thead>
+          <thead className="[&_th]:align-top">
             <tr>
-              <th>Mes</th>
-              <th className="text-right">Ingresos</th>
-              <th className="text-right">IGV</th>
-              <th className="text-right">Renta</th>
-              <th className="text-right">A pagar</th>
-              <th>Declaración</th>
+              <Th id="mes" label="Mes" f={f} />
+              <Th id="ingresos" label="Ingresos" f={f} right />
+              <Th id="igv" label="IGV" f={f} right />
+              <Th id="renta" label="Renta" f={f} right />
+              <Th id="total" label="A pagar" f={f} right />
+              <Th id="declaracion" label="Declaración" f={f} />
             </tr>
           </thead>
           <tbody>
-            {estado.meses.map(({ mes, ingresos, calculo }) => {
+            {f.filtradas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+            {f.filtradas.map(({ mes, ingresos, calculo }) => {
               const e = ESTADO[declaraciones.estadoDe(mes)];
               const sinIgv = calculo.lecturaIgv?.tipo !== "registrado";
               return (
@@ -105,7 +138,7 @@ export default function ObligacionesTab({ anio: anioDeFuera }: { anio?: number }
           {totales && (
             <tfoot>
               <tr className="font-bold">
-                <td>Total {anio}</td>
+                <td>{f.activos > 0 ? "Total de lo que se ve" : `Total ${anio}`}</td>
                 <td className={cn(NUM, "text-[var(--text-primary)]")}>{formatCurrency(totales.ingresos)}</td>
                 <td className={cn(NUM, "text-[var(--text-primary)]")}>{formatCurrency(totales.igv)}</td>
                 <td className={cn(NUM, "text-[var(--text-primary)]")}>{formatCurrency(totales.renta)}</td>
@@ -115,6 +148,7 @@ export default function ObligacionesTab({ anio: anioDeFuera }: { anio?: number }
             </tfoot>
           )}
         </DataTable>
+        </>
       )}
     </div>
   );

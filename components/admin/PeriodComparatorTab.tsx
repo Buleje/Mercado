@@ -25,6 +25,7 @@ import {
   RefreshCw,
   RotateCcw,
 } from "@buleje/design-system/icons";
+import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -58,6 +59,15 @@ const PERIODOS: { value: Periodo; label: string }[] = [
 const CONTRAS: { value: ContraPeriodo; label: string }[] = [
   { value: "anterior", label: "vs. anterior" },
   { value: "hace_un_anyo", label: "vs. hace un año" },
+];
+
+/** Hacia dónde se movió la métrica (no si fue bueno o malo: eso lo dice el color). */
+const rumbo = (f: Fila) => (f.cambio == null ? "Sin dato" : Math.abs(f.cambio) < 0.5 ? "Sin cambio" : f.cambio > 0 ? "Subió" : "Bajó");
+
+/** Autofiltros de Excel (25-10): matriz fija de indicadores, así que sólo la métrica y su rumbo. */
+const COLUMNAS_FILTRO: readonly ColumnaFiltro<Fila>[] = [
+  { id: "metrica", label: "Métrica", tipo: "multi", valor: (f) => f.label },
+  { id: "cambio", label: "Cambio", tipo: "multi", valor: rumbo },
 ];
 
 const FLECHA =
@@ -102,7 +112,9 @@ export default function PeriodComparatorTab() {
         : [],
     [mostrado],
   );
-  const juzgables = filas
+  const filtros = useFiltrosTabla(filas, COLUMNAS_FILTRO);
+  const visibles = filtros.filtradas;
+  const juzgables = visibles
     .map((f) => esMejora(f.cambio, f.sentido))
     .filter((x): x is boolean => x != null);
   const mejoraron = juzgables.filter(Boolean).length;
@@ -110,7 +122,7 @@ export default function PeriodComparatorTab() {
   const exportar = () => {
     if (!mostrado) return;
     exportToCSV(
-      filas.map((f) => ({
+      visibles.map((f) => ({
         metrica: f.label,
         [mostrado.actual.etiqueta]: valor(f.tipo, f.a),
         [mostrado.base.etiqueta]: valor(f.tipo, f.b),
@@ -217,8 +229,9 @@ export default function PeriodComparatorTab() {
 
       {!error && mostrado && (
         <div aria-busy={cargando || !vigente} className={cn("space-y-2", !vigente && "opacity-60")}>
+          <BarraFiltrosTabla f={filtros} />
           <ListaMovil
-            filas={filas}
+            filas={visibles}
             etiquetaActual={mostrado.actual.etiqueta}
             etiquetaBase={mostrado.base.etiqueta}
           />
@@ -228,16 +241,17 @@ export default function PeriodComparatorTab() {
             </p>
           )}
           <DataTable zebra wrapperClassName="hidden sm:block">
-            <thead>
+            <thead className="[&_th]:align-top">
               <tr>
-                <th>Métrica</th>
+                <th>Métrica<FiltroEnCabecera id="metrica" f={filtros} compacto /></th>
                 <th className="text-right">{mostrado.actual.etiqueta}</th>
                 <th className="text-right">{mostrado.base.etiqueta}</th>
-                <th className="text-right">Cambio</th>
+                <th className="text-right">Cambio<FiltroEnCabecera id="cambio" f={filtros} compacto /></th>
               </tr>
             </thead>
             <tbody>
-              {filas.map((f) => (
+              {visibles.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+              {visibles.map((f) => (
                 <tr key={f.key}>
                   {/* Sin estilos propios en las celdas (ley 10): el peso y el
                       color van en un span, como en el resto del panel. */}
