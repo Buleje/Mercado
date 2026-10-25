@@ -18,7 +18,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency } from "@/lib/format";
 import { AsignarPedidoModal, type EstadoAsignar } from "../AsignarPedidoModal";
 import { AsignacionesPrerrequisitos } from "../AsignacionesPrerrequisitos";
-import { TablaAsignaciones, type AsignacionFila } from "../TablaAsignaciones";
+import { GRUPOS_ESTADO, TablaAsignaciones, contarGrupo, type AsignacionFila } from "../TablaAsignaciones";
 import { usePedidosPorRepartir } from "../use-pedidos-por-repartir";
 
 async function leer<T>(url: string, que: string): Promise<T> {
@@ -111,9 +111,7 @@ export function AsignacionesTab({
   };
 
   // Cifras con los estados reales del servidor (VALID_TRANSITIONS).
-  const pendientes = assignments.filter((a) => a.status === "assigned" || a.status === "accepted").length;
-  const enCamino = assignments.filter((a) => a.status === "picked_up" || a.status === "in_transit").length;
-  const entregadas = assignments.filter((a) => a.status === "delivered").length;
+  const [pendientes, enCamino, entregadas] = GRUPOS_ESTADO.map((g) => contarGrupo(assignments, g));
   const canceladas = assignments.filter((a) => a.status === "cancelled").length;
   const tarifas = assignments.filter((a) => a.status === "delivered").reduce((acc, a) => acc + toNum(a.fee), 0);
 

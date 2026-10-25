@@ -50,6 +50,22 @@ export const ESTADO_ASIGNACION: Record<string, { label: string; className: strin
 const nombreDe = (a: AsignacionFila) => a.partner?.name?.trim() || a.partnerName?.trim() || "Repartidor sin nombre";
 
 const etiquetaEstado = (a: AsignacionFila) => ESTADO_ASIGNACION[a.status]?.label ?? a.status;
+
+/** Los atajos de arriba y las cifras de «Indicadores» cuentan con esto: lo mismo que el filtro de Estado. */
+export const GRUPOS_ESTADO = [
+  { id: "pendientes", rotulo: "Pendientes", estados: ["assigned", "accepted"] },
+  { id: "en-camino", rotulo: "En camino", estados: ["picked_up", "in_transit"] },
+  { id: "entregadas", rotulo: "Entregadas", estados: ["delivered"] },
+] as const;
+type GrupoEstado = (typeof GRUPOS_ESTADO)[number];
+
+const etiquetasDe = (g: GrupoEstado) => g.estados.map((e) => ESTADO_ASIGNACION[e].label);
+export const contarGrupo = (filas: readonly AsignacionFila[], g: GrupoEstado) =>
+  filas.filter((a) => (g.estados as readonly string[]).includes(a.status)).length;
+
+const CHIP = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";
+const CHIP_ON = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
+const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 const diaDe = (a: AsignacionFila) => {
   const fecha = a.createdAt ?? a.assignedAt;
   return fecha ? limaDateKey(fecha) || null : null;
@@ -77,8 +93,24 @@ export function TablaAsignaciones({ asignaciones, canceladas }: { asignaciones: 
   const f = useFiltrosTabla(asignaciones, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(f.filtradas);
+  const puestas = (f.facetas.estado as string[] | undefined) ?? [];
+  const mismo = (g: GrupoEstado) => {
+    const et = etiquetasDe(g);
+    return puestas.length === et.length && et.every((x) => puestas.includes(x));
+  };
   return (
     <>
+      <div role="group" aria-label="Atajos por estado" className="flex gap-1.5 overflow-x-auto px-4 pt-2 scrollbar-none">
+        {GRUPOS_ESTADO.map((g) => {
+          const on = mismo(g);
+          return (
+            <button key={g.id} type="button" aria-pressed={on} onClick={() => f.setFaceta("estado", on ? undefined : etiquetasDe(g))} className={cn(CHIP, on ? CHIP_ON : CHIP_OFF)}>
+              {g.rotulo}
+              <span className="tabular-nums text-[var(--text-secondary)]">{contarGrupo(asignaciones, g)}</span>
+            </button>
+          );
+        })}
+      </div>
       <BarraFiltrosTabla vistas="asignaciones" f={f} className="px-4 pt-2" />
       <div className="overflow-x-auto">
         <DataTable className="w-full">
