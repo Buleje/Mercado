@@ -54,7 +54,9 @@ try {
   const r = await c.query(limpio, params);
   const filas = r.rows.slice(0, max);
   if (json) console.log(JSON.stringify(filas, null, 1));
-  else console.table(filas);
+  /* jsonb/objetos como texto (24-10): `console.table` los mostraba «[Object]» y había que repetir con --json. */
+  else console.table(filas.map((f) => Object.fromEntries(Object.entries(f).map(([k, v]) =>
+    [k, v !== null && typeof v === "object" && !(v instanceof Date) ? JSON.stringify(v).slice(0, 200) : v]))));
   if (r.rows.length > max) console.log(`… ${r.rows.length - max} filas más (--max para ver más)`);
 } catch (e) {
   console.error(String(e?.message ?? e));
