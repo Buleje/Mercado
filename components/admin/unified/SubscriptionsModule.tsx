@@ -22,14 +22,17 @@ import { Download, RefreshCw } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatDate, formatNumber } from "@/lib/format";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
-import { CabeceraVista, CLASE_SELECT, CLASE_TABLA, descargarCsv, FilaFiltros, tarjetasDe, TH, Vacio } from "@/components/admin/campanas/comun";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+import { CabeceraVista, CLASE_SELECT, CLASE_TABLA, descargarCsv, FilaFiltros, tarjetasDe, Vacio } from "@/components/admin/campanas/comun";
 
 import { FilaAcciones } from "./subscriptions-admin/FilaAcciones";
 import { FREQUENCY_LABELS, STATUS_LABELS, STATUS_STYLES, type Accion, type SubFrequency, type SubStatus, type Subscription, type SubscriptionStats } from "./subscriptions-admin/tipos";
@@ -49,6 +52,21 @@ const fmtDate = (iso: string) => {
   } catch {
     return iso;
   }
+};
+
+/* Buscador y frecuencia ya están arriba; la sección ya es el estado. En el encabezado: producto, monto y próximo cobro. */
+const COLUMNAS: readonly ColumnaFiltro<Subscription>[] = [
+  { id: "producto", label: "Producto", tipo: "multi", valor: (s) => s.productName, soloConVarios: true },
+  { id: "monto", label: "Monto al mes", tipo: "rango", numero: (s) => Number(s.monthlyAmount), unidad: "S/", paso: 0.01 },
+  { id: "cobro", label: "Próximo cobro", tipo: "fecha", numero: (s) => (s.status === "cancelled" ? null : limaDateKey(s.nextBilling) || null) },
+];
+const ORDEN: Record<string, AccesorOrden<Subscription>> = {
+  cliente: { valor: (s) => s.customerName, texto: true },
+  producto: { valor: (s) => s.productName, texto: true },
+  frecuencia: { valor: (s) => FREQUENCY_LABELS[s.frequency], texto: true },
+  monto: { valor: (s) => Number(s.monthlyAmount) },
+  cobro: { valor: (s) => (s.status === "cancelled" ? null : s.nextBilling) },
+  estado: { valor: (s) => STATUS_LABELS[s.status], texto: true },
 };
 
 export default function SubscriptionsModule() {
@@ -167,15 +185,19 @@ export default function SubscriptionsModule() {
     });
   }, [delTab, search, freq]);
 
+  const f = useFiltrosTabla(filtradas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
+
   const exportar = () =>
     descargarCsv(
       "suscripciones",
       ["ID", "Cliente", "Teléfono", "Producto", "Frecuencia", "Estado", "Inicio", "Próximo cobro", "Monto mensual"],
-      filtradas.map((r) => [r.id, r.customerName, r.customerPhone, r.productName, FREQUENCY_LABELS[r.frequency], STATUS_LABELS[r.status], r.startDate, r.nextBilling, Number(r.monthlyAmount).toFixed(2)]),
+      filas.map((r) => [r.id, r.customerName, r.customerPhone, r.productName, FREQUENCY_LABELS[r.frequency], STATUS_LABELS[r.status], r.startDate, r.nextBilling, Number(r.monthlyAmount).toFixed(2)]),
     );
 
   const menu: MenuAccion[] = [
-    { id: "csv", label: "Descargar CSV", hint: `${filtradas.length} suscripciones, con los filtros de ahora`, icon: Download, onSelect: exportar, disabled: filtradas.length === 0 },
+    { id: "csv", label: "Descargar CSV", hint: `${filas.length} suscripciones, lo que ves en la tabla`, icon: Download, onSelect: exportar, disabled: filas.length === 0 },
     { id: "recargar", label: "Actualizar", icon: RefreshCw, onSelect: () => setRecarga((n) => n + 1) },
   ];
 
@@ -224,22 +246,25 @@ export default function SubscriptionsModule() {
         {filtradas.length === 0 ? (
           <Vacio>{subs.length === 0 ? "Aún no hay suscripciones: aparecerán cuando un cliente contrate Bodega al Mes." : "Ninguna suscripción coincide con los filtros."}</Vacio>
         ) : (
+          <>
+          <BarraFiltrosTabla f={f} />
           <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
             <div className="overflow-x-auto">
               <DataTable className={CLASE_TABLA}>
                 <thead>
                   <tr>
-                    <th className={TH}>Cliente</th>
-                    <th className={cn(TH, "hidden sm:table-cell")}>Producto</th>
-                    <th className={cn(TH, "hidden md:table-cell")}>Frecuencia</th>
-                    <th className={cn(TH, "text-right")}>Monto al mes</th>
-                    <th className={cn(TH, "hidden md:table-cell")}>Próximo cobro</th>
-                    <th className={cn(TH, "text-center")}>Estado</th>
-                    <th className={cn(TH, "text-right")}>Acciones</th>
+                    <ThColumna label="Cliente" orden={ord} ordenId="cliente" />
+                    <ThColumna label="Producto" ids={["producto"]} f={f} className="hidden sm:table-cell" orden={ord} ordenId="producto" />
+                    <ThColumna label="Frecuencia" className="hidden md:table-cell" orden={ord} ordenId="frecuencia" />
+                    <ThColumna label="Monto al mes" ids={["monto"]} f={f} derecha orden={ord} ordenId="monto" />
+                    <ThColumna label="Próximo cobro" ids={["cobro"]} f={f} className="hidden md:table-cell" orden={ord} ordenId="cobro" />
+                    <ThColumna label="Estado" orden={ord} ordenId="estado" />
+                    <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft)]">
-                  {filtradas.map((s) => (
+                  {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+                  {filas.map((s) => (
                     <tr key={s.id}>
                       <td>
                         <p className="font-bold text-[var(--text-primary)]">{s.customerName}</p>
@@ -261,6 +286,7 @@ export default function SubscriptionsModule() {
               </DataTable>
             </div>
           </div>
+          </>
         )}
       </div>
     </div>

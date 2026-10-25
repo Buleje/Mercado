@@ -15,18 +15,21 @@ import { toast } from "sonner";
 import { DataTable } from "@buleje/design-system";
 import { Download, Plus, RefreshCw } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { cn } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
-import { CabeceraVista, CLASE_SELECT, CLASE_TABLA, descargarCsv, FilaFiltros, tarjetasDe, TH, Vacio } from "@/components/admin/campanas/comun";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { CabeceraVista, CLASE_SELECT, CLASE_TABLA, descargarCsv, FilaFiltros, tarjetasDe, Vacio } from "@/components/admin/campanas/comun";
 import { GiftCardDetailsModal, type GiftCardDetails } from "./gift-cards-admin/GiftCardDetailsModal";
 import { CreateManualGiftCardModal } from "./gift-cards-admin/CreateManualGiftCardModal";
 import { formatNumber } from "@/lib/format";
 import { type AdminStats, type ApiGiftCard, toGiftCardDetails } from "./gift-cards-admin/tipos";
 import { FilaTarjeta, fmt, STATUS_LABELS } from "./gift-cards-admin/FilaTarjeta";
+import { COLUMNAS, ORDEN } from "./gift-cards-admin/columnas-filtro";
 
 
 // ── Main Component ──────────────────────────────────────────────────────────
@@ -82,6 +85,10 @@ export default function GiftCardsAdminModule() {
       return c.recipientName.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
     });
   }, [cards, search, statusFilter]);
+
+  const f = useFiltrosTabla(filtered, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
 
   // Cifras: las del backend; el cálculo local sólo cubre los segundos hasta que lleguen.
   const vendidas = stats?.vendidas30d ?? cards.length;
@@ -180,11 +187,11 @@ export default function GiftCardsAdminModule() {
     descargarCsv(
       "tarjetas_de_regalo",
       ["ID", "Código", "Monto", "Saldo", "Destinatario", "Estado", "Emitida", "Vence", "Canjeada"],
-      filtered.map((r) => [r.id, r.code, Number(r.amount).toFixed(2), Number(r.balance).toFixed(2), r.recipientName, STATUS_LABELS[r.status], r.createdAt, r.expiresAt, r.redeemedAt ?? ""]),
+      filas.map((r) => [r.id, r.code, Number(r.amount).toFixed(2), Number(r.balance).toFixed(2), r.recipientName, STATUS_LABELS[r.status], r.createdAt, r.expiresAt, r.redeemedAt ?? ""]),
     );
 
   const menu: MenuAccion[] = [
-    { id: "csv", label: "Descargar CSV", hint: `${filtered.length} tarjetas, con los filtros de ahora`, icon: Download, onSelect: exportar, disabled: filtered.length === 0 },
+    { id: "csv", label: "Descargar CSV", hint: `${filas.length} tarjetas, lo que ves en la tabla`, icon: Download, onSelect: exportar, disabled: filas.length === 0 },
     { id: "recargar", label: "Actualizar", icon: RefreshCw, onSelect: () => void refetch() },
   ];
 
@@ -258,28 +265,32 @@ export default function GiftCardsAdminModule() {
       ) : filtered.length === 0 ? (
         <Vacio>{cards.length === 0 ? "Aún no hay tarjetas: aparecerán cuando un cliente compre una o emitas una." : "Ninguna tarjeta coincide con los filtros."}</Vacio>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="overflow-x-auto">
             <DataTable className={CLASE_TABLA}>
               <thead>
                 <tr>
-                  <th className={TH}>Código</th>
-                  <th className={cn(TH, "hidden sm:table-cell")}>Destinatario</th>
-                  <th className={cn(TH, "text-right")}>Monto</th>
-                  <th className={cn(TH, "hidden text-right lg:table-cell")}>Saldo</th>
-                  <th className={cn(TH, "hidden md:table-cell")}>Vence</th>
-                  <th className={cn(TH, "text-center")}>Estado</th>
-                  <th className={cn(TH, "text-right")}>Acciones</th>
+                  <ThColumna label="Código" orden={ord} ordenId="codigo" />
+                  <ThColumna label="Destinatario" className="hidden sm:table-cell" orden={ord} ordenId="destinatario" />
+                  <ThColumna label="Monto" ids={["monto"]} f={f} derecha orden={ord} ordenId="monto" />
+                  <ThColumna label="Saldo" ids={["saldo"]} f={f} derecha className="hidden lg:table-cell" orden={ord} ordenId="saldo" />
+                  <ThColumna label="Vence" ids={["vence"]} f={f} className="hidden md:table-cell" orden={ord} ordenId="vence" />
+                  <ThColumna label="Estado" orden={ord} ordenId="estado" />
+                  <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
-                {filtered.map((c) => (
+                {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+                {filas.map((c) => (
                   <FilaTarjeta key={c.id} c={c} onVer={() => setSelected(c)} onCancelar={() => void handleCancel(c.id)} />
                 ))}
               </tbody>
             </DataTable>
           </div>
         </div>
+        </>
       )}
 
       {selected && <GiftCardDetailsModal card={selected} onClose={() => setSelected(null)} onCancel={handleCancel} onExtend={handleExtend} />}

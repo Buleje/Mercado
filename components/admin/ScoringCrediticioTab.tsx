@@ -38,8 +38,27 @@ import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
 import { ME_DEBEN } from "@/components/admin/por-cobrar/FiadosEnVentasYCaja";
 import FilaFiarle from "./fiarle/FilaFiarle";
 import { ORDEN_VEREDICTOS, VEREDICTO } from "./fiarle/estilo";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+import type { FilaFiarle as FilaFiarleDatos } from "@/lib/credit/a-quien-fiarle";
 
 const soles = (n: number) => montoEnMoneda(n, "PEN");
+
+/* La respuesta ya es un chip y el buscador cubre nombre y celular: en el encabezado, los montos. */
+const COLUMNAS: readonly ColumnaFiltro<FilaFiarleDatos>[] = [
+  { id: "debe", label: "Debe", tipo: "rango", numero: (f) => f.deuda, unidad: "S/", paso: 0.01 },
+  { id: "limite", label: "Límite", tipo: "rango", numero: (f) => (f.limite > 0 ? f.limite : null), unidad: "S/", paso: 1 },
+  { id: "fiados", label: "Fiados", tipo: "rango", numero: (f) => f.fiados, paso: 1 },
+];
+const ORDEN: Record<string, AccesorOrden<FilaFiarleDatos>> = {
+  cliente: { valor: (f) => f.nombre, texto: true },
+  // Primero los de «No le fíes»… igual que los chips: el orden de ORDEN_VEREDICTOS al revés es el de riesgo.
+  respuesta: { valor: (f) => -ORDEN_VEREDICTOS.indexOf(f.veredicto) },
+  debe: { valor: (f) => f.deuda },
+  limite: { valor: (f) => (f.limite > 0 ? f.limite : null) },
+  fiados: { valor: (f) => f.fiados },
+};
 
 export default function ScoringCrediticioTab({ enMeDeben = false }: { enMeDeben?: boolean } = {}) {
   const { data, loading, error, recargar } = useAQuienFiarle();
@@ -54,6 +73,10 @@ export default function ScoringCrediticioTab({ enMeDeben = false }: { enMeDeben?
       return !texto || `${f.nombre} ${f.telefono}`.toLowerCase().includes(texto);
     });
   }, [data.filas, filtro, q]);
+
+  const tabla = useFiltrosTabla(filas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const vistas = ord.ordenar(tabla.filtradas);
 
   const kpis = useKpisPlegables({
     claveMemoria: "plata-fiarle",
@@ -134,19 +157,22 @@ export default function ScoringCrediticioTab({ enMeDeben = false }: { enMeDeben?
           Todavía no tienes clientes: cuando compren o les fíes, acá ves a quién fiarle.
         </p>
       ) : (
+        <>
+        <BarraFiltrosTabla f={tabla} />
         <DataTable zebra wrapperClassName="sm:pr-14">
           <thead>
             <tr>
-              <th>Cliente</th>
-              <th>¿Fiarle?</th>
-              <th className="text-right">Debe</th>
-              <th className="text-right">Límite</th>
-              <th>Fiados</th>
-              <th><span className="sr-only">Acciones</span></th>
+              <ThColumna label="Cliente" orden={ord} ordenId="cliente" />
+              <ThColumna label="¿Fiarle?" orden={ord} ordenId="respuesta" />
+              <ThColumna label="Debe" ids={["debe"]} f={tabla} derecha orden={ord} ordenId="debe" />
+              <ThColumna label="Límite" ids={["limite"]} f={tabla} derecha orden={ord} ordenId="limite" />
+              <ThColumna label="Fiados" ids={["fiados"]} f={tabla} orden={ord} ordenId="fiados" />
+              <th data-label="Acciones"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            {filas.map((f) => <FilaFiarle key={f.telefono} fila={f} />)}
+            {vistas.map((f) => <FilaFiarle key={f.telefono} fila={f} />)}
+            {filas.length > 0 && vistas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
             {filas.length === 0 && (
               <tr>
                 <td colSpan={6} className="text-center">
@@ -156,6 +182,7 @@ export default function ScoringCrediticioTab({ enMeDeben = false }: { enMeDeben?
             )}
           </tbody>
         </DataTable>
+        </>
       )}
     </div>
   );

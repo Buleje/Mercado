@@ -32,6 +32,9 @@ import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { button } from "@/components/ui-system/button-variants";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/format";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +62,21 @@ const SUGERENCIA: Record<Suggestion, { rotulo: string; clase: string; icono: typ
 
 const HREF_HISTORIAL = "/admin?tab=inventario&vista=precios";
 const HREF_ANOTADOS = "/admin?tab=compras&vista=proveedores&sub=comparar";
+
+/* Buscador y «Sugerencia» ya están arriba de la tabla: en el encabezado, los montos y las tiendas. */
+const COLUMNAS: readonly ColumnaFiltro<PricingProduct>[] = [
+  { id: "mio", label: "Tu precio", tipo: "rango", numero: (p) => p.myPrice, unidad: "S/", paso: 0.01 },
+  { id: "promedio", label: "Promedio", tipo: "rango", numero: (p) => p.avgPrice, unidad: "S/", paso: 0.01 },
+  { id: "tiendas", label: "Tiendas", tipo: "rango", numero: (p) => p.competitorCount, paso: 1 },
+];
+const ORDEN: Record<string, AccesorOrden<PricingProduct>> = {
+  producto: { valor: (p) => p.name, texto: true },
+  mio: { valor: (p) => p.myPrice },
+  promedio: { valor: (p) => p.avgPrice },
+  rango: { valor: (p) => p.minPrice },
+  tiendas: { valor: (p) => p.competitorCount },
+  sugerencia: { valor: (p) => SUGERENCIA[p.suggestion].rotulo, texto: true },
+};
 
 /** Dónde cae tu precio entre el más barato y el más caro (la raya es el promedio). */
 function PriceBar({ myPrice, minPrice, maxPrice, avgPrice }: { myPrice: number; minPrice: number; maxPrice: number; avgPrice: number }) {
@@ -129,6 +147,10 @@ export default function CompetitivePricingTab() {
     return products.filter((p) => (filtro === "todas" || p.suggestion === filtro) && (!q || p.name.toLowerCase().includes(q)));
   }, [products, filtro, busqueda]);
 
+  const f = useFiltrosTabla(visibles, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
+
   const kpis = useKpisPlegables({
     claveMemoria: "marketplace-precios",
     alto: "md",
@@ -185,20 +207,23 @@ export default function CompetitivePricingTab() {
       ) : visibles.length === 0 ? (
         <VacioDeUnaFrase>Ningún producto coincide con esa búsqueda.</VacioDeUnaFrase>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable className={ENCABEZADOS_14}>
           <thead>
             <tr>
-              <th>Producto</th>
-              <th className="text-right">Tu precio</th>
-              <th className="text-right">Promedio</th>
-              <th className="text-right">Más barato – más caro</th>
-              <th className="text-right">Tiendas</th>
-              <th>Sugerencia</th>
-              <th />
+              <ThColumna label="Producto" orden={ord} ordenId="producto" />
+              <ThColumna label="Tu precio" ids={["mio"]} f={f} derecha orden={ord} ordenId="mio" />
+              <ThColumna label="Promedio" ids={["promedio"]} f={f} derecha orden={ord} ordenId="promedio" />
+              <ThColumna label="Más barato – más caro" derecha orden={ord} ordenId="rango" />
+              <ThColumna label="Tiendas" ids={["tiendas"]} f={f} derecha orden={ord} ordenId="tiendas" />
+              <ThColumna label="Sugerencia" orden={ord} ordenId="sugerencia" />
+              <th data-label="Acciones"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            {visibles.map((p) => {
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+            {filas.map((p) => {
               const s = SUGERENCIA[p.suggestion];
               const Icono = s.icono;
               const puede = (p.suggestion === "Subir" || p.suggestion === "Bajar") && p.avgPrice !== null;
@@ -244,6 +269,7 @@ export default function CompetitivePricingTab() {
             })}
           </tbody>
         </DataTable>
+        </>
       )}
     </div>
   );

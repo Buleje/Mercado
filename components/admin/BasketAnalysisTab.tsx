@@ -6,9 +6,31 @@ import { ShoppingCart, ArrowRight, Download, Package, Lightbulb } from "@buleje/
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Association } from "@/app/api/analytics/basket-analysis/route";
 import { formatCurrency } from "@/lib/format";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 
 type SortKey = "count" | "confidence" | "support" | "lift";
+
+const ORDEN_COLUMNA: Record<string, AccesorOrden<Association>> = {
+  a: { valor: (a) => a.productA, texto: true },
+  b: { valor: (a) => a.productB, texto: true },
+  categoria: { valor: (a) => a.category, texto: true },
+  soporte: { valor: (a) => a.support },
+  confianza: { valor: (a) => a.confidence },
+  lift: { valor: (a) => a.lift },
+  count: { valor: (a) => a.count },
+};
+/* La categoría ya tiene su selector arriba de la tabla; el orden de siempre lo da «Ordenar». */
+const COLUMNAS: readonly ColumnaFiltro<Association>[] = [
+  { id: "a", label: "Producto A", tipo: "texto", valor: (a) => a.productA },
+  { id: "b", label: "Producto B", tipo: "texto", valor: (a) => a.productB },
+  { id: "soporte", label: "Soporte", tipo: "rango", numero: (a) => Math.round(a.support * 100), unidad: "%", paso: 1 },
+  { id: "confianza", label: "Confianza", tipo: "rango", numero: (a) => Math.round(a.confidence * 100), unidad: "%", paso: 1 },
+  { id: "lift", label: "Lift", tipo: "rango", numero: (a) => Number(Number(a.lift).toFixed(1)), unidad: "x", paso: 0.1 },
+  { id: "count", label: "Transacciones", tipo: "rango", numero: (a) => a.count, paso: 1 },
+];
 
 const ORDEN: Record<SortKey, string> = { count: "Más frecuentes", confidence: "Más confianza", support: "Más soporte", lift: "Más lift" };
 const CONTROL = "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)]";
@@ -62,7 +84,11 @@ export default function BasketAnalysisTab({ period: periodoExterno }: { period?:
   // Cross-sell suggestions: pares con lift > 1.8
   const crossSell = useMemo(() => sorted.filter(a => a.lift >= 1.8).slice(0, 4), [sorted]);
 
-  const exportar = () => exportToCSV(sorted.map(a => ({ producto_a: a.productA, producto_b: a.productB, categoria: a.category, soporte: (a.support * 100).toFixed(1) + "%", confianza: (a.confidence * 100).toFixed(1) + "%", lift: Number(a.lift).toFixed(1), transacciones: a.count })), "analisis-cesta");
+  const f = useFiltrosTabla(sorted, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN_COLUMNA);
+  const filas = ord.ordenar(f.filtradas);
+
+  const exportar = () => exportToCSV(filas.map(a => ({ producto_a: a.productA, producto_b: a.productB, categoria: a.category, soporte: (a.support * 100).toFixed(1) + "%", confianza: (a.confidence * 100).toFixed(1) + "%", lift: Number(a.lift).toFixed(1), transacciones: a.count })), "analisis-cesta");
 
   if (!loading && !error && associations.length === 0) {
     return (
@@ -186,22 +212,25 @@ export default function BasketAnalysisTab({ period: periodoExterno }: { period?:
             ))}
           </div>
         ) : (
+          <>
+          <BarraFiltrosTabla f={f} />
           <DataTable className="min-w-[600px]">
               <thead>
                 <tr>
-                  <th>Producto A</th>
-                  <th />
-                  <th>Producto B</th>
-                  <th>Categoría</th>
-                  <th className="text-right">Soporte</th>
-                  <th className="text-right">Confianza</th>
-                  <th className="text-right">Lift</th>
-                  <th className="text-right">Transacciones</th>
+                  <ThColumna label="Producto A" ids={["a"]} f={f} orden={ord} ordenId="a" />
+                  <th data-label=""><span className="sr-only">hacia</span></th>
+                  <ThColumna label="Producto B" ids={["b"]} f={f} orden={ord} ordenId="b" />
+                  <ThColumna label="Categoría" orden={ord} ordenId="categoria" />
+                  <ThColumna label="Soporte" ids={["soporte"]} f={f} derecha orden={ord} ordenId="soporte" />
+                  <ThColumna label="Confianza" ids={["confianza"]} f={f} derecha orden={ord} ordenId="confianza" />
+                  <ThColumna label="Lift" ids={["lift"]} f={f} derecha orden={ord} ordenId="lift" />
+                  <ThColumna label="Transacciones" ids={["count"]} f={f} derecha orden={ord} ordenId="count" />
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((a, i) => (
-                  <tr key={i}>
+                {filas.length === 0 && sorted.length > 0 && <SinCoincidenciasFila colSpan={8} />}
+                {filas.map((a, i) => (
+                  <tr key={`${a.productA}|${a.productB}|${i}`}>
                     <td className="font-semibold">{a.productA}</td>
                     <td><ArrowRight className="h-3 w-3 text-[var(--text-tertiary)]" /></td>
                     <td className="font-semibold">{a.productB}</td>
@@ -225,6 +254,7 @@ export default function BasketAnalysisTab({ period: periodoExterno }: { period?:
                 ))}
               </tbody>
           </DataTable>
+          </>
         )}
       </div>
     </div>
