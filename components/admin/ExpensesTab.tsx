@@ -19,6 +19,8 @@ import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { CabeceraVista } from "@/components/admin/inventario/movimientos/CabeceraVista";
 import { button } from "@/components/ui-system/button-variants";
 import GastoNuevoModal from "@/components/admin/gastos/GastoNuevoModal";
+import { COLUMNAS_FILTRO_GASTOS_ANOTADOS } from "@/components/admin/gastos/textos-gasto";
+import { useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import ListaGastos, { descargarCsvGastos, gastosVisibles, type GastoDeLaLista } from "@/components/admin/gastos/ListaGastos";
 import type { GastoGuardado } from "@/components/admin/gastos/use-gasto-nuevo";
 import { useIndicadoresGastos } from "@/components/admin/unified/finanzas/gastos/use-indicadores-gastos";
@@ -126,6 +128,8 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0, barra, accionC
 
   const totalPeriod = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const visibles = useMemo(() => gastosVisibles(expenses, buscar, categoria), [expenses, buscar, categoria]);
+  /* Autofiltros de las cabeceras, encima del buscador y la categoría; el CSV baja lo que queda. */
+  const filtros = useFiltrosTabla(visibles, COLUMNAS_FILTRO_GASTOS_ANOTADOS);
   const kpis = useIndicadoresGastos({
     delPeriodo: totalPeriod,
     cuantosDelPeriodo: expenses.length,
@@ -141,10 +145,10 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0, barra, accionC
     {
       id: "csv",
       label: "Descargar CSV",
-      hint: `${visibles.length} ${visibles.length === 1 ? "gasto" : "gastos"}, con el buscador y la categoría`,
+      hint: `${filtros.filtradas.length} ${filtros.filtradas.length === 1 ? "gasto" : "gastos"}, con el buscador, la categoría y los filtros`,
       icon: Download,
-      onSelect: () => descargarCsvGastos(visibles, from, to, categoria),
-      disabled: visibles.length === 0,
+      onSelect: () => descargarCsvGastos(filtros.filtradas, from, to, categoria),
+      disabled: filtros.filtradas.length === 0,
     },
     /* Sin `onVerCatalogo` no hay catálogo a la vista (quien no veía Compras no
        lo ve acá tampoco): una acción que no abre nada, no. */
@@ -204,6 +208,7 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0, barra, accionC
           onBuscar={setBuscar}
           categoria={categoria}
           onCategoria={setCategoria}
+          filtros={filtros}
           onCambio={() => setTick(v => v + 1)}
         />
       )}

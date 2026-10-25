@@ -13,6 +13,8 @@ import PresupuestoPanel from "./historial/PresupuestoPanel";
 import GastoDetalleModal from "./historial/GastoDetalleModal";
 import GastoEditarModal from "./historial/GastoEditarModal";
 import HistorialTabla from "./historial/HistorialTabla";
+import { useFiltrosGastos } from "./historial/use-filtros-gastos";
+import { BarraFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { PERIOD_LABELS, fmt, type HistorialItem, type Period } from "./historial/shared";
 
 /**
@@ -69,7 +71,10 @@ export default function HistorialGastosTab() {
    */
   const [cambios, setCambios] = useState(0);
 
-  const { resumen } = h;
+  /* Autofiltros de las cabeceras: sobre todas las filas, antes de «Ver más».
+     `h.resumen` queda para los chips de categoría (no se achican al filtrar una columna). */
+  const vista = useFiltrosGastos(h.filtered, h.visibles);
+  const resumen = vista.resumen;
   const conDatos = h.items.length > 0;
 
   return (
@@ -160,8 +165,8 @@ export default function HistorialGastosTab() {
 
           <button
             type="button"
-            onClick={h.exportarCsv}
-            disabled={h.filtered.length === 0}
+            onClick={() => h.exportarCsv(vista.filas)}
+            disabled={vista.filas.length === 0}
             className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50 "
           >
             <Download className="h-4 w-4" />
@@ -237,12 +242,12 @@ export default function HistorialGastosTab() {
         {/* Los chips de categoría son un filtro más: vivían en una tarjeta
             aparte, con título propio y 4rem de aire, lejos de la fila de
             filtros con la que trabajan en conjunto. */}
-        {resumen.categorias.length > 0 && (
+        {h.resumen.categorias.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pt-0.5">
             <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               Categorías
             </span>
-            {resumen.categorias.slice(0, 10).map(({ cat, total }) => {
+            {h.resumen.categorias.slice(0, 10).map(({ cat, total }) => {
               const isActive = h.categoryFilter === cat;
               return (
                 <button
@@ -344,16 +349,20 @@ export default function HistorialGastosTab() {
           ) : null}
         </div>
       ) : (
+        <>
+        <BarraFiltrosTabla f={vista.f} />
         <HistorialTabla
-          grupos={h.grupos}
+          grupos={vista.grupos}
+          filtros={vista.f}
           orden={h.orden}
           alternarOrden={h.alternarOrden}
           resumen={resumen}
           visibles={h.visibles}
-          totalFilas={h.totalFilas}
+          totalFilas={vista.totalFilas}
           verMas={h.verMas}
           onAbrir={setDetalle}
         />
+        </>
       )}
 
       <GastoDetalleModal
@@ -365,7 +374,7 @@ export default function HistorialGastosTab() {
       {editando && (
         <GastoEditarModal
           item={editando}
-          categorias={resumen.categorias.map((c) => c.cat)}
+          categorias={h.resumen.categorias.map((c) => c.cat)}
           onGuardado={() => { h.recargar(); setCambios((n) => n + 1); }}
           onClose={() => setEditando(null)}
         />

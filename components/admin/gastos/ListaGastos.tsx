@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Calendar, Camera, Receipt, Search, Trash2, Wallet, X } from "@buleje/design-system/icons";
+import { Calendar, Search, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
+import { BarraFiltrosTabla, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { formatCurrency } from "@/lib/format";
 import { exportToCSV } from "@/lib/utils";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -12,7 +13,8 @@ import {
   categoriasDeLista, diaConNombre, diaDelGasto, filtrarGastos, lineaDeCajaAlBorrar, normalizar,
   type RetiroDelGasto,
 } from "@/lib/gastos/lista-gastos";
-import { iconoDeCategoria } from "./categorias";
+import TablaGastos from "./TablaGastos";
+import { conMayuscula, queDelGasto } from "./textos-gasto";
 
 export type GastoDeLaLista = {
   id: string; category: string; description: string; amount: number; date: string; recurring: boolean;
@@ -35,21 +37,10 @@ interface Props {
   /** Categoría elegida (también desde las tarjetas de arriba); `null` = todas. */
   categoria: string | null;
   onCategoria: (c: string | null) => void;
+  /** Los autofiltros de las cabeceras, armados sobre lo que dejan el buscador y la categoría. */
+  filtros: FiltrosTabla<GastoDeLaLista>;
   /** Después de borrar: volver a pedir la lista y los totales. */
   onCambio: () => void;
-}
-
-const queDelGasto = (g: GastoDeLaLista) => decodeExpenseDescription(g.description).description.trim() || g.category;
-const conMayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-/** «Factura F001-123 · IGV S/ 18.00» — lo que dice el papel del gasto, si tiene. */
-function papelDelGasto(e: GastoDeLaLista): string | null {
-  if (!e.documentType || e.documentType === "sin_comprobante") return null;
-  const tipo = conMayuscula(e.documentType);
-  const igv = e.documentType === "factura" && e.igvAmount != null
-    ? e.igvAmount > 0 ? ` · IGV ${formatCurrency(e.igvAmount)}` : " · exonerada"
-    : "";
-  return `${tipo}${e.documentNumber ? ` ${e.documentNumber}` : ""}${igv}`;
 }
 
 /** «01/10/2026» — como lo escribe el contador. */
@@ -90,7 +81,7 @@ function filasCsv(gastos: readonly GastoDeLaLista[]) {
   }));
 }
 
-export default function ListaGastos({ gastos, desde, hasta, onDesde, onHasta, buscar, onBuscar, categoria, onCategoria, onCambio }: Props) {
+export default function ListaGastos({ gastos, desde, hasta, onDesde, onHasta, buscar, onBuscar, categoria, onCategoria, filtros, onCambio }: Props) {
   const { confirm } = useConfirm();
   const [borrando, setBorrando] = useState<string | null>(null);
 
@@ -191,64 +182,11 @@ export default function ListaGastos({ gastos, desde, hasta, onDesde, onHasta, bu
           </button>
         </div>
       ) : (
-        <ul className="max-h-100 space-y-2 overflow-y-auto">
-          {visibles.map((e) => (
-            <FilaGasto key={e.id} gasto={e} borrando={borrando === e.id} onBorrar={() => borrar(e)} />
-          ))}
-        </ul>
+        <>
+          <BarraFiltrosTabla f={filtros} />
+          <TablaGastos filtros={filtros} borrando={borrando} onBorrar={borrar} />
+        </>
       )}
     </div>
-  );
-}
-
-function FilaGasto({ gasto: e, borrando, onBorrar }: { gasto: GastoDeLaLista; borrando: boolean; onBorrar: () => void }) {
-  const CatIcon = iconoDeCategoria(e.category);
-  const papel = papelDelGasto(e);
-  const que = queDelGasto(e);
-  return (
-    <li className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-2 sm:px-4 sm:py-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]">
-        <CatIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-[var(--text-primary)]">{que}</p>
-        <p className="text-sm text-[var(--text-secondary)]">
-          {diaConNombre(diaDelGasto(e.date))} · <span className="capitalize">{e.category}</span>
-          {e.recurring && " · Recurrente"}
-          {e.caja && (
-            <span className="ml-1 inline-flex items-center gap-0.5 text-[var(--text-secondary)]">
-              · <Wallet className="h-3.5 w-3.5" aria-hidden />de la caja
-            </span>
-          )}
-        </p>
-        {papel && (
-          <p className="mt-0.5 flex items-center gap-1 text-sm text-[var(--text-secondary)]">
-            <Receipt className="h-3.5 w-3.5 shrink-0" aria-hidden />{papel}
-          </p>
-        )}
-      </div>
-      <p className="shrink-0 font-extrabold tabular-nums text-[var(--data-error-ink)]">−{formatCurrency(Number(e.amount))}</p>
-      {e.attachmentUrl && (
-        <a
-          href={e.attachmentUrl}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`Ver la foto del comprobante de «${que}»`}
-          title="Ver la foto del comprobante"
-          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
-        >
-          <Camera className="h-4 w-4" aria-hidden />
-        </a>
-      )}
-      <button
-        type="button"
-        aria-label={`Borrar «${que}»`}
-        onClick={onBorrar}
-        disabled={borrando}
-        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] disabled:opacity-50"
-      >
-        <Trash2 className="h-4 w-4" aria-hidden />
-      </button>
-    </li>
   );
 }

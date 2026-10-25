@@ -12,6 +12,7 @@
 
 import { DataTable } from "@buleje/design-system";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "@buleje/design-system/icons";
+import { FiltroEnCabecera, SinCoincidenciasFila, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 import { SOURCE_META } from "./fuentes";
@@ -31,6 +32,8 @@ type Grupo = { clave: string; label: string; total: number; gastos: number; item
 
 interface Props {
   grupos: Grupo[];
+  /** Autofiltros de Excel de las cabeceras (sobre todas las filas, antes de «Ver más»). */
+  filtros: FiltrosTabla<HistorialItem>;
   orden: Orden;
   alternarOrden: (campo: Orden["campo"]) => void;
   resumen: { total: number; pagado: number; porPagar: number; cantidad: number };
@@ -41,8 +44,10 @@ interface Props {
 }
 
 function Cabecera({
-  campo, label, orden, alternarOrden, alinear = "left",
+  campo, label, orden, alternarOrden, alinear = "left", filtros, filtroId,
 }: {
+  filtros?: FiltrosTabla<HistorialItem>;
+  filtroId?: string;
   campo: Orden["campo"];
   label: string;
   orden: Orden;
@@ -72,12 +77,13 @@ function Cabecera({
         {label}
         <Icono className="h-3.5 w-3.5" aria-hidden />
       </button>
+      {filtros && filtroId && <FiltroEnCabecera id={filtroId} f={filtros} compacto />}
     </th>
   );
 }
 
 export default function HistorialTabla({
-  grupos, orden, alternarOrden, resumen, visibles, totalFilas, verMas, onAbrir,
+  grupos, filtros, orden, alternarOrden, resumen, visibles, totalFilas, verMas, onAbrir,
 }: Props) {
   const agrupaPorMes = orden.campo === "fecha";
 
@@ -102,21 +108,24 @@ export default function HistorialTabla({
             <col style={{ width: "9rem" }} />
             <col style={{ width: "5rem" }} />
           </colgroup>
-          <thead className="sticky top-0 z-10">
+          <thead className="sticky top-0 z-10 [&_th]:align-top">
             <tr>
-              <Cabecera campo="fecha" label="Fecha" orden={orden} alternarOrden={alternarOrden} />
-              <Cabecera campo="source" label="Origen" orden={orden} alternarOrden={alternarOrden} />
-              <Cabecera campo="category" label="Categoría" orden={orden} alternarOrden={alternarOrden} />
+              <Cabecera campo="fecha" label="Fecha" orden={orden} alternarOrden={alternarOrden} filtros={filtros} filtroId="fecha" />
+              <Cabecera campo="source" label="Origen" orden={orden} alternarOrden={alternarOrden} filtros={filtros} filtroId="origen" />
+              <Cabecera campo="category" label="Categoría" orden={orden} alternarOrden={alternarOrden} filtros={filtros} filtroId="categoria" />
               <th scope="col">
                 Descripción
+                <FiltroEnCabecera id="descripcion" f={filtros} compacto />
               </th>
-              <Cabecera campo="estadoPago" label="Pago" orden={orden} alternarOrden={alternarOrden} />
-              <Cabecera campo="amount" label="Monto" orden={orden} alternarOrden={alternarOrden} alinear="right" />
+              <Cabecera campo="estadoPago" label="Pago" orden={orden} alternarOrden={alternarOrden} filtros={filtros} filtroId="pago" />
+              <Cabecera campo="amount" label="Monto" orden={orden} alternarOrden={alternarOrden} alinear="right" filtros={filtros} filtroId="monto" />
               <th scope="col" className="text-right">
                 <span className="sr-only">Acciones</span>
               </th>
             </tr>
           </thead>
+
+          {grupos.length === 0 && <tbody><SinCoincidenciasFila colSpan={7} /></tbody>}
 
           {grupos.map((grupo) => (
             <tbody key={grupo.clave}>

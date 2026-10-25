@@ -172,8 +172,9 @@ export function useHistorialGastos() {
     setSoloGastos(false);
   }, []);
 
-  const exportarCsv = useCallback(() => {
-    const blob = new Blob([construirCsv(filtered)], { type: "text/csv;charset=utf-8" });
+  /** `filas`: lo que la tabla muestra (con los filtros de columna); sin él, todo lo filtrado arriba. */
+  const exportarCsv = useCallback((filas: HistorialItem[] = filtered) => {
+    const blob = new Blob([construirCsv(filas)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
