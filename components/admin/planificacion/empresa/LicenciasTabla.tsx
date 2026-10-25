@@ -5,7 +5,7 @@
  * Arriba lo vencido y lo que vence; «Agregar las típicas» trae la lista de
  * cada rubro (sólo las que faltan) para no empezar de cero.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BadgeStatus, DataTable } from "@buleje/design-system";
 import { Eye, ListChecks, Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
@@ -18,8 +18,34 @@ import { RUBROS_PLANTILLA, licenciasQueFaltan, type RubroPlantilla } from "@/lib
 import { limaDateKey } from "@/lib/utils";
 import { CabeceraSeccion } from "../comun/CabeceraSeccion";
 import { fechaCorta } from "./campos-plan";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { LicenciaModal } from "./LicenciaModal";
 import { chipLicencia, ordenarLicencias, type Licencia } from "./licencias-util";
+
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+const ROTULO_ESTADO = { pendiente: "Por tramitar", vencida: "Vencida", "por-vencer": "Por vencer", vigente: "Vigente", "sin-vencimiento": "No vence" } as const;
+
+/** La lista de licencias es corta y llega entera: se filtra en el cliente. */
+function columnasDe(hoy: string): { columnas: readonly ColumnaFiltro<Licencia>[]; orden: Record<string, AccesorOrden<Licencia>> } {
+  const estado = (l: Licencia) => ROTULO_ESTADO[estadoLicencia(l, hoy).estado];
+  return {
+    columnas: [
+      { id: "licencia", label: "Licencia", tipo: "texto", valor: (l) => [l.nombre, l.numero ?? ""] },
+      { id: "entidad", label: "Entidad", tipo: "multi", valor: (l) => l.entidad || "", soloConVarios: true },
+      { id: "vence", label: "Vence", tipo: "fecha", numero: (l) => l.vence || null, formatearValor: ddmm },
+      { id: "estado", label: "Estado", tipo: "multi", valor: estado, soloConVarios: true },
+    ],
+    orden: {
+      licencia: { valor: (l) => l.nombre, texto: true },
+      entidad: { valor: (l) => l.entidad, texto: true },
+      numero: { valor: (l) => l.numero, texto: true },
+      vence: { valor: (l) => l.vence || null, texto: true },
+      estado: { valor: estado, texto: true },
+    },
+  };
+}
 
 export function LicenciasTabla() {
   const { datos, cambiar, puedeEditar } = useSeccionPlan("licencias");
@@ -27,7 +53,11 @@ export function LicenciasTabla() {
   /** `undefined` = cerrado; `null` = nueva. */
   const [editando, setEditando] = useState<Licencia | null | undefined>(undefined);
   const hoy = limaDateKey();
-  const filas = ordenarLicencias(datos.items, hoy);
+  const todas = useMemo(() => ordenarLicencias(datos.items, hoy), [datos.items, hoy]);
+  const { columnas, orden } = useMemo(() => columnasDe(hoy), [hoy]);
+  const f = useFiltrosTabla(todas, columnas);
+  const ord = useOrdenColumna(orden);
+  const filas = ord.ordenar(f.filtradas);
 
   const guardar = (l: Licencia) =>
     cambiar((prev) => {
@@ -78,26 +108,29 @@ export function LicenciasTabla() {
         ) : null}
       </CabeceraSeccion>
 
-      {filas.length === 0 ? (
+      {todas.length === 0 ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-[var(--rule-base)] p-6">
           <span className="text-sm text-[var(--text-secondary)]">Todavía no anotas licencias.</span>
           {puedeEditar ? <ActionMenu label="Agregar las típicas" icon={ListChecks} actions={tipicas} /> : null}
         </div>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable aria-label="Licencias y permisos">
           <thead>
             <tr>
-              <th>Licencia</th>
-              <th>Entidad</th>
-              <th>Número</th>
-              <th className="whitespace-nowrap">Vence</th>
-              <th>Estado</th>
+              <ThColumna label="Licencia" ids={["licencia"]} f={f} orden={ord} ordenId="licencia" />
+              <ThColumna label="Entidad" ids={["entidad"]} f={f} orden={ord} ordenId="entidad" />
+              <ThColumna label="Número" orden={ord} ordenId="numero" />
+              <ThColumna label="Vence" ids={["vence"]} f={f} className="whitespace-nowrap" orden={ord} ordenId="vence" />
+              <ThColumna label="Estado" ids={["estado"]} f={f} orden={ord} ordenId="estado" />
               <th className="w-12">
                 <span className="sr-only">Acciones</span>
               </th>
             </tr>
           </thead>
           <tbody>
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
             {filas.map((l) => {
               const { estado, dias } = estadoLicencia(l, hoy);
               const chip = chipLicencia(estado, dias);
@@ -129,6 +162,7 @@ export function LicenciasTabla() {
             })}
           </tbody>
         </DataTable>
+        </>
       )}
 
       {editando !== undefined ? (

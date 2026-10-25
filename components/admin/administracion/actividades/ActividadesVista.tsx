@@ -23,6 +23,10 @@ import { CANAL_UI, REGLA_UI, ROL_UI } from "../comun/reglas";
 import { ActividadModal } from "./ActividadModal";
 import { useBorrarActividad } from "./use-borrar-actividad";
 import { PlantillasSugeridas } from "./PlantillasSugeridas";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna } from "@/components/admin/shared/use-orden-columna";
+import { COLUMNAS_ACTIVIDADES, ORDEN_ACTIVIDADES } from "./columnas-filtro-actividades";
 import { borradorDePlantilla, type Borrador } from "./use-actividad-form";
 
 const AYUDA = {
@@ -36,6 +40,9 @@ type Ventana = { actividad: ActividadDTO | null; inicial?: Borrador } | null;
 export default function ActividadesVista() {
   const { actividades, cargando, recargando, error, refrescar } = useAgenda();
   const [ventana, setVentana] = useState<Ventana>(null);
+  const f = useFiltrosTabla(actividades, COLUMNAS_ACTIVIDADES);
+  const ord = useOrdenColumna(ORDEN_ACTIVIDADES);
+  const filas = ord.ordenar(f.filtradas);
 
   const abrirPlantilla = (p: PlantillaAgenda) => setVentana({ actividad: null, inicial: borradorDePlantilla(p) });
 
@@ -73,23 +80,27 @@ export default function ActividadesVista() {
       ) : actividades.length === 0 ? (
         !error && <EmptyState title="Todavía no hay actividades" description="Agrega una sugerida o crea la tuya con «Nueva actividad»." />
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable zebra aria-busy={recargando}>
           <thead>
             <tr>
-              <th>Actividad</th>
-              <th>Cuándo</th>
-              <th>Avisa por</th>
-              <th>Quién la hace</th>
-              <th>Prendida</th>
-              <th aria-label="Acciones" />
+              <ThColumna label="Actividad" ids={["actividad"]} f={f} orden={ord} ordenId="actividad" />
+              <ThColumna label="Cuándo" ids={["cuando"]} f={f} orden={ord} ordenId="cuando" />
+              <ThColumna label="Avisa por" ids={["avisa"]} f={f} orden={ord} ordenId="avisa" />
+              <ThColumna label="Quién la hace" ids={["quien"]} f={f} orden={ord} ordenId="quien" />
+              <ThColumna label="Prendida" ids={["prendida"]} f={f} orden={ord} ordenId="prendida" />
+              <th data-label="Acciones"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            {actividades.map((a) => (
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+            {filas.map((a) => (
               <FilaActividad key={a.id} a={a} onEditar={() => setVentana({ actividad: a })} />
             ))}
           </tbody>
         </DataTable>
+        </>
       )}
 
       {ventana && <ActividadModal actividad={ventana.actividad} inicial={ventana.inicial} onCerrar={() => setVentana(null)} />}

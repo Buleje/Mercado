@@ -16,6 +16,24 @@ import { cn } from "@/lib/utils";
 import { EstadoVacio } from "../piezas/EstadoVacio";
 import { MAX_ZONAS, NOMBRE_TIPO, formatoArea, totalesArea, zonaNueva, type Zona } from "./espacios-config";
 import { ZonaModal } from "./ZonaModal";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+
+/** Hasta 100 zonas, todas en el cliente. El área no lleva filtro: mezcla m² y ha. */
+const COLUMNAS: readonly ColumnaFiltro<Zona>[] = [
+  { id: "zona", label: "Zona", tipo: "texto", valor: (z) => [z.nombre, z.nota ?? ""] },
+  { id: "tipo", label: "Tipo", tipo: "multi", valor: (z) => NOMBRE_TIPO[z.tipo], soloConVarios: true },
+  { id: "uso", label: "Uso", tipo: "texto", valor: (z) => z.uso ?? "" },
+  { id: "responsable", label: "Responsable", tipo: "multi", valor: (z) => z.responsable || "", soloConVarios: true },
+];
+
+const ORDEN: Record<string, AccesorOrden<Zona>> = {
+  zona: { valor: (z) => z.nombre, texto: true },
+  tipo: { valor: (z) => NOMBRE_TIPO[z.tipo], texto: true },
+  uso: { valor: (z) => z.uso, texto: true },
+  responsable: { valor: (z) => z.responsable, texto: true },
+};
 
 const ROTULO = "text-sm font-semibold text-[var(--text-secondary)]";
 const VACIO = <span className="text-[var(--text-tertiary)]">—</span>;
@@ -24,7 +42,11 @@ export function ZonasTabla() {
   const { datos, cambiar, puedeEditar } = useSeccionPlan("espacios");
   const { zonas } = datos;
   const [editando, setEditando] = useState<{ inicial: Zona; esNueva: boolean } | null>(null);
-  const { totales, sinArea } = totalesArea(zonas);
+  const f = useFiltrosTabla(zonas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
+  /* El área total suma lo que se ve (con filtros), por unidad. */
+  const { totales, sinArea } = totalesArea(f.filtradas);
   const lleno = zonas.length >= MAX_ZONAS;
   const nueva = () => setEditando({ inicial: zonaNueva(nuevoId()), esNueva: true });
 
@@ -76,14 +98,15 @@ export function ZonasTabla() {
         </EstadoVacio>
       ) : (
         <>
+          <BarraFiltrosTabla f={f} />
           <DataTable aria-label="Zonas">
             <thead>
               <tr>
-                <th>Zona</th>
-                <th>Tipo</th>
-                <th className="text-right">Área</th>
-                <th>Uso</th>
-                <th>Responsable</th>
+                <ThColumna label="Zona" ids={["zona"]} f={f} orden={ord} ordenId="zona" />
+                <ThColumna label="Tipo" ids={["tipo"]} f={f} orden={ord} ordenId="tipo" />
+                <th className="text-right" data-label="Área">Área</th>
+                <ThColumna label="Uso" ids={["uso"]} f={f} orden={ord} ordenId="uso" />
+                <ThColumna label="Responsable" ids={["responsable"]} f={f} orden={ord} ordenId="responsable" />
                 {puedeEditar && (
                   <th className="w-12">
                     <span className="sr-only">Acciones</span>
@@ -92,7 +115,8 @@ export function ZonasTabla() {
               </tr>
             </thead>
             <tbody>
-              {zonas.map((z) => {
+              {filas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
+              {filas.map((z) => {
                 const acciones: MenuAccion[] = [
                   { id: "editar", label: "Editar", icon: Pencil, onSelect: () => setEditando({ inicial: z, esNueva: false }) },
                   { id: "borrar", label: "Borrar", icon: Trash2, tone: "danger", onSelect: () => borrar(z) },
@@ -121,7 +145,7 @@ export function ZonasTabla() {
           </DataTable>
 
           <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-[var(--text-secondary)]" aria-live="polite">
-            <span className="font-semibold text-[var(--text-primary)]">Área total</span>
+            <span className="font-semibold text-[var(--text-primary)]">{f.activos > 0 ? "Área total de lo que se ve" : "Área total"}</span>
             {totales.length === 0 ? (
               <span className="text-[var(--text-tertiary)]">sin áreas anotadas</span>
             ) : (

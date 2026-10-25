@@ -5,7 +5,7 @@
  * aportes, en cuánto se recupera, en qué se fue y de dónde salió) y abajo
  * cada gasto, con su categoría y su fuente.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
@@ -19,6 +19,32 @@ import { CabeceraSeccion } from "../comun/CabeceraSeccion";
 import { fechaCorta } from "../empresa/campos-plan";
 import { InversionModal, type ItemInversion } from "./InversionModal";
 import { InversionTotales } from "./InversionTotales";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+
+const ddmm = (v: number | string) => String(v).split("-").reverse().slice(0, 2).join("/");
+
+/** Los gastos llegan enteros con el plan: se filtra y ordena en el cliente. */
+function columnasDe(socios: Parameters<typeof etiquetaFuente>[1]): { columnas: readonly ColumnaFiltro<ItemInversion>[]; orden: Record<string, AccesorOrden<ItemInversion>> } {
+  const fuente = (i: ItemInversion) => etiquetaFuente(i.fuente, socios);
+  return {
+    columnas: [
+      { id: "concepto", label: "Concepto", tipo: "texto", valor: (i) => i.concepto },
+      { id: "categoria", label: "Categoría", tipo: "multi", valor: (i) => i.categoria || "", soloConVarios: true },
+      { id: "monto", label: "Monto", tipo: "rango", numero: (i) => i.monto, unidad: "S/", paso: 0.01 },
+      { id: "fuente", label: "De dónde salió", tipo: "multi", valor: fuente, soloConVarios: true },
+      { id: "fecha", label: "Fecha", tipo: "fecha", numero: (i) => i.fecha || null, formatearValor: ddmm },
+    ],
+    orden: {
+      concepto: { valor: (i) => i.concepto, texto: true },
+      categoria: { valor: (i) => i.categoria, texto: true },
+      monto: { valor: (i) => i.monto },
+      fuente: { valor: fuente, texto: true },
+      fecha: { valor: (i) => i.fecha || null, texto: true },
+    },
+  };
+}
 
 export function InversionTabla() {
   const { datos, cambiar, puedeEditar } = useSeccionPlan("inversion");
@@ -27,7 +53,12 @@ export function InversionTabla() {
   const [editando, setEditando] = useState<ItemInversion | null | undefined>(undefined);
   const hoy = limaDateKey();
   const totales = totalesInversion(datos, socios.items);
-  const filas = [...datos.items].sort((a, b) => (a.fecha || "9999").localeCompare(b.fecha || "9999"));
+  const todas = useMemo(() => [...datos.items].sort((a, b) => (a.fecha || "9999").localeCompare(b.fecha || "9999")), [datos.items]);
+  const { columnas, orden } = useMemo(() => columnasDe(socios.items), [socios.items]);
+  const f = useFiltrosTabla(todas, columnas);
+  const ord = useOrdenColumna(orden);
+  const filas = ord.ordenar(f.filtradas);
+  const totalVisto = filas.reduce((a, i) => a + i.monto, 0);
 
   const guardar = (i: ItemInversion) =>
     cambiar((prev) => {
@@ -69,25 +100,28 @@ export function InversionTabla() {
         onGanancia={(v) => cambiar((prev) => ({ ...prev, gananciaMensualEsperada: v }))}
       />
 
-      {filas.length === 0 ? (
+      {todas.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-sm text-[var(--text-secondary)]">
           Todavía no anotas gastos de inversión.
         </div>
       ) : (
+        <>
+        <BarraFiltrosTabla f={f} />
         <DataTable aria-label="Gastos de la inversión inicial">
           <thead>
             <tr>
-              <th>Concepto</th>
-              <th>Categoría</th>
-              <th className="text-right">Monto</th>
-              <th>De dónde salió</th>
-              <th className="whitespace-nowrap">Fecha</th>
+              <ThColumna label="Concepto" ids={["concepto"]} f={f} orden={ord} ordenId="concepto" />
+              <ThColumna label="Categoría" ids={["categoria"]} f={f} orden={ord} ordenId="categoria" />
+              <ThColumna label="Monto" ids={["monto"]} f={f} derecha orden={ord} ordenId="monto" />
+              <ThColumna label="De dónde salió" ids={["fuente"]} f={f} orden={ord} ordenId="fuente" />
+              <ThColumna label="Fecha" ids={["fecha"]} f={f} className="whitespace-nowrap" orden={ord} ordenId="fecha" />
               <th className="w-12">
                 <span className="sr-only">Acciones</span>
               </th>
             </tr>
           </thead>
           <tbody>
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={6} />}
             {filas.map((i) => {
               const acciones: MenuAccion[] = puedeEditar
                 ? [
@@ -111,15 +145,16 @@ export function InversionTabla() {
           </tbody>
           <tfoot>
             <tr>
-              <td className="font-semibold">Total</td>
+              <td className="font-semibold">{f.activos > 0 ? "Total de lo que se ve" : "Total"}</td>
               <td />
-              <td className="text-right font-semibold whitespace-nowrap tabular-nums">{formatCurrency(totales.total)}</td>
+              <td className="text-right font-semibold whitespace-nowrap tabular-nums">{formatCurrency(f.activos > 0 ? totalVisto : totales.total)}</td>
               <td />
               <td />
               <td />
             </tr>
           </tfoot>
         </DataTable>
+        </>
       )}
 
       {editando !== undefined ? (
