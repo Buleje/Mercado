@@ -7,10 +7,14 @@
  */
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { FolderOpen } from "@buleje/design-system/icons";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import { textoFecha } from "@/lib/comprobantes/periodo";
-import type { Conciliacion, TipoDiferencia } from "@/lib/comprobantes/conciliacion";
+import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
+import type { Conciliacion, Diferencia, TipoDiferencia } from "@/lib/comprobantes/conciliacion";
 import { abrirExpediente } from "../expediente/expediente-url";
 import { fmt } from "../tipos";
 
@@ -20,6 +24,26 @@ export const ROTULO_DIFERENCIA: Record<TipoDiferencia, string> = {
   "pedido-inexistente": "Su pedido ya no está",
   "cancelado-con-comprobante": "Cancelado con comprobante vigente",
   "importe-distinto": "Importe distinto",
+};
+
+const refDe = (d: Diferencia) => d.documento ?? (d.operacion ? `#${d.operacion.slice(-6)}` : null);
+
+/** Filtros de columna sobre las diferencias que llegaron (el «qué pasa» ya se filtra con los chips de arriba). */
+const COLUMNAS: readonly ColumnaFiltro<Diferencia>[] = [
+  { id: "documento", label: "Documento", tipo: "texto", valor: (d) => refDe(d) },
+  { id: "cliente", label: "Cliente", tipo: "texto", valor: (d) => d.cliente || null },
+  { id: "comprobante", label: "Comprobante", tipo: "rango", numero: (d) => d.importeDocumento, unidad: "S/", paso: 0.01 },
+  { id: "pedido", label: "Pedido", tipo: "rango", numero: (d) => d.importeOperacion, unidad: "S/", paso: 0.01 },
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (d) => diaDeVigencia(d.fecha) },
+];
+
+const ORDEN: Record<string, AccesorOrden<Diferencia>> = {
+  tipo: { valor: (d) => ROTULO_DIFERENCIA[d.tipo], texto: true },
+  documento: { valor: (d) => refDe(d), texto: true },
+  cliente: { valor: (d) => d.cliente, texto: true },
+  comprobante: { valor: (d) => d.importeDocumento },
+  pedido: { valor: (d) => d.importeOperacion },
+  fecha: { valor: (d) => diaDeVigencia(d.fecha) },
 };
 
 const CHIP_FILTRO = "inline-flex h-12 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";
@@ -32,7 +56,10 @@ interface Props {
 
 export function ConciliacionDiferencias({ c, tipo, onTipo }: Props) {
   const tipos = (Object.keys(c.porTipoDiferencia) as TipoDiferencia[]).filter((t) => (c.porTipoDiferencia[t] ?? 0) > 0);
-  const filas = tipo ? c.diferencias.filter((d) => d.tipo === tipo) : c.diferencias;
+  const porTipo = tipo ? c.diferencias.filter((d) => d.tipo === tipo) : c.diferencias;
+  const f = useFiltrosTabla(porTipo, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
   const recortado = c.totalDiferencias > c.diferencias.length;
   const claseChip = (activo: boolean) =>
     cn(CHIP_FILTRO, activo ? "border-primary bg-primary/10 text-[var(--text-primary)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]");
@@ -63,22 +90,25 @@ export function ConciliacionDiferencias({ c, tipo, onTipo }: Props) {
         </div>
       )}
 
-      {filas.length > 0 && (
+      {porTipo.length > 0 && <BarraFiltrosTabla f={f} />}
+
+      {porTipo.length > 0 && (
         <DataTable className="min-w-[720px]">
           <thead>
             <tr>
-              <th>Qué pasa</th>
-              <th>Documento</th>
-              <th>Cliente</th>
-              <th>Comprobante</th>
-              <th>Pedido</th>
-              <th>Fecha</th>
+              <ThColumna label="Qué pasa" className="align-top" f={f} orden={ord} ordenId="tipo" />
+              <ThColumna label="Documento" ids={["documento"]} f={f} orden={ord} ordenId="documento" />
+              <ThColumna label="Cliente" ids={["cliente"]} f={f} orden={ord} ordenId="cliente" />
+              <ThColumna label="Comprobante" ids={["comprobante"]} f={f} orden={ord} ordenId="comprobante" />
+              <ThColumna label="Pedido" ids={["pedido"]} f={f} orden={ord} ordenId="pedido" />
+              <ThColumna label="Fecha" ids={["fecha"]} f={f} orden={ord} ordenId="fecha" />
               <th>
                 <span className="sr-only">Expediente</span>
               </th>
             </tr>
           </thead>
           <tbody>
+            {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
             {filas.map((d) => {
               const ref = d.operacion ?? d.documento;
               return (

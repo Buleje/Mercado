@@ -118,7 +118,7 @@ export default function GuiasRemisionVista() {
             )}
           </div>
         ) : (
-          <GuiasTabla guias={datos.pagina} total={filtradas.length} page={datos.page} totalPages={datos.totalPages} onPage={datos.setPage} onAbrir={setSeleccionada} />
+          <GuiasTabla guias={filtradas} page={datos.page} onPage={datos.setPage} onAbrir={setSeleccionada} />
         )}
       </div>
 

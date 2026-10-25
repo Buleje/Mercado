@@ -9,6 +9,10 @@ import { useState } from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, MessageCircle } from "@buleje/design-system/icons";
 import { DataTable, LoadingState } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+import { diaDeVigencia } from "@/lib/cotizaciones/vigencia";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { textoDia, textoQuedan } from "@/lib/cotizaciones/vigencia";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -46,6 +50,22 @@ function Vistazo({ c }: { c: Cotizacion }) {
   );
 }
 
+/** Filtros de columna sobre todas las cotizaciones de la sección (llegan enteras; se paginan acá). El estado ya tiene sus chips arriba. */
+const COLUMNAS: readonly ColumnaFiltro<Cotizacion>[] = [
+  { id: "numero", label: "N°", tipo: "texto", valor: (c) => c.numero },
+  { id: "cliente", label: "Cliente", tipo: "texto", valor: (c) => [c.clienteNombre, c.clienteRuc ?? ""] },
+  { id: "total", label: "Total", tipo: "rango", numero: (c) => c.total, unidad: "S/", paso: 0.01 },
+  { id: "valido", label: "Válido hasta", tipo: "fecha", numero: (c) => diaDeVigencia(c.validoHasta) },
+];
+
+const ORDEN: Record<string, AccesorOrden<Cotizacion>> = {
+  numero: { valor: (c) => c.numero, texto: true },
+  cliente: { valor: (c) => c.clienteNombre, texto: true },
+  total: { valor: (c) => c.total },
+  valido: { valor: (c) => diaDeVigencia(c.validoHasta) },
+  estado: { valor: (c) => STATUS_META[c.status].label, texto: true },
+};
+
 const alTeclado = (fn: () => void) => (e: React.KeyboardEvent) => {
   if (e.target !== e.currentTarget) return;
   if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fn(); }
@@ -53,9 +73,12 @@ const alTeclado = (fn: () => void) => (e: React.KeyboardEvent) => {
 
 export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, onAbrir, vacio, accionVacio }: Props) {
   const [pagina, setPagina] = useState(1);
-  const paginas = Math.max(1, Math.ceil(filas.length / PER_PAGE));
+  const f = useFiltrosTabla(filas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const ordenadas = ord.ordenar(f.filtradas);
+  const paginas = Math.max(1, Math.ceil(ordenadas.length / PER_PAGE));
   const actual = Math.min(pagina, paginas);
-  const visibles = filas.slice((actual - 1) * PER_PAGE, actual * PER_PAGE);
+  const visibles = ordenadas.slice((actual - 1) * PER_PAGE, actual * PER_PAGE);
 
   if (loading && filas.length === 0) return <LoadingState />;
   if (error) {
@@ -80,8 +103,10 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
 
   return (
     <div className="space-y-3">
+      <BarraFiltrosTabla f={f} plegableSiempre={vista === "cards"} />
       {vista === "cards" ? (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {visibles.length === 0 && <p className="col-span-full text-center text-[var(--text-tertiary)]">Ninguna cotización coincide con los filtros de columna.</p>}
           {visibles.map((c) => {
             return (
               <div
@@ -123,14 +148,15 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
         <DataTable>
           <thead>
             <tr>
-              <th>N°</th>
-              <th>Cliente</th>
-              <th className="text-right">Total</th>
-              <th>Válido hasta</th>
-              <th>Estado</th>
+              <ThColumna label="N°" ids={["numero"]} f={f} orden={ord} ordenId="numero" />
+              <ThColumna label="Cliente" ids={["cliente"]} f={f} orden={ord} ordenId="cliente" />
+              <ThColumna label="Total" ids={["total"]} f={f} derecha orden={ord} ordenId="total" />
+              <ThColumna label="Válido hasta" ids={["valido"]} f={f} orden={ord} ordenId="valido" />
+              <ThColumna label="Estado" className="align-top" f={f} orden={ord} ordenId="estado" />
             </tr>
           </thead>
           <tbody>
+            {visibles.length === 0 && <SinCoincidenciasFila colSpan={5} />}
             {visibles.map((c) => (
               <tr
                 key={c.id}
@@ -161,7 +187,7 @@ export function ListaCotizaciones({ filas, vista, loading, error, onReintentar, 
       {paginas > 1 && (
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm text-[var(--text-secondary)]">
-            {filas.length} cotizaciones · página {actual} de {paginas}
+            {ordenadas.length} cotizaciones · página {actual} de {paginas}
           </p>
           <div className="flex gap-1">
             <button type="button" aria-label="Página anterior" disabled={actual <= 1} onClick={() => setPagina(actual - 1)} className={button({ variant: "ghost", className: "w-12 rounded-xl px-0" })}>

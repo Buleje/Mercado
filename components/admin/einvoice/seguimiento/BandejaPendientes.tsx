@@ -11,6 +11,9 @@
 import { useMemo, useState } from "react";
 import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { ArrowRight, CheckCircle2, FolderOpen } from "@buleje/design-system/icons";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
@@ -27,6 +30,26 @@ const RESPUESTA: Record<TipoRespuesta, { rotulo: string; tono: Tono }> = {
   captura: { rotulo: "Error de captura", tono: "aviso" },
   rechazo: { rotulo: "Rechazo confirmado", tono: "error" },
   desconocida: { rotulo: "Respuesta desconocida", tono: "info" },
+};
+
+/** Filtros de columna: la bandeja llega entera (no se pagina en el servidor). La causa sigue en los chips de arriba. */
+const COLUMNAS: readonly ColumnaFiltro<Pendiente>[] = [
+  { id: "prioridad", label: "Prioridad", tipo: "multi", valor: (p) => ROTULO_GRAVEDAD[p.gravedad], soloConVarios: true },
+  { id: "documento", label: "Qué falta", tipo: "texto", valor: (p) => [p.documento, ROTULO_CAUSA[p.causa]] },
+  { id: "cliente", label: "Cliente", tipo: "texto", valor: (p) => p.cliente || null },
+  { id: "importe", label: "Importe", tipo: "rango", numero: (p) => p.importe, unidad: "S/", paso: 0.01 },
+  { id: "responsable", label: "Responsable", tipo: "multi", valor: (p) => p.responsable ?? null, soloConVarios: true },
+  { id: "desde", label: "Desde", tipo: "fecha", numero: (p) => diaDeVigencia(p.fecha) },
+];
+
+const PESO_GRAVEDAD = { alta: 3, media: 2, baja: 1 } as const;
+const ORDEN: Record<string, AccesorOrden<Pendiente>> = {
+  prioridad: { valor: (p) => PESO_GRAVEDAD[p.gravedad] },
+  documento: { valor: (p) => p.documento, texto: true },
+  cliente: { valor: (p) => p.cliente, texto: true },
+  importe: { valor: (p) => p.importe },
+  responsable: { valor: (p) => p.responsable, texto: true },
+  desde: { valor: (p) => diaDeVigencia(p.fecha) },
 };
 
 const CHIP_FILTRO = "inline-flex h-12 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";
@@ -144,6 +167,9 @@ export function BandejaPendientes({ carga, ahora }: { carga: CargaPendientes; ah
   const lista = carga.fase === "listo" ? carga.pendientes : carga.fase === "cargando" ? (carga.previa ?? []) : [];
   const cuentas = useMemo(() => contarPorCausa(lista), [lista]);
   const visibles = useMemo(() => (causa ? lista.filter((p) => p.causa === causa) : lista), [lista, causa]);
+  const f = useFiltrosTabla(visibles, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
 
   if (carga.fase === "error") {
     return <p role="alert" className="text-sm font-semibold text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">{carga.mensaje}</p>;
@@ -174,24 +200,27 @@ export function BandejaPendientes({ carga, ahora }: { carga: CargaPendientes; ah
         ))}
       </div>
 
-      <PorCausa lista={visibles} />
+      <PorCausa lista={f.filtradas} />
+
+      <BarraFiltrosTabla f={f} />
 
       <DataTable className="min-w-[720px]">
         <thead>
           <tr>
-            <th>Prioridad</th>
-            <th>Qué falta</th>
-            <th>Cliente</th>
-            <th>Importe</th>
-            <th>Responsable</th>
-            <th>Desde</th>
+            <ThColumna label="Prioridad" ids={["prioridad"]} f={f} orden={ord} ordenId="prioridad" />
+            <ThColumna label="Qué falta" ids={["documento"]} f={f} orden={ord} ordenId="documento" />
+            <ThColumna label="Cliente" ids={["cliente"]} f={f} orden={ord} ordenId="cliente" />
+            <ThColumna label="Importe" ids={["importe"]} f={f} orden={ord} ordenId="importe" />
+            <ThColumna label="Responsable" ids={["responsable"]} f={f} orden={ord} ordenId="responsable" />
+            <ThColumna label="Desde" ids={["desde"]} f={f} orden={ord} ordenId="desde" />
             <th>
               <span className="sr-only">Acciones</span>
             </th>
           </tr>
         </thead>
         <tbody>
-          {visibles.map((p) => (
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+          {filas.map((p) => (
             <FilaPendiente key={p.id} p={p} ahora={ahora} />
           ))}
         </tbody>
