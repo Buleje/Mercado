@@ -1,10 +1,10 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { DollarSign, History, Link2, MoreHorizontal, ScrollText, Trash2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { codigoDeOrden, descripcionALaVista } from "@/lib/compras/referencia-documento";
 import PagarCuentaForm, { METODOS } from "./PagarCuentaForm";
@@ -12,6 +12,7 @@ import { diaDeVencimiento, estaPagada, fechaConDia, saldo, vencimiento, type Cue
 import type { MetodoPago, PagoCuenta, ResultadoPago } from "./use-cuentas-por-pagar";
 import { DataTable } from "@buleje/design-system";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
@@ -56,12 +57,22 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
   onEstadoDeCuenta: (supplierId: string) => void;
   onVincular: (c: CuentaPorPagar) => void;
 }) {
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    const hoy = limaDateKey();
+    const ayer = limaDateKey(Date.now() - 86_400_000);
+    const en7 = limaDateKey(Date.now() + 7 * 86_400_000);
+    return [
+      { id: "vencidas", nombre: "Vencidas", ayuda: "Pasó su día y aún falta pagar", estado: { facetas: { vence: { min: null, max: ayer }, falta: { min: 0.01, max: null } }, textos: {} } },
+      { id: "esta-semana", nombre: "Vencen esta semana", ayuda: "De hoy a 7 días", estado: { facetas: { vence: { min: hoy, max: en7 }, falta: { min: 0.01, max: null } }, textos: {} } },
+    ];
+  }, []);
   const f = useFiltrosTabla(cuentas, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(f.filtradas);
   return (
     <>
-    <BarraFiltrosTabla excel="Lo que debo" vistas="por-pagar" f={f} />
+    <BarraFiltrosTabla excel="Lo que debo" vistas="por-pagar" presets={presets} f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>

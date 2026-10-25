@@ -13,7 +13,9 @@
  */
 
 import { DataTable } from "@buleje/design-system";
+import { useMemo } from "react";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { RefreshCw, ShoppingCart, Loader2, CheckCircle } from "@buleje/design-system/icons";
@@ -56,6 +58,12 @@ export default function ForecastReorden() {
 /** El panel B (ocupa las dos columnas de la grilla del tablero). */
 export function ForecastReordenPanel({ f }: { f: Forecasting }) {
   const { state, autoReordering, autoReorderMsg, ejecutarAutoReorder } = f;
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "criticos", nombre: "Críticos", ayuda: "Se acaban antes de que llegue el pedido", estado: { facetas: { aviso: ["Crítico"] }, textos: {} } },
+    ];
+  }, []);
   const ft = useFiltrosTabla(state.reorder, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(ft.filtradas);
@@ -132,7 +140,7 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
             {state.reorder.length > 0 && (
               /* Tabla responsive — scroll horizontal en mobile */
               <>
-              <BarraFiltrosTabla excel="Sugerencias de compra" vistas="reorden" f={ft} />
+              <BarraFiltrosTabla excel="Sugerencias de compra" vistas="reorden" presets={presets} f={ft} />
               <div className="overflow-x-auto -mx-1">
                 <DataTable className="w-full min-w-[540px]">
                   <thead>

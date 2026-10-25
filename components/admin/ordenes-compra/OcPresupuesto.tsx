@@ -14,6 +14,7 @@ import {
   type LineaPresupuestoCompras,
 } from "@/lib/compras/presupuesto-compras";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { usePresupuestoCompras } from "@/components/admin/ordenes-compra/hooks/use-presupuesto-compras";
@@ -121,6 +122,12 @@ function FijarTecho({
 export default function OcPresupuesto({ barra }: { barra?: ReactNode }) {
   const { data, cargando, error, aviso, guardando, cargar, guardar } = usePresupuestoCompras();
   const [editando, setEditando] = useState<string | null>(null);
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "pasados", nombre: "Te pasaste", ayuda: "Compraste más que tu techo", estado: { facetas: { queda: { min: null, max: -0.01 } }, textos: {} } },
+    ];
+  }, []);
   const f = useFiltrosTabla(data?.proveedores ?? SIN_LINEAS, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = useMemo(() => ord.ordenar(f.filtradas), [ord, f.filtradas]);
@@ -192,7 +199,7 @@ export default function OcPresupuesto({ barra }: { barra?: ReactNode }) {
           ) : (
             <section className="space-y-2">
               <BlockTitle>Por proveedor · {data.proveedores.length}</BlockTitle>
-              <BarraFiltrosTabla excel="Presupuesto de compras" vistas="oc-presupuesto" f={f} />
+              <BarraFiltrosTabla excel="Presupuesto de compras" vistas="oc-presupuesto" presets={presets} f={f} />
               <DataTable>
                 <thead>
                   <tr>

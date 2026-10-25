@@ -43,6 +43,7 @@ import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-
 import { ACCION_LIQUIDAR, PARAM_ACCION, PARAM_PERSONA } from "@/components/admin/adelantos/cuentas/liquidar-por-url";
 import type { PorCobrarTipo } from "@/lib/db/por-cobrar.db";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import type { PorCobrarFila } from "@/lib/db/por-cobrar.db";
 import FilaPorCobrar from "./por-cobrar/FilaPorCobrar";
 import TarjetaIndicador from "./por-cobrar/TarjetaIndicador";
@@ -103,6 +104,16 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
       return `${f.quien} ${f.nota ?? ""}`.toLowerCase().includes(texto);
     });
   }, [data.items, filtro, q]);
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    const hoy = limaDateKey();
+    const ayer = limaDateKey(Date.now() - 86_400_000);
+    const en7 = limaDateKey(Date.now() + 7 * 86_400_000);
+    return [
+      { id: "vencidas", nombre: "Vencidas", ayuda: "Pasó su día y aún no te pagan", estado: { facetas: { vence: { min: null, max: ayer } }, textos: {} } },
+      { id: "esta-semana", nombre: "Vencen esta semana", ayuda: "De hoy a 7 días", estado: { facetas: { vence: { min: hoy, max: en7 } }, textos: {} } },
+    ];
+  }, []);
   const f = useFiltrosTabla(filas, COLUMNAS_FILTRO);
   const crucePorClave = useMemo(() => new Map(data.cruces.map((c) => [c.clave, c])), [data.cruces]);
 
@@ -240,7 +251,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
           {/* `sm:pr-14`: el botón flotante «Abrir acciones rápidas» es fixed en
               x 1200-1256 y se comía el «Cobrar» de la fila que quedara a esa
               altura (medido con `elementFromPoint`): ese corredor queda libre. */}
-          <BarraFiltrosTabla vistas="por-cobrar" f={f} />
+          <BarraFiltrosTabla vistas="por-cobrar" presets={presets} f={f} />
           <DataTable zebra wrapperClassName="sm:pr-14">
             <thead>
               <tr>

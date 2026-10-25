@@ -8,6 +8,7 @@
 import { useEffect, useMemo, type MutableRefObject } from "react";
 import { DataTable } from "@buleje/design-system";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { ChevronLeft, ChevronRight, Loader2 } from "@buleje/design-system/icons";
@@ -79,6 +80,13 @@ function Marca({ t }: { t: Turno }) {
 
 export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setPage, porPagina, visiblesRef }: Props) {
   const base = useMemo<Fila[]>(() => turnos.map((t) => ({ t, quien: nombreDe(t) })), [turnos, nombreDe]);
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "faltante", nombre: "Con faltante", ayuda: "Turnos donde faltó plata", estado: { facetas: { diferencia: { min: null, max: -0.01 } }, textos: {} } },
+      { id: "sobrante", nombre: "Con sobrante", ayuda: "Turnos donde sobró plata", estado: { facetas: { diferencia: { min: 0.01, max: null } }, textos: {} } },
+    ];
+  }, []);
   const f = useFiltrosTabla(base, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(f.filtradas);
@@ -98,7 +106,7 @@ export function HistorialTabla({ turnos, nombreDe, onVer, cargandoId, page, setP
   useEffect(() => { setPage(1); }, [f.filtradas.length]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
-      <BarraFiltrosTabla vistas="turnos" f={f} className="px-3 py-2" />
+      <BarraFiltrosTabla vistas="turnos" presets={presets} f={f} className="px-3 py-2" />
       <DataTable>
         <thead>
           <tr>

@@ -15,6 +15,7 @@ import {
 } from "./datos-proveedores";
 import { DataTable } from "@buleje/design-system";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
@@ -66,13 +67,19 @@ export default function TablaProveedores({ proveedores, cuentas, compras, hoy, a
     contacto: { valor: (s) => s.phone || s.email || s.address || null, texto: true },
     debe: { valor: (s) => debe.get(s.id) ?? 0 },
   }), [debe]);
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "les-debes", nombre: "Les debes", ayuda: "Proveedores con saldo pendiente", estado: { facetas: { debe: { min: 0.01, max: null } }, textos: {} } },
+    ];
+  }, []);
   const f = useFiltrosTabla(proveedores, columnas);
   const ord = useOrdenColumna(accesores);
   const filas = ord.ordenar(f.filtradas);
 
   return (
     <>
-    <BarraFiltrosTabla excel="Proveedores" vistas="proveedores" f={f} />
+    <BarraFiltrosTabla excel="Proveedores" vistas="proveedores" presets={presets} f={f} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>

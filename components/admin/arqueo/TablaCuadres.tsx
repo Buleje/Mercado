@@ -6,6 +6,7 @@ import { Calculator, CheckCircle2, Eye } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { cn, limaDateKey } from "@/lib/utils";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { FILTROS, STATUS_MAP, dentroDeTolerancia, fmt, fmtSigno, horaLima, lecturaDelConteo, type CashAudit, type FiltroCuadre } from "./arqueo-shared";
@@ -70,6 +71,13 @@ export default function TablaCuadres({
     const pasa = FILTROS.find((x) => x.id === filtro)!.pasa;
     return audits.filter(pasa);
   }, [audits, filtro]);
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "con-diferencia", nombre: "Con diferencia", ayuda: "Sobró o faltó plata", estado: { facetas: { estado: ["Sobrante", "Faltante"] }, textos: {} } },
+      { id: "sin-conteo", nombre: "Sin conteo", ayuda: "Cerradas sin contar", estado: { facetas: { estado: ["Cerrada sin conteo"] }, textos: {} } },
+    ];
+  }, []);
   const fc = useFiltrosTabla(delChip, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(fc.filtradas);
@@ -113,7 +121,7 @@ export default function TablaCuadres({
         </div>
       </div>
 
-      <BarraFiltrosTabla excel="Cuadres de caja" vistas="cuadres" f={fc} className="px-3 py-2" />
+      <BarraFiltrosTabla excel="Cuadres de caja" vistas="cuadres" presets={presets} f={fc} className="px-3 py-2" />
       {delChip.length === 0 ? (
         <p className="p-6 text-center text-sm text-[var(--text-secondary)]">Ningún cuadre con ese filtro.</p>
       ) : (

@@ -16,6 +16,7 @@ import type { DiaDeCaja, TotalesDeCaja } from "@/lib/caja/cierres-por-dia";
 import { formatDateShort, formatWeekday } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { fmt } from "./tipos";
@@ -90,6 +91,13 @@ export function CajaPorDiaTabla({ dias, totales, tolerancia, veVentas, onVer, ca
   );
   /* Sin las ventas a la vista, «Vendido» tampoco se filtra. */
   const columnas = useMemo(() => (veVentas ? COLUMNAS : COLUMNAS.filter((c) => c.id !== "vendido")), [veVentas]);
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "con-diferencia", nombre: "Con diferencia", ayuda: "Días que no cuadraron", estado: { facetas: { estado: ["Menor", "Alerta"] }, textos: {} } },
+      { id: "sin-conteo", nombre: "Sin conteo", ayuda: "Días que nadie contó", estado: { facetas: { estado: ["Sin conteo"] }, textos: {} } },
+    ];
+  }, []);
   const f = useFiltrosTabla(base, columnas);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(f.filtradas);
@@ -120,7 +128,7 @@ export function CajaPorDiaTabla({ dias, totales, tolerancia, veVentas, onVer, ca
           <span>Diferencia neta <b className="text-[var(--text-primary)] tabular-nums">{fmt(vistoDif)}</b></span>
         </div>
       )}
-      <BarraFiltrosTabla excel="Caja por día" vistas="caja-por-dia" f={f} className="px-4 sm:px-5 py-2" />
+      <BarraFiltrosTabla excel="Caja por día" vistas="caja-por-dia" presets={presets} f={f} className="px-4 sm:px-5 py-2" />
       {base.length === 0 ? (
         <EmptyState icon={History} title="Sin cajas cerradas" description="No hay cierres en el rango seleccionado." className="p-6" />
       ) : (

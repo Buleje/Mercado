@@ -6,6 +6,7 @@ import { Calendar, Search, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
 import { BarraFiltrosTabla, type FiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { formatCurrency } from "@/lib/format";
 import { exportToCSV } from "@/lib/utils";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -83,6 +84,10 @@ function filasCsv(gastos: readonly GastoDeLaLista[]) {
 
 export default function ListaGastos({ gastos, desde, hasta, onDesde, onHasta, buscar, onBuscar, categoria, onCategoria, filtros, onCambio }: Props) {
   const { confirm } = useConfirm();
+  /* Vistas de fábrica (25-10): los gastos sin papel para la SUNAT. */
+  const presets = useMemo<PresetsFiltros>(() => [
+    { id: "sin-comprobante", nombre: "Sin comprobante", ayuda: "Gastos sin boleta ni factura", estado: { facetas: { comprobante: ["Sin comprobante"] }, textos: {} } },
+  ], []);
   const [borrando, setBorrando] = useState<string | null>(null);
 
   const categorias = useMemo(() => {
@@ -183,7 +188,7 @@ export default function ListaGastos({ gastos, desde, hasta, onDesde, onHasta, bu
         </div>
       ) : (
         <>
-          <BarraFiltrosTabla vistas="gastos" f={filtros} />
+          <BarraFiltrosTabla vistas="gastos" presets={presets} f={filtros} />
           <TablaGastos filtros={filtros} borrando={borrando} onBorrar={borrar} />
         </>
       )}

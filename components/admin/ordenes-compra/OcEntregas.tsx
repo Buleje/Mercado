@@ -10,9 +10,10 @@ import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { button } from "@/components/ui-system/button-variants";
 import { claveDeDia, diaCorto, lineasDeSeguimiento, listarCorto, type GrupoEntrega } from "@/lib/compras/ciclo-oc";
 import { formatCurrency } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import type { OrdenOC } from "@/components/admin/ordenes-compra/oc-compartido";
 import { BarraFiltrosTabla, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { useEntregasOc } from "@/components/admin/ordenes-compra/hooks/use-entregas-oc";
@@ -67,6 +68,16 @@ function queFalta(o: OrdenOC): string {
 export default function OcEntregas({ barra }: { barra?: ReactNode }) {
   const { grupos, cargando, error, aviso, hoy, recibiendo, setRecibiendo, alRecibir, cambiarFecha, guardandoFecha, cargar } = useEntregasOc();
   const todas = useMemo(() => grupos.flatMap((g) => g.ordenes), [grupos]);
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    const hoy = limaDateKey();
+    const ayer = limaDateKey(Date.now() - 86_400_000);
+    const en7 = limaDateKey(Date.now() + 7 * 86_400_000);
+    return [
+      { id: "atrasadas", nombre: "Atrasadas", ayuda: "Prometidas para antes de hoy", estado: { facetas: { prometida: { min: null, max: ayer } }, textos: {} } },
+      { id: "esta-semana", nombre: "Llegan esta semana", ayuda: "Prometidas de hoy a 7 días", estado: { facetas: { prometida: { min: hoy, max: en7 } }, textos: {} } },
+    ];
+  }, []);
   const f = useFiltrosTabla(todas, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const pasan = useMemo(() => new Set(f.filtradas.map((o) => o.id)), [f.filtradas]);
@@ -94,7 +105,7 @@ export default function OcEntregas({ barra }: { barra?: ReactNode }) {
         !error && <p className="text-sm text-[var(--text-secondary)]">No hay órdenes esperando mercadería.</p>
       ) : (
         <>
-        <BarraFiltrosTabla excel="Entregas por llegar" vistas="oc-entregas" f={f} />
+        <BarraFiltrosTabla excel="Entregas por llegar" vistas="oc-entregas" presets={presets} f={f} />
         {f.activos > 0 && pasan.size === 0 && <p className="text-sm text-[var(--text-secondary)]">Ninguna orden coincide con los filtros.</p>}
         {grupos.map((g) => ({ ...g, ordenes: ord.ordenar(g.ordenes.filter((o) => pasan.has(o.id))) })).filter((g) => g.ordenes.length > 0).map((g, i) => (
           <section key={g.id} aria-label={g.rotulo} className="space-y-2" data-qa={`entregas-${g.id}`}>

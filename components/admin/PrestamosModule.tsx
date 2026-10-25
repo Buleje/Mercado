@@ -25,6 +25,7 @@ import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admi
 import { Field } from "@/components/admin/shared/Field";
 import { FiltrosEnBoton } from "@/components/admin/shared";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import TablaCuotasPrestamo from "@/components/admin/prestamos/TablaCuotasPrestamo";
 import { COLUMNAS_CARTERA, saldoDe } from "@/components/admin/prestamos/filtros-cartera";
 import { useOrdenColumnas, EnOrden } from "@/components/admin/shared/columnas-ordenables";
@@ -589,6 +590,12 @@ export default function PrestamosModule() {
   };
 
   // Autofiltros de Excel de la tabla (Cliente, Sys, Monto, Tasa, Cuotas, Saldo, Status): sobre lo que ya dejó la búsqueda.
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "vencidos", nombre: "Vencidos", ayuda: "Préstamos con cuotas vencidas", estado: { facetas: { status: ["Vencido"] }, textos: {} } },
+    ];
+  }, []);
   const f = useFiltrosTabla(displayList, COLUMNAS_CARTERA);
   useEffect(() => { setPage(1); }, [f.facetas, f.textos]);
   const lista = f.filtradas;
@@ -765,7 +772,7 @@ export default function PrestamosModule() {
             </div>
           ) : (
             <>
-              <BarraFiltrosTabla vistas="prestamos" f={f} className="px-4 pt-3" />
+              <BarraFiltrosTabla vistas="prestamos" presets={presets} f={f} className="px-4 pt-3" />
               <div className="-mx-4 sm:mx-0">
                 <DataTable className="min-w-[600px] sm:min-w-0">
                   <thead ref={ordenCartera.refCabecera}>

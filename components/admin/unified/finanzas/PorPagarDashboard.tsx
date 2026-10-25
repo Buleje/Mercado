@@ -23,7 +23,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, MoreHorizontal, ReceiptText, RefreshCw, Scale, Search, Truck } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
@@ -33,6 +33,7 @@ import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
 import { usePorPagar } from "@/hooks/use-por-pagar";
 import { ENLACE_FUENTE, ETIQUETA_FUENTE, FUENTES_POR_PAGAR, type EnlacePorPagar, type FuentePorPagar, type PersonaPorPagar } from "@/lib/finance/por-pagar";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import FilaPorPagar from "./por-pagar/FilaPorPagar";
@@ -83,6 +84,16 @@ export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}
     });
   }, [data.personas, filtro, q]);
 
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    const hoy = limaDateKey();
+    const ayer = limaDateKey(Date.now() - 86_400_000);
+    const en7 = limaDateKey(Date.now() + 7 * 86_400_000);
+    return [
+      { id: "vencidas", nombre: "Vencidas", ayuda: "Pasó su día y aún lo debes", estado: { facetas: { vence: { min: null, max: ayer } }, textos: {} } },
+      { id: "esta-semana", nombre: "Vencen esta semana", ayuda: "De hoy a 7 días", estado: { facetas: { vence: { min: hoy, max: en7 } }, textos: {} } },
+    ];
+  }, []);
   const fc = useFiltrosTabla(filas, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const vistas = ord.ordenar(fc.filtradas);
@@ -231,7 +242,7 @@ export default function PorPagarDashboard({ onIr, barra, onSeccion }: Props = {}
 
           {/* `sm:pr-14`: el mismo corredor libre que «Por cobrar» le deja al
               botón flotante de acciones rápidas. */}
-          <BarraFiltrosTabla excel="Lo que debo todo" vistas="por-pagar-todo" f={fc} />
+          <BarraFiltrosTabla excel="Lo que debo todo" vistas="por-pagar-todo" presets={presets} f={fc} />
           <DataTable zebra wrapperClassName="sm:pr-14">
             <thead>
               <tr>

@@ -7,7 +7,7 @@
  * sin compra recibida, en su propia fila. Las cifras las arma el servidor
  * (`lib/analytics/margen-por-proveedor.ts`).
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
@@ -16,6 +16,7 @@ import type { FilaProveedor } from "@/lib/analytics/margen-por-proveedor";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import { useMargenProveedor, type DiasMargen } from "./use-margen-proveedor";
@@ -75,6 +76,12 @@ function Fila({ f, apagada = false }: { f: FilaProveedor; apagada?: boolean }) {
 export default function MargenPorProveedor() {
   const [dias, setDias] = useState<DiasMargen>("30");
   const { datos, cargando, error, reintentar } = useMargenProveedor(dias);
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "pierdes", nombre: "Pierdes plata", ayuda: "Proveedores con ganancia negativa", estado: { facetas: { ganancia: { min: null, max: -0.01 } }, textos: {} } },
+    ];
+  }, []);
   const fl = useFiltrosTabla(datos?.filas ?? SIN_FILAS, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(fl.filtradas);
@@ -111,7 +118,7 @@ export default function MargenPorProveedor() {
         <p className="p-4 text-sm text-[var(--text-secondary)]">No vendiste nada en estos {datos.periodDays} días.</p>
       ) : (
         <>
-        <BarraFiltrosTabla excel="Margen por proveedor" vistas="margen-proveedor" f={fl} />
+        <BarraFiltrosTabla excel="Margen por proveedor" vistas="margen-proveedor" presets={presets} f={fl} />
         <div className={cn("overflow-x-auto rounded-xl border border-[var(--rule-base)] transition-opacity", cargando && "opacity-60")} aria-busy={cargando}>
           <DataTable>
             <thead>

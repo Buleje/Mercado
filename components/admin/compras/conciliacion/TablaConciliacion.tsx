@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { DataTable } from "@buleje/design-system";
 import { ChevronDown } from "@buleje/design-system/icons";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
@@ -8,6 +8,7 @@ import { diaCorto } from "@/lib/compras/ciclo-oc";
 import type { EstadoConciliacion, FilaConciliacion } from "@/lib/compras/conciliacion";
 import { cn, formatCurrency } from "@/lib/utils";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
 import { ThColumna } from "@/components/admin/shared/th-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 import DetalleConciliacion from "./DetalleConciliacion";
@@ -57,12 +58,18 @@ export default function TablaConciliacion({ filas, abierta, setAbierta, onVerCue
   onVerCuenta: (cuentaId: string) => void;
   onVincular: (cuentaId: string) => void;
 }) {
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    return [
+      { id: "por-revisar", nombre: "Por revisar", ayuda: "Lo que no cuadra entre orden, llegada y factura", estado: { facetas: { estado: ["Por revisar"] }, textos: {} } },
+    ];
+  }, []);
   const fil = useFiltrosTabla(filas, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const vistas = ord.ordenar(fil.filtradas);
   return (
     <>
-    <BarraFiltrosTabla excel="Conciliación de compras" vistas="conciliacion-compras" f={fil} />
+    <BarraFiltrosTabla excel="Conciliación de compras" vistas="conciliacion-compras" presets={presets} f={fil} />
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
