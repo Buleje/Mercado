@@ -39,6 +39,11 @@ async function getRedis(): Promise<Redis | null> {
 /** Respaldo SÓLO para cuando no hay Upstash (ver arriba). */
 const memoria = new Map<string, { valor: unknown; vence: number }>();
 
+/** Saca lo vencido: una clave que nadie vuelve a leer no queda para siempre en el proceso. */
+function barrerVencidas(ahora = Date.now()): void {
+  for (const [k, e] of memoria) if (ahora >= e.vence) memoria.delete(k);
+}
+
 function deMemoria(clave: string): unknown {
   const e = memoria.get(clave);
   if (!e) return null;
@@ -79,6 +84,7 @@ export async function kvEscribir(
     }
   }
   if (opciones.soloSiNueva && deMemoria(clave) !== null) return false;
+  barrerVencidas();
   memoria.set(clave, { valor, vence: Date.now() + segundos * 1000 });
   return true;
 }
@@ -128,7 +134,11 @@ export async function kvBorrar(clave: string): Promise<boolean> {
   const r = await getRedis();
   if (r) {
     try {
-      return (await r.del(clave)) > 0;
+      const borrada = (await r.del(clave)) > 0;
+      /* La copia de respaldo también (un SET que cayó a memoria): si no, un GET que
+         también cae a memoria serviría lo que el dueño ya apagó (revisión 24-10). */
+      memoria.delete(clave);
+      return borrada;
     } catch (err) {
       logger.warn("[camaras.kv] del falló, borro de la memoria", { error: String(err) });
     }

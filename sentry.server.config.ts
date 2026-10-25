@@ -32,6 +32,9 @@ Sentry.init({
 
   beforeSend(event, hint) {
     event = tacharEventoSentry(event);
+    /* El cuerpo del espejo del celular es la pantalla del dueño (WhatsApp, banco):
+       Sentry adjunta hasta ~10 KB del cuerpo a un error. Nunca para esa ruta. */
+    if (event.request?.url?.includes("/camaras/espejo/")) delete event.request.data;
     // hint.originalException is the raw Error; hint.data may carry extra context
     const requestId = (hint?.data as Record<string, unknown> | undefined)?.["requestId"] as string | undefined;
     if (requestId) {

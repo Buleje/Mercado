@@ -23,6 +23,9 @@ export type DetalleMirada = {
   calidad: "hd" | "sd";
   desde?: string;
   hasta?: string;
+  /** Desde dónde se miró (espejo del celular, 24-10): IP y una huella corta del navegador. */
+  ip?: string;
+  equipo?: string;
 };
 
 export function detalleDeMirada(d: DetalleMirada): string {
@@ -32,6 +35,8 @@ export function detalleDeMirada(d: DetalleMirada): string {
     tipo: d.tipo,
     calidad: d.calidad,
     ...(d.tipo === "grabacion" && d.desde && d.hasta ? { desde: d.desde, hasta: d.hasta } : {}),
+    ...(d.ip ? { ip: d.ip } : {}),
+    ...(d.equipo ? { equipo: d.equipo } : {}),
   });
 }
 
