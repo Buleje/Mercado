@@ -381,7 +381,7 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       constante: /const CLAVES: readonly Seccion\[\] = \[([^\]]+)\]/,
     },
     "documentos/contratos": {
-      archivo: "components/admin/ContratosModule.tsx",
+      archivo: "components/admin/contratos/constantes-contratos.ts",
       constante: /const CONTRATOS_VISTAS = \[([^\]]+)\]/,
     },
     // Ola 3: Cotizaciones se mudó de Documentos a Comprobantes (`facturacion`).
