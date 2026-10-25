@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "@buleje/design-system/icons";
 import { type NotaCredito, type SortField, PER_PAGE } from "@/components/admin/notas-credito/nc-compartido";
 import { useNcEstado } from "@/components/admin/notas-credito/hooks/use-nc-estado";
@@ -75,8 +75,17 @@ export function useNcLista(previo: ReturnType<typeof useNcEstado> & ReturnType<t
   });
   const toggleAll = () => { if (allChecked) setCheckedIds(new Set()); else setCheckedIds(new Set(paginated.map(nc => nc.id))); };
 
+  /* Lo que muestra la tabla tras los embudos y el orden de sus columnas (lo publica NcTabla): el CSV baja ESO. */
+  const visiblesRef = useRef<NotaCredito[] | null>(null);
+  const [nVisibles, setNVisibles] = useState<number | null>(null);
+  const publicarVisibles = useCallback((filas: NotaCredito[] | null) => {
+    visiblesRef.current = filas;
+    setNVisibles(filas ? filas.length : null);
+  }, []);
+
   const exportCSV = () => {
-    const items = someChecked ? filteredNotas.filter(nc => checkedIds.has(nc.id)) : filteredNotas;
+    const base = visiblesRef.current ?? filteredNotas;
+    const items = someChecked ? base.filter(nc => checkedIds.has(nc.id)) : base;
     const header = "Número,Motivo,Codigo,Monto,IGV,Total,Status,Fecha\n";
     const rows = items.map(nc => `${nc.numero},"${nc.motivoDesc}",${nc.motivoCodigo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
@@ -88,5 +97,6 @@ export function useNcLista(previo: ReturnType<typeof useNcEstado> & ReturnType<t
   return {
     fetchNotas, filteredNotas, totalPages, paginated, toggleSort,
     SortIcon, allChecked, someChecked, toggleCheck, toggleAll, exportCSV,
+    publicarVisibles, nVisibles,
   };
 }

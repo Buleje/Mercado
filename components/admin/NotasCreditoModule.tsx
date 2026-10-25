@@ -22,13 +22,14 @@ export default function NotasCreditoModule() {
   const {
     notas, setStatusFilter, checkedIds, setCheckedIds, showShortcuts, setShowShortcuts, setShowNew,
     setWizardStep, setCreateError, setPickerSearch, setPickerDocType, filteredNotas, someChecked,
-    exportCSV, handleBulkEmit, fetchNotas,
+    exportCSV, handleBulkEmit, fetchNotas, nVisibles,
   } = nc;
   const kpis = useIndicadoresNc(nc);
   const abrirNueva = () => { setShowNew(true); setCreateError(null); setWizardStep(0); setPickerSearch(""); setPickerDocType("all"); };
+  const nAExportar = nVisibles ?? filteredNotas.length;
   const acciones: MenuAccion[] = [
     { id: "atajos", label: "Atajos de teclado", hint: "N nueva nota, F buscar, Esc cerrar", icon: Keyboard, activo: showShortcuts, onSelect: () => setShowShortcuts(v => !v) },
-    { id: "csv", label: "Exportar a CSV", hint: `${filteredNotas.length} nota${filteredNotas.length === 1 ? "" : "s"}, con los filtros puestos`, icon: Download, onSelect: exportCSV, disabled: filteredNotas.length === 0 },
+    { id: "csv", label: "Exportar a CSV", hint: `${nAExportar} nota${nAExportar === 1 ? "" : "s"}, las que ves en la tabla`, icon: Download, onSelect: exportCSV, disabled: nAExportar === 0 },
     { id: "refrescar", label: "Actualizar", icon: RefreshCw, onSelect: fetchNotas },
   ];
 

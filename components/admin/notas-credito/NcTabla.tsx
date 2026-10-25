@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { AnimatePresence } from "@/components/admin/providers";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -38,11 +39,17 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
   const {
     loading, error, page, setPage, setSelected, checkedIds, viewMode, setShowNew,
     setWizardStep, setCreateError, fetchNotas, filteredNotas, setCheckedIds,
-    toggleCheck, handleDuplicate, handleEmitSunat, handleAnular,
+    toggleCheck, handleDuplicate, handleEmitSunat, handleAnular, publicarVisibles,
   } = nc;
   const f = useFiltrosTabla(filteredNotas, COLUMNAS);
   const ord = useOrdenColumna(ORDEN);
   const filas = ord.ordenar(f.filtradas);
+  /* El CSV del módulo baja exactamente estas filas (en el tablero no hay embudos: baja todo). */
+  const vista = viewMode === "kanban" ? null : filas;
+  useEffect(() => {
+    publicarVisibles(vista);
+  }, [vista, publicarVisibles]);
+  useEffect(() => () => publicarVisibles(null), [publicarVisibles]);
   const totalPages = Math.max(1, Math.ceil(filas.length / PER_PAGE));
   const actual = Math.min(page, totalPages);
   const paginated = filas.slice((actual - 1) * PER_PAGE, actual * PER_PAGE);
