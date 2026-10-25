@@ -20,6 +20,7 @@ import type { CriteriosBusqueda } from "@/lib/comprobantes/busqueda";
 import { resumenDesdeGrupos, type ResumenComprobantes } from "@/lib/comprobantes/resumen";
 import { armarPendientes, DIAS_POR_VENCER, type Pendiente } from "@/lib/comprobantes/pendientes";
 import { conciliar, type Conciliacion } from "@/lib/comprobantes/conciliacion";
+import { ordenDeLista, type ColumnaOrden, type DireccionOrden } from "@/lib/comprobantes/orden";
 
 export type OrigenComprobante = "pedido" | "sin-pedido";
 
@@ -34,6 +35,9 @@ export interface FiltrosLista {
   cliente?: string;
   serieNumero?: string;
   montoMin?: number;
+  /** Orden pedido (lista blanca); sin él, fecha descendente. */
+  orden?: ColumnaOrden;
+  dir?: DireccionOrden;
   montoMax?: number;
 }
 
@@ -110,7 +114,7 @@ export const ComprobantesSeguimientoDB = {
   async listar(tenantId: string, f: FiltrosLista) {
     const where = whereLista(tenantId, f);
     const [filas, total, grupos] = await Promise.all([
-      prisma.sunatInvoice.findMany({ where, orderBy: { createdAt: "desc" }, take: f.limite, select: COLUMNAS_LISTA }),
+      prisma.sunatInvoice.findMany({ where, orderBy: ordenDeLista(f.orden, f.dir), take: f.limite, select: COLUMNAS_LISTA }),
       prisma.sunatInvoice.count({ where }),
       prisma.sunatInvoice.groupBy({ by: ["type", "sunatStatus"], where, _count: { _all: true }, _sum: { total: true, igv: true } }),
     ]);

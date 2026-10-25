@@ -88,7 +88,7 @@ export function useListaComprobantes(filtros: FiltrosComprobantes) {
  */
 export function useFacetasComprobantes(filtros: FiltrosComprobantes, resumenTabla: ResumenComprobantes | null): ResumenComprobantes | null {
   const sinFacetas = filtros.tipos.length === 0 && filtros.estados.length === 0;
-  const clave = sinFacetas ? "" : aParams({ ...filtros, tipos: [], estados: [] }, 1).toString();
+  const clave = sinFacetas ? "" : aParams({ ...filtros, tipos: [], estados: [], orden: null }, 1).toString();
   const [propio, setPropio] = useState<{ clave: string; resumen: ResumenComprobantes | null }>({ clave: "", resumen: null });
 
   useEffect(() => {

@@ -4,8 +4,9 @@ import { DataTable } from "@buleje/design-system";
 import { Eye } from "@buleje/design-system/icons";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import { FiltroColumnaRango, FiltroColumnaTexto } from "@/components/admin/shared/filtros-columna";
-import { ThColumna } from "@/components/admin/shared/th-columna";
+import { ThColumna, type OrdenDeColumnas } from "@/components/admin/shared/th-columna";
 import type { FiltrosComprobantes } from "./filtros-comprobantes";
+import type { ColumnaOrden } from "@/lib/comprobantes/orden";
 import { cn } from "@/lib/utils";
 import { fmt, STATUS_META, TYPE_META, type EDocument } from "./tipos";
 
@@ -20,6 +21,18 @@ interface Props {
 
 /** La tabla de comprobantes. Tipo y Estado se filtran desde la fila de arriba (una sola vez, también en el celular). */
 export function TablaComprobantes({ docs, orden, onVer, filtros, onCambiar }: Props) {
+  /* La lista es paginada en el servidor: el orden vive en los filtros y se pide a la base. */
+  const actual = filtros.orden;
+  const ordenCol: OrdenDeColumnas = {
+    activa: actual?.columna ?? null,
+    direccion: actual?.dir ?? "desc",
+    alternar: (id) => {
+      const columna = id as ColumnaOrden;
+      const dir = actual?.columna === columna ? (actual.dir === "asc" ? "desc" : "asc") : columna === "cliente" || columna === "serie" ? "asc" : "desc";
+      onCambiar({ ...filtros, orden: { columna, dir } });
+    },
+    ariaSort: (id) => (actual?.columna === id ? (actual.dir === "asc" ? "ascending" : "descending") : "none"),
+  };
   return (
     <DataTable className="min-w-[640px]">
       <thead ref={orden.refCabecera}>
@@ -28,19 +41,19 @@ export function TablaComprobantes({ docs, orden, onVer, filtros, onCambiar }: Pr
             orden={orden.orden}
             celdas={{
               serieNro: (
-                <ThColumna label="Serie-Nro" dataCol="serieNro">
+                <ThColumna label="Serie-Nro" dataCol="serieNro" orden={ordenCol} ordenId="serie">
                   <FiltroColumnaTexto label="Serie-Nro" placeholder="Buscar" value={filtros.serie} onChange={(serie) => onCambiar({ ...filtros, serie })} />
                 </ThColumna>
               ),
-              fecha: <th data-col="fecha">Fecha</th>,
+              fecha: <ThColumna label="Fecha" dataCol="fecha" orden={ordenCol} ordenId="fecha" />,
               tipo: <th data-col="tipo">Tipo</th>,
               cliente: (
-                <ThColumna label="Cliente" dataCol="cliente">
+                <ThColumna label="Cliente" dataCol="cliente" orden={ordenCol} ordenId="cliente">
                   <FiltroColumnaTexto label="Cliente" placeholder="Nombre o RUC" value={filtros.cliente} onChange={(cliente) => onCambiar({ ...filtros, cliente })} />
                 </ThColumna>
               ),
               total: (
-                <ThColumna label="Total" dataCol="total">
+                <ThColumna label="Total" dataCol="total" orden={ordenCol} ordenId="total">
                   <FiltroColumnaRango
                     label="Total"
                     unidad="S/"
@@ -51,7 +64,7 @@ export function TablaComprobantes({ docs, orden, onVer, filtros, onCambiar }: Pr
                   />
                 </ThColumna>
               ),
-              estado: <th data-col="estado">Estado</th>,
+              estado: <ThColumna label="Estado" dataCol="estado" orden={ordenCol} ordenId="estado" />,
             }}
           />
           <th></th>

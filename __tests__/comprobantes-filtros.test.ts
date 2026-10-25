@@ -58,7 +58,7 @@ describe("chips y «Restablecer alcance»", () => {
 describe("vistas guardadas: lo leído del navegador no se confía", () => {
   it("descarta tipos, estados y períodos inventados", () => {
     const v = normalizarFiltros({ q: 5, periodo: "siglo", tipos: ["factura", "cheque"], estados: ["emitido", "anulado"], origen: "x" });
-    expect(v).toEqual({ q: "", periodo: "mes", tipos: ["factura"], estados: ["anulado"], origen: "", cliente: "", serie: "", montoMin: null, montoMax: null });
+    expect(v).toEqual({ q: "", periodo: "mes", tipos: ["factura"], estados: ["anulado"], origen: "", cliente: "", serie: "", montoMin: null, montoMax: null, orden: null });
     expect(normalizarFiltros(null)).toBeNull();
   });
 
@@ -114,5 +114,18 @@ describe("clientes frecuentes (F40): se sugieren, nunca se copian solos", () => 
     expect(nombreAnteriorDistinto(docs, { tipo: "factura", nombre: "Otra empresa", documento: "20123456789" })).toBe("Ferretería Ucayali SAC");
     expect(nombreAnteriorDistinto(docs, { tipo: "factura", nombre: "ferreteria ucayali sac", documento: "20123456789" })).toBeNull();
     expect(nombreAnteriorDistinto(docs, { tipo: "factura", nombre: "Otra", documento: "2012" })).toBeNull();
+  });
+});
+
+describe("orden de la lista (ronda 4)", () => {
+  it("sin orden no manda parámetros y con orden los manda", () => {
+    expect(aParams(FILTROS_INICIALES, 200).has("orden")).toBe(false);
+    const p = aParams({ ...FILTROS_INICIALES, orden: { columna: "total", dir: "asc" } }, 200);
+    expect(p.get("orden")).toBe("total");
+    expect(p.get("dir")).toBe("asc");
+  });
+  it("un orden guardado inválido se descarta", () => {
+    expect(normalizarFiltros({ orden: { columna: "x", dir: "asc" } })?.orden).toBeNull();
+    expect(normalizarFiltros({ orden: { columna: "cliente", dir: "desc" } })?.orden).toEqual({ columna: "cliente", dir: "desc" });
   });
 });

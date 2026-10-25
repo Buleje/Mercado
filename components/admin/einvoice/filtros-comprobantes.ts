@@ -5,6 +5,7 @@
  * Puro (sin React): se prueba solo.
  */
 import { esPeriodo, rangoDePeriodo, rotuloDePeriodo, type PeriodoClave } from "@/lib/comprobantes/periodo";
+import { COLUMNAS_ORDEN, type ColumnaOrden, type DireccionOrden } from "@/lib/comprobantes/orden";
 import { STATUS_META, TYPE_META, type DocStatus, type DocType } from "./tipos";
 
 export type OrigenFiltro = "" | "pedido" | "sin-pedido";
@@ -20,10 +21,12 @@ export interface FiltrosComprobantes {
   serie: string;
   montoMin: number | null;
   montoMax: number | null;
+  /** Orden de la tabla (se pide a la base); `null` = fecha descendente. */
+  orden: { columna: ColumnaOrden; dir: DireccionOrden } | null;
 }
 
 export const FILTROS_INICIALES: FiltrosComprobantes = {
-  q: "", periodo: "mes", tipos: [], estados: [], origen: "", cliente: "", serie: "", montoMin: null, montoMax: null,
+  q: "", periodo: "mes", tipos: [], estados: [], origen: "", cliente: "", serie: "", montoMin: null, montoMax: null, orden: null,
 };
 
 /** Tipos que se pueden filtrar (la base no guarda notas de débito todavía). */
@@ -58,6 +61,10 @@ export function aParams(f: FiltrosComprobantes, limite: number): URLSearchParams
   if (f.serie.trim()) p.set("serie", f.serie.trim().slice(0, 20));
   if (f.montoMin != null) p.set("montoMin", String(f.montoMin));
   if (f.montoMax != null) p.set("montoMax", String(f.montoMax));
+  if (f.orden) {
+    p.set("orden", f.orden.columna);
+    p.set("dir", f.orden.dir);
+  }
   p.set("limite", String(limite));
   return p;
 }
@@ -96,6 +103,13 @@ export function nombreDeVista(f: FiltrosComprobantes): string {
   return [...partes, rotuloDePeriodo(f.periodo)].join(" · ").slice(0, 60);
 }
 
+function normalizarOrden(v: unknown): FiltrosComprobantes["orden"] {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const columna = COLUMNAS_ORDEN.find((c) => c === o.columna);
+  return columna && (o.dir === "asc" || o.dir === "desc") ? { columna, dir: o.dir } : null;
+}
+
 /** Lee un alcance guardado (localStorage) sin confiar en su forma. */
 export function normalizarFiltros(v: unknown): FiltrosComprobantes | null {
   if (!v || typeof v !== "object") return null;
@@ -112,6 +126,7 @@ export function normalizarFiltros(v: unknown): FiltrosComprobantes | null {
     serie: typeof o.serie === "string" ? o.serie.slice(0, 20) : "",
     montoMin: typeof o.montoMin === "number" && o.montoMin >= 0 ? o.montoMin : null,
     montoMax: typeof o.montoMax === "number" && o.montoMax >= 0 ? o.montoMax : null,
+    orden: normalizarOrden(o.orden),
   };
 }
 

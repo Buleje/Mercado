@@ -5,7 +5,7 @@
  * Query: `desde`/`hasta` (días de Lima), `q` (serie-número, cliente, RUC,
  * #pedido, importe o estado), `tipo` y `estado` (separados por coma), `origen`
  * (pedido | sin-pedido), `limite` (≤ 2000, por defecto 200). Opcionales del encabezado de la tabla: `cliente` (nombre o RUC/DNI),
- * `serie` (serie y/o número), `montoMin`/`montoMax` (total).
+ * `serie` (serie y/o número), `montoMin`/`montoMax` (total), `orden` (fecha | serie | cliente | total | estado) con `dir` (asc | desc; sin `orden`, fecha descendente).
  * → `{ data, total, resumen }`: `resumen` sale del MISMO filtro que `data`,
  * contado en la base (antes las cifras eran de los 100 que traía la lista).
  *
@@ -20,6 +20,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ComprobantesSeguimientoDB } from "@/lib/db/comprobantes-seguimiento.db";
 import { rangoDeParams } from "@/lib/comprobantes/periodo";
 import { interpretarBusqueda } from "@/lib/comprobantes/busqueda";
+import { COLUMNAS_ORDEN } from "@/lib/comprobantes/orden";
 
 const ROLES = ["admin", "cajero"] as const;
 const TIPOS = ["boleta", "factura", "nota_credito", "baja"] as const;
@@ -43,6 +44,8 @@ const ParamsSchema = z.object({
   serie: z.string().max(20).optional(),
   montoMin: z.coerce.number().min(0).max(1e9).optional(),
   montoMax: z.coerce.number().min(0).max(1e9).optional(),
+  orden: z.enum(COLUMNAS_ORDEN).optional(),
+  dir: z.enum(["asc", "desc"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -63,6 +66,8 @@ export async function GET(req: NextRequest) {
     serie: sp.get("serie") || undefined,
     montoMin: sp.get("montoMin") || undefined,
     montoMax: sp.get("montoMax") || undefined,
+    orden: sp.get("orden") || undefined,
+    dir: sp.get("dir") || undefined,
   });
   if (!rango || !parsed.success) {
     return NextResponse.json({ error: "Filtros inválidos: revisa las fechas, el tipo o el estado." }, { status: 400 });
@@ -79,6 +84,8 @@ export async function GET(req: NextRequest) {
       serieNumero: parsed.data.serie,
       montoMin: parsed.data.montoMin,
       montoMax: parsed.data.montoMax,
+      orden: parsed.data.orden,
+      dir: parsed.data.dir,
     });
     return NextResponse.json(r, { headers: { "X-Total-Count": String(r.total) } });
   } catch (e) {
