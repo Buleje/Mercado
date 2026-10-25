@@ -9,7 +9,8 @@ import {
   CubicacionVinculoError,
   ForestCubicacionesDB,
 } from "@/lib/db/forest-cubicaciones.db";
-import { corridasDeCubicacion, FICHA_MAX, normalizarFicha } from "@/lib/forestal/cubicacion-registro";
+import { veElMargen } from "@/lib/forestal/cubicacion-margen";
+import { corridasDeCubicacion, FICHA_MAX, normalizarFicha, PRECIO_COMPRA_MAX, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
@@ -24,7 +25,11 @@ import { esVariado } from "@/lib/forestal/variado-desglose";
  *
  * GET     — lista las guardadas (más reciente primero). Con `?enLibro=1`, además
  *           `enLibro`: las que amparan líneas vivas del Libro y por qué no se borran.
- * POST    — guarda una nueva o actualiza por `id`.
+ * POST    — guarda una nueva o actualiza por `id`. No acepta `compraAMano`
+ *           (Zod lo descarta): re-guardar desde el cubicador lo conserva.
+ * PATCH   — `?id=` + `{ compraAMano: { precioPt } | null }`: anota o borra el
+ *           precio de compra por PT escrito a mano en el margen del camión. Sólo
+ *           admin y dueño (los que ven el margen), sin reenviar la cubicación.
  * DELETE  — borra por `?id=` · 409 `en_libro` si ampara líneas vivas del Libro
  *           (sus medidas pieza por pieza son las del Anexo 04): primero se anula
  *           la línea en el Libro › Producción.
@@ -102,6 +107,16 @@ const saveSchema = z.object({
   piezas: z.array(piezaSchema).min(1).max(1000),
 });
 
+/** El precio de compra es lo que se le pagó a la comunidad: sólo lo reciben los que ven el margen
+    (`veElMargen`, la misma lista que la pantalla); el almacenero y el encargado, no. */
+const paraElRol = (role: string, lista: CubicacionRegistro[]): CubicacionRegistro[] =>
+  veElMargen(role) ? lista : lista.map(({ compraAMano: _oculto, ...c }) => c);
+
+/* Número de verdad (sin coerce: `true` daba S/ 1,00) y desde 0,01: al redondear a 2 decimales nunca queda 0. */
+const compraAManoSchema = z.object({
+  compraAMano: z.object({ precioPt: z.number().min(0.01).max(PRECIO_COMPRA_MAX) }).strict().nullable(),
+}).strict();
+
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:herramientas");
   return ok
@@ -120,7 +135,7 @@ export const GET = withApiHandler("forestal-cubicaciones-get", async (req: NextR
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
   try {
-    const cubicaciones = await ForestCubicacionesDB.list(auth.tenantId);
+    const cubicaciones = paraElRol(auth.role, await ForestCubicacionesDB.list(auth.tenantId));
     // ?despachoId= — cuáles de estas cubicaciones originaron ese despacho. El
     // Libro guarda especie/volumen pero NO las medidas pieza por pieza; el hilo
     // es despacho → corridas de producción → cubicación que las creó.
@@ -182,7 +197,8 @@ export const POST = withApiHandler("forestal-cubicaciones-post", async (req: Nex
       auth.username ?? "unknown",
       { updatedAtLeido },
     );
-    return NextResponse.json({ cubicacion }, { status: parsed.data.id ? 200 : 201 });
+    /* Re-guardar una con precio anotado no se lo devuelve al almacenero (revisión 24-10). */
+    return NextResponse.json({ cubicacion: paraElRol(auth.role, [cubicacion])[0] }, { status: parsed.data.id ? 200 : 201 });
   } catch (err) {
     /* Una corrida que no existe, es de otro negocio, está anulada o no es de
        producción no se liga (ADR-445): 422 con el motivo, no un 500. */
@@ -193,6 +209,47 @@ export const POST = withApiHandler("forestal-cubicaciones-post", async (req: Nex
       return NextResponse.json({ error: "vinculo_invalido", message: err.message, ids: err.ids }, { status: 422 });
     }
     logger.error("[cubicaciones.POST] failed", { error: String(err), tenantId: auth.tenantId });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+});
+
+export const PATCH = withApiHandler("forestal-cubicaciones-patch", async (req: NextRequest) => {
+  const auth = await requireAdmin(req, ["admin", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+  /* `requireAdmin` deja pasar al encargado (management tier): el margen es sólo de admin y dueño. */
+  if (!veElMargen(auth.role)) {
+    return NextResponse.json({ error: "forbidden", message: "Sólo el administrador o el dueño anotan el precio de compra." }, { status: 403 });
+  }
+  const csrf = assertCsrf(req);
+  if (csrf) return csrf;
+  const rl = await applyRateLimit(req, "GENEROUS", "cubicaciones");
+  if (rl) return rl;
+  const guard = await ensureSpec(auth.tenantId);
+  if (guard) return guard;
+
+  const id = new URL(req.url).searchParams.get("id")?.trim().slice(0, 60);
+  if (!id) return NextResponse.json({ error: "missing_id" }, { status: 400 });
+  let body: unknown;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
+  const parsed = compraAManoSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "validation_error", message: "El precio de compra por PT va de 0,01 a 99 999.", issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) },
+      { status: 400 },
+    );
+  }
+  try {
+    const cubicacion = await ForestCubicacionesDB.anotarCompraAMano(
+      auth.tenantId,
+      id,
+      parsed.data.compraAMano?.precioPt ?? null,
+      auth.username ?? "unknown",
+    );
+    return cubicacion
+      ? NextResponse.json({ cubicacion })
+      : NextResponse.json({ error: "not_found", message: "Esa cubicación ya no está entre las guardadas." }, { status: 404 });
+  } catch (err) {
+    logger.error("[cubicaciones.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 });

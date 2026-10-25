@@ -34,6 +34,7 @@ import { MargenDelCamionBloque } from "./cubicador-detalle-margen";
 import { useRendimientoDeGuia } from "./hooks/use-rendimiento-de-guia";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { piezasDeLaMismaGuia } from "@/lib/forestal/cubicacion-rendimiento-guia";
+import { veElMargen } from "@/lib/forestal/cubicacion-margen";
 
 const DIMENSIONES_DETALLE = ["especie", "tipo", "largo", "medida", "seccion", "dueno"] as const satisfies readonly DimensionResumen[];
 type Lectura = "especie-tipo" | (typeof DIMENSIONES_DETALLE)[number];
@@ -49,7 +50,7 @@ const primeraColDe = (d: DimensionResumen) => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
-export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveModals, puedeComparar, onClose, onAbrir, onComparar }: {
+export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveModals, puedeComparar, onClose, onAbrir, onComparar, onCompraAMano }: {
   c: CubicacionRegistro;
   /** Las otras guardadas con la MISMA GTF (otros camiones de la guía): el rendimiento y el margen suman todas. */
   deLaMismaGuia?: readonly CubicacionRegistro[];
@@ -61,6 +62,8 @@ export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveMo
   onClose: () => void;
   onAbrir: () => void;
   onComparar: () => void;
+  /** Se guardó (o borró) el precio de compra anotado a mano: la guardada nueva. */
+  onCompraAMano?: (c: CubicacionRegistro) => void;
 }) {
   const [lectura, setLectura] = useState<Lectura>("especie-tipo");
   const precioDe = useMemo(() => precioDeCubicacion(c), [c]);
@@ -72,7 +75,7 @@ export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveMo
   const deLaGuia = useMemo(() => piezasDeLaMismaGuia(c, deLaMismaGuia), [c, deLaMismaGuia]);
   /* El margen dice lo que se pagó a la comunidad: como el rendimiento con plata del Libro, sólo admin y dueño (revisión 24-10). */
   const rol = useMiRol();
-  const veMargen = rol === "admin" || rol === "owner" || rol === "superadmin";
+  const veMargen = veElMargen(rol);
 
   const pt = c.totales.pieTablar;
   const conValor = c.valor > 0;
@@ -120,7 +123,7 @@ export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveMo
 
         {c.gtfNumber?.trim() && <RendimientoContraLaGuia c={c} r={guia} deLaGuia={deLaGuia} />}
 
-        {veMargen && <MargenDelCamionBloque c={c} guia={guia} deLaGuia={deLaGuia} />}
+        {veMargen && <MargenDelCamionBloque c={c} guia={guia} deLaGuia={deLaGuia} puedeAnotar={veMargen} onGuardada={onCompraAMano} />}
 
         <section aria-label="Resúmenes de la cubicación" className="space-y-3">
           <ChipsDeLectura opciones={LECTURAS} valor={lectura} onCambiar={setLectura} etiqueta="Cómo leer el lote" />

@@ -6,7 +6,9 @@ import { auditCtp } from "@/lib/forestal/ctp-audit";
 import {
   construirRegistro,
   corridasDeCubicacion,
+  normalizarCompraAMano,
   totalesDe,
+  type CompraAMano,
   type CubicacionRegistro,
   type FichaCubicacion,
 } from "@/lib/forestal/cubicacion-registro";
@@ -201,11 +203,13 @@ async function exigirCorridasLigables(
  * Lo que llega a `save`. Los textos del papel aceptan `null` = «borrarlo»;
  * ausentes (`undefined`) = «dejar el que tenía» (ver `datosQueSeConservan`).
  */
-export type EntradaGuardar = Omit<Parameters<typeof construirRegistro>[0], "cliente" | "notas" | "gtfNumber" | "ficha"> & {
+export type EntradaGuardar = Omit<Parameters<typeof construirRegistro>[0], "cliente" | "notas" | "gtfNumber" | "ficha" | "compraAMano"> & {
   cliente?: string | null;
   notas?: string | null;
   gtfNumber?: string | null;
   ficha?: FichaCubicacion | null;
+  /** El POST del cubicador nunca lo trae (se conserva); se anota con `anotarCompraAMano`. */
+  compraAMano?: CompraAMano | null;
 };
 
 /**
@@ -223,6 +227,7 @@ export function datosQueSeConservan(
   notas: string | undefined;
   gtfNumber: string | undefined;
   ficha: FichaCubicacion | undefined;
+  compraAMano: CompraAMano | undefined;
   piezas: Record<string, unknown>[];
 } {
   const tomar = <T,>(nuevo: T | null | undefined, viejo: T | undefined): T | undefined =>
@@ -245,6 +250,8 @@ export function datosQueSeConservan(
     notas: tomar(input.notas, existente?.notas),
     gtfNumber: tomar(input.gtfNumber, existente?.gtfNumber),
     ficha: tomar(input.ficha, existente?.ficha),
+    /* El precio de compra anotado en el margen: re-guardar desde el cubicador no lo borra. */
+    compraAMano: tomar(input.compraAMano, existente?.compraAMano),
     piezas: traePrecio || precioViejo.size === 0
       ? input.piezas
       : input.piezas.map((p) => (typeof p.id === "string" && precioViejo.has(p.id) ? { ...p, precio: precioViejo.get(p.id) } : p)),
@@ -348,6 +355,57 @@ export const ForestCubicacionesDB = {
       user,
     });
     return registro;
+  },
+
+  /**
+   * Anota (o borra, con `null`) el precio de compra por PT escrito a mano en
+   * «Margen del camión» (Brandon 24-10), SIN reescribir la cubicación: sólo
+   * ese campo, bajo el mismo lock que `save`. No toca `updatedAt` (es la
+   * versión de la MEDICIÓN: si cambiara, el cubicador abierto daría 409 por un
+   * dato que no es suyo, y la guardada saltaría al primer lugar de la lista).
+   * `fecha` y `por` salen de acá, no del cliente. null = no existe.
+   */
+  async anotarCompraAMano(
+    tenantId: string,
+    id: string,
+    precioPt: number | null,
+    user = "unknown",
+  ): Promise<CubicacionRegistro | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!id) return null;
+    const compraAMano = precioPt === null ? undefined : normalizarCompraAMano({ precioPt, fecha: new Date().toISOString(), por: user });
+    if (precioPt !== null && !compraAMano) throw new Error("precio de compra fuera de rango");
+    const res = await PlatformSettingsDB.actualizar<unknown[], { registro: CubicacionRegistro; antes: CompraAMano | undefined; igual?: boolean } | null>(
+      `${KEY_PREFIX}${tenantId}`,
+      async (actual) => {
+        const list = (Array.isArray(actual) ? actual : []).filter(esRegistro);
+        const hallado = list.find((c) => c.id === id);
+        if (!hallado) return { resultado: null };
+        const { compraAMano: antes, ...resto } = hallado;
+        /* Sin cambio (el mismo precio, o borrar lo que no hay): ni se escribe ni se audita («de 1,80 a 1,80»). */
+        if ((antes?.precioPt ?? null) === (compraAMano?.precioPt ?? null)) return { resultado: { registro: hallado, antes, igual: true } };
+        const registro: CubicacionRegistro = compraAMano ? { ...resto, compraAMano } : resto;
+        return { valor: list.map((c) => (c.id === id ? registro : c)), resultado: { registro, antes } };
+      },
+      user,
+    );
+    if (!res) return null;
+    if (res.igual) return normalizarVolumen(res.registro);
+    const soles = (n: number) => `S/ ${n.toFixed(2)}`;
+    const { registro, antes } = res;
+    auditCtp({
+      tenantId,
+      action: "ctp_cubicacion_compra_a_mano",
+      entity: "ForestCubicacion",
+      entityId: id,
+      detail: compraAMano
+        ? antes
+          ? `Cambió el precio de compra de ${soles(antes.precioPt)} a ${soles(compraAMano.precioPt)} por PT en la cubicación "${registro.nombre}"`
+          : `Anotó el precio de compra ${soles(compraAMano.precioPt)} por PT en la cubicación "${registro.nombre}"`
+        : `Borró el precio de compra anotado${antes ? ` (${soles(antes.precioPt)} por PT)` : ""} de la cubicación "${registro.nombre}"`,
+      user,
+    });
+    return normalizarVolumen(registro);
   },
 
   /**

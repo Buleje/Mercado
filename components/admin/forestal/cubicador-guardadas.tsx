@@ -28,6 +28,7 @@ import { useGuardadasDelCubicador } from "./hooks/use-guardadas-del-cubicador";
 import { DetalleCubicacionModal } from "./cubicador-detalle-modal";
 import { CompararCubicacionesModal } from "./cubicador-comparar-modal";
 import { ResumenPorFicha } from "./cubicador-guardadas-resumen";
+import { MargenDelMes } from "./cubicador-guardadas-margen-mes";
 import AtarGuardadasModal from "./cubicador-atar-modal";
 import { AvisosDeGuardadas } from "./cubicador-guardadas-avisos";
 import { useRendimientoDeGuias } from "./hooks/use-rendimiento-de-guias";
@@ -51,7 +52,7 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
   /** Sólo dentro de otra ventana (producir sin lote): la lista va debajo del lote y se cierra. */
   onCerrar?: () => void;
 }) {
-  const { lista, enLibro, cargando, error, borrando, recargar, borrar } = useGuardadasDelCubicador(recargarToken);
+  const { lista, enLibro, cargando, error, borrando, recargar, borrar, reemplazar } = useGuardadasDelCubicador(recargarToken);
   const { porId: papeles } = usePapelesDeCubicaciones(true);
   const { confirm } = useConfirm();
   const [busqueda, setBusqueda] = useState("");
@@ -222,6 +223,8 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
             rinde={rinde}
             cargandoRinde={cargandoGuias}
           />
+          {/* De TODAS las guardadas (no de lo filtrado): el mes se elige adentro. */}
+          {!dentroDeVentana && <MargenDelMes lista={lista} guias={guias} cargandoGuias={cargandoGuias} />}
           <p className="flex flex-wrap items-baseline gap-x-2 text-sm text-[var(--text-secondary)]">
             {filtrando ? `Suma de las ${mostradas.length} que se ven` : `Suma de las ${mostradas.length}`}
             <span className="font-mono font-extrabold tabular-nums text-[var(--text-primary)]">
@@ -276,6 +279,7 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
             setDetalleId(null);
             setComparar({ aId: detalle.id });
           }}
+          onCompraAMano={reemplazar}
         />
       )}
       {comparar && (

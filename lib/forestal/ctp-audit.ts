@@ -418,6 +418,8 @@ export type CtpAuditAction =
   | "ctp_vinculo_parte_crear"
   | "ctp_vinculo_parte_quitar"
   | "ctp_cubicacion_update"
+  /** Anotó, cambió o borró el precio de compra por PT escrito a mano en el margen del camión (24-10). */
+  | "ctp_cubicacion_compra_a_mano"
   | "ctp_cubicacion_delete"
   // Distribuciones de rolliza guardadas (Brandon, 2026-09-01): los bloques
   // cargados en "Distribución de rolliza sobre lo aserrado", con nombre.

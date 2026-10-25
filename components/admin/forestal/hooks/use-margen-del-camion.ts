@@ -5,16 +5,19 @@
  * cubicaciones comerciales de ESTA guardada (`?ref=`, venta y compra del
  * mismo lote) y las compras de su comunidad (`?parte=`; sin la ficha de la
  * comunidad, todas las compras), más lo que el usuario elige o escribe. La
- * cuenta la arma `armarMargen` (pura). SÓLO LECTURA: no escribe nada, y el
- * precio escrito a mano vive en la ventana (no se guarda).
+ * cuenta la arma `armarMargen` (pura). Lo único que escribe es el precio de
+ * compra por PT anotado a mano (24-10): es un dato del dueño en ESTA guardada,
+ * no mueve plata; al abrir otra vez sale elegido (`armarMargenGuardado`), salvo
+ * que el lote ya tenga su compra registrada: ésa manda y el anotado es respaldo.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { cruzarConGuia } from "@/lib/forestal/cubicacion-rendimiento-guia";
 import {
-  armarMargen, rendimientoDelCruce, type ComercialParaMargen, type EleccionDeCompra, type MargenArmado, type RendimientoParaConvertir,
+  armarMargen, armarMargenGuardado, guardadaParaMargen, precioGuardado, rendimientoDelCruce,
+  type ComercialParaMargen, type EleccionDeCompra, type MargenArmado, type RendimientoParaConvertir,
 } from "@/lib/forestal/cubicacion-margen";
-import { pedir, RUTA_CUBICACIONES_TROZAS } from "./use-cubicaciones-trozas";
+import { jsonPost, pedir, RUTA_CUBICACIONES_TROZAS } from "./use-cubicaciones-trozas";
 import type { EstadoDeLaGuia } from "./use-rendimiento-de-guia";
 import type { PiezasDeLaGuia } from "../cubicador-detalle-rendimiento";
 
@@ -70,30 +73,66 @@ function rendimientoDe(guia: EstadoDeLaGuia, c: CubicacionRegistro, deLaGuia?: P
 export type MargenDelCamionEstado =
   | { estado: "cargando" }
   | { estado: "error"; mensaje: string }
-  | ({ estado: "lista" } & MargenArmado);
+  | ({
+      estado: "lista";
+      /** La compra con la que quedó: la que eligió el usuario o la que manda lo guardado. */
+      eleccion: EleccionDeCompra;
+      /** Hay precio a mano guardado pero manda la compra del lote. */
+      respaldo: boolean;
+    } & MargenArmado);
 
-export function useMargenDelCamion(c: CubicacionRegistro, guia: EstadoDeLaGuia, deLaGuia?: PiezasDeLaGuia) {
+const leerGuardada = (j: unknown): CubicacionRegistro | null => ((j ?? {}) as { cubicacion?: CubicacionRegistro }).cubicacion ?? null;
+
+/** Guardar o borrar (`null`) el precio de compra por PT anotado en la guardada. */
+function useAnotarCompraAMano(id: string, onGuardada?: (c: CubicacionRegistro) => void) {
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const anotar = useCallback(async (precioPt: number | null): Promise<boolean> => {
+    setGuardando(true);
+    setError(null);
+    const r = await pedir(
+      `/api/admin/forestal/cubicaciones?id=${encodeURIComponent(id)}`,
+      jsonPost("PATCH", { compraAMano: precioPt === null ? null : { precioPt } }),
+      leerGuardada,
+    );
+    setGuardando(false);
+    if (!r.ok || !r.data) {
+      setError(r.ok ? "No se pudo guardar el precio." : r.mensaje);
+      return false;
+    }
+    onGuardada?.(r.data);
+    return true;
+  }, [id, onGuardada]);
+  return { guardando, error, anotar };
+}
+
+export function useMargenDelCamion(c: CubicacionRegistro, guia: EstadoDeLaGuia, deLaGuia?: PiezasDeLaGuia, onGuardada?: (c: CubicacionRegistro) => void) {
   const parteId = c.ficha?.comunidadParteId?.trim() || undefined;
   const comerciales = useComercialesDelCamion(c.id, parteId);
-  const [eleccion, setEleccion] = useState<EleccionDeCompra>("");
-  const [precioAMano, setPrecioAMano] = useState("");
+  /* Mientras el usuario no elija, manda lo guardado (`armarMargenGuardado`, la misma
+     regla del mes): la compra del lote; si no hay, el precio anotado; si no, la que calza. */
+  const [tocada, setEleccion] = useState<EleccionDeCompra | null>(null);
+  const [precioAMano, setPrecioAMano] = useState(() => precioGuardado(c.compraAMano));
+  const { guardando, error: errorAlAnotar, anotar } = useAnotarCompraAMano(c.id, onGuardada);
+  /* Borrar el anotado vuelve a la compra que calza sola. */
+  const borrarAnotado = useCallback(async () => {
+    if (!(await anotar(null))) return;
+    setEleccion("");
+    setPrecioAMano("");
+  }, [anotar]);
   const rendimiento = useMemo(() => rendimientoDe(guia, c, deLaGuia), [guia, c, deLaGuia]);
 
   const resultado = useMemo((): MargenDelCamionEstado => {
     if (comerciales.estado !== "lista") return comerciales;
-    return {
-      estado: "lista",
-      ...armarMargen({
-        guardada: { id: c.id, gtfNumber: c.gtfNumber, valor: c.valor, pt: c.totales.pieTablar },
-        deLaRef: comerciales.deLaRef,
-        deLaComunidad: comerciales.deLaComunidad,
-        comunidadParteId: parteId,
-        eleccion,
-        precioAMano,
-        rendimiento,
-      }),
-    };
-  }, [comerciales, c.id, c.gtfNumber, c.valor, c.totales.pieTablar, parteId, eleccion, precioAMano, rendimiento]);
+    const entrada = { guardada: guardadaParaMargen(c), deLaRef: comerciales.deLaRef, deLaComunidad: comerciales.deLaComunidad, comunidadParteId: parteId, precioAMano, rendimiento };
+    return tocada === null
+      ? { estado: "lista", ...armarMargenGuardado(entrada) }
+      : { estado: "lista", ...armarMargen({ ...entrada, eleccion: tocada }), eleccion: tocada, respaldo: false };
+  }, [comerciales, c, parteId, tocada, precioAMano, rendimiento]);
+  const eleccion: EleccionDeCompra = resultado.estado === "lista" ? resultado.eleccion : (tocada ?? "");
 
-  return { resultado, conComunidad: !!parteId, eleccion, setEleccion, precioAMano, setPrecioAMano };
+  return {
+    resultado, conComunidad: !!parteId, eleccion, setEleccion, precioAMano, setPrecioAMano,
+    anotado: c.compraAMano ?? null, guardando, errorAlAnotar, anotar, borrarAnotado,
+  };
 }

@@ -72,6 +72,41 @@ export function normalizarFicha(raw: unknown): FichaCubicacion | undefined {
   return Object.keys(ficha).length > 0 ? ficha : undefined;
 }
 
+/**
+ * El precio de compra por PT que el dueño escribió a mano en «Margen del
+ * camión» (Brandon 24-10: «recordar el precio de compra»). Dato suyo, para
+ * mirar: no mueve plata ni toca la cuenta de la comunidad. `fecha` (ISO) y
+ * `por` los pone el servidor al guardarlo, nunca el cliente.
+ */
+export interface CompraAMano {
+  /** S/ por PT aserrado (> 0, 2 decimales). */
+  precioPt: number;
+  fecha: string;
+  por: string;
+}
+
+/** Tope del precio de compra escrito a mano (S/ por PT), el mismo de `precioEscrito`. */
+export const PRECIO_COMPRA_MAX = 99_999;
+
+/**
+ * El precio de compra a mano en forma canónica: número > 0 y ≤ 99 999 con 2
+ * decimales (0 no: el margen lo lee con `precioEscrito`, que tampoco acepta
+ * cero). Sin precio válido → `undefined` (no hay nada guardado).
+ */
+export function normalizarCompraAMano(raw: unknown): CompraAMano | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const f = raw as Record<string, unknown>;
+  const n = typeof f.precioPt === "number" || typeof f.precioPt === "string" ? Number(f.precioPt) : NaN;
+  if (!Number.isFinite(n) || n <= 0 || n > PRECIO_COMPRA_MAX) return undefined;
+  const precioPt = r2(n);
+  if (!(precioPt > 0)) return undefined;
+  return {
+    precioPt,
+    fecha: fechaHoraValida(f.fecha) ?? new Date().toISOString(),
+    por: typeof f.por === "string" && f.por.trim() ? f.por.trim().slice(0, 120) : "unknown",
+  };
+}
+
 export interface CubicacionRegistro {
   id: string;
   /** Nombre con el que el usuario la va a buscar ("Lote Tornillo · Pérez"). */
@@ -89,6 +124,8 @@ export interface CubicacionRegistro {
   valor: number;
   /** Comprador, comunidad de origen, permiso, camión… (sin el campo = cubicaciones viejas). */
   ficha?: FichaCubicacion;
+  /** El precio de compra por PT anotado a mano en el margen (sin el campo = no hay). */
+  compraAMano?: CompraAMano;
   totales: CubicacionTotales;
   piezas: PiezaCubicada[];
   /** Línea de PRODUCCIÓN del Libro CTP que se creó desde esta cubicación
@@ -240,6 +277,7 @@ export function construirRegistro(input: {
   gtfNumber?: string;
   trasera?: { ids: string[]; anchoM: number };
   ficha?: FichaCubicacion | Record<string, unknown>;
+  compraAMano?: CompraAMano | Record<string, unknown> | null;
   createdAt?: string;
   createdBy?: string;
 }): CubicacionRegistro {
@@ -258,6 +296,7 @@ export function construirRegistro(input: {
     precioPt,
     valor: r2(piezas.reduce((a, p) => a + p.pieTablar * precioDe(p), 0)),
     ficha: normalizarFicha(input.ficha),
+    compraAMano: normalizarCompraAMano(input.compraAMano),
     totales,
     piezas,
     /* El primero de la lista manda como `ctpEntryId`: lo que ya leía un solo id

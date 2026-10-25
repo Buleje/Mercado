@@ -20,6 +20,7 @@
  * Pura: sin base ni React.
  */
 import { PT_POR_M3 } from "./cubicacion";
+import type { CompraAMano, CubicacionRegistro } from "./cubicacion-registro";
 import type { CruceConGuia } from "./cubicacion-rendimiento-guia";
 import { puedeSerLaMismaGtf } from "./gtf-talonario";
 
@@ -38,6 +39,8 @@ export interface ComercialParaMargen {
   monto: number | null;
   gtfNumber: string | null;
   parteId: string | null;
+  /** El beneficiario de Adelantos (el margen del mes junta por él las de la comunidad, como `?conBeneficiario=1`). */
+  beneficiarioId?: string | null;
   personaNombre: string | null;
   cubicacionRefId: string | null;
 }
@@ -52,6 +55,10 @@ export interface GuardadaParaMargen {
 
 /** El rendimiento de la GTF con que se pasa el m³ de troza a PT aserrado, o qué falta para tenerlo. */
 export type RendimientoParaConvertir = { pct: number; gtf: string; /** Cuántas guardadas de esa GTF se sumaron (1 = sólo ésta). */ camiones?: number } | { falta: string };
+
+/** Lo que el margen lee de una guardada: lo mismo en el detalle y en el margen del mes. */
+export const guardadaParaMargen = (c: Pick<CubicacionRegistro, "id" | "gtfNumber" | "valor" | "totales">): GuardadaParaMargen =>
+  ({ id: c.id, gtfNumber: c.gtfNumber, valor: c.valor, pt: c.totales.pieTablar });
 
 const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const viva = (c: ComercialParaMargen) => c.estado !== "anulada";
@@ -123,15 +130,25 @@ export function comprasQueCalzan(
   deLaComunidad: readonly ComercialParaMargen[],
   comunidadParteId?: string,
 ): { origen: "lote" | "guia"; cubs: ComercialParaMargen[] } | null {
-  const delLote = deLaRef.filter((c) => c.cubicacionRefId === g.id && c.sentido === "compra" && viva(c));
+  const delLote = deLaRef.filter((c) => esCompraDelLote(c, g.id));
   if (delLote.length > 0) return { origen: "lote", cubs: delLote };
   const gtf = g.gtfNumber?.trim();
   /* Sin la ficha de la comunidad la lista son TODAS las compras del negocio: no se
      elige sola la de otra persona porque comparte la GTF (revisión 24-10). */
   if (!gtf || !comunidadParteId) return null;
-  const deLaGuia = comprasParaElegir(deLaComunidad, comunidadParteId).filter((c) => puedeSerLaMismaGtf(c.gtfNumber, gtf));
+  /* La compra que ya es el lote de OTRO camión no se toma por la GTF: dos camiones de
+     la misma guía y comunidad contaban la misma compra dos veces (revisión 24-10). */
+  const deLaGuia = comprasParaElegir(deLaComunidad, comunidadParteId).filter(
+    (c) => puedeSerLaMismaGtf(c.gtfNumber, gtf) && (!c.cubicacionRefId || c.cubicacionRefId === g.id),
+  );
   return deLaGuia.length > 0 ? { origen: "guia", cubs: deLaGuia } : null;
 }
+
+const esCompraDelLote = (c: ComercialParaMargen, id: string) => c.cubicacionRefId === id && c.sentido === "compra" && viva(c);
+
+/** Hay una compra viva atada a ESTE lote (`cubicacionRefId`): manda sobre el precio anotado a mano. */
+export const hayCompraDelLote = (id: string, deLaRef: readonly ComercialParaMargen[]): boolean =>
+  deLaRef.some((c) => esCompraDelLote(c, id));
 
 /** Las compras vivas para elegir a mano, la más nueva primero. */
 export function comprasParaElegir(lista: readonly ComercialParaMargen[], comunidadParteId?: string): ComercialParaMargen[] {
@@ -245,6 +262,14 @@ export function margenDelCamion(
 /** Lo que eligió el usuario: «» = la que calza sola, «mano» = el precio escrito, o el id de una compra. */
 export type EleccionDeCompra = "" | "mano" | (string & {});
 
+/** Admin y dueño ven el margen y su precio de compra a mano: la MISMA lista en el servidor (GET, POST, PATCH) y en la pantalla. */
+export const ROLES_QUE_VEN_EL_MARGEN: readonly string[] = ["admin", "owner"];
+export const veElMargen = (rol: string | null | undefined): boolean => rol != null && ROLES_QUE_VEN_EL_MARGEN.includes(rol);
+
+/** El precio anotado a mano como texto del campo («» si no hay). */
+export const precioGuardado = (compra: Pick<CompraAMano, "precioPt"> | null | undefined): string =>
+  compra && compra.precioPt > 0 ? String(compra.precioPt) : "";
+
 export interface MargenArmado {
   venta: ResultadoVenta;
   /** null = no hay compra que calce ni elegida: hay que elegirla o escribirla. */
@@ -288,4 +313,25 @@ export function armarMargen(input: {
 
   const margen = venta.ok && compra?.ok ? margenDelCamion(venta.venta, compra.compra) : null;
   return { venta, compra, calza, candidatas, margen };
+}
+
+/**
+ * Con qué compra arranca el margen de una guardada, sin que el usuario haya
+ * elegido nada. La misma regla en el detalle y en el mes:
+ * - el lote YA tiene su compra registrada → manda ésa (es lo que se pagó) y el
+ *   precio anotado a mano queda de respaldo (revisión 24-10: 2.000 a mano
+ *   tapaban 3.600 reales);
+ * - esa compra no se puede usar (troza sin rendimiento de la guía) → el anotado;
+ * - sin compra del lote → el anotado manda («la próxima vez sale solo») sobre
+ *   la que calza por la GTF; sin anotado, la que calza.
+ * `respaldo` = hay precio a mano pero no se usó.
+ */
+export function armarMargenGuardado(
+  input: Omit<Parameters<typeof armarMargen>[0], "eleccion">,
+): MargenArmado & { eleccion: EleccionDeCompra; respaldo: boolean } {
+  const conPrecio = precioEscrito(input.precioAMano) !== null;
+  const eleccion: EleccionDeCompra = conPrecio && !hayCompraDelLote(input.guardada.id, input.deLaRef) ? "mano" : "";
+  const r = armarMargen({ ...input, eleccion });
+  if (conPrecio && eleccion === "" && !r.compra?.ok) return { ...armarMargen({ ...input, eleccion: "mano" }), eleccion: "mano", respaldo: false };
+  return { ...r, eleccion, respaldo: conPrecio && eleccion === "" };
 }

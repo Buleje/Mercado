@@ -3,21 +3,24 @@
 /**
  * «Margen del camión» en el detalle de una cubicación guardada (Brandon 24-10):
  * a cuánto le compraste a la comunidad, a cuánto le vendiste al comprador, y
- * cuánto ganaste por PT y por el camión. Sólo lectura: los montos salen de las
- * cuentas (la base) o del valor de la guardada; el margen es de pantalla y no
- * se guarda. Cada número dice de dónde sale, y un derivado se dice que lo es.
+ * cuánto ganaste por PT y por el camión. Los montos salen de las cuentas (la
+ * base) o del valor de la guardada; el margen es de pantalla y no se guarda.
+ * Lo único que se anota es el precio de compra por PT escrito a mano (24-10,
+ * sólo admin y dueño): dato del dueño en ESTA guardada, que no mueve plata.
+ * Cada número dice de dónde sale, y un derivado se dice que lo es.
  */
 import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Pencil } from "@buleje/design-system/icons";
+import { Pencil, Save, Trash2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
-import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
-import type {
-  ComercialParaMargen, CompraDelCamion, EleccionDeCompra, MargenArmado, MargenDelCamion, VentaDelCamion,
+import type { CompraAMano, CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import {
+  precioEscrito, type ComercialParaMargen, type CompraDelCamion, type EleccionDeCompra, type MargenArmado, type MargenDelCamion, type VentaDelCamion,
 } from "@/lib/forestal/cubicacion-margen";
 import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { limaDateKey } from "@/lib/utils";
 import { useMargenDelCamion } from "./hooks/use-margen-del-camion";
 import type { PiezasDeLaGuia } from "./cubicador-detalle-rendimiento";
 import type { EstadoDeLaGuia } from "./hooks/use-rendimiento-de-guia";
@@ -30,6 +33,10 @@ const soles = (n: number) => `S/ ${fmtSoles(n)}`;
 /** Soles de una tarjeta angosta: con céntimos hasta S/ 100, enteros desde ahí («1,400»). */
 const solesCortos = (n: number) => (Math.abs(n) < 100 ? fmtSoles(n) : formatNumber(n, 0));
 const diaMes = (f: string) => (/^\d{4}-\d{2}-\d{2}/.test(f) ? `${f.slice(8, 10)}/${f.slice(5, 7)}` : f);
+/** «guardado el 24/10 por qaadmin»: el día en Lima (a las 20:00 de Pucallpa el UTC ya es mañana). */
+const guardadoEl = (a: CompraAMano) => `guardado el ${diaMes(limaDateKey(a.fecha))} por ${a.por}`;
+/** El precio escrito es el mismo que está anotado (al céntimo, como lo guarda el servidor). */
+const esElAnotado = (n: number | null, a: CompraAMano | null) => n !== null && a !== null && Math.round(n * 100) === Math.round(a.precioPt * 100);
 const personasDe = (cubs: readonly ComercialParaMargen[]) =>
   [...new Set(cubs.map((c) => c.personaNombre?.trim()).filter(Boolean))].join(", ") || "sin nombre";
 const volumenDe = (vol: number, unidad: "PT" | "m³" | null, troza: boolean) =>
@@ -41,10 +48,13 @@ function etiquetaDeCompra(c: ComercialParaMargen): string {
   return [c.codigo, diaMes(c.fecha), c.personaNombre ?? "sin nombre", vol, c.monto != null && c.monto > 0 ? soles(c.monto) : "sin valorizar"].join(" · ");
 }
 
+/* Por la GTF (sin atar a este lote: precio por PT × los PT de ESTE camión) o convertida (troza → PT): derivada. */
+const esDerivada = (c: CompraDelCamion) => c.origen === "guia" || c.conversion.tipo !== "directa";
+
 function frase(v: VentaDelCamion, compra: CompraDelCamion, m: MargenDelCamion): { tono: string; texto: string } {
   const cobrada = v.fuente === "cuenta";
   /* Un precio por PT convertido (troza → aserrado) es derivado: «≈», y el camión manda (0,66 × 2.000 ≠ 1.326,60). */
-  const aprox = compra.conversion.tipo !== "directa" ? "≈ " : "";
+  const aprox = esDerivada(compra) ? "≈ " : "";
   const inicio = `Compraste a ${aprox}${soles(compra.porPt)} y ${cobrada ? "vendiste" : "lo pusiste"} a ${soles(v.porPt)} el PT`;
   if (m.camion === 0) return { tono: NEUTRO, texto: `${inicio}: quedas en cero.` };
   const gana = m.camion > 0;
@@ -62,13 +72,20 @@ function lineaDeVenta(v: VentaDelCamion): string {
   return `precio puesto en el cubicador (no encuentro su venta valorizada en la cuenta): ${cuanto}.${enCuenta}`;
 }
 
-function lineaDeCompra(c: CompraDelCamion, gtf: string | undefined): string {
-  if (c.origen === "a-mano") return `${soles(c.porPt)} por PT, escrito a mano (no se guarda).`;
+function lineaDeCompra(c: CompraDelCamion, gtf: string | undefined, anotado: CompraAMano | null): string {
+  if (c.origen === "a-mano") {
+    return esElAnotado(c.porPt, anotado) && anotado
+      ? `${soles(c.porPt)} por PT, anotado a mano (${guardadoEl(anotado)}); no sale de las cuentas.`
+      : `${soles(c.porPt)} por PT, escrito a mano (todavía sin guardar).`;
+  }
   const deDonde = c.origen === "lote" ? "del mismo lote" : c.origen === "guia" ? `con la misma GTF ${gtf ?? ""}` : "elegida por ti";
   const cuanto = `${soles(c.monto ?? 0)} por ${volumenDe(c.volumen ?? 0, c.unidad, c.conversion.tipo === "oxapampina")}`;
   const inicio = `${c.cubs.map((x) => x.codigo).join(" + ")} de ${personasDe(c.cubs)}, ${deDonde}: ${cuanto}`;
   switch (c.conversion.tipo) {
-    case "directa": return `${inicio} (de la base).`;
+    case "directa":
+      return c.origen === "guia"
+        ? `${inicio} = ≈ ${soles(c.porPt)} por PT, por los PT de este camión (derivado: la compra no está atada a este lote).`
+        : `${inicio} (de la base).`;
     case "oxapampina": return `${inicio}; se compara PT con PT, sin rendimiento (derivado).`;
     case "rendimiento":
       return `${inicio} = ${soles(c.conversion.porM3)} el m³, convertida con el ${fmtPct(c.conversion.pct)} % de rendimiento de la GTF ${c.conversion.gtf}${(c.conversion.camiones ?? 1) > 1 ? ` (sus ${c.conversion.camiones} cubicaciones juntas)` : ""}: ≈ ${soles(c.porPt)} por PT aserrado (derivado).`;
@@ -86,12 +103,57 @@ function faltaLaCompra(c: CubicacionRegistro, conComunidad: boolean, candidatas:
   return `No encuentro la compra a ${comunidad}${gtf ? ` con la GTF ${gtf}` : ""}: elígela de sus compras o escribe el precio por PT.`;
 }
 
-function ElegirCompra({ m, eleccion, setEleccion, precioAMano, setPrecioAMano }: {
+type Anotar = {
+  anotado: CompraAMano | null;
+  guardando: boolean;
+  errorAlAnotar: string | null;
+  anotar: (precioPt: number | null) => Promise<boolean>;
+  borrarAnotado: () => Promise<void>;
+  /** Admin y dueño (el servidor frena igual a los demás). */
+  puedeAnotar: boolean;
+};
+
+/** Guardar el precio escrito, o cambiarlo/borrarlo si ya hay uno anotado. */
+function AnotarPrecio({ precioAMano, a }: { precioAMano: string; a: Anotar }) {
+  const n = precioEscrito(precioAMano);
+  const igual = esElAnotado(n, a.anotado);
+  return (
+    <div className="space-y-1.5 sm:col-span-2">
+      {a.puedeAnotar && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void a.anotar(n)}
+            disabled={n === null || igual || a.guardando}
+            className={button({ variant: "accent", size: "md", className: "gap-1.5 px-4" })}
+            title={n === null ? "Escribe un precio por PT" : igual ? "Ya es el precio guardado" : undefined}
+          >
+            <Save className="h-4 w-4" aria-hidden /> {a.anotado ? "Guardar el precio nuevo" : "Guardar este precio"}
+          </button>
+          {a.anotado && (
+            <button type="button" onClick={() => void a.borrarAnotado()} disabled={a.guardando} className={button({ variant: "secondary", size: "md", className: "gap-1.5 px-4" })}>
+              <Trash2 className="h-4 w-4" aria-hidden /> Borrar el precio guardado
+            </button>
+          )}
+        </div>
+      )}
+      {a.anotado && (
+        <p className="text-sm text-[var(--text-secondary)]" data-precio-anotado={a.anotado.precioPt}>
+          {igual ? "Precio " : `El guardado es S/ ${fmtSoles(a.anotado.precioPt)}, `}{guardadoEl(a.anotado)}.
+        </p>
+      )}
+      {a.errorAlAnotar && <p role="alert" className="text-sm font-semibold text-[var(--data-error-ink)]">{a.errorAlAnotar}</p>}
+    </div>
+  );
+}
+
+function ElegirCompra({ m, eleccion, setEleccion, precioAMano, setPrecioAMano, a }: {
   m: MargenArmado;
   eleccion: EleccionDeCompra;
   setEleccion: (v: EleccionDeCompra) => void;
   precioAMano: string;
   setPrecioAMano: (v: string) => void;
+  a: Anotar;
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -107,7 +169,7 @@ function ElegirCompra({ m, eleccion, setEleccion, precioAMano, setPrecioAMano }:
       </label>
       {eleccion === "mano" && (
         <label className="block min-w-0">
-          <span className={ETIQUETA_CUENTA}>Precio de compra por PT (S/), no se guarda</span>
+          <span className={ETIQUETA_CUENTA}>Precio de compra por PT (S/)</span>
           <input
             className={CAMPO_CUENTA}
             inputMode="decimal"
@@ -117,11 +179,12 @@ function ElegirCompra({ m, eleccion, setEleccion, precioAMano, setPrecioAMano }:
           />
         </label>
       )}
+      {eleccion === "mano" && <AnotarPrecio precioAMano={precioAMano} a={a} />}
     </div>
   );
 }
 
-function ConMargen({ v, compra, m }: { v: VentaDelCamion; compra: CompraDelCamion; m: MargenDelCamion }) {
+function ConMargen({ v, compra, m, anotado }: { v: VentaDelCamion; compra: CompraDelCamion; m: MargenDelCamion; anotado: CompraAMano | null }) {
   const tono = m.camion > 0 ? TXT_OK : m.camion < 0 ? TXT_AVISO : undefined;
   const f = frase(v, compra, m);
   return (
@@ -132,7 +195,7 @@ function ConMargen({ v, compra, m }: { v: VentaDelCamion; compra: CompraDelCamio
           lleva el «S/», como «S/ por PT» de arriba, y el camión pasa a soles
           enteros desde S/ 100 (lo exacto queda en la frase de arriba). */}
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <KpiResumen label="Compra S/ por PT" value={fmtSoles(compra.porPt)} hint={compra.origen === "a-mano" ? "Escrito a mano" : compra.conversion.tipo === "directa" ? "De la cuenta" : "Derivado"} />
+        <KpiResumen label="Compra S/ por PT" value={fmtSoles(compra.porPt)} hint={compra.origen === "a-mano" ? (esElAnotado(compra.porPt, anotado) ? "Anotado a mano" : "Escrito a mano") : esDerivada(compra) ? "Derivado" : "De la cuenta"} />
         <KpiResumen label="Venta S/ por PT" value={fmtSoles(v.porPt)} hint={v.fuente === "cuenta" ? "De la cuenta" : "Sin cobrar"} />
         <KpiResumen label="Margen S/ por PT" value={conSigno(m.porPt, fmtSoles)} tono={tono} hint={m.pct !== null ? `${fmtPct(m.pct)} % de la venta` : undefined} />
         <KpiResumen label="Margen del camión S/" value={conSigno(m.camion, solesCortos)} tono={tono} hint={`${fmtPt(m.pt)} PT del camión`} destacado={m.camion > 0} />
@@ -141,8 +204,17 @@ function ConMargen({ v, compra, m }: { v: VentaDelCamion; compra: CompraDelCamio
   );
 }
 
-export function MargenDelCamionBloque({ c, guia, deLaGuia }: { c: CubicacionRegistro; guia: EstadoDeLaGuia; deLaGuia?: PiezasDeLaGuia }) {
-  const { resultado: r, conComunidad, eleccion, setEleccion, precioAMano, setPrecioAMano } = useMargenDelCamion(c, guia, deLaGuia);
+export function MargenDelCamionBloque({ c, guia, deLaGuia, puedeAnotar, onGuardada }: {
+  c: CubicacionRegistro;
+  guia: EstadoDeLaGuia;
+  deLaGuia?: PiezasDeLaGuia;
+  /** Admin y dueño: guardan el precio de compra escrito a mano. */
+  puedeAnotar: boolean;
+  /** La guardada con el precio anotado (o borrado), para que la lista no quede vieja. */
+  onGuardada?: (c: CubicacionRegistro) => void;
+}) {
+  const { resultado: r, conComunidad, eleccion, setEleccion, precioAMano, setPrecioAMano, ...anotar } = useMargenDelCamion(c, guia, deLaGuia, onGuardada);
+  const a: Anotar = { ...anotar, puedeAnotar };
   const [cambiar, setCambiar] = useState(false);
   const verElegir = r.estado === "lista" && (!r.calza || cambiar || eleccion !== "" || (r.compra !== null && !r.compra.ok));
 
@@ -153,7 +225,7 @@ export function MargenDelCamionBloque({ c, guia, deLaGuia }: { c: CubicacionRegi
           <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Margen del camión</CardTitle>
           <InfoTip
             what="Venta por PT − compra por PT = margen por PT; × los PT del camión = margen del camión; ÷ la venta = el %."
-            affects="Cálculo de pantalla: no se guarda ni mueve plata. Los montos salen de las cuentas (lo valorizado al descontar); la compra por m³ de troza se pasa a PT con el rendimiento de la GTF, y eso es un derivado."
+            affects="Cálculo de pantalla: no mueve plata. Los montos salen de las cuentas (lo valorizado al descontar); la compra por m³ de troza se pasa a PT con el rendimiento de la GTF, y eso es un derivado. Si escribes el precio de compra a mano, puedes guardarlo en esta cubicación: la próxima vez sale solo y entra en el margen del mes."
             example="Compraste a S/ 1,80 y vendiste a S/ 2,50: ganaste S/ 0,70 por PT, S/ 1.400 en un camión de 2.000 PT."
           />
         </div>
@@ -170,7 +242,7 @@ export function MargenDelCamionBloque({ c, guia, deLaGuia }: { c: CubicacionRegi
       {r.estado === "lista" && (
         <>
           {r.margen && r.venta.ok && r.compra?.ok ? (
-            <ConMargen v={r.venta.venta} compra={r.compra.compra} m={r.margen} />
+            <ConMargen v={r.venta.venta} compra={r.compra.compra} m={r.margen} anotado={a.anotado} />
           ) : (
             <>
               {!r.venta.ok && <Caja tono={NEUTRO}>{r.venta.falta}</Caja>}
@@ -181,11 +253,16 @@ export function MargenDelCamionBloque({ c, guia, deLaGuia }: { c: CubicacionRegi
 
           <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
             {r.venta.ok && <li><span className="font-semibold text-[var(--text-primary)]">Venta:</span> {lineaDeVenta(r.venta.venta)}</li>}
-            {r.compra?.ok && <li><span className="font-semibold text-[var(--text-primary)]">Compra:</span> {lineaDeCompra(r.compra.compra, c.gtfNumber)}</li>}
+            {r.compra?.ok && <li><span className="font-semibold text-[var(--text-primary)]">Compra:</span> {lineaDeCompra(r.compra.compra, c.gtfNumber, a.anotado)}</li>}
+            {r.respaldo && a.anotado && (
+              <li data-precio-respaldo={a.anotado.precioPt}>
+                <span className="font-semibold text-[var(--text-primary)]">A mano:</span> S/ {fmtSoles(a.anotado.precioPt)} por PT ({guardadoEl(a.anotado)}) queda de respaldo: manda la compra del lote, que es lo que se pagó.
+              </li>
+            )}
           </ul>
 
           {verElegir && (
-            <ElegirCompra m={r} eleccion={eleccion} setEleccion={setEleccion} precioAMano={precioAMano} setPrecioAMano={setPrecioAMano} />
+            <ElegirCompra m={r} eleccion={eleccion} setEleccion={setEleccion} precioAMano={precioAMano} setPrecioAMano={setPrecioAMano} a={a} />
           )}
         </>
       )}

@@ -38,6 +38,8 @@ export function useGuardadasDelCubicador(recargarToken?: number): {
   recargar: () => void;
   /** true = se borró. */
   borrar: (id: string) => Promise<boolean>;
+  /** Pone en la lista la guardada que devolvió una escritura (precio anotado), sin esperar la recarga. */
+  reemplazar: (c: CubicacionRegistro) => void;
 } {
   const [lista, setLista] = useState<CubicacionRegistro[]>([]);
   const [enLibro, setEnLibro] = useState<Record<string, EnLibroDeGuardada>>({});
@@ -105,5 +107,11 @@ export function useGuardadasDelCubicador(recargarToken?: number): {
 
   const recargar = useCallback(() => { void cargar(); }, [cargar]);
 
-  return { lista, enLibro, cargando, error, borrando, recargar, borrar };
+  /* Una carga que salió antes de la escritura no la pisa (cuenta como cambio). */
+  const reemplazar = useCallback((c: CubicacionRegistro) => {
+    cargasRef.current.cambios += 1;
+    setLista((prev) => prev.map((x) => (x.id === c.id ? c : x)));
+  }, []);
+
+  return { lista, enLibro, cargando, error, borrando, recargar, borrar, reemplazar };
 }
