@@ -4,6 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { AdelantosReciboDB } from "@/lib/db/adelantos-recibo.db";
+import { AdelantosHojaFirmasDB } from "@/lib/db/adelantos-hoja-firmas.db";
 
 /**
  * GET /api/adelantos/estado-recibos — por adelanto: hora de la última firma y
@@ -17,8 +18,12 @@ export async function GET(req: NextRequest) {
   const sinPermiso = permisoAdelantos(auth.role, "read");
   if (sinPermiso) return sinPermiso;
   try {
-    const estados = await AdelantosReciboDB.estados(auth.tenantId);
-    return NextResponse.json({ estados }, { headers: { "Cache-Control": "private, no-store" } });
+    const [estados, hojas] = await Promise.all([
+      AdelantosReciboDB.estados(auth.tenantId),
+      // Firmado en papel (25-10): la foto de la hoja firmada de cada adelanto, {codigo, en, documentoId}.
+      AdelantosHojaFirmasDB.hojasPorAdelanto(auth.tenantId),
+    ]);
+    return NextResponse.json({ estados, hojas }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
     logger.error("[adelantos/estado-recibos] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "No se pudo leer el estado de los recibos." }, { status: 503 });
