@@ -147,11 +147,16 @@ export default function LothPlanPreliminares({
   };
 
   return (
-    <section id={ID_PRELIMINARES} data-testid="preliminares-del-plan" aria-labelledby="preliminares-titulo" className="space-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1">
+    <section id={ID_PRELIMINARES} data-testid="preliminares-del-plan" aria-labelledby="preliminares-titulo" className="space-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+      {/* Una sola fila cuando no hay pendientes (26-10, «más compacto»): el
+          título, «ninguna pendiente», las cerradas a un clic y el botón. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex min-w-0 grow basis-[16rem] items-center gap-1">
           <FileWarning className="h-5 w-5 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden="true" />
-          <CardTitle id="preliminares-titulo">GTF preliminares (hechas a mano, por enviar a SERFOR)</CardTitle>
+          {/* «Hechas a mano, por enviar a SERFOR» al lado del título y no dentro:
+              así se recorta (o pasa al ⓘ en angosto) antes que partir la fila. */}
+          <CardTitle id="preliminares-titulo" className="shrink-0">GTF preliminares</CardTitle>
+          <span className="min-w-0 truncate text-sm text-[var(--text-secondary)] max-lg:hidden">(hechas a mano, por enviar a SERFOR)</span>
           <InfoTip
             title="Qué es una preliminar"
             what="Una guía que ya hiciste en papel y todavía no registras en SERFOR ni en el libro. Anotas el N.º de GTF, el de la LT y cuánto trajo de cada especie."
@@ -159,6 +164,15 @@ export default function LothPlanPreliminares({
             example="GTF 1 con LT 2: tornillo 30 trozas, 20 m³ (bloque 1). Quedan 120 m³ → si se registran quedan 100 m³."
           />
         </div>
+        {pre !== null && pendientes.length === 0 && (
+          <span data-preliminares-vacio className="text-sm text-[var(--text-secondary)]">Ninguna pendiente de registrar</span>
+        )}
+        {pre !== null && cerradas.length > 0 && (
+          <Btn variant="ghost" size="sm" onClick={() => setVerCerradas((v) => !v)} aria-expanded={verCerradas}>
+            <ChevronDown className={`h-4 w-4 transition-transform ${verCerradas ? "rotate-180" : ""}`} aria-hidden="true" />
+            Registradas y anuladas ({cerradas.length})
+          </Btn>
+        )}
         {puedeEscribir && (
           <Btn variant="primary" onClick={() => setEditando("nueva")} data-testid="registrar-preliminar">
             <Plus className="h-4 w-4" aria-hidden="true" /> Registrar GTF preliminar
@@ -169,7 +183,6 @@ export default function LothPlanPreliminares({
         <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">No se pudieron leer las preliminares de este plan. Recarga la página.</p>
       ) : (
         <>
-          {pendientes.length === 0 && <p className="text-sm text-[var(--text-secondary)]">Ninguna guía hecha a mano pendiente de registrar.</p>}
           {pendientes.length > 0 && (
             <ul className="divide-y divide-[var(--rule-base)]">
               {pendientes.map((g) => (
@@ -177,20 +190,12 @@ export default function LothPlanPreliminares({
               ))}
             </ul>
           )}
-          {cerradas.length > 0 && (
-            <div>
-              <Btn variant="ghost" size="sm" onClick={() => setVerCerradas((v) => !v)} aria-expanded={verCerradas}>
-                <ChevronDown className={`h-4 w-4 transition-transform ${verCerradas ? "rotate-180" : ""}`} aria-hidden="true" />
-                Registradas y anuladas ({cerradas.length})
-              </Btn>
-              {verCerradas && (
-                <ul className="divide-y divide-[var(--rule-base)]">
-                  {cerradas.map((g) => (
-                    <Fila key={g.id} g={g} acciones={accionesDe(g)} />
-                  ))}
-                </ul>
-              )}
-            </div>
+          {verCerradas && cerradas.length > 0 && (
+            <ul className="divide-y divide-[var(--rule-base)] border-t border-[var(--rule-base)]">
+              {cerradas.map((g) => (
+                <Fila key={g.id} g={g} acciones={accionesDe(g)} />
+              ))}
+            </ul>
           )}
         </>
       )}

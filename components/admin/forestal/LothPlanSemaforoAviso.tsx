@@ -49,6 +49,8 @@ export default function LothPlanSemaforoAviso({ semaforo, ficha, vigenciaDicha =
   return (
     <div
       data-aviso-semaforo={rojo ? "rojo" : "ambar"}
+      data-aviso-nivel={rojo ? "rojo" : "ambar"}
+      data-aviso-resumen={(primera?.texto ?? "").replace(/(:|\.\s|\.$).*$/, "")}
       className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 px-3 py-2 text-sm ${
         rojo
           ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/12"

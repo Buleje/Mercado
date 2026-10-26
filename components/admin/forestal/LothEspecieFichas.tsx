@@ -19,6 +19,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, Pencil, Printer, ShieldAlert, Trash2 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BloquePlan } from "./loth-plan-ui";
 import { formatCurrency } from "@/lib/format";
 
@@ -110,7 +111,13 @@ export default function LothEspecieFichas({
     <BloquePlan
       id="loth-plan-especies"
       titulo="Especies del plan"
-      sub="Lo autorizado contra lo censado, talado y movilizado — con su saldo"
+      ayuda={
+        <InfoTip
+          title="Cómo se lee"
+          what="Lo autorizado contra lo censado, talado y movilizado de cada especie, con su saldo."
+          example="Tornillo: autorizado 80 m³ y movilizado 20 m³ → saldo 60 m³."
+        />
+      }
       acciones={
         onImprimir || onAgregar ? (
           <>

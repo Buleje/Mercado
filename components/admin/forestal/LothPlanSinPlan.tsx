@@ -95,6 +95,8 @@ export default function LothPlanSinPlan({
       {!vacio && (
         <div
           data-testid="sin-plan-renglon"
+          data-aviso-nivel="ambar"
+          data-aviso-resumen={resumenSinPlan(dato)}
           className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
         >
           <span className="flex min-w-0 items-center gap-2 font-semibold">

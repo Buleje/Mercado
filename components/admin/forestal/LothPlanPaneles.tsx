@@ -7,7 +7,6 @@
  */
 
 import { useState, type ReactNode } from "react";
-import { ExternalLink } from "@buleje/design-system/icons";
 import { mismaEspecie } from "@/lib/forestal/loth-constants";
 import LothPoaPanel from "./LothPoaPanel";
 import LothZafraPanel from "./LothZafraPanel";
@@ -20,9 +19,7 @@ import LothPlanAvisos from "./LothPlanAvisos";
 import LothPlanCroquis from "./LothPlanCroquis";
 import LothPlanPestanas, { idPanel, idTab, type PestanaPlan } from "./LothPlanPestanas";
 import LothPlantacionRegistro from "./LothPlantacionRegistro";
-import PlanDocumentosDelPlan from "./plan-documentos/PlanDocumentosDelPlan";
-import PapelesDelPlan from "./plan-papeles/PapelesDelPlan";
-import { enlaceAlDrive } from "./plan-documentos/plan-documentos-api";
+import PestanaPapeles from "./plan-papeles/PestanaPapeles";
 import type { VistaPlan } from "./hooks/use-loth-plan-view";
 import { useSaldoDelPlan } from "./hooks/use-loth-saldo-plan";
 import LothPlanSinPlan from "./LothPlanSinPlan";
@@ -34,6 +31,7 @@ import LothPlantacionBloques, { type SaldoDeLosBloquesProps } from "./LothPlanta
 import { useIrAPreliminares } from "./hooks/use-ir-a-preliminares";
 import { useSemaforoDelPlanAbierto } from "./hooks/use-loth-semaforo-libro";
 import LothPlazosDelLibroAviso from "./LothPlazosDelLibroAviso";
+import LothPlanAvisosFranja from "./LothPlanAvisosFranja";
 import { PESTANA_PAPELES } from "./plan-papeles/abrir-papeles";
 import { pedirPasoAlAbrir } from "./hooks/loth-plan-paso-pedido";
 
@@ -90,6 +88,9 @@ export default function LothPlanPaneles({
   };
   return (
     <>
+      {/* Todos los avisos en una franja (26-10): lo rojo a la vista, el resto
+          plegado en una línea con su resumen. */}
+      <LothPlanAvisosFranja>
       {/* El plazo de 15 días es del libro entero, no de este plan (B5): va aparte, arriba. */}
       <LothPlazosDelLibroAviso firma={reloadSignal} />
       <LothPlanAvisos
@@ -129,6 +130,7 @@ export default function LothPlanPaneles({
       <LothPlanPreliminaresAviso guias={saldo.dato?.preliminares?.guias} onVer={() => irA.ir()} />
 
       <LothPlanSinPlan version={version} onCambio={trasAtar} onVerGuia={onVerGuia} />
+      </LothPlanAvisosFranja>
 
       <LothPlanPestanas pestanas={esPlantacion ? pestanasPlantacion : pestanas} activa={pestana} onCambiar={setPestana} />
 
@@ -235,34 +237,7 @@ export default function LothPlanPaneles({
 
       {docs.disponible && (
         <Panel id="documentos" activa={pestana}>
-          {/* Papeles del permiso: lo que la norma pide, arriba; las carpetas, abajo. */}
-          <PapelesDelPlan
-            planId={plan.id}
-            esPlantacion={esPlantacion}
-            vigenciaHasta={plan.vigenciaHasta}
-            papeles={v.papeles}
-            docs={docs}
-            onPlanCambiado={async () => {
-              await Promise.all([d.loadPlans(), d.loadDetail(plan.id)]);
-            }}
-          />
-          {docs.vista?.preparada && docs.vista.carpetaRaizId && (
-            <p className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-tertiary)]">
-              <span className="min-w-0 truncate" title={docs.vista.rutaRaiz}>
-                En Documentos: <span className="font-semibold text-[var(--text-secondary)]">{docs.vista.rutaRaiz}</span>
-              </span>
-              <a
-                href={enlaceAlDrive(docs.vista.carpetaRaizId)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)]"
-              >
-                <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                Abrir en Documentos
-              </a>
-            </p>
-          )}
-          <PlanDocumentosDelPlan planId={plan.id} docs={docs} />
+          <PestanaPapeles v={v} plan={plan} />
         </Panel>
       )}
 

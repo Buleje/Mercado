@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import LothPlanAvisos from "@/components/admin/forestal/LothPlanAvisos";
 import { hoyDelLibro } from "@/lib/forestal/vigencia-avisos";
@@ -35,7 +35,12 @@ describe("aviso de vigencia del plan", () => {
     const caja = document.querySelector('[data-aviso-vigencia="vencido"]')!;
     expect(caja).toBeTruthy();
     expect(caja.textContent).toContain("Plan de manejo PO-2026-001 venció hace 11 días");
-    expect(caja.textContent).toContain("la guía que emitas queda observada");
+    // Una línea + ⓘ (26-10): la consecuencia vive en el ⓘ, que abre con un clic.
+    fireEvent.click(within(caja as HTMLElement).getByRole("button", { name: "Qué pasa cuando vence el plan" }));
+    expect(document.body.textContent).toContain("la guía que emitas queda observada");
+    // Rojo = siempre a la vista en la franja de avisos; el resumen sale corto.
+    expect(caja.getAttribute("data-aviso-nivel")).toBe("rojo");
+    expect(caja.getAttribute("data-aviso-resumen")).toBe("Venció hace 11 días");
     // Rojo por token, no por hex (gate de diseño del panel).
     expect(caja.className).toContain("border-[var(--data-error-500)]");
   });
@@ -50,6 +55,8 @@ describe("aviso de vigencia del plan", () => {
     const caja = document.querySelector('[data-aviso-vigencia="por_vencer"]')!;
     expect(caja.textContent).toContain("vence en 30 días");
     expect(caja.className).toContain("--data-warning-500");
+    // A más de una semana se pliega con los demás avisos (ámbar).
+    expect(caja.getAttribute("data-aviso-nivel")).toBe("ambar");
   });
 
   it("sin plan, sin vigencia cargada o con el plan holgado no ocupa lugar", () => {

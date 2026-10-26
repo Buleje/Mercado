@@ -19,101 +19,21 @@
  */
 
 import { useState } from "react";
-import { AlertTriangle, Ban, CalendarClock, CheckCircle2, Link2 } from "@buleje/design-system/icons";
+import { AlertTriangle, Ban, CalendarClock, CheckCircle2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { avisoDeVigencia } from "@/lib/forestal/vigencia-avisos";
-import { permisoGemeloDelPlan } from "@/lib/forestal/loth-plan-permiso";
-import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
-import { Btn } from "./ctp-shared";
-import { unirPlanConPermiso } from "./loth-plan-unir";
+import { UnirConPermiso, unidosEnLaSesion, type PlanEnPantalla } from "./LothPlanAvisoUnir";
 import type { ControlRow } from "./loth-plan-shared";
 import { formatNumber } from "@/lib/format";
 import type { PasoPlan } from "@/lib/forestal/loth-plan-pasos";
 import LothPlanSemaforoAviso, { razonesDelAviso } from "./LothPlanSemaforoAviso";
 import type { SemaforoDeLaPantalla } from "./hooks/use-loth-semaforo-libro";
 
-/** Lo que el aviso de «unir» necesita del plan en pantalla. */
-interface PlanEnPantalla {
-  id?: string | null;
-  contratoId?: string | null;
-  planNumber?: string | null;
-  tituloHabilitante?: string | null;
-}
 
-/**
- * «Este plan y el permiso X tienen el mismo código: ¿los unimos?».
- *
- * Hoy plan y permiso sólo se atan si el permiso se elige del Directorio al dar
- * de alta el plan; un plan cargado a mano queda suelto aunque su código sea el
- * del permiso (Blas: 19-SEC/REG-PLT-2025-096). Unir usa las MISMAS dos
- * escrituras que el alta con Directorio (`LothPlanForm`): el plan guarda el
- * permiso (`contratoId`) y el permiso guarda su plan (`planId`).
- *
- * Con dos o más permisos candidatos no se sugiere nada (`permisoGemeloDelPlan`).
- */
-/** Qué quedó después de unir: con qué permiso y, si el permiso no guardó su plan, por qué. */
-interface Unido {
-  planId: string;
-  contratoId: string;
-  codigo: string;
-  pendiente: string | null;
-}
-
-/**
- * Lo recién unido, por plan, mientras dure la sesión de la página.
- *
- * Unir recarga los planes, y mientras recargan la vista del plan se desmonta
- * entera (muestra el «cargando»): un estado de React acá se perdía y el aviso
- * desaparecía sin respuesta — medido en el navegador el 29-09: el plan quedó
- * unido y la pantalla no lo dijo. Guardado afuera del componente, la línea
- * «Plan unido al permiso…» sobrevive a esa recarga.
- */
-const unidosEnLaSesion = new Map<string, Unido>();
-
-function UnirConPermiso({ plan, onUnido }: { plan: PlanEnPantalla & { id: string }; onUnido: (u: Unido) => void }) {
-  const { contratos, disponible, actualizar } = usePermisosForestal({ activo: true });
-  const [uniendo, setUniendo] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const gemelo = permisoGemeloDelPlan(plan, contratos);
-  if (!disponible || !gemelo) return null;
-  const permiso = gemelo;
-
-  async function unir() {
-    setUniendo(true);
-    setError(null);
-    try {
-      // Las dos escrituras viven en `loth-plan-unir` (las usa también Extracción).
-      const { pendiente } = await unirPlanConPermiso(plan.id, permiso.id, actualizar);
-      onUnido({ planId: plan.id, contratoId: permiso.id, codigo: permiso.codigo, pendiente });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setUniendo(false);
-    }
-  }
-
-  return (
-    <div
-      data-aviso-unir={permiso.codigo}
-      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 border-[var(--data-info-500)]/50 bg-[var(--data-info-500)]/10 px-4 py-2.5 text-sm text-[var(--data-info-ink)]"
-    >
-      <Link2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-      <span className="flex min-w-0 grow basis-[18rem] items-center gap-1">
-        <span className="min-w-0">
-          Este plan y el permiso <span className="font-mono font-bold">{permiso.codigo}</span> tienen el mismo código: ¿los unimos?
-        </span>
-        <InfoTip
-          title="Unir el plan con su permiso"
-          what="Es el mismo papel cargado dos veces: una como plan de manejo y otra como permiso del Directorio."
-          affects="Unidos, el permiso lleva su plan (censo, especies autorizadas, POA) y el plan su permiso. No se borra ni se cambia nada más."
-          example="Si el código no es del mismo papel, no los unas: elige el permiso correcto desde el Directorio."
-        />
-      </span>
-      <Btn variant="primary" size="sm" onClick={() => void unir()} disabled={uniendo} aria-busy={uniendo}>
-        {uniendo ? "Uniendo…" : "Unirlos"}
-      </Btn>
-      {error && <p role="alert" className="basis-full text-sm font-semibold text-[var(--data-error-ink)]">{error}</p>}
-    </div>
-  );
+/** «Plan de manejo PO 12 vence en 30 días» → «Vence en 30 días» (el resumen de la franja). */
+export function resumenVigencia(titulo: string): string {
+  const m = /\s(venció|vence)(\s.*)$/.exec(titulo);
+  return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)}${m[2]}` : titulo;
 }
 
 export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPlanUnido, plantacion = false, semaforo, onCompletarFicha, onVerPapeles }: {
@@ -167,13 +87,15 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
   if (!truncado && !hasCenso && !vigencia && !planSinPermiso && !unidoAca && !conSemaforo) return null;
 
   return (
-    <div className="space-y-2">
+    /* `contents`: cada aviso es hijo directo de la franja (`LothPlanAvisosFranja`),
+       que los cuenta y pliega por su `data-aviso-nivel`. */
+    <div className="contents">
       {/* ⛔ Antes que cualquier otro número: si el censo vino cortado, TODO lo
           que sigue —aprovechables, volumen sobre DMC, intensidad por
           hectárea, el cuadre por especie— está calculado sobre una parte. Un
           POA equivocado que se ve completo es peor que uno que falta. */}
       {truncado && (
-        <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+        <p data-aviso-nivel="rojo" data-aviso-resumen="Censo cargado a medias" className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
             El censo tiene {formatNumber(truncado.total)} árboles y se cargaron {formatNumber(truncado.cargados)}.
@@ -189,17 +111,23 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
       {vigencia && (
         <p
           data-aviso-vigencia={vigencia.nivel}
-          className={`flex items-start gap-2 rounded-xl border-2 p-3 text-sm ${
+          /* A una semana de vencer ya no se pliega: queda a la vista como lo rojo. */
+          data-aviso-nivel={vigencia.nivel === "vencido" || vigencia.gravedad === "urgente" ? "rojo" : "ambar"}
+          data-aviso-resumen={resumenVigencia(vigencia.titulo)}
+          className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm ${
             vigencia.nivel === "vencido"
               ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
               : "border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"
           }`}
         >
-          <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>
-            <span className="font-bold">{vigencia.titulo}.</span>{" "}
-            <span className="font-medium">{vigencia.detalle}</span>
-          </span>
+          <CalendarClock className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 font-bold">{vigencia.titulo}.</span>
+          <InfoTip
+            title={vigencia.nivel === "vencido" ? "El plan ya venció" : "El plan está por vencer"}
+            ariaLabel="Qué pasa cuando vence el plan"
+            what={vigencia.detalle}
+            example="Renovarlo ante la ARFFS toma meses: empieza el trámite apenas veas este aviso."
+          />
         </p>
       )}
 
@@ -221,7 +149,7 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
         />
       )}
       {unidoAca && (
-        <div role="status" data-aviso-unir="unido" className="space-y-1">
+        <div role="status" data-aviso-unir="unido" data-aviso-nivel={unidoAca.pendiente ? "rojo" : "ok"} className="space-y-1">
           <p className="flex items-center gap-2 text-sm font-medium text-[var(--data-success-ink)]">
             <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
             {/* Un solo hijo de texto: en un flex con gap, el punto suelto quedaba separado. */}
@@ -238,7 +166,7 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
       )}
 
       {todoBien && (
-        <p className="flex items-center gap-2 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+        <p data-aviso-nivel="ok" className="flex items-center gap-2 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
           <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
           {plantacion
             ? "Todos los árboles marcados son de especies del registro."
@@ -247,18 +175,26 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
       )}
 
       {noAut.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">
+        <div
+          data-aviso-nivel="rojo"
+          data-aviso-resumen="Especie fuera del plan"
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">
           <Ban className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <p className="min-w-0 grow basis-[20rem]">
-            <span className="font-bold">
-              {plantacion ? "Especie(s) marcada(s) fuera del registro: " : "Especie(s) censada(s) fuera del plan aprobado: "}
+          <p className="flex min-w-0 grow basis-[16rem] items-center gap-1">
+            <span className="min-w-0">
+              <span className="font-bold">
+                {plantacion ? "Especie(s) marcada(s) fuera del registro: " : "Especie(s) censada(s) fuera del plan aprobado: "}
+              </span>
+              {noAut.map((r) => r.species).join(", ")}.
             </span>
-            {noAut.map((r) => r.species).join(", ")}.{" "}
-            <span className="font-medium">
-              {plantacion
+            <InfoTip
+              title="Especie fuera del plan"
+              ariaLabel="Por qué una especie fuera del plan es infracción"
+              what={plantacion
                 ? "Talar o movilizar una especie que no está en el registro es infracción — corrige el registro o los árboles antes de emitir GTF."
                 : "Talar o movilizar una especie no autorizada es infracción — corrige el plan o el censo antes de emitir GTF."}
-            </span>
+              affects="«Resolver» te deja agregarla al plan (si la resolución la autoriza) o sacar sus árboles del censo."
+            />
           </p>
           {/* El aviso trae el camino: antes decía qué estaba mal y había que
               salir a buscar dónde se arregla. */}
@@ -268,7 +204,7 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
                 key={r.species}
                 type="button"
                 onClick={() => onResolver?.(r.species)}
-                className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--data-error-700)] px-3 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--data-error-700)] px-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
               >
                 Resolver {r.species}
               </button>
@@ -278,7 +214,11 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
       )}
 
       {excArb.map((r) => (
-        <div key={r.species} className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] px-4 py-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
+        <div
+          key={r.species}
+          data-aviso-nivel="ambar"
+          data-aviso-resumen={`${r.species}: más árboles que los autorizados`}
+          className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] px-3 py-2 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <div>
             <span className="font-bold">{r.species}:</span>{" "}

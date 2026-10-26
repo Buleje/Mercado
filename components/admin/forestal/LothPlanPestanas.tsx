@@ -25,9 +25,15 @@
  *
  * Tablist de verdad (flechas, Inicio/Fin, foco que sigue; Tab entra y sale del
  * grupo de una), como en Saldos del Libro CTP.
+ *
+ * PEGADA arriba (26-10, «mejor de navegar»): al bajar por el censo o el plan de
+ * tala la barra queda debajo de la cabecera del panel, con sus cifras, y
+ * cambiar de pestaña desde ahí vuelve al principio de la pestaña nueva — si no,
+ * se caía a la mitad de un panel que nunca se vio. Mismo trato que las
+ * secciones del cubicador (`cubicador-secciones`).
  */
 
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 
 export type PestanaPlan = "avance" | "especies" | "censo" | "registro" | "documentos";
 /** Las de un plan de bosque natural (PO, PMFI, DEMA, PGMF). */
@@ -63,11 +69,21 @@ export default function LothPlanPestanas({ pestanas, activa, onCambiar }: {
   onCambiar: (p: PestanaPlan) => void;
 }) {
   const ids = pestanas.map((p) => p.id);
+  const ancla = useRef<HTMLDivElement>(null);
+  const cambiar = (p: PestanaPlan) => {
+    onCambiar(p);
+    const el = ancla.current;
+    /* 64 px = la cabecera del panel: más arriba, la barra ya está pegada. */
+    if (el && el.getBoundingClientRect().top < 64) el.scrollIntoView({ block: "start", behavior: "auto" });
+  };
   return (
+    <>
+    <div ref={ancla} aria-hidden className="scroll-mt-16" />
     <div
       role="tablist"
       aria-label="Partes del plan de manejo"
-      className="flex gap-1 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1"
+      data-pestanas-plan
+      className="sticky top-16 z-20 flex gap-1 overflow-x-auto max-sm:gap-0.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1 shadow-[var(--shadow-sm)]"
     >
       {pestanas.map((p) => {
         const sel = p.id === activa;
@@ -81,7 +97,7 @@ export default function LothPlanPestanas({ pestanas, activa, onCambiar }: {
             aria-controls={idPanel(p.id)}
             tabIndex={sel ? 0 : -1}
             title={p.alertaTexto}
-            onClick={() => onCambiar(p.id)}
+            onClick={() => cambiar(p.id)}
             onKeyDown={(e) => {
               if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
               e.preventDefault();
@@ -90,10 +106,10 @@ export default function LothPlanPestanas({ pestanas, activa, onCambiar }: {
                 e.key === "Home" ? 0
                   : e.key === "End" ? ids.length - 1
                     : (i + (e.key === "ArrowRight" ? 1 : -1) + ids.length) % ids.length;
-              onCambiar(ids[destino]);
-              document.getElementById(idTab(ids[destino]))?.focus();
+              cambiar(ids[destino]);
+              document.getElementById(idTab(ids[destino]))?.focus({ preventScroll: true });
             }}
-            className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+            className={`inline-flex min-h-10 min-w-max flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm max-sm:gap-1 max-sm:px-1.5 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
               sel
                 ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -104,6 +120,7 @@ export default function LothPlanPestanas({ pestanas, activa, onCambiar }: {
         );
       })}
     </div>
+    </>
   );
 }
 

@@ -176,14 +176,19 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
           tone="info"
         />
       </div>
+      {/* Una línea + ⓘ (26-10): el párrafo de tres renglones pasó al ⓘ. */}
       {semillerosDifieren && (
-        <p className="flex items-start gap-2 border-b border-[var(--rule-soft)] bg-[var(--data-warning-500)]/8 px-4 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+        <p className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--data-warning-500)]/8 px-4 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
-            El regente declaró <b>{semillerosDeclarados}</b> semillero{semillerosDeclarados === 1 ? "" : "s"} en el censo y el
-            sistema reserva <b>{totales.semilleros}</b>. Revisa la especie antes de talar — en el Censo, la columna
-            «Condición» es la del regente y «Categoría POA» la del cálculo.
+            El regente declaró <b>{semillerosDeclarados}</b> semillero{semillerosDeclarados === 1 ? "" : "s"} y el sistema reserva <b>{totales.semilleros}</b>: revisa la especie antes de talar.
           </span>
+          <InfoTip
+            ariaLabel="Dónde ver la diferencia de semilleros"
+            title="Regente vs. sistema"
+            what="En el Censo, la columna «Condición» es la del regente y «Categoría POA» la del cálculo."
+            affects="Manda lo que firma la resolución aprobada del plan."
+          />
         </p>
       )}
 
@@ -277,9 +282,10 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
             return (
               <li key={`${a.titulo}-${i}`} className="flex items-start gap-2 text-sm">
                 <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${NIVEL_CLASS[a.nivel]}`} />
-                <span>
-                  <b className={NIVEL_CLASS[a.nivel]}>{a.titulo}.</b>{" "}
-                  <span className="text-[var(--text-secondary)]">{a.detalle}</span>
+                {/* Título a la vista y el detalle en el ⓘ (26-10): eran dos renglones por aviso. */}
+                <span className="inline-flex flex-wrap items-center gap-x-1">
+                  <b className={NIVEL_CLASS[a.nivel]}>{a.titulo}.</b>
+                  {a.detalle && <InfoTip ariaLabel={`Detalle: ${a.titulo}`} title={a.titulo} what={a.detalle} />}
                 </span>
               </li>
             );
@@ -290,7 +296,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
                 type="button"
                 onClick={() => setTodasLasAlertas((v) => !v)}
                 aria-expanded={todasLasAlertas}
-                className="text-xs font-bold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+                className="min-h-9 text-sm font-bold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
               >
                 {todasLasAlertas ? "Ver sólo las tres primeras" : `Ver los ${Math.min(alertas.length, 8)} avisos`}
               </button>

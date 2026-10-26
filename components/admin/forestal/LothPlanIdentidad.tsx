@@ -58,7 +58,9 @@ export function LothPlanIdentidadLinea({ plan }: { plan: Plan }) {
   return (
     <div className="space-y-2" data-plan-identidad>
       <div className="flex min-w-0 items-center gap-x-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-3">
-        <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5 text-sm">
+        {/* En UNA fila desde 768 px (26-10): los datos se recortan (el título
+            los dice enteros) antes que la vigencia baje a otro renglón. */}
+        <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5 text-sm md:flex-nowrap">
           <strong className="min-w-0 truncate font-bold text-[var(--text-primary)]" title={plan.titularName}>
             {plan.alias?.trim() || plan.titularName}
           </strong>
@@ -72,7 +74,7 @@ export function LothPlanIdentidadLinea({ plan }: { plan: Plan }) {
               {d.v}
             </span>
           ))}
-          <span className={`inline-flex shrink-0 items-center gap-1.5 font-bold ${TONO_TEXTO[vig.tono]}`}>
+          <span className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap font-bold ${TONO_TEXTO[vig.tono]}`}>
             <span className={`h-2 w-2 shrink-0 rounded-full ${TONO_PUNTO[vig.tono]}`} aria-hidden="true" />
             {vig.texto}
           </span>

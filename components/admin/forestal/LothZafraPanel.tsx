@@ -14,7 +14,8 @@ import { AlertTriangle, CalendarClock, CheckCircle2, TrendingUp } from "@buleje/
 import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ZAFRA_ESTADO_LABEL, ZAFRA_ESTADO_TONE, type ZafraAnalisis } from "@/lib/forestal/loth-zafra";
-import { BloquePlan } from "./loth-plan-ui";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { BloquePlan, BotonPlegar, CifraLinea } from "./loth-plan-ui";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
 import { COLUMNAS_ZAFRA, ESTADO_MES } from "./loth-plan-columnas-filtro";
 
@@ -24,6 +25,10 @@ const TONE_CLASS = {
   error: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
   info: "text-[var(--text-secondary)]",
 } as const;
+/** Abierto o plegado, recordado en el navegador (26-10: plegado por defecto). */
+export const CLAVE_ZAFRA_ABIERTA = "loth:plan:zafra-abierta";
+const TONO_CIFRA = { success: "ok", warning: "warn", error: "danger", info: undefined } as const;
+
 const TONE_BG = {
   success: "bg-[var(--data-success-500)]",
   warning: "bg-[var(--data-warning-500)]",
@@ -44,6 +49,9 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
    * porque para planificar la zafra sí hace falta el cuadro completo.
    */
   const [todos, setTodos] = useState(false);
+  /* Plegado por defecto (26-10, «más compacto»): la cabecera sigue diciendo
+     cuánto se movió, cuánto tiempo pasó y cuánto falta. Plegar no es esconder. */
+  const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_ZAFRA_ABIERTA, false);
   const iActual = zafra.meses.findIndex((m) => m.actual);
   const mesesVisibles = useMemo(() => {
     if (todos || zafra.meses.length <= 5) return zafra.meses;
@@ -62,7 +70,15 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
     <BloquePlan
       id="loth-plan-zafra"
       titulo="Zafra · avance contra la vigencia"
-      sub={
+      plegado={!abierto}
+      sub={!abierto && zafra.diasTotales > 0 ? (
+        <span data-zafra-cifras className="flex flex-wrap gap-x-3 gap-y-0.5">
+          <CifraLinea valor={`${zafra.avanceVolumenPct.toFixed(1)} %`} label="movilizado" tono={TONO_CIFRA[tone]} />
+          <CifraLinea valor={`${zafra.avanceTiempoPct.toFixed(1)} %`} label="del tiempo" />
+          <CifraLinea valor={`${Number(zafra.saldoM3).toFixed(3)} m³`} label="por movilizar" />
+          <CifraLinea valor={String(zafra.diasRestantes)} label={zafra.diasRestantes === 1 ? "día queda" : "días quedan"} />
+        </span>
+      ) : (
         <>
           {zafra.diasTotales > 0
             ? `${zafra.diasTranscurridos} de ${zafra.diasTotales} días · quedan ${zafra.diasRestantes}`
@@ -73,14 +89,24 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
             affects="No reemplaza el cronograma aprobado en el plan."
           />
         </>
-      }
+      )}
       acciones={
-        <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black uppercase tracking-wide ${TONE_CLASS[tone]}`}>
-          <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" /> {ZAFRA_ESTADO_LABEL[zafra.estado]}
-        </span>
+        <>
+          <span className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black uppercase tracking-wide ${TONE_CLASS[tone]}`}>
+            <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" /> {ZAFRA_ESTADO_LABEL[zafra.estado]}
+          </span>
+          <BotonPlegar
+            abierto={abierto}
+            onClick={() => setAbierto(!abierto)}
+            controla="loth-plan-zafra-cuerpo"
+            label={abierto ? "Plegar" : "Ver el detalle"}
+            icon={TrendingUp}
+            compacto
+          />
+        </>
       }
     >
-      <div className="space-y-4 p-4">
+      <div id="loth-plan-zafra-cuerpo" hidden={!abierto} className="space-y-4 p-4">
         {/* Barras: volumen vs tiempo */}
         <div className="space-y-2">
           <Barra label="Volumen movilizado" pct={zafra.avanceVolumenPct} tone={tone} />

@@ -15,14 +15,15 @@
 import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { AlertTriangle, Printer } from "@buleje/design-system/icons";
+import { AlertTriangle, Axe, Printer } from "@buleje/design-system/icons";
 import {
   metaDeDias,
   planDeTala,
   type ArbolParaTalar,
   type SaldoEspecie,
 } from "@/lib/forestal/loth-plan-tala";
-import { BloquePlan } from "./loth-plan-ui";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { BloquePlan, BotonPlegar, CifraLinea } from "./loth-plan-ui";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
 import { COLUMNAS_TALA, type FilaTala } from "./loth-plan-columnas-filtro";
 import { formatNumber } from "@/lib/format";
@@ -43,11 +44,15 @@ export interface LothPlanTalaPanelProps {
 
 /** Jornadas que se planifican de una vez. Una semana es lo que dura una cuadrilla. */
 const OPCIONES_DIAS = [1, 7, 15, 30];
+/** Abierto o plegado, recordado en el navegador (26-10: plegado por defecto). */
+export const CLAVE_TALA_ABIERTA = "loth:plan:tala-abierta";
 
 export default function LothPlanTalaPanel({
   arboles, saldos, ritmoRequeridoM3Dia, diasRestantes, saldoTotalM3, onImprimir,
 }: LothPlanTalaPanelProps) {
   const [dias, setDias] = useState(7);
+  /* Plegado, la cabecera dice la meta, cuántos árboles y si falta (26-10). */
+  const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_TALA_ABIERTA, false);
 
   const meta = useMemo(
     () => metaDeDias(ritmoRequeridoM3Dia, Math.min(dias, diasRestantes || dias), saldoTotalM3),
@@ -64,7 +69,14 @@ export default function LothPlanTalaPanel({
     <BloquePlan
       id="loth-plan-tala"
       titulo="Qué talar para no perder saldo"
-      sub={
+      plegado={!abierto}
+      sub={!abierto ? (
+        <span data-tala-cifras className="flex flex-wrap gap-x-3 gap-y-0.5">
+          <CifraLinea valor={`${n3(meta)} m³`} label={`en ${Math.min(dias, diasRestantes || dias)} ${dias === 1 ? "jornada" : "jornadas"}`} />
+          <CifraLinea valor={String(plan.lineas.length)} label={plan.lineas.length === 1 ? "árbol a tumbar" : "árboles a tumbar"} />
+          {plan.faltanteM3 > 0 && <CifraLinea valor={`${n3(plan.faltanteM3)} m³`} label="faltan" tono="warn" />}
+        </span>
+      ) : (
         <>
           Al ritmo que pide la zafra: <span className="font-mono tabular-nums">{n3(ritmoRequeridoM3Dia)}</span> m³/día
           <InfoTip
@@ -73,9 +85,10 @@ export default function LothPlanTalaPanel({
             example="Se imprime y se va al monte con eso; la tala se asienta con su fecha y su acta cuando pasa."
           />
         </>
-      }
+      )}
       acciones={
         <>
+          {abierto && (
           <div role="group" aria-label="Días a planificar" className="flex rounded-lg border border-[var(--rule-base)] p-0.5">
             {OPCIONES_DIAS.map((d) => (
               <button
@@ -89,7 +102,8 @@ export default function LothPlanTalaPanel({
               </button>
             ))}
           </div>
-          {onImprimir && plan.lineas.length > 0 && (
+          )}
+          {abierto && onImprimir && plan.lineas.length > 0 && (
             <button
               type="button"
               onClick={() => onImprimir(meta)}
@@ -98,10 +112,18 @@ export default function LothPlanTalaPanel({
               <Printer className="h-3.5 w-3.5" /> Imprimir
             </button>
           )}
+          <BotonPlegar
+            abierto={abierto}
+            onClick={() => setAbierto(!abierto)}
+            controla="loth-plan-tala-cuerpo"
+            label={abierto ? "Plegar" : "Ver los árboles"}
+            icon={Axe}
+            compacto
+          />
         </>
       }
     >
-      <div className="p-4">
+      <div id="loth-plan-tala-cuerpo" hidden={!abierto} className="p-4">
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Cifra label="Meta del período" valor={`${n3(meta)} m³`} nota={`${Math.min(dias, diasRestantes || dias)} ${dias === 1 ? "jornada" : "jornadas"}`} />
         <Cifra label="El plan suma" valor={`${n3(plan.totalM3)} m³`} nota={`${plan.lineas.length} ${plan.lineas.length === 1 ? "árbol" : "árboles"}`} tono={plan.faltanteM3 > 0 ? "warn" : "ok"} />

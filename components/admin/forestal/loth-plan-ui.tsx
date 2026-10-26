@@ -18,24 +18,35 @@ import { CATEGORIA_COLOR, CATEGORIA_LABEL } from "@/lib/forestal/loth-poa";
  * decía qué mandaba. Ahora la vista tiene un solo `SectionTitle` y todos los
  * bloques cuelgan de él con el mismo peso.
  */
-export function BloquePlan({ id, titulo, sub, acciones, children, className = "" }: {
+export function BloquePlan({ id, titulo, sub, ayuda, acciones, children, className = "", plegado = false }: {
   id: string;
   titulo: ReactNode;
   sub?: ReactNode;
+  /** El ⓘ al lado del título (regla 9 de la vista: explicar con ⓘ, no con un subtítulo). */
+  ayuda?: ReactNode;
   acciones?: ReactNode;
   children?: ReactNode;
   className?: string;
+  /** Plegado queda sólo la cabecera: sin el filete de abajo (dibujaba un doble borde). */
+  plegado?: boolean;
 }) {
   return (
     <section
       aria-labelledby={`${id}-titulo`}
       className={`overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ${className}`}
     >
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--rule-soft)] px-4 py-3">
+      <header className={`flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 ${plegado ? "" : "border-b border-[var(--rule-soft)]"}`}>
         {/* `grow basis-*` y no `flex-1`: con base 0 el título nunca pide
             renglón y se monta sobre las acciones a 400 px. */}
         <div className="min-w-0 grow basis-[14rem]">
-          <CardTitle className="text-sm font-bold" id={`${id}-titulo`}>{titulo}</CardTitle>
+          {ayuda ? (
+            <div className="flex items-center gap-1">
+              <CardTitle className="text-sm font-bold" id={`${id}-titulo`}>{titulo}</CardTitle>
+              {ayuda}
+            </div>
+          ) : (
+            <CardTitle className="text-sm font-bold" id={`${id}-titulo`}>{titulo}</CardTitle>
+          )}
           {sub && <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">{sub}</p>}
         </div>
         {acciones && <div className="flex shrink-0 flex-wrap items-center gap-2">{acciones}</div>}
@@ -68,7 +79,7 @@ export function BotonPlegar({ abierto, onClick, controla, label, icon: Icono, ti
       aria-expanded={abierto}
       aria-controls={controla}
       title={titulo}
-      className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+      className={`inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
         abierto
           ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"

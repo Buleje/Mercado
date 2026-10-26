@@ -179,6 +179,7 @@ export function pestanasDelPlan({
     {
       id: "avance",
       label: "Avance y tala",
+      labelCorto: "Avance",
       alerta: zafra.estado === "vencida" ? "danger" : zafra.estado === "atrasado" ? "warn" : undefined,
       alertaTexto: zafra.estado === "vencida" ? "Vigencia vencida" : zafra.estado === "atrasado" ? "Zafra atrasada" : undefined,
     },
