@@ -8,21 +8,36 @@
  */
 
 import { useState } from "react";
-import { ChevronDown, HelpCircle } from "@buleje/design-system/icons";
+import { AlertTriangle, ChevronDown, HelpCircle } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import type { SaldoPorBloques } from "@/lib/forestal/loth-plan-bloques-saldo";
+import type { NoCuadra, SaldoPorBloques } from "@/lib/forestal/loth-plan-bloques-saldo";
 import { Btn } from "./ctp-shared";
 import LothPlanBloqueGuias from "./LothPlanBloqueGuias";
 
 const NUM = "font-mono tabular-nums";
 
-export default function LothPlanBloquesSinAsignar({ sinBloque }: { sinBloque: SaldoPorBloques["sinBloque"] }) {
+/** Las guías de una especie suman más que lo que mide el libro: se dice, no se descarta. */
+function NoCuadraAviso({ filas }: { filas: readonly NoCuadra[] }) {
+  if (filas.length === 0) return null;
+  return (
+    <p role="status" data-testid="bloques-no-cuadra" className="flex items-start gap-1.5 text-sm font-medium text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>
+        No cuadra:{" "}
+        {filas.map((f) => `${f.especie}, las guías suman ${fmtM3(f.guiasM3)} m³ y el libro mide ${fmtM3(f.usadoM3)}`).join(" · ")}. Revisa los despachos de esas guías.
+      </span>
+    </p>
+  );
+}
+
+export default function LothPlanBloquesSinAsignar({ sinBloque, noCuadra = [] }: { sinBloque: SaldoPorBloques["sinBloque"]; noCuadra?: readonly NoCuadra[] }) {
   const [ver, setVer] = useState(false);
-  if (sinBloque.especies.length === 0) return null;
+  if (sinBloque.especies.length === 0) return <NoCuadraAviso filas={noCuadra} />;
   const guias = sinBloque.especies.flatMap((e) => e.guias);
   return (
     <div data-testid="sin-bloque" className="space-y-1 rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-2">
+      <NoCuadraAviso filas={noCuadra} />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
         <HelpCircle className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
         <span className="font-semibold text-[var(--text-primary)]">Sin bloque asignado</span>

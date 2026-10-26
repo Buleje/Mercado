@@ -16,8 +16,9 @@ import { AlertTriangle, ChevronDown } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { previsualizarBloques, textoDeExceso, type EspecieConUsos, type ExcesoDeBloque, type SaldoDelBloque, type SaldoPorBloques } from "@/lib/forestal/loth-plan-bloques-saldo";
-import { lineasQueCuentan, preliminarPorEspecie, type GtfPreliminarVista, type LineaPreliminar } from "@/lib/forestal/loth-plan-preliminares";
+import { escritoQueFalta, lineasQueCuentan, preliminarPorEspecie, type GtfPreliminarVista, type LineaPreliminar } from "@/lib/forestal/loth-plan-preliminares";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { excedeTechoM3 } from "@/lib/forestal/loth-t6";
 import { Btn } from "./ctp-shared";
 import LothPlanBloqueGuias from "./LothPlanBloqueGuias";
 import { CifrasDelBloque } from "./LothPlanBloqueTarjeta";
@@ -71,10 +72,12 @@ function BloqueEnLaVentana({ antes, con, excesos }: { antes: SaldoDelBloque; con
 }
 
 /** Sin bloques: el saldo del plan de las especies que se escriben (o de todas, si todavía ninguna). */
-function SaldoDelPlan({ saldo, guias, lineas, exceptoId }: { saldo: readonly EspecieConUsos[]; guias: readonly GtfPreliminarVista[]; lineas: readonly LineaPreliminar[]; exceptoId?: string }) {
+function SaldoDelPlan({ saldo, guias, lineas, numeroGtf, exceptoId }: { saldo: readonly EspecieConUsos[]; guias: readonly GtfPreliminarVista[]; lineas: readonly LineaPreliminar[]; numeroGtf: string; exceptoId?: string }) {
   const otras = lineasQueCuentan(guias, exceptoId);
+  /* Lo que el libro ya tiene de ese N.º ya está en «usado»: sumarlo otra vez pinta un «se pasa» falso. */
+  const escritasQueCuentan = escritoQueFalta(numeroGtf, lineas, saldo);
   const antes = new Map(preliminarPorEspecie(saldo, otras).map((p) => [p.clave, p.m3]));
-  const con = new Map(preliminarPorEspecie(saldo, [...otras, ...lineas]).map((p) => [p.clave, p]));
+  const con = new Map(preliminarPorEspecie(saldo, [...otras, ...escritasQueCuentan]).map((p) => [p.clave, p]));
   const escritas = new Set(lineas.map((l) => claveEspecie(l.especie)));
   const conTecho = saldo.filter((e) => e.autorizadoM3 != null && (escritas.size === 0 || escritas.has(e.clave)));
   if (conTecho.length === 0) return <p className="text-sm text-[var(--text-secondary)]">Esta especie no tiene techo en el plan.</p>;
@@ -92,7 +95,7 @@ function SaldoDelPlan({ saldo, guias, lineas, exceptoId }: { saldo: readonly Esp
           <div key={e.clave} className="space-y-1">
             <p className="text-sm font-semibold text-[var(--text-secondary)]">{e.especie}</p>
             <CifrasDelBloque
-              c={{ autorizadoM3: e.autorizadoM3 ?? 0, usadoM3: e.usadoM3, pendienteM3: pend, quedaM3: e.quedaM3 ?? 0, quedaSiSeRegistranM3: c?.quedaSiSeRegistranM3 ?? e.quedaM3 ?? 0, excede: c?.excede, excedeHoy: (e.quedaM3 ?? 0) < 0 }}
+              c={{ autorizadoM3: e.autorizadoM3 ?? 0, usadoM3: e.usadoM3, pendienteM3: pend, quedaM3: e.quedaM3 ?? 0, quedaSiSeRegistranM3: c?.quedaSiSeRegistranM3 ?? e.quedaM3 ?? 0, excede: c?.excede, excedeHoy: excedeTechoM3(e.usadoM3, e.autorizadoM3 ?? 0) }}
               estaGuiaM3={escritas.size > 0 ? esta : undefined}
               columnas="grid-cols-3"
             />
@@ -148,7 +151,7 @@ export default function LothPlanPreliminarPanelBloque({
           No te pases del volumen autorizado de {conBloques ? "cada bloque" : "cada especie"}.
         </p>
       </div>
-      {!conBloques && <SaldoDelPlan saldo={saldo} guias={guias} lineas={lineas} exceptoId={exceptoId} />}
+      {!conBloques && <SaldoDelPlan saldo={saldo} guias={guias} lineas={lineas} numeroGtf={numeroGtf} exceptoId={exceptoId} />}
       {previa && nombres.length === 0 && (
         <div className="space-y-1">
           <p className="text-sm text-[var(--text-secondary)]">Elige el bloque en una fila para ver su detalle.</p>
@@ -156,8 +159,9 @@ export default function LothPlanPreliminarPanelBloque({
             {previa.con.bloques.map((b) => (
               <li key={b.nombre} className="flex flex-wrap items-baseline justify-between gap-x-2 py-1">
                 <span className="font-semibold text-[var(--text-primary)]">{b.nombre}</span>
-                <span className={`${NUM} ${b.excede ? ROJO : "text-[var(--text-secondary)]"}`}>
-                  saldo {fmtM3(b.total.quedaM3)} · si se registran {fmtM3(b.total.quedaSiSeRegistranM3)}
+                <span className={`${NUM} text-[var(--text-secondary)]`}>
+                  disponible {fmtM3(b.total.disponibleM3)}
+                  {b.total.seExcedeM3 > 0 && <b className={ROJO}> · se pasa {fmtM3(b.total.seExcedeM3)}</b>}
                 </span>
               </li>
             ))}

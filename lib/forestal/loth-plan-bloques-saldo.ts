@@ -14,7 +14,8 @@
  *    bloque; si la reparte en varios, sólo si los m³ del libro son los de la
  *    preliminar (si no, partirlos sería inventar). Lo demás queda «sin bloque
  *    asignado», aparte y con su motivo: nunca se reparte a ojo.
- *  · pendiente = las preliminares que todavía descuentan (`cuenta`), con su bloque.
+ *  · pendiente = lo que las preliminares todavía descuentan (`faltan`: entera si no
+ *    está en el libro; si el libro ya tiene parte de esa GTF, lo que falta), con su bloque.
  *  · saldo = autorizado − usado; si se registran = saldo − pendiente.
  *  · se pasa = usado + pendiente > autorizado con `excedeTechoM3` (3 decimales,
  *    la misma tolerancia del freno). Es un AVISO: el freno legal (T6) no lee
@@ -24,7 +25,7 @@
  * y la ventana de la preliminar lo previsualiza con esta misma función.
  */
 import { claveEspecie } from "./loth-constants";
-import { claveDeNumeroGtf, type EspecieDelSaldo, type GtfPreliminarVista, type LineaPreliminar } from "./loth-plan-preliminares";
+import { claveDeNumeroGtf, escritoQueFalta, type EspecieDelSaldo, type GtfPreliminarVista, type LineaPreliminar } from "./loth-plan-preliminares";
 import { excedeTechoM3 } from "./loth-t6";
 
 /* `|| 0`: un −0,0004 redondea a −0 y la tarjeta decía «-0.000 m³». */
@@ -48,9 +49,10 @@ export interface BloqueAutorizado {
 }
 
 /**
- * registrada = está en el libro y ya descuenta · pendiente = preliminar que
- * descuenta en «si se registran» · sin_descontar = preliminar marcada como
- * registrada (o ya en el libro) cuyo despacho todavía no descuenta en el libro.
+ * registrada = está en el libro y ya descuenta · pendiente = lo de una preliminar
+ * que descuenta en «si se registran» (entera, o lo que falta si el libro tiene parte)
+ * · sin_descontar = preliminar marcada como registrada cuyo despacho todavía no
+ * descuenta en el libro.
  */
 export type EstadoGuiaDelBloque = "registrada" | "pendiente" | "sin_descontar";
 
@@ -93,12 +95,22 @@ export interface EspecieEnElBloque {
 export interface SaldoDelBloque {
   nombre: string;
   especies: EspecieEnElBloque[];
-  total: { autorizadoM3: number; usadoM3: number; pendienteM3: number; quedaM3: number; quedaSiSeRegistranM3: number };
+  total: {
+    autorizadoM3: number;
+    usadoM3: number;
+    pendienteM3: number;
+    quedaM3: number;
+    quedaSiSeRegistranM3: number;
+    /** Suma, por especie, de lo que queda si se registran SIN negativos: lo que se pasa una no lo tapa otra. */
+    disponibleM3: number;
+    /** Suma de lo que se pasa cada especie (`pasaPorM3`, con `excedeTechoM3`). */
+    seExcedeM3: number;
+  };
   excede: boolean;
   guias: GuiaDelBloque[];
 }
 
-export type MotivoSinBloque = "sin_numero" | "sin_preliminar" | "otra_especie" | "varios_bloques" | "bloque_no_existe";
+export type MotivoSinBloque = "sin_numero" | "sin_preliminar" | "otra_especie" | "varios_bloques" | "bloque_no_existe" | "sin_bloque";
 
 export type GuiaSinBloque = GuiaDelBloque & { motivo: MotivoSinBloque };
 
@@ -126,15 +138,26 @@ export interface ExcesoDeBloque {
   preliminarIds: string[];
 }
 
+/** Las guías de una especie suman más de lo que el libro mide (el freno): algo no cuadra y no se esconde. */
+export interface NoCuadra {
+  clave: string;
+  especie: string;
+  /** Lo que mide el freno (T6). */
+  usadoM3: number;
+  /** La suma de sus guías en el saldo. */
+  guiasM3: number;
+}
+
 export interface SaldoPorBloques {
   /** El reparto tal cual (para que la ventana previsualice con esta misma función). */
   reparto: BloqueAutorizado[];
   bloques: SaldoDelBloque[];
   sinBloque: { especies: EspecieSinBloque[]; usadoM3: number; pendienteM3: number };
   excesos: ExcesoDeBloque[];
+  noCuadra: NoCuadra[];
 }
 
-export const SIN_BLOQUES: SaldoPorBloques = { reparto: [], bloques: [], sinBloque: { especies: [], usadoM3: 0, pendienteM3: 0 }, excesos: [] };
+export const SIN_BLOQUES: SaldoPorBloques = { reparto: [], bloques: [], sinBloque: { especies: [], usadoM3: 0, pendienteM3: 0 }, excesos: [], noCuadra: [] };
 
 interface Acc {
   clave: string;
@@ -151,7 +174,7 @@ const ORDEN_ESTADO: Record<EstadoGuiaDelBloque, number> = { pendiente: 0, regist
 const porNumero = (a: GuiaDelBloque, b: GuiaDelBloque) =>
   ORDEN_ESTADO[a.estado] - ORDEN_ESTADO[b.estado] || (a.numeroGtf ?? "").localeCompare(b.numeroGtf ?? "", "es", { numeric: true }) || a.especie.localeCompare(b.especie, "es");
 
-type Preliminar = Pick<GtfPreliminarVista, "id" | "numeroGtf" | "numerosLt" | "estado" | "cuenta" | "lineas" | "gtfId">;
+type Preliminar = Pick<GtfPreliminarVista, "id" | "numeroGtf" | "numerosLt" | "estado" | "cuenta" | "faltan" | "lineas" | "gtfId">;
 
 /**
  * El saldo de cada bloque, lo sin bloque y lo que se pasa. Sin reparto
@@ -160,7 +183,10 @@ type Preliminar = Pick<GtfPreliminarVista, "id" | "numeroGtf" | "numerosLt" | "e
 export function saldoPorBloques(reparto: readonly BloqueAutorizado[], especies: readonly EspecieConUsos[], preliminares: readonly Preliminar[]): SaldoPorBloques {
   if (reparto.length === 0) return SIN_BLOQUES;
   const nombreDe = new Map(reparto.map((b) => [b.nombre.trim().toLowerCase(), b.nombre.trim()]));
-  const bloqueDe = (b: string | null | undefined) => (b ? nombreDe.get(b.trim().toLowerCase()) ?? null : null);
+  /* Con un solo bloque, lo anotado sin bloque (cuando el plan no tenía reparto) es de ése, como `prepararPreliminar`. */
+  const unico = reparto.length === 1 ? reparto[0]!.nombre.trim() : null;
+  const bloqueDe = (b: string | null | undefined) => (b?.trim() ? nombreDe.get(b.trim().toLowerCase()) ?? null : unico);
+  const motivoDe = (b: string | null | undefined): MotivoSinBloque => (b?.trim() ? "bloque_no_existe" : "sin_bloque");
   const nombreDeEspecie = new Map(especies.map((e) => [e.clave || claveEspecie(e.especie), e.especie]));
 
   const accs = new Map<string, Map<string, Acc>>();
@@ -200,6 +226,7 @@ export function saldoPorBloques(reparto: readonly BloqueAutorizado[], especies: 
   }
   /** «guía|especie» de las líneas de preliminar que encontraron su m³ en el libro. */
   const consumidas = new Set<string>();
+  const noCuadra: NoCuadra[] = [];
 
   for (const e of especies) {
     const clave = e.clave || claveEspecie(e.especie);
@@ -219,9 +246,12 @@ export function saldoPorBloques(reparto: readonly BloqueAutorizado[], especies: 
       if (!k) motivo = "sin_numero";
       else if (!p) motivo = "sin_preliminar";
       else if (lineas.length === 0) motivo = "otra_especie";
-      else if (bloques.some((b) => b == null)) motivo = "bloque_no_existe";
+      else if (bloques.some((b) => b == null)) motivo = motivoDe(lineas[bloques.findIndex((b) => b == null)]!.bloque);
       else if (lineas.length > 1 && r3(u.m3) !== r3(lineas.reduce((a, l) => a + l.m3, 0))) motivo = "varios_bloques";
       if (motivo || !p) {
+        /* Su preliminar ya sale acá con lo del libro: listarla además como «sin descontar» en cada
+           bloque mostraba la misma guía tres veces y con un motivo falso (sí descuenta). */
+        if (p && lineas.length > 0) consumidas.add(`${p.id}|${clave}`);
         aSinBloque(clave, e.especie).guias.push({ ...base, key: `u${i}|${clave}|${k ?? "-"}`, numerosLt: p?.numerosLt ?? [], trozas: u.trozas, m3: r3(u.m3), preliminarId: p?.id ?? null, motivo: motivo ?? "sin_preliminar" });
         continue;
       }
@@ -238,29 +268,48 @@ export function saldoPorBloques(reparto: readonly BloqueAutorizado[], especies: 
     /* Lo del libro que no se pudo atar a un bloque (incluye lo que el freno mide sin guía). */
     const resto = r3(e.usadoM3 - atribuido);
     if (resto > 0) aSinBloque(clave, e.especie).usadoM3 = resto;
+    /* Las guías suman más que lo medido: antes la diferencia negativa se descartaba en silencio. */
+    const guiasM3 = r3(usos.reduce((a, u) => a + u.m3, 0));
+    if (r3(guiasM3 - e.usadoM3) > 0) noCuadra.push({ clave, especie: e.especie, usadoM3: r3(e.usadoM3), guiasM3 });
   }
 
   for (const p of preliminares) {
     if (p.estado === "anulada") continue;
+    const porEspecie = new Map<string, { lineas: [number, LineaPreliminar][]; faltan: LineaPreliminar[] }>();
+    const grupo = (clave: string) => porEspecie.get(clave) ?? porEspecie.set(clave, { lineas: [], faltan: [] }).get(clave)!;
     for (const [j, l] of p.lineas.entries()) {
       const clave = claveEspecie(l.especie);
-      if (!clave) continue;
-      const estado: EstadoGuiaDelBloque | null = p.cuenta ? "pendiente" : consumidas.has(`${p.id}|${clave}`) ? null : "sin_descontar";
-      if (!estado) continue;
-      const bloque = bloqueDe(l.bloque);
-      const guia: GuiaDelBloque = { key: `p${p.id}|${j}`, numeroGtf: p.numeroGtf, numerosLt: p.numerosLt, clave, especie: nombreDeEspecie.get(clave) ?? l.especie, trozas: l.trozas, m3: r3(l.m3), estado, preliminarId: p.id, gtfId: p.gtfId };
-      if (!bloque) {
-        const s = aSinBloque(clave, l.especie);
-        if (estado === "pendiente") s.pendienteM3 = r3(s.pendienteM3 + l.m3);
-        s.guias.push({ ...guia, motivo: "bloque_no_existe" });
-        continue;
+      if (clave) grupo(clave).lineas.push([j, l]);
+    }
+    for (const l of p.faltan) {
+      const clave = claveEspecie(l.especie);
+      if (clave) grupo(clave).faltan.push(l);
+    }
+    for (const [clave, g] of porEspecie) {
+      /* Repartida en varios bloques y con parte en el libro: lo que falta va en una fila sin bloque. */
+      const partida = g.lineas.length > 1 && g.faltan.length > 0 && g.faltan.length < g.lineas.length;
+      const filas: { l: LineaPreliminar; key: string; estado: EstadoGuiaDelBloque }[] =
+        g.faltan.length > 0
+          ? g.faltan.map((l, i) => ({ l, key: `p${p.id}|${clave}|${i}`, estado: "pendiente" }))
+          : consumidas.has(`${p.id}|${clave}`)
+            ? []
+            : g.lineas.map(([j, l]) => ({ l, key: `p${p.id}|${j}`, estado: "sin_descontar" }));
+      for (const { l, key, estado } of filas) {
+        const bloque = partida ? null : bloqueDe(l.bloque);
+        const guia: GuiaDelBloque = { key, numeroGtf: p.numeroGtf, numerosLt: p.numerosLt, clave, especie: nombreDeEspecie.get(clave) ?? l.especie, trozas: l.trozas, m3: r3(l.m3), estado, preliminarId: p.id, gtfId: p.gtfId };
+        if (!bloque) {
+          const s = aSinBloque(clave, l.especie);
+          if (estado === "pendiente") s.pendienteM3 = r3(s.pendienteM3 + l.m3);
+          s.guias.push({ ...guia, motivo: partida ? "varios_bloques" : motivoDe(l.bloque) });
+          continue;
+        }
+        if (estado === "pendiente") {
+          const a = accDe(bloque, clave, l.especie);
+          a.pendienteM3 = r3(a.pendienteM3 + l.m3);
+          a.pendienteTrozas += l.trozas;
+        }
+        guiasDe.get(bloque)?.push(guia);
       }
-      if (estado === "pendiente") {
-        const a = accDe(bloque, clave, l.especie);
-        a.pendienteM3 = r3(a.pendienteM3 + l.m3);
-        a.pendienteTrozas += l.trozas;
-      }
-      guiasDe.get(bloque)?.push(guia);
     }
   }
 
@@ -301,7 +350,15 @@ export function saldoPorBloques(reparto: readonly BloqueAutorizado[], especies: 
     return {
       nombre,
       especies: filas,
-      total: { autorizadoM3, usadoM3, pendienteM3, quedaM3: r3(autorizadoM3 - usadoM3), quedaSiSeRegistranM3: r3(autorizadoM3 - usadoM3 - pendienteM3) },
+      total: {
+        autorizadoM3,
+        usadoM3,
+        pendienteM3,
+        quedaM3: r3(autorizadoM3 - usadoM3),
+        quedaSiSeRegistranM3: r3(autorizadoM3 - usadoM3 - pendienteM3),
+        disponibleM3: r3(filas.reduce((a, f) => a + Math.max(0, f.quedaSiSeRegistranM3), 0)),
+        seExcedeM3: r3(filas.reduce((a, f) => a + f.pasaPorM3, 0)),
+      },
       excede: filas.some((f) => f.excede),
       guias,
     };
@@ -313,11 +370,22 @@ export function saldoPorBloques(reparto: readonly BloqueAutorizado[], especies: 
     bloques,
     sinBloque: { especies: sin, usadoM3: r3(sin.reduce((a, s) => a + s.usadoM3, 0)), pendienteM3: r3(sin.reduce((a, s) => a + s.pendienteM3, 0)) },
     excesos,
+    noCuadra,
   };
 }
 
 /** La guía que se está escribiendo en la ventana, para previsualizarla como una pendiente más. */
 export const ID_ESCRIBIENDO = "__escribiendo__";
+
+/**
+ * ¿El saldo YA cuenta ese N.º? Como `delPlan` (las guías del saldo entran a `guiaDelLibroDe`):
+ * al guardarla nace sin descontar, así que la vista previa tampoco la descuenta otra vez.
+ * (Una ForestGtf guardada sin despachos no se ve desde acá: ésa la previsualiza como pendiente.)
+ */
+export function numeroYaEnElSaldo(numeroGtf: string, especies: readonly EspecieConUsos[]): boolean {
+  const k = claveDeNumeroGtf(numeroGtf);
+  return k != null && especies.some((e) => (e.guias ?? []).some((u) => claveDeNumeroGtf(u.gtfNumber) === k));
+}
 
 /**
  * Cómo quedan los bloques con lo que se está escribiendo (la ventana): sin la
@@ -333,14 +401,18 @@ export function previsualizarBloques(
 ): { antes: SaldoPorBloques; con: SaldoPorBloques } {
   const otras = preliminares.filter((g) => g.id !== exceptoId);
   const unico = porBloque.reparto.length === 1 ? porBloque.reparto[0]!.nombre : null;
+  const lineas = escrito.lineas.map((l) => ({ ...l, bloque: unico ?? l.bloque }));
   const virtual: Preliminar = {
     id: ID_ESCRIBIENDO,
     numeroGtf: escrito.numeroGtf.trim() || "(esta guía)",
     numerosLt: escrito.numerosLt,
     estado: "pendiente",
-    cuenta: true,
+    /* Con el N.º ya en el libro no descuenta: ata lo del libro a su bloque, como hará el servidor. */
+    cuenta: !numeroYaEnElSaldo(escrito.numeroGtf, especies),
     gtfId: null,
-    lineas: escrito.lineas.map((l) => ({ ...l, bloque: unico ?? l.bloque })),
+    lineas,
+    /* Lo que el libro todavía no tiene de ese N.º, como `aVista` al guardarla. */
+    faltan: escritoQueFalta(escrito.numeroGtf, lineas, especies),
   };
   return {
     antes: saldoPorBloques(porBloque.reparto, especies, otras),
@@ -360,4 +432,5 @@ export const MOTIVO_SIN_BLOQUE: Record<MotivoSinBloque, string> = {
   otra_especie: "su preliminar no trae esta especie",
   varios_bloques: "su preliminar reparte la especie en varios bloques y los m³ del libro no son los mismos",
   bloque_no_existe: "el bloque de su preliminar ya no está en el reparto",
+  sin_bloque: "se anotó sin bloque",
 };

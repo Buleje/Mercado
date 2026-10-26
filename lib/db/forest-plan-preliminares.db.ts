@@ -25,6 +25,7 @@ import {
   cambiarEstadoPreliminar,
   corregirPreliminar,
   gtfPreliminarGuardadaSchema,
+  delLibroDeLaGuia,
   guiaDelLibroDe,
   prepararPreliminar,
   resumenDeLineas,
@@ -124,7 +125,7 @@ export const ForestPlanPreliminaresDB = {
     const delLibro = [...guardadas, ...contadas];
     const guias = [...lista]
       .sort((a, b) => b.creadaAt.localeCompare(a.creadaAt))
-      .map((g) => aVista(g, guiaDelLibroDe(g.numeroGtf, delLibro, planId)));
+      .map((g) => aVista(g, guiaDelLibroDe(g.numeroGtf, delLibro, planId), delLibroDeLaGuia(g.numeroGtf, saldo.especies)));
     const { resumen, porEspecie } = resumirPreliminares(saldo, guias);
     /* El saldo de cada bloque: lo del libro sólo va a un bloque si su preliminar lo dice (ver el módulo). */
     const porBloque = saldoPorBloques(reparto?.bloques ?? [], saldo.especies, guias);

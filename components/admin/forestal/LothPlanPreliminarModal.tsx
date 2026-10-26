@@ -111,7 +111,7 @@ export default function LothPlanPreliminarModal({
       }),
     [filas],
   );
-  const previa = useMemo(() => previsualizarGuia(saldo, guias, lineasEscritas, guia?.id), [saldo, guias, lineasEscritas, guia?.id]);
+  const previa = useMemo(() => previsualizarGuia(saldo, guias, lineasEscritas, guia?.id, gtfFinal), [saldo, guias, lineasEscritas, guia?.id, gtfFinal]);
 
   const guardar = async () => {
     setError(null);

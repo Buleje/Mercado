@@ -12,6 +12,7 @@ import {
   avisoDePreliminar,
   cambiarEstadoPreliminar,
   corregirPreliminar,
+  delLibroDeLaGuia,
   guiaDelLibroDe,
   numeroConRegion,
   prepararPreliminar,
@@ -224,5 +225,37 @@ describe("guía del libro con el mismo N.º", () => {
       enElLibro: { gtfId: "propia", gtfNumber: "0005", sinPlan: false },
     });
     expect(r).toMatchObject({ ok: true, yaEnElLibro: true, guia: { estado: "registrada", gtfId: "propia" } });
+  });
+});
+
+describe("preliminar con parte ya en el libro (revisor 25-10: 2,761 de 43,261)", () => {
+  const T = "Tornillo (Cedrelinga catenaeformis)";
+  const SALDO_120 = [{ clave: "tornillo", especie: T, autorizadoM3: 30, usadoM3: 2.761, quedaM3: 27.239, guias: [{ gtfNumber: "001-0000120", m3: 2.761, trozas: 3, sinPlan: false }] }];
+  const saldo120 = { especies: SALDO_120, total: { quedaM3: 27.239 }, sinTecho: false };
+  const g = anotar([], "a", listos("1-120", [{ especie: T, trozas: 40, m3: 43.261, bloque: "Bloque 2" }]))[0]!;
+  const enLibro = guiaDelLibroDe("1-120", [{ id: null, gtfNumber: "001-0000120", planId: "plan-1" }], "plan-1");
+
+  it("el KPI cuenta lo que falta registrar (declarado − libro) hasta que se marque registrada", () => {
+    const v = aVista(g, enLibro, delLibroDeLaGuia(g.numeroGtf, SALDO_120));
+    expect(v).toMatchObject({ cuenta: false, faltan: [{ especie: T, trozas: 37, m3: 40.5, bloque: "Bloque 2" }] });
+    const { resumen, porEspecie } = resumirPreliminares(saldo120, [v]);
+    expect(resumen).toMatchObject({ guias: 1, trozas: 37, m3: 40.5, enElLibro: 1, quedaSiSeRegistranTotalM3: -13.261, excede: true });
+    expect(porEspecie[0]).toMatchObject({ m3: 40.5, quedaSiSeRegistranM3: -13.261, excede: true });
+    const r = cambiarEstadoPreliminar([g], "a", { accion: "registrada" }, { por: "qa", at: "x" });
+    if (!r.ok) throw new Error("no registró");
+    expect(aVista(r.lista[0]!, enLibro, delLibroDeLaGuia(g.numeroGtf, SALDO_120)).faltan).toEqual([]);
+  });
+
+  it("la vista previa resta lo que el libro ya tiene de ese N.º", () => {
+    const previa = previsualizarGuia(SALDO_120, [], [{ especie: T, trozas: 40, m3: 43.261, bloque: null }], undefined, "001-0000120");
+    expect(previa).toEqual([expect.objectContaining({ clave: "tornillo", m3: 40.5, quedaSiSeRegistranM3: -13.261, excede: true })]);
+  });
+
+  it("2 · sin bloques: con el N.º ya en el saldo por lo mismo, no avisa «se pasa» sin ser cierto", () => {
+    const SALDO_16 = [{ clave: "tornillo", especie: T, autorizadoM3: 30, usadoM3: 25, quedaM3: 5, guias: [{ gtfNumber: "19-000016", m3: 25, trozas: 9, sinPlan: false }] }];
+    const previa = previsualizarGuia(SALDO_16, [], [{ especie: T, trozas: 9, m3: 25, bloque: null }], undefined, "19-16");
+    expect(previa).toEqual([expect.objectContaining({ clave: "tornillo", m3: 0, quedaSiSeRegistranM3: 5, excede: false })]);
+    /* Otro N.º sí descuenta (25 + 25 > 30). */
+    expect(previsualizarGuia(SALDO_16, [], [{ especie: T, trozas: 9, m3: 25, bloque: null }], undefined, "19-17")[0]).toMatchObject({ excede: true });
   });
 });

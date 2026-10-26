@@ -13,9 +13,9 @@ import {
   type BloqueAutorizado,
   type EspecieConUsos,
 } from "@/lib/forestal/loth-plan-bloques-saldo";
-import type { GtfPreliminarVista } from "@/lib/forestal/loth-plan-preliminares";
+import { delLibroDeLaGuia, faltaPorRegistrar, type GtfPreliminarVista } from "@/lib/forestal/loth-plan-preliminares";
 
-type P = Pick<GtfPreliminarVista, "id" | "numeroGtf" | "numerosLt" | "estado" | "cuenta" | "lineas" | "gtfId">;
+type P = Pick<GtfPreliminarVista, "id" | "numeroGtf" | "numerosLt" | "estado" | "cuenta" | "faltan" | "lineas" | "gtfId">;
 
 const REPARTO: BloqueAutorizado[] = [
   { nombre: "Bloque 1", especies: [{ speciesCommon: "Tornillo", volumenM3: 50 }] },
@@ -31,7 +31,9 @@ const especie = (usadoM3: number, guias: EspecieConUsos["guias"]): EspecieConUso
   guias,
 });
 
-const pre = (id: string, numeroGtf: string, estado: P["estado"], cuenta: boolean, lineas: P["lineas"]): P => ({ id, numeroGtf, numerosLt: ["19-000002"], estado, cuenta, lineas, gtfId: null });
+const pre = (id: string, numeroGtf: string, estado: P["estado"], cuenta: boolean, lineas: P["lineas"], faltan: P["faltan"] = cuenta ? lineas : []): P => ({
+  id, numeroGtf, numerosLt: ["19-000002"], estado, cuenta, faltan, lineas, gtfId: null,
+});
 const linea = (bloque: string | null, m3: number, trozas = 10, esp = "Tornillo (Cedrelinga catenaeformis)") => ({ especie: esp, trozas, m3, bloque });
 
 describe("saldoPorBloques", () => {
@@ -90,6 +92,15 @@ describe("saldoPorBloques", () => {
     expect(distinto.sinBloque.usadoM3).toBe(12.5);
   });
 
+  it("varios bloques con m³ distintos: la guía sale UNA vez, sin bloque, y no también «sin descontar» en cada bloque", () => {
+    const r = saldoPorBloques(REPARTO, [especie(15, [{ gtfNumber: "19-000120", m3: 15, trozas: 5, sinPlan: false }])], [
+      pre("v", "19-000120", "registrada", false, [linea("Bloque 1", 10), linea("Bloque 2", 10)]),
+    ]);
+    expect(r.bloques.flatMap((b) => b.guias)).toEqual([]);
+    expect(r.sinBloque.especies[0]!.guias).toMatchObject([{ numeroGtf: "19-000120", motivo: "varios_bloques", m3: 15 }]);
+    expect(r.sinBloque.usadoM3).toBe(15);
+  });
+
   it("una especie que el bloque no tiene: autorizado 0 y aviso propio", () => {
     const cap = (m3: number) => linea("Bloque 1", m3, 2, "Capirona");
     const r = saldoPorBloques(REPARTO, [especie(0, [])], [pre("k", "19-000040", "pendiente", true, [cap(2)])]);
@@ -116,10 +127,78 @@ describe("previsualizarBloques (la ventana)", () => {
     expect(con.bloques[1]!.especies.find((e) => e.clave === "tornillo")).toMatchObject({ pendienteM3: 31, excede: true, pasaPorM3: 1 });
   });
 
+  it("con el N.º ya en el libro no descuenta otra vez: ata lo del libro al bloque, como el servidor al guardarla", () => {
+    const libro = [especie(12, [{ gtfNumber: "19-000016", m3: 12, trozas: 4, sinPlan: false }])];
+    const { con } = previsualizarBloques({ reparto: REPARTO }, libro, [], { numeroGtf: "19-16", numerosLt: [], lineas: [linea("Bloque 2", 12)] });
+    const guardada = saldoPorBloques(REPARTO, libro, [pre("n", "19-16", "registrada", false, [linea("Bloque 2", 12)])]);
+    const b2 = (r: typeof con) => r.bloques[1]!.especies.find((e) => e.clave === "tornillo")!;
+    expect(b2(con)).toMatchObject({ usadoM3: 12, pendienteM3: 0 });
+    expect(con.sinBloque.usadoM3).toBe(0);
+    expect(b2(con)).toMatchObject({ usadoM3: b2(guardada).usadoM3, pendienteM3: b2(guardada).pendienteM3, quedaM3: b2(guardada).quedaM3 });
+  });
+
   it("con un solo bloque, lo escrito sin bloque va a ése", () => {
     const uno: BloqueAutorizado[] = [{ nombre: "Único", especies: [{ speciesCommon: "Tornillo", volumenM3: 10 }] }];
     const { con } = previsualizarBloques({ reparto: uno }, [especie(0, [])], [], { numeroGtf: "", numerosLt: [], lineas: [linea(null, 4)] });
     expect(con.bloques[0]!.especies[0]).toMatchObject({ pendienteM3: 4, quedaSiSeRegistranM3: 6 });
     expect(con.sinBloque.pendienteM3).toBe(0);
+  });
+});
+
+describe("arreglos del revisor (r2)", () => {
+  const T = "Tornillo (Cedrelinga catenaeformis)";
+  const libro120 = [especie(2.761, [{ gtfNumber: "001-0000120", m3: 2.761, trozas: 3, sinPlan: false }])];
+  /* Como `delPlan`: pendiente, su N.º ya en el libro (no `cuenta`) y lo que falta por `faltaPorRegistrar`. */
+  const parcial = (lineas: P["lineas"], especies = libro120) => pre("p", "1-120", "pendiente", false, lineas, faltaPorRegistrar(lineas, delLibroDeLaGuia("1-120", especies)));
+
+  it("1 · preliminar con parte en el libro: lo que falta (43,261 − 2,761) sigue en su bloque y vuelve el aviso", () => {
+    const r = saldoPorBloques(REPARTO, libro120, [parcial([linea("Bloque 2", 43.261, 40)])]);
+    const b2 = r.bloques[1]!;
+    expect(b2.especies.find((e) => e.clave === "tornillo")).toMatchObject({ usadoM3: 2.761, pendienteM3: 40.5, pendienteTrozas: 37, excede: true, pasaPorM3: 13.261 });
+    expect(b2.guias.map((g) => [g.estado, g.m3])).toEqual([["pendiente", 40.5], ["registrada", 2.761]]);
+    expect(r.excesos).toMatchObject([{ bloque: "Bloque 2", pasaPorM3: 13.261, preliminarIds: ["p"] }]);
+    expect(r.sinBloque.especies).toEqual([]);
+  });
+
+  it("1 · nunca negativo: con el libro en lo declarado o más, no queda nada pendiente", () => {
+    const lleno = [especie(50, [{ gtfNumber: "001-0000120", m3: 50, trozas: 50, sinPlan: false }])];
+    expect(faltaPorRegistrar([linea("Bloque 2", 43.261)], delLibroDeLaGuia("1-120", lleno))).toEqual([]);
+    const r = saldoPorBloques(REPARTO, lleno, [parcial([linea("Bloque 2", 43.261)], lleno)]);
+    expect(r.bloques[1]!.especies.find((e) => e.clave === "tornillo")).toMatchObject({ usadoM3: 50, pendienteM3: 0 });
+  });
+
+  it("1 · repartida en varios bloques con parte en el libro: lo que falta va sin bloque, no se parte a ojo", () => {
+    const r = saldoPorBloques(REPARTO, [especie(5, [{ gtfNumber: "001-0000120", m3: 5, trozas: 2, sinPlan: false }])], [
+      parcial([linea("Bloque 1", 10), linea("Bloque 2", 10)], [especie(5, [{ gtfNumber: "001-0000120", m3: 5, trozas: 2, sinPlan: false }])]),
+    ]);
+    expect(r.bloques.flatMap((b) => b.especies).every((e) => e.pendienteM3 === 0 && e.usadoM3 === 0)).toBe(true);
+    expect(r.sinBloque).toMatchObject({ usadoM3: 5, pendienteM3: 15 });
+    expect(r.sinBloque.especies[0]!.guias.map((g) => [g.estado, g.m3, g.motivo])).toEqual([["pendiente", 15, "varios_bloques"], ["registrada", 5, "varios_bloques"]]);
+  });
+
+  it("1 · la ventana descuenta sólo lo que falta del N.º que ya está en el libro", () => {
+    const { con } = previsualizarBloques({ reparto: REPARTO }, libro120, [], { numeroGtf: "001-0000120", numerosLt: [], lineas: [linea("Bloque 2", 43.261, 40)] });
+    expect(con.bloques[1]!.especies.find((e) => e.clave === "tornillo")).toMatchObject({ usadoM3: 2.761, pendienteM3: 40.5, excede: true });
+  });
+
+  it("3 · total del bloque: lo que se pasa una especie no lo tapa lo libre de otra", () => {
+    const r = saldoPorBloques(REPARTO, [especie(0, [])], [pre("t", "19-000030", "pendiente", true, [linea("Bloque 2", 43.261, 40, T)])]);
+    expect(r.bloques[1]!.total).toMatchObject({ autorizadoM3: 35, quedaSiSeRegistranM3: -8.261, disponibleM3: 5, seExcedeM3: 13.261 });
+    expect(r.bloques[0]!.total).toMatchObject({ disponibleM3: 50, seExcedeM3: 0 });
+  });
+
+  it("4 · las guías suman más que lo que mide el libro: «no cuadra», no se descarta", () => {
+    const g = (n: string, m3: number) => ({ gtfNumber: n, m3, trozas: 1, sinPlan: false });
+    expect(saldoPorBloques(REPARTO, [especie(10, [g("19-1", 8), g("19-2", 7)])], []).noCuadra).toEqual([{ clave: "tornillo", especie: T, usadoM3: 10, guiasM3: 15 }]);
+    expect(saldoPorBloques(REPARTO, [especie(15, [g("19-1", 8), g("19-2", 7)])], []).noCuadra).toEqual([]);
+  });
+
+  it("5 · anotada sin bloque: su motivo es «se anotó sin bloque»; con un solo bloque va a ése", () => {
+    const sin = saldoPorBloques(REPARTO, [especie(0, [])], [pre("s", "19-000050", "pendiente", true, [linea(null, 4)])]);
+    expect(sin.sinBloque.especies[0]!.guias).toMatchObject([{ motivo: "sin_bloque", m3: 4 }]);
+    const uno: BloqueAutorizado[] = [{ nombre: "Único", especies: [{ speciesCommon: "Tornillo", volumenM3: 10 }] }];
+    const r = saldoPorBloques(uno, [especie(0, [])], [pre("s", "19-000050", "pendiente", true, [linea(null, 4)])]);
+    expect(r.bloques[0]!.especies[0]).toMatchObject({ pendienteM3: 4 });
+    expect(r.sinBloque.especies).toEqual([]);
   });
 });

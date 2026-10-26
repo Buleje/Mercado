@@ -252,17 +252,89 @@ export function guiaDelLibroDe(numeroGtf: string, guias: readonly GuiaDelLibro[]
 /** La preliminar como la ve la pantalla. */
 export interface GtfPreliminarVista extends GtfPreliminar {
   enElLibro: EnElLibro | null;
-  /** ¿Descuenta en «Saldo si se registran»? Pendiente y todavía no en el libro. */
+  /** ¿Descuenta ENTERA en «Saldo si se registran»? Pendiente y todavía no en el libro. */
   cuenta: boolean;
+  /**
+   * Lo que todavía descuenta en «Saldo si se registran» (`faltaPorRegistrar`): entera si
+   * `cuenta`; pendiente y ya en el libro, lo declarado − lo que el libro tiene de esa guía;
+   * registrada o anulada, nada.
+   */
+  faltan: LineaPreliminar[];
   trozas: number;
   m3: number;
 }
 
-export function aVista(g: GtfPreliminar, enElLibro: EnElLibro | null): GtfPreliminarVista {
+/** Un despacho de una guía como lo trae el saldo (la forma de `UsoParaBloques`). */
+export interface UsoDeLaGuiaEnElSaldo {
+  gtfNumber: string | null;
+  m3: number;
+  trozas: number;
+  sinPlan: boolean;
+}
+
+export type LibroDeLaGuia = ReadonlyMap<string, { m3: number; trozas: number }>;
+
+/**
+ * Lo que el libro (el saldo, lo que mide el freno) ya tiene de ese N.º de guía, por
+ * especie. Con el N.º en una guía del plan y en una sin plan cuenta la del plan, como
+ * `saldoPorBloques` (la otra es de otro titular).
+ */
+export function delLibroDeLaGuia(
+  numeroGtf: string | null | undefined,
+  especies: readonly { clave: string; especie: string; guias?: readonly UsoDeLaGuiaEnElSaldo[] }[],
+): LibroDeLaGuia {
+  const out = new Map<string, { m3: number; trozas: number }>();
+  const k = claveDeNumeroGtf(numeroGtf);
+  if (!k) return out;
+  for (const e of especies) {
+    const mismas = (e.guias ?? []).filter((u) => claveDeNumeroGtf(u.gtfNumber) === k);
+    const delPlan = mismas.filter((u) => !u.sinPlan);
+    const cuentan = delPlan.length > 0 ? delPlan : mismas;
+    if (cuentan.length === 0) continue;
+    const clave = e.clave || claveEspecie(e.especie);
+    const prev = out.get(clave) ?? { m3: 0, trozas: 0 };
+    out.set(clave, { m3: r3(prev.m3 + cuentan.reduce((a, u) => a + u.m3, 0)), trozas: prev.trozas + cuentan.reduce((a, u) => a + u.trozas, 0) });
+  }
+  return out;
+}
+
+/**
+ * Lo que de una preliminar todavía falta registrar (revisor 25-10: declaró 43,261 en el
+ * Bloque 2, el libro ya tenía 2,761 de esa GTF y los 40,5 restantes no salían en ningún
+ * lado): por especie, lo declarado − lo que el libro ya tiene de esa guía, nunca negativo.
+ * La especie en un solo bloque queda en ése; repartida en varios con algo ya en el libro
+ * queda en UNA fila sin bloque (no se sabe de cuál salió lo registrado: partirlo sería
+ * inventar). Sin nada en el libro de esa especie, las filas tal cual.
+ */
+export function faltaPorRegistrar(lineas: readonly LineaPreliminar[], delLibro: LibroDeLaGuia): LineaPreliminar[] {
+  const grupos = new Map<string, LineaPreliminar[]>();
+  for (const l of lineas) {
+    const k = claveEspecie(l.especie);
+    if (k) grupos.set(k, [...(grupos.get(k) ?? []), l]);
+  }
+  const out: LineaPreliminar[] = [];
+  for (const [k, ls] of grupos) {
+    const libro = delLibro.get(k);
+    if (!libro || r3(libro.m3) <= 0) {
+      out.push(...ls);
+      continue;
+    }
+    const falta = r3(ls.reduce((a, l) => a + l.m3, 0) - libro.m3);
+    if (falta <= 0) continue;
+    const trozas = Math.max(0, ls.reduce((a, l) => a + l.trozas, 0) - libro.trozas);
+    out.push({ especie: ls[0]!.especie, trozas, m3: falta, bloque: ls.length === 1 ? ls[0]!.bloque : null });
+  }
+  return out;
+}
+
+/** `delLibro` = `delLibroDeLaGuia` de su N.º (sin él, la que está en el libro no descuenta nada). */
+export function aVista(g: GtfPreliminar, enElLibro: EnElLibro | null, delLibro?: LibroDeLaGuia): GtfPreliminarVista {
+  const cuenta = g.estado === "pendiente" && enElLibro == null;
   return {
     ...g,
     enElLibro,
-    cuenta: g.estado === "pendiente" && enElLibro == null,
+    cuenta,
+    faltan: cuenta ? g.lineas : g.estado === "pendiente" && delLibro ? faltaPorRegistrar(g.lineas, delLibro) : [],
     trozas: g.lineas.reduce((a, l) => a + l.trozas, 0),
     m3: r3(g.lineas.reduce((a, l) => a + l.m3, 0)),
   };
@@ -292,9 +364,9 @@ export interface PreliminarDeEspecie {
   porBloque: { bloque: string; trozas: number; m3: number }[];
 }
 
-/** Las filas de las preliminares que descuentan, salvo la de `exceptoId` (la que se está corrigiendo). */
-export function lineasQueCuentan(guias: readonly Pick<GtfPreliminarVista, "id" | "cuenta" | "lineas">[], exceptoId?: string): LineaPreliminar[] {
-  return guias.filter((g) => g.cuenta && g.id !== exceptoId).flatMap((g) => g.lineas);
+/** Lo que todavía descuenta de cada preliminar (`faltan`), salvo la de `exceptoId` (la que se está corrigiendo). */
+export function lineasQueCuentan(guias: readonly Pick<GtfPreliminarVista, "id" | "faltan">[], exceptoId?: string): LineaPreliminar[] {
+  return guias.filter((g) => g.id !== exceptoId).flatMap((g) => g.faltan);
 }
 
 /** Lo preliminar por especie (sólo las que tienen algo), con el saldo si se registran. */
@@ -333,7 +405,7 @@ export function preliminarPorEspecie(especies: readonly EspecieDelSaldo[], linea
 }
 
 export interface ResumenPreliminares {
-  /** Preliminares que descuentan (pendientes y no en el libro). */
+  /** Preliminares con algo por registrar (pendientes; las ya en el libro, por lo que falta). */
   guias: number;
   trozas: number;
   m3: number;
@@ -363,14 +435,14 @@ export function resumirPreliminares(
   saldo: { especies: readonly EspecieDelSaldo[]; total: { quedaM3: number }; sinTecho: boolean },
   guias: readonly GtfPreliminarVista[],
 ): { resumen: ResumenPreliminares; porEspecie: PreliminarDeEspecie[] } {
-  const cuentan = guias.filter((g) => g.cuenta);
-  const porEspecie = preliminarPorEspecie(saldo.especies, lineasQueCuentan(cuentan));
+  const faltan = lineasQueCuentan(guias);
+  const porEspecie = preliminarPorEspecie(saldo.especies, faltan);
   const conTechoM3 = porEspecie.filter((e) => e.quedaM3 != null).reduce((a, e) => a + e.m3, 0);
   return {
     resumen: {
-      guias: cuentan.length,
-      trozas: cuentan.reduce((a, g) => a + g.trozas, 0),
-      m3: r3(cuentan.reduce((a, g) => a + g.m3, 0)),
+      guias: guias.filter((g) => g.faltan.length > 0).length,
+      trozas: faltan.reduce((a, l) => a + l.trozas, 0),
+      m3: r3(faltan.reduce((a, l) => a + l.m3, 0)),
       enElLibro: guias.filter((g) => g.estado === "pendiente" && g.enElLibro != null).length,
       quedaTotalM3: saldo.sinTecho ? null : r3(saldo.total.quedaM3),
       quedaSiSeRegistranTotalM3: saldo.sinTecho ? null : r3(saldo.total.quedaM3 - conTechoM3),
@@ -381,17 +453,35 @@ export function resumirPreliminares(
 }
 
 /**
+ * Lo escrito en la ventana como lo contará el servidor al guardarla: sólo lo que el
+ * libro todavía no tiene de ese N.º (`faltaPorRegistrar`). Con el N.º ya en el saldo
+ * por lo mismo o más, no descuenta nada (si no, avisaba «se pasa» sin ser cierto).
+ */
+export function escritoQueFalta(
+  numeroGtf: string,
+  lineas: readonly LineaPreliminar[],
+  especies: readonly (EspecieDelSaldo & { guias?: readonly UsoDeLaGuiaEnElSaldo[] })[],
+): LineaPreliminar[] {
+  return faltaPorRegistrar(lineas, delLibroDeLaGuia(numeroGtf, especies));
+}
+
+/**
  * La vista previa de la ventana: cómo quedarían las especies de ESTA guía si se
- * registran todas las pendientes más ésta (sin contarla dos veces al corregirla).
+ * registran todas las pendientes más ésta (sin contarla dos veces al corregirla
+ * ni contar lo que el libro ya tiene de su N.º).
  */
 export function previsualizarGuia(
-  especies: readonly EspecieDelSaldo[],
-  guias: readonly Pick<GtfPreliminarVista, "id" | "cuenta" | "lineas">[],
+  especies: readonly (EspecieDelSaldo & { guias?: readonly UsoDeLaGuiaEnElSaldo[] })[],
+  guias: readonly Pick<GtfPreliminarVista, "id" | "faltan">[],
   lineasNuevas: readonly LineaPreliminar[],
   exceptoId?: string,
+  numeroGtf = "",
 ): PreliminarDeEspecie[] {
   const propias = new Set(lineasNuevas.map((l) => claveEspecie(l.especie)));
-  return preliminarPorEspecie(especies, [...lineasQueCuentan(guias, exceptoId), ...lineasNuevas]).filter((e) => propias.has(e.clave));
+  const faltan = escritoQueFalta(numeroGtf, lineasNuevas, especies);
+  /* La especie escrita que el libro ya cubre sale igual, con 0: si no, desaparecía de la vista previa. */
+  const cubiertas = lineasNuevas.filter((l) => !faltan.some((f) => claveEspecie(f.especie) === claveEspecie(l.especie))).map((l) => ({ ...l, trozas: 0, m3: 0, bloque: null }));
+  return preliminarPorEspecie(especies, [...lineasQueCuentan(guias, exceptoId), ...faltan, ...cubiertas]).filter((e) => propias.has(e.clave));
 }
 
 /** Lo que va en la lista de observaciones del plan mientras la preliminar siga pendiente. */

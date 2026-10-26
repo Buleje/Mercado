@@ -27,15 +27,15 @@ type Cifras = Pick<EspecieEnElBloque, "autorizadoM3" | "usadoM3" | "pendienteM3"
   excedeHoy?: boolean;
 };
 
-/** Autorizado · Usado · Preliminar · Saldo · Si se registran (y «Esta guía» en la ventana). */
-export function CifrasDelBloque({ c, estaGuiaM3, columnas = "grid-cols-3 sm:grid-cols-5" }: { c: Cifras; estaGuiaM3?: number; columnas?: string }) {
+/** Autorizado · Usado · Preliminar · Saldo · Si se registran (y «Esta guía» en la ventana). `ultima` cambia el rótulo de la última cifra. */
+export function CifrasDelBloque({ c, estaGuiaM3, columnas = "grid-cols-3 sm:grid-cols-5", ultima = "Si se registran" }: { c: Cifras; estaGuiaM3?: number; columnas?: string; ultima?: string }) {
   const items: { k: string; t: string; v: number; rojo?: boolean; fuerte?: boolean }[] = [
     { k: "aut", t: "Autorizado", v: c.autorizadoM3 },
     { k: "usado", t: "Usado", v: c.usadoM3 },
     { k: "pend", t: estaGuiaM3 == null ? "Preliminar" : "Otras prelim.", v: c.pendienteM3 - (estaGuiaM3 ?? 0) },
     ...(estaGuiaM3 == null ? [] : [{ k: "esta", t: "Esta guía", v: estaGuiaM3, fuerte: true }]),
     { k: "queda", t: "Saldo", v: c.quedaM3, rojo: c.excedeHoy },
-    { k: "si", t: "Si se registran", v: c.quedaSiSeRegistranM3, rojo: c.excede, fuerte: true },
+    { k: "si", t: ultima, v: c.quedaSiSeRegistranM3, rojo: c.excede, fuerte: true },
   ];
   return (
     <dl className={`grid gap-x-3 gap-y-1 ${columnas}`}>
@@ -78,6 +78,8 @@ export default function LothPlanBloqueTarjeta({
   const t = saldo.total;
   const ids = [...new Set(excesos.flatMap((x) => x.preliminarIds))];
   const especies = saldo.especies.filter((e) => e.enElReparto || e.usadoM3 > 0 || e.pendienteM3 > 0);
+  /* Lo que se pasa una especie no lo tapa lo libre de otra: «Disponible» suma sin negativos y lo pasado va aparte, en rojo. */
+  const pasadas = saldo.especies.filter((e) => e.excede).map((e) => e.especie);
   return (
     <li
       data-testid="bloque-saldo"
@@ -88,7 +90,12 @@ export default function LothPlanBloqueTarjeta({
       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="text-sm font-bold text-[var(--text-primary)]">{saldo.nombre}</span>
         <span className={`${NUM} text-sm text-[var(--text-secondary)]`}>
-          Saldo <b className={t.quedaM3 < 0 ? ROJO : "text-[var(--text-primary)]"}>{fmtM3(t.quedaM3)} m³</b> de {fmtM3(t.autorizadoM3)}
+          Disponible <b className="text-[var(--text-primary)]">{fmtM3(t.disponibleM3)} m³</b> de {fmtM3(t.autorizadoM3)}
+          {t.seExcedeM3 > 0 && (
+            <b data-testid="bloque-se-pasa" className={ROJO}>
+              {" "}· Se pasa {fmtM3(t.seExcedeM3)} m³ ({pasadas.join(", ")})
+            </b>
+          )}
         </span>
       </div>
       <ul className="space-y-2">
@@ -114,7 +121,7 @@ export default function LothPlanBloqueTarjeta({
       {especies.length > 1 && (
         <div className="space-y-1 rounded-lg bg-[var(--surface-sunken)] px-2 py-1.5">
           <p className="text-xs font-semibold text-[var(--text-secondary)]">Total del bloque</p>
-          <CifrasDelBloque c={{ ...t, excede: saldo.excede, excedeHoy: t.quedaM3 < 0 }} />
+          <CifrasDelBloque c={{ ...t, quedaSiSeRegistranM3: t.disponibleM3, excede: false, excedeHoy: false }} ultima="Disponible" />
         </div>
       )}
       {excesos.length > 0 && (

@@ -204,7 +204,7 @@ export default function LothPlantacionBloques({
             );
           })}
         </ul>
-        {conSaldo && <LothPlanBloquesSinAsignar sinBloque={porBloque.sinBloque} />}
+        {conSaldo && <LothPlanBloquesSinAsignar sinBloque={porBloque.sinBloque} noCuadra={porBloque.noCuadra} />}
       </div>
       {editor}
     </BloquePlan>
