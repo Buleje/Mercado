@@ -33,6 +33,25 @@ export type EstadoPreliminar = (typeof ESTADOS_PRELIMINAR)[number];
 /* `|| 0`: un −0,0004 redondea a −0 y la tarjeta decía «-0.000 m³». */
 const r3 = (n: number) => Math.round((n + Number.EPSILON) * 1000) / 1000 || 0;
 
+/** Dígitos del correlativo de la guía hecha a mano: «19-000015» (Brandon 25-10). */
+export const DIGITOS_PRELIMINAR = 6;
+
+/** Los dos dígitos del departamento como se escriben en la guía: `19` → «19», `1` → «01». */
+export function prefijoDeRegion(codigo: string): string {
+  return String(Number(codigo)).padStart(2, "0");
+}
+
+/**
+ * «15» con Pasco → «19-000015» (GTF y LT): se escribe sólo el número y el
+ * sistema lo acomoda. Lo que ya trae guion o letras se guarda tal cual, igual
+ * que todo sin región.
+ */
+export function numeroConRegion(escrito: string, codigoRegion: string | null | undefined): string {
+  const t = escrito.trim();
+  if (!codigoRegion || !/^\d+$/.test(t)) return t;
+  return `${prefijoDeRegion(codigoRegion)}-${t.padStart(DIGITOS_PRELIMINAR, "0")}`;
+}
+
 const fechaValida = (s: string) => {
   const d = new Date(`${s}T12:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;

@@ -13,6 +13,7 @@ import {
   cambiarEstadoPreliminar,
   corregirPreliminar,
   guiaDelLibroDe,
+  numeroConRegion,
   prepararPreliminar,
   previsualizarGuia,
   resumirPreliminares,
@@ -154,6 +155,23 @@ describe("saldo si se registran", () => {
     const previa = previsualizarGuia(SALDO, vistas, [{ especie: T, trozas: 30, m3: 10, bloque: "Bloque 1" }], "a");
     /* 15 de la otra pendiente + 10 nuevos (no los 20 viejos de «a») → quedan 5. */
     expect(previa).toEqual([expect.objectContaining({ clave: "tornillo", m3: 25, quedaSiSeRegistranM3: 5, excede: false })]);
+  });
+});
+
+describe("el N.º con la región (Brandon: «pongo GTF 15 y LT 12 y el sistema lo acomoda»)", () => {
+  it("Pasco: un dígito, dos dígitos y ceros escritos de más", () => {
+    expect(numeroConRegion("5", "19")).toBe("19-000005");
+    expect(numeroConRegion("15", "19")).toBe("19-000015");
+    expect(numeroConRegion(" 12 ", "19")).toBe("19-000012");
+    expect(numeroConRegion("015", "19")).toBe("19-000015");
+  });
+  it("región de un dígito lleva su cero (Amazonas = 01)", () => {
+    expect(numeroConRegion("7", "1")).toBe("01-000007");
+  });
+  it("sin región, o con el N.º ya completo, se guarda tal cual", () => {
+    expect(numeroConRegion("15", "")).toBe("15");
+    expect(numeroConRegion("19-000015", "19")).toBe("19-000015");
+    expect(numeroConRegion("019-001-0000065", "19")).toBe("019-001-0000065");
   });
 });
 

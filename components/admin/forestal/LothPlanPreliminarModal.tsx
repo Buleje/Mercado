@@ -14,8 +14,10 @@ import { useMemo, useState } from "react";
 import { FileWarning } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import {
+  numeroConRegion,
   previsualizarGuia,
   type DatosPreliminar,
   type EspecieDelSaldo,
@@ -24,6 +26,7 @@ import {
 } from "@/lib/forestal/loth-plan-preliminares";
 import { guardarPreliminarDelPlan } from "./hooks/plan-preliminares-api";
 import LothPlanPreliminarFilas, { numeroEscrito, type FilaPreliminar } from "./LothPlanPreliminarFilas";
+import LothPlanPreliminarRegion from "./LothPlanPreliminarRegion";
 import { Btn, CampoGrid, Field, I } from "./ctp-shared";
 
 let siguiente = 0;
@@ -86,6 +89,12 @@ export default function LothPlanPreliminarModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const conBloque = bloques.length > 1;
+  /* La región fijada vive en este equipo; `null` = todavía no se tocó: manda la fijada. */
+  const [regionFija, setRegionFija] = useLocalStorage<string>("loth-preliminar-region-fija", "");
+  const [regionElegida, setRegionElegida] = useState<string | null>(null);
+  const region = regionElegida ?? regionFija;
+  const gtfFinal = numeroConRegion(numeroGtf, region);
+  const ltFinal = numeroConRegion(numeroLt, region);
 
   /* La vista previa: sólo con las filas que ya se entienden. */
   const previa = useMemo(() => {
@@ -111,7 +120,7 @@ export default function LothPlanPreliminarModal({
     setBusy(true);
     const r = await guardarPreliminarDelPlan(
       planId,
-      { numeroGtf: numeroGtf.trim(), numeroLt: numeroLt.trim(), fecha: fecha || null, lineas, nota: nota.trim() || null },
+      { numeroGtf: gtfFinal, numeroLt: ltFinal, fecha: fecha || null, lineas, nota: nota.trim() || null },
       guia?.id,
     );
     setBusy(false);
@@ -141,14 +150,22 @@ export default function LothPlanPreliminarModal({
     >
       <div className={`${MODAL_BODY} space-y-4`}>
         <CampoGrid>
-          <Field label="N.º de GTF *" span={4}>
-            <input className={I} value={numeroGtf} onChange={(e) => setNumeroGtf(e.target.value)} placeholder="001-0000123" data-testid="preliminar-gtf" />
+          <Field label="Región" span={6}>
+            <LothPlanPreliminarRegion
+              region={region}
+              fija={region !== "" && region === regionFija}
+              onRegion={setRegionElegida}
+              onFijar={() => setRegionFija(region !== "" && region === regionFija ? "" : region)}
+            />
           </Field>
-          <Field label="N.º de LT vinculado *" span={4}>
-            <input className={I} value={numeroLt} onChange={(e) => setNumeroLt(e.target.value)} placeholder="2" data-testid="preliminar-lt" />
-          </Field>
-          <Field label="Fecha" span={4}>
+          <Field label="Fecha" span={6}>
             <input type="date" className={I} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          </Field>
+          <Field label="N.º de GTF *" span={6} hint={gtfFinal && gtfFinal !== numeroGtf.trim() ? `Se guarda como ${gtfFinal}` : undefined}>
+            <input className={I} value={numeroGtf} onChange={(e) => setNumeroGtf(e.target.value)} placeholder={region ? "15" : "19-000015"} inputMode={region ? "numeric" : undefined} data-testid="preliminar-gtf" />
+          </Field>
+          <Field label="N.º de LT vinculado *" span={6} hint={ltFinal && ltFinal !== numeroLt.trim() ? `Se guarda como ${ltFinal}` : undefined}>
+            <input className={I} value={numeroLt} onChange={(e) => setNumeroLt(e.target.value)} placeholder={region ? "12" : "19-000012"} inputMode={region ? "numeric" : undefined} data-testid="preliminar-lt" />
           </Field>
         </CampoGrid>
         {especies.length === 0 ? (
