@@ -149,6 +149,15 @@ function codigoMeta(crudo: string): number | null {
   }
 }
 
+/**
+ * Por dónde saldría un WhatsApp del negocio, SIN mandarlo (para los ensayos de
+ * los crons): `null` = ni el negocio ni el servidor tienen cuenta configurada.
+ * No devuelve el token ni el número.
+ */
+export async function viaDelWhatsAppDelNegocio(tenantId: string, contexto?: string): Promise<ViaEnvioWa | null> {
+  return (await cuentaParaMandar(tenantId, contexto))?.via ?? null;
+}
+
 /** Últimos 3 dígitos: suficiente para ubicar el envío sin guardar el número en el log. */
 const telefonoTapado = (to: string) => (to.length > 3 ? `…${to.slice(-3)}` : "…");
 

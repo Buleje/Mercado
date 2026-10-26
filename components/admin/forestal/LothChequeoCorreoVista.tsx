@@ -8,7 +8,7 @@
  * del panel. No envía nada ni marca nada como avisado.
  */
 
-import { Mail } from "@buleje/design-system/icons";
+import { Bell, Mail } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -29,8 +29,8 @@ export default function LothChequeoCorreoVista({ onCerrar }: { onCerrar: () => v
         <InfoTip
           icono="ayuda"
           title="El correo del chequeo"
-          what="Cada mañana a las 7:00 revisa tu Libro TH y te escribe sólo si aparece algo nuevo que puede multarte: una multa, o un plazo que vence en 7 días o menos. Lo que ya te avisó no se repite; si se corrige y vuelve, te avisa otra vez."
-          example="«Libro TH: 1 cosa que puede multarte — GTF 19-000003 a 5 días del plazo». El vencimiento del plan no va acá: te llega en su propio aviso."
+          what="Cada mañana a las 7:00 revisa tu Libro TH y te avisa sólo si aparece algo nuevo que puede multarte: una multa, o un plazo que vence en 7 días o menos. Llega a la campana del panel, por WhatsApp y por correo. Lo que ya te avisó no se repite, salvo el último día del plazo: ese día te lo recuerda otra vez."
+          example="«Libro TH: 1 cosa que puede multarte — GTF 19-000003 a 5 días del plazo» y, el día que vence, «Hoy es el último día para pasar la GTF 19-000003 al libro». El vencimiento del plan no va acá: te llega en su propio aviso."
         />
       }
       footer={
@@ -55,6 +55,14 @@ export default function LothChequeoCorreoVista({ onCerrar }: { onCerrar: () => v
         ) : vista ? (
           <>
             <Destino vista={vista} />
+            <p className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
+              <Bell className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden="true" />
+              {!vista.celular
+                ? "También va a la campana del panel (sin celular del dueño no va por WhatsApp)."
+                : vista.whatsappListo
+                  ? `También va a la campana del panel y por WhatsApp al ${vista.celular}.`
+                  : "También va a la campana del panel (el WhatsApp del negocio no está configurado)."}
+            </p>
             <p className="text-sm text-[var(--text-primary)]">
               <span className="font-semibold">Asunto:</span> {vista.asunto}
             </p>

@@ -13,6 +13,10 @@ export interface VistaCorreoChequeo {
   html: string;
   /** Enmascarado («b•••@gmail.com»); `null` = el negocio no tiene correo. */
   destino: string | null;
+  /** El celular del dueño para el WhatsApp, enmascarado («+51 9•• ••• 123»); `null` = no hay. */
+  celular: string | null;
+  /** ¿Hay cuenta de WhatsApp (del negocio o del servidor) para mandarlo? */
+  whatsappListo: boolean;
   /** ¿Saldría mañana a las 7:00? */
   sale: boolean;
   /** Por qué no sale (falta el correo, apagado, ya avisado, nada que avisar). */

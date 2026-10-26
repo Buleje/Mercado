@@ -4,6 +4,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { enmascararCorreo } from "@/lib/avisos-correo-tipos";
+import { enmascararTelefono } from "@/lib/asistente/mandar-papel";
+import { telefonoParaWa } from "@/lib/whatsapp/aviso-plantilla";
+import { viaDelWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
 import { baseDelPanel, correoDelChequeoDeHoy, destinoDelCorreoChequeo } from "@/lib/forestal/loth-chequeo-correo-server";
 import { armarCorreoChequeo, URL_AVISOS_CORREO } from "@/lib/forestal/loth-chequeo-correo";
 import { logger } from "@/lib/logger";
@@ -12,7 +15,8 @@ import { withApiHandler } from "@/lib/api-handler";
 /**
  * GET /api/admin/forestal/loth/chequeo/correo — la vista previa del correo del
  * chequeo del Libro TH (cron `loth-chequeo-correo`, 07:00 de Lima) para el
- * negocio de la sesión: el asunto, el HTML y a qué correo llega (enmascarado).
+ * negocio de la sesión: el asunto, el HTML y a qué correo llega (enmascarado),
+ * y a qué celular le llega por WhatsApp (la campana del panel sale siempre).
  * NO envía ni toca el registro de lo avisado.
  *
  * El HTML es el que saldría con lo nuevo; si todo ya se avisó, el de todo lo
@@ -37,7 +41,10 @@ export const GET = withApiHandler("forestal-loth-chequeo-correo", async (req: Ne
 
   try {
     const destino = await destinoDelCorreoChequeo(auth.tenantId);
-    const d = await correoDelChequeoDeHoy(auth.tenantId, destino.negocio);
+    const [d, via] = await Promise.all([
+      correoDelChequeoDeHoy(auth.tenantId, destino.negocio),
+      destino.telefono ? viaDelWhatsAppDelNegocio(auth.tenantId, "loth_chequeo") : Promise.resolve(null),
+    ]);
     const correo =
       d.correo ??
       armarCorreoChequeo({ negocio: destino.negocio, avisos: d.plan.avisos, checks: d.chequeo.checks, sinLeer: d.chequeo.sinLeer, base: baseDelPanel() });
@@ -54,6 +61,8 @@ export const GET = withApiHandler("forestal-loth-chequeo-correo", async (req: Ne
       asunto: correo.asunto,
       html: correo.html,
       destino: enmascararCorreo(destino.correo),
+      celular: destino.telefono ? enmascararTelefono(telefonoParaWa(destino.telefono)) : null,
+      whatsappListo: via != null,
       sale: motivo == null,
       motivo,
       avisos: d.plan.avisos.length,

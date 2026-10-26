@@ -10,12 +10,15 @@ import {
   AVISA_OTRO_CRON,
   asuntoDelCorreo,
   avisosDelChequeo,
+  campanaDelChequeo,
   claveDelCaso,
   diasQueQuedan,
   leerRegistroAvisados,
+  mensajeWhatsAppChequeo,
   planearCorreoChequeo,
   registroCambia,
   REGISTRO_VACIO,
+  SUFIJO_ULTIMO_DIA,
   TOPE_REGISTRO_AVISADOS,
   URL_CHEQUEO_TH,
   type RegistroAvisados,
@@ -36,11 +39,11 @@ function casoDelPlan(nombre: string, vigenciaHasta: string): { vencido: string[]
   return { vencido: r.vencido, porVencer: r.porVencer };
 }
 
-/** La preliminar anotada con la guía de hace `dias` días. */
-function preliminar(numero: string, dias: number) {
+/** La preliminar anotada con la guía de hace `dias` días (vieja desde `desde` días: 10 de fábrica). */
+function preliminar(numero: string, dias: number, desde = 10) {
   const d = new Date(`${HOY}T12:00:00.000Z`);
   d.setUTCDate(d.getUTCDate() - dias);
-  return preliminaresViejas([{ numeroGtf: numero, fecha: d.toISOString().slice(0, 10), anotadaEl: HOY, plan: "PO1" }], HOY, 10);
+  return preliminaresViejas([{ numeroGtf: numero, fecha: d.toISOString().slice(0, 10), anotadaEl: HOY, plan: "PO1" }], HOY, desde);
 }
 
 function despacho(quedan: number, numero = "771"): string {
@@ -194,6 +197,95 @@ describe("planearCorreoChequeo — dedupe y caducidad", () => {
   it("leerRegistroAvisados descarta lo que no entiende", () => {
     expect(leerRegistroAvisados(null)).toEqual(REGISTRO_VACIO);
     expect(leerRegistroAvisados({ avisados: { "a|b": HOY, sinBarra: HOY, "c|d": 3, "e|f": "ayer" } })).toEqual({ v: 1, avisados: { "a|b": HOY } } satisfies RegistroAvisados);
+  });
+});
+
+describe("el último día — un segundo aviso, nunca dos el mismo día", () => {
+  /** La preliminar de la GTF 19-000003 con `quedan` días de plazo (15 corridos); vieja desde los 7 días para verla a 7 del plazo. */
+  const conQuedan = (quedan: number) => checks({ preliminar_vieja: preliminar("19-000003", 15 - quedan, 7).porVencer });
+  /** Un día del cron: planea y, si hay algo nuevo, lo «manda» y sella. */
+  const dia = (registro: RegistroAvisados, quedan: number, hoy: string) => {
+    const p = planearCorreoChequeo({ checks: conQuedan(quedan), sinLeer: [], registro, hoy });
+    return { p, registro: p.nuevos.length > 0 ? p.registroSiSale : p.registroSiNoSale };
+  };
+
+  it("la preliminar que va de 7 a 3 y a 0 días = 2 avisos: a los 7 y el último día", () => {
+    const d7 = dia(REGISTRO_VACIO, 7, "2026-10-19");
+    const d3 = dia(d7.registro, 3, "2026-10-23");
+    const d0 = dia(d3.registro, 0, "2026-10-26");
+    expect([d7.p.nuevos.length, d3.p.nuevos.length, d0.p.nuevos.length]).toEqual([1, 0, 1]);
+    expect(d7.p.nuevos[0]).toMatchObject({ quedan: 7, ultimoDia: false });
+    expect(d0.p.nuevos[0]).toMatchObject({ quedan: 0, ultimoDia: true });
+    expect(d0.p.nuevos[0].clave).toBe(`${d7.p.nuevos[0].clave}${SUFIJO_ULTIMO_DIA}`);
+    // El asunto lo dice; la segunda corrida del mismo día no repite.
+    expect(asuntoDelCorreo(d0.p.nuevos)).toBe("Hoy es el último día para pasar la GTF 19-000003 al libro");
+    expect(dia(d0.registro, 0, "2026-10-26").p.nuevos).toHaveLength(0);
+    // Lo de siempre conserva la fecha del primer aviso.
+    expect(Object.values(d0.registro.avisados).sort()).toEqual(["2026-10-19", "2026-10-26"]);
+  });
+
+  it("el caso que aparece ya en su último día = 1 aviso (se sellan las dos claves)", () => {
+    const d0 = dia(REGISTRO_VACIO, 0, HOY);
+    expect(d0.p.nuevos).toHaveLength(1);
+    expect(d0.p.nuevos[0].ultimoDia).toBe(true);
+    expect(Object.keys(d0.registro.avisados)).toEqual([d0.p.nuevos[0].clave, d0.p.nuevos[0].claveBase]);
+    expect(dia(d0.registro, 0, HOY).p.nuevos).toHaveLength(0);
+  });
+
+  it("el de 2 días que no salió (canal caído) no se suma al del último día: sale uno", () => {
+    const d2 = dia(REGISTRO_VACIO, 2, "2026-10-24");
+    expect(d2.p.nuevos).toHaveLength(1);
+    const sinSellar = d2.p.registroSiNoSale;
+    const d0 = planearCorreoChequeo({ checks: conQuedan(0), sinLeer: [], registro: sinSellar, hoy: HOY });
+    expect(d0.nuevos.map((a) => a.ultimoDia)).toEqual([true]);
+  });
+
+  it("al vencer pasa a multa (otro chequeo) y las dos claves caducan", () => {
+    const d0 = dia(REGISTRO_VACIO, 0, HOY);
+    const vencida = preliminar("19-000003", 16);
+    const p = planearCorreoChequeo({ checks: checks({ preliminar_vieja: [], preliminar_vencida: vencida.vencidas }), sinLeer: [], registro: d0.registro, hoy: "2026-10-27" });
+    expect(p.nuevos.map((a) => a.chequeo)).toEqual(["preliminar_vencida"]);
+    expect(Object.keys(p.registroSiSale.avisados).some((k) => k.startsWith("preliminar_vieja|"))).toBe(false);
+  });
+
+  it("lo que vence hoy va primero; el despacho lo dice a su modo; el cuerpo lo marca", () => {
+    const cs = checks({
+      despacho_sin_asentar: [despacho(-2, "700")],
+      despacho_por_asentar: [despacho(0)],
+      preliminar_vieja: preliminar("19-000003", 10).porVencer,
+    });
+    const a = avisosDelChequeo(cs);
+    expect(a.map((x) => [x.chequeo, x.ultimoDia])).toEqual([
+      ["despacho_por_asentar", true],
+      ["despacho_sin_asentar", false],
+      ["preliminar_vieja", false],
+    ]);
+    expect(asuntoDelCorreo(a)).toBe("Hoy es el último día para asentar el despacho de la GTF 771 en el libro (y 2 más que pueden multarte)");
+    const { html } = armarCorreoChequeo({ negocio: "Blas", avisos: a, checks: cs, sinLeer: [], base: "https://buleje.pe" });
+    expect(html).toContain("Último día:");
+    expect(html).toContain("Hoy es el último día de plazo para una");
+  });
+});
+
+describe("la campana y el WhatsApp", () => {
+  const cs = checks({ preliminar_vieja: preliminar("19-000003", 10).porVencer });
+
+  it("el WhatsApp es el asunto y el enlace al chequeo, en texto plano", () => {
+    expect(mensajeWhatsAppChequeo(avisosDelChequeo(cs), "https://buleje.pe/")).toBe(
+      `Libro TH: 1 cosa que puede multarte — GTF 19-000003 a 5 días del plazo. Ábrelo: https://buleje.pe${URL_CHEQUEO_TH}`,
+    );
+  });
+
+  it("la campana: mismo id para el mismo aviso; grave si multa o vence hoy", () => {
+    const a = avisosDelChequeo(cs);
+    const c = campanaDelChequeo(a);
+    expect(c).toMatchObject({ severidad: "MEDIUM", titulo: "Libro TH: 1 cosa que puede multarte — GTF 19-000003 a 5 días del plazo" });
+    expect(c.cuerpo).toBe("GTF 19-000003 a 5 días del plazo. Corrígelo en el chequeo del Libro TH.");
+    expect(campanaDelChequeo(avisosDelChequeo(cs)).entityId).toBe(c.entityId);
+    const otro = avisosDelChequeo(checks({ preliminar_vieja: preliminar("19-000004", 10).porVencer }));
+    expect(campanaDelChequeo(otro).entityId).not.toBe(c.entityId);
+    expect(campanaDelChequeo(avisosDelChequeo(checks({ preliminar_vieja: preliminar("19-000003", 15).porVencer }))).severidad).toBe("HIGH");
+    expect(campanaDelChequeo(avisosDelChequeo(checks({ despacho_sin_asentar: [despacho(-2)] }))).severidad).toBe("HIGH");
   });
 });
 
