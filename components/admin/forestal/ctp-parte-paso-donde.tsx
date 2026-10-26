@@ -20,7 +20,13 @@ export default function CtpPartePasoDonde({ form }: { form: ParteFormEstado }) {
     <>
       <PendientesDelPaso pendientes={form.pendientesDe("donde")} />
       <Seccion title="Dónde está" hint="La dirección del destinatario es el punto de llegada de la guía">
-        <Field label="Dirección" span={12}>
+        <Field
+          label="Dirección"
+          span={12}
+          hint="La dirección legal, como en su RUC o en su ficha registral."
+          ejemplo="Av. Centenario 1234, Pucallpa"
+          afecta="Es el punto de partida o de llegada que imprime la guía."
+        >
           <input type="text" className={I} value={b.direccion ?? ""} onChange={(e) => set({ direccion: e.target.value })} />
         </Field>
         {/* Región · provincia · distrito en cascada, con el mismo selector que
@@ -30,6 +36,7 @@ export default function CtpPartePasoDonde({ form }: { form: ParteFormEstado }) {
             INEI sale solo de los tres nombres elegidos. */}
         <CtpUbigeoSelects
           span={4}
+          conAyuda
           valor={{ departamento: b.region ?? "", provincia: b.provincia ?? "", distrito: b.distrito ?? "" }}
           onChange={(v) => {
             /**
@@ -54,10 +61,22 @@ export default function CtpPartePasoDonde({ form }: { form: ParteFormEstado }) {
             });
           }}
         />
-        <Field label="Zona" span={8} hint="Sector o caserío — identifica el punto de llegada cuando la dirección no tiene numeración">
+        <Field
+          label="Zona"
+          span={8}
+          hint="El sector, caserío o kilómetro, cuando la dirección no tiene numeración."
+          ejemplo="Caserío Nuevo Paraíso, km 34 de la carretera Federico Basadre"
+          afecta="Ayuda al chofer a llegar y sale junto a la dirección en la guía."
+        >
           <input type="text" className={I} value={b.zona ?? ""} onChange={(e) => set({ zona: e.target.value })} />
         </Field>
-        <Field label="Ubigeo" span={4} hint="Se completa solo al elegir departamento, provincia y distrito">
+        <Field
+          label="Ubigeo"
+          span={4}
+          hint="El código INEI de 6 dígitos. Se completa solo al elegir departamento, provincia y distrito."
+          ejemplo="250101 (Callería)"
+          afecta="Lo piden la guía y la factura electrónica."
+        >
           <input type="text" className={`${I} font-mono`} value={b.ubigeo ?? ""} onChange={(e) => set({ ubigeo: e.target.value })} />
         </Field>
         {/* Dónde se carga el camión: no es la dirección legal. */}
@@ -70,7 +89,7 @@ export default function CtpPartePasoDonde({ form }: { form: ParteFormEstado }) {
       </Seccion>
 
       <Seccion title="Cómo se le ubica" hint="Teléfono, WhatsApp y quién atiende de verdad">
-        <Field label="Teléfono" span={4}>
+        <Field label="Teléfono" span={4} hint="El número fijo o celular que figura en sus papeles." ejemplo="061 571234" afecta="Para llamar si hay un problema con una guía o un pago.">
           <input type="text" className={I} value={b.telefono ?? ""} onChange={(e) => set({ telefono: e.target.value })} />
         </Field>
         {/* WhatsApp aparte: en la selva el fijo no existe y el número que
@@ -79,7 +98,7 @@ export default function CtpPartePasoDonde({ form }: { form: ParteFormEstado }) {
             asocia el id por `htmlFor` y sólo a un input/select/textarea —
             envolviéndolo en un div, el label quedaba sin campo asociado (se
             vio: `label[for]` vacío para WhatsApp). */}
-        <Field label="WhatsApp" span={3} hint="Solo números, con o sin +51">
+        <Field label="WhatsApp" span={3} hint="Sólo números, con o sin +51." ejemplo="961234567" afecta="Activa el botón verde para abrir el chat en un toque.">
           <input type="text" className={I} value={b.whatsapp ?? ""} onChange={(e) => set({ whatsapp: e.target.value })} />
         </Field>
         <div className="sm:col-span-1 flex items-end">
@@ -96,23 +115,23 @@ export default function CtpPartePasoDonde({ form }: { form: ParteFormEstado }) {
             </a>
           )}
         </div>
-        <Field label="Email" span={4}>
+        <Field label="Email" span={4} hint="El correo donde recibe facturas o avisos." ejemplo="ccnn.santarosa@gmail.com" afecta="Se usa para enviarle sus comprobantes.">
           <input type="email" className={I} value={b.email ?? ""} onChange={(e) => set({ email: e.target.value })} />
         </Field>
         {/* Quien atiende de verdad, cuando no es el representante legal. */}
-        <Field label="Contacto" span={6} hint="El que coordina el flete o la entrega">
+        <Field label="Contacto" span={6} hint="Quien coordina el flete o la entrega, si no es el representante." ejemplo="Rosa Ríos (secretaria de la comunidad)" afecta="Es a quien se llama para coordinar la carga.">
           <input type="text" className={I} value={b.contactoNombre ?? ""} onChange={(e) => set({ contactoNombre: e.target.value })} />
         </Field>
-        <Field label="Teléfono del contacto" span={6}>
+        <Field label="Teléfono del contacto" span={6} hint="El celular de esa persona." ejemplo="987654321">
           <input type="text" className={I} value={b.contactoTelefono ?? ""} onChange={(e) => set({ contactoTelefono: e.target.value })} />
         </Field>
         {/* El segundo que contesta. En comunidades y empresas chicas el primer
             contacto se queda sin señal o cambia de número, y la guía se frena
             por no tener a quién llamar. */}
-        <Field label="Otro contacto" span={6} hint="El que contesta cuando el primero no">
+        <Field label="Otro contacto" span={6} hint="Quien contesta cuando el primero no tiene señal." ejemplo="Carlos Mozombite (tesorero)" afecta="Evita que una guía se frene por no tener a quién llamar.">
           <input type="text" className={I} value={b.contacto2Nombre ?? ""} onChange={(e) => set({ contacto2Nombre: e.target.value })} />
         </Field>
-        <Field label="Su teléfono" span={6}>
+        <Field label="Su teléfono" span={6} hint="El celular del otro contacto." ejemplo="965432187">
           <input type="text" className={I} value={b.contacto2Telefono ?? ""} onChange={(e) => set({ contacto2Telefono: e.target.value })} />
         </Field>
       </Seccion>

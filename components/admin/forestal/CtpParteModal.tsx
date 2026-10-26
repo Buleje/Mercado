@@ -22,7 +22,7 @@ import { Loader2, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { AnteriorSiguiente, BarraDePasos } from "@/components/admin/shared/barra-de-pasos";
 import { ROL_LABEL, type Parte, type RolParte, type Vehiculo } from "@/lib/forestal/directorio";
-import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
+import { Btn, FormularioClaro, ModalBody, ModalFooter } from "./ctp-shared";
 import { useParteForm, type BorradorDeParte } from "./hooks/use-parte-form";
 import { ResumenDeSalud } from "./ctp-parte-salud";
 import CtpPartePasoQuien from "./ctp-parte-paso-quien";
@@ -44,6 +44,7 @@ export default function CtpParteModal({
   onGuardar,
   onClose,
   aboveModals = false,
+  desdeOtroFormulario = false,
 }: {
   /** `null` = alta. */
   parte: Parte | null;
@@ -74,8 +75,21 @@ export default function CtpParteModal({
    * toda la página (ver `AdminModal`).
    */
   aboveModals?: boolean;
+  /**
+   * Se abre desde el selector de otro formulario (una guía, el alta del plan):
+   * la ficha no ofrece ir al Libro TH, que dejaría ese formulario a medias.
+   */
+  desdeOtroFormulario?: boolean;
 }) {
-  const form = useParteForm({ parte, rolInicial, existentes, vehiculos: vehiculosDeLaLibreta, onGuardar, onClose });
+  const form = useParteForm({
+    parte,
+    rolInicial,
+    existentes,
+    vehiculos: vehiculosDeLaLibreta,
+    onGuardar,
+    onClose,
+    anidada: aboveModals || desdeOtroFormulario,
+  });
   const { b, error, aviso, coincide, coincideBloquea, dandoDeBaja, estado, cerrar, pasos, paso, setPaso, hayPapel } = form;
 
   return (
@@ -102,6 +116,9 @@ export default function CtpParteModal({
         </ModalFooter>
       }
     >
+      {/* Estilo claro (26-10): cada campo con su ⓘ —qué poner, un ejemplo y
+          para qué sirve— en vez de la ayuda en letra chica debajo. */}
+      <FormularioClaro>
       <ModalBody ref={form.bodyRef}>
         {/* Primera hija del cuerpo: así queda pegada arriba mientras se baja. */}
         <BarraDePasos etiqueta="Pasos de la ficha" borde="modal" pasos={pasos} actual={paso} onIr={setPaso} />
@@ -129,6 +146,7 @@ export default function CtpParteModal({
 
         <AnteriorSiguiente pasos={pasos} actual={paso} onIr={setPaso} />
       </ModalBody>
+      </FormularioClaro>
     </AdminModal>
   );
 }

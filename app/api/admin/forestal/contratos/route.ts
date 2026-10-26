@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { ForestContratoDB, PlanAjenoError, PlanOcupadoError } from "@/lib/db/forest-contrato.db";
+import { ForestContratoDB, PlanAjenoError, PlanOcupadoError, TitularAjenoError } from "@/lib/db/forest-contrato.db";
 import { ESTADOS_CONTRATO, TIPOS_CONTRATO } from "@/lib/forestal/contratos";
 
 /**
@@ -127,6 +127,9 @@ export const POST = withApiHandler("forestal-contratos-post", async (req: NextRe
     }
     if (err instanceof PlanAjenoError) {
       return NextResponse.json({ error: "plan_ajeno", message: err.message }, { status: 400 });
+    }
+    if (err instanceof TitularAjenoError) {
+      return NextResponse.json({ error: "titular_ajeno", message: err.message }, { status: 400 });
     }
     logger.error("[contratos.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

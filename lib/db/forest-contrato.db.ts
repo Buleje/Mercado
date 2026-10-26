@@ -92,6 +92,27 @@ async function exigirPlanDelTenant(tenantId: string, planId: string | null | und
   return existe.id;
 }
 
+/**
+ * El permiso se quiso atar a una ficha del Directorio que no es de este negocio.
+ * Igual que `planId`, `titularId` no tiene clave foránea: sin esto un POST o un
+ * PATCH a mano podía colgar el permiso de la ficha de otro tenant (revisión
+ * ADR-518, 26-10). La ruta lo devuelve como **400 con el motivo**.
+ */
+export class TitularAjenoError extends Error {
+  constructor() {
+    super("Esa ficha del Directorio no existe en este negocio.");
+    this.name = "TitularAjenoError";
+  }
+}
+
+/** La ficha existe y es de ESTE negocio — o no se ata. Una ficha archivada sigue siendo suya. */
+async function exigirTitularDelTenant(tenantId: string, titularId: string | null | undefined) {
+  const id = (titularId ?? "").trim();
+  if (!id) return;
+  const existe = await prisma.forestParty.findFirst({ where: { tenantId, id }, select: { id: true } });
+  if (!existe) throw new TitularAjenoError();
+}
+
 type ContratoRow = Prisma.ForestContratoGetPayload<Record<string, never>>;
 
 const txt = (v: string | null | undefined): string | null => {
@@ -223,6 +244,7 @@ export class ForestContratoDB {
       await exigirPlanDelTenant(tenantId, input.planId);
       await exigirPlanLibre(tenantId, input.planId);
     }
+    await exigirTitularDelTenant(tenantId, input.titularId);
     if (!tenantId) throw new Error("tenantId is required");
     const codigo = (input.codigo ?? "").trim();
     if (!codigo) throw new Error("codigo is required");
@@ -277,6 +299,7 @@ export class ForestContratoDB {
       await exigirPlanDelTenant(tenantId, input.planId);
       await exigirPlanLibre(tenantId, input.planId, id);
     }
+    if (input.titularId !== undefined) await exigirTitularDelTenant(tenantId, input.titularId);
     const codigo = input.codigo?.trim();
     const row = await prisma.forestContrato.update({
       where: { id },

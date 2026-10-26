@@ -434,6 +434,9 @@ export function Field({
   label,
   required,
   hint,
+  ejemplo,
+  afecta,
+  error,
   casillero,
   span,
   noAplica,
@@ -441,7 +444,18 @@ export function Field({
 }: {
   label: string;
   required?: boolean;
+  /** Qué poner. En estilo claro va al ⓘ, con `ejemplo` y `afecta`. */
   hint?: string;
+  /** Un ejemplo real y fácil de copiar («20601234567»). Sólo en el ⓘ. */
+  ejemplo?: string;
+  /** Para qué sirve o dónde sale el dato. Sólo en el ⓘ. */
+  afecta?: string;
+  /**
+   * Lo que está MAL en lo escrito («El DNI tiene 8 dígitos.»). A diferencia de
+   * la ayuda, siempre se ve debajo del campo —también en estilo claro— y el
+   * control queda `aria-invalid`.
+   */
+  error?: string | null;
   casillero?: number | string;
   span?: CampoSpan;
   /**
@@ -468,9 +482,10 @@ export function Field({
   const papel = estilo === "papel";
   // En estilo claro la ayuda vive en un ⓘ (portal): no hay nodo al que apuntar
   // con `aria-describedby`, así que no se declara un id que no existe.
-  const ayudaEnIcono = claro && Boolean(hint) && !noAplica;
+  const ayudaEnIcono = claro && Boolean(hint || ejemplo || afecta) && !noAplica;
   const idCampo = `${base}-campo`;
   const idAyuda = hint && !ayudaEnIcono ? `${base}-ayuda` : undefined;
+  const idError = error ? `${base}-error` : undefined;
   const idNoAplica = `${base}-noaplica`;
 
   /**
@@ -505,10 +520,11 @@ export function Field({
       ? cloneElement(unico as ReactElement<Record<string, unknown>>, {
           id: (unico.props as { id?: string }).id ?? idCampo,
           "aria-describedby":
-            [(unico.props as { "aria-describedby"?: string })["aria-describedby"], idAyuda, noAplica ? idNoAplica : undefined]
+            [(unico.props as { "aria-describedby"?: string })["aria-describedby"], idError, idAyuda, noAplica ? idNoAplica : undefined]
               .filter(Boolean)
               .join(" ") || undefined,
           ...(required ? { "aria-required": true } : {}),
+          ...(error ? { "aria-invalid": true } : {}),
           /* Se marca, NO se bloquea. Tipear en la casilla de DNI es lo que
              cambia el tipo de documento declarado, así que deshabilitarla
              sacaría esa vía; y en un formulario de cumplimiento el operador
@@ -560,12 +576,17 @@ export function Field({
         /* El ⓘ va AFUERA del <label>: adentro, tocarlo enfocaría el campo. */
         <div className="mb-1 flex items-center gap-1.5">
           {rotulo}
-          <InfoTip title={label} what={hint} ariaLabel={`Ayuda: ${label}`} />
+          <InfoTip title={label} what={hint} example={ejemplo} affects={afecta} ariaLabel={`Ayuda: ${label}`} />
         </div>
       ) : (
         rotulo
       )}
       {control}
+      {error && (
+        <span id={idError} className="mt-1 block text-sm font-medium leading-snug text-[var(--data-error-ink)]">
+          {error}
+        </span>
+      )}
       {noAplica ? (
         /* El motivo ocupa el lugar de la ayuda: quien mira el formulario no
            necesita las dos cosas, necesita saber por qué ese casillero se

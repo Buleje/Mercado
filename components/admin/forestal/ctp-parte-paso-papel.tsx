@@ -4,7 +4,8 @@
  * Paso «Según el papel» de la ficha del Directorio: lo que pide cada papel
  * marcado y ningún otro — el precio del cliente, el registro MTC del
  * transportista, la licencia del conductor, la autorización del destino y, para
- * el proveedor, su título y sus permisos (`ctp-parte-paso-proveedor`).
+ * el proveedor, quién firma y sus planes de manejo, de sólo lectura
+ * (`ctp-parte-paso-proveedor`, ADR-518).
  */
 
 import { TIPOS_ESTABLECIMIENTO } from "@/lib/forestal/ctp-gtf-datos";
@@ -27,7 +28,7 @@ export default function CtpPartePasoPapel({ form }: { form: ParteFormEstado }) {
           <>
             <span className="sm:col-span-12 text-sm font-bold text-[var(--text-primary)]">
               A cuánto se le cobra el pie
-              <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">· reemplaza a la tarifa de la planta, sin sus recargos</span>
+              <span className="ml-1.5 font-normal text-[var(--text-secondary)]">· reemplaza a la tarifa de la planta, sin sus recargos</span>
             </span>
             <CtpPartePrecios parteId={b.id ?? null} onPendientes={form.setPreciosPendientes} />
           </>
@@ -51,12 +52,18 @@ export default function CtpPartePasoPapel({ form }: { form: ParteFormEstado }) {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                <p className="mt-1 text-sm text-[var(--text-tertiary)]">
                   Se dan de alta en Directorio → Vehículos, que valida las placas repetidas.
                 </p>
               </div>
             )}
-            <Field label="Registro MTC" span={4} hint="Si es empresa de transporte">
+            <Field
+              label="Registro MTC"
+              span={4}
+              hint="El N° de registro que el MTC le da a la empresa de transporte de carga."
+              ejemplo="1567892CNG"
+              afecta="Lo pide el puesto de control y sale en la guía."
+            >
               <input type="text" className={I} value={b.registroMtc ?? ""} onChange={(e) => set({ registroMtc: e.target.value })} />
             </Field>
           </>
@@ -67,15 +74,27 @@ export default function CtpPartePasoPapel({ form }: { form: ParteFormEstado }) {
             span={6}
             hint={
               esEstablecimiento
-                ? "Formato 2024, casillero (18): el N° que la ARFFS le dio al depósito o centro de comercialización"
-                : "Formato 2024, casillero (22): la autorización del CTP o depósito que recibe; vacío si es una persona"
+                ? "El N° que la ARFFS le dio al depósito o centro de comercialización."
+                : "La autorización del CTP o depósito que recibe la madera. Vacío si es una persona."
+            }
+            ejemplo="25-UCA/AUT-DEP-2024-003"
+            afecta={
+              esEstablecimiento
+                ? "Llena el casillero (18) de la guía (formato 2024)."
+                : "Llena el casillero (22) de la guía (formato 2024)."
             }
           >
             <input type="text" className={`${I} font-mono`} value={b.codigoCtp ?? ""} onChange={(e) => set({ codigoCtp: e.target.value })} />
           </Field>
         )}
         {esEstablecimiento && (
-          <Field label="Tipo de establecimiento" span={6} hint="Formato 2024, casillero (19). Guardado acá, la guía lo llena sola al elegir este local (ADR-493)">
+          <Field
+            label="Tipo de establecimiento"
+            span={6}
+            hint="Qué es el local: depósito, centro de comercialización, planta, etc."
+            ejemplo="Depósito"
+            afecta="La guía llena sola el casillero (19) al elegir este local."
+          >
             <select
               className={I}
               value={b.tipoEstablecimiento ?? ""}
@@ -91,7 +110,13 @@ export default function CtpPartePasoPapel({ form }: { form: ParteFormEstado }) {
           </Field>
         )}
         {esConductor && (
-          <Field label="Licencia de conducir" span={4} hint="Es lo que pide el puesto de control">
+          <Field
+            label="Licencia de conducir"
+            span={4}
+            hint="El N° de la licencia del chofer, tal como figura en el brevete."
+            ejemplo="U45678912"
+            afecta="La pide el puesto de control y sale en la guía."
+          >
             <input type="text" className={`${I} font-mono`} value={b.licencia ?? ""} onChange={(e) => set({ licencia: e.target.value })} />
           </Field>
         )}

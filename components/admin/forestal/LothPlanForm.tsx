@@ -55,6 +55,7 @@ import { totalM3 } from "./loth-plan-especies-api";
 import { partirEnBloques } from "./loth-plan-bloques-filas";
 import LothPlanFormBloques from "./LothPlanFormBloques";
 import { AnteriorSiguiente, BarraDePasos } from "./LothPlanFormPasos";
+import LothPlanFormFichaDelTitular from "./LothPlanFormFichaDelTitular";
 
 /* El formulario vacío y el plan vuelto formulario viven en `loth-plan-form-shared`;
    se siguen exportando desde acá para quien ya los importaba (el test de edición). */
@@ -113,6 +114,19 @@ export default function LothPlanForm({
   return (
     <form onSubmit={submit} className="space-y-5 p-5">
       <BarraDePasos form={form} />
+
+      {/* De qué ficha del Directorio es el plan (ADR-518), arriba de todos los
+          pasos: el alta pedida desde la ficha abre en «Tipo», y sin esto no se
+          veía para quién era hasta el paso del titular. */}
+      {form.titular && (
+        <LothPlanFormFichaDelTitular
+          titular={form.titular}
+          titularEscrito={f.titularName}
+          traidos={form.permiso ? [] : form.traidos}
+          atarIgual={form.atarIgual}
+          onAtarIgual={form.atarIgualAlTitular}
+        />
+      )}
 
       {err && (
         <div role="alert" className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/12">

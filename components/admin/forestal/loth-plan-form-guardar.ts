@@ -9,6 +9,7 @@ import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import type { Contrato } from "@/lib/forestal/contratos";
+import type { Parte } from "@/lib/forestal/directorio";
 import { guardarValoresPendientes, pendientesVacios, type PendientesCampos } from "@/components/admin/shared/CamposPersonalizados";
 import {
   guardarDocumentosPendientes,
@@ -21,6 +22,7 @@ import type { BloqueDelPlan } from "@/lib/forestal/loth-plan-bloques";
 import type { Plan } from "./loth-plan-shared";
 import { pideCampo } from "@/lib/forestal/loth-tipos-plan";
 import { FORMULARIO, type FormularioPlan } from "./loth-plan-form-shared";
+import { atarPlanAlTitular } from "./loth-plan-atar-titular";
 
 /** Lo que el envío lee y escribe del formulario, tal como estaba en el render del clic. */
 export interface ContextoEnvioPlan {
@@ -34,9 +36,18 @@ export interface ContextoEnvioPlan {
   /** El reparto por bloque o zona del alta (null = sin bloques). */
   bloques: BloqueDelPlan[] | null;
   permiso: Contrato | null;
+  /** La ficha del Directorio de la que salió el titular: el plan queda atado a ella (ADR-518). */
+  titular: Parte | null;
+  /** «Atar igual»: el titular escrito cambió, pero se confirmó que es esa ficha. */
+  atarIgual: boolean;
+  /** Los permisos del negocio: el plan que ya cuelga de uno no crea otro. */
+  contratos: readonly Contrato[];
   camposPendientes: PendientesCampos;
   docsPend: PendientesDocumentos;
   actualizarPermiso: ReturnType<typeof usePermisosForestal>["actualizar"];
+  crearPermiso: ReturnType<typeof usePermisosForestal>["crear"];
+  /** `false` sin la spec de permisos: no se crea ninguno. */
+  permisosDisponibles: boolean;
   onSaved: (planId?: string) => void;
   setErr: Dispatch<SetStateAction<string | null>>;
   setBusy: Dispatch<SetStateAction<boolean>>;
@@ -49,8 +60,8 @@ export interface ContextoEnvioPlan {
 
 export async function enviarPlan(e: FormEvent, ctx: ContextoEnvioPlan) {
   const {
-    f, plan, creadoId, puedeGuardar, especiesMal, especiesParaGuardar, bloques, permiso, camposPendientes, docsPend,
-    actualizarPermiso, onSaved, setErr, setBusy, setIntentoGuardar, setCreadoId, setCamposPendientes,
+    f, plan, creadoId, puedeGuardar, especiesMal, especiesParaGuardar, bloques, permiso, titular, atarIgual, contratos, camposPendientes,
+    docsPend, actualizarPermiso, crearPermiso, permisosDisponibles, onSaved, setErr, setBusy, setIntentoGuardar, setCreadoId, setCamposPendientes,
     setDocsPend, setPasoDocs,
   } = ctx;
   e.preventDefault();
@@ -129,11 +140,16 @@ export async function enviarPlan(e: FormEvent, ctx: ContextoEnvioPlan) {
     }
     /* El permiso y su documento de gestión quedan atados: `ForestContrato.planId`
        existía desde ADR-421 y ninguna pantalla lo llenaba (0 de 6 medidos).
-       Si falla, el plan YA está creado: se avisa, no se pierde el alta. */
-    if (permiso && idPlan) {
-      const atado = await actualizarPermiso(permiso.id, { planId: idPlan });
-      if (atado.error) {
-        setErr(`El plan se creó, pero no se pudo atar al permiso ${permiso.codigo}: ${atado.error}`);
+       Y el plan, a la ficha de su titular (ADR-518): sin permiso elegido, se
+       crea con el código del plan. Si falla, el plan YA está creado: se avisa,
+       no se pierde el alta. */
+    if (idPlan) {
+      const errorAtado = await atarPlanAlTitular({
+        idPlan, f, permiso, titular, atarIgual, contratos,
+        crear: crearPermiso, actualizar: actualizarPermiso, disponible: permisosDisponibles,
+      });
+      if (errorAtado) {
+        setErr(errorAtado);
         setBusy(false);
         return;
       }

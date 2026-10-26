@@ -22,14 +22,26 @@ export default function CtpPartePasoPapeles({ form }: { form: ParteFormEstado })
       <div className="grid grid-cols-1 items-start gap-x-6 lg:grid-cols-2">
         <Seccion title="Logo y papeles del titular">
           <CampoGrid className="sm:col-span-12">
-            <Field label="Membrete de sus documentos" span={12} hint="Sale en la cabecera de la guía y sus anexos">
+            <Field
+              label="Membrete de sus documentos"
+              span={12}
+              hint="El logo o sello de la comunidad o empresa, en foto o PNG."
+              ejemplo="El sello redondo de la comunidad, escaneado"
+              afecta="Sale en la cabecera de la guía y de sus anexos."
+            >
               <CtpParteLogo logo={b.logo ?? ""} onCambio={(logo) => set({ logo })} />
             </Field>
-            <Field label="Documentos del titular" span={12} hint="Permiso, resolución, copia del RUC — se guardan en el Drive">
+            <Field
+              label="Documentos del titular"
+              span={12}
+              hint="Los papeles de la comunidad o empresa. Los de cada permiso van en su plan de manejo."
+              ejemplo="Ficha RUC, vigencia de poder, DNI del representante"
+              afecta="Se guardan en el Archivo, en la carpeta de este titular."
+            >
               <CtpParteAdjuntos adjuntos={b.adjuntos ?? []} nombreParte={b.nombre} onCambio={(adjuntos) => set({ adjuntos })} />
             </Field>
             {parte?.id && (
-              <Field label="Su carpeta en el Archivo" span={12} hint="Ábrela para ver lo que tiene en el sistema">
+              <Field label="Su carpeta en el Archivo" span={12} hint="Ábrela para ver todo lo que tiene en el sistema." afecta="Ahí están sus papeles, fotos y documentos sueltos.">
                 <CtpParteCarpeta parteId={parte.id} />
               </Field>
             )}
@@ -40,7 +52,13 @@ export default function CtpPartePasoPapeles({ form }: { form: ParteFormEstado })
             separa el aire, no una línea a media altura. */}
         <Seccion title="Notas" className="lg:mt-0 lg:border-t-0 lg:pt-0">
           <CampoGrid className="sm:col-span-12">
-            <Field label="Observaciones internas" span={12} hint="Una línea que describe a la parte; se pisa al editarla">
+            <Field
+              label="Observaciones internas"
+              span={12}
+              hint="Una línea que lo describe; se reemplaza al editarla. Lo que pasó día a día va en la bitácora."
+              ejemplo="Entrega shihuahuaco seco; pide adelanto en efectivo"
+              afecta="Sólo la ve tu equipo, nunca sale en la guía."
+            >
               <input type="text" className={I} value={b.notas ?? ""} onChange={(e) => set({ notas: e.target.value })} />
             </Field>
             <CtpParteBitacora notas={parte?.bitacora ?? []} nueva={b.nuevaNota ?? ""} onNueva={(nuevaNota) => set({ nuevaNota })} />
@@ -72,7 +90,7 @@ export default function CtpPartePasoPapeles({ form }: { form: ParteFormEstado })
           />
           <span className="text-sm text-[var(--text-primary)]">
             Dar de baja
-            <span className="block text-xs text-[var(--text-tertiary)]">
+            <span className="block text-sm text-[var(--text-tertiary)]">
               Deja de ofrecerse en los selectores de guías y formularios. No se borra: lo que ya se emitió con esta parte
               sigue igual.
             </span>

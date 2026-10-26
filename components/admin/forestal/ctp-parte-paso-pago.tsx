@@ -20,17 +20,23 @@ export default function CtpPartePasoPago({ form }: { form: ParteFormEstado }) {
       <PendientesDelPaso pendientes={form.pendientesDe("pago")} />
       {/* Sin esto, cada pago vuelve a pedir el número de cuenta por chat. */}
       <Seccion title="Cómo se le paga" hint="Para transferirle sin volver a pedir los datos">
-        <Field label="Banco" span={4}>
+        <Field label="Banco" span={4} hint="El banco o la caja donde tiene su cuenta." ejemplo="BCP" afecta="Con la cuenta y el CCI, se le transfiere sin pedir los datos por chat.">
           <input type="text" className={I} value={b.banco ?? ""} onChange={(e) => set({ banco: e.target.value })} placeholder="BCP, Interbank…" />
         </Field>
-        <Field label="N° de cuenta" span={4}>
+        <Field label="N° de cuenta" span={4} hint="El número de cuenta, como sale en su voucher o en la app del banco." ejemplo="215-12345678-0-12" afecta="Sirve para depositarle en el mismo banco.">
           <input type="text" className={`${I} font-mono`} value={b.cuentaNumero ?? ""} onChange={(e) => set({ cuentaNumero: e.target.value })} />
         </Field>
-        <Field label="CCI" span={4} hint={cciMal ?? "20 dígitos — es el que sirve para transferir entre bancos distintos"}>
+        <Field
+          label="CCI"
+          span={4}
+          hint="El Código de Cuenta Interbancario: 20 dígitos, sin guiones."
+          ejemplo="00221500123456789014"
+          afecta="Es el que sirve para transferirle desde otro banco."
+          error={cciMal}
+        >
           <input
             type="text"
             inputMode="numeric"
-            aria-invalid={cciMal ? true : undefined}
             className={`${I} font-mono ${cciMal ? "border-[var(--data-error-500)]" : ""}`}
             value={b.cuentaCci ?? ""}
             onChange={(e) => set({ cuentaCci: e.target.value })}
@@ -40,18 +46,30 @@ export default function CtpPartePasoPago({ form }: { form: ParteFormEstado }) {
           <BotonCopiar valor={b.cuentaNumero} cual="el N° de cuenta" copiado={copiado} onCopiar={copiar} />
           <BotonCopiar valor={b.cuentaCci} cual="el CCI" copiado={copiado} onCopiar={copiar} />
           <BotonCopiar valor={b.docNumero} cual="el documento" copiado={copiado} onCopiar={copiar} />
-          <span className="text-xs text-[var(--text-tertiary)]">
+          <span className="text-sm text-[var(--text-tertiary)]">
             {copiado ? `Copiado ${copiado}` : "Copiar para pegar en el banco o en un WhatsApp"}
           </span>
         </div>
-        <Field label="La cuenta está a nombre de" span={12} hint="Sólo si no coincide con el titular de la ficha (pasa: la comunidad cobra en la cuenta de su jefe)">
+        <Field
+          label="La cuenta está a nombre de"
+          span={12}
+          hint="Sólo si no coincide con el titular de la ficha: pasa cuando la comunidad cobra en la cuenta de su jefe."
+          ejemplo="Juan Pérez Shahuano (jefe de la comunidad)"
+          afecta="Sale en la constancia de pago, para que se sepa a quién se le transfirió."
+        >
           <input type="text" className={I} value={b.cuentaTitular ?? ""} onChange={(e) => set({ cuentaTitular: e.target.value })} />
         </Field>
 
         {/* Contado o crédito: es lo que decide si una compra deja una fecha de
             pago que vigilar. Sin pactar NO es contado — asumirlo haría
             aparecer deuda cero donde en realidad no se sabe. */}
-        <Field label="Condición de pago" span={4} hint={textoCondicionPago(b.condicionPago, b.diasCredito)}>
+        <Field
+          label="Condición de pago"
+          span={4}
+          hint={textoCondicionPago(b.condicionPago, b.diasCredito)}
+          ejemplo="Crédito a 30 días"
+          afecta="El crédito deja una fecha de pago que el sistema vigila. Sin pactar no se supone contado."
+        >
           <select
             className={I}
             value={b.condicionPago ?? ""}
@@ -69,7 +87,7 @@ export default function CtpPartePasoPago({ form }: { form: ParteFormEstado }) {
           </select>
         </Field>
         {b.condicionPago === "credito" && (
-          <Field label="Días de crédito" span={4} hint="Los que se pactaron: de ahí sale el vencimiento">
+          <Field label="Días de crédito" span={4} hint="Los días que se pactaron para pagar." ejemplo="30" afecta="De ahí sale la fecha en que vence cada cargo.">
             <input
               type="number"
               min={0}
@@ -84,7 +102,9 @@ export default function CtpPartePasoPago({ form }: { form: ParteFormEstado }) {
         <Field
           label="Correo de cobranza"
           span={b.condicionPago === "credito" ? 4 : 8}
-          hint="Dónde mandar factura y liquidación, si no es el correo general"
+          hint="Dónde mandar la factura y la liquidación, si no es el correo general."
+          ejemplo="cobranzas@maderasucayali.pe"
+          afecta="Las facturas y liquidaciones se le envían a este correo."
         >
           <input type="email" className={I} value={b.emailCobranza ?? ""} onChange={(e) => set({ emailCobranza: e.target.value })} />
         </Field>

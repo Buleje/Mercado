@@ -277,6 +277,7 @@ export default function DirectorioPicker({
       {/* El MISMO editor del Directorio, no un formulario aparte */}
       {modal && (
         <CtpParteModal
+          desdeOtroFormulario
           parte={modal === "nuevo" ? null : modal}
           rolInicial={rol}
           existentes={partes}

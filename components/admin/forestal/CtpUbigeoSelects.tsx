@@ -74,6 +74,7 @@ export default function CtpUbigeoSelects({
   span = 2,
   marcarFaltas = false,
   casilleros,
+  conAyuda = false,
 }: {
   valor: UbigeoValor;
   onChange: (v: UbigeoValor) => void;
@@ -82,6 +83,8 @@ export default function CtpUbigeoSelects({
   casilleros?: readonly [string | undefined, string | undefined, string | undefined];
   /** Los que están vacíos se pintan como «falta» (una guía que pide el ubigeo completo). */
   marcarFaltas?: boolean;
+  /** Cada campo con su ⓘ: qué poner y un ejemplo (ficha del Directorio, ADR-518). */
+  conAyuda?: boolean;
 }) {
   /* `claseFalta` y no la clase pelada: en oscuro el ámbar no se veía (globals.css pisa el borde). */
   const clase = (v: string | undefined) => (marcarFaltas && !v?.trim() ? claseFalta(I) : I);
@@ -107,7 +110,14 @@ export default function CtpUbigeoSelects({
 
   return (
     <>
-      <Field span={span} label="Departamento" casillero={casilleros?.[0]}>
+      <Field
+        span={span}
+        label="Departamento"
+        casillero={casilleros?.[0]}
+        hint={conAyuda ? "La región donde queda la dirección. Al cambiarla se borran provincia y distrito." : undefined}
+        ejemplo={conAyuda ? "Ucayali" : undefined}
+        afecta={conAyuda ? "Con provincia y distrito arma el ubigeo de la dirección." : undefined}
+      >
         <select
           className={clase(valor.departamento)}
           value={opcionElegida(opDep, valor.departamento)}
@@ -125,7 +135,8 @@ export default function CtpUbigeoSelects({
         span={span}
         label="Provincia"
         casillero={casilleros?.[1]}
-        hint={valor.departamento ? undefined : "Elige primero el departamento"}
+        hint={valor.departamento ? (conAyuda ? "La provincia de esa dirección." : undefined) : "Elige primero el departamento"}
+        ejemplo={conAyuda ? "Coronel Portillo" : undefined}
       >
         <select
           className={clase(valor.provincia)}
@@ -143,7 +154,8 @@ export default function CtpUbigeoSelects({
         span={span}
         label="Distrito"
         casillero={casilleros?.[2]}
-        hint={valor.provincia ? undefined : "Elige primero la provincia"}
+        hint={valor.provincia ? (conAyuda ? "El distrito de esa dirección." : undefined) : "Elige primero la provincia"}
+        ejemplo={conAyuda ? "Callería" : undefined}
       >
         <select
           className={clase(valor.distrito)}

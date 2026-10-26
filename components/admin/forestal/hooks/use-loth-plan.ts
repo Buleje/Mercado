@@ -18,6 +18,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 import type { FichaEspecie } from "../LothEspecieFichas";
 import { useLothPermiso } from "./use-loth-libro-permiso";
+import { ALTA_PEDIDA_EVENTO, altaPedida } from "./loth-plan-alta-pedida";
 import {
   CENSO_LIMITE,
   FLAG_LABEL,
@@ -63,7 +64,14 @@ export function useLothPlan(reloadSignal?: number) {
   const [usoCenso, setUsoCenso] = useState<UsoDelLibro[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showPlanForm, setShowPlanForm] = useState(false);
+  /* «Crear plan de manejo para este titular» desde la ficha del Directorio
+     (ADR-518): el libro abre con el alta a la vista. */
+  const [showPlanForm, setShowPlanForm] = useState(() => altaPedida() != null);
+  useEffect(() => {
+    const abrir = () => { if (altaPedida()) setShowPlanForm(true); };
+    window.addEventListener(ALTA_PEDIDA_EVENTO, abrir);
+    return () => window.removeEventListener(ALTA_PEDIDA_EVENTO, abrir);
+  }, []);
   const [balance, setBalance] = useState<Balance | null>(null);
   /* El balance de este plan no se pudo leer: el semáforo dice «No pude leer el
      saldo» en vez de un verde con cero especies (M2, 25-10). */

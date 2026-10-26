@@ -31,7 +31,7 @@ export default function CtpPartePasoQuien({
   form: ParteFormEstado;
   onUsarExistente?: (p: Parte) => void;
 }) {
-  const { parte, b, set, docTipo, docMal, coincide, coincideBloquea, fuente, estado, parecidas, existentes, esCliente, saldo, historial } = form;
+  const { parte, b, set, docTipo, docMal, coincideBloquea, fuente, estado, parecidas, existentes, esCliente, saldo, historial } = form;
   return (
     <>
       {parte && (
@@ -44,7 +44,10 @@ export default function CtpPartePasoQuien({
       {historial && historial.guias > 0 && <LoQueCompraste historial={historial} />}
       <PendientesDelPaso pendientes={form.pendientesDe("quien")} />
 
-      <Seccion title="Qué papel cumple" hint="Se puede marcar más de uno">
+      <Seccion
+        title="Qué papel cumple"
+        hint="Marca todo lo que hace contigo: te vende madera (proveedor), te compra (cliente), la lleva (transportista o conductor). Se puede marcar más de uno: una comunidad puede ser proveedor y cliente."
+      >
         <div className="sm:col-span-12 flex flex-wrap gap-2">
           {ROLES_PARTE.map((rol) => {
             const on = b.roles.includes(rol);
@@ -65,7 +68,13 @@ export default function CtpPartePasoQuien({
       </Seccion>
 
       <Seccion title="Identidad">
-        <Field label="Tipo de documento" span={3}>
+        <Field
+          label="Tipo de documento"
+          span={3}
+          hint="RUC si es empresa o comunidad con RUC; DNI si es una persona."
+          ejemplo="RUC"
+          afecta="Decide de dónde se traen sus datos (SUNAT o RENIEC) y cómo sale en la guía."
+        >
           <select className={I} value={docTipo} onChange={(e) => set({ docTipo: e.target.value as DocTipo })}>
             {DOC_TIPOS.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -75,11 +84,14 @@ export default function CtpPartePasoQuien({
         <Field
           label="N° de documento"
           span={4}
-          hint={docMal ?? (coincideBloquea ? "Ya es de otra ficha" : coincide ? "Ya existe — se va a combinar" : undefined)}
+          hint="El RUC tiene 11 dígitos y el DNI, 8. Escríbelo sin espacios ni guiones."
+          ejemplo="20601234567"
+          afecta="Con él se traen la razón social y el domicilio, y se evita tener la misma comunidad dos veces."
+          error={docMal ?? (coincideBloquea ? "Ya es de otra ficha." : null)}
         >
           <input
             type="text"
-            aria-invalid={coincideBloquea || docMal ? true : undefined}
+            inputMode="numeric"
             className={`${I} font-mono ${coincideBloquea || docMal ? "border-[var(--data-error-500)]" : ""}`}
             value={b.docNumero ?? ""}
             onChange={(e) => set({ docNumero: e.target.value })}
@@ -93,7 +105,14 @@ export default function CtpPartePasoQuien({
             </Btn>
           )}
         </div>
-        <Field label="Nombre o razón social" required span={12}>
+        <Field
+          label="Nombre o razón social"
+          required
+          span={12}
+          hint="Como figura en SUNAT o en su título. Con «Traer de SUNAT» se llena solo."
+          ejemplo="Comunidad Nativa Santa Rosa de Chivis"
+          afecta="Es el titular que sale en la guía y en sus planes de manejo."
+        >
           <input type="text" className={I} value={b.nombre} onChange={(e) => set({ nombre: e.target.value })} />
         </Field>
         <CtpParteNombreEsDocumento

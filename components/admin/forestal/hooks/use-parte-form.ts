@@ -9,8 +9,9 @@
  * propio (`ctp-parte-paso-*`). Pasos: `lib/forestal/directorio-pasos.ts`.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { logger } from "@/lib/logger";
+import { navegarTrasCerrar } from "./use-parte-form-salir";
 import {
   completitud,
   estadoTitulo,
@@ -94,9 +95,14 @@ export interface OpcionesFichaParte {
   vehiculos: readonly Vehiculo[];
   onGuardar: (input: BorradorDeParte) => Promise<Parte | void>;
   onClose: () => void;
+  /**
+   * Abierta encima de otro formulario (una guía, el alta del plan, otro modal):
+   * sin los accesos que llevan al Libro TH, que dejarían ese otro a medias.
+   */
+  anidada?: boolean;
 }
 
-export function useParteForm({ parte, rolInicial, existentes, vehiculos, onGuardar, onClose }: OpcionesFichaParte) {
+export function useParteForm({ parte, rolInicial, existentes, vehiculos, onGuardar, onClose, anidada = false }: OpcionesFichaParte) {
   const [b, setB] = useState<BorradorDeParte>(() => aBorrador(parte, rolInicial));
   const [copiado, setCopiado] = useState<string | null>(null);
   const [estado, setEstado] = useState<"idle" | "consultando" | "guardando">("idle");
@@ -388,9 +394,28 @@ export function useParteForm({ parte, rolInicial, existentes, vehiculos, onGuard
   /* «Ver su cuenta» sale de la ficha hacia Adelantos → Cuenta por persona: si
      hay algo sin guardar, pregunta igual que al cerrar. */
   const verCuenta = useCierreSeguro(hayCambios, () => {
+    const antes = window.location.href;
     onClose();
-    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "adelantos" } }));
+    navegarTrasCerrar(antes, () =>
+      window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "adelantos" } })),
+    );
   });
+  /* Ir al Libro TH desde «Planes de manejo» (ADR-518): igual que «Ver su
+     cuenta», pregunta si hay algo sin guardar; cierra y DESPUÉS navega, así el
+     alta del plan no se abre con la ficha todavía encima. */
+  const accionAlLibro = useRef<(() => void) | null>(null);
+  const salirAlLibro = useCierreSeguro(hayCambios, () => {
+    const accion = accionAlLibro.current;
+    accionAlLibro.current = null;
+    const antes = window.location.href;
+    onClose();
+    // El cierre es un «atrás» asíncrono: navegar en el mismo tick lo deshacía.
+    if (accion) navegarTrasCerrar(antes, accion);
+  });
+  const irAlLibro = (accion: () => void) => {
+    accionAlLibro.current = accion;
+    void salirAlLibro();
+  };
 
   return {
     parte, existentes, b, set, estado, error, aviso, copiado, copiar,
@@ -401,7 +426,7 @@ export function useParteForm({ parte, rolInicial, existentes, vehiculos, onGuard
     permisosPendientes, setPermisosPendientes, setPermisosDelTitular, camposPendientes, setCamposPendientes,
     setPreciosPendientes, vinculosPendientes, setVinculosPendientes,
     saldo, historial, pasos, paso, setPaso, pendientesDe,
-    alternarRol, traerDelPadron, guardar, bodyRef, cerrar, verCuenta,
+    alternarRol, traerDelPadron, guardar, bodyRef, cerrar, verCuenta, anidada, irAlLibro,
   };
 }
 

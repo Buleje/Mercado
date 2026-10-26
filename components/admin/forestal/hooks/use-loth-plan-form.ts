@@ -31,6 +31,8 @@ import { PASO_DEL_ESENCIAL, PASO_DEL_RELLENO, pasoVisible, pasosDelPlan, type Pa
 import { mensajeDeRelleno, rellenoEnPlan } from "@/lib/forestal/loth-plan-relleno";
 import { fichaDelFormulario } from "./loth-plan-form-ficha";
 import { pasoPedidoAlAbrir, soltarPasoPedido } from "./loth-plan-paso-pedido";
+import { altaPedida, soltarAltaPedida } from "./loth-plan-alta-pedida";
+import { arranqueDelAlta } from "../loth-plan-atar-titular";
 import { irAlEsencial } from "../LothPlanFormEsencial";
 import type { Plan } from "../loth-plan-shared";
 import { esTipoPlantacion, especialidadSugerida, metaDe, rotulosDe, type TipoPlan } from "@/lib/forestal/loth-tipos-plan";
@@ -52,13 +54,23 @@ export function useLothPlanForm({
   especiesConVolumen?: number | null;
 }) {
   const editando = Boolean(plan);
-  const [f, setF] = useState<FormularioPlan>(() => (plan ? desdePlan(plan) : formularioVacio()));
+  /* «Crear plan de manejo para este titular» desde la ficha (ADR-518): el alta
+     arranca con el titular puesto. Sólo se LEE acá (StrictMode inicializa dos
+     veces); se suelta al montar. */
+  const [alta] = useState(() => (plan ? null : arranqueDelAlta(altaPedida())));
+  const [f, setF] = useState<FormularioPlan>(() => (plan ? desdePlan(plan) : (alta?.f ?? formularioVacio())));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   /** El permiso bajo el que se aprueba este plan, si se eligió uno. */
-  const [permiso, setPermiso] = useState<Contrato | null>(null);
+  const [permiso, setPermiso] = useState<Contrato | null>(() => alta?.permiso ?? null);
   /** Qué campos completó el permiso: se dice, no se hace en silencio. */
-  const [traidos, setTraidos] = useState<string[]>([]);
+  const [traidos, setTraidos] = useState<string[]>(() => alta?.traidos ?? []);
+  /** La ficha del Directorio del titular: al guardar, el plan queda atado a ella. */
+  const [titular, setTitular] = useState<Parte | null>(() => alta?.titular ?? null);
+  /* «Atar igual» (revisión ADR-518): el titular escrito ya no es el de la ficha, pero se confirmó. Vale para ESE texto. */
+  const [atarIgualA, setAtarIgualA] = useState<string | null>(null);
+  const claveAtar = titular ? `${titular.id}|${f.titularName.trim()}` : null;
+  const atarIgual = claveAtar != null && atarIgualA === claveAtar;
   /**
    * ¿El tipo lo eligió una persona? Mientras no, el permiso puede proponerlo:
    * cada título habilitante tiene su documento por norma. Después, manda quien
@@ -97,7 +109,10 @@ export function useLothPlanForm({
   /** El paso que se ve (`loth-plan-pasos`): una cosa a la vez. */
   /* «Completar la ficha» (aviso del plan) abre en el paso del primer dato que falta. */
   const [pasoElegido, setPaso] = useState<PasoPlan>(() => pasoPedidoAlAbrir() ?? "tipo");
-  useEffect(() => soltarPasoPedido(), []);
+  useEffect(() => {
+    soltarPasoPedido();
+    soltarAltaPedida();
+  }, []);
   /** Recién después del primer «Crear» se marcan en rojo las filas a medias. */
   const [intentoGuardar, setIntentoGuardar] = useState(false);
   /** Las filas que entraron leyendo la constancia: se marcan para revisarlas contra el papel. */
@@ -105,12 +120,12 @@ export function useLothPlanForm({
 
   /* Los permisos, una sola vez para el formulario y su picker: dos consultas de
      la misma lista en la misma pantalla pueden contestar distinto. */
-  const { contratos, actualizar: actualizarPermiso } = usePermisosForestal();
+  const { contratos, actualizar: actualizarPermiso, crear: crearPermiso, disponible: permisosDisponibles } = usePermisosForestal();
   /* El plan elegido en el chip del libro, si está atado a un permiso del
      Directorio: en un ALTA se propone el mismo permiso (02-10-2026). Sólo se
      propone mientras no se haya elegido uno a mano ni descartado la propuesta. */
   const libroPermiso = useLothPermiso();
-  const [propuestaDescartada, setPropuestaDescartada] = useState(false);
+  const [propuestaDescartada, setPropuestaDescartada] = useState(() => alta != null);
   const planDelLibro = libroPermiso?.plan ?? null;
   const contratoDelLibro =
     !editando && !permiso && !propuestaDescartada && planDelLibro?.contratoId
@@ -207,6 +222,7 @@ export function useLothPlanForm({
     setF({ ...campos, contratoId: elegido?.id ?? campos.contratoId });
     setPermiso(elegido ?? null);
     setTraidos(completados);
+    setTitular(p);
   }
 
   /**
@@ -235,8 +251,11 @@ export function useLothPlanForm({
     setTraidos(completados);
   }
 
-  /** Soltar el permiso NO borra lo cargado: eso ya es parte del formulario. */
+  /** Soltar el permiso NO borra lo cargado: eso ya es parte del formulario. El
+   *  vínculo sí se suelta: vuelve al permiso que el plan ya tenía, o a ninguno. */
   function soltarPermiso() {
+    const previo = plan?.contratoId && plan.contratoId !== permiso?.id ? plan.contratoId : "";
+    setF((p) => ({ ...p, contratoId: previo }));
     setPermiso(null);
     setTraidos([]);
   }
@@ -271,21 +290,21 @@ export function useLothPlanForm({
     /* Las especies a medias frenan el alta: se muestra su paso, con lo que falta marcado. */
     if (puedeGuardar && especiesMal) setPaso("especies");
     return enviarPlan(e, {
-      f, plan, creadoId, puedeGuardar, especiesMal, especiesParaGuardar, permiso, camposPendientes, docsPend,
+      f, plan, creadoId, puedeGuardar, especiesMal, especiesParaGuardar, permiso, titular, atarIgual, contratos, camposPendientes, docsPend,
       bloques: conBloques ? bloquesParaGuardar(especies, conBloques) : null,
-      actualizarPermiso, onSaved, setErr, setBusy, setIntentoGuardar, setCreadoId, setCamposPendientes,
+      actualizarPermiso, crearPermiso, permisosDisponibles, onSaved, setErr, setBusy, setIntentoGuardar, setCreadoId, setCamposPendientes,
       setDocsPend, setPasoDocs,
     });
   }
 
   return {
-    editando, f, setF, set, busy, err, permiso, traidos, copiadoDe, menuCopiar, setMenuCopiar,
+    editando, f, setF, set, busy, err, permiso, traidos, titular, copiadoDe, menuCopiar, setMenuCopiar,
     camposPendientes, setCamposPendientes, docsPend, setDocsPend, pasoDocs, setSubiendoEnEdicion, creadoId,
     especies, setEspecies, intentoGuardar, filasLeidas, contratos, planDelLibro, contratoDelLibro,
     setPropuestaDescartada, arffsUsadas, meta, rot, esPlantacion, llevaEspecies, lector, faltaRegente,
     puedeGuardar, esenciales, esencial, resumenEsenciales, vigenciaAbierta, setVigenciaAbierta, traerDelDirectorio, copiarDe, usarPermisoDelLibro,
     soltarPermiso, elegirTipo, submit, bloques, setBloques, porBloques, problemaBloques, pasos, paso, setPaso, irAEsencial,
-    rellenos, pasosConRelleno, ficha,
+    rellenos, pasosConRelleno, ficha, atarIgual, atarIgualAlTitular: () => setAtarIgualA(claveAtar),
   };
 }
 

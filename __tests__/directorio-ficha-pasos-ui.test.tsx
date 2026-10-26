@@ -60,7 +60,7 @@ describe("ficha del Directorio por pasos", () => {
 
   it("un DNI del representante mal escrito lleva a «Según el papel» y lo marca en rojo", () => {
     const { onGuardar, paso } = abrir();
-    fireEvent.change(screen.getByLabelText(/Nombre o razón social/), { target: { value: "CCNN SANTA ROSA" } });
+    fireEvent.change(screen.getByLabelText(/^Nombre o razón social/), { target: { value: "CCNN SANTA ROSA" } });
     fireEvent.change(screen.getByLabelText("DNI del representante"), { target: { value: "123" } });
     expect(paso(/Según el papel/)).toHaveAttribute("data-paso-estado", "falta");
 

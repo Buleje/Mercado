@@ -111,7 +111,7 @@ export function pendientesDeFicha(f: FichaParaSalud, ctx: ContextoDeFicha = {}):
        solo cargado, el dato existe y reclamarlo de nuevo es ruido. El orden y
        el peso de los demás pendientes no cambian. */
     if (!lleno(f.tituloHabilitante) && !tienePermisos(ctx)) {
-      p.push({ campo: "Título habilitante", porque: "Es el origen legal de la madera que te vende", nivel: "alto" });
+      p.push({ campo: "Título habilitante", porque: "Es el origen legal de la madera que te vende: se carga al crear su plan de manejo", nivel: "alto" });
     }
     if (!lleno(f.representante)) {
       p.push({ campo: "Representante legal", porque: "Es quien firma el contrato y la guía", nivel: "medio" });
@@ -163,7 +163,7 @@ export function tituloCubiertoPorPermisos(f: FichaParaSalud, ctx: ContextoDeFich
   if (!roles.includes("proveedor")) return null;
   if (lleno(f.tituloHabilitante) || !tienePermisos(ctx)) return null;
   const n = ctx.permisos ?? 0;
-  return `El origen legal está en sus permisos: ${n} cargado${n === 1 ? "" : "s"} acá abajo, con su área y su vigencia.`;
+  return `El origen legal está en sus planes de manejo: ${n} cargado${n === 1 ? "" : "s"} en la lista de abajo, con su área y su vigencia.`;
 }
 
 // ─── CCI: 20 dígitos ───────────────────────────────────────────────────────

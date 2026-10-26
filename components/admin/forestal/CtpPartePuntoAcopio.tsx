@@ -61,7 +61,10 @@ export default function CtpPartePuntoAcopio({
       <Field
         label="Punto de acopio"
         span={8}
-        hint={error ?? "Pega las coordenadas del WhatsApp o el link de Google Maps"}
+        hint="Dónde se carga el camión, que no siempre es la dirección legal. Pega las coordenadas que te mandan por WhatsApp o el link de Google Maps."
+        ejemplo="-8.379100, -74.553900"
+        afecta="El chofer abre el punto en el mapa y llega sin llamar."
+        error={error}
       >
         {punto ? (
           <div className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3">
@@ -73,7 +76,7 @@ export default function CtpPartePuntoAcopio({
               href={linkDelMapa(punto)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--data-info-700)] hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--data-info-ink)] hover:underline"
             >
               Ver en el mapa
               <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -96,12 +99,11 @@ export default function CtpPartePuntoAcopio({
             onChange={(e) => tomar(e.target.value)}
             onPaste={(e) => tomar(e.clipboardData.getData("text"))}
             placeholder="-8.379100, -74.553900"
-            aria-invalid={error ? true : undefined}
           />
         )}
       </Field>
 
-      <Field label="Cómo se llega" span={4} hint="En palabras: «km 42, entrada a la derecha»">
+      <Field label="Cómo se llega" span={4} hint="En palabras, como se lo dirías al chofer." ejemplo="km 42, entrada a la derecha después del puente" afecta="Acompaña al punto en el mapa.">
         <input
           type="text"
           className={I}
@@ -113,7 +115,7 @@ export default function CtpPartePuntoAcopio({
       {/* El error de verdad no es escribir mal: es pegarlas invertidas y que el
           punto caiga en el mar sin que nadie lo note hasta que sale el camión. */}
       {aviso && (
-        <p className="sm:col-span-12 -mt-1 text-xs font-semibold text-[var(--data-warning-700)]">{aviso}</p>
+        <p className="sm:col-span-12 -mt-1 text-sm font-semibold text-[var(--data-warning-ink)]">{aviso}</p>
       )}
     </>
   );

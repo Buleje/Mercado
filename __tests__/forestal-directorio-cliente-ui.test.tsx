@@ -151,7 +151,7 @@ describe("papel «Cliente» en la ficha del Directorio", () => {
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");
 
-    fireEvent.change(screen.getByLabelText(/Nombre o razón social/), {
+    fireEvent.change(screen.getByLabelText(/^Nombre o razón social/), {
       target: { value: "MADERERA QA" },
     });
     fireEvent.change(await screen.findByLabelText("Precio por pie, toda especie"), {
