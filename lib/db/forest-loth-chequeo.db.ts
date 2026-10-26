@@ -7,12 +7,19 @@
  *   · `censoDeArboles` — los árboles del censo con el código de alguna tala,
  *                        con o sin UTM.
  *   · `planesConCenso` — qué planes tienen censo cargado (sin censo no se juzga).
+ *   · `avisadosPorCorreo` / `guardarAvisadosPorCorreo` — lo que el correo del
+ *                        chequeo ya avisó (PlatformSetting
+ *                        `loth-chequeo-avisados:<tenantId>`, sin schema).
  *
- * Sólo lectura: ni escribe ni invalida. `tenantId` primero, sin fallback.
+ * Las lecturas del chequeo ni escriben ni invalidan; el registro del correo se
+ * escribe bajo el candado de `PlatformSettingsDB.actualizar`. `tenantId`
+ * primero, sin fallback.
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import type { ArbolCensoChequeo, GuiaChequeo } from "@/lib/forestal/loth-chequeo-tipos";
+import { claveAvisadosChequeo, leerRegistroAvisados, type RegistroAvisados } from "@/lib/forestal/loth-chequeo-correo";
 
 /** Techo de lectura: un libro real anda en cientos (el mismo orden que el aviso de plazos). */
 const LIMITE = 20_000;
@@ -81,5 +88,23 @@ export const ForestLothChequeoDB = {
       where: { tenantId, planId: { in: [...planIds] }, deletedAt: null },
     });
     return new Set(filas.map((f) => f.planId));
+  },
+
+  /** Lo que el correo del chequeo ya avisó a este negocio (leído de la base, sin caché). */
+  async avisadosPorCorreo(tenantId: string): Promise<RegistroAvisados> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return leerRegistroAvisados(await PlatformSettingsDB.getFresco<unknown>(claveAvisadosChequeo(tenantId)));
+  },
+
+  /**
+   * Lee-modifica-escribe el registro bajo candado: `cambio` recibe lo guardado
+   * y devuelve lo nuevo, o `null` para no escribir. `true` = se escribió.
+   */
+  async guardarAvisadosPorCorreo(tenantId: string, cambio: (actual: RegistroAvisados) => RegistroAvisados | null): Promise<boolean> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return PlatformSettingsDB.actualizar<unknown, boolean>(claveAvisadosChequeo(tenantId), (actual) => {
+      const valor = cambio(leerRegistroAvisados(actual));
+      return valor ? { valor, resultado: true } : { resultado: false };
+    });
   },
 };

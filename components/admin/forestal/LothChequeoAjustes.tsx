@@ -8,10 +8,13 @@
  *    de la RDE 264-2019; de fábrica, el mismo aviso de los plazos: 10).
  *  · Si pedir la licencia del conductor en cada guía (la GTF la trae en su
  *    casillero; quien no la llena, puede apagarlo y el aviso deja de pedirla).
+ *  · «Ver el correo que te llegaría» (26-10): la vista previa del correo de
+ *    las 7:00 (`LothChequeoCorreoVista`). Se abre EN LUGAR de esta ventana,
+ *    no encima: dos modales apilados se roban el foco.
  */
 
 import { useState } from "react";
-import { SlidersHorizontal } from "@buleje/design-system/icons";
+import { Mail, SlidersHorizontal } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { CAMPO_INPUT } from "@/components/admin/shared/campos-personalizados-ui";
@@ -22,32 +25,46 @@ import { AJUSTES_CHEQUEO_DEFECTO, type AjustesChequeo } from "@/lib/forestal/lot
 import { PLAZO_REGISTRO_DIAS } from "@/lib/forestal/loth-constants";
 import { cn } from "@/lib/utils";
 import { CLASE_ENCENDIDO_RIEL } from "./ctp-riel-piezas";
+import LothChequeoCorreoVista from "./LothChequeoCorreoVista";
 import { DIAS_PRELIMINAR_MAX, ajustesSanos } from "./hooks/use-loth-cumplimiento-avanzado";
 
 const iguales = (a: AjustesChequeo, b: AjustesChequeo) => a.diasPreliminar === b.diasPreliminar && a.pedirLicencia === b.pedirLicencia;
 
 /** El botón del riel (encendido si hay algo distinto a lo de fábrica) y su ventana. */
 export default function LothChequeoAjustes({ ajustes, onGuardar }: { ajustes: AjustesChequeo; onGuardar: (a: AjustesChequeo) => void }) {
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState<"ajustes" | "correo" | null>(null);
   const cambiado = !iguales(ajustes, AJUSTES_CHEQUEO_DEFECTO);
   const etiqueta = cambiado ? "Ajustes del chequeo (cambiados)" : "Ajustes del chequeo";
   return (
     <>
       <button
         type="button"
-        onClick={() => setAbierto(true)}
+        onClick={() => setAbierto("ajustes")}
         title={etiqueta}
         aria-label={etiqueta}
         className={button({ variant: "secondary", size: "icon", className: cn("shrink-0 rounded-xl", cambiado && CLASE_ENCENDIDO_RIEL) })}
       >
         <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
       </button>
-      {abierto && <VentanaAjustes ajustes={ajustes} onGuardar={onGuardar} onCerrar={() => setAbierto(false)} />}
+      {abierto === "ajustes" && (
+        <VentanaAjustes ajustes={ajustes} onGuardar={onGuardar} onCerrar={() => setAbierto(null)} onVerCorreo={() => setAbierto("correo")} />
+      )}
+      {abierto === "correo" && <LothChequeoCorreoVista onCerrar={() => setAbierto(null)} />}
     </>
   );
 }
 
-function VentanaAjustes({ ajustes, onGuardar, onCerrar }: { ajustes: AjustesChequeo; onGuardar: (a: AjustesChequeo) => void; onCerrar: () => void }) {
+function VentanaAjustes({
+  ajustes,
+  onGuardar,
+  onCerrar,
+  onVerCorreo,
+}: {
+  ajustes: AjustesChequeo;
+  onGuardar: (a: AjustesChequeo) => void;
+  onCerrar: () => void;
+  onVerCorreo: () => void;
+}) {
   /* El número se escribe como texto: vacío mientras se borra, se sanea al guardar. */
   const [dias, setDias] = useState(String(ajustes.diasPreliminar));
   const [pedirLicencia, setPedirLicencia] = useState(ajustes.pedirLicencia);
@@ -126,6 +143,17 @@ function VentanaAjustes({ ajustes, onGuardar, onCerrar }: { ajustes: AjustesCheq
           label="Pedir la licencia del conductor en cada guía"
           desc="Apagado, el aviso de transporte sólo pide la placa y el conductor."
         />
+        <span className="flex items-center gap-1.5 border-t border-[var(--rule-base)] pt-4">
+          <button type="button" onClick={onVerCorreo} className={button({ variant: "secondary" })}>
+            <Mail className="h-4 w-4" aria-hidden="true" />
+            Ver el correo que te llegaría
+          </button>
+          <InfoTip
+            title="El correo del chequeo"
+            what="Cada mañana a las 7:00 te escribe sólo si aparece algo nuevo que puede multarte. Usa los ajustes de fábrica: los de este equipo no viajan al correo."
+            example="«PO1 vence en 7 días» te llega una vez; si amplías la vigencia y vuelve a vencer, te avisa de nuevo."
+          />
+        </span>
       </div>
     </AdminModal>
   );
