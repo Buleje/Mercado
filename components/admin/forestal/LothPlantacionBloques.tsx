@@ -8,18 +8,26 @@
  *
  * Sin reparto, una línea con «Repartir por bloques»; con reparto, una tarjeta
  * por bloque y el aviso si no cuadra. El editor: `LothPlantacionBloquesEditar`.
+ *
+ * Con el saldo (25-10, `porBloque` del servidor), cada tarjeta trae su saldo,
+ * sus guías y el aviso rojo si se pasa; lo del libro que no se sabe de qué
+ * bloque salió va aparte («Sin bloque asignado»), nunca repartido a ojo.
  */
 
 import { useState } from "react";
 import { AlertTriangle, LayoutGrid, Pencil } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
-import { cuadreConElRegistro, subtotalDelBloque, TOLERANCIA_M3, type DescuadreDeEspecie } from "@/lib/forestal/loth-plan-bloques";
+import { cuadreConElRegistro, subtotalDelBloque, TOLERANCIA_M3, type BloqueDelPlan, type DescuadreDeEspecie } from "@/lib/forestal/loth-plan-bloques";
+import type { SaldoPorBloques } from "@/lib/forestal/loth-plan-bloques-saldo";
 import { Btn } from "./ctp-shared";
 import { BloquePlan } from "./loth-plan-ui";
 import type { Species } from "./loth-plan-shared";
 import { usePlanBloques } from "./hooks/use-plan-bloques";
+import { ID_BLOQUES } from "./hooks/use-ir-a-preliminares";
 import LothPlantacionBloquesEditar from "./LothPlantacionBloquesEditar";
+import LothPlanBloqueTarjeta from "./LothPlanBloqueTarjeta";
+import LothPlanBloquesSinAsignar from "./LothPlanBloquesSinAsignar";
 
 const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
 
@@ -51,15 +59,42 @@ export function AvisoDescuadre({ descuadres }: { descuadres: readonly DescuadreD
   );
 }
 
-export default function LothPlantacionBloques({ planId, species }: { planId: string; species: Species[] }) {
+/** Lo que el saldo trae para la sección (todo opcional: sin saldo, la tarjeta de siempre). */
+export interface SaldoDeLosBloquesProps {
+  porBloque?: SaldoPorBloques | null;
+  /** «Corregir» en una tarjeta que se pasa: las preliminares a corregir. */
+  onVerPreliminares?: (ids: string[]) => void;
+  /** Se guardó el reparto: el saldo por bloque se relee. */
+  onRepartoCambio?: () => void;
+}
+
+export default function LothPlantacionBloques({
+  planId,
+  species,
+  soloConBloques = false,
+  porBloque,
+  onVerPreliminares,
+  onRepartoCambio,
+}: {
+  planId: string;
+  species: Species[];
+  /** Bosque natural: sin reparto no se pinta nada (ni el «Repartir por bloques»). */
+  soloConBloques?: boolean;
+} & SaldoDeLosBloquesProps) {
   const { bloques, leido, error, guardar } = usePlanBloques(planId);
   const [editando, setEditando] = useState(false);
   const descuadres = cuadreConElRegistro(bloques, species);
+  const guardarYReleer = async (xs: BloqueDelPlan[]) => {
+    const r = await guardar(xs);
+    if (r.ok) onRepartoCambio?.();
+    return r;
+  };
+  const conSaldo = porBloque != null && porBloque.bloques.length > 0;
   const editor = editando && (
     <LothPlantacionBloquesEditar
       reparto={bloques}
       species={species}
-      onGuardar={guardar}
+      onGuardar={guardarYReleer}
       onClose={() => setEditando(false)}
     />
   );
@@ -75,7 +110,7 @@ export default function LothPlantacionBloques({ planId, species }: { planId: str
   if (!leido) return null;
 
   if (bloques.length === 0) {
-    if (species.length === 0) return null;
+    if (species.length === 0 || soloConBloques) return null;
     return (
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-2">
         <LayoutGrid className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
@@ -118,10 +153,31 @@ export default function LothPlantacionBloques({ planId, species }: { planId: str
         </>
       }
     >
-      <div className="space-y-3 p-3">
+      <div id={ID_BLOQUES} className="scroll-mt-4 space-y-3 p-3">
         <AvisoDescuadre descuadres={descuadres} />
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {bloques.map((b) => {
+        {conSaldo && (
+          <p className="flex items-center gap-1 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            No te pases del volumen autorizado de cada bloque.
+            <InfoTip
+              title="Saldo por bloque"
+              what="Autorizado del bloque − usado = saldo. «Usado» es lo registrado en el libro cuya GTF tiene su preliminar con este bloque; «Preliminar», lo pendiente de registrar."
+              affects="Si lo usado más lo preliminar pasa lo autorizado de una especie del bloque, sale en rojo para corregir. El freno del despacho mide por especie del plan y no cambia."
+              example="Bloque 2: tornillo 30 m³ autorizados, preliminar de 43,261 m³ → se pasa por 13,261 m³."
+            />
+          </p>
+        )}
+        <ul className={`grid gap-3 ${conSaldo ? "lg:grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
+          {conSaldo &&
+            porBloque.bloques.map((s) => (
+              <LothPlanBloqueTarjeta
+                key={s.nombre}
+                saldo={s}
+                reparto={bloques.find((b) => b.nombre.trim() === s.nombre)}
+                excesos={porBloque.excesos.filter((x) => x.bloque === s.nombre)}
+                onVerPreliminares={onVerPreliminares}
+              />
+            ))}
+          {!conSaldo && bloques.map((b) => {
             const s = subtotalDelBloque(b);
             return (
               <li key={b.nombre} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
@@ -148,6 +204,7 @@ export default function LothPlantacionBloques({ planId, species }: { planId: str
             );
           })}
         </ul>
+        {conSaldo && <LothPlanBloquesSinAsignar sinBloque={porBloque.sinBloque} />}
       </div>
       {editor}
     </BloquePlan>

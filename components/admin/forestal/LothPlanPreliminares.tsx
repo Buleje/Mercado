@@ -38,10 +38,15 @@ const PILL: Record<GtfPreliminarVista["estado"], string> = {
 /** «2026-10-12» → «12/10/2026», sin pasar por `Date` (fecha sin hora). */
 const fechaCorta = (f: string | null) => (f ? f.split("-").reverse().join("/") : null);
 
-function Fila({ g, acciones }: { g: GtfPreliminarVista; acciones: MenuAccion[] }) {
+function Fila({ g, acciones, resaltada = false }: { g: GtfPreliminarVista; acciones: MenuAccion[]; resaltada?: boolean }) {
   const fecha = fechaCorta(g.fecha);
   return (
-    <li data-testid="preliminar" data-estado={g.estado} className="flex items-start gap-2 py-2">
+    <li
+      data-testid="preliminar"
+      data-estado={g.estado}
+      data-preliminar-id={g.id}
+      className={`flex items-start gap-2 py-2 ${resaltada ? "rounded-lg bg-[var(--data-error-50)] px-2 ring-2 ring-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/12" : ""}`}
+    >
       <div className="min-w-0 flex-1 space-y-0.5">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
           <span className="font-mono font-bold text-[var(--text-primary)]">GTF {g.numeroGtf}</span>
@@ -67,9 +72,12 @@ export default function LothPlanPreliminares({
   planId,
   dato,
   onCambio,
+  resaltadas = [],
 }: {
   planId: string;
   dato: SaldoPlanRespuesta | null;
+  /** Las que hacen pasar un bloque, tras «Corregir» en su aviso. */
+  resaltadas?: readonly string[];
   /** Se guardó algo: la vista relee el saldo (y con él, las preliminares). */
   onCambio: () => void;
 }) {
@@ -165,7 +173,7 @@ export default function LothPlanPreliminares({
           {pendientes.length > 0 && (
             <ul className="divide-y divide-[var(--rule-base)]">
               {pendientes.map((g) => (
-                <Fila key={g.id} g={g} acciones={accionesDe(g)} />
+                <Fila key={g.id} g={g} acciones={accionesDe(g)} resaltada={resaltadas.includes(g.id)} />
               ))}
             </ul>
           )}
@@ -200,6 +208,7 @@ export default function LothPlanPreliminares({
           guia={editando === "nueva" ? null : editando}
           especies={especies}
           bloques={pre.bloques}
+          porBloque={pre.porBloque}
           saldo={dato.saldo.especies}
           guias={pre.guias}
           onClose={() => setEditando(null)}

@@ -29,7 +29,7 @@ import type { CascadaEspecie, CascadaPlan } from "@/lib/forestal/loth-saldo-casc
 import { Btn } from "./ctp-shared";
 import LothPlanFormPlantacion from "./LothPlanFormPlantacion";
 import LothPlantacionTabla, { cambiosDeFila } from "./LothPlantacionTabla";
-import LothPlantacionBloques from "./LothPlantacionBloques";
+import LothPlantacionBloques, { type SaldoDeLosBloquesProps } from "./LothPlantacionBloques";
 import { BloquePlan } from "./loth-plan-ui";
 import { AvisoTaladoSinRegistrar, SugeridasRegistroVacio, type EspecieSugerida } from "./LothPlantacionSugeridas";
 import { fmtFecha, fmtRange, type Plan, type Species } from "./loth-plan-shared";
@@ -47,7 +47,7 @@ import {
 
 export type { EspecieSugerida } from "./LothPlantacionSugeridas";
 
-export default function LothPlantacionRegistro({ plan, species, cascada, sugeridas, onEditarPlan, onCambio }: {
+export default function LothPlantacionRegistro({ plan, species, cascada, sugeridas, onEditarPlan, onCambio, bloques }: {
   plan: Plan;
   species: Species[];
   cascada: CascadaPlan;
@@ -55,6 +55,8 @@ export default function LothPlantacionRegistro({ plan, species, cascada, sugerid
   onEditarPlan: () => void;
   /** Después de agregar, corregir o quitar: recargar el detalle del plan. */
   onCambio: () => void;
+  /** El saldo por bloque (del saldo del plan) para «Por bloque o zona». */
+  bloques?: SaldoDeLosBloquesProps;
 }) {
   const [agregando, setAgregando] = useState<FilaEspecie[] | null>(null);
   const [intento, setIntento] = useState(false);
@@ -165,7 +167,7 @@ export default function LothPlantacionRegistro({ plan, species, cascada, sugerid
       </BloquePlan>
 
       {/* Dónde está cada especie: por bloque o zona (Brandon 24-10). El saldo de arriba no cambia. */}
-      <LothPlantacionBloques planId={plan.id} species={species} />
+      <LothPlantacionBloques planId={plan.id} species={species} {...bloques} />
 
       <AdminModal
         open={agregando != null}

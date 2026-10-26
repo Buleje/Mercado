@@ -7,7 +7,8 @@
  * anotarla y para corregirla.
  *
  * El servidor valida y calcula (`POST/PATCH /plan/preliminares`); acá sólo se
- * previsualiza «saldo si se registran» con las mismas funciones puras.
+ * previsualiza «saldo si se registran» con las mismas funciones puras. Al
+ * costado (abajo en el celular), el saldo del bloque elegido (25-10).
  */
 
 import { useMemo, useState } from "react";
@@ -16,17 +17,18 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import { SIN_BLOQUES, type EspecieConUsos, type SaldoPorBloques } from "@/lib/forestal/loth-plan-bloques-saldo";
 import {
   numeroConRegion,
   previsualizarGuia,
   type DatosPreliminar,
-  type EspecieDelSaldo,
   type GtfPreliminarVista,
   type LineaPreliminar,
 } from "@/lib/forestal/loth-plan-preliminares";
 import { guardarPreliminarDelPlan } from "./hooks/plan-preliminares-api";
 import LothPlanPreliminarFilas, { numeroEscrito, type FilaPreliminar } from "./LothPlanPreliminarFilas";
 import LothPlanPreliminarLts from "./LothPlanPreliminarLts";
+import LothPlanPreliminarPanelBloque from "./LothPlanPreliminarPanelBloque";
 import LothPlanPreliminarRegion from "./LothPlanPreliminarRegion";
 import { Btn, CampoGrid, Field, I } from "./ctp-shared";
 
@@ -65,6 +67,7 @@ export default function LothPlanPreliminarModal({
   guia,
   especies,
   bloques,
+  porBloque,
   saldo,
   guias,
   onClose,
@@ -75,8 +78,10 @@ export default function LothPlanPreliminarModal({
   guia: GtfPreliminarVista | null;
   especies: string[];
   bloques: string[];
-  /** Las especies del saldo (lo que mide el freno), para la vista previa. */
-  saldo: readonly EspecieDelSaldo[];
+  /** El saldo por bloque del servidor (su reparto sirve para previsualizar). */
+  porBloque?: SaldoPorBloques;
+  /** Las especies del saldo (lo que mide el freno) con sus guías, para la vista previa. */
+  saldo: readonly EspecieConUsos[];
   /** Las preliminares del plan (las pendientes ya descuentan en la vista previa). */
   guias: readonly GtfPreliminarVista[];
   onClose: () => void;
@@ -98,13 +103,15 @@ export default function LothPlanPreliminarModal({
   const ltsFinales = lts.map((l) => numeroConRegion(l, region)).filter(Boolean);
 
   /* La vista previa: sólo con las filas que ya se entienden. */
-  const previa = useMemo(() => {
-    const lineas: LineaPreliminar[] = filas.flatMap((f) => {
-      const m3 = numeroEscrito(f.m3);
-      return f.especie && m3 != null && m3 > 0 ? [{ especie: f.especie, trozas: numeroEscrito(f.trozas) ?? 0, m3, bloque: f.bloque || null }] : [];
-    });
-    return previsualizarGuia(saldo, guias, lineas, guia?.id);
-  }, [filas, saldo, guias, guia?.id]);
+  const lineasEscritas = useMemo(
+    () =>
+      filas.flatMap((f): LineaPreliminar[] => {
+        const m3 = numeroEscrito(f.m3);
+        return f.especie && m3 != null && m3 > 0 ? [{ especie: f.especie, trozas: numeroEscrito(f.trozas) ?? 0, m3, bloque: f.bloque || null }] : [];
+      }),
+    [filas],
+  );
+  const previa = useMemo(() => previsualizarGuia(saldo, guias, lineasEscritas, guia?.id), [saldo, guias, lineasEscritas, guia?.id]);
 
   const guardar = async () => {
     setError(null);
@@ -132,7 +139,7 @@ export default function LothPlanPreliminarModal({
   return (
     <AdminModal
       open
-      size="lg"
+      size="xl"
       onClose={busy ? () => undefined : onClose}
       title={guia ? `Corregir la GTF preliminar ${guia.numeroGtf}` : "Registrar GTF preliminar"}
       description="Guía hecha a mano, por enviar a SERFOR. Queda pendiente hasta que la registres."
@@ -149,53 +156,65 @@ export default function LothPlanPreliminarModal({
         </ModalFooter>
       }
     >
-      <div className={`${MODAL_BODY} space-y-4`}>
-        <CampoGrid>
-          <Field label="Región" span={6}>
-            <LothPlanPreliminarRegion
-              region={region}
-              fija={region !== "" && region === regionFija}
-              onRegion={setRegionElegida}
-              onFijar={() => setRegionFija(region !== "" && region === regionFija ? "" : region)}
-            />
+      <div className={`${MODAL_BODY} grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]`}>
+        <div className="min-w-0 space-y-4">
+          <CampoGrid>
+            <Field label="Región" span={6}>
+              <LothPlanPreliminarRegion
+                region={region}
+                fija={region !== "" && region === regionFija}
+                onRegion={setRegionElegida}
+                onFijar={() => setRegionFija(region !== "" && region === regionFija ? "" : region)}
+              />
+            </Field>
+            <Field label="Fecha" span={6}>
+              <input type="date" className={I} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+            </Field>
+            <Field label="N.º de GTF *" span={6} hint={gtfFinal && gtfFinal !== numeroGtf.trim() ? `Se guarda como ${gtfFinal}` : undefined}>
+              <input className={I} value={numeroGtf} onChange={(e) => setNumeroGtf(e.target.value)} placeholder={region ? "15" : "19-000015"} inputMode={region ? "numeric" : undefined} data-testid="preliminar-gtf" />
+            </Field>
+            <Field label={lts.length > 1 ? `Listas de trozas vinculadas (${lts.length}) *` : "N.º de LT vinculado *"} span={6}>
+              <LothPlanPreliminarLts
+                lts={lts}
+                region={region}
+                onCambiar={(i, v) => setLts((xs) => xs.map((x, j) => (j === i ? v : x)))}
+                onAgregar={() => setLts((xs) => [...xs, ""])}
+                onQuitar={(i) => setLts((xs) => (xs.length > 1 ? xs.filter((_, j) => j !== i) : xs))}
+              />
+            </Field>
+          </CampoGrid>
+          {especies.length === 0 ? (
+            <p className="text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              Este plan no tiene especies cargadas: cárgalas primero en «Especies».
+            </p>
+          ) : (
+            <>
+              {bloques.length === 1 && <p className="text-sm text-[var(--text-secondary)]">Todo va al bloque {bloques[0]} (el plan tiene uno solo).</p>}
+              <LothPlanPreliminarFilas
+                filas={filas}
+                especies={especies}
+                bloques={bloques}
+                previa={previa}
+                onCambiar={(key, cambio) => setFilas((fs) => fs.map((f) => (f.key === key ? { ...f, ...cambio } : f)))}
+                onAgregar={() => setFilas((fs) => [...fs, nuevaFila()])}
+                onQuitar={(key) => setFilas((fs) => (fs.length > 1 ? fs.filter((f) => f.key !== key) : fs))}
+              />
+            </>
+          )}
+          <Field label="Nota" span={12}>
+            <input className={I} value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej.: falta firmar el regente" maxLength={500} />
           </Field>
-          <Field label="Fecha" span={6}>
-            <input type="date" className={I} value={fecha} onChange={(e) => setFecha(e.target.value)} />
-          </Field>
-          <Field label="N.º de GTF *" span={6} hint={gtfFinal && gtfFinal !== numeroGtf.trim() ? `Se guarda como ${gtfFinal}` : undefined}>
-            <input className={I} value={numeroGtf} onChange={(e) => setNumeroGtf(e.target.value)} placeholder={region ? "15" : "19-000015"} inputMode={region ? "numeric" : undefined} data-testid="preliminar-gtf" />
-          </Field>
-          <Field label={lts.length > 1 ? `Listas de trozas vinculadas (${lts.length}) *` : "N.º de LT vinculado *"} span={6}>
-            <LothPlanPreliminarLts
-              lts={lts}
-              region={region}
-              onCambiar={(i, v) => setLts((xs) => xs.map((x, j) => (j === i ? v : x)))}
-              onAgregar={() => setLts((xs) => [...xs, ""])}
-              onQuitar={(i) => setLts((xs) => (xs.length > 1 ? xs.filter((_, j) => j !== i) : xs))}
-            />
-          </Field>
-        </CampoGrid>
-        {especies.length === 0 ? (
-          <p className="text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            Este plan no tiene especies cargadas: cárgalas primero en «Especies».
-          </p>
-        ) : (
-          <>
-            {bloques.length === 1 && <p className="text-sm text-[var(--text-secondary)]">Todo va al bloque {bloques[0]} (el plan tiene uno solo).</p>}
-            <LothPlanPreliminarFilas
-              filas={filas}
-              especies={especies}
-              bloques={bloques}
-              previa={previa}
-              onCambiar={(key, cambio) => setFilas((fs) => fs.map((f) => (f.key === key ? { ...f, ...cambio } : f)))}
-              onAgregar={() => setFilas((fs) => [...fs, nuevaFila()])}
-              onQuitar={(key) => setFilas((fs) => (fs.length > 1 ? fs.filter((f) => f.key !== key) : fs))}
-            />
-          </>
-        )}
-        <Field label="Nota" span={12}>
-          <input className={I} value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej.: falta firmar el regente" maxLength={500} />
-        </Field>
+        </div>
+        <LothPlanPreliminarPanelBloque
+          porBloque={porBloque ?? SIN_BLOQUES}
+          saldo={saldo}
+          guias={guias}
+          lineas={lineasEscritas}
+          elegidos={filas.map((f) => f.bloque)}
+          numeroGtf={gtfFinal}
+          numerosLt={ltsFinales}
+          exceptoId={guia?.id}
+        />
       </div>
     </AdminModal>
   );

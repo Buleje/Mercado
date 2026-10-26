@@ -22,6 +22,7 @@ import { z } from "zod";
 import { claveNumeroGtf } from "./gtf-talonario";
 import { claveEspecie } from "./loth-constants";
 import { excedeTechoM3 } from "./loth-t6";
+import type { SaldoPorBloques } from "./loth-plan-bloques-saldo";
 
 export const MAX_LINEAS_PRELIMINAR = 30;
 export const MAX_PRELIMINARES_POR_PLAN = 500;
@@ -353,6 +354,8 @@ export interface PreliminaresDelPlan {
   porEspecie: PreliminarDeEspecie[];
   /** Los bloques del plan, por nombre: la ventana los ofrece si hay más de uno. */
   bloques: string[];
+  /** El saldo de cada bloque con sus guías y lo que se pasa (`saldoPorBloques`); sin reparto, vacío. */
+  porBloque: SaldoPorBloques;
 }
 
 /** El KPI de arriba y la columna por especie, del saldo del plan y sus preliminares (lo calcula el servidor). */

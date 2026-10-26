@@ -18,6 +18,7 @@ import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { ForestPlanBloquesDB } from "@/lib/db/forest-plan-bloques.db";
 import { auditLoth } from "@/lib/forestal/loth-audit";
+import { saldoPorBloques, type UsoParaBloques } from "@/lib/forestal/loth-plan-bloques-saldo";
 import {
   agregarPreliminar,
   aVista,
@@ -103,7 +104,7 @@ export const ForestPlanPreliminaresDB = {
     tenantId: string,
     planId: string,
     saldo: {
-      especies: readonly (EspecieDelSaldo & { guias?: readonly { gtfNumber: string | null; gtfId?: string | null; sinPlan: boolean }[] })[];
+      especies: readonly (EspecieDelSaldo & { guias?: readonly UsoParaBloques[] })[];
       total: { quedaM3: number };
       sinTecho: boolean;
     },
@@ -125,7 +126,9 @@ export const ForestPlanPreliminaresDB = {
       .sort((a, b) => b.creadaAt.localeCompare(a.creadaAt))
       .map((g) => aVista(g, guiaDelLibroDe(g.numeroGtf, delLibro, planId)));
     const { resumen, porEspecie } = resumirPreliminares(saldo, guias);
-    return { guias, resumen, porEspecie, bloques: reparto?.bloques.map((b) => b.nombre) ?? [] };
+    /* El saldo de cada bloque: lo del libro sólo va a un bloque si su preliminar lo dice (ver el módulo). */
+    const porBloque = saldoPorBloques(reparto?.bloques ?? [], saldo.especies, guias);
+    return { guias, resumen, porEspecie, bloques: reparto?.bloques.map((b) => b.nombre) ?? [], porBloque };
   },
 
   /** Cruza los datos con las especies y los bloques del plan; 400 legible si algo no cuadra. */

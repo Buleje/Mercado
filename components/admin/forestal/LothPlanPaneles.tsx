@@ -27,8 +27,11 @@ import type { VistaPlan } from "./hooks/use-loth-plan-view";
 import { useSaldoDelPlan } from "./hooks/use-loth-saldo-plan";
 import LothPlanSinPlan from "./LothPlanSinPlan";
 import LothPlanSaldoGrande from "./LothPlanSaldoGrande";
-import LothPlanPreliminares, { ID_PRELIMINARES } from "./LothPlanPreliminares";
+import LothPlanPreliminares from "./LothPlanPreliminares";
 import LothPlanPreliminaresAviso from "./LothPlanPreliminaresAviso";
+import LothPlanBloquesExcesoAviso from "./LothPlanBloquesExcesoAviso";
+import LothPlantacionBloques, { type SaldoDeLosBloquesProps } from "./LothPlantacionBloques";
+import { useIrAPreliminares } from "./hooks/use-ir-a-preliminares";
 import { useSemaforoDelPlanAbierto } from "./hooks/use-loth-semaforo-libro";
 import LothPlazosDelLibroAviso from "./LothPlazosDelLibroAviso";
 import { PESTANA_PAPELES } from "./plan-papeles/abrir-papeles";
@@ -56,13 +59,17 @@ export default function LothPlanPaneles({
   /* Las GTF preliminares (25-10) vienen con el saldo; guardar una relee sólo el saldo. */
   const [preliminares, setPreliminares] = useState(0);
   const saldo = useSaldoDelPlan(plan.id, version * 1000 + preliminares, true, true);
+  const pestanaDelSaldo: PestanaPlan = esPlantacion ? "registro" : "avance";
+  /* «Corregir» de un bloque que se pasa (25-10): a sus preliminares, resaltadas. */
+  const irA = useIrAPreliminares(() => setPestana(pestanaDelSaldo));
+  const porBloque = saldo.dato?.preliminares?.porBloque;
+  const bloques: SaldoDeLosBloquesProps = { porBloque, onVerPreliminares: irA.ir, onRepartoCambio: () => setPreliminares((n) => n + 1) };
   const saldoGrande = (
     <>
       <LothPlanSaldoGrande lectura={saldo} onVerGuia={onVerGuia} onCambio={() => trasAtar()} />
-      <LothPlanPreliminares planId={plan.id} dato={saldo.dato} onCambio={() => setPreliminares((n) => n + 1)} />
+      <LothPlanPreliminares planId={plan.id} dato={saldo.dato} onCambio={() => setPreliminares((n) => n + 1)} resaltadas={irA.resaltadas} />
     </>
   );
-  const pestanaDelSaldo: PestanaPlan = esPlantacion ? "registro" : "avance";
   /* El semáforo (Brandon 24-10): el mismo de la cabecera; acá, lo que se arregla. */
   const semaforo = useSemaforoDelPlanAbierto(plan, {
     especies: d.saldoFallo ? null : d.cascada.especies,
@@ -118,13 +125,8 @@ export default function LothPlanPaneles({
         } : undefined}
       />
 
-      <LothPlanPreliminaresAviso
-        guias={saldo.dato?.preliminares?.guias}
-        onVer={() => {
-          setPestana(pestanaDelSaldo);
-          requestAnimationFrame(() => document.getElementById(ID_PRELIMINARES)?.scrollIntoView({ block: "start", behavior: "smooth" }));
-        }}
-      />
+      <LothPlanBloquesExcesoAviso excesos={porBloque?.excesos} onVer={(ids) => irA.ir(ids, true)} />
+      <LothPlanPreliminaresAviso guias={saldo.dato?.preliminares?.guias} onVer={() => irA.ir()} />
 
       <LothPlanSinPlan version={version} onCambio={trasAtar} onVerGuia={onVerGuia} />
 
@@ -140,6 +142,7 @@ export default function LothPlanPaneles({
             sugeridas={d.especiesSinRegistrar}
             onEditarPlan={() => setEditandoPlan(true)}
             onCambio={() => d.loadDetail(plan.id)}
+            bloques={bloques}
           />
           {/* El período es opcional en un registro: sin fechas, la zafra no
               tiene contra qué medirse y no se pinta. */}
@@ -157,6 +160,8 @@ export default function LothPlanPaneles({
         <>
           <Panel id="avance" activa={pestana}>
             {saldoGrande}
+            {/* Por bloque o zona (25-10): en bosque natural, sólo si el plan tiene reparto. */}
+            <LothPlantacionBloques planId={plan.id} species={d.species} soloConBloques {...bloques} />
             <LothZafraPanel zafra={zafra} />
             {/* Y el paso que faltaba: con qué árboles se llega a ese ritmo. */}
             <LothPlanTalaPanel
