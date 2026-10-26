@@ -31,6 +31,7 @@
  *   {"click": "<sel>"} {"hover": "<sel>"} {"activar": "<sel>"} (sólo si aria-pressed≠true) {"llenar": ["<sel>", "texto"]}
  *   {"embudo": "Estado"}          (abre el filtro tipo Excel de la columna «Estado»: lista, rango o lupa)
  *   {"dobleClic": "<sel>"} {"clicDerecho": "<sel>"}  → mouse REAL (16-10: explorador del Archivo, entrar y menú contextual)
+ *   {"pegar": ["<sel>" | null, "a\tb\n1\t2"]}  → Ctrl+V de ese texto sobre el elemento (o el del foco): pegar de Excel
  *   {"abrir": "<sel>"}            → click sólo si su aria-expanded no es "true" (plegables recordados)
  *   {"tecla": "Enter"}            {"elegir": ["<sel>", "valor o etiqueta"]}
  *   {"rueda": [x, y, dy]}         → rueda REAL del mouse en (x, y): prueba scroll bloqueado/libre detrás de un modal
@@ -609,6 +610,17 @@ async function recorrido(t, primero) {
         else if (tipo === "clicDerecho") await visible(page, valor).click({ button: "right", timeout: 15_000 });
         // {"hover": "<selector>"} (15-10: el menú de Cámaras se abre al pasar el mouse; antes, pointerover a mano en un eval).
         else if (tipo === "hover") await visible(page, valor).hover({ timeout: 15_000 });
+        // {"pegar": ["<sel>" | null, "texto"]}: Ctrl+V de un texto (TSV de Excel) sobre ese elemento, o sobre el
+        // que tiene el foco con null (25-10: el pegado del cubicador armaba el ClipboardEvent a mano en un eval).
+        else if (tipo === "pegar") {
+          const [sel, texto] = valor;
+          if (sel) await visible(page, sel).click({ timeout: 15_000 });
+          await page.evaluate((t) => {
+            const dt = new DataTransfer();
+            dt.setData("text/plain", t);
+            (document.activeElement ?? document.body).dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+          }, texto);
+        }
         else if (tipo === "activar") {
           /* Como abrir, para interruptores (aria-pressed): la pasada oscura volvía a tocar
              «Fijar» y desfijaba la especie que dejó la clara (15-10, despacho a mano). */
