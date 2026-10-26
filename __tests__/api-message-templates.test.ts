@@ -54,8 +54,10 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
+  getClientIp: vi.fn(() => "127.0.0.1"),
 }));
 
+import { invalidateAll } from "@/lib/cache";
 import { GET, POST, PATCH, DELETE } from "@/app/api/message-templates/route";
 
 const AUTH = { tenantId: "main", role: "admin", username: "test" };
@@ -81,7 +83,10 @@ const VALID_BODY = { name: "Bienvenida", channel: "whatsapp", category: "ventas"
 // ── GET ──────────────────────────────────────────────────────────────────────
 
 describe("GET /api/message-templates", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    invalidateAll();
+  });
 
   it("returns 401 when unauthenticated", async () => {
     mockRequireAdmin.mockResolvedValue(UNAUTH);

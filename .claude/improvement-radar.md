@@ -178,3 +178,17 @@ Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 - **Sugerencia:** Files [components/superadmin/banners/BannerImageAdjuster.tsx, components/superadmin/banners/BannerPreviewStudio.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
 - **Last seen:** 2026-04-27T01:43:48.118Z
 
+
+---
+
+## Weekly health 2026-10-26
+- tsc: verde (0 errores)
+- tests: 52 fallos en 18 archivos (3952 pasan). Causas: mocks desactualizados (`getClientIp`, `tryAdmin`), prisma mocks sin `transfer/warehouse/savedCart`, caché entre tests. Incluye 5 en `__tests__/whatsapp/` y varios en checkout (danger zone, no tocados).
+- lint: la config ESLint falla ("react-hooks" plugin no definido en un override); 410 errores legacy tienen rutina propia
+- outdated: 30+ paquetes con updates; `npm audit --omit=dev`: 58 vulns (2 critical, 21 high; zod <4.6.6 high)
+- acción: fix de `api-message-templates.test.ts` (9 tests: mock getClientIp + invalidateAll). PR pendiente de review.
+
+### [pending] 43 tests rojos restantes (weekly 2026-10-26)
+- api-warehouse-transfers (11), api-product-variants (4), checkout/* (danger zone, humano), whatsapp/* (5, humano), api-product-seo, api-purchases-create, cart-route-auth, feature-flags, etc.
+
+### [pending] npm audit high/critical (zod, ws, ...) — evaluar `npm audit fix` en sprint propio
