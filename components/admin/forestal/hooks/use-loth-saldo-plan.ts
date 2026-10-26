@@ -59,9 +59,14 @@ function useLectura<T>(url: string | null, que: string): LecturaEstado<T> {
   return { dato: vigente?.dato ?? anterior, cargando: !!url && !vigente, error: vigente?.error ?? null };
 }
 
-/** El saldo de un plan. Sin `planId` o con `activo:false` no se pide nada. */
-export function useSaldoDelPlan(planId: string | null | undefined, version = 0, activo = true): LecturaEstado<SaldoPlanRespuesta> {
-  const url = activo && planId ? `${RUTA}?${new URLSearchParams({ planId })}&v=${version}` : null;
+/**
+ * El saldo de un plan. Sin `planId` o con `activo:false` no se pide nada.
+ * `conPreliminares` suma las GTF preliminares del plan (`preliminares` de la respuesta).
+ */
+export function useSaldoDelPlan(planId: string | null | undefined, version = 0, activo = true, conPreliminares = false): LecturaEstado<SaldoPlanRespuesta> {
+  /* `&v=` va AL FINAL: `useLectura` lo saca para mostrar lo anterior mientras relee. */
+  const params = new URLSearchParams({ planId: planId ?? "", ...(conPreliminares ? { preliminares: "1" } : {}) });
+  const url = activo && planId ? `${RUTA}?${params}&v=${version}` : null;
   return useLectura<SaldoPlanRespuesta>(url, "el saldo del plan");
 }
 

@@ -27,6 +27,8 @@ import type { VistaPlan } from "./hooks/use-loth-plan-view";
 import { useSaldoDelPlan } from "./hooks/use-loth-saldo-plan";
 import LothPlanSinPlan from "./LothPlanSinPlan";
 import LothPlanSaldoGrande from "./LothPlanSaldoGrande";
+import LothPlanPreliminares, { ID_PRELIMINARES } from "./LothPlanPreliminares";
+import LothPlanPreliminaresAviso from "./LothPlanPreliminaresAviso";
 import { useSemaforoDelPlanAbierto } from "./hooks/use-loth-semaforo-libro";
 import LothPlazosDelLibroAviso from "./LothPlazosDelLibroAviso";
 import { PESTANA_PAPELES } from "./plan-papeles/abrir-papeles";
@@ -51,8 +53,16 @@ export default function LothPlanPaneles({
   /* «Saldo que no se pasa» (24-10): se relee con el libro y tras atar o crear un plan. */
   const [atados, setAtados] = useState(0);
   const version = reloadSignal * 1000 + atados;
-  const saldo = useSaldoDelPlan(plan.id, version);
-  const saldoGrande = <LothPlanSaldoGrande lectura={saldo} onVerGuia={onVerGuia} onCambio={() => trasAtar()} />;
+  /* Las GTF preliminares (25-10) vienen con el saldo; guardar una relee sólo el saldo. */
+  const [preliminares, setPreliminares] = useState(0);
+  const saldo = useSaldoDelPlan(plan.id, version * 1000 + preliminares, true, true);
+  const saldoGrande = (
+    <>
+      <LothPlanSaldoGrande lectura={saldo} onVerGuia={onVerGuia} onCambio={() => trasAtar()} />
+      <LothPlanPreliminares planId={plan.id} dato={saldo.dato} onCambio={() => setPreliminares((n) => n + 1)} />
+    </>
+  );
+  const pestanaDelSaldo: PestanaPlan = esPlantacion ? "registro" : "avance";
   /* El semáforo (Brandon 24-10): el mismo de la cabecera; acá, lo que se arregla. */
   const semaforo = useSemaforoDelPlanAbierto(plan, {
     especies: d.saldoFallo ? null : d.cascada.especies,
@@ -106,6 +116,14 @@ export default function LothPlanPaneles({
             tab?.scrollIntoView({ block: "nearest", behavior: "smooth" });
           });
         } : undefined}
+      />
+
+      <LothPlanPreliminaresAviso
+        guias={saldo.dato?.preliminares?.guias}
+        onVer={() => {
+          setPestana(pestanaDelSaldo);
+          requestAnimationFrame(() => document.getElementById(ID_PRELIMINARES)?.scrollIntoView({ block: "start", behavior: "smooth" }));
+        }}
       />
 
       <LothPlanSinPlan version={version} onCambio={trasAtar} onVerGuia={onVerGuia} />

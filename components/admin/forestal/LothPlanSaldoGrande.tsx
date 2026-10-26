@@ -21,7 +21,9 @@ import { useMiRol } from "@/hooks/use-mi-rol";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 import type { SaldoDeEspecieConGuias, SaldoPlanRespuesta, UsoConGuia } from "@/lib/forestal/loth-saldo-plan-tipos";
+import type { PreliminarDeEspecie } from "@/lib/forestal/loth-plan-preliminares";
 import LothGtfDesatarPermiso from "./LothGtfDesatarPermiso";
+import { KpiPreliminares, PreliminarEnLaTarjeta } from "./loth-plan-preliminar-saldo";
 
 const NUM = "font-mono tabular-nums";
 
@@ -93,7 +95,20 @@ function GuiasDeLaEspecie({ e, onVerGuia, onDesatar }: { e: SaldoDeEspecieConGui
   );
 }
 
-function TarjetaEspecie({ e, techo, onVerGuia, onDesatar }: { e: SaldoDeEspecieConGuias; techo: string; onVerGuia?: (gtfNumber: string) => void; onDesatar?: Desatar }) {
+function TarjetaEspecie({
+  e,
+  techo,
+  pre,
+  onVerGuia,
+  onDesatar,
+}: {
+  e: SaldoDeEspecieConGuias;
+  techo: string;
+  /** Lo preliminar de la especie (GTF hechas a mano por registrar): sólo se muestra, no frena. */
+  pre?: PreliminarDeEspecie;
+  onVerGuia?: (gtfNumber: string) => void;
+  onDesatar?: Desatar;
+}) {
   const t = tono(e);
   const conTecho = e.autorizadoM3 != null && e.quedaM3 != null;
   return (
@@ -133,6 +148,7 @@ function TarjetaEspecie({ e, techo, onVerGuia, onDesatar }: { e: SaldoDeEspecieC
           <span className={NUM}>{fmtM3(e.usadoSinPlanM3)} m³</span> sin plan cuentan acá
         </p>
       )}
+      <PreliminarEnLaTarjeta pre={pre} />
       <GuiasDeLaEspecie e={e} onVerGuia={onVerGuia} onDesatar={onDesatar} />
     </li>
   );
@@ -165,6 +181,7 @@ export default function LothPlanSaldoGrande({
   if (!dato?.plan || !saldo || saldo.especies.length === 0) return null;
   const techo = dato.plan.plantacion ? "Registrado" : "Autorizado";
   const { total } = saldo;
+  const preliminar = new Map((dato.preliminares?.porEspecie ?? []).map((p) => [p.clave, p]));
   return (
     <section data-testid="saldo-del-plan" aria-labelledby="saldo-del-plan-titulo" className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -183,9 +200,10 @@ export default function LothPlanSaldoGrande({
           </p>
         )}
       </div>
+      {dato.preliminares && <KpiPreliminares resumen={dato.preliminares.resumen} />}
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {saldo.especies.map((e) => (
-          <TarjetaEspecie key={e.clave} e={e} techo={techo} onVerGuia={onVerGuia} onDesatar={puedeDesatar ? setDesatando : undefined} />
+          <TarjetaEspecie key={e.clave} e={e} techo={techo} pre={preliminar.get(e.clave)} onVerGuia={onVerGuia} onDesatar={puedeDesatar ? setDesatando : undefined} />
         ))}
       </ul>
       {desatando?.gtfId && (

@@ -5,6 +5,7 @@
  */
 import type { AtarSinPlanConteo } from "./loth-atar-sin-plan";
 import type { MinimoDelPlanNuevo, PlanDesdeLaGuia, PlanSugerido } from "./loth-atar-lo-suelto";
+import type { PreliminaresDelPlan } from "./loth-plan-preliminares";
 import type { SaldoDeEspecie, SaldoDelPlan, UsoDeLaGuia } from "./loth-saldo-cascada";
 
 /** Lo que una guía se llevó de una especie, con su guía para abrirla (`null` = no se encontró viva). */
@@ -25,6 +26,11 @@ export interface SaldoPlanRespuesta {
   /** Las especies del plan tal como están (para el freno del despacho: `claveT6`). */
   delPlan: { speciesCommon: string; speciesScientific: string | null }[];
   saldo: SaldoConGuias;
+  /**
+   * Sólo con `&preliminares=1` (25-10): las GTF hechas a mano por enviar a SERFOR
+   * y cuánto quedaría si se registran. NO cuenta en el freno. `null` = no se pudo leer.
+   */
+  preliminares?: PreliminaresDelPlan | null;
 }
 
 /**

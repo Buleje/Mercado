@@ -37,7 +37,9 @@ export type LothAuditEntity =
   // KV: parámetros del Plan Operativo (DMC por especie, % de semilleros).
   | "ForestLothPoa"
   // KV: reparto de las especies de una plantación por bloque o zona.
-  | "ForestLothPlanBloques";
+  | "ForestLothPlanBloques"
+  // KV: GTF preliminares del plan (hechas a mano, por enviar a SERFOR).
+  | "ForestLothGtfPreliminar";
 
 /**
  * De dónde vino el pedido (IP y navegador), para los eventos que el titular
@@ -98,6 +100,10 @@ export type LothAuditAction =
   | "loth_poa_config_update"
   // Reparto de las especies del plan por bloque o zona (KV)
   | "loth_plan_bloques_update"
+  // GTF preliminares del plan (KV): anotar, corregir, registrar, anular
+  | "loth_plan_preliminar_crear"
+  | "loth_plan_preliminar_corregir"
+  | "loth_plan_preliminar_estado"
   // ¿Asierra dentro del TH o la madera va a una planta? (KV, por carátula)
   | "loth_transformacion_update";
 

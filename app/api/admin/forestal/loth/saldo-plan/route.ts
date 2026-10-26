@@ -6,6 +6,8 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { withApiHandler } from "@/lib/api-handler";
 import { LothInvariantError } from "@/lib/db/forest-loth.db";
 import { ForestLothSaldoPlanDB } from "@/lib/db/forest-loth-saldo-plan.db";
+import { ForestPlanPreliminaresDB } from "@/lib/db/forest-plan-preliminares.db";
+import { logger } from "@/lib/logger";
 import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 
@@ -14,6 +16,9 @@ import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
  *
  *   GET  ?planId=…   → el saldo del plan por especie: autorizado · usado · queda,
  *                      con la guía de cada m³ (`ForestLothSaldoPlanDB.saldo`).
+ *        &preliminares=1 → además, las GTF preliminares del plan (hechas a mano,
+ *                      por enviar a SERFOR) y «saldo si se registran», contra ESE
+ *                      saldo. No tocan el freno: se muestran aparte.
  *   GET  ?sinPlan=1  → el de cada plan vigente con especies: lo que sale sin plan
  *                      se mide contra todos (el freno del despacho sin permiso).
  *   GET  ?sueltos=1  → las guías y trozas sin plan, con el plan sugerido y el que
@@ -33,7 +38,7 @@ const id = z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/, "El identi
 const getSchema = z.union([
   z.object({ sueltos: z.literal("1") }),
   z.object({ sinPlan: z.literal("1") }),
-  z.object({ planId: id }),
+  z.object({ planId: id, preliminares: z.literal("1").optional() }),
 ]);
 
 const postSchema = z.object({
@@ -69,7 +74,13 @@ export const GET = withApiHandler("forestal-loth-saldo-plan-get", async (req: Ne
     }
     const r = await ForestLothSaldoPlanDB.saldo(auth.tenantId, parsed.data.planId);
     if (!r) return NextResponse.json({ error: "not_found", message: "No encontramos ese plan." }, { status: 404 });
-    return NextResponse.json(r);
+    if (parsed.data.preliminares !== "1") return NextResponse.json(r);
+    /* Lo preliminar no puede tumbar el saldo: si falla, el saldo sale igual y la pantalla lo dice. */
+    const preliminares = await ForestPlanPreliminaresDB.delPlan(auth.tenantId, parsed.data.planId, r.saldo).catch((err) => {
+      logger.error("[loth.saldo-plan.GET] preliminares falló", { error: String(err), tenantId: auth.tenantId });
+      return null;
+    });
+    return NextResponse.json({ ...r, preliminares });
   } catch (err) {
     return lothErrorResponse(err, "loth.saldo-plan.GET", auth.tenantId);
   }
