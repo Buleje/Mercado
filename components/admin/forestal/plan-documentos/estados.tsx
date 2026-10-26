@@ -85,3 +85,19 @@ export function PastillaEstado({
     </span>
   );
 }
+
+/**
+ * Un casillero que no cuenta para este tipo de plan (ADR-517): «Si aplica»
+ * (poder, regente: se pide según el caso) o «No aplica» (lo de la plantilla
+ * que este tipo no pide). Gris: no pide acción.
+ */
+export function PastillaNoCuenta({ cuenta }: { cuenta: "si_aplica" | "no_aplica" }) {
+  return (
+    <span
+      title={cuenta === "si_aplica" ? "Se pide según el caso: no cuenta como faltante." : "Este tipo de plan no lo pide: no cuenta."}
+      className="inline-flex h-6 shrink-0 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-xs font-semibold text-[var(--text-secondary)]"
+    >
+      {cuenta === "si_aplica" ? "Si aplica" : "No aplica"}
+    </span>
+  );
+}

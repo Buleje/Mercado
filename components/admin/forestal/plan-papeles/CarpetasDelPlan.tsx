@@ -75,15 +75,25 @@ export default function CarpetasDelPlan({
           </CardTitle>
           <InfoTip
             title="Carpetas del plan"
-            what="Las carpetas del plan en el Archivo: en cada una, los documentos que se esperan, los archivos sueltos y los campos que se escriben. Lo que subes en «Papeles del permiso» cae acá, en su carpeta."
+            what="Las carpetas del plan en el Archivo: en cada una, los papeles que pide la norma para este tipo de plan, los que agregaste, los archivos sueltos y los campos que se escriben. Lo que subes en «Papeles del permiso» cae acá, en su casillero."
             affects={`No impide guardar el plan. «Vence pronto» = en ${DIAS_VENCE_PRONTO} días o menos, según la fecha de vencimiento que le pongas al archivo; entra al aviso «Por vencer» de Documentos.${raiz ? ` En Documentos: ${raiz.ruta}.` : ""}`}
             example="La vigencia de poder vence el 12/10: ponle esa fecha y el 12/09 aparece en amarillo."
           />
         </div>
         {resumen.esperados > 0 && (
-          <p className="flex flex-wrap items-center gap-x-2 text-sm">
+          <p data-carpetas-cuenta className="flex flex-wrap items-center gap-x-2 text-sm">
             <span className="font-semibold tabular-nums text-[var(--text-primary)]">
-              {resumen.cargados} de {resumen.esperados} documentos esperados
+              {/* Alineada al tipo de plan (ADR-517): la misma cuenta que «Papeles del permiso». */}
+              {resumen.porTipo
+                ? [
+                    resumen.porTipo.obligatorios > 0
+                      ? `${resumen.porTipo.presentes} de ${resumen.porTipo.obligatorios} papeles obligatorios`
+                      : null,
+                    resumen.porTipo.propios > 0 ? `${resumen.porTipo.propiosCargados} de ${resumen.porTipo.propios} que agregaste` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                : `${resumen.cargados} de ${resumen.esperados} documentos esperados`}
             </span>
             {cuenta.map((c) => (
               <span key={c.texto} className={`font-semibold ${c.tinta}`}>

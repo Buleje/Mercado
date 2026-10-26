@@ -14,7 +14,7 @@ import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { Camera, FileUp, Lock } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { PastillaEstado } from "./estados";
+import { PastillaEstado, PastillaNoCuenta } from "./estados";
 import ArchivoFila, { FilaSubida } from "./ArchivoFila";
 import type { ArchivoVista, CasilleroVista } from "./modelo";
 import type { SubidaEnCurso } from "../hooks/use-plan-documentos";
@@ -106,7 +106,12 @@ export default function CasilleroArchivos({
         </CardTitle>
         {casillero?.descripcion && <InfoTip title={titulo} what={casillero.descripcion} example="Frente y dorso en dos fotos, o todo en un PDF." />}
         {extra}
-        {casillero && <PastillaEstado estado={casillero.estado} vence={vence} porSubir={casillero.archivos.some((a) => a.pendiente)} />}
+        {casillero &&
+          (casillero.cuenta === "no_aplica" || (casillero.cuenta === "si_aplica" && casillero.estado === "falta") ? (
+            <PastillaNoCuenta cuenta={casillero.cuenta} />
+          ) : (
+            <PastillaEstado estado={casillero.estado} vence={vence} porSubir={casillero.archivos.some((a) => a.pendiente)} />
+          ))}
       </header>
 
       {(n > 0 || subidas.length > 0) && (

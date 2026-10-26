@@ -13,6 +13,7 @@
 
 import { useState } from "react";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { tagPapel } from "@/lib/forestal/loth-plan-papeles";
 import type { DocumentosDelPlan } from "../hooks/use-plan-documentos";
 import PlanDocumentosSeccion from "./PlanDocumentosSeccion";
 import VistaPreviaDoc from "./VistaPreviaDoc";
@@ -57,7 +58,9 @@ export default function PlanDocumentosDelPlan({
     subidas: docs.subidas,
     subir: (files, carpeta, casillero) => {
       setAviso(null);
-      void docs.subir(files, carpeta, casillero);
+      /* El casillero de un papel (ADR-517) le pone su etiqueta: así cuenta en
+         «Papeles» aunque sea el «de la norma», que no tiene fila en la base. */
+      void docs.subir(files, carpeta, casillero, casillero?.papel ? { etiquetas: [tagPapel(casillero.papel)] } : undefined);
     },
     cambiarVence: (archivo, fecha) => {
       if (archivo.documentId) void docs.cambiarVencimiento(archivo.documentId, fecha).then(informar);

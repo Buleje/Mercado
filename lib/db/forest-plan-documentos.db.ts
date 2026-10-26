@@ -39,6 +39,8 @@ import {
   type DocumentoFila,
   type PlanParaCarpeta,
 } from "@/lib/forestal/plan-documentos-semilla";
+import { archivosDeVista, papelesDePlan } from "@/lib/forestal/loth-plan-papeles";
+import { alinearConPapeles } from "@/lib/forestal/plan-documentos-por-tipo";
 
 /**
  * ForestPlanDocumentosDB — «Documentos del plan de manejo» (ADR-467).
@@ -124,6 +126,8 @@ const SELECT_PLAN = {
   titularName: true,
   representanteLegal: true,
   propietarioNombre: true,
+  /* Decide qué papeles pide el plan (la resolución vale lo que dura el plan). */
+  vigenciaHasta: true,
   deletedAt: true,
 } as const;
 type PlanFila = Prisma.ForestPlanGetPayload<{ select: typeof SELECT_PLAN }> & PlanParaCarpeta;
@@ -506,15 +510,36 @@ export const ForestPlanDocumentosDB = {
     for (const n of nietas) {
       if (n.parentId) subcarpetasPorCarpeta.set(n.parentId, (subcarpetasPorCarpeta.get(n.parentId) ?? 0) + 1);
     }
-    const carpetas = armarCarpetas({
+    const hoy = limaDateKey();
+    const armadas = armarCarpetas({
       planId: plan.id,
-      hoy: limaDateKey(),
+      hoy,
       plantilla,
       camposArchivo,
       carpetasDrive,
       documentos: await marcarConCandado(tenantId, documentos, viewerRole),
       subcarpetasPorCarpeta,
     });
+    /* ADR-517: cada papel que pide ESTE tipo de plan, con su casillero; lo de
+       la plantilla que no pide, sin contar. Sólo al leer: no escribe nada. Un
+       negocio sin plantilla todavía (la pantalla le muestra la sugerida) queda
+       como está. */
+    const carpetas =
+      plantilla.length === 0
+        ? armadas
+        : alinearConPapeles(
+            armadas,
+            papelesDePlan(
+              {
+                planType: plan.planType,
+                titularName: plan.titularName,
+                propietarioNombre: plan.propietarioNombre,
+                vigenciaHasta: plan.vigenciaHasta ? plan.vigenciaHasta.toISOString().slice(0, 10) : null,
+              },
+              archivosDeVista({ carpetas: armadas }),
+              hoy,
+            ).lista,
+          );
 
     return {
       planId: plan.id,

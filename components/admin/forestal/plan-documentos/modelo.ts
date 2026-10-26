@@ -10,11 +10,14 @@
  */
 
 import { claveDesdeNombre } from "@/lib/campos-personalizados";
+import { PREFIJO_TAG_PAPEL, papelDeEtiquetas, type ClavePapel } from "@/lib/forestal/loth-plan-papeles";
 import {
+  cuentaEnLoQueFalta,
   estadoDeCasillero,
   type ArchivoDelPlan,
   type CarpetaDelPlan,
   type CarpetaSemilla,
+  type CuentaCasillero,
   type EstadoCasillero,
 } from "@/lib/forestal/plan-documentos-tipos";
 import type { PlantillaCarpeta } from "./plan-documentos-api";
@@ -46,6 +49,12 @@ export interface CasilleroVista {
   pendiente: boolean;
   /** Archivos que este rol no ve por el candado de su carpeta: cuentan, sin nombre. */
   conCandado?: number;
+  /** Papel del permiso que representa: lo que se sube acá lleva su etiqueta (ADR-517). */
+  papel?: ClavePapel | null;
+  /** Cómo cuenta según el tipo de plan (ADR-517). Sin esto, cuenta como antes. */
+  cuenta?: CuentaCasillero;
+  /** Lo pide la norma y la plantilla no lo tiene: no se renombra ni se borra. */
+  porNorma?: boolean;
 }
 
 export interface CarpetaVista {
@@ -118,7 +127,8 @@ export function carpetasDelServidor(carpetas: readonly CarpetaDelPlan[]): Carpet
       sueltos: c.sueltos.map(deServidor),
       ...(c.sueltosConCandado?.length ? { sueltosConCandado: c.sueltosConCandado.length } : {}),
       casilleros: c.casilleros.map((k) => ({
-        campoId: k.campo.id,
+        /* El «de la norma» no existe en la base: sin id, lo subido no lleva `campo:`. */
+        campoId: k.porNorma ? null : k.campo.id,
         clave: k.campo.clave,
         nombre: k.campo.nombre,
         descripcion: k.campo.descripcion,
@@ -127,6 +137,8 @@ export function carpetasDelServidor(carpetas: readonly CarpetaDelPlan[]): Carpet
         archivos: k.archivos.map(deServidor),
         pendiente: false,
         ...(k.conCandado?.length ? { conCandado: k.conCandado.length } : {}),
+        ...(k.cuenta ? { cuenta: k.cuenta, papel: papelDeEtiquetas(k.papel ? [`${PREFIJO_TAG_PAPEL}${k.papel}`] : []) } : {}),
+        ...(k.porNorma ? { porNorma: true } : {}),
       })),
     }));
 }
@@ -237,44 +249,87 @@ export interface ResumenFalta {
   vencenPronto: number;
   vencidos: number;
   chips: ChipFalta[];
+  /**
+   * Vista alineada al tipo de plan (ADR-517): los obligatorios —la MISMA
+   * cuenta que «Papeles»— y aparte lo que agregó el negocio. null = vista vieja.
+   */
+  porTipo: { obligatorios: number; presentes: number; propios: number; propiosCargados: number } | null;
+}
+
+const tieneArchivos = (k: CasilleroVista) => k.archivos.length + (k.conCandado ?? 0) > 0;
+const estaVigente = (k: CasilleroVista) => k.estado === "cargado" || k.estado === "vence_pronto";
+
+/**
+ * Los casilleros que entran a «lo que falta»: los que cuentan y, de los «si
+ * aplica», los que tienen algo subido (un vencido pesa igual).
+ */
+function casillerosQueSeMiran(c: CarpetaVista): CasilleroVista[] {
+  return c.casilleros.filter((k) => cuentaEnLoQueFalta(k.cuenta) || (k.cuenta === "si_aplica" && tieneArchivos(k)));
 }
 
 /**
  * Un chip por documento esperado, primero lo que pide acción (vencido, falta,
- * vence pronto) y al final lo que está bien. `cargados` = esperados − faltan,
- * la MISMA cuenta que el servidor (`resumirCarpetas`): un papel vencido o por
- * vencer ESTÁ cargado —hay que renovarlo, no buscarlo— y se cuenta además en
- * su columna.
+ * vence pronto) y al final lo que está bien. Misma cuenta que el servidor
+ * (`resumirCarpetas`).
+ *
+ * Con la vista alineada al tipo de plan (ADR-517) cuentan los obligatorios y
+ * los que agregó el negocio, y `cargados` = lo que está y no venció: la cuenta
+ * de «Papeles». Sin eso, como antes: `cargados` = esperados − faltan (un papel
+ * vencido ESTÁ cargado —hay que renovarlo, no buscarlo— y se cuenta además en
+ * su columna).
  */
 export function loQueFalta(carpetas: readonly CarpetaVista[]): ResumenFalta {
   const peso: Record<EstadoCasillero, number> = { vencido: 0, falta: 1, vence_pronto: 2, cargado: 3 };
-  const chips: ChipFalta[] = carpetas.flatMap((c) =>
-    c.casilleros.map((k) => ({
-      carpetaClave: c.clave,
-      carpetaNombre: c.nombre,
-      casilleroClave: k.clave,
-      nombre: k.nombre,
-      estado: k.estado,
-      vence: k.archivos.map((a) => a.vence).filter((v): v is string => Boolean(v)).sort()[0] ?? null,
-      porSubir: k.archivos.some((a) => a.pendiente),
+  const alineada = carpetas.some((c) => c.casilleros.some((k) => k.cuenta !== undefined));
+  const filas = carpetas.flatMap((c) =>
+    casillerosQueSeMiran(c).map((k) => ({
+      k,
+      chip: {
+        carpetaClave: c.clave,
+        carpetaNombre: c.nombre,
+        casilleroClave: k.clave,
+        nombre: k.nombre,
+        estado: k.estado,
+        vence: k.archivos.map((a) => a.vence).filter((v): v is string => Boolean(v)).sort()[0] ?? null,
+        porSubir: k.archivos.some((a) => a.pendiente),
+      } satisfies ChipFalta,
     })),
   );
-  chips.sort((a, b) => peso[a.estado] - peso[b.estado]);
-  const n = (e: EstadoCasillero) => chips.filter((c) => c.estado === e).length;
+  filas.sort((a, b) => peso[a.chip.estado] - peso[b.chip.estado]);
+  const mirados = filas.map((f) => f.k);
+  const cuentan = mirados.filter((k) => cuentaEnLoQueFalta(k.cuenta));
+  const n = (lista: readonly CasilleroVista[], e: EstadoCasillero) => lista.filter((k) => k.estado === e).length;
+  const vigentes = (lista: readonly CasilleroVista[]) => lista.filter(estaVigente).length;
+  const obligatorios = cuentan.filter((k) => k.cuenta === "obligatorio");
+  const propios = cuentan.filter((k) => k.cuenta !== "obligatorio");
   return {
-    esperados: chips.length,
-    cargados: chips.length - n("falta"),
-    faltan: n("falta"),
-    vencenPronto: n("vence_pronto"),
-    vencidos: n("vencido"),
-    chips,
+    esperados: cuentan.length,
+    cargados: alineada ? vigentes(cuentan) : cuentan.length - n(cuentan, "falta"),
+    faltan: n(cuentan, "falta"),
+    vencenPronto: n(mirados, "vence_pronto"),
+    vencidos: n(mirados, "vencido"),
+    chips: filas.map((f) => f.chip),
+    porTipo: alineada
+      ? { obligatorios: obligatorios.length, presentes: vigentes(obligatorios), propios: propios.length, propiosCargados: vigentes(propios) }
+      : null,
+  };
+}
+
+/** Lo que dice el árbol de una carpeta: «2/3» = vigentes de los que cuentan (misma regla que `loQueFalta`). */
+export function cuentaDeCarpeta(c: CarpetaVista): { esperados: number; cargados: number } {
+  const cuentan = c.casilleros.filter((k) => cuentaEnLoQueFalta(k.cuenta));
+  const alineada = c.casilleros.some((k) => k.cuenta !== undefined);
+  return {
+    esperados: cuentan.length,
+    cargados: cuentan.filter((k) => (alineada ? estaVigente(k) : k.estado !== "falta")).length,
   };
 }
 
 /** El estado de una carpeta entera, para el punto del árbol. */
 export function estadoDeCarpeta(c: CarpetaVista): EstadoCasillero | null {
-  if (c.casilleros.length === 0) return null;
-  const e = c.casilleros.map((k) => k.estado);
+  const mirados = casillerosQueSeMiran(c);
+  if (mirados.length === 0) return null;
+  const e = mirados.map((k) => k.estado);
   if (e.includes("vencido")) return "vencido";
   if (e.includes("falta")) return "falta";
   if (e.includes("vence_pronto")) return "vence_pronto";

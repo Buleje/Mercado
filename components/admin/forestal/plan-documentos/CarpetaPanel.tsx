@@ -18,6 +18,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { formatDate } from "@/lib/format";
 import { TIPO_ARCHIVO, TIPO_CARPETA, formularioDeCarpeta } from "@/lib/forestal/plan-documentos-tipos";
 import CasilleroArchivos from "./CasilleroArchivos";
+import CasillerosDeCarpeta, { idCasillero } from "./CasillerosDeCarpeta";
 import NuevoCasillero from "./NuevoCasillero";
 import { enlaceAlDrive } from "./plan-documentos-api";
 import type { AccionesDocs, DatosDelPlan } from "./acciones";
@@ -30,7 +31,7 @@ import type { CarpetaVista } from "./modelo";
  */
 const NO_EN_CARPETAS: readonly string[] = [TIPO_ARCHIVO, TIPO_CARPETA, "opcion", "si_no", "nota"];
 
-export const idCasillero = (carpeta: string, casillero: string) => `docs-plan-${carpeta}-${casillero}`;
+export { idCasillero };
 
 /** Campos personalizados plegados, recordado para todas las carpetas y planes. */
 const CLAVE_CAMPOS_ABIERTOS = "loth:plan:carpeta-campos-abiertos";
@@ -195,29 +196,7 @@ export default function CarpetaPanel({
         </p>
       )}
 
-      {carpeta.casilleros.length > 0 && (
-        <div className="grid grid-cols-1 gap-2 @min-[40rem]:grid-cols-2">
-          {carpeta.casilleros.map((k) => (
-            <CasilleroArchivos
-              key={k.clave}
-              domId={idCasillero(carpeta.clave, k.clave)}
-              titulo={k.nombre}
-              casillero={k}
-              archivos={k.archivos}
-              subidas={subidasDe(k.clave)}
-              ocupado={false}
-              vacio="Todavía no está."
-              extra={k.soloEstePlan ? <span className="text-xs text-[var(--text-tertiary)]">sólo este plan</span> : undefined}
-              onSubir={(files) => acciones.subir(files, carpeta, k)}
-              onVer={acciones.ver}
-              onQuitar={acciones.quitar}
-              onVence={acciones.cambiarVence}
-              onDescartarSubida={acciones.descartarSubida}
-              conCandado={k.conCandado}
-            />
-          ))}
-        </div>
-      )}
+      <CasillerosDeCarpeta carpeta={carpeta} acciones={acciones} subidasDe={subidasDe} />
 
       {conPlantilla && nuevoCasillero && (
         <NuevoCasillero

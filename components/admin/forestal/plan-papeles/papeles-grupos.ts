@@ -55,7 +55,8 @@ export function tramosDeAvance(lista: readonly PapelDelPlan[]): { clave: string;
 interface CarpetaConCasilleros {
   clave: string;
   nombre: string;
-  casilleros: readonly { clave: string; nombre: string }[];
+  /** `papel`/`cuenta`/`porNorma`: la vista alineada al tipo de plan (ADR-517). */
+  casilleros: readonly { clave: string; nombre: string; papel?: string | null; cuenta?: string; porNorma?: boolean }[];
 }
 
 /**
@@ -65,9 +66,19 @@ interface CarpetaConCasilleros {
  * carpetas todavía.
  */
 export function destinoDelPapel<C extends CarpetaConCasilleros>(
-  papel: Pick<PapelDelPlan, "carpeta" | "casilleros">,
+  papel: Pick<PapelDelPlan, "carpeta" | "casilleros"> & { clave?: string },
   carpetas: readonly C[],
 ): { carpeta: C; casillero: C["casilleros"][number] | null } | null {
+  /* Vista alineada al tipo de plan (ADR-517): el casillero que el servidor le
+     asignó al papel —el de la plantilla o el «de la norma»—, donde esté. */
+  if (papel.clave) {
+    for (const es of [(x: C["casilleros"][number]) => x.cuenta === "obligatorio", (x: C["casilleros"][number]) => x.porNorma === true]) {
+      for (const c of carpetas) {
+        const k = c.casilleros.find((x) => x.papel === papel.clave && es(x));
+        if (k) return { carpeta: c, casillero: k };
+      }
+    }
+  }
   const carpeta = carpetas.find((c) => c.clave === papel.carpeta) ?? carpetas[0];
   if (!carpeta) return null;
   const casillero = carpeta.casilleros.find((k) => papel.casilleros.includes(k.clave)) ?? null;

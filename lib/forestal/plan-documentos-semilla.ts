@@ -24,6 +24,7 @@ import {
   RAIZ_DRIVE_LOTH,
   TIPO_ARCHIVO,
   TIPO_CARPETA,
+  cuentaEnLoQueFalta,
   estadoDeCasillero,
   formularioDeCarpeta,
   type ArchivoConCandado,
@@ -438,18 +439,30 @@ export function armarCarpetas(e: EntradaArmado): CarpetaDelPlan[] {
 }
 
 /**
- * «Lo que falta», contado por casillero. `cargados` = esperados − faltan: un
- * papel vencido o por vencer ESTÁ cargado (hay que renovarlo, no buscarlo), y
- * se cuenta además en su columna.
+ * «Lo que falta», contado por casillero.
+ *
+ * Con la vista alineada al tipo de plan (ADR-517, `cuenta` en cada casillero)
+ * cuentan los obligatorios y los que agregó el negocio, y `cargados` es la
+ * cuenta de «Papeles»: lo que está y no venció. Los «si aplica» que se
+ * subieron suman sólo a vencidos / por vencer (una vigencia de poder vencida
+ * pesa aunque no sea de todos los planes).
+ *
+ * Sin `cuenta` (vista vieja) cuenta todo, como antes: `cargados` = esperados −
+ * faltan (un papel vencido ESTÁ cargado: hay que renovarlo, no buscarlo).
  */
 export function resumirCarpetas(carpetas: readonly CarpetaDelPlan[]): ResumenDocumentosPlan {
-  const casilleros = carpetas.flatMap((c) => c.casilleros);
+  const todos = carpetas.flatMap((c) => c.casilleros);
+  const alineada = todos.some((k) => k.cuenta !== undefined);
+  const casilleros = todos.filter((k) => cuentaEnLoQueFalta(k.cuenta));
+  const conFecha = alineada
+    ? todos.filter((k) => cuentaEnLoQueFalta(k.cuenta) || (k.cuenta === "si_aplica" && k.archivos.length + (k.conCandado?.length ?? 0) > 0))
+    : casilleros;
   const faltan = casilleros.filter((c) => c.estado === "falta").length;
   return {
     esperados: casilleros.length,
-    cargados: casilleros.length - faltan,
+    cargados: alineada ? casilleros.filter((c) => c.estado === "cargado" || c.estado === "vence_pronto").length : casilleros.length - faltan,
     faltan,
-    vencenPronto: casilleros.filter((c) => c.estado === "vence_pronto").length,
-    vencidos: casilleros.filter((c) => c.estado === "vencido").length,
+    vencenPronto: conFecha.filter((c) => c.estado === "vence_pronto").length,
+    vencidos: conFecha.filter((c) => c.estado === "vencido").length,
   };
 }

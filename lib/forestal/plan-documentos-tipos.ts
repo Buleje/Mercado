@@ -58,6 +58,21 @@ export interface ArchivoConCandado {
   uploadedAt: string;
 }
 
+/**
+ * Cómo cuenta un casillero en «lo que falta» según el TIPO de plan (ADR-517):
+ * · `obligatorio` — es el de un papel que la norma pide siempre; su estado es
+ *   el del papel (la cuenta de las carpetas es la de los papeles);
+ * · `si_aplica` — papel que se pide según el caso (poder, regente…): no falta;
+ * · `no_aplica` — casillero de la plantilla sugerida que este tipo no pide (el
+ *   título de propiedad en un PO): no cuenta;
+ * · `propio` — lo agregó el negocio: cuenta como siempre.
+ */
+export type CuentaCasillero = "obligatorio" | "si_aplica" | "no_aplica" | "propio";
+
+/** Sin `cuenta` (vista anterior a ADR-517) cuenta como antes: todos. */
+export const cuentaEnLoQueFalta = (cuenta: CuentaCasillero | undefined): boolean =>
+  cuenta === undefined || cuenta === "obligatorio" || cuenta === "propio";
+
 export interface CasilleroArchivo {
   campo: Omit<CampoPersonalizado, "tipo"> & { tipo: typeof TIPO_ARCHIVO }; // no depende de ampliar TipoCampo
   estado: EstadoCasillero;
@@ -66,6 +81,16 @@ export interface CasilleroArchivo {
   conCandado?: ArchivoConCandado[];
   /** El vencimiento más próximo entre sus archivos (ISO) o null. */
   venceEl: string | null;
+  /** Qué papel del permiso representa (`loth-plan-papeles`), o null. Opcional: ADR-517. */
+  papel?: string | null;
+  /** Cómo cuenta según el tipo de plan. Opcional: ADR-517. */
+  cuenta?: CuentaCasillero;
+  /**
+   * Lo pide la norma y la plantilla no lo tiene (el contrato de concesión de
+   * un PO): no existe en la base, `campo.id` = "" y lo que se sube ahí queda
+   * con la etiqueta `papel:` en su carpeta. Opcional: ADR-517.
+   */
+  porNorma?: boolean;
 }
 
 export interface CarpetaDelPlan {

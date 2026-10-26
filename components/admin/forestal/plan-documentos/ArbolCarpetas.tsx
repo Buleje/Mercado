@@ -11,7 +11,7 @@ import { useId, useState } from "react";
 import { Folder, FolderOpen, FolderPlus, Loader2 } from "@buleje/design-system/icons";
 import { BOTON_PRIMARIO, BOTON_SUAVE, CAMPO_INPUT } from "@/components/admin/shared/campos-personalizados-ui";
 import { ASPECTO_ESTADO } from "./estados";
-import { archivosDeCarpeta, estadoDeCarpeta, type CarpetaVista } from "./modelo";
+import { archivosDeCarpeta, cuentaDeCarpeta, estadoDeCarpeta, type CarpetaVista } from "./modelo";
 
 export default function ArbolCarpetas({
   carpetas,
@@ -63,8 +63,8 @@ export default function ArbolCarpetas({
         {carpetas.map((c) => {
           const activa = c.clave === elegida;
           const estado = estadoDeCarpeta(c);
-          const esperados = c.casilleros.length;
-          const cargados = c.casilleros.filter((k) => k.estado !== "falta").length;
+          /* Los que cuentan según el tipo de plan (ADR-517): lo que no aplica, no. */
+          const { esperados, cargados } = cuentaDeCarpeta(c);
           const archivos = archivosDeCarpeta(c);
           const Glifo = activa ? FolderOpen : Folder;
           return (
