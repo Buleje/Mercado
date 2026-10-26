@@ -30,7 +30,8 @@ export const MAX_HISTORIAL_PRELIMINAR = 30;
 export const ESTADOS_PRELIMINAR = ["pendiente", "registrada", "anulada"] as const;
 export type EstadoPreliminar = (typeof ESTADOS_PRELIMINAR)[number];
 
-const r3 = (n: number) => Math.round((n + Number.EPSILON) * 1000) / 1000;
+/* `|| 0`: un −0,0004 redondea a −0 y la tarjeta decía «-0.000 m³». */
+const r3 = (n: number) => Math.round((n + Number.EPSILON) * 1000) / 1000 || 0;
 
 const fechaValida = (s: string) => {
   const d = new Date(`${s}T12:00:00Z`);
@@ -180,13 +181,14 @@ export function preliminarRepetida(guias: readonly GtfPreliminar[], numeroGtf: s
 
 /** Una guía del libro (viva, no anulada) de este plan o sin plan. */
 export interface GuiaDelLibro {
-  id: string;
+  id: string | null;
   gtfNumber: string;
   planId: string | null;
 }
 
 export interface EnElLibro {
-  gtfId: string;
+  /** `null` = el saldo la cuenta (despacho con el N.º escrito en el libro) pero no tiene su guía guardada. */
+  gtfId: string | null;
   gtfNumber: string;
   /** La guía del libro no tiene plan: igual ya cuenta en el saldo (ADR-459), pero falta atarla. */
   sinPlan: boolean;

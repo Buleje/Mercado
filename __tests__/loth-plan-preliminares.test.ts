@@ -168,6 +168,15 @@ describe("guía del libro con el mismo N.º", () => {
     expect(guiaDelLibroDe("6", libro, "plan-1")).toBeNull();
   });
 
+  it("un despacho del libro con el N.º escrito (sin su guía guardada) también la cuenta: no descuenta dos veces", () => {
+    // Revisor 25-10: QA forestal tenía 001-0000487 despachada sin ForestGtf; la preliminar «1-487» descontaba otra vez.
+    const contada = [{ id: null, gtfNumber: "001-0000487", planId: null }];
+    const enLibro = guiaDelLibroDe("1-487", contada, "plan-1");
+    expect(enLibro).toEqual({ gtfId: null, gtfNumber: "001-0000487", sinPlan: true });
+    const g = { estado: "pendiente", lineas: [{ especie: "Tornillo", trozas: 30, m3: 20, bloque: null }] } as unknown as GtfPreliminar;
+    expect(aVista(g, enLibro).cuenta).toBe(false);
+  });
+
   it("al anotar una que ya está en el libro de este plan, nace registrada", () => {
     const r = agregarPreliminar([], listos("5", [{ especie: "Capirona", trozas: 1, m3: 1, bloque: null }]), {
       ...ctx("a"),

@@ -88,7 +88,8 @@ export const ForestPlanPreliminaresDB = {
     return prisma.forestGtf.findMany({
       where: { tenantId, deletedAt: null, status: { not: "anulada" }, OR: [{ planId }, { planId: null }] },
       select: { id: true, gtfNumber: true, planId: true },
-      orderBy: { createdAt: "asc" },
+      /* Las más nuevas primero: el tope corta las viejas, no las que una preliminar acaba de alcanzar. */
+      orderBy: { createdAt: "desc" },
       take: MAX_GUIAS_DEL_LIBRO,
     });
   },
@@ -100,14 +101,25 @@ export const ForestPlanPreliminaresDB = {
   async delPlan(
     tenantId: string,
     planId: string,
-    saldo: { especies: readonly EspecieDelSaldo[]; total: { quedaM3: number }; sinTecho: boolean },
+    saldo: {
+      especies: readonly (EspecieDelSaldo & { guias?: readonly { gtfNumber: string | null; gtfId?: string | null; sinPlan: boolean }[] })[];
+      total: { quedaM3: number };
+      sinTecho: boolean;
+    },
   ): Promise<PreliminaresDelPlan> {
     if (!tenantId) throw new Error("tenantId is required");
-    const [lista, delLibro, reparto] = await Promise.all([
+    const [lista, guardadas, reparto] = await Promise.all([
       ForestPlanPreliminaresDB.listar(tenantId, planId),
       ForestPlanPreliminaresDB.guiasDelLibro(tenantId, planId),
       ForestPlanBloquesDB.leer(tenantId, planId),
     ]);
+    /* Las guías que el saldo YA cuenta, tengan o no su ForestGtf: un despacho del libro
+       con el N.º escrito (POST /loth) descuenta sin guía guardada, y la preliminar con
+       ese N.º descontaba otra vez y avisaba «falta registrarla». */
+    const contadas: GuiaDelLibro[] = saldo.especies.flatMap((e) =>
+      (e.guias ?? []).flatMap((u) => (u.gtfNumber ? [{ id: u.gtfId ?? null, gtfNumber: u.gtfNumber, planId: u.sinPlan ? null : planId }] : [])),
+    );
+    const delLibro = [...guardadas, ...contadas];
     const guias = [...lista]
       .sort((a, b) => b.creadaAt.localeCompare(a.creadaAt))
       .map((g) => aVista(g, guiaDelLibroDe(g.numeroGtf, delLibro, planId)));

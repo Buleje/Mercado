@@ -29,9 +29,16 @@ import { Btn, CampoGrid, Field, I } from "./ctp-shared";
 let siguiente = 0;
 const nuevaFila = (especie = ""): FilaPreliminar => ({ key: `f${++siguiente}`, especie, trozas: "", m3: "", bloque: "" });
 
-function filasDe(guia: GtfPreliminarVista | null, especies: string[]): FilaPreliminar[] {
+function filasDe(guia: GtfPreliminarVista | null, especies: string[], bloques: string[]): FilaPreliminar[] {
   if (!guia) return [nuevaFila(especies.length === 1 ? especies[0] : "")];
-  return guia.lineas.map((l) => ({ key: `f${++siguiente}`, especie: l.especie, trozas: String(l.trozas), m3: String(l.m3), bloque: l.bloque ?? "" }));
+  // Un bloque renombrado o borrado vuelve a «Elige el bloque…»: mandar el nombre viejo daba 400.
+  return guia.lineas.map((l) => ({
+    key: `f${++siguiente}`,
+    especie: l.especie,
+    trozas: String(l.trozas),
+    m3: String(l.m3),
+    bloque: l.bloque && bloques.includes(l.bloque) ? l.bloque : "",
+  }));
 }
 
 /** Lo escrito → lo que va al servidor; `error` = la primera fila que no se entiende. */
@@ -75,7 +82,7 @@ export default function LothPlanPreliminarModal({
   const [numeroLt, setNumeroLt] = useState(guia?.numeroLt ?? "");
   const [fecha, setFecha] = useState(guia?.fecha ?? "");
   const [nota, setNota] = useState(guia?.nota ?? "");
-  const [filas, setFilas] = useState<FilaPreliminar[]>(() => filasDe(guia, especies));
+  const [filas, setFilas] = useState<FilaPreliminar[]>(() => filasDe(guia, especies, bloques));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const conBloque = bloques.length > 1;
