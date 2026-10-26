@@ -154,8 +154,9 @@ export function useDarAdelanto({
         return;
       }
       const { id, codigoOperacion, repetido } = r.adelanto;
-      // La foto, con el adelanto ya creado (privada, como en Mi Plata). Un alta repetida no la pisa.
-      const avisoFoto = form.foto && !repetido ? await guardarVoucher(id, form.foto) : null;
+      // La foto, con el adelanto ya creado (privada, como en Mi Plata). También en un alta
+      // repetida (la respuesta del 1.er intento se perdió): si ya tenía foto, la ruta da 409 y no la pisa.
+      const avisoFoto = form.foto ? await guardarVoucher(id, form.foto) : null;
       const cuentaNueva =
         r.cuenta?.origen === "creada" ? " Se le abrió su cuenta en Mi Plata." : r.cuenta?.origen === "vinculada" ? " Quedó unida a su cuenta de Mi Plata (mismo documento)." : "";
       const cuando = r.descuento?.texto ? `${r.descuento.texto}.` : "Se descuenta en su pago del sábado.";

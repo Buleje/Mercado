@@ -1765,6 +1765,28 @@ export const AdelantosDB = {
   },
 
   /**
+   * Pago del sábado (RRHH): los adelantos de planilla que siguen ABIERTOS tras el
+   * descuento y cuya fecha de cobro caía ese sábado o antes pasan a `nuevo`. Los
+   * llama quien paga, dentro de su tx y con los adelantos ya bloqueados por
+   * `abiertosDePlanillaEnTx`. Los cancelados por el descuento no se tocan.
+   */
+  async correrDescuentoDePlanillaEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    ids: string[],
+    hasta: Date,
+    nuevo: Date,
+  ): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return 0;
+    const r = await tx.adelanto.updateMany({
+      where: { id: { in: ids }, tenantId, modalidad: "DESCUENTO_PLANILLA", status: "ABIERTO", fechaVencimiento: { lte: hasta }, ...whereDireccion("DADO") },
+      data: { fechaVencimiento: nuevo },
+    });
+    return r.count;
+  },
+
+  /**
    * Los adelantos de planilla ABIERTOS de una persona, bloqueados (`FOR UPDATE`,
    * en orden de id) y releídos bajo el lock, dentro de la tx de quien paga el
    * sueldo. Sin el lock, una entrega que entraba entre la lectura y el descuento

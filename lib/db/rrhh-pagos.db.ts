@@ -30,7 +30,7 @@ import {
   type PagoSemanaDTO,
 } from "@/lib/rrhh/pago-semana";
 import { tarifaVigente } from "@/lib/rrhh/ganado";
-import { descuentoDelAdelanto, primerSabadoDesde, type DescuentoDelAdelanto } from "@/lib/rrhh/adelanto-rrhh";
+import { descuentoDelAdelanto, primerSabadoDesde, sabadoTrasElPago, type DescuentoDelAdelanto } from "@/lib/rrhh/adelanto-rrhh";
 import type { FechaKey, Modalidad } from "@/lib/rrhh/tipos";
 import { AdelantosDB, DescuentoDePlanillaError } from "./adelantos.db";
 import { CashRegistersMovementsDB } from "./cash-registers-movements.db";
@@ -425,6 +425,17 @@ export const PagosSemanaDB = {
           });
           if (!e) throw new PagoSemanaError(409, "adelanto_cambio", "Un adelanto cambió mientras pagabas. Vuelve a abrir el pago.");
         }
+        // Lo que el ganado no alcanzó a cubrir pasa al sábado siguiente (nunca a uno
+        // ya pasado, si se paga tarde): con la fecha vieja salía «vencido» en Cobranza
+        // y en «Hoy toca» aunque el próximo pago lo descuenta solo (reviewer 25-10).
+        const sabados = sabadoTrasElPago(desde, limaDateKey());
+        await AdelantosDB.correrDescuentoDePlanillaEnTx(
+          tx,
+          tenantId,
+          adelantos.map((a) => a.id),
+          new Date(`${sabados.pagado}T23:59:59-05:00`),
+          new Date(`${sabados.siguiente}T12:00:00-05:00`),
+        );
         // La caja, ÚLTIMO lock.
         const caja = input.saleDeCaja && calculo.neto > 0
           ? await anotarEnCajaAbiertaEnTx(tx, tenantId, {

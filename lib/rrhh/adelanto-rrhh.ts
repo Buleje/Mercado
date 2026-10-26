@@ -73,9 +73,21 @@ export function descuentoDelAdelanto(e: { hoy: FechaKey; tipo: TipoDePago; seman
   return { fecha: e.semanaPagada ? sumarDias(sabado, 7) : sabado, tipo: e.tipo, semanaPagada: e.semanaPagada };
 }
 
+/**
+ * Tras pagar la semana que empieza `desde` (lunes), lo que el ganado no cubrió se
+ * cobra el sábado siguiente; si se paga tarde, nunca un sábado que ya pasó.
+ */
+export function sabadoTrasElPago(desde: FechaKey, hoy: FechaKey): { pagado: FechaKey; siguiente: FechaKey } {
+  const pagado = sumarDias(desde, 5);
+  const despues = sumarDias(pagado, 7);
+  const proximo = primerSabadoDesde(hoy);
+  return { pagado, siguiente: proximo > despues ? proximo : despues };
+}
+
 /** «Se descuenta el sábado 31/10» — la frase de la ventana, del aviso y de la lista de Mi Plata. */
 export function textoDelDescuento(d: Pick<DescuentoDelAdelanto, "fecha" | "tipo">): string {
-  if (d.tipo === "mensual") return `Cobra por mes: se descuenta en su pago del mes (${etiquetaCorta(d.fecha)})`;
+  // No hay pago mensual que lo descuente solo (el del sábado rechaza a quien cobra por mes).
+  if (d.tipo === "mensual") return `Cobra por mes: cóbraselo a fin de mes (${etiquetaCorta(d.fecha)})`;
   return `Se descuenta el sábado ${etiquetaCorta(d.fecha)}`;
 }
 

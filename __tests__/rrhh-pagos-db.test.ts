@@ -20,6 +20,7 @@ const m = vi.hoisted(() => {
     abiertos: vi.fn(),
     descuentos: vi.fn(),
     registrar: vi.fn(),
+    correr: vi.fn(),
     anotarCaja: vi.fn(),
     logActivity: vi.fn(() => Promise.resolve()),
     // Para `semana` (la tira): fuera de la transacción.
@@ -42,6 +43,7 @@ vi.mock("@/lib/db/adelantos.db", () => ({
     abiertosDePlanillaEnTx: m.abiertos,
     descuentosDePlanillaEnTx: m.descuentos,
     registrarEntregaEnTx: m.registrar,
+    correrDescuentoDePlanillaEnTx: m.correr,
     invalidarResultado: vi.fn(),
     planillaDePersonas: m.planillaDePersonas,
     clavesDePagoDelConcepto: m.clavesDePago,
@@ -169,6 +171,8 @@ describe("PagosSemanaDB.pagar", () => {
     expect(m.obtener).toHaveBeenCalledWith("t1", "c1");
     expect(m.periodo.mock.calls[0][0]).toBe("t1");
     expect(m.abiertos).toHaveBeenCalledWith(m.tx, "t1", "b1");
+    // Lo que no alcanzó pasa al sábado siguiente, en la misma tx y con el mismo negocio.
+    expect(m.correr.mock.calls[0].slice(0, 2)).toEqual([m.tx, "t1"]);
   });
 
   it("de otro negocio (no existe en el mío) → null, sin transacción", async () => {

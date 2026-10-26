@@ -8,6 +8,7 @@ import {
   finDeMes,
   notaDelAdelantoRrhh,
   primerSabadoDesde,
+  sabadoTrasElPago,
   textoDelDescuento,
   vistaPreviaDelPago,
 } from "@/lib/rrhh/adelanto-rrhh";
@@ -35,11 +36,20 @@ describe("el sábado del descuento", () => {
     const d = descuentoDelAdelanto({ hoy: "2026-02-10", tipo: "mensual", semanaPagada: true });
     expect(d).toEqual({ fecha: "2026-02-28", tipo: "mensual", semanaPagada: false });
     expect(finDeMes("2028-02-03")).toBe("2028-02-29");
-    expect(textoDelDescuento(d)).toBe("Cobra por mes: se descuenta en su pago del mes (28/02)");
+    expect(textoDelDescuento(d)).toBe("Cobra por mes: cóbraselo a fin de mes (28/02)");
   });
 
   it("la frase del sábado lleva día y mes", () => {
     expect(textoDelDescuento({ fecha: "2026-10-31", tipo: "tarifa" })).toBe("Se descuenta el sábado 31/10");
+  });
+
+  it("tras un pago que no cubrió todo, el saldo pasa al sábado siguiente (nunca a uno pasado)", () => {
+    // Semana del lunes 26-10 pagada el sábado 31-10 → 07-11.
+    expect(sabadoTrasElPago("2026-10-26", "2026-10-31")).toEqual({ pagado: "2026-10-31", siguiente: "2026-11-07" });
+    // Esa misma semana pagada tarde, el lunes 09-11 → el próximo sábado, 14-11.
+    expect(sabadoTrasElPago("2026-10-26", "2026-11-09")).toEqual({ pagado: "2026-10-31", siguiente: "2026-11-14" });
+    // Cruza el año.
+    expect(sabadoTrasElPago("2026-12-28", "2027-01-02").siguiente).toBe("2027-01-09");
   });
 });
 
