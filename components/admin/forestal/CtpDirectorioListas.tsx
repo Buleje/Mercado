@@ -9,6 +9,7 @@
 import { Loader2, MessageCircle, Pencil, Share2, Trash2 } from "@buleje/design-system/icons";
 import {
   CATEGORIA_LABEL,
+  ROL_LABEL,
   ROL_PLURAL,
   categoriaEfectiva,
   direccionCompleta,
@@ -19,14 +20,29 @@ import {
   type Vehiculo,
 } from "@/lib/forestal/directorio";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
+import { button } from "@/components/ui-system/button-variants";
 import { IconAction } from "./ctp-shared";
 
-function Vacio({ texto }: { texto: string }) {
+function Vacio({ texto, onQuitarBusqueda }: { texto: string; onQuitarBusqueda?: () => void }) {
   return (
-    <p className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
-      {texto}
-    </p>
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
+      <p>{texto}</p>
+      {onQuitarBusqueda && (
+        <button type="button" onClick={onQuitarBusqueda} className={button({ variant: "secondary" })}>
+          Quitar la búsqueda
+        </button>
+      )}
+    </div>
   );
+}
+
+/**
+ * Con una búsqueda puesta, «Todavía no hay proveedores cargados» mentía (había
+ * ocho y ninguno coincidía): se dice qué no coincidió y se ofrece quitarla.
+ */
+function vacioDeBusqueda(busqueda: string | undefined, plural: string): string | null {
+  const q = busqueda?.trim();
+  return q ? `Ningún ${plural} coincide con «${q}».` : null;
 }
 
 export function ListaPartes({
@@ -37,6 +53,8 @@ export function ListaPartes({
   onEditar,
   onBorrar,
   onTrazar,
+  busqueda,
+  onQuitarBusqueda,
 }: {
   partes: Parte[];
   rol: RolParte;
@@ -47,8 +65,13 @@ export function ListaPartes({
   onBorrar: (p: Parte) => void;
   /** Sólo para proveedores: abre su cadena completa. */
   onTrazar: (p: Parte) => void;
+  /** Lo escrito en el buscador: sin resultados, el vacío lo dice y ofrece quitarlo. */
+  busqueda?: string;
+  onQuitarBusqueda?: () => void;
 }) {
   if (partes.length === 0) {
+    const porBusqueda = vacioDeBusqueda(busqueda, ROL_LABEL[rol].toLowerCase());
+    if (porBusqueda) return <Vacio texto={porBusqueda} onQuitarBusqueda={onQuitarBusqueda} />;
     return <Vacio texto={vacioTexto ?? `Todavía no hay ${ROL_PLURAL[rol].toLowerCase()} cargados. El primero se agrega acá o desde una guía.`} />;
   }
   return (
@@ -132,13 +155,19 @@ export function ListaVehiculos({
   borrando,
   onEditar,
   onBorrar,
+  busqueda,
+  onQuitarBusqueda,
 }: {
   vehiculos: Vehiculo[];
   borrando: string | null;
   onEditar: (v: Vehiculo) => void;
   onBorrar: (v: Vehiculo) => void;
+  busqueda?: string;
+  onQuitarBusqueda?: () => void;
 }) {
   if (vehiculos.length === 0) {
+    const porBusqueda = vacioDeBusqueda(busqueda, "vehículo");
+    if (porBusqueda) return <Vacio texto={porBusqueda} onQuitarBusqueda={onQuitarBusqueda} />;
     return <Vacio texto="Todavía no hay vehículos cargados. Agrega el primero para elegirlo por placa en la guía." />;
   }
   return (

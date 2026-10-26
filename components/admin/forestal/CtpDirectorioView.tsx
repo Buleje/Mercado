@@ -215,6 +215,8 @@ export default function CtpDirectorioView({
                 borrando={borrando}
                 onEditar={(v) => setEditando({ tipo: "vehiculo", valor: v })}
                 onBorrar={(v) => void borrar(v.id, formatearPlaca(v.placa), "vehiculo")}
+                busqueda={q}
+                onQuitarBusqueda={() => setQ("")}
               />
             ) : rol ? (
               <ListaPartes
@@ -225,6 +227,8 @@ export default function CtpDirectorioView({
                 onTrazar={(p) => setTrazando(p.nombre)}
                 onEditar={(p) => fichaParte.abrir(p.id)}
                 onBorrar={(p) => void borrar(p.id, p.nombre, "parte")}
+                busqueda={q}
+                onQuitarBusqueda={() => setQ("")}
               />
             ) : null}
           </>
