@@ -7,38 +7,30 @@
  * caso de la foto, la foto misma al lado para cotejar letra por letra— y
  * recién ahí confirma. Nada se agrega a ciegas.
  */
-import { useCallback, useRef, useState } from "react";
-import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, Camera, Check, Download, FileSpreadsheet, Loader2, Mic, Sparkles, Upload } from "@buleje/design-system/icons";
+import { useRef, useState } from "react";
+import { AlertTriangle, Camera, Check, ClipboardPaste, Download, FileSpreadsheet, Loader2, Mic, Sparkles, Upload } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
-import { parsearFilasImportadas, interpretarOcrPiezas, interpretarDictadoAudio, PLANTILLA_IMPORT, type PiezaImportada, type ResultadoImport } from "@/lib/forestal/cubicacion-import";
-import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
-import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
-import { loadConfig } from "@/lib/forestal/cubicador-config";
+import type { PiezaImportada } from "@/lib/forestal/cubicacion-import";
 import { formatNumber } from "@/lib/format";
 import type { PlanillaId } from "@/lib/forestal/planillas/tipos";
 import SelectorPlanilla from "./planillas/SelectorPlanilla";
+import AyudaDelOrigen, { type OrigenImport } from "./cubicador-importar-ayuda";
+import VistaPreviaImportacion from "./cubicador-importar-vista-previa";
+import TablaParaPegar from "./cubicador-pegar-tabla";
+import { olvidarBorradorPegar } from "./hooks/use-tabla-pegar";
+import { useLeerImportacion } from "./hooks/use-leer-importacion";
+import type { ResumenPegado } from "@/lib/forestal/cubicacion-pegar";
+import { fmtM3, fmtPiezas, fmtPt as fmtPtEntero } from "@/lib/forestal/cubicacion-formato";
 
 const fmtPt = (v: number) => formatNumber(v, 2);
 
-function leerComoDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const fr = new FileReader();
-    fr.onload = () => resolve(String(fr.result));
-    fr.onerror = () => reject(new Error("No se pudo leer la imagen"));
-    fr.readAsDataURL(file);
-  });
-}
-
 export default function ImportarCubicacionModal({
-  onAgregar, onCerrar, filasActuales = 0, duenos = [], planillaInicial = null,
+  onAgregar, onCerrar, filasActuales = 0, duenos = [], planillaInicial = null, modoInicial, textoPegado = null, especies = [],
 }: {
   /** Suma las piezas leídas al lote del cubicador. */
-  onAgregar: (piezas: PiezaImportada[]) => void;
+  onAgregar: (piezas: PiezaImportada[], origen: OrigenImport) => void;
   onCerrar: () => void;
   /** Filas que YA tiene el lote — se muestra que la importación se suma a ellas. */
   filasActuales?: number;
@@ -46,107 +38,43 @@ export default function ImportarCubicacionModal({
   duenos?: readonly string[];
   /** Llegó desde Herramientas › Planillas de campo: abre en «Foto» con esa hoja elegida. */
   planillaInicial?: PlanillaId | null;
+  /** «Pegar de Excel» o un Ctrl+V de una tabla en la vista Cargar: abre en la tabla para pegar. */
+  modoInicial?: "pegar";
+  /** Lo pegado con Ctrl+V fuera de un campo: la tabla abre ya llena. */
+  textoPegado?: string | null;
+  /** Las especies del negocio, para la tabla para pegar. */
+  especies?: readonly string[];
 }) {
-  const [modo, setModo] = useState<"excel" | "foto" | "audio">(planillaInicial ? "foto" : "excel");
+  const [modo, setModo] = useState<OrigenImport>(modoInicial ?? (planillaInicial ? "foto" : "excel"));
+  /* La tabla para pegar queda montada (escondida) una vez vista: ir a «Desde
+     Excel» y volver no pierde lo pegado ni su Ctrl+Z. */
+  const [pegarVisto, setPegarVisto] = useState(modoInicial === "pegar");
+  const [resumenPegado, setResumenPegado] = useState<ResumenPegado | null>(null);
   /** La planilla de la foto: con una elegida, la IA la lee con su prompt (el del negocio si lo guardó). */
   const [planilla, setPlanilla] = useState<PlanillaId | null>(planillaInicial);
-  const [resultado, setResultado] = useState<ResultadoImport | null>(null);
-  const [nombreArchivo, setNombreArchivo] = useState("");
-  const [cargando, setCargando] = useState(false);
-  const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
-  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
-  const [advertenciaIA, setAdvertenciaIA] = useState<string | null>(null);
-  const [transcript, setTranscript] = useState<string | null>(null);
+  const {
+    resultado, setResultado, nombreArchivo, setNombreArchivo, cargando, errorGeneral, setErrorGeneral,
+    fotoUrl, setFotoUrl, advertenciaIA, setAdvertenciaIA, transcript, setTranscript,
+    procesar, procesarFoto, procesarAudio, bajando, descargarPlantilla,
+  } = useLeerImportacion({ planilla, duenos });
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const procesar = useCallback(async (file: File) => {
-    setCargando(true);
-    setErrorGeneral(null);
-    setResultado(null);
-    setNombreArchivo(file.name);
-    try {
-      const filas = await leerArchivoAFilas(file);
-      setResultado(parsearFilasImportadas(filas));
-    } catch (e) {
-      setErrorGeneral(`No se pudo leer el archivo: ${e instanceof Error ? e.message : String(e)}. Prueba con un .xlsx o .csv.`);
-    } finally {
-      setCargando(false);
-    }
-  }, []);
-
-  const procesarFoto = useCallback(async (file: File) => {
-    setCargando(true);
-    setErrorGeneral(null);
-    setResultado(null);
-    setAdvertenciaIA(null);
-    setNombreArchivo(file.name);
-    try {
-      const dataUrl = await leerComoDataUrl(file);
-      setFotoUrl(dataUrl);
-      const r = await fetch("/api/admin/forestal/cubicacion-ocr/aserrada", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify(planilla ? { image: dataUrl, planillaId: planilla } : { image: dataUrl }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
-      setResultado(interpretarOcrPiezas(j.piezas ?? []));
-      if (j.advertencia) setAdvertenciaIA(String(j.advertencia));
-    } catch (e) {
-      setErrorGeneral(e instanceof Error ? e.message : String(e));
-    } finally {
-      setCargando(false);
-    }
-  }, [planilla]);
-
-  const procesarAudio = useCallback(async (file: File) => {
-    setCargando(true);
-    setErrorGeneral(null);
-    setResultado(null);
-    setTranscript(null);
-    setNombreArchivo(file.name);
-    try {
-      const fd = new FormData();
-      fd.append("audio", file);
-      const r = await fetch("/api/admin/forestal/cubicacion-audio", {
-        method: "POST",
-        headers: csrfHeaders(),
-        credentials: "include",
-        body: fd,
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
-      setTranscript(String(j.transcript ?? ""));
-      // El vocabulario de comandos ("fijo"/"especie"/"eliminá el último") es el
-      // MISMO que el operario personalizó para el micrófono en vivo en Ajustes
-      // — si no, el importador de audio sólo reconocería las frases DEFAULT.
-      setResultado(interpretarDictadoAudio(String(j.transcript ?? ""), loadConfig().comandos, duenos));
-    } catch (e) {
-      setErrorGeneral(e instanceof Error ? e.message : String(e));
-    } finally {
-      setCargando(false);
-    }
-  }, [duenos]);
-
-  const [bajando, setBajando] = useState(false);
-  const descargarPlantilla = () => {
-    // .xlsx real: cada columna en su celda (un CSV se abre en una sola celda con
-    // el separador ";" del Excel es-PE). Sin datos: solo los encabezados.
-    setBajando(true);
-    descargarPlantillaImport(PLANTILLA_IMPORT.headers)
-      .catch(() => setErrorGeneral("No se pudo generar la plantilla. Prueba de nuevo."))
-      .finally(() => setBajando(false));
-  };
 
   const totalPt = resultado?.piezas.reduce((a, p) => a + p.pieTablar, 0) ?? 0;
   const totalPiezas = resultado?.piezas.reduce((a, p) => a + p.cantidad, 0) ?? 0;
   const raras = resultado?.piezas.filter((p) => p.sospechosa).length ?? 0;
   /** Lo que hay para agregar, ya leído: `null` mientras no haya nada. */
-  const listas = resultado && !cargando && resultado.piezas.length > 0 ? resultado.piezas : null;
+  const listas =
+    modo === "pegar"
+      ? (resumenPegado && resumenPegado.piezas.length > 0 ? resumenPegado.piezas : null)
+      : resultado && !cargando && resultado.piezas.length > 0 ? resultado.piezas : null;
+  const piezasPegadas = resumenPegado?.totalPiezas ?? 0;
+  const notaPegar = resumenPegado && listas
+    ? `${fmtPiezas(piezasPegadas)} piezas · ${fmtPtEntero(resumenPegado.pt)} PT · ${fmtM3(resumenPegado.m3)} m³${resumenPegado.filasConError > 0 ? ` · ${resumenPegado.filasConError} ${resumenPegado.filasConError === 1 ? "fila en rojo queda" : "filas en rojo quedan"} fuera` : ""}`
+    : undefined;
 
   const META = {
     excel: { title: "Importar cubicación desde Excel", description: "Especie · Cantidad · Espesor · Ancho · Largo", icon: FileSpreadsheet },
+    pegar: { title: "Pegar desde Excel", description: "Copia una o varias columnas de tu Excel y pégalas en la tabla", icon: ClipboardPaste },
     foto: { title: "Escanear planilla de cubicación", description: "Foto de la planilla llenada a mano, leída con IA", icon: Camera },
     audio: { title: "Importar dictado de audio", description: "Un archivo de audio con las medidas dictadas seguidas, transcrito y clasificado", icon: Mic },
   } as const;
@@ -162,6 +90,7 @@ export default function ImportarCubicacionModal({
       open
       onClose={onCerrar}
       variant="wide"
+      size={modo === "pegar" ? "xl" : undefined}
       title={META[modo].title}
       description={META[modo].description}
       icon={META[modo].icon}
@@ -172,7 +101,7 @@ export default function ImportarCubicacionModal({
         <ModalFooter
           error={errorGeneral}
           nota={
-            listas
+            modo === "pegar" ? notaPegar : listas
               ? `${listas.length} fila(s) · ${totalPiezas} piezas · ${fmtPt(totalPt)} PT${raras > 0 ? ` · ${raras} con medidas raras` : ""}`
               : undefined
           }
@@ -181,8 +110,11 @@ export default function ImportarCubicacionModal({
           {/* Sólo se ofrece agregar cuando hay algo que agregar; el pie existe
               igual para que "Cancelar" no dependa de que el archivo se leyera. */}
           {listas && (
-            <Btn variant="dark" onClick={() => { onAgregar(listas); onCerrar(); }}>
-              <Check className="h-4 w-4" /> Agregar {listas.length} al lote
+            <Btn variant="dark" onClick={() => { if (modo === "pegar") olvidarBorradorPegar(); onAgregar(listas, modo); onCerrar(); }}>
+              <Check className="h-4 w-4" />
+              {modo === "pegar"
+                ? ` Agregar ${fmtPiezas(piezasPegadas)} ${piezasPegadas === 1 ? "pieza" : "piezas"} al lote`
+                : ` Agregar ${listas.length} al lote`}
               {filasActuales > 0 ? ` (quedará con ${filasActuales + listas.length})` : ""}
             </Btn>
           )}
@@ -192,48 +124,19 @@ export default function ImportarCubicacionModal({
       <div className={MODAL_BODY}>
         <SegmentedControl
           value={modo}
-          onChange={(v) => { setModo(v); setResultado(null); setErrorGeneral(null); setAdvertenciaIA(null); setFotoUrl(null); setTranscript(null); setNombreArchivo(""); }}
+          onChange={(v) => { setModo(v); if (v === "pegar") setPegarVisto(true); setResultado(null); setErrorGeneral(null); setAdvertenciaIA(null); setFotoUrl(null); setTranscript(null); setNombreArchivo(""); }}
           label="Origen de las piezas"
           className="mb-3"
+          /* Cortos: con «Pegar» los cuatro «Desde …» medían 397 px y a 400 la última opción quedaba cortada. */
           options={[
-            { value: "excel", label: "Desde Excel", icon: <FileSpreadsheet className="h-4 w-4" /> },
-            { value: "foto", label: "Desde foto", icon: <Camera className="h-4 w-4" /> },
-            { value: "audio", label: "Desde audio", icon: <Mic className="h-4 w-4" /> },
+            { value: "excel", label: "Excel", icon: <FileSpreadsheet className="h-4 w-4" /> },
+            { value: "pegar", label: "Pegar", icon: <ClipboardPaste className="h-4 w-4" /> },
+            { value: "foto", label: "Foto", icon: <Camera className="h-4 w-4" /> },
+            { value: "audio", label: "Audio", icon: <Mic className="h-4 w-4" /> },
           ]}
         />
 
-        {modo === "excel" ? (
-          <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-            Sube un Excel con <b>Especie · Cantidad · Espesor · Ancho · Largo</b>.
-            <InfoTip
-              icono="ayuda"
-              title="Importar desde Excel"
-              what="Cantidad es opcional (por defecto 1). Espesor y ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad."
-              example="La plantilla trae al lado un resumen en vivo (piezas · pie tablar · m³ · especies distintas) que se calcula solo mientras la vas llenando, para ver qué se va a importar sin salir del Excel."
-            />
-          </p>
-        ) : modo === "foto" ? (
-          <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-            Sácale una foto a la planilla de cubicación escrita a mano.
-            <InfoTip
-              icono="ayuda"
-              title="Escanear planilla de cubicación"
-              what="La IA lee la letra y arma la lista de piezas: cantidad, espesor, ancho y largo por fila."
-              example="Tú la revisas contra la foto antes de sumarla al lote; las filas donde la IA no estuvo segura salen resaltadas."
-            />
-          </p>
-        ) : (
-          <p className="mb-3 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-            Sube un audio con las medidas dictadas tabla por tabla.
-            <InfoTip
-              icono="ayuda"
-              title="Importar dictado de audio"
-              what={<>Se transcribe y se separa en piezas automáticamente — espesor, ancho y largo (&ldquo;dos ocho once, dos ocho diez…&rdquo;); tú revisas el transcript y la lista antes de sumarla al lote.</>}
-              example={<>Igual que el micrófono en vivo: &ldquo;cinco tablas de dos por ocho por diez&rdquo; (cantidad), &ldquo;especie cedro&rdquo;, &ldquo;pon fijo el largo a diez&rdquo; / &ldquo;quita el fijo&rdquo;, &ldquo;elimina el último&rdquo; si te corregiste al dictar.</>}
-              ancho="w-80"
-            />
-          </p>
-        )}
+        <AyudaDelOrigen modo={modo} />
 
         {filasActuales > 0 && (
           <p className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-[var(--accent)]">
@@ -280,7 +183,7 @@ export default function ImportarCubicacionModal({
             {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
           </div>
           </div>
-        ) : (
+        ) : modo === "audio" ? (
           <div className="flex flex-wrap items-center gap-3">
             <label className={`inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 ${cargando ? "pointer-events-none opacity-70" : ""}`}>
               {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Subir archivo de audio
@@ -293,6 +196,12 @@ export default function ImportarCubicacionModal({
               />
             </label>
             {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
+          </div>
+        ) : null}
+
+        {pegarVisto && (
+          <div hidden={modo !== "pegar"}>
+            <TablaParaPegar textoInicial={textoPegado} especies={especies} onCambio={setResumenPegado} />
           </div>
         )}
 
@@ -330,54 +239,7 @@ export default function ImportarCubicacionModal({
           </p>
         )}
 
-        {/* Preview */}
-        {resultado && !cargando && (
-          <div className="mt-4 space-y-3">
-            {resultado.errores.length > 0 && (
-              <div className="rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 dark:bg-[var(--data-warning-500)]/12">
-                <p className="mb-1 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                  {resultado.errores.length} {resultado.errores.length === 1 ? "fila no se pudo leer" : "filas no se pudieron leer"} (se saltean):
-                </p>
-                <ul className="max-h-24 space-y-0.5 overflow-y-auto text-xs text-[var(--text-secondary)]">
-                  {resultado.errores.slice(0, 20).map((e) => (
-                    <li key={e.fila}>Fila {e.fila}: {e.motivo}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {resultado.piezas.length > 0 ? (
-              <>
-                <div className="max-h-56 overflow-auto rounded-xl border border-[var(--rule-base)]">
-                  <DataTable className="w-full min-w-[420px]">
-                    <thead className="sticky top-0">
-                      <tr>
-                        <th>Cant.</th><th>Medida</th><th>Especie</th><th className="text-right">Pie tablar</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {resultado.piezas.map((p) => (
-                        <tr key={p.id} className={`${p.sospechosa ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : ""}`}>
-                          <td className="font-mono tabular-nums text-[var(--text-secondary)]">{p.cantidad}</td>
-                          <td className="font-mono font-bold tabular-nums">
-                            {p.espesor}×{p.ancho}×{p.largo}
-                            {p.sospechosa && <AlertTriangle className="ml-1 inline h-3 w-3 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />}
-                          </td>
-                          <td className="text-[var(--text-secondary)]">{p.especie ?? "—"}</td>
-                          <td className="text-right font-mono tabular-nums">{fmtPt(p.pieTablar)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </DataTable>
-                </div>
-              </>
-            ) : resultado.errores.length > 0 ? null : (
-              <p className="py-4 text-center text-sm text-[var(--text-tertiary)]">
-                {modo === "excel" ? "El archivo no tiene piezas para importar." : modo === "foto" ? "No se identificó ninguna pieza en la foto." : "No se identificó ninguna pieza en el audio."}
-              </p>
-            )}
-          </div>
-        )}
+        {resultado && !cargando && <VistaPreviaImportacion resultado={resultado} modo={modo} />}
       </div>
     </AdminModal>
   );

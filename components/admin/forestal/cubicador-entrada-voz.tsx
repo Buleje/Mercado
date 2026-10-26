@@ -42,6 +42,7 @@ interface PanelEntradaVozProps {
   /** Número del bloque en el índice del cubicador (Brandon 23-10); sin él, el título va solo. */
   numero?: number;
   onImportar: () => void;
+  onPegarExcel: () => void;
   showAjustes: boolean;
   onToggleAjustes: () => void;
   config: CubicadorConfig;
@@ -106,7 +107,7 @@ interface PanelEntradaVozProps {
 }
 
 export default function PanelEntradaVoz({
-  grillaId, onPresent, onPlegar, numero, onImportar, showAjustes, onToggleAjustes,
+  grillaId, onPresent, onPlegar, numero, onImportar, onPegarExcel, showAjustes, onToggleAjustes,
   config, onUpdateConfig, voices, onProbarVoz,
   supported, listening, onToggleListen, paused, onTogglePausa,
   fijas, onAplicarFijas, especie, onEspecieChange, especies = ESPECIES, onAbrirEspecies,
@@ -151,7 +152,7 @@ export default function PanelEntradaVoz({
       {/* 1. DICTAR: lo primero del panel, con sus herramientas adentro. */}
       <CajaDictado
         supported={supported} listening={listening} onToggleListen={onToggleListen}
-        paused={paused} onTogglePausa={onTogglePausa} fijas={fijas} onImportar={onImportar}
+        paused={paused} onTogglePausa={onTogglePausa} fijas={fijas} onImportar={onImportar} onPegarExcel={onPegarExcel}
         config={config} onUpdateConfig={onUpdateConfig} voices={voices} onProbarVoz={onProbarVoz}
         showAjustes={showAjustes} onToggleAjustes={onToggleAjustes} liveGroups={liveGroups} errMsg={errMsg}
       />

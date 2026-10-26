@@ -34,6 +34,7 @@ import {
 } from "@/lib/forestal/cubicacion-apartados";
 import ApartadosPanel, { colorClaseApartado } from "./cubicacion-apartados";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
+import { usePegarEnCargar } from "./hooks/use-pegar-en-cargar";
 import LiquidacionModal from "./LiquidacionModal";
 import EnviarLibroModal from "./EnviarLibroModal";
 import Anexo04Modal from "./Anexo04Modal";
@@ -604,6 +605,15 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
    *  secciones: el envoltorio le da una URL propia y se apila como antes. */
   const { seccion, irA, visitadas } = useSeccionDelCubicador();
   const enSecciones = !onLote;
+  /* «Pegar de Excel» (Brandon 25-10): el botón o un Ctrl+V de una tabla en Cargar
+     abren el importador en la tabla para pegar. En un ref: abrir el modal no
+     redibuja el cubicador (el anfitrión de modales lo lee al pintarse). */
+  const entradaPegar = useRef<{ texto: string | null } | null>(null);
+  const abrirPegar = useCallback((texto: string | null) => {
+    entradaPegar.current = { texto };
+    modales.abrir("importar");
+  }, [modales]);
+  usePegarEnCargar(enSecciones && seccion === "cargar", abrirPegar);
   const { hayCambios, marcarGuardado } = useCambiosSinGuardar(rows, Boolean(cubicacionActual));
   const estadoGuardado = !cubicacionActual ? "Sin guardar" : hayCambios ? "Cambios sin guardar" : "Guardada";
   /** El precio del lote (ADR-430): modo Aserrío/Venta/A mano, lo puesto a mano
@@ -2396,7 +2406,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           onPlegar={enSecciones ? undefined : () => setPlegados((v) => ({ ...v, voz: true }))}
           grillaId={GRILLA_CARGA}
           onPresent={onPresent}
-          onImportar={() => modales.abrir("importar")}
+          onImportar={() => { entradaPegar.current = null; modales.abrir("importar"); }}
+          onPegarExcel={() => abrirPegar(null)}
           showAjustes={showAjustes}
           onToggleAjustes={() => setShowAjustes((v) => !v)}
           config={config}
@@ -3372,8 +3383,11 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
                 filasActuales={rows.length}
                 duenos={duenosParaElegir}
                 planillaInicial={planillaPedida}
-                onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
-                onCerrar={() => { cerrar("importar"); if (planillaPedida) setPlanillaPedida(null); }}
+                modoInicial={entradaPegar.current ? "pegar" : undefined}
+                textoPegado={entradaPegar.current?.texto ?? null}
+                especies={especiesOfrecidas}
+                onAgregar={(piezas, origen) => { agregarVarias(piezas); setEnviado(false); if (origen === "pegar" && enSecciones) irA("lote"); }}
+                onCerrar={() => { cerrar("importar"); entradaPegar.current = null; if (planillaPedida) setPlanillaPedida(null); }}
               />
             )}
 

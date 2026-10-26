@@ -18,7 +18,7 @@
  * micrófono: importar un Excel y la voz que repite no dependen de él.
  */
 import { useId } from "react";
-import { FileSpreadsheet, Mic, MicOff, Pause, Play, Settings, Volume2, VolumeX } from "@buleje/design-system/icons";
+import { ClipboardPaste, FileSpreadsheet, Mic, MicOff, Pause, Play, Settings, Volume2, VolumeX } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { IconAction } from "@/components/admin/shared/module-primitives";
@@ -35,6 +35,8 @@ export interface CajaDictadoProps {
   onTogglePausa: () => void;
   fijas: MedidasFijas;
   onImportar: () => void;
+  /** Abre la tabla para pegar columnas copiadas de un Excel. */
+  onPegarExcel: () => void;
   config: CubicadorConfig;
   onUpdateConfig: (patch: Partial<CubicadorConfig>) => void;
   voices: SpeechSynthesisVoice[];
@@ -46,7 +48,7 @@ export interface CajaDictadoProps {
 }
 
 export default function CajaDictado({
-  supported, listening, onToggleListen, paused, onTogglePausa, fijas, onImportar,
+  supported, listening, onToggleListen, paused, onTogglePausa, fijas, onImportar, onPegarExcel,
   config, onUpdateConfig, voices, onProbarVoz, showAjustes, onToggleAjustes, liveGroups, errMsg,
 }: CajaDictadoProps) {
   const speakOn = config.speak;
@@ -134,6 +136,15 @@ export default function CajaDictado({
             <div role="group" aria-label="Entrada" className="flex items-center gap-1.5">
               <Kicker aria-hidden className="font-bold">Entrada</Kicker>
               <IconAction icon={FileSpreadsheet} label="Importar Excel" title="Importar Excel: un Excel/CSV de piezas al lote" onClick={onImportar} />
+              {/* Con texto: es la forma más rápida de traer un Excel (Brandon 25-10). */}
+              <button
+                type="button"
+                onClick={onPegarExcel}
+                title="Pegar de Excel: copia una o varias columnas de tu Excel y pégalas en una tabla. También sirve Ctrl+V acá, fuera de un campo."
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+              >
+                <ClipboardPaste className="h-4 w-4" /> Pegar de Excel
+              </button>
             </div>
             <div role="group" aria-label="Voz" className="flex items-center gap-1.5 border-l border-[var(--rule-soft)] pl-3">
               <Kicker aria-hidden className="font-bold">Voz</Kicker>

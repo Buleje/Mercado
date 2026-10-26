@@ -32,7 +32,7 @@ export interface ResultadoImport {
   columnas: Record<Campo, number | null>;
 }
 
-type Campo = "cantidad" | "espesor" | "ancho" | "largo" | "especie" | "uEspesor" | "uAncho" | "uLargo";
+export type Campo = "cantidad" | "espesor" | "ancho" | "largo" | "especie" | "uEspesor" | "uAncho" | "uLargo";
 
 /** `columnas` no aplica cuando el origen no es una matriz de celdas (foto/audio). */
 const COLUMNAS_SIN_MAPEO: Record<Campo, number | null> = {
@@ -41,8 +41,8 @@ const COLUMNAS_SIN_MAPEO: Record<Campo, number | null> = {
 
 export const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
-/** Sinónimos de cada encabezado, como los escribe un maderero. */
-const ALIAS: Record<Campo, string[]> = {
+/** Sinónimos de cada encabezado, como los escribe un maderero (también los usa la tabla para pegar, `cubicacion-pegar.ts`). */
+export const ALIAS: Record<Campo, string[]> = {
   cantidad: ["cantidad", "cant", "cant.", "piezas", "pzas", "unidades", "und", "nro", "n"],
   espesor: ["espesor", "esp", "esp.", "grosor", "grueso", "e"],
   ancho: ["ancho", "anch", "anchura", "a"],

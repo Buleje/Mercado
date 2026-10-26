@@ -20,6 +20,7 @@ const props = (extra: Partial<Props> = {}): Props => ({
   grillaId: "cub-carga",
   onPlegar: vi.fn(),
   onImportar: vi.fn(),
+  onPegarExcel: vi.fn(),
   showAjustes: false,
   onToggleAjustes: vi.fn(),
   config: CONFIG_DEFAULT,
@@ -74,6 +75,14 @@ describe("PanelEntradaVoz — disposición de «Dictar y cargar»", () => {
     expect(within(caja()).getByRole("button", { name: /Cómo se dicta/ })).toBeInTheDocument();
     /* Importar Excel está una sola vez. */
     expect(screen.getAllByRole("button", { name: /Importar Excel/ })).toHaveLength(1);
+  });
+
+  it("«Pegar de Excel» va con texto en el grupo Entrada y abre la tabla para pegar (Brandon 25-10)", () => {
+    const onPegarExcel = vi.fn();
+    render(<PanelEntradaVoz {...props({ onPegarExcel })} />);
+    const entrada = within(caja()).getByRole("group", { name: "Entrada" });
+    fireEvent.click(within(entrada).getByRole("button", { name: "Pegar de Excel" }));
+    expect(onPegarExcel).toHaveBeenCalledTimes(1);
   });
 
   it("la barra del título queda con Especies y Ocultar, sin Importar ni Ajustes", () => {
