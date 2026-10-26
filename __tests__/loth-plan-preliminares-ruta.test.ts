@@ -65,7 +65,7 @@ const ctx = { params: Promise.resolve({}) };
 const post = (body: unknown) => POST(new NextRequest(URL_RUTA, { method: "POST", body: JSON.stringify(body) }), ctx);
 const patch = (body: unknown) => PATCH(new NextRequest(URL_RUTA, { method: "PATCH", body: JSON.stringify(body) }), ctx);
 
-const GUIA = { planId: "plan-propio", numeroGtf: "001-0000123", numeroLt: "2", lineas: [{ especie: "tornillo", trozas: 30, m3: 20, bloque: "Bloque 1" }] };
+const GUIA = { planId: "plan-propio", numeroGtf: "001-0000123", numerosLt: ["2"], lineas: [{ especie: "tornillo", trozas: 30, m3: 20, bloque: "Bloque 1" }] };
 
 beforeEach(() => {
   H.rol = "admin";

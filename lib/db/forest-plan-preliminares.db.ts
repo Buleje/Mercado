@@ -27,6 +27,7 @@ import {
   guiaDelLibroDe,
   prepararPreliminar,
   resumenDeLineas,
+  textoDeLts,
   resumirPreliminares,
   type AccionDeEstado,
   type DatosPreliminar,
@@ -161,7 +162,7 @@ export const ForestPlanPreliminaresDB = {
       action: "loth_plan_preliminar_crear",
       entity: "ForestLothGtfPreliminar",
       entityId: r.guia.id,
-      detail: `Anotó la GTF preliminar ${r.guia.numeroGtf} (LT ${r.guia.numeroLt})${r.yaEnElLibro ? ", ya en el libro: quedó registrada" : ", pendiente de SERFOR"}: ${resumenDeLineas(r.guia.lineas)}`,
+      detail: `Anotó la GTF preliminar ${r.guia.numeroGtf} (LT ${textoDeLts(r.guia.numerosLt)})${r.yaEnElLibro ? ", ya en el libro: quedó registrada" : ", pendiente de SERFOR"}: ${resumenDeLineas(r.guia.lineas)}`,
       user: actor(user),
     });
     return { guia: r.guia, yaEnElLibro: r.yaEnElLibro };
@@ -188,7 +189,7 @@ export const ForestPlanPreliminaresDB = {
       action: "loth_plan_preliminar_corregir",
       entity: "ForestLothGtfPreliminar",
       entityId: id,
-      detail: `Corrigió la GTF preliminar ${r.guia.numeroGtf} (LT ${r.guia.numeroLt}): ${resumenDeLineas(r.guia.lineas)}`,
+      detail: `Corrigió la GTF preliminar ${r.guia.numeroGtf} (LT ${textoDeLts(r.guia.numerosLt)}): ${resumenDeLineas(r.guia.lineas)}`,
       user: actor(user),
     });
     return { guia: r.guia, yaEnElLibro: r.yaEnElLibro };
@@ -221,7 +222,7 @@ export const ForestPlanPreliminaresDB = {
       action: "loth_plan_preliminar_estado",
       entity: "ForestLothGtfPreliminar",
       entityId: id,
-      detail: `GTF preliminar ${r.guia.numeroGtf} (LT ${r.guia.numeroLt}): ${que}`,
+      detail: `GTF preliminar ${r.guia.numeroGtf} (LT ${textoDeLts(r.guia.numerosLt)}): ${que}`,
       user: actor(user),
     });
     return r.guia;

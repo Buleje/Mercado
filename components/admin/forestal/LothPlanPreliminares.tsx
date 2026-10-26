@@ -19,7 +19,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
-import { resumenDeLineas, type GtfPreliminarVista } from "@/lib/forestal/loth-plan-preliminares";
+import { resumenDeLineas, textoDeLts, type GtfPreliminarVista } from "@/lib/forestal/loth-plan-preliminares";
 import type { SaldoPlanRespuesta } from "@/lib/forestal/loth-saldo-plan-tipos";
 import { MENSAJE_MOTIVO, motivoSuficiente } from "@/lib/validations/motivo";
 import { cambiarEstadoDeLaPreliminar, type CambioDeEstado } from "./hooks/plan-preliminares-api";
@@ -45,7 +45,7 @@ function Fila({ g, acciones }: { g: GtfPreliminarVista; acciones: MenuAccion[] }
       <div className="min-w-0 flex-1 space-y-0.5">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
           <span className="font-mono font-bold text-[var(--text-primary)]">GTF {g.numeroGtf}</span>
-          <span className="text-[var(--text-secondary)]">LT {g.numeroLt}</span>
+          <span className="text-[var(--text-secondary)]">LT {textoDeLts(g.numerosLt)}</span>
           {fecha && <span className={`${NUM} text-[var(--text-secondary)]`}>{fecha}</span>}
           <span className={`rounded-md px-1.5 text-xs font-semibold ${PILL[g.estado]}`}>{g.estado}</span>
           {g.estado === "pendiente" && g.enElLibro && (

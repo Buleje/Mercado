@@ -20,6 +20,8 @@ import {
   type DatosListos,
   type EspecieDelSaldo,
   type GtfPreliminar,
+  gtfPreliminarGuardadaSchema,
+  textoDeLts,
 } from "@/lib/forestal/loth-plan-preliminares";
 
 const ESPECIES_PLAN = [{ speciesCommon: "Tornillo (Cedrelinga catenaeformis)" }, { speciesCommon: "Capirona" }];
@@ -31,7 +33,7 @@ const saldo = { especies: SALDO, total: { quedaM3: 30 }, sinTecho: false };
 
 const ctx = (id: string) => ({ id, por: "qaadmin", at: `2026-10-25T10:00:0${id.length}Z`, enElLibro: null });
 
-const listos = (numeroGtf: string, lineas: DatosListos["lineas"]): DatosListos => ({ numeroGtf, numeroLt: "2", fecha: null, lineas, nota: null });
+const listos = (numeroGtf: string, lineas: DatosListos["lineas"]): DatosListos => ({ numeroGtf, numerosLt: ["2"], fecha: null, lineas, nota: null });
 
 function anotar(lista: GtfPreliminar[], id: string, d: DatosListos): GtfPreliminar[] {
   const r = agregarPreliminar(lista, d, ctx(id));
@@ -39,34 +41,55 @@ function anotar(lista: GtfPreliminar[], id: string, d: DatosListos): GtfPrelimin
   return r.lista;
 }
 
+describe("varias listas de trozas por guía (Brandon 25-10)", () => {
+  it("guarda todas las LT y la misma escrita dos veces queda una sola", () => {
+    const r = prepararPreliminar(
+      { numeroGtf: "19-000015", numerosLt: ["19-000012", " 19-000013 ", "019-0000012"], lineas: [{ especie: "tornillo", trozas: 30, m3: 20 }] },
+      ESPECIES_PLAN,
+      [],
+    );
+    expect(r.ok && r.datos.numerosLt).toEqual(["19-000012", "19-000013"]);
+  });
+  it("lo guardado con UNA sola LT (antes de las varias) se lee como lista", () => {
+    const vieja = {
+      id: "g1", numeroGtf: "1", numeroLt: "2", fecha: null, lineas: [], nota: null, estado: "anulada", motivoAnulacion: "prueba",
+      gtfId: null, creadaPor: "qa", creadaAt: "2026-10-25T20:00:00Z", cambiadaPor: null, cambiadaAt: null, historial: [],
+    };
+    const p = gtfPreliminarGuardadaSchema.safeParse(vieja);
+    expect(p.success && p.data.numerosLt).toEqual(["2"]);
+    expect(p.success && "numeroLt" in p.data).toBe(false);
+    expect(textoDeLts(["19-000012", "19-000013"])).toBe("19-000012, 19-000013");
+  });
+});
+
 describe("prepararPreliminar", () => {
   it("cruza la especie por claveEspecie y guarda el nombre del plan", () => {
-    const r = prepararPreliminar({ numeroGtf: " 001-0000123 ", numeroLt: "2", lineas: [{ especie: "tornillo", trozas: 30, m3: 20.00049 }] }, ESPECIES_PLAN, []);
+    const r = prepararPreliminar({ numeroGtf: " 001-0000123 ", numerosLt: ["2"], lineas: [{ especie: "tornillo", trozas: 30, m3: 20.00049 }] }, ESPECIES_PLAN, []);
     expect(r).toEqual({
       ok: true,
-      datos: { numeroGtf: "001-0000123", numeroLt: "2", fecha: null, nota: null, lineas: [{ especie: "Tornillo (Cedrelinga catenaeformis)", trozas: 30, m3: 20, bloque: null }] },
+      datos: { numeroGtf: "001-0000123", numerosLt: ["2"], fecha: null, nota: null, lineas: [{ especie: "Tornillo (Cedrelinga catenaeformis)", trozas: 30, m3: 20, bloque: null }] },
     });
   });
 
   it("rechaza la especie que no está en el plan", () => {
-    const r = prepararPreliminar({ numeroGtf: "1", numeroLt: "2", lineas: [{ especie: "Caoba", trozas: 1, m3: 1 }] }, ESPECIES_PLAN, []);
+    const r = prepararPreliminar({ numeroGtf: "1", numerosLt: ["2"], lineas: [{ especie: "Caoba", trozas: 1, m3: 1 }] }, ESPECIES_PLAN, []);
     expect(r).toEqual({ ok: false, mensaje: "«Caoba» no está en las especies de este plan." });
   });
 
   it("con un solo bloque lo pone solo; con varios lo exige y tiene que existir", () => {
-    const uno = prepararPreliminar({ numeroGtf: "1", numeroLt: "2", lineas: [{ especie: "Capirona", trozas: 1, m3: 1 }] }, ESPECIES_PLAN, ["Bloque 1"]);
+    const uno = prepararPreliminar({ numeroGtf: "1", numerosLt: ["2"], lineas: [{ especie: "Capirona", trozas: 1, m3: 1 }] }, ESPECIES_PLAN, ["Bloque 1"]);
     expect(uno.ok && uno.datos.lineas[0]!.bloque).toBe("Bloque 1");
-    const sinElegir = prepararPreliminar({ numeroGtf: "1", numeroLt: "2", lineas: [{ especie: "Capirona", trozas: 1, m3: 1 }] }, ESPECIES_PLAN, ["Bloque 1", "Bloque 2"]);
+    const sinElegir = prepararPreliminar({ numeroGtf: "1", numerosLt: ["2"], lineas: [{ especie: "Capirona", trozas: 1, m3: 1 }] }, ESPECIES_PLAN, ["Bloque 1", "Bloque 2"]);
     expect(sinElegir).toEqual({ ok: false, mensaje: "Elige el bloque de Capirona: el plan tiene 2." });
-    const otro = prepararPreliminar({ numeroGtf: "1", numeroLt: "2", lineas: [{ especie: "Capirona", trozas: 1, m3: 1, bloque: "Bloque 9" }] }, ESPECIES_PLAN, ["Bloque 1", "Bloque 2"]);
+    const otro = prepararPreliminar({ numeroGtf: "1", numerosLt: ["2"], lineas: [{ especie: "Capirona", trozas: 1, m3: 1, bloque: "Bloque 9" }] }, ESPECIES_PLAN, ["Bloque 1", "Bloque 2"]);
     expect(otro).toEqual({ ok: false, mensaje: "El bloque «Bloque 9» no está en este plan." });
-    const bien = prepararPreliminar({ numeroGtf: "1", numeroLt: "2", lineas: [{ especie: "Capirona", trozas: 1, m3: 1, bloque: "bloque 2" }] }, ESPECIES_PLAN, ["Bloque 1", "Bloque 2"]);
+    const bien = prepararPreliminar({ numeroGtf: "1", numerosLt: ["2"], lineas: [{ especie: "Capirona", trozas: 1, m3: 1, bloque: "bloque 2" }] }, ESPECIES_PLAN, ["Bloque 1", "Bloque 2"]);
     expect(bien.ok && bien.datos.lineas[0]!.bloque).toBe("Bloque 2");
   });
 
   it("la misma especie y bloque dos veces en una guía se rechaza", () => {
     const r = prepararPreliminar(
-      { numeroGtf: "1", numeroLt: "2", lineas: [{ especie: "Tornillo", trozas: 1, m3: 1 }, { especie: "tornillo (cedrelinga)", trozas: 2, m3: 2 }] },
+      { numeroGtf: "1", numerosLt: ["2"], lineas: [{ especie: "Tornillo", trozas: 1, m3: 1 }, { especie: "tornillo (cedrelinga)", trozas: 2, m3: 2 }] },
       ESPECIES_PLAN,
       [],
     );

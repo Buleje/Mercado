@@ -2,7 +2,7 @@
  * GTF preliminares de un plan (Brandon 25-10): las guías hechas a mano que
  * todavía no se registran en SERFOR ni en el libro.
  *
- *   POST  { planId, numeroGtf, numeroLt, fecha?, lineas[], nota? } → 201 { guia, yaEnElLibro, message? }
+ *   POST  { planId, numeroGtf, numerosLt[], fecha?, lineas[], nota? } → 201 { guia, yaEnElLibro, message? }
  *   PATCH { planId, id, accion: "corregir", datos }                → { guia, yaEnElLibro, message? }
  *   PATCH { planId, id, accion: "registrada" | "pendiente" }        → { guia }
  *   PATCH { planId, id, accion: "anular", motivo }                  → { guia }

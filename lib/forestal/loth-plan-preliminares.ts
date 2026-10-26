@@ -26,6 +26,7 @@ import { excedeTechoM3 } from "./loth-t6";
 export const MAX_LINEAS_PRELIMINAR = 30;
 export const MAX_PRELIMINARES_POR_PLAN = 500;
 export const MAX_HISTORIAL_PRELIMINAR = 30;
+export const MAX_LT_POR_GUIA = 20;
 
 export const ESTADOS_PRELIMINAR = ["pendiente", "registrada", "anulada"] as const;
 export type EstadoPreliminar = (typeof ESTADOS_PRELIMINAR)[number];
@@ -71,7 +72,13 @@ export const lineaPreliminarSchema = z
 export const datosPreliminarSchema = z
   .object({
     numeroGtf: z.string({ error: "Escribe el N.º de la GTF." }).trim().min(1, "Escribe el N.º de la GTF.").max(40, "El N.º de la GTF es muy largo."),
-    numeroLt: z.string({ error: "Escribe el N.º de la LT vinculada." }).trim().min(1, "Escribe el N.º de la LT vinculada.").max(40, "El N.º de la LT es muy largo."),
+    /* Una guía puede llevar varias listas de trozas (Brandon 25-10). */
+    numerosLt: z
+      .array(z.string({ error: "Escribe el N.º de la LT vinculada." }).trim().min(1, "Escribe el N.º de cada LT o quita la fila vacía.").max(40, "El N.º de la LT es muy largo."), {
+        error: "Escribe el N.º de la LT vinculada.",
+      })
+      .min(1, "Escribe el N.º de la LT vinculada.")
+      .max(MAX_LT_POR_GUIA, `Hasta ${MAX_LT_POR_GUIA} listas de trozas por guía.`),
     fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha va como AAAA-MM-DD.").refine(fechaValida, "Esa fecha no existe.").nullable().optional(),
     lineas: z.array(lineaPreliminarSchema, { error: "Agrega al menos una especie." }).min(1, "Agrega al menos una especie.").max(MAX_LINEAS_PRELIMINAR, `Hasta ${MAX_LINEAS_PRELIMINAR} filas por guía.`),
     nota: z.string().trim().max(500, "La nota es muy larga (máximo 500 letras).").nullable().optional(),
@@ -99,7 +106,8 @@ export interface CambioPreliminar {
 export interface GtfPreliminar {
   id: string;
   numeroGtf: string;
-  numeroLt: string;
+  /** Las listas de trozas de la guía (al menos una). */
+  numerosLt: string[];
   /** AAAA-MM-DD; `null` = no se anotó. */
   fecha: string | null;
   lineas: LineaPreliminar[];
@@ -119,7 +127,7 @@ export interface GtfPreliminar {
 /** Los datos ya cruzados con el plan: especie con su nombre del plan, bloque elegido, m³ a 3 decimales. */
 export interface DatosListos {
   numeroGtf: string;
-  numeroLt: string;
+  numerosLt: string[];
   fecha: string | null;
   lineas: LineaPreliminar[];
   nota: string | null;
@@ -129,7 +137,9 @@ export interface DatosListos {
 export const gtfPreliminarGuardadaSchema = z.object({
   id: z.string().min(1),
   numeroGtf: z.string().min(1),
-  numeroLt: z.string(),
+  numerosLt: z.array(z.string()).optional(),
+  /** Lo guardado antes de las varias LT (25-10): una sola. Se lee como lista. */
+  numeroLt: z.string().optional(),
   fecha: z.string().nullable(),
   lineas: z.array(z.object({ especie: z.string().min(1), trozas: z.number(), m3: z.number(), bloque: z.string().nullable() })),
   nota: z.string().nullable(),
@@ -141,7 +151,12 @@ export const gtfPreliminarGuardadaSchema = z.object({
   cambiadaPor: z.string().nullable(),
   cambiadaAt: z.string().nullable(),
   historial: z.array(z.object({ at: z.string(), por: z.string(), que: z.string() })),
-});
+}).transform(({ numeroLt, numerosLt, ...g }): GtfPreliminar => ({ ...g, numerosLt: numerosLt ?? (numeroLt ? [numeroLt] : []) }));
+
+/** «19-000012, 19-000013»: las LT de una guía en una línea. */
+export function textoDeLts(numeros: readonly string[]): string {
+  return numeros.join(", ");
+}
 
 /** La clave de un N.º de guía: «001-0000123» ≡ «1-123» (`claveNumeroGtf`); si no tiene tramos, el texto sin espacios. */
 export function claveDeNumeroGtf(numero: string | null | undefined): string | null {
@@ -185,9 +200,18 @@ export function prepararPreliminar(datos: DatosPreliminar, especiesDelPlan: read
     lineas.push({ especie, trozas: l.trozas, m3, bloque });
   }
   const nota = datos.nota ? enUnaLinea(datos.nota) : "";
+  // La misma LT escrita dos veces («19-000012» y «12» con la región) queda una sola.
+  const numerosLt: string[] = [];
+  const ltVistas = new Set<string>();
+  for (const n of datos.numerosLt) {
+    const k = claveDeNumeroGtf(n);
+    if (!k || ltVistas.has(k)) continue;
+    ltVistas.add(k);
+    numerosLt.push(enUnaLinea(n));
+  }
   return {
     ok: true,
-    datos: { numeroGtf: enUnaLinea(datos.numeroGtf), numeroLt: enUnaLinea(datos.numeroLt), fecha: datos.fecha ?? null, lineas, nota: nota || null },
+    datos: { numeroGtf: enUnaLinea(datos.numeroGtf), numerosLt, fecha: datos.fecha ?? null, lineas, nota: nota || null },
   };
 }
 
@@ -368,11 +392,12 @@ export function previsualizarGuia(
 }
 
 /** Lo que va en la lista de observaciones del plan mientras la preliminar siga pendiente. */
-export function avisoDePreliminar(g: Pick<GtfPreliminarVista, "numeroGtf" | "numeroLt" | "estado" | "enElLibro">): string | null {
+export function avisoDePreliminar(g: Pick<GtfPreliminarVista, "numeroGtf" | "numerosLt" | "estado" | "enElLibro">): string | null {
   if (g.estado !== "pendiente") return null;
-  if (g.enElLibro && !g.enElLibro.sinPlan) return `GTF ${g.numeroGtf} (LT ${g.numeroLt}): ya está en el libro; confírmala como registrada.`;
-  if (g.enElLibro) return `GTF ${g.numeroGtf} (LT ${g.numeroLt}): ya está en el libro pero sin plan; átala a este plan y confírmala.`;
-  return `GTF ${g.numeroGtf} (LT ${g.numeroLt}): falta registrarla en SERFOR y en el libro.`;
+  const lt = textoDeLts(g.numerosLt);
+  if (g.enElLibro && !g.enElLibro.sinPlan) return `GTF ${g.numeroGtf} (LT ${lt}): ya está en el libro; confírmala como registrada.`;
+  if (g.enElLibro) return `GTF ${g.numeroGtf} (LT ${lt}): ya está en el libro pero sin plan; átala a este plan y confírmala.`;
+  return `GTF ${g.numeroGtf} (LT ${lt}): falta registrarla en SERFOR y en el libro.`;
 }
 
 /** «Tornillo 30 trozas · 20.000 m³ (Bloque 1)», para la lista y la bitácora. */
@@ -443,7 +468,7 @@ export function corregirPreliminar(
   const yaEnElLibro = actual.estado === "pendiente" && ctx.enElLibro != null && !ctx.enElLibro.sinPlan;
   const que = [
     actual.numeroGtf !== datos.numeroGtf ? `N.º ${actual.numeroGtf} → ${datos.numeroGtf}` : null,
-    actual.numeroLt !== datos.numeroLt ? `LT ${actual.numeroLt} → ${datos.numeroLt}` : null,
+    textoDeLts(actual.numerosLt) !== textoDeLts(datos.numerosLt) ? `LT ${textoDeLts(actual.numerosLt)} → ${textoDeLts(datos.numerosLt)}` : null,
     JSON.stringify(actual.lineas) !== JSON.stringify(datos.lineas) ? "corrigió las especies" : null,
     actual.fecha !== datos.fecha ? "fecha" : null,
     actual.nota !== datos.nota ? "nota" : null,

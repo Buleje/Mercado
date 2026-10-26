@@ -26,6 +26,7 @@ import {
 } from "@/lib/forestal/loth-plan-preliminares";
 import { guardarPreliminarDelPlan } from "./hooks/plan-preliminares-api";
 import LothPlanPreliminarFilas, { numeroEscrito, type FilaPreliminar } from "./LothPlanPreliminarFilas";
+import LothPlanPreliminarLts from "./LothPlanPreliminarLts";
 import LothPlanPreliminarRegion from "./LothPlanPreliminarRegion";
 import { Btn, CampoGrid, Field, I } from "./ctp-shared";
 
@@ -82,7 +83,7 @@ export default function LothPlanPreliminarModal({
   onGuardado: (mensaje: string) => void;
 }) {
   const [numeroGtf, setNumeroGtf] = useState(guia?.numeroGtf ?? "");
-  const [numeroLt, setNumeroLt] = useState(guia?.numeroLt ?? "");
+  const [lts, setLts] = useState<string[]>(() => (guia?.numerosLt.length ? [...guia.numerosLt] : [""]));
   const [fecha, setFecha] = useState(guia?.fecha ?? "");
   const [nota, setNota] = useState(guia?.nota ?? "");
   const [filas, setFilas] = useState<FilaPreliminar[]>(() => filasDe(guia, especies, bloques));
@@ -94,7 +95,7 @@ export default function LothPlanPreliminarModal({
   const [regionElegida, setRegionElegida] = useState<string | null>(null);
   const region = regionElegida ?? regionFija;
   const gtfFinal = numeroConRegion(numeroGtf, region);
-  const ltFinal = numeroConRegion(numeroLt, region);
+  const ltsFinales = lts.map((l) => numeroConRegion(l, region)).filter(Boolean);
 
   /* La vista previa: sólo con las filas que ya se entienden. */
   const previa = useMemo(() => {
@@ -108,7 +109,7 @@ export default function LothPlanPreliminarModal({
   const guardar = async () => {
     setError(null);
     if (!numeroGtf.trim()) return setError("Escribe el N.º de la GTF.");
-    if (!numeroLt.trim()) return setError("Escribe el N.º de la LT vinculada.");
+    if (ltsFinales.length === 0) return setError("Escribe el N.º de la LT vinculada.");
     const { lineas, error: e } = armar(filas, conBloque);
     if (e) return setError(e);
     const repetidas = new Set<string>();
@@ -120,7 +121,7 @@ export default function LothPlanPreliminarModal({
     setBusy(true);
     const r = await guardarPreliminarDelPlan(
       planId,
-      { numeroGtf: gtfFinal, numeroLt: ltFinal, fecha: fecha || null, lineas, nota: nota.trim() || null },
+      { numeroGtf: gtfFinal, numerosLt: ltsFinales, fecha: fecha || null, lineas, nota: nota.trim() || null },
       guia?.id,
     );
     setBusy(false);
@@ -164,8 +165,14 @@ export default function LothPlanPreliminarModal({
           <Field label="N.º de GTF *" span={6} hint={gtfFinal && gtfFinal !== numeroGtf.trim() ? `Se guarda como ${gtfFinal}` : undefined}>
             <input className={I} value={numeroGtf} onChange={(e) => setNumeroGtf(e.target.value)} placeholder={region ? "15" : "19-000015"} inputMode={region ? "numeric" : undefined} data-testid="preliminar-gtf" />
           </Field>
-          <Field label="N.º de LT vinculado *" span={6} hint={ltFinal && ltFinal !== numeroLt.trim() ? `Se guarda como ${ltFinal}` : undefined}>
-            <input className={I} value={numeroLt} onChange={(e) => setNumeroLt(e.target.value)} placeholder={region ? "12" : "19-000012"} inputMode={region ? "numeric" : undefined} data-testid="preliminar-lt" />
+          <Field label={lts.length > 1 ? `Listas de trozas vinculadas (${lts.length}) *` : "N.º de LT vinculado *"} span={6}>
+            <LothPlanPreliminarLts
+              lts={lts}
+              region={region}
+              onCambiar={(i, v) => setLts((xs) => xs.map((x, j) => (j === i ? v : x)))}
+              onAgregar={() => setLts((xs) => [...xs, ""])}
+              onQuitar={(i) => setLts((xs) => (xs.length > 1 ? xs.filter((_, j) => j !== i) : xs))}
+            />
           </Field>
         </CampoGrid>
         {especies.length === 0 ? (
