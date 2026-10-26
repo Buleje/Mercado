@@ -7,22 +7,24 @@
  * 300 que se pegaron.
  */
 import { memo } from "react";
+import { AlertCircle, AlertTriangle } from "@buleje/design-system/icons";
+import { clasificarCelda, COLUMNAS_NUMERICAS } from "./cubicador-pegar-tipo-dato";
 import { COLUMNAS_PEGAR, type ColumnaPegar, type FilaLeida, type FilaPegar } from "@/lib/forestal/cubicacion-pegar";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 
 export const GRILLA_PEGAR = "pegar-cubicador";
 export const LISTA_ESPECIES_PEGAR = "pegar-cubicador-especies";
 
-const NUMERICAS = new Set<ColumnaPegar>(["cantidad", "espesor", "ancho", "largo"]);
+const NUMERICAS = COLUMNAS_NUMERICAS;
 const NOMBRE_CORTO: Record<ColumnaPegar, string> = {
   cantidad: "Cant.", espesor: "Espesor", ancho: "Ancho", largo: "Largo", especie: "Especie", dueno: "Dueño", observacion: "Observación",
 };
 
 const CELDA =
-  "h-9 w-full min-w-0 rounded-md border bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]";
+  "h-10 w-full min-w-0 rounded-md border bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]";
 /** Error = borde lleno y fondo rojo; aviso = borde punteado (en oscuro el coral y el rojo se parecen: la forma los separa). */
 const CON_ERROR = "border-[var(--data-error)] bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/15";
-const CON_AVISO = "border-dashed border-[var(--data-warning-500)]";
+const CON_AVISO = "border-dashed border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15";
 const NORMAL = "border-[var(--rule-soft)]";
 const MARCADA = "bg-[var(--accent-muted)]";
 
@@ -58,12 +60,14 @@ export const FilaParaPegar = memo(function FilaParaPegar({
     <tr>
       <td className="text-center text-xs tabular-nums text-[var(--text-tertiary)]">{i + 1}</td>
       {COLUMNAS_PEGAR.map((c, k) => {
-        const error = leida.errores[c];
-        const aviso = leida.avisos[c];
+        /* Lo que dice el tipo de dato (letra en una medida, número en la especie) manda sobre el motivo de la fila. */
+        const tipo = clasificarCelda(c, fila[c]);
+        const error = tipo.tipo === "error" ? tipo.motivo : leida.errores[c];
+        const aviso = tipo.tipo === "aviso" ? tipo.motivo : leida.avisos[c];
         const numerica = NUMERICAS.has(c);
         const tono = error ? CON_ERROR : aviso ? CON_AVISO : NORMAL;
         return (
-          <td key={c}>
+          <td key={c} className="relative">
             <input
               type="text"
               inputMode={numerica ? "decimal" : "text"}
@@ -82,8 +86,13 @@ export const FilaParaPegar = memo(function FilaParaPegar({
               onKeyDown={manejo.onKeyDown}
               onMouseDown={manejo.onMouseDown}
               onMouseEnter={manejo.onMouseEnter}
-              className={`${CELDA} ${tono} ${numerica ? "text-right font-mono tabular-nums" : ""} ${k >= selC0 && k <= selC1 ? MARCADA : ""}`}
+              className={`${CELDA} ${tono} ${numerica ? "text-right font-mono tabular-nums" : ""} ${error || aviso ? "pr-7" : ""} ${k >= selC0 && k <= selC1 ? MARCADA : ""}`}
             />
+            {(error || aviso) && (
+              <span aria-hidden="true" title={error ?? aviso} className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 ${error ? "text-[var(--data-error-ink)]" : "text-[var(--data-warning-ink)]"}`}>
+                {error ? <AlertCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+              </span>
+            )}
           </td>
         );
       })}

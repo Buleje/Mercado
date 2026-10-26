@@ -90,7 +90,7 @@ export default function ImportarCubicacionModal({
       open
       onClose={onCerrar}
       variant="wide"
-      size={modo === "pegar" ? "xl" : undefined}
+      size={modo === "pegar" ? "planilla" : undefined}
       title={META[modo].title}
       description={META[modo].description}
       icon={META[modo].icon}
@@ -113,7 +113,7 @@ export default function ImportarCubicacionModal({
             <Btn variant="dark" onClick={() => { if (modo === "pegar") olvidarBorradorPegar(); onAgregar(listas, modo); onCerrar(); }}>
               <Check className="h-4 w-4" />
               {modo === "pegar"
-                ? ` Agregar ${fmtPiezas(piezasPegadas)} ${piezasPegadas === 1 ? "pieza" : "piezas"} al lote`
+                ? ` Agregar ${fmtPiezas(piezasPegadas)} ${piezasPegadas === 1 ? "pieza" : "piezas"} al lote${(resumenPegado?.filasConError ?? 0) > 0 ? ` (saltando ${resumenPegado?.filasConError} en rojo)` : ""}`
                 : ` Agregar ${listas.length} al lote`}
               {filasActuales > 0 ? ` (quedará con ${filasActuales + listas.length})` : ""}
             </Btn>

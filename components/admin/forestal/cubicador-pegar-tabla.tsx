@@ -10,20 +10,21 @@
  */
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Eraser, Undo2, X } from "@buleje/design-system/icons";
+import { AlertCircle, AlertTriangle, Eraser, Undo2, X } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Btn } from "./ctp-shared";
 import { useTecladoGrilla } from "./celdas-excel";
 import {
   COLUMNAS_PEGAR, pareceTabla, rangoATexto, tituloDeColumna, type ResumenPegado, type UnidadesPegar,
 } from "@/lib/forestal/cubicacion-pegar";
+import { fraseResumen, resumirTipos } from "./cubicador-pegar-tipo-dato";
 import { esRangoDeVarias, useTablaPegar } from "./hooks/use-tabla-pegar";
 import { FilaParaPegar, GRILLA_PEGAR, LISTA_ESPECIES_PEGAR, type ManejoCeldas } from "./cubicador-pegar-fila";
 
 const COLUMNAS_IDX = COLUMNAS_PEGAR.map((_, k) => k);
 const FLECHAS: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
 const ANCHO_COL: Record<(typeof COLUMNAS_PEGAR)[number], string> = {
-  cantidad: "w-16", espesor: "w-24", ancho: "w-24", largo: "w-24", especie: "w-36", dueno: "w-32", observacion: "w-40",
+  cantidad: "w-20", espesor: "w-28", ancho: "w-28", largo: "w-28", especie: "w-44", dueno: "w-40", observacion: "",
 };
 const UNIDADES_DE: Partial<Record<(typeof COLUMNAS_PEGAR)[number], { columna: keyof UnidadesPegar; opciones: [string, string][] }>> = {
   espesor: { columna: "espesor", opciones: [["pulg", "″"], ["cm", "cm"]] },
@@ -123,6 +124,14 @@ export default function TablaParaPegar({
 
   const titulos = useMemo(() => COLUMNAS_PEGAR.map((c) => tituloDeColumna(c, unidades)), [unidades]);
   const varias = esRangoDeVarias(rango);
+  const tipos = useMemo(() => resumirTipos(filas), [filas]);
+  const fraseTipos = fraseResumen(tipos);
+  const irALaPrimera = useCallback(() => {
+    const p = tipos.primera;
+    const el = p && cajaRef.current?.querySelector<HTMLInputElement>(`input[data-fila="${p.fila}"][data-col="${p.col}"]`);
+    el?.focus();
+    el?.scrollIntoView({ block: "center", inline: "center" });
+  }, [tipos.primera]);
   const fueraDeLista = useMemo(
     () => [...new Set(leidas.flatMap((l) => (l.avisos.especie && l.pieza?.especie ? [l.pieza.especie] : [])))],
     [leidas],
@@ -154,6 +163,17 @@ export default function TablaParaPegar({
         </Btn>
       </div>
 
+      {fraseTipos && (
+        <div role="status" className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2 text-sm ${tipos.rojas > 0 ? "border-[var(--data-error)] bg-[var(--data-error-50)] text-[var(--data-error-ink)] dark:bg-[var(--data-error)]/15" : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/15"}`}>
+          {tipos.rojas > 0 ? <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" /> : <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />}
+          <span className="font-semibold">{fraseTipos}</span>
+          {tipos.corridas.length > 0 && (
+            <span>¿Pegaste las columnas corridas? Todo lo de {tipos.corridas.map((c) => tituloDeColumna(c, unidades).split(" ")[0]).join(" y ")} cae mal.</span>
+          )}
+          <button type="button" onClick={irALaPrimera} className="ml-auto font-semibold underline underline-offset-2">Ir a la primera</button>
+        </div>
+      )}
+
       <div
         ref={cajaRef}
         tabIndex={-1}
@@ -165,9 +185,9 @@ export default function TablaParaPegar({
         <DataTable
           planilla
           stickyHeader
-          wrapperClassName="max-h-[min(55vh,480px)] overflow-auto"
+          wrapperClassName="max-h-[min(62vh,720px)] overflow-auto"
           /* hoja-grilla: en el celular sigue siendo tabla (sin ella el DataTable la vuelve tarjetas) y se desplaza en su caja. */
-          className="hoja-grilla min-w-[56rem] table-fixed [&_thead_th]:align-top [&_tbody_td]:!px-1 [&_tbody_td]:!py-1 [&_thead_th]:!px-1.5 [&_thead_th]:!py-1.5"
+          className="hoja-grilla min-w-[60rem] table-fixed [&_thead_th]:align-top [&_tbody_td]:!px-1 [&_tbody_td]:!py-1 [&_thead_th]:!px-1.5 [&_thead_th]:!py-1.5"
         >
           <thead>
             <tr>
@@ -193,8 +213,8 @@ export default function TablaParaPegar({
                   </th>
                 );
               })}
-              <th className="w-16 text-right">PT</th>
-              <th className="w-20 text-right">m³</th>
+              <th className="w-20 text-right">PT</th>
+              <th className="w-24 text-right">m³</th>
             </tr>
           </thead>
           <tbody>
