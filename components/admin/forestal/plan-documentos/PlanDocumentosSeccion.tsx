@@ -26,6 +26,7 @@ export default function PlanDocumentosSeccion({
   aviso,
   elegida: elegidaExterna,
   onElegir,
+  sinResumen = false,
 }: {
   carpetas: readonly CarpetaVista[];
   acciones: AccionesDocs;
@@ -37,6 +38,8 @@ export default function PlanDocumentosSeccion({
   /** Controlada desde afuera cuando quien monta quiere elegir (la carpeta recién creada). */
   elegida?: string | null;
   onElegir?: (clave: string) => void;
+  /** Sin los chips de «lo que falta» (la pestaña Papeles los dice en cada papel). */
+  sinResumen?: boolean;
 }) {
   const [elegidaLocal, setElegidaLocal] = useState<string | null>(null);
   const pedida = elegidaExterna ?? elegidaLocal;
@@ -51,18 +54,20 @@ export default function PlanDocumentosSeccion({
 
   return (
     <div data-docs-plan className="space-y-3">
-      <LoQueFalta
-        resumen={resumen}
-        onElegir={(chip) => {
-          elegir(chip.carpetaClave);
-          /* Un cuadro después: la carpeta nueva recién se pinta. */
-          requestAnimationFrame(() => {
-            const el = document.getElementById(idCasillero(chip.carpetaClave, chip.casilleroClave));
-            el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-            el?.focus({ preventScroll: true });
-          });
-        }}
-      />
+      {!sinResumen && (
+        <LoQueFalta
+          resumen={resumen}
+          onElegir={(chip) => {
+            elegir(chip.carpetaClave);
+            /* Un cuadro después: la carpeta nueva recién se pinta. */
+            requestAnimationFrame(() => {
+              const el = document.getElementById(idCasillero(chip.carpetaClave, chip.casilleroClave));
+              el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+              el?.focus({ preventScroll: true });
+            });
+          }}
+        />
+      )}
 
       {error && (
         <p role="alert" className="rounded-xl border border-[var(--data-error-500)]/50 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm font-semibold text-[var(--text-primary)]">

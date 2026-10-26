@@ -135,7 +135,8 @@ export default function CasilleroArchivos({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        {n === 0 && subidas.length === 0 && conCandado === 0 && <p className="w-full text-xs text-[var(--text-tertiary)]">{vacio}</p>}
+        {/* Un casillero vacío ya lo dice su pastilla («Falta»): la frase va sólo en los sueltos. */}
+        {!casillero && n === 0 && subidas.length === 0 && conCandado === 0 && <p className="w-full text-xs text-[var(--text-tertiary)]">{vacio}</p>}
         <button type="button" onClick={() => camaraRef.current?.click()} disabled={ocupado} className={cn(BOTON, `grow basis-24 whitespace-nowrap sm:hidden`)}>
           <Camera className="h-4 w-4" aria-hidden="true" /> Foto
         </button>

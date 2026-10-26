@@ -22,16 +22,29 @@ export default function PlanDocumentosDelPlan({
   planId,
   docs,
   delPlan,
+  elegida: elegidaExterna,
+  onElegir,
+  sinResumen = false,
 }: {
   planId: string;
   docs: DocumentosDelPlan;
   /** Si no viene, lo que el plan ya guarda sale de la vista del servidor. */
   delPlan?: DatosDelPlan;
+  /** La carpeta abierta, si quien monta la quiere elegir (un papel que lleva a la suya). */
+  elegida?: string | null;
+  onElegir?: (clave: string) => void;
+  /** Sin la fila de chips «lo que falta»: quien monta ya dice qué falta. */
+  sinResumen?: boolean;
 }) {
   const { confirm } = useConfirm();
   const [verId, setVerId] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
-  const [elegida, setElegida] = useState<string | null>(null);
+  const [elegidaLocal, setElegidaLocal] = useState<string | null>(null);
+  const elegida = elegidaExterna ?? elegidaLocal;
+  const setElegida = (clave: string) => {
+    setElegidaLocal(clave);
+    onElegir?.(clave);
+  };
 
   if (!docs.disponible) return null;
 
@@ -94,6 +107,7 @@ export default function PlanDocumentosDelPlan({
         aviso={aviso}
         elegida={elegida}
         onElegir={setElegida}
+        sinResumen={sinResumen}
       />
       <VistaPreviaDoc docId={verId} onClose={() => setVerId(null)} onCambio={() => void docs.recargar()} />
     </>

@@ -9,11 +9,12 @@
 
 import { useId, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { ArrowDown, ArrowUp, ExternalLink, FolderPlus, MoreHorizontal, Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
+import { ArrowDown, ArrowUp, ChevronDown, ExternalLink, FolderPlus, MoreHorizontal, Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CamposPersonalizados, { pendientesVacios } from "@/components/admin/shared/CamposPersonalizados";
 import { BOTON_SUAVE, CAMPO_INPUT } from "@/components/admin/shared/campos-personalizados-ui";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { formatDate } from "@/lib/format";
 import { TIPO_ARCHIVO, TIPO_CARPETA, formularioDeCarpeta } from "@/lib/forestal/plan-documentos-tipos";
 import CasilleroArchivos from "./CasilleroArchivos";
@@ -30,6 +31,9 @@ import type { CarpetaVista } from "./modelo";
 const NO_EN_CARPETAS: readonly string[] = [TIPO_ARCHIVO, TIPO_CARPETA, "opcion", "si_no", "nota"];
 
 export const idCasillero = (carpeta: string, casillero: string) => `docs-plan-${carpeta}-${casillero}`;
+
+/** Campos personalizados plegados, recordado para todas las carpetas y planes. */
+const CLAVE_CAMPOS_ABIERTOS = "loth:plan:carpeta-campos-abiertos";
 
 function DelPlan({ clave, datos }: { clave: string; datos: DatosDelPlan }) {
   const fecha = datos.resolucionDate ? formatDate(`${datos.resolucionDate.slice(0, 10)}T00:00:00.000Z`, { soloFecha: true }) : null;
@@ -74,6 +78,7 @@ export default function CarpetaPanel({
   const [nombre, setNombre] = useState(carpeta.nombre);
   const [nuevoCasillero, setNuevoCasillero] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [camposAbiertos, setCamposAbiertos] = useLocalStorage(CLAVE_CAMPOS_ABIERTOS, false);
   const alta = acciones.modo === "alta";
   /* Una carpeta hecha a mano en Documentos no tiene plantilla: sin «sumarla»
      no admite campos (el servidor rechaza campos de una carpeta que no está). */
@@ -101,7 +106,11 @@ export default function CarpetaPanel({
     if (!error) setRenombrando(false);
   }
 
+  /* «Documento esperado» es de una vez por carpeta: va al menú, no a la vista. */
   const menu: MenuAccion[] = [
+    ...(conPlantilla && !nuevoCasillero
+      ? [{ id: "casillero", label: "Agregar documento esperado", hint: "Un papel que esta carpeta debe tener", icon: Plus, onSelect: () => setNuevoCasillero(true) }]
+      : []),
     ...(editable ? [{ id: "renombrar", label: "Renombrar", icon: Pencil, onSelect: () => { setNombre(carpeta.nombre); setRenombrando(true); } }] : []),
     ...(acciones.mover && editable && carpeta.enLaLista
       ? [
@@ -210,23 +219,17 @@ export default function CarpetaPanel({
         </div>
       )}
 
-      {conPlantilla &&
-        (nuevoCasillero ? (
-          <NuevoCasillero
-            existentes={carpeta.casilleros.map((k) => k.nombre)}
-            onCancelar={() => setNuevoCasillero(false)}
-            onCrear={async (input) => {
-              const error = await acciones.crearCasillero(carpeta, input);
-              if (!error) setNuevoCasillero(false);
-              return error;
-            }}
-          />
-        ) : (
-          <button type="button" className={BOTON_SUAVE} onClick={() => setNuevoCasillero(true)}>
-            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-            Documento esperado
-          </button>
-        ))}
+      {conPlantilla && nuevoCasillero && (
+        <NuevoCasillero
+          existentes={carpeta.casilleros.map((k) => k.nombre)}
+          onCancelar={() => setNuevoCasillero(false)}
+          onCrear={async (input) => {
+            const error = await acciones.crearCasillero(carpeta, input);
+            if (!error) setNuevoCasillero(false);
+            return error;
+          }}
+        />
+      )}
 
       <CasilleroArchivos
         domId={idCasillero(carpeta.clave, "sueltos")}
@@ -245,15 +248,40 @@ export default function CarpetaPanel({
       />
 
       {conPlantilla && !(carpeta.provisional && !alta) && (
-        <CamposPersonalizados
-          key={carpeta.clave}
-          formulario={formularioDeCarpeta(carpeta.clave)}
-          registroId={acciones.planId}
-          etiquetaFormulario="planes"
-          excluirTipos={NO_EN_CARPETAS}
-          pendientes={alta ? (acciones.datos?.[carpeta.clave] ?? pendientesVacios(formularioDeCarpeta(carpeta.clave))) : undefined}
-          onPendientes={alta ? (p) => acciones.onDatos?.(carpeta.clave, p) : undefined}
-        />
+        /* Plegado y recordado. Plegado no se desmonta: lo escrito no se pierde. */
+        <div data-campos-carpeta className="rounded-xl border border-[var(--rule-soft)]">
+          <div className="flex items-center gap-1 pr-2">
+            <button
+              type="button"
+              aria-expanded={camposAbiertos}
+              aria-controls={`${id}-campos`}
+              onClick={() => setCamposAbiertos(!camposAbiertos)}
+              className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-3 text-left text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+            >
+              <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform ${camposAbiertos ? "" : "-rotate-90"}`} aria-hidden="true" />
+              Campos personalizados
+            </button>
+            <InfoTip
+              title="Campos personalizados"
+              what="Lo que este formulario no pregunta y tu negocio igual necesita anotar: un texto, un número o una fecha por carpeta."
+              affects="Ninguno es obligatorio: si queda vacío, el plan se guarda igual. Sin esto, lo que el formulario no previó termina en «Observaciones», donde no se puede buscar ni sumar."
+              example="Carpeta Resolución: «N° de expediente ATFFS» = 2026-0412."
+            />
+          </div>
+          <div id={`${id}-campos`} hidden={!camposAbiertos} className="px-3 pb-3">
+            {/* Su propio título y su párrafo sobran acá: los dicen el botón y el ⓘ. */}
+            <CamposPersonalizados
+              key={carpeta.clave}
+              formulario={formularioDeCarpeta(carpeta.clave)}
+              registroId={acciones.planId}
+              etiquetaFormulario="planes"
+              excluirTipos={NO_EN_CARPETAS}
+              pendientes={alta ? (acciones.datos?.[carpeta.clave] ?? pendientesVacios(formularioDeCarpeta(carpeta.clave))) : undefined}
+              onPendientes={alta ? (p) => acciones.onDatos?.(carpeta.clave, p) : undefined}
+              className="border-0! bg-transparent! p-0! [&>div:first-child>div:first-child]:hidden"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -9,21 +9,28 @@
  * mismo. Cada archivo subido desde una fila lleva `papel:<clave>` y, si es la
  * resolución, la vigencia del plan como vencimiento (entra al aviso «Por
  * vencer» de siempre).
+ *
+ * Arriba la cabecera con el avance (`PapelesCabecera`); debajo, los papeles
+ * agrupados por lo que piden hacer (`PapelesLista`). Cada fila sabe a qué
+ * carpeta y casillero va (`destinoDelPapel`): por eso la pestaña ya no repite
+ * la fila de chips «lo que falta» de las carpetas.
  */
 
 import { useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { Loader2, ScanText } from "@buleje/design-system/icons";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { button } from "@/components/ui-system/button-variants";
-import { tagPapel, textoCuenta, type PapelDelPlan, type PapelesDelPlan as Papeles } from "@/lib/forestal/loth-plan-papeles";
+import { Loader2 } from "@buleje/design-system/icons";
+import { tagPapel, type PapelDelPlan, type PapelesDelPlan as Papeles } from "@/lib/forestal/loth-plan-papeles";
 import type { DocumentosDelPlan } from "../hooks/use-plan-documentos";
 import { useLlenarResolucion } from "../hooks/use-llenar-resolucion";
 import VistaPreviaDoc from "../plan-documentos/VistaPreviaDoc";
 import LlenarDesdeResolucion from "./LlenarDesdeResolucion";
-import PapelFila from "./PapelFila";
+import PapelesCabecera from "./PapelesCabecera";
+import PapelesLista from "./PapelesLista";
+import { destinoDelPapel } from "./papeles-grupos";
 
 const VALEN_LO_QUE_EL_PLAN = new Set(["resolucion", "plan-aprobado"]);
+
+const CAJA_ERROR =
+  "rounded-xl border border-[var(--data-error-500)]/50 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm font-semibold text-[var(--text-primary)]";
 
 export default function PapelesDelPlan({
   planId,
@@ -32,6 +39,7 @@ export default function PapelesDelPlan({
   papeles,
   docs,
   onPlanCambiado,
+  onIrACarpeta,
 }: {
   planId: string;
   esPlantacion: boolean;
@@ -40,6 +48,8 @@ export default function PapelesDelPlan({
   papeles: Papeles | null;
   docs: DocumentosDelPlan;
   onPlanCambiado: () => void | Promise<void>;
+  /** Abre la carpeta del papel (y su casillero, si tiene) en «Carpetas del plan». */
+  onIrACarpeta?: (carpetaClave: string, casilleroClave: string | null) => void;
 }) {
   const [verId, setVerId] = useState<string | null>(null);
   const [subiendo, setSubiendo] = useState<string | null>(null);
@@ -49,7 +59,7 @@ export default function PapelesDelPlan({
   if (!docs.disponible) return null;
   if (!papeles) {
     return docs.error ? (
-      <p role="alert" className="rounded-xl border border-[var(--data-error-500)]/50 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm font-semibold text-[var(--text-primary)]">
+      <p role="alert" className={CAJA_ERROR}>
         No pude revisar los papeles: {docs.error}
       </p>
     ) : (
@@ -65,16 +75,15 @@ export default function PapelesDelPlan({
   const vigencia = vigenciaHasta ? vigenciaHasta.slice(0, 10) : null;
 
   const subir = async (p: PapelDelPlan, files: File[]) => {
-    const carpeta = docs.carpetas.find((c) => c.clave === p.carpeta) ?? docs.carpetas[0];
-    if (!carpeta) {
+    const destino = destinoDelPapel(p, docs.carpetas);
+    if (!destino) {
       setAviso("Este plan todavía no tiene carpetas en el Archivo.");
       return;
     }
-    const casillero = carpeta.casilleros.find((k) => p.casilleros.includes(k.clave)) ?? null;
     setAviso(null);
     setSubiendo(p.clave);
     try {
-      await docs.subir(files, carpeta, casillero, {
+      await docs.subir(files, destino.carpeta, destino.casillero, {
         etiquetas: [tagPapel(p.clave)],
         vence: VALEN_LO_QUE_EL_PLAN.has(p.clave) ? vigencia : null,
       });
@@ -95,58 +104,45 @@ export default function PapelesDelPlan({
     }
   };
 
+  /** «Registro de plantación › Resolución o constancia de registro». */
+  const destino = (p: PapelDelPlan): string | null => {
+    const d = destinoDelPapel(p, docs.carpetas);
+    return d ? (d.casillero ? `${d.carpeta.nombre} › ${d.casillero.nombre}` : d.carpeta.nombre) : null;
+  };
+
   const errores = docs.subidas.filter((s) => s.estado === "error");
-  const segunCaso = papeles.lista.filter((p) => p.estado === "segun_caso").length;
 
   return (
-    <section data-papeles-plan className="space-y-1 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <CardTitle>Papeles del permiso</CardTitle>
-          <InfoTip
-            title="Papeles del permiso"
-            what={`Lo que SERFOR, la ATFFS u OSINFOR te pueden pedir para ${esPlantacion ? "esta plantación" : "este plan"}, según su tipo, y cuál ya está en su carpeta del Archivo. Cada fila dice qué norma lo pide.`}
-            affects={`La cuenta sale en la pestaña y en el semáforo del plan; los vencimientos, en «Por vencer» de Documentos.${segunCaso > 0 ? ` Los «si aplica» (${segunCaso}) no cuentan hasta que los subas.` : ""}`}
-            example="Plan 096: Certificado ✓ · Título ✓ · Acta de la comunidad: falta · Mapa: falta."
-          />
-        </div>
-        <span
-          className={`text-sm font-bold tabular-nums ${papeles.presentes < papeles.requeridos ? "text-[var(--data-warning-ink)]" : "text-[var(--data-success-ink)]"}`}
-        >
-          {textoCuenta(papeles)}
-          {papeles.vencidos > 0 && ` · ${papeles.vencidos} ${papeles.vencidos === 1 ? "vencido" : "vencidos"}`}
-        </span>
-        {resolucionId && (
-          <button
-            type="button"
-            className={`${button({ variant: "secondary" })} ml-auto`}
-            disabled={llenar.estado?.fase === "leyendo"}
-            onClick={() => void llenar.leer(resolucionId)}
-          >
-            <ScanText className="h-4 w-4" aria-hidden="true" />
-            Llenar desde {esPlantacion ? "el certificado" : "la resolución"}
-          </button>
-        )}
-      </div>
+    <section data-papeles-plan aria-label="Papeles del permiso" className="space-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <PapelesCabecera
+        papeles={papeles}
+        esPlantacion={esPlantacion}
+        vigencia={vigencia}
+        llenar={resolucionId ? { leyendo: llenar.estado?.fase === "leyendo", onLeer: () => void llenar.leer(resolucionId) } : null}
+      />
 
       {(aviso || errores.length > 0) && (
-        <p role="alert" className="rounded-xl border border-[var(--data-error-500)]/50 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm font-semibold text-[var(--text-primary)]">
+        <p role="alert" className={CAJA_ERROR}>
           {aviso ?? errores.map((e) => `${e.nombre}: ${e.motivo ?? "no subió"}`).join(" · ")}
         </p>
       )}
 
-      <ul className="divide-y divide-[var(--rule-soft)]" aria-label="Papeles del permiso">
-        {papeles.lista.map((p) => (
-          <PapelFila
-            key={p.clave}
-            papel={p}
-            subiendo={subiendo === p.clave}
-            bloqueado={subiendo != null || docs.ocupado}
-            onSubir={(files) => void subir(p, files)}
-            onVer={setVerId}
-          />
-        ))}
-      </ul>
+      <PapelesLista
+        lista={papeles.lista}
+        destino={destino}
+        subiendo={subiendo}
+        bloqueado={subiendo != null || docs.ocupado}
+        onSubir={(p, files) => void subir(p, files)}
+        onVer={setVerId}
+        onIrACarpeta={
+          onIrACarpeta
+            ? (p) => {
+                const d = destinoDelPapel(p, docs.carpetas);
+                if (d) onIrACarpeta(d.carpeta.clave, d.casillero?.clave ?? null);
+              }
+            : undefined
+        }
+      />
 
       <VistaPreviaDoc docId={verId} onClose={() => setVerId(null)} onCambio={() => void docs.recargar()} />
       <LlenarDesdeResolucion llenar={llenar} nombreArchivo={resolucion?.nombre ?? "el papel"} onGuardar={() => void guardar()} />
