@@ -169,9 +169,21 @@ export default function CarpetaPanel({
             <button type="button" className={BOTON_SUAVE} onClick={() => setRenombrando(false)}>Cancelar</button>
           </div>
         ) : (
-          <CardTitle as="h4" className="text-sm font-bold min-w-0 flex-1 truncate" title={carpeta.nombre}>
+          <CardTitle
+            as="h4"
+            className="text-sm font-bold min-w-0 flex-1 truncate"
+            title={carpeta.nombreEnDocumentos ? `${carpeta.nombre} · En Documentos: ${carpeta.nombreEnDocumentos}` : carpeta.nombre}
+          >
             {carpeta.nombre}
           </CardTitle>
+        )}
+        {!renombrando && carpeta.nombreEnDocumentos && (
+          <InfoTip
+            title={carpeta.nombre}
+            what={`En Documentos: ${carpeta.nombreEnDocumentos}. Es la misma carpeta: acá lleva el nombre de los papeles de este tipo de plan.`}
+            affects="Sólo cambia en esta pestaña. En Documentos y en tus otros planes sigue con su nombre."
+            example="En un PO, «Títulos de propiedad» se ve como «Contrato de concesión»."
+          />
         )}
         {carpeta.soloEstePlan && conPlantilla && (
           <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-semibold text-[var(--text-secondary)]">Sólo este plan</span>

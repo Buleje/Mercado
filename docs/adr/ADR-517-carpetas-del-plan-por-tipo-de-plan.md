@@ -25,6 +25,13 @@ La causa es que ADR-467 tiene UNA plantilla por negocio, sembrada pensando en un
 - La cuenta de las carpetas pasa a ser la de los papeles: «x de y papeles obligatorios», y aparte «· a de b que agregaste» si el negocio sumó casilleros propios.
 - Una vista sin `cuenta` es la vieja (por ejemplo, la provisional de un negocio sin sembrar) y se cuenta como antes.
 
+- **Nombre de la carpeta por tipo (26-10, Brandon: «que en un PO la carpeta no diga "Registro de plantación / Resolución" sino un nombre de PO»).** `alinearConElPlan` también cambia, sólo en pantalla, el nombre de dos carpetas de la semilla:
+  - `resolucion` pasa a «Resolución y <sigla> aprobado» en PO, PGMF, PMFI y DEMA.
+  - `titulos` pasa a «Contrato de concesión» en PO y PGMF, «Título del predio» en PMFI y «Título de la comunidad» en DEMA.
+  - La plantación queda igual.
+  - Si el negocio la renombró (en la plantilla o en el Drive), manda su nombre.
+  - El real viaja en `nombreEnDocumentos` y se ve en el ⓘ y en el `title`. En Documentos la carpeta no cambia.
+
 ## Alternativas descartadas
 
 - **Una plantilla por tipo de plan en la base.** Pide sembrar y migrar plantillas en todos los negocios, sobre la base compartida que es producción, y rompe las plantillas que cada negocio ya personalizó.

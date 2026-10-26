@@ -61,6 +61,8 @@ export interface CasilleroVista {
 export interface CarpetaVista {
   clave: string;
   nombre: string;
+  /** Su nombre en Documentos, sólo si la pestaña muestra otro por el tipo de plan (ADR-517). */
+  nombreEnDocumentos?: string;
   folderId: string | null;
   plantillaId: string | null;
   soloEstePlan: boolean;
@@ -118,6 +120,7 @@ export function carpetasDelServidor(carpetas: readonly CarpetaDelPlan[]): Carpet
     .map((c) => ({
       clave: c.clave,
       nombre: c.nombre,
+      ...(c.nombreEnDocumentos ? { nombreEnDocumentos: c.nombreEnDocumentos } : {}),
       folderId: c.folderId,
       plantillaId: c.plantillaId,
       soloEstePlan: c.soloEstePlan,

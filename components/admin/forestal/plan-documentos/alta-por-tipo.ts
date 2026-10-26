@@ -41,6 +41,7 @@ function aServidor(c: CarpetaVista, pend: DatosDelPendiente): CarpetaDelPlan {
   return {
     clave: c.clave,
     nombre: c.nombre,
+    ...(c.nombreEnDocumentos ? { nombreEnDocumentos: c.nombreEnDocumentos } : {}),
     folderId: c.folderId,
     plantillaId: c.plantillaId,
     soloEstePlan: c.soloEstePlan,
@@ -85,8 +86,12 @@ export function alinearAlta(base: readonly CarpetaVista[], pend: PendientesDocum
   return alinearConElPlan(base.map((c) => aServidor(c, datos)), plan, hoy).flatMap((c) => {
     const antes = base.find((x) => x.clave === c.clave);
     if (!antes) return [];
+    const { nombreEnDocumentos: _antes, ...sinNombreReal } = antes;
     return {
-      ...antes,
+      ...sinNombreReal,
+      /* El nombre por tipo de plan (sólo en pantalla, ADR-517). */
+      nombre: c.nombre,
+      ...(c.nombreEnDocumentos ? { nombreEnDocumentos: c.nombreEnDocumentos } : {}),
       sueltos: devolver(c.sueltos),
       casilleros: c.casilleros.map((k): CasilleroVista => {
         const previo = antes.casilleros.find((x) => x.clave === k.campo.clave);

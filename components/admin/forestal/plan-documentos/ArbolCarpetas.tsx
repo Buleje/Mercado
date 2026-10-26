@@ -40,7 +40,7 @@ export default function ArbolCarpetas({
       setAviso("Ponle un nombre de al menos dos letras.");
       return;
     }
-    if (carpetas.some((c) => c.nombre.trim().toLowerCase() === limpio.toLowerCase())) {
+    if (carpetas.some((c) => [c.nombre, c.nombreEnDocumentos].some((n) => n?.trim().toLowerCase() === limpio.toLowerCase()))) {
       setAviso(`Ya hay una carpeta «${limpio}».`);
       return;
     }
@@ -73,7 +73,7 @@ export default function ArbolCarpetas({
                 type="button"
                 onClick={() => onElegir(c.clave)}
                 aria-current={activa ? "true" : undefined}
-                title={c.nombre}
+                title={c.nombreEnDocumentos ? `${c.nombre} · En Documentos: ${c.nombreEnDocumentos}` : c.nombre}
                 className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
                   activa
                     ? "bg-[var(--accent)]/12 text-[var(--text-primary)]"

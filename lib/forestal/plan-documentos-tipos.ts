@@ -97,6 +97,11 @@ export interface CarpetaDelPlan {
   clave: string;
   /** Nombre que se ve en el Drive (manda el Drive; la plantilla sólo siembra). */
   nombre: string;
+  /**
+   * Sólo cuando la pestaña muestra otro nombre por el tipo de plan (ADR-517:
+   * «Contrato de concesión» en un PO): el que tiene en el Drive/Documentos.
+   */
+  nombreEnDocumentos?: string;
   /** null = todavía no se creó en el Drive (plan sin preparar o carpeta nueva de la plantilla). */
   folderId: string | null;
   /** Fila `tipo:"carpeta"` de la plantilla; null = carpeta hecha a mano en el Drive (sin adoptar). */

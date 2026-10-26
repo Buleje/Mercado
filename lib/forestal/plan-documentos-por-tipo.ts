@@ -29,9 +29,11 @@ import {
   type PapelDelPlan,
   type PlanParaPapeles,
 } from "@/lib/forestal/loth-plan-papeles";
+import { metaDe } from "@/lib/forestal/loth-tipos-plan";
 import { filasDeSemilla } from "@/lib/forestal/plan-documentos-semilla";
 import {
   TIPO_ARCHIVO,
+  TIPO_CARPETA,
   formularioDeCarpeta,
   type ArchivoConCandado,
   type ArchivoDelPlan,
@@ -182,5 +184,50 @@ export function alinearConPapeles(carpetas: readonly CarpetaDelPlan[], papeles: 
  * así lo que se ve al crear es lo que se ve después de guardar.
  */
 export function alinearConElPlan(carpetas: readonly CarpetaDelPlan[], plan: PlanParaPapeles, hoy: string): CarpetaDelPlan[] {
-  return alinearConPapeles(carpetas, papelesDePlan(plan, archivosDeVista({ carpetas: [...carpetas] }), hoy).lista);
+  return alinearConPapeles(carpetas, papelesDePlan(plan, archivosDeVista({ carpetas: [...carpetas] }), hoy).lista).map((c) => {
+    const { nombreEnDocumentos: _antes, ...resto } = c;
+    return { ...resto, ...nombreDeCarpetaPorTipo(c, plan.planType) };
+  });
+}
+
+/** El nombre de cada carpeta de la semilla, por clave: si el guardado es otro, el negocio la renombró. */
+const NOMBRE_DE_LA_SEMILLA: ReadonlyMap<string, string> = new Map(
+  filasDeSemilla()
+    .filter((f) => f.tipo === TIPO_CARPETA)
+    .map((f) => [f.clave, f.nombre]),
+);
+
+/**
+ * Cómo se llama en la pestaña la carpeta de la semilla según el tipo de plan,
+ * con las palabras de sus papeles (`loth-plan-papeles.ts`). Plantación: la de
+ * siempre. La semilla se pensó para una plantación; en un PO «Registro de
+ * plantación / Resolución» guarda la resolución y el PO aprobado, y «Títulos
+ * de propiedad», el contrato de concesión.
+ */
+export function nombreDeCarpetaParaElTipo(clave: string, planType: string | null | undefined): string | null {
+  const meta = metaDe(planType);
+  if (meta.key === "PLANTACION") return null;
+  if (clave === "resolucion") return `Resolución y ${meta.sigla} aprobado`;
+  if (clave === "titulos") {
+    if (meta.key === "PO" || meta.key === "PGMF") return "Contrato de concesión";
+    return meta.key === "DEMA" ? "Título de la comunidad" : "Título del predio";
+  }
+  return null;
+}
+
+/**
+ * El nombre que se MUESTRA de una carpeta (sólo en pantalla: nada se escribe y
+ * en Documentos sigue con el suyo). Si el negocio la renombró —en su plantilla
+ * o en el Drive—, manda el suyo. `nombreEnDocumentos` viene sólo si cambia.
+ */
+export function nombreDeCarpetaPorTipo(
+  carpeta: Pick<CarpetaDelPlan, "clave" | "nombre" | "nombreEnDocumentos">,
+  planType: string | null | undefined,
+): { nombre: string; nombreEnDocumentos?: string } {
+  /* Ya mostrada con otro nombre (el alta realinea al cambiar de tipo): se parte del real. */
+  const real = carpeta.nombreEnDocumentos ?? carpeta.nombre;
+  const semilla = NOMBRE_DE_LA_SEMILLA.get(carpeta.clave);
+  const delTipo = nombreDeCarpetaParaElTipo(carpeta.clave, planType);
+  if (!semilla || !delTipo || real.trim() !== semilla || delTipo === semilla) return { nombre: real };
+  return { nombre: delTipo, nombreEnDocumentos: real };
 }

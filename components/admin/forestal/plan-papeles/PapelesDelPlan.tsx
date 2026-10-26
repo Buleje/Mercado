@@ -104,10 +104,11 @@ export default function PapelesDelPlan({
     }
   };
 
-  /** «Registro de plantación › Resolución o constancia de registro». */
+  /** «Resolución y PO aprobado › PO aprobado»: la carpeta con el nombre de su tipo de plan (ADR-517); sin repetir si se llaman igual. */
   const destino = (p: PapelDelPlan): string | null => {
     const d = destinoDelPapel(p, docs.carpetas);
-    return d ? (d.casillero ? `${d.carpeta.nombre} › ${d.casillero.nombre}` : d.carpeta.nombre) : null;
+    if (!d) return null;
+    return d.casillero && d.casillero.nombre !== d.carpeta.nombre ? `${d.carpeta.nombre} › ${d.casillero.nombre}` : d.carpeta.nombre;
   };
 
   const errores = docs.subidas.filter((s) => s.estado === "error");
