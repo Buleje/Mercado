@@ -13,6 +13,10 @@
 
 import { esc, idRow, openCtpReport } from "./ctp-print-shared";
 import type { LothComplianceResult } from "./loth-compliance";
+import { normaDe } from "./loth-chequeo-secciones";
+
+/** Cuántos casos de cada problema entran al PDF (el resto, «y N más»). */
+const CASOS_EN_EL_PDF = 10;
 
 interface LothCaratulaLike {
   titularName?: string | null;
@@ -33,14 +37,34 @@ const VERDICT: Record<LothComplianceResult["readiness"], { label: string; color:
   error: { label: "Requiere atención antes de una fiscalización", color: "#842029", bg: "#f8d7da" },
 };
 
+/** Con algo sin revisar, el veredicto no dice «al día» (reviewer 26-10). */
+const VERDICT_A_MEDIAS = { label: "Sin problemas en lo revisado — falta revisar una parte", color: "#8a5a00", bg: "#fff3cd" };
+
+/**
+ * Lo que este PDF NO revisó: lo que el servidor no pudo leer y, si la ruta de
+ * los chequeos avanzados no contestó, esos chequeos enteros.
+ */
+export function loNoRevisado(o: { sinLeer?: readonly string[]; errorAvanzado?: string | null; avanzadoLeido?: boolean }): string[] {
+  const out = [...(o.sinLeer ?? [])];
+  if (o.errorAvanzado && !o.avanzadoLeido) out.unshift(`los chequeos avanzados (guías, árboles y bloques, plan y papeles, plazos): ${o.errorAvanzado}`);
+  return out;
+}
+
 export function printLothCumplimiento(opts: {
   result: LothComplianceResult;
   caratula: LothCaratulaLike | null;
   totalLineas: number;
+  /** Lo que el servidor no pudo leer (`ChequeoAvanzado.sinLeer`). */
+  sinLeer?: readonly string[];
+  /** La ruta de los chequeos avanzados falló. */
+  errorAvanzado?: string | null;
+  /** Hay un cálculo anterior de los avanzados (del mismo plan y ajustes): el error es de una recarga. */
+  avanzadoLeido?: boolean;
 }): void {
   const { result, caratula, totalLineas } = opts;
   const c = caratula ?? {};
-  const v = VERDICT[result.readiness];
+  const noRevisado = loNoRevisado(opts);
+  const v = noRevisado.length > 0 && result.readiness === "ready" ? VERDICT_A_MEDIAS : VERDICT[result.readiness];
   const ubic = [c.distrito, c.provincia, c.departamento].map((x) => (x ?? "").trim()).filter(Boolean).join(", ");
 
   const idBlock = `<div class="id">${[
@@ -58,20 +82,37 @@ export function printLothCumplimiento(opts: {
 
   const verdictBox = `<div class="verdict" style="background:${v.bg};color:${v.color}">
     <div class="vt">${esc(v.label)}</div>
-    <div class="vs">Índice de cumplimiento: <b>${result.score}/100</b> ·
+    <div class="vs">Índice de cumplimiento${noRevisado.length > 0 ? " (sobre lo revisado)" : ""}: <b>${result.score}/100</b> ·
       ${result.bloqueos} ${result.bloqueos === 1 ? "bloqueo" : "bloqueos"} ·
       ${result.advertencias} ${result.advertencias === 1 ? "advertencia" : "advertencias"} ·
       ${result.enOrden.length} en orden</div>
-  </div>`;
+  </div>${
+    noRevisado.length > 0
+      ? `<div class="norev"><b>No se revisó:</b> ${noRevisado.map((x) => esc(x)).join(" · ")}.
+    <div class="muted">Esos chequeos no entran al índice ni a «en orden»: sin ellos, el veredicto queda abierto.</div></div>`
+      : ""
+  }`;
+
+  /* Los casos y la norma de cada problema (26-10): el fiscalizador ve CUÁLES guías o árboles, no sólo cuántos. */
+  const casosDe = (p: LothComplianceResult["problemas"][number]) => {
+    const norma = normaDe(p);
+    const casos = (p.casos ?? []).slice(0, CASOS_EN_EL_PDF);
+    const resto = p.count - casos.length;
+    return `${norma ? `<div class="muted">Norma: ${esc(norma)}</div>` : ""}${
+      casos.length ? `<ul>${casos.map((c) => `<li>${esc(c)}</li>`).join("")}${resto > 0 ? `<li class="muted">y ${resto} más</li>` : ""}</ul>` : ""
+    }`;
+  };
 
   const problemasRows =
     result.problemas.length === 0
-      ? `<tr><td colspan="3" class="muted">Sin observaciones — el libro no tiene problemas detectados.</td></tr>`
+      ? `<tr><td colspan="3" class="muted">${
+          noRevisado.length > 0 ? "Sin observaciones en lo revisado (ver «No se revisó»)." : "Sin observaciones — el libro no tiene problemas detectados."
+        }</td></tr>`
       : result.problemas
           .map(
             (p) => `<tr>
         <td><span class="badge" style="background:${p.severity === "error" ? "#f8d7da" : "#fff3cd"};color:${p.severity === "error" ? "#842029" : "#8a5a00"}">${p.severity === "error" ? "BLOQUEO" : "ADVERTENCIA"}</span></td>
-        <td><b>${esc(p.title)}</b><div class="muted">${esc(p.description)}</div></td>
+        <td><b>${esc(p.title)}</b><div class="muted">${esc(p.description)}</div>${casosDe(p)}</td>
         <td>${esc(p.action)}</td>
       </tr>`,
           )
@@ -106,6 +147,7 @@ export function printLothCumplimiento(opts: {
     .verdict{border-radius:8px;padding:14px 16px;margin:14px 0}
     .verdict .vt{font-size:15px;font-weight:800}
     .verdict .vs{font-size:12px;margin-top:3px;opacity:.9}
+    .norev{border:1px solid #e0b252;background:#fffaf0;color:#5c3d00;border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:12px}
     ul.ok{margin:6px 0 0;padding-left:18px;columns:2;font-size:12px;color:#333}
     ul.ok li{margin:2px 0;break-inside:avoid}
   `;

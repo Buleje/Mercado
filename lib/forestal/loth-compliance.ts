@@ -17,6 +17,9 @@
  *    advertencias no bloquean pero conviene mirarlas.
  */
 
+import type { LothSeccion } from "./loth-chequeo-tipos";
+import { resumirChequeo } from "./loth-chequeo-secciones";
+
 export type LothComplianceTone = "success" | "warning" | "error";
 export type LothNavTarget = "rentabilidad" | "secciones" | "plan" | "caratula" | "gtf";
 export type LothSeverity = "error" | "warning";
@@ -50,6 +53,8 @@ export interface LothComplianceInput {
    * infracción es exactamente lo que hacía el cruce por string exacto.
    */
   especiesAmbiguas?: { libro: string; plan: string }[];
+  /** Los chequeos avanzados del servidor (`GET /loth/chequeo`): suman al mismo puntaje y al PDF. */
+  extra?: LothCheck[];
 }
 
 export interface LothCheck {
@@ -64,6 +69,10 @@ export interface LothCheck {
   action: string;
   navTarget: LothNavTarget;
   navigateLabel: string;
+  /** Chequeo avanzado (26-10): su sección, la norma en corto y un caso por línea. */
+  seccion?: LothSeccion;
+  norma?: string;
+  casos?: string[];
 }
 
 export interface LothComplianceResult {
@@ -276,24 +285,5 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
     },
   ];
 
-  const problemas = checks
-    .filter((c) => c.count > 0)
-    .sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1));
-  const enOrden = checks.filter((c) => c.count <= 0);
-  const bloqueos = problemas.filter((c) => c.severity === "error").length;
-  const advertencias = problemas.filter((c) => c.severity === "warning").length;
-
-  const totalRestado = problemas.reduce((a, c) => a + c.penalty, 0);
-  const score = Math.max(0, Math.min(100, 100 - totalRestado));
-  const tone: LothComplianceTone = bloqueos > 0 ? "error" : advertencias > 0 ? "warning" : "success";
-  const readiness = bloqueos > 0 ? "error" : advertencias > 0 ? "warning" : "ready";
-
-  // El label sigue al estado: con casos activos va el título del PROBLEMA, no el
-  // del alta. Con `okTitle` fijo, el desglose decía «Todas las guías declaradas
-  // están emitidas · −25 pts (2 casos)» — una línea que se contradice sola.
-  const breakdown = checks
-    .filter((c) => c.penalty > 0)
-    .map((c) => ({ key: c.key, label: c.count > 0 ? c.title : c.okTitle, puntos: c.count > 0 ? c.penalty : 0, casos: c.count }));
-
-  return { score, tone, checks, problemas, enOrden, bloqueos, advertencias, readiness, breakdown };
+  return resumirChequeo([...checks, ...(input.extra ?? [])]);
 }

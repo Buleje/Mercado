@@ -14,18 +14,25 @@
  * 287 px) es la tarjeta de «Indicadores», plegada y recordada; el veredicto y
  * sus contadores, una línea. El score y los chequeos salen de
  * `computeLothCompliance` (puro), el MISMO que consume el reporte imprimible.
+ *
+ * 26-10 (Brandon: «que todo se cumpla… para evitar multas»): se suman los
+ * chequeos avanzados del servidor (guías, árboles y bloques, plan y papeles,
+ * plazos, fechas) y la vista va por secciones con filtro por severidad
+ * (`LothChequeoSecciones`); sus ajustes, en el riel (`LothChequeoAjustes`).
  */
 
 import { useState } from "react";
-import { AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
-import { CardTitle, ErrorAlert, LoadingState, WarningAlert } from "@buleje/design-system";
+import { RefreshCw } from "@buleje/design-system/icons";
+import { ErrorAlert, LoadingState, WarningAlert } from "@buleje/design-system";
 import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
-import { printLothCumplimiento } from "@/lib/forestal/loth-cumplimiento-print";
+import { loNoRevisado, printLothCumplimiento } from "@/lib/forestal/loth-cumplimiento-print";
 import { formatNumber } from "@/lib/format";
 import { Btn, VistaHeader } from "./ctp-shared";
 import { BotonDescargar, BotonRecargar } from "./ctp-riel-control";
 import { useKpisPlegables } from "./kpis-plegables";
-import { EnOrden, ProblemCard, PuntajeLoth, ReadinessBanner, TONE_LABEL, plural } from "./LothCumplimientoPiezas";
+import { PuntajeLoth, ReadinessBanner, TONE_A_MEDIAS, TONE_LABEL, plural } from "./LothCumplimientoPiezas";
+import LothChequeoAjustes from "./LothChequeoAjustes";
+import LothChequeoSecciones from "./LothChequeoSecciones";
 import { useLothCumplimiento } from "./hooks/use-loth-cumplimiento";
 
 export default function LothCumplimientoChequeo({
@@ -38,13 +45,16 @@ export default function LothCumplimientoChequeo({
   /** Se incrementa tras cada escritura del libro → gatilla refetch (fin del "apretá Recargar"). */
   reloadSignal?: number;
 }) {
-  const { result, caratula, loading, ready, error, load } = useLothCumplimiento(totalLineas, reloadSignal);
+  const { result, caratula, loading, ready, error, load, avanzado } = useLothCumplimiento(totalLineas, reloadSignal);
   const [reportError, setReportError] = useState<string | null>(null);
+  /* Con algo sin revisar, ni el panel ni el PDF dicen «al día» (reviewer 26-10): la misma regla en los dos. */
+  const aMedias = loNoRevisado({ sinLeer: avanzado.sinLeer, errorAvanzado: avanzado.error, avanzadoLeido: avanzado.leido }).length > 0;
+  const tono = result ? (aMedias && result.tone === "success" ? TONE_A_MEDIAS : TONE_LABEL[result.tone]) : "";
   /* Arriba de los returns tempranos: es un hook. */
   const kpis = useKpisPlegables({
     claveMemoria: "loth-cumplimiento",
-    resumen: result ? `${result.score}/100 · ${TONE_LABEL[result.tone]}` : undefined,
-    tarjetas: result ? [<PuntajeLoth key="puntaje" result={result} />] : [],
+    resumen: result ? `${result.score}/100 · ${tono}` : undefined,
+    tarjetas: result ? [<PuntajeLoth key="puntaje" result={result} etiqueta={tono} />] : [],
   });
 
   if (loading && !ready) return <LoadingState message="Calculando cumplimiento del libro..." />;
@@ -62,13 +72,20 @@ export default function LothCumplimientoChequeo({
     );
   }
 
-  const { problemas, enOrden, bloqueos, advertencias, readiness } = result;
+  const { checks, enOrden, bloqueos, advertencias, readiness } = result;
 
   function handleReport() {
     if (!result) return;
     setReportError(null);
     try {
-      printLothCumplimiento({ result, caratula, totalLineas });
+      printLothCumplimiento({
+        result,
+        caratula,
+        totalLineas,
+        sinLeer: avanzado.sinLeer,
+        errorAvanzado: avanzado.error,
+        avanzadoLeido: avanzado.leido,
+      });
     } catch (err) {
       setReportError(err instanceof Error ? err.message : String(err));
     }
@@ -82,6 +99,7 @@ export default function LothCumplimientoChequeo({
         hint="Cifras del libro entero (todos los planes). «Rentabilidad y rendimiento» es de un plan: con 2 o más planes puede dar otra cifra."
       >
         {kpis.boton}
+        <LothChequeoAjustes ajustes={avanzado.ajustes} onGuardar={avanzado.guardar} />
         <BotonDescargar onClick={handleReport} etiqueta="Descargar el reporte de cumplimiento (PDF)" />
         <BotonRecargar onClick={() => void load()} cargando={loading} etiqueta="Recargar el chequeo" />
       </VistaHeader>
@@ -89,27 +107,17 @@ export default function LothCumplimientoChequeo({
       {reportError && <WarningAlert title="No se pudo abrir el reporte" description={reportError} />}
       {error && <WarningAlert title="No se pudo recargar: se muestra el último cálculo" description={error} />}
 
-      <ReadinessBanner readiness={readiness} bloqueos={bloqueos} advertencias={advertencias} enOrden={enOrden.length} onNavigate={onNavigate} />
+      <ReadinessBanner readiness={readiness} aMedias={aMedias} bloqueos={bloqueos} advertencias={advertencias} enOrden={enOrden.length} onNavigate={onNavigate} />
 
       {kpis.panel}
 
-      {problemas.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-[var(--data-warning-600)]" />
-            <CardTitle className="text-sm font-bold">
-              Requiere atención <span className="text-[var(--text-tertiary)]">({problemas.length})</span>
-            </CardTitle>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {problemas.map((c) => (
-              <ProblemCard key={c.key} check={c} onNavigate={() => onNavigate(c.navTarget)} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <EnOrden checks={enOrden} />
+      <LothChequeoSecciones
+        checks={checks}
+        sinLeer={avanzado.sinLeer}
+        errorAvanzado={avanzado.error}
+        avanzadoLeido={avanzado.leido}
+        onNavigate={onNavigate}
+      />
     </div>
   );
 }

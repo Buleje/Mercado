@@ -15,6 +15,7 @@ import { computeLothCompliance, type LothAnomaly, type LothComplianceResult } fr
 import { permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 import { PERMISO_SIN_PLAN } from "@/lib/forestal/loth-filtro-permiso";
 import { useLothPermiso } from "./use-loth-libro-permiso";
+import { useLothCumplimientoAvanzado } from "./use-loth-cumplimiento-avanzado";
 
 export interface CaratulaCumplimiento {
   titularName?: string | null;
@@ -58,7 +59,10 @@ export function useLothCumplimiento(totalLineas: number, reloadSignal?: number) 
   const permiso = useLothPermiso();
   const permisoListo = permiso?.listo ?? true;
   const planDelLibro = permiso?.planSel && permiso.planSel !== PERMISO_SIN_PLAN ? permiso.planSel : null;
-  const load = useCallback(async () => {
+  /* Los chequeos avanzados (26-10): guías, árboles, bloques, plan, plazos y fechas, del servidor. */
+  const avanzado = useLothCumplimientoAvanzado({ planId: planDelLibro, listo: permisoListo, reloadSignal });
+  const recargarAvanzado = avanzado.load;
+  const loadBase = useCallback(async () => {
     if (!permisoListo) return;
     setLoading(true);
     setError(null);
@@ -114,15 +118,40 @@ export function useLothCumplimiento(totalLineas: number, reloadSignal?: number) 
   }, [permisoListo, planDelLibro]);
 
   useEffect(() => {
-    void load();
-  }, [load, reloadSignal]);
+    void loadBase();
+  }, [loadBase, reloadSignal]);
 
-  /* Sin `ready` no hay veredicto: ver el FIX de arriba. */
+  /* «Recargar» trae las dos cosas. */
+  const load = useCallback(async () => {
+    await Promise.all([loadBase(), recargarAvanzado()]);
+  }, [loadBase, recargarAvanzado]);
+
+  /*
+   * Sin `ready` no hay veredicto (ver el FIX de arriba), y tampoco hasta que
+   * los avanzados contesten la primera vez: un 100/100 sin ellos sería falso.
+   * Si fallan, el veredicto sale con los de siempre y la vista lo avisa.
+   */
+  const extra = avanzado.checks;
+  const listoTodo = ready && avanzado.terminado;
   const result: LothComplianceResult | null = useMemo(() => {
-    if (!ready || anomalias === null) return null;
+    if (!listoTodo || anomalias === null) return null;
     const citesSinPermiso = citesEspecies.filter((sp) => !permisoParaEspecie({ permisos: citesPermisos }, sp));
-    return computeLothCompliance({ anomalias, caratula, totalLineas, citesSinPermiso, especiesNoAutorizadas, especiesAmbiguas, gtfsFantasma });
-  }, [ready, anomalias, caratula, totalLineas, citesEspecies, citesPermisos, especiesNoAutorizadas, especiesAmbiguas, gtfsFantasma]);
+    return computeLothCompliance({ anomalias, caratula, totalLineas, citesSinPermiso, especiesNoAutorizadas, especiesAmbiguas, gtfsFantasma, extra });
+  }, [listoTodo, anomalias, caratula, totalLineas, citesEspecies, citesPermisos, especiesNoAutorizadas, especiesAmbiguas, gtfsFantasma, extra]);
 
-  return { result, caratula, loading, ready, error, load };
+  return {
+    result,
+    caratula,
+    loading: loading || avanzado.cargando,
+    ready: listoTodo,
+    error,
+    load,
+    avanzado: {
+      sinLeer: avanzado.sinLeer,
+      leido: avanzado.leido,
+      error: avanzado.error,
+      ajustes: avanzado.ajustes,
+      guardar: avanzado.guardar,
+    },
+  };
 }
