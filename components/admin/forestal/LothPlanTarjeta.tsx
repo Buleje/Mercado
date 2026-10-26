@@ -11,15 +11,19 @@
  * Las cifras cambian con el tipo, igual que la cabecera del plan abierto:
  *   · bosque     → autorizado · aprovechado (movilizado ÷ autorizado) · saldo;
  *   · plantación → registrado · talado · en pie (ADR-459).
+ *
+ * Con GTF preliminares por registrar (Brandon 26-10), una franja aparte, con
+ * borde punteado porque todavía no es dato del libro: cuántas GTF, su volumen
+ * y el saldo preliminar («si se registran», lo calcula el servidor).
  */
 
-import { ArrowRight, Building2, MapPin } from "@buleje/design-system/icons";
+import { ArrowRight, Building2, MapPin, NotebookPen } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { formatNumber } from "@/lib/format";
 import type { PlanConFicha } from "@/lib/forestal/loth-planes-varios";
 import type { Plan } from "./loth-plan-shared";
 import { ETIQUETA_FICHA, TONO_FICHA } from "./LothFichaPermiso";
-import type { ResumenPlan } from "./hooks/use-loth-planes-varios";
+import type { PreliminarDeLaTarjeta, ResumenPlan } from "./hooks/use-loth-planes-varios";
 import type { SemaforoDeLaPantalla } from "./hooks/use-loth-semaforo-libro";
 import { LothPlanSemaforoLinea } from "./LothPlanSemaforo";
 
@@ -81,6 +85,33 @@ function cifrasDe(esPlantacion: boolean, r: Extract<ResumenPlan, { estado: "ok" 
   };
 }
 
+function cifrasPreliminar(p: PreliminarDeLaTarjeta): Cifra[] {
+  return [
+    { etiqueta: "GTF", valor: formatNumber(p.guias, 0), nota: `${formatNumber(p.trozas, 0)} ${p.trozas === 1 ? "troza" : "trozas"}` },
+    { etiqueta: "Volumen", valor: m3(p.m3), nota: "por registrar" },
+    {
+      etiqueta: "Saldo",
+      valor: p.saldoM3 == null ? "—" : m3(p.saldoM3),
+      nota: p.saldoM3 == null ? "sin techo" : p.excede ? "se pasaría" : "si se registran",
+      tono: p.excede ? "danger" : undefined,
+    },
+  ];
+}
+
+function Cifras({ cifras }: { cifras: Cifra[] }) {
+  return (
+    <span className="grid grid-cols-3 gap-2">
+      {cifras.map((c) => (
+        <span key={c.etiqueta} className="min-w-0">
+          <Kicker className="block truncate">{c.etiqueta}</Kicker>
+          <span className={`block truncate text-sm font-bold tabular-nums ${c.tono ? TONO_CIFRA[c.tono] : "text-[var(--text-primary)]"}`}>{c.valor}</span>
+          <span className="block truncate text-xs text-[var(--text-tertiary)]" title={c.nota}>{c.nota}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 const TONO_CIFRA = {
   warn: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
   danger: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
@@ -100,6 +131,7 @@ export default function LothPlanTarjeta({ item, resumen, semaforo, elegido, onEl
   const lugar = lugarDe(plan);
   const dias = cuanto(ficha.diasQuedan);
   const ok = resumen?.estado === "ok" ? cifrasDe(esPlantacion, resumen) : null;
+  const preliminar = resumen?.estado === "ok" ? resumen.preliminar : undefined;
   const barra = ok?.pct == null ? 0 : Math.min(100, Math.max(0, ok.pct));
   const colorBarra = ok?.pct != null && ok.pct > 100 ? "bg-[var(--data-error-500)]" : ok?.pct != null && ok.pct >= 85 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent)]";
 
@@ -142,15 +174,7 @@ export default function LothPlanTarjeta({ item, resumen, semaforo, elegido, onEl
       <span className="block rounded-xl bg-[var(--surface-sunken)] p-2.5">
         {ok ? (
           <>
-            <span className="grid grid-cols-3 gap-2">
-              {ok.cifras.map((c) => (
-                <span key={c.etiqueta} className="min-w-0">
-                  <Kicker className="block truncate">{c.etiqueta}</Kicker>
-                  <span className={`block truncate text-sm font-bold tabular-nums ${c.tono ? TONO_CIFRA[c.tono] : "text-[var(--text-primary)]"}`}>{c.valor}</span>
-                  <span className="block truncate text-xs text-[var(--text-tertiary)]" title={c.nota}>{c.nota}</span>
-                </span>
-              ))}
-            </span>
+            <Cifras cifras={ok.cifras} />
             <span className="mt-2.5 flex items-center gap-2">
               <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--rule-base)]">
                 <span className={`block h-full rounded-full ${colorBarra}`} style={{ width: `${barra}%` }} />
@@ -169,6 +193,19 @@ export default function LothPlanTarjeta({ item, resumen, semaforo, elegido, onEl
           </span>
         )}
       </span>
+
+      {preliminar && (
+        <span
+          data-plan-preliminar
+          className={`block rounded-xl border border-dashed p-2.5 ${preliminar.excede ? "border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--data-warning-500)]/60 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10"}`}
+        >
+          <span className={`mb-1.5 flex items-center gap-1.5 text-xs font-bold ${preliminar.excede ? TONO_CIFRA.danger : "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]"}`}>
+            <NotebookPen className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Preliminar · por registrar en SERFOR
+          </span>
+          <Cifras cifras={cifrasPreliminar(preliminar)} />
+        </span>
+      )}
 
       {semaforo && <LothPlanSemaforoLinea semaforo={semaforo.semaforo} ficha={semaforo.ficha} />}
 

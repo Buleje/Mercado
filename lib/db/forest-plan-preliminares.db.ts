@@ -85,6 +85,25 @@ export const ForestPlanPreliminaresDB = {
     return separar(raw).validas;
   },
 
+  /**
+   * Los planes del negocio con alguna preliminar PENDIENTE (Brandon 26-10: la grilla
+   * «Todos» dice cuántas GTF, su volumen y el saldo preliminar). Una sola lectura por
+   * prefijo de la clave —que ya lleva el tenant—; el detalle de cada plan lo pide la
+   * grilla después, sólo para estos (el cruce con el libro sale de `delPlan`).
+   */
+  async planesConPendientes(tenantId: string): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const prefijo = `${KEY_PREFIX}${tenantId}:`;
+    const filas = await prisma.platformSetting.findMany({
+      where: { key: { startsWith: prefijo } },
+      select: { key: true, value: true },
+    });
+    return filas
+      .filter((f) => separar(f.value as Store | null).validas.some((g) => g.estado === "pendiente"))
+      .map((f) => f.key.slice(prefijo.length))
+      .filter(Boolean);
+  },
+
   /** Las guías vivas del libro de este plan y sin plan: con ellas se sabe si una preliminar ya se registró. */
   async guiasDelLibro(tenantId: string, planId: string): Promise<GuiaDelLibro[]> {
     if (!tenantId) throw new Error("tenantId is required");

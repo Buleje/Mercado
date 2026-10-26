@@ -39,6 +39,8 @@ const getSchema = z.union([
   z.object({ sueltos: z.literal("1") }),
   z.object({ sinPlan: z.literal("1") }),
   z.object({ planId: id, preliminares: z.literal("1").optional() }),
+  /* La grilla «Todos» (26-10): qué planes tienen GTF preliminares pendientes. */
+  z.object({ preliminaresPendientes: z.literal("1") }),
 ]);
 
 const postSchema = z.object({
@@ -71,6 +73,9 @@ export const GET = withApiHandler("forestal-loth-saldo-plan-get", async (req: Ne
     }
     if ("sinPlan" in parsed.data) {
       return NextResponse.json(await ForestLothSaldoPlanDB.saldosDeLoSinPlan(auth.tenantId));
+    }
+    if ("preliminaresPendientes" in parsed.data) {
+      return NextResponse.json({ planIds: await ForestPlanPreliminaresDB.planesConPendientes(auth.tenantId) });
     }
     const r = await ForestLothSaldoPlanDB.saldo(auth.tenantId, parsed.data.planId);
     if (!r) return NextResponse.json({ error: "not_found", message: "No encontramos ese plan." }, { status: 404 });
