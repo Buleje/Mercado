@@ -21,6 +21,8 @@ import {
   type PendientesCampos,
 } from "@/hooks/use-campos-personalizados";
 import { subirArchivosAlDrive } from "@/hooks/use-documents";
+import { PREFIJO_TAG_PAPEL, papelDeEtiquetas, tagPapel, type ClavePapel } from "@/lib/forestal/loth-plan-papeles";
+import { papelDeCasilleroNorma } from "@/lib/forestal/plan-documentos-por-tipo";
 import { formularioDeCarpeta, type CarpetaDelPlan, type PlanDocumentosVista } from "@/lib/forestal/plan-documentos-tipos";
 import { crearCarpeta, crearCasilleroArchivo, etiquetarDocumento, leerVista, prepararCarpetas } from "./plan-documentos-api";
 
@@ -92,16 +94,33 @@ export interface ResultadoGuardado {
   subidos: number;
 }
 
-/** El casillero de la vista que corresponde a una referencia del alta. */
-function casilleroEn(carpeta: CarpetaDelPlan | undefined, ref: RefCasillero, creados: Map<string, string>): string | null {
+/** Dónde queda un archivo dentro de su carpeta: el casillero (`campo:`) y el papel del permiso (`papel:`). */
+interface Lugar {
+  campoId: string | null;
+  papel: ClavePapel | null;
+}
+
+/**
+ * El lugar de la vista (ya alineada al tipo del plan guardado, ADR-517) que
+ * corresponde a una referencia del alta. El casillero de un papel le suma su
+ * etiqueta, como al subir con el plan guardado; el «de la norma» no existe en
+ * la base y vive SÓLO de esa etiqueta. Si el tipo guardado no pide ese papel,
+ * el archivo va suelto a su carpeta con la etiqueta igual: «Otros archivos»,
+ * lo mismo que mostraba el alta. null = un casillero inventado que no se creó.
+ */
+function lugarEn(carpeta: CarpetaDelPlan | undefined, ref: RefCasillero, creados: Map<string, string>): Lugar | null {
   if (!carpeta) return null;
   const idNuevo = creados.get(ref.clave);
-  if (idNuevo) return idNuevo;
+  if (idNuevo) return { campoId: idNuevo, papel: null };
   const hit =
     carpeta.casilleros.find((c) => ref.id != null && c.campo.id === ref.id) ??
     carpeta.casilleros.find((c) => c.campo.clave === ref.clave) ??
     carpeta.casilleros.find((c) => claveDesdeNombre(c.campo.nombre) === claveDesdeNombre(ref.nombre));
-  return hit?.campo.id ?? null;
+  const papelNorma = papelDeCasilleroNorma(ref.clave);
+  if (!hit) return papelNorma ? { campoId: null, papel: papelNorma } : null;
+  const papel = papelDeEtiquetas(hit.papel ? [`${PREFIJO_TAG_PAPEL}${hit.papel}`] : []) ?? papelNorma;
+  const campoId = hit.porNorma || !hit.campo.id ? null : hit.campo.id;
+  return campoId || papel ? { campoId, papel } : null;
 }
 
 /**
@@ -187,7 +206,7 @@ export async function guardarDocumentosPendientes(
   }
 
   // 4 · Archivos. Cada uno sabe su carpeta (folderId) y su casillero (campoId).
-  const destino = new Map<string, { folderId: string; campoId: string | null }>();
+  const destino = new Map<string, { folderId: string } & Lugar>();
   const aSubir: ArchivoPendiente[] = [];
   const soloEtiquetar: ArchivoPendiente[] = [];
   /* El archivo que iba a un casillero recién creado se queda con su id: si
@@ -199,12 +218,12 @@ export async function guardarDocumentosPendientes(
   for (const a of pend.archivos) {
     const clave = real(a.carpetaClave);
     const carpeta = clave ? vista.carpetas.find((c) => c.clave === clave) : undefined;
-    const campoId = a.casillero ? casilleroEn(carpeta, a.casillero, casilleroCreado) : null;
-    if (!carpeta?.folderId || (a.casillero && !campoId)) {
+    const lugar: Lugar | null = a.casillero ? lugarEn(carpeta, a.casillero, casilleroCreado) : { campoId: null, papel: null };
+    if (!carpeta?.folderId || !lugar) {
       restante.archivos.push({ ...conIdReal(a), error: !carpeta?.folderId ? "su carpeta no se pudo crear" : "su casillero no se pudo crear" });
       continue;
     }
-    destino.set(a.id, { folderId: carpeta.folderId, campoId });
+    destino.set(a.id, { folderId: carpeta.folderId, ...lugar });
     (a.documentId ? soloEtiquetar : aSubir).push(a);
   }
 
@@ -246,10 +265,16 @@ export async function guardarDocumentosPendientes(
     }
     const d = destino.get(a.id);
     try {
-      if (d?.campoId || a.vence) await etiquetarDocumento(doc, { campoId: d?.campoId ?? null, expiresAt: a.vence ?? undefined });
+      if (d?.campoId || d?.papel || a.vence) {
+        await etiquetarDocumento(doc, {
+          campoId: d?.campoId ?? null,
+          expiresAt: a.vence ?? undefined,
+          ...(d?.papel ? { etiquetas: [tagPapel(d.papel)] } : {}),
+        });
+      }
       subidos += 1;
     } catch (e) {
-      const m = `subió, pero no se pudo ${d?.campoId ? "poner en su casillero" : "guardar el vencimiento"} (${e instanceof Error ? e.message : String(e)})`;
+      const m = `subió, pero no se pudo ${d?.campoId || d?.papel ? "poner en su casillero" : "guardar el vencimiento"} (${e instanceof Error ? e.message : String(e)})`;
       errores.push(`${a.file.name}: ${m}`);
       restante.archivos.push({ ...conIdReal(a), documentId: doc.id, documentTags: doc.tags, error: m });
     }

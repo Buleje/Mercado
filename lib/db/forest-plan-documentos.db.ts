@@ -39,8 +39,7 @@ import {
   type DocumentoFila,
   type PlanParaCarpeta,
 } from "@/lib/forestal/plan-documentos-semilla";
-import { archivosDeVista, papelesDePlan } from "@/lib/forestal/loth-plan-papeles";
-import { alinearConPapeles } from "@/lib/forestal/plan-documentos-por-tipo";
+import { alinearConElPlan } from "@/lib/forestal/plan-documentos-por-tipo";
 
 /**
  * ForestPlanDocumentosDB — «Documentos del plan de manejo» (ADR-467).
@@ -527,18 +526,15 @@ export const ForestPlanDocumentosDB = {
     const carpetas =
       plantilla.length === 0
         ? armadas
-        : alinearConPapeles(
+        : alinearConElPlan(
             armadas,
-            papelesDePlan(
-              {
-                planType: plan.planType,
-                titularName: plan.titularName,
-                propietarioNombre: plan.propietarioNombre,
-                vigenciaHasta: plan.vigenciaHasta ? plan.vigenciaHasta.toISOString().slice(0, 10) : null,
-              },
-              archivosDeVista({ carpetas: armadas }),
-              hoy,
-            ).lista,
+            {
+              planType: plan.planType,
+              titularName: plan.titularName,
+              propietarioNombre: plan.propietarioNombre,
+              vigenciaHasta: plan.vigenciaHasta ? plan.vigenciaHasta.toISOString().slice(0, 10) : null,
+            },
+            hoy,
           );
 
     return {

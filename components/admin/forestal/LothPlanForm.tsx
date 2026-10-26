@@ -236,6 +236,12 @@ export default function LothPlanForm({
             pendientes={docsPend}
             onPendientes={setDocsPend}
             onOcupado={setSubiendoEnEdicion}
+            plan={{
+              planType: f.planType,
+              titularName: f.titularName || null,
+              propietarioNombre: f.propietarioNombre || null,
+              vigenciaHasta: f.vigenciaHasta || null,
+            }}
             delPlan={{
               resolucionNumber: f.resolucionNumber || null,
               resolucionDate: f.resolucionDate || null,

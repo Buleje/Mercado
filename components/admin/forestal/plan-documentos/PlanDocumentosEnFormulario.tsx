@@ -13,6 +13,7 @@
  */
 
 import { useEffect } from "react";
+import type { PlanParaPapeles } from "@/lib/forestal/loth-plan-papeles";
 import { usePlanDocumentos } from "../hooks/use-plan-documentos";
 import PlanDocumentosAlta from "./PlanDocumentosAlta";
 import PlanDocumentosDelPlan from "./PlanDocumentosDelPlan";
@@ -24,6 +25,7 @@ export default function PlanDocumentosEnFormulario({
   pendientes,
   onPendientes,
   delPlan,
+  plan,
   onOcupado,
 }: {
   /** null = alta. */
@@ -31,6 +33,8 @@ export default function PlanDocumentosEnFormulario({
   pendientes: PendientesDocumentos;
   onPendientes: (fn: (p: PendientesDocumentos) => PendientesDocumentos) => void;
   delPlan: DatosDelPlan;
+  /** Alta: el tipo elegido en el formulario, para alinear las carpetas con sus papeles (ADR-517). */
+  plan: PlanParaPapeles;
   onOcupado?: (ocupado: boolean) => void;
 }) {
   const docs = usePlanDocumentos({ planId, activo: planId != null });
@@ -38,6 +42,6 @@ export default function PlanDocumentosEnFormulario({
     onOcupado?.(docs.ocupado);
   }, [docs.ocupado, onOcupado]);
 
-  if (!planId) return <PlanDocumentosAlta pendientes={pendientes} onPendientes={onPendientes} delPlan={delPlan} />;
+  if (!planId) return <PlanDocumentosAlta pendientes={pendientes} onPendientes={onPendientes} delPlan={delPlan} plan={plan} />;
   return <PlanDocumentosDelPlan planId={planId} docs={docs} delPlan={delPlan} />;
 }

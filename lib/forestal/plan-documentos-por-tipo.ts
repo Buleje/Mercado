@@ -20,7 +20,15 @@
  * PURO: sin React, sin fetch, sin Prisma.
  */
 
-import type { PapelDelPlan } from "@/lib/forestal/loth-plan-papeles";
+import {
+  PREFIJO_TAG_PAPEL,
+  archivosDeVista,
+  papelDeEtiquetas,
+  papelesDePlan,
+  type ClavePapel,
+  type PapelDelPlan,
+  type PlanParaPapeles,
+} from "@/lib/forestal/loth-plan-papeles";
 import { filasDeSemilla } from "@/lib/forestal/plan-documentos-semilla";
 import {
   TIPO_ARCHIVO,
@@ -36,6 +44,12 @@ import {
 /** Clave del casillero «de la norma» de un papel (no existe en la base). */
 export const PREFIJO_CASILLERO_NORMA = "norma-";
 export const claveCasilleroNorma = (papel: string): string => `${PREFIJO_CASILLERO_NORMA}${papel}`;
+
+/** El papel de un casillero «de la norma» por su clave (`norma-titulo` → `titulo`), o null si no es uno. */
+export function papelDeCasilleroNorma(clave: string | null | undefined): ClavePapel | null {
+  if (!clave?.startsWith(PREFIJO_CASILLERO_NORMA)) return null;
+  return papelDeEtiquetas([`${PREFIJO_TAG_PAPEL}${clave.slice(PREFIJO_CASILLERO_NORMA.length)}`]);
+}
 
 /** Los casilleros `archivo` de la semilla, `formulario|clave`: los únicos que pueden quedar «no aplica». */
 const CASILLEROS_DE_LA_SEMILLA: ReadonlySet<string> = new Set(
@@ -160,4 +174,13 @@ export function alinearConPapeles(carpetas: readonly CarpetaDelPlan[], papeles: 
       .map((x) => x.k);
   }
   return fuera;
+}
+
+/**
+ * Las carpetas alineadas con los papeles de ESTE plan: la vista del servidor
+ * (plan guardado) y el alta (plan por guardar, ADR-517) llaman a esto mismo,
+ * así lo que se ve al crear es lo que se ve después de guardar.
+ */
+export function alinearConElPlan(carpetas: readonly CarpetaDelPlan[], plan: PlanParaPapeles, hoy: string): CarpetaDelPlan[] {
+  return alinearConPapeles(carpetas, papelesDePlan(plan, archivosDeVista({ carpetas: [...carpetas] }), hoy).lista);
 }

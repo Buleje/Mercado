@@ -6,12 +6,17 @@
  * con su carpeta y su casillero) y lo escribe `guardarDocumentosPendientes`
  * cuando el plan se guarda. El estado vive en el formulario del plan, que es
  * quien decide cuándo guardar y cuándo preguntar antes de cerrar.
+ *
+ * Las carpetas se alinean con los papeles del TIPO elegido en el formulario
+ * (ADR-517), igual que las del plan guardado: al cambiar el tipo, cambian.
  */
 
 import { useMemo, useState } from "react";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import type { PlanParaPapeles } from "@/lib/forestal/loth-plan-papeles";
 import { SEMILLA, usePlantillaAlta } from "../hooks/use-plan-documentos";
 import PlanDocumentosSeccion from "./PlanDocumentosSeccion";
+import { avisoFueraDeSuCasillero, fueraDeSuCasillero } from "./alta-por-tipo";
 import { carpetasDelAlta } from "./modelo";
 import { idLocal, type PendientesDocumentos } from "./pendientes";
 import type { AccionesDocs, DatosDelPlan } from "./acciones";
@@ -20,15 +25,23 @@ export default function PlanDocumentosAlta({
   pendientes,
   onPendientes,
   delPlan,
+  plan,
 }: {
   pendientes: PendientesDocumentos;
   onPendientes: (fn: (p: PendientesDocumentos) => PendientesDocumentos) => void;
   delPlan: DatosDelPlan;
+  /** El tipo elegido y lo que decide sus papeles (tierra comunal, vigencia). */
+  plan: PlanParaPapeles;
 }) {
   const { plantilla, cargando, error, disponible, hoy } = usePlantillaAlta({ semilla: SEMILLA });
   const { confirm } = useConfirm();
   const [elegida, setElegida] = useState<string | null>(null);
-  const carpetas = useMemo(() => carpetasDelAlta(plantilla, pendientes, hoy), [plantilla, pendientes, hoy]);
+  const { planType, titularName = null, propietarioNombre = null, vigenciaHasta = null } = plan;
+  const carpetas = useMemo(
+    () => carpetasDelAlta(plantilla, pendientes, hoy, { planType, titularName, propietarioNombre, vigenciaHasta }),
+    [plantilla, pendientes, hoy, planType, titularName, propietarioNombre, vigenciaHasta],
+  );
+  const aviso = useMemo(() => avisoFueraDeSuCasillero(fueraDeSuCasillero(carpetas, pendientes)), [carpetas, pendientes]);
 
   if (!disponible) return null;
 
@@ -114,6 +127,7 @@ export default function PlanDocumentosAlta({
       acciones={acciones}
       delPlan={delPlan}
       cargando={cargando}
+      aviso={aviso}
       error={error ? `No se pudo leer la plantilla de carpetas (${error}). Se muestran las sugeridas.` : null}
       elegida={elegida}
       onElegir={setElegida}

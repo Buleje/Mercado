@@ -10,7 +10,7 @@
  */
 
 import { claveDesdeNombre } from "@/lib/campos-personalizados";
-import { PREFIJO_TAG_PAPEL, papelDeEtiquetas, type ClavePapel } from "@/lib/forestal/loth-plan-papeles";
+import { PREFIJO_TAG_PAPEL, papelDeEtiquetas, type ClavePapel, type PlanParaPapeles } from "@/lib/forestal/loth-plan-papeles";
 import {
   cuentaEnLoQueFalta,
   estadoDeCasillero,
@@ -20,6 +20,7 @@ import {
   type CuentaCasillero,
   type EstadoCasillero,
 } from "@/lib/forestal/plan-documentos-tipos";
+import { alinearAlta } from "./alta-por-tipo";
 import type { PlantillaCarpeta } from "./plan-documentos-api";
 import type { ArchivoPendiente, PendientesDocumentos } from "./pendientes";
 
@@ -164,8 +165,17 @@ export function plantillaDeSemilla(semilla: readonly CarpetaSemilla[]): Plantill
  * Lo que se ve en un alta: la plantilla del negocio + lo cargado en memoria.
  * Un archivo pendiente cuenta como «cargado» (se sube al guardar); si el
  * vencimiento ya pasó, dice «vencido» igual que en el Drive.
+ *
+ * Con `plan` (el tipo elegido en el formulario y lo que decide sus papeles),
+ * alineada como la vista del plan guardado (ADR-517): en un PO, el contrato de
+ * concesión con su casillero y el título de propiedad «no aplica».
  */
-export function carpetasDelAlta(plantilla: readonly PlantillaCarpeta[], pend: PendientesDocumentos, hoy: string): CarpetaVista[] {
+export function carpetasDelAlta(
+  plantilla: readonly PlantillaCarpeta[],
+  pend: PendientesDocumentos,
+  hoy: string,
+  plan?: PlanParaPapeles | null,
+): CarpetaVista[] {
   const base: CarpetaVista[] = plantilla.map((c) => ({
     clave: c.clave,
     nombre: c.nombre,
@@ -225,7 +235,7 @@ export function carpetasDelAlta(plantilla: readonly PlantillaCarpeta[], pend: Pe
     (cas ? cas.archivos : carpeta.sueltos).push(dePendiente(a));
   }
   for (const c of base) for (const k of c.casilleros) k.estado = conEstado(k.archivos, hoy);
-  return base;
+  return plan ? alinearAlta(base, pend, plan, hoy) : base;
 }
 
 // ── «Lo que falta» ──────────────────────────────────────────────────────────
