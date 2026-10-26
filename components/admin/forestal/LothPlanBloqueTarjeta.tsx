@@ -1,33 +1,53 @@
 "use client";
 
 /**
- * Una tarjeta de «Por bloque o zona» con su saldo (Brandon 25-10): por especie,
- * lo autorizado del bloque, lo usado (registrado en el libro y atado a este
- * bloque por su GTF preliminar), lo preliminar pendiente, el saldo y el saldo si
- * se registran; el total del bloque; el aviso rojo si se pasa, y sus guías.
+ * Una tarjeta de «Por bloque o zona» con su saldo (Brandon 25-10 → 26-10 «que
+ * cada cosa se diferencie»): cada bloque con su tono y su insignia, el estado en
+ * una palabra (Se pasa · Preliminar pendiente · Cuadra · Sin uso), lo autorizado,
+ * las hectáreas y lo disponible en cifra grande, la barra del bloque entero y,
+ * por especie, su barra apilada; el aviso rojo si se pasa, y sus guías.
  *
  * Todo viene calculado del servidor (`porBloque` del saldo): acá sólo se pinta.
  */
 
 import { useState } from "react";
-import { AlertTriangle, ArrowRight, ChevronDown } from "@buleje/design-system/icons";
+import { BadgeStatus } from "@buleje/design-system";
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Clock, MinusCircle } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
-import type { BloqueDelPlan } from "@/lib/forestal/loth-plan-bloques";
+import { subtotalDelBloque, type BloqueDelPlan } from "@/lib/forestal/loth-plan-bloques";
 import { textoDeExceso, type EspecieEnElBloque, type ExcesoDeBloque, type SaldoDelBloque } from "@/lib/forestal/loth-plan-bloques-saldo";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { Btn } from "./ctp-shared";
 import LothPlanBloqueGuias from "./LothPlanBloqueGuias";
+import LothPlanBloqueEspecieFila from "./LothPlanBloqueEspecieFila";
+import { BarraDeTramos, CifraGrande, CifrasEnLinea, InsigniaDelBloque, varDeTono } from "./LothPlanBloqueBarra";
+import { ESTADO_DEL_BLOQUE, estadoDelBloque, idDeBloque, insigniaDelBloque, tramosDelBloque, type EstadoDelBloque } from "./loth-plan-bloque-visual";
 
 const NUM = "font-mono tabular-nums";
 const ROJO = "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
+
+/* El texto del badge en su tono «-ink» (el del DS, `--data-warning` sobre su 12 %, da 1,9:1 en claro). */
+const TINTA_DEL_ESTADO: Record<EstadoDelBloque, string> = {
+  se_pasa: "text-[var(--data-error-ink)]",
+  preliminar: "text-[var(--data-warning-ink)]",
+  cuadra: "text-[var(--data-success-ink)]",
+  sin_uso: "",
+};
+
+const ICONO_DEL_ESTADO: Record<EstadoDelBloque, typeof AlertTriangle> = {
+  se_pasa: AlertTriangle,
+  preliminar: Clock,
+  cuadra: CheckCircle2,
+  sin_uso: MinusCircle,
+};
 
 type Cifras = Pick<EspecieEnElBloque, "autorizadoM3" | "usadoM3" | "pendienteM3" | "quedaM3" | "quedaSiSeRegistranM3"> & {
   excede?: boolean;
   excedeHoy?: boolean;
 };
 
-/** Autorizado · Usado · Preliminar · Saldo · Si se registran (y «Esta guía» en la ventana). `ultima` cambia el rótulo de la última cifra. */
+/** Autorizado · Usado · Preliminar · Saldo · Si se registran (y «Esta guía» en la ventana). `ultima` cambia el rótulo de la última cifra. Lo usa la ventana de la preliminar. */
 export function CifrasDelBloque({ c, estaGuiaM3, columnas = "grid-cols-3 sm:grid-cols-5", ultima = "Si se registran" }: { c: Cifras; estaGuiaM3?: number; columnas?: string; ultima?: string }) {
   const items: { k: string; t: string; v: number; rojo?: boolean; fuerte?: boolean }[] = [
     { k: "aut", t: "Autorizado", v: c.autorizadoM3 },
@@ -65,12 +85,15 @@ export default function LothPlanBloqueTarjeta({
   saldo,
   reparto,
   excesos,
+  tono,
   onVerPreliminares,
 }: {
   saldo: SaldoDelBloque;
   /** El reparto de ese bloque (árboles y hectáreas). */
   reparto?: BloqueDelPlan;
   excesos: readonly ExcesoDeBloque[];
+  /** El tono del bloque (`tonoDelBloque(i)`): franja, insignia y tramo «usado». */
+  tono: string;
   /** «Corregir»: lleva a las preliminares que lo hacen pasar. */
   onVerPreliminares?: (ids: string[]) => void;
 }) {
@@ -80,74 +103,90 @@ export default function LothPlanBloqueTarjeta({
   const especies = saldo.especies.filter((e) => e.enElReparto || e.usadoM3 > 0 || e.pendienteM3 > 0);
   /* Lo que se pasa una especie no lo tapa lo libre de otra: «Disponible» suma sin negativos y lo pasado va aparte, en rojo. */
   const pasadas = saldo.especies.filter((e) => e.excede).map((e) => e.especie);
+  const estado = estadoDelBloque(saldo);
+  const sub = reparto ? subtotalDelBloque(reparto) : null;
+  const meta = [
+    `${especies.length} ${especies.length === 1 ? "especie" : "especies"}`,
+    sub?.arboles != null ? `${formatNumber(sub.arboles, 0)} ${sub.arboles === 1 ? "árbol" : "árboles"}` : null,
+  ].filter(Boolean);
   return (
     <li
+      id={idDeBloque(saldo.nombre)}
       data-testid="bloque-saldo"
       data-bloque={saldo.nombre}
       data-excede={saldo.excede ? "si" : "no"}
-      className={`space-y-2 rounded-xl bg-[var(--surface-canvas)] p-3 ${saldo.excede ? "border-2 border-[var(--data-error-500)]" : "border border-[var(--rule-base)]"}`}
+      data-estado={estado}
+      style={varDeTono(tono)}
+      className={`relative scroll-mt-4 overflow-hidden rounded-xl border bg-[var(--surface-canvas)] ${
+        saldo.excede ? "border-[var(--data-error-500)] ring-1 ring-[var(--data-error-500)]" : "border-[var(--rule-base)]"
+      }`}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-        <span className="text-sm font-bold text-[var(--text-primary)]">{saldo.nombre}</span>
-        <span className={`${NUM} text-sm text-[var(--text-secondary)]`}>
-          Disponible <b className="text-[var(--text-primary)]">{fmtM3(t.disponibleM3)} m³</b> de {fmtM3(t.autorizadoM3)}
-          {t.seExcedeM3 > 0 && (
-            <b data-testid="bloque-se-pasa" className={ROJO}>
-              {" "}· Se pasa {fmtM3(t.seExcedeM3)} m³ ({pasadas.join(", ")})
-            </b>
+      {/* La franja del tono: el bloque se reconoce antes de leer el nombre. */}
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5" style={{ background: "var(--bloque)" }} />
+      <div className="space-y-3 py-3 pl-5 pr-3">
+        <div className="flex items-start gap-3">
+          <InsigniaDelBloque texto={insigniaDelBloque(saldo.nombre)} tono={tono} grande />
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-bold leading-tight text-[var(--text-primary)]">{saldo.nombre}</p>
+            <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{meta.join(" · ")}</p>
+          </div>
+          <BadgeStatus variant={ESTADO_DEL_BLOQUE[estado].variante} label={ESTADO_DEL_BLOQUE[estado].texto} icon={ICONO_DEL_ESTADO[estado]} className={`shrink-0 ${TINTA_DEL_ESTADO[estado]}`} />
+        </div>
+        <dl className={`grid gap-2 ${sub?.ha != null ? "grid-cols-3" : "grid-cols-2"}`}>
+          <CifraGrande t="Autorizado" v={fmtM3(t.autorizadoM3)} unidad="m³" />
+          {sub?.ha != null && <CifraGrande t="Superficie" v={formatNumber(sub.ha, 2)} unidad="ha" />}
+          {t.seExcedeM3 > 0 ? (
+            <CifraGrande t="Se pasa" v={fmtM3(t.seExcedeM3)} unidad="m³" rojo testid="bloque-se-pasa" nota={pasadas.join(", ")} />
+          ) : (
+            <CifraGrande t="Disponible" v={fmtM3(t.disponibleM3)} unidad="m³" />
           )}
-        </span>
-      </div>
-      <ul className="space-y-2">
-        {especies.map((e) => {
-          const meta = metaDelReparto(reparto, e.clave);
-          return (
-            <li key={e.clave} data-especie={e.clave} className="space-y-1 border-t border-[var(--rule-soft)] pt-2 first:border-t-0 first:pt-0">
-              <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-sm">
-                <span className="font-semibold text-[var(--text-primary)]">{e.especie}</span>
-                {meta && <span className={`${NUM} text-xs text-[var(--text-tertiary)]`}>{meta}</span>}
-              </p>
-              <CifrasDelBloque c={e} />
-              {e.excede && (
-                <p className={`text-sm font-semibold ${ROJO}`}>
-                  {e.enElReparto ? `Se pasa por ${fmtM3(e.pasaPorM3)} m³` : `No está en este bloque: ${fmtM3(e.pasaPorM3)} m³ anotados`}
-                  {e.excedeHoy ? " (ya con lo registrado)" : " si se registran las preliminares"}
-                </p>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      {especies.length > 1 && (
-        <div className="space-y-1 rounded-lg bg-[var(--surface-sunken)] px-2 py-1.5">
-          <p className="text-xs font-semibold text-[var(--text-secondary)]">Total del bloque</p>
-          <CifrasDelBloque c={{ ...t, quedaSiSeRegistranM3: t.disponibleM3, excede: false, excedeHoy: false }} ultima="Disponible" />
+        </dl>
+        <div className="space-y-1.5">
+          <BarraDeTramos
+            t={tramosDelBloque(saldo.especies)}
+            alto="h-4"
+            etiqueta={`${saldo.nombre}: usado ${fmtM3(t.usadoM3)}, preliminar ${fmtM3(t.pendienteM3)}, disponible ${fmtM3(t.disponibleM3)} de ${fmtM3(t.autorizadoM3)} m³${t.seExcedeM3 > 0 ? `, se pasa ${fmtM3(t.seExcedeM3)}` : ""}`}
+          />
+          <CifrasEnLinea
+            items={[
+              { k: "usado", t: "Usado", v: t.usadoM3, tramo: "usado" },
+              { k: "pend", t: "Preliminar", v: t.pendienteM3, tramo: "preliminar" },
+              { k: "queda", t: "Saldo hoy", v: t.quedaM3 },
+              /* «Disponible» ya está en cifra grande; si se pasa, la cifra grande es lo pasado y acá va lo disponible. */
+              ...(t.seExcedeM3 > 0 ? [{ k: "disp", t: "Disponible", v: t.disponibleM3, tramo: "libre" as const, fuerte: true }] : []),
+            ]}
+          />
         </div>
-      )}
-      {excesos.length > 0 && (
-        <div role="status" className="flex flex-wrap items-start gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2 py-1.5 text-sm dark:bg-[var(--data-error-500)]/12">
-          <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${ROJO}`} aria-hidden="true" />
-          <ul className={`min-w-0 flex-1 font-medium ${ROJO}`}>
-            {excesos.map((x) => (
-              <li key={x.clave}>{textoDeExceso(x, fmtM3)}</li>
-            ))}
-          </ul>
-          <Btn
-            variant="ghost"
-            size="sm"
-            className="shrink-0"
-            onClick={() => (ids.length > 0 && onVerPreliminares ? onVerPreliminares(ids) : setVerGuias(true))}
-          >
-            {ids.length > 0 && onVerPreliminares ? "Corregir" : "Ver guías"} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        <ul className="space-y-3 rounded-lg border border-[var(--rule-soft)] p-3">
+          {especies.map((e) => (
+            <LothPlanBloqueEspecieFila key={e.clave} e={e} meta={metaDelReparto(reparto, e.clave)} />
+          ))}
+        </ul>
+        {excesos.length > 0 && (
+          <div role="status" className="flex flex-wrap items-start gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2 py-1.5 text-sm dark:bg-[var(--data-error-500)]/12">
+            <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${ROJO}`} aria-hidden="true" />
+            <ul className={`min-w-0 flex-1 font-medium ${ROJO}`}>
+              {excesos.map((x) => (
+                <li key={x.clave}>{textoDeExceso(x, fmtM3)}</li>
+              ))}
+            </ul>
+            <Btn
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={() => (ids.length > 0 && onVerPreliminares ? onVerPreliminares(ids) : setVerGuias(true))}
+            >
+              {ids.length > 0 && onVerPreliminares ? "Corregir" : "Ver guías"} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Btn>
+          </div>
+        )}
+        <div>
+          <Btn variant="ghost" size="sm" onClick={() => setVerGuias((v) => !v)} aria-expanded={verGuias}>
+            <ChevronDown className={`h-4 w-4 transition-transform ${verGuias ? "rotate-180" : ""}`} aria-hidden="true" />
+            Guías de este bloque ({saldo.guias.length})
           </Btn>
+          {verGuias && <LothPlanBloqueGuias guias={saldo.guias} />}
         </div>
-      )}
-      <div>
-        <Btn variant="ghost" size="sm" onClick={() => setVerGuias((v) => !v)} aria-expanded={verGuias}>
-          <ChevronDown className={`h-4 w-4 transition-transform ${verGuias ? "rotate-180" : ""}`} aria-hidden="true" />
-          Guías de este bloque ({saldo.guias.length})
-        </Btn>
-        {verGuias && <LothPlanBloqueGuias guias={saldo.guias} />}
       </div>
     </li>
   );

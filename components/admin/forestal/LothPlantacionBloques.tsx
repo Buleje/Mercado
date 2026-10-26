@@ -16,18 +16,27 @@
 
 import { useState } from "react";
 import { AlertTriangle, LayoutGrid, Pencil } from "@buleje/design-system/icons";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import { cuadreConElRegistro, subtotalDelBloque, TOLERANCIA_M3, type BloqueDelPlan, type DescuadreDeEspecie } from "@/lib/forestal/loth-plan-bloques";
 import type { SaldoPorBloques } from "@/lib/forestal/loth-plan-bloques-saldo";
 import { Btn } from "./ctp-shared";
-import { BloquePlan } from "./loth-plan-ui";
+import { BloquePlan, BotonPlegar } from "./loth-plan-ui";
 import type { Species } from "./loth-plan-shared";
 import { usePlanBloques } from "./hooks/use-plan-bloques";
 import { ID_BLOQUES } from "./hooks/use-ir-a-preliminares";
 import LothPlantacionBloquesEditar from "./LothPlantacionBloquesEditar";
 import LothPlanBloqueTarjeta from "./LothPlanBloqueTarjeta";
+import LothPlanBloqueTarjetaReparto from "./LothPlanBloqueTarjetaReparto";
 import LothPlanBloquesSinAsignar from "./LothPlanBloquesSinAsignar";
+import LothPlanBloquesMapa, { type BloqueDelMapa } from "./LothPlanBloquesMapa";
+import { LeyendaDeBarras } from "./LothPlanBloqueBarra";
+import { conteoDeEstados, estadoDelBloque, tonoDelBloque, type EstadoDelBloque } from "./loth-plan-bloque-visual";
+
+/** Abierto o plegado, recordado en el navegador para todos los planes (como Zafra y Tala). */
+const CLAVE_BLOQUES_ABIERTOS = "loth:plan:bloques-abiertos";
+const ID_CUERPO = "bloques-del-plan-cuerpo";
 
 const m3 = (v: number) => `${formatNumber(v, 3)} m³`;
 
@@ -58,6 +67,14 @@ export function AvisoDescuadre({ descuadres }: { descuadres: readonly DescuadreD
     </div>
   );
 }
+
+/** «1 se pasa · 1 con preliminar · 1 sin uso»: el estado de los bloques en la línea del título, con su color. */
+const PALABRA_DEL_ESTADO: Record<EstadoDelBloque, { uno: string; varios: string; clase: string }> = {
+  se_pasa: { uno: "se pasa", varios: "se pasan", clase: "font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" },
+  preliminar: { uno: "con preliminar", varios: "con preliminar", clase: "font-semibold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]" },
+  cuadra: { uno: "cuadra", varios: "cuadran", clase: "font-semibold text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" },
+  sin_uso: { uno: "sin uso", varios: "sin uso", clase: "" },
+};
 
 /** Lo que el saldo trae para la sección (todo opcional: sin saldo, la tarjeta de siempre). */
 export interface SaldoDeLosBloquesProps {
@@ -90,6 +107,20 @@ export default function LothPlantacionBloques({
     return r;
   };
   const conSaldo = porBloque != null && porBloque.bloques.length > 0;
+  /* El tono va por el ORDEN del reparto (el que eligió quien lo cargó) y se busca por nombre: la tarjeta y el mapa dicen lo mismo. */
+  const tonoPorNombre = new Map(bloques.map((b, i) => [b.nombre.trim(), tonoDelBloque(i)] as const));
+  const tonoDe = (nombre: string, i: number) => tonoPorNombre.get(nombre.trim()) ?? tonoDelBloque(i);
+  const mapa: BloqueDelMapa[] = conSaldo
+    ? porBloque.bloques.map((s, i) => ({ nombre: s.nombre, tono: tonoDe(s.nombre, i), m3: s.total.autorizadoM3, estado: estadoDelBloque(s) }))
+    : bloques.map((b, i) => ({ nombre: b.nombre, tono: tonoDe(b.nombre, i), m3: subtotalDelBloque(b).m3 }));
+  const estados = conSaldo ? conteoDeEstados(porBloque.bloques) : [];
+  const n = mapa.length;
+  /* Plegable y recordado (26-10, «más compacto»): plegado quedan la cabecera con los
+     conteos y la tira de colores (tocar un bloque lo abre y baja a su tarjeta). Sin
+     elección guardada, arranca abierto sólo si algún bloque se pasa. */
+  const [guardado, setAbierto] = useLocalStorage<boolean | null>(CLAVE_BLOQUES_ABIERTOS, null);
+  const abierto = guardado ?? (conSaldo && porBloque.bloques.some((b) => b.excede));
+  const plegadoVacio = !abierto && n < 2 && descuadres.length === 0;
   const editor = editando && (
     <LothPlantacionBloquesEditar
       reparto={bloques}
@@ -135,7 +166,15 @@ export default function LothPlantacionBloques({
       titulo="Por bloque o zona"
       sub={
         <>
-          <span className="font-mono tabular-nums">{bloques.length}</span> {bloques.length === 1 ? "bloque" : "bloques"}
+          <span className="font-mono tabular-nums">{n}</span> {n === 1 ? "bloque" : "bloques"}
+          {estados.map(({ estado, n: cuantos }) => (
+            <span key={estado}>
+              {" · "}
+              <span className={PALABRA_DEL_ESTADO[estado].clase}>
+                <span className="font-mono tabular-nums">{cuantos}</span> {cuantos === 1 ? PALABRA_DEL_ESTADO[estado].uno : PALABRA_DEL_ESTADO[estado].varios}
+              </span>
+            </span>
+          ))}
           {descuadres.length === 0 ? " · cuadra con lo registrado" : null}
         </>
       }
@@ -150,61 +189,58 @@ export default function LothPlantacionBloques({
           <Btn size="sm" onClick={() => setEditando(true)}>
             <Pencil className="h-4 w-4" aria-hidden="true" /> Cambiar el reparto
           </Btn>
+          <BotonPlegar
+            abierto={abierto}
+            onClick={() => setAbierto(!abierto)}
+            controla={ID_CUERPO}
+            label={abierto ? "Plegar" : "Ver los bloques"}
+            icon={LayoutGrid}
+            compacto
+          />
         </>
       }
+      plegado={plegadoVacio}
     >
-      <div id={ID_BLOQUES} className="scroll-mt-4 space-y-3 p-3">
+      <div id={ID_BLOQUES} className={`scroll-mt-4 space-y-3 ${plegadoVacio ? "" : "p-3"}`}>
         <AvisoDescuadre descuadres={descuadres} />
+        <LothPlanBloquesMapa bloques={mapa} onAntesDeIr={() => setAbierto(true)} />
+        <div id={ID_CUERPO} hidden={!abierto} className="space-y-3">
         {conSaldo && (
-          <p className="flex items-center gap-1 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            No te pases del volumen autorizado de cada bloque.
-            <InfoTip
-              title="Saldo por bloque"
-              what="Autorizado del bloque − usado = saldo. «Usado» es lo registrado en el libro cuya GTF tiene su preliminar con este bloque; «Preliminar», lo pendiente de registrar."
-              affects="Si lo usado más lo preliminar pasa lo autorizado de una especie del bloque, sale en rojo para corregir. El freno del despacho mide por especie del plan y no cambia."
-              example="Bloque 2: tornillo 30 m³ autorizados, preliminar de 43,261 m³ → se pasa por 13,261 m³."
-            />
-          </p>
+          /* Una sola fila: el recordatorio a la izquierda y la leyenda de TODAS las barras a la derecha (no se repite en cada tarjeta). */
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <p className="flex items-center gap-1 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              No te pases del volumen autorizado de cada bloque.
+              <InfoTip
+                title="Saldo por bloque"
+                what="Autorizado del bloque − usado = saldo. «Usado» es lo registrado en el libro cuya GTF tiene su preliminar con este bloque; «Preliminar», lo pendiente de registrar."
+                affects="Si lo usado más lo preliminar pasa lo autorizado de una especie del bloque, sale en rojo para corregir. El freno del despacho mide por especie del plan y no cambia."
+                example="Bloque 2: tornillo 30 m³ autorizados, preliminar de 43,261 m³ → se pasa por 13,261 m³."
+              />
+            </p>
+            <LeyendaDeBarras tonos={mapa.map((b) => b.tono)} conPasa={porBloque.bloques.some((b) => b.excede)} />
+          </div>
         )}
-        <ul className={`grid gap-3 ${conSaldo ? "lg:grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
+        <ul className={`grid gap-3 ${n < 2 ? "" : conSaldo ? "lg:grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
           {conSaldo &&
-            porBloque.bloques.map((s) => (
+            porBloque.bloques.map((s, i) => (
               <LothPlanBloqueTarjeta
                 key={s.nombre}
                 saldo={s}
+                tono={tonoDe(s.nombre, i)}
                 reparto={bloques.find((b) => b.nombre.trim() === s.nombre)}
                 excesos={porBloque.excesos.filter((x) => x.bloque === s.nombre)}
                 onVerPreliminares={onVerPreliminares}
               />
             ))}
-          {!conSaldo && bloques.map((b) => {
-            const s = subtotalDelBloque(b);
-            return (
-              <li key={b.nombre} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-                  <span className="text-sm font-bold text-[var(--text-primary)]">{b.nombre}</span>
-                  <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
-                    {m3(s.m3)}
-                    {s.ha != null && ` · ${formatNumber(s.ha, 2)} ha`}
-                  </span>
-                </div>
-                <ul className="mt-1.5 space-y-1 text-sm">
-                  {b.especies.map((e) => (
-                    <li key={e.speciesCommon} className="flex flex-wrap items-baseline justify-between gap-x-2">
-                      <span className="text-[var(--text-primary)]">{e.speciesCommon}</span>
-                      <span className="font-mono tabular-nums text-[var(--text-secondary)]">
-                        {e.arboles != null && `${formatNumber(e.arboles, 0)} ${e.arboles === 1 ? "árbol" : "árboles"} · `}
-                        {e.superficieHa != null && `${formatNumber(e.superficieHa, 2)} ha · `}
-                        {m3(e.volumenM3)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            );
-          })}
+          {!conSaldo && bloques.map((b, i) => <LothPlanBloqueTarjetaReparto key={b.nombre} bloque={b} tono={tonoDe(b.nombre, i)} />)}
+          {/* «Sin bloque» va en la misma grilla: con 3 bloques llena el hueco de la 4.ª celda en vez de abrir otra fila. */}
+          {conSaldo && (porBloque.sinBloque.especies.length > 0 || porBloque.noCuadra.length > 0) && (
+            <li className="min-w-0">
+              <LothPlanBloquesSinAsignar sinBloque={porBloque.sinBloque} noCuadra={porBloque.noCuadra} />
+            </li>
+          )}
         </ul>
-        {conSaldo && <LothPlanBloquesSinAsignar sinBloque={porBloque.sinBloque} noCuadra={porBloque.noCuadra} />}
+        </div>
       </div>
       {editor}
     </BloquePlan>
