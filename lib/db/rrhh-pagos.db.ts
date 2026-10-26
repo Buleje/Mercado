@@ -29,7 +29,9 @@ import {
   type PagoHechoDTO,
   type PagoSemanaDTO,
 } from "@/lib/rrhh/pago-semana";
-import type { FechaKey } from "@/lib/rrhh/tipos";
+import { tarifaVigente } from "@/lib/rrhh/ganado";
+import { descuentoDelAdelanto, primerSabadoDesde, type DescuentoDelAdelanto } from "@/lib/rrhh/adelanto-rrhh";
+import type { FechaKey, Modalidad } from "@/lib/rrhh/tipos";
 import { AdelantosDB, DescuentoDePlanillaError } from "./adelantos.db";
 import { CashRegistersMovementsDB } from "./cash-registers-movements.db";
 import { anotarEnCajaAbiertaEnTx, GastoConCajaDB, revalidarTrasEgreso } from "./gasto-con-caja.db";
@@ -155,6 +157,36 @@ export const PagosSemanaDB = {
   /** La semana que contiene `dia` (lunes a domingo). */
   semanaDelDia(dia: FechaKey): { desde: FechaKey; hasta: FechaKey } {
     return semanaDe(dia);
+  },
+
+  /**
+   * El día en que el pago le descuenta un adelanto que se da HOY (25-10, «Dar
+   * adelanto» desde la fila): el primer sábado desde hoy; el siguiente si esa
+   * semana ya se le pagó (la marca del gasto); fin de mes si cobra por mes
+   * (`lib/rrhh/adelanto-rrhh.ts`). Sólo lee: dos consultas, sin lock.
+   */
+  async fechaDelDescuento(tenantId: string, colaboradorId: string, hoy: FechaKey = limaDateKey()): Promise<DescuentoDelAdelanto> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const sabado = primerSabadoDesde(hoy);
+    const { desde } = semanaDe(sabado);
+    const [tarifas, gasto] = await Promise.all([
+      ColaboradoresDB.tarifasDe(tenantId, [colaboradorId]),
+      prisma.expense.findFirst({
+        where: { tenantId, documentNumber: { equals: marcaDelPago(desde, colaboradorId), mode: "insensitive" } },
+        select: { id: true },
+      }),
+    ]);
+    const vigente = tarifaVigente(
+      (tarifas.get(colaboradorId) ?? []).map((t) => ({
+        modalidad: t.modalidad as Modalidad,
+        monto: t.monto,
+        horasJornada: t.horasJornada,
+        vigenteDesde: fechaKeyDeDate(t.vigenteDesde),
+      })),
+      sabado,
+    );
+    const tipo = tipoDePago(vigente ? { modalidad: vigente.modalidad, monto: vigente.monto } : null);
+    return descuentoDelAdelanto({ hoy, tipo, semanaPagada: Boolean(gasto) });
   },
 
   /**

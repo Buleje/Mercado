@@ -60,7 +60,7 @@ function sinFotoLocal(body: Record<string, unknown>): Record<string, unknown> {
 }
 
 /** ADR-491 V: la foto del alta, PRIVADA en la carpeta del adelanto. Dos intentos; `null` = quedó (o ya tenía una). */
-async function guardarVoucher(adelantoId: string, local: string): Promise<string | null> {
+export async function guardarVoucher(adelantoId: string, local: string): Promise<string | null> {
   for (let intento = 1; intento <= 2; intento++) {
     try {
       const fd = new FormData();

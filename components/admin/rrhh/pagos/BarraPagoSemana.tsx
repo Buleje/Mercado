@@ -18,7 +18,7 @@ import { BOTON } from "../rrhh-form";
 import { formatearPEN, pluralizar } from "../rrhh-ui";
 import DarAdelantoModal, { type PersonaParaAdelanto } from "./DarAdelantoModal";
 import PagoSemanaModal from "./PagoSemanaModal";
-import { usePagoSemana } from "./use-pago-semana";
+import type { PagoSemana } from "./use-pago-semana";
 
 const TONO = {
   hoy: "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
@@ -27,8 +27,8 @@ const TONO = {
 
 type Adelanto = { abierto: false } | { abierto: true; colaboradorId?: string };
 
-export default function BarraPagoSemana() {
-  const pago = usePagoSemana(true);
+/** `pago` lo carga `AsistenciaView`: el mismo dato sirve al chip de adelanto de cada fila. */
+export default function BarraPagoSemana({ pago }: { pago: PagoSemana }) {
   const { datos, setDesde, recargar } = pago;
   const [verPago, setVerPago] = useState(false);
   const [adelanto, setAdelanto] = useState<Adelanto>({ abierto: false });
@@ -124,6 +124,7 @@ export default function BarraPagoSemana() {
         <DarAdelantoModal
           personas={personas}
           colaboradorId={adelanto.colaboradorId}
+          pago={datos}
           aboveModals={verPago}
           onClose={() => setAdelanto({ abierto: false })}
           onDado={() => {

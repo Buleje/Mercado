@@ -9,7 +9,9 @@ import { limaDateKey } from "@/lib/utils";
 import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { AdelantosDB, ContratoInvalidoError, IdempotenciaDistintaError } from "@/lib/db/adelantos.db";
 import { ColaboradoresDB, CuentaAmbiguaError } from "@/lib/db/rrhh-colaboradores.db";
+import { PagosSemanaDB } from "@/lib/db/rrhh-pagos.db";
 import { RRHH_GESTION, nivelDeRol } from "@/lib/rrhh/roles";
+import { IDS_METODO, IDS_MOTIVO, notaDelAdelantoRrhh, textoDelDescuento, type DescuentoDelAdelanto } from "@/lib/rrhh/adelanto-rrhh";
 import { respuestaErrorColaborador } from "../../_errores";
 
 const DarAdelantoSchema = z.object({
@@ -18,7 +20,16 @@ const DarAdelantoSchema = z.object({
   fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha va como AAAA-MM-DD").optional(),
   nota: z.string().trim().max(500).optional(),
   /** Por dónde salió la plata del cajón; ausente = no mover la caja. Sólo con fecha de hoy. */
-  metodoCaja: z.enum(["efectivo", "yape", "plin", "transferencia"]).nullable().optional(),
+  metodoCaja: z.enum(IDS_METODO).nullable().optional(),
+  /** (25-10) Para qué lo pidió: va a la nota. «Otro» pide el detalle. */
+  motivo: z.enum(IDS_MOTIVO).optional(),
+  detalle: z.string().trim().max(200).optional(),
+  /** (25-10) Cómo se le dio — va a la nota aunque no salga de la caja. */
+  metodo: z.enum(IDS_METODO).optional(),
+  /** (25-10) `true` = sale de la caja abierta por `metodo` (sólo hoy). */
+  saleDeCaja: z.boolean().optional(),
+  /** (25-10) El n.º del recibo de papel, si se firmó uno. */
+  reciboManual: z.string().trim().max(60).optional(),
   /** El mismo intento (doble clic, reintento) no da dos adelantos. */
   idempotencyKey: z.string().trim().min(8).max(100),
 });
@@ -57,7 +68,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!parsed.success) {
     return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 422 });
   }
-  const { fecha, nota, metodoCaja, idempotencyKey } = parsed.data;
+  const { fecha, nota, motivo, detalle, metodo, saleDeCaja, reciboManual, idempotencyKey } = parsed.data;
+  if (motivo === "otro" && !detalle) {
+    return NextResponse.json({ error: "detalle_requerido", message: "Con «Otro», escribe para qué fue el adelanto." }, { status: 422 });
+  }
+  if (saleDeCaja && !metodo) {
+    return NextResponse.json({ error: "metodo_requerido", message: "Elige cómo salió de la caja (efectivo, Yape…)." }, { status: 422 });
+  }
+  // `metodoCaja` es el contrato de antes (la ficha del colaborador); `saleDeCaja` + `metodo`, el de la fila.
+  const metodoCaja = saleDeCaja ? (metodo ?? null) : (parsed.data.metodoCaja ?? null);
   const monto = Math.round(parsed.data.monto * 100) / 100;
   if (monto <= 0) return NextResponse.json({ error: "validation_error", message: "El monto tiene que ser mayor que cero." }, { status: 422 });
   const hoy = limaDateKey();
@@ -86,6 +105,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     if (!cuenta) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+    // El sábado en que el pago lo descuenta (o fin de mes si cobra por mes). Si
+    // no se puede leer, el adelanto se anota igual sin fecha: no se frena plata
+    // por un aviso (sin fecha, Cobranza lo marca «sin fecha para cobrar»).
+    let descuento: DescuentoDelAdelanto | null = null;
+    try {
+      descuento = await PagosSemanaDB.fechaDelDescuento(auth.tenantId, id, hoy);
+    } catch (e) {
+      logger.warn("[rrhh/adelanto] no se pudo calcular el sábado del descuento", { error: e instanceof Error ? e.message : String(e) });
+    }
+
     let adelanto;
     try {
       adelanto = await AdelantosDB.create(auth.tenantId, {
@@ -95,10 +124,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         moneda: "PEN",
         // Hoy = la hora de ahora; un día pasado, al mediodía de Lima (nunca corre de día).
         fechaAdelanto: dia === hoy ? undefined : `${dia}T12:00:00-05:00`,
-        notas: nota || "Adelanto de sueldo (RRHH)",
+        notas: notaDelAdelantoRrhh({ motivo, detalle, metodo: metodo ?? metodoCaja, nota }),
         direccion: "DADO",
         idempotencyKey,
-        metodoCaja: metodoCaja ?? null,
+        metodoCaja,
+        // Al mediodía de Lima: la fecha nunca corre de día (como «Fecha de cobro» de Mi Plata).
+        fechaVencimiento: descuento ? `${descuento.fecha}T12:00:00-05:00` : null,
+        reciboManual: reciboManual || undefined,
       });
     } catch (bizErr) {
       if (bizErr instanceof IdempotenciaDistintaError || bizErr instanceof ContratoInvalidoError) {
@@ -109,7 +141,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "adelanto_rechazado", message }, { status: 400 });
     }
 
-    const cuerpo = { adelanto, cuenta: { beneficiarioId: cuenta.beneficiarioId, origen: cuenta.origen } };
+    const cuerpo = {
+      adelanto,
+      cuenta: { beneficiarioId: cuenta.beneficiarioId, origen: cuenta.origen },
+      descuento: descuento ? { ...descuento, texto: textoDelDescuento(descuento) } : null,
+    };
     if (adelanto.repetido) return NextResponse.json(cuerpo, { status: 200 });
     logActivity(
       "rrhh_adelanto",

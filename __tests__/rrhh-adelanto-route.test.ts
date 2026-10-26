@@ -25,6 +25,7 @@ const m = vi.hoisted(() => {
     requireAdmin: vi.fn(),
     asegurarCuenta: vi.fn(),
     create: vi.fn(),
+    fechaDelDescuento: vi.fn(),
     logActivity: vi.fn(() => Promise.resolve()),
   };
 });
@@ -43,6 +44,7 @@ vi.mock("@/lib/db/adelantos.db", () => ({
   IdempotenciaDistintaError: m.IdempotenciaDistintaError,
   ContratoInvalidoError: m.ContratoInvalidoError,
 }));
+vi.mock("@/lib/db/rrhh-pagos.db", () => ({ PagosSemanaDB: { fechaDelDescuento: m.fechaDelDescuento } }));
 vi.mock("@/app/api/rrhh/colaboradores/_errores", () => ({ respuestaErrorColaborador: vi.fn(() => null) }));
 
 const { POST } = await import("@/app/api/rrhh/colaboradores/[id]/adelanto/route");
@@ -74,6 +76,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   m.asegurarCuenta.mockResolvedValue({ beneficiarioId: "b1", nombre: "Juan Pérez", origen: "existente" });
   m.create.mockResolvedValue({ id: "a1", codigoOperacion: "ADL-1" });
+  m.fechaDelDescuento.mockResolvedValue({ fecha: "2026-10-31", tipo: "tarifa", semanaPagada: false });
 });
 
 it("sin sesión: el 401 pasa tal cual", async () => {
@@ -155,5 +158,47 @@ describe.each(["admin", "owner", "manager"])("rol %s", (role) => {
     expect((await POST(req({ ...BODY, monto: 0 }), params)).status).toBe(422);
     expect((await POST(req({ monto: 50 }), params)).status).toBe(422);
     expect(m.create).not.toHaveBeenCalled();
+  });
+
+  it("(25-10) el servidor pone el sábado del descuento, la nota legible y el recibo de papel", async () => {
+    const res = await POST(req({ ...BODY, motivo: "pasaje", detalle: "a Pucallpa", metodo: "yape", reciboManual: " 0042 " }), params);
+    expect(res.status).toBe(201);
+    expect(m.fechaDelDescuento).toHaveBeenCalledWith("t1", "c1", limaDateKey());
+    expect(m.create.mock.calls[0][1]).toMatchObject({
+      notas: "Adelanto de sueldo (RRHH) · Pasaje: a Pucallpa · por Yape",
+      fechaVencimiento: "2026-10-31T12:00:00-05:00",
+      reciboManual: "0042",
+      metodoCaja: null,
+    });
+    const cuerpo = await res.json();
+    expect(cuerpo.descuento).toEqual({ fecha: "2026-10-31", tipo: "tarifa", semanaPagada: false, texto: "Se descuenta el sábado 31/10" });
+  });
+
+  it("(25-10) «sale de la caja» mueve la caja por el método elegido; sin método → 422", async () => {
+    expect((await POST(req({ ...BODY, metodo: "efectivo", saleDeCaja: true }), params)).status).toBe(201);
+    expect(m.create.mock.calls[0][1].metodoCaja).toBe("efectivo");
+    const sinMetodo = await POST(req({ ...BODY, saleDeCaja: true }), params);
+    expect(sinMetodo.status).toBe(422);
+    expect((await sinMetodo.json()).error).toBe("metodo_requerido");
+    const pasado = await POST(req({ ...BODY, fecha: ayer(), metodo: "yape", saleDeCaja: true }), params);
+    expect((await pasado.json()).error).toBe("caja_solo_hoy");
+    expect(m.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("(25-10) «Otro» sin detalle → 422; textos largos → 422", async () => {
+    const otro = await POST(req({ ...BODY, motivo: "otro" }), params);
+    expect((await otro.json()).error).toBe("detalle_requerido");
+    expect((await POST(req({ ...BODY, detalle: "x".repeat(201) }), params)).status).toBe(422);
+    expect((await POST(req({ ...BODY, reciboManual: "x".repeat(61) }), params)).status).toBe(422);
+    expect((await POST(req({ ...BODY, motivo: "fiesta" }), params)).status).toBe(422);
+    expect(m.create).not.toHaveBeenCalled();
+  });
+
+  it("(25-10) si el sábado no se puede leer, el adelanto se anota igual sin fecha", async () => {
+    m.fechaDelDescuento.mockRejectedValue(new Error("db caída"));
+    const res = await POST(req(BODY), params);
+    expect(res.status).toBe(201);
+    expect(m.create.mock.calls[0][1].fechaVencimiento).toBeNull();
+    expect((await res.json()).descuento).toBeNull();
   });
 });

@@ -10,6 +10,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { problemaDeDireccion } from "@/lib/adelantos/direccion";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { esFotoDelNegocio } from "@/lib/adelantos/recibo-firmado";
+import { marcarTrabajadores } from "@/lib/adelantos/trabajador-del-adelanto.server";
 
 const METODOS_CAJA = ["efectivo", "yape", "plin", "tarjeta", "transferencia"] as const;
 
@@ -110,7 +111,8 @@ export async function GET(req: NextRequest) {
         { status: 400 },
       );
     }
-    const adelantos = await AdelantosDB.list(auth.tenantId, filtros.data);
+    // (25-10) Los de planilla de un trabajador llevan `trabajador` («Ver en Equipo»).
+    const adelantos = await marcarTrabajadores(auth.tenantId, await AdelantosDB.list(auth.tenantId, filtros.data));
     return NextResponse.json(adelantos, { headers: { "X-Total-Count": String(adelantos.length) } });
   } catch (e) {
     logger.error("[adelantos] GET error", { err: e instanceof Error ? e.message : String(e) });

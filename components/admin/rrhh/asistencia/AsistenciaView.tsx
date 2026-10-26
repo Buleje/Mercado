@@ -17,7 +17,9 @@
  * 11-10): el estado sigue siendo local, no va a la URL.
  *
  * Arriba, sólo para el dueño, la línea del pago del sábado (24-10): adelantos
- * de la semana y el neto por persona (`../pagos/BarraPagoSemana`).
+ * de la semana y el neto por persona (`../pagos/BarraPagoSemana`). El mismo
+ * pago alimenta «Dar adelanto» en el «⋯» de cada fila y su chip «Adelanto
+ * S/ 50 esta semana» (25-10, `adelanto-de-la-fila`).
  */
 
 import { useState, type ReactNode } from "react";
@@ -29,6 +31,8 @@ import HojaDelMes from "./HojaDelMes";
 import HojaDeLaSemana from "./HojaDeLaSemana";
 import MotivoCorreccionModal from "./MotivoCorreccionModal";
 import BarraPagoSemana from "../pagos/BarraPagoSemana";
+import { usePagoSemana } from "../pagos/use-pago-semana";
+import { ProveedorAdelantoDeLaFila } from "./adelanto-de-la-fila";
 import { ID_PANEL_ASISTENCIA, type ModoAsistencia } from "./panel-asistencia";
 import type { NivelRrhh } from "@/lib/rrhh/tipos";
 
@@ -45,6 +49,8 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
   const [fecha, setFecha] = useState<string>(() => limaDateKey());
   const [mes, setMes] = useState<string>(() => mesDe(limaDateKey()));
   const [semana, setSemana] = useState<string>(() => semanaDe(limaDateKey()).desde);
+  // El pago del sábado sólo lo ve el dueño (el servidor le dice 403 al encargado).
+  const pago = usePagoSemana(nivel === "completo");
 
   const primerDiaDelMes = `${mes}-01`;
   const ultimoDiaDelMes = `${mes}-${String(diasDelMes(primerDiaDelMes)).padStart(2, "0")}`;
@@ -75,10 +81,10 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
   }
 
   return (
-    <>
-      {nivel === "completo" && <BarraPagoSemana />}
+    <ProveedorAdelantoDeLaFila nivel={nivel} pago={nivel === "completo" ? pago : null}>
+      {nivel === "completo" && <BarraPagoSemana pago={pago} />}
       {hoja}
       <MotivoCorreccionModal />
-    </>
+    </ProveedorAdelantoDeLaFila>
   );
 }

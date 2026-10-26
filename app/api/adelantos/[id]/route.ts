@@ -11,6 +11,7 @@ import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { motivoSchema } from "@/lib/forestal/motivo";
 import { AdelantoNoControlableError, AdelantosControlDB } from "@/lib/db/adelantos-control.db";
 import { PATRON_DIA } from "@/lib/adelantos/control-edicion";
+import { marcarTrabajadores } from "@/lib/adelantos/trabajador-del-adelanto.server";
 import { randomBytes } from "crypto";
 import { esErrorImagen, leerMultipartFirma, normalizarImagen } from "@/lib/adelantos/imagen-firma.server";
 import { esReciboFirmado, PREFIJO_PRIVADO, rutaFirmaPrivada } from "@/lib/adelantos/recibo-firmado";
@@ -80,7 +81,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const adelanto = await AdelantosDB.getById(auth.tenantId, id);
     if (!adelanto) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-    return NextResponse.json(adelanto);
+    const [conMarca] = await marcarTrabajadores(auth.tenantId, [adelanto]);
+    return NextResponse.json(conMarca);
   } catch (e) {
     logger.error("[adelantos/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });

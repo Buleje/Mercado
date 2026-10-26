@@ -32,6 +32,7 @@ import { ESTADO_VACIO, puedeMandarRecibo } from "@/lib/adelantos/recibo-whatsapp
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { imprimirComprobante } from "../detalle/comprobante-del-adelanto";
 import CeldaRecibo from "./CeldaRecibo";
+import MarcaTrabajador from "./MarcaTrabajador";
 import FilaAcciones, { type AccionFila } from "./FilaAcciones";
 import ModalesDeLaFila, { type AccionAbierta } from "./ModalesDeLaFila";
 import { esDeuda, etiquetaEstado } from "./estado-visible";
@@ -313,6 +314,7 @@ export default function TablaAdelantos({
                       {a.beneficiario?.telefono && (
                         <span className="block truncate text-sm tabular-nums text-[var(--text-tertiary)]">{a.beneficiario.telefono}</span>
                       )}
+                      {a.trabajador && <MarcaTrabajador adelanto={a} rotulo="Trabajador" />}
                     </td>
                     <td className="whitespace-nowrap tabular-nums text-[var(--text-secondary)]">
                       {fechaCelda(a.fechaAdelanto)}

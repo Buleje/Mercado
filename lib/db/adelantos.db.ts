@@ -235,6 +235,11 @@ export type DbAdelanto = {
   entregasPactadas: DbEntregaPactada[];
   /** ADR-491: si el registro tiene alguna firma / huella (badge en lista y ficha). */
   firmas?: { firma: boolean; huella: boolean };
+  /**
+   * (25-10) Descuento por planilla de una cuenta unida a un colaborador de RRHH:
+   * lo pegan las rutas GET (`lib/adelantos/trabajador-del-adelanto.server.ts`).
+   */
+  trabajador?: { colaboradorId: string; nombre: string } | null;
   createdAt: string;
   updatedAt: string;
 };

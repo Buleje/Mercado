@@ -18,15 +18,16 @@
  */
 
 import { useState, type ReactNode } from "react";
-import { AlertTriangle, CalendarClock, CalendarDays, Clock, History, Loader2, MessageSquare, MoreHorizontal, StickyNote, UserMinus } from "@buleje/design-system/icons";
+import { AlertTriangle, CalendarClock, CalendarDays, Clock, HandCoins, History, Loader2, MessageSquare, MoreHorizontal, StickyNote, UserMinus } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { tardanzaDe } from "@/lib/rrhh/asistencia";
 import { AVISO_NOTA_SIN_SALUD, NOTA_DIA_MAX, notaDelDia } from "@/lib/rrhh/nota-del-dia";
 import { cn } from "@/lib/utils";
 import { BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
+import { useAdelantoDeLaFila } from "./adelanto-de-la-fila";
 import CampoNotaSuelta from "./CampoNotaSuelta";
 import { useNotasDelDia } from "./notas-del-dia";
-import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, loQueFaltaALaFicha } from "../rrhh-ui";
+import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, formatearPEN, loQueFaltaALaFicha } from "../rrhh-ui";
 import type { AsistenciaDTO, ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 
 const LLEVA_HORAS: ReadonlySet<EstadoAsistencia> = new Set(["PRESENTE", "TARDANZA", "MEDIO_DIA"]);
@@ -65,6 +66,10 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
   const { sueltaDe, guardarNota } = useNotasDelDia();
   const nota = notaDelDia(marca, sueltaDe(colaborador.id, fecha));
   const puedeAnotar = !soloLectura && Boolean(estadoActual || guardarNota);
+  // Adelanto desde la fila (25-10): lo dado esta semana sale del pago del sábado ya cargado.
+  const { darAdelanto, dadoEnLaSemana } = useAdelantoDeLaFila();
+  const dado = dadoEnLaSemana(colaborador.id, fecha);
+  const daAdelanto = darAdelanto && colaborador.estado !== "CESADO" ? () => darAdelanto({ id: colaborador.id, nombre: colaborador.nombre }) : null;
   const metaActual = estadoActual ? ESTADO_ASISTENCIA_META[estadoActual] : null;
   const muestraHoras = Boolean(estadoActual && LLEVA_HORAS.has(estadoActual));
   // `null` mientras no haya hora marcada u horario del puesto: sin eso no hay nada que decir.
@@ -102,6 +107,11 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
           </span>
           {colaborador.puesto && <span className="truncate">{colaborador.puesto.nombre}</span>}
           {colaborador.eventual && <span className="shrink-0 text-[var(--text-tertiary)]">· eventual</span>}
+          {dado > 0 && (
+            <span data-qa="rrhh-chip-adelanto" className={cn(CLASE_CHIP, "py-0 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)]")}>
+              Adelanto {formatearPEN(dado)} esta semana
+            </span>
+          )}
           {onCompletar && faltaFicha.length > 0 && (
             <button
               type="button"
@@ -135,16 +145,17 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
             <MessageSquare className="h-5 w-5" aria-hidden />
           </button>
         )}
-        {/* Historial, eventual y retirar en «⋯». */}
+        {/* Historial, adelanto, eventual y retirar en «⋯». */}
         <ActionMenu
           label={`Más de ${colaborador.nombre}`}
           icon={MoreHorizontal}
           soloIcono
           size="md"
           className="w-12 shrink-0"
-          title="Historial, eventual y retirar"
+          title="Historial, adelanto, eventual y retirar"
           actions={[
             { id: "historial", label: "Historial de correcciones", hint: "Quién cambió esta marca y por qué", icon: History, onSelect: onVerHistorial },
+            ...(daAdelanto ? [{ id: "adelanto", label: "Dar adelanto", hint: "Se le descuenta de su pago del sábado", icon: HandCoins, onSelect: daAdelanto }] : []),
             ...(onEventual
               ? [
                   colaborador.eventual

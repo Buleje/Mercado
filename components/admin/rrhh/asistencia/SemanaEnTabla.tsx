@@ -20,8 +20,10 @@ import type { FilaSemana } from "./semana-pdf";
 import type { ColaboradorMinDTO, EstadoAsistencia, FechaKey } from "@/lib/rrhh/tipos";
 import { formatNumber } from "@/lib/format";
 import { feriadoDe } from "@/lib/feriados-peru";
-import { MoreHorizontal, UserMinus } from "@buleje/design-system/icons";
-import ActionMenu from "@/components/admin/shared/action-menu";
+import { HandCoins, MoreHorizontal, UserMinus } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { CLASE_CHIP } from "../rrhh-form";
+import { useAdelantoDeLaFila } from "./adelanto-de-la-fila";
 
 interface Props {
   filas: FilaSemana[];
@@ -42,6 +44,16 @@ interface Props {
 }
 
 export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pendientes, erroresPorCelda, conPlata, totales, onMarcar, onAceptarTardanza, onVerHistorial, onRetirar }: Props) {
+  // Adelanto desde la fila (25-10): lo dado esta semana sale del pago del sábado ya cargado.
+  const { darAdelanto, dadoEnLaSemana } = useAdelantoDeLaFila();
+  const accionesDe = (c: ColaboradorMinDTO): MenuAccion[] => [
+    ...(darAdelanto && c.estado !== "CESADO"
+      ? [{ id: "adelanto", label: "Dar adelanto", hint: "Se le descuenta de su pago del sábado", icon: HandCoins, onSelect: () => darAdelanto({ id: c.id, nombre: c.nombre }) }]
+      : []),
+    ...(onRetirar
+      ? [{ id: "retirar", label: "Retirado…", hint: "Ya no trabaja acá: desde qué día deja de salir", icon: UserMinus, tone: "danger" as const, onSelect: () => onRetirar(c) }]
+      : []),
+  ];
   return (
     <div className="hidden sm:block">
       <DataTable zebra stickyHeader wrapperClassName="max-h-[70vh] rounded-2xl">
@@ -76,7 +88,10 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
           </tr>
         </thead>
         <tbody>
-          {filas.map(({ c, marcasDeLaPersona, conteo, sinMarcar, trabajados, plata }) => (
+          {filas.map(({ c, marcasDeLaPersona, conteo, sinMarcar, trabajados, plata }) => {
+            const acciones = accionesDe(c);
+            const dado = dias[0] ? dadoEnLaSemana(c.id, dias[0]) : 0;
+            return (
             <tr key={c.id}>
               <td className="sticky left-0 z-10 bg-[var(--surface-raised)] font-semibold">
                 <div className="flex w-52 items-center gap-1">
@@ -85,15 +100,24 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
                       {c.nombre}
                     </span>
                     {c.puesto && <span className="block truncate text-sm font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
+                    {dado > 0 && (
+                      <span
+                        data-qa="rrhh-chip-adelanto"
+                        title={`Adelanto ${formatearPEN(dado)} esta semana`}
+                        className={cn(CLASE_CHIP, "mt-0.5 py-0 font-semibold bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)]")}
+                      >
+                        Adelanto {formatearPEN(dado)}
+                      </span>
+                    )}
                   </div>
-                  {onRetirar && (
+                  {acciones.length > 0 && (
                     <ActionMenu
                       label={`Más de ${c.nombre}`}
                       icon={MoreHorizontal}
                       soloIcono
                       size="sm"
-                      title="Retirar"
-                      actions={[{ id: "retirar", label: "Retirado…", hint: "Ya no trabaja acá: desde qué día deja de salir", icon: UserMinus, tone: "danger", onSelect: () => onRetirar(c) }]}
+                      title={acciones.length > 1 ? "Adelanto y retirar" : acciones[0].label}
+                      actions={acciones}
                     />
                   )}
                 </div>
@@ -150,7 +174,8 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
                 </td>
               )}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
         {conPlata && totales.ganado != null && (
           <tfoot>

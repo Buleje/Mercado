@@ -1152,6 +1152,28 @@ export const ColaboradoresDB = {
     return mapa;
   },
 
+  /**
+   * (25-10) Qué cuentas de Mi Plata son de un trabajador: `beneficiarioId` →
+   * el colaborador. Una consulta para toda la lista de adelantos (la marca
+   * «Trabajador · se descuenta el sábado» de Mi Plata, sin un pedido por fila).
+   * Cesados incluidos: su adelanto sigue siendo de planilla.
+   */
+  async trabajadoresDeCuentas(tenantId: string, beneficiarioIds: readonly string[]): Promise<Map<string, { colaboradorId: string; nombre: string }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const mapa = new Map<string, { colaboradorId: string; nombre: string }>();
+    const ids = [...new Set(beneficiarioIds.filter(Boolean))];
+    if (ids.length === 0) return mapa;
+    const rows = await prisma.colaborador.findMany({
+      where: { tenantId, deletedAt: null, beneficiarioId: { in: ids } },
+      select: { id: true, nombre: true, beneficiarioId: true },
+      orderBy: { createdAt: "asc" },
+    });
+    for (const r of rows) {
+      if (r.beneficiarioId && !mapa.has(r.beneficiarioId)) mapa.set(r.beneficiarioId, { colaboradorId: r.id, nombre: r.nombre });
+    }
+    return mapa;
+  },
+
   async guardarTarifa(tenantId: string, colaboradorId: string, input: TarifaGuardarInput, usuario: string): Promise<TarifaRow[]> {
     if (!tenantId) throw new Error("tenantId is required");
     if (input.modalidad === "SIN_PAGO" && input.monto !== 0) {

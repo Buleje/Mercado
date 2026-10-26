@@ -9,10 +9,11 @@
  * adelanto?» sólo se podía contestar de memoria.
  */
 
-import { CalendarDays, Hash, Phone, Repeat, Ruler, StickyNote } from "@buleje/design-system/icons";
+import { CalendarDays, Hash, Phone, Repeat, Ruler, StickyNote, Users } from "@buleje/design-system/icons";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import { fmtPt, MODALIDAD_LABEL, PT_TIPO_LABEL } from "../shared";
+import MarcaTrabajador from "../lista/MarcaTrabajador";
 
 const fechaLarga = (iso: string) =>
   new Date(iso).toLocaleDateString("es-PE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
@@ -44,6 +45,12 @@ export default function FichaAdelanto({ adelanto: a }: { adelanto: DbAdelanto })
             <span className="text-[var(--text-tertiary)]"> · {a.entregasPactadas.length} cuotas</span>
           )}
         </Dato>
+        {/* De alguien del equipo (25-10): se descuenta en su pago del sábado. */}
+        {a.trabajador && (
+          <Dato icon={Users} label="Trabajador de tu equipo" ancho>
+            <MarcaTrabajador adelanto={a} rotulo={a.trabajador.nombre} className="text-base" />
+          </Dato>
+        )}
         {a.beneficiario?.documento && (
           <Dato icon={Hash} label="Documento">
             <span className="tabular-nums">{a.beneficiario.documento}</span>
@@ -80,17 +87,20 @@ function Dato({
   icon: Icon,
   label,
   children,
+  ancho,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   children: React.ReactNode;
+  /** A lo ancho de la ficha y en varias líneas (lleva un enlace al final: no se corta). */
+  ancho?: boolean;
 }) {
   return (
-    <div className="min-w-0">
+    <div className={ancho ? "min-w-0 sm:col-span-2" : "min-w-0"}>
       <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
         <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> {label}
       </p>
-      <div className="mt-0.5 truncate text-base font-semibold text-[var(--text-primary)]">{children}</div>
+      <div className={`mt-0.5 text-base font-semibold text-[var(--text-primary)] ${ancho ? "" : "truncate"}`}>{children}</div>
     </div>
   );
 }

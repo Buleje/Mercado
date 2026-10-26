@@ -116,7 +116,8 @@ export function Comprobante({
 }: {
   url: string | null;
   onChange: (u: string | null) => void;
-  onAbrirCamara: () => void;
+  /** Sin esto no hay «Tomar foto» (25-10: una ventana encima de otra tapaba la cámara). */
+  onAbrirCamara?: () => void;
 }) {
   const [leyendo, setLeyendo] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -164,14 +165,16 @@ export function Comprobante({
       <div className="flex flex-wrap gap-2">
         {/* La cámara primero: el adelanto se registra con el recibo en la mano,
             y mandar a buscar el archivo termina en «después la subo». */}
-        <button
-          type="button"
-          onClick={onAbrirCamara}
-          className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary/12 px-3.5 text-sm font-semibold text-[var(--accent-ink)] ring-1 ring-primary/40 transition-colors hover:bg-primary/20"
-        >
-          <Camera className="h-4 w-4" /> Tomar foto
-        </button>
-        <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
+        {onAbrirCamara && (
+          <button
+            type="button"
+            onClick={onAbrirCamara}
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary/12 px-3.5 text-sm font-semibold text-[var(--accent-ink)] ring-1 ring-primary/40 transition-colors hover:bg-primary/20"
+          >
+            <Camera className="h-4 w-4" /> Tomar foto
+          </button>
+        )}
+        <label className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
           <FileText className="h-4 w-4" /> {leyendo ? "Leyendo…" : "Adjuntar archivo"}
           <input type="file" accept={ACEPTA_ADJUNTO} className="hidden" onChange={adjuntar} disabled={leyendo} />
         </label>
