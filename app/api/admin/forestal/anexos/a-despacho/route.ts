@@ -10,6 +10,8 @@ import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { ForestCtpGuiaDesdeAnexoDB } from "@/lib/db/forest-ctp-guia-desde-anexo.db";
+import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
+import { CONFIRMACIONES } from "@/lib/forestal/anexo-a-despacho";
 
 /**
  * /api/admin/forestal/anexos/a-despacho — «Guías sin registrar» (ADR-446).
@@ -24,7 +26,13 @@ import { ForestCtpGuiaDesdeAnexoDB } from "@/lib/db/forest-ctp-guia-desde-anexo.
  * GET  ?anexoId=…      — un anexo: su estado y lo que pasaría si se registra AHORA.
  * POST                 — registra una tanda (una transacción por guía) o, con
  *                         `simular: true`, devuelve la tanda como quedaría con
- *                         las elecciones de origen, sin escribir.
+ *                         las elecciones de origen, sin escribir. Cada guía
+ *                         lleva `confirmo` (sin origen / desde «usado»): sin
+ *                         eso el alta la devuelve bloqueada (decisiones 5 y 8).
+ * PATCH                — la revisión (26-10): `resolver` una duda de papeles
+ *                         con una de sus opciones, `deshacer` un «reemplazado»,
+ *                         o `responder` un hueco del talonario. Nunca borra un
+ *                         anexo ni escribe en el libro.
  *
  * El cliente sólo elige DE QUÉ CORRIDAS sale cada grupo (especie × tipo); los
  * m³ y las piezas de cada línea los arma el servidor desde el anexo guardado.
@@ -49,7 +57,15 @@ const eleccionSchema = z.object({
 const guiaSchema = z.object({
   anexoId: z.string().trim().min(1).max(60),
   elecciones: z.array(eleccionSchema).max(60).optional(),
+  confirmo: z.array(z.enum(CONFIRMACIONES)).max(CONFIRMACIONES.length).optional(),
 });
+
+const clave = z.string().trim().min(1).max(400);
+const patchSchema = z.discriminatedUnion("accion", [
+  z.object({ accion: z.literal("resolver"), duda: clave, opcion: clave }),
+  z.object({ accion: z.literal("deshacer"), anexoId: z.string().trim().min(1).max(60) }),
+  z.object({ accion: z.literal("responder"), clave, valor: z.string().trim().min(1).max(40).nullable() }),
+]);
 
 const postSchema = z
   .object({
@@ -170,6 +186,59 @@ export const POST = withApiHandler("forestal-anexos-a-despacho-post", async (req
       return NextResponse.json({ error: err.code, message: err.message, detail: err.detail }, { status: 409 });
     }
     logger.error("[anexos.a-despacho.POST] failed", { error: String(err), tenantId: auth.tenantId });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+});
+
+export const PATCH = withApiHandler("forestal-anexos-a-despacho-patch", async (req: NextRequest) => {
+  const auth = await requireAdmin(req, ["admin", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+  const rol = soloAdminODueno(auth.role, "contestar la revisión de las guías sin registrar");
+  if (rol) return rol;
+  const csrf = assertCsrf(req);
+  if (csrf) return csrf;
+  const rl = applyRateLimitWithTenant(req, "MODERATE", auth.tenantId, "anexos-a-despacho-revision", RateLimitPresets.MODERATE);
+  if (rl) return rl;
+  const guard = await ensureSpec(auth.tenantId);
+  if (guard) return guard;
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  const parsed = patchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "validation_error",
+        issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+      },
+      { status: 400 },
+    );
+  }
+  const user = auth.username ?? "unknown";
+  const p = parsed.data;
+  try {
+    const resultado =
+      p.accion === "resolver"
+        ? await ForestCtpGuiaDesdeAnexoDB.resolverDuda(auth.tenantId, p.duda, p.opcion, user)
+        : p.accion === "deshacer"
+          ? await ForestCtpGuiaDesdeAnexoDB.deshacerReemplazo(auth.tenantId, p.anexoId, user)
+          : await ForestCtpGuiaDesdeAnexoDB.responder(auth.tenantId, p.clave, p.valor, user);
+    return NextResponse.json(resultado);
+  } catch (err) {
+    if (err instanceof CtpInvariantError) {
+      return NextResponse.json({ error: err.code, message: err.message, detail: err.detail }, { status: 409 });
+    }
+    if (err instanceof ClaveOcupadaError) {
+      return NextResponse.json(
+        { error: "TANDA_EN_CURSO", message: "Se está registrando una guía o guardando un anexo: espera unos segundos y vuelve a intentar." },
+        { status: 409 },
+      );
+    }
+    logger.error("[anexos.a-despacho.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 });

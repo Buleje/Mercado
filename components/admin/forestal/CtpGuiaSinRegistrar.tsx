@@ -7,11 +7,12 @@
  */
 import { useEffect, useState } from "react";
 import { AlertTriangle, Calculator, Check, ChevronRight, Loader2, RefreshCw } from "@buleje/design-system/icons";
-import type { EleccionDeOrigen, GrupoPropuesto, PropuestaDeGuia } from "@/lib/forestal/anexo-a-despacho";
+import type { Confirmacion, EleccionDeOrigen, GrupoPropuesto, PropuestaDeGuia } from "@/lib/forestal/anexo-a-despacho";
 import type { ResultadoGuia } from "@/lib/db/forest-ctp-guia-desde-anexo.db";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CtpGuiaGrupoOrigen, { SIN_ORIGEN_SUAVE } from "./CtpGuiaGrupoOrigen";
+import CtpSalidaConfirmar from "./CtpSalidaConfirmar";
 import {
   esperaLegible,
   estadoDeGuia,
@@ -23,6 +24,7 @@ import {
   ptDeGuia,
   resultadoTerminal,
   resumenDeBloqueo,
+  sinConfirmar,
   textoDeResultado,
   type TonoEstado,
 } from "./guias-sin-registrar-pantalla";
@@ -70,8 +72,10 @@ export default function CtpGuiaSinRegistrar({
   esSiguiente,
   siguienteGtf,
   elecciones,
+  confirmo,
   ocupado,
   registrandoDesde,
+  onConfirmar,
   onElegir,
   onRevisar,
   onRegistrar,
@@ -85,16 +89,21 @@ export default function CtpGuiaSinRegistrar({
   esSiguiente: boolean;
   siguienteGtf: string | null;
   elecciones: Readonly<Record<string, EleccionDeOrigen>> | undefined;
+  /** Lo que el dueño ya confirmó de esta guía (sin origen / desde «usado»). */
+  confirmo: readonly Confirmacion[];
   /** Se está registrando o releyendo algo: los actos esperan. */
   ocupado: boolean;
   /** Si ESTA guía se está registrando, desde cuándo. */
   registrandoDesde: number | null;
+  onConfirmar: (c: Confirmacion) => void;
   onElegir: (grupo: GrupoPropuesto, corridas: string[] | null) => void;
   onRevisar: () => void;
   onRegistrar: () => void;
   onAnotarProduccion?: (especie: string) => void;
 }) {
-  const estado = estadoDeGuia(p, resultado);
+  const confirmados = { [p.anexoId]: confirmo };
+  const estado = estadoDeGuia(p, resultado, confirmados);
+  const faltaConfirmar = sinConfirmar(p, confirmados).length > 0;
   const idDetalle = `guia-${p.anexoId}`;
   const manual = p.totalManualM3 != null && Math.abs(p.totalManualM3 - p.totalM3) >= 0.001 ? p.totalManualM3 : null;
   const reintento = fallo(resultado);
@@ -104,7 +113,9 @@ export default function CtpGuiaSinRegistrar({
       ? "Esta guía ya está en Despacho."
       : !esSiguiente && !reintento
         ? `Registra antes la guía ${siguienteGtf ?? "más vieja"}: esta propuesta cuenta con que ésa ya salió.`
-        : undefined;
+        : faltaConfirmar
+          ? "Marca arriba lo que confirmas de esta guía."
+          : undefined;
 
   return (
     <li className={`rounded-xl border-2 ${abierta ? "border-[var(--accent)]/60" : "border-[var(--rule-base)]"} bg-[var(--surface-raised)]`}>
@@ -186,6 +197,10 @@ export default function CtpGuiaSinRegistrar({
               />
             ))}
           </ul>
+
+          {p.registrable && !resultadoTerminal(resultado) && (
+            <CtpSalidaConfirmar p={p} confirmo={confirmo} bloqueado={ocupado} onAlternar={onConfirmar} />
+          )}
 
           {resultado && (
             <p role="status" className={`flex items-start gap-1.5 text-sm ${resultado.estado === "registrada" || resultado.estado === "ya_registrada" ? "text-[var(--data-success-ink)]" : "text-[var(--data-error-ink)]"}`}>

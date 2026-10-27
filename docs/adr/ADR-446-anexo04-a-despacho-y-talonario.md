@@ -1,6 +1,6 @@
 # ADR-446 — Registrar en el libro la salida de un Anexo 04 guardado, y la GTF con el largo real de su talonario
 
-**Estado:** Aceptado y construido (2026-09-28): talonario `8a9721f78`, puente `e3eb18571`, pantalla «Guías sin registrar» `fcd6d8ab4`. Revisado por reviewer y security (sin críticos). **En Blas no se registró nada todavía:** Brandon confirma guía por guía desde la pantalla. Pendiente: «Nuevo despacho» guarda el número sin lock (`forest-ctp.db.ts` ~1097); decisiones 5, 8 y 9 se resuelven al confirmar cada guía.
+**Estado:** Aceptado y construido (2026-09-28): talonario `8a9721f78`, puente `e3eb18571`, pantalla «Guías sin registrar» `fcd6d8ab4`. Revisado por reviewer y security (sin críticos). **En Blas no se registró nada todavía:** Brandon confirma guía por guía desde la pantalla. Pendiente: «Nuevo despacho» guarda el número sin lock (`forest-ctp.db.ts` ~1097); decisiones 5, 8 y 9 se resuelven al confirmar cada guía. **Revisión 26-10 (r3):** ver «Revisión en tanda» al final.
 **Relacionados:** ADR-444 (un paquete en UNA guía vigente), ADR-445 (origen y salida del día), ADR-437 (madera de servicio WASACO).
 
 ## Contexto
@@ -68,9 +68,23 @@ El modal de despacho actual (no ofrece corridas «usado», no es atómico) · af
 2. ✅ **Anotar la producción de Azúcar huayo** (16 piezas, 0,92 m³) antes de registrar la 064, así entra entera.
 3. ✅ **Eran pruebas: anulados el 28-09** (despachos #1 SL-680 y #4 SL-682, con motivo, por `ForestCtpDB.annul`). Blas queda con 0 despachos vigentes.
 4. ✅ **Serie 19-001, correlativo de 7 dígitos** (19-001-0000065 es el siguiente).
-5. Guías 060 y 062 (09/09): ¿salieron del inventario del 1 de agosto?
+5. Guías 060 y 062 (09/09): ¿salieron del inventario del 1 de agosto? → **se contesta en la pantalla, guía por guía** (casilla «Salió de … marcada «usado»»).
 6. ✅ **Los ~8 m³ sobrantes siguen en el patio:** al registrar las guías, el resto vuelve a Productos disponibles (se le quita «usado» SÓLO a ese resto, no automáticamente a toda la corrida).
 7. ✅ **El Tornillo del inventario del 1 de agosto es de WASACO (servicio):** sin precio de venta ni costo (`valorVenta` null), igual que el permiso de Santos Muñoz.
-8. ~2 m³ de Tornillo corto y tablas sin producción de ese tipo: ¿anotar producción o dejar sin origen?
-9. Guías 059 y 061 sin anexo: ¿existen?
+8. ~2 m³ de Tornillo corto y tablas sin producción de ese tipo: ¿anotar producción o dejar sin origen? → **se contesta en la pantalla** («Anotar la producción» o casilla «Regístrala con X m³ sin corrida de origen»).
+9. Guías 059 y 061 sin anexo: ¿existen? → **se contesta en la pantalla** («No salió» / «Salió: falta cargar su Anexo 04»).
 10. ✅ **Sí, se parten** en «lo que salió en esta guía» y «lo que queda» (decisión 3 del diseño).
+
+## Revisión en tanda (r3, 2026-10-26)
+
+Medido en Blas (26-10, sólo lectura): 13 GTF con Anexo 04 sin despacho (145,302 m³), 0 despachos vigentes, la producción de Tornillo no alcanza para 11 de ellas y la 065 tiene dos Anexos distintos (el del 20-10 es el mismo papel que el de la 066). Lo que se agregó, sin schema:
+
+1. **Redondeo a 3 decimales** en líneas y grupos, como el Anexo 04, con el mayor resto **por especie** (el stock se mira por especie): la 064 se bloqueaba por 0,0002 m³ de Copal y, repartido sobre todo el papel, por 0,001 de Mashonaste.
+2. **Dudas que el sistema no decide** (`lib/forestal/anexo-dudas.ts`): `dos_papeles` (una guía con dos Anexos distintos → «¿cuál viajó?»; el otro queda «reemplazado», no se borra) y `mismo_papel` (mismo papel —piezas, m³ y especies, sin fecha— en dos guías → quitarlo de una, o «salieron dos veces»). Mientras haya duda, esas guías salen `bloqueada`.
+3. **Confirmación por guía** de las decisiones 5 y 8 (`confirmo: ["usado" | "sin_origen"]` en el POST): sin la casilla marcada el servidor devuelve `bloqueada` (`FALTA_CONFIRMAR_*`) aunque el botón se forzara. En la tanda, la fila se corta en la primera guía sin confirmar: las propuestas de las siguientes suponen que las anteriores salieron antes. Cambiar el origen de una guía borra las confirmaciones de esa y de las siguientes.
+4. **Huecos del talonario** (decisión 9): números que faltan entre guías emitidas (hasta 5 seguidos) → «No salió» / «Salió: falta cargar su Anexo 04». No bloquean.
+5. **PATCH** `/api/admin/forestal/anexos/a-despacho`: `resolver` (duda + opción), `deshacer` (un «reemplazado») y `responder` (clave + valor, o `null` para volver a preguntar). Nunca escribe en el libro: guarda en el KV `ctp-guias-revision:<tenantId>` por `PlatformSettingsDB.actualizar`, con auditoría (`ctp-audit`). El GET devuelve `contestadas` para poder cambiarlas.
+6. **Aviso en el libro**: «N guías salieron sin registrar su despacho» en los pendientes (`ctp-pendientes.ts`, `?contar=1`, sin período) → lleva a Despacho.
+
+Riesgo aceptado: dos camiones reales con la misma carga exacta disparan «mismo papel»; se contesta una vez y una guía nueva con ese papel vuelve a preguntar.
+

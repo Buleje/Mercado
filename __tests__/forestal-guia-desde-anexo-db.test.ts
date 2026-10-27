@@ -36,6 +36,8 @@ const P = `${PREFIJO}${runId}`;
 const ESPECIE = `A446 ${runId}`;
 const COMERCIAL = "MADERA ASERRADA (COMERCIAL)";
 const PAQ_CORTA = "MADERA ASERRADA (PAQUETERIA CORTA)";
+/** Lo que el dueño confirma en la revisión (decisiones 5 y 8); los casos de abajo prueban otra cosa. */
+const OK = ["sin_origen", "usado"] as const;
 
 async function purgar() {
   const linea = { tenantId: T, createdBy: { startsWith: PREFIJO } };
@@ -84,6 +86,9 @@ function fila(cantidad: number, espesor: number, ancho: number, largo: number): 
   const base = { cantidad, espesor, ancho, largo, uEspesor: "pulg" as const, uAncho: "pulg" as const, uLargo: "pies" as const };
   return { id: `p${++n}`, ...base, especie: ESPECIE, ...cubicarPieza(base) };
 }
+/* Cada guía de este archivo lleva un papel con su propia cantidad de piezas: dos
+   guías con el mismo papel (piezas, m³ y especies) son una duda de la revisión
+   («¿salió dos veces?») y la guía queda bloqueada hasta contestarla. */
 const comercial = (pz: number) => fila(pz, 2, 8, 10); // 13,33 pt c/u
 const paqCorta = (pz: number) => fila(pz, 6, 6, 4); // 12 pt c/u
 const tabla = (pz: number) => fila(pz, 1, 4, 8);
@@ -152,7 +157,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       expect(sim.tanda.guias.map((g) => g.gtf)).toEqual([gA, gB]);
       expect(sim.tanda.guias.every((g) => g.registrable)).toBe(true);
 
-      const r = await ForestCtpGuiaDesdeAnexoDB.registrarTanda(T, [{ anexoId: b.id }, { anexoId: a.id }], { user: P });
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarTanda(T, [{ anexoId: b.id, confirmo: OK }, { anexoId: a.id, confirmo: OK }], { user: P });
       expect(r.resumen).toMatchObject({ registradas: 2, errores: 0, bloqueadas: 0 });
       // Se registran en el orden de la tanda (la más vieja primero), aunque se pidan al revés.
       expect(r.guias.map((g) => g.gtf)).toEqual([gA, gB]);
@@ -172,7 +177,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       }
       const tablaB = lB.find((l) => l.productType === "MADERA ASERRADA (TABLA)")!;
       expect(tablaB.origenes).toHaveLength(0);
-      expect(Number(tablaB.quantity)).toBeCloseTo(0.1887, 4);
+      expect(Number(tablaB.quantity)).toBeCloseTo(0.189, 4); // a 3 decimales, como el Anexo 04 (ADR-446 r3)
       const conOrigen = [...lA, ...lB].filter((l) => l.origenes.length > 0);
       expect(conOrigen.every((l) => l.duenoMadera === "tercero" && l.titularNombre === "WASACO QA")).toBe(true);
 
@@ -199,7 +204,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       expect(disp[0].paquetes.map((p) => p.codigo).sort()).toEqual([`${R}-COM-R2`, `${R}-PQC-R2`]);
 
       /* Idempotente: la misma tanda otra vez no crea nada. */
-      const otra = await ForestCtpGuiaDesdeAnexoDB.registrarTanda(T, [{ anexoId: a.id }, { anexoId: b.id }], { user: P });
+      const otra = await ForestCtpGuiaDesdeAnexoDB.registrarTanda(T, [{ anexoId: a.id, confirmo: OK }, { anexoId: b.id, confirmo: OK }], { user: P });
       expect(otra.resumen).toMatchObject({ registradas: 0, yaRegistradas: 2 });
       expect(await lineasDeGuia(gA)).toHaveLength(2);
 
@@ -221,7 +226,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
          volvió a quedar «usado» (el cierre de una tanda anterior no llegó a
          correr), la siguiente la suelta. */
       await ForestCtpDB.marcarUsado(T, k1.id, { usado: true, motivo: "QA: la liberación no corrió", user: P });
-      const reintento = await ForestCtpGuiaDesdeAnexoDB.registrarTanda(T, [{ anexoId: a.id }], { user: P });
+      const reintento = await ForestCtpGuiaDesdeAnexoDB.registrarTanda(T, [{ anexoId: a.id, confirmo: OK }], { user: P });
       expect(reintento.resumen).toMatchObject({ registradas: 0, yaRegistradas: 1 });
       expect(reintento.liberadas.map((u) => u.corridaId)).toEqual([k1.id]);
     },
@@ -235,8 +240,8 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       const g = gtf();
       const c = await anexo("C", g, "2026-08-20", [comercial(10)]);
       const [x, y] = await Promise.all([
-        ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, c.id, { user: P }),
-        ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, c.id, { user: P }),
+        ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, c.id, { user: P, confirmo: OK }),
+        ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, c.id, { user: P, confirmo: OK }),
       ]);
       /* Una entra; la otra, según cuándo llega: «otra tanda en curso» (llegó
          DURANTE, la bandeja se toma sin esperar) o «ya registrada» (DESPUÉS). */
@@ -261,7 +266,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
         if (++llamadas === 2) throw new CtpInvariantError("falla inyectada en la 2.ª línea", "VALIDACION");
         return real(...args);
       });
-      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, d.id, { user: P });
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, d.id, { user: P, confirmo: OK });
       expect(r.guias[0]).toMatchObject({ estado: "error", codigo: "VALIDACION" });
       expect(await lineasDeGuia(g)).toHaveLength(0);
       expect((await paquetesDe(k.id)).map((p) => [p.codigo, Number(p.volumenM3)])).toEqual([
@@ -282,15 +287,16 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       vi.spyOn(ForestCtpCierreDB, "list").mockResolvedValue([agosto as unknown as CtpCierrePeriodo]);
 
       const gJulio = gtf();
-      const enJulio = await anexo("E", gJulio, "2026-07-20", [comercial(10)]);
-      const r1 = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, enJulio.id, { user: P });
+      const enJulio = await anexo("E", gJulio, "2026-07-20", [comercial(12)]);
+      const r1 = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, enJulio.id, { user: P, confirmo: OK });
       expect(r1.guias[0]).toMatchObject({ estado: "error", codigo: "PERIODO_CERRADO" });
 
       /* La guía es de agosto (abierto), pero el montón a partir vive en julio (cerrado). */
       const gAgosto = gtf();
-      const enAgosto = await anexo("F", gAgosto, "2026-08-10", [comercial(10)]);
+      const enAgosto = await anexo("F", gAgosto, "2026-08-10", [comercial(13)]);
       const r2 = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, enAgosto.id, {
         user: P,
+        confirmo: OK,
         elecciones: [{ especie: ESPECIE, tipo: "Comercial", corridas: [k.id] }],
       });
       expect(r2.guias[0]).toMatchObject({ estado: "error", codigo: "PERIODO_CERRADO" });
@@ -305,13 +311,13 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
     async () => {
       await inventario();
       const g = gtf();
-      const viejo = await anexo("G1", g, "2026-08-24", [comercial(10)]);
+      const viejo = await anexo("G1", g, "2026-08-24", [comercial(14)]);
       await new Promise((ok) => setTimeout(ok, 5));
       const nuevo = await anexo("G2", g.replace(/^19-/, "019-"), "2026-08-25", [comercial(11)]);
       const pend = await ForestCtpGuiaDesdeAnexoDB.pendientes(T);
       expect(pend.reemplazados.find((x) => x.anexoId === viejo.id)?.por).toBe(nuevo.id);
 
-      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, nuevo.id, { user: P });
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, nuevo.id, { user: P, confirmo: OK });
       expect(r.guias[0]).toMatchObject({ estado: "registrada", reemplazados: [viejo.id] });
       const bandeja = await ForestAnexosDB.list(T);
       expect(bandeja.find((x) => x.id === viejo.id)?.reemplazadoPor).toBe(nuevo.id);
@@ -323,7 +329,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
         piezas: viejo.piezas,
       }, P);
       expect((await ForestAnexosDB.list(T)).find((x) => x.id === viejo.id)?.reemplazadoPor).toBe(nuevo.id);
-      const otra = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, viejo.id, { user: P });
+      const otra = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, viejo.id, { user: P, confirmo: OK });
       expect(otra.guias[0]).toMatchObject({ estado: "error", codigo: "ANEXO_NO_REGISTRABLE" });
     },
     180_000,
@@ -374,7 +380,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
         createdBy: P,
       });
       const h = await anexo("H", g, "2026-08-26", [comercial(10)]);
-      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, h.id, { user: P });
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, h.id, { user: P, confirmo: OK });
       expect(r.guias[0].estado).toBe("ya_existe");
       expect(await lineasDeGuia(g)).toHaveLength(0);
     },
@@ -388,7 +394,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       const g = gtf();
       const i = await anexo("I", g, "2026-08-27", [comercial(10)]);
       expect(await ForestCtpGuiaDesdeAnexoDB.proponer("main", i.id)).toMatchObject({ estado: "no_existe" });
-      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia("main", i.id, { user: P });
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia("main", i.id, { user: P, confirmo: OK });
       expect(r.guias[0]).toMatchObject({ estado: "error", codigo: "ANEXO_NO_REGISTRABLE" });
 
       const fisico = await prisma.forestCtpPaquete.create({
@@ -420,18 +426,20 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       const g = gtf();
       const salida = { ...comercial(32), especie };
       const a = await anexo("K", g, "2026-08-29", [salida]);
-      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, a.id, { user: P });
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, a.id, { user: P, confirmo: OK });
       expect(r.guias[0].estado).toBe("registrada");
       const [linea] = await lineasDeGuia(g);
       // Va a nivel corrida: sin código de paquete (una línea por bulto físico es lo que el ADR descarta).
       expect(linea.codigoProducto).toBeNull();
       const [enPatio] = (await ForestCtpDB.productosDisponibles(T, { especie })).corridas;
       expect(enPatio.id).toBe(k.id);
-      expect(enPatio.disponible).toBeCloseTo(2 - salida.m3, 4);
+      /* La línea va a 3 decimales, como el Anexo 04 (ADR-446 r3). */
+      const salioM3 = Math.round(salida.m3 * 1000) / 1000;
+      expect(enPatio.disponible).toBeCloseTo(2 - salioM3, 4);
       // Los dos bultos siguen listados: la diferencia con el saldo es lo que salió sin decir cuál.
       const listado = enPatio.paquetes.reduce((s2, p) => s2 + p.volumenM3, 0);
       expect(listado).toBeCloseTo(2, 4);
-      expect(listado - enPatio.disponible).toBeCloseTo(salida.m3, 4);
+      expect(listado - enPatio.disponible).toBeCloseTo(salioM3, 4);
     },
     180_000,
   );
@@ -454,7 +462,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       const pend = await ForestCtpGuiaDesdeAnexoDB.pendientes(T);
       expect(pend.tanda.guias.some((x) => x.anexoId === l.id)).toBe(true);
       expect(pend.registrados.some((x) => x.anexoId === l.id)).toBe(false);
-      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, l.id, { user: P });
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, l.id, { user: P, confirmo: OK });
       expect(r.guias[0].estado).toBe("ya_existe");
       expect(await lineasDeGuia(g)).toHaveLength(0);
     },
@@ -465,7 +473,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
     "con la bandeja tomada: guardar espera 3 s y responde «tanda en curso»; registrar no espera",
     async () => {
       await inventario();
-      const m = await anexo("M", gtf(), "2026-08-31", [comercial(10)]);
+      const m = await anexo("M", gtf(), "2026-08-31", [comercial(15)]);
       let soltar!: () => void;
       const tomada = new Promise<void>((ok) => (soltar = ok));
       let avisar!: () => void;
@@ -480,7 +488,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
         const t0 = Date.now();
         await expect(anexo("N", gtf(), "2026-08-31", [comercial(5)])).rejects.toMatchObject({ code: "TANDA_EN_CURSO" });
         expect(Date.now() - t0).toBeLessThan(10_000);
-        const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, m.id, { user: P });
+        const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, m.id, { user: P, confirmo: OK });
         expect(r.guias[0]).toMatchObject({ estado: "error", codigo: "TANDA_EN_CURSO" });
       } finally {
         soltar();
@@ -509,6 +517,7 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
       /* La especie la comparten los otros casos: se elige ESTA corrida. */
       const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, q.id, {
         user: P,
+        confirmo: OK,
         elecciones: [{ especie: ESPECIE, tipo: "Comercial", corridas: [k.id] }],
       });
       expect(r.guias[0].estado).toBe("registrada");
@@ -538,12 +547,33 @@ describe.skipIf(!HAS_DB)("ADR-446 · registrar guías desde su Anexo 04 (op-qa-u
         },
         P,
       );
-      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, sinStock.id, { user: P });
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, sinStock.id, { user: P, confirmo: OK });
       expect(r.guias[0].estado).toBe("bloqueada");
       if (r.guias[0].estado === "bloqueada") {
         expect(r.guias[0].bloqueos[0]).toMatchObject({ codigo: "SIN_STOCK_DE_LA_ESPECIE", piezas: 16 });
       }
       expect(await lineasDeGuia(g)).toHaveLength(0);
+    },
+    120_000,
+  );
+
+  it(
+    "sin confirmar que sale del inventario «usado» la guía vuelve bloqueada y no escribe nada (decisión 5)",
+    async () => {
+      const k = await inventario();
+      const g = gtf();
+      const u = await anexo("U", g, "2026-08-20", [comercial(30)]);
+      const elecciones = [{ especie: ESPECIE, tipo: "Comercial" as const, corridas: [k.id] }];
+      const r = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, u.id, { user: P, elecciones });
+      expect(r.guias[0].estado).toBe("bloqueada");
+      if (r.guias[0].estado === "bloqueada") {
+        expect(r.guias[0].bloqueos.map((b) => b.codigo)).toEqual(["FALTA_CONFIRMAR_USADO"]);
+      }
+      expect(await lineasDeGuia(g)).toHaveLength(0);
+
+      const ok = await ForestCtpGuiaDesdeAnexoDB.registrarGuia(T, u.id, { user: P, elecciones, confirmo: ["usado"] });
+      expect(ok.guias[0].estado).toBe("registrada");
+      expect((await lineasDeGuia(g)).length).toBeGreaterThan(0);
     },
     120_000,
   );

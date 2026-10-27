@@ -9,6 +9,7 @@
 import type {
   BloqueoDeGuia,
   CandidataDeOrigen,
+  Confirmacion,
   EleccionDeOrigen,
   GrupoPropuesto,
   LineaPropuesta,
@@ -61,17 +62,45 @@ export const fallo = (r: ResultadoGuia | undefined): boolean => r?.estado === "e
  * antes que las de arriba sacaría de otras corridas que las que se ven.
  */
 export function siguienteEnFila(
-  guias: readonly Pick<PropuestaDeGuia, "anexoId" | "registrable">[],
+  guias: readonly GuiaEnFila[],
   resultados: Readonly<Record<string, ResultadoGuia>>,
 ): string | null {
   return guias.find((g) => g.registrable && !resultadoTerminal(resultados[g.anexoId]) && !fallo(resultados[g.anexoId]))?.anexoId ?? null;
 }
 
-/** Las que «Registrar las listas» va a mandar, en orden (las que fallaron, otra vez). */
-export const listasEnFila = (
-  guias: readonly Pick<PropuestaDeGuia, "anexoId" | "registrable">[],
+/** Lo que la fila mira de cada guía (los campos de confirmar faltan en las propuestas viejas). */
+export type GuiaEnFila = Pick<PropuestaDeGuia, "anexoId" | "registrable"> &
+  Partial<Pick<PropuestaDeGuia, "sinOrigenPorConfirmar" | "usadasComoOrigen">>;
+export type ConfirmadosPorGuia = Readonly<Record<string, readonly Confirmacion[]>>;
+
+/** Lo que la guía pide confirmar y el dueño todavía no marcó (decisiones 5 y 8 del ADR-446). */
+export function sinConfirmar(g: GuiaEnFila, confirmados: ConfirmadosPorGuia = {}): Confirmacion[] {
+  const ya = new Set(confirmados[g.anexoId] ?? []);
+  const pide: Confirmacion[] = [];
+  if (g.sinOrigenPorConfirmar) pide.push("sin_origen");
+  if ((g.usadasComoOrigen?.length ?? 0) > 0) pide.push("usado");
+  return pide.filter((c) => !ya.has(c));
+}
+
+/**
+ * Las que «Registrar las listas» va a mandar, en orden (las que fallaron, otra
+ * vez). Se corta en la primera que espera una confirmación: las de abajo cuentan
+ * con que ésa salió antes, y mandarlas igual sacaría de otras corridas que las
+ * que se ven.
+ */
+export function listasEnFila(
+  guias: readonly GuiaEnFila[],
   resultados: Readonly<Record<string, ResultadoGuia>>,
-): string[] => guias.filter((g) => g.registrable && !resultadoTerminal(resultados[g.anexoId])).map((g) => g.anexoId);
+  confirmados: ConfirmadosPorGuia = {},
+): string[] {
+  const out: string[] = [];
+  for (const g of guias) {
+    if (!g.registrable || resultadoTerminal(resultados[g.anexoId])) continue;
+    if (sinConfirmar(g, confirmados).length > 0) break;
+    out.push(g.anexoId);
+  }
+  return out;
+}
 
 const anioDe = (iso: string) => iso.slice(0, 4);
 /** «01/08» si es del año de la guía; «19/10/2025» si no (la N° 20 de Blas está fechada en 2025). */
@@ -132,6 +161,8 @@ export function mensajeDeCodigo(codigo: string | null | undefined, delServidor: 
       return "El libro está ocupado con otra operación: intenta en unos segundos.";
     case "ANEXO_REGISTRADO":
       return "Ese anexo ya tiene su salida en el libro: no se edita ni se borra.";
+    case "DUDA_DESACTUALIZADA":
+      return `${delServidor} Vuelve a cargar la lista.`.trim();
     default:
       return delServidor;
   }
@@ -181,12 +212,18 @@ export function resumenDeBloqueo(b: BloqueoDeGuia): { texto: string; accion: Acc
 export type TonoEstado = "ok" | "error" | "aviso" | "neutro";
 
 /** La pastilla de estado de una guía. */
-export function estadoDeGuia(p: Pick<PropuestaDeGuia, "registrable">, r: ResultadoGuia | undefined): { texto: string; tono: TonoEstado } {
+export function estadoDeGuia(
+  p: GuiaEnFila,
+  r: ResultadoGuia | undefined,
+  confirmados: ConfirmadosPorGuia = {},
+): { texto: string; tono: TonoEstado } {
   if (r?.estado === "registrada") return { texto: "Registrada", tono: "ok" };
   if (r?.estado === "ya_registrada") return { texto: "Ya estaba", tono: "ok" };
   if (r?.estado === "ya_existe") return { texto: "Ya en Despacho", tono: "aviso" };
   if (r?.estado === "error") return { texto: "No se registró", tono: "error" };
-  return p.registrable ? { texto: "Lista", tono: "ok" } : { texto: "Bloqueada", tono: "error" };
+  if (r?.estado === "bloqueada") return { texto: "Bloqueada", tono: "error" };
+  if (!p.registrable) return { texto: "Bloqueada", tono: "error" };
+  return sinConfirmar(p, confirmados).length > 0 ? { texto: "Falta confirmar", tono: "aviso" } : { texto: "Lista", tono: "ok" };
 }
 
 const rango = (ns: readonly number[]) => {

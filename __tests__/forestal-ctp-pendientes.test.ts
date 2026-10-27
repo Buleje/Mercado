@@ -146,3 +146,14 @@ describe("permisos con la vigencia vencida", () => {
       .toMatch(/ninguno traba/);
   });
 });
+
+describe("el aviso de guías que salieron sin registrar su despacho (ADR-446)", () => {
+  it("cuenta las guías, dice los m³ y lleva a Despacho; sin ellas no aparece", () => {
+    const p = pendientesDelLibro({ ...VACIO, guiasSinDespacho: 13, m3SinDespacho: 145.303 }).find((x) => x.clave === "guias-sin-despacho");
+    expect(p).toMatchObject({ cantidad: 13, urgencia: "atrasado", vista: "despacho", titulo: "Guías que salieron sin registrar su despacho" });
+    expect(p?.detalle).toContain("145.30 m³");
+    expect(pendientesDelLibro({ ...VACIO, guiasSinDespacho: 1, m3SinDespacho: 0.361 }).find((x) => x.clave === "guias-sin-despacho")?.titulo)
+      .toBe("Guía que salió sin registrar su despacho");
+    expect(pendientesDelLibro(VACIO).some((x) => x.clave === "guias-sin-despacho")).toBe(false);
+  });
+});

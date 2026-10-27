@@ -29,8 +29,10 @@ import {
   listasEnFila,
   mensajeDeCodigo,
   siguienteEnFila,
+  type ConfirmadosPorGuia,
   type EleccionesPorGuia,
 } from "@/components/admin/forestal/guias-sin-registrar-pantalla";
+import type { Confirmacion } from "@/lib/forestal/anexo-a-despacho";
 import {
   MAX_POR_PEDIDO,
   esperarCortable,
@@ -59,6 +61,7 @@ export function useGuiasSinRegistrar(
   const [error, setError] = useState<string | null>(null);
   const [elecciones, setElecciones] = useState<EleccionesPorGuia>({});
   const [liberar, setLiberar] = useState<ReadonlySet<string>>(new Set());
+  const [confirmados, setConfirmados] = useState<ConfirmadosPorGuia>({});
   const [resultados, setResultados] = useState<Readonly<Record<string, ResultadoGuia>>>({});
   const [liberadas, setLiberadas] = useState<readonly UsadaLiberada[]>([]);
   const [registrando, setRegistrando] = useState<EstadoGuiasSinRegistrar["registrando"]>(null);
@@ -68,6 +71,7 @@ export function useGuiasSinRegistrar(
   const datosRef = useRef(datos);
   const eleccionesRef = useRef(elecciones);
   const liberarRef = useRef(liberar);
+  const confirmadosRef = useRef(confirmados);
   const resultadosRef = useRef(resultados);
   const onCambioRef = useRef(opts.onCambio);
   useEffect(() => {
@@ -156,6 +160,16 @@ export function useGuiasSinRegistrar(
       if (Object.keys(porGuia).length > 0) nuevas[anexoId] = porGuia;
       else delete nuevas[anexoId];
       ponerElecciones(nuevas);
+      /* Cambiar un origen cambia lo que sale de esta guía y de las que vienen
+         después: lo que el dueño había confirmado de ellas se vuelve a confirmar. */
+      const orden = datosRef.current?.tanda.guias.map((g) => g.anexoId) ?? [];
+      const desde = orden.indexOf(anexoId);
+      if (desde >= 0) {
+        const quedan = { ...confirmadosRef.current };
+        for (const id of orden.slice(desde)) delete quedan[id];
+        confirmadosRef.current = quedan;
+        setConfirmados(quedan);
+      }
       void revisar();
     },
     [revisar],
@@ -169,6 +183,14 @@ export function useGuiasSinRegistrar(
     setLiberar(s);
   }, []);
 
+  /** Marca o desmarca lo que el dueño confirma de una guía. Nunca se marca solo. */
+  const alternarConfirmo = useCallback((anexoId: string, c: Confirmacion) => {
+    const ya = confirmadosRef.current[anexoId] ?? [];
+    const nuevas = ya.includes(c) ? ya.filter((x) => x !== c) : [...ya, c];
+    confirmadosRef.current = { ...confirmadosRef.current, [anexoId]: nuevas };
+    setConfirmados(confirmadosRef.current);
+  }, []);
+
   /**
    * UNA guía, sin releer la lista. `corta` = la fila no debe seguir;
    * `esperarSeg` = el fallo es pasajero y la fila reintenta después de eso.
@@ -179,7 +201,11 @@ export function useGuiasSinRegistrar(
       const base = { anexoId, numero: guia?.numero ?? "", gtf: guia?.gtf ?? "" };
       setRegistrando({ anexoId, desde: Date.now() });
       const r = await pedir<ResultadoTanda>("POST", {
-        guias: [{ anexoId, elecciones: eleccionesParaApi(eleccionesRef.current[anexoId]) }],
+        guias: [{
+          anexoId,
+          elecciones: eleccionesParaApi(eleccionesRef.current[anexoId]),
+          ...((confirmadosRef.current[anexoId]?.length ?? 0) > 0 ? { confirmo: [...(confirmadosRef.current[anexoId] ?? [])] } : {}),
+        }],
         ...(liberarRef.current.size > 0 ? { liberarUsadas: [...liberarRef.current] } : {}),
       });
       let resultado: ResultadoGuia;
@@ -231,7 +257,7 @@ export function useGuiasSinRegistrar(
   const registrarListas = useCallback(async () => {
     const base = datosRef.current;
     if (!base) return;
-    const ids = listasEnFila(base.tanda.guias, resultadosRef.current);
+    const ids = listasEnFila(base.tanda.guias, resultadosRef.current, confirmadosRef.current);
     if (ids.length === 0) return;
     detenerPedido.current = false;
     const cortar = () => detenerPedido.current || !vivo.current;
@@ -273,6 +299,7 @@ export function useGuiasSinRegistrar(
     simulando,
     error,
     elecciones,
+    confirmados,
     liberar,
     resultados,
     liberadas,
@@ -283,6 +310,7 @@ export function useGuiasSinRegistrar(
     revisar,
     elegir,
     alternarLiberar,
+    alternarConfirmo,
     registrar,
     registrarListas,
     detener,

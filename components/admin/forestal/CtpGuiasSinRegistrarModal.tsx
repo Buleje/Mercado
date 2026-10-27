@@ -14,6 +14,7 @@ import { AlertTriangle, Check, FileStack, Loader2 } from "@buleje/design-system/
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EstadoGuiasSinRegistrar } from "@/hooks/use-guias-sin-registrar";
+import { useRevisionDeSalidas } from "@/hooks/use-revision-de-salidas";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import CtpGuiaSinRegistrar, {
   BOTON_PRIMARIO,
@@ -23,10 +24,14 @@ import CtpGuiaSinRegistrar, {
 } from "./CtpGuiaSinRegistrar";
 import { SIN_ORIGEN_SUAVE } from "./CtpGuiaGrupoOrigen";
 import CtpGuiasSobrante from "./CtpGuiasSobrante";
+import CtpSalidasDecididas from "./CtpSalidasDecididas";
+import CtpSalidasPreguntas from "./CtpSalidasPreguntas";
 import {
   haySinOrigen,
   listasEnFila,
   ptDeGuia,
+  resultadoTerminal,
+  sinConfirmar,
   textoDeResultado,
 } from "./guias-sin-registrar-pantalla";
 
@@ -50,13 +55,18 @@ export default function CtpGuiasSinRegistrarModal({
   /** La guía abierta; `""` = el operador las cerró todas. Sin elegir, la que sigue. */
   const [abierta, setAbierta] = useState<string | null>(null);
   const [confirmarFila, setConfirmarFila] = useState(false);
+  const revision = useRevisionDeSalidas(estado.cargar);
   const d = estado.datos;
   const guias = d?.tanda.guias ?? [];
   const abiertaReal = abierta ?? estado.siguiente ?? guias[0]?.anexoId ?? "";
   const ocupado =
-    estado.registrando != null || estado.fila != null || estado.simulando || estado.cargando;
-  const enFila = listasEnFila(guias, estado.resultados);
+    estado.registrando != null || estado.fila != null || estado.simulando || estado.cargando || revision.enviando != null;
+  const enFila = listasEnFila(guias, estado.resultados, estado.confirmados);
   const bloqueadas = guias.filter((g) => !g.registrable).length;
+  const vivas = guias.filter((g) => g.registrable && !resultadoTerminal(estado.resultados[g.anexoId]));
+  const porConfirmar = vivas.filter((g) => sinConfirmar(g, estado.confirmados).length > 0).length;
+  /* «Lista» en su fila pero fuera de la tanda: espera a una de arriba sin confirmar. */
+  const esperan = vivas.length - porConfirmar - enFila.length;
   const pendientes = new Set(guias.map((g) => g.anexoId));
   /* Registradas en esta sesión: ya no vienen en la lista, pero se dice qué pasó. */
   const hechas = Object.values(estado.resultados).filter((r) => !pendientes.has(r.anexoId));
@@ -72,7 +82,8 @@ export default function CtpGuiasSinRegistrarModal({
       : guias.length === 0
         ? "Nada pendiente."
         : [
-            plural(enFila.length, "lista", "listas"),
+            plural(enFila.length, "lista", "listas") + (esperan > 0 ? ` (${esperan} más ${esperan === 1 ? "espera" : "esperan"} a la que falta confirmar)` : ""),
+            porConfirmar > 0 ? `${porConfirmar} por confirmar` : "",
             bloqueadas > 0 ? plural(bloqueadas, "bloqueada", "bloqueadas") : "",
           ]
             .filter(Boolean)
@@ -261,6 +272,15 @@ export default function CtpGuiasSinRegistrarModal({
           </p>
         )}
 
+        {d && (
+          <CtpSalidasPreguntas
+            datos={d}
+            revision={revision}
+            bloqueado={ocupado}
+            onAnotarProduccion={onAnotarProduccion}
+          />
+        )}
+
         {guias.length > 0 && (
           <ul className="space-y-2">
             {guias.map((p) => (
@@ -273,6 +293,8 @@ export default function CtpGuiasSinRegistrarModal({
                 esSiguiente={estado.siguiente === p.anexoId}
                 siguienteGtf={estado.siguiente ? gtfDe(estado.siguiente) : null}
                 elecciones={estado.elecciones[p.anexoId]}
+                confirmo={estado.confirmados[p.anexoId] ?? []}
+                onConfirmar={(c) => estado.alternarConfirmo(p.anexoId, c)}
                 ocupado={ocupado}
                 registrandoDesde={
                   estado.registrando?.anexoId === p.anexoId ? estado.registrando.desde : null
@@ -297,28 +319,7 @@ export default function CtpGuiasSinRegistrarModal({
           />
         )}
 
-        {d && (d.reemplazados.length > 0 || d.sinGuia.length > 0 || d.registrados.length > 0) && (
-          <ul className="space-y-0.5 text-xs text-[var(--text-tertiary)]">
-            {d.reemplazados.map((x) => (
-              <li key={x.anexoId}>
-                El Anexo {x.numero || "s/n"} de la {x.gtf} queda reemplazado por el{" "}
-                {x.porNumero || "más nuevo"}: no se borra ni se registra.
-              </li>
-            ))}
-            {d.sinGuia.length > 0 && (
-              <li>
-                {plural(d.sinGuia.length, "anexo sin N° de guía", "anexos sin N° de guía")}: no hay
-                salida que registrar.
-              </li>
-            )}
-            {d.registrados.length > 0 && (
-              <li>
-                {plural(d.registrados.length, "guía ya está", "guías ya están")} en Despacho desde
-                su anexo.
-              </li>
-            )}
-          </ul>
-        )}
+        {d && <CtpSalidasDecididas datos={d} revision={revision} bloqueado={ocupado} />}
       </div>
     </AdminModal>
   );

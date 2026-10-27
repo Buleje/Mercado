@@ -9,9 +9,11 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { leerJson } from "@/lib/errores/sin-dato";
 import type { RespuestaPendientes, ResultadoGuia, UsadaLiberada } from "@/lib/db/forest-ctp-guia-desde-anexo.db";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
+import type { Confirmacion } from "@/lib/forestal/anexo-a-despacho";
 import {
   esperaLegible,
   mensajeDeCodigo,
+  type ConfirmadosPorGuia,
   type EleccionesPorGuia,
 } from "@/components/admin/forestal/guias-sin-registrar-pantalla";
 
@@ -47,13 +49,14 @@ function segundosDeEspera(r: Response, j: CuerpoDeError | null): number | null {
   return Number.isFinite(n) && n > 0 ? Math.ceil(n) : null;
 }
 
-export async function pedir<T>(metodo: "GET" | "POST", cuerpo?: unknown): Promise<Respuesta<T>> {
+/** GET trae la bandeja; POST registra (o simula); PATCH contesta la revisión (dudas y huecos). */
+export async function pedir<T>(metodo: "GET" | "POST" | "PATCH", cuerpo?: unknown): Promise<Respuesta<T>> {
   try {
     const r = await fetch(metodo === "GET" ? `${URL_GUIAS_A_DESPACHO}?pendientes=1` : URL_GUIAS_A_DESPACHO, {
       method: metodo,
       credentials: "include",
       cache: "no-store",
-      headers: metodo === "POST" ? csrfHeaders({ "Content-Type": "application/json" }) : undefined,
+      headers: metodo === "GET" ? undefined : csrfHeaders({ "Content-Type": "application/json" }),
       body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
     });
     const j = await leerJson<T & CuerpoDeError>(r);
@@ -93,6 +96,8 @@ export interface EstadoGuiasSinRegistrar {
   simulando: boolean;
   error: string | null;
   elecciones: EleccionesPorGuia;
+  /** Lo que el dueño confirmó de cada guía (sin origen / desde «usado»): sin eso no se registra. */
+  confirmados: ConfirmadosPorGuia;
   /** Corridas «usado» que ninguna guía toma y que el dueño marcó para devolver al patio. */
   liberar: ReadonlySet<string>;
   /** Lo que pasó con cada guía registrada (o intentada) en esta sesión. */
@@ -113,6 +118,7 @@ export interface EstadoGuiasSinRegistrar {
   /** `corridas = null` vuelve a la propuesta; `[]` = sin origen. */
   elegir: (anexoId: string, grupo: GrupoAElegir, corridas: string[] | null) => void;
   alternarLiberar: (corridaId: string) => void;
+  alternarConfirmo: (anexoId: string, c: Confirmacion) => void;
   registrar: (anexoId: string) => Promise<void>;
   registrarListas: () => Promise<void>;
   detener: () => void;

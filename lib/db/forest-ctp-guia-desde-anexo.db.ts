@@ -10,11 +10,13 @@ import {
   anexoRegistrado,
   clasificarAnexos,
   esMonton,
+  faltaConfirmar,
   fechaCorta,
   proponerDespachoDeAnexo,
   proponerTanda,
   type AnexoReemplazado,
   type BloqueoDeGuia,
+  type Confirmacion,
   type CorridaOrigen,
   type EleccionDeOrigen,
   type EstadoDelLibro,
@@ -23,11 +25,22 @@ import {
   type PropuestaDeTanda,
 } from "@/lib/forestal/anexo-a-despacho";
 import { etiquetaEmision, vincularDespachos, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
-import { mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
+import { claveNumeroGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
+import {
+  RESPUESTAS_POR_TIPO,
+  bloqueosPorDuda,
+  dudasDeAnexos,
+  huecosDelTalonario,
+  tipoDePregunta,
+  type DudaDeAnexo,
+  type HuecoDelTalonario,
+  type OpcionDeDuda,
+  type RespuestasDeRevision,
+} from "@/lib/forestal/anexo-dudas";
 import { presentacionSugerida } from "@/lib/forestal/loctp-catalogos";
 import { ForestCtpDB, type CreadoEnTx, type CreatePreparado, type CtpEntryInput } from "./forest-ctp.db";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
-import { ORIGEN_VIGENTE } from "./forest-ctp-despacho.db";
+import { ForestCtpDespachoDB, ORIGEN_VIGENTE } from "./forest-ctp-despacho.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestAnexosDB, claveAnexos, normalizarAnexos } from "./forest-anexos.db";
 import { ClaveOcupadaError, PlatformSettingsDB } from "./platform-settings.db";
@@ -145,6 +158,8 @@ export interface ResultadoTanda {
 export interface GuiaPedida {
   anexoId: string;
   elecciones?: readonly EleccionDeOrigen[];
+  /** Lo que el dueño confirmó de ESTA guía (decisiones 5 y 8): sin eso, el alta la bloquea. */
+  confirmo?: readonly Confirmacion[];
 }
 
 export interface RespuestaPendientes {
@@ -154,6 +169,19 @@ export interface RespuestaPendientes {
   sinGuia: { anexoId: string; numero: string; fecha: string }[];
   /** Pedidos que no son una guía pendiente (ya registrada, reemplazada, no existe). */
   fuera: { anexoId: string; motivo: string }[];
+  /** Papeles en duda (dos anexos distintos en una guía, o el mismo en dos): las guías que tocan no se registran. */
+  dudas: DudaDeAnexo[];
+  /** Números del talonario que faltan entre las guías pendientes (decisión 9). */
+  huecos: HuecoDelTalonario[];
+  /** «El mismo papel en dos guías» ya contestado «son distintas»: se muestra para poder cambiarlo. */
+  contestadas: { clave: string; pregunta: string; gtfs: string[] }[];
+}
+
+/** Lo que cambia una pregunta contestada (para la pantalla y la auditoría). */
+export interface ResultadoRevision {
+  /** Anexos que quedaron (o dejaron de quedar) reemplazados. */
+  cambiados: { anexoId: string; numero: string; gtf: string; reemplazadoPor: string | null }[];
+  respuesta?: { clave: string; valor: string };
 }
 
 export type RespuestaAnexo =
@@ -387,6 +415,38 @@ function comoResultado(anexo: BaseResultado, err: unknown): ResultadoGuia {
   return { ...anexo, estado: "error", codigo: "INTERNO", mensaje: "No se pudo registrar esta guía por un error del servidor; las demás siguen." };
 }
 
+// ── Las respuestas de la revisión (KV, ADR-446 26-10) ──────────────────────
+
+const claveRevision = (tenantId: string) => `ctp-guias-revision:${tenantId}`;
+const ESPERA_REVISION_MS = 3_000;
+
+interface RespuestaGuardada {
+  valor: string;
+  user: string;
+  at: string;
+}
+
+/** El KV tolera basura: sólo cuentan las claves de pregunta con un valor de texto. */
+function respuestasDe(raw: unknown): RespuestasDeRevision {
+  const out: Record<string, string> = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!tipoDePregunta(k)) continue;
+    const valor = v && typeof v === "object" ? (v as Partial<RespuestaGuardada>).valor : undefined;
+    if (typeof valor === "string" && valor) out[k] = valor;
+  }
+  return out;
+}
+
+const respuestasFrescas = async (tenantId: string): Promise<RespuestasDeRevision> =>
+  respuestasDe(await PlatformSettingsDB.getFresco<unknown>(claveRevision(tenantId)));
+
+/** guía (`claveNumeroGtf`) → por qué no se registra todavía. */
+const dudasPorGuia = (lista: readonly AnexoEmitido[], vigentes: ReadonlySet<string>, respuestas: RespuestasDeRevision) =>
+  bloqueosPorDuda(dudasDeAnexos(lista, vigentes, respuestas));
+
+const enDudaDe = (porGuia: ReadonlyMap<string, string>, a: Pick<AnexoEmitido, "gtf">) => porGuia.get(claveNumeroGtf(a.gtf) ?? "");
+
 // ── La clase ──────────────────────────────────────────────────────────────
 
 export class ForestCtpGuiaDesdeAnexoDB {
@@ -437,11 +497,31 @@ export class ForestCtpGuiaDesdeAnexoDB {
       }
     }
     const aProponer = pedidas ? cl.pendientes.filter((a) => pedidas.has(a.id)) : cl.pendientes;
+    const respuestas = await respuestasFrescas(tenantId);
+    const dudas = dudasDeAnexos(lista, vigentes, respuestas);
+    const porGuia = bloqueosPorDuda(dudas);
+    /* Las contestadas «son distintas» no salen como duda: se buscan sin su respuesta. */
+    const papeles = Object.keys(respuestas).filter((k) => tipoDePregunta(k) === "papel");
+    const contestadas = papeles.length === 0
+      ? []
+      : dudasDeAnexos(lista, vigentes, Object.fromEntries(Object.entries(respuestas).filter(([k]) => !papeles.includes(k))))
+          .filter((d) => respuestas[d.clave] === "distintas")
+          .map((d) => ({ clave: d.clave, pregunta: d.pregunta, gtfs: d.gtfs }));
+    const enDuda = new Map<string, string>();
+    for (const a of aProponer) {
+      const m = enDudaDe(porGuia, a);
+      if (m) enDuda.set(a.id, m);
+    }
     const estado = await estadoDelLibro(prisma, tenantId);
     const elecciones = pedidas
       ? Object.fromEntries([...pedidas].filter(([, g]) => g.elecciones?.length).map(([id, g]) => [id, g.elecciones!]))
       : undefined;
-    const tanda = proponerTanda(aProponer, estado, { elecciones, claveStock: ForestCtpDB.claveDeStock });
+    const tanda = proponerTanda(aProponer, estado, { elecciones, claveStock: ForestCtpDB.claveDeStock, enDuda });
+    const huecos = huecosDelTalonario(
+      await ForestCtpDespachoDB.numerosUsados(tenantId, lista),
+      cl.pendientes.map((a) => a.gtf),
+      respuestas,
+    );
     return {
       tanda,
       reemplazados: cl.reemplazados,
@@ -451,6 +531,9 @@ export class ForestCtpGuiaDesdeAnexoDB {
       })),
       sinGuia: cl.sinGuia.map((a) => ({ anexoId: a.id, numero: a.numero, fecha: a.fecha })),
       fuera,
+      dudas,
+      huecos,
+      contestadas,
     };
   }
 
@@ -629,9 +712,14 @@ export class ForestCtpGuiaDesdeAnexoDB {
   static async registrarGuia(
     tenantId: string,
     anexoId: string,
-    opts: { elecciones?: readonly EleccionDeOrigen[]; user: string; liberarUsadas?: readonly string[] },
+    opts: {
+      elecciones?: readonly EleccionDeOrigen[];
+      confirmo?: readonly Confirmacion[];
+      user: string;
+      liberarUsadas?: readonly string[];
+    },
   ): Promise<ResultadoTanda> {
-    return ForestCtpGuiaDesdeAnexoDB.registrarTanda(tenantId, [{ anexoId, elecciones: opts.elecciones }], opts);
+    return ForestCtpGuiaDesdeAnexoDB.registrarTanda(tenantId, [{ anexoId, elecciones: opts.elecciones, confirmo: opts.confirmo }], opts);
   }
 
   /**
@@ -655,7 +743,7 @@ export class ForestCtpGuiaDesdeAnexoDB {
 
     const resultados: ResultadoGuia[] = [];
     for (const g of enOrden) {
-      resultados.push(await ForestCtpGuiaDesdeAnexoDB.registrarUna(tenantId, g.anexoId, g.elecciones, opts.user));
+      resultados.push(await ForestCtpGuiaDesdeAnexoDB.registrarUna(tenantId, g.anexoId, g.elecciones, g.confirmo ?? [], opts.user));
     }
     /* Las candidatas salen de los orígenes VIGENTES de todos los anexos ya
        registrados (no sólo de lo registrado ahora): un reintento que vuelve
@@ -682,6 +770,7 @@ export class ForestCtpGuiaDesdeAnexoDB {
     tenantId: string,
     anexoId: string,
     elecciones: readonly EleccionDeOrigen[] | undefined,
+    confirmo: readonly Confirmacion[],
     user: string,
   ): Promise<ResultadoGuia> {
     const { lista, vigentes, desdeOtraLinea } = await bandejaConfiable(prisma, tenantId, await ForestAnexosDB.list(tenantId));
@@ -727,14 +816,25 @@ export class ForestCtpGuiaDesdeAnexoDB {
         };
       }
 
+      /* Una pregunta sin contestar sobre su papel (dos anexos distintos, o el
+         mismo en otra guía): no se registra hasta que el dueño elija. */
+      const respuestas = await respuestasFrescas(tenantId);
+      const duda = enDudaDe(dudasPorGuia(lista, vigentes, respuestas), anexo);
+      if (duda) {
+        return { ...base, estado: "bloqueada", bloqueos: [{ codigo: "ANEXO_EN_DUDA", mensaje: duda }], mensaje: duda };
+      }
+
       const estado = await estadoDelLibro(prisma, tenantId);
       const propuesta = proponerDespachoDeAnexo(anexo, estado, { elecciones, claveStock: ForestCtpDB.claveDeStock });
-      if (!propuesta.registrable) {
+      /* Lo que no se decide solo (decisiones 5 y 8): sin origen o desde una
+         corrida «usado», sólo con la confirmación del dueño para ESTA guía. */
+      const bloqueos = propuesta.registrable ? faltaConfirmar(propuesta, confirmo) : propuesta.bloqueos;
+      if (bloqueos.length > 0) {
         return {
           ...base,
           estado: "bloqueada",
-          bloqueos: propuesta.bloqueos,
-          mensaje: propuesta.bloqueos.map((b) => b.mensaje).join(" "),
+          bloqueos,
+          mensaje: bloqueos.map((b) => b.mensaje).join(" "),
         };
       }
       /* Cierre, especie del catálogo y cierres de la atribución: ANTES de la
@@ -768,6 +868,13 @@ export class ForestCtpGuiaDesdeAnexoDB {
           }
           if (a.reemplazadoPor && listaTx.some((x) => x.id === a.reemplazadoPor)) {
             throw new CtpInvariantError("Este anexo quedó reemplazado mientras se registraba.", "ANEXO_NO_REGISTRABLE", { anexoId });
+          }
+          if (enDudaDe(dudasPorGuia(bandejaTx.lista, vig, respuestas), a)) {
+            throw new CtpInvariantError(
+              "Mientras se registraba, otro anexo dejó esta guía con una pregunta sin contestar: contéstala y vuelve a registrarla.",
+              "ANEXO_EN_DUDA",
+              { anexoId },
+            );
           }
           await ForestCtpDB.bloquearProduccion(tx, tenantId);
           const misma = await despachosDeLaGuia(tx, tenantId, a.gtf);
@@ -993,5 +1100,196 @@ export class ForestCtpGuiaDesdeAnexoDB {
       }
     }
     return { liberadas, noLiberadas };
+  }
+
+  // ── La revisión: lo que el dueño contesta antes de registrar ─────────────
+
+  /**
+   * Contesta una duda de papeles (`anexo-dudas`) con una de SUS opciones. Se
+   * vuelve a calcular bajo el lock de la bandeja: si otra pestaña ya la
+   * contestó o cambió un anexo, la opción que el dueño vio no se aplica.
+   * Nunca borra un anexo: sólo lo marca reemplazado (o deja de marcarlo).
+   */
+  static async resolverDuda(tenantId: string, duda: string, opcion: string, user: string): Promise<ResultadoRevision> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!user?.trim()) throw new Error("user is required");
+    const respuestas = await respuestasFrescas(tenantId);
+    const buscar = (lista: readonly AnexoEmitido[], vigentes: ReadonlySet<string>) => {
+      const d = dudasDeAnexos(lista, vigentes, respuestas).find((x) => x.clave === duda);
+      if (!d) {
+        throw new CtpInvariantError(
+          "Esa pregunta ya no está (otra pestaña la contestó o cambió un anexo): vuelve a cargar la lista.",
+          "DUDA_DESACTUALIZADA",
+          { duda },
+        );
+      }
+      const o = d.opciones.find((x) => x.clave === opcion);
+      if (!o) throw new CtpInvariantError("Esa respuesta no es de esta pregunta.", "DUDA_DESACTUALIZADA", { duda, opcion });
+      return { d, o };
+    };
+    const fuera = await bandejaConfiable(prisma, tenantId, await ForestAnexosDB.list(tenantId));
+    const { o: vista } = buscar(fuera.lista, fuera.vigentes);
+    if (vista.accion.tipo === "responder") {
+      return ForestCtpGuiaDesdeAnexoDB.responder(tenantId, vista.accion.clave, vista.accion.valor, user);
+    }
+
+    const hecho = await PlatformSettingsDB.actualizar<unknown, ResultadoRevision & { pregunta: string; opcion: OpcionDeDuda; lista: AnexoEmitido[] }>(
+      claveAnexos(tenantId),
+      async (actual, tx) => {
+        const listaTx = normalizarAnexos(actual);
+        const bandeja = await bandejaConfiable(tx, tenantId, listaTx);
+        const { d, o } = buscar(bandeja.lista, bandeja.vigentes);
+        const marcas = new Map<string, string | null>();
+        if (o.accion.tipo === "elegir") {
+          marcas.set(o.accion.vale, null);
+          for (const id of o.accion.descartar) marcas.set(id, o.accion.vale);
+        } else if (o.accion.tipo === "quitar") {
+          for (const id of o.accion.anexoIds) marcas.set(id, o.accion.por);
+        }
+        const cambiados: ResultadoRevision["cambiados"] = [];
+        const nueva = listaTx.map((a) => {
+          if (!marcas.has(a.id)) return a;
+          const por = marcas.get(a.id) ?? null;
+          if ((a.reemplazadoPor ?? null) === por) return a;
+          cambiados.push({ anexoId: a.id, numero: a.numero, gtf: a.gtf, reemplazadoPor: por });
+          return { ...a, reemplazadoPor: por };
+        });
+        const resultado = { cambiados, pregunta: d.pregunta, opcion: o, lista: listaTx };
+        return cambiados.length > 0 ? { valor: nueva, resultado } : { resultado };
+      },
+      user,
+      { esperaMaxMs: ESPERA_REVISION_MS },
+    );
+    const porId = new Map(hecho.lista.map((a) => [a.id, a]));
+    for (const c of hecho.cambiados) {
+      const a = porId.get(c.anexoId);
+      const por = c.reemplazadoPor ? porId.get(c.reemplazadoPor) : undefined;
+      await auditCtpEsperando({
+        tenantId,
+        action: "ctp_anexo04_eleccion",
+        entity: "ForestAnexo04",
+        entityId: c.anexoId,
+        detail:
+          `«${hecho.pregunta}» → «${hecho.opcion.etiqueta}»: ` +
+          (por
+            ? `el ${a ? etiquetaEmision(a) : "anexo"} queda reemplazado por el ${etiquetaEmision(por)} (no se borra, no se registra)`
+            : `el ${a ? etiquetaEmision(a) : "anexo"} vuelve a valer para su guía`),
+        user,
+      });
+    }
+    ForestCtpGuiaDesdeAnexoDB.invalidar(tenantId);
+    return { cambiados: hecho.cambiados };
+  }
+
+  /**
+   * Deshace una marca de «reemplazado» (el dueño eligió mal). No se deshace
+   * si el anexo que lo reemplaza ya está registrado en su misma guía: ahí la
+   * salida ya está en el libro y cambiar el papel es anular esa salida.
+   */
+  static async deshacerReemplazo(tenantId: string, anexoId: string, user: string): Promise<ResultadoRevision> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!user?.trim()) throw new Error("user is required");
+    const hecho = await PlatformSettingsDB.actualizar<unknown, ResultadoRevision & { antes: AnexoEmitido; por: AnexoEmitido | undefined }>(
+      claveAnexos(tenantId),
+      async (actual, tx) => {
+        const listaTx = normalizarAnexos(actual);
+        const a = listaTx.find((x) => x.id === anexoId);
+        if (!a) throw new CtpInvariantError("Ese Anexo 04 no existe en la bandeja.", "ANEXO_NO_REGISTRABLE", { anexoId });
+        if (!a.reemplazadoPor) throw new CtpInvariantError("Ese anexo no está marcado como reemplazado.", "DUDA_DESACTUALIZADA", { anexoId });
+        const { vigentes } = await bandejaConfiable(tx, tenantId, listaTx);
+        const por = listaTx.find((x) => x.id === a.reemplazadoPor);
+        if (anexoRegistrado(a, vigentes)) {
+          throw new CtpInvariantError("Ese anexo ya está registrado en Despacho.", "DUDA_DESACTUALIZADA", { anexoId });
+        }
+        if (por && anexoRegistrado(por, vigentes) && mismoNumeroGtf(por.gtf, a.gtf)) {
+          throw new CtpInvariantError(
+            `La guía ${a.gtf} ya está en Despacho con el ${etiquetaEmision(por)}: para cambiar de papel, anula antes esa salida.`,
+            "DUDA_DESACTUALIZADA",
+            { anexoId, por: por.id },
+          );
+        }
+        return {
+          valor: listaTx.map((x) => (x.id === anexoId ? { ...x, reemplazadoPor: null } : x)),
+          resultado: { cambiados: [{ anexoId, numero: a.numero, gtf: a.gtf, reemplazadoPor: null }], antes: a, por },
+        };
+      },
+      user,
+      { esperaMaxMs: ESPERA_REVISION_MS },
+    );
+    await auditCtpEsperando({
+      tenantId,
+      action: "ctp_anexo04_eleccion",
+      entity: "ForestAnexo04",
+      entityId: anexoId,
+      detail: `Deshizo «reemplazado»: el ${etiquetaEmision(hecho.antes)} vuelve a contar para su guía${hecho.por ? ` (lo reemplazaba el ${etiquetaEmision(hecho.por)})` : ""}`,
+      user,
+    });
+    ForestCtpGuiaDesdeAnexoDB.invalidar(tenantId);
+    return { cambiados: hecho.cambiados };
+  }
+
+  /**
+   * Anota (o borra, con `valor = null`) la respuesta a una pregunta que no
+   * mueve anexos: un hueco del talonario o «salieron dos veces». Sólo se
+   * contesta una pregunta que existe AHORA, con un valor de su tipo.
+   */
+  static async responder(tenantId: string, clave: string, valor: string | null, user: string): Promise<ResultadoRevision> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!user?.trim()) throw new Error("user is required");
+    const tipo = tipoDePregunta(clave);
+    if (!tipo) throw new CtpInvariantError("Esa pregunta no existe.", "DUDA_DESACTUALIZADA", { clave });
+    if (valor != null && !(RESPUESTAS_POR_TIPO[tipo] as readonly string[]).includes(valor)) {
+      throw new CtpInvariantError("Esa respuesta no es de esta pregunta.", "DUDA_DESACTUALIZADA", { clave, valor });
+    }
+    const { lista, vigentes } = await bandejaConfiable(prisma, tenantId, await ForestAnexosDB.list(tenantId));
+    const respuestas = await respuestasFrescas(tenantId);
+    const { pendientes } = clasificarAnexos(lista, vigentes);
+    let texto: string;
+    if (tipo === "hueco") {
+      const h = huecosDelTalonario(await ForestCtpDespachoDB.numerosUsados(tenantId, lista), pendientes.map((a) => a.gtf), respuestas)
+        .find((x) => x.clave === clave);
+      if (!h) throw new CtpInvariantError("Ese número ya no es un hueco del talonario: vuelve a cargar la lista.", "DUDA_DESACTUALIZADA", { clave });
+      texto = `Guía ${h.numero} (entre la ${h.entre[0]} y la ${h.entre[1]})`;
+    } else {
+      /* La pregunta contestada ya no sale en la lista: se busca sin su respuesta. */
+      const sin = Object.fromEntries(Object.entries(respuestas).filter(([k]) => k !== clave));
+      const d = dudasDeAnexos(lista, vigentes, sin).find((x) => x.clave === clave);
+      if (!d) throw new CtpInvariantError("Esa pregunta ya no está: vuelve a cargar la lista.", "DUDA_DESACTUALIZADA", { clave });
+      texto = d.pregunta;
+    }
+    await PlatformSettingsDB.actualizar<unknown, null>(
+      claveRevision(tenantId),
+      (actual) => {
+        const base = actual && typeof actual === "object" && !Array.isArray(actual) ? { ...(actual as Record<string, unknown>) } : {};
+        if (valor == null) delete base[clave];
+        else base[clave] = { valor, user, at: new Date().toISOString() } satisfies RespuestaGuardada;
+        return { valor: base, resultado: null };
+      },
+      user,
+      { esperaMaxMs: ESPERA_REVISION_MS },
+    );
+    const legible: Record<string, string> = {
+      no_salio: "no salió (número saltado o anulado en papel)",
+      falta_anexo: "salió y falta su Anexo 04",
+      distintas: "salieron dos veces: son guías distintas",
+    };
+    await auditCtpEsperando({
+      tenantId,
+      action: "ctp_guias_revision_respuesta",
+      entity: "ForestAnexo04",
+      entityId: clave.slice(0, 120),
+      detail: valor == null ? `Borró la respuesta de «${texto}»` : `«${texto}» → ${legible[valor] ?? valor}`,
+      user,
+    });
+    ForestCtpGuiaDesdeAnexoDB.invalidar(tenantId);
+    return { cambiados: [], respuesta: valor == null ? undefined : { clave, valor } };
+  }
+
+  private static invalidar(tenantId: string): void {
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch (err) {
+      logger.error("[guia-desde-anexo] invalidar caché falló", { error: String(err) });
+    }
   }
 }

@@ -471,6 +471,10 @@ export type CtpAuditAction =
   | "ctp_guia_desde_anexo"
   | "ctp_paquete_partido"
   | "ctp_anexo04_reemplazado"
+  // La revisión (26-10): el dueño elige qué papel viajó con la guía (o lo
+  // deshace) y contesta los huecos del talonario o «salió dos veces».
+  | "ctp_anexo04_eleccion"
+  | "ctp_guias_revision_respuesta"
   // Cubicación de trozas → cuenta de la persona (ADR-478). Aplicar y anular
   // mueven plata en sus adelantos: van con `auditCtpEsperando`.
   | "ctp_cubicacion_trozas_guardar"

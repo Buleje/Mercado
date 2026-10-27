@@ -78,6 +78,9 @@ type Respuesta = {
   porParte?: unknown;
   /** `ctp?paquetesSinMedidas=1`: los paquetes sin alguna medida, recortados, y cuántos son en total. */
   paquetesSinMedidas?: { paquetes?: unknown; total?: unknown; enElPatio?: unknown };
+  /** `anexos/a-despacho?contar=1` (ADR-446): GTF con Anexo 04 que no están en Despacho. */
+  guias?: number;
+  totalM3?: number;
 };
 
 /** Lo que devuelve el hook. Exportado: el shell lo carga una vez y lo reparte
@@ -225,8 +228,11 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
       /* Sin período, como los permisos vencidos: una guía de marzo sin pagar se
          sigue debiendo hoy. */
       json("/api/admin/forestal/guias/plata?sinPagar=1"),
+      /* Sin período: una guía que salió en agosto sin registrar sigue
+         descontando el patio hoy. Sólo el conteo (no arma propuestas). */
+      json("/api/admin/forestal/anexos/a-despacho?contar=1"),
     ])
-      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos, sinFoto, sinPagar]) => {
+      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos, sinFoto, sinPagar, sinDespacho]) => {
         if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
         const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
           .filter((e) => e.status === "registrado");
@@ -276,6 +282,8 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           guiasSinFoto: Number(sinFoto?.sinFoto?.guias) || 0,
           guiasSinFotoDetalle: arr<{ gtf: string }>(sinFoto?.sinFoto?.detalle),
           guiasSinPagar: arr<GuiasSinPagarDeParte>(sinPagar?.porParte),
+          guiasSinDespacho: Number(sinDespacho?.guias) || 0,
+          m3SinDespacho: Number(sinDespacho?.totalM3) || 0,
         });
 
         /* ── Lo que se viene ──────────────────────────────────────────────

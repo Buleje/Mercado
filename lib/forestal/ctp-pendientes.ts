@@ -94,6 +94,14 @@ export interface DatosPendientes {
    * cierra igual con deudas.
    */
   guiasSinPagar?: readonly GuiasSinPagarDeParte[];
+  /**
+   * GTF de salida con su Anexo 04 cargado que no están en Despacho (ADR-446,
+   * 26-10): la madera ya salió y el libro todavía la cuenta en el patio. Lo
+   * cuenta el servidor con la misma regla de la revisión (`?contar=1`), sin
+   * período: una guía de agosto sin registrar sigue sin registrar hoy.
+   */
+  guiasSinDespacho?: number;
+  m3SinDespacho?: number;
 }
 
 /** A partir de acá una troza parada empieza a costar. Mismo corte que el patio. */
@@ -214,6 +222,16 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       cantidad: d.despachosSinGtf,
       titulo: "Despachos sin GTF de salida",
       detalle: "El producto salió sin guía que lo ampare.",
+      vista: "despacho",
+    },
+    {
+      clave: "guias-sin-despacho",
+      urgencia: "atrasado",
+      cantidad: d.guiasSinDespacho ?? 0,
+      titulo: (d.guiasSinDespacho ?? 0) === 1
+        ? "Guía que salió sin registrar su despacho"
+        : "Guías que salieron sin registrar su despacho",
+      detalle: `${(d.m3SinDespacho ?? 0).toFixed(2)} m³ salieron con su Anexo 04 y el libro todavía los cuenta en el patio: revísalas en «Guías sin registrar».`,
       vista: "despacho",
     },
     {

@@ -144,8 +144,10 @@ describe("la tanda de Blas con el mejor ajuste", () => {
     ]);
     expect(la064.bloqueos[0].m3).toBeCloseTo(0.92, 2);
     expect(la064.bloqueos[0].mensaje).toMatch(/Azucar huayo.*25\/09\/2026 o antes/);
-    // Todo lo demás de la 064 tiene origen: su único faltante es esa especie.
-    expect(la064.sinAtribuirM3).toBeCloseTo(0.9199, 4);
+    // Todo lo demás de la 064 tiene origen: su único faltante es esa especie
+    // (el resto, menos de un litro, es el redondeo a 3 decimales del papel).
+    expect(la064.sinAtribuirM3 - la064.bloqueos[0].m3!).toBeLessThan(0.001);
+    expect(la064.sinAtribuirM3).toBeCloseTo(0.92, 2);
   });
 
   it("anotada la producción de Azúcar huayo, la 064 se registra entera", () => {
@@ -245,7 +247,8 @@ describe("el operador cambia el origen", () => {
     const com = p.lineas.filter((l) => l.tipo === "Comercial");
     expect(com).toHaveLength(1);
     expect(com[0].origen).toBeNull();
-    expect(com[0].m3).toBeCloseTo(3.1667, 4);
+    // El grupo sale con los 3 decimales del papel (3,1667 en piezas → 3,167).
+    expect(com[0].m3).toBeCloseTo(3.167, 4);
   });
 
   it("una corrida de otra especie o posterior a la guía se rechaza con el motivo", () => {
@@ -385,7 +388,7 @@ describe("la propuesta juzga igual que el alta (revisión 28-09)", () => {
     const l = p.lineas.find((x) => x.origen?.corridaId === "c1")!;
     expect(l.origen?.clase).toBe("paquete");
     expect(l.origenM3).toBeLessThanOrEqual(0.997);
-    expect(r4(p.lineas.reduce((a, x) => a + x.m3, 0))).toBeCloseTo(r4(piezas[0].m3), 4);
+    expect(r4(p.lineas.reduce((a, x) => a + x.m3, 0))).toBeCloseTo(Math.round(piezas[0].m3 * 1000) / 1000, 4);
   });
 });
 
@@ -404,6 +407,18 @@ describe("repartirPiezas y grupos", () => {
       "Panguana·Comercial", "Azucar huayo·Comercial",
     ]);
     expect(g.reduce((a, x) => a + x.piezas, 0)).toBe(256);
+  });
+
+  it("cada especie suma lo que dice el papel a 3 decimales (la 064: Mashonaste 3,531, no 3,532)", () => {
+    const [a064] = porGtf("19-001-0000064").sort((x, y) => y.createdAt.localeCompare(x.createdAt));
+    const crudo = new Map<string, number>();
+    for (const p of a064.piezas) crudo.set(p.especie ?? "", (crudo.get(p.especie ?? "") ?? 0) + (Number(p.m3) || 0));
+    const g = gruposDelAnexo(a064);
+    for (const [especie, m3] of crudo) {
+      const suma = g.filter((x) => x.especie === especie).reduce((a, x) => a + x.m3, 0);
+      expect(Math.round(suma * 1000), especie).toBe(Math.round(m3 * 1000));
+    }
+    expect(g.filter((x) => x.especie === "Mashonaste").map((x) => x.tipo)).toEqual(["Comercial", "Larga angosta"]);
   });
 });
 

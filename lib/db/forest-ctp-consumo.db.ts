@@ -234,7 +234,11 @@ export class CtpInvariantError extends Error {
       /** La bandeja de anexos la tiene otra tanda (o un guardado): reintentar en segundos. */
       | "TANDA_EN_CURSO"
       /** Otra operación tiene tomadas las corridas o los paquetes (lock_timeout o deadlock): reintentar. */
-      | "LIBRO_OCUPADO",
+      | "LIBRO_OCUPADO"
+      /** La guía tiene una pregunta sin contestar sobre su papel (`anexo-dudas`): la contesta el dueño. */
+      | "ANEXO_EN_DUDA"
+      /** La pregunta que el dueño contestó ya no es la de ahora (otra pestaña, otro anexo): recargar. */
+      | "DUDA_DESACTUALIZADA",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);

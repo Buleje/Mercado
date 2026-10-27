@@ -11,11 +11,13 @@ import {
   SIN_ORIGEN,
   eleccionesParaApi,
   esperaLegible,
+  estadoDeGuia,
   mensajeDeCodigo,
   fechaDeCorrida,
   listasEnFila,
   resumenDeBloqueo,
   siguienteEnFila,
+  sinConfirmar,
   textoDeLinea,
   textoDeResultado,
   valorDelSelector,
@@ -49,6 +51,34 @@ describe("siguienteEnFila / listasEnFila", () => {
 
   it("sin ninguna lista, no hay siguiente", () => {
     expect(siguienteEnFila([{ anexoId: "a064", registrable: false }], {})).toBeNull();
+  });
+});
+
+describe("confirmaciones (decisiones 5 y 8)", () => {
+  const usada = { corridaId: "c1", lineNo: 1, fecha: "2026-08-01", m3: 2.5 };
+  const conDudas = [
+    { anexoId: "a054", registrable: true },
+    { anexoId: "a055", registrable: true, sinOrigenPorConfirmar: true, usadasComoOrigen: [usada] },
+    { anexoId: "a063", registrable: true },
+  ];
+
+  it("nada viene marcado: pide las dos, y sólo lo que falta", () => {
+    expect(sinConfirmar(conDudas[1])).toEqual(["sin_origen", "usado"]);
+    expect(sinConfirmar(conDudas[1], { a055: ["usado"] })).toEqual(["sin_origen"]);
+    expect(sinConfirmar(conDudas[0])).toEqual([]);
+  });
+
+  it("la fila se corta en la primera sin confirmar: las de abajo cuentan con que ésa salió antes", () => {
+    expect(listasEnFila(conDudas, {})).toEqual(["a054"]);
+    expect(listasEnFila(conDudas, {}, { a055: ["usado"] })).toEqual(["a054"]);
+    expect(listasEnFila(conDudas, {}, { a055: ["sin_origen", "usado"] })).toEqual(["a054", "a055", "a063"]);
+  });
+
+  it("el estado dice «Falta confirmar» hasta marcarlo, y «Bloqueada» si el servidor la devolvió", () => {
+    expect(estadoDeGuia(conDudas[1], undefined).texto).toBe("Falta confirmar");
+    expect(estadoDeGuia(conDudas[1], undefined, { a055: ["sin_origen", "usado"] }).texto).toBe("Lista");
+    const bloqueada: ResultadoGuia = { anexoId: "a055", numero: "", gtf: "", estado: "bloqueada", bloqueos: [], mensaje: "Falta confirmar" };
+    expect(estadoDeGuia(conDudas[1], bloqueada).texto).toBe("Bloqueada");
   });
 });
 

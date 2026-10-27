@@ -1238,6 +1238,16 @@ export class ForestCtpDespachoDB {
     return usados;
   }
 
+  /**
+   * Los números que el talonario ya gastó (despachos de cualquier estado y
+   * anexos), como se escribieron: «Guías sin registrar» pregunta por los
+   * huecos entre ellos (ADR-446, decisión 9). `anexos` = la bandeja ya leída.
+   */
+  static async numerosUsados(tenantId: string, anexos: unknown): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return (await ForestCtpDespachoDB.gtfUsadas(prisma, tenantId, anexos)).map((u) => u.numero);
+  }
+
   /** El KV de los Anexos 04 guardados, sin caché (misma clave que `ForestAnexosDB`). */
   private static anexosFrescos(tenantId: string): Promise<unknown> {
     return PlatformSettingsDB.getFresco<unknown>(`ctp-anexos:${tenantId}`);
