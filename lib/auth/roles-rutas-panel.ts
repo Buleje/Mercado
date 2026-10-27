@@ -81,6 +81,9 @@ export const RUTAS_PANEL = {
      (correo enmascarado): el PATCH lo corta `soloAdminODueno`, porque apagar
      «Pedidos» o «Stock bajo» le quitaría al dueño su forma de enterarse. */
   "/api/admin/avisos-correo": ["admin", "owner"],
+  /* Salidas de Anexo 04 por registrar (aviso de plazo, campana y Libro): los
+     mismos roles que leen la bandeja de anexos. Sin módulo forestal → lista vacía. */
+  "/api/admin/forestal/salidas-por-registrar": ["admin", "almacenero", "owner"],
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type RutaPanel = keyof typeof RUTAS_PANEL;

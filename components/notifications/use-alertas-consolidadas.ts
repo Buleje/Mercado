@@ -16,6 +16,7 @@ import { useMiRol } from "@/hooks/use-mi-rol";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import { cachedJson, invalidateCachedJson } from "@/lib/client-cache-fetch";
 import { alertasDeAgenda } from "@/lib/agenda/alertas-campana";
+import { alertasDeSalidas } from "./alertas-de-salidas";
 import { logger } from "@/lib/logger";
 import type { CategoriaId } from "./notificaciones-categorias";
 
@@ -164,6 +165,8 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
   const puedeStats = puedePedir("/api/admin/stats", rol);
   // Agenda de Administración (ADR-501): «Hoy» devuelve sólo lo del rol de quien mira.
   const puedeAgenda = puedePedir("/api/admin/agenda/hoy", rol);
+  // Salidas de Anexo 04 por registrar (ADR-519): el servidor devuelve vacío sin módulo forestal.
+  const puedeSalidas = puedePedir("/api/admin/forestal/salidas-por-registrar", rol);
   const [alertas, setAlertas] = useState<AlertaAhora[]>([]);
   const [cargando, setCargando] = useState(false);
 
@@ -183,7 +186,13 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
             return null;
           })
         : Promise.resolve(null),
-    ]).then(([stats, lotes, recordatorios, agenda]) => {
+      puedeSalidas
+        ? leer("/api/admin/forestal/salidas-por-registrar", fresco).catch((err: unknown) => {
+            logger.warn("[campana] salidas-por-registrar falló", { error: String(err) });
+            return null;
+          })
+        : Promise.resolve(null),
+    ]).then(([stats, lotes, recordatorios, agenda, salidas]) => {
       if (!vivo) return;
       const listaLotes = Array.isArray(lotes)
         ? lotes
@@ -193,6 +202,7 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
         ...alertasDeLotes(listaLotes as Array<{ expiryDate?: string }>),
         ...alertasDeRecordatorios(Array.isArray(recordatorios) ? recordatorios : []),
         ...alertasDeAgenda(agenda),
+        ...alertasDeSalidas(salidas as Parameters<typeof alertasDeSalidas>[0]),
       ];
       // Urgente primero; dentro de cada nivel, el orden de arriba.
       todas.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "critical" ? -1 : 1));
@@ -202,7 +212,7 @@ export function useAlertasConsolidadas(abierto: boolean, recarga: number) {
     return () => {
       vivo = false;
     };
-  }, [abierto, recarga, puedeStats, puedeAgenda]);
+  }, [abierto, recarga, puedeStats, puedeAgenda, puedeSalidas]);
 
   return { alertas, cargando };
 }

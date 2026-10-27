@@ -20,6 +20,8 @@ import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda
 import { useGuiasSinRegistrar, type EstadoGuiasSinRegistrar } from "@/hooks/use-guias-sin-registrar";
 import { useConteoGuiasSinRegistrar } from "@/hooks/use-conteo-guias-sin-registrar";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { useSalidasPorRegistrar } from "@/hooks/use-salidas-por-registrar";
+import { cuandoVence } from "@/lib/forestal/salidas-por-registrar";
 
 const CtpGuiasSinRegistrarModal = dynamic(() => import("./CtpGuiasSinRegistrarModal"), { ssr: false });
 /* El cubicador entero: sólo baja si se va a anotar una producción. */
@@ -169,9 +171,20 @@ function BarraDeDespacho({ items, onCambio }: { items: DeudaItem[]; onCambio?: (
      adentro del modal: al entrar a Despacho, la pastilla pinta con el conteo
      liviano (`?contar=1`, sin `estadoDelLibro` ni `proponerTanda` — medido en
      Blas, 3,4 s → los ms del conteo) y `abrir()` recién ahí pide la propuesta. */
-  const estado = useGuiasSinRegistrar({ onCambio });
+  /* Al registrar una guía el conteo se relee (`onCambio`) y la fecha también. */
+  const [recarga, setRecarga] = useState(0);
+  const alCambiar = useCallback(() => {
+    setRecarga((n) => n + 1);
+    onCambio?.();
+  }, [onCambio]);
+  const estado = useGuiasSinRegistrar({ onCambio: alCambiar });
   const conteoLigero = useConteoGuiasSinRegistrar(true);
   const { abierto, abrir, cerrar } = useAbrirReleyendo(estado);
+  /* El plazo de registro (2 días hábiles) de la guía que antes vence: la misma
+     fuente que la campana y el Recorrido del permiso. */
+  const plazo = useSalidasPorRegistrar(true, recarga);
+  const primera = plazo?.salidas[0];
+  const cuando = primera && plazo ? ` · ${cuandoVence(primera, plazo.hoy)}` : "";
   const guias = estado.datos ? estado.datos.tanda.guias.length : (conteoLigero.conteo?.guias ?? 0);
   const m3 = estado.datos ? estado.datos.tanda.resumen.totalM3 : (conteoLigero.conteo?.totalM3 ?? 0);
   const todos = useMemo<DeudaItem[]>(
@@ -182,7 +195,7 @@ function BarraDeDespacho({ items, onCambio }: { items: DeudaItem[]; onCambio?: (
               key: "guias-sin-registrar",
               valor: guias,
               label: guias === 1 ? "guía sin registrar" : "guías sin registrar",
-              hint: `${fmtM3(m3)} m³ sólo en su Anexo 04`,
+              hint: `${fmtM3(m3)} m³ sólo en su Anexo 04${cuando}`,
               tono: "warning",
               title: "Salieron con su Anexo 04 y el libro no las tiene en Despacho. Toca para revisarlas y registrarlas una por una.",
               onClick: abrir,
@@ -190,7 +203,7 @@ function BarraDeDespacho({ items, onCambio }: { items: DeudaItem[]; onCambio?: (
             ...items,
           ]
         : items,
-    [guias, m3, items, abrir],
+    [guias, m3, items, abrir, cuando],
   );
   return (
     <>

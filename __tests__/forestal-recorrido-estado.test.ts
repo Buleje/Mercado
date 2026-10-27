@@ -233,13 +233,16 @@ describe("derivarRecorrido · anexo, salida y plazo", () => {
     expect(e.plazo).toBeNull();
   });
 
+  /* El plazo viene de la lista única del servidor (`salidasPorRegistrar`), no de una cuenta propia. */
+  const pend = (x: Record<string, unknown> = {}) => ({ anexoId: "ax1", numero: "0012", gtfNumber: "GTF-77", venceEl: "2026-10-28", fueraDePlazo: false, ...x });
+
   it("anexo emitido y su salida todavía sin registrar → avisa el plazo desde la fecha de la guía", () => {
-    const e = derivarRecorrido(datos({ ...hecho(), anexos: [anexo({ despachoIds: [] })], despachos: [] }));
+    const e = derivarRecorrido(datos({ ...hecho(), anexos: [anexo({ despachoIds: [] })], despachos: [], salidasPendientes: [pend()] }));
     expect(paso(e, "salida").estado).toBe("pendiente");
     /* Lunes 26 → vence el miércoles 28 (2 días hábiles). */
     expect(e.plazo).toEqual({ anexoId: "ax1", gtfNumber: "GTF-77", venceEl: "2026-10-28" });
     /* Citada pero anulada = sigue faltando registrar. */
-    const anulada = derivarRecorrido(datos({ ...hecho(), anexos: [anexo()], despachos: [despacho({ status: "anulado" })] }));
+    const anulada = derivarRecorrido(datos({ ...hecho(), anexos: [anexo()], despachos: [despacho({ status: "anulado" })], salidasPendientes: [pend()] }));
     expect(anulada.plazo).toMatchObject({ anexoId: "ax1", venceEl: "2026-10-28" });
   });
 
@@ -255,8 +258,10 @@ describe("derivarRecorrido · anexo, salida y plazo", () => {
     expect(paso(viejo, "salida").estado).toBe("hecho");
     expect(viejo.plazo).toBeNull();
     /* Un anexo sin salida cuyo plazo ya pasó tampoco da aviso de «registrar hoy». */
-    const vencido = derivarRecorrido(datos({ ...hecho(), anexos: [anexo({ despachoIds: [], fecha: "2026-10-20" })] }));
+    const vencido = derivarRecorrido(datos({ ...hecho(), anexos: [anexo({ despachoIds: [], fecha: "2026-10-20" })], salidasPendientes: [pend({ venceEl: "2026-10-22", fueraDePlazo: true })] }));
     expect(vencido.plazo).toBeNull();
+    /* Una guía pendiente de OTRO anexo (no del bloque) no avisa en este recorrido. */
+    expect(derivarRecorrido(datos({ ...hecho(), anexos: [anexo({ despachoIds: [] })], salidasPendientes: [pend({ anexoId: "otro" })] })).plazo).toBeNull();
   });
 });
 

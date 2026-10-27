@@ -8,7 +8,8 @@
  * - «Hecho» lo dice el Libro, no la propuesta: un día que la pantalla cuenta y
  *   el Libro no tiene (apagado por «Completar», o su madera salió en otra
  *   corrida) se nombra como tal en el detalle, no se cuenta como jornada.
- * - El plazo usa el predicado de `ctp-compliance.ts` (`estaFueraDePlazo`), el
+ * - El plazo usa el predicado de `ctp-compliance.ts` (`estaFueraDePlazo`, vía
+ *   `salidas-por-registrar.ts`), el
  *   mismo del badge y del Excel; acá no hay otra cuenta de días hábiles.
  * - El faltante se muestra (`sinAtribuirM3`), nunca se fuerza.
  */
@@ -20,7 +21,7 @@ import {
 } from "./recorrido-permiso";
 import { aprovechableDe, capacidadDe, diasDe, esAserradaDirecta, type BloqueRolliza, type JornadaEnLibro } from "./cubicacion-reparto";
 import { trozasDelBloque } from "./trozas-para-bloque";
-import { estaFueraDePlazo } from "./ctp-compliance";
+import { venceElRegistro, type SalidaPorRegistrar } from "./salidas-por-registrar";
 import { normalizarCodigoContrato } from "./contratos";
 import { claveEspecie } from "./loth-constants";
 import { PT_POR_M3 } from "./cubicacion";
@@ -91,6 +92,12 @@ export interface DatosDelRecorrido {
   /** Hoy, `AAAA-MM-DD` (día de Lima). */
   hoy: string;
   /**
+   * Las guías sin salida en el Libro de TODO el negocio (`ForestAnexosDB.salidasPorRegistrar`:
+   * la misma lista de la pastilla y la campana). El plazo del recorrido sale de acá, filtrada
+   * a los anexos del bloque; sin ella no hay aviso.
+   */
+  salidasPendientes?: readonly SalidaPorRegistrar[];
+  /**
    * Con los días de la pantalla (POST con `porDia`): por qué no queda ningún
    * día listo para registrar (`faltanDiasListos`). Sin esto el paso quedaba
    * «pendiente» mudo y el botón no hacía nada.
@@ -100,26 +107,7 @@ export interface DatosDelRecorrido {
 
 const permisoClave = (p: string | null | undefined) => normalizarCodigoContrato((p ?? "").trim());
 
-/**
- * El último día en plazo de registro de una línea fechada `fecha`: el mayor día
- * en que `estaFueraDePlazo` todavía dice que no. Se busca con el MISMO
- * predicado del libro (no hay otra cuenta de hábiles); 2 hábiles caben en 9
- * días corridos aun con feriado de fin de semana largo.
- */
-export function venceElRegistro(fecha: Date | string): string {
-  /* La actividad cuenta desde la medianoche UTC de su día (la convención de
-     `diasHabilesDeRegistro`), aunque el Libro la guarde a mediodía. */
-  const f = new Date(typeof fecha === "string" && fecha.length === 10 ? `${fecha}T12:00:00.000Z` : fecha);
-  const dia = (n: number) => new Date(Date.UTC(f.getUTCFullYear(), f.getUTCMonth(), f.getUTCDate() + n));
-  const base = dia(0);
-  let ultimo = base;
-  for (let n = 1; n <= 9; n++) {
-    /* Registrar al último segundo del día n. */
-    if (estaFueraDePlazo({ entryDate: base, createdAt: new Date(dia(n + 1).getTime() - 1) })) break;
-    ultimo = dia(n);
-  }
-  return ultimo.toISOString().slice(0, 10);
-}
+export { venceElRegistro };
 
 /**
  * Los Anexos 04 vigentes (no reemplazados) de este permiso y especie, emitidos
@@ -315,15 +303,13 @@ export function derivarRecorrido(d: DatosDelRecorrido): EstadoRecorrido {
 
   /* El plazo: de los anexos cuya salida TODAVÍA no está en el Libro, el que
      antes vence (si todavía no venció). Cuenta desde la fecha de la guía con
-     el predicado del badge (`venceElRegistro` → `estaFueraDePlazo`). Una
+     la fuente única `salidasPorRegistrar` (→ `estaFueraDePlazo`). Una
      salida ya registrada no avisa: antes decía «Registrar hoy» con el
      recorrido 6/6 y la salida ya en el Libro (prueba del 27-10). */
-  const conSalida = new Set(salidas.map((x) => x.id));
-  const plazos = anexos
-    .filter((a) => !(a.despachoIds ?? []).some((id) => conSalida.has(id)))
-    .map((a) => ({ anexoId: a.id, gtfNumber: a.gtf?.trim() || null, venceEl: venceElRegistro(a.fecha) }))
-    .filter((p) => p.venceEl >= d.hoy)
-    .sort((x, y) => x.venceEl.localeCompare(y.venceEl));
+  const delRecorrido = new Set(anexos.map((a) => a.id));
+  const plazos = (d.salidasPendientes ?? [])
+    .filter((p) => delRecorrido.has(p.anexoId) && !p.fueraDePlazo)
+    .map((p) => ({ anexoId: p.anexoId, gtfNumber: p.gtfNumber, venceEl: p.venceEl }));
 
   /* Lo que el bloque ampara y las trozas elegidas no alcanzan a dar (al tope
      menor entre el % del bloque y el 56 %). Derivado: no se fuerza. */

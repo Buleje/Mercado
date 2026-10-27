@@ -1,11 +1,13 @@
 import "server-only";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import { ClaveOcupadaError, PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import {
   construirEmision, claveEmision, etiquetaEmision, filaNoCuadra, recortarBandeja, traseraQueSigue, vinculosDe,
   type AnexoEmitido, type EntradaEmision,
 } from "@/lib/forestal/anexo04-registro";
+import { idsDeDespachosCitados, salidasPorRegistrar, type SalidaPorRegistrar } from "@/lib/forestal/salidas-por-registrar";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
 
 /**
@@ -76,6 +78,22 @@ export const ForestAnexosDB = {
   async list(tenantId: string): Promise<AnexoEmitido[]> {
     if (!tenantId) throw new Error("tenantId is required");
     return normalizarAnexos(await PlatformSettingsDB.getFresco<unknown[]>(claveAnexos(tenantId)));
+  },
+
+  /**
+   * Los anexos con N° de GTF cuya salida no está en el Libro (fuente única
+   * `salidasPorRegistrar`): aviso de la campana y de la sección Despacho. Una
+   * línea de Despacho anulada o borrada no cuenta como salida. `hoy` = día de Lima.
+   */
+  async salidasPorRegistrar(tenantId: string, hoy: string): Promise<SalidaPorRegistrar[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const anexos = await this.list(tenantId);
+    const ids = idsDeDespachosCitados(anexos);
+    const vivos = ids.length === 0 ? [] : await prisma.forestCtpEntry.findMany({
+      where: { tenantId, id: { in: ids }, section: "despacho", deletedAt: null, status: "registrado" },
+      select: { id: true, gtfNumber: true },
+    });
+    return salidasPorRegistrar(anexos, vivos, hoy);
   },
 
   /**

@@ -97,12 +97,14 @@ async function leer(tenantId: string, distribucionId: string, bloqueId: string, 
   const bloque = distribucion?.bloques.find((b) => b.id === bloqueId);
   if (!distribucion || !bloque) return null;
   const ids = trozasDelBloque(bloque);
-  const [leidas, lote, anexos] = await Promise.all([
+  const hoy = hoyEnLima();
+  const [leidas, lote, anexos, salidasPendientes] = await Promise.all([
     ids.length
       ? ForestLoteAserrioDB.elegiblesDe(tenantId, ids, { loteId: bloque.loteId, especie: bloque.especie, permiso: bloque.permiso })
       : Promise.resolve({ trozas: [], noEncontradas: [] as string[] }),
     leerLote(tenantId, bloque.loteId),
     ForestAnexosDB.list(tenantId),
+    ForestAnexosDB.salidasPorRegistrar(tenantId, hoy),
   ]);
   const trozas = leidas.trozas.map((t) => ({
     id: t.id,
@@ -140,7 +142,8 @@ async function leer(tenantId: string, distribucionId: string, bloqueId: string, 
     lote: loteDelRecorrido,
     anexos,
     despachos: [] as { id: string; gtfNumber: string | null; status: string; entryDate: Date }[],
-    hoy: hoyEnLima(),
+    hoy,
+    salidasPendientes,
     /* Con los días de la pantalla (POST), el paso dice por qué no queda ninguno listo. */
     sinDiasListos: porDia && lote ? faltanDiasListos(planDe(bloque, porDia, lote)) : null,
   };

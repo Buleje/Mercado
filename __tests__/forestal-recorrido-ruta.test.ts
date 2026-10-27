@@ -48,7 +48,7 @@ vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: vi.fn(async (
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: vi.fn() }));
-vi.mock("@/lib/db/forest-anexos.db", () => ({ ForestAnexosDB: { list: async () => [] } }));
+vi.mock("@/lib/db/forest-anexos.db", () => ({ ForestAnexosDB: { list: async () => [], salidasPorRegistrar: async () => [] } }));
 vi.mock("@/lib/db/forest-ctp.db", () => ({
   ForestCtpDB: { codigosDePaquete: async () => [], despachosConGuiaPorIds: async () => [] },
 }));
