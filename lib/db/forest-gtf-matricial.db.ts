@@ -2,6 +2,9 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
+import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
+import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
+import type { GuiaDelTalonario } from "@/lib/forestal/gtf-matricial-fuente";
 import type { DisposicionTalonario, FormatoTalonario } from "@/lib/forestal/gtf-matricial-disposicion";
 import {
   agregarPerfil,
@@ -94,12 +97,24 @@ export const ForestGtfMatricialDB = {
   /**
    * El dueño del talonario sale de la guía GUARDADA de este tenant (los mismos
    * datos con que se numera), nunca del cliente. Sin guía = sin dueño (la de la
-   * empresa). null = la guía no existe en este tenant.
+   * empresa). null = la guía (o el despacho) no existe en este tenant.
    */
-  async duenoDeLaGuia(tenantId: string, gtfId: string | null | undefined): Promise<DuenoTalonario | null> {
+  async duenoDeLaGuia(tenantId: string, guia: GuiaDelTalonario | null | undefined): Promise<DuenoTalonario | null> {
     if (!tenantId) throw new Error("tenantId is required");
-    if (!gtfId) return { titular: null, permiso: null, planId: null };
-    const g = await ForestGtfDB.getById(tenantId, gtfId);
+    if (!guia?.id) return { titular: null, permiso: null, planId: null };
+    if (guia.tipo === "despacho") {
+      const d = await ForestCtpDB.getById(tenantId, guia.id);
+      if (!d || d.section !== "despacho") return null;
+      /* La guía de SALIDA la emite el CTP con su propio talonario, visado a
+         nombre del centro: es UNA forma para todas sus salidas, no una por
+         permiso ni por plan (la madera que sale ya es del CTP). Dueño = la razón
+         social de la Ficha, sin permiso ni plan: todas las salidas eligen la
+         misma, y guardarla nunca pisa la de una guía del Libro TH del mismo
+         titular (ésa lleva su permiso; sólo se ofrece como punto de partida). */
+      const ficha = await ForestCtpFichaDB.get(tenantId);
+      return { titular: ficha.razonSocial?.trim() || null, permiso: null, planId: null };
+    }
+    const g = await ForestGtfDB.getById(tenantId, guia.id);
     return g ? { titular: g.titularName ?? null, permiso: g.tituloHabilitante ?? null, planId: g.planId ?? null } : null;
   },
 
@@ -154,7 +169,7 @@ export const ForestGtfMatricialDB = {
     if (!sueltas.length) return null;
     const alm = await leer(tenantId);
     for (const t of sueltas) {
-      const dueno = await this.duenoDeLaGuia(tenantId, t.gtfId);
+      const dueno = await this.duenoDeLaGuia(tenantId, { tipo: "gtf", id: t.gtfId });
       if (dueno && resolverForma(alm, dueno)?.forma?.id === formaId) return t.numeroGuia;
     }
     return null;

@@ -45,6 +45,8 @@ import { useImportarFotoPendiente } from "./planillas/importar-pendiente";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
+import type { AccionImpresion } from "./despacho-impresiones-menu";
+import type { DespachoParaImprimir } from "./hooks/use-impresion-despacho";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpProducirSinLoteModal from "./CtpProducirSinLoteModal";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
@@ -103,6 +105,8 @@ const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
 const CtpCubicacionComercialModal = dynamic(() => import("./CtpCubicacionComercialModal"), {
   ssr: false,
 });
+/* Las impresiones de la GTF de salida (hoja SERFOR, resumen, talonario, con formato): entran al pedirlas. */
+const CtpDespachoImpresiones = dynamic(() => import("./CtpDespachoImpresiones"), { ssr: false });
 import {
   COLUMNAS_PRODUCCION_OPCIONALES,
   type CtpEntry,
@@ -810,6 +814,9 @@ export function CtpEntriesView({
   const [ampliarId, setAmpliarId] = useState<string | null>(null);
   /** Despacho al que se le están adjuntando papeles (ADR-371). */
   const [papelesEntry, setPapelesEntry] = useState<CtpEntry | null>(null);
+  /** La impresión de la GTF de salida pedida desde el ⋯ de una fila (Brandon 27-10) y lo que se está armando. */
+  const [impresion, setImpresion] = useState<{ despacho: DespachoParaImprimir; accion: AccionImpresion } | null>(null);
+  const [imprimiendo, setImprimiendo] = useState<{ id: string; accion: AccionImpresion } | null>(null);
   const [comercialEntry, setComercialEntry] = useState<CtpEntry | null>(null);
   /** La línea cuya guía se está mirando/editando (ADR-374). */
   const [guiaEntry, setGuiaEntry] = useState<CtpEntry | null>(null);
@@ -2078,6 +2085,24 @@ export function CtpEntriesView({
           totalesVista={totalesVista}
           colsProduccion={colsProduccion}
           filtrosColumna={filtrosColumna}
+          onImprimir={
+            section === "despacho"
+              ? (e, accion) =>
+                  setImpresion({
+                    accion,
+                    despacho: {
+                      id: e.id,
+                      gtfNumber: e.gtfNumber ?? "",
+                      lineNo: e.lineNo,
+                      anulada: e.status === "anulado" ? (e.annulledReason ?? "") : null,
+                      createdAt: e.createdAt ?? null,
+                      conAnexo: conAnexo.has(e.id),
+                      destino: e.destino,
+                    },
+                  })
+              : undefined
+          }
+          imprimiendo={imprimiendo}
         />
 
         {visible.length > 0 && (
@@ -2232,6 +2257,17 @@ export function CtpEntriesView({
         <CtpCubicacionComercialModal
           despachoId={comercialEntry.id}
           onClose={() => setComercialEntry(null)}
+        />
+      )}
+      {impresion && (
+        <CtpDespachoImpresiones
+          despacho={impresion.despacho}
+          accion={impresion.accion}
+          onOcupado={(a) => setImprimiendo(a ? { id: impresion.despacho.id, accion: a } : null)}
+          onFin={() => {
+            setImpresion(null);
+            setImprimiendo(null);
+          }}
         />
       )}
       {papelesEntry && (

@@ -47,7 +47,7 @@ import LothGtfCubicarModal from "./LothGtfCubicarModal";
 import LothGtfAsignarPermiso from "./LothGtfAsignarPermiso";
 import LothGtfDesatarPermiso from "./LothGtfDesatarPermiso";
 import GtfMatricialModal from "./GtfMatricialModal";
-import { useGtfConFormato } from "./hooks/use-gtf-con-formato";
+import { fuenteLoth, useGtfConFormato } from "./hooks/use-gtf-con-formato";
 import GtfEnviarAlMonteModal from "./GtfEnviarAlMonteModal";
 import { useColaMonteCtx } from "./cola-monte-contexto";
 import { etiquetaMonteImpresa } from "./gtf-monte-ya-impresa";
@@ -242,7 +242,7 @@ export default function AccionesGtf({
   /* ADR-512: el pedido de corrección de la guía (una sola llamada para toda la lista, en el proveedor). */
   const corr = useCorreccionDeLaFila(g.id, !soloLectura && g.status !== "anulada" && !g.deletedAt);
   /* «Imprimir con formato» sin abrir el diseñador: pide titular y fecha del talonario al elegirlo. */
-  const cf = useGtfConFormato(g);
+  const cf = useGtfConFormato(useMemo(() => fuenteLoth(g), [g]));
   useEffect(() => {
     if (cf.error) toast.error(cf.error);
   }, [cf.error]);

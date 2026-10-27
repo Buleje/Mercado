@@ -13,7 +13,7 @@ import {
   type ErrorPerfil,
   type ResultadoPerfil,
 } from "@/lib/forestal/gtf-matricial-perfiles";
-import { isSpecializationEnabled } from "@/lib/specializations";
+import { guardTalonario } from "@/lib/forestal/gtf-matricial-habilitado";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -33,10 +33,8 @@ const ROLES: readonly AdminRole[] = ["admin", "almacenero", "owner"];
 
 const ESTADO: Record<ErrorPerfil, number> = { "no-existe": 404, repetido: 409, tope: 409, oficina: 422 };
 
-async function ensureSpec(tenantId: string) {
-  const enabled = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
-  return enabled ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
-}
+/** Las impresoras son de la empresa, no de una guía: basta con el Libro TH o el Libro CTP (27-10). */
+const ensureSpec = (tenantId: string) => guardTalonario(tenantId, null);
 
 /** Sesión + límite + especialización: lo mismo para los cuatro verbos. */
 async function entrada(req: NextRequest): Promise<Response | SessionPayload> {

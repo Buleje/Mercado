@@ -257,18 +257,6 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
   );
 
   const pieGtf = `GTF ${numero} · Emitida por el titular desde su Libro de Operaciones`;
-  const pieLista = `${listas.hojas > 1 ? "Listas de trozas" : "Lista de trozas"} N° ${nroLista} · Anexo de la GTF ${numero}`;
-
-  /* Cada hoja es UNA lista con su N° (las de SERFOR: 34 trozas → listas 5 y
-     6), y se imprime en su propia página: cabecera, filas, total y firmas.
-     Se parte con las filas por hoja de `hojasDeLaLista`: las mismas con que
-     se contaron los N° del (33), y las de a 20 si la guía se emitió así. */
-  const trozos = partirEnHojas(filas, listas.filasPorHoja);
-  const hojasLista = (trozos.length ? trozos : [[]]).map((trozo, i, todas) => {
-    const html = htmlListaTrozas({ ...entradas.lista, numero: listas.numeros[i] ?? nroLista, trozas: trozo });
-    const nota = todas.length > 1 ? `<div class="pie">Hoja ${i + 1} de ${todas.length} · anexo del (33)</div>` : NOTA_LISTA;
-    return `${sello}${html.replace(NOTA_LISTA, nota)}`;
-  });
 
   return {
     gtf: {
@@ -278,20 +266,43 @@ export function papelesGuiaLoth(g: GuiaLothParaImprimir): { gtf: HojaGuiaLoth; l
       pieCorrido: pieGtf,
       html: documentoHtml({ titulo: `GTF ${numero}`, css: CSS_GTF_OFICIAL + CSS_GTF_SALIDA, cuerpo: cuerpos, pieCorrido: pieGtf }),
     },
-    lista: {
-      nombre: "Lista de trozas",
-      archivo: `Lista de trozas ${nroLista}`,
-      etiqueta:
-        listas.hojas > 1
-          ? `${filas.length} trozas en ${listas.hojas} hojas · anexo del (33)`
-          : `${filas.length} troza${filas.length === 1 ? "" : "s"} · anexo del (33)`,
+    lista: listaDeTrozasImprimible(entradas, sello),
+  };
+}
+
+/**
+ * La lista de trozas de una guía, lista para el visor. Cada hoja es UNA lista
+ * con su N° (las de SERFOR: 34 trozas → listas 5 y 6), y se imprime en su
+ * propia página: cabecera, filas, total y firmas. Se parte con las filas por
+ * hoja de `hojasDeLaLista`: las mismas con que se contaron los N° del (33), y
+ * las de a 20 si la guía se emitió así. La usan la guía del Libro TH y la de
+ * salida del Libro CTP con trozas sin aserrar (27-10). `sello`: el de anulada
+ * o borrador, arriba de cada hoja.
+ */
+export function listaDeTrozasImprimible(entradas: EntradasGuiaLoth, sello = ""): HojaGuiaLoth {
+  const { filas, listas } = entradas;
+  const numero = entradas.cuerpo.numeroGtf;
+  const nroLista = listas.casillero35;
+  const pieLista = `${listas.hojas > 1 ? "Listas de trozas" : "Lista de trozas"} N° ${nroLista} · Anexo de la GTF ${numero}`;
+  const trozos = partirEnHojas(filas, listas.filasPorHoja);
+  const hojasLista = (trozos.length ? trozos : [[]]).map((trozo, i, todas) => {
+    const html = htmlListaTrozas({ ...entradas.lista, numero: listas.numeros[i] ?? nroLista, trozas: trozo });
+    const nota = todas.length > 1 ? `<div class="pie">Hoja ${i + 1} de ${todas.length} · anexo del (33)</div>` : NOTA_LISTA;
+    return `${sello}${html.replace(NOTA_LISTA, nota)}`;
+  });
+  return {
+    nombre: "Lista de trozas",
+    archivo: `Lista de trozas ${nroLista}`,
+    etiqueta:
+      listas.hojas > 1
+        ? `${filas.length} trozas en ${listas.hojas} hojas · anexo del (33)`
+        : `${filas.length} troza${filas.length === 1 ? "" : "s"} · anexo del (33)`,
+    pieCorrido: pieLista,
+    html: documentoHtml({
+      titulo: `Lista de trozas ${nroLista}`,
+      css: CSS_LISTA_TROZAS + CSS_HOJAS_DE_LISTA,
+      cuerpo: hojasLista.length > 1 ? hojasLista : hojasLista[0],
       pieCorrido: pieLista,
-      html: documentoHtml({
-        titulo: `Lista de trozas ${nroLista}`,
-        css: CSS_LISTA_TROZAS + CSS_HOJAS_DE_LISTA,
-        cuerpo: hojasLista.length > 1 ? hojasLista : hojasLista[0],
-        pieCorrido: pieLista,
-      }),
-    },
+    }),
   };
 }

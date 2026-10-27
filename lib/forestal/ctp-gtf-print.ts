@@ -51,6 +51,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { urlVerificarDespacho } from "@/lib/tenant-url-publica";
 import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
 import { aplicarPiezasGuia } from "@/lib/extensiones/guia-impresa";
+import { cuerpoGuiaSalida, guiasDeOrigen } from "@/lib/forestal/guia-salida-imprimible";
 
 /** Vive en `ctp-gtf-formato` (sin "use client"): la usa también el servidor (salida de la matricial, 16-10). */
 export { CSS_GTF_SALIDA };
@@ -136,6 +137,13 @@ export async function documentoGtfSalida(
    * como salía: se completa lo que hay, nunca se inventa lo que falta.
    */
   permisos?: readonly PermisoDeGuia[] | null,
+  /**
+   * Cuántas trozas salen sin aserrar en la guía (ADR-363), si la lista viaja
+   * con ella (`GuiaSalidaImprimible.trozas.length`): con más de una hoja, el
+   * (35) lleva el N° de cada hoja («9, 10»), como el talonario. Sin pasarla,
+   * el (35) es el N° de lista escrito en el despacho o el de la guía.
+   */
+  trozasEnLista?: number,
 ): Promise<DocumentoGtfSalida> {
   if (!despacho.gtfNumber) {
     throw new Error("El despacho todavía no tiene GTF emitida. Emite la GTF antes de imprimirla.");
@@ -199,24 +207,21 @@ export async function documentoGtfSalida(
 
   // El cuerpo va con los casilleros numerados del formato de SERFOR: en un
   // puesto de control se pide "el (22)" y "el (31)", no "el destinatario".
+  // El armado es el de `cuerpoGuiaSalida`, el MISMO que usa el talonario de la
+  // matricial (`entradasGuiaSalida`): los dos papeles dicen lo mismo.
   const lineasProducto = lineasDeLaGuiaSalida(despacho, lineasDeLaGuia);
-  const cuerpoOficial = cuerpoGtfOficial({
-    // La ficha llega parcial (se imprime aunque esté a medio llenar): los
-    // casilleros sin dato quedan en blanco, que es el comportamiento correcto.
-    ficha: ficha as CtpFicha,
-    datos,
-    lineas: lineasProducto,
-    numeroGtf: despacho.gtfNumber ?? "",
-    fechaExpedicion: despacho.entryDate ?? "",
-    listasTrozas: despacho.gtfNumber ?? "",
-    // (36) las GTF con las que ENTRÓ la materia prima: salen de la cadena, sin
-    // repetir la misma guía dos veces si dos corridas comparten origen.
-    gtfOrigen: [...new Set((cadena?.corridas ?? []).flatMap((c) => c.guias))].join(", "),
-    // Buleje no registra ante la ARFFS: mientras el operador no cargue el N°
-    // que devuelve el SNIFFS, el recuadro va en blanco para llenarlo a mano.
-    registroSerfor: "",
-    permisos: permisos ?? undefined,
-  });
+  const cuerpoOficial = cuerpoGtfOficial(
+    cuerpoGuiaSalida({
+      gtfNumber: despacho.gtfNumber,
+      fecha: despacho.entryDate,
+      ficha,
+      datos,
+      lineas: lineasProducto,
+      cadena,
+      permisos,
+      trozasEnLista,
+    }),
+  );
 
   const fichas: FichaResumen[] = [
     { k: "Destinatario", v: datos.destinatario?.nombre ?? despacho.destino ?? "" },
@@ -293,6 +298,6 @@ export async function documentoGtfSalida(
     },
     datos,
     lineas: lineasProducto,
-    guiasDeIngreso: [...new Set((cadena?.corridas ?? []).flatMap((c) => c.guias))],
+    guiasDeIngreso: guiasDeOrigen(cadena),
   });
 }

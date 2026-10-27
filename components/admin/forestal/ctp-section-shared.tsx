@@ -34,6 +34,8 @@ export interface CtpEntry {
   gtfDatos?: unknown;
   status: "registrado" | "anulado";
   annulledReason: string | null;
+  /** Cuándo se registró la línea (ISO): el plazo de registro de 2 días hábiles lo mira contra `entryDate`. */
+  createdAt?: string;
   /** El código pintado en el atado (ADR-314 · casillero 9 de la Sección 4). */
   codigoProducto?: string | null;
   /**

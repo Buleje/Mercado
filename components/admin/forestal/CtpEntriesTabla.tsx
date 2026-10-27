@@ -20,6 +20,7 @@ import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, AlertCircle, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Coins, Download, FileText, HandCoins, Link2, MoreHorizontal, PackagePlus, Paperclip, Scale, Truck, X as XIcon } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
+import { opcionesImpresionDespacho, type AccionImpresion } from "./despacho-impresiones-menu";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import {
@@ -146,6 +147,10 @@ export interface CtpEntriesTablaProps {
   colsProduccion?: ColsProduccionVisibles;
   /** Autofiltros en la cabecera (Brandon, 2026-09-03). Sin esto, la tabla queda igual. */
   filtrosColumna?: FiltrosDeColumna;
+  /** Imprimir la GTF de salida de la fila (hoja SERFOR, resumen, talonario, con formato) — sólo Despacho. */
+  onImprimir?: (e: CtpEntry, accion: AccionImpresion) => void;
+  /** Lo que se está armando ahora (el ⋯ de esa fila gira). */
+  imprimiendo?: { id: string; accion: AccionImpresion } | null;
 }
 
 const COLS_PRODUCCION_DEFECTO: ColsProduccionVisibles = {
@@ -496,6 +501,8 @@ export default function CtpEntriesTabla({
   totalesVista,
   colsProduccion = COLS_PRODUCCION_DEFECTO,
   filtrosColumna,
+  onImprimir,
+  imprimiendo = null,
 }: CtpEntriesTablaProps) {
   const cv = colsProduccion;
   const fc = filtrosColumna ?? {};
@@ -519,7 +526,17 @@ export default function CtpEntriesTabla({
    * acciones para las ocho filas: escritas adentro del `map` se releen ocho
    * veces y se desincronizan a la primera que cambie.
    */
+  /* Las impresiones de la GTF de salida, arriba y con su grupo (Brandon 27-10):
+     las mismas del Libro TH. Las de la línea quedan debajo, en «Esta línea». */
+  const impresionesDe = (e: CtpEntry): MenuAccion[] =>
+    section === "despacho" && onImprimir
+      ? opcionesImpresionDespacho(e, { onImprimir: (a) => onImprimir(e, a), ocupado: imprimiendo?.id === e.id ? imprimiendo.accion : null })
+      : [];
   const accionesDeLinea = (e: CtpEntry): MenuAccion[] => {
+    const imprimir = impresionesDe(e);
+    return imprimir.length ? [...imprimir, ...accionesDeLaLinea(e).map((a) => ({ ...a, seccion: "Esta línea" }))] : accionesDeLaLinea(e);
+  };
+  const accionesDeLaLinea = (e: CtpEntry): MenuAccion[] => {
     const lista: MenuAccion[] = [
       {
         id: "cadena",
@@ -885,6 +902,7 @@ export default function CtpEntriesTabla({
               onPapeles={section === "despacho" ? onPapeles : undefined}
               onCubicacionComercial={section === "despacho" && e.status !== "anulado" ? onCubicacionComercial : undefined}
               onGuia={section === "despacho" ? onGuia : undefined}
+              imprimir={impresionesDe(e)}
               onCobrarAserrio={section === "produccion" ? onCobrarAserrio : undefined}
               /* Sólo `registrado` se puede cobrar (ADR-412 no cobra anuladas)
                  — la fila de escritorio ya lo respeta (línea ~573); la card

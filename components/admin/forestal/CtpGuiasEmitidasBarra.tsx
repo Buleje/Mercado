@@ -15,12 +15,14 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { agruparPorGuia, cantidadesPorUnidad, type CantidadPorUnidad, type GuiaEmitida } from "@/lib/forestal/guias-emitidas";
 import type { GuiaElegida } from "@/lib/forestal/tramites-desde-guias";
 import { avisoDePermisos, permisosDeLasGuias, type GuiaConPermiso } from "@/lib/forestal/tramites-permiso";
 import type { CifraSeleccion } from "./ctp-barra-seleccion";
 import GuiasAFormatoBarra from "./GuiasAFormatoBarra";
+import { accionesConFormatoVarias, fuenteSalida, useGtfConFormatoVarias } from "./hooks/use-gtf-con-formato";
 import { refGuia } from "./tramite-guias-url";
 
 const cifraDe = ({ unidad, total }: CantidadPorUnidad): CifraSeleccion => {
@@ -63,6 +65,13 @@ export default function CtpGuiasEmitidasBarra({ elegidas, onLimpiar }: { elegida
     () => guias.map((g) => ({ gtfNumber: g.gtfNumber, status: g.anulada ? "anulada" : "emitida" })),
     [guias],
   );
+  /* 27-10: las tildadas con formato, como en el Libro TH — cada guía ENTERA
+     (todas sus líneas; con su lista si salen trozas), en una sola impresión o
+     un PDF. Las anuladas no salen. */
+  const varias = useGtfConFormatoVarias(useMemo(() => guias.map((g) => fuenteSalida(g.lineas[0].despachoId, g.gtfNumber, g.anulada)), [guias]));
+  useEffect(() => {
+    if (varias.error) toast.error(varias.error);
+  }, [varias.error]);
   if (guias.length === 0) return null;
 
   const anuladas = guias.filter((g) => g.anulada).length;
@@ -83,6 +92,7 @@ export default function CtpGuiasEmitidasBarra({ elegidas, onLimpiar }: { elegida
       cifras={cifras}
       onLimpiar={onLimpiar}
       aviso={aviso}
+      conFormato={accionesConFormatoVarias(varias)}
     />
   );
 }

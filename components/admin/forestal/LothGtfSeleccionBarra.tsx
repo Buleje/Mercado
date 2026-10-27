@@ -13,14 +13,13 @@
 
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { Download } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { avisoDePermisos, permisosDeLasGuias } from "@/lib/forestal/tramites-permiso";
 import { permisoDeLaGuiaGtf } from "./gtf-acciones-menu";
 import type { CifraSeleccion } from "./ctp-barra-seleccion";
 import type { Gtf } from "./gtf-tabla-columnas";
 import GuiasAFormatoBarra from "./GuiasAFormatoBarra";
-import { useGtfConFormatoVarias } from "./hooks/use-gtf-con-formato";
+import { accionesConFormatoVarias, fuenteLoth, useGtfConFormatoVarias } from "./hooks/use-gtf-con-formato";
 
 export default function LothGtfSeleccionBarra({ elegidas, onLimpiar }: { elegidas: readonly Gtf[]; onLimpiar: () => void }) {
   const aviso = useMemo(
@@ -28,7 +27,7 @@ export default function LothGtfSeleccionBarra({ elegidas, onLimpiar }: { elegida
     [elegidas],
   );
   /* 27-10: las tildadas en UN PDF con formato (guía + lista de cada una); las anuladas no salen. */
-  const varias = useGtfConFormatoVarias(elegidas);
+  const varias = useGtfConFormatoVarias(useMemo(() => elegidas.map(fuenteLoth), [elegidas]));
   useEffect(() => {
     if (varias.error) toast.error(varias.error);
   }, [varias.error]);
@@ -44,6 +43,5 @@ export default function LothGtfSeleccionBarra({ elegidas, onLimpiar }: { elegida
     { label: "Piezas", valor: String(piezas) },
   ];
 
-  const pdf = { label: varias.ocupado ? "Armando el PDF…" : "PDF con formato", icon: Download, disabled: varias.ocupado || varias.vivas === 0, onClick: () => void varias.bajar() };
-  return <GuiasAFormatoBarra elegidas={elegidas} refs={elegidas.map((g) => g.id)} cifras={cifras} onLimpiar={onLimpiar} aviso={aviso} accionesExtra={[pdf]} />;
+  return <GuiasAFormatoBarra elegidas={elegidas} refs={elegidas.map((g) => g.id)} cifras={cifras} onLimpiar={onLimpiar} aviso={aviso} conFormato={accionesConFormatoVarias(varias)} />;
 }

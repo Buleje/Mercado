@@ -9,7 +9,8 @@ import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
 import { auditCtp, type CtpAuditAction } from "@/lib/forestal/ctp-audit";
 import { hojaSchema } from "@/lib/forestal/gtf-matricial-disposicion";
 import { formaIdSchema, MENSAJE_ERROR_FORMA, nombreFormaSchema, type ErrorForma } from "@/lib/forestal/gtf-matricial-formas";
-import { isSpecializationEnabled } from "@/lib/specializations";
+import { guardTalonario } from "@/lib/forestal/gtf-matricial-habilitado";
+import { guiaDeLosParametros, MENSAJE_GUIA_O_DESPACHO } from "@/lib/forestal/gtf-matricial-fuente";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -27,28 +28,33 @@ import { withApiHandler } from "@/lib/api-handler";
  *       imprimir en el monte saldría con esa forma (mandada con ella, o la
  *       que elige sola por su dueño).
  * `gtfId` sólo sirve para decir, en la respuesta, qué tanto es de esa guía.
+ * Desde el 27-10 la guía puede ser la de salida de un despacho del Libro CTP:
+ * `despachoId` (POST/PATCH) o `despacho` (DELETE), nunca junto con la del
+ * Libro TH (400).
  */
 
 const ROLES: readonly AdminRole[] = ["admin", "almacenero", "owner"];
 const ESTADO: Record<ErrorForma, number> = { no_existe: 404, tope: 409, nombre_repetido: 409 };
 const gtfIdSchema = z.string().trim().min(1).max(64);
 
-const postSchema = z.object({ gtfId: gtfIdSchema.optional(), nombre: nombreFormaSchema.optional(), guia: hojaSchema, lista: hojaSchema });
-const patchSchema = z.object({ gtfId: gtfIdSchema.optional(), formaId: formaIdSchema, nombre: nombreFormaSchema });
-const deleteSchema = z.object({ forma: formaIdSchema, gtf: gtfIdSchema.optional() });
+const unaGuia = (v: { gtfId?: string; despachoId?: string }) => !(v.gtfId && v.despachoId);
+const postSchema = z
+  .object({ gtfId: gtfIdSchema.optional(), despachoId: gtfIdSchema.optional(), nombre: nombreFormaSchema.optional(), guia: hojaSchema, lista: hojaSchema })
+  .refine(unaGuia, { message: MENSAJE_GUIA_O_DESPACHO });
+const patchSchema = z
+  .object({ gtfId: gtfIdSchema.optional(), despachoId: gtfIdSchema.optional(), formaId: formaIdSchema, nombre: nombreFormaSchema })
+  .refine(unaGuia, { message: MENSAJE_GUIA_O_DESPACHO });
+const deleteSchema = z
+  .object({ forma: formaIdSchema, gtf: gtfIdSchema.optional(), despacho: gtfIdSchema.optional() })
+  .refine((v) => !(v.gtf && v.despacho), { message: MENSAJE_GUIA_O_DESPACHO });
 
-async function ensureSpec(tenantId: string) {
-  const enabled = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
-  return enabled ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
-}
-
-/** Sesión + límite + especialización: lo mismo para los tres verbos. */
+/** Sesión + límite: lo mismo para los tres verbos. El libro habilitado depende de la guía (`guardTalonario`, tras validar). */
 async function entrada(req: NextRequest): Promise<Response | SessionPayload> {
   const auth = await requireAdmin(req, ROLES);
   if (auth instanceof Response) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
-  return (await ensureSpec(auth.tenantId)) ?? auth;
+  return auth;
 }
 
 function responder(r: ResultadoFormaDB, status = 200) {
@@ -77,8 +83,11 @@ export const POST = withApiHandler("forestal-loth-gtf-matricial-formas-post", as
   if (auth instanceof Response) return auth;
   const parsed = postSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return invalido(parsed.error.issues);
+  const deLaGuia = guiaDeLosParametros(parsed.data.gtfId, parsed.data.despachoId);
+  const guard = await guardTalonario(auth.tenantId, deLaGuia);
+  if (guard) return guard;
   try {
-    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, parsed.data.gtfId);
+    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, deLaGuia);
     if (!dueno) return NO_HAY_GUIA();
     const { nombre, guia, lista } = parsed.data;
     const r = await ForestGtfMatricialDB.crearForma(auth.tenantId, dueno, { nombre, guia, lista }, auth.username ?? "unknown");
@@ -96,8 +105,11 @@ export const PATCH = withApiHandler("forestal-loth-gtf-matricial-formas-patch", 
   if (auth instanceof Response) return auth;
   const parsed = patchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return invalido(parsed.error.issues);
+  const deLaGuia = guiaDeLosParametros(parsed.data.gtfId, parsed.data.despachoId);
+  const guard = await guardTalonario(auth.tenantId, deLaGuia);
+  if (guard) return guard;
   try {
-    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, parsed.data.gtfId);
+    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, deLaGuia);
     if (!dueno) return NO_HAY_GUIA();
     const r = await ForestGtfMatricialDB.renombrarForma(auth.tenantId, dueno, parsed.data.formaId, parsed.data.nombre, auth.username ?? "unknown");
     auditar(auth, r, "gtf_talonario_forma_renombrar", parsed.data.formaId, `Forma del talonario renombrada a «${parsed.data.nombre}»`);
@@ -113,8 +125,11 @@ export const DELETE = withApiHandler("forestal-loth-gtf-matricial-formas-delete"
   const auth = await entrada(req);
   if (auth instanceof Response) return auth;
   const sp = req.nextUrl.searchParams;
-  const parsed = deleteSchema.safeParse({ forma: sp.get("forma") ?? undefined, gtf: sp.get("gtf") ?? undefined });
+  const parsed = deleteSchema.safeParse({ forma: sp.get("forma") ?? undefined, gtf: sp.get("gtf") ?? undefined, despacho: sp.get("despacho") ?? undefined });
   if (!parsed.success) return invalido(parsed.error.issues);
+  const deLaGuia = guiaDeLosParametros(parsed.data.gtf, parsed.data.despacho);
+  const guard = await guardTalonario(auth.tenantId, deLaGuia);
+  if (guard) return guard;
   try {
     /* El monte bajaría esa guía con una forma que ya no está: primero se imprime o se cambia el envío. */
     const cola = await ForestGtfColaMonteDB.leerAlDia(auth.tenantId);
@@ -126,7 +141,7 @@ export const DELETE = withApiHandler("forestal-loth-gtf-matricial-formas-delete"
         { status: 409 },
       );
     }
-    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, parsed.data.gtf);
+    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, deLaGuia);
     if (!dueno) return NO_HAY_GUIA();
     const r = await ForestGtfMatricialDB.borrarForma(auth.tenantId, dueno, parsed.data.forma, auth.username ?? "unknown");
     auditar(auth, r, "gtf_talonario_forma_borrar", parsed.data.forma, `Forma del talonario ${parsed.data.forma} borrada`);

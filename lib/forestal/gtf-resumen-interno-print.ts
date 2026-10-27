@@ -50,7 +50,8 @@ const met = (v: number | null | undefined): string => (v == null ? "—" : v.toF
 const signo = (v: number): string => (v > 0 ? `+${fmtM3(v)}` : fmtM3(v));
 const rango = (r: Rango | null, f: (v: number) => string): string => (r ? `${f(r.min)} · ${f(r.prom)} · ${f(r.max)}` : "—");
 
-const CSS_RESUMEN = `
+/** El estilo de las tablas del resumen (lo reusa el de la guía de salida, `despacho-resumen-interno`). */
+export const CSS_RESUMEN = `
   .ri-qr { float:right; width:24mm; margin:0 0 2mm 4mm; text-align:center; font-size:6pt; color:var(--gris-suave); }
   .ri-qr svg { width:22mm; height:22mm; display:block; margin:0 auto .5mm; }
   table.ri { width:100%; border-collapse:collapse; margin:1mm 0 2.6mm; font-size:7.4pt; font-variant-numeric:tabular-nums; }

@@ -6,6 +6,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestGtfMatricialDB } from "@/lib/db/forest-gtf-matricial.db";
 import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
+import { ForestCtpGuiaSalidaDB } from "@/lib/db/forest-ctp-guia-salida.db";
 import { CATALOGO } from "@/lib/forestal/gtf-matricial-disposicion";
 import { formaIdSchema, MENSAJE_ERROR_FORMA } from "@/lib/forestal/gtf-matricial-formas";
 import { MENSAJE_ERROR_PERFIL, transformacionDe } from "@/lib/forestal/gtf-matricial-perfiles";
@@ -15,7 +16,11 @@ import { renglonesDeLaPagina } from "@/lib/forestal/gtf-salida-geometria";
 import { pdfPrueba, pdfTalonario } from "@/lib/forestal/gtf-salida-pdf";
 import { PERFIL_OFICINA_ID } from "@/lib/forestal/gtf-salida-tipos";
 import type { LothGtfCaratula, LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
-import { isSpecializationEnabled } from "@/lib/specializations";
+import type { EntradasGuiaLoth } from "@/lib/forestal/loth-guia-print";
+import type { DuenoTalonario } from "@/lib/forestal/gtf-matricial-titulares";
+import { guardTalonario } from "@/lib/forestal/gtf-matricial-habilitado";
+import { guiaDeLosParametros } from "@/lib/forestal/gtf-matricial-fuente";
+import { faltanParaImprimir } from "@/lib/forestal/guia-salida-imprimible";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -35,6 +40,10 @@ import { withApiHandler } from "@/lib/api-handler";
  *     la que se elige sola para la guía (permiso + titular). Una forma pedida que
  *     ya no existe es 404: nunca se cae a otra (gastaría una hoja numerada).
  *   · Header `X-Recortados`: renglones que no entran en el papel/carro.
+ *   · `despachoId=<id>` en vez de `gtfId` (27-10): la GTF de SALIDA de ese
+ *     despacho del Libro CTP, entera (todas sus líneas), con las entradas de
+ *     `ForestCtpGuiaSalidaDB` (las mismas de su hoja SERFOR) y la forma única
+ *     del CTP. 409 `SIN_GUIA` si todavía no tiene N°.
  *
  * Disposición = la forma GUARDADA de la guía (la misma que abre el modal);
  * perfil = la calibración guardada de esa impresora. Todo sale del
@@ -43,8 +52,11 @@ import { withApiHandler } from "@/lib/api-handler";
 
 const ROLES: readonly AdminRole[] = ["admin", "almacenero", "owner"];
 
+const MENSAJE_UNA_GUIA = "Indica una guía del Libro TH (gtfId) o un despacho del Libro CTP (despachoId): uno solo.";
+
 const querySchema = z.object({
-  gtfId: z.string().trim().min(1).max(64),
+  gtfId: z.string().trim().min(1).max(64).optional(),
+  despachoId: z.string().trim().min(1).max(64).optional(),
   formato: z.enum(["pdf", "escp"]),
   perfil: z.string().trim().min(1).max(64).default(PERFIL_OFICINA_ID),
   hoja: z.enum(["guia", "lista"]).default("guia"),
@@ -52,12 +64,12 @@ const querySchema = z.object({
   valores: z.enum(["0", "1"]).default("0"),
   agujas: z.enum(["9", "24"]).default("9"),
   forma: formaIdSchema.optional(),
-});
+}).refine((v) => !!v.gtfId !== !!v.despachoId, { message: MENSAJE_UNA_GUIA });
 
-async function ensureSpec(tenantId: string) {
-  const enabled = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
-  return enabled ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
-}
+const NO_HAY_GUIA = () => NextResponse.json({ error: "not_found", message: "No encontramos esa guía." }, { status: 404 });
+
+/** Lo que cambia según de qué libro es la guía: su dueño (la forma), su N° y sus valores. */
+type GuiaParaSalida = { dueno: DuenoTalonario; numero: string; entradas: () => Promise<EntradasGuiaLoth> };
 
 /** «GTF-019-001-0000772-guia.pdf»: sólo lo que un nombre de archivo admite en cualquier celular. */
 const nombreArchivo = (numero: string, partes: string[], ext: "pdf" | "prn"): string =>
@@ -68,37 +80,59 @@ export const GET = withApiHandler("forestal-loth-gtf-matricial-salida", async (r
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
-  const guard = await ensureSpec(auth.tenantId);
-  if (guard) return guard;
 
   const sp = req.nextUrl.searchParams;
-  const q = querySchema.safeParse(Object.fromEntries(["gtfId", "formato", "perfil", "hoja", "prueba", "valores", "agujas", "forma"].map((k) => [k, sp.get(k) ?? undefined])));
-  if (!q.success) return NextResponse.json({ error: "validation_error", issues: q.error.issues.slice(0, 5) }, { status: 400 });
-  const { gtfId, formato, perfil: perfilId, hoja: formatoHoja } = q.data;
+  const q = querySchema.safeParse(Object.fromEntries(["gtfId", "despachoId", "formato", "perfil", "hoja", "prueba", "valores", "agujas", "forma"].map((k) => [k, sp.get(k) ?? undefined])));
+  if (!q.success) {
+    const una = q.error.issues.some((i) => i.message === MENSAJE_UNA_GUIA);
+    return NextResponse.json({ error: "validation_error", ...(una ? { message: MENSAJE_UNA_GUIA } : {}), issues: q.error.issues.slice(0, 5) }, { status: 400 });
+  }
+  const { gtfId, despachoId, formato, perfil: perfilId, hoja: formatoHoja } = q.data;
+  const guard = await guardTalonario(auth.tenantId, guiaDeLosParametros(gtfId, despachoId));
+  if (guard) return guard;
   const prueba = q.data.prueba === "1";
   const agujas: Agujas = q.data.agujas === "24" ? 24 : 9;
-
   try {
-    const g = await ForestGtfDB.getById(auth.tenantId, gtfId);
-    if (!g) return NextResponse.json({ error: "not_found", message: "No encontramos esa guía." }, { status: 404 });
-    if (g.status === "anulada" && !prueba) {
-      return NextResponse.json({ error: "anulada", message: "Esa guía está anulada: no se imprime en el talonario." }, { status: 409 });
+    let deLaGuia: GuiaParaSalida;
+    if (despachoId) {
+      /* La GTF de SALIDA del CTP: la guía entera con las entradas de su hoja
+         SERFOR, y la forma única del talonario del CTP (su razón social). */
+      const r = await ForestCtpGuiaSalidaDB.guiaSalidaDeDespacho(auth.tenantId, despachoId);
+      if (!r.ok && r.error === "NO_EXISTE") return NO_HAY_GUIA();
+      if (!r.ok) return NextResponse.json({ error: "SIN_GUIA", message: "Emite la guía primero: botón Guía de la fila." }, { status: 409 });
+      if (r.guia.anulada && !prueba) {
+        return NextResponse.json({ error: "anulada", message: "Esa guía está anulada: no se imprime en el talonario." }, { status: 409 });
+      }
+      const faltan = faltanParaImprimir(r.guia);
+      if (faltan && !prueba) return NextResponse.json({ error: "FALTAN_DATOS", message: faltan }, { status: 409 });
+      deLaGuia = { dueno: { titular: r.guia.titular || null, permiso: null, planId: null }, numero: r.guia.gtfNumber, entradas: async () => r.entradas };
+    } else {
+      const g = await ForestGtfDB.getById(auth.tenantId, gtfId ?? "");
+      if (!g) return NO_HAY_GUIA();
+      if (g.status === "anulada" && !prueba) {
+        return NextResponse.json({ error: "anulada", message: "Esa guía está anulada: no se imprime en el talonario." }, { status: 409 });
+      }
+      deLaGuia = {
+        dueno: { titular: g.titularName ?? null, permiso: g.tituloHabilitante ?? null, planId: g.planId ?? null },
+        numero: g.gtfNumber,
+        entradas: async () => {
+          const caratula: LothGtfCaratula | null = g.gtfDatos ? null : await ForestLothDB.getActiveCaratula(auth.tenantId);
+          // Fechas y decimales como los ve el cliente (ISO y texto): la misma entrada que el modal.
+          return entradasDeLaGuia(JSON.parse(JSON.stringify(g)) as LothGtfDoc, caratula);
+        },
+      };
     }
-    const dueno = { titular: g.titularName ?? null, permiso: g.tituloHabilitante ?? null, planId: g.planId ?? null };
-    const { disposicion, perfil } = await ForestGtfMatricialDB.paraSalida(auth.tenantId, dueno, perfilId, q.data.forma);
+    const { disposicion, perfil } = await ForestGtfMatricialDB.paraSalida(auth.tenantId, deLaGuia.dueno, perfilId, q.data.forma);
     if (!disposicion) return NextResponse.json({ error: "forma_no_existe", message: MENSAJE_ERROR_FORMA.no_existe }, { status: 404 });
     if (!perfil) return NextResponse.json({ error: "perfil_no_existe", message: MENSAJE_ERROR_PERFIL["no-existe"] }, { status: 404 });
 
     const hoja = disposicion[formatoHoja];
     const t = transformacionDe(hoja, perfil);
-    const caratula: LothGtfCaratula | null = g.gtfDatos ? null : await ForestLothDB.getActiveCaratula(auth.tenantId);
-    // Fechas y decimales como los ve el cliente (ISO y texto): la misma entrada que el modal.
-    const doc = JSON.parse(JSON.stringify(g)) as LothGtfDoc;
-    const paginas = paginasDe(formatoHoja, entradasDeLaGuia(doc, caratula), hoja);
+    const paginas = paginasDe(formatoHoja, await deLaGuia.entradas(), hoja);
     const cat = CATALOGO[formatoHoja];
     const renglones = paginas.map((p) => renglonesDeLaPagina(hoja, cat, p, t));
 
-    const numero = g.gtfNumber;
+    const numero = deLaGuia.numero;
     const partes = prueba ? [formatoHoja, "prueba", perfil.id] : [formatoHoja];
     let cuerpo: Uint8Array;
     let recortados = 0;
@@ -126,7 +160,7 @@ export const GET = withApiHandler("forestal-loth-gtf-matricial-salida", async (r
       },
     });
   } catch (err) {
-    logger.error("[loth.gtf-matricial.salida] failed", { error: String(err), tenantId: auth.tenantId, gtfId });
+    logger.error("[loth.gtf-matricial.salida] failed", { error: String(err), tenantId: auth.tenantId, gtfId, despachoId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 });

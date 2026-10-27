@@ -8,7 +8,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestGtfMatricialDB } from "@/lib/db/forest-gtf-matricial.db";
 import { hojaSchema } from "@/lib/forestal/gtf-matricial-disposicion";
 import { formaIdSchema, MENSAJE_ERROR_FORMA, type ErrorForma } from "@/lib/forestal/gtf-matricial-formas";
-import { isSpecializationEnabled } from "@/lib/specializations";
+import { guardTalonario } from "@/lib/forestal/gtf-matricial-habilitado";
+import { guiaDeLosParametros, MENSAJE_GUIA_O_DESPACHO } from "@/lib/forestal/gtf-matricial-fuente";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -20,6 +21,11 @@ import { withApiHandler } from "@/lib/api-handler";
  * (permiso + titular), que pone el SERVIDOR desde la guía (`ForestGtf.titularName`
  * / `tituloHabilitante` / `planId`, los mismos datos con que se numera), nunca
  * el cliente. Crear, renombrar y borrar formas: `./formas`.
+ *
+ * La guía es una del Libro TH (`gtf` / `gtfId`) o, desde el 27-10, la de
+ * salida de un despacho del Libro CTP (`despacho` / `despachoId`): nunca las
+ * dos (400). El despacho tiene UNA forma para todas las salidas del CTP
+ * (`ForestGtfMatricialDB.duenoDeLaGuia`).
  *
  * GET `?gtf=<id>[&forma=<id>]` — la forma de esa guía (o la elegida a mano),
  *   por qué se eligió, todas las formas (las del dueño arriba) y las impresoras.
@@ -35,49 +41,52 @@ import { withApiHandler } from "@/lib/api-handler";
 
 const ROLES: readonly AdminRole[] = ["admin", "almacenero", "owner"];
 
-const getSchema = z.object({
-  gtf: z.string().trim().min(1).max(64).optional(),
-  de: z.string().trim().min(1).max(300).optional(),
-  forma: formaIdSchema.optional(),
-});
+const getSchema = z
+  .object({
+    gtf: z.string().trim().min(1).max(64).optional(),
+    despacho: z.string().trim().min(1).max(64).optional(),
+    de: z.string().trim().min(1).max(300).optional(),
+    forma: formaIdSchema.optional(),
+  })
+  .refine((v) => !(v.gtf && v.despacho), { message: MENSAJE_GUIA_O_DESPACHO });
 
-const putSchema = z.object({
-  gtfId: z.string().trim().min(1).max(64).optional(),
-  formaId: formaIdSchema.optional(),
-  formato: z.enum(["guia", "lista"]),
-  hoja: hojaSchema,
-});
+const putSchema = z
+  .object({
+    gtfId: z.string().trim().min(1).max(64).optional(),
+    despachoId: z.string().trim().min(1).max(64).optional(),
+    formaId: formaIdSchema.optional(),
+    formato: z.enum(["guia", "lista"]),
+    hoja: hojaSchema,
+  })
+  .refine((v) => !(v.gtfId && v.despachoId), { message: MENSAJE_GUIA_O_DESPACHO });
 
 const NO_HAY_GUIA = { error: "not_found", message: "No encontramos esa guía." } as const;
 
 const ESTADO: Record<ErrorForma, number> = { no_existe: 404, tope: 409, nombre_repetido: 409 };
 const errorForma = (e: ErrorForma) => NextResponse.json({ error: e, message: MENSAJE_ERROR_FORMA[e] }, { status: ESTADO[e] });
 
-async function ensureSpec(tenantId: string) {
-  const enabled = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
-  return enabled ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
-}
-
 export const GET = withApiHandler("forestal-loth-gtf-matricial-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ROLES);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
-  const guard = await ensureSpec(auth.tenantId);
-  if (guard) return guard;
   const q = getSchema.safeParse({
     gtf: req.nextUrl.searchParams.get("gtf") ?? undefined,
+    despacho: req.nextUrl.searchParams.get("despacho") ?? undefined,
     de: req.nextUrl.searchParams.get("de") ?? undefined,
     forma: req.nextUrl.searchParams.get("forma") ?? undefined,
   });
   if (!q.success) return NextResponse.json({ error: "validation_error", issues: q.error.issues.slice(0, 5) }, { status: 400 });
+  const guia = guiaDeLosParametros(q.data.gtf, q.data.despacho);
+  const guard = await guardTalonario(auth.tenantId, guia);
+  if (guard) return guard;
   try {
     if (q.data.de) {
       const disposicion = await ForestGtfMatricialDB.de(auth.tenantId, q.data.de);
       if (!disposicion) return errorForma("no_existe");
       return NextResponse.json({ disposicion });
     }
-    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, q.data.gtf);
+    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, guia);
     if (!dueno) return NextResponse.json(NO_HAY_GUIA, { status: 404 });
     const r = await ForestGtfMatricialDB.paraDueno(auth.tenantId, dueno, q.data.forma);
     return r ? NextResponse.json(r) : errorForma("no_existe");
@@ -92,19 +101,21 @@ export const PUT = withApiHandler("forestal-loth-gtf-matricial-put", async (req:
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
-  const guard = await ensureSpec(auth.tenantId);
-  if (guard) return guard;
 
   const body = await req.json().catch(() => null);
   const parsed = putSchema.safeParse(body);
   if (!parsed.success) {
+    const ambas = parsed.error.issues.some((i) => i.message === MENSAJE_GUIA_O_DESPACHO);
     return NextResponse.json(
-      { error: "validation_error", message: "Alguna medida está fuera de rango.", issues: parsed.error.issues.slice(0, 5) },
+      { error: "validation_error", message: ambas ? MENSAJE_GUIA_O_DESPACHO : "Alguna medida está fuera de rango.", issues: parsed.error.issues.slice(0, 5) },
       { status: 400 },
     );
   }
+  const guia = guiaDeLosParametros(parsed.data.gtfId, parsed.data.despachoId);
+  const guard = await guardTalonario(auth.tenantId, guia);
+  if (guard) return guard;
   try {
-    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, parsed.data.gtfId);
+    const dueno = await ForestGtfMatricialDB.duenoDeLaGuia(auth.tenantId, guia);
     if (!dueno) return NextResponse.json(NO_HAY_GUIA, { status: 404 });
     const r = await ForestGtfMatricialDB.guardar(
       auth.tenantId,

@@ -10,7 +10,8 @@
  * inventario / Anular) full-width. Misma data y mismos handlers que la tabla.
  */
 
-import { AlertCircle, Boxes, Calendar, Coins, Download, FileText, HandCoins, Link2, Paperclip, PackagePlus, Scale, Truck, Check } from "@buleje/design-system/icons";
+import { AlertCircle, Boxes, Calendar, Coins, Download, FileText, HandCoins, Link2, Paperclip, PackagePlus, Printer, Scale, Truck, Check } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { CardTitle } from "@buleje/design-system";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
@@ -41,6 +42,8 @@ interface CtpSeccionCardMobileProps {
   onCubicacionComercial?: (e: CtpEntry) => void;
   /** Abrir la guía de transporte de esa línea — borrador editable o emitida (solo despachos). */
   onGuia?: (e: CtpEntry) => void;
+  /** Las impresiones de la GTF de salida (las mismas del ⋯ de escritorio); también en la anulada. */
+  imprimir?: MenuAccion[];
   /** Ponerle o cambiarle dueño y precio a una corrida ya declarada (ADR-412, solo producción). */
   onCobrarAserrio?: (e: CtpEntry) => void;
   /** Selección para «Cobrar aserrío» EN TANDA (ADR-412, solo producción,
@@ -55,7 +58,7 @@ const fmtDate = (iso: string) => {
   try { return formatDate(iso, { soloFecha: true }); } catch { return iso; }
 };
 
-export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar, onPapeles, onCubicacionComercial, onGuia, onCobrarAserrio, marcadaCobro, onMarcarCobro }: CtpSeccionCardMobileProps) {
+export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul, ampliable, onAmpliar, onPapeles, onCubicacionComercial, onGuia, imprimir, onCobrarAserrio, marcadaCobro, onMarcarCobro }: CtpSeccionCardMobileProps) {
   const anulado = e.status === "anulado";
   const KindIcon = section === "produccion" ? Boxes : Truck;
   const rend = section === "produccion" ? evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null) : null;
@@ -196,6 +199,9 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
         <p className="mt-2 rounded-lg bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)]">{e.annulledReason}</p>
       )}
 
+      {imprimir && imprimir.length > 0 && (
+        <div className="mt-3"><ActionMenu label="Imprimir la guía" title="Imprimir la guía entera" icon={Printer} variant="outline" size="md" className="w-full" actions={imprimir} /></div>
+      )}
       {!anulado && (
         <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--rule-soft)] pt-3">
           <button

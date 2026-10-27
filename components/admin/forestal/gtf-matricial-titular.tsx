@@ -61,7 +61,7 @@ function estado(info: InfoTalonario): { chip: string; ayuda: string } {
 export default function TitularTalonario({ t, accion }: { t: EstadoGtfMatricial; accion?: ReactNode }) {
   const id = useId();
   const { confirm, prompt } = useConfirm();
-  const f = useFormasTalonario(t.gtfId, t);
+  const f = useFormasTalonario(t.ref, t);
   const info = t.info;
   if (!info) return null;
   const actual = info.forma;

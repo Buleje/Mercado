@@ -3,6 +3,10 @@
  * guardar), `…/gtf-matricial/formas` (nueva, renombrar, borrar) y la salida
  * con `forma=`. Cada negocio ve sólo las suyas; la salida usa la pedida y, si
  * ya no existe, NO cae a otra (gastaría una hoja numerada con otro encaje).
+ *
+ * Desde el 27-10 el talonario también imprime la GTF de SALIDA de un despacho
+ * del Libro CTP (`despacho=` / `despachoId=`): una sola forma para todas las
+ * salidas del CTP (su razón social), que nunca pisa la de una guía del Libro TH.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
@@ -10,6 +14,8 @@ import fichasJson from "./forestal-loth-importar-guia.fichas-blas.json";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import { gtfDatosConFicha } from "@/lib/forestal/loth-importar-guia";
 import { hojaDeFabrica } from "@/lib/forestal/gtf-matricial-disposicion";
+import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import { entradasGuiaSalida, type GuiaSalidaImprimible } from "@/lib/forestal/guia-salida-imprimible";
 
 interface Sesion {
   tenantId: string;
@@ -22,6 +28,10 @@ const { estado, logger } = vi.hoisted(() => ({
     sesion: null as Sesion | null,
     kv: new Map<string, unknown>(),
     guias: new Map<string, Record<string, unknown>>(),
+    despachos: new Map<string, Record<string, unknown>>(),
+    salidas: new Map<string, unknown>(),
+    razonSocial: new Map<string, string>(),
+    apagadas: new Set<string>(),
   },
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
@@ -31,7 +41,7 @@ vi.mock("@/lib/require-admin", async () => {
   return { requireAdmin: vi.fn(async () => estado.sesion ?? NextResponse.json({ error: "unauthorized" }, { status: 401 })) };
 });
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn(() => null) }));
-vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
+vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async (_t: string, spec: string) => !estado.apagadas.has(spec) }));
 vi.mock("@/lib/logger", () => ({ logger }));
 vi.mock("@/lib/db/platform-settings.db", () => ({
   PlatformSettingsDB: {
@@ -56,6 +66,18 @@ vi.mock("@/lib/db/forest-gtf.db", () => ({
   },
 }));
 vi.mock("@/lib/db/forest-loth.db", () => ({ ForestLothDB: { getActiveCaratula: vi.fn(async () => null) } }));
+/** El despacho del Libro CTP, también sólo para SU tenant. */
+vi.mock("@/lib/db/forest-ctp.db", () => ({
+  ForestCtpDB: { getById: vi.fn(async (tenantId: string, id: string) => estado.despachos.get(`${tenantId}:${id}`) ?? null) },
+}));
+vi.mock("@/lib/db/forest-ctp-ficha.db", () => ({
+  ForestCtpFichaDB: { get: vi.fn(async (tenantId: string) => ({ razonSocial: estado.razonSocial.get(tenantId) ?? "" })) },
+}));
+vi.mock("@/lib/db/forest-ctp-guia-salida.db", () => ({
+  ForestCtpGuiaSalidaDB: {
+    guiaSalidaDeDespacho: vi.fn(async (tenantId: string, id: string) => estado.salidas.get(`${tenantId}:${id}`) ?? { ok: false, error: "NO_EXISTE" }),
+  },
+}));
 
 const T = "t-qa-formas";
 const AJENO = "t-otro-negocio";
@@ -93,6 +115,19 @@ async function salida(qs: string) {
   return GET(new NextRequest(`${BASE}/salida?${qs}`));
 }
 const guiaCorrida = (dx: number) => ({ ...hojaDeFabrica("guia"), offsetXMm: dx });
+
+/** La GTF de salida que devuelve `ForestCtpGuiaSalidaDB` para un despacho emitido (3 productos aserrados). */
+const salidaCtp = (extra: Partial<GuiaSalidaImprimible> = {}) => {
+  const guia: GuiaSalidaImprimible = {
+    despachoId: "desp-77", lineNo: 77, lineIds: ["desp-77"], gtfNumber: "019-002-0000077", fecha: "2026-10-20",
+    datos: leerGtfDatos({ destinatario: { nombre: "Maderas Lima" }, vehiculo: { placa: "ABC-123" } }),
+    lineas: [{ cientifico: "Cedrelinga cateniformis", comun: "Tornillo", tipoProducto: "Madera aserrada", presentacion: "m³", cantidad: 40, unidad: "m³", total: 12.345 }],
+    cadena: { corridas: [{ lineNo: 40, quantity: 12.345, guias: ["019-001-000123"] }] },
+    trozas: [], enRollo: false, titular: "MADERERA EL AGUAJAL S.A.C.", faltan: [], anulada: false,
+    ...extra,
+  };
+  return { ok: true, guia, entradas: entradasGuiaSalida(guia, { razonSocial: guia.titular }) };
+};
 const bytes = async (res: Response) => Buffer.from(await res.arrayBuffer()).toString("hex");
 
 beforeEach(() => {
@@ -103,6 +138,15 @@ beforeEach(() => {
   estado.guias.set(`${T}:gtf-aguajal`, guia({ id: "gtf-aguajal" }));
   estado.guias.set(`${T}:gtf-santos`, guia({ id: "gtf-santos", gtfNumber: "019-001-0000483", titularName: "SANTOS MUÑOZ ROJAS", tituloHabilitante: "25-UCA-C-PER-009-21" }));
   estado.guias.set(`${AJENO}:gtf-ajena`, guia({ id: "gtf-ajena", tenantId: AJENO }));
+  estado.despachos.clear();
+  estado.salidas.clear();
+  estado.razonSocial.clear();
+  estado.apagadas.clear();
+  /* El CTP se llama igual que el titular de la guía del Libro TH (el aserradero también tiene monte). */
+  estado.razonSocial.set(T, "MADERERA EL AGUAJAL S.A.C.");
+  for (const id of ["desp-77", "desp-78"]) estado.despachos.set(`${T}:${id}`, { id, tenantId: T, section: "despacho", gtfNumber: null });
+  estado.despachos.set(`${T}:prod-5`, { id: "prod-5", tenantId: T, section: "produccion" });
+  estado.despachos.set(`${AJENO}:desp-ajeno`, { id: "desp-ajeno", tenantId: AJENO, section: "despacho" });
   logger.error.mockClear();
 });
 
@@ -196,5 +240,80 @@ describe("nueva, renombrar y borrar", () => {
     /* Otra guía (Santos) no la usa: la suya es otra. */
     const s = await talonario("PUT", { gtfId: "gtf-santos", formato: "guia", hoja: guiaCorrida(4) });
     expect((await formas("DELETE", undefined, `?forma=${s.j.forma?.id}`)).res.status).toBe(200);
+  });
+});
+
+describe("la GTF de salida de un despacho del Libro CTP (27-10)", () => {
+  it("una forma para todas las salidas del CTP: arranca de la del Libro TH del mismo titular y guardarla NO la pisa", async () => {
+    const th = await talonario("PUT", { gtfId: "gtf-aguajal", formato: "guia", hoja: guiaCorrida(12) });
+    const idTh = th.j.forma?.id as string;
+    /* Primera vez: abre la del monte (mismo titular) como punto de partida; el 1.er Guardar crea la del CTP. */
+    const a = await talonario("GET", "despacho=desp-77");
+    expect(a.res.status).toBe(200);
+    expect(a.j).toMatchObject({ forma: { id: idTh }, coincide: "titular" });
+    const p = await talonario("PUT", { despachoId: "desp-77", formato: "guia", hoja: guiaCorrida(30) });
+    expect(p.res.status).toBe(200);
+    expect(p.j).toMatchObject({ creada: true, forma: { nombre: "MADERERA EL AGUAJAL S.A.C.", coincide: "exacta" } });
+    const idCtp = p.j.forma?.id as string;
+    expect(idCtp).not.toBe(idTh);
+    /* Otra salida del CTP abre la MISMA; la guía del Libro TH sigue con la suya, intacta. */
+    expect((await talonario("GET", "despacho=desp-78")).j).toMatchObject({ forma: { id: idCtp }, coincide: "exacta" });
+    const delTh = await talonario("GET", "gtf=gtf-aguajal");
+    expect(delTh.j).toMatchObject({ forma: { id: idTh }, coincide: "exacta" });
+    expect((delTh.j.disposicion as { guia: { offsetXMm: number } }).guia.offsetXMm).toBe(12);
+    /* Nueva (copia) y borrar también por despacho. */
+    const c = await formas("POST", { despachoId: "desp-77", nombre: "CTP · matricial de oficina", guia: guiaCorrida(5), lista: hojaDeFabrica("lista") });
+    expect(c.res.status).toBe(201);
+    expect((await formas("DELETE", undefined, `?forma=${c.j.forma?.id}&despacho=desp-77`)).res.status).toBe(200);
+  });
+
+  it("el despacho de OTRO negocio, o una línea que no es despacho → 404; los dos parámetros → 400", async () => {
+    expect((await talonario("GET", "despacho=desp-ajeno")).res.status).toBe(404);
+    expect((await talonario("PUT", { despachoId: "desp-ajeno", formato: "guia", hoja: guiaCorrida(1) })).res.status).toBe(404);
+    expect((await talonario("GET", "despacho=prod-5")).res.status).toBe(404);
+    expect((await salida("despachoId=desp-ajeno&formato=escp")).status).toBe(404);
+    expect((await talonario("GET", "gtf=gtf-aguajal&despacho=desp-77")).res.status).toBe(400);
+    const ambos = await talonario("PUT", { gtfId: "gtf-aguajal", despachoId: "desp-77", formato: "guia", hoja: guiaCorrida(1) });
+    expect(ambos.res.status).toBe(400);
+    expect(String(ambos.j.message)).toContain("no los dos");
+    expect((await formas("POST", { gtfId: "gtf-aguajal", despachoId: "desp-77", guia: guiaCorrida(1), lista: hojaDeFabrica("lista") })).res.status).toBe(400);
+    expect((await salida("gtfId=gtf-aguajal&despachoId=desp-77&formato=escp")).status).toBe(400);
+    expect((await salida("formato=escp")).status).toBe(400);
+  });
+
+  it("la salida: sin N° → 409 SIN_GUIA; anulada o a medias → 409; emitida → sale con la forma del CTP", async () => {
+    estado.salidas.set(`${T}:desp-77`, { ok: false, error: "SIN_GUIA" });
+    const sin = await salida("despachoId=desp-77&formato=escp");
+    expect(sin.status).toBe(409);
+    expect(await sin.json()).toMatchObject({ error: "SIN_GUIA", message: "Emite la guía primero: botón Guía de la fila." });
+    estado.salidas.set(`${T}:desp-77`, salidaCtp({ anulada: true }));
+    expect((await salida("despachoId=desp-77&formato=escp")).status).toBe(409);
+    /* El original no sale a medias (lo mismo que la hoja SERFOR); la hoja de prueba sí. */
+    estado.salidas.set(`${T}:desp-77`, salidaCtp({ faltan: ["Destinatario", "Placa"] }));
+    const aMedias = await salida("despachoId=desp-77&formato=escp");
+    expect(aMedias.status).toBe(409);
+    expect(await aMedias.json()).toMatchObject({ error: "FALTAN_DATOS", message: "Falta completar la guía: Destinatario, Placa. Ábrela con el botón Guía." });
+    expect((await salida("despachoId=desp-77&formato=escp&prueba=1&valores=1")).status).toBe(200);
+    estado.salidas.set(`${T}:desp-77`, salidaCtp());
+    const conFabrica = await salida("despachoId=desp-77&formato=escp");
+    expect(conFabrica.status).toBe(200);
+    expect(conFabrica.headers.get("Content-Disposition")).toContain("GTF-019-002-0000077-guia.prn");
+    /* Guardada la del CTP (corrida 30 mm), la salida la usa: otros bytes. */
+    await talonario("PUT", { despachoId: "desp-77", formato: "guia", hoja: guiaCorrida(30) });
+    expect(await bytes(await salida("despachoId=desp-77&formato=escp"))).not.toBe(await bytes(conFabrica));
+  });
+
+  it("cada guía pide SU libro: el despacho, el Libro CTP; la del monte, el Libro TH; sin guía, cualquiera de los dos", async () => {
+    estado.apagadas.add("spec:forestal:ctp-libro");
+    expect((await talonario("GET", "despacho=desp-77")).res.status).toBe(403);
+    expect((await talonario("GET", "gtf=gtf-aguajal")).res.status).toBe(200);
+    expect((await talonario("GET", "")).res.status).toBe(200);
+    estado.apagadas.clear();
+    estado.apagadas.add("spec:forestal:loth-libro");
+    expect((await talonario("GET", "gtf=gtf-aguajal")).res.status).toBe(403);
+    expect((await salida("gtfId=gtf-aguajal&formato=escp")).status).toBe(403);
+    expect((await talonario("GET", "despacho=desp-77")).res.status).toBe(200);
+    estado.apagadas.add("spec:forestal:ctp-libro");
+    expect((await talonario("GET", "")).res.status).toBe(403);
   });
 });

@@ -13,6 +13,7 @@ import { useCallback, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { DisposicionTalonario } from "@/lib/forestal/gtf-matricial-disposicion";
 import type { FormaResuelta, OrigenDisposicion, ResumenForma } from "@/lib/forestal/gtf-matricial-formas";
+import { consultaTalonario, idsTalonario, type GuiaDelTalonario } from "@/lib/forestal/gtf-matricial-fuente";
 import type { EstadoGtfMatricial } from "./use-gtf-matricial";
 
 export const RUTA_TALONARIO = "/api/admin/forestal/loth/gtf-matricial";
@@ -72,7 +73,8 @@ async function pedir<T>(url: string, init: RequestInit, fallo: string): Promise<
 
 type Ocupado = "elegir" | "nueva" | "renombrar" | "borrar" | `copiar:${string}`;
 
-export function useFormasTalonario(gtfId: string, t: EstadoGtfMatricial) {
+/** `ref`: de qué guía se abrió el talonario (TH o despacho del CTP): el servidor la usa para decir cuánto le calza cada forma. */
+export function useFormasTalonario(ref: GuiaDelTalonario, t: EstadoGtfMatricial) {
   const [ocupado, setOcupado] = useState<Ocupado | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,13 +112,13 @@ export function useFormasTalonario(gtfId: string, t: EstadoGtfMatricial) {
           {
             method: "POST",
             headers: csrfHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({ gtfId, ...(nombre?.trim() && { nombre: nombre.trim() }), guia: d.guia, lista: d.lista }),
+            body: JSON.stringify({ ...idsTalonario(ref), ...(nombre?.trim() && { nombre: nombre.trim() }), guia: d.guia, lista: d.lista }),
           },
           "No se pudo crear la forma",
         );
         t.adoptar(j.forma, j.disposicion);
       }),
-    [correr, gtfId, t],
+    [correr, ref, t],
   );
 
   const renombrar = useCallback(
@@ -126,12 +128,12 @@ export function useFormasTalonario(gtfId: string, t: EstadoGtfMatricial) {
         if (!formaId) return;
         const j = await pedir<{ forma: ResumenForma }>(
           RUTA_FORMAS,
-          { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ gtfId, formaId, nombre: nombre.trim() }) },
+          { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ ...idsTalonario(ref), formaId, nombre: nombre.trim() }) },
           "No se pudo renombrar",
         );
         t.renombrada(j.forma);
       }),
-    [correr, gtfId, t],
+    [correr, ref, t],
   );
 
   /** Borra la que se ve y abre la que la guía elige sola sin ella. */
@@ -140,11 +142,11 @@ export function useFormasTalonario(gtfId: string, t: EstadoGtfMatricial) {
       correr("borrar", async () => {
         const formaId = t.formaId;
         if (!formaId) return;
-        const q = new URLSearchParams({ forma: formaId, gtf: gtfId });
+        const q = new URLSearchParams({ forma: formaId, ...consultaTalonario(ref) });
         await pedir<{ forma: ResumenForma }>(`${RUTA_FORMAS}?${q.toString()}`, { method: "DELETE", headers: csrfHeaders() }, "No se pudo borrar");
         await t.cargar();
       }),
-    [correr, gtfId, t],
+    [correr, ref, t],
   );
 
   /** Trae las dos hojas de otra forma: quedan sin guardar y se deshacen hoja por hoja. */

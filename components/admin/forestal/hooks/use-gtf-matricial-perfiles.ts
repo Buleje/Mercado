@@ -16,6 +16,7 @@ import { avisoRecortados, bajarSalida, descargarBlob } from "@/lib/forestal/gtf-
 import { calcularCalibracion, CAMPOS_MEDIDA, type AjusteImpresora, type CampoMedida, type MedidasCruces } from "@/lib/forestal/gtf-matricial-calibrar";
 import { transformacionDe } from "@/lib/forestal/gtf-matricial-perfiles";
 import { PERFIL_OFICINA_ID, type FormatoSalida, type PerfilImpresora } from "@/lib/forestal/gtf-salida-tipos";
+import { idsTalonario, type GuiaDelTalonario } from "@/lib/forestal/gtf-matricial-fuente";
 import type { EstadoGtfMatricial } from "./use-gtf-matricial";
 
 export const RUTA_PERFILES = "/api/admin/forestal/loth/gtf-matricial/perfiles";
@@ -150,7 +151,7 @@ const RUTA_SALIDA = "/api/admin/forestal/loth/gtf-matricial/salida";
  * impresora elegida. El servidor arma la salida con lo GUARDADO: si hay
  * cambios sin guardar, se guardan antes (igual que «Imprimir»).
  */
-export function useSalidaTalonario(gtfId: string, t: EstadoGtfMatricial, imp: EstadoPerfilesTalonario) {
+export function useSalidaTalonario(ref: GuiaDelTalonario, t: EstadoGtfMatricial, imp: EstadoPerfilesTalonario) {
   const [bajando, setBajando] = useState<FormatoSalida | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   /** «N valores no entran en su casillero…» de la última hoja bajada (cabecera `X-Recortados`). */
@@ -161,7 +162,7 @@ export function useSalidaTalonario(gtfId: string, t: EstadoGtfMatricial, imp: Es
       setRecortes(null);
       if (t.sucio && !(await t.guardar())) return;
       await imp.guardar();
-      const q = new URLSearchParams({ gtfId, formato, perfil: imp.elegido?.id ?? PERFIL_OFICINA_ID, hoja: t.formato });
+      const q = new URLSearchParams({ ...idsTalonario(ref), formato, perfil: imp.elegido?.id ?? PERFIL_OFICINA_ID, hoja: t.formato });
       /* La forma que se ve; sin ella (la creó este Guardar), el servidor elige la de la guía: es ésa. */
       if (t.formaId) q.set("forma", t.formaId);
       if (prueba) {
@@ -175,7 +176,7 @@ export function useSalidaTalonario(gtfId: string, t: EstadoGtfMatricial, imp: Es
       descargarBlob(r.blob, r.nombre);
       setRecortes(avisoRecortados(r.recortados));
     },
-    [gtfId, t, imp],
+    [ref, t, imp],
   );
   return { bajar, bajando, aviso, recortes };
 }

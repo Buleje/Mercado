@@ -20,12 +20,12 @@
  */
 
 import { useMemo, useState } from "react";
-import { Ban, FileStack, FileText, Flag, Paperclip, Stamp } from "@buleje/design-system/icons";
+import { Ban, FileStack, FileText, Flag, Paperclip, Printer, Stamp } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useConteoDocumentosGuias } from "@/hooks/use-documentos-guia";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatosQueAceptan, type GuiaElegida } from "@/lib/forestal/tramites-desde-guias";
-import CtpBarraSeleccion, { type AccionSeleccion, type CifraSeleccion } from "./ctp-barra-seleccion";
+import CtpBarraSeleccion, { type CifraSeleccion } from "./ctp-barra-seleccion";
 import GuiasPapelesModal from "./GuiasPapelesModal";
 import { irATramiteConGuias } from "./tramite-guias-url";
 
@@ -46,7 +46,7 @@ export default function GuiasAFormatoBarra({
   cifras,
   onLimpiar,
   aviso,
-  accionesExtra = [],
+  conFormato = [],
 }: {
   elegidas: readonly GuiaElegida[];
   /** Los ids como viajan en `?guias=` (`refGuia`): el del Libro TH sin prefijo, el del CTP con `ctp:`. */
@@ -55,8 +55,8 @@ export default function GuiasAFormatoBarra({
   onLimpiar: () => void;
   /** Lo que conviene saber antes de salir del libro (ámbar, no frena): «van 2 permisos → 2 oficios». */
   aviso?: string | null;
-  /** Botones propios de un libro, antes de «Papeles» (el Libro TH: «PDF con formato»). */
-  accionesExtra?: AccionSeleccion[];
+  /** Imprimir o bajar en PDF las tildadas con formato (`accionesConFormatoVarias`): un botón «Con formato» junto a «Otro formato». */
+  conFormato?: MenuAccion[];
 }) {
   const opciones = useMemo(() => formatosQueAceptan(elegidas), [elegidas]);
   /* Los papeles se cuentan cuando se deja de tildar (no un pedido por casilla). */
@@ -93,7 +93,7 @@ export default function GuiasAFormatoBarra({
     <CtpBarraSeleccion
       cifras={conPapeles}
       onLimpiar={onLimpiar}
-      accionesSecundarias={[...accionesExtra, { label: "Papeles", icon: Paperclip, onClick: () => setVerPapeles(true) }]}
+      accionesSecundarias={[{ label: "Papeles", icon: Paperclip, onClick: () => setVerPapeles(true) }]}
       aviso={aviso}
       avisoTono="aviso"
       accionLabel="Relación de guías"
@@ -101,14 +101,26 @@ export default function GuiasAFormatoBarra({
       accionDisabled={!relacion?.habilitado}
       onAccion={() => irATramiteConGuias(RELACION, refs)}
       menu={
-        <ActionMenu
-          label="Otro formato"
-          icon={Stamp}
-          size="md"
-          compactoEnMovil
-          title="Usar las guías elegidas en otro trámite: anulación, pérdida, talonario"
-          actions={otros}
-        />
+        <>
+          {conFormato.length > 0 && (
+            <ActionMenu
+              label="Con formato"
+              icon={Printer}
+              size="md"
+              compactoEnMovil
+              title="Las tildadas en hoja blanca, con todo el formato y sus valores"
+              actions={conFormato}
+            />
+          )}
+          <ActionMenu
+            label="Otro formato"
+            icon={Stamp}
+            size="md"
+            compactoEnMovil
+            title="Usar las guías elegidas en otro trámite: anulación, pérdida, talonario"
+            actions={otros}
+          />
+        </>
       }
     />
     {verPapeles && (

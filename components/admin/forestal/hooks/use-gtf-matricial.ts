@@ -5,13 +5,15 @@
  * disposición del tenant (guía + lista), lo que cambió sin guardar, qué campo
  * está elegido y las hojas que salen de ESTA guía.
  *
- * Los valores salen de `entradasDeLaGuia` (la misma entrada que «Imprimir hoja
- * SERFOR»). Una guía anotada a mano necesita la carátula del libro para su
- * identidad (casilleros 6 y 7): se pide sólo en ese caso.
+ * Los valores (`entradas`) los arma quien abre el modal: la guía del Libro TH
+ * con `entradasDeLaGuia` (la misma entrada que «Imprimir hoja SERFOR», con la
+ * carátula si la guía se anotó a mano) y la de salida de un despacho del CTP
+ * con lo que devuelve el servidor (27-10). De qué guía es, `ref`
+ * (`GuiaDelTalonario`): con eso se pide la forma y se guarda.
  *
  * Las «formas» del talonario (16-10): cada encaje con su nombre y la referencia
  * del permiso y titular para el que se calibró. El servidor elige sola la de
- * la guía (`?gtf=`); `cargar(formaId)` abre otra a mano. «Guardar» guarda en
+ * la guía (`?gtf=` o `?despacho=`); `cargar(formaId)` abre otra a mano. «Guardar» guarda en
  * la que se ve (`info.forma`); si el dueño todavía no tiene la suya, el primer
  * Guardar la crea con el nombre «<permiso> · <titular>» y desde ahí es ésa.
  * Las acciones de la lista (nueva, renombrar, borrar): `use-gtf-matricial-formas`.
@@ -36,9 +38,9 @@ import {
 import { alRecuadro } from "@/lib/forestal/gtf-matricial-calibracion";
 import { deshacer as deshacerH, empujar, historialVacio, rehacer as rehacerH, type Historial } from "@/lib/forestal/gtf-matricial-edicion";
 import type { FormaResuelta, ResumenForma } from "@/lib/forestal/gtf-matricial-formas";
-import { entradasDeLaGuia, paginasDe, type PaginaTalonario } from "@/lib/forestal/gtf-matricial-valores";
-import type { LothGtfCaratula, LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
-import type { Gtf } from "../gtf-tabla-columnas";
+import { consultaTalonario, idsTalonario, type GuiaDelTalonario } from "@/lib/forestal/gtf-matricial-fuente";
+import { paginasDe, type PaginaTalonario } from "@/lib/forestal/gtf-matricial-valores";
+import type { EntradasGuiaLoth } from "@/lib/forestal/loth-guia-print";
 import { conForma, ordenarFormas, RUTA_TALONARIO, type InfoTalonario } from "./use-gtf-matricial-formas";
 
 export type { InfoTalonario };
@@ -65,7 +67,7 @@ async function leerJson<T>(r: Response): Promise<T | null> {
   }
 }
 
-export function useGtfMatricial(g: Gtf) {
+export function useGtfMatricial(ref: GuiaDelTalonario, entradas: EntradasGuiaLoth) {
   const [disp, setDispEstado] = useState<DisposicionTalonario | null>(null);
   /* Espejo síncrono: varias ediciones en el mismo cuadro (un arrastre) leen la última, no la del render. */
   const dispRef = useRef<DisposicionTalonario | null>(null);
@@ -82,12 +84,11 @@ export function useGtfMatricial(g: Gtf) {
   const [guardando, setGuardando] = useState(false);
   const [formato, setFormato] = useState<FormatoTalonario>("guia");
   const [pagina, setPagina] = useState(0);
-  const [caratula, setCaratula] = useState<LothGtfCaratula | null>(null);
   const [info, setInfo] = useState<InfoTalonario | null>(null);
   const [cargando, setCargando] = useState(true);
   /* Sólo vale la respuesta del último pedido: elegir dos formas seguidas no deja la primera encima. */
   const pedido = useRef(0);
-  const necesitaCaratula = !g.gtfDatos;
+  const { tipo, id } = ref;
 
   /** Pone una forma entera como la que se ve: guardada, sin pasos para deshacer (eran de otra forma). */
   const reiniciar = useCallback(
@@ -107,7 +108,7 @@ export function useGtfMatricial(g: Gtf) {
       const n = ++pedido.current;
       setCargando(true);
       try {
-        const q = new URLSearchParams({ gtf: g.id });
+        const q = new URLSearchParams(consultaTalonario({ tipo, id } as GuiaDelTalonario));
         if (formaId) q.set("forma", formaId);
         const r = await fetch(`${RUTA}?${q.toString()}`, { credentials: "include" });
         const j = await leerJson<RespuestaGet>(r);
@@ -131,7 +132,7 @@ export function useGtfMatricial(g: Gtf) {
         if (n === pedido.current) setCargando(false);
       }
     },
-    [g.id, reiniciar],
+    [tipo, id, reiniciar],
   );
 
   useEffect(() => {
@@ -158,15 +159,6 @@ export function useGtfMatricial(g: Gtf) {
     );
   }, []);
 
-  useEffect(() => {
-    if (!necesitaCaratula) return;
-    fetch("/api/admin/forestal/loth/caratula", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setCaratula(j?.active ?? null))
-      .catch((err) => console.warn("[gtf-matricial] no se pudo leer la carátula", err));
-  }, [necesitaCaratula]);
-
-  const entradas = useMemo(() => entradasDeLaGuia(g as unknown as LothGtfDoc, caratula), [g, caratula]);
   const hoja = disp?.[formato] ?? null;
   const paginas: PaginaTalonario[] = useMemo(() => (hoja ? paginasDe(formato, entradas, hoja) : []), [formato, entradas, hoja]);
   const paginaActual = Math.min(pagina, Math.max(0, paginas.length - 1));
@@ -280,7 +272,7 @@ export function useGtfMatricial(g: Gtf) {
           method: "PUT",
           credentials: "include",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ gtfId: g.id, formato: f, hoja: disp[f], ...(formaId && { formaId }) }),
+          body: JSON.stringify({ ...idsTalonario({ tipo, id } as GuiaDelTalonario), formato: f, hoja: disp[f], ...(formaId && { formaId }) }),
         });
         const j = await leerJson<{ disposicion?: DisposicionTalonario; forma?: ResumenForma; message?: string; error?: string }>(r);
         if (!r.ok || !j?.disposicion || !j.forma) throw new Error(j?.message ?? j?.error ?? `No se pudo guardar (${r.status})`);
@@ -300,7 +292,7 @@ export function useGtfMatricial(g: Gtf) {
     } finally {
       setGuardando(false);
     }
-  }, [disp, formaActual, g.id, guardado, setDisp]);
+  }, [disp, formaActual, tipo, id, guardado, setDisp]);
 
   const elegirFormato = useCallback((f: FormatoTalonario) => {
     setFormato(f);
@@ -311,7 +303,7 @@ export function useGtfMatricial(g: Gtf) {
     disp, hoja, formato, elegirFormato, entradas, paginas, pagina: paginaActual, setPagina,
     sucio, guardando, error, guardar, restaurar, cambiarHoja, cambiarCampo, cambiarTabla, cambiarColumna,
     editar, deshacer, rehacer, puedeDeshacer, puedeRehacer, info, reemplazarTodo,
-    gtfId: g.id, formaId: formaActual, cargando, cargar, adoptar, renombrada,
+    ref, formaId: formaActual, cargando, cargar, adoptar, renombrada,
   };
 }
 
