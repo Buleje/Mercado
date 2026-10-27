@@ -277,8 +277,10 @@ describe("Declarar producción — el modal aparte", () => {
   });
 
   it("la libreta que se vacía es la MISMA clave que escribe el cubicador", () => {
-    const fuente = readFileSync(join(process.cwd(), "components/admin/forestal/CubicadorMadera.tsx"), "utf8");
-    expect(fuente).toContain("return `buleje-cubicacion-${slug}${espacio}`;");
+    /* Los dos arman la clave con `slugKey` (ADR-519, fase 0: sin operación activa, nunca la de «main»). */
+    const leer = (f: string) => readFileSync(join(process.cwd(), f), "utf8");
+    expect(leer("components/admin/forestal/CubicadorMadera.tsx")).toContain("return slugKey(espacio);");
+    expect(leer("components/admin/forestal/hooks/libreta-produccion.ts")).toContain("slugKey(ESPACIO_PRODUCCION)");
   });
 });
 

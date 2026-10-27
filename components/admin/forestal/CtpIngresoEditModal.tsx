@@ -130,10 +130,13 @@ export default function CtpIngresoEditModal({
   entry,
   onClose,
   onSaved,
+  aboveModals = false,
 }: {
   entry: WoodEntry;
   onClose: () => void;
   onSaved: () => void;
+  /** Se abre desde otra ventana (ADR-519: «Datos listos» del cubicador). */
+  aboveModals?: boolean;
 }) {
   const [data, setData] = useState<Borrador>(() => desde(entry));
   /* El catálogo de especies de esta planta: alimenta el datalist y el
@@ -285,6 +288,7 @@ export default function CtpIngresoEditModal({
   return (
     <AdminModal
       open
+      aboveModals={aboveModals}
       onClose={cerrar}
       variant="info"
       title={`Corregir ingreso · ${entry.gtfNumber}`}

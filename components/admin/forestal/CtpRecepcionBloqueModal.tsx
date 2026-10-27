@@ -78,6 +78,7 @@ export default function CtpRecepcionBloqueModal({
   preseleccion,
   onListo,
   onClose,
+  aboveModals = false,
 }: {
   /** Las guías del período a las que todavía les falta recibir madera. */
   guias: readonly GuiaParaBloque[];
@@ -89,6 +90,8 @@ export default function CtpRecepcionBloqueModal({
   /** Cuántas entraron y cuáles no — la vista recarga y avisa. */
   onListo: (r: ResultadoBloque) => void;
   onClose: () => void;
+  /** Se abre desde otra ventana (ADR-519: «Datos listos» del cubicador). */
+  aboveModals?: boolean;
 }) {
   const [intentado, setIntentado] = useState(false);
   const { enviando, hechas, recibir } = useRecepcionBloque();
@@ -187,6 +190,7 @@ export default function CtpRecepcionBloqueModal({
   return (
     <AdminModal
       open
+      aboveModals={aboveModals}
       onClose={enviando ? () => {} : onClose}
       variant="info"
       icon={PackageCheck}

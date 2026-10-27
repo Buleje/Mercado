@@ -38,26 +38,33 @@ import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
  * como respaldo.
  */
 export function tenantDeLaClave(): string {
+  return tenantSlugActivo() ?? SIN_TENANT;
+}
+
+/** Marca de una clave sin operación activa: nunca es la de otra (ADR-519, «main» de respaldo = fuga). */
+export const SIN_TENANT = "sin-tenant";
+
+/**
+ * El slug de la operación activa (cookie, y localStorage como respaldo), o
+ * `null`. Nunca cae a `"main"`: una hoja guardada bajo el tenant equivocado
+ * aparece en otra operación (tenant hardcodeado = fuga entre tenants).
+ */
+export function tenantSlugActivo(): string | null {
   if (typeof document !== "undefined") {
     const m = document.cookie.match(/(?:^|;\s*)active-tenant-slug=([^;]+)/);
     if (m) return decodeURIComponent(m[1]!);
   }
   try {
-    return localStorage.getItem("active-tenant-slug") ?? "main";
+    return localStorage.getItem("active-tenant-slug") || null;
   } catch {
-    /* modo privado: la clave del tenant por defecto sigue siendo usable */
-    return "main";
+    return null;
   }
 }
 
 export function slugKey(sufijo = "") {
-  let slug = "main";
-  try {
-    slug = localStorage.getItem("active-tenant-slug") ?? "main";
-  } catch {
-    /* modo privado: la clave del tenant por defecto sigue siendo usable */
-  }
-  return `buleje-cubicacion-${slug}${sufijo}`;
+  /* Sin operación, una clave propia y aislada: lo que se escriba ahí no lo lee
+     ningún tenant real. `sembrarBloques` ni siquiera escribe. */
+  return `buleje-cubicacion-${tenantSlugActivo() ?? SIN_TENANT}${sufijo}`;
 }
 
 /**
@@ -77,6 +84,8 @@ export interface ResultadoSiembra {
   conEspecie?: number;
   /** De esos repetidos, los que no sabían sus trozas y ahora las saben (ADR-464). */
   conTrozas?: number;
+  /** No hay operación activa: no se sembró nada y hay que avisarlo. */
+  sinTenant?: true;
 }
 
 /** La huella con la que se decide si un bloque ya está cargado. */
@@ -262,6 +271,7 @@ export function sembrarBloques(
   prefijo = "sembrado",
 ): ResultadoSiembra {
   if (candidatos.length === 0) return { sembrados: 0, repetidos: 0 };
+  if (tenantSlugActivo() === null) return { sembrados: 0, repetidos: 0, sinTenant: true };
   try {
     const raw = localStorage.getItem(slugKey("-rolliza"));
     const actuales: BloqueRolliza[] = raw ? (JSON.parse(raw) as BloqueRolliza[]) : [];

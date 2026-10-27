@@ -34,6 +34,8 @@ import { abrirResumenesDelCubicador, sembrarBloques } from "@/lib/forestal/sembr
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import FilaCandidato, { ChipEspecie } from "./llevar-al-cubicador-fila";
 import ResumenLlevarAlCubicador from "./resumen-llevar-al-cubicador";
+import DatosListosDelGrupo from "./datos-listos-del-grupo";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
@@ -41,17 +43,24 @@ import { button } from "@/components/ui-system/button-variants";
 export default function LlevarAlCubicadorModal({
   candidatos,
   recorte,
+  patio,
   onCerrar,
+  onDatosCambiaron,
 }: {
   candidatos: CandidatoDeCapacidad[];
   /** El recorte en palabras, para que el bloque diga de dónde salió. */
   recorte: string;
+  /** El patio que ya trajo Capacidad: de ahí sale qué le falta al grupo. */
+  patio: readonly TrozaConsumible[];
   onCerrar: () => void;
+  /** Se arregló una recepción o un permiso: que Capacidad relea. */
+  onDatosCambiaron: () => void;
 }) {
   const [elegidos, setElegidos] = useState<Set<string>>(
     () => new Set(candidatos.map((c) => c.clave)),
   );
   const [yendo, setYendo] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const seleccion = useMemo(
     () => candidatos.filter((c) => elegidos.has(c.clave)),
@@ -67,6 +76,11 @@ export default function LlevarAlCubicadorModal({
     () => llegadasDeCandidatos(seleccion.length > 0 ? seleccion : candidatos),
     [seleccion, candidatos],
   );
+  /* Las trozas de lo tildado (o de todo si nada está tildado), sin repetir. */
+  const trozaIds = useMemo(
+    () => [...new Set((seleccion.length > 0 ? seleccion : candidatos).flatMap((c) => c.trozaIds ?? []))],
+    [seleccion, candidatos],
+  );
   const pct = Math.round(RENDIMIENTO_META * 100);
 
   const alternar = (clave: string) =>
@@ -79,11 +93,16 @@ export default function LlevarAlCubicadorModal({
 
   const llevar = () => {
     if (bloques.length === 0 || yendo) return;
+    const r = sembrarBloques(bloques, "capacidad");
+    if (r.sinTenant) {
+      setAviso("No se detecta la operación activa: recarga el panel y vuelve a intentar. No se llevó nada.");
+      return;
+    }
+    setAviso(null);
     setYendo(true);
     /* Cada bloque lleva SU especie y SU permiso (`bloquesDeCandidato`): la
        distribución agrupa por especie y separa por permiso sin volver a
        elegirlos en la tabla. */
-    sembrarBloques(bloques, "capacidad");
     abrirResumenesDelCubicador();
   };
 
@@ -115,7 +134,12 @@ export default function LlevarAlCubicadorModal({
       }
     >
       <div className="px-5 py-4 sm:px-6">
-
+        <DatosListosDelGrupo trozaIds={trozaIds} patio={patio} onCambio={onDatosCambiaron} />
+        {aviso && (
+          <p role="alert" className="mt-3 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            {aviso}
+          </p>
+        )}
         {candidatos.length === 0 ? (
           <p className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-6 text-center text-sm text-[var(--text-secondary)]">
             Con este recorte no queda madera para repartir. Quita algún filtro y vuelve a

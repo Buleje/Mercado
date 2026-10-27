@@ -24,21 +24,13 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { quitarAsignaciones, type ApartadosAsignados } from "@/lib/forestal/cubicacion-apartados";
 import { filasSinLasDeclaradas } from "@/lib/forestal/declarar-por-dueno";
 import { logger } from "@/lib/logger";
+import { SIN_TENANT, slugKey, tenantSlugActivo } from "@/lib/forestal/sembrar-reparto";
 
 /** El espacio propio del cubicador de «Producir sin lote» — otra libreta, la misma pantalla. */
 export const ESPACIO_PRODUCCION = "-ctp-produccion";
 
-const slug = (): string => {
-  try {
-    return localStorage.getItem("active-tenant-slug") ?? "main";
-  } catch {
-    return "main";
-  }
-};
-
-/** La misma clave que `CubicadorMadera` usa para las filas de este espacio. */
-export const claveLibretaProduccion = (): string =>
-  `buleje-cubicacion-${slug()}${ESPACIO_PRODUCCION}`;
+/** La misma clave que `CubicadorMadera` usa para las filas de este espacio (`slugKey`: sin operación, nunca la de «main»). */
+export const claveLibretaProduccion = (): string => slugKey(ESPACIO_PRODUCCION);
 
 /**
  * Borra las filas cubicadas y sus apartados (que apuntan a ids de esas filas).
@@ -92,7 +84,7 @@ export function quitarDeLaLibretaProduccion(ids: readonly string[]): void {
   }
 }
 
-const clavePrecios = (): string => `buleje-precio-venta-pt-${slug()}`;
+const clavePrecios = (): string => `buleje-precio-venta-pt-${tenantSlugActivo() ?? SIN_TENANT}`;
 
 /** Último precio de venta usado, S/ por PT, por clave de especie. */
 export function preciosDeVentaRecordados(): Record<string, number> {

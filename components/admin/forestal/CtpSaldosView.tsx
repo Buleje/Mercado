@@ -216,6 +216,7 @@ export function CtpSaldosView({
         filtros={filtros}
         period={period}
         onCorridasCambiaron={fuentes.recargarCorridas}
+        onDatosCambiaron={fuentes.recargar}
       />
     </div>
   );

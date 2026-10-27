@@ -55,6 +55,8 @@
  *   {"fallar": "/api/settings"}   → ese GET responde 500 (o ["/api/x", 503]); {"fallar": null} lo
  *                                   quita. Para probar «la carga falló» (04-10: sin esto fue un
  *                                   parche de fetch + history.back a mano). Recargá con {"eval": "location.reload()"}.
+ *   {"modificar": ["/api/x", "(j) => { …; return j; }"]} → la respuesta REAL de ese GET pasada por esa función (27-10:
+ *                                   un estado raro sin armar el JSON entero; al principio rige desde la carga, como parchear)
  *   {"parchear": ["/api/x", {...}, "POST"?]} → ese GET (o el método del 3.º) responde 200 con ESE JSON (05-10: tablas forestales sin datos en
  *                                   main; el barrido parcheaba fetch a mano, 3 intentos). Igual que `fallar`: se quita
  *                                   con {"fallar": null}. Si va AL PRINCIPIO de los pasos rige desde la primera carga;
@@ -554,6 +556,18 @@ async function rutear(page, tipo, valor) {
         ? r.fulfill({ status, contentType: "application/json", body: "{}" })
         : r.fallback());
   }
+  if (tipo === "modificar") {
+    /* {"modificar": ["/api/x", "(j) => { j.items[0].x = null; return j; }"]} → la respuesta REAL de ese GET
+       pasada por esa función (27-10: ver el estado «con faltantes» sin armar a mano el JSON entero del patio). */
+    const [ruta, fuente, metodo = "GET"] = valor;
+    const fn = new Function(`return (${fuente})`)();
+    return page.route((u) => u.pathname === ruta, async (r) => {
+      if (r.request().method() !== metodo) return r.fallback();
+      const resp = await r.fetch();
+      const json = fn(await resp.json());
+      return r.fulfill({ response: resp, contentType: "application/json", body: JSON.stringify(json) });
+    });
+  }
   const [ruta, json, metodo = "GET"] = valor;
   return page.route((u) => u.pathname === ruta, (r) =>
     r.request().method() === metodo
@@ -605,7 +619,7 @@ async function recorrido(t, primero) {
      carriles midieron la vista vacía creyéndola parcheada, porque el patch sólo
      tocaba los pedidos de DESPUÉS). Los de más abajo siguen pidiendo un reload. */
   let rutasIniciales = 0;
-  while (rutasIniciales < pasos.length && ["fallar", "parchear", "espiar"].includes(Object.keys(pasos[rutasIniciales] ?? {})[0])) {
+  while (rutasIniciales < pasos.length && ["fallar", "parchear", "espiar", "modificar"].includes(Object.keys(pasos[rutasIniciales] ?? {})[0])) {
     const [tipo, valor] = Object.entries(pasos[rutasIniciales])[0];
     await rutear(page, tipo, valor);
     rutasIniciales++;
@@ -708,7 +722,7 @@ async function recorrido(t, primero) {
         else if (tipo === "llenar") await visible(page, valor[0]).fill(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "elegir") await visible(page, valor[0]).selectOption(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "subir") await page.locator(valor[0]).first().setInputFiles(String(valor[1]), { timeout: 15_000 });
-        else if (tipo === "fallar" || tipo === "parchear" || tipo === "espiar") {
+        else if (tipo === "fallar" || tipo === "parchear" || tipo === "espiar" || tipo === "modificar") {
           if (i < rutasIniciales) continue; // ya rige desde la primera carga
           await rutear(page, tipo, valor);
         }

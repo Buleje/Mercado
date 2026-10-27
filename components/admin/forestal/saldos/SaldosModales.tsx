@@ -69,12 +69,15 @@ export default function SaldosModales({
   filtros,
   period,
   onCorridasCambiaron,
+  onDatosCambiaron,
 }: {
   m: ModalesDeSaldos;
   entrada: EntradaCapacidad;
   filtros: FiltrosCapacidad;
   period: CtpPeriod;
   onCorridasCambiaron: () => void;
+  /** Se recibió una guía o se puso un permiso: relee las cuatro fuentes. */
+  onDatosCambiaron: () => void;
 }) {
   return (
     <>
@@ -117,7 +120,9 @@ export default function SaldosModales({
         <LlevarAlCubicadorModal
           candidatos={bloquesDesdeCapacidad(entrada, filtros)}
           recorte={hayFiltro(filtros) ? textoDeRecortes(filtros) : ""}
+          patio={entrada.patio}
           onCerrar={() => m.setLlevando(false)}
+          onDatosCambiaron={onDatosCambiaron}
         />
       )}
 

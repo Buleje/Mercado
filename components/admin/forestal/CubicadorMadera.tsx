@@ -115,6 +115,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 /** Los modales del cubicador que se abren sin redibujar la tabla. */
 type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar" | "variado" | "trasera" | "guardar";
 import { formatNumber } from "@/lib/format";
+import { slugKey } from "@/lib/forestal/sembrar-reparto";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -219,9 +220,8 @@ const SIN_CAMBIO = () => undefined;
  * misma pantalla con otra libreta.
  */
 const storageKey = (espacio = "") => {
-  let slug = "main";
-  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
-  return `buleje-cubicacion-${slug}${espacio}`;
+  /* Misma clave que `slugKey`: sin operación activa, una propia (nunca la de «main»). */
+  return slugKey(espacio);
 };
 const saveLocal = (next: PiezaCubicada[], espacio = "") => {
   try { localStorage.setItem(storageKey(espacio), JSON.stringify(next)); } catch { /* quota */ }
