@@ -253,7 +253,14 @@ describe("confirmaciones guía por guía (decisiones 5 y 8)", () => {
     const [b] = faltaConfirmar(p);
     expect(b.codigo).toBe("FALTA_CONFIRMAR_USADO");
     expect(b.mensaje).toContain("la corrida N° 7 del 01/08/2026");
-    expect(faltaConfirmar(p, ["usado"])).toEqual([]);
+    expect(faltaConfirmar(p, { usadas: ["c-torn"] })).toEqual([]);
+  });
+
+  it("confirmar una corrida «usado» no vale para OTRA que aparezca después", () => {
+    const p = proponerDespachoDeAnexo(B, estadoDe([corridaTornillo({ usado: true, id: "c-otra" })]));
+    const [b] = faltaConfirmar(p, { usadas: ["c-torn"] });
+    expect(b.codigo).toBe("FALTA_CONFIRMAR_USADO");
+    expect(b.mensaje).toContain("no estaba cuando confirmaste");
   });
 
   it("de una corrida normal no pide nada", () => {
@@ -267,8 +274,8 @@ describe("confirmaciones guía por guía (decisiones 5 y 8)", () => {
     const sinOrigen = t.guias.find((g) => g.registrable && g.sinOrigenPorConfirmar)!;
     expect(sinOrigen).toBeDefined();
     const b = faltaConfirmar(sinOrigen).find((x) => x.codigo === "FALTA_CONFIRMAR_SIN_ORIGEN")!;
-    expect(b.m3).toBe(sinOrigen.sinAtribuirM3);
-    expect(faltaConfirmar(sinOrigen, ["sin_origen", "usado"])).toEqual([]);
+    expect(b.m3).toBe(sinOrigen.sinOrigenM3);
+    expect(faltaConfirmar(sinOrigen, { sinOrigenM3: sinOrigen.sinOrigenM3, usadas: sinOrigen.usadasComoOrigen.map((u) => u.corridaId) })).toEqual([]);
     const la054 = t.guias.find((g) => g.gtf.endsWith("054"))!;
     expect(confirmacionesDe(la054)).toContain("usado");
   });

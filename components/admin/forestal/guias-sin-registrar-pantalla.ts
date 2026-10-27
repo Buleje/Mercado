@@ -6,14 +6,16 @@
  * La pantalla no calcula ningún m³: todos salen de la propuesta del servidor
  * (`proponerTanda`). Acá sólo se decide CÓMO se lee.
  */
-import type {
-  BloqueoDeGuia,
-  CandidataDeOrigen,
-  Confirmacion,
-  EleccionDeOrigen,
-  GrupoPropuesto,
-  LineaPropuesta,
-  PropuestaDeGuia,
+import {
+  faltanConfirmar,
+  type BloqueoDeGuia,
+  type CandidataDeOrigen,
+  type Confirmacion,
+  type ConfirmoDeGuia,
+  type EleccionDeOrigen,
+  type GrupoPropuesto,
+  type LineaPropuesta,
+  type PropuestaDeGuia,
 } from "@/lib/forestal/anexo-a-despacho";
 import type { ResultadoGuia } from "@/lib/db/forest-ctp-guia-desde-anexo.db";
 import { TOLERANCIA_ATRIBUCION } from "@/lib/forestal/atribucion-despacho";
@@ -70,16 +72,13 @@ export function siguienteEnFila(
 
 /** Lo que la fila mira de cada guía (los campos de confirmar faltan en las propuestas viejas). */
 export type GuiaEnFila = Pick<PropuestaDeGuia, "anexoId" | "registrable"> &
-  Partial<Pick<PropuestaDeGuia, "sinOrigenPorConfirmar" | "usadasComoOrigen">>;
-export type ConfirmadosPorGuia = Readonly<Record<string, readonly Confirmacion[]>>;
+  Partial<Pick<PropuestaDeGuia, "sinOrigenPorConfirmar" | "sinOrigenM3" | "usadasComoOrigen">>;
+/** Por guía, lo que el dueño VIO al confirmar (m³ sin origen, ids «usado»). */
+export type ConfirmadosPorGuia = Readonly<Record<string, ConfirmoDeGuia>>;
 
-/** Lo que la guía pide confirmar y el dueño todavía no marcó (decisiones 5 y 8 del ADR-446). */
+/** Lo que la guía pide confirmar y el dueño todavía no marcó para ESTE contenido (decisiones 5 y 8 del ADR-446). */
 export function sinConfirmar(g: GuiaEnFila, confirmados: ConfirmadosPorGuia = {}): Confirmacion[] {
-  const ya = new Set(confirmados[g.anexoId] ?? []);
-  const pide: Confirmacion[] = [];
-  if (g.sinOrigenPorConfirmar) pide.push("sin_origen");
-  if ((g.usadasComoOrigen?.length ?? 0) > 0) pide.push("usado");
-  return pide.filter((c) => !ya.has(c));
+  return faltanConfirmar(g, confirmados[g.anexoId]);
 }
 
 /**

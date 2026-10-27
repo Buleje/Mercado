@@ -182,8 +182,15 @@ export interface GrupoDelAnexo {
 
 export const claveDeGrupo = (especie: string, tipo: string): string => `${claveEspecie(especie)}|${tipo}`;
 
-/** Lo que dice el anexo que salió, por especie × tipo, en el orden del papel. */
-export function gruposDelAnexo(anexo: Pick<AnexoParaDespacho, "piezas" | "especieGlobal">): GrupoDelAnexo[] {
+/**
+ * Lo que dice el anexo que salió, por especie × tipo, en el orden del papel.
+ * `claveStock` = la de I3 (la misma que usa la propuesta): el redondeo a 3
+ * decimales reparte las milésimas DENTRO de cada stock, nunca entre dos.
+ */
+export function gruposDelAnexo(
+  anexo: Pick<AnexoParaDespacho, "piezas" | "especieGlobal">,
+  claveStock: (producto: string | null, especie: string | null) => string = claveStockPorDefecto,
+): GrupoDelAnexo[] {
   const ordenEspecie = new Map<string, number>();
   const grupos = new Map<string, GrupoDelAnexo>();
   for (const p of anexo.piezas) {
@@ -208,14 +215,20 @@ export function gruposDelAnexo(anexo: Pick<AnexoParaDespacho, "piezas" | "especi
     grupos.set(clave, g);
   }
   const lista = [...grupos.values()];
-  /* El mayor resto va POR ESPECIE, no sobre el papel entero: el stock se mira
-     por especie, y repartido sobre todo el papel la 064 de Blas subía las dos
-     filas de Mashonaste (3,4986 + 0,0328 → 3,499 + 0,033 = 3,532) contra 3,531
-     producidos, y quedaba bloqueada por la milésima que había ganado Copal. */
+  /* El mayor resto va POR CLAVE DE STOCK (la de I3), no sobre el papel entero:
+     repartido sobre todo el papel la 064 de Blas subía las dos filas de
+     Mashonaste (3,4986 + 0,0328 → 3,499 + 0,033 = 3,532) contra 3,531
+     producidos, y quedaba bloqueada por la milésima que había ganado Copal.
+     Hoy la clave de I3 junta todos los «MADERA ASERRADA (…)» de una especie
+     (`claveEspecie` quita el paréntesis); si un día los separa, el redondeo
+     la sigue sola. Lo que no tiene producto se redondea con su especie. */
   const m3En3 = new Array<number>(lista.length).fill(0);
-  const porEspecie = new Map<string, number[]>();
-  lista.forEach((g, i) => porEspecie.set(g.claveEspecie, [...(porEspecie.get(g.claveEspecie) ?? []), i]));
-  for (const indices of porEspecie.values()) {
+  const porStock = new Map<string, number[]>();
+  lista.forEach((g, i) => {
+    const k = g.producto ? claveStock(g.producto, g.especie) : `sin producto|${g.claveEspecie}`;
+    porStock.set(k, [...(porStock.get(k) ?? []), i]);
+  });
+  for (const indices of porStock.values()) {
     const redondeados = redondearA3(indices.map((i) => lista[i].m3));
     indices.forEach((i, j) => { m3En3[i] = redondeados[j]; });
   }
@@ -419,6 +432,12 @@ export interface PropuestaDeGuia {
   partidos: number;
   /** Corridas marcadas «usado» que esta guía toma como origen. */
   usadasComoOrigen: { corridaId: string; lineNo: number; fecha: string; m3: number }[];
+  /**
+   * Lo que de verdad sale sin corrida: la suma de las líneas sin origen. No es
+   * `sinAtribuirM3` (total − atribuido), que también cuenta los restos de
+   * menos de un litro que cada grupo ya absorbió en su última línea.
+   */
+  sinOrigenM3: number;
   /**
    * Lleva m³ sin corrida de origen: no se registra hasta que el dueño lo
    * confirme guía por guía (decisión 8). Nunca se decide solo.
@@ -668,7 +687,7 @@ function proponerEn(
 ): PropuestaDeGuia {
   const claveStock = opts.claveStock ?? claveStockPorDefecto;
   const fecha = anexo.fecha.slice(0, 10);
-  const grupos = gruposDelAnexo(anexo);
+  const grupos = gruposDelAnexo(anexo, claveStock);
   const bloqueos: BloqueoDeGuia[] = [];
   const elegidas = new Map((opts.elecciones ?? []).map((e) => [claveDeGrupo(e.especie, e.tipo), e.corridas]));
 
@@ -781,6 +800,9 @@ function proponerEn(
 
   const totalM3 = r4(grupos.reduce((a, g) => a + g.m3, 0));
   const atribuidoM3 = r4(lineas.reduce((a, l) => a + l.origenM3, 0));
+  /* Sólo las líneas que salen sin corrida: los restos de menos de un litro que
+     un grupo absorbió en su última línea ya tienen origen (no se confirman). */
+  const sinOrigenM3 = r4(lineas.reduce((a, l) => a + (l.origen ? 0 : l.m3), 0));
   const usadas = new Map<string, { corridaId: string; lineNo: number; fecha: string; m3: number }>();
   for (const l of lineas) {
     if (!l.origen?.usado) continue;
@@ -803,7 +825,8 @@ function proponerEn(
     registrable: bloqueos.length === 0,
     partidos: lineas.filter((l) => (l.origen?.restoM3 ?? 0) > 0).length,
     usadasComoOrigen: [...usadas.values()].sort((a, b) => a.lineNo - b.lineNo),
-    sinOrigenPorConfirmar: r4(totalM3 - atribuidoM3) >= TOLERANCIA_ATRIBUCION,
+    sinOrigenM3,
+    sinOrigenPorConfirmar: sinOrigenM3 > 0,
   };
 }
 
@@ -822,12 +845,84 @@ export function proponerDespachoDeAnexo(
 export type Confirmacion = "sin_origen" | "usado";
 export const CONFIRMACIONES = ["sin_origen", "usado"] as const satisfies readonly Confirmacion[];
 
+/**
+ * Lo que el dueño VIO y confirmó de una guía (ADR-446 r3): una confirmación
+ * vale para ese contenido, no para la palabra. Si después la guía sale con más
+ * m³ sin origen (otra pestaña anuló una corrida, falló una guía de arriba) o
+ * toma una corrida «usado» que no estaba, el alta la bloquea otra vez.
+ */
+export interface ConfirmoDeGuia {
+  /** Los m³ sin corrida de origen que se veían al confirmar. */
+  sinOrigenM3?: number;
+  /** Las corridas «usado» (id) que se veían como origen al confirmar. */
+  usadas?: readonly string[];
+}
+
+/** Holgura del sin origen confirmado: una milésima (lo que se ve en pantalla). */
+export const HOLGURA_CONFIRMO_M3 = 0.001;
+
+type ParaConfirmar = Partial<Pick<PropuestaDeGuia, "sinOrigenPorConfirmar" | "sinOrigenM3" | "usadasComoOrigen">>;
+
 /** Lo que ESTA propuesta pide confirmar antes de registrarla. La tanda no lo cuenta como bloqueo: sólo el alta. */
-export function confirmacionesDe(p: Pick<PropuestaDeGuia, "sinOrigenPorConfirmar" | "usadasComoOrigen">): Confirmacion[] {
+export function confirmacionesDe(p: ParaConfirmar): Confirmacion[] {
   const out: Confirmacion[] = [];
   if (p.sinOrigenPorConfirmar) out.push("sin_origen");
-  if (p.usadasComoOrigen.length > 0) out.push("usado");
+  if ((p.usadasComoOrigen?.length ?? 0) > 0) out.push("usado");
   return out;
+}
+
+/** La marca cubre lo que la propuesta lleva HOY (la misma regla en la pantalla y bajo el lock). */
+export function cubre(p: ParaConfirmar, conf: ConfirmoDeGuia | undefined, c: Confirmacion): boolean {
+  if (!conf) return false;
+  if (c === "sin_origen") {
+    return conf.sinOrigenM3 != null && Number.isFinite(conf.sinOrigenM3) && r4(p.sinOrigenM3 ?? Number.NaN) <= r4(conf.sinOrigenM3 + HOLGURA_CONFIRMO_M3);
+  }
+  const vistas = new Set(conf.usadas ?? []);
+  return (p.usadasComoOrigen ?? []).every((u) => vistas.has(u.corridaId));
+}
+
+/** Lo que la guía pide y la marca no cubre. */
+export function faltanConfirmar(p: ParaConfirmar, conf: ConfirmoDeGuia | undefined): Confirmacion[] {
+  return confirmacionesDe(p).filter((c) => !cubre(p, conf, c));
+}
+
+/** Tildar o destildar una casilla: guarda lo que se ve AHORA de esa guía. */
+export function marcarConfirmo(
+  p: Pick<PropuestaDeGuia, "sinOrigenM3" | "usadasComoOrigen">,
+  conf: ConfirmoDeGuia | undefined,
+  c: Confirmacion,
+): ConfirmoDeGuia | undefined {
+  const nuevo: ConfirmoDeGuia = { ...conf };
+  if (cubre(p, conf, c)) {
+    if (c === "sin_origen") delete nuevo.sinOrigenM3;
+    else delete nuevo.usadas;
+  } else if (c === "sin_origen") {
+    nuevo.sinOrigenM3 = p.sinOrigenM3;
+  } else {
+    nuevo.usadas = p.usadasComoOrigen.map((u) => u.corridaId);
+  }
+  return nuevo.sinOrigenM3 == null && nuevo.usadas == null ? undefined : nuevo;
+}
+
+/**
+ * La marca, sólo si la guía sigue diciendo lo mismo que cuando se tildó: al
+ * releer la lista, lo que cambió se suelta y vuelve a pedirse (aunque haya
+ * bajado: el dueño confirma lo que ve).
+ */
+export function confirmoVigente(
+  p: ParaConfirmar,
+  conf: ConfirmoDeGuia | undefined,
+): ConfirmoDeGuia | undefined {
+  if (!conf) return undefined;
+  const nuevo: ConfirmoDeGuia = {};
+  if (conf.sinOrigenM3 != null && p.sinOrigenPorConfirmar && r4(p.sinOrigenM3 ?? Number.NaN) === r4(conf.sinOrigenM3)) {
+    nuevo.sinOrigenM3 = conf.sinOrigenM3;
+  }
+  const hoy = (p.usadasComoOrigen ?? []).map((u) => u.corridaId).sort();
+  const vistas = [...(conf.usadas ?? [])].sort();
+  if (conf.usadas != null && hoy.length > 0 && hoy.join("|") === vistas.join("|")) nuevo.usadas = conf.usadas;
+  if (nuevo.sinOrigenM3 === conf.sinOrigenM3 && nuevo.usadas === conf.usadas) return conf; // nada se soltó: la misma referencia
+  return nuevo.sinOrigenM3 == null && nuevo.usadas == null ? undefined : nuevo;
 }
 
 /** «N° 3 y N° 5 del 01/08/2026». */
@@ -841,24 +936,30 @@ export function corridasUsadasLegibles(usadas: PropuestaDeGuia["usadasComoOrigen
 
 /**
  * Lo que falta confirmar, como bloqueo del alta. El servidor lo vuelve a
- * calcular bajo el lock: una confirmación vale para la propuesta de AHORA.
+ * calcular con la propuesta de AHORA y lo compara con lo que el dueño vio:
+ * más sin origen que lo confirmado (+ una milésima) o una corrida «usado» que
+ * no estaba en su pantalla = bloqueada.
  */
-export function faltaConfirmar(p: PropuestaDeGuia, confirmo: readonly Confirmacion[] = []): BloqueoDeGuia[] {
-  const ya = new Set(confirmo);
+export function faltaConfirmar(p: PropuestaDeGuia, confirmo?: ConfirmoDeGuia): BloqueoDeGuia[] {
   const out: BloqueoDeGuia[] = [];
-  for (const c of confirmacionesDe(p)) {
-    if (ya.has(c)) continue;
+  for (const c of faltanConfirmar(p, confirmo)) {
     if (c === "sin_origen") {
+      const visto = confirmo?.sinOrigenM3;
       out.push({
         codigo: "FALTA_CONFIRMAR_SIN_ORIGEN",
-        mensaje: `${fmtM3(p.sinAtribuirM3)} m³ de esta guía no tienen corrida de origen: anota antes la producción que falta o confirma que se registra así.`,
-        m3: p.sinAtribuirM3,
+        mensaje:
+          visto != null
+            ? `Confirmaste ${fmtM3(visto)} m³ sin corrida de origen y ahora son ${fmtM3(p.sinOrigenM3)} m³: el libro cambió. Revísala y vuelve a confirmar.`
+            : `${fmtM3(p.sinOrigenM3)} m³ de esta guía no tienen corrida de origen: anota antes la producción que falta o confirma que se registra así.`,
+        m3: p.sinOrigenM3,
       });
     } else {
-      const m = r4(p.usadasComoOrigen.reduce((a, u) => a + u.m3, 0));
+      const vistas = new Set(confirmo?.usadas ?? []);
+      const nuevas = p.usadasComoOrigen.filter((u) => !vistas.has(u.corridaId));
+      const m = r4(nuevas.reduce((a, u) => a + u.m3, 0));
       out.push({
         codigo: "FALTA_CONFIRMAR_USADO",
-        mensaje: `Toma ${fmtM3(m)} m³ de ${corridasUsadasLegibles(p.usadasComoOrigen)}, marcada${p.usadasComoOrigen.length > 1 ? "s" : ""} «usado»: confirma que salió de ese inventario o elige otro origen.`,
+        mensaje: `Toma ${fmtM3(m)} m³ de ${corridasUsadasLegibles(nuevas)}, marcada${nuevas.length > 1 ? "s" : ""} «usado»${vistas.size > 0 ? " (no estaba cuando confirmaste)" : ""}: confirma que salió de ese inventario o elige otro origen.`,
         m3: m,
       });
     }

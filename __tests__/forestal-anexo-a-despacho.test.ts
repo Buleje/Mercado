@@ -14,7 +14,10 @@ import {
   TOL_RESTO_M3,
   claveStockPorDefecto,
   clasificarAnexos,
+  confirmoVigente,
+  faltaConfirmar,
   gruposDelAnexo,
+  marcarConfirmo,
   proponerDespachoDeAnexo,
   proponerTanda,
   repartirPiezas,
@@ -375,6 +378,62 @@ describe("la propuesta juzga igual que el alta (revisión 28-09)", () => {
     };
     const t = proponerTanda(clasificarAnexos(anexos, new Set()).pendientes, estadoDe([...corridasBlas, az]));
     expect(t.guias.at(-1)!.registrable).toBe(false);
+  });
+
+  it("Comercial 3,4986 + Larga angosta 0,0328 de una especie con ese stock exacto: registrable", () => {
+    /* La clave de I3 junta los «MADERA ASERRADA (…)» de una especie: la
+       milésima que el redondeo pasa de un tipo al otro queda en el MISMO stock. */
+    const kCom = claveStockPorDefecto("MADERA ASERRADA (COMERCIAL)", "Mashonaste");
+    expect(claveStockPorDefecto("MADERA ASERRADA (LARGA ANGOSTA)", "Mashonaste")).toBe(kCom);
+    const pieza = (id: string, tipo: string, m3: number) =>
+      ({ id, cantidad: 1, espesor: 1, ancho: 1, largo: 1, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: "Mashonaste", tipo, m3, pieTablar: 0 }) as unknown as PiezaCubicada;
+    const a = anexoDe([pieza("c", "Comercial", 3.4986), pieza("l", "Larga angosta", 0.0328)]);
+    const g = gruposDelAnexo(a);
+    expect(g.map((x) => x.tipo)).toEqual(["Comercial", "Larga angosta"]);
+    expect(Math.round(g.reduce((s, x) => s + x.m3, 0) * 1000)).toBe(3531);
+    const p = proponerDespachoDeAnexo(a, { corridas: [], stock: { [kCom]: r4(3.4986 + 0.0328) } });
+    expect(p.bloqueos).toEqual([]);
+    expect(p.registrable).toBe(true);
+    /* Con una clave que SÍ separa los tipos, cada uno se redondea dentro de su stock. */
+    const separa = (prod: string | null, esp: string | null) => `${prod}|${esp}`;
+    const porTipo = gruposDelAnexo(a, separa);
+    expect(porTipo.find((x) => x.tipo === "Larga angosta")!.m3).toBe(0.033);
+    expect(porTipo.find((x) => x.tipo === "Comercial")!.m3).toBe(3.499);
+  });
+
+  it("confirmar 0,200 m³ sin origen no vale si la guía pasa a llevar 1,8", () => {
+    const piezas = [fila(400, 1, 6, 8, "Azucar huayo")];
+    const a = anexoDe(piezas);
+    const k = claveStockPorDefecto("MADERA ASERRADA (TABLA)", "Azucar huayo");
+    const conOrigen = (disp: number) => corrida({ id: "az", especie: "Azucar huayo", disponibleM3: disp });
+    const total = r4(piezas[0].m3);
+    expect(total).toBeGreaterThan(3);
+    const antes = proponerDespachoDeAnexo(a, { corridas: [conOrigen(r4(total - 0.2))], stock: { [k]: 5 } });
+    expect(antes.sinOrigenM3).toBeCloseTo(0.2, 3);
+    const visto = marcarConfirmo(antes, undefined, "sin_origen");
+    expect(faltaConfirmar(antes, visto)).toEqual([]);
+    /* Otra pestaña anuló casi toda la corrida: ahora salen ~1,8 m³ sin origen. */
+    const despues = proponerDespachoDeAnexo(a, { corridas: [conOrigen(r4(total - 1.8))], stock: { [k]: 5 } });
+    expect(despues.sinOrigenM3).toBeCloseTo(1.8, 3);
+    const [b] = faltaConfirmar(despues, visto);
+    expect(b).toMatchObject({ codigo: "FALTA_CONFIRMAR_SIN_ORIGEN" });
+    expect(b.mensaje).toContain("Confirmaste 0.200");
+    /* La pantalla suelta la marca al releer: el contenido ya no es el que vio. */
+    expect(confirmoVigente(despues, visto)).toBeUndefined();
+    expect(confirmoVigente(antes, visto)).toEqual(visto);
+  });
+
+  it("los restos de menos de un litro que cada grupo absorbe no piden confirmar «sin origen»", () => {
+    const piezas = [fila(16, 1, 6, 8, "Tornillo"), fila(10, 2, 8, 10, "Tornillo")];
+    const a = anexoDe(piezas);
+    const g = gruposDelAnexo(a);
+    expect(g.length).toBe(2);
+    /* Cada corrida tiene 0,0006 menos que su grupo: dos restos de 0,6 litros = 1,2 litros en total. */
+    const corridas = g.map((x, i) => corrida({ id: `c${i}`, lineNo: i + 1, producto: x.producto, disponibleM3: r4(x.m3 - 0.0006) }));
+    const p = proponerDespachoDeAnexo(a, { corridas, stock: { [claveStockPorDefecto(g[0].producto, "Tornillo")]: 10 } });
+    expect(p.sinAtribuirM3).toBeGreaterThanOrEqual(0.001);
+    expect(p.sinOrigenM3).toBe(0);
+    expect(p.sinOrigenPorConfirmar).toBe(false);
   });
 
   it("un bulto de otro tipo sale entero, pero su corrida no atribuye más de su saldo (I5)", () => {

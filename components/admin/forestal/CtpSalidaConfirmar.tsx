@@ -7,7 +7,7 @@
  * registra (el servidor la devuelve bloqueada aunque el botón se forzara).
  */
 import { AlertTriangle } from "@buleje/design-system/icons";
-import { confirmacionesDe, corridasUsadasLegibles, type Confirmacion, type PropuestaDeGuia } from "@/lib/forestal/anexo-a-despacho";
+import { confirmacionesDe, corridasUsadasLegibles, cubre, type Confirmacion, type ConfirmoDeGuia, type PropuestaDeGuia } from "@/lib/forestal/anexo-a-despacho";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Casilla } from "@/components/ui-system/Casilla";
@@ -17,7 +17,7 @@ const totalUsado = (p: PropuestaDeGuia) => p.usadasComoOrigen.reduce((s, u) => s
 function textoDe(c: Confirmacion, p: PropuestaDeGuia): { texto: string; what: string; affects: string } {
   if (c === "sin_origen") {
     return {
-      texto: `Regístrala con ${fmtM3(p.sinAtribuirM3)} m³ sin corrida de origen`,
+      texto: `Regístrala con ${fmtM3(p.sinOrigenM3)} m³ sin corrida de origen`,
       what: "El libro no tiene producción de esa especie que alcance para esta guía. Lo ideal es anotarla antes («Anotar la producción» arriba); si no la hay, esa parte entra como salida sin origen.",
       affects: "El libro la acepta, pero esos m³ no dicen de qué guía de ingreso salieron: el certificado de trazabilidad no se emite hasta completarlos.",
     };
@@ -36,7 +36,8 @@ export default function CtpSalidaConfirmar({
   onAlternar,
 }: {
   p: PropuestaDeGuia;
-  confirmo: readonly Confirmacion[];
+  /** Lo que el dueño ya vio y confirmó de esta guía (se suelta solo si cambia). */
+  confirmo: ConfirmoDeGuia | undefined;
   bloqueado: boolean;
   onAlternar: (c: Confirmacion) => void;
 }) {
@@ -55,7 +56,7 @@ export default function CtpSalidaConfirmar({
         const id = `confirmo-${p.anexoId}-${c}`;
         return (
           <div key={c} className="flex items-start gap-2">
-            <Casilla id={id} checked={confirmo.includes(c)} onChange={() => onAlternar(c)} className="mt-0.5" />
+            <Casilla id={id} checked={cubre(p, confirmo, c)} onChange={() => onAlternar(c)} className="mt-0.5" />
             <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer text-sm tabular-nums text-[var(--text-primary)]">
               {texto}
             </label>

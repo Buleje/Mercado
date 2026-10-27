@@ -11,7 +11,6 @@ import { ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { ForestCtpGuiaDesdeAnexoDB } from "@/lib/db/forest-ctp-guia-desde-anexo.db";
 import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
-import { CONFIRMACIONES } from "@/lib/forestal/anexo-a-despacho";
 
 /**
  * /api/admin/forestal/anexos/a-despacho — «Guías sin registrar» (ADR-446).
@@ -27,8 +26,11 @@ import { CONFIRMACIONES } from "@/lib/forestal/anexo-a-despacho";
  * POST                 — registra una tanda (una transacción por guía) o, con
  *                         `simular: true`, devuelve la tanda como quedaría con
  *                         las elecciones de origen, sin escribir. Cada guía
- *                         lleva `confirmo` (sin origen / desde «usado»): sin
- *                         eso el alta la devuelve bloqueada (decisiones 5 y 8).
+ *                         lleva `confirmo` = lo que el dueño VIO: `sinOrigenM3`
+ *                         (los m³ sin corrida) y `usadas` (ids de corridas
+ *                         «usado»). Si bajo el lock hay más sin origen que eso
+ *                         (+1 litro) o una «usado» que no está en la lista, el
+ *                         alta la bloquea (decisiones 5 y 8, ADR-446 r3).
  * PATCH                — la revisión (26-10): `resolver` una duda de papeles
  *                         con una de sus opciones, `deshacer` un «reemplazado»,
  *                         o `responder` un hueco del talonario. Nunca borra un
@@ -57,7 +59,12 @@ const eleccionSchema = z.object({
 const guiaSchema = z.object({
   anexoId: z.string().trim().min(1).max(60),
   elecciones: z.array(eleccionSchema).max(60).optional(),
-  confirmo: z.array(z.enum(CONFIRMACIONES)).max(CONFIRMACIONES.length).optional(),
+  confirmo: z
+    .object({
+      sinOrigenM3: z.number().finite().min(0).max(100_000).optional(),
+      usadas: z.array(z.string().trim().min(1).max(60)).max(60).optional(),
+    })
+    .optional(),
 });
 
 const clave = z.string().trim().min(1).max(400);

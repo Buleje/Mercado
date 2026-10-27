@@ -7,7 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { AlertTriangle, Calculator, Check, ChevronRight, Loader2, RefreshCw } from "@buleje/design-system/icons";
-import type { Confirmacion, EleccionDeOrigen, GrupoPropuesto, PropuestaDeGuia } from "@/lib/forestal/anexo-a-despacho";
+import type { Confirmacion, ConfirmoDeGuia, EleccionDeOrigen, GrupoPropuesto, PropuestaDeGuia } from "@/lib/forestal/anexo-a-despacho";
 import type { ResultadoGuia } from "@/lib/db/forest-ctp-guia-desde-anexo.db";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -90,7 +90,7 @@ export default function CtpGuiaSinRegistrar({
   siguienteGtf: string | null;
   elecciones: Readonly<Record<string, EleccionDeOrigen>> | undefined;
   /** Lo que el dueño ya confirmó de esta guía (sin origen / desde «usado»). */
-  confirmo: readonly Confirmacion[];
+  confirmo: ConfirmoDeGuia | undefined;
   /** Se está registrando o releyendo algo: los actos esperan. */
   ocupado: boolean;
   /** Si ESTA guía se está registrando, desde cuándo. */
@@ -101,7 +101,7 @@ export default function CtpGuiaSinRegistrar({
   onRegistrar: () => void;
   onAnotarProduccion?: (especie: string) => void;
 }) {
-  const confirmados = { [p.anexoId]: confirmo };
+  const confirmados = confirmo ? { [p.anexoId]: confirmo } : {};
   const estado = estadoDeGuia(p, resultado, confirmados);
   const faltaConfirmar = sinConfirmar(p, confirmados).length > 0;
   const idDetalle = `guia-${p.anexoId}`;
@@ -138,7 +138,7 @@ export default function CtpGuiaSinRegistrar({
             <span>{fmtM3(p.totalM3)} m³</span>
             <span>{fmtEntero(piezasDeGuia(p))} pzas</span>
             <span>{fmtM3(p.atribuidoM3)} con origen</span>
-            {haySinOrigen(p.sinAtribuirM3) && <span className={SIN_ORIGEN_SUAVE}>{fmtM3(p.sinAtribuirM3)} sin origen</span>}
+            {haySinOrigen(p.sinOrigenM3) && <span className={SIN_ORIGEN_SUAVE}>{fmtM3(p.sinOrigenM3)} sin origen</span>}
           </span>
         </span>
         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-bold ${PASTILLA[estado.tono]}`}>{estado.texto}</span>

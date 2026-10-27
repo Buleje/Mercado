@@ -293,7 +293,7 @@ export default function CtpGuiasSinRegistrarModal({
                 esSiguiente={estado.siguiente === p.anexoId}
                 siguienteGtf={estado.siguiente ? gtfDe(estado.siguiente) : null}
                 elecciones={estado.elecciones[p.anexoId]}
-                confirmo={estado.confirmados[p.anexoId] ?? []}
+                confirmo={estado.confirmados[p.anexoId]}
                 onConfirmar={(c) => estado.alternarConfirmo(p.anexoId, c)}
                 ocupado={ocupado}
                 registrandoDesde={

@@ -16,7 +16,7 @@ import {
   proponerTanda,
   type AnexoReemplazado,
   type BloqueoDeGuia,
-  type Confirmacion,
+  type ConfirmoDeGuia,
   type CorridaOrigen,
   type EleccionDeOrigen,
   type EstadoDelLibro,
@@ -158,8 +158,10 @@ export interface ResultadoTanda {
 export interface GuiaPedida {
   anexoId: string;
   elecciones?: readonly EleccionDeOrigen[];
-  /** Lo que el dueño confirmó de ESTA guía (decisiones 5 y 8): sin eso, el alta la bloquea. */
-  confirmo?: readonly Confirmacion[];
+  /** Lo que el dueño VIO y confirmó de ESTA guía (decisiones 5 y 8): los m³ sin
+   *  origen y las corridas «usado». Sin eso —o si el libro cambió desde entonces—
+   *  el alta la bloquea. */
+  confirmo?: ConfirmoDeGuia;
 }
 
 export interface RespuestaPendientes {
@@ -387,7 +389,7 @@ function entradaDeLinea(anexo: AnexoEmitido, l: LineaPropuesta, user: string): C
 const huella = (p: PropuestaDeGuia): string =>
   JSON.stringify([
     p.registrable,
-    p.lineas.map((l) => [l.grupo, l.m3, l.origenM3, l.piezas, l.origen?.corridaId ?? null, l.origen?.paqueteId ?? null, l.origen?.clase ?? null, l.origen?.restoM3 ?? 0]),
+    p.lineas.map((l) => [l.grupo, l.m3, l.origenM3, l.piezas, l.origen?.corridaId ?? null, l.origen?.usado ?? null, l.origen?.paqueteId ?? null, l.origen?.clase ?? null, l.origen?.restoM3 ?? 0]),
   ]);
 
 /** Un error del libro como resultado de UNA guía: la tanda sigue con las demás. */
@@ -714,7 +716,7 @@ export class ForestCtpGuiaDesdeAnexoDB {
     anexoId: string,
     opts: {
       elecciones?: readonly EleccionDeOrigen[];
-      confirmo?: readonly Confirmacion[];
+      confirmo?: ConfirmoDeGuia;
       user: string;
       liberarUsadas?: readonly string[];
     },
@@ -743,7 +745,7 @@ export class ForestCtpGuiaDesdeAnexoDB {
 
     const resultados: ResultadoGuia[] = [];
     for (const g of enOrden) {
-      resultados.push(await ForestCtpGuiaDesdeAnexoDB.registrarUna(tenantId, g.anexoId, g.elecciones, g.confirmo ?? [], opts.user));
+      resultados.push(await ForestCtpGuiaDesdeAnexoDB.registrarUna(tenantId, g.anexoId, g.elecciones, g.confirmo, opts.user));
     }
     /* Las candidatas salen de los orígenes VIGENTES de todos los anexos ya
        registrados (no sólo de lo registrado ahora): un reintento que vuelve
@@ -770,7 +772,7 @@ export class ForestCtpGuiaDesdeAnexoDB {
     tenantId: string,
     anexoId: string,
     elecciones: readonly EleccionDeOrigen[] | undefined,
-    confirmo: readonly Confirmacion[],
+    confirmo: ConfirmoDeGuia | undefined,
     user: string,
   ): Promise<ResultadoGuia> {
     const { lista, vigentes, desdeOtraLinea } = await bandejaConfiable(prisma, tenantId, await ForestAnexosDB.list(tenantId));
@@ -901,6 +903,11 @@ export class ForestCtpGuiaDesdeAnexoDB {
               { anexoId },
             );
           }
+          /* Y lo confirmado se juzga contra lo de BAJO el lock, no contra la
+             lectura de afuera: más m³ sin origen que los vistos (+1 litro) o una
+             corrida «usado» que el dueño no vio = no se escribe. */
+          const [falta] = faltaConfirmar(bajoLock, confirmo);
+          if (falta) throw new CtpInvariantError(falta.mensaje, "PROPUESTA_DESACTUALIZADA", { anexoId, falta: falta.codigo });
           const aBloquear = [...new Set(propuesta.lineas.map((l) => l.origen?.paqueteId).filter((x): x is string => Boolean(x)))];
           if (aBloquear.length > 0) {
             await tx.$queryRaw`

@@ -32,7 +32,7 @@ import {
   type ConfirmadosPorGuia,
   type EleccionesPorGuia,
 } from "@/components/admin/forestal/guias-sin-registrar-pantalla";
-import type { Confirmacion } from "@/lib/forestal/anexo-a-despacho";
+import { confirmoVigente, marcarConfirmo, type Confirmacion, type ConfirmoDeGuia } from "@/lib/forestal/anexo-a-despacho";
 import {
   MAX_POR_PEDIDO,
   esperarCortable,
@@ -91,6 +91,20 @@ export function useGuiasSinRegistrar(
   const ponerDatos = (d: RespuestaPendientes) => {
     datosRef.current = d;
     setDatos(d);
+    /* Lo confirmado vale para lo que el dueño VIO: si al releer (cargar,
+       revisar, otra pestaña anuló una corrida) cambian los m³ sin origen o las
+       corridas «usado» de una guía, su marca se suelta y hay que volver a mirarla. */
+    const antes = confirmadosRef.current;
+    const quedan: Record<string, ConfirmoDeGuia> = {};
+    for (const g of d.tanda.guias) {
+      const v = confirmoVigente(g, antes[g.anexoId]);
+      if (v) quedan[g.anexoId] = v;
+    }
+    const iguales = Object.keys(quedan).length === Object.keys(antes).length && Object.entries(quedan).every(([id, v]) => v === antes[id]);
+    if (!iguales) {
+      confirmadosRef.current = quedan;
+      setConfirmados(quedan);
+    }
   };
   const ponerElecciones = (e: EleccionesPorGuia) => {
     eleccionesRef.current = e;
@@ -185,10 +199,16 @@ export function useGuiasSinRegistrar(
 
   /** Marca o desmarca lo que el dueño confirma de una guía. Nunca se marca solo. */
   const alternarConfirmo = useCallback((anexoId: string, c: Confirmacion) => {
-    const ya = confirmadosRef.current[anexoId] ?? [];
-    const nuevas = ya.includes(c) ? ya.filter((x) => x !== c) : [...ya, c];
-    confirmadosRef.current = { ...confirmadosRef.current, [anexoId]: nuevas };
-    setConfirmados(confirmadosRef.current);
+    /* Se guarda lo que muestra la pantalla AHORA (m³ sin origen, ids «usado»),
+       no una palabra suelta: el servidor lo compara con lo de bajo el lock. */
+    const guia = datosRef.current?.tanda.guias.find((g) => g.anexoId === anexoId);
+    if (!guia) return;
+    const nuevo = marcarConfirmo(guia, confirmadosRef.current[anexoId], c);
+    const quedan = { ...confirmadosRef.current };
+    if (nuevo) quedan[anexoId] = nuevo;
+    else delete quedan[anexoId];
+    confirmadosRef.current = quedan;
+    setConfirmados(quedan);
   }, []);
 
   /**
@@ -204,7 +224,7 @@ export function useGuiasSinRegistrar(
         guias: [{
           anexoId,
           elecciones: eleccionesParaApi(eleccionesRef.current[anexoId]),
-          ...((confirmadosRef.current[anexoId]?.length ?? 0) > 0 ? { confirmo: [...(confirmadosRef.current[anexoId] ?? [])] } : {}),
+          ...(confirmadosRef.current[anexoId] ? { confirmo: confirmadosRef.current[anexoId] } : {}),
         }],
         ...(liberarRef.current.size > 0 ? { liberarUsadas: [...liberarRef.current] } : {}),
       });
