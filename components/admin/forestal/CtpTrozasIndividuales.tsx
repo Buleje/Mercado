@@ -14,9 +14,9 @@
  * porque es el número que se cuadra contra el Excel del SNIFFS.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Download, Loader2, PackageOpen, QrCode, Search, Tag } from "@buleje/design-system/icons";
+import { Download, Loader2, PackageOpen, QrCode, Tag } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { useEtiquetasDelPatio, useImprimirEtiquetasTrozas } from "@/hooks/use-imprimir-etiquetas-trozas";
@@ -26,28 +26,54 @@ import { estado, exportarTrozasCsv, type TrozaIndividual } from "./ctp-trozas-in
 import EspecieFoto from "./EspecieFoto";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { formatDateNumeric } from "@/lib/format";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "./filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
 export type { TrozaIndividual };
 
 const n = (v: number | null | undefined, dec = 2) => (v == null ? "—" : v.toFixed(dec));
-const TH = "align-bottom";
+const TH = "align-top";
 const TD = "align-middle";
 const NUM = "text-right font-mono tabular-nums";
 
+const ORDEN: Record<string, AccesorOrden<TrozaIndividual>> = {
+  codigo: { valor: (t) => t.codificacion, texto: true },
+  planta: { valor: (t) => t.codigoPlanta, texto: true },
+  especie: { valor: (t) => t.especieComun, texto: true },
+  d1: { valor: (t) => t.d1Cm },
+  d2: { valor: (t) => t.d2Cm },
+  largo: { valor: (t) => t.largoM },
+  diametro: { valor: (t) => t.diametroCm },
+  volumen: { valor: (t) => t.volumenM3 },
+  gtf: { valor: (t) => t.ingreso.gtfNumber, texto: true },
+  estado: { valor: (t) => estado(t).label, texto: true },
+};
 
 export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod }) {
   const [datos, setDatos] = useState<{ trozas: TrozaIndividual[]; total: number; volumenM3: number } | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [q, setQ] = useState("");
   const { indice: fotosEspecie } = useEspeciesFotos();
   /** Las tildadas para «Imprimir etiquetas (N)» (ADR-436). Sólo entran las
    *  «En patio»: el checkbox de las demás sale deshabilitado. */
   const { seleccion, alternar, elegirTodas, limpiar, modalIds, abrir, cerrar } = useImprimirEtiquetasTrozas();
   const { etiquetas, actualizar: actualizarEtiquetas } = useEtiquetasDelPatio();
-  /** Filtro rápido: sólo las que están en el patio y todavía no llevan etiqueta. */
-  const [sinEtiqueta, setSinEtiqueta] = useState(false);
-  const etiquetadaEn = (t: TrozaIndividual) => t.etiquetadaEn ?? etiquetas.get(t.id) ?? null;
+  const etiquetadaEn = useCallback((t: TrozaIndividual) => t.etiquetadaEn ?? etiquetas.get(t.id) ?? null, [etiquetas]);
+  /** Filtros en el encabezado de cada columna (como el resto del panel, 26-10). */
+  const columnas = useMemo<readonly ColumnaFiltro<TrozaIndividual>[]>(() => [
+    { id: "codigo", label: "Código troza", tipo: "texto", valor: (t) => [t.codificacion ?? "", t.parcela ?? ""].filter(Boolean) },
+    { id: "planta", label: "Código planta", tipo: "texto", valor: (t) => t.codigoPlanta },
+    { id: "especie", label: "Especie", tipo: "multi", valor: (t) => t.especieComun, clave: (v) => v.trim().toLowerCase() },
+    { id: "d1", label: "D1 cm", tipo: "rango", numero: (t) => t.d1Cm, unidad: "cm" },
+    { id: "d2", label: "D2 cm", tipo: "rango", numero: (t) => t.d2Cm, unidad: "cm" },
+    { id: "largo", label: "Largo m", tipo: "rango", numero: (t) => t.largoM, unidad: "m", paso: 0.01 },
+    { id: "diametro", label: "Ø cm", tipo: "rango", numero: (t) => t.diametroCm, unidad: "cm" },
+    { id: "volumen", label: "Volumen m³", tipo: "rango", numero: (t) => t.volumenM3, unidad: "m³", paso: 0.0001 },
+    { id: "gtf", label: "GTF", tipo: "texto", valor: (t) => t.ingreso.gtfNumber },
+    { id: "estado", label: "Estado", tipo: "multi", valor: (t) => estado(t).label },
+    { id: "etiqueta", label: "Etiqueta", tipo: "multi", valor: (t) => (etiquetadaEn(t) ? "Con etiqueta" : "Sin etiqueta") },
+  ], [etiquetadaEn]);
 
   /** El modal imprimió: se sella la fecha y, si numeró, el código nuevo sale en la fila. */
   const alImprimir = (trozas: TrozaEtiquetable[]) => {
@@ -77,17 +103,15 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
     return () => { vivo = false; };
   }, [period.from, period.to]);
 
-  /** El buscador filtra en el cliente: ya está todo el período en memoria. */
-  const filtradas = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    let lista = datos?.trozas ?? [];
-    if (sinEtiqueta) lista = lista.filter((x) => estado(x).libre && !(x.etiquetadaEn ?? etiquetas.get(x.id)));
-    if (!t) return lista;
-    return lista.filter((x) =>
-      [x.codificacion, x.codigoPlanta, x.especieComun, x.ingreso.gtfNumber, x.parcela]
-        .some((v) => (v ?? "").toLowerCase().includes(t)),
-    );
-  }, [q, datos, sinEtiqueta, etiquetas]);
+  const f = useFiltrosTabla(datos?.trozas ?? [], columnas);
+  const ord = useOrdenColumna(ORDEN);
+  const filtradas = useMemo(() => ord.ordenar(f.filtradas), [ord, f.filtradas]);
+  /** Atajo «Sin etiqueta»: escribe en los MISMOS embudos de Estado y Etiqueta. */
+  const sinEtiqueta = f.facetas.etiqueta?.toString() === "Sin etiqueta" && f.facetas.estado?.toString() === "En patio";
+  const alternarSinEtiqueta = () => {
+    f.setFaceta("etiqueta", sinEtiqueta ? undefined : ["Sin etiqueta"]);
+    f.setFaceta("estado", sinEtiqueta ? undefined : ["En patio"]);
+  };
 
   const sumaVisible = filtradas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
   const libresVisibles = useMemo(() => filtradas.filter((t) => estado(t).libre), [filtradas]);
@@ -119,17 +143,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="relative flex min-w-0 flex-1 items-center sm:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por código, especie o GTF…"
-            aria-label="Buscar una troza"
-            className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-          />
-        </label>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
             <b className="text-[var(--text-primary)]">{filtradas.length}</b>
@@ -141,7 +155,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
           <button
             type="button"
             aria-pressed={sinEtiqueta}
-            onClick={() => setSinEtiqueta((v) => !v)}
+            onClick={alternarSinEtiqueta}
             className={`inline-flex h-12 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${
               sinEtiqueta
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)] dark:bg-[var(--accent)]/12"
@@ -163,6 +177,8 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
         </div>
       </div>
 
+      <BarraFiltrosTabla f={f} sinConteo />
+
       {modalIds && <CtpEtiquetasTrozasModal ids={modalIds} onClose={cerrar} onListo={alImprimir} />}
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -181,20 +197,21 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
                 />
               </th>
               <th scope="col" className={`${TH} w-12 text-right`}>N°</th>
-              <th scope="col" className={TH}>Código troza</th>
-              <th scope="col" className={TH} title="El que marcó este centro al recibirla">Código planta</th>
-              <th scope="col" className={TH}>Especie</th>
-              <th scope="col" className={`${TH} text-right`} title="Diámetro de un extremo">D1 cm</th>
-              <th scope="col" className={`${TH} text-right`} title="Diámetro del otro extremo">D2 cm</th>
-              <th scope="col" className={`${TH} text-right`}>Largo m</th>
-              <th scope="col" className={`${TH} text-right`} title="Promedio de D1 y D2: el que se usa para cubicar">Ø cm</th>
-              <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
-              <th scope="col" className={TH}>GTF</th>
-              <th scope="col" className={TH}>Estado</th>
-              <th scope="col" className={TH} title="Cuándo se imprimió su última etiqueta QR">Etiqueta</th>
+              <ThColumna label="Código troza" ids={["codigo"]} f={f} orden={ord} ordenId="codigo" className={TH} />
+              <ThColumna label="Código planta" ids={["planta"]} f={f} orden={ord} ordenId="planta" className={TH} title="El que marcó este centro al recibirla" />
+              <ThColumna label="Especie" ids={["especie"]} f={f} orden={ord} ordenId="especie" className={TH} />
+              <ThColumna label="D1 cm" ids={["d1"]} f={f} derecha orden={ord} ordenId="d1" className={TH} title="Diámetro de un extremo" />
+              <ThColumna label="D2 cm" ids={["d2"]} f={f} derecha orden={ord} ordenId="d2" className={TH} title="Diámetro del otro extremo" />
+              <ThColumna label="Largo m" ids={["largo"]} f={f} derecha orden={ord} ordenId="largo" className={TH} />
+              <ThColumna label="Ø cm" ids={["diametro"]} f={f} derecha orden={ord} ordenId="diametro" className={TH} title="Promedio de D1 y D2: el que se usa para cubicar" />
+              <ThColumna label="Volumen m³" ids={["volumen"]} f={f} derecha orden={ord} ordenId="volumen" className={TH} />
+              <ThColumna label="GTF" ids={["gtf"]} f={f} orden={ord} ordenId="gtf" className={TH} />
+              <ThColumna label="Estado" ids={["estado"]} f={f} orden={ord} ordenId="estado" className={TH} />
+              <ThColumna label="Etiqueta" ids={["etiqueta"]} f={f} className={TH} title="Cuándo se imprimió su última etiqueta QR" />
             </tr>
           </thead>
           <tbody>
+            {filtradas.length === 0 && <SinCoincidenciasFila colSpan={13} />}
             {filtradas.map((t, i) => {
               const e = estado(t);
               return (
