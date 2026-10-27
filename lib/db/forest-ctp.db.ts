@@ -1331,6 +1331,20 @@ export class ForestCtpDB {
         _sum: { quantity: true },
       });
       for (const f of filas) atribuido.set(f.despachoEntryId, Number(f._sum.quantity ?? 0));
+      /* Las trozas que se fueron enteras (ADR-363) atribuyen igual que una
+         corrida: su origen es la guía con que entraron. Sin sumarlas, una
+         venta en rollo salía «sin origen declarado» en la fila y en el aviso
+         del certificado, aunque `trazabilidadCompleta` (el certificado) y el
+         resumen interno ya las cuentan (QA 27-10). */
+      const enRollo = await prisma.woodEntryTroza.groupBy({
+        by: ["despachadaEnId"],
+        where: { tenantId, despachadaEnId: { in: despachos } },
+        _sum: { volumenM3: true },
+      });
+      for (const t of enRollo) {
+        if (!t.despachadaEnId) continue;
+        atribuido.set(t.despachadaEnId, Number(((atribuido.get(t.despachadaEnId) ?? 0) + Number(t._sum.volumenM3 ?? 0)).toFixed(4)));
+      }
     }
 
     // ¿Este paquete ya salió? Es la pregunta del reporte "estado de productos":

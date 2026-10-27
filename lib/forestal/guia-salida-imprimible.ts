@@ -100,6 +100,19 @@ export function listasDeLaSalida(datos: GtfDatos, gtfNumber: string, trozas: num
   return { hojas: 1, numeros: [casillero35], casillero35, filasPorHoja: filasPorLista };
 }
 
+/**
+ * La salida del CTP INICIA su transporte en el CTP: el bloque (17)-(20d) va
+ * «No aplica» (la opción «Del área del título o de un CTP» del formato 2024,
+ * la misma que elige el Libro TH). El formulario del CTP no pide ese modo, y
+ * sin él el bloque salía en blanco —un casillero en blanco de una declaración
+ * jurada se puede llenar después— (QA 27-10). Un modo elegido se respeta.
+ */
+export function conPartidaDeSalida(datos: GtfDatos): GtfDatos {
+  const partida = datos.traslado?.partida;
+  if (!partida || partida.modo) return datos;
+  return { ...datos, traslado: { ...datos.traslado, partida: { ...partida, modo: "inicio" } } };
+}
+
 export interface CuerpoGuiaSalidaInput {
   gtfNumber: string | null | undefined;
   /** `YYYY-MM-DD` de la línea — casillero (3). */
@@ -127,7 +140,7 @@ export function cuerpoGuiaSalida(i: CuerpoGuiaSalidaInput): CuerpoGtfInput {
     // La ficha llega parcial (se imprime aunque esté a medio llenar): los
     // casilleros sin dato quedan en blanco, que es el comportamiento correcto.
     ficha: i.ficha as CtpFicha,
-    datos: i.datos,
+    datos: conPartidaDeSalida(i.datos),
     lineas: [...i.lineas],
     numeroGtf: numero,
     fechaExpedicion: i.fecha ?? "",

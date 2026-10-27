@@ -157,6 +157,12 @@ vi.mock("@/lib/prisma", () => {
         count: vi.fn(async ({ where }: { where: Record<string, unknown> }) => filtrar(where).length),
       },
       forestCtpDespachoOrigen: { groupBy: vi.fn(async () => []) },
+      /* Las trozas que salieron sin aserrar también atribuyen (27-10). */
+      woodEntryTroza: {
+        groupBy: vi.fn(async ({ where }: { where: { despachadaEnId: { in: string[] } } }) =>
+          where.despachadaEnId.in.includes("d3") ? [{ despachadaEnId: "d3", _sum: { volumenM3: 1.191 } }] : [],
+        ),
+      },
     },
   };
 });
@@ -246,6 +252,8 @@ describe("ForestCtpDB.list — el filtro llega a la base", () => {
   it("despacho sin filtro → todos los del tenant, y el where no lleva AND de contrato", async () => {
     const r = await ForestCtpDB.list(T, { section: "despacho" });
     expect(ids(r.entries as Fila[])).toEqual(["d1", "d2", "d3"]);
+    /* La venta en rollo (d3) tiene origen: el volumen de sus trozas, no «sin origen declarado». */
+    expect((r.entries as Array<{ id: string; atribuidoQty?: number }>).find((e) => e.id === "d3")?.atribuidoQty).toBe(1.191);
     expect((H.wheres[0] as Record<string, unknown>).AND).toBeUndefined();
   });
 

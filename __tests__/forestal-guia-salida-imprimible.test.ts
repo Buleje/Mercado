@@ -102,6 +102,14 @@ describe("entradasGuiaSalida", () => {
     expect(casillerosGtf(conNro.cuerpo)["35"]).toBe("LP-7");
   });
 
+  it("la partida de la salida va «No aplica» si el formulario no eligió el modo; un modo elegido se respeta", () => {
+    const c = casillerosGtf(entradasGuiaSalida(guiaDe({}), ficha, permisos).cuerpo);
+    expect([c.p17, c.p18, c.p19, c.p20a]).toEqual(["NO APLICA", "NO APLICA", "NO APLICA", "NO APLICA"]);
+    const d = datosCon();
+    const continua = { ...d, traslado: { ...d.traslado, partida: { ...d.traslado.partida, modo: "continua" as const, nombre: "Depósito Yarina" } } };
+    expect(casillerosGtf(entradasGuiaSalida(guiaDe({ datos: continua }), ficha, permisos).cuerpo).p17).toBe("Depósito Yarina");
+  });
+
   it("trozas que salen sin aserrar → su lista con todas las filas, partida de a 30 y numerada por hoja", () => {
     const trozas = Array.from({ length: 35 }, (_, i) => pieza(i));
     const rollo = [{ ...linea("Shihuahuaco", "Dipteryx micrantha", "Madera rolliza", 39.55), presentacion: "Trozas", cantidad: 35 }];

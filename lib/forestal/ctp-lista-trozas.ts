@@ -163,7 +163,7 @@ export function htmlListaTrozas(i: ListaTrozasInput): string {
   // el total de abajo y agrega una tabla que no informa nada nuevo.
   const porEspecie =
     especies.length > 1
-      ? `${seccionDoc("Resumen por especie", "cruza con el (37) de la guía")}
+      ? `${seccionDoc("Resumen por especie", "cruza con el (34) de la guía")}
     <table class="lt esp">
       <thead><tr><th>Nombre común</th><th>Nombre científico</th><th class="c">Piezas</th><th class="r">Volumen m³</th><th class="r">%</th></tr></thead>
       <tbody>${especies

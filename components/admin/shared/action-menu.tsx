@@ -277,15 +277,20 @@ export default function ActionMenu({
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const ancho = Math.max(0, Math.min(ANCHO_PANEL_REM * rem, base.width - 2 * MARGEN));
     const derechaAlBoton = Math.max(MARGEN, base.width - bRight);
+    const top = haciaArriba ? Math.max(MARGEN, bTop - Math.min(disponible, 520) - 8) : bBottom + 8;
     setPos({
-      top: haciaArriba ? Math.max(MARGEN, bTop - Math.min(disponible, 520) - 8) : bBottom + 8,
+      top,
       right: Math.min(derechaAlBoton, Math.max(MARGEN, base.width - ancho - MARGEN)),
       width: ancho,
       /* SIN piso de 200: eso fue justo lo que empujó el panel fuera del
          diálogo cuando `disponible` daba menos (el menú de la fila igual
          scrollea adentro con `overflow-y-auto` en `listaRef`, así que un
          `maxHeight` chico no esconde nada — recorta con aviso). */
-      maxHeight: Math.max(0, disponible - 8),
+      /* Hacia arriba termina 8 px antes del botón: con todo el alto de arriba
+         (`disponible`) y el `top` subido sólo 520, el panel bajaba hasta tapar
+         el botón y salía por debajo de la pantalla (27-10, menú del despacho:
+         «Anular la línea» quedaba fuera de alcance). */
+      maxHeight: Math.max(0, haciaArriba ? bTop - 8 - top : disponible - 8),
     });
   }, []);
 

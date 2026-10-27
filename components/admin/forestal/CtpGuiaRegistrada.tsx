@@ -77,6 +77,8 @@ export default function CtpGuiaRegistrada({
     [filas, catalogoEspecies.cientificoDe],
   );
   const total = volumenTotal(filas);
+  /* «Con su cadena declarada» sólo si cada fila dice de dónde sale: una corrida o la guía con que entró la troza (QA 27-10). */
+  const conOrigen = filas.length > 0 && filas.every((f) => Boolean(f.trozaId ? f.gtfOrigen.length : f.corridaId));
 
   async function imprimir() {
     if (!cabecera) { setError("No se pudo identificar la línea registrada para verificar la guía."); return; }
@@ -124,7 +126,7 @@ export default function CtpGuiaRegistrada({
           Guía {gtfNumber} registrada — {lineas} {lineas === 1 ? "línea" : "líneas"} en el libro
         </p>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-          {fmtM3(total)} m³ con su cadena de custodia declarada.
+          {fmtM3(total)} m³{conOrigen ? " con su cadena de custodia declarada." : " · sin origen declarado: complétalo en la cadena de custodia de cada despacho."}
           <InfoTip icono="ayuda" title="Qué sigue" what="Ya se puede emitir el anexo 04 y el certificado desde la ficha de cada despacho." />
         </p>
 

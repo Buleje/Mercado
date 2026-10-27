@@ -101,6 +101,27 @@ describe("ActionMenu — portal según el ancestro", () => {
     expect(top + maxHeight).toBeLessThanOrEqual(618);
   });
 
+  it("hacia arriba con mucho alto encima, el panel termina ANTES del botón y no se sale por abajo (menú del despacho, 2026-10-27)", () => {
+    // Pantalla alta (1280×1000), botón de la última fila en y=880-918: abajo
+    // quedan 82 px y arriba 880 → abre hacia arriba. El `top` sube a lo sumo
+    // 520, pero el alto máximo era TODO lo de arriba (872): el panel bajaba
+    // por encima del botón hasta salir de la pantalla y «Anular la línea»
+    // quedaba fuera de alcance.
+    Object.defineProperty(window, "innerWidth", { value: 1280, configurable: true });
+    Object.defineProperty(window, "innerHeight", { value: 1000, configurable: true });
+    render(<ActionMenu label="Opciones" actions={acciones} />);
+    const boton = screen.getByRole("button", { name: /Opciones/i });
+    boton.getBoundingClientRect = () =>
+      ({ top: 880, bottom: 918, left: 1100, right: 1200, width: 100, height: 38, x: 1100, y: 880, toJSON() {} }) as DOMRect;
+    fireEvent.click(boton);
+    const item = screen.getAllByRole("menuitem")[0]!;
+    const panel = item.closest('[role="menu"]')!.parentElement as HTMLElement;
+    const top = parseFloat(panel.style.top);
+    const maxHeight = parseFloat(panel.style.maxHeight);
+    expect(top).toBeLessThan(880);
+    expect(top + maxHeight).toBeLessThanOrEqual(880 - 8);
+  });
+
   it("a 400 px, con el botón cerca del borde IZQUIERDO, el panel no se sale por la izquierda (Ingresos, 2026-09-25)", () => {
     // Medido: «Opciones» de Ingresos a 400 px, botón en x=72–120. Colgado del
     // borde derecho del botón, el panel de 304 px arrancaba en x=−184.
