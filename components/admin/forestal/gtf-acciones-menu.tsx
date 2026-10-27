@@ -13,6 +13,8 @@
  *     Resumen interno (R1-R4) → siempre (anulada: con su sello)
  *   · Imprimir en talonario → viva: sólo los valores sobre el talonario
  *     preimpreso de la matricial (15-10, `GtfMatricialModal`)
+ *   · Imprimir con formato → viva: la guía y su lista en hoja blanca, con el
+ *     formato entero (27-10, `use-gtf-con-formato`; una anulada no: parecería válida)
  *   · Enviar al monte → viva: a la cola «Por imprimir» del celular + WhatsApp
  *     (16-10); ya impresa dice «Ya impresa en la hoja N° …» y sólo deja
  *     «Reimprimir en otra hoja» con motivo
@@ -29,7 +31,8 @@
  * Los modales de «Datos», «Documentos» y «Deshacer» se montan sólo abiertos (uno por fila).
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Ban, CheckCircle2, Eye, FileText, FileWarning, FolderOpen, Link2, Link2Off, LogIn, Printer, ReceiptText, Ruler, Send, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
@@ -44,6 +47,7 @@ import LothGtfCubicarModal from "./LothGtfCubicarModal";
 import LothGtfAsignarPermiso from "./LothGtfAsignarPermiso";
 import LothGtfDesatarPermiso from "./LothGtfDesatarPermiso";
 import GtfMatricialModal from "./GtfMatricialModal";
+import { useGtfConFormato } from "./hooks/use-gtf-con-formato";
 import GtfEnviarAlMonteModal from "./GtfEnviarAlMonteModal";
 import { useColaMonteCtx } from "./cola-monte-contexto";
 import { etiquetaMonteImpresa } from "./gtf-monte-ya-impresa";
@@ -84,6 +88,8 @@ export function opcionesGtf(
     abrirPermiso,
     abrirDesatar,
     abrirTalonario,
+    imprimirConFormato,
+    conFormatoOcupado = false,
     abrirMonte,
     abrirCorreccion,
     correccionAbierta = false,
@@ -100,6 +106,9 @@ export function opcionesGtf(
     abrirPermiso?: () => void;
     abrirDesatar?: () => void;
     abrirTalonario?: () => void;
+    imprimirConFormato?: () => void;
+    /** Pidiendo los datos de la guía para imprimirla con formato. */
+    conFormatoOcupado?: boolean;
     abrirMonte?: () => void;
     abrirCorreccion?: () => void;
     /** Ya hay un pedido de corrección abierto (Pendiente o En revisión): no se pide otro. */
@@ -138,6 +147,16 @@ export function opcionesGtf(
       hint: "Sólo los valores, cada uno en su casillero del talonario de la matricial",
       icon: ReceiptText,
       onSelect: abrirTalonario,
+    });
+  }
+  if (viva && imprimirConFormato) {
+    a.push({
+      id: "con-formato",
+      label: "Imprimir con formato",
+      hint: "La guía y su lista en hoja blanca, con todo el formato y sus valores",
+      icon: FileText,
+      busy: conFormatoOcupado,
+      onSelect: imprimirConFormato,
     });
   }
   if (viva && abrirMonte) {
@@ -222,6 +241,11 @@ export default function AccionesGtf({
   const monteImpresa = etiquetaMonteImpresa(useColaMonteCtx()?.porGuia.get(g.id));
   /* ADR-512: el pedido de corrección de la guía (una sola llamada para toda la lista, en el proveedor). */
   const corr = useCorreccionDeLaFila(g.id, !soloLectura && g.status !== "anulada" && !g.deletedAt);
+  /* «Imprimir con formato» sin abrir el diseñador: pide titular y fecha del talonario al elegirlo. */
+  const cf = useGtfConFormato(g);
+  useEffect(() => {
+    if (cf.error) toast.error(cf.error);
+  }, [cf.error]);
   const acciones = useMemo(
     () =>
       opcionesGtf(g, {
@@ -233,6 +257,8 @@ export default function AccionesGtf({
         abrirPermiso: () => setAbierto("permiso"),
         abrirDesatar: () => setAbierto("desatar"),
         abrirTalonario: () => setAbierto("talonario"),
+        imprimirConFormato: () => void cf.imprimir(["guia", "lista"]),
+        conFormatoOcupado: cf.ocupado === "imprimir",
         abrirMonte: () => setAbierto("monte"),
         abrirCorreccion: corr.puede ? () => corr.abrir("fila") : undefined,
         correccionAbierta: corr.abierta,
@@ -241,7 +267,7 @@ export default function AccionesGtf({
         onResumen,
         onAnular,
       }),
-    [g, soloLectura, monteImpresa, corr.puede, corr.abierta, corr.abrir, onHoja, onResumen, onAnular],
+    [g, soloLectura, monteImpresa, corr.puede, corr.abierta, corr.abrir, cf.imprimir, cf.ocupado, onHoja, onResumen, onAnular],
   );
   return (
     <div className="flex items-center justify-end gap-2">

@@ -46,7 +46,7 @@ export function sanearParaFuente(texto: string, tiene: (cp: number) => boolean):
   return out;
 }
 
-async function nuevoDocumento(titulo: string): Promise<{ doc: PDFDocument; font: PDFFont; tiene: (cp: number) => boolean }> {
+export async function nuevoDocumento(titulo: string): Promise<{ doc: PDFDocument; font: PDFFont; tiene: (cp: number) => boolean }> {
   const doc = await PDFDocument.create({ updateMetadata: false });
   doc.setTitle(titulo, { showInWindowTitleBar: true });
   doc.setSubject("Imprimir a tamaño real (100 %, sin ajustar a la página) en el talonario de la matricial.");
@@ -59,9 +59,9 @@ async function nuevoDocumento(titulo: string): Promise<{ doc: PDFDocument; font:
   return { doc, font, tiene: (cp) => set.has(cp) };
 }
 
-const nuevaPagina = (doc: PDFDocument, hoja: Hoja): PDFPage => doc.addPage([hoja.anchoMm * PT_POR_MM, hoja.altoMm * PT_POR_MM]);
+export const nuevaPagina = (doc: PDFDocument, hoja: Hoja): PDFPage => doc.addPage([hoja.anchoMm * PT_POR_MM, hoja.altoMm * PT_POR_MM]);
 
-function dibujarRenglones(page: PDFPage, hoja: Hoja, renglones: RenglonSalida[], font: PDFFont, tiene: (cp: number) => boolean): void {
+export function dibujarRenglones(page: PDFPage, hoja: Hoja, renglones: RenglonSalida[], font: PDFFont, tiene: (cp: number) => boolean): void {
   for (const r of renglones) {
     const texto = sanearParaFuente(r.texto, tiene);
     if (!texto.trim()) continue;

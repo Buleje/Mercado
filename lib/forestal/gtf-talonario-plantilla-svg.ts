@@ -59,6 +59,19 @@ export const ESTILO_PAPEL: Record<TintaPapel, EstiloPlantilla> = {
   celeste: { tinta: "#16759f", linea: "#5aa9cc", franja: "none", folio: "#c2272d", grosorMax: 0.2 },
 };
 
+export type TintaFormato = "celeste" | "negro";
+
+/**
+ * Papel blanco CON FORMATO (27-10): el talonario entero en hoja blanca, con
+ * las rayas en su grosor (no se pone encima de otro talonario). Celeste = la
+ * de la imprenta (`--gtf-*`), franjas celestes y el N° en rojo; negro = para
+ * impresoras en blanco y negro y fotocopias, franjas gris claro.
+ */
+export const ESTILO_CON_FORMATO: Record<TintaFormato, EstiloPlantilla> = {
+  celeste: { tinta: "#16759f", linea: "#8cc7de", franja: "#dcf0f7", folio: "#c2272d" },
+  negro: { tinta: "#000000", linea: "#7a7a7a", franja: "#ececec", folio: "#000000" },
+};
+
 /** mm con 3 decimales y sin ceros de más. */
 const n = (v: number): string => String(Math.round(v * 1000) / 1000);
 

@@ -23,7 +23,7 @@
  */
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, FileDown, PanelLeftOpen, PanelRightClose, PanelRightOpen, Printer, RotateCcw, Save } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, FileDown, FileText, PanelLeftOpen, PanelRightClose, PanelRightOpen, Printer, RotateCcw, Save } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -35,6 +35,7 @@ import { transformacionDe } from "@/lib/forestal/gtf-matricial-perfiles";
 import { Btn, ModalFooter, PanelSkeleton, useCierreSeguro } from "./ctp-shared";
 import type { Gtf } from "./gtf-tabla-columnas";
 import { useGtfMatricial } from "./hooks/use-gtf-matricial";
+import { accionesConFormato, useGtfConFormato } from "./hooks/use-gtf-con-formato";
 import { usePerfilesTalonario, useSalidaTalonario } from "./hooks/use-gtf-matricial-perfiles";
 import { useFondoTalonario } from "./hooks/use-gtf-matricial-fondo";
 import { usePanelesTalonario, type PanelesTalonario, type PestanaTalonario } from "./hooks/use-gtf-matricial-paneles";
@@ -75,6 +76,12 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
   const p = usePanelesTalonario();
   const imp = usePerfilesTalonario();
   const salida = useSalidaTalonario(g.id, t, imp);
+  /* En hoja blanca, con el formato dibujado y cada valor en su renglón de fábrica: no depende de lo acomodado. */
+  const cf = useGtfConFormato(g, {
+    entradas: t.entradas,
+    titular: t.info?.titular?.nombre,
+    separador: { guia: t.disp?.guia.separadorFecha, lista: t.disp?.lista.separadorFecha },
+  });
   const [conValores, setConValores] = useState(true);
   const [posiciones, setPosiciones] = useState(false);
   const cerrar = useCierreSeguro(t.sucio, onClose);
@@ -125,7 +132,7 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
       }
       footer={
         <ModalFooter
-          error={t.error ?? salida.aviso}
+          error={t.error ?? salida.aviso ?? cf.error}
           aviso={salida.recortes && <span role="status" className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{salida.recortes}</span>}
           nota={
             hoja && (
@@ -164,6 +171,12 @@ export default function GtfMatricialModal({ g, onClose }: { g: Gtf; onClose: () 
               { id: "pdf", label: "PDF a tamaño real", hint: `Para mandarlo · ${imp.elegido?.nombre ?? "Oficina"}`, icon: FileDown, busy: salida.bajando === "pdf", onSelect: () => void salida.bajar("pdf") },
               { id: "escp", label: "ESC/P para la matricial (.prn)", hint: `Directo a la Epson · ${imp.elegido?.nombre ?? "Oficina"}`, icon: Printer, busy: salida.bajando === "escp", onSelect: () => void salida.bajar("escp") },
             ]}
+          />
+          <ActionMenu
+            label="Con formato"
+            icon={FileText}
+            disabled={!hoja}
+            actions={accionesConFormato(cf)}
           />
           <Btn variant="primary" onClick={() => void imprimir()} disabled={!hoja || t.guardando}>
             <Printer className="h-4 w-4" aria-hidden /> Imprimir {cat.nombre.toLowerCase()}

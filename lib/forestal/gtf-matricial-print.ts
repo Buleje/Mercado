@@ -23,7 +23,7 @@ import { INTERLINEA } from "./gtf-matricial-edicion";
 import { aplicarX, aplicarY, escalaPct, transformacionDe, type Transformacion } from "./gtf-matricial-perfiles";
 import { encajarValor, type Encaje, type ModoValor } from "./gtf-salida-geometria";
 import type { PlantillaHoja } from "./gtf-talonario-plantilla";
-import { ESTILO_PAPEL, grupoPlantillaSvg, type EstiloPlantilla } from "./gtf-talonario-plantilla-svg";
+import { ESTILO_CON_FORMATO, ESTILO_PAPEL, grupoPlantillaSvg, type EstiloPlantilla } from "./gtf-talonario-plantilla-svg";
 
 /** Interlineado de los valores: el mismo en pantalla y en papel (vive con las cajas de `gtf-matricial-edicion`). */
 export { INTERLINEA };
@@ -84,7 +84,7 @@ export function cajasDeLaPagina(hoja: DisposicionHoja, cat: CatalogoFormato, p: 
   return out;
 }
 
-function documento(hoja: DisposicionHoja, titulo: string, hojas: string[]): string {
+function documento(hoja: { anchoMm: number; altoMm: number }, titulo: string, hojas: string[]): string {
   const w = n(hoja.anchoMm);
   const h = n(hoja.altoMm);
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>
@@ -185,6 +185,35 @@ export function htmlHojaPruebaBlanca(
     style="position:absolute;left:0;top:0"><g transform="${transformSvg(tr)}">${grupoPlantillaSvg(plantilla, estilo)}<g stroke="#000" fill="none">${cruces}</g></g>${leyenda}</svg>`;
   const valores = pagina ? cajasDeLaPagina(hoja, cat, pagina, tr).join("") : "";
   return documento(hoja, titulo, [svg + valores]);
+}
+
+/** Una hoja de «con formato»: la plantilla y los valores en los mm de ESA plantilla (sin impresora ni recuadro medido). */
+export interface HojaConFormato {
+  hoja: DisposicionHoja;
+  cat: CatalogoFormato;
+  pagina: PaginaTalonario;
+  plantilla: PlantillaHoja;
+}
+
+/**
+ * El talonario COMPLETO en papel blanco (27-10): cada hoja con el formato
+ * dibujado en la tinta de la imprenta y sus valores encima. Sin corrimiento
+ * ni escala: no hay talonario preimpreso con el que cuadrar.
+ */
+export function htmlConFormato(hojas: HojaConFormato[], titulo: string, estilo: EstiloPlantilla = ESTILO_CON_FORMATO.celeste): string {
+  const [primera] = hojas;
+  if (!primera) return documento({ anchoMm: 210, altoMm: 297 }, titulo, []);
+  const W = n(primera.hoja.anchoMm);
+  const H = n(primera.hoja.altoMm);
+  return documento(
+    primera.hoja,
+    titulo,
+    hojas.map(
+      (h) =>
+        `<svg xmlns="http://www.w3.org/2000/svg" data-con-formato="1" width="${W}mm" height="${H}mm" viewBox="0 0 ${W} ${H}" style="position:absolute;left:0;top:0">${grupoPlantillaSvg(h.plantilla, estilo)}</svg>` +
+        cajasDeLaPagina(h.hoja, h.cat, h.pagina).join(""),
+    ),
+  );
 }
 
 /** El marco de la última impresión: queda en el DOM hasta la siguiente (las pruebas leen su HTML). */

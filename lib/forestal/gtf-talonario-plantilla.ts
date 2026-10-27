@@ -498,7 +498,10 @@ function plantillaLista(e: EncabezadoTalonario): PlantillaHoja {
   for (const [id, a, b, , rotulo] of COLS_LISTA) {
     const lineas = rotulo.split("\n");
     const base = id === "n" ? 42.4 : id === "codigo" ? 42.2 : lineas.length > 1 ? 39.5 : 44.7;
-    lineas.forEach((s, i) => t.push(texto((a + b) / 2, base + i * 3.6, s, id === "comun" ? 6.9 : 7.2, { peso: 600, alinea: "centro" })));
+    const pt = id === "comun" ? 6.9 : 7.2;
+    /* Si no entra entre sus rayas (Arial seminegrita ≈ 0,56 em por letra), se encoge a la columna con 1 mm por lado: «(5) Codificación» pisaba las rayas. */
+    const cabe = b - a - 2;
+    lineas.forEach((s, i) => t.push(texto((a + b) / 2, base + i * 3.6, s, pt, { peso: 600, alinea: "centro", ...(s.length * 0.56 * pt * (25.4 / 72) > cabe && { ancho: cabe }) })));
   }
   for (let k = 0; k < n; k++) t.push(texto((X0 + 19) / 2, filas + k * h + 4.1, String(k + 1), 8.2, { alinea: "centro" }));
   /* (11) TOTAL */
