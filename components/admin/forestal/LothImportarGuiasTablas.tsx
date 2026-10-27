@@ -12,6 +12,8 @@ import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
 import type { TalaReferencial, TrozaImportada } from "@/lib/forestal/loth-importar-guia-tipos";
 import { DataTable } from "@buleje/design-system";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "./filtros-tabla-forestal";
 
 export const TONO = {
   ok: "bg-[var(--data-success-500)]/12 text-[var(--data-success-ink)]",
@@ -26,11 +28,39 @@ const TH =
   "whitespace-nowrap";
 const TD = "whitespace-nowrap";
 
+type EstadoImport = "nueva" | "ya_trozada" | "renombrada" | "conflicto" | "ampliar" | "existente";
+/** Lo que dice el chip de cada estado: es también lo que se elige en el embudo. */
+const TEXTO_ESTADO: Record<EstadoImport, string> = {
+  nueva: "Nueva",
+  ya_trozada: "Ya está",
+  renombrada: "Repite código",
+  conflicto: "Choca",
+  ampliar: "Se amplía",
+  existente: "Ya tiene tala",
+};
+
+const COL_TROZAS: readonly ColumnaFiltro<TrozaImportada>[] = [
+  { id: "guia", label: "Código en la guía", tipo: "texto", valor: (t) => t.codificacionGuia },
+  { id: "unico", label: "Código único", tipo: "texto", valor: (t) => t.trozaCode },
+  { id: "arbol", label: "Árbol", tipo: "texto", valor: (t) => t.treeCode },
+  { id: "especie", label: "Especie", tipo: "multi", valor: (t) => t.speciesCommon ?? "—" },
+  { id: "m3", label: "m³", tipo: "rango", numero: (t) => t.volumeM3, unidad: "m³", paso: 0.0001 },
+  { id: "estado", label: "Estado", tipo: "multi", valor: (t) => TEXTO_ESTADO[t.estado] },
+];
+
+const COL_TALAS: readonly ColumnaFiltro<TalaReferencial>[] = [
+  { id: "arbol", label: "Árbol", tipo: "texto", valor: (t) => t.treeCode },
+  { id: "trozas", label: "Trozas", tipo: "texto", valor: (t) => t.trozas },
+  { id: "especie", label: "Especie", tipo: "multi", valor: (t) => t.speciesCommon ?? "—" },
+  { id: "m3", label: "m³", tipo: "rango", numero: (t) => t.volumeM3, unidad: "m³", paso: 0.0001 },
+  { id: "estado", label: "Estado", tipo: "multi", valor: (t) => TEXTO_ESTADO[t.estado] },
+];
+
 function EstadoFila({
   estado,
   detalle,
 }: {
-  estado: "nueva" | "ya_trozada" | "renombrada" | "conflicto" | "ampliar" | "existente";
+  estado: EstadoImport;
   detalle: string | null;
 }) {
   if (estado === "nueva")
@@ -65,25 +95,28 @@ function EstadoFila({
  * («12A-0001», siempre lleno); se resaltan las que repiten el código de otra guía del permiso.
  */
 export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
+  const f = useFiltrosTabla(trozas, COL_TROZAS);
   return (
     <div className="overflow-x-auto px-1 pb-2">
+      {trozas.length > 3 && <BarraFiltrosTabla f={f} className="mb-2" />}
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
           <tr>
-            <th className={TH}>Código en la guía</th>
-            <th className={TH}>Código único</th>
-            <th className={TH}>Árbol</th>
-            <th className={TH}>Especie</th>
+            <ThColumna label="Código en la guía" ids={["guia"]} f={f} className={`${TH} align-top`} />
+            <ThColumna label="Código único" ids={["unico"]} f={f} className={`${TH} align-top`} />
+            <ThColumna label="Árbol" ids={["arbol"]} f={f} className={`${TH} align-top`} />
+            <ThColumna label="Especie" ids={["especie"]} f={f} className={`${TH} align-top`} />
             <th className={`${TH} text-right`}>D1 (m)</th>
             <th className={`${TH} text-right`}>D2 (m)</th>
             <th className={`${TH} text-right`}>Largo (m)</th>
-            <th className={`${TH} text-right`}>m³</th>
+            <ThColumna label="m³" ids={["m3"]} f={f} derecha className={`${TH} align-top`} />
             <th className={`${TH} text-right`}>≈pt</th>
-            <th className={TH}>Estado</th>
+            <ThColumna label="Estado" ids={["estado"]} f={f} className={`${TH} align-top`} />
           </tr>
         </thead>
         <tbody>
-          {trozas.map((t) => (
+          {f.filtradas.length === 0 && trozas.length > 0 && <SinCoincidenciasFila colSpan={10} />}
+          {f.filtradas.map((t) => (
             <tr key={t.indice}>
               <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
                 {t.codificacionGuia ?? "—"}
@@ -125,23 +158,26 @@ export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
 }
 
 export function TablaTalas({ talas }: { talas: TalaReferencial[] }) {
+  const f = useFiltrosTabla(talas, COL_TALAS);
   return (
     <div className="overflow-x-auto px-1 pb-2">
+      {talas.length > 3 && <BarraFiltrosTabla f={f} className="mb-2" />}
       <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
         <thead>
           <tr>
-            <th className={TH}>Árbol</th>
-            <th className={TH}>Trozas</th>
-            <th className={TH}>Especie</th>
+            <ThColumna label="Árbol" ids={["arbol"]} f={f} className={`${TH} align-top`} />
+            <ThColumna label="Trozas" ids={["trozas"]} f={f} className={`${TH} align-top`} />
+            <ThColumna label="Especie" ids={["especie"]} f={f} className={`${TH} align-top`} />
             <th className={`${TH} text-right`}>Largo (m)</th>
             <th className={`${TH} text-right`}>D1 (m)</th>
             <th className={`${TH} text-right`}>D2 (m)</th>
-            <th className={`${TH} text-right`}>m³</th>
-            <th className={TH}>Estado</th>
+            <ThColumna label="m³" ids={["m3"]} f={f} derecha className={`${TH} align-top`} />
+            <ThColumna label="Estado" ids={["estado"]} f={f} className={`${TH} align-top`} />
           </tr>
         </thead>
         <tbody>
-          {talas.map((t) => (
+          {f.filtradas.length === 0 && talas.length > 0 && <SinCoincidenciasFila colSpan={8} />}
+          {f.filtradas.map((t) => (
             <tr key={t.treeCode}>
               <td className={`${TD} font-mono font-semibold`}>
                 {t.treeCode}
