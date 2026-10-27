@@ -36,6 +36,12 @@
  * distinguir tipo. Una especie sin producción suficiente BLOQUEA la guía —el
  * alta la rechazaría—, y la propuesta lo dice antes (decisión 2: Azúcar huayo
  * de la 064).
+ *
+ * El permiso (ADR-519, decisión 3): un anexo que dice de qué permiso salió
+ * sólo se cubre con corridas de ESE permiso (`permisoAjeno`, con el criterio
+ * de `vincularCorridaEnTx`: `mismoPermiso`). Lo que su permiso no alcanza
+ * queda sin atribuir, nunca se toma de otro título. Un anexo sin permiso (los
+ * de antes) se cubre como siempre.
  */
 import type { PiezaCubicada } from "./cubicacion";
 import { ORDEN_TIPO, ordenTipo, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
@@ -44,6 +50,7 @@ import { claveEspecie } from "./loth-constants";
 import { TOLERANCIA_ATRIBUCION } from "./atribucion-despacho";
 import { mismoNumeroGtf } from "./gtf-talonario";
 import { fmtM3 } from "./cubicacion-formato";
+import { mismoPermiso, type PermisoRef } from "./vincular-trozas";
 
 /**
  * Un resto de montón más chico que esto no se guarda como paquete: 5 litros no
@@ -104,6 +111,8 @@ export interface AnexoParaDespacho {
   despachoIds?: readonly string[];
   /** Otro anexo de la misma guía que lo reemplazó: no se registra. */
   reemplazadoPor?: string | null;
+  /** El permiso del que salió (ADR-519): con él, sólo corridas de ese permiso. Ausente = cualquiera. */
+  permiso?: string | null;
 }
 
 export interface PaqueteOrigen {
@@ -142,6 +151,13 @@ export interface CorridaOrigen {
   paquetes: readonly PaqueteOrigen[];
   /** Lo que ya salió de ESTA corrida en despachos que no nombran uno de sus paquetes, por producto del despacho. */
   salidoSinPaquete: readonly { producto: string | null; m3: number }[];
+  /**
+   * DERIVADO al leer (ADR-519): los permisos de la madera de la corrida — el
+   * de cada guía de ingreso que consumió (ADR-402: hereda el de su madera) y
+   * el suyo propio (`contratoId` vivo u `originCode`, ADR-447). Vacío o
+   * ausente = no declara ninguno y no decide (`mismoPermiso`).
+   */
+  permisos?: readonly PermisoRef[];
 }
 
 export interface EstadoDelLibro {
@@ -331,6 +347,56 @@ function copiar(t: Trabajo): Trabajo {
   };
 }
 
+// ── El permiso de la guía (ADR-519) ───────────────────────────────────────
+
+/**
+ * El permiso de la corrida que NO es el de la guía, o `null` si la corrida
+ * puede ser origen de esa guía. Mismo criterio que `vincularCorridaEnTx`
+ * (`mismoPermiso`): sin dato en una punta no se afirma que difieren, así que
+ * un anexo sin permiso, o una corrida que no declara ninguno, siguen como
+ * antes. Una corrida que mezcla permisos (dato viejo) es ajena si UNO de ellos
+ * no es el de la guía: nunca se atribuye madera de otro título.
+ */
+export function permisoAjeno(
+  c: Pick<CorridaOrigen, "permisos">,
+  permisoGuia: string | null | undefined,
+): PermisoRef | null {
+  const codigo = permisoGuia?.trim();
+  if (!codigo) return null;
+  const guia: PermisoRef = { contratoId: null, codigo };
+  return (c.permisos ?? []).find((p) => !mismoPermiso(p, guia)) ?? null;
+}
+
+/**
+ * Las corridas de `ids` que son de otro permiso que la guía, leídas del
+ * estado dado (la capa de datos lo usa BAJO los locks, con el libro de ese
+ * momento). Vacío = todas sirven.
+ */
+export function corridasDeOtroPermiso(
+  estado: EstadoDelLibro,
+  permisoGuia: string | null | undefined,
+  ids: Iterable<string>,
+): { corridaId: string; lineNo: number; permiso: string | null }[] {
+  const buscadas = new Set(ids);
+  const out: { corridaId: string; lineNo: number; permiso: string | null }[] = [];
+  for (const c of estado.corridas) {
+    if (!buscadas.has(c.id)) continue;
+    const ajeno = permisoAjeno(c, permisoGuia);
+    if (ajeno) out.push({ corridaId: c.id, lineNo: c.lineNo, permiso: ajeno.codigo });
+  }
+  return out.sort((a, b) => a.lineNo - b.lineNo);
+}
+
+/**
+ * La vista de la guía: sólo las corridas de su permiso. Comparte los objetos
+ * de `t` (saldo y fuentes), así lo que esta guía saca se descuenta igual para
+ * la siguiente de la tanda. Sin permiso en el anexo, `t` tal cual.
+ */
+function delPermiso(t: Trabajo, permisoGuia: string | null | undefined): Trabajo {
+  if (!permisoGuia?.trim()) return t;
+  return { corridas: new Map([...t.corridas].filter(([, x]) => !permisoAjeno(x.c, permisoGuia))), stock: t.stock };
+}
+
 // ── La propuesta ──────────────────────────────────────────────────────────
 
 /** Lo que el operador puede cambiar: de qué corridas sale un grupo, en orden. `[]` = sin origen. */
@@ -368,6 +434,13 @@ export interface LineaPropuesta {
   /** Piezas del grupo repartidas entre sus líneas en proporción al volumen. */
   piezas: number;
   origen: OrigenDeLinea | null;
+  /**
+   * Sólo en una línea sin origen de un anexo con permiso (ADR-519): había
+   * corridas con madera de ese tipo, pero de OTRO permiso. Es el código del
+   * permiso de la guía, para decir el motivo verdadero («no hay producción
+   * del permiso X») y no «el libro no tiene producción de ese tipo».
+   */
+  sinCorridaDelPermiso?: string;
 }
 
 export interface CandidataDeOrigen {
@@ -399,7 +472,9 @@ export type CodigoBloqueo =
   /** Hay m³ sin corrida de origen y el dueño no dijo «regístrala sin origen» (decisión 8). */
   | "FALTA_CONFIRMAR_SIN_ORIGEN"
   /** Toma madera de corridas marcadas «usado» y el dueño no dijo «salió de ese inventario» (decisión 5). */
-  | "FALTA_CONFIRMAR_USADO";
+  | "FALTA_CONFIRMAR_USADO"
+  /** El operador eligió una corrida de otro permiso que el del anexo (ADR-519). */
+  | "PERMISO_DISTINTO";
 
 export interface BloqueoDeGuia {
   codigo: CodigoBloqueo;
@@ -612,11 +687,27 @@ function cubrirElegido(
   fecha: string,
   corridas: readonly string[],
   bloqueos: BloqueoDeGuia[],
+  permisoGuia?: string | null,
 ): Toma[] {
   const tomas: Toma[] = [];
   let falta = grupo.m3;
   for (const id of corridas) {
     const x = t.corridas.get(id);
+    /* El permiso antes que todo (ADR-519): una guía sale de la madera de su
+       permiso, aunque el operador elija otra corrida. */
+    const ajeno = x ? permisoAjeno(x.c, permisoGuia) : null;
+    if (x && ajeno) {
+      bloqueos.push({
+        codigo: "PERMISO_DISTINTO",
+        mensaje:
+          `${grupo.especie} ${grupo.tipo.toLowerCase()}: la corrida N° ${x.c.lineNo} es del permiso ${ajeno.codigo ?? "sin código"} ` +
+          `y esta guía es del permiso ${permisoGuia?.trim()}. Una guía sale de la madera de su permiso: elige una corrida de su permiso o déjalo sin atribuir.`,
+        especie: grupo.especie,
+        tipo: grupo.tipo,
+        corridaId: id,
+      });
+      continue;
+    }
     const motivo = !x
       ? "no existe, está anulada o es de otra tienda"
       : claveEspecie(x.c.especie) !== grupo.claveEspecie
@@ -690,6 +781,9 @@ function proponerEn(
   const grupos = gruposDelAnexo(anexo, claveStock);
   const bloqueos: BloqueoDeGuia[] = [];
   const elegidas = new Map((opts.elecciones ?? []).map((e) => [claveDeGrupo(e.especie, e.tipo), e.corridas]));
+  /* Lo que la guía puede tomar: sólo las corridas de su permiso (ADR-519). */
+  const tg = delPermiso(t, anexo.permiso);
+  const permisoGuia = anexo.permiso?.trim() || null;
 
   /* I3 antes que nada: una especie sin producción suficiente hace rechazar el
      alta, y es lo primero que hay que resolver (se anota la producción). */
@@ -733,13 +827,13 @@ function proponerEn(
   const gruposPropuestos: GrupoPropuesto[] = [];
   const lineas: LineaPropuesta[] = [];
   for (const g of grupos) {
-    const candidatas = g.claveEspecie && g.producto ? candidatasDe(t, g, fecha) : [];
+    const candidatas = g.claveEspecie && g.producto ? candidatasDe(tg, g, fecha) : [];
     const elegido = elegidas.get(g.clave);
     const tomas = !g.claveEspecie || !g.producto
       ? []
       : elegido
-        ? cubrirElegido(t, g, fecha, elegido, bloqueos)
-        : cubrirAuto(t, g, fecha);
+        ? cubrirElegido(t, g, fecha, elegido, bloqueos, anexo.permiso)
+        : cubrirAuto(tg, g, fecha);
     const atribuido = r4(tomas.reduce((a, x) => a + x.q, 0));
     let sinAtribuir = r4(Math.max(0, g.m3 - atribuido));
     const delGrupo: LineaPropuesta[] = tomas.map((x) => {
@@ -775,9 +869,12 @@ function proponerEn(
         const ultima = delGrupo[delGrupo.length - 1];
         ultima.m3 = r4(ultima.m3 + sinAtribuir);
       } else {
+        /* ¿Faltó madera, o la había pero de otro permiso? (ADR-519) */
+        const sinElPermiso = permisoGuia !== null && candidatasDe(t, g, fecha).length > candidatas.length;
         delGrupo.push({
           grupo: g.clave, especie: g.especie, tipo: g.tipo, producto: g.producto,
           m3: sinAtribuir, origenM3: 0, piezas: 0, origen: null,
+          ...(sinElPermiso ? { sinCorridaDelPermiso: permisoGuia } : {}),
         });
       }
     } else if (!g.producto) {
@@ -945,12 +1042,17 @@ export function faltaConfirmar(p: PropuestaDeGuia, confirmo?: ConfirmoDeGuia): B
   for (const c of faltanConfirmar(p, confirmo)) {
     if (c === "sin_origen") {
       const visto = confirmo?.sinOrigenM3;
+      /* Había corridas, pero de otro permiso (ADR-519): «anota la producción que
+         falta» mandaba a anotar madera que el libro ya tiene. */
+      const permisoSinCorrida = p.lineas.find((l) => !l.origen && l.sinCorridaDelPermiso)?.sinCorridaDelPermiso;
       out.push({
         codigo: "FALTA_CONFIRMAR_SIN_ORIGEN",
         mensaje:
           visto != null
             ? `Confirmaste ${fmtM3(visto)} m³ sin corrida de origen y ahora son ${fmtM3(p.sinOrigenM3)} m³: el libro cambió. Revísala y vuelve a confirmar.`
-            : `${fmtM3(p.sinOrigenM3)} m³ de esta guía no tienen corrida de origen: anota antes la producción que falta o confirma que se registra así.`,
+            : permisoSinCorrida
+              ? `${fmtM3(p.sinOrigenM3)} m³ de esta guía no tienen corrida de origen del permiso ${permisoSinCorrida} (las de otro permiso no valen): anota antes la producción de su permiso o confirma que se registra así.`
+              : `${fmtM3(p.sinOrigenM3)} m³ de esta guía no tienen corrida de origen: anota antes la producción que falta o confirma que se registra así.`,
         m3: p.sinOrigenM3,
       });
     } else {

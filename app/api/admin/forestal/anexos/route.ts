@@ -72,6 +72,9 @@ const saveSchema = z.object({
   modo: z.enum(["oficial", "compacto"]).default("oficial"),
   especieGlobal: z.string().trim().max(60).nullish(),
   ctpEntryId: z.string().trim().max(60).nullish(),
+  /* El permiso del que salió (ADR-519): con él, la guía sólo se atribuye a
+     corridas de ese permiso. Ausente = se conserva el que tenía; null = ninguno. */
+  permiso: z.string().trim().max(120).nullish(),
   /* El total declarado A MANO en el papel. No reemplaza al recalculado —ese
      sigue saliendo de las piezas— pero sin guardarlo no se puede re-imprimir
      el documento que se entregó. */
@@ -145,7 +148,7 @@ export const POST = withApiHandler("forestal-anexos-post", async (req: NextReque
       { status: 400 },
     );
   }
-  const { id, fecha, especieGlobal, ctpEntryId, piezas, totalManualM3, trasera, ...datos } = parsed.data;
+  const { id, fecha, especieGlobal, ctpEntryId, permiso, piezas, totalManualM3, trasera, ...datos } = parsed.data;
   try {
     const anexo = await ForestAnexosDB.save(
       auth.tenantId,
@@ -155,6 +158,7 @@ export const POST = withApiHandler("forestal-anexos-post", async (req: NextReque
         datos,
         especieGlobal: especieGlobal ?? undefined,
         ctpEntryId: ctpEntryId ?? undefined,
+        permiso: permiso === undefined ? undefined : permiso || null,
         totalManualM3: totalManualM3 ?? null,
         /* Sin trasera en el body = `undefined`: la capa de datos conserva la
            que el registro ya tenía si las piezas no cambiaron. */

@@ -87,7 +87,7 @@ export default function AnexoPorPermiso({
    */
   precioDe?: PrecioPt;
   /** Abre el Anexo 04 con las piezas ya unificadas de ese permiso. */
-  onAbrir: (piezas: PiezaCubicada[], etiqueta: string, especie: string) => void;
+  onAbrir: (piezas: PiezaCubicada[], etiqueta: string, especie: string, permiso: string | null) => void;
 }) {
   const [elegido, setElegido] = useState<string | null>(null);
   /** Sube al abrir el Anexo 04: el estado «guardado / en el libro» se relee mientras se guarda. */
@@ -284,7 +284,7 @@ export default function AnexoPorPermiso({
             <button
               type="button"
               onClick={() => {
-                onAbrir(actual.piezas, actual.label, actual.especies[0] ?? "");
+                onAbrir(actual.piezas, actual.label, actual.especies[0] ?? "", actual.permiso);
               }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
             >
@@ -304,7 +304,7 @@ export default function AnexoPorPermiso({
           </div>
 
           {/* El anexo guardado de este permiso y su paso al libro (Fase 5). */}
-          <AnexoAlLibro piezas={actual.piezas} />
+          <AnexoAlLibro piezas={actual.piezas} permiso={actual.permiso} />
 
           {/* El cuadre, antes que el detalle: si no cierra, no se imprime. */}
           <p

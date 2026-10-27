@@ -13,6 +13,7 @@
  */
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
+import { normalizarCodigoContrato } from "./contratos";
 
 const n = (v: number): string => String(Math.round((Number.isFinite(v) ? v : 0) * 10000) / 10000);
 
@@ -46,15 +47,25 @@ export function firmaDePiezas(piezas: readonly PiezaCubicada[], especieGlobal?: 
  * Con varios iguales (re-guardados, o el reemplazado y el vigente) gana el que
  * ya está en el libro, después el que no fue reemplazado y, si empatan, el más
  * reciente (la lista llega con el más reciente primero).
+ *
+ * Desde ADR-519 el anexo guarda su permiso cuando sale de uno: con `permiso`,
+ * uno guardado con OTRO permiso no es éste aunque lleve las mismas medidas.
+ * Los guardados sin permiso (los de antes) siguen hallándose por contenido.
  */
 export function anexoGuardadoDelPermiso(
   piezas: readonly PiezaCubicada[],
   emitidos: readonly AnexoEmitido[],
+  permiso?: string | null,
 ): AnexoEmitido | null {
   if (piezas.length === 0) return null;
   const firma = firmaDePiezas(piezas);
   if (!firma) return null;
-  const iguales = emitidos.filter((a) => firmaDePiezas(a.piezas, a.especieGlobal) === firma);
+  const propio = normalizarCodigoContrato(permiso ?? "");
+  const deOtroPermiso = (a: AnexoEmitido): boolean => {
+    const suyo = normalizarCodigoContrato(a.permiso ?? "");
+    return Boolean(propio && suyo && suyo !== propio);
+  };
+  const iguales = emitidos.filter((a) => !deOtroPermiso(a) && firmaDePiezas(a.piezas, a.especieGlobal) === firma);
   if (iguales.length === 0) return null;
   const puntaje = (a: AnexoEmitido): number => ((a.despachoIds?.length ?? 0) > 0 ? 2 : 0) + (a.reemplazadoPor ? 0 : 1);
   return [...iguales].sort((a, b) => puntaje(b) - puntaje(a))[0];

@@ -35,13 +35,13 @@ export type EstadoAnexoDelPermiso =
 /** Quiénes pasan un anexo al libro: lo mismo que exige la ruta (ADR-437). */
 export const puedePasarAlLibro = (rol: string | null): boolean => rol === "admin" || rol === "owner";
 
-export function useAnexoAlLibro(piezas: readonly PiezaCubicada[]) {
+export function useAnexoAlLibro(piezas: readonly PiezaCubicada[], permiso?: string | null) {
   const [token, setToken] = useState(0);
   const { lista, cargando } = useAnexosEmitidos(token);
   const rol = useMiRol();
   const recargar = useCallback(() => setToken((t) => t + 1), []);
 
-  const anexo = useMemo(() => anexoGuardadoDelPermiso(piezas, lista), [piezas, lista]);
+  const anexo = useMemo(() => anexoGuardadoDelPermiso(piezas, lista, permiso), [piezas, lista, permiso]);
   const conDespachos = (anexo?.despachoIds?.length ?? 0) > 0;
   const idAnexo = anexo?.id ?? null;
 

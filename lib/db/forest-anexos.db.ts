@@ -122,6 +122,9 @@ export const ForestAnexosDB = {
             /* El croquis de la trasera: el que viene, o el que ya tenía si
                las piezas no cambiaron (ver `traseraQueSigue`). */
             trasera: traseraQueSigue(existente, input),
+            /* El permiso (ADR-519): el que viene; sin dato, el que ya tenía —
+               re-bajar el mismo papel desde otra pantalla no lo suelta. */
+            permiso: input.permiso !== undefined ? input.permiso : existente?.permiso,
             id: existente?.id ?? input.id,
             createdAt: existente?.createdAt,
             createdBy: existente?.createdBy ?? user,
@@ -142,7 +145,7 @@ export const ForestAnexosDB = {
       action: existia ? "ctp_anexo04_update" : "ctp_anexo04_emit",
       entity: "ForestAnexo04",
       entityId: registro.id,
-      detail: `${existia ? "Actualizó" : "Emitió"} el ${etiquetaEmision(registro)} · ${registro.hojas} hoja(s) · ${registro.totalPiezas} piezas · ${registro.totalM3} m³`,
+      detail: `${existia ? "Actualizó" : "Emitió"} el ${etiquetaEmision(registro)} · ${registro.hojas} hoja(s) · ${registro.totalPiezas} piezas · ${registro.totalM3} m³${registro.permiso ? ` · permiso ${registro.permiso}` : ""}`,
       user,
     });
     return registro;

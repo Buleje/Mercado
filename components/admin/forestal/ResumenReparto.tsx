@@ -158,8 +158,8 @@ function ThAyuda({ children, ayuda, alinear = "right" }: { children: ReactNode; 
 function tenantSlug(): string {
   try { return localStorage.getItem("active-tenant-slug") ?? "main"; } catch { return "main"; }
 }
-/** Derivados del lote de aserrada: `…-{slug}-precio`, `-meta`, `-rolliza`. */
-const claveLocal = (sufijo: string) => `buleje-cubicacion-${tenantSlug()}${sufijo}`;
+/** Derivados del lote de aserrada: `…-{slug}-precio`, `-meta`, `-rolliza` — la misma clave que escriben el cubicador y `sembrarBloques` (`slugKey`). */
+const claveLocal = (sufijo: string) => slugKey(sufijo);
 /**
  * El lote de TROZAS tiene el slug al final (`buleje-cubicacion-trozas-{slug}`),
  * no el patrón de los derivados. No es un capricho: es otro lote, no un anexo
@@ -1054,6 +1054,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     etiqueta: string;
     /** Cuántos bloques de cada clase aportaron piezas a este anexo (checklist). */
     procedencia: ProcedenciaBloques;
+    /** El permiso del papel, si sale de UN permiso (ADR-519): se guarda con el emitido. */
+    permiso?: string | null;
   } | null>(null);
   const [bajando, setBajando] = useState<"pdf" | "excel" | null>(null);
   const [errorBajar, setErrorBajar] = useState<string | null>(null);
@@ -2256,6 +2258,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                 especie: e.especie,
                 etiqueta: b.bloque.etiqueta || "Sin etiqueta",
                 procedencia: esAserradaDirecta(b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
+                permiso: b.bloque.permiso ?? null,
               })}
               /* El papel de UNA jornada: el Libro se registra día por día, así que
                  el anexo del día 2 no puede traer las piezas del día 1 (ADR-405). */
@@ -2264,6 +2267,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                 especie: e.especie,
                 etiqueta: `${b.bloque.etiqueta || "Sin etiqueta"} · día ${dia}`,
                 procedencia: esAserradaDirecta(b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
+                permiso: b.bloque.permiso ?? null,
               })}
               anexoElegidos={seleccionAnexo}
               onAlternarAnexo={alternarSeleccionAnexo}
@@ -2350,7 +2354,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             <AnexoPorPermiso
               anexos={anexosVista}
               precioDe={precioDe}
-              onAbrir={(piezas, etiqueta, especie) => {
+              onAbrir={(piezas, etiqueta, especie, permiso) => {
                 /* Con «Marcado» o «Por distribuir», la procedencia sale de los
                    bloques que de verdad aportaron líneas a ESTE papel. */
                 const elegido = modoAnexo === "todo" ? undefined : anexosVista.find((a) => a.label === etiqueta);
@@ -2358,6 +2362,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                   piezas,
                   especie,
                   etiqueta,
+                  permiso,
                   /* Un permiso puede juntar bloques de troza y de aserrada
                      directa: el checklist tiene que decir de cuáles salió. */
                   procedencia: elegido ? procedenciaDeAnexo(elegido) : {
@@ -2508,6 +2513,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           rows={anexoDe.piezas}
           piezasLote={piezas}
           especieGlobal={anexoDe.especie}
+          permiso={anexoDe.permiso}
           procedencia={anexoDe.procedencia}
           cuadre={cuadrePapel}
           /* Revisar el cuadre es corregir la distribución, que está detrás:

@@ -47,6 +47,13 @@ export interface AnexoEmitido {
   especieGlobal?: string;
   /** Despacho del Libro CTP del que salió, si se emitió desde ahí. */ ctpEntryId?: string;
   /**
+   * El permiso del que salió, si se emitió desde un permiso de la Distribución
+   * (ADR-519). Al pasarlo al libro, la guía sólo se atribuye a corridas de ese
+   * permiso. Ausente en los de antes y en los que no salieron de un permiso:
+   * esos se registran como siempre.
+   */
+  permiso?: string | null;
+  /**
    * Las líneas de Despacho que registraron en el libro la salida de este papel
    * (ADR-446, «Guías sin registrar»). Vacío o ausente = el libro todavía no la
    * tiene. Si esos despachos se anulan, el anexo vuelve a estar pendiente: se
@@ -240,6 +247,8 @@ export interface EntradaEmision {
   totalManualM3?: number | null;
   especieGlobal?: string;
   ctpEntryId?: string;
+  /** El permiso del que salió (ver `AnexoEmitido.permiso`). */
+  permiso?: string | null;
   /** La parte trasera que viajó con el papel (ver `AnexoEmitido.trasera`). */
   trasera?: TraseraGuardada | null;
   fecha?: string;
@@ -283,6 +292,8 @@ export function construirEmision(input: EntradaEmision): AnexoEmitido {
     piezas,
     especieGlobal: input.especieGlobal,
     ctpEntryId: input.ctpEntryId,
+    /* Sólo si hay uno: un emitido es un JSON dentro de la bandeja del tenant. */
+    ...(input.permiso?.trim() ? { permiso: input.permiso.trim() } : {}),
     ...(input.trasera && input.trasera.piezas.length > 0 ? { trasera: input.trasera } : {}),
     createdAt: input.createdAt ?? ahora,
     createdBy: input.createdBy,

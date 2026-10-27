@@ -34,6 +34,8 @@ import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestAnexosDB } from "./forest-anexos.db";
+import { permisosDeCorridasPorId } from "./forest-ctp-permiso-corrida";
+import { permisoAjeno } from "@/lib/forestal/anexo-a-despacho";
 import { agregarPnl, decidirMargen, type FilaPnl, type MargenMotivo, type PnlAgregado } from "@/lib/forestal/ctp-pnl";
 import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
@@ -186,8 +188,13 @@ export class ForestCtpDespachoDB {
        son un KV que se lee con el cliente global, y adentro pedirían una
        segunda conexión del pool mientras la tx retiene la suya. */
     const cierres = await ForestCtpCierreDB.list(tenantId);
+    /* El permiso de la guía (ADR-519) vive en la bandeja de anexos, que es otro
+       KV: se lee también afuera. Una línea que no salió de un anexo con
+       permiso no tiene ninguno y se reasigna como siempre. */
+    const permisoGuia =
+      (await ForestAnexosDB.list(tenantId)).find((a) => a.despachoIds?.includes(despachoEntryId))?.permiso?.trim() || null;
     const escritos = await prisma.$transaction(
-      (tx) => ForestCtpDespachoDB.setOrigenesEnTx(tx, tenantId, despachoEntryId, origenes, user, { cierres }),
+      (tx) => ForestCtpDespachoDB.setOrigenesEnTx(tx, tenantId, despachoEntryId, origenes, user, { cierres, permisoGuia }),
       CTP_TX_OPTS,
     );
     await ForestCtpDespachoDB.despuesDeOrigenes(tenantId, despachoEntryId, escritos, user);
@@ -211,6 +218,7 @@ export class ForestCtpDespachoDB {
    *
    * `cierres` los lee el llamador ANTES de abrir la transacción
    * (`ForestCtpCierreDB.list`), por la misma razón que en `setConsumosEnTx`.
+   * `permisoGuia` (ADR-519), el del anexo que registró la línea, también.
    */
   static async setOrigenesEnTx(
     tx: Prisma.TransactionClient,
@@ -218,7 +226,7 @@ export class ForestCtpDespachoDB {
     despachoEntryId: string,
     origenes: OrigenInput[],
     user: string,
-    { cierres }: { cierres: CtpCierrePeriodo[] },
+    { cierres, permisoGuia }: { cierres: CtpCierrePeriodo[]; permisoGuia?: string | null },
   ): Promise<OrigenesEscritos> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!despachoEntryId) throw new Error("despachoEntryId is required");
@@ -262,7 +270,7 @@ export class ForestCtpDespachoDB {
       where: { id: despachoEntryId, tenantId, deletedAt: null },
       select: {
         id: true, section: true, quantity: true, unit: true, productType: true, speciesCommon: true, lineNo: true,
-        codigoProducto: true,
+        codigoProducto: true, gtfNumber: true,
       },
     });
     if (!despacho) throw new Error("Línea de despacho no encontrada");
@@ -306,6 +314,25 @@ export class ForestCtpDespachoDB {
         "TENANT_MISMATCH",
         { lineas: noProduccion.map((c) => c.lineNo) },
       );
+    }
+
+    // 3b. El permiso (ADR-519): una línea que salió de un Anexo 04 con permiso
+    //     sólo sale de corridas de ese permiso — la misma regla que la
+    //     propuesta y `registrarTanda`, ahora al reasignar a mano. Con las
+    //     corridas ya lockeadas: una troza vinculada mientras tanto no se cuela.
+    if (permisoGuia?.trim() && ids.length > 0) {
+      const permisos = await permisosDeCorridasPorId(tx, tenantId, ids);
+      for (const c of [...corridas].sort((a, b) => a.lineNo - b.lineNo)) {
+        const ajeno = permisoAjeno({ permisos: permisos.get(c.id) ?? [] }, permisoGuia);
+        if (!ajeno) continue;
+        throw new CtpInvariantError(
+          `La corrida N° ${c.lineNo} es del permiso ${ajeno.codigo ?? "sin código"} y esta salida es de la guía ` +
+            `${despacho.gtfNumber ?? "sin número"}, del permiso ${permisoGuia.trim()}: una guía sale de la madera de su permiso. ` +
+            "Elige una corrida de su permiso.",
+          "PERMISO_DISTINTO",
+          { despachoEntryId, corridaId: c.id, permisoCorrida: ajeno.codigo, permisoGuia: permisoGuia.trim() },
+        );
+      }
     }
 
     // 4. Mismo producto y misma unidad: atribuir tablones a un despacho de

@@ -9,6 +9,8 @@ import {
   TOL_RESTO_M3,
   anexoRegistrado,
   clasificarAnexos,
+  claveDeGrupo,
+  corridasDeOtroPermiso,
   esMonton,
   faltaConfirmar,
   fechaCorta,
@@ -47,6 +49,7 @@ import { ClaveOcupadaError, PlatformSettingsDB } from "./platform-settings.db";
 import { esEsperaDeLockVencida } from "@/lib/errores/codigo-pg";
 import { esChoqueDeLocks } from "@/lib/forestal/ctp-api-errors";
 import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
+import { permisosDeCorridas } from "./forest-ctp-permiso-corrida";
 
 /**
  * forest-ctp-guia-desde-anexo.db — «Guías sin registrar» (ADR-446): la salida
@@ -93,7 +96,8 @@ const fechaIso = (d: Date) => d.toISOString().slice(0, 10);
 
 type Lector = Pick<
   Prisma.TransactionClient,
-  "forestCtpEntry" | "forestCtpDespachoOrigen" | "forestCtpReproceso" | "forestCtpPaquete" | "forestCtpApartado" | "forestCtpConsumo"
+  | "forestCtpEntry" | "forestCtpDespachoOrigen" | "forestCtpReproceso" | "forestCtpPaquete" | "forestCtpApartado" | "forestCtpConsumo"
+  | "woodEntry" | "forestContrato"
 >;
 
 export interface PartidoDeMonton {
@@ -208,17 +212,20 @@ async function estadoDelLibro(client: Lector, tenantId: string): Promise<EstadoD
     select: {
       id: true, lineNo: true, entryDate: true, speciesCommon: true, productType: true, presentacion: true,
       unit: true, usadoAt: true, volumeInputM3: true, duenoMadera: true, titularNombre: true,
+      originCode: true, contratoId: true,
     },
   });
   const ids = corridas.map((c) => c.id);
   if (ids.length === 0) return { corridas: [], stock: Object.fromEntries(await ForestCtpDB.stockPorProducto(client, tenantId)) };
 
-  const consumos = await client.forestCtpConsumo.groupBy({
-    by: ["ctpEntryId"],
+  /* Cada consumo con su guía de ingreso: dice que la corrida tiene materia
+     prima y de qué permiso es su madera (ADR-519). */
+  const consumos = await client.forestCtpConsumo.findMany({
     where: { tenantId, ctpEntryId: { in: ids } },
-    _count: { _all: true },
+    select: { ctpEntryId: true, woodEntryId: true },
   });
-  const conConsumos = new Set(consumos.filter((c) => c._count._all > 0).map((c) => c.ctpEntryId));
+  const conConsumos = new Set(consumos.map((c) => c.ctpEntryId));
+  const permisos = await permisosDeCorridas(client, tenantId, corridas, consumos);
   const paquetes = await client.forestCtpPaquete.findMany({
     where: { tenantId, ctpEntryId: { in: ids }, deletedAt: null },
     orderBy: { codigo: "asc" },
@@ -275,6 +282,7 @@ async function estadoDelLibro(client: Lector, tenantId: string): Promise<EstadoD
       sinOrigen: !(Number(c.volumeInputM3 ?? 0) > 0) && !conConsumos.has(c.id),
       duenoMadera: c.duenoMadera,
       titularNombre: c.titularNombre,
+      permisos: permisos.get(c.id) ?? [],
       paquetes: propios.map((p) => ({
         id: p.id,
         codigo: p.codigo,
@@ -359,7 +367,11 @@ async function despachosDeLaGuia(client: Lector, tenantId: string, gtf: string) 
 function entradaDeLinea(anexo: AnexoEmitido, l: LineaPropuesta, user: string): CtpEntryInput {
   const nota =
     `Salida registrada desde el Anexo 04 N° ${anexo.numero || "s/n"} del ${fechaCorta(anexo.fecha)}` +
-    (l.origen ? "" : " · sin corrida de origen: el libro no tiene producción de ese tipo para cubrirla");
+    (l.origen
+      ? ""
+      : l.sinCorridaDelPermiso
+        ? ` · sin corrida de origen: no hay producción del permiso ${l.sinCorridaDelPermiso} para cubrirla`
+        : " · sin corrida de origen: el libro no tiene producción de ese tipo para cubrirla");
   return {
     section: "despacho",
     /* Mediodía UTC: el día sale igual formateado en UTC (convención del libro)
@@ -890,9 +902,29 @@ export class ForestCtpGuiaDesdeAnexoDB {
               },
             };
           }
+          const estadoTx = await estadoDelLibro(tx, tenantId);
+          /* El permiso (ADR-519), con el libro de BAJO los locks: ninguna
+             corrida de la que sale esta guía —las de la propuesta y las que
+             eligió el operador para los grupos de ESTA guía (una elección vieja
+             de un grupo que ya no está la ignora también `proponerEn`)— puede
+             ser de otro permiso que el del anexo (una troza de otro título
+             vinculada mientras tanto la cambia). */
+          const gruposDeLaGuia = new Set(propuesta.grupos.map((g) => g.clave));
+          const [ajena] = corridasDeOtroPermiso(estadoTx, a.permiso, [
+            ...propuesta.lineas.map((l) => l.origen?.corridaId).filter((x): x is string => Boolean(x)),
+            ...(elecciones ?? []).filter((e) => gruposDeLaGuia.has(claveDeGrupo(e.especie, e.tipo))).flatMap((e) => e.corridas),
+          ]);
+          if (ajena) {
+            throw new CtpInvariantError(
+              `La corrida N° ${ajena.lineNo} es del permiso ${ajena.permiso ?? "sin código"} y la guía ${a.gtf} es del permiso ${a.permiso?.trim()}: ` +
+                "una guía sale de la madera de su permiso. Elige corridas de su permiso o déjalo sin atribuir.",
+              "PERMISO_DISTINTO",
+              { anexoId, corridaId: ajena.corridaId, permisoCorrida: ajena.permiso, permisoGuia: a.permiso?.trim() ?? null },
+            );
+          }
           /* Bajo los locks, la misma propuesta: si el libro cambió desde la
              lectura de afuera, no se registra algo que el operador no vio. */
-          const bajoLock = proponerDespachoDeAnexo(a, await estadoDelLibro(tx, tenantId), {
+          const bajoLock = proponerDespachoDeAnexo(a, estadoTx, {
             elecciones,
             claveStock: ForestCtpDB.claveDeStock,
           });
@@ -987,6 +1019,7 @@ export class ForestCtpGuiaDesdeAnexoDB {
         detail:
           `Registró la guía ${anexo.gtf} desde el ${etiquetaEmision(anexo)}: ${resultado.despachos.length} línea(s) de Despacho · ` +
           `${m3(propuesta.totalM3)} · ${m3(propuesta.atribuidoM3)} con corrida de origen · ${m3(propuesta.sinAtribuirM3)} sin atribuir` +
+          (anexo.permiso?.trim() ? ` · sólo corridas del permiso ${anexo.permiso.trim()}` : "") +
           (resultado.reemplazados.length ? ` · ${resultado.reemplazados.length} anexo(s) de la misma guía quedan reemplazados` : ""),
         user,
       });

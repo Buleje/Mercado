@@ -24,6 +24,13 @@ export function useAnexo04Salidas(ctx: {
   especieGlobal?: string;
   ctpEntryId?: string;
   /**
+   * El permiso de la Distribución del que sale el papel (ADR-519): viaja a la
+   * bandeja para que, al pasarlo al libro, la guía sólo se atribuya a corridas
+   * de ese permiso. `null` (bloque sin permiso) lo borra; `undefined` (sin
+   * Distribución detrás) no lo manda y el registro conserva el suyo.
+   */
+  permiso?: string | null;
+  /**
    * Volumen total declarado a mano (ver `Anexo04Opts.totalManualM3`): viaja
    * al PDF/Excel para que lo descargado sea igual al preview, y desde
    * 2026-09-09 **también a la bandeja**, en su propio campo.
@@ -46,7 +53,7 @@ export function useAnexo04Salidas(ctx: {
   /** Se llama cuando la bandeja cambió (para releerla). */
   onRegistrado: () => void;
 }) {
-  const { filas, datos, especieGlobal, ctpEntryId, totalManualM3, trasera, onAviso, onRegistrado } = ctx;
+  const { filas, datos, especieGlobal, ctpEntryId, permiso, totalManualM3, trasera, onAviso, onRegistrado } = ctx;
   const [generando, setGenerando] = useState(false);
 
   /**
@@ -67,6 +74,9 @@ export function useAnexo04Salidas(ctx: {
         unidadV: d.unidadV, modo: d.modo, especieGlobal: especieGlobal ?? null,
         ctpEntryId: ctpEntryId ?? null, piezas,
         totalManualM3: totalManual ?? null,
+        /* `null` = el bloque quedó «sin permiso»: lo borra del registro.
+           `undefined` (las pantallas sin Distribución) = conserva el suyo. */
+        ...(permiso !== undefined ? { permiso: permiso?.trim() || null } : {}),
         /* Sólo si hay: sin el campo, el servidor conserva la que el registro
            ya tenía si las piezas no cambiaron. */
         ...(traseraGuardada ? { trasera: traseraGuardada } : {}),
@@ -78,7 +88,7 @@ export function useAnexo04Salidas(ctx: {
         window.dispatchEvent(new Event(EVENTO_ANEXO_GUARDADO));
       })
       .catch((err) => onAviso?.(`El PDF salió, pero no quedó en el historial (${String(err).slice(0, 60)}).`, "error"));
-  }, [especieGlobal, ctpEntryId, onAviso, onRegistrado]);
+  }, [especieGlobal, ctpEntryId, permiso, onAviso, onRegistrado]);
 
   const descargarPdf = useCallback(() => {
     setGenerando(true);

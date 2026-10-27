@@ -77,7 +77,7 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas, trasera,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, permiso, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas, trasera,
   cuadre, onVerCuadre, piezasLote,
 }: {
   /**
@@ -106,6 +106,8 @@ export default function Anexo04Modal({
   especieGlobal?: string;
   /** Despacho del Libro que origina la emisión (queda en el historial). */
   ctpEntryId?: string;
+  /** El permiso de la Distribución del que sale este papel (ADR-519): se guarda con el emitido. */
+  permiso?: string | null;
   /**
    * La línea del despacho, para poder mirar su GUÍA al lado del anexo: los dos
    * papeles viajan juntos en el camión y se revisan juntos antes de imprimir.
@@ -322,7 +324,7 @@ export default function Anexo04Modal({
   ];
 
   const { generando, descargarPdf, descargarExcel, descargarResumenPapel, reDescargar, pdfDeLote } = useAnexo04Salidas({
-    filas: filasPapel, datos, especieGlobal: especie, ctpEntryId, totalManualM3: totalManual, trasera: traseraPapel, onAviso,
+    filas: filasPapel, datos, especieGlobal: especie, ctpEntryId, permiso, totalManualM3: totalManual, trasera: traseraPapel, onAviso,
     onRegistrado: () => setHistorialToken((t) => t + 1),
   });
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un

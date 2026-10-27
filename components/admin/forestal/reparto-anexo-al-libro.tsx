@@ -53,8 +53,12 @@ function Linea({ estado }: { estado: EstadoAnexoDelPermiso }) {
   );
 }
 
-export default function AnexoAlLibro({ piezas }: { piezas: readonly PiezaCubicada[] }) {
-  const { estado, puedePasar, rol, recargar } = useAnexoAlLibro(piezas);
+export default function AnexoAlLibro({ piezas, permiso }: {
+  piezas: readonly PiezaCubicada[];
+  /** El permiso de la Distribución (ADR-519): un anexo guardado de OTRO permiso no es éste. */
+  permiso?: string | null;
+}) {
+  const { estado, puedePasar, rol, recargar } = useAnexoAlLibro(piezas, permiso);
   const { abrir, modal } = useFlujoAlLibro(recargar);
   const falta = estado.tipo === "guardado" ? estado : null;
   const motivoApagado = !falta
