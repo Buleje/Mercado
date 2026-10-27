@@ -22,6 +22,10 @@ Recibís **solo el diff + los criterios**, no la conversación: ese es el punto.
 intenta refutar con evidencia directa (grep exacto, SELECT, `getComputedStyle`) antes de
 entrar al reporte — históricamente 7 de 16 hallazgos de auditoría fueron falsos positivos.
 
+**El árbol de trabajo no se toca**: nunca `git stash`, `git checkout -- <ruta>` ni `git restore` para
+comparar con lo viejo — lo viejo es `git show HEAD:<ruta>`. 27-10: un revisor hizo stash + pop con un
+carril de pantalla editando en el mismo checkout; los cambios sin commitear desaparecieron un rato.
+
 ## Modos (el hilo principal indica cuál)
 - **review**: bugs, `tenantId` en cada query, `safeParse`, `requireAdmin`, invalidación de cache,
   totales en backend, tokens del DS, dark/400 px, y «¿qué caso falta?». Un hallazgo = archivo:línea
