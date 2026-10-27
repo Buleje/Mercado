@@ -185,8 +185,16 @@ async function main() {
     log("   🟢 MODO TRABAJO (panel compilado): los cambios de código NO se ven hasta correr `panel-desarrollo`");
   }
 
+  // Panel sólo cuando se pide (Brandon 26-10): en local ya NO se prende al abrir cada sesión
+  // (2,4-5,8 GB aunque el pedido no toque el panel). Lo prenden `panel`, el ícono «Prender panel»
+  // o qa-capturas al verificar. BSM_DEV_AL_INICIAR=1 vuelve al arranque automático; el contenedor
+  // recién clonado (sin node_modules) sigue instalando dependencias en el bloque de abajo.
+  const sinDepsAlInicio = !existsSync(join(projectRoot, "node_modules", ".bin"));
+  if (devStatus === "down" && !sinDepsAlInicio && process.env.BSM_DEV_AL_INICIAR !== "1") {
+    log("   💤 apagado a propósito: se prende con `panel`, el ícono «Prender panel» o al verificar con qa-capturas");
+  }
   // Si dev no arranca, lo lanzamos en BG fire-and-forget
-  if (devStatus === "down") {
+  else if (devStatus === "down") {
     try {
       // stdout/stderr a archivo, NO a /dev/null: si el server arranca roto
       // (DB caida, Prisma desincronizado, puerto tomado) el error tiene que

@@ -63,6 +63,7 @@
  *                                   el resumen; un cuerpo de más de 2.000 caracteres va ENTERO a
  *                                   <salida>/espiado-N-MÉTODO.txt y el reporte trae `cuerpoArchivo`). {"espiar": ["/api/x", "POST", true]}: sólo ese método y lo FRENA con
  *                                   200 {} — probar un botón que escribe sin tocar la base. Al principio rige desde la carga. `"/api/x/*"` = todo lo que cuelga de /api/x.
+ *   {"verTexto": "Apartado 2"}    → baja DENTRO del panel hasta el texto que empieza con eso (centrado)
  *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
  *                                   EMPIEZA con eso (dentro de main o de un diálogo). Para
  *                                   lo que `click` no alcanza: radios segmentados, botones
@@ -173,8 +174,19 @@ async function baseQueResponde() {
   try {
     const escucha = () => /:300[01]\s/.test(execSync("ss -ltnH", { encoding: "utf8" }));
     let ok = escucha();
-    for (let t = 0; !ok && t < 30; t++) {
-      if (t === 0) console.error("[qa-capturas] el dev no escucha todavía: espero hasta 90 s por si se está reiniciando…");
+    /* 26-10: el panel ya no se prende al abrir la sesión (sólo cuando se pide). Si nadie escucha y
+       no hay un dev arrancando, qa-capturas lo prende y espera hasta 3 min (arranque en frío). */
+    let vueltas = 30;
+    let arrancando = true;
+    try { execSync("pgrep -f 'next dev|next-server|dev-with-canary'", { stdio: "ignore" }); } catch { arrancando = false; }
+    if (!ok && !arrancando) {
+      console.error("[qa-capturas] el panel está apagado: lo prendo (1-2 min)… log: /tmp/dev-server.log");
+      const raiz = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+      spawn("bash", ["-c", "setsid nohup npm run dev > /tmp/dev-server.log 2>&1 < /dev/null &"], { cwd: raiz, detached: true, stdio: "ignore" }).unref();
+      vueltas = 60;
+    }
+    for (let t = 0; !ok && t < vueltas; t++) {
+      if (t === 0) console.error(`[qa-capturas] el dev no escucha todavía: espero hasta ${vueltas * 3} s por si se está reiniciando…`);
       await new Promise((r) => setTimeout(r, 3000));
       ok = escucha();
     }
@@ -641,6 +653,31 @@ async function recorrido(t, primero) {
              recuerda abierto se cerraba con el click del segundo tema (05-10, indicadores). */
           const el = visible(page, valor);
           if ((await el.getAttribute("aria-expanded", { timeout: 15_000 })) !== "true") await el.click({ timeout: 15_000 });
+        }
+        else if (tipo === "verTexto") {
+          /* 26-10 (carril de filtros: 4 corridas para llegar a «Apartado 2»): lleva a la vista,
+             centrado, el primer elemento de main o de un diálogo cuyo texto empieza con eso.
+             `rueda` mueve la página entera; esto baja dentro del contenedor del panel. */
+          const ok = await page
+            .waitForFunction(
+              (t) => {
+                const raiz = [...document.querySelectorAll("main, [role=dialog], [role=alertdialog]")];
+                // El más profundo que empieza con el texto: un botón con ícono también tiene hijos.
+                const el = raiz
+                  .flatMap((r) => [...r.querySelectorAll("*")])
+                  .filter((x) => (x.textContent ?? "").trim().startsWith(t))
+                  .sort((a, b) => a.querySelectorAll("*").length - b.querySelectorAll("*").length)[0];
+                if (!el) return false;
+                el.scrollIntoView({ block: "center" });
+                return true;
+              },
+              String(valor),
+              { timeout: 15_000 },
+            )
+            .then(() => true)
+            .catch(() => false);
+          if (!ok) throw new Error(`verTexto: no hay texto que empiece con «${valor}»`);
+          await page.waitForTimeout(300);
         }
         else if (tipo === "clicTexto") {
           /* Espera como `click` (hasta 15 s): las vistas del panel cargan por partes. Sólo

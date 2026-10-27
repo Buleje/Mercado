@@ -165,7 +165,7 @@ if (dirtyLines.length > 0) {
 }
 
 if (commitCount > 0) {
-  messageParts.push(`📊 ${commitCount} commits en esta sesion.`);
+  messageParts.push(`📊 ${commitCount} commits en las últimas 8 h.`);
 }
 
 if (hotFiles.length > 0) {
@@ -174,13 +174,19 @@ if (hotFiles.length > 0) {
   );
 }
 
-messageParts.push("💾 Session state guardado para handoff.");
+// 2026-10-26 (Brandon: «evitar ruido visual»): el resumen salía igual al final de CADA turno.
+// Ahora sólo aparece cuando cambió algo desde el turno anterior; el estado se guarda igual.
+const huella = (archivos, commits, calientes) => [archivos, commits, calientes.join(",")].join("|");
+const huellaAnterior = huella(
+  existingState.filesUncommitted,
+  existingState.commitsThisSession,
+  (existingState.hotFilesDetected || []).map(h => h.file)
+);
+const huellaActual = huella(dirtyLines.length, commitCount, hotFiles.map(([f]) => f));
 
-const response = {
-  continue: true,
-  suppressOutput: false,
-  systemMessage: messageParts.join(" "),
-};
+const response = huellaActual === huellaAnterior || messageParts.length === 0
+  ? { continue: true, suppressOutput: true }
+  : { continue: true, suppressOutput: false, systemMessage: messageParts.join(" ") };
 
 process.stdout.write(JSON.stringify(response));
 process.exit(0);
