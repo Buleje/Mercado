@@ -13,6 +13,7 @@
  * de diagnóstico que no se muestra porque un endpoint tosió no diagnostica nada.
  */
 import { useCallback, useEffect, useState } from "react";
+import { despachosConAnexo } from "@/lib/forestal/anexo04-registro";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { normalizeCtpFicha, requisitosFaltantes } from "@/lib/forestal/ctp-ficha-types";
 import { logger } from "@/lib/logger";
@@ -52,7 +53,7 @@ export function usePuestaEnMarcha(): EstadoPuestaEnMarcha {
       pedir<{ entries?: { id: string; status?: string; gtfNumber?: string | null; valorVenta?: string | null }[] }>(
         "/api/admin/forestal/ctp?section=despacho&take=500",
       ),
-      pedir<{ anexos?: { ctpEntryId?: string }[] }>("/api/admin/forestal/anexos"),
+      pedir<{ anexos?: { ctpEntryId?: string; despachoIds?: string[] }[] }>("/api/admin/forestal/anexos"),
       pedir<{ cierres?: { reabierto?: unknown }[] }>("/api/admin/forestal/ctp/cierre"),
       pedir<{ saldos?: { productos?: { stock?: number }[] } }>("/api/admin/forestal/ctp?saldos=1"),
       pedir<{ ficha?: unknown }>("/api/admin/forestal/ctp-ficha"),
@@ -62,7 +63,7 @@ export function usePuestaEnMarcha(): EstadoPuestaEnMarcha {
     const total = st.totalCount ?? 0;
     const corridas = (prod?.entries ?? []).filter((e) => e.status === "registrado");
     const despachos = (desp?.entries ?? []).filter((e) => e.status === "registrado");
-    const conAnexo = new Set((anexos?.anexos ?? []).map((a) => a.ctpEntryId).filter(Boolean));
+    const conAnexo = despachosConAnexo(anexos?.anexos ?? []);
     /* La ficha entera, no tres campos sueltos: `requisitosFaltantes` necesita
        todos para decir qué papel queda roto y por cuál. */
     const f = normalizeCtpFicha(ficha?.ficha);

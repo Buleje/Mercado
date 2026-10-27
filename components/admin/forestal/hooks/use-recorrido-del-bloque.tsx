@@ -6,6 +6,7 @@ import { button } from "@/components/ui-system/button-variants";
 import { logger } from "@/lib/logger";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { claveMarca, type BloqueDistribuido, type BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
+import type { DistribucionRegistro } from "@/lib/forestal/distribucion-registro";
 import type { EstadoRecorrido } from "@/lib/forestal/recorrido-permiso";
 import RecorridoPermisoModal from "../recorrido/RecorridoPermisoModal";
 import type { EstadoLotesAserrio } from "./use-lotes-aserrio";
@@ -27,8 +28,13 @@ type Aplicar = (bloqueId: string, cambio: (b: BloqueRolliza) => BloqueRolliza) =
 /** Lo que pone la pantalla de la Distribución: el anexo y el guardado son suyos. */
 export interface AccionesDeLaDistribucion {
   piezasDe: (b: BloqueDistribuido) => PiezaCubicada[];
-  abrirAnexo: (b: BloqueDistribuido) => void;
+  abrirAnexo: (b: BloqueDistribuido, emitidoId?: string) => void;
   guardarDistribucion: () => void;
+  /** Abre una distribución guardada en la pantalla (la misma de «Guardadas › Abrir»). */
+  abrirGuardada: (d: DistribucionRegistro) => void;
+  /** Por qué no se pudo guardar (p. ej. 409 «se está registrando una jornada»). */
+  errorGuardar?: string | null;
+  guardando?: boolean;
 }
 
 const URL_DISTRIBUCIONES = "/api/admin/forestal/distribuciones";
@@ -44,6 +50,16 @@ async function libroDeLaGuardada(distribucionId: string, bloqueId: string): Prom
   const campos: Partial<CamposDelLibro> = {};
   for (const k of CAMPOS_DEL_LIBRO) if (b[k] != null) Object.assign(campos, { [k]: b[k] });
   return campos;
+}
+
+/** La distribución GUARDADA que ya tiene este bloque (la más reciente si hubiera varias). */
+async function guardadaConElBloque(bloqueId: string): Promise<DistribucionRegistro | null> {
+  const r = await fetch(URL_DISTRIBUCIONES, { credentials: "include", cache: "no-store" });
+  if (!r.ok) throw new Error(`No se pudieron leer las distribuciones guardadas (HTTP ${r.status})`);
+  const j = (await r.json()) as { distribuciones?: DistribucionRegistro[] };
+  const con = (j.distribuciones ?? []).filter((d) => (d.bloques ?? []).some((b) => b.id === bloqueId));
+  con.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  return con[0] ?? null;
 }
 
 /** `?recorrido=<bloqueId>` abre la ventana de ese bloque (el aviso del cubicador lleva acá). */
@@ -77,16 +93,45 @@ export function useRecorridoDelBloque({
 }) {
   const [abiertoDe, setAbiertoDe] = useState<string | null>(null);
   const enlace = useRef<string | null>(null);
+  /** Lo que se halló al buscar el bloque entre las guardadas (sólo sin distribución abierta). */
+  const [busqueda, setBusqueda] = useState<{ bloqueId: string; d: DistribucionRegistro | null } | null>(null);
+  const abrirGuardada = acciones?.abrirGuardada;
 
   /* El enlace se lee una vez y espera a que el bloque exista (los bloques del
-     dispositivo llegan después del primer render). */
+     dispositivo llegan después del primer render). Si el bloque ya está en una
+     distribución guardada, se abre ESA —la misma de «Guardadas › Abrir»— antes
+     de mostrar la ventana: recargar no puede pedir «guárdala» (duplicaría). */
   useEffect(() => {
     if (enlace.current === null) enlace.current = bloqueDelEnlace() ?? "";
-    if (enlace.current && porId.has(enlace.current)) {
-      setAbiertoDe(enlace.current);
-      enlace.current = "";
+    const id = enlace.current;
+    if (!id || !porId.has(id)) return;
+    enlace.current = "";
+    if (distribucionId || !abrirGuardada) {
+      setAbiertoDe(id);
+      return;
     }
-  }, [porId]);
+    guardadaConElBloque(id)
+      .then((d) => {
+        if (d) abrirGuardada(d);
+      })
+      .catch((err: unknown) => logger.error("[recorrido] buscar la distribución guardada falló", { error: String(err) }))
+      .finally(() => setAbiertoDe(id));
+  }, [porId, distribucionId, abrirGuardada]);
+
+  /* Abierta la ventana sin distribución: ¿el bloque ya pertenece a una guardada? Si sí, no se ofrece «Guardar». */
+  useEffect(() => {
+    if (!abiertoDe || distribucionId) return;
+    let vigente = true;
+    guardadaConElBloque(abiertoDe)
+      .then((d) => vigente && setBusqueda({ bloqueId: abiertoDe, d }))
+      .catch((err: unknown) => {
+        logger.error("[recorrido] buscar la distribución guardada falló", { error: String(err) });
+        if (vigente) setBusqueda({ bloqueId: abiertoDe, d: null });
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [abiertoDe, distribucionId]);
 
   const alEjecutar = useCallback(
     async (estado: EstadoRecorrido | null) => {
@@ -138,9 +183,14 @@ export function useRecorridoDelBloque({
         patio: lotes.trozas,
         onCambio: () => void lotes.recargar(),
         piezas: acciones?.piezasDe(bd) ?? [],
-        abrirAnexo: acciones ? () => acciones.abrirAnexo(bd) : undefined,
+        abrirAnexo: acciones ? (id) => acciones.abrirAnexo(bd, id) : undefined,
       }}
       guardarDistribucion={acciones?.guardarDistribucion}
+      guardando={acciones?.guardando}
+      errorGuardar={acciones?.errorGuardar}
+      buscandoGuardada={!distribucionId && busqueda?.bloqueId !== bd.bloque.id}
+      guardadaExistente={busqueda?.bloqueId === bd.bloque.id ? busqueda.d : null}
+      abrirGuardada={abrirGuardada}
       onEjecutado={(e) => void alEjecutar(e)}
       onClose={() => setAbiertoDe(null)}
     />

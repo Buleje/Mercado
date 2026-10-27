@@ -32,13 +32,16 @@ export interface AccionesDelRecorrido {
   /** Algo se arregló afuera (guía recibida, permiso puesto): releer patio y recorrido. */
   onCambio: () => void;
   piezas: readonly PiezaCubicada[];
-  abrirAnexo?: () => void;
+  /** Con `emitidoId` abre ESE anexo ya guardado (para ver o ponerle la GTF), no uno en blanco. */
+  abrirAnexo?: (emitidoId?: string) => void;
+  /** El anexo guardado del permiso (el del paso «Anexo 04»), si ya hay. */
+  anexoGuardadoId?: string;
   registrar: ReturnType<typeof botonRegistrar>;
   /** En qué paso va el botón: «lote» hasta que el lote exista, después «jornadas». */
   pasoDelBoton: "lote" | "jornadas";
   ejecutando: boolean;
   onRegistrar: () => void;
-  serfor: { datos: readonly DatoSerfor[]; cargando: boolean };
+  serfor: { datos: readonly DatoSerfor[]; cargando: boolean; recargar: () => void };
 }
 
 function BotonAnexo({ abrir, etiqueta }: { abrir?: () => void; etiqueta: string }) {
@@ -100,7 +103,7 @@ export default function RecorridoAccionPaso({ paso, a }: { paso: PasoEnPantalla;
     }
 
     case "anexo":
-      return paso.estado === "no_aplica" ? null : <BotonAnexo abrir={a.abrirAnexo} etiqueta={paso.estado === "hecho" ? "Ver el Anexo 04" : "Abrir el Anexo 04"} />;
+      return paso.estado === "no_aplica" ? null : <BotonAnexo abrir={a.abrirAnexo ? () => a.abrirAnexo?.(paso.estado === "hecho" ? a.anexoGuardadoId : undefined) : undefined} etiqueta={paso.estado === "hecho" ? "Ver el Anexo 04" : "Abrir el Anexo 04"} />;
 
     case "salida":
       if (paso.estado === "no_aplica") return null;
@@ -111,7 +114,7 @@ export default function RecorridoAccionPaso({ paso, a }: { paso: PasoEnPantalla;
             <span className="block text-sm font-bold text-[var(--text-primary)]">Cuando SERFOR te dé el N° de la GTF</span>
             <span className="block text-sm text-[var(--text-secondary)]">Ponlo en el Anexo 04 y pásalo al Libro: la salida queda atada a este permiso.</span>
             <div className="flex flex-wrap items-center gap-2">
-              <BotonAnexo abrir={a.abrirAnexo} etiqueta="Poner el N° de GTF en el Anexo 04" />
+              <BotonAnexo abrir={a.abrirAnexo ? () => a.abrirAnexo?.(a.anexoGuardadoId) : undefined} etiqueta="Poner el N° de GTF en el Anexo 04" />
             </div>
             {a.piezas.length > 0 && <AnexoAlLibro piezas={a.piezas} permiso={a.bd.bloque.permiso ?? null} />}
           </div>

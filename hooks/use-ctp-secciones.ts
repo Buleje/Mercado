@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { applyCtpPeriodParams, ctpPeriodShortLabel, periodoAnterior, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { despachosConAnexo } from "@/lib/forestal/anexo04-registro";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { conContratoId } from "@/lib/forestal/contrato-filtro";
 import { useContratoActivo } from "@/contexts/contrato-activo-context";
@@ -97,9 +98,9 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
     if (section !== "despacho") return new Set<string>();
     try {
       const r = await fetch("/api/admin/forestal/anexos", { credentials: "include", cache: "no-store" });
-      const j: { anexos?: { ctpEntryId?: string }[] } = r.ok ? await r.json() : { anexos: [] };
+      const j: { anexos?: { ctpEntryId?: string; despachoIds?: string[] }[] } = r.ok ? await r.json() : { anexos: [] };
       const lista = j.anexos ?? [];
-      const emitidos = new Set(lista.map((a) => a.ctpEntryId).filter(Boolean) as string[]);
+      const emitidos = despachosConAnexo(lista);
       setConAnexo(emitidos);
       setTotalAnexos(lista.length);
       return emitidos;

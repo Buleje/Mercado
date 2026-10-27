@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useAnexosEmitidos } from "@/hooks/use-anexos-emitidos";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { EVENTO_ANEXO_GUARDADO, useAnexosEmitidos } from "@/hooks/use-anexos-emitidos";
 import { anexoGuardadoDelPermiso } from "@/lib/forestal/anexo-del-permiso-guardado";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
@@ -25,8 +25,15 @@ export function useDatosParaSerfor(
   estado: EstadoRecorrido | null,
   piezas: readonly PiezaCubicada[],
   activo: boolean,
-): { datos: DatoSerfor[]; cargando: boolean } {
-  const { lista, cargando: leyendoAnexos } = useAnexosEmitidos(0);
+): { datos: DatoSerfor[]; cargando: boolean; recargar: () => void } {
+  /* Se relee al guardarse un anexo (el modal del Anexo 04 avisa con el evento) y con «Volver a leer». */
+  const [token, setToken] = useState(0);
+  const recargar = useCallback(() => setToken((t) => t + 1), []);
+  useEffect(() => {
+    window.addEventListener(EVENTO_ANEXO_GUARDADO, recargar);
+    return () => window.removeEventListener(EVENTO_ANEXO_GUARDADO, recargar);
+  }, [recargar]);
+  const { lista, cargando: leyendoAnexos } = useAnexosEmitidos(token);
   const [ultima, setUltima] = useState<GtfDatos | null>(null);
   const [leyendoMolde, setLeyendoMolde] = useState(true);
 
@@ -69,5 +76,5 @@ export function useDatosParaSerfor(
     [estado, permiso, anexo, ultima],
   );
 
-  return { datos, cargando: leyendoMolde || (leyendoAnexos && lista.length === 0) };
+  return { datos, cargando: leyendoMolde || (leyendoAnexos && lista.length === 0), recargar };
 }

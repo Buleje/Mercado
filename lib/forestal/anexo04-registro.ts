@@ -390,3 +390,17 @@ export function etiquetaEmision(e: AnexoEmitido): string {
   const partes = [e.numero ? `N° ${e.numero}` : null, e.gtf ? `GTF ${e.gtf}` : null].filter(Boolean);
   return partes.length ? partes.join(" · ") : "Anexo sin numerar";
 }
+
+/**
+ * Los despachos del Libro que ya tienen su Anexo 04: el que se emitió desde esa
+ * línea (`ctpEntryId`) Y el que se pasó al libro después (`despachoIds`, ADR-446).
+ * Contar sólo el primero pedía «1 sin anexo 04» de una salida que ya lo tenía.
+ */
+export function despachosConAnexo(anexos: readonly Pick<AnexoEmitido, "ctpEntryId" | "despachoIds">[]): Set<string> {
+  const ids = new Set<string>();
+  for (const a of anexos) {
+    if (a.ctpEntryId) ids.add(a.ctpEntryId);
+    for (const d of a.despachoIds ?? []) if (d) ids.add(d);
+  }
+  return ids;
+}

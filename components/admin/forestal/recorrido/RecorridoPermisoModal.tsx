@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { Loader2, RefreshCw, Route, Save } from "@buleje/design-system/icons";
+import { FolderOpen, Loader2, RefreshCw, Route, Save } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
+import type { DistribucionRegistro } from "@/lib/forestal/distribucion-registro";
 import type { BloqueDistribuido } from "@/lib/forestal/cubicacion-reparto";
 import { botonRegistrar, ESTADO_EN_PANTALLA, pasosEnOrden, textoEjecutados } from "@/lib/forestal/recorrido-pantalla";
 import type { EstadoRecorrido } from "@/lib/forestal/recorrido-permiso";
@@ -22,7 +23,7 @@ import RecorridoPaso from "./recorrido-paso";
  * ya existe.
  */
 
-type AccionesBase = Omit<AccionesDelRecorrido, "registrar" | "pasoDelBoton" | "ejecutando" | "onRegistrar" | "serfor" | "distribucionId">;
+type AccionesBase = Omit<AccionesDelRecorrido, "registrar" | "pasoDelBoton" | "ejecutando" | "onRegistrar" | "serfor" | "distribucionId" | "anexoGuardadoId">;
 
 export default function RecorridoPermisoModal({
   bd,
@@ -31,6 +32,11 @@ export default function RecorridoPermisoModal({
   puedeDeclarar,
   acciones,
   guardarDistribucion,
+  guardando,
+  errorGuardar,
+  buscandoGuardada,
+  guardadaExistente,
+  abrirGuardada,
   aboveModals,
   onEjecutado,
   onClose,
@@ -42,6 +48,14 @@ export default function RecorridoPermisoModal({
   acciones: AccionesBase;
   /** Sin distribución guardada no hay recorrido: el botón la guarda. */
   guardarDistribucion?: () => void;
+  guardando?: boolean;
+  /** El servidor rechazó el guardado (409 «se está registrando una jornada», duplicado…). */
+  errorGuardar?: string | null;
+  /** Buscando si el bloque ya está en una distribución guardada. */
+  buscandoGuardada?: boolean;
+  /** La guardada que ya tiene este bloque: se abre, nunca se guarda otra. */
+  guardadaExistente?: DistribucionRegistro | null;
+  abrirGuardada?: (d: DistribucionRegistro) => void;
   aboveModals?: boolean;
   /** El servidor escribió lote o jornadas: la pantalla trae lo escrito. */
   onEjecutado: (estado: EstadoRecorrido | null) => void;
@@ -73,6 +87,7 @@ export default function RecorridoPermisoModal({
         ejecutando: r.ejecutando,
         onRegistrar: () => void onRegistrar(),
         serfor,
+        anexoGuardadoId: pasos.find((p) => p.paso === "anexo")?.ids[0],
       }
     : null;
 
@@ -104,7 +119,7 @@ export default function RecorridoPermisoModal({
           nota={resumen && conProblema ? `Se registró hasta donde se pudo. ${resumen}` : undefined}
         >
           {distribucionId && (
-            <button type="button" onClick={() => void r.recargar()} disabled={r.cargando || r.ejecutando} className={button({ variant: "secondary" })}>
+            <button type="button" onClick={() => { void r.recargar(); serfor.recargar(); }} disabled={r.cargando || r.ejecutando} className={button({ variant: "secondary" })}>
               {r.cargando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <RefreshCw className="h-4 w-4" aria-hidden />}
               Volver a leer
             </button>
@@ -118,11 +133,31 @@ export default function RecorridoPermisoModal({
       <div className={`${MODAL_BODY} space-y-4`} data-recorrido-bloque={bd.bloque.id}>
         {!distribucionId ? (
           <div className="space-y-3 text-sm text-[var(--text-secondary)]">
-            <span className="block">El recorrido se lee de la distribución guardada: guárdala y vuelve a abrir este bloque.</span>
-            {guardarDistribucion && (
-              <button type="button" onClick={guardarDistribucion} className={button({ variant: "primary" })}>
-                <Save className="h-4 w-4" aria-hidden /> Guardar la distribución
-              </button>
+            {buscandoGuardada ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Buscando la distribución guardada…
+              </span>
+            ) : guardadaExistente && abrirGuardada ? (
+              <>
+                <span className="block">Este bloque ya está en la distribución guardada «{guardadaExistente.nombre}»: ábrela para ver su recorrido.</span>
+                <button type="button" data-recorrido-abrir-guardada={guardadaExistente.id} onClick={() => abrirGuardada(guardadaExistente)} className={button({ variant: "primary" })}>
+                  <FolderOpen className="h-4 w-4" aria-hidden /> Abrir la guardada
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="block">El recorrido se lee de la distribución guardada: guárdala y vuelve a abrir este bloque.</span>
+                {guardarDistribucion && (
+                  <button type="button" onClick={guardarDistribucion} disabled={guardando} className={button({ variant: "primary" })}>
+                    {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />} Guardar la distribución
+                  </button>
+                )}
+              </>
+            )}
+            {errorGuardar && (
+              <span role="alert" className="block font-bold text-[var(--data-error-ink)]">
+                {errorGuardar}
+              </span>
             )}
           </div>
         ) : !r.estado && r.cargando ? (

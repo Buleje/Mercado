@@ -77,7 +77,7 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, permiso, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas, trasera,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, ctpEntryId, permiso, declarado, abrirHistorial = false, despacho, procedencia, avisosExtra, rotuloDeLasPiezas, trasera, emitidoId,
   cuadre, onVerCuadre, piezasLote,
 }: {
   /**
@@ -133,6 +133,8 @@ export default function Anexo04Modal({
   rotuloDeLasPiezas?: string;
   /** Descarga el PDF interno detallado (el de siempre, con precios y tipos). */
   onPdfDetallado?: () => void;
+  /** Abre cargado con este anexo YA guardado (para ponerle la GTF): al emitir lo actualiza, no crea otro. */
+  emitidoId?: string;
   onCerrar: () => void;
   onAviso?: (msg: string, tono: "success" | "error") => void;
 }) {
@@ -154,6 +156,7 @@ export default function Anexo04Modal({
   const idPapeles = useId();
   const [, setGtfHtml] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
+  const [errorGuardado, setErrorGuardado] = useState<string | null>(null);
   /** Los emitidos alimentan la bandeja Y el checklist (N° repetido, volumen ya
    *  amparado por otra emisión de la misma guía): por eso se cargan siempre. */
   const { lista: emitidos, cargando: cargandoEmitidos, quitar } = useAnexosEmitidos(historialToken);
@@ -325,6 +328,8 @@ export default function Anexo04Modal({
 
   const { generando, descargarPdf, descargarExcel, descargarResumenPapel, reDescargar, pdfDeLote } = useAnexo04Salidas({
     filas: filasPapel, datos, especieGlobal: especie, ctpEntryId, permiso, totalManualM3: totalManual, trasera: traseraPapel, onAviso,
+    anexoId: emitidoId && origen === `emitido:${emitidoId}` ? emitidoId : undefined,
+    onErrorRegistro: setErrorGuardado,
     onRegistrado: () => setHistorialToken((t) => t + 1),
   });
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
@@ -357,6 +362,16 @@ export default function Anexo04Modal({
     setTotalBuffer(a.totalManualM3 != null ? String(a.totalManualM3).replace(".", ",") : "");
     setVerHistorial(false);
   };
+
+  /* Abierto desde el recorrido para completar un anexo ya guardado: se carga ese, una vez. */
+  const emitidoCargado = useRef(false);
+  useEffect(() => {
+    if (!emitidoId || cargandoEmitidos || emitidoCargado.current) return;
+    emitidoCargado.current = true;
+    const a = emitidos.find((e) => e.id === emitidoId);
+    if (a) cargarEmision(a);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- una sola vez, con la bandeja ya cargada
+  }, [emitidoId, cargandoEmitidos]);
 
   /**
    * Imprime lo que se está viendo. Con la guía activa se imprime SU iframe —el
@@ -398,6 +413,7 @@ export default function Anexo04Modal({
       <Anexo04Acciones
         presentable={presentable}
         generando={generando}
+        errorGuardado={errorGuardado}
         onPdfDetallado={onPdfDetallado}
         onExcel={descargarExcel}
         onResumenPapel={descargarResumenPapel}

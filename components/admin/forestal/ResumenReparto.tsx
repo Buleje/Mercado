@@ -857,7 +857,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         const v = vistaDelBloque(b.bloque.id);
         return v ? piezasFiltradasDelBloque(v.b, v.especie, marcadoEn(marcadas)) : [];
       },
-      abrirAnexo: (b) => {
+      abrirAnexo: (b, emitidoId) => {
         const v = vistaDelBloque(b.bloque.id);
         if (!v) return;
         setAnexoDe({
@@ -866,9 +866,13 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           etiqueta: v.b.bloque.etiqueta || "Sin etiqueta",
           procedencia: esAserradaDirecta(v.b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
           permiso: v.b.bloque.permiso ?? null,
+          emitidoId,
         });
       },
       guardarDistribucion: () => candadoGuardar.conCandado(() => void guardarDistribucion())(),
+      abrirGuardada: abrirDistribucion,
+      errorGuardar: errorGuardarDistribucion,
+      guardando: guardandoDistribucion,
     },
   });
   const reprocesos = useMemo(() => sugerenciasDeReproceso(distPorTipo), [distPorTipo]);
@@ -1085,6 +1089,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     procedencia: ProcedenciaBloques;
     /** El permiso del papel, si sale de UN permiso (ADR-519): se guarda con el emitido. */
     permiso?: string | null;
+    /** El anexo YA guardado que se abre (recorrido del permiso): se completa, no se crea otro. */
+    emitidoId?: string;
   } | null>(null);
   const [bajando, setBajando] = useState<"pdf" | "excel" | null>(null);
   const [errorBajar, setErrorBajar] = useState<string | null>(null);
@@ -2543,6 +2549,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           piezasLote={piezas}
           especieGlobal={anexoDe.especie}
           permiso={anexoDe.permiso}
+          emitidoId={anexoDe.emitidoId}
           procedencia={anexoDe.procedencia}
           cuadre={cuadrePapel}
           /* Revisar el cuadre es corregir la distribución, que está detrás:

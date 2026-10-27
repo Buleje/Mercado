@@ -13,8 +13,10 @@ import { button } from "@/components/ui-system/button-variants";
 const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 export default function Anexo04Acciones({
-  presentable, generando, onPdfDetallado, onExcel, onResumenPapel, onImprimir, onDescargar, extra,
+  presentable, generando, onPdfDetallado, onExcel, onResumenPapel, onImprimir, onDescargar, extra, errorGuardado,
 }: {
+  /** Por qué el papel no quedó en la bandeja (el PDF sí salió). */
+  errorGuardado?: string | null;
   /** Salidas de más, a la izquierda del pie («Un anexo por tipo»). */
   extra?: ReactNode;
   presentable: boolean;
@@ -29,6 +31,11 @@ export default function Anexo04Acciones({
 }) {
   return (
     <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+      {errorGuardado && (
+        <span role="alert" className="mr-auto text-sm font-bold text-[var(--data-error-ink)]">
+          {errorGuardado}
+        </span>
+      )}
       {extra}
       {onPdfDetallado && (
         <button type="button" onClick={onPdfDetallado} title="El PDF interno de siempre: tipos, precios y subtotales" className={BTN}>

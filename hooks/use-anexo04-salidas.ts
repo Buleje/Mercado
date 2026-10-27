@@ -50,10 +50,14 @@ export function useAnexo04Salidas(ctx: {
    */
   trasera?: TraseraParaPdf | null;
   onAviso?: (msg: string, tono: "success" | "error") => void;
+  /** Para actualizar un anexo YA guardado (no crear otro con el mismo papel). */
+  anexoId?: string;
+  /** El motivo por el que la bandeja no recibió el papel (o `null` al lograrlo): se muestra donde se guarda. */
+  onErrorRegistro?: (mensaje: string | null) => void;
   /** Se llama cuando la bandeja cambió (para releerla). */
   onRegistrado: () => void;
 }) {
-  const { filas, datos, especieGlobal, ctpEntryId, permiso, totalManualM3, trasera, onAviso, onRegistrado } = ctx;
+  const { filas, datos, especieGlobal, ctpEntryId, permiso, totalManualM3, trasera, onAviso, onRegistrado, anexoId, onErrorRegistro } = ctx;
   const [generando, setGenerando] = useState(false);
 
   /**
@@ -69,6 +73,7 @@ export function useAnexo04Salidas(ctx: {
       credentials: "include",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
+        ...(anexoId ? { id: anexoId } : {}),
         numero: d.numero, gtf: d.gtf, empresa: d.empresa, firmante: d.firmante,
         documento: d.documento, cargo: d.cargo, observaciones: d.observaciones,
         unidadV: d.unidadV, modo: d.modo, especieGlobal: especieGlobal ?? null,
@@ -82,13 +87,23 @@ export function useAnexo04Salidas(ctx: {
         ...(traseraGuardada ? { trasera: traseraGuardada } : {}),
       }),
     })
-      .then((r) => {
-        if (!r.ok) return;
+      .then(async (r) => {
+        if (!r.ok) {
+          const j = (await r.json().catch(() => ({}))) as { message?: string; error?: string };
+          const motivo = j.message ?? j.error ?? `HTTP ${r.status}`;
+          onErrorRegistro?.(`No quedó guardado en la bandeja: ${motivo}`);
+          onAviso?.(`El PDF salió, pero no quedó en el historial: ${motivo}`, "error");
+          return;
+        }
+        onErrorRegistro?.(null);
         onRegistrado();
         window.dispatchEvent(new Event(EVENTO_ANEXO_GUARDADO));
       })
-      .catch((err) => onAviso?.(`El PDF salió, pero no quedó en el historial (${String(err).slice(0, 60)}).`, "error"));
-  }, [especieGlobal, ctpEntryId, permiso, onAviso, onRegistrado]);
+      .catch((err) => {
+        onErrorRegistro?.(`No quedó guardado en la bandeja (${String(err).slice(0, 60)}).`);
+        onAviso?.(`El PDF salió, pero no quedó en el historial (${String(err).slice(0, 60)}).`, "error");
+      });
+  }, [especieGlobal, ctpEntryId, permiso, onAviso, onRegistrado, anexoId, onErrorRegistro]);
 
   const descargarPdf = useCallback(() => {
     setGenerando(true);
