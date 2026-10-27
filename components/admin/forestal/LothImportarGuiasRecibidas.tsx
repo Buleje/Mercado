@@ -8,22 +8,56 @@
  * ingreso es la fuente (no se vuelve a consultar SERFOR).
  */
 
-import { useId } from "react";
+import { useEffect, useId, useMemo } from "react";
 import { AlertTriangle, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { fechaConDia } from "@/lib/forestal/loth-tablero-reporte";
-import type { GrupoCandidatas } from "@/lib/forestal/loth-importar-guia-tipos";
+import type { GrupoCandidatas, GuiaCandidata } from "@/lib/forestal/loth-importar-guia-tipos";
 import type { ImportarGuias } from "./hooks/use-importar-guias";
 import { ChipPermiso } from "./LothImportarGuiasPermiso";
 import { Btn } from "./ctp-shared";
 import { DataTable } from "@buleje/design-system";
+import {
+  BarraFiltrosTabla,
+  FiltroEnCabecera,
+  useFiltrosTabla,
+  type ColumnaFiltro,
+} from "./filtros-tabla-forestal";
+
+/** Una guía con el título del grupo del que sale: lo que filtra el embudo. */
+type FilaRecibida = GuiaCandidata & { titulo: string };
+
+const COLUMNAS: readonly ColumnaFiltro<FilaRecibida>[] = [
+  { id: "titulo", label: "Título habilitante", tipo: "multi", valor: (x) => x.titulo },
+  { id: "gtf", label: "N° de GTF", tipo: "texto", valor: (x) => x.gtfNumber },
+  { id: "registro", label: "N° de registro", tipo: "texto", valor: (x) => x.numeroRegistro ?? "" },
+  { id: "fecha", label: "Fecha", tipo: "fecha", numero: (x) => x.fecha ?? "" },
+  { id: "especie", label: "Especie", tipo: "multi", valor: (x) => (x.especies.length ? x.especies : ["—"]) },
+  { id: "piezas", label: "Trozas", tipo: "rango", numero: (x) => x.piezas },
+  { id: "m3", label: "m³", tipo: "rango", numero: (x) => x.volumenM3 ?? 0, unidad: "m³", paso: 0.0001 },
+];
 
 const CASILLA =
   "h-5 w-5 shrink-0 cursor-pointer accent-[var(--accent)] disabled:cursor-not-allowed";
 
 export default function LothImportarGuiasRecibidas({ s }: { s: ImportarGuias }) {
   const { cargando, error, datos } = s.candidatas;
+  const filas = useMemo<FilaRecibida[]>(
+    () => (datos?.grupos ?? []).flatMap((g) => g.guias.map((x) => ({ ...x, titulo: g.titulo }))),
+    [datos],
+  );
+  const f = useFiltrosTabla(filas, COLUMNAS);
+  const visibles = useMemo(() => new Set(f.filtradas.map((x) => x.woodEntryId)), [f.filtradas]);
+  const hayFiltro = f.filtradas.length !== filas.length;
+  /* Lo que el filtro esconde sale de lo elegido: se importa sólo lo que se ve. */
+  const escondidasElegidas = useMemo(
+    () => filas.filter((x) => !visibles.has(x.woodEntryId) && s.elegidas.has(x.woodEntryId)).map((x) => x.woodEntryId),
+    [filas, visibles, s.elegidas],
+  );
+  useEffect(() => {
+    if (escondidasElegidas.length > 0) s.alternar(escondidasElegidas, false);
+  }, [escondidasElegidas, s]);
 
   if (cargando && !datos)
     return (
@@ -54,9 +88,16 @@ export default function LothImportarGuiasRecibidas({ s }: { s: ImportarGuias }) 
       </p>
     );
 
-  const todas = datos.grupos.flatMap((g) =>
-    g.guias.filter((x) => !x.anulada).map((x) => x.woodEntryId),
-  );
+  /* Cada grupo con sólo las guías que pasan el filtro; sus cifras se recalculan si hay filtro. */
+  const grupos = datos.grupos
+    .map((g) => {
+      const guias = g.guias.filter((x) => visibles.has(x.woodEntryId));
+      return hayFiltro
+        ? { ...g, guias, piezas: guias.reduce((a, x) => a + x.piezas, 0), volumenM3: guias.reduce((a, x) => a + (x.volumenM3 ?? 0), 0) }
+        : g;
+    })
+    .filter((g) => g.guias.length > 0);
+  const todas = grupos.flatMap((g) => g.guias.filter((x) => !x.anulada).map((x) => x.woodEntryId));
   const elegidasTodas = todas.length > 0 && todas.every((id) => s.elegidas.has(id));
 
   return (
@@ -80,10 +121,24 @@ export default function LothImportarGuiasRecibidas({ s }: { s: ImportarGuias }) 
           className="ml-auto"
           onClick={() => s.alternar(todas, !elegidasTodas)}
         >
-          {elegidasTodas ? "Soltar todas" : `Elegir todas (${todas.length})`}
+          {elegidasTodas ? "Soltar todas" : `Elegir todas${hayFiltro ? " las que ves" : ""} (${todas.length})`}
         </Btn>
       </div>
-      {datos.grupos.map((g) => (
+      {filas.length > 1 && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-[var(--text-secondary)]">
+          {COLUMNAS.map((c) => (
+            <span key={c.id} className="inline-flex items-center gap-1">
+              {c.label}
+              <FiltroEnCabecera id={c.id} f={f} compacto />
+            </span>
+          ))}
+          <BarraFiltrosTabla f={f} sinConteo />
+        </div>
+      )}
+      {hayFiltro && grupos.length === 0 && (
+        <p className="p-3 text-sm text-[var(--text-secondary)]">Ninguna guía coincide con los filtros.</p>
+      )}
+      {grupos.map((g) => (
         <GrupoRecibidas key={g.titulo} g={g} s={s} />
       ))}
     </div>
