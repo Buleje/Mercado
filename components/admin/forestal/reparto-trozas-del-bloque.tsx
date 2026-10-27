@@ -19,6 +19,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { volumenLibre } from "@/lib/forestal/lotes-aserrio";
+import { trozasDelBloque } from "@/lib/forestal/trozas-para-bloque";
 import {
   especiesLibres,
   m3DeIds,
@@ -110,7 +111,7 @@ function SelectorDelBloque({ panel, bloque: b, estado, enOtroBloque }: {
       }),
     [hayRegla, libres, reglaPermiso, reglaExige, busqueda, enOtroBloque],
   );
-  const [seleccion, setSeleccion] = useState<Set<string>>(() => new Set(modo.modo === "crear" ? (b.trozaIds ?? []) : []));
+  const [seleccion, setSeleccion] = useState<Set<string>>(() => new Set(modo.modo === "crear" ? trozasDelBloque(b) : []));
   const [ocupado, setOcupado] = useState(false);
   const [quitando, setQuitando] = useState<string | null>(null);
   const [mensajes, setMensajes] = useState<{ tono: "ok" | "aviso" | "error"; texto: string }[]>([]);

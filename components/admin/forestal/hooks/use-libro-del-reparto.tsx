@@ -13,6 +13,7 @@ import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
 import { distConVolumenOficial, repartoOficial } from "@/lib/forestal/reparto-oficial";
 import CtpReprocesoModal from "../CtpReprocesoModal";
 import RepartoCompletarLote from "../reparto-completar-lote";
+import RepartoElegirTrozas from "../reparto-elegir-trozas";
 import { AvisoDelLibro, JornadaLibro } from "../reparto-jornada-libro";
 import { anotarLibroEnLaGuardada } from "../reparto-lotes-sugeridos-api";
 import { useLibroDeBloques } from "./use-libro-de-bloques";
@@ -181,18 +182,22 @@ export function useLibroDelReparto({
   const aviso = (b: BloqueDistribuido): ReactNode => {
     const id = b.bloque.id;
     const plan = planes.get(id);
-    const faltan = plan && !plan.oculto && plan.noDisponibles > 0 && !leyendo(b);
+    const faltan = plan && !plan.oculto && (plan.noDisponibles > 0 || plan.sinAtribuirM3 > 0) && !leyendo(b);
     return (
       <>
         {libro.aviso?.bloqueId === id && <AvisoDelLibro aviso={libro.aviso} onCerrar={libro.cerrarAviso} />}
+        {/* ADR-519 fase 1: qué trozas del grupo ampara de verdad (con el volumen del Libro). */}
+        {(b.bloque.trozaIds ?? []).length > 0 && <RepartoElegirTrozas bd={porId.get(id) ?? b} distribucionId={distribucionId} aplicar={aplicar} />}
         {faltan && (
           <p className="mx-3 mt-2 flex items-center gap-1.5 text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            {plan.noDisponibles} troza{plan.noDisponibles === 1 ? "" : "s"} del bloque ya no {plan.noDisponibles === 1 ? "está libre" : "están libres"} en su lote
+            {plan.noDisponibles > 0
+              ? `${plan.noDisponibles} troza${plan.noDisponibles === 1 ? "" : "s"} del bloque ya no ${plan.noDisponibles === 1 ? "está libre" : "están libres"} en su lote`
+              : "Las trozas elegidas no alcanzan para sus días"}
             {plan.sinAtribuirM3 > 0 ? ` · ${fmtM3(plan.sinAtribuirM3)} m³ sin atribuir` : ""}
             <InfoTip
               title="Sin atribuir"
-              what="Esas trozas entraron a la sierra por otra corrida, se sacaron del lote o no tienen volumen. Las jornadas se registran sólo con las que siguen libres."
+              what="Esas trozas entraron a la sierra por otra corrida, se sacaron del lote o no tienen volumen; o las elegidas no dan la rolliza que piden sus días bajo el tope. Las jornadas se registran sólo con las que siguen libres."
               affects="Nunca se declara producción sobre madera que no está: lo que no alcanza queda sin atribuir."
             />
           </p>

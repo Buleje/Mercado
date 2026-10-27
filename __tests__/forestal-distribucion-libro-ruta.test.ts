@@ -22,6 +22,12 @@ vi.mock("@/lib/db/platform-settings.db", () => ({
   PlatformSettingsDB: {
     get: async (k: string) => H.kv.get(k) ?? null,
     set: async (k: string, v: unknown) => void H.kv.set(k, JSON.parse(JSON.stringify(v))),
+    /* `save`/`remove` leen-cambian-escriben bajo candado (ADR-445): acá, en memoria. */
+    actualizar: async (k: string, cambio: (actual: unknown, tx: unknown) => Promise<{ valor?: unknown; resultado: unknown }> | { valor?: unknown; resultado: unknown }) => {
+      const r = await cambio(H.kv.get(k) ?? null, {});
+      if (r.valor !== undefined) H.kv.set(k, JSON.parse(JSON.stringify(r.valor)));
+      return r.resultado;
+    },
   },
 }));
 

@@ -71,9 +71,10 @@ export async function anotarLoteEnLaGuardada(
   await reescribirLaGuardada(id, (b) => {
     const c = cambios.get(b.id);
     if (!c) return null;
-    /* ADR-505: otras trozas = otras medidas; la copia vieja no las describe. */
+    /* ADR-505: otras trozas = otras medidas; la copia vieja no las describe.
+       ADR-519: tampoco las elegidas, que eran de las trozas viejas. */
     const otras = (c.trozaIds ?? []).join() !== (b.trozaIds ?? []).join();
-    return { ...b, loteId: c.loteId ?? null, trozaIds: c.trozaIds ?? null, ...(otras ? { trozasMedidas: null } : {}) };
+    return { ...b, loteId: c.loteId ?? null, trozaIds: c.trozaIds ?? null, ...(otras ? { trozasMedidas: null, trozasElegidas: null } : {}) };
   });
 }
 
@@ -96,6 +97,16 @@ export async function anotarLibroEnLaGuardada(
           jornadasLibro: bloque.jornadasLibro ?? null,
           complementos: bloque.complementos ?? null,
         },
+  );
+}
+
+/**
+ * Las trozas que el bloque ampara de verdad (ADR-519, fase 1): sólo ese campo,
+ * del bloque que lo eligió. `null` = «todas las del grupo» otra vez.
+ */
+export async function anotarElegidasEnLaGuardada(id: string, bloqueId: string, trozasElegidas: string[] | null): Promise<void> {
+  await reescribirLaGuardada(id, (b) =>
+    b.id !== bloqueId || (b.trozasElegidas ?? []).join() === (trozasElegidas ?? []).join() ? null : { ...b, trozasElegidas },
   );
 }
 

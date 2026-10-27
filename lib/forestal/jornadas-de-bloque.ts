@@ -27,6 +27,7 @@
  */
 import { juntarGrupos, sumarDias, type Jornada } from "./consumo-en-jornadas";
 import {
+  APROVECHABLE_DEFAULT,
   esAserradaDirecta,
   type AsignacionGrupo,
   type BloqueDistribuido,
@@ -36,6 +37,7 @@ import { fmtM3 } from "./cubicacion-formato";
 import type { LoteAserrio, TrozaDelLote } from "./lotes-aserrio";
 import { TEXTO_ESTADO_LOCAL } from "./lotes-por-bloque";
 import { corridasAMedioDeclarar, RENDIMIENTO_TOPE_PCT, topeDeclarableM3, type CorridaAMedioDeclarar } from "./produccion-paquetes";
+import { repartirEnDias, rollizaNecesariaM3, trozasDelBloque } from "./trozas-para-bloque";
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
 /** Un litro: la tolerancia con la que el servidor compara contra el tope. */
@@ -107,10 +109,10 @@ export function clavesCompletadas(
 
 /** El bloque no escribe en el Libro: por qué (o `null` si puede). */
 export function motivoDelBloque(
-  b: Pick<BloqueRolliza, "trozaIds" | "loteId" | "origen">,
+  b: Pick<BloqueRolliza, "trozaIds" | "trozasElegidas" | "loteId" | "origen">,
   lote: LoteParaLibro | null | undefined,
 ): string | null {
-  if (!b.trozaIds || b.trozaIds.length === 0) {
+  if (trozasDelBloque(b).length === 0) {
     return b.origen === "lote"
       ? "Salió de un lote ya creado, sin sus trozas: su producción se registra desde Consumos del Libro."
       : `${TEXTO_ESTADO_LOCAL.manual}.`;
@@ -121,7 +123,7 @@ export function motivoDelBloque(
 }
 
 export function planLibroDeBloque(
-  bd: Pick<BloqueDistribuido, "bloque" | "porDia">,
+  bd: Pick<BloqueDistribuido, "bloque" | "porDia"> & Partial<Pick<BloqueDistribuido, "aprovechablePct">>,
   lote: LoteParaLibro | null | undefined,
   hoy: string,
 ): PlanLibroDeBloque {
@@ -199,8 +201,9 @@ export function planLibroDeBloque(
 
   /* 3 · Las trozas del bloque que siguen libres EN SU LOTE. Lo que el Libro
      dice manda sobre la lista guardada: una pieza consumida por otra corrida
-     ya no es de este bloque, y una que no está en el lote no se mete. */
-  const ids = new Set(b.trozaIds ?? []);
+     ya no es de este bloque, y una que no está en el lote no se mete.
+     ADR-519: si el bloque eligió sus trozas, sólo ésas (`trozasElegidas ?? trozaIds`). */
+  const ids = new Set(trozasDelBloque(b));
   const delBloque = lote.trozas.filter((t) => ids.has(t.id));
   const libres = delBloque
     .filter((t) => !t.consumidaEnId && vol(t) > 0)
@@ -213,8 +216,13 @@ export function planLibroDeBloque(
   const ajenas = [...new Set(delBloque.map((t) => t.consumidaEnId).filter((c): c is string => Boolean(c) && !nuestras.has(c!)))];
   const noDisponibles = Math.max(0, ids.size - libres.length - porAca.length);
   const atribuible = [...libres, ...porAca].reduce((a, t) => a + vol(t), 0);
-  const faltante = r4(Math.max(0, (Number(b.m3) || 0) - atribuible));
-  const sinAtribuirM3 = noDisponibles > 0 && faltante > TOL_GTF_M3 ? faltante : 0;
+  /* Con trozas elegidas el m³ del bloque es el del grupo entero: lo que se
+     compara es lo que las elegidas suman en el lote (las que ya no están se
+     cuentan en `noDisponibles`; su volumen no se inventa). */
+  const conElegidas = (b.trozaIds ?? []).length > 0 && (b.trozasElegidas ?? []).length > 0;
+  const referenciaM3 = conElegidas ? delBloque.reduce((a, t) => a + vol(t), 0) : Number(b.m3) || 0;
+  const faltante = r4(Math.max(0, referenciaM3 - atribuible));
+  let sinAtribuirM3 = noDisponibles > 0 && faltante > TOL_GTF_M3 ? faltante : 0;
 
   /* 4 · Trozas enteras a cada día pendiente, en proporción a lo aserrado. */
   const pendientes = jornadas.filter((j) => j.estado === "lista");
@@ -238,6 +246,27 @@ export function planLibroDeBloque(
       j.estado = "apagada";
       j.motivo = porque;
     }
+  } else if (pendientes.length > 0 && conElegidas) {
+    /* ADR-519: con trozas elegidas el reparto es el MISMO de la propuesta
+       (`repartirEnDias`: la más grande al día al que más le falta según su
+       tope), así propuesta y Libro dicen lo mismo con las mismas trozas. Lo
+       que no alcanza se dice en `sinAtribuirM3`; no se reparte en proporción. */
+    const pct = Number(bd.aprovechablePct ?? b.aprovechablePct) > 0 ? Number(bd.aprovechablePct ?? b.aprovechablePct) : APROVECHABLE_DEFAULT;
+    const necesita = new Map(pendientes.map((j) => [j.dia, rollizaNecesariaM3(j.m3, pct)]));
+    const reparto = repartirEnDias(
+      libres.map((t) => ({ id: t.id, volumenM3: vol(t), t })),
+      pendientes.map((j) => ({ dia: j.dia, necesitaM3: necesita.get(j.dia) ?? 0 })),
+    );
+    let falta = 0;
+    for (const j of pendientes) {
+      for (const { t } of reparto.get(j.dia) ?? []) {
+        j.trozaIds.push(t.id);
+        j.etiquetas.push(rotulo(t));
+        j.rollizaM3 = r4(j.rollizaM3 + vol(t));
+      }
+      falta += Math.max(0, (necesita.get(j.dia) ?? 0) - j.rollizaM3);
+    }
+    if (r4(falta) > TOL_GTF_M3) sinAtribuirM3 = r4(Math.max(sinAtribuirM3, falta));
   } else if (pendientes.length > 0) {
     const totalM3 = pendientes.reduce((a, j) => a + j.m3, 0);
     const totalVol = libres.reduce((a, t) => a + vol(t), 0);
@@ -344,7 +373,8 @@ export function completarDelLote(
   const consumidoM3 = r4(Math.max(0, (Number(lote.volumenM3) || 0) - libresLote.reduce((a, t) => a + vol(t), 0)));
 
   /* El bloque traído con sus trozas usa las suyas; el que salió del lote ES el lote. */
-  const ids = b.trozaIds && b.trozaIds.length > 0 ? new Set(b.trozaIds) : null;
+  const propias = trozasDelBloque(b);
+  const ids = propias.length > 0 ? new Set(propias) : null;
   const libres = libresLote
     .filter((t) => !ids || ids.has(t.id))
     .sort((x, y) => vol(y) - vol(x) || x.id.localeCompare(y.id));

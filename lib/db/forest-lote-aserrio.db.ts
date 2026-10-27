@@ -11,6 +11,7 @@ import {
 } from "./forest-ctp-consumo.db";
 import { ForestCtpDB } from "./forest-ctp.db";
 import { agruparPorGuia, guiaRecibida } from "@/lib/forestal/consumo-trozas";
+import { medidaDeTroza, type TrozaMedida } from "@/lib/forestal/medida-cabe-en-troza";
 import { invalidateByPrefix } from "@/lib/cache";
 import { vivaLinea } from "./wood-entries.db";
 import { Prisma } from "@/lib/generated/prisma/client";
@@ -254,6 +255,23 @@ function motivoEnMixto(code: string): string {
 function fechaDeApertura(antes: Date, despues: Date): string {
   const [a, d] = [formatDateNumeric(antes), formatDateNumeric(despues)];
   return a === d ? `${formatDateTime(antes)} → ${formatDateTime(despues)}` : `${a} → ${d}`;
+}
+
+/** Una troza pedida por un bloque, como la lee `elegiblesDe` (ADR-519). */
+export interface TrozaElegibleDeBloque {
+  id: string;
+  codigo: string | null;
+  volumenM3: number;
+  /** Cuándo llegó al patio: su recepción → la de su guía → el asiento (T3). */
+  llegaISO: string | null;
+  especie: string | null;
+  permiso: string | null;
+  medidas: TrozaMedida | null;
+  porRecepcionar: boolean;
+  /** La corrida que ya la consumió: si es una jornada del bloque, cuenta como elegida. */
+  consumidaEnId: string | null;
+  /** Por qué no se puede consumir; `null` = puede. */
+  motivo: string | null;
 }
 
 export class ForestLoteAserrioDB {
@@ -1066,6 +1084,125 @@ export class ForestLoteAserrioDB {
       );
       throw e;
     }
+  }
+
+  /**
+   * Las trozas pedidas tal como las ve quien CONSUME (ADR-519): por cada una,
+   * su volumen, cuándo llegó al patio, sus medidas y —si no se puede— por qué.
+   * Es lo que lee `POST /distribuciones/trozas-para-bloque` antes de correr
+   * `elegirTrozasParaBloque`: la pantalla propone, el servidor relee.
+   *
+   * El porqué, en este orden (el primero que aplica):
+   *  1. `motivoNoElegible` (T1, ADR-325, LM4) — el MISMO texto del escritor;
+   *  2. de otra especie o de otro permiso que el bloque (L-A1, ADR-393);
+   *  3. ya apartada en otro lote vivo (la del lote del propio bloque, no);
+   *  4. mes cerrado: todas las jornadas del bloque caen en un período cerrado
+   *     (el cierre congela el costo: es el mismo corte, ADR-139/134 D6);
+   *  5. T3 (ADR-433): llegó después de la última jornada, no pudo estar en esa
+   *     sierra.
+   * Una id que no es del negocio (o no existe) sale en `noEncontradas`: nunca
+   * desaparece en silencio.
+   *
+   * Sólo lectura: no toma candados. El escritor (`agregarTrozas`, `consumir`)
+   * vuelve a mirar todo bajo lock.
+   */
+  static async elegiblesDe(
+    tenantId: string,
+    trozaIds: readonly string[],
+    opciones: {
+      /** El lote del bloque, si ya lo tiene: sus piezas no cuentan como «en otro lote». */
+      loteId?: string | null;
+      especie?: string | null;
+      permiso?: string | null;
+      /** Fechas (AAAA-MM-DD) de las jornadas del bloque, para el cierre y T3. */
+      fechas?: readonly string[];
+    } = {},
+  ): Promise<{ trozas: TrozaElegibleDeBloque[]; noEncontradas: string[]; cerradoDe: Record<string, string> }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(trozaIds.map((x) => x.trim()).filter(Boolean))];
+    if (ids.length === 0) return { trozas: [], noEncontradas: [], cerradoDe: {} };
+    const fechas = [...new Set((opciones.fechas ?? []).filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)))].sort();
+    const [filas, cierres] = await Promise.all([
+      prisma.woodEntryTroza.findMany({
+        where: { id: { in: ids }, tenantId },
+        select: {
+          id: true,
+          codigoPlanta: true,
+          codificacion: true,
+          especieComun: true,
+          volumenM3: true,
+          largoM: true,
+          d1Cm: true,
+          d2Cm: true,
+          diametroCm: true,
+          recibidaD1Cm: true,
+          recibidaD2Cm: true,
+          oxD1Pulg: true,
+          oxD2Pulg: true,
+          consumidaEnId: true,
+          noRecepcionada: true,
+          fechaRecepcion: true,
+          descarte: true,
+          loteAserrioId: true,
+          loteAserrio: { select: { code: true, deletedAt: true } },
+          _count: { select: { retrozos: true } },
+          despachadaEn: { select: { status: true, deletedAt: true } },
+          loteMixto: { select: { code: true, status: true, deletedAt: true } },
+          entry: {
+            select: { status: true, deletedAt: true, fechaRecepcion: true, gtfNumber: true, entryDate: true, originCode: true },
+          },
+        },
+      }),
+      fechas.length > 0 ? ForestCtpCierreDB.list(tenantId) : Promise.resolve([]),
+    ]);
+
+    const cerradoDe: Record<string, string> = {};
+    for (const f of fechas) {
+      const c = closedPeriodOf(cierres, new Date(`${f}T12:00:00Z`));
+      if (c) cerradoDe[f] = c.label;
+    }
+    const todasCerradas = fechas.length > 0 && fechas.every((f) => cerradoDe[f]);
+    const ultima = fechas.length > 0 ? fechas[fechas.length - 1]! : null;
+    const especie = opciones.especie?.trim() || null;
+    const permiso = opciones.permiso?.trim() || null;
+    const diaUTC = (d: Date) => d.toISOString().slice(0, 10);
+
+    const trozas = filas.map((t): TrozaElegibleDeBloque => {
+      const llega = t.fechaRecepcion ?? t.entry?.fechaRecepcion ?? t.entry?.entryDate ?? null;
+      const permisoTroza = t.entry?.originCode?.trim() || null;
+      const otroLote = t.loteAserrioId && t.loteAserrioId !== opciones.loteId && !t.loteAserrio?.deletedAt;
+      let motivo = motivoNoElegible(t);
+      if (!motivo && especie && claveEspecie(t.especieComun) !== claveEspecie(especie)) {
+        motivo = `es ${t.especieComun ?? "sin especie"} y el bloque es de ${especie}`;
+      }
+      if (!motivo && permiso && permisoTroza && permisoTroza !== permiso) {
+        motivo = `es del permiso ${permisoTroza} y el bloque es del ${permiso}`;
+      }
+      if (!motivo && otroLote) motivo = `ya está en el lote ${t.loteAserrio?.code ?? "de otro bloque"}`;
+      if (!motivo && todasCerradas) {
+        motivo = `sus jornadas caen en ${[...new Set(Object.values(cerradoDe))].join(", ")}, mes cerrado del libro: reábrelo o cambia la fecha del bloque`;
+      }
+      if (!motivo && ultima && llega && diaUTC(llega) > ultima) {
+        motivo = `llegó el ${formatDateNumeric(llega)}, después de la última jornada del bloque (${ultima.split("-").reverse().join("/")})`;
+      }
+      return {
+        id: t.id,
+        codigo: t.codigoPlanta?.trim() || t.codificacion?.trim() || null,
+        volumenM3: Number(t.volumenM3) || 0,
+        llegaISO: llega ? llega.toISOString() : null,
+        especie: t.especieComun ?? null,
+        permiso: permisoTroza,
+        medidas: medidaDeTroza(t),
+        porRecepcionar:
+          t.noRecepcionada ||
+          (t.entry != null &&
+            !guiaRecibida({ estado: t.entry.status, fechaRecepcionGuia: t.entry.fechaRecepcion, fechaRecepcionTroza: t.fechaRecepcion })),
+        consumidaEnId: t.consumidaEnId ?? null,
+        motivo,
+      };
+    });
+    const vistas = new Set(trozas.map((t) => t.id));
+    return { trozas, noEncontradas: ids.filter((id) => !vistas.has(id)), cerradoDe };
   }
 
   /**

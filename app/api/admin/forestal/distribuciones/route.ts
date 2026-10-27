@@ -67,6 +67,10 @@ const bloqueSchema = z.object({
      Sin declararlos, Zod los borra y al reabrir la distribución el bloque
      «traído del Libro» queda como uno cargado a mano: no puede crear su lote. */
   trozaIds: z.array(z.string().trim().max(40)).max(MAX_TROZAS_POR_BLOQUE).nullish(),
+  /* ADR-519: las que el bloque ampara de verdad (subconjunto de `trozaIds`).
+     Sin declararlo, Zod lo borra y al reabrir el lote y las jornadas vuelven a
+     consumir el grupo entero. */
+  trozasElegidas: z.array(z.string().trim().max(40)).max(MAX_TROZAS_POR_BLOQUE).nullish(),
   /* ADR-505: las medidas de sus trozas viajan con la hoja (Zod descarta lo no declarado). */
   trozasMedidas: z
     .array(
@@ -113,6 +117,19 @@ const saveSchema = z.object({
   // protege el KV (es un JSON) sin estorbar el uso real.
   bloques: z.array(bloqueSchema).min(1).max(200),
 });
+
+/**
+ * Sólo las elegidas que siguen siendo del bloque, sin repetir; vacía = no se
+ * eligió (el bloque vuelve a sus `trozaIds`). Una id ajena al bloque no se
+ * guarda: el lote y las jornadas no pueden consumir lo que el bloque no trae.
+ */
+function elegidasDelBloque(trozaIds: string[] | null | undefined, elegidas: string[] | null | undefined): string[] | undefined {
+  /* Sin trozas del bloque no hay qué elegir: nunca una elegida fuera de `trozaIds`. */
+  if (!trozaIds || trozaIds.length === 0) return undefined;
+  const propias = new Set(trozaIds);
+  const dentro = [...new Set((elegidas ?? []).filter((id) => Boolean(id) && propias.has(id)))];
+  return dentro.length > 0 ? dentro : undefined;
+}
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:herramientas");
@@ -172,6 +189,7 @@ export const POST = withApiHandler("forestal-distribuciones-post", async (req: N
           loteId: b.loteId ?? undefined,
           paqueteId: b.paqueteId ?? undefined,
           trozaIds: b.trozaIds ?? undefined,
+          trozasElegidas: elegidasDelBloque(b.trozaIds, b.trozasElegidas),
           trozasMedidas: b.trozasMedidas ?? undefined,
           ignorarMedidas: b.ignorarMedidas ?? undefined,
           corridaIds: b.corridaIds ?? undefined,

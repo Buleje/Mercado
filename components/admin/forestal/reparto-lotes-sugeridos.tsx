@@ -19,11 +19,13 @@ import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import {
   avisosDelBloque,
   estadoLocalDelBloque,
+  pedidoDelBloque,
   TEXTO_ESTADO_LOCAL,
   type LoteCreadoDeBloque,
   type LoteDelBloque,
   type ResultadoLotesPorBloque,
 } from "@/lib/forestal/lotes-por-bloque";
+import { trozasDelBloque } from "@/lib/forestal/trozas-para-bloque";
 import { crearLotesPorBloque, previsualizarLotesPorBloque } from "./reparto-lotes-sugeridos-api";
 import { button } from "@/components/ui-system/button-variants";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -66,7 +68,7 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
     () =>
       foto
         .filter((b) => estadoLocalDelBloque(b) === "pedible")
-        .map((b) => ({ bloqueId: b.id, etiqueta: b.etiqueta, trozaIds: b.trozaIds ?? [] })),
+        .map(pedidoDelBloque),
     [foto],
   );
   const [previa, setPrevia] = useState<Map<string, LoteDelBloque> | null>(pedidos.length === 0 ? new Map() : null);
@@ -262,7 +264,7 @@ function FilaBloque({ bloque: b, previa, elegido, onAlternar, codigoDeLote, lote
       <td className={`${TD} font-semibold`}>{b.etiqueta || "Sin etiqueta"}</td>
       <td className={TD}>{lote?.especie ?? (b.especie || "—")}</td>
       <td className={`${TD} break-all`}>{lote ? (lote.permiso ?? "—") : (b.permiso || "—")}</td>
-      <td className={`${TD} text-right tabular-nums`}>{lote?.trozas ?? (b.trozaIds?.length || "—")}</td>
+      <td className={`${TD} text-right tabular-nums`}>{lote?.trozas ?? (trozasDelBloque(b).length || "—")}</td>
       <td className={`${TD} text-right tabular-nums`}>{fmtM3(lote?.m3 ?? (Number(b.m3) || 0))}</td>
       <td className={TD}>{estado}</td>
     </tr>

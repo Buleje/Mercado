@@ -26,6 +26,7 @@ import { fmtM3 } from "./cubicacion-formato";
 import type { BloqueRolliza } from "./cubicacion-reparto";
 import { claveEspecie } from "./loth-constants";
 import { proponerLotes, type PropuestaDeLote, type TrozaParaPropuesta } from "./propuesta-de-lotes";
+import { trozasDelBloque } from "./trozas-para-bloque";
 
 export { MAX_TROZAS_POR_BLOQUE } from "./cubicacion-reparto";
 
@@ -204,12 +205,21 @@ export function lotesPorBloque(
 export type EstadoLocalDelBloque = "ya-tiene-lote" | "aserrada" | "manual" | "pedible";
 
 export function estadoLocalDelBloque(
-  b: Pick<BloqueRolliza, "loteId" | "tipo" | "trozaIds">,
+  b: Pick<BloqueRolliza, "loteId" | "tipo" | "trozaIds" | "trozasElegidas">,
 ): EstadoLocalDelBloque {
   if (texto(b.loteId)) return "ya-tiene-lote";
   if (b.tipo === "aserrada") return "aserrada";
-  if (!b.trozaIds || b.trozaIds.length === 0) return "manual";
+  if (trozasDelBloque(b).length === 0) return "manual";
   return "pedible";
+}
+
+/**
+ * El pedido de lote de un bloque: SUS trozas elegidas si las hay (ADR-519),
+ * si no todas. Un bloque de Capacidad trae el grupo entero; armar el lote con
+ * todo consumiría madera que el bloque no ampara.
+ */
+export function pedidoDelBloque(b: Pick<BloqueRolliza, "id" | "etiqueta" | "trozaIds" | "trozasElegidas">): PedidoPorBloque {
+  return { bloqueId: b.id, etiqueta: b.etiqueta, trozaIds: trozasDelBloque(b) };
 }
 
 /** El texto de un bloque que no se pide al servidor. */

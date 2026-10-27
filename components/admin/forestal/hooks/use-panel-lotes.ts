@@ -118,8 +118,12 @@ export function usePanelLotes({ bloques, onGuardar, estadoLotes, distribucionId 
       if (!b) return;
       const nuevo = { ...b, ...cambio(b) };
       /* ADR-505: otras trozas = otras medidas; la copia se vuelve a armar sola
-         (`useCuadreMedidas`) desde las trozas nuevas. */
-      if ((nuevo.trozaIds ?? []).join() !== (b.trozaIds ?? []).join()) nuevo.trozasMedidas = null;
+         (`useCuadreMedidas`) desde las trozas nuevas. ADR-519: y las elegidas
+         eran de las trozas viejas: se vuelven a elegir. */
+      if ((nuevo.trozaIds ?? []).join() !== (b.trozaIds ?? []).join()) {
+        nuevo.trozasMedidas = null;
+        nuevo.trozasElegidas = null;
+      }
       cambiar(
         (prev) => prev.map((x) => (x.id === bloqueId ? nuevo : x)),
         new Map([[bloqueId, { loteId: nuevo.loteId ?? null, trozaIds: nuevo.trozaIds ?? null }]]),

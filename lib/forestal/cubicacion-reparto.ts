@@ -151,6 +151,14 @@ export interface BloqueRolliza {
    */
   trozaIds?: string[] | null;
   /**
+   * Las trozas que el bloque ampara DE VERDAD (ADR-519): un subconjunto de
+   * `trozaIds`, enteras y por orden de llegada, hasta cubrir lo usado sin
+   * pasar el 56 % (`elegirTrozasParaBloque`). El lote por bloque y las
+   * jornadas leen `trozasDelBloque(b)` = éstas si hay, si no `trozaIds`.
+   * Sin esto el bloque consumía su grupo entero (65 trozas para 10 m³).
+   */
+  trozasElegidas?: string[] | null;
+  /**
    * Las medidas de SUS trozas (largo, D1/D2), copiadas con la hoja (ADR-505,
    * tope `MAX_TROZAS_POR_BLOQUE`). Con ellas el reparto sólo le pone piezas
    * que caben en alguna de sus trozas. Sin copia el bloque toma de todo, como
