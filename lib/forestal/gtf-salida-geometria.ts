@@ -110,6 +110,17 @@ export interface Encaje {
   achicado: boolean;
   /** No entra ni achicado (o `encajar` apagado): en pantalla, amarillo. Con `varias`, nunca: se parte. */
   noEntra: boolean;
+  /** Salió su sigla porque el nombre entero no entraba ni achicado (`siglaDelValor`). */
+  abreviado?: true;
+}
+
+/**
+ * La sigla entre paréntesis al final del valor, si la trae: «Plan de Manejo
+ * Forestal Intermedio (PMFI)» → «PMFI». null = no trae (no se inventa una).
+ */
+export function siglaDelValor(texto: string): string | null {
+  const m = /\(([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9.-]{1,11})\)\s*$/u.exec(texto);
+  return m && m.index > 0 ? m[1] : null;
 }
 
 /** UNA fuente para «cuántos renglones y con qué letra»: pantalla, HTML de la matricial, PDF y ESC/P. */
@@ -120,7 +131,16 @@ export function encajarValor(texto: string, anchoMm: number, letraPt: number, mo
   }
   const linea = enUnaLinea(texto);
   const letra = letraQueEntra(linea, anchoMm, letraPt, modo.encajar ?? true);
-  return { lineas: [linea], letraPt: letra, achicado: letra < letraPt, noEntra: !!linea && !entraEnUnaLinea(linea, anchoMm, letra) };
+  const noEntra = !!linea && !entraEnUnaLinea(linea, anchoMm, letra);
+  /* Ni achicado entra (27-10: el (9) «Plan de Manejo Forestal Intermedio
+     (PMFI)» de 40 mm pedía 52 y la matricial lo cortaba en el borde del
+     carro): si el valor trae su sigla, sale la sigla, que se lee igual. */
+  const sigla = noEntra ? siglaDelValor(linea) : null;
+  if (sigla) {
+    const letraSigla = letraQueEntra(sigla, anchoMm, letraPt, modo.encajar ?? true);
+    return { lineas: [sigla], letraPt: letraSigla, achicado: letraSigla < letraPt, noEntra: !entraEnUnaLinea(sigla, anchoMm, letraSigla), abreviado: true };
+  }
+  return { lineas: [linea], letraPt: letra, achicado: letra < letraPt, noEntra };
 }
 
 /** La X donde empieza el renglón, con el ancho de letra de quien imprime. */

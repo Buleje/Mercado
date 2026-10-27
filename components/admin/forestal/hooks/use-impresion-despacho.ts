@@ -16,8 +16,11 @@ import type { DocumentoImprimible } from "../CtpDocumentoVisor";
 import type { GuiaParaArchivar } from "../CtpArchivadorAuto";
 import { hojaResumenInternoDespacho } from "@/lib/forestal/despacho-resumen-interno";
 import type { CtpFicha, PermisoDeGuia } from "@/lib/forestal/ctp-ficha-types";
-import { faltanParaImprimir } from "@/lib/forestal/guia-salida-imprimible";
-import { papelesGuiaSalida } from "@/lib/forestal/guia-salida-papeles";
+import { avisosTipoDeLaGuia } from "@/lib/forestal/ctp-gtf-print";
+import { faltantesGtf, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
+import type { AvisoTipo } from "@/lib/forestal/gtf-validador-tipo";
+import { faltanParaImprimir, type GuiaSalidaImprimible } from "@/lib/forestal/guia-salida-imprimible";
+import { despachoDeLaGuiaSalida, papelesGuiaSalida, type PapelesGuiaSalida } from "@/lib/forestal/guia-salida-papeles";
 import { limaDateKey } from "@/lib/utils";
 import { AvisoGuiaSalida, leerGuiaSalida } from "./use-guia-salida";
 
@@ -63,6 +66,25 @@ async function leerPermisos(): Promise<PermisoDeGuia[] | null> {
     console.warn("[impresion-despacho] permisos no leídos", err);
     return null;
   }
+}
+
+/**
+ * La guía ENTERA de un despacho armada para el papel, se pida desde el botón
+ * que sea (menú ⋯, ficha del despacho, guía recién registrada, Anexo 04):
+ * todas sus líneas con el mismo N°, su cadena y su lista de trozas. Antes la
+ * ficha y el Anexo 04 armaban la hoja con SU línea sola: una guía de tres
+ * productos salía con uno y declaraba menos carga (27-10). `datos` = lo que
+ * hay en el formulario: el papel sale con lo corregido aunque no esté
+ * guardado. Lanza con el motivo en palabras (sin N°, casilleros que faltan).
+ */
+export async function papelesDeLaGuiaEntera(
+  despachoId: string,
+  o: { ficha: Partial<CtpFicha>; permisos: readonly PermisoDeGuia[] | null; datos?: GtfDatos; anulada?: string | null },
+): Promise<{ papeles: PapelesGuiaSalida; guia: GuiaSalidaImprimible; avisosTipo: AvisoTipo[] }> {
+  const r = await leerGuiaSalida(despachoId);
+  const guia = o.datos ? { ...r.guia, datos: o.datos, faltan: faltantesGtf(o.datos).map((f) => f.campo) } : r.guia;
+  const papeles = await papelesGuiaSalida({ guia, entradas: r.entradas }, o.ficha, o.permisos, o.anulada ?? null);
+  return { papeles, guia, avisosTipo: avisosTipoDeLaGuia(despachoDeLaGuiaSalida(guia), guia.lineas) };
 }
 
 /** Etiquetas y descripción con que la hoja va al expediente (igual que desde la guía del despacho). */

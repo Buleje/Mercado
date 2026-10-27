@@ -175,6 +175,7 @@ function nuevaForma(dueno: DuenoTalonario, nombre: string, h: { guia: Disposicio
     permiso: texto(dueno.permiso),
     titular: texto(dueno.titular),
     planId: texto(dueno.planId),
+    ...(dueno.libro === "ctp" ? { libro: "ctp" as const } : {}),
     guia: h.guia,
     lista: h.lista,
     creada: firma,

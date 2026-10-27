@@ -392,7 +392,6 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                 // El número de la BASE gana: la fila del listado puede estar vieja.
                 despacho={{ ...entry, unitLabel, gtfNumber: guia?.gtfNumber ?? entry.gtfNumber }}
                 ficha={ficha}
-                cadena={traza ? { corridas: traza.corridas } : null}
                 // CITES es legal CON permiso: si la Ficha lo tiene archivado para esta
                 // especie, se copia a la guía en vez de pedirlo tipeado otra vez.
                 citesPermiso={

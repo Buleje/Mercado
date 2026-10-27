@@ -32,7 +32,7 @@ import {
   type ResultadoForma,
   type ResumenForma,
 } from "@/lib/forestal/gtf-matricial-formas";
-import { normalizarAlmacen, type AlmacenTalonario, type DuenoTalonario } from "@/lib/forestal/gtf-matricial-titulares";
+import { duenoSalidaCtp, normalizarAlmacen, type AlmacenTalonario, type DuenoTalonario } from "@/lib/forestal/gtf-matricial-titulares";
 
 /**
  * ForestGtfMatricialDB — dónde cae cada valor de la guía en el talonario
@@ -112,7 +112,7 @@ export const ForestGtfMatricialDB = {
          misma, y guardarla nunca pisa la de una guía del Libro TH del mismo
          titular (ésa lleva su permiso; sólo se ofrece como punto de partida). */
       const ficha = await ForestCtpFichaDB.get(tenantId);
-      return { titular: ficha.razonSocial?.trim() || null, permiso: null, planId: null };
+      return duenoSalidaCtp(ficha.razonSocial);
     }
     const g = await ForestGtfDB.getById(tenantId, guia.id);
     return g ? { titular: g.titularName ?? null, permiso: g.tituloHabilitante ?? null, planId: g.planId ?? null } : null;

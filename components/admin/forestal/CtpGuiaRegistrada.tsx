@@ -15,12 +15,10 @@
 
 import { useMemo, useState } from "react";
 import { Check, FileText, Loader2, Printer } from "@buleje/design-system/icons";
-import { documentoGtfSalida } from "@/lib/forestal/ctp-gtf-print";
 import { filasDeLaGuia } from "@/lib/forestal/ctp-gtf-formato";
 import { revisarTiposGTF } from "@/lib/forestal/gtf-validador-tipo";
 import { AvisoTipoGtf } from "./aviso-tipo-gtf";
-import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
-import { cadenaDeGuia, despachoDeGuia, lineasDeGuia } from "@/lib/forestal/guia-desde-lista";
+import { lineasDeGuia } from "@/lib/forestal/guia-desde-lista";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
 import CtpVentaDeLaGuia from "./CtpVentaDeLaGuia";
 import { faltantesGtf, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
@@ -31,6 +29,7 @@ import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { Btn } from "./ctp-shared";
+import { papelesDeLaGuiaEntera } from "./hooks/use-impresion-despacho";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
@@ -55,7 +54,8 @@ export default function CtpGuiaRegistrada({
   ficha: FichaCtp | null;
 }) {
   /** La hoja armada queda: cerrar el visor no obliga a volver a generarla. */
-  const [hoja, setHoja] = useState<DocumentoImprimible | null>(null);
+  const [hojas, setHojas] = useState<DocumentoImprimible[] | null>(null);
+  const [activo, setActivo] = useState(0);
   const [verVisor, setVerVisor] = useState(false);
   const [cola, setCola] = useState<GuiaParaArchivar[]>([]);
   const [archivada, setArchivada] = useState<string | null>(null);
@@ -83,34 +83,27 @@ export default function CtpGuiaRegistrada({
     setGenerando(true);
     setError(null);
     try {
-      const d = await documentoGtfSalida(
-        despachoDeGuia(
-          filas,
-          { ...cabecera, entryDate: emision, gtfNumber, destino: datos.destinatario.nombre || null },
-          catalogoEspecies.cientificoDe,
-        ),
-        ficha ?? {},
-        cadenaDeGuia(filas),
-        datos,
-        /* El binomio que falte en el asiento sale del catálogo de la planta: el
-           casillero (34) lo pide y una guía a medio llenar la para el control. */
-        lineasDeGuia(filas, catalogoEspecies.cientificoDe),
-        permisos,
-      );
-      const html = documentoHtml({ titulo: d.titulo, css: d.css, cuerpo: d.cuerpos, pieCorrido: d.pieCorrido });
+      /* La guía ENTERA como la lee el servidor (27-10): sus productos y, si
+         salen trozas sin aserrar, su lista — lo mismo que el menú ⋯ y el
+         talonario. Con los datos de esta pantalla, que son los recién guardados. */
+      const { papeles } = await papelesDeLaGuiaEntera(cabecera.id, { ficha: ficha ?? {}, permisos, datos });
+      const docs: DocumentoImprimible[] = [papeles.gtf, ...(papeles.lista ? [papeles.lista] : [])];
       /* No se dispara la impresión: se abre el visor. Original + 2 copias son
          tres hojas — conviene mirarlas antes de gastar el papel. */
-      setHoja({ nombre: d.titulo, archivo: d.titulo, etiqueta: "Original + 2 copias (art. 5)", pieCorrido: d.pieCorrido, html });
+      setHojas(docs);
+      setActivo(0);
       setVerVisor(true);
       setArchivada(null);
-      setCola([{
-        clave: `${cabecera.id}:${d.titulo}`,
-        nombre: d.titulo,
-        html,
-        pieCorrido: d.pieCorrido,
-        etiquetas: ["forestal", "GTF", "salida", gtfNumber].filter((t) => Boolean(t.trim())),
-        descripcion: `${d.titulo} emitida por el CTP — ${lineas} ${lineas === 1 ? "producto" : "productos"}, ${fmtM3(total)} m³${datos.destinatario.nombre ? `, destino ${datos.destinatario.nombre}` : ""}.`,
-      }]);
+      setCola(
+        docs.map((doc) => ({
+          clave: `${cabecera.id}:${doc.archivo ?? doc.nombre}`,
+          nombre: doc.archivo ?? doc.nombre,
+          html: doc.html,
+          pieCorrido: doc.pieCorrido,
+          etiquetas: ["forestal", "GTF", "salida", gtfNumber].filter((t) => Boolean(t.trim())),
+          descripcion: `${doc.nombre} emitida por el CTP — ${lineas} ${lineas === 1 ? "producto" : "productos"}, ${fmtM3(total)} m³${datos.destinatario.nombre ? `, destino ${datos.destinatario.nombre}` : ""}.`,
+        })),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -139,9 +132,9 @@ export default function CtpGuiaRegistrada({
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Btn variant="dark" disabled={generando || faltan.length > 0} onClick={() => void imprimir()}>
             {generando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-            {hoja ? "Volver a armar la guía" : "Imprimir la guía (3 copias)"}
+            {hojas ? "Volver a armar la guía" : "Imprimir la guía (3 copias)"}
           </Btn>
-          {hoja && !verVisor && (
+          {hojas && !verVisor && (
             <Btn variant="secondary" onClick={() => setVerVisor(true)}>
               <FileText className="h-4 w-4" /> Ver la hoja otra vez
             </Btn>
@@ -161,11 +154,11 @@ export default function CtpGuiaRegistrada({
         )}
       </div>
 
-      {hoja && verVisor && (
+      {hojas && verVisor && (
         <CtpDocumentoVisor
-          documentos={[hoja]}
-          activo={0}
-          onActivo={() => {}}
+          documentos={hojas}
+          activo={activo}
+          onActivo={setActivo}
           onClose={() => setVerVisor(false)}
         />
       )}

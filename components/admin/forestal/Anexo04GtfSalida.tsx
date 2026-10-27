@@ -10,25 +10,21 @@
  * es como se revisan antes de imprimir.
  *
  * ── Qué arma y qué no ────────────────────────────────────────────────────────
- * Usa el MISMO renderer que la guía de salida del detalle (`documentoGtfSalida`):
- * si tuviera plantilla propia, el papel que se revisa acá y el que se imprime
- * allá podrían diferir. La cadena de custodia se pide aparte —es la que llena el
- * casillero (36), «N° GTF de origen»— y si no llega, la guía sale igual con ese
- * casillero vacío, que es el comportamiento correcto: en blanco se llena a mano,
- * inventado invalida el documento.
+ * Usa el MISMO armado que la guía de salida del detalle y del menú ⋯
+ * (`papelesDeLaGuiaEntera` → `documentoGtfSalida`): si tuviera plantilla
+ * propia, el papel que se revisa acá y el que se imprime allá podrían diferir.
+ * La cadena de custodia —la que llena el casillero (36), «N° GTF de origen»—
+ * sale de los puentes del Libro: lo que no tiene origen queda en blanco, que se
+ * llena a mano; inventado invalida el documento.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Loader2 } from "@buleje/design-system/icons";
-import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
-import { documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
 import type { AvisoTipo } from "@/lib/forestal/gtf-validador-tipo";
 import { AvisoTipoGtf } from "./aviso-tipo-gtf";
-import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
-import { logger } from "@/lib/logger";
 import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
-import { useEspeciesConCatalogo } from "./ctp-especie-campo";
+import { papelesDeLaGuiaEntera } from "./hooks/use-impresion-despacho";
 
 export interface DespachoParaGtf {
   id: string;
@@ -61,8 +57,6 @@ export default function Anexo04GtfSalida({
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [avisosTipo, setAvisosTipo] = useState<AvisoTipo[]>([]);
-  /* El catálogo de la planta completa el binomio que el asiento no trae. */
-  const catalogoEspecies = useEspeciesConCatalogo();
   /* Los permisos cargados (ADR-421/425): el título declarado en la guía puede
      ser uno que la Ficha del CTP no tiene, y sin la lista sus casilleros
      (5)(8)(9) salían en blanco. `contratos` arranca `[]` y sólo cambia de
@@ -73,59 +67,15 @@ export default function Anexo04GtfSalida({
     let vivo = true;
     (async () => {
       try {
-        // La cadena llena el (36). Si el pedido falla, la guía se arma igual.
-        let cadena: GtfCadena | null = null;
-        try {
-          const r = await fetch(
-            `/api/admin/forestal/ctp/origenes?despachoEntryId=${encodeURIComponent(despacho.id)}`,
-            { credentials: "include" },
-          );
-          if (r.ok) {
-            const j = (await r.json()) as { trazabilidad?: { corridas?: GtfCadena["corridas"] } };
-            cadena = j.trazabilidad?.corridas ? { corridas: j.trazabilidad.corridas } : null;
-          }
-        } catch (err) {
-          logger.warn("[anexo04-gtf] sin cadena de custodia", { error: String(err) });
-        }
-
-        const doc: GtfDespacho = {
-          id: despacho.id,
-          lineNo: despacho.lineNo,
-          entryDate: despacho.entryDate,
-          productType: despacho.productType,
-          speciesCommon: despacho.speciesCommon,
-          /* Si el asiento no trae el binomio, sale del catálogo de la planta
-             (ADR-410): el anexo lo imprime al lado del nombre común y dejarlo
-             vacío es entregar un papel a medio llenar. */
-          speciesScientific:
-            despacho.speciesScientific?.trim() ||
-            catalogoEspecies.cientificoDe(despacho.speciesCommon ?? ""),
-          cites: despacho.cites,
-          quantity: despacho.quantity,
-          unitLabel: despacho.unit ?? "m3",
-          pieces: despacho.pieces,
-          gtfNumber: despacho.gtfNumber,
-          destino: despacho.destino,
-        };
-        const d = await documentoGtfSalida(
-          doc,
-          ficha ?? {},
-          cadena,
-          leerGtfDatos(despacho.gtfDatos),
-          // El detalle (37) sale del propio despacho, como hasta hoy.
-          undefined,
-          permisos,
-        );
-        const armado = documentoHtml({
-          titulo: d.titulo,
-          css: d.css,
-          cuerpo: d.cuerpos,
-          pieCorrido: d.pieCorrido,
-        });
+        /* La guía ENTERA (27-10): todas sus líneas con el mismo N°, su cadena
+           —que llena el (36)— y el binomio del catálogo, como la arma el
+           servidor para el menú ⋯ y el talonario. Antes salía sólo la línea
+           de este anexo: una guía de tres productos declaraba uno. */
+        const { papeles, avisosTipo: avisos } = await papelesDeLaGuiaEntera(despacho.id, { ficha: ficha ?? {}, permisos });
         if (!vivo) return;
-        setAvisosTipo(d.avisosTipo);
-        setHtml(armado);
-        onHtml(armado);
+        setAvisosTipo(avisos);
+        setHtml(papeles.gtf.html);
+        onHtml(papeles.gtf.html);
       } catch (err) {
         if (!vivo) return;
         // El motivo importa: «falta el destinatario» se arregla en un minuto,
@@ -138,10 +88,10 @@ export default function Anexo04GtfSalida({
       vivo = false;
       onHtml(null);
     };
-    /* `cientificoDe` entra en las deps a propósito: el catálogo llega DESPUÉS
-       del primer render (es un fetch), y sin esto el anexo se armaría con el
-       casillero del binomio vacío y no se volvería a armar nunca. */
-  }, [despacho, ficha, onHtml, catalogoEspecies.cientificoDe, permisos]);
+    /* `permisos` arranca `[]` y cambia de identidad sólo cuando termina de
+       cargar: con él en las deps la hoja se vuelve a armar con los casilleros
+       (5)(8)(9) del permiso declarado. */
+  }, [despacho.id, ficha, onHtml, permisos]);
 
   if (error) {
     return (

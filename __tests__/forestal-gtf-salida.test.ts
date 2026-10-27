@@ -36,6 +36,7 @@ import {
   anchoParaEntrar,
   BASE_EM,
   encajarValor,
+  siglaDelValor,
   LETRA_MIN_ENCAJE_PT,
   partirRenglones,
   renglonesDeLaPagina,
@@ -333,6 +334,12 @@ describe("cada valor en su renglón (Brandon 16-10)", () => {
 
   it("se achica sólo ese valor, lo justo y no menos de 6 pt (20 cpi, el paso más angosto de la matricial)", () => {
     expect(encajarValor("Madera en rollo", 22.3, 9)).toEqual({ lineas: ["Madera en rollo"], letraPt: 7, achicado: true, noEntra: false });
+    /* 27-10: el (9) de fábrica mide 40 mm y el nombre entero pide 52 a 6 pt → sale su sigla, sin achicar. */
+    expect(encajarValor("Plan de Manejo Forestal Intermedio (PMFI)", 40, 9)).toEqual({ lineas: ["PMFI"], letraPt: 9, achicado: false, noEntra: false, abreviado: true });
+    /* Si entra achicado, va entero; sin sigla al final, no se inventa una. */
+    expect(encajarValor("Plan Intermedio (PMFI)", 40, 9).lineas).toEqual(["Plan Intermedio (PMFI)"]);
+    expect(encajarValor("X".repeat(60), 40, 9)).toMatchObject({ noEntra: true });
+    expect(siglaDelValor("(PMFI)")).toBeNull();
     expect(encajarValor("Metros cúbicos", 17.8, 7).letraPt).toBe(6);
     expect(encajarValor("Trozas", 21.7, 9)).toMatchObject({ letraPt: 9, achicado: false });
     expect(LETRA_MIN_ENCAJE_PT).toBe(6);

@@ -17,9 +17,8 @@ import { CardTitle } from "@buleje/design-system";
 import { ChevronDown, FileText, Loader2, Printer } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
-import { avisosTipoDeLaGuia, documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
+import { avisosTipoDeLaGuia, type GtfDespacho } from "@/lib/forestal/ctp-gtf-print";
 import { AvisoTipoGtf } from "./aviso-tipo-gtf";
-import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
 import CtpArchivadorAuto, { type GuiaParaArchivar } from "./CtpArchivadorAuto";
 import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
@@ -27,6 +26,7 @@ import { gtfCompleta, leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf
 import type { FichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpGtfDatosForm from "./CtpGtfDatosForm";
 import CtpGtfConfirmarNumero from "./CtpGtfConfirmarNumero";
+import { papelesDeLaGuiaEntera } from "./hooks/use-impresion-despacho";
 import { pedirEmisionGtf, type ConfirmacionEmision, type RespuestaEmision } from "@/hooks/use-proxima-gtf";
 import { correlativoEnSerie } from "@/lib/forestal/gtf-talonario";
 import { Btn } from "./ctp-shared";
@@ -34,13 +34,11 @@ import { Btn } from "./ctp-shared";
 export default function CtpGtfSeccion({
   despacho,
   ficha,
-  cadena,
   citesPermiso,
   gtfDatosGuardado,
 }: {
   despacho: GtfDespacho;
   ficha: FichaCtp | null;
-  cadena: GtfCadena | null;
   /** Permiso CITES del ingreso, si la especie lo requiere. */
   citesPermiso?: string | null;
   /** JSON crudo de la base: lo valida `leerGtfDatos` adentro del formulario. */
@@ -58,7 +56,8 @@ export default function CtpGtfSeccion({
   // Abierto de una si la guía ya tiene número: lo siguiente es completarla.
   const [abierto, setAbierto] = useState<boolean>(Boolean(despacho.gtfNumber));
   /** La guía armada, esperando que la miren antes de imprimirla o archivarla. */
-  const [documento, setDocumento] = useState<DocumentoImprimible | null>(null);
+  const [documentos, setDocumentos] = useState<DocumentoImprimible[] | null>(null);
+  const [activo, setActivo] = useState(0);
   /* Fase 3 (2026-10-03): el tipo declarado contra su m³ por pieza, ANTES de emitir. */
   const avisosTipo = useMemo(() => avisosTipoDeLaGuia(despacho), [despacho]);
   /** La guía de salida también va sola al expediente, igual que las de ingreso. */
@@ -120,54 +119,39 @@ export default function CtpGtfSeccion({
    * Imprime con lo que hay en el formulario (no con lo último guardado): si el
    * operador corrigió la placa y todavía no guardó, el papel tiene que salir con
    * la placa corregida. El guardado es aparte, a un clic de distancia.
+   *
+   * La guía ENTERA (27-10): todas las líneas con su N° y, si salen trozas, su
+   * lista — antes salía sólo esta línea y una guía de tres productos declaraba uno.
    */
   async function imprimir(datos: GtfDatos) {
     if (!gtf) throw new Error("Emite la GTF antes de imprimirla.");
     if (!ficha) throw new Error("Todavía no se pudo leer la Ficha del CTP. Reintenta en un momento.");
     setBusy("imprimir");
     try {
-      const d = await documentoGtfSalida(
-        { ...despacho, gtfNumber: gtf },
-        ficha,
-        cadena,
-        datos,
-        // El detalle (37) lo arma el propio despacho: una guía, un producto.
-        undefined,
-        permisos.contratos,
-      );
+      const { papeles } = await papelesDeLaGuiaEntera(despacho.id, { ficha, permisos: permisos.contratos, datos });
       // No se dispara la impresión: se abre el visor. El original y sus dos
       // copias son tres hojas — conviene mirarlas antes de gastar el papel.
-      const html = documentoHtml({
-        titulo: d.titulo,
-        css: d.css,
-        cuerpo: d.cuerpos,
-        pieCorrido: d.pieCorrido,
-      });
-      setDocumento({
-        nombre: d.titulo,
-        archivo: d.titulo,
-        etiqueta: "Original + 2 copias (art. 5)",
-        pieCorrido: d.pieCorrido,
-        html,
-      });
+      const docs: DocumentoImprimible[] = [papeles.gtf, ...(papeles.lista ? [papeles.lista] : [])];
+      setDocumentos(docs);
+      setActivo(0);
       // Al expediente sin que nadie apriete nada: la guía que se imprime es la
       // constancia de lo que salió del CTP, y si depende de que alguien la
       // guarde, el mes que viene falta justo la que se pide.
       setArchivada(null);
-      setColaArchivo([
-        {
-          clave: `${despacho.id}:${d.titulo}`,
-          nombre: d.titulo,
-          html,
-          pieCorrido: d.pieCorrido,
+      setColaArchivo(
+        docs.map((doc) => ({
+          clave: `${despacho.id}:${doc.archivo ?? doc.nombre}`,
+          nombre: doc.archivo ?? doc.nombre,
+          html: doc.html,
+          pieCorrido: doc.pieCorrido,
           etiquetas: ["forestal", "GTF", "salida", gtf ?? "", despacho.speciesCommon ?? ""].filter(
             (t): t is string => Boolean(t && t.trim()),
           ),
           descripcion:
-            `${d.titulo} emitida por el CTP — despacho línea #${despacho.lineNo}` +
+            `${doc.nombre} emitida por el CTP — despacho línea #${despacho.lineNo}` +
             `${despacho.destino ? `, destino ${despacho.destino}` : ""}.`,
-        },
-      ]);
+        })),
+      );
     } finally {
       setBusy(null);
     }
@@ -284,11 +268,11 @@ export default function CtpGtfSeccion({
         />
       )}
 
-      {documento && (
+      {documentos && (
         <CtpDocumentoVisor
-          documentos={[documento]}
-          activo={0}
-          onActivo={() => {}}
+          documentos={documentos}
+          activo={activo}
+          onActivo={setActivo}
           onArchivar={(d) => ({
             etiquetas: ["forestal", "GTF", "salida", gtf ?? "", despacho.speciesCommon ?? ""].filter(
               (t): t is string => Boolean(t && t.trim()),
@@ -297,7 +281,7 @@ export default function CtpGtfSeccion({
               `${d.nombre} emitida por el CTP — despacho línea #${despacho.lineNo}` +
               `${despacho.destino ? `, destino ${despacho.destino}` : ""}.`,
           })}
-          onClose={() => setDocumento(null)}
+          onClose={() => setDocumentos(null)}
         />
       )}
 

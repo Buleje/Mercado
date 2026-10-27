@@ -253,7 +253,7 @@ describe("la GTF de salida de un despacho del Libro CTP (27-10)", () => {
     expect(a.j).toMatchObject({ forma: { id: idTh }, coincide: "titular" });
     const p = await talonario("PUT", { despachoId: "desp-77", formato: "guia", hoja: guiaCorrida(30) });
     expect(p.res.status).toBe(200);
-    expect(p.j).toMatchObject({ creada: true, forma: { nombre: "MADERERA EL AGUAJAL S.A.C.", coincide: "exacta" } });
+    expect(p.j).toMatchObject({ creada: true, forma: { nombre: "Salidas del CTP · MADERERA EL AGUAJAL S.A.C.", coincide: "exacta" } });
     const idCtp = p.j.forma?.id as string;
     expect(idCtp).not.toBe(idTh);
     /* Otra salida del CTP abre la MISMA; la guía del Libro TH sigue con la suya, intacta. */
@@ -265,6 +265,20 @@ describe("la GTF de salida de un despacho del Libro CTP (27-10)", () => {
     const c = await formas("POST", { despachoId: "desp-77", nombre: "CTP · matricial de oficina", guia: guiaCorrida(5), lista: hojaDeFabrica("lista") });
     expect(c.res.status).toBe(201);
     expect((await formas("DELETE", undefined, `?forma=${c.j.forma?.id}&despacho=desp-77`)).res.status).toBe(200);
+  });
+
+  it("la forma del CTP nunca la elige sola una guía del Libro TH del mismo titular (acomodar una no mueve la otra)", async () => {
+    const p = await talonario("PUT", { despachoId: "desp-77", formato: "guia", hoja: guiaCorrida(30) });
+    const idCtp = p.j.forma?.id as string;
+    const th = await talonario("GET", "gtf=gtf-aguajal");
+    expect(th.res.status).toBe(200);
+    expect(th.j.forma?.id).not.toBe(idCtp);
+    expect(th.j.nueva).toBeTruthy();
+    /* Guardar la del monte crea la suya: la del CTP queda con su corrimiento. */
+    await talonario("PUT", { gtfId: "gtf-aguajal", formato: "guia", hoja: guiaCorrida(12) });
+    const ctp = await talonario("GET", "despacho=desp-77");
+    expect(ctp.j).toMatchObject({ forma: { id: idCtp }, coincide: "exacta" });
+    expect((ctp.j.disposicion as { guia: { offsetXMm: number } }).guia.offsetXMm).toBe(30);
   });
 
   it("el despacho de OTRO negocio, o una línea que no es despacho → 404; los dos parámetros → 400", async () => {

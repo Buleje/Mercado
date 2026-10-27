@@ -17,7 +17,7 @@ import { pdfPrueba, pdfTalonario } from "@/lib/forestal/gtf-salida-pdf";
 import { PERFIL_OFICINA_ID } from "@/lib/forestal/gtf-salida-tipos";
 import type { LothGtfCaratula, LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 import type { EntradasGuiaLoth } from "@/lib/forestal/loth-guia-print";
-import type { DuenoTalonario } from "@/lib/forestal/gtf-matricial-titulares";
+import { duenoSalidaCtp, type DuenoTalonario } from "@/lib/forestal/gtf-matricial-titulares";
 import { guardTalonario } from "@/lib/forestal/gtf-matricial-habilitado";
 import { guiaDeLosParametros } from "@/lib/forestal/gtf-matricial-fuente";
 import { faltanParaImprimir } from "@/lib/forestal/guia-salida-imprimible";
@@ -105,7 +105,7 @@ export const GET = withApiHandler("forestal-loth-gtf-matricial-salida", async (r
       }
       const faltan = faltanParaImprimir(r.guia);
       if (faltan && !prueba) return NextResponse.json({ error: "FALTAN_DATOS", message: faltan }, { status: 409 });
-      deLaGuia = { dueno: { titular: r.guia.titular || null, permiso: null, planId: null }, numero: r.guia.gtfNumber, entradas: async () => r.entradas };
+      deLaGuia = { dueno: duenoSalidaCtp(r.guia.titular), numero: r.guia.gtfNumber, entradas: async () => r.entradas };
     } else {
       const g = await ForestGtfDB.getById(auth.tenantId, gtfId ?? "");
       if (!g) return NO_HAY_GUIA();

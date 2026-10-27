@@ -85,7 +85,7 @@ export interface NoEntra {
 export interface RevisionEncaje {
   /** No entran ni achicados (o «Encajar» apagado): amarillo, pisan al vecino. */
   noEntran: NoEntra[];
-  /** Entran porque se les achicó la letra. */
+  /** Entran porque se les achicó la letra (o salió su sigla: `abreviado`). */
   achicados: NoEntra[];
 }
 
@@ -101,9 +101,9 @@ export function revisarEncaje(hoja: DisposicionHoja, cat: CatalogoFormato, pagin
   if (!pagina) return r;
   const anotar = (clave: string, etiqueta: string, texto: string, ancho: number, letra: number, modo: { varias?: boolean; encajar?: boolean }) => {
     const e = encajarValor(texto, ancho, letra, modo);
-    const item = { clave, etiqueta, texto, letraPt: e.letraPt, necesitaMm: anchoParaEntrar(texto) };
+    const item = { clave, etiqueta, texto: e.abreviado ? `${e.lineas[0]} (sigla de «${texto}»)` : texto, letraPt: e.letraPt, necesitaMm: anchoParaEntrar(texto) };
     if (e.noEntra) r.noEntran.push(item);
-    else if (e.achicado) r.achicados.push(item);
+    else if (e.achicado || e.abreviado) r.achicados.push(item);
   };
   for (const c of cat.campos) {
     const pos = hoja.campos[c.id];

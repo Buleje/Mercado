@@ -47,7 +47,22 @@ export interface DuenoTalonario {
   titular: string | null;
   permiso: string | null;
   planId: string | null;
+  /** «ctp» = el talonario propio del CTP para sus GTF de salida (`duenoSalidaCtp`). Falta = una guía del Libro TH. */
+  libro?: "ctp" | null;
 }
+
+/**
+ * El dueño del talonario de las GTF de SALIDA del CTP: una forma para todas
+ * sus salidas (la razón social de la Ficha, sin permiso ni plan) y con su
+ * marca de libro, para que nunca coincida con la de una guía del Libro TH del
+ * mismo titular (revisión 27-10: sin la marca, acomodar una movía la otra).
+ */
+export const duenoSalidaCtp = (titular: string | null | undefined): DuenoTalonario => ({
+  titular: texto(titular),
+  permiso: null,
+  planId: null,
+  libro: "ctp",
+});
 
 export interface Firma {
   en: string;
@@ -61,6 +76,8 @@ export interface FormaTalonario {
   permiso: string | null;
   titular: string | null;
   planId: string | null;
+  /** «ctp» = la forma del talonario de salida del CTP. Falta = del Libro TH (o de la empresa). */
+  libro?: "ctp";
   guia: DisposicionHoja;
   lista: DisposicionHoja;
   creada: Firma | null;
@@ -90,14 +107,14 @@ export function claveDeTitular(nombre: string | null | undefined): string | null
 }
 
 /** «17-CPO/C-J-001-02 · Maderera El Aguajal SAC»; sin permiso, el titular; sin nada, «La empresa». */
-export function nombreAutomatico(d: Pick<DuenoTalonario, "permiso" | "titular">): string {
-  const partes = [texto(d.permiso), texto(d.titular)].filter((p): p is string => !!p);
+export function nombreAutomatico(d: Pick<DuenoTalonario, "permiso" | "titular" | "libro">): string {
+  const partes = [d.libro === "ctp" ? "Salidas del CTP" : null, texto(d.permiso), texto(d.titular)].filter((p): p is string => !!p);
   return (partes.length ? partes.join(" · ") : NOMBRE_EMPRESA).slice(0, NOMBRE_FORMA_MAX).trim();
 }
 
 /** La de la empresa: sin titular, sin permiso y sin plan. De ésa arranca un dueño sin la suya. */
-export const esDeLaEmpresa = (f: Pick<FormaTalonario, "titular" | "permiso" | "planId">): boolean =>
-  !texto(f.titular) && !texto(f.permiso) && !texto(f.planId);
+export const esDeLaEmpresa = (f: Pick<FormaTalonario, "titular" | "permiso" | "planId" | "libro">): boolean =>
+  !f.libro && !texto(f.titular) && !texto(f.permiso) && !texto(f.planId);
 
 export type Coincidencia = "exacta" | "titular" | "permiso";
 
@@ -106,8 +123,17 @@ export type Coincidencia = "exacta" | "titular" | "permiso";
  * titular; «titular» = el mismo titular con otro permiso; «permiso» = el mismo
  * permiso con el titular escrito distinto (la vara de la numeración). Sin
  * titular de los dos lados: exacta si tampoco hay permiso o es el mismo.
+ *
+ * Libros distintos (27-10): la forma del CTP nunca es de una guía del Libro
+ * TH; la de una guía del Libro TH del mismo titular le sirve al CTP sólo como
+ * punto de partida («titular»: se ve, pero guardar crea la suya).
  */
-export function coincidencia(f: Pick<FormaTalonario, "titular" | "permiso" | "planId">, d: DuenoTalonario): Coincidencia | null {
+export function coincidencia(f: Pick<FormaTalonario, "titular" | "permiso" | "planId" | "libro">, d: DuenoTalonario): Coincidencia | null {
+  if ((f.libro ?? null) !== (d.libro ?? null)) {
+    if (f.libro) return null;
+    const c = coincidencia(f, { ...d, libro: null });
+    return c === "exacta" || c === "titular" ? "titular" : null;
+  }
   const tf = texto(f.titular);
   const td = texto(d.titular);
   const mismoPerm = (!!texto(d.planId) && f.planId === d.planId) || mismoPermiso(f.permiso, d.permiso);
@@ -131,6 +157,7 @@ function normalizarForma(id: string, raw: unknown): FormaTalonario | null {
     permiso: texto(raw.permiso),
     titular: texto(raw.titular),
     planId: texto(raw.planId),
+    ...(raw.libro === "ctp" ? { libro: "ctp" as const } : {}),
     guia: d.guia,
     lista: d.lista,
     creada: firmaDe(raw.creada),
