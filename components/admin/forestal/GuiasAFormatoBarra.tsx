@@ -25,7 +25,7 @@ import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-me
 import { useConteoDocumentosGuias } from "@/hooks/use-documentos-guia";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatosQueAceptan, type GuiaElegida } from "@/lib/forestal/tramites-desde-guias";
-import CtpBarraSeleccion, { type CifraSeleccion } from "./ctp-barra-seleccion";
+import CtpBarraSeleccion, { type AccionSeleccion, type CifraSeleccion } from "./ctp-barra-seleccion";
 import GuiasPapelesModal from "./GuiasPapelesModal";
 import { irATramiteConGuias } from "./tramite-guias-url";
 
@@ -46,6 +46,7 @@ export default function GuiasAFormatoBarra({
   cifras,
   onLimpiar,
   aviso,
+  accionesExtra = [],
 }: {
   elegidas: readonly GuiaElegida[];
   /** Los ids como viajan en `?guias=` (`refGuia`): el del Libro TH sin prefijo, el del CTP con `ctp:`. */
@@ -54,6 +55,8 @@ export default function GuiasAFormatoBarra({
   onLimpiar: () => void;
   /** Lo que conviene saber antes de salir del libro (ámbar, no frena): «van 2 permisos → 2 oficios». */
   aviso?: string | null;
+  /** Botones propios de un libro, antes de «Papeles» (el Libro TH: «PDF con formato»). */
+  accionesExtra?: AccionSeleccion[];
 }) {
   const opciones = useMemo(() => formatosQueAceptan(elegidas), [elegidas]);
   /* Los papeles se cuentan cuando se deja de tildar (no un pedido por casilla). */
@@ -90,7 +93,7 @@ export default function GuiasAFormatoBarra({
     <CtpBarraSeleccion
       cifras={conPapeles}
       onLimpiar={onLimpiar}
-      accionesSecundarias={[{ label: "Papeles", icon: Paperclip, onClick: () => setVerPapeles(true) }]}
+      accionesSecundarias={[...accionesExtra, { label: "Papeles", icon: Paperclip, onClick: () => setVerPapeles(true) }]}
       aviso={aviso}
       avisoTono="aviso"
       accionLabel="Relación de guías"

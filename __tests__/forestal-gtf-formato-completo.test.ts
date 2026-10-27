@@ -2,13 +2,14 @@
  * «Con formato» (27-10): la guía y su lista en hoja blanca, con el formato
  * dibujado y cada valor en su ranura de fábrica, con aire contra rótulos y rayas.
  */
+import { inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import fichasJson from "./forestal-loth-importar-guia.fichas-blas.json";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import { gtfDatosConFicha } from "@/lib/forestal/loth-importar-guia";
 import { CATALOGO, hojaDeFabrica } from "@/lib/forestal/gtf-matricial-disposicion";
 import { entradasDeLaGuia } from "@/lib/forestal/gtf-matricial-valores";
-import { hojasConFormato, htmlFormatoCompleto } from "@/lib/forestal/gtf-formato-completo";
+import { MARCA_COPIA, emisorDeLaGuia, hojasConFormato, htmlFormatoCompleto } from "@/lib/forestal/gtf-formato-completo";
 import type { LothGtfDoc } from "@/lib/forestal/loth-gtf-oficial";
 
 const FICHA = (fichasJson as unknown as Record<string, GtfSerfor>)["1-10-0473187"];
@@ -25,7 +26,7 @@ const doc = (n: number): LothGtfDoc => ({
 describe("gtf-formato-completo", () => {
   it("guía primero y todas las hojas de la lista (45 trozas de a 20 = 3); cada hoja con su formato", () => {
     const hojas = hojasConFormato(["guia", "lista"], entradasDeLaGuia(doc(45), null));
-    expect(hojas.map((h) => (h.cat === CATALOGO.guia ? "guia" : "lista"))).toEqual(["guia", "lista", "lista", "lista"]);
+    expect(hojas.map((h) => (h.cat.nombre === CATALOGO.guia.nombre ? "guia" : "lista"))).toEqual(["guia", "lista", "lista", "lista"]);
     expect(hojas.every((h) => h.plantilla.trazos.length > 50)).toBe(true);
     const html = htmlFormatoCompleto(["guia", "lista"], entradasDeLaGuia(doc(45), null), "GTF prueba");
     const negro = htmlFormatoCompleto(["guia"], entradasDeLaGuia(doc(3), null), "GTF prueba", { tinta: "negro" });
@@ -50,7 +51,7 @@ describe("gtf-formato-completo", () => {
 
   it("sin trozas: la lista no sale junto a la guía, pero sí pedida sola", () => {
     const e = entradasDeLaGuia(doc(0), null);
-    expect(hojasConFormato(["guia", "lista"], e).map((h) => (h.cat === CATALOGO.guia ? "guia" : "lista"))).toEqual(["guia"]);
+    expect(hojasConFormato(["guia", "lista"], e).map((h) => (h.cat.nombre === CATALOGO.guia.nombre ? "guia" : "lista"))).toEqual(["guia"]);
     expect(hojasConFormato(["lista"], e)).toHaveLength(1);
   });
 
@@ -71,5 +72,51 @@ describe("gtf-formato-completo", () => {
     /* La lista: de 0,6 a 1 mm por lado. */
     const [lista] = hojasConFormato(["lista"], entradasDeLaGuia(doc(3), null));
     expect(lista.hoja.tabla.columnas.comun.x - hojaDeFabrica("lista").tabla.columnas.comun.x).toBeCloseTo(0.4, 5);
+  });
+
+  it("emisor: el Rep. Legal y su DNI en (38)/(39) de la guía y (14)/(15)/(16) de la lista; sin Rep. Legal, a mano", () => {
+    const e = entradasDeLaGuia(doc(3), null);
+    const conRep = { ...e, cuerpo: { ...e.cuerpo, ficha: { ...e.cuerpo.ficha, representante: "DAMIAN ESPINOZA SEBASTIAN", representanteDni: "45831805" } } } as typeof e;
+    expect(emisorDeLaGuia(conRep)).toEqual({ nombre: "DAMIAN ESPINOZA SEBASTIAN", documento: "DNI 45831805", cargo: "Representante legal" });
+    const [guia, lista] = hojasConFormato(["guia", "lista"], conRep);
+    expect(guia.pagina.campos["emisor:nombre"]).toBe("DAMIAN ESPINOZA SEBASTIAN");
+    expect(guia.pagina.campos["emisor:documento"]).toBe("DNI 45831805");
+    expect(guia.hoja.campos["emisor:nombre"]).toMatchObject({ x: 137, anchoMm: 56, alinea: "centro", visible: true });
+    expect(lista.pagina.campos["emisor:cargo"]).toBe("Representante legal");
+    expect(htmlFormatoCompleto(["guia"], conRep, "x")).toContain("DAMIAN ESPINOZA SEBASTIAN");
+    /* Apagado, o sin representante: no se inventa. */
+    expect(hojasConFormato(["guia"], conRep, { emisor: false })[0].pagina.campos["emisor:nombre"]).toBeUndefined();
+    const sinRep = { ...e, cuerpo: { ...e.cuerpo, ficha: { ...e.cuerpo.ficha, representante: "" } } } as typeof e;
+    expect(emisorDeLaGuia(sinRep)).toBeNull();
+  });
+
+  it("marca «COPIA»: cruzada y con su pie por defecto; apagada, no sale", () => {
+    const e = entradasDeLaGuia(doc(3), null);
+    const con = htmlFormatoCompleto(["guia", "lista"], e, "x");
+    expect(con.match(/data-marca-copia/g)).toHaveLength(2);
+    expect(con).toContain(MARCA_COPIA.pie);
+    expect(htmlFormatoCompleto(["guia"], e, "x", { copia: false })).not.toContain("data-marca-copia");
+  });
+
+  it("el PDF lleva la marca (texto extraíble) y el emisor", async () => {
+    const { pdfConFormato } = await import("@/lib/forestal/gtf-formato-completo-pdf");
+    const { ESTILO_CON_FORMATO } = await import("@/lib/forestal/gtf-talonario-plantilla-svg");
+    const e = entradasDeLaGuia(doc(3), null);
+    const conRep = { ...e, cuerpo: { ...e.cuerpo, ficha: { ...e.cuerpo.ficha, representante: "DAMIAN ESPINOZA", representanteDni: "45831805" } } } as typeof e;
+    const bytes = await pdfConFormato(hojasConFormato(["guia"], conRep), "x", ESTILO_CON_FORMATO.celeste, MARCA_COPIA);
+    /* Los streams van comprimidos y las 14 fuentes estándar escriben el texto en hex dentro de <…>. */
+    const textos: string[] = [];
+    for (const m of Buffer.from(bytes).toString("latin1").matchAll(/stream\r?\n([\s\S]*?)endstream/g)) {
+      let s: string;
+      try {
+        s = inflateSync(Buffer.from(m[1], "latin1")).toString("latin1");
+      } catch {
+        continue;
+      }
+      for (const t of s.matchAll(/<([0-9A-Fa-f]+)> Tj/g)) textos.push(Buffer.from(t[1], "hex").toString("latin1"));
+    }
+    expect(textos).toContain("COPIA");
+    expect(textos).toContain("DAMIAN ESPINOZA");
+    expect(textos.some((t) => t.startsWith("COPIA · No vale"))).toBe(true);
   });
 });

@@ -12,9 +12,9 @@
  * Sin DOM: corre en el navegador (se importa con `import()` al bajarlo).
  */
 
-import { LineCapStyle, StandardFonts, concatTransformationMatrix, popGraphicsState, pushGraphicsState, rgb, type Color, type PDFFont, type PDFPage } from "pdf-lib";
+import { LineCapStyle, StandardFonts, concatTransformationMatrix, degrees, popGraphicsState, pushGraphicsState, rgb, type Color, type PDFFont, type PDFPage } from "pdf-lib";
 import { transformacionDe } from "./gtf-matricial-perfiles";
-import type { HojaConFormato } from "./gtf-matricial-print";
+import { MARCA_LETRA_MM, MARCA_OPACIDAD, MARCA_PIE_MM, type HojaConFormato, type MarcaCopia } from "./gtf-matricial-print";
 import { renglonesDeLaPagina } from "./gtf-salida-geometria";
 import { PT_POR_MM, dibujarRenglones, nuevaPagina, nuevoDocumento, sanearParaFuente } from "./gtf-salida-pdf";
 import type { PlantillaHoja, TrazoPlantilla } from "./gtf-talonario-plantilla";
@@ -94,8 +94,30 @@ function dibujarPlantilla(page: PDFPage, altoMm: number, p: PlantillaHoja, e: Es
   for (const t of p.trazos) dibujarTrazo(page, altoMm, t, e, l);
 }
 
-/** El PDF de «Con formato»: una página A4 por hoja, el formato debajo y los valores encima. */
-export async function pdfConFormato(hojas: HojaConFormato[], titulo: string, estilo: EstiloPlantilla): Promise<Uint8Array> {
+/** La marca encima de todo, como `marcaSvg`: la palabra centrada en la hoja y cruzada por la diagonal, y su pie. */
+function dibujarMarca(page: PDFPage, anchoMm: number, altoMm: number, m: MarcaCopia, e: EstiloPlantilla, l: Letras): void {
+  const tinta = color(e.tinta) ?? rgb(0, 0, 0);
+  const W = anchoMm * PT_POR_MM;
+  const H = altoMm * PT_POR_MM;
+  const grande = sanearParaFuente(m.grande, l.tiene);
+  const size = MARCA_LETRA_MM * PT_POR_MM;
+  const w = l.negrita.widthOfTextAtSize(grande, size);
+  const alto = l.negrita.heightAtSize(size, { descender: false });
+  const ang = Math.atan2(H, W);
+  /* El centro de la palabra en el centro de la hoja: se arranca medio ancho atrás por la diagonal y media altura abajo. */
+  const [ux, uy, vx, vy] = [Math.cos(ang), Math.sin(ang), -Math.sin(ang), Math.cos(ang)];
+  page.drawText(grande, {
+    x: W / 2 - (w / 2) * ux - (alto / 2) * vx,
+    y: H / 2 - (w / 2) * uy - (alto / 2) * vy,
+    size, font: l.negrita, color: tinta, opacity: MARCA_OPACIDAD, rotate: degrees((ang * 180) / Math.PI),
+  });
+  const pie = sanearParaFuente(m.pie, l.tiene);
+  const letraPie = MARCA_PIE_MM.letra * PT_POR_MM;
+  page.drawText(pie, { x: W / 2 - l.normal.widthOfTextAtSize(pie, letraPie) / 2, y: MARCA_PIE_MM.base * PT_POR_MM, size: letraPie, font: l.normal, color: tinta });
+}
+
+/** El PDF de «Con formato»: una página A4 por hoja, el formato debajo, los valores encima y, con `marca`, la copia. */
+export async function pdfConFormato(hojas: HojaConFormato[], titulo: string, estilo: EstiloPlantilla, marca: MarcaCopia | null = null): Promise<Uint8Array> {
   const { doc, font, tiene } = await nuevoDocumento(titulo);
   doc.setSubject("La guía de transporte forestal con su formato completo, en hoja A4.");
   const normal = await doc.embedFont(StandardFonts.Helvetica);
@@ -106,6 +128,7 @@ export async function pdfConFormato(hojas: HojaConFormato[], titulo: string, est
     const page = nuevaPagina(doc, h.hoja);
     dibujarPlantilla(page, h.hoja.altoMm, h.plantilla, estilo, letras);
     dibujarRenglones(page, h.hoja, renglonesDeLaPagina(h.hoja, h.cat, h.pagina, transformacionDe(h.hoja, null)), font, tiene);
+    if (marca) dibujarMarca(page, h.hoja.anchoMm, h.hoja.altoMm, marca, estilo, letras);
   }
   return doc.save({ useObjectStreams: false });
 }

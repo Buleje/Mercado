@@ -195,23 +195,48 @@ export interface HojaConFormato {
   plantilla: PlantillaHoja;
 }
 
+/** La marca de una hoja con formato: la palabra cruzada y la línea del pie. */
+export interface MarcaCopia {
+  grande: string;
+  pie: string;
+}
+
+/** Tamaño de la palabra cruzada (mm, ≈ 130 pt) y su tinta: se lee, pero los valores siguen legibles encima. */
+export const MARCA_LETRA_MM = 46;
+export const MARCA_OPACIDAD = 0.09;
+/** El pie, a 3 mm del borde de abajo (el recuadro termina a 7,5 mm). */
+export const MARCA_PIE_MM = { base: 3, letra: 2.5 } as const;
+
+/** La marca encima de todo (en diagonal, de abajo a la izquierda hacia arriba a la derecha) y su pie. */
+function marcaSvg(m: MarcaCopia, W: number, H: number, estilo: EstiloPlantilla): string {
+  const ang = n((Math.atan2(H, W) * 180) / Math.PI);
+  const cx = n(W / 2);
+  const cy = n(H / 2);
+  return `<svg xmlns="http://www.w3.org/2000/svg" data-marca-copia="1" width="${n(W)}mm" height="${n(H)}mm" viewBox="0 0 ${n(W)} ${n(H)}" style="position:absolute;left:0;top:0" font-family="Arial, Helvetica, sans-serif">
+    <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" transform="rotate(-${ang} ${cx} ${cy})" font-size="${MARCA_LETRA_MM}" font-weight="700" fill="${estilo.tinta}" fill-opacity="${MARCA_OPACIDAD}">${esc(m.grande)}</text>
+    <text x="${cx}" y="${n(H - MARCA_PIE_MM.base)}" text-anchor="middle" font-size="${MARCA_PIE_MM.letra}" fill="${estilo.tinta}">${esc(m.pie)}</text></svg>`;
+}
+
 /**
  * El talonario COMPLETO en papel blanco (27-10): cada hoja con el formato
- * dibujado en la tinta de la imprenta y sus valores encima. Sin corrimiento
- * ni escala: no hay talonario preimpreso con el que cuadrar.
+ * dibujado en la tinta elegida, sus valores encima y, con `marca`, la palabra
+ * «COPIA» cruzada y su pie. Sin corrimiento ni escala: no hay talonario
+ * preimpreso con el que cuadrar.
  */
-export function htmlConFormato(hojas: HojaConFormato[], titulo: string, estilo: EstiloPlantilla = ESTILO_CON_FORMATO.celeste): string {
+export function htmlConFormato(hojas: HojaConFormato[], titulo: string, estilo: EstiloPlantilla = ESTILO_CON_FORMATO.celeste, marca: MarcaCopia | null = null): string {
   const [primera] = hojas;
   if (!primera) return documento({ anchoMm: 210, altoMm: 297 }, titulo, []);
-  const W = n(primera.hoja.anchoMm);
-  const H = n(primera.hoja.altoMm);
+  const { anchoMm, altoMm } = primera.hoja;
+  const W = n(anchoMm);
+  const H = n(altoMm);
   return documento(
     primera.hoja,
     titulo,
     hojas.map(
       (h) =>
         `<svg xmlns="http://www.w3.org/2000/svg" data-con-formato="1" width="${W}mm" height="${H}mm" viewBox="0 0 ${W} ${H}" style="position:absolute;left:0;top:0">${grupoPlantillaSvg(h.plantilla, estilo)}</svg>` +
-        cajasDeLaPagina(h.hoja, h.cat, h.pagina).join(""),
+        cajasDeLaPagina(h.hoja, h.cat, h.pagina).join("") +
+        (marca ? marcaSvg(marca, anchoMm, altoMm, estilo) : ""),
     ),
   );
 }
