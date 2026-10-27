@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ForestDistribucionesDB } from "@/lib/db/forest-distribuciones.db";
+import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -210,6 +211,13 @@ export const POST = withApiHandler("forestal-distribuciones-post", async (req: N
     );
     return NextResponse.json({ distribucion }, { status: parsed.data.id ? 200 : 201 });
   } catch (err) {
+    /* Una jornada del Recorrido tiene la clave mientras escribe el Libro. */
+    if (err instanceof ClaveOcupadaError) {
+      return NextResponse.json(
+        { error: "jornada_en_curso", message: "Se está registrando una jornada: prueba de nuevo en unos segundos." },
+        { status: 409 },
+      );
+    }
     logger.error("[distribuciones.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

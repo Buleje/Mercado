@@ -43,11 +43,24 @@ export interface ResumenJornadas {
   mensaje: string;
 }
 
-export interface TransporteJornadas {
+/** Los dos actos por separado: una falla al declarar deja la corrida abierta (se nombra su N°). */
+interface DosActos {
   consumir: (j: Jornada) => Promise<{ id: string; lineNo: number }>;
   declarar: (corridaId: string, j: Jornada) => Promise<void>;
-  onAvance?: (hechas: number, total: number) => void;
 }
+
+/**
+ * Un solo acto (ADR-519, fase 2): el servidor consume y declara en UNA
+ * transacción. Una falla no deja nada, así que el día queda «no-consumio» y
+ * nunca «corrida-abierta».
+ */
+interface UnActo {
+  registrar: (j: Jornada) => Promise<{ id: string; lineNo: number }>;
+}
+
+export type TransporteJornadas = (DosActos | UnActo) & {
+  onAvance?: (hechas: number, total: number) => void;
+};
 
 /**
  * Dos fallos seguidos de consumo por el MISMO motivo y se corta.
@@ -72,7 +85,7 @@ export async function registrarJornadas(
 
     let corrida: { id: string; lineNo: number };
     try {
-      corrida = await io.consumir(j);
+      corrida = "registrar" in io ? await io.registrar(j) : await io.consumir(j);
     } catch (e) {
       const motivo = texto(e);
       seguidos = motivo === ultimoMotivo ? seguidos + 1 : 1;
@@ -94,6 +107,10 @@ export async function registrarJornadas(
 
     seguidos = 0;
     ultimoMotivo = null;
+    if ("registrar" in io) {
+      resultados.push({ dia: j.dia, fecha: j.fecha, estado: "declarada", lineNo: corrida.lineNo, corridaId: corrida.id });
+      continue;
+    }
     try {
       await io.declarar(corrida.id, j);
       resultados.push({ dia: j.dia, fecha: j.fecha, estado: "declarada", lineNo: corrida.lineNo, corridaId: corrida.id });

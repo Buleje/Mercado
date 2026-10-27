@@ -116,6 +116,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "anexo" | "enviar" | "variado" | "trasera" | "guardar";
 import { formatNumber } from "@/lib/format";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
+import AvisoPermisoCubicador from "./recorrido/aviso-permiso-cubicador";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -2380,6 +2381,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
           ) : undefined}
         />
       )}
+      {/* ADR-519 fase 4: madera de un permiso → su recorrido en la Distribución. Fuera de
+          las secciones: se ve en Cargar, Lote y Resumen. */}
+      {!espacio && <AvisoPermisoCubicador titulo={form.ficha.tituloHabilitante} />}
 
       <div {...(enSecciones ? panelDeSeccion(seccion) : {})} className="space-y-4">
       {/* Cargar: dictar y cargar, con lo último que entró al lote debajo. */}

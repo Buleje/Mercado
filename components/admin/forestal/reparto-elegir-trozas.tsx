@@ -42,10 +42,13 @@ export default function RepartoElegirTrozas({
   bd,
   distribucionId,
   aplicar,
+  onGuardado,
 }: {
   bd: BloqueDistribuido;
   distribucionId: string | null;
   aplicar: Aplicar;
+  /** Ya quedó anotado en la distribución guardada (el recorrido relee su paso). */
+  onGuardado?: () => void;
 }) {
   const b = bd.bloque;
   const [abierto, setAbierto] = useState(false);
@@ -101,7 +104,10 @@ export default function RepartoElegirTrozas({
           error: String(err),
         }),
       )
-      .finally(() => setGuardando(false));
+      .finally(() => {
+        setGuardando(false);
+        onGuardado?.();
+      });
   };
 
   const resumen =

@@ -17,6 +17,7 @@ import RepartoElegirTrozas from "../reparto-elegir-trozas";
 import { AvisoDelLibro, JornadaLibro } from "../reparto-jornada-libro";
 import { anotarLibroEnLaGuardada } from "../reparto-lotes-sugeridos-api";
 import { useLibroDeBloques } from "./use-libro-de-bloques";
+import { useRecorridoDelBloque, type AccionesDeLaDistribucion } from "./use-recorrido-del-bloque";
 import { MOTIVO_ROL, useTandaDelLibro } from "./use-tanda-del-libro";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import type { EstadoLotesAserrio } from "./use-lotes-aserrio";
@@ -45,6 +46,7 @@ export function useLibroDelReparto({
   distPorTipo,
   lotes,
   marcar,
+  recorrido,
 }: {
   bloques: BloqueRolliza[];
   /** Guarda la tabla en el dispositivo (la misma función de la pantalla). */
@@ -56,6 +58,8 @@ export function useLibroDelReparto({
   distPorTipo: Distribucion;
   lotes: EstadoLotesAserrio;
   marcar: (claves: string[], estado?: boolean) => void;
+  /** ADR-519 fase 4: el anexo y el guardado de la Distribución, para el «Recorrido del permiso». */
+  recorrido?: AccionesDeLaDistribucion;
 }) {
   const [hoy] = useState(() => limaDateKey());
   const bloquesRef = useRef(bloques);
@@ -115,6 +119,8 @@ export function useLibroDelReparto({
       ),
   });
 
+  const recorridoDe = useRecorridoDelBloque({ distribucionId, porId, vistaPorId, aplicar, lotes, marcar, puedeDeclarar, hoy, acciones: recorrido });
+
   const [completarDe, setCompletarDe] = useState<string | null>(null);
   const [lre, setLre] = useState<{ bloqueId: string; origen: CorridaDelLoteParaCompletar; elegidas: AsignacionGrupo[] } | null>(null);
 
@@ -163,7 +169,14 @@ export function useLibroDelReparto({
     );
   };
 
-  const bloque = (b: BloqueDistribuido): ReactNode => {
+  const bloque = (b: BloqueDistribuido): ReactNode => (
+    <>
+      {recorridoDe.boton(b)}
+      {botonDelLibro(b)}
+    </>
+  );
+
+  const botonDelLibro = (b: BloqueDistribuido): ReactNode => {
     const id = b.bloque.id;
     const c = completos.get(id);
     const plan = planes.get(id);
@@ -215,6 +228,7 @@ export function useLibroDelReparto({
   const nodo = (
     <>
       {tanda.nodo}
+      {recorridoDe.nodo}
       {bdCompletar && planCompletar && (
         <RepartoCompletarLote
           etiqueta={bdCompletar.bloque.etiqueta || "sin etiqueta"}

@@ -203,7 +203,10 @@ describe("madera propia: una corrida por especie, en UNA transacción", () => {
     const r = await producir(input(PROPIA));
 
     expect(H.prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(H.tx.$executeRaw).toHaveBeenCalledTimes(1);
+    /* El candado de siempre + el de la numeración del Libro (revisión ADR-519, M1). */
+    expect(H.tx.$executeRaw).toHaveBeenCalledTimes(2);
+    const sqls = H.tx.$executeRaw.mock.calls.map((c: unknown[]) => (Array.isArray(c[0]) ? c[0].join("?") : String(c[0])));
+    expect(sqls.some((q: string) => q.includes("'ctp-lineno:'"))).toBe(true);
     expect(H.estado.entries.map((e) => [e.data.lineNo, e.data.speciesCommon])).toEqual([
       [41, "Panguana"],
       [42, "Tornillo"],

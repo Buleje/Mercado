@@ -538,6 +538,48 @@ export interface CreadoEnTx {
   origenesEscritos: OrigenesEscritos | null;
 }
 
+/** Lo que `declararProduccion` le escribe a una corrida abierta (ADR-349). */
+export interface CamposDeclaracion {
+  productType?: string | null;
+  presentacion?: string | null;
+  quantity: number;
+  unit: string;
+  pieces?: number | null;
+  codigoProducto?: string | null;
+  lineaProduccion?: string | null;
+  observations?: string | null;
+  /**
+   * Los PAQUETES que salieron (ADR-349). El formato del SNIFFS declara
+   * paquetes, no un volumen suelto: cada uno con su código, su producto y
+   * —si se dimensionó— espesor, ancho y largo.
+   *
+   * Son el detalle de `quantity`, no otra cantidad: se valida que sumen lo
+   * declarado. Sin paquetes, la corrida se declara como antes.
+   */
+  paquetes?: {
+    codigo: string;
+    productType?: string | null;
+    presentacion?: string | null;
+    cantidad: number;
+    volumenM3: number;
+    espesorCm?: number | null;
+    anchoCm?: number | null;
+    largoM?: number | null;
+    observations?: string | null;
+  }[];
+}
+
+/** La corrida tal como la juzga `validarDeclaracion`: lo que se lee de ella antes de declarar. */
+export interface CorridaPorDeclarar {
+  id: string;
+  section: string;
+  status: string;
+  lineNo: number;
+  entryDate: Date;
+  quantity: unknown;
+  volumeInputM3: { toNumber(): number } | number | null;
+}
+
 /* `produccionKey` y `produccionKeyBase` viven en `lib/forestal/ctp-claves-import.ts`
    (puras: también las usa el modal de importar). Se re-exportan para los importadores de siempre. */
 export { produccionKey, produccionKeyBase } from "@/lib/forestal/ctp-claves-import";
@@ -859,6 +901,23 @@ export class ForestCtpDB {
    * stock tape al del paquete: sacar dos veces el último bulto de un producto
    * decía «sólo quedan 0,5» cuando la causa era «ya va en otra guía».
    */
+  /**
+   * El N° de línea de una sección, en fila (revisión de ADR-519, M1). El N° es
+   * `MAX(lineNo) + 1` y, sin candado, dos altas a la vez de la misma sección
+   * (dos jornadas, una jornada y una producción sin lote) leían el mismo MAX y
+   * salían con el mismo N°. Un candado de transacción por negocio y sección:
+   * la segunda espera al commit de la primera y lee el MAX nuevo. Se suelta
+   * solo al cerrar la transacción.
+   *
+   * Orden de candados donde se toma (sin ciclos): claves KV (distribución,
+   * anexo) → `bloquearProduccion` (sólo despachos) → ESTE → lote → trozas
+   * `ORDER BY id` → ingresos. Nadie que ya tenga un lote o una troza pide
+   * después este candado.
+   */
+  static async bloquearNumeracion(tx: Prisma.TransactionClient, tenantId: string, section: string): Promise<void> {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('ctp-lineno:' || ${tenantId} || ':' || ${section}))`;
+  }
+
   static async bloquearProduccion(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
     await tx.$queryRaw`
       SELECT "id" FROM "ForestCtpEntry"
@@ -1007,6 +1066,7 @@ export class ForestCtpDB {
       await ForestCtpDB.assertStockDisponible(tx, tenantId, input, { yaBloqueado: true });
     }
 
+    await ForestCtpDB.bloquearNumeracion(tx, tenantId, input.section);
     const max = await tx.forestCtpEntry.aggregate({
       where: { tenantId, section: input.section },
       _max: { lineNo: true },
@@ -1709,35 +1769,7 @@ export class ForestCtpDB {
   static async declararProduccion(
     tenantId: string,
     id: string,
-    campos: {
-      productType?: string | null;
-      presentacion?: string | null;
-      quantity: number;
-      unit: string;
-      pieces?: number | null;
-      codigoProducto?: string | null;
-      lineaProduccion?: string | null;
-      observations?: string | null;
-      /**
-       * Los PAQUETES que salieron (ADR-349). El formato del SNIFFS declara
-       * paquetes, no un volumen suelto: cada uno con su código, su producto y
-       * —si se dimensionó— espesor, ancho y largo.
-       *
-       * Son el detalle de `quantity`, no otra cantidad: se valida que sumen lo
-       * declarado. Sin paquetes, la corrida se declara como antes.
-       */
-      paquetes?: {
-        codigo: string;
-        productType?: string | null;
-        presentacion?: string | null;
-        cantidad: number;
-        volumenM3: number;
-        espesorCm?: number | null;
-        anchoCm?: number | null;
-        largoM?: number | null;
-        observations?: string | null;
-      }[];
-    },
+    campos: CamposDeclaracion,
     user = "unknown",
   ) {
     if (!tenantId) throw new Error("tenantId is required");
@@ -1755,6 +1787,24 @@ export class ForestCtpDB {
       },
     });
     if (!actual) return null;
+    await ForestCtpDB.validarDeclaracion(tenantId, actual, campos);
+    const { entry, rendimiento } = await ForestCtpDB.declararProduccionEnTx(prisma, tenantId, actual, campos, user);
+    ForestCtpDB.despuesDeDeclarar(tenantId, entry, campos, rendimiento, user);
+    return entry;
+  }
+
+  /**
+   * Las reglas de `declararProduccion`, sin escribir nada (ADR-519, fase 2):
+   * sección, estado, mes cerrado, cantidad, tope del 56 % y paquetes. Sueltas
+   * para que la jornada del bloque las corra ANTES de su transacción, sobre la
+   * corrida que todavía no existe; el texto y el código de cada rechazo son
+   * los mismos de siempre.
+   */
+  static async validarDeclaracion(
+    tenantId: string,
+    actual: CorridaPorDeclarar,
+    campos: CamposDeclaracion,
+  ): Promise<void> {
     if (actual.section !== "produccion") {
       throw new CtpInvariantError(
         "Sólo una corrida de producción declara producción.",
@@ -1829,14 +1879,30 @@ export class ForestCtpDB {
         paquetes.map((p) => p.codigo),
       );
     }
+  }
 
+  /**
+   * El UPDATE de `declararProduccion` dentro de una transacción ajena (ADR-519,
+   * fase 2). No valida —eso es `validarDeclaracion`, antes— ni audita: el
+   * renglón va DESPUÉS del commit (`despuesDeDeclarar`), o narraría una
+   * declaración que un rollback deshizo.
+   */
+  static async declararProduccionEnTx(
+    tx: typeof prisma | Prisma.TransactionClient,
+    tenantId: string,
+    actual: Pick<CorridaPorDeclarar, "id" | "volumeInputM3">,
+    campos: CamposDeclaracion,
+    user: string,
+  ) {
+    const id = actual.id;
+    const paquetes = campos.paquetes ?? [];
     const inVol = actual.volumeInputM3 != null ? Number(actual.volumeInputM3) : 0;
     const rendimiento =
       inVol > 0 && campos.unit === "m3"
         ? Math.round((campos.quantity / inVol) * 10000) / 100
         : null;
 
-    const entry = await prisma.forestCtpEntry.update({
+    const entry = await tx.forestCtpEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
       data: {
         productType: campos.productType?.trim() || null,
@@ -1875,11 +1941,23 @@ export class ForestCtpDB {
           : {}),
       },
     });
+    return { entry, rendimiento };
+  }
+
+  /** Lo que va después del commit de una declaración: el renglón del libro y la caché. */
+  static despuesDeDeclarar(
+    tenantId: string,
+    entry: { id: string; lineNo: number },
+    campos: CamposDeclaracion,
+    rendimiento: number | null,
+    user: string,
+  ): void {
+    const paquetes = campos.paquetes ?? [];
     auditCtp({
       tenantId,
       action: "ctp_linea_produccion_declarada",
       entity: "ForestCtpEntry",
-      entityId: id,
+      entityId: entry.id,
       detail:
         `Declaró la producción de la corrida #${entry.lineNo}: ${campos.quantity} ${campos.unit}` +
         (paquetes.length > 0 ? ` en ${paquetes.length} paquete(s)` : "") +
@@ -1891,7 +1969,6 @@ export class ForestCtpDB {
     } catch {
       /* cache best-effort */
     }
-    return entry;
   }
 
   /**

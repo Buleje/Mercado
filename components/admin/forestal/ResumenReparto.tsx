@@ -836,11 +836,40 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     () => (dim === "tipo" ? dist : distribuirPorCapacidad(bloquesDiferidos, piezasDiferidas, "tipo", precioDe)),
     [dim, dist, bloquesDiferidos, piezasDiferidas, precioDe],
   );
+  /** El bloque como lo muestra la tabla, con su especie: lo que usa el Anexo 04 del bloque.
+      Antes del cableado del Libro: el recorrido lee sus piezas al dibujarse. */
+  const vistaDelBloque = (id: string) => {
+    for (const e of distVista.especies) {
+      const b = e.bloques.find((x) => x.bloque.id === id);
+      if (b) return { b, especie: e.especie };
+    }
+    return null;
+  };
   /* ADR-464, fases 3 y 4: cada jornada del bloque escribe su corrida en el
      Libro y «Completar» declara lo que falta del lote (LPC o LRE). */
   const libroReparto = useLibroDelReparto({
     bloques, guardar, distribucionId: distribucionActual?.id ?? null,
     dim, distVista, distPorTipo, lotes: estadoLotes, marcar,
+    /* ADR-519 fase 4: el «Recorrido del permiso» abre el mismo Anexo 04 (con lo
+       tildado, como el botón del bloque) y guarda con el mismo candado. */
+    recorrido: {
+      piezasDe: (b) => {
+        const v = vistaDelBloque(b.bloque.id);
+        return v ? piezasFiltradasDelBloque(v.b, v.especie, marcadoEn(marcadas)) : [];
+      },
+      abrirAnexo: (b) => {
+        const v = vistaDelBloque(b.bloque.id);
+        if (!v) return;
+        setAnexoDe({
+          piezas: piezasFiltradasDelBloque(v.b, v.especie, marcadoEn(marcadas)),
+          especie: v.especie,
+          etiqueta: v.b.bloque.etiqueta || "Sin etiqueta",
+          procedencia: esAserradaDirecta(v.b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
+          permiso: v.b.bloque.permiso ?? null,
+        });
+      },
+      guardarDistribucion: () => candadoGuardar.conCandado(() => void guardarDistribucion())(),
+    },
   });
   const reprocesos = useMemo(() => sugerenciasDeReproceso(distPorTipo), [distPorTipo]);
   /**

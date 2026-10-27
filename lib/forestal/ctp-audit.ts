@@ -425,6 +425,9 @@ export type CtpAuditAction =
   // cargados en "Distribución de rolliza sobre lo aserrado", con nombre.
   | "ctp_distribucion_create"
   | "ctp_distribucion_update"
+  // Un paso del Recorrido del permiso ejecutado desde el servidor (ADR-519):
+  // el lote del bloque o sus jornadas. Cada escritura del Libro deja además su renglón propio.
+  | "ctp_recorrido_paso"
   | "ctp_distribucion_delete"
   // ANEXO N° 04 emitido con la GTF (lista de productos transformados)
   // Baja lógica del Plan de Manejo (ADR-126). Es el papel que autoriza todo el

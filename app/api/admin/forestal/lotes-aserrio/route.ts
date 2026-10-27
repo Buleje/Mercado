@@ -8,6 +8,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestVincularCorridaDB } from "@/lib/db/forest-vincular-corrida.db";
+import { ForestJornadaBloqueDB } from "@/lib/db/forest-jornada-bloque.db";
 import { vincularCorridaSchema } from "@/lib/forestal/vincular-desde-mixto";
 import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 
@@ -213,6 +214,32 @@ const patchSchema = z.discriminatedUnion("accion", [
     observaciones: z.string().trim().max(500).optional(),
   }),
   /**
+   * REGISTRAR UNA JORNADA en un solo acto (ADR-519, fase 2): consumir sus
+   * piezas y declararle la producción en UNA transacción. Si algo falla no
+   * queda corrida abierta. Declarar es del dueño o un administrador (abajo).
+   */
+  z.object({
+    accion: z.literal("registrar-jornada"),
+    loteId: z.string().trim().min(1).max(60),
+    trozaIds: z.array(z.string().trim().min(1).max(60)).min(1).max(500),
+    fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD").optional(),
+    observaciones: z.string().trim().max(500).optional(),
+    /** Se acepta por compatibilidad y se ignora: el servidor SIEMPRE exige todas (revisión ADR-519, B3). */
+    exigirTodas: z.boolean().optional(),
+    /** Los mismos campos y topes que `declarar_produccion` de `PATCH /ctp`; la jornada declara en m³. */
+    produccion: z.object({
+      quantity: z.coerce.number().positive().max(9999999),
+      unit: z.literal("m3"),
+      pieces: z.coerce.number().int().nonnegative().max(999999).nullable().optional(),
+      productType: z.string().trim().max(80).nullable().optional(),
+      presentacion: z.string().trim().max(80).nullable().optional(),
+      codigoProducto: z.string().trim().max(80).nullable().optional(),
+      lineaProduccion: z.string().trim().max(10).nullable().optional(),
+      observations: z.string().trim().max(1000).nullable().optional(),
+      paquetes: z.array(paqueteSchema).max(200).optional(),
+    }),
+  }),
+  /**
    * SUMAR piezas a una corrida que todavía no declaró (ADR-364): el turno que
    * entra en tandas es UNA corrida, no dos asientos con dos rendimientos.
    */
@@ -398,6 +425,32 @@ export async function PATCH(req: NextRequest) {
         },
         { status: 403 },
       );
+    }
+
+    /* Registrar una jornada DECLARA producción: los mismos que `PATCH /ctp`
+       (admin, owner y el «management tier», que deja pasar a manager). El
+       almacenero consume pero no declara; antes consumía y el segundo pedido
+       le rebotaba, dejando la corrida abierta. */
+    if (d.accion === "registrar-jornada" && !["admin", "owner", "manager"].includes(g.auth.role)) {
+      return NextResponse.json(
+        {
+          error: "forbidden",
+          message: "Registrar la jornada declara su producción en el Libro: lo hace el dueño o un administrador.",
+        },
+        { status: 403 },
+      );
+    }
+    if (d.accion === "registrar-jornada") {
+      /* Día suelto → mediodía UTC, como `consumir`. */
+      const r = await ForestJornadaBloqueDB.registrarJornada(g.auth.tenantId, {
+        loteId: d.loteId,
+        trozaIds: d.trozaIds,
+        fecha: d.fecha ? new Date(`${d.fecha}T12:00:00.000Z`) : undefined,
+        observaciones: d.observaciones ?? null,
+        produccion: d.produccion,
+        user,
+      });
+      return NextResponse.json(r);
     }
 
     if (d.accion === "agregar") {

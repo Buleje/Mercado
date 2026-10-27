@@ -55,6 +55,9 @@
  *   {"fallar": "/api/settings"}   → ese GET responde 500 (o ["/api/x", 503]); {"fallar": null} lo
  *                                   quita. Para probar «la carga falló» (04-10: sin esto fue un
  *                                   parche de fetch + history.back a mano). Recargá con {"eval": "location.reload()"}.
+ *   presets del recorrido del permiso (ADR-519): `recorrido-distribucion-sembrada` (siembra 6 bloques desde Capacidad en
+ *     el tenant QA forestal) · `recorrido-qa-limpiar` (borra las distribuciones sembradas HOY sin lote: si no, sus trozas
+ *     elegidas traban la corrida siguiente; las que tienen lote se listan para anularlo a mano)
  *   {"modificar": ["/api/x", "(j) => { …; return j; }"]} → la respuesta REAL de ese GET pasada por esa función (27-10:
  *                                   un estado raro sin armar el JSON entero; al principio rige desde la carga, como parchear)
  *   {"parchear": ["/api/x", {...}, "POST"?]} → ese GET (o el método del 3.º) responde 200 con ESE JSON (05-10: tablas forestales sin datos en

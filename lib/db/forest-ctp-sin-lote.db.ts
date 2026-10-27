@@ -8,6 +8,7 @@ import { esDuenoMadera, etiquetaDeDueno, revisarDueno } from "@/lib/forestal/due
 import { motivoParteNoAceptable } from "@/lib/forestal/aserrio-cobro";
 import type { ProduccionSinLoteInput, ProduccionSinLoteRespuesta } from "@/lib/forestal/declarar-produccion";
 import type { ResultadoCobro } from "@/lib/forestal/tarifa-aserrio";
+import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import {
   MATERIA_PRIMA_SIN_LOTE,
   ProduccionSinLoteError,
@@ -226,6 +227,9 @@ export const ForestCtpSinLoteDB = {
           );
         }
 
+        /* El mismo candado de numeración que `crearEnTx`: sin él, una jornada
+           y esta tanda leían el mismo MAX y repetían el N° de línea. */
+        await ForestCtpDB.bloquearNumeracion(tx, tenantId, "produccion");
         const max = await tx.forestCtpEntry.aggregate({
           where: { tenantId, section: "produccion" },
           _max: { lineNo: true },
