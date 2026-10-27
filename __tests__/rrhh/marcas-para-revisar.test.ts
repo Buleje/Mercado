@@ -49,6 +49,9 @@ describe("motivosDeLaMarca", () => {
     expect(codigos(marca({ entrada: "06:20" }))).toEqual(["fuera_de_horario"]);
     expect(codigos(marca({ entrada: "07:00" }))).toEqual([]);
   });
+  it("medio día de la tarde no sale como fuera de horario (revisión 26-10)", () => {
+    expect(codigos(marca({ entrada: "13:00", salida: "18:00", estado: "MEDIO_DIA" }))).toEqual([]);
+  });
   it("tarde pero marcado Presente", () => {
     expect(codigos(marca({ entrada: "08:30" }))).toEqual(["tarde_sin_tardanza"]);
     expect(codigos(marca({ entrada: "08:30", estado: "TARDANZA" }))).toEqual([]);

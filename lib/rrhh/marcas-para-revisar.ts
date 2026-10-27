@@ -65,7 +65,9 @@ export function motivosDeLaMarca(m: AsistenciaDTO, horario: HorarioDelPuesto | n
     motivos.push({ codigo: "kiosko_sin_foto", texto: "La marcó la tablet sin foto: no hay cómo saber quién fue" });
   }
 
-  if (horario?.horaEntrada && entradaMin != null) {
+  // Medio día no se juzga contra la hora de entrada del puesto: el de la tarde entra a las 13:00
+  // a propósito y saldría «fuera de horario» todos los días (revisión 26-10).
+  if (horario?.horaEntrada && entradaMin != null && m.estado !== "MEDIO_DIA") {
     const t = tardanzaDe(m.entrada, horario.horaEntrada, horario.toleranciaMin);
     if (t) {
       const gracia = Math.max(0, Math.trunc(horario.toleranciaMin) || 0);
