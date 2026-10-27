@@ -74,6 +74,12 @@ export interface HechosDeCorrida {
   reprocesadaEn: number[];
   /** Despachos vivos que la citan como origen. */
   despachos: { lineNo: number; gtf: string | null }[];
+  /**
+   * Paquetes vivos de la corrida que una guía VIVA lleva por su código, aunque
+   * el origen de esa guía sea otra corrida: anulada la corrida, el paquete
+   * quedaría vivo colgado de ella (mismo criterio que anular una corrida).
+   */
+  paquetesEnGuia: { codigo: string; despacho: number; gtf: string | null }[];
   lotesComerciales: number;
   /** Código de los lotes de aserrío vivos que cerró. */
   lotesAserrio: string[];
@@ -104,13 +110,16 @@ export function bloqueosDe(h: HechosDeCorrida): string[] {
       `se reprocesó en ${h.reprocesadaEn.length === 1 ? "la corrida" : "las corridas"} N.º ${lista(h.reprocesadaEn)}`,
     );
   }
-  if (h.despachos.length > 0) {
-    const d = h.despachos.map((x) =>
-      x.gtf ? `N.º ${x.lineNo} (GTF ${x.gtf})` : `N.º ${x.lineNo}`,
-    );
-    motivos.push(
-      `salió en ${h.despachos.length === 1 ? "el despacho" : "los despachos"} ${lista(d)}`,
-    );
+  /* Un despacho que además lleva un paquete de la corrida se dice una vez, con el paquete. */
+  const conPaquete = new Set(h.paquetesEnGuia.map((p) => p.despacho));
+  const despachos = h.despachos.filter((x) => !conPaquete.has(x.lineNo));
+  if (despachos.length > 0) {
+    const d = despachos.map((x) => (x.gtf ? `N.º ${x.lineNo} (GTF ${x.gtf})` : `N.º ${x.lineNo}`));
+    motivos.push(`salió en ${despachos.length === 1 ? "el despacho" : "los despachos"} ${lista(d)}`);
+  }
+  for (const p of h.paquetesEnGuia) {
+    const guia = p.gtf?.trim() ? `la guía ${p.gtf.trim()}` : "una guía en borrador";
+    motivos.push(`tiene el paquete ${p.codigo} en ${guia} (despacho N.º ${p.despacho}): anula esa salida primero`);
   }
   if (h.lotesComerciales > 0) motivos.push("está en un lote comercial");
   if (h.lotesAserrio.length > 0) {

@@ -31,7 +31,8 @@ const tx = {
   $queryRaw: vi.fn(async (strings: TemplateStringsArray, ...values: unknown[]) => {
     if (strings.join("?").includes("ForestCtpPaquete")) {
       H.escrituras.push("lock-paquetes");
-      return H.paquetes.filter((p) => p.deletedAt == null && p.ctpEntryId === values[1]).map(({ codigo }) => ({ codigo }));
+      const corridas = [values[1]].flat();
+      return H.paquetes.filter((p) => p.deletedAt == null && corridas.includes(p.ctpEntryId)).map(({ codigo, ctpEntryId }) => ({ codigo, ctpEntryId }));
     }
     H.escrituras.push("lock");
     return [];

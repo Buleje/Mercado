@@ -2712,11 +2712,8 @@ export class ForestCtpDB {
       select: { id: true, codigo: true },
     });
     if (vivos.length === 0) return 0;
-    const enGuia = await db.forestCtpEntry.findMany({
-      where: { tenantId, section: "despacho", codigoProducto: { in: vivos.map((p) => p.codigo) }, ...ORIGEN_VIGENTE.despacho, ...NO_ES_SALIDA_DE_TROZAS },
-      select: { codigoProducto: true },
-    });
-    const viajan = new Set(enGuia.map((d) => d.codigoProducto));
+    const enGuia = await ForestCtpDespachoDB.guiasConPaquetesEn(db, tenantId, vivos.map((p) => p.codigo));
+    const viajan = new Set(enGuia.map((d) => d.codigo));
     const ids = vivos.filter((p) => !viajan.has(p.codigo)).map((p) => p.id);
     if (ids.length === 0) return 0;
     const r = await db.forestCtpPaquete.updateMany({
@@ -2756,6 +2753,32 @@ export class ForestCtpDB {
     return r.count;
   }
 
+  /** `FOR UPDATE` sobre la corrida: el mismo candado que toma el alta de un despacho (I3). */
+  static async bloquearCorridaEn(tx: Pick<Prisma.TransactionClient, "$queryRaw">, tenantId: string, id: string): Promise<void> {
+    await tx.$queryRaw`SELECT "id" FROM "ForestCtpEntry" WHERE "tenantId" = ${tenantId} AND "id" = ${id} FOR UPDATE`;
+  }
+
+  /**
+   * Los paquetes vivos de estas corridas, BLOQUEADOS en orden de id. Se llama
+   * con las corridas ya bloqueadas: el orden del alta de un despacho es la
+   * corrida (I3) y después el paquete (`exigirPaqueteLibreEnTx`), así que el
+   * que anula y el que despacha se turnan sin abrazarse. Lo usan anular o
+   * borrar una corrida y «Anular el día» (todas las del día en una consulta).
+   */
+  static async bloquearPaquetesDeEn(
+    tx: Pick<Prisma.TransactionClient, "$queryRaw">,
+    tenantId: string,
+    corridaIds: readonly string[],
+  ): Promise<{ codigo: string; ctpEntryId: string }[]> {
+    if (corridaIds.length === 0) return [];
+    return tx.$queryRaw<{ codigo: string; ctpEntryId: string }[]>`
+      SELECT "codigo", "ctpEntryId" FROM "ForestCtpPaquete"
+      WHERE "tenantId" = ${tenantId} AND "ctpEntryId" = ANY(${[...corridaIds]}::text[]) AND "deletedAt" IS NULL
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+  }
+
   /**
    * Una corrida de la que ya salió madera —un despacho o un reproceso VIVOS
    * que la citan como origen— no se anula ni se borra suelta: el despacho
@@ -2764,29 +2787,16 @@ export class ForestCtpDB {
    * día» (`bloqueosDe`) y deshacer un lote de aserrío (`forzar`); el botón
    * «Anular» de una fila no la tenía. Se llama con la corrida bloqueada.
    */
-  /** `FOR UPDATE` sobre la corrida: el mismo candado que toma el alta de un despacho (I3). */
-  static async bloquearCorridaEn(tx: Pick<Prisma.TransactionClient, "$queryRaw">, tenantId: string, id: string): Promise<void> {
-    await tx.$queryRaw`SELECT "id" FROM "ForestCtpEntry" WHERE "tenantId" = ${tenantId} AND "id" = ${id} FOR UPDATE`;
-  }
-
   static async exigirSinSalidaVivaEn(
     db: Pick<Prisma.TransactionClient, "$queryRaw" | "forestCtpEntry" | "forestCtpDespachoOrigen" | "forestCtpReproceso">,
     tenantId: string,
     corridaId: string,
     lineNo?: number | null,
   ): Promise<void> {
-    /* Los paquetes de la corrida, BLOQUEADOS (después de la corrida: el orden
-       del alta de un despacho, I3 y luego el paquete). Un despacho puede citar
-       el PAQUETE por su código aunque su origen se haya atribuido a otra
-       corrida: sin mirar esto la corrida se anulaba y el paquete quedaba vivo
-       colgado de ella. Mismo criterio que `exigirPaqueteLibreEnTx`. */
-    const paquetes = await db.$queryRaw<{ codigo: string }[]>`
-      SELECT "codigo" FROM "ForestCtpPaquete"
-      WHERE "tenantId" = ${tenantId} AND "ctpEntryId" = ${corridaId} AND "deletedAt" IS NULL
-      ORDER BY "id"
-      FOR UPDATE
-    `;
-    const codigos = paquetes.map((p) => p.codigo);
+    /* Un despacho puede citar el PAQUETE por su código aunque su origen se
+       haya atribuido a otra corrida: sin mirar esto la corrida se anulaba y el
+       paquete quedaba vivo colgado de ella. */
+    const paquetes = await ForestCtpDB.bloquearPaquetesDeEn(db, tenantId, [corridaId]);
     const [despachos, reprocesos, guiasDelPaquete] = await Promise.all([
       db.forestCtpDespachoOrigen.findMany({
         where: { tenantId, produccionEntryId: corridaId, despacho: ORIGEN_VIGENTE.despacho },
@@ -2798,20 +2808,13 @@ export class ForestCtpDB {
         select: { destino: { select: { lineNo: true } } },
         take: 5,
       }),
-      codigos.length === 0
-        ? Promise.resolve([] as { lineNo: number; gtfNumber: string | null; codigoProducto: string | null }[])
-        : db.forestCtpEntry.findMany({
-            where: { tenantId, section: "despacho", codigoProducto: { in: codigos }, ...ORIGEN_VIGENTE.despacho, ...NO_ES_SALIDA_DE_TROZAS },
-            select: { lineNo: true, gtfNumber: true, codigoProducto: true },
-            orderBy: { lineNo: "asc" },
-            take: 5,
-          }),
+      ForestCtpDespachoDB.guiasConPaquetesEn(db, tenantId, paquetes.map((p) => p.codigo)).then((g) => g.slice(0, 5)),
     ]);
     if (despachos.length === 0 && reprocesos.length === 0 && guiasDelPaquete.length === 0) return;
     const conGtf = (g: string | null) => (g?.trim() ? ` (GTF ${g.trim()})` : "");
     const lineasDelPaquete = new Set(guiasDelPaquete.map((g) => g.lineNo));
     const partes = [
-      ...guiasDelPaquete.map((g) => `el despacho N° ${g.lineNo}${conGtf(g.gtfNumber)}, que lleva el paquete ${g.codigoProducto}`),
+      ...guiasDelPaquete.map((g) => `el despacho N° ${g.lineNo}${conGtf(g.gtfNumber)}, que lleva el paquete ${g.codigo}`),
       ...despachos
         .filter((d) => !lineasDelPaquete.has(d.despacho.lineNo))
         .map((d) => `el despacho N° ${d.despacho.lineNo}${conGtf(d.despacho.gtfNumber)}`),
@@ -2825,7 +2828,7 @@ export class ForestCtpDB {
         corridaId,
         despachos: [...new Set([...despachos.map((d) => d.despacho.lineNo), ...lineasDelPaquete])],
         reprocesos: reprocesos.map((r) => r.destino.lineNo),
-        paquetes: [...new Set(guiasDelPaquete.map((g) => g.codigoProducto))],
+        paquetes: [...new Set(guiasDelPaquete.map((g) => g.codigo))],
       },
     );
   }

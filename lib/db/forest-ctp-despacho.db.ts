@@ -565,6 +565,29 @@ export class ForestCtpDespachoDB {
   }
 
   /**
+   * Las guías VIVAS que llevan alguno de estos paquetes por su código, con el
+   * cliente que se pase (la tx que ya bloqueó los paquetes, o `prisma`). Es el
+   * criterio de `exigirPaqueteLibreEnTx` —vigente y no salida de trozas sin
+   * aserrar (ADR-363), que guarda el código de la PIEZA—. Lo usan anular o
+   * borrar una corrida y «Anular el día» para frenar, y la baja de paquetes
+   * para no tocar uno que viaja: una sola regla para los tres.
+   */
+  static async guiasConPaquetesEn(
+    db: Pick<Prisma.TransactionClient, "forestCtpEntry">,
+    tenantId: string,
+    codigos: readonly string[],
+  ): Promise<{ lineNo: number; gtfNumber: string | null; codigo: string }[]> {
+    const unicos = [...new Set(codigos.filter(Boolean))];
+    if (unicos.length === 0) return [];
+    const filas = await db.forestCtpEntry.findMany({
+      where: { tenantId, section: "despacho", codigoProducto: { in: unicos }, ...DESPACHO_VIGENTE, ...NO_ES_SALIDA_DE_TROZAS },
+      select: { lineNo: true, gtfNumber: true, codigoProducto: true },
+      orderBy: { lineNo: "asc" },
+    });
+    return filas.flatMap((f) => (f.codigoProducto ? [{ lineNo: f.lineNo, gtfNumber: f.gtfNumber, codigo: f.codigoProducto }] : []));
+  }
+
+  /**
    * Los códigos de paquete que ya viajan en una guía viva (ADR-444).
    *
    * UNA consulta para todos (`codigoProducto in [...]`, nunca una por

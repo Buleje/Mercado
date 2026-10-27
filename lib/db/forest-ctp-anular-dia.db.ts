@@ -20,6 +20,7 @@ import {
 import { CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestCtpDB } from "./forest-ctp.db";
+import { ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 
 /**
  * ForestCtpAnularDiaDB — anular TODAS las corridas de producción de un día, en
@@ -33,8 +34,10 @@ import { ForestCtpDB } from "./forest-ctp.db";
  *  2. `anular` repite todo dentro de la transacción, con las corridas del día
  *     bloqueadas (`FOR UPDATE`, ordenadas por id): si entre la previa y el clic
  *     alguien cobró el aserrío o agregó una corrida, eso se ve acá y no se anula
- *     nada. Cada línea se anula con `ForestCtpDB.anularLineaEn`, la misma
- *     escritura que el botón «Anular» de una fila.
+ *     nada. Después de las corridas se bloquean sus paquetes (el orden del
+ *     alta de un despacho: corrida y luego paquete). Cada línea se anula con
+ *     `ForestCtpDB.anularLineaEn`, la misma escritura que el botón «Anular» de
+ *     una fila: da de baja sus paquetes en la misma tx.
  */
 
 const CACHE_LIBRO = "forest-ctp";
@@ -80,6 +83,7 @@ async function hechosDe(
         },
         loteMiembros: { where: { lote: { deletedAt: null } }, select: { id: true } },
         apartados: { where: { liberadoAt: null }, select: { para: true } },
+        paquetes: { where: { deletedAt: null }, select: { codigo: true } },
       },
       orderBy: { lineNo: "asc" },
     }),
@@ -92,8 +96,16 @@ async function hechosDe(
       select: { ctpEntryId: true, monto: true, parteNombre: true },
     }),
   ]);
+  /* Las guías vivas que llevan un paquete del día por su código: la misma
+     regla que frena anular una corrida suelta (`exigirSinSalidaVivaEn`). */
+  const guias = await ForestCtpDespachoDB.guiasConPaquetesEn(
+    db,
+    tenantId,
+    filas.flatMap((f) => f.paquetes.map((p) => p.codigo)),
+  );
   return filas.map((f) => {
     const cargo = cargos.find((c) => c.ctpEntryId === f.id);
+    const suyos = new Set(f.paquetes.map((p) => p.codigo));
     return {
       id: f.id,
       lineNo: f.lineNo,
@@ -104,6 +116,9 @@ async function hechosDe(
       reprocesosEntrada: f._count.reprocesosEntrada,
       reprocesadaEn: f.reprocesosSalida.map((r) => r.destino.lineNo),
       despachos: f.salidas.map((s) => ({ lineNo: s.despacho.lineNo, gtf: s.despacho.gtfNumber })),
+      paquetesEnGuia: guias
+        .filter((g) => suyos.has(g.codigo))
+        .map((g) => ({ codigo: g.codigo, despacho: g.lineNo, gtf: g.gtfNumber })),
       lotesComerciales: f.loteMiembros.length,
       lotesAserrio: lotes.filter((l) => l.produccionEntryId === f.id).map((l) => l.code),
       apartados: f.apartados.map((a) => a.para),
@@ -221,7 +236,12 @@ export const ForestCtpAnularDiaDB = {
         );
       }
 
-      /* 2 · Lo que cuelga, releído con las filas ya bloqueadas. */
+      /* 2 · Sus paquetes, bloqueados después de las corridas y en orden de id:
+         un despacho que quiere llevar uno espera, y uno que ya lo lleva frena
+         abajo (la corrida quedaría muerta con el paquete vivo en la guía). */
+      await ForestCtpDB.bloquearPaquetesDeEn(tx, tenantId, vivas.map((v) => v.id));
+
+      /* 3 · Lo que cuelga, releído con las filas ya bloqueadas. */
       const hechos = await hechosDe(tx, tenantId, [...hoy]);
       const bloqueadas = corridasBloqueadas({
         corridas: hechos.map((h) => ({
@@ -240,7 +260,8 @@ export const ForestCtpAnularDiaDB = {
         );
       }
 
-      /* 3 · La misma escritura que anular una fila, una por una, en la tx. */
+      /* 4 · La misma escritura que anular una fila (con la baja de sus
+         paquetes), una por una, en la tx. */
       const motivo = motivoDeLaLinea(input.motivo, etiqueta, hoy.size);
       const hechas: RespuestaAnularDia["anuladas"] = [];
       for (const h of [...hechos].sort((a, b) => a.id.localeCompare(b.id))) {

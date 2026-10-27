@@ -31,6 +31,8 @@ const H = vi.hoisted(() => {
       $transaction: vi.fn(async (fn: (t: typeof tx) => unknown) => fn(tx)),
     },
     anularLineaEn: vi.fn(),
+    bloquearPaquetes: vi.fn(async () => []),
+    guias: vi.fn(async (): Promise<{ lineNo: number; gtfNumber: string | null; codigo: string }[]> => []),
     jornadas: vi.fn(),
     cerrado: vi.fn(async (): Promise<unknown> => null),
     audit: vi.fn(),
@@ -49,7 +51,14 @@ vi.mock("@/lib/logger", () => ({
 }));
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: H.audit }));
 vi.mock("@/lib/db/forest-ctp.db", () => ({
-  ForestCtpDB: { anularLineaEn: H.anularLineaEn, jornadasDeProduccion: H.jornadas },
+  ForestCtpDB: {
+    anularLineaEn: H.anularLineaEn,
+    bloquearPaquetesDeEn: H.bloquearPaquetes,
+    jornadasDeProduccion: H.jornadas,
+  },
+}));
+vi.mock("@/lib/db/forest-ctp-despacho.db", () => ({
+  ForestCtpDespachoDB: { guiasConPaquetesEn: H.guias },
 }));
 vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({
   ForestCtpCierreDB: { closedPeriodOf: H.cerrado },
@@ -79,6 +88,7 @@ const limpia = (x: Partial<HechosDeCorrida> = {}): HechosDeCorrida => ({
   reprocesosEntrada: 0,
   reprocesadaEn: [],
   despachos: [],
+  paquetesEnGuia: [],
   lotesComerciales: 0,
   lotesAserrio: [],
   apartados: [],
@@ -135,6 +145,27 @@ describe("qué impide anular una corrida en bloque", () => {
     ).toEqual([
       "N.º 30 · Panguana: tiene 1 troza vinculada",
       "N.º 31 · sin especie: sale de un reproceso; está en un lote comercial",
+    ]);
+  });
+
+  it("un paquete en una guía viva dice el paquete y la guía; el despacho no se repite", () => {
+    expect(
+      bloqueosDe(
+        limpia({
+          despachos: [
+            { lineNo: 12, gtf: "019-001-000123" },
+            { lineNo: 9, gtf: null },
+          ],
+          paquetesEnGuia: [
+            { codigo: "PQ-2609-031", despacho: 12, gtf: "019-001-000123" },
+            { codigo: "PQ-2609-032", despacho: 14, gtf: null },
+          ],
+        }),
+      ),
+    ).toEqual([
+      "salió en el despacho N.º 9",
+      "tiene el paquete PQ-2609-031 en la guía 019-001-000123 (despacho N.º 12): anula esa salida primero",
+      "tiene el paquete PQ-2609-032 en una guía en borrador (despacho N.º 14): anula esa salida primero",
     ]);
   });
 });
@@ -194,6 +225,7 @@ const FILA = (
   salidas: [],
   loteMiembros: [],
   apartados: [],
+  paquetes: [],
   ...extra,
 });
 
@@ -266,6 +298,31 @@ describe("ForestCtpAnularDiaDB.anular", () => {
     const e = await ForestCtpAnularDiaDB.anular("t1", pedido).catch((x: unknown) => x);
     expect(e).toMatchObject({ code: "CON_MOVIMIENTOS" });
     expect((e as Error).message).toContain("N.º 31 · Cumala: tiene 4 trozas vinculadas");
+    expect(H.anularLineaEn).not.toHaveBeenCalled();
+  });
+
+  it("bloquea los paquetes de TODAS las corridas después de ellas, antes de releer", async () => {
+    await ForestCtpAnularDiaDB.anular("t1", pedido);
+    expect(H.bloquearPaquetes).toHaveBeenCalledWith(H.tx, "t1", ["a", "b"]);
+    const lockCorridas = H.tx.$queryRaw.mock.invocationCallOrder[0]!;
+    const lockPaquetes = H.bloquearPaquetes.mock.invocationCallOrder[0]!;
+    const relectura = H.tx.forestCtpEntry.findMany.mock.invocationCallOrder[0]!;
+    expect(lockCorridas).toBeLessThan(lockPaquetes);
+    expect(lockPaquetes).toBeLessThan(relectura);
+  });
+
+  it("un paquete de una corrida en una guía viva frena el día y dice corrida, paquete y guía", async () => {
+    H.tx.forestCtpEntry.findMany.mockResolvedValueOnce([
+      FILA("a", 30, "Panguana"),
+      FILA("b", 31, "Cumala", { paquetes: [{ codigo: "PQ-2609-031" }] }),
+    ]);
+    H.guias.mockResolvedValueOnce([{ lineNo: 12, gtfNumber: "019-001-000123", codigo: "PQ-2609-031" }]);
+    const e = await ForestCtpAnularDiaDB.anular("t1", pedido).catch((x: unknown) => x);
+    expect(e).toMatchObject({ code: "CON_MOVIMIENTOS" });
+    expect((e as Error).message).toContain(
+      "N.º 31 · Cumala: tiene el paquete PQ-2609-031 en la guía 019-001-000123 (despacho N.º 12): anula esa salida primero",
+    );
+    expect(H.guias).toHaveBeenCalledWith(H.tx, "t1", ["PQ-2609-031"]);
     expect(H.anularLineaEn).not.toHaveBeenCalled();
   });
 
