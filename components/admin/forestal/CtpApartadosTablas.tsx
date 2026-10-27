@@ -23,10 +23,12 @@ const fmtFecha = (iso: string | null) => (iso ? formatDateNumeric(`${iso}T00:00:
 
 /** Título del casillero + su embudo, si la columna lo tiene. */
 function ThF<T>({ f, id, ancho, children }: { f: FiltrosTabla<T>; id?: string; ancho?: string; children: ReactNode }) {
+  /* Con 0-1 filas no hay qué filtrar: el embudo sólo estorba. */
+  const hay = f.total > 1;
   return (
     <Th ancho={ancho}>
       {children}
-      {id && <FiltroEnCabecera id={id} f={f} compacto />}
+      {id && hay && <FiltroEnCabecera id={id} f={f} compacto />}
     </Th>
   );
 }
