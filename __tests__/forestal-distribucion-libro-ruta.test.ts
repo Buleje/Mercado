@@ -16,7 +16,10 @@ vi.mock("@/lib/auth/csrf", () => ({ assertCsrf: () => null }));
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn(async () => null) }));
 vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: vi.fn(async () => true) }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
-vi.mock("@/lib/prisma", () => ({ prisma: {} }));
+/* `save` pregunta qué lotes siguen vivos (choque con otra distribución): todos. */
+vi.mock("@/lib/prisma", () => ({
+  prisma: { forestLoteAserrio: { findMany: async ({ where }: { where: { id: { in: string[] } } }) => where.id.in.map((id) => ({ id })) } },
+}));
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: () => {}, auditCtpEsperando: async () => {} }));
 vi.mock("@/lib/db/platform-settings.db", () => ({
   PlatformSettingsDB: {

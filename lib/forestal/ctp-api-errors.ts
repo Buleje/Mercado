@@ -71,7 +71,7 @@ export function ctpErrorResponse(err: unknown, ctx: string, tenantId: string): N
         status:
           err.code === "FOTO_NO_VALIDA"
             ? 400
-            : err.code === "PAQUETE_YA_DESPACHADO" || err.code === "TROZA_NO_RETROZABLE" || err.code === "CAMBIO_DE_GUIA"
+            : err.code === "PAQUETE_YA_DESPACHADO" || err.code === "TROZA_NO_RETROZABLE" || err.code === "CAMBIO_DE_GUIA" || err.code === "CORRIDA_CON_SALIDA_REGISTRADA"
               ? 409
               : 422,
       },

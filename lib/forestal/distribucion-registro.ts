@@ -107,3 +107,20 @@ export function filtrarDistribuciones(lista: DistribucionRegistro[], termino: st
       .some((campo) => (campo ?? "").toLowerCase().includes(t)),
   );
 }
+
+/**
+ * «Duplicar» una distribución guardada (ADR-519): los mismos bloques, SIN lo
+ * que el Libro anotó en ellos (lote, corridas, jornadas, complementos) ni las
+ * trozas elegidas — esas ya son del bloque original. Copiar la anotación
+ * haría que el servidor rechace la copia con 409 (un lote es de un solo
+ * bloque) y que la copia contara la misma producción dos veces.
+ */
+export function copiaDeDistribucion(d: DistribucionRegistro): DistribucionRegistro {
+  return {
+    ...d,
+    id: "",
+    nombre: `${d.nombre} (copia)`,
+    bloques: d.bloques.map((b) => ({ ...b, loteId: null, corridaIds: null, jornadasLibro: null, complementos: null, trozasElegidas: null })),
+  };
+}
+

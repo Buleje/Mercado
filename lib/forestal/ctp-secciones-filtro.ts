@@ -108,7 +108,9 @@ export interface FiltrosSeccion {
 }
 
 const num = (v: string | number | null | undefined): number => (v == null ? 0 : Number(v) || 0);
-const r2 = (n: number) => Math.round(n * 100) / 100;
+/* Los m³ del Libro van a 3 decimales: con 2, el pie dijo 0,910 con una sola
+   línea de 0,912 (prueba del Recorrido, 27-10). Pies y facetas, igual. */
+const r3 = (n: number) => Math.round(n * 1000) / 1000;
 
 /** Un rango abierto por los dos lados: `null` = sin tope de ese lado. */
 export interface RangoNumerico {
@@ -238,7 +240,7 @@ function agrupar(
     map.set(k, { value: prev.value, count: prev.count + 1, peso: prev.peso + peso(l) });
   }
   return [...map.values()]
-    .map(({ value, count, peso }) => ({ value, count, volumeM3: r2(peso) }))
+    .map(({ value, count, peso }) => ({ value, count, volumeM3: r3(peso) }))
     .sort((a, b) => (b.volumeM3 ?? 0) - (a.volumeM3 ?? 0) || b.count - a.count)
     .slice(0, 30);
 }
@@ -263,7 +265,7 @@ function agruparMultiple(
     }
   }
   return [...map.entries()]
-    .map(([value, { count, peso }]) => ({ value, count, volumeM3: r2(peso) }))
+    .map(([value, { count, peso }]) => ({ value, count, volumeM3: r3(peso) }))
     .sort((a, b) => (b.volumeM3 ?? 0) - (a.volumeM3 ?? 0) || b.count - a.count)
     .slice(0, 30);
 }
@@ -301,7 +303,7 @@ export function facetasDeSeccion(lineas: LineaCtp[]): {
     permisos: agruparMultiple(vivas, (l) => l.permisoOrigen, (l) => num(l.quantity)),
     salidas: (["stock", "parcial", "salido"] as const).flatMap((k) => {
       const v = porSalida.get(k);
-      return v ? [{ value: k, count: v.count, volumeM3: r2(v.peso) }] : [];
+      return v ? [{ value: k, count: v.count, volumeM3: r3(v.peso) }] : [];
     }),
   };
 }
@@ -369,8 +371,8 @@ export function totalesDeSeccion(lineas: LineaCtp[]): TotalesSeccion {
   const vivas = lineas.filter((l) => l.status === "registrado");
   return {
     lineas: vivas.length,
-    cantidad: r2(vivas.reduce((a, l) => a + num(l.quantity), 0)),
-    consumido: r2(vivas.reduce((a, l) => a + num(l.volumeInputM3), 0)),
+    cantidad: r3(vivas.reduce((a, l) => a + num(l.quantity), 0)),
+    consumido: r3(vivas.reduce((a, l) => a + num(l.volumeInputM3), 0)),
     piezas: vivas.reduce((a, l) => a + (l.pieces ?? 0), 0),
   };
 }

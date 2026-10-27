@@ -15,6 +15,7 @@ const H = vi.hoisted(() => ({
   lotes: [] as { id: string; code: string; vivo: boolean }[],
   kv: [] as unknown[],
   opciones: undefined as Record<string, unknown> | undefined,
+  lotesMuertos: [] as string[],
 }));
 
 vi.mock("server-only", () => ({}));
@@ -34,6 +35,9 @@ vi.mock("@/lib/prisma", () => ({
         const l = H.lotes.find((x) => x.id === where.id && x.vivo);
         return l ? { id: l.id, code: l.code } : null;
       },
+      /* Los lotes de los bloques que se guardan: todos vivos salvo los de `H.lotesMuertos`. */
+      findMany: async ({ where }: { where: { id: { in: string[] } } }) =>
+        where.id.in.filter((id) => !H.lotesMuertos.includes(id)).map((id) => ({ id })),
     },
   },
 }));
@@ -56,7 +60,7 @@ vi.mock("@/lib/db/platform-settings.db", () => ({
 }));
 
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
-import { ESPERA_GUARDAR_MS, ForestDistribucionesDB } from "@/lib/db/forest-distribuciones.db";
+import { DistribucionYaTomadaError, ESPERA_GUARDAR_MS, ForestDistribucionesDB } from "@/lib/db/forest-distribuciones.db";
 import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 
 const T = "t-qa";
@@ -123,5 +127,53 @@ describe("save: un guardado viejo no borra lo que anotó el servidor", () => {
     expect(r.bloques[0].loteId).toBe("L2");
     expect(H.opciones).toMatchObject({ esperaMaxMs: ESPERA_GUARDAR_MS });
     expect(Number(H.opciones?.timeout)).toBeGreaterThan(ESPERA_GUARDAR_MS);
+  });
+});
+
+describe("save: una distribución NUEVA no se lleva el lote ni las corridas de otra (prueba del 27-10)", () => {
+  const bloque = (x: Partial<BloqueRolliza> = {}): BloqueRolliza =>
+    ({ id: "b1", etiqueta: "B1", especie: "Cachimbo", m3: 2, origen: "trozas", trozaIds: ["t1", "t2"], ...x }) as BloqueRolliza;
+  const jornada = (dia: number, corridaId: string, lineNo: number) => ({ dia, corridaId, lineNo, estado: "declarada" as const, fecha: "2026-10-20" });
+  const guardar = (id: string | undefined, nombre: string, b: BloqueRolliza) =>
+    ForestDistribucionesDB.save(T, { id, nombre, bloques: [b] } as Parameters<typeof ForestDistribucionesDB.save>[1]);
+
+  beforeEach(async () => {
+    H.kv = [];
+    await guardar("d1", "Octubre", bloque());
+    const d = H.kv[0] as { bloques: BloqueRolliza[] };
+    d.bloques[0] = { ...d.bloques[0], loteId: "L1", jornadasLibro: [jornada(1, "c31", 31)] };
+  });
+
+  it("copia con el mismo lote → 409 con el bloque y la distribución dueños, y no se guarda nada", async () => {
+    const r = guardar(undefined, "Octubre (copia)", bloque({ id: "b9", etiqueta: "A", loteId: "L1" }));
+    await expect(r).rejects.toBeInstanceOf(DistribucionYaTomadaError);
+    await expect(guardar(undefined, "Octubre (copia)", bloque({ id: "b9", etiqueta: "A", loteId: "L1" }))).rejects.toThrow(
+      "Este lote ya es del bloque B1 de la distribución Octubre: ábrela desde Guardadas.",
+    );
+    expect(H.kv).toHaveLength(1);
+  });
+
+  it("copia sin lote pero con la jornada del Libro → 409 que nombra la corrida", async () => {
+    await expect(guardar("d2", "Otra", bloque({ jornadasLibro: [jornada(1, "c31", 31)] }))).rejects.toThrow(
+      "La corrida N° 31 del bloque B1 ya es del bloque B1 de la distribución Octubre",
+    );
+    expect(H.kv).toHaveLength(1);
+  });
+
+  it("copia con el lote de otra pero ese lote ya eliminado → se guarda (un lote muerto no ampara nada)", async () => {
+    H.lotesMuertos = ["L1"];
+    try {
+      await guardar("d2", "Octubre (copia)", bloque({ id: "b9", etiqueta: "A", loteId: "L1" }));
+      expect(H.kv).toHaveLength(2);
+    } finally {
+      H.lotesMuertos = [];
+    }
+  });
+
+  it("nueva con trozas y sin anotaciones ajenas → se guarda; y RE-guardar la misma con su lote no choca consigo misma", async () => {
+    await guardar("d2", "Noviembre", bloque({ loteId: "L2" }));
+    expect(H.kv).toHaveLength(2);
+    const r = await guardar("d1", "Octubre", bloque({ loteId: "L1", jornadasLibro: [jornada(1, "c31", 31)] }));
+    expect(r.bloques[0].loteId).toBe("L1");
   });
 });

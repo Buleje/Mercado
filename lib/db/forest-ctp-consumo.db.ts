@@ -164,6 +164,9 @@ export class CtpInvariantError extends Error {
       /** Deshacer un lote cuya corrida ya tiene despacho/reproceso: hace falta
        *  `forzar` explícito — no es un error normal, es una confirmación. */
       | "LOTE_CON_SALIDA_REGISTRADA"
+      /** Anular o borrar suelta una corrida de la que ya salió madera (un
+       *  despacho o un reproceso vivos la citan): primero se anula la salida. 409. */
+      | "CORRIDA_CON_SALIDA_REGISTRADA"
       /** Falta el motivo de una acción que lo exige (ej. marcar "ya usado"). */
       | "MOTIVO_REQUERIDO"
       // ── Retrozado (ADR-313) ──

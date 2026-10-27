@@ -16,7 +16,7 @@ import { AlertTriangle, Copy, FolderOpen, Layers, Loader2, Search, Trash2, X } f
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { filtrarDistribuciones, type DistribucionRegistro } from "@/lib/forestal/distribucion-registro";
+import { copiaDeDistribucion, filtrarDistribuciones, type DistribucionRegistro } from "@/lib/forestal/distribucion-registro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDate } from "@/lib/format";
 
@@ -170,7 +170,7 @@ export default function DistribucionesGuardadas({
                     className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-[var(--accent)] hover:brightness-95">
                     <FolderOpen className="h-3.5 w-3.5" /> Abrir
                   </button>
-                  <button type="button" onClick={() => onAbrir({ ...d, id: "", nombre: `${d.nombre} (copia)` })} title="Empezar una distribución nueva con estos mismos bloques"
+                  <button type="button" onClick={() => onAbrir(copiaDeDistribucion(d))} title="Empezar una distribución nueva con estos mismos bloques"
                     aria-label={`Duplicar ${d.nombre}`}
                     className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)]">
                     <Copy className="h-3.5 w-3.5" />

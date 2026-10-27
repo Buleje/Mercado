@@ -72,7 +72,7 @@ const DESPACHO_VIGENTE = ORIGEN_VIGENTE.despacho;
  * paquete, una guía» (ADR-444). La marca que persiste es la pieza colgada del
  * despacho (`despachadaEnId`), no `desdeTrozas`, que sólo vive en el alta.
  */
-const NO_ES_SALIDA_DE_TROZAS = { trozasDespachadas: { none: {} } } as const;
+export const NO_ES_SALIDA_DE_TROZAS = { trozasDespachadas: { none: {} } } as const;
 
 /** Un origen como lo devuelve `setOrigenes`: con la corrida que lo sostiene. */
 export type OrigenConCorrida = Prisma.ForestCtpDespachoOrigenGetPayload<{

@@ -60,8 +60,11 @@ export interface EstadoRecorrido {
   pasos: PasoDelRecorrido[];
   /** El primer paso no hecho (null = recorrido completo). */
   siguiente: PasoRecorrido | null;
-  /** La salida registrada más próxima a vencer su plazo de registro (2 días hábiles), si hay. */
-  plazo: { despachoId: string; gtfNumber: string | null; venceEl: string } | null;
+  /**
+   * El Anexo 04 cuya salida falta registrar en el Libro y antes vence su plazo
+   * (2 días hábiles desde la guía), si hay y no venció. Registrada = sin aviso.
+   */
+  plazo: { anexoId: string; gtfNumber: string | null; venceEl: string } | null;
   /** Rendimiento sugerido por la distribución contra el real de las corridas (null si no hay producción). */
   rendimiento: { sugeridoPct: number; realPct: number | null } | null;
 }

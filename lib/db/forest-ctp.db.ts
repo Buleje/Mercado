@@ -29,7 +29,7 @@ import {
   CONSUMO_VIGENTE,
   CTP_TX_OPTS,
 } from "./forest-ctp-consumo.db";
-import { ORIGEN_VIGENTE, ForestCtpDespachoDB, type OrigenesEscritos } from "./forest-ctp-despacho.db";
+import { NO_ES_SALIDA_DE_TROZAS, ORIGEN_VIGENTE, ForestCtpDespachoDB, type OrigenesEscritos } from "./forest-ctp-despacho.db";
 import type { CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestEspeciesDB } from "./forest-especies.db";
@@ -2691,6 +2691,146 @@ export class ForestCtpDB {
   }
 
   /**
+   * Los paquetes de una corrida que se anula o se borra se dan de baja con
+   * ella (prueba del Recorrido del permiso, 27-10: PQ-2609-031 quedó vivo
+   * colgado de la corrida N° 48 anulada). Las lecturas de stock ya lo dejaban
+   * afuera —miran el estado de la corrida—, pero el paquete seguía «vivo» en
+   * la búsqueda por código y en cualquier lectura que mire sólo el paquete.
+   *
+   * Uno que YA viaja en una guía viva no se toca: esa guía lo sigue citando,
+   * y sólo pasa por el camino forzado (`annul` con `forzarConSalida`, al
+   * deshacer un lote de aserrío con salida confirmada). El código no se
+   * libera: el índice único (tenantId, codigo) también ve los dados de baja.
+   */
+  static async bajaDePaquetesEn(
+    db: Pick<Prisma.TransactionClient, "forestCtpEntry" | "forestCtpPaquete">,
+    tenantId: string,
+    corridaId: string,
+  ): Promise<number> {
+    const vivos = await db.forestCtpPaquete.findMany({
+      where: { tenantId, ctpEntryId: corridaId, deletedAt: null },
+      select: { id: true, codigo: true },
+    });
+    if (vivos.length === 0) return 0;
+    const enGuia = await db.forestCtpEntry.findMany({
+      where: { tenantId, section: "despacho", codigoProducto: { in: vivos.map((p) => p.codigo) }, ...ORIGEN_VIGENTE.despacho, ...NO_ES_SALIDA_DE_TROZAS },
+      select: { codigoProducto: true },
+    });
+    const viajan = new Set(enGuia.map((d) => d.codigoProducto));
+    const ids = vivos.filter((p) => !viajan.has(p.codigo)).map((p) => p.id);
+    if (ids.length === 0) return 0;
+    const r = await db.forestCtpPaquete.updateMany({
+      where: { tenantId, id: { in: ids }, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return r.count;
+  }
+
+  /**
+   * Al ANULAR o borrar un despacho: si su paquete es de una corrida que ya
+   * está muerta (anulada o borrada), ese paquete sólo seguía vivo porque esta
+   * guía lo citaba (`bajaDePaquetesEn` no toca uno que viaja). Sin la guía ya
+   * no lo sostiene nada: se da de baja en la misma transacción. Uno que otra
+   * guía viva sigue citando, no se toca. La salida de trozas sin aserrar
+   * (ADR-363) guarda el código de la PIEZA, que puede coincidir con el de un
+   * paquete: esa no da de baja nada. Se llama con la línea ya anulada/borrada.
+   */
+  static async bajaDePaqueteDelDespachoEn(
+    db: Pick<Prisma.TransactionClient, "forestCtpEntry" | "forestCtpPaquete" | "woodEntryTroza">,
+    tenantId: string,
+    linea: { id: string; section: string; codigoProducto: string | null },
+  ): Promise<number> {
+    const codigo = linea.codigoProducto?.trim();
+    if (linea.section !== "despacho" || !codigo) return 0;
+    if ((await db.woodEntryTroza.count({ where: { tenantId, despachadaEnId: linea.id } })) > 0) return 0;
+    const otraGuia = await db.forestCtpEntry.findFirst({
+      where: { tenantId, section: "despacho", codigoProducto: codigo, id: { not: linea.id }, ...ORIGEN_VIGENTE.despacho, ...NO_ES_SALIDA_DE_TROZAS },
+      select: { id: true },
+    });
+    if (otraGuia) return 0;
+    const r = await db.forestCtpPaquete.updateMany({
+      /* Corrida muerta = NO (viva y registrada): el mismo criterio de vigencia que el despacho. */
+      where: { tenantId, codigo, deletedAt: null, entry: { NOT: { deletedAt: null, status: "registrado" } } },
+      data: { deletedAt: new Date() },
+    });
+    return r.count;
+  }
+
+  /**
+   * Una corrida de la que ya salió madera —un despacho o un reproceso VIVOS
+   * que la citan como origen— no se anula ni se borra suelta: el despacho
+   * quedaría sin corrida de origen (I3) y el reproceso sin entrada (I6). Hay
+   * que anular la salida antes. Es la misma regla que ya tenían «Anular el
+   * día» (`bloqueosDe`) y deshacer un lote de aserrío (`forzar`); el botón
+   * «Anular» de una fila no la tenía. Se llama con la corrida bloqueada.
+   */
+  /** `FOR UPDATE` sobre la corrida: el mismo candado que toma el alta de un despacho (I3). */
+  static async bloquearCorridaEn(tx: Pick<Prisma.TransactionClient, "$queryRaw">, tenantId: string, id: string): Promise<void> {
+    await tx.$queryRaw`SELECT "id" FROM "ForestCtpEntry" WHERE "tenantId" = ${tenantId} AND "id" = ${id} FOR UPDATE`;
+  }
+
+  static async exigirSinSalidaVivaEn(
+    db: Pick<Prisma.TransactionClient, "$queryRaw" | "forestCtpEntry" | "forestCtpDespachoOrigen" | "forestCtpReproceso">,
+    tenantId: string,
+    corridaId: string,
+    lineNo?: number | null,
+  ): Promise<void> {
+    /* Los paquetes de la corrida, BLOQUEADOS (después de la corrida: el orden
+       del alta de un despacho, I3 y luego el paquete). Un despacho puede citar
+       el PAQUETE por su código aunque su origen se haya atribuido a otra
+       corrida: sin mirar esto la corrida se anulaba y el paquete quedaba vivo
+       colgado de ella. Mismo criterio que `exigirPaqueteLibreEnTx`. */
+    const paquetes = await db.$queryRaw<{ codigo: string }[]>`
+      SELECT "codigo" FROM "ForestCtpPaquete"
+      WHERE "tenantId" = ${tenantId} AND "ctpEntryId" = ${corridaId} AND "deletedAt" IS NULL
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+    const codigos = paquetes.map((p) => p.codigo);
+    const [despachos, reprocesos, guiasDelPaquete] = await Promise.all([
+      db.forestCtpDespachoOrigen.findMany({
+        where: { tenantId, produccionEntryId: corridaId, despacho: ORIGEN_VIGENTE.despacho },
+        select: { despacho: { select: { lineNo: true, gtfNumber: true } } },
+        take: 5,
+      }),
+      db.forestCtpReproceso.findMany({
+        where: { tenantId, origenEntryId: corridaId, destino: { deletedAt: null, status: "registrado" } },
+        select: { destino: { select: { lineNo: true } } },
+        take: 5,
+      }),
+      codigos.length === 0
+        ? Promise.resolve([] as { lineNo: number; gtfNumber: string | null; codigoProducto: string | null }[])
+        : db.forestCtpEntry.findMany({
+            where: { tenantId, section: "despacho", codigoProducto: { in: codigos }, ...ORIGEN_VIGENTE.despacho, ...NO_ES_SALIDA_DE_TROZAS },
+            select: { lineNo: true, gtfNumber: true, codigoProducto: true },
+            orderBy: { lineNo: "asc" },
+            take: 5,
+          }),
+    ]);
+    if (despachos.length === 0 && reprocesos.length === 0 && guiasDelPaquete.length === 0) return;
+    const conGtf = (g: string | null) => (g?.trim() ? ` (GTF ${g.trim()})` : "");
+    const lineasDelPaquete = new Set(guiasDelPaquete.map((g) => g.lineNo));
+    const partes = [
+      ...guiasDelPaquete.map((g) => `el despacho N° ${g.lineNo}${conGtf(g.gtfNumber)}, que lleva el paquete ${g.codigoProducto}`),
+      ...despachos
+        .filter((d) => !lineasDelPaquete.has(d.despacho.lineNo))
+        .map((d) => `el despacho N° ${d.despacho.lineNo}${conGtf(d.despacho.gtfNumber)}`),
+      ...reprocesos.map((r) => `el reproceso N° ${r.destino.lineNo}`),
+    ];
+    throw new CtpInvariantError(
+      `De la corrida${lineNo != null ? ` N° ${lineNo}` : ""} ya salió madera en ${[...new Set(partes)].join(", ")}: ` +
+        "anula esa salida primero y después la corrida.",
+      "CORRIDA_CON_SALIDA_REGISTRADA",
+      {
+        corridaId,
+        despachos: [...new Set([...despachos.map((d) => d.despacho.lineNo), ...lineasDelPaquete])],
+        reprocesos: reprocesos.map((r) => r.destino.lineNo),
+        paquetes: [...new Set(guiasDelPaquete.map((g) => g.codigoProducto))],
+      },
+    );
+  }
+
+  /**
    * Las escrituras de ANULAR una línea, con el cliente que se le pase: `prisma`
    * desde `annul` (una línea suelta) o la transacción de `ForestCtpAnularDiaDB`
    * (todas las de un día, todas o ninguna — 2026-09-23). Es UNA sola manera de
@@ -2700,7 +2840,7 @@ export class ForestCtpDB {
    * por pedido y no por línea.
    */
   static async anularLineaEn(
-    db: Pick<Prisma.TransactionClient, "forestCtpEntry" | "woodEntryTroza">,
+    db: Pick<Prisma.TransactionClient, "forestCtpEntry" | "woodEntryTroza" | "forestCtpPaquete">,
     tenantId: string,
     id: string,
     reason: string,
@@ -2709,6 +2849,9 @@ export class ForestCtpDB {
       where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
       data: { status: "anulado", annulledReason: reason.trim() },
     });
+    await ForestCtpDB.bajaDePaquetesEn(db, tenantId, id);
+    /* Antes de soltar las piezas despachadas: con ellas se sabe si era una salida de trozas. */
+    await ForestCtpDB.bajaDePaqueteDelDespachoEn(db, tenantId, e);
     // Las piezas vuelven al patio (ADR-326). Anular una corrida deshace el
     // consumo: en la realidad esa madera está ahí y se va a asserar en otra. Sin
     // esto quedaban marcadas "ya consumida" para siempre y nadie podía usarlas.
@@ -2726,13 +2869,24 @@ export class ForestCtpDB {
     return e;
   }
 
-  static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
+  static async annul(
+    tenantId: string,
+    id: string,
+    reason: string,
+    user = "unknown",
+    /**
+     * `true` sólo desde deshacer un lote de aserrío con salida YA confirmada
+     * con «forzar» (el motivo lo dice): ahí se sabe y se acepta que el
+     * despacho queda sin corrida. El botón «Anular» nunca lo manda.
+     */
+    opts: { forzarConSalida?: boolean } = {},
+  ) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");
     // Cierre de período (ADR-139): una línea de un mes cerrado no se anula.
     const curAnnul = await prisma.forestCtpEntry.findFirst({
       where: { id, tenantId },
-      select: { entryDate: true },
+      select: { entryDate: true, lineNo: true },
     });
     const cerradoAnnul = curAnnul
       ? await ForestCtpCierreDB.closedPeriodOf(tenantId, curAnnul.entryDate)
@@ -2744,7 +2898,14 @@ export class ForestCtpDB {
         { periodKey: cerradoAnnul.periodKey },
       );
     }
-    const e = await ForestCtpDB.anularLineaEn(prisma, tenantId, id, reason);
+    /* Una transacción, con la corrida bloqueada: es la misma fila que toma el
+       alta de un despacho (I3), así que un despacho que llega a la vez espera
+       y después ve la corrida anulada. Antes eran tres escrituras sueltas. */
+    const e = await prisma.$transaction(async (tx) => {
+      await ForestCtpDB.bloquearCorridaEn(tx, tenantId, id);
+      if (!opts.forzarConSalida) await ForestCtpDB.exigirSinSalidaVivaEn(tx, tenantId, id, curAnnul?.lineNo);
+      return ForestCtpDB.anularLineaEn(tx, tenantId, id, reason);
+    }, CTP_TX_OPTS);
     /* Si a esta corrida se le cobraba el aserrío (ADR-412 §4), ese cargo deja
        de deberse. Awaited para que el saldo de la cuenta ya no lo muestre al
        volver, pero sin poder tumbar la anulación: el libro manda. */
@@ -3934,7 +4095,7 @@ export class ForestCtpDB {
     if (!tenantId) throw new Error("tenantId is required");
     const curDel = await prisma.forestCtpEntry.findFirst({
       where: { id, tenantId },
-      select: { entryDate: true },
+      select: { entryDate: true, lineNo: true },
     });
     const cerradoDel = curDel
       ? await ForestCtpCierreDB.closedPeriodOf(tenantId, curDel.entryDate)
@@ -3946,23 +4107,32 @@ export class ForestCtpDB {
         { periodKey: cerradoDel.periodKey },
       );
     }
-    const e = await prisma.forestCtpEntry.update({
-      where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
-      data: { deletedAt: new Date() },
-    });
-    // Igual que al anular: la FK es SET NULL al DELETE real, que acá nunca pasa
-    // (es soft-delete), así que las piezas hay que soltarlas a mano.
-    await prisma.woodEntryTroza.updateMany({
-      where: { tenantId, consumidaEnId: id },
-      data: { consumidaEnId: null, fechaConsumo: null },
-    });
-    /* Y las que salieron SIN ASERRAR (ADR-363): anular el despacho es decir que
-       ese camión no salió, así que la madera sigue en el patio. Sin esto la
-       pieza quedaba marcada "ya despachada" para siempre. */
-    await prisma.woodEntryTroza.updateMany({
-      where: { tenantId, despachadaEnId: id },
-      data: { despachadaEnId: null, fechaDespacho: null },
-    });
+    /* Igual que `annul`: una transacción con la corrida bloqueada, sin salida
+       viva colgando y con sus paquetes dados de baja. */
+    const e = await prisma.$transaction(async (tx) => {
+      await ForestCtpDB.bloquearCorridaEn(tx, tenantId, id);
+      await ForestCtpDB.exigirSinSalidaVivaEn(tx, tenantId, id, curDel?.lineNo);
+      const borrada = await tx.forestCtpEntry.update({
+        where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
+        data: { deletedAt: new Date() },
+      });
+      await ForestCtpDB.bajaDePaqueteDelDespachoEn(tx, tenantId, borrada);
+      // Igual que al anular: la FK es SET NULL al DELETE real, que acá nunca pasa
+      // (es soft-delete), así que las piezas hay que soltarlas a mano.
+      await tx.woodEntryTroza.updateMany({
+        where: { tenantId, consumidaEnId: id },
+        data: { consumidaEnId: null, fechaConsumo: null },
+      });
+      /* Y las que salieron SIN ASERRAR (ADR-363): anular el despacho es decir que
+         ese camión no salió, así que la madera sigue en el patio. Sin esto la
+         pieza quedaba marcada "ya despachada" para siempre. */
+      await tx.woodEntryTroza.updateMany({
+        where: { tenantId, despachadaEnId: id },
+        data: { despachadaEnId: null, fechaDespacho: null },
+      });
+      await ForestCtpDB.bajaDePaquetesEn(tx, tenantId, id);
+      return borrada;
+    }, CTP_TX_OPTS);
     /* Mismo criterio que al anular: el aserrío de una corrida borrada no se debe. */
     try {
       await ForestAserrioDB.alAnular(tenantId, id, user);

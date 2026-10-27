@@ -95,7 +95,7 @@ describe("plazo y rendimiento", () => {
     expect(diaCorto("2026-10-29T03:00:00.000Z")).toBe("jueves 29-10");
   });
   it("aviso: antes, el mismo día y vencido", () => {
-    const plazo = { despachoId: "x", gtfNumber: "0001-064", venceEl: "2026-10-29" };
+    const plazo = { anexoId: "x", gtfNumber: "0001-064", venceEl: "2026-10-29" };
     expect(avisoDePlazo(plazo, "2026-10-27")).toEqual({ texto: "Registrar hoy: vence el jueves 29-10 (GTF 0001-064)", vencido: false });
     expect(avisoDePlazo(plazo, "2026-10-29")?.texto).toBe("Registrar hoy: vence hoy, jueves 29-10 (GTF 0001-064)");
     expect(avisoDePlazo(plazo, "2026-10-30")).toMatchObject({ vencido: true });

@@ -224,13 +224,23 @@ describe("derivarRecorrido · anexo, salida y plazo", () => {
     ...x,
   });
 
-  it("anexo del permiso (normalizado) y salida con guía → recorrido completo, con el plazo que vence", () => {
+  it("anexo del permiso (normalizado) y salida con guía → recorrido completo y SIN aviso de plazo (ya está en el Libro)", () => {
     const e = derivarRecorrido(datos({ ...hecho(), anexos: [anexo()], despachos: [despacho()] }));
     expect(paso(e, "anexo")).toMatchObject({ estado: "hecho", ids: ["ax1"] });
     expect(paso(e, "salida")).toMatchObject({ estado: "hecho", ids: ["dsp1"], detalle: "GTF GTF-77" });
     expect(e.siguiente).toBeNull();
+    /* La prueba del 27-10: 6/6 y seguía «Registrar hoy: vence el jueves 29-10». */
+    expect(e.plazo).toBeNull();
+  });
+
+  it("anexo emitido y su salida todavía sin registrar → avisa el plazo desde la fecha de la guía", () => {
+    const e = derivarRecorrido(datos({ ...hecho(), anexos: [anexo({ despachoIds: [] })], despachos: [] }));
+    expect(paso(e, "salida").estado).toBe("pendiente");
     /* Lunes 26 → vence el miércoles 28 (2 días hábiles). */
-    expect(e.plazo).toEqual({ despachoId: "dsp1", gtfNumber: "GTF-77", venceEl: "2026-10-28" });
+    expect(e.plazo).toEqual({ anexoId: "ax1", gtfNumber: "GTF-77", venceEl: "2026-10-28" });
+    /* Citada pero anulada = sigue faltando registrar. */
+    const anulada = derivarRecorrido(datos({ ...hecho(), anexos: [anexo()], despachos: [despacho({ status: "anulado" })] }));
+    expect(anulada.plazo).toMatchObject({ anexoId: "ax1", venceEl: "2026-10-28" });
   });
 
   it("anexo reemplazado, de otro permiso, de otra especie o anterior al bloque no cuenta", () => {
@@ -244,6 +254,9 @@ describe("derivarRecorrido · anexo, salida y plazo", () => {
     const viejo = derivarRecorrido(datos({ ...hecho(), anexos: [anexo()], despachos: [despacho({ entryDate: new Date("2026-10-20T12:00:00.000Z") })] }));
     expect(paso(viejo, "salida").estado).toBe("hecho");
     expect(viejo.plazo).toBeNull();
+    /* Un anexo sin salida cuyo plazo ya pasó tampoco da aviso de «registrar hoy». */
+    const vencido = derivarRecorrido(datos({ ...hecho(), anexos: [anexo({ despachoIds: [], fecha: "2026-10-20" })] }));
+    expect(vencido.plazo).toBeNull();
   });
 });
 

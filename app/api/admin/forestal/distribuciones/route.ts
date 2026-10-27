@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
-import { ForestDistribucionesDB } from "@/lib/db/forest-distribuciones.db";
+import { DistribucionYaTomadaError, ForestDistribucionesDB } from "@/lib/db/forest-distribuciones.db";
 import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
@@ -211,6 +211,10 @@ export const POST = withApiHandler("forestal-distribuciones-post", async (req: N
     );
     return NextResponse.json({ distribucion }, { status: parsed.data.id ? 200 : 201 });
   } catch (err) {
+    /* Una copia que trae el lote o las corridas de otra distribución guardada. */
+    if (err instanceof DistribucionYaTomadaError) {
+      return NextResponse.json({ error: "ya_es_de_otra_distribucion", message: err.message, detalle: err.detalle }, { status: 409 });
+    }
     /* Una jornada del Recorrido tiene la clave mientras escribe el Libro. */
     if (err instanceof ClaveOcupadaError) {
       return NextResponse.json(

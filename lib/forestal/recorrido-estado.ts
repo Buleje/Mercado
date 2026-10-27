@@ -313,9 +313,15 @@ export function derivarRecorrido(d: DatosDelRecorrido): EstadoRecorrido {
     });
   }
 
-  /* El plazo: de las salidas con su guía, la que antes vence (si todavía no venció). */
-  const plazos = salidas
-    .map((x) => ({ despachoId: x.id, gtfNumber: x.gtfNumber, venceEl: venceElRegistro(x.entryDate) }))
+  /* El plazo: de los anexos cuya salida TODAVÍA no está en el Libro, el que
+     antes vence (si todavía no venció). Cuenta desde la fecha de la guía con
+     el predicado del badge (`venceElRegistro` → `estaFueraDePlazo`). Una
+     salida ya registrada no avisa: antes decía «Registrar hoy» con el
+     recorrido 6/6 y la salida ya en el Libro (prueba del 27-10). */
+  const conSalida = new Set(salidas.map((x) => x.id));
+  const plazos = anexos
+    .filter((a) => !(a.despachoIds ?? []).some((id) => conSalida.has(id)))
+    .map((a) => ({ anexoId: a.id, gtfNumber: a.gtf?.trim() || null, venceEl: venceElRegistro(a.fecha) }))
     .filter((p) => p.venceEl >= d.hoy)
     .sort((x, y) => x.venceEl.localeCompare(y.venceEl));
 

@@ -5,6 +5,8 @@ import { construirRegistroDistribucion, type DistribucionRegistro } from "@/lib/
 import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
+import { tomadosPorOtros } from "@/lib/forestal/recorrido-estado";
+import { prisma } from "@/lib/prisma";
 
 /**
  * ForestDistribucionesDB — distribuciones de rolliza guardadas del aserradero
@@ -60,6 +62,59 @@ export function conservarAnotaciones<B extends BloqueEntrante>(guardado: BloqueR
   };
 }
 
+/**
+ * Una distribución NUEVA trae en un bloque el lote o una corrida que ya anotó
+ * un bloque de OTRA distribución guardada (copia, «Guardar como», una pestaña
+ * vieja). Guardarla sería la misma producción amparada dos veces en el
+ * Anexo 04: la ruta responde 409 y pide abrir la original desde Guardadas.
+ */
+export class DistribucionYaTomadaError extends Error {
+  constructor(message: string, readonly detalle: { bloque: string; loteId?: string; corridaId?: string }) {
+    super(message);
+    this.name = "DistribucionYaTomadaError";
+  }
+}
+
+/**
+ * El primer lote o corrida de `bloques` que ya es de otro bloque guardado, como error; o `null`.
+ *
+ * `lotesVivos`: los lotes de aserrío que siguen vivos (sin `deletedAt`). Un
+ * lote ya eliminado no ampara nada en el Anexo 04, así que el bloque viejo
+ * que lo anotó no es dueño de nada y la nueva distribución puede guardarse
+ * (decisión de la revisión del 27-10). Sin el conjunto se bloquea igual: sin
+ * saber, lo seguro es no amparar dos veces.
+ */
+export function choqueConOtraDistribucion(
+  guardadas: readonly DistribucionRegistro[],
+  nuevaId: string,
+  bloques: readonly BloqueRolliza[],
+  lotesVivos?: ReadonlySet<string>,
+): DistribucionYaTomadaError | null {
+  /* Sólo OTRAS distribuciones: lo que la misma ya anotó es suyo (re-guardarla
+     no choca consigo misma). Bloque "" = no se excluye ninguno más. */
+  const tomados = tomadosPorOtros(guardadas.filter((d) => d.id !== nuevaId), nuevaId, "");
+  for (const b of bloques) {
+    const etiqueta = b.etiqueta || "sin etiqueta";
+    const deOtro = b.loteId ? tomados.lotes.get(b.loteId) : undefined;
+    if (b.loteId && deOtro && (!lotesVivos || lotesVivos.has(b.loteId))) {
+      return new DistribucionYaTomadaError(`Este lote ya es del ${deOtro}: ábrela desde Guardadas.`, { bloque: etiqueta, loteId: b.loteId });
+    }
+    const jornadas = (b.jornadasLibro ?? []).map((j) => ({ id: j.corridaId, lineNo: j.lineNo as number | undefined }));
+    const otras = [...(b.corridaIds ?? []), ...(b.complementos ?? []).map((c) => c.corridaId)].map((id) => ({ id, lineNo: undefined }));
+    for (const c of [...jornadas, ...otras]) {
+      const quien = c.id ? tomados.corridas.get(c.id) : undefined;
+      if (quien) {
+        const corrida = c.lineNo != null ? `La corrida N° ${c.lineNo}` : "Una corrida";
+        return new DistribucionYaTomadaError(`${corrida} del bloque ${etiqueta} ya es del ${quien}: ábrela desde Guardadas.`, {
+          bloque: etiqueta,
+          corridaId: c.id ?? undefined,
+        });
+      }
+    }
+  }
+  return null;
+}
+
 /** Lo guardado, sin filas rotas, la más reciente primero. */
 function normalizar(raw: unknown): DistribucionRegistro[] {
   if (!Array.isArray(raw)) return [];
@@ -93,6 +148,20 @@ export const ForestDistribucionesDB = {
     user = "unknown",
   ): Promise<DistribucionRegistro> {
     if (!tenantId) throw new Error("tenantId is required");
+    /* Fuera del candado (una consulta, sólo si algún bloque trae lote): qué
+       lotes siguen vivos, para que uno ya eliminado no trabe la nueva. */
+    const lotesPedidos = [...new Set(input.bloques.map((b) => b.loteId).filter((id): id is string => Boolean(id)))];
+    const lotesVivos =
+      lotesPedidos.length === 0
+        ? new Set<string>()
+        : new Set(
+            (
+              await prisma.forestLoteAserrio.findMany({
+                where: { tenantId, id: { in: lotesPedidos }, deletedAt: null },
+                select: { id: true },
+              })
+            ).map((l) => l.id),
+          );
     const { registro, existente } = await PlatformSettingsDB.actualizar<
       unknown,
       { registro: DistribucionRegistro; existente: DistribucionRegistro | undefined }
@@ -107,6 +176,11 @@ export const ForestDistribucionesDB = {
           createdAt: existente?.createdAt,
           createdBy: existente?.createdBy ?? user,
         });
+        /* Sólo al CREAR: una guardada ya es dueña de lo que anotó el servidor. */
+        if (!existente) {
+          const choque = choqueConOtraDistribucion(list, registro.id, registro.bloques, lotesVivos);
+          if (choque) throw choque;
+        }
         const next = existente
           ? list.map((d) => (d.id === registro.id ? registro : d))
           : [registro, ...list].slice(0, MAX_GUARDADAS);

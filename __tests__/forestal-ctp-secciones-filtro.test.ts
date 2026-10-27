@@ -242,6 +242,11 @@ describe("totalesDeSeccion", () => {
     ]);
     expect(t).toEqual({ lineas: 1, cantidad: 10, consumido: 12.5, piezas: 20 });
   });
+
+  it("m³ a 3 decimales: una sola línea de 0,912 suma 0,912, no 0,91 (prueba del 27-10)", () => {
+    const t = totalesDeSeccion([linea({ id: "a", quantity: "0.9120", volumeInputM3: "1.6285", pieces: 1 })]);
+    expect(t).toMatchObject({ cantidad: 0.912, consumido: 1.629 });
+  });
 });
 
 describe("seccionACsv", () => {

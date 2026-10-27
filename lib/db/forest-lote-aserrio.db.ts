@@ -3025,15 +3025,34 @@ export class ForestLoteAserrioDB {
       // el motivo lo dice explícito: es la diferencia entre "se corrigió a
       // tiempo" y "se borró con ventas ya hechas".
       const conSalidaIds = new Set(conSalida.map((c) => c.id));
+      /* La revisión de arriba corre fuera de la tx y cada corrida se anula en
+         la suya: un despacho que entra en medio hace que `annul` dé 409 a
+         mitad del bucle. Se acepta la carrera (una tx que tome el lote y
+         todas sus corridas a la vez sería mucho candado para un caso raro),
+         pero el mensaje dice cuántas quedaron anuladas y qué falta. */
+      let anuladas = 0;
       for (const c of vivas) {
-        await ForestCtpDB.annul(
-          tenantId,
-          c.id,
-          conSalidaIds.has(c.id)
-            ? `${motivo.trim()} · FORZADO: la corrida ya tenía despacho/reproceso registrado`
-            : motivo.trim(),
-          user,
-        );
+        try {
+          await ForestCtpDB.annul(
+            tenantId,
+            c.id,
+            conSalidaIds.has(c.id)
+              ? `${motivo.trim()} · FORZADO: la corrida ya tenía despacho/reproceso registrado`
+              : motivo.trim(),
+            user,
+            /* «Forzar» ya se confirmó arriba: el despacho queda sin corrida, a sabiendas. */
+            { forzarConSalida: conSalidaIds.has(c.id) },
+          );
+        } catch (err) {
+          if (!(err instanceof CtpInvariantError) || err.code !== "CORRIDA_CON_SALIDA_REGISTRADA") throw err;
+          throw new CtpInvariantError(
+            `Se anularon ${anuladas} de ${vivas.length} corridas del lote ${lote.code}; la N° ${c.lineNo} ya tiene salida ` +
+              `(entró mientras se anulaba): ${err.message} Después vuelve a intentar eliminar el lote.`,
+            "CORRIDA_CON_SALIDA_REGISTRADA",
+            { ...(err.detail ?? {}), loteId, anuladas, total: vivas.length },
+          );
+        }
+        anuladas++;
       }
       corridaAnulada = true;
     }
