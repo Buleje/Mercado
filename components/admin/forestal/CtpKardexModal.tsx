@@ -12,38 +12,22 @@
 import { useCallback, useEffect, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { MODAL_BODY } from "./ctp-shared";
-import { AlertCircle, ArrowDownRight, ArrowUpRight, Scale } from "@buleje/design-system/icons";
-import { LoadingState, DataTable } from "@buleje/design-system";
+import { AlertCircle, Scale } from "@buleje/design-system/icons";
+import { LoadingState } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { formatDate } from "@/lib/format";
+import CtpKardexTabla, { type MovimientoKardex } from "./CtpKardexTabla";
 
-interface Mov {
-  fecha: string;
-  tipo: "ingreso" | "consumo";
-  doc: string;
-  entra: number;
-  sale: number;
-  saldo: number;
-}
 interface Kardex {
   especie: string;
-  movimientos: Mov[];
+  movimientos: MovimientoKardex[];
   ingresoTotal: number;
   consumoTotal: number;
   saldo: number;
 }
 
 const n4 = (v: number) => fmtM3(v);
-// entryDate es date-only a medianoche UTC → sin timeZone:UTC se corre un día.
-const fmtDate = (iso: string) => {
-  try {
-    return formatDate(iso, { soloFecha: true });
-  } catch {
-    return iso;
-  }
-};
 
 export default function CtpKardexModal({
   especie,
@@ -115,103 +99,14 @@ export default function CtpKardexModal({
                 </p>
               </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                <DataTable className="w-full">
-                  <thead>
-                    <tr>
-                      <th scope="col">
-                        Fecha
-                      </th>
-                      <th scope="col">
-                        Documento
-                      </th>
-                      <th
-                        scope="col"
-                        className="text-right"
-                      >
-                        Entra
-                      </th>
-                      <th
-                        scope="col"
-                        className="text-right"
-                      >
-                        Sale
-                      </th>
-                      <th
-                        scope="col"
-                        className="text-right"
-                      >
-                        Saldo
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {k.movimientos.map((m, i) => (
-                      <tr key={i}>
-                        <td className="whitespace-nowrap text-[var(--text-secondary)]">
-                          {fmtDate(m.fecha)}
-                        </td>
-                        <td>
-                          <span className="inline-flex items-center gap-1.5 text-[var(--text-primary)]">
-                            {m.tipo === "ingreso" ? (
-                              <ArrowUpRight
-                                className="h-3.5 w-3.5 text-[var(--data-success-ink)]"
-                                aria-hidden
-                              />
-                            ) : (
-                              <ArrowDownRight
-                                className="h-3.5 w-3.5 text-[var(--data-warning-ink)]"
-                                aria-hidden
-                              />
-                            )}
-                            {m.doc}
-                          </span>
-                        </td>
-                        <td className="text-right font-mono tabular-nums text-[var(--data-success-ink)]">
-                          {m.entra > 0 ? n4(m.entra) : "—"}
-                        </td>
-                        <td className="text-right font-mono tabular-nums text-[var(--data-warning-ink)]">
-                          {m.sale > 0 ? n4(m.sale) : "—"}
-                        </td>
-                        <td className="text-right">
-                          <span
-                            className={`font-mono font-bold tabular-nums ${m.saldo < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]"}`}
-                          >
-                            {n4(m.saldo)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  {k.movimientos.length > 0 && (
-                    <tfoot>
-                      <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
-                        <td colSpan={2}>
-                          Totales
-                        </td>
-                        <td className="text-right font-mono tabular-nums text-[var(--data-success-ink)]">
-                          {n4(k.ingresoTotal)}
-                        </td>
-                        <td className="text-right font-mono tabular-nums text-[var(--data-warning-ink)]">
-                          {n4(k.consumoTotal)}
-                        </td>
-                        <td className="text-right">
-                          <span
-                            className={`font-mono tabular-nums ${k.saldo < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]"}`}
-                          >
-                            {n4(k.saldo)}
-                          </span>
-                        </td>
-                      </tr>
-                    </tfoot>
-                  )}
-                </DataTable>
-                {k.movimientos.length === 0 && (
-                  <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">
-                    Sin movimientos de {especie} en {period.label}.
-                  </div>
-                )}
-              </div>
+              <CtpKardexTabla
+                movimientos={k.movimientos}
+                ingresoTotal={k.ingresoTotal}
+                consumoTotal={k.consumoTotal}
+                saldo={k.saldo}
+                vacio={`Sin movimientos de ${especie} en ${period.label}.`}
+                excel={`Kardex ${especie}`}
+              />
             </div>
           </>
         )}
