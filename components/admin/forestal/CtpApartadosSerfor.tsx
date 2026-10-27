@@ -26,11 +26,7 @@ import {
   type IngresoParaFuente,
   type RetrozoParaApartado,
 } from "@/lib/forestal/loctp-apartados";
-import { Celda, Cuadro, Entero, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
-import { formatDateNumeric } from "@/lib/format";
-
-const fmtFecha = (iso: string | null) =>
-  iso ? formatDateNumeric(`${iso}T00:00:00Z`, { soloFecha: true }) : null;
+import { ApartadoFuentes, ApartadoRetrozado } from "./CtpApartadosTablas";
 
 export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
   const [cargando, setCargando] = useState(true);
@@ -98,99 +94,9 @@ export default function CtpApartadosSerfor({ period }: { period: CtpPeriod }) {
 
   return (
     <div className="space-y-4">
-      <Cuadro
-        titulo="Apartado 1 · Fuente de origen o procedencia de la madera"
-        subtitulo="7 casilleros. El N° de esta tabla es el que la Sección 1 declara en su casillero (5): sin este registro, ese número no referencia nada."
-      >
-        <thead>
-          <tr>
-            <Th ancho="w-14">(1) N°</Th>
-            <Th>(2) Fuente</Th>
-            <Th>(3) Titular</Th>
-            <Th>(4) Cód. título</Th>
-            <Th>(5) Resolución</Th>
-            <Th>(6) RUC</Th>
-            <Th>(7) Procedencia</Th>
-            <Th>Guías</Th>
-            <Th>m³</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[var(--rule-base)]">
-          {fuentes.length === 0 ? (
-            <SinDatos cols={9}>
-              Ningún ingreso del período identifica su fuente. Falta el titular, el código del título o la
-              resolución — se completan al traer la guía de SERFOR o a mano en el ingreso.
-            </SinDatos>
-          ) : (
-            fuentes.map((f) => (
-              <tr key={f.nro}>
-                <td className="font-mono font-bold tabular-nums">{f.nro}</td>
-                <Texto v={f.fuente} />
-                <td className="font-semibold">{f.titular || "—"}</td>
-                <Texto v={f.codigoTitulo} className="font-mono" />
-                <Texto v={f.resolucion} className="font-mono" />
-                <Texto v={f.ruc} className="font-mono" />
-                <Texto v={f.procedencia} />
-                <Entero v={f.ingresos} />
-                <Celda v={f.volumenM3} />
-              </tr>
-            ))
-          )}
-        </tbody>
-      </Cuadro>
+      <ApartadoFuentes fuentes={fuentes} />
 
-      <Cuadro
-        titulo="Apartado 2 · Retrozado"
-        subtitulo="11 casilleros. El seccionado de trozas dentro de la planta: de qué troza salió cada pedazo, con qué volumen entró y con cuál quedó."
-      >
-        <thead>
-          <tr>
-            <Th ancho="w-14">(1) N°</Th>
-            <Th>(2) Fecha</Th>
-            <Th>(3) Cód. origen/CTP</Th>
-            <Th>(4) Vol. inicial</Th>
-            <Th>(5) Cód. retrozado</Th>
-            <Th>(6) N. común</Th>
-            <Th>(7) N. científico</Th>
-            <Th>(8) Ø mayor cm</Th>
-            <Th>(9) Ø menor cm</Th>
-            <Th>(10) Largo m</Th>
-            <Th>(11) Vol. final</Th>
-            <Th>Observaciones</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[var(--rule-base)]">
-          {retrozos.length === 0 ? (
-            <SinDatos cols={12}>
-              Sin retrozado en el período. Se registra desde Trozas, cortando una troza en pedazos.
-            </SinDatos>
-          ) : (
-            retrozos.map((r) => (
-              <tr key={`${r.nro}-${r.codigoRetrozado}`}>
-                <td className="font-mono tabular-nums text-[var(--text-tertiary)]">{r.nro}</td>
-                <Texto v={fmtFecha(r.fecha)} className="whitespace-nowrap" />
-                <Texto v={r.codigoOrigen} className="font-mono" />
-                <Celda v={r.volumenInicial} />
-                <td className="font-mono font-bold">{r.codigoRetrozado}</td>
-                <Texto v={r.nombreComun} />
-                <Texto v={r.nombreCientifico} className="italic" />
-                <Entero v={r.diametroMayorCm} />
-                <Entero v={r.diametroMenorCm} />
-                <Celda v={r.longitudM} />
-                <Celda v={r.volumenFinal} />
-                <td className="text-[var(--text-secondary)]">
-                  {r.descarte && (
-                    <span className="mr-1 rounded-md bg-[var(--data-warning-100)] px-1.5 py-0.5 font-bold text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
-                      DESCARTE
-                    </span>
-                  )}
-                  {r.observaciones || (r.descarte ? "" : "—")}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </Cuadro>
+      <ApartadoRetrozado retrozos={retrozos} />
 
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-sm text-[var(--text-tertiary)]">
         <span className="inline-flex items-center gap-1.5">
