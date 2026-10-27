@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Copy, Link2, Loader2, RefreshCw, Tablet, Trash2 } from "@buleje/design-system/icons";
+import { CheckCircle2, Copy, Link2, Loader2, QrCode, RefreshCw, Tablet, Trash2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { Button, Interruptor } from "@/components/ui-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -22,8 +22,15 @@ import { useKioskoAjustes } from "./use-kiosko-ajustes";
 const FECHA = new Intl.DateTimeFormat("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Lima" });
 const fecha = (iso: string | null) => (iso ? FECHA.format(new Date(iso)) : "—");
 
-export default function KioskoAsistenciaAjustes() {
-  const { resumen, cargando, guardando, error, recien, cambiarActivo, cambiarSinFoto, generar, revocar } = useKioskoAjustes();
+interface Props {
+  /** Dentro de una ventana: sin marco ni título propio (los pone la ventana). */
+  enVentana?: boolean;
+  /** Si viene, se ofrece «Imprimir fotochecks» (cada trabajador muestra el suyo a la tablet). */
+  alImprimirFotochecks?: () => void;
+}
+
+export default function KioskoAsistenciaAjustes({ enVentana = false, alImprimirFotochecks }: Props) {
+  const { resumen, cargando, guardando, error, recien, cambiarActivo, cambiarSinFoto, generar, ponerTablet, revocar } = useKioskoAjustes();
   const [dias, setDias] = useState<number>(DIAS_VENCE_POR_DEFECTO);
   const [copiado, setCopiado] = useState(false);
 
@@ -47,9 +54,12 @@ export default function KioskoAsistenciaAjustes() {
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4" aria-busy={cargando}>
+    <section
+      className={enVentana ? "flex flex-col gap-4" : "flex flex-col gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"}
+      aria-busy={cargando}
+    >
       <div className="flex items-center gap-2">
-        <CardTitle>Kiosko de asistencia</CardTitle>
+        {enVentana ? <span className="text-sm font-semibold text-[var(--text-secondary)]">Cómo funciona</span> : <CardTitle>Kiosko de asistencia</CardTitle>}
         <InfoTip
           what="Cada trabajador marca su entrada y su salida en la tablet del local, mostrando el QR de su fotocheck (o escribiendo su DNI). Cada marca guarda una foto y la IP."
           affects="La marca entra a la hoja de asistencia como «kiosko», con la tardanza según el horario del puesto. Dos marcas de la misma persona en menos de 2 minutos cuentan una sola vez. El enlace queda atado a la primera tablet que lo abre: en un celular no marca."
@@ -121,10 +131,15 @@ export default function KioskoAsistenciaAjustes() {
                 ))}
               </select>
             </label>
-            <Button type="button" onClick={pedirOtro} disabled={guardando}>
-              <RefreshCw className="h-4 w-4" aria-hidden />
-              {enlace ? "Generar otro enlace" : "Generar enlace"}
-            </Button>
+            {!enlace || enlace.estado === "vencido" ? (
+              <Button type="button" onClick={() => void ponerTablet(dias)} disabled={guardando}>
+                <Tablet className="h-4 w-4" aria-hidden /> Poner la tablet en la entrada
+              </Button>
+            ) : (
+              <Button type="button" variant="secondary" onClick={pedirOtro} disabled={guardando}>
+                <RefreshCw className="h-4 w-4" aria-hidden /> Generar otro enlace
+              </Button>
+            )}
             {enlace && (
               <Button type="button" variant="ghost" onClick={quitar} disabled={guardando}>
                 <Trash2 className="h-4 w-4" aria-hidden /> Revocar
@@ -139,7 +154,7 @@ export default function KioskoAsistenciaAjustes() {
           )}
           {recien && enlace && !enlace.aparato && (
             <div className="flex flex-col items-start gap-3 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 sm:flex-row">
-              <QrImagen texto={recien} lado={176} alt="QR del enlace del kiosko" className="h-44 w-44 shrink-0 rounded-lg" />
+              <QrImagen texto={recien} lado={256} alt="QR del enlace del kiosko" className="h-56 w-56 shrink-0 rounded-lg" />
               <div className="flex min-w-0 flex-col gap-2">
                 <p className="text-sm font-semibold text-[var(--data-warning-ink)]">
                   Escanéalo con la tablet del local: queda atado a la primera que lo abra. No lo imprimas ni lo compartas.
@@ -156,6 +171,15 @@ export default function KioskoAsistenciaAjustes() {
           )}
         </>
       ) : null}
+
+      {alImprimirFotochecks && resumen && (
+        <div className="flex flex-wrap items-center gap-3 border-t border-[var(--rule-soft)] pt-3 text-sm text-[var(--text-secondary)]">
+          <span className="min-w-0 flex-1 basis-56">Cada trabajador muestra el QR de su fotocheck a la tablet. Si aún no los tienen, imprímelos.</span>
+          <Button type="button" variant="secondary" onClick={alImprimirFotochecks}>
+            <QrCode className="h-4 w-4" aria-hidden /> Imprimir fotochecks
+          </Button>
+        </div>
+      )}
 
       {error && (
         <p className="text-sm text-[var(--data-error-700)]" role="alert">

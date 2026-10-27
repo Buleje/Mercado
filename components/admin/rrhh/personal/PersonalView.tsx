@@ -27,6 +27,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { FileSignature, LayoutList, Plus, QrCode, UserPlus, Users } from "@buleje/design-system/icons";
@@ -66,6 +67,11 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   // «Que la tabla cambie a formato de fotocheck y LUEGO aparezca el botón de
   // descargar» (Brandon 2026-09-15): la lista se ve como tarjetas antes de imprimir.
   const [modoFotocheck, setModoFotocheck] = useState(false);
+  // «Imprimir fotochecks» desde el kiosko de la asistencia llega con `?fotochecks=1`.
+  const pideFotochecks = useSearchParams().get("fotochecks") === "1";
+  useEffect(() => {
+    if (pideFotochecks) setModoFotocheck(true);
+  }, [pideFotochecks]);
 
   // El input nunca se desmonta: `qInput` cambia en cada tecla, `q` (lo que
   // dispara el fetch) recién 250ms después de la última tecla.

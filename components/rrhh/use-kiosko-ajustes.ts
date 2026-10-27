@@ -103,10 +103,21 @@ export function useKioskoAjustes() {
     [correr],
   );
 
+  /** «Poner la tablet en la entrada»: enlace nuevo y marcación encendida, de una. */
+  const ponerTablet = useCallback(
+    async (venceDias: number) => {
+      const r = await correr<EnlaceGeneradoDTO>("POST", { venceDias });
+      if (!r) return;
+      setRecien(`${window.location.origin}/kiosko/asistencia/${encodeURIComponent(r.token)}`);
+      if (!r.activo) await correr("PUT", { activo: true });
+    },
+    [correr],
+  );
+
   const revocar = useCallback(async () => {
     const r = await correr("DELETE");
     if (r) setRecien(null);
   }, [correr]);
 
-  return { resumen, cargando, guardando, error, recien, cambiarActivo, cambiarSinFoto, generar, revocar };
+  return { resumen, cargando, guardando, error, recien, cambiarActivo, cambiarSinFoto, generar, ponerTablet, revocar };
 }

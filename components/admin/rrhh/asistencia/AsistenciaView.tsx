@@ -30,6 +30,8 @@ import HojaDelDia from "./HojaDelDia";
 import HojaDelMes from "./HojaDelMes";
 import HojaDeLaSemana from "./HojaDeLaSemana";
 import MotivoCorreccionModal from "./MotivoCorreccionModal";
+import MarcasParaRevisar from "./MarcasParaRevisar";
+import BotonTabletEntrada from "./BotonTabletEntrada";
 import BarraPagoSemana from "../pagos/BarraPagoSemana";
 import { usePagoSemana } from "../pagos/use-pago-semana";
 import { ProveedorAdelantoDeLaFila } from "./adelanto-de-la-fila";
@@ -67,6 +69,13 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
     setModo(m);
   };
 
+  /** «Corregir» en una marca para revisar: ese día, en la hoja del día. */
+  const irADia = (f: string) => {
+    setFecha(f);
+    setModo("dia");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   /* Las secciones van en la fila del título (patrón del panel, como Turnos):
      cada hoja la pinta en su `EncabezadoDeVista`. */
   const selectorModo = <BarraDeSecciones secciones={MODOS} activa={modo} onCambiar={elegirModo} etiqueta="Ver la asistencia por" idPanel={ID_PANEL_ASISTENCIA} />;
@@ -83,6 +92,14 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
   return (
     <ProveedorAdelantoDeLaFila nivel={nivel} pago={nivel === "completo" ? pago : null}>
       {nivel === "completo" && <BarraPagoSemana pago={pago} />}
+      {nivel !== "marcar" && (
+        <MarcasParaRevisar
+          clave={`${modo}|${fecha}|${semana}|${mes}`}
+          hoy={limaDateKey()}
+          onCorregir={irADia}
+          acciones={nivel === "completo" ? <BotonTabletEntrada /> : undefined}
+        />
+      )}
       {hoja}
       <MotivoCorreccionModal />
     </ProveedorAdelantoDeLaFila>
