@@ -19,7 +19,8 @@
 
 import { useRef, useState } from "react";
 import { descartarEsperado } from "@/lib/errores/sin-dato";
-import { DataTable } from "@buleje/design-system";
+import type { AccionImport } from "./CtpImportDetalleTabla";
+import CtpImportDetalleTabla from "./CtpImportDetalleTabla";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { MODAL_BODY } from "./ctp-shared";
@@ -51,7 +52,7 @@ const REGISTRO_ORDER: Registro[] = ["ingresos", "produccion", "salida"];
 const MODE_LABEL: Record<ImportMode, string> = { completo: "Libro completo", ingresos: "Ingresos", produccion: "Producción", salida: "Salida" };
 const REGISTRO_NOUN: Record<Registro, string> = { ingresos: "ingresos", produccion: "corridas", salida: "despachos" };
 
-type Action = "crear" | "creado" | "existe" | "difiere" | "error";
+type Action = AccionImport;
 interface ResultRow { row?: number; gtf: string | null; action: Action; message: string; seccion?: string }
 interface Resumen { total: number; crear: number; creados: number; saltados: number; difieren: number; errores: number }
 interface Combined { ingresos: unknown[]; produccion: unknown[]; salida: unknown[] }
@@ -518,30 +519,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               </p>
             )}
 
-            <div className="max-h-[46vh] overflow-y-auto rounded-2xl border border-[var(--rule-base)]">
-              <DataTable className="w-full">
-                <thead className="sticky top-0">
-                  <tr>
-                    {isCombined && <th>Registro</th>}
-                    <th>Fila</th>
-                    <th>GTF</th>
-                    <th>Estado</th>
-                    <th>Detalle</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detalle.map((d, i) => (
-                    <tr key={i}>
-                      {isCombined && <td className="font-bold text-[var(--text-secondary)]">{d.seccion ?? "—"}</td>}
-                      <td className="font-mono text-[var(--text-tertiary)]">{d.row ?? "—"}</td>
-                      <td className="font-mono font-bold">{d.gtf ?? "—"}</td>
-                      <td><ActionBadge action={d.action} /></td>
-                      <td className="text-[var(--text-secondary)]">{d.message}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </DataTable>
-            </div>
+            <CtpImportDetalleTabla detalle={detalle} conRegistro={isCombined} />
 
             {phase !== "done" && (duplicados.length > 0 || resumen.difieren > 0) && (
               <p className="text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
@@ -597,18 +575,6 @@ function StepDot({ n, on }: { n: number; on: boolean }) {
   return (
     <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-bold ${on ? "bg-[var(--brand-ink)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>{n}</span>
   );
-}
-
-function ActionBadge({ action }: { action: Action }) {
-  const map: Record<Action, { label: string; cls: string }> = {
-    crear: { label: "A crear", cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)]" },
-    creado: { label: "Creado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)]" },
-    existe: { label: "Ya existe", cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
-    difiere: { label: "Difiere", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" },
-    error: { label: "Error", cls: "bg-[var(--data-error-100)] text-[var(--data-error-700)]" },
-  };
-  const m = map[action];
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${m.cls}`}>{m.label}</span>;
 }
 
 function Chip({ tone, label }: { tone: "info" | "muted" | "warning" | "error"; label: string }) {
