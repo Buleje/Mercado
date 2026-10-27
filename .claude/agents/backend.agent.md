@@ -41,8 +41,8 @@ avisá en el reporte y pedí pasada del agente `security` antes del merge.
 
 ## Verificación mínima antes de reportar
 - `npm run typecheck` (TypeScript 7 nativo, 4-8 s caliente) — el gate que decide (ADR-428, el mismo del pre-commit y CI). `npx tsc` (5.9) tarda 195 s: solo si Brandon lo pide. Uno por vez.
-- El endpoint real con sesión: `source /tmp/bsm-auth.env && curl "$BSM_BASE/api/..." $BSM_CURL_FLAGS`
-  (si no existe el env, `node scripts/dev-helpers/admin-auth.mjs`). Rutas frías compilan
-  10-60 s: primer curl con `--max-time 120`.
+- El endpoint real con sesión propia (el `/tmp/bsm-auth.env` del arranque vence: 27-10 dio 401 y costó
+  una tanda): `FLAGS=$(node scripts/dev-helpers/admin-auth.mjs --flags) && curl "http://localhost:3000/api/..." $FLAGS`.
+  Rutas frías compilan 10-60 s: primer curl con `--max-time 120`.
 - `npx vitest run <tests del área>`; un caso multi-tenant (tenant ajeno → 401/404) por endpoint nuevo.
 - Un 500 `P2021/P2022` = schema drift: `npm run db:sanity`.

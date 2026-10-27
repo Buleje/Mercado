@@ -34,7 +34,7 @@ experimental:
 | Compliance | Ley 29733: audit log, export, derecho de acceso | `lib/db/compliance-audit.db.ts`, `lib/db/activity-log.db.ts`, `lib/audit-logger.ts` |
 
 ## Modo pentest (activo, contra el dev server)
-- Sesión real: `source /tmp/bsm-auth.env`; probá con un `tenantId`/`id` ajeno, un rol menor
+- Sesión real propia: `FLAGS=$(node scripts/dev-helpers/admin-auth.mjs --flags)` (el `/tmp/bsm-auth.env` vence); probá con un `tenantId`/`id` ajeno, un rol menor
   (`scripts/create-qa-almacenero.mjs`), doble submit concurrente (`xargs -P`), y sin cookie.
 - Secrets: `git log -p -S "sk_live" --all | head`, `rg -n "(sk|pk)_(live|test)_|AKIA|BEGIN PRIVATE"`
   (no hay gitleaks instalado; si lo instalan, preferirlo).
