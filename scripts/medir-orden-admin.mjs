@@ -525,12 +525,14 @@ async function main() {
   const t0 = Date.now();
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: ANCHO, height: ALTO }, extraHTTPHeaders: { "x-tenant-id": TENANT } });
-  const page = await ctx.newPage();
+  let page = await ctx.newPage();
   /* Un formulario con «¿salir sin guardar?» colgaría el `goto` siguiente: se sale.
      Cualquier otro diálogo al cargar (alert de error) se cierra sin aceptar nada. */
-  page.on("dialog", (d) => {
-    (d.type() === "beforeunload" ? d.accept() : d.dismiss()).catch((err) => console.error(`diálogo: ${String(err).slice(0, 80)}`));
-  });
+  const cerrarDialogos = (p) =>
+    p.on("dialog", (d) => {
+      (d.type() === "beforeunload" ? d.accept() : d.dismiss()).catch((err) => console.error(`diálogo: ${String(err).slice(0, 80)}`));
+    });
+  cerrarDialogos(page);
   if (!(await entrar(page))) {
     console.error("❌ login falló: ¿dev server arriba? ¿existe qaadmin en el tenant?");
     await browser.close();
@@ -555,7 +557,25 @@ async function main() {
     },
     { slug: TENANT, extra: sembrar },
   );
-  const red = vigilarRed(page);
+  let red = vigilarRed(page);
+  /* 28-10: la 1.ª carga después de editar a veces cae con `ERR_ABORTED` o `Page crashed`
+     mientras Turbopack recompila (3 de 6 corridas del LO-TH): se reintenta una vez, y si la
+     página murió, en una nueva del mismo contexto (la sesión sigue). */
+  const medirConReintento = async (lugar, tope) => {
+    try {
+      return await medirLugar(page, red, lugar, tope);
+    } catch (err) {
+      if (!/ERR_ABORTED|crashed|Target (page, context or browser )?closed/i.test(String(err))) throw err;
+      console.log(`↻   ${idDe(lugar).padEnd(38)} ${String(err).slice(0, 60)}: reintento`);
+      if (page.isClosed() || /crashed/i.test(String(err))) {
+        await page.close().catch((e) => console.error(`cerrar página: ${String(e).slice(0, 60)}`));
+        page = await ctx.newPage();
+        cerrarDialogos(page);
+        red = vigilarRed(page);
+      }
+      return medirLugar(page, red, lugar, tope);
+    }
+  };
 
   const filas = [];
   /* 09-10: con el dev server colgado, cada lugar quemaba su tope (y el candado) sin
@@ -566,8 +586,8 @@ async function main() {
     /* El primero paga la compilación en frío del panel (10-60 s). */
     const tope = i === 0 ? Math.max(TOPE_MS, 120_000) : TOPE_MS;
     try {
-      let fila = await medirLugar(page, red, lugar, tope);
-      if (fila.llegada.ruta.startsWith("/login") && (await entrar(page))) fila = await medirLugar(page, red, lugar, tope);
+      let fila = await medirConReintento(lugar, tope);
+      if (fila.llegada.ruta.startsWith("/login") && (await entrar(page))) fila = await medirConReintento(lugar, tope);
       filas.push(fila);
       console.log(lineaDe(fila));
       sinRespuesta = !fila.espera.listo && (fila.espera.cargadores ?? []).includes("sin <main>") ? sinRespuesta + 1 : 0;
