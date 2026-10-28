@@ -251,6 +251,9 @@ export function useLoteDesdeExcel() {
         const texto =
           `Lote ${r.lote.code}${r.sumadoAExistente ? " (el que ya estaba programado)" : ""}: ${r.piezas} troza${r.piezas === 1 ? "" : "s"} · ` +
           `${fmtM3(r.volumenM3)} m³ en consumo · N° ${r.corrida.lineNo}, producción por declarar` +
+          (r.trozasCargadas > 0
+            ? ` · ${r.trozasCargadas} troza${r.trozasCargadas === 1 ? "" : "s"} cargada${r.trozasCargadas === 1 ? "" : "s"} a su guía`
+            : "") +
           (r.medidas.guardadas > 0 ? ` · D1/D2 de ${r.medidas.guardadas}` : "") +
           (r.medidas.rechazadas > 0 ? ` · ${r.medidas.rechazadas} sin guardar D1/D2` : "");
         const importado = { id: r.lote.id, code: r.lote.code, texto };

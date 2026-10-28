@@ -61,6 +61,8 @@ const AVISO = "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] da
 const PASTILLA: Record<EstadoFilaLote | "importada", { texto: string; clase: string }> = {
   entra: { texto: "Entra", clase: OK },
   "ya-en-el-lote": { texto: "Ya en este lote", clase: OK },
+  /* Su guía no tenía la lista de trozas: se carga del Excel y entra (28-10). */
+  "se-carga": { texto: "Se carga", clase: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   importada: { texto: "Importada", clase: OK },
   "no-entra": { texto: "No entra", clase: MAL },
   "no-encontrada": { texto: "No está", clase: MAL },

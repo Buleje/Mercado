@@ -320,6 +320,42 @@ describe("el permiso del lote sale del Excel («Contrato») si las trozas no tra
   });
 });
 
+describe("guía en el libro SIN lista de trozas: se carga del Excel y entra (28-10)", () => {
+  const filas = pegarYLeer([TITULOS, ...DATOS].join("\n")).leidas.map((f) => ({ ...f, especie: "Cedrelinga cateniformis / TORNILLO" }));
+  const guia = {
+    gtf: "019-001-0000012",
+    filas: [{ woodEntryId: "we-12", especie: "Tornillo", cientifica: "Cedrelinga cateniformis" }],
+    permiso: "19-SEC/REG-PLT-2025-167",
+    ingresoDia: "2026-10-19",
+    recibida: true,
+  };
+  it("las de la guía sin lista entran con la especie y el permiso DECLARADOS en la guía; la otra guía (con lista) no se inventa", () => {
+    const c = cruzarLote(filas, [], null, [guia]);
+    expect(c.filas.map((f) => f.estado)).toEqual(["se-carga", "se-carga", "no-encontrada"]);
+    expect(c.filas[0].carga).toEqual({ woodEntryId: "we-12", especieComun: "Tornillo", especieCientifica: "Cedrelinga cateniformis" });
+    expect(c.especie).toEqual({ comun: "Tornillo", cientifica: "Cedrelinga cateniformis" });
+    expect(c.permiso).toBe("19-SEC/REG-PLT-2025-167");
+    expect(c.fechaMinima).toBe("2026-10-19");
+    expect(c.piezas).toBe(2);
+    expect(c.volumenM3).toBe(4.071);
+    expect(c.avisos[0]).toMatch(/^2 trozas se cargan a la guía 019-001-0000012, que no tenía su lista/);
+    expect(c.bloqueos).toEqual([]);
+  });
+  it("una guía sin recibir no se carga: primero se recepciona", () => {
+    const c = cruzarLote(filas.slice(0, 1), [], null, [{ ...guia, recibida: false }]);
+    expect(c.filas[0]).toMatchObject({ estado: "no-entra", motivo: "la guía 019-001-0000012 todavía no se recibió en el patio: recepciónala en Ingresos" });
+  });
+
+  it("sin volumen no se carga, y la misma troza dos veces es «repetida»", () => {
+    const c = cruzarLote([{ ...filas[0], volumenM3: null }, filas[1], { ...filas[1], fila: 9 }], [], null, [guia]);
+    expect(c.filas.map((f) => [f.estado, f.motivo])).toEqual([
+      ["no-entra", "sin volumen en el Excel: no se puede cargar ni consumir"],
+      ["se-carga", "la guía 019-001-0000012 no tiene su lista de trozas: se carga del Excel"],
+      ["repetida", "es la misma troza de la fila 2"],
+    ]);
+  });
+});
+
 describe("fechaFueraDeRango (T3)", () => {
   it("ni antes de que entren las trozas ni en el futuro", () => {
     expect(fechaFueraDeRango("2026-06-09", "2026-10-19", "2026-10-27")).toBe(

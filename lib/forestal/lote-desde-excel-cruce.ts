@@ -47,13 +47,41 @@ export interface CandidataLote {
 export type EstadoFilaLote =
   | "entra"
   | "ya-en-el-lote"
+  /** Su guía está en el libro SIN lista de trozas: se carga del Excel y entra (28-10). */
+  | "se-carga"
   | "no-entra"
   | "no-encontrada"
   | "ambigua"
   | "repetida";
 
+/**
+ * Una guía registrada en el libro que todavía no tiene su lista de trozas
+ * (Brandon 28-10: «quiero que sí se pueda consumir lo importado»). La lista
+ * se completa desde el Excel del SNIFFS por el mismo camino que el inventario
+ * (`agregarTrozas` con `desdeImportacion`): agrega el detalle que trae su
+ * propio documento; el volumen, la especie y el GTF declarados no cambian.
+ */
+export interface GuiaSinLista {
+  gtf: string;
+  /** La fila del ingreso que recibe las piezas (la de su especie, si son varias). */
+  filas: { woodEntryId: string; especie: string; cientifica: string | null }[];
+  permiso: string | null;
+  ingresoDia: string | null;
+  /** Validada o con fecha de recepción: sus piezas pueden ir a la sierra (ADR-339). */
+  recibida: boolean;
+}
+
+/** Dónde y con qué especie se carga una troza nueva en su guía. */
+export interface CargaEnGuia {
+  woodEntryId: string;
+  especieComun: string;
+  especieCientifica: string | null;
+}
+
 export interface FilaCruzada {
   fila: number;
+  /** Sólo en «se-carga»: a qué fila de la guía va y con qué especie. */
+  carga?: CargaEnGuia;
   codigo: string;
   gtf: string | null;
   estado: EstadoFilaLote;
@@ -109,6 +137,8 @@ export interface ResultadoImportarLote {
   /** Se sumó al lote que ya estaba programado con ese N°. */
   sumadoAExistente: boolean;
   medidas: { guardadas: number; rechazadas: number };
+  /** Trozas cargadas a una guía que no tenía su lista (28-10). */
+  trozasCargadas: number;
 }
 
 /** Más de 1 dm³ de diferencia es otro dato, no el redondeo del SNIFFS (3 decimales). */
@@ -146,8 +176,12 @@ export function cruzarLote(
   filas: readonly FilaLoteExcel[],
   candidatas: readonly CandidataLote[],
   existente: LoteExistente | null,
+  guiasSinLista: readonly GuiaSinLista[] = [],
 ): CruceLote {
   const usadas = new Map<string, number>();
+  const sinLista = new Map(guiasSinLista.map((g) => [limpio(g.gtf), g]));
+  /* Las que se cargan se cuentan como candidatas para la especie, el permiso y T3. */
+  const pseudo: CandidataLote[] = [];
   const cruzadas: FilaCruzada[] = filas.map((f) => {
     const codigo = (f.codigoPlanta ?? f.codigoTroza ?? "").trim();
     const base: FilaCruzada = {
@@ -165,6 +199,52 @@ export function cruzarLote(
       completaD2: null,
     };
     const cs = candidatasDe(f, candidatas);
+    const guia = cs.length === 0 && f.gtf ? sinLista.get(limpio(f.gtf)) : undefined;
+    if (guia) {
+      /* Cargarla para que después no se pueda consumir dejaría la lista a medias
+         de un intento fallido: se dice el camino antes de escribir nada. */
+      if (!guia.recibida) {
+        return {
+          ...base,
+          estado: "no-entra",
+          motivo: `la guía ${guia.gtf} todavía no se recibió en el patio: recepciónala en Ingresos`,
+        };
+      }
+      if (!(f.volumenM3 != null && f.volumenM3 > 0)) {
+        return { ...base, estado: "no-entra", motivo: "sin volumen en el Excel: no se puede cargar ni consumir" };
+      }
+      const clave = `${limpio(f.gtf)}|${limpio(f.codigoPlanta ?? f.codigoTroza)}`;
+      const antes = usadas.get(clave);
+      if (antes != null) return { ...base, estado: "repetida", motivo: `es la misma troza de la fila ${antes}` };
+      usadas.set(clave, f.fila);
+      const carga = cargaEnGuia(guia, f.especie);
+      pseudo.push({
+        id: `carga:${clave}`,
+        codigoPlanta: f.codigoPlanta,
+        codificacion: f.codigoTroza,
+        gtf: guia.gtf,
+        especieComun: carga.especieComun,
+        especieCientifica: carga.especieCientifica,
+        permiso: guia.permiso,
+        volumenM3: f.volumenM3,
+        d1Cm: f.d1Cm,
+        d2Cm: f.d2Cm,
+        largoM: f.largoM,
+        lote: null,
+        motivo: null,
+        ingresoDia: guia.ingresoDia,
+      });
+      return {
+        ...base,
+        estado: "se-carga",
+        motivo: `la guía ${guia.gtf} no tiene su lista de trozas: se carga del Excel`,
+        trozaId: `carga:${clave}`,
+        gtf: guia.gtf,
+        especie: carga.especieComun,
+        volumenLibro: f.volumenM3,
+        carga,
+      };
+    }
     if (cs.length === 0) {
       return {
         ...base,
@@ -221,8 +301,9 @@ export function cruzarLote(
     return { ...conTroza, estado: c.lote ? "ya-en-el-lote" : "entra" };
   });
 
-  const entran = cruzadas.filter((f) => f.estado === "entra" || f.estado === "ya-en-el-lote");
-  const deEntran = entran.map((f) => candidatas.find((c) => c.id === f.trozaId)!).filter(Boolean);
+  const entran = cruzadas.filter((f) => f.estado === "entra" || f.estado === "ya-en-el-lote" || f.estado === "se-carga");
+  const todas = [...candidatas, ...pseudo];
+  const deEntran = entran.map((f) => todas.find((c) => c.id === f.trozaId)!).filter(Boolean);
 
   const bloqueos: string[] = [];
   if (existente && existente.status !== "abierto") {
@@ -286,6 +367,15 @@ export function cruzarLote(
   if (sinConsumo > 0) {
     avisos.push(
       `${sinConsumo} troza${sinConsumo === 1 ? "" : "s"} no figura${sinConsumo === 1 ? "" : "n"} «En consumo» en el SNIFFS: revisa la columna Estado Actual.`,
+    );
+  }
+
+  const cargadas = cruzadas.filter((f) => f.estado === "se-carga");
+  if (cargadas.length > 0) {
+    const guias = [...new Set(cargadas.map((f) => f.gtf))].join(", ");
+    avisos.push(
+      `${cargadas.length} troza${cargadas.length === 1 ? "" : "s"} se carga${cargadas.length === 1 ? "" : "n"} a la guía ${guias}, que no tenía su lista: ` +
+        "es el detalle del Excel del SNIFFS (el volumen y la especie declarados de la guía no cambian).",
     );
   }
 
@@ -361,4 +451,24 @@ export function fechaFueraDeRango(
     return `Las trozas entraron al libro el ${diaLegible(fechaMinima)}: el consumo no puede ser antes.`;
   }
   return null;
+}
+
+/**
+ * A qué fila de la guía va una troza nueva y con qué especie. El SNIFFS
+ * escribe «Cedrelinga cateniformis / TORNILLO» (científico / común); manda la
+ * especie DECLARADA en la guía: con una sola fila, ésa; con varias, la que
+ * coincida con lo que dice el Excel.
+ */
+export function cargaEnGuia(guia: GuiaSinLista, especieExcel: string | null): CargaEnGuia {
+  const partes = (especieExcel ?? "").split("/").map((x) => x.trim()).filter(Boolean);
+  const claves = new Set(partes.map((x) => claveEspecie(x)));
+  const fila =
+    guia.filas.find((f) => claves.has(claveEspecie(f.especie)) || (f.cientifica && claves.has(claveEspecie(f.cientifica)))) ??
+    (guia.filas.length === 1 ? guia.filas[0] : null);
+  if (fila) return { woodEntryId: fila.woodEntryId, especieComun: fila.especie, especieCientifica: fila.cientifica };
+  return {
+    woodEntryId: guia.filas[0]!.woodEntryId,
+    especieComun: partes.length > 1 ? partes.slice(1).join(" / ") : (partes[0] ?? "Sin especie"),
+    especieCientifica: partes.length > 1 ? partes[0]! : null,
+  };
 }

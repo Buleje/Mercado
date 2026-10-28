@@ -15,7 +15,7 @@ El SNIFFS ya tiene los lotes armados y consumidos (lista de trozas con «Lote»,
 - La fecha del consumo sale de «Fecha del Estado»; si es anterior al ingreso de las trozas (T3) se dice y se ofrece la primera fecha válida.
 
 ## Alternativas descartadas
-- **Crear trozas que no están en el patio:** el origen legal es la GTF; una troza sin ingreso no se inventa. La fila sale «No está».
+- **Crear trozas que no están en el patio:** el origen legal es la GTF; una troza sin ingreso no se inventa. La fila sale «No está». (28-10, ver Consecuencias: si la guía SÍ está en el libro pero sin su lista de trozas, la lista se completa desde el Excel.)
 - **Forzar la fecha del SNIFFS por encima de T3:** es la invariante que impide declarar madera aserrada antes de llegar.
 - **Hacer el cruce en la pantalla con el patio que ya tiene:** el patio de la pantalla no trae las consumidas ni sus motivos, y la pantalla no decide.
 
@@ -25,3 +25,4 @@ El SNIFFS ya tiene los lotes armados y consumidos (lista de trozas con «Lote»,
 - Auditoría: `ctp_lote_importado_sniffs`.
 - (27-10, 2.ª vuelta) El pegado es una grilla como la del cubicador (`CtpLoteExcelGrilla`: clic en una celda y Ctrl+V; con los títulos del SNIFFS cada columna cae en la suya; columnas sueltas desde la celda). Se cruza solo medio segundo después del último cambio.
 - (27-10) Un lote `consumido` cuya corrida viva no declaró producción se rotula «En consumo» (tarjeta, detalle y cada pieza), no «Aserrado»: `estadoDeLote` / `loteEnConsumo` en `lib/forestal/lotes-aserrio.ts`. El filtro por estado sigue siendo por `status`.
+- (28-10) Guía registrada y recibida SIN lista de trozas (Blas: 019-001-0000010 y las 7 de la serie 010): sus filas salen «Se carga» y, al importar, la lista se completa desde el Excel por el camino del inventario del SNIFFS (`WoodEntriesDB.agregarTrozas` con `desdeImportacion`: sólo si la guía no tiene NINGUNA pieza; volumen, especie y GTF declarados no cambian), con la especie DECLARADA en la guía; recién después se consume. Una guía con lista no recibe piezas inventadas; una sin recibir dice «recepciónala en Ingresos» antes de escribir nada.
