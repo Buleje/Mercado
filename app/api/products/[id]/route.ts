@@ -116,6 +116,15 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
     // espera specsJson/richContentJson string, no los arrays crudos).
     const { specs, richContent, confirmarBajoPiso, ...body } = parsed.data;
 
+    // Un código de barras lo tiene UN producto: el lector de la caja encontraría el equivocado.
+    const codigoNuevo = body.barcode?.trim();
+    if (codigoNuevo && codigoNuevo !== (existing.barcode ?? "").trim()) {
+      const repetido = (await ProductsDB.listByBarcodes(auth.tenantId, [codigoNuevo])).find((r) => r.id !== numId);
+      if (repetido) {
+        return NextResponse.json({ error: `Ese código ya lo tiene «${repetido.name}»`, campo: "barcode", productoId: repetido.id }, { status: 409 });
+      }
+    }
+
     // b-9: si el stock cambia (de un número a otro), el porqué va primero. El
     // kardex lo guarda en `notes`; antes quedaba «Ajuste manual sin razón documentada».
     const cambiaStock = body.stock != null && existing.stock != null && body.stock !== existing.stock;

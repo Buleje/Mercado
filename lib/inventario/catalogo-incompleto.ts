@@ -12,13 +12,14 @@
  * Los servicios no llevan stock ni código: no cuentan como incompletos.
  */
 
-export const FALTAS_DE_CATALOGO = ["sin-costo", "sin-codigo", "sin-minimo", "incompleto"] as const;
+export const FALTAS_DE_CATALOGO = ["sin-costo", "sin-codigo", "sin-minimo", "sin-control", "incompleto"] as const;
 export type FaltaDeCatalogo = (typeof FALTAS_DE_CATALOGO)[number];
 
 export const ETIQUETA_FALTA: Record<FaltaDeCatalogo, string> = {
   "sin-costo": "Sin costo",
   "sin-codigo": "Sin código de barras",
   "sin-minimo": "Sin stock mínimo",
+  "sin-control": "Sin control de stock",
   incompleto: "Catálogo por completar",
 };
 
@@ -39,6 +40,8 @@ const esServicio = (p: ProductoDelCatalogo) => p.type === "service";
 const sinCosto = (p: ProductoDelCatalogo) => !(Number(p.costPrice ?? 0) > 0);
 const sinCodigo = (p: ProductoDelCatalogo) => !(p.barcode ?? "").trim();
 /** Sólo si lleva stock: un producto sin stock gestionado no tiene mínimo que poner. */
+/** Producto (no servicio) sin stock gestionado: la caja no sabe cuánto queda. */
+const sinControl = (p: ProductoDelCatalogo) => p.stock == null;
 const sinMinimo = (p: ProductoDelCatalogo) => p.stock != null && p.stockMin == null;
 
 /** ¿A `p` le falta el dato `falta`? `incompleto` = le falta cualquiera de los tres. */
@@ -51,6 +54,8 @@ export function leFalta(p: ProductoDelCatalogo, falta: FaltaDeCatalogo): boolean
       return sinCodigo(p);
     case "sin-minimo":
       return sinMinimo(p);
+    case "sin-control":
+      return sinControl(p);
     case "incompleto":
       return sinCosto(p) || sinCodigo(p) || sinMinimo(p);
   }

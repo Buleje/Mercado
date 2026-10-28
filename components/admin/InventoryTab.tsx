@@ -6,6 +6,7 @@ import type { ModuleActionItem } from "@/components/admin/shared/ModuleActionMen
 import { cn } from "@/lib/utils";
 import type { DbProduct } from "@/lib/jsondb";
 import { useInventario } from "@/components/admin/inventario/hooks/use-inventario";
+import ListaParaVender from "@/components/admin/inventario/ListaParaVender";
 import InventarioBarra from "@/components/admin/inventario/InventarioBarra";
 import InventarioCabecera from "@/components/admin/inventario/InventarioCabecera";
 import { useIndicadoresInventario, MargenPorCategoria, AvisoDuplicados } from "@/components/admin/inventario/InventarioResumen";
@@ -53,6 +54,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
       <InventarioAlertaOC inv={inv} />
       <AvisoDuplicados inv={inv} />
+
+      <ListaParaVender inv={inv} />
 
       <InventarioBarra inv={inv} onBuscarConEscaner={() => setEscanerBusca(true)} />
 
