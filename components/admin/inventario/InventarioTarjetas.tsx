@@ -135,7 +135,7 @@ export default function InventarioTarjetas({ inv }: { inv: Inventario }) {
             <InventarioAltaRapida inv={inv} />
           </>
         )}
-        <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
+        <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} pageSizeOptions={[10, 25, 50, 100]} />
       </div>
     </>
   );

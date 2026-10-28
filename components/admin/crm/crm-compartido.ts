@@ -133,3 +133,5 @@ export const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg:
 };
 
 export const PAGE_SIZE = 25;
+/** Clientes por página a ≤639 px (cada uno es una tarjeta alta). */
+export const PAGE_SIZE_CELULAR = 8;

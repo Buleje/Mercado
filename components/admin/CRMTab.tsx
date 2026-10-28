@@ -13,6 +13,7 @@ import CrmFiltros from "@/components/admin/crm/CrmFiltros";
 import CrmFilas from "@/components/admin/crm/CrmFilas";
 import CrmPaginacion from "@/components/admin/crm/CrmPaginacion";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
+import CrmTarjetas from "@/components/admin/crm/CrmTarjetas";
 import CrmComparar from "@/components/admin/crm/CrmComparar";
 
 export { inferSegment } from "@/components/admin/crm/crm-compartido";
@@ -100,7 +101,14 @@ export default function CRMTab() {
         <CrmFiltros crm={crm} />
         {/* La tabla de clientes: cabecera ordenable (arrastrar columnas), filas y paginación. */}
         <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
-          <DataTable stickyHeader className="min-w-[600px]">
+          {/* ≤639 px: tarjetas compactas (CrmTarjetas); la tabla, desde sm. */}
+          {crm.paginated.length === 0 && (
+            <p className="px-3 py-6 text-center text-[var(--text-secondary)] sm:hidden">
+              {crm.hayFiltros ? "Ningún cliente con estos filtros." : "Sin clientes."}
+            </p>
+          )}
+          <CrmTarjetas crm={crm} />
+          <DataTable stickyHeader wrapperClassName="hidden sm:block" className="min-w-[600px]">
             <thead ref={crm.orden.refCabecera}>
               <tr>
                 {crm.compareMode && <th className="w-10"><span className="sr-only">Comparar</span></th>}

@@ -205,7 +205,11 @@ export function useAjustes(storeMode: StoreMode) {
     { id: "settings-businessAddress", label: "Dirección", vacio: !businessAddress.trim() },
     { id: "settings-businessAddress", label: "Ubicación en el mapa", vacio: businessLat == null },
     { id: "settings-logo", label: "Logo", vacio: !logoUrl },
-  ].filter(f => f.vacio), [businessName, razonSocial, ruc, businessPhone, businessEmail, businessAddress, businessLat, logoUrl]);
+  ].filter(f => f.vacio).map((f): FaltaItem => ({
+    ...f,
+    // «Datos del negocio» va en secciones: abrir la que tiene el campo antes de ir a él.
+    antes: () => window.dispatchEvent(new CustomEvent("ajustes-negocio-sub", { detail: f.id === "settings-logo" ? "imagenes" : "datos" })),
+  })), [businessName, razonSocial, ruc, businessPhone, businessEmail, businessAddress, businessLat, logoUrl]);
 
   // Cobros: lo que lee el pago de la tienda (número y QR) y la boleta
   // electrónica (RUC y denominación del emisor). Plin y transferencia sólo si

@@ -90,7 +90,7 @@ export function BuscadorAjustes({ valor, onCambiar, onIrAPrimera }: {
 /** Celular: las secciones en una fila que se desliza. */
 export function MenuSeccionesMovil({ secciones, activa, pendientes, onIr, conCambios = [] }: MenuProps) {
   return (
-    <nav aria-label="Secciones de configuración" className="lg:hidden flex gap-2 overflow-x-auto pb-1">
+    <nav aria-label="Secciones de configuración" className="lg:hidden grid grid-cols-2 gap-2 sm:grid-cols-4">
       {secciones.map((s) => {
         const Icon = s.icon;
         const esta = s.id === activa;
@@ -101,7 +101,7 @@ export function MenuSeccionesMovil({ secciones, activa, pendientes, onIr, conCam
             onClick={() => onIr(s.id)}
             aria-current={esta ? "page" : undefined}
             className={cn(
-              "shrink-0 inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border text-sm font-semibold transition-colors",
+              "min-w-0 inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border text-sm font-semibold transition-colors",
               esta
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",

@@ -1,7 +1,8 @@
 import { useMemo } from "react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { guardarCliente } from "@/components/admin/cliente360/guardar-cliente";
 import { enRango } from "@/lib/admin/filtros-columna";
-import { PAGE_SIZE, esActivo, frecuenciaDe, type Customer, type Frecuencia, type Segment } from "@/components/admin/crm/crm-compartido";
+import { PAGE_SIZE, PAGE_SIZE_CELULAR, esActivo, frecuenciaDe, type Customer, type Frecuencia, type Segment } from "@/components/admin/crm/crm-compartido";
 import { useCrmClientes } from "@/components/admin/crm/use-crm-clientes";
 
 /** Lo que se calcula de los clientes (indicadores, filtros, página) y las acciones de la tabla. Parte de `useCrm`. */
@@ -72,10 +73,14 @@ export function useCrmVista(previo: ReturnType<typeof useCrmClientes>) {
   const hayFiltros = frecuencia.length > 0 || creditoRango.min != null || creditoRango.max != null
     || filterSegment.length > 0 || filterTags.length > 0 || search.trim() !== "";
 
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // En el celular cada cliente es una tarjeta de ~180 px: 25 por página eran 5,8 pantallas (medido 28-10);
+  // con 8, ≤2,5. Los demás siguen en las páginas de al lado: no se pierde ninguno.
+  const celular = useMediaQuery("(max-width: 639px)");
+  const tamano = celular ? PAGE_SIZE_CELULAR : PAGE_SIZE;
+  const totalPages  = Math.max(1, Math.ceil(filtered.length / tamano));
   // Clamp page dentro del rango válido — evita setState derivado en useEffect
   const effectivePage = Math.min(page, totalPages);
-  const paginated   = filtered.slice((effectivePage - 1) * PAGE_SIZE, effectivePage * PAGE_SIZE);
+  const paginated   = filtered.slice((effectivePage - 1) * tamano, effectivePage * tamano);
 
   // ── Credit limit ──────────────────────────────────────────────────────────
 

@@ -2,6 +2,7 @@ import { useEffect, useCallback, useMemo, useState } from "react";
 import { leFalta } from "@/lib/inventario/catalogo-incompleto";
 import type { DbProduct } from "@/lib/jsondb";
 import { usePagination } from "@/hooks/use-pagination";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { formatDateShort } from "@/lib/format";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type Rango } from "@/lib/admin/filtros-columna";
 import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
@@ -236,6 +237,11 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
   };
 
   const pgProducts = usePagination(filteredProducts, 50);
+  // En el celular cada producto es una tarjeta alta: 50 por página eran 18,8 pantallas (medido 28-10).
+  // Arranca en 10; el «por página» del pie sigue ofreciendo 25, 50 y 100.
+  const celular = useMediaQuery("(max-width: 639px)");
+  const { setPageSize: ponerTamanoProductos } = pgProducts;
+  useEffect(() => { if (celular) ponerTamanoProductos(10); }, [celular]); // eslint-disable-line react-hooks/exhaustive-deps
   const pgMovements = usePagination(filteredMovements, 50);
 
   // Reset pagination when filters change
