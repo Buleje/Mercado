@@ -59,9 +59,7 @@ export async function POST(req: NextRequest) {
       `Plan de ${installments} cuotas de S/${plan.installmentAmount} creado para cliente ${customerId} (total: S/${plan.totalWithInterest})`,
       plan.id,
       auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[credit/create-plan] background task failed", { err: String(err) }); });
 
     return NextResponse.json(plan, { status: 201 });
   } catch (err) {

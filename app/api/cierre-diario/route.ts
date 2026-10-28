@@ -68,9 +68,7 @@ export async function POST(req: NextRequest) {
       "Crear", "cierre-diario",
       `Cierre del día ${data.fecha} — Ventas: S/${data.totalVentas.toFixed(2)}`,
       summary.id, auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[cierre-diario] background task failed", { err: String(err) }); });
 
     return NextResponse.json(summary, { status: 201 });
   } catch (e) {

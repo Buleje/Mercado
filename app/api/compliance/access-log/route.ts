@@ -178,9 +178,7 @@ export async function POST(req: NextRequest) {
           tenantId,
         },
       })
-      .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      .catch((err) => { logger.warn("[compliance/access-log] background task failed", { err: String(err) }); });
 
     logger.info("[COMPLIANCE] Access log queried", {
       tenantId,

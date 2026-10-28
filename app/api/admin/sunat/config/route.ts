@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 // ── GET /api/admin/sunat/config — obtener config SUNAT del tenant ──────────
 
@@ -102,9 +103,7 @@ export async function PUT(req: NextRequest) {
       auth.name ?? "admin",
       undefined,
       auth.tenantId,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[admin/sunat/config] background task failed", { err: String(err) }); });
 
     return NextResponse.json({
       data: { id: config.id, ruc: config.ruc, razonSocial: config.razonSocial },

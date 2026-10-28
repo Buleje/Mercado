@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const FeedbackSchema = z.object({
   messageId: z.string().min(1),
@@ -50,9 +51,7 @@ export async function POST(req: NextRequest) {
     `${parsed.data.feedback === "up" ? "👍" : "👎"} feedback on AI message`,
     parsed.data.messageId,
     auth.username
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  ).catch((err) => { logger.warn("[ai-assistant/feedback] background task failed", { err: String(err) }); });
 
   return NextResponse.json({ data: { id: updated.id, feedback: updated.feedback } });
 }

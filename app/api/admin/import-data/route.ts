@@ -6,6 +6,7 @@ import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod/v4";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { logger } from "@/lib/logger";
 
 // ── Schemas de validación ─────────────────────────────────────────────────────
 
@@ -141,9 +142,7 @@ async function importHandler(
       `Importación: ${imported.products} productos, ${imported.customers} clientes`,
       auth.tenantId,
       auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[admin/import-data] background task failed", { err: String(err) }); });
 
     return NextResponse.json({ imported, errors }, { status: 201 });
   } catch (err) {

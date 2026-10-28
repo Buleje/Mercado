@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { enqueueActivityLog } from "@/lib/queue";
 import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -61,9 +62,7 @@ export async function POST(req: NextRequest) {
       data: { ...parsed.data, tenantId: auth.tenantId },
     });
 
-    enqueueActivityLog({ action: "commission_rule_created", resource: "commission", resourceId: rule.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión creada para ${parsed.data.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    enqueueActivityLog({ action: "commission_rule_created", resource: "commission", resourceId: rule.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión creada para ${parsed.data.cashierId}` }, timestamp: new Date().toISOString() }).catch((err) => { logger.warn("[commission-rules] background task failed", { err: String(err) }); });
 
     return NextResponse.json(rule, { status: 201 });
   } catch (err) {
@@ -94,9 +93,7 @@ export async function PATCH(req: NextRequest) {
 
     const updated = await prisma.commissionRule.update({ where: { id }, data: parsed.data });
 
-    enqueueActivityLog({ action: "commission_rule_updated", resource: "commission", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión actualizada para ${existing.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    enqueueActivityLog({ action: "commission_rule_updated", resource: "commission", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión actualizada para ${existing.cashierId}` }, timestamp: new Date().toISOString() }).catch((err) => { logger.warn("[commission-rules] background task failed", { err: String(err) }); });
 
     return NextResponse.json(updated);
   } catch (err) {
@@ -121,9 +118,7 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.commissionRule.delete({ where: { id } });
 
-    enqueueActivityLog({ action: "commission_rule_deleted", resource: "commission", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión eliminada para ${existing.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    enqueueActivityLog({ action: "commission_rule_deleted", resource: "commission", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión eliminada para ${existing.cashierId}` }, timestamp: new Date().toISOString() }).catch((err) => { logger.warn("[commission-rules] background task failed", { err: String(err) }); });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

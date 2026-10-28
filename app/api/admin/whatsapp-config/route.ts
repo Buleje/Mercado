@@ -172,9 +172,7 @@ export async function PUT(req: NextRequest) {
       "whatsapp_config",
       `WhatsApp Commerce configurado para tenant ${auth.tenantId}`,
       config.id
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[admin/whatsapp-config] background task failed", { err: String(err) }); });
 
     return NextResponse.json({
       ok: true,
@@ -242,9 +240,7 @@ export async function DELETE(req: NextRequest) {
       "whatsapp_config",
       `WhatsApp Commerce desactivado para tenant ${auth.tenantId}`,
       config.id
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[admin/whatsapp-config] background task failed", { err: String(err) }); });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

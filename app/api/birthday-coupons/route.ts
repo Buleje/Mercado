@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 async function checkAndCreateBirthdayCoupons() {
   const now = new Date();
@@ -53,9 +54,7 @@ async function checkAndCreateBirthdayCoupons() {
         title: "🎂 ¡Feliz cumpleaños!",
         body: `${customer.name}, tienes un cupón de 10% con código ${code}. ¡Válido por 7 días!`,
         url: "/cuenta",
-      }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      }).catch((err) => { logger.warn("[birthday-coupons] background task failed", { err: String(err) }); });
     }
 
     created++;

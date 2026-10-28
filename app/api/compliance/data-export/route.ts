@@ -306,9 +306,7 @@ export async function POST(req: NextRequest) {
           tenantId,
         },
       })
-      .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      .catch((err) => { logger.warn("[compliance/data-export] background task failed", { err: String(err) }); });
 
     logger.info("[COMPLIANCE] Data export completed", {
       tenantId,

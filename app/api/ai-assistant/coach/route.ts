@@ -178,9 +178,7 @@ export async function POST(req: NextRequest) {
     `Coach ${context}: ${message.slice(0, 100)}`,
     undefined,
     auth.username
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  ).catch((err) => { logger.warn("[ai-assistant/coach] background task failed", { err: String(err) }); });
 
   // ── Router LLM (ADR-010) hace disponibility check internamente ────────────
   // El fallback a rule-based se maneja en el bloque `!res.ok` más abajo.
@@ -310,15 +308,11 @@ export async function POST(req: NextRequest) {
 
     // ── Save to conversation memory (fire-and-forget) ─────────────────────
     if (activeConversationId) {
-      saveMessage(activeConversationId, "user", message).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      saveMessage(activeConversationId, "user", message).catch((err) => { logger.warn("[ai-assistant/coach] background task failed", { err: String(err) }); });
       saveMessage(activeConversationId, "assistant", moderation.output, {
         mode: `coach-${context}`,
         tokensUsed: res.usage?.totalTokens ?? 0,
-      }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      }).catch((err) => { logger.warn("[ai-assistant/coach] background task failed", { err: String(err) }); });
     }
 
     return NextResponse.json({
