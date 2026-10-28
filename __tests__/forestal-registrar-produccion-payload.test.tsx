@@ -59,6 +59,9 @@ beforeEach(() => {
   vi.setSystemTime(new Date("2026-10-28T15:00:00Z"));
   localStorage.clear();
   cuerpos = [];
+  H.tira = null;
+  H.cobro = null;
+  H.sniffs = null;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (_url: string, init?: RequestInit) => {
@@ -230,4 +233,111 @@ it("sin lote: del SNIFFS, día de la tira, duplicar y quitar", async () => {
   expect(r.cuerpo).toMatchSnapshot("cuerpo");
   /* El recorrido llegó a donde tenía que llegar: tres paquetes ≠ cero. */
   expect(within(document.body).queryByText(/Todavía no agregaste/)).toBeNull();
+});
+
+it("ampliar con cobro inicial y tocar sólo el precio: manda precioManualPt y no duenoParteId", async () => {
+  const onConfirmar = vi.fn();
+  render(
+    <Modal
+      material={{ especie: "Cumala", piezas: 0, volumenM3: 4, permisos: [] }}
+      fecha="2026-10-20"
+      titulo="Ampliar la corrida N° 19"
+      yaDeclaradoM3={0.5}
+      paquetesPrevios={[{ codigo: "PQ-2610-001", productType: "MADERA ASERRADA", volumenM3: 0.5, cantidad: 30 }]}
+      cobroInicial={{ duenoParteId: "parte-9", precioManualPt: 1.2, nombreGuardado: "Dueño de la madera" }}
+      ctaLabel="Agregar a la corrida"
+      guardando={false}
+      error={null}
+      onConfirmar={onConfirmar}
+      onClose={() => {}}
+    />,
+  );
+  await esperarSerie();
+  escribir("Cantidad (piezas)", "10");
+  escribir(/^Volumen \(m³\)/, "0.2");
+  boton(/^Añadir$/);
+  boton(/Revisar/);
+  act(() => H.cobro?.onChange({ duenoParteId: "parte-9", precioManualPt: 1.5 }, { dueno: false, precio: true }));
+  const r = await guardarYCapturar(onConfirmar, "ampliar");
+  const cuerpo = JSON.parse(r.cuerpo) as { aserrio?: Record<string, unknown> };
+  expect(cuerpo.aserrio).toMatchObject({ precioManualPt: 1.5 });
+  expect(cuerpo.aserrio).not.toHaveProperty("duenoParteId");
+});
+
+it("Ctrl+Enter no guarda mientras el cobro no es válido, y sí guarda cuando vuelve a serlo", async () => {
+  const onConfirmar = vi.fn();
+  render(
+    <Modal
+      material={{ especie: "Capirona", piezas: 5, volumenM3: 6, permisos: ["CON-25-002"] }}
+      fecha="2026-10-28"
+      guardando={false}
+      error={null}
+      onConfirmar={onConfirmar}
+      onClose={() => {}}
+    />,
+  );
+  await esperarSerie();
+  act(() => H.tira?.onElegir("2026-10-25"));
+  const codigo = H.sniffs?.siguienteCodigo([]) ?? "";
+  const paquete: PaqueteBorrador = {
+    id: "s1",
+    codigo,
+    productType: "MADERA ASERRADA",
+    presentacion: "PIEZAS",
+    cantidad: 40,
+    volumenM3: 0.6,
+    espesorCm: 5,
+    anchoCm: 20,
+    largoM: 3,
+    observations: "",
+  };
+  act(() => H.sniffs?.onAgregar([paquete], { lote: "L-7" } as unknown as DetalleProduccionSniffs));
+  boton(/Revisar/);
+  act(() => H.cobro?.onValidez?.(false));
+  fireEvent.keyDown(document, { key: "Enter", ctrlKey: true });
+  expect(onConfirmar).not.toHaveBeenCalled();
+  act(() => H.cobro?.onValidez?.(true));
+  fireEvent.keyDown(document, { key: "Enter", ctrlKey: true });
+  expect(onConfirmar).toHaveBeenCalledTimes(1);
+});
+
+it("Ctrl+Enter en el paso Piezas manda el mismo cuerpo que el botón Guardar producción", async () => {
+  const onConfirmar = vi.fn();
+  render(
+    <Modal
+      material={{ especie: "Capirona", piezas: 5, volumenM3: 6, permisos: ["CON-25-002"] }}
+      fecha="2026-10-28"
+      guardando={false}
+      error={null}
+      onConfirmar={onConfirmar}
+      onClose={() => {}}
+    />,
+  );
+  await esperarSerie();
+  act(() => H.tira?.onElegir("2026-10-25"));
+  const codigo = H.sniffs?.siguienteCodigo([]) ?? "";
+  const paquete: PaqueteBorrador = {
+    id: "s1",
+    codigo,
+    productType: "MADERA ASERRADA",
+    presentacion: "PIEZAS",
+    cantidad: 40,
+    volumenM3: 0.6,
+    espesorCm: 5,
+    anchoCm: 20,
+    largoM: 3,
+    observations: "",
+  };
+  act(() => H.sniffs?.onAgregar([paquete], { lote: "L-7" } as unknown as DetalleProduccionSniffs));
+  fireEvent.keyDown(document, { key: "Enter", ctrlKey: true });
+  expect(onConfirmar).toHaveBeenCalledTimes(1);
+  const datosTecla = onConfirmar.mock.calls[0][0] as ProduccionRegistrada;
+  await guardarProduccionDeCorrida("corrida-1", "declarar", datosTecla);
+  boton(/^Guardar producción$/);
+  expect(onConfirmar).toHaveBeenCalledTimes(2);
+  const datosBoton = onConfirmar.mock.calls[1][0] as ProduccionRegistrada;
+  await guardarProduccionDeCorrida("corrida-1", "declarar", datosBoton);
+  expect(cuerpos).toHaveLength(2);
+  expect(JSON.stringify(datosBoton)).toBe(JSON.stringify(datosTecla));
+  expect(cuerpos[1]).toBe(cuerpos[0]);
 });
