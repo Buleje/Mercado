@@ -12,7 +12,7 @@ import type { PlanillaCampo } from "@/lib/forestal/planillas/tipos";
 
 const ID_BARRA = "planilla-barra-imprimir";
 
-function ponerBarra(w: Window): void {
+export function ponerBarra(w: Window): void {
   const d = w.document;
   if (!d.body || d.getElementById(ID_BARRA)) return;
   const estilo = d.createElement("style");

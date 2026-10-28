@@ -100,6 +100,8 @@ export function SalidasDeLaCubicacionModal({ c, aboveModals, onClose, onGuardada
         <ListaDeViajes
           salidas={salidas}
           compradorDeLaFicha={c.cliente}
+          guardada={c}
+          partes={libreta.partes}
           editandoId={editandoId}
           quitandoId={enviando !== "viaje" ? enviando : null}
           onEditar={(s) => abrir(borradorDeSalida(s, saldo.grupos))}

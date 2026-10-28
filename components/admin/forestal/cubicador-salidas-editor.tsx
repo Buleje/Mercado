@@ -17,6 +17,8 @@ import type { SaldoCubicacion } from "@/lib/forestal/cubicacion-salidas";
 import { CAMPO_CUENTA as CAMPO, ETIQUETA_CUENTA as ETIQUETA } from "./cubicacion-cuenta-persona";
 import { lineasDelBorrador, totalDeLineas, type BorradorSalida, type CampoViaje, type ModoSalida, type RespaldoViaje } from "./cubicador-salidas-logica";
 import { TablaDeLaParte } from "./cubicador-salidas-tabla";
+import AvisoDeLaGuia from "./cubicador-guardar-aviso-guia";
+import { useViajeDesdeGuia } from "./hooks/use-viaje-desde-guia";
 
 /** Cómo se suele sacar la madera en Pucallpa (se puede escribir otro). */
 const VEHICULOS = ["Camión", "Camión con carreta", "Furgón", "Camioneta", "Bote", "Chata"] as const;
@@ -62,6 +64,7 @@ export function EditorDeViaje({ borrador, actualizar, saldo, conModo, respaldo, 
   aviso?: string | null;
 }) {
   const id = (k: string) => `${idBase}-${k}`;
+  const guia = useViajeDesdeGuia(borrador, actualizar);
   const poner = (k: CampoViaje) => (e: { target: { value: string } }) => {
     const v = e.target.value;
     actualizar((b) => (k === "cliente" ? { ...b, cliente: v, clienteParteId: undefined } : { ...b, [k]: v }));
@@ -96,7 +99,10 @@ export function EditorDeViaje({ borrador, actualizar, saldo, conModo, respaldo, 
           <Lista id={id("l-choferes")} opciones={sugerencias.choferes} />
         </Campo>
         <Campo id={id("gtf")} etiqueta="N° de GTF de salida">
-          <input id={id("gtf")} className={CAMPO} value={borrador.gtf} onChange={poner("gtf")} placeholder={deLaFicha("gtf") ?? "Sin guía"} maxLength={60} />
+          <input id={id("gtf")} className={CAMPO} value={borrador.gtf} onChange={poner("gtf")} placeholder={deLaFicha("gtf") ?? "Sin guía"} maxLength={60}
+            onBlur={(e) => void guia.buscar(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void guia.buscar(e.currentTarget.value); } }} />
+          <div className="mt-1.5"><AvisoDeLaGuia aviso={guia.aviso} onDeshacer={guia.deshacer} /></div>
         </Campo>
         <Campo id={id("destino")} etiqueta="Destino">
           <input id={id("destino")} className={CAMPO} value={borrador.destino} onChange={poner("destino")} list={id("l-destinos")}

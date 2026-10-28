@@ -7,8 +7,9 @@
  */
 import { useCallback, useRef, useState } from "react";
 import {
-  llenarFichaDesdeGuia, revertirLlenado, type CampoLlenable, type GuiaParaFicha,
+  llenarFichaDesdeGuia, revertirLlenado, type CampoLlenable,
 } from "@/lib/forestal/cubicacion-desde-guia";
+import { buscarGuiaParaFicha } from "./buscar-guia-para-ficha";
 import type { FichaCubicacion } from "@/lib/forestal/cubicacion-registro";
 import type { DatosDeLaCubicacion } from "../cubicador-guardar-tipos";
 import type { useLibretaDeLaFicha } from "./use-libreta-de-la-ficha";
@@ -41,13 +42,11 @@ export function useFichaDesdeGuia(datos: DatosDeLaCubicacion, actualizar: Actual
     puso.current = null;
     setAviso({ tipo: "buscando" });
     try {
-      const r = await fetch(`/api/admin/forestal/gtf?gtfNumber=${encodeURIComponent(numero)}&ficha=1`, { credentials: "same-origin" });
+      const r = await buscarGuiaParaFicha(numero);
       if (mio !== turno.current) return;
-      if (r.status === 404) { setAviso({ tipo: "no-esta", numero }); return; }
-      if (!r.ok) { ultimo.current = ""; setAviso({ tipo: "error" }); return; }
-      const guia = ((await r.json()) as { guia?: GuiaParaFicha }).guia;
-      if (mio !== turno.current) return;
-      if (!guia) { setAviso({ tipo: "no-esta", numero }); return; }
+      if (r.estado === "no-esta") { setAviso({ tipo: "no-esta", numero }); return; }
+      if (r.estado === "error") { ultimo.current = ""; setAviso({ tipo: "error" }); return; }
+      const guia = r.guia;
       const { patch, campos } = llenarFichaDesdeGuia(fichaAhora.current, guia);
       if (campos.length === 0) { setAviso({ tipo: "nada-que-llenar", numero: guia.gtfNumber }); return; }
       /* Si la CCNN de la guía está en el Directorio, queda atada. */

@@ -11,8 +11,7 @@ import { useMemo, useState } from "react";
 import { Check, Copy, MessageCircle } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
-import { celularDeParte, enlaceWhatsApp, textoWhatsAppDeGuardada } from "@/lib/forestal/cubicacion-whatsapp";
-import { normalizarNombreFicha } from "@/lib/forestal/cubicacion-por-ficha";
+import { celularDelComprador, enlaceWhatsApp, textoWhatsAppDeGuardada } from "@/lib/forestal/cubicacion-whatsapp";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { logger } from "@/lib/logger";
 import { fechaDeLaGuardada } from "./cubicador-guardadas-tarjeta";
@@ -23,13 +22,7 @@ export function AccionesWhatsAppDeGuardada({ c }: { c: CubicacionRegistro }) {
   const [copiado, setCopiado] = useState(false);
 
   const texto = useMemo(() => textoWhatsAppDeGuardada(c, fechaDeLaGuardada(c.fecha)), [c]);
-  const numero = useMemo(() => {
-    const nombre = c.cliente ? normalizarNombreFicha(c.cliente) : "";
-    const parte =
-      (idComprador ? dir.partes.find((p) => p.id === idComprador) : undefined) ??
-      (nombre ? dir.partes.find((p) => p.activo && normalizarNombreFicha(p.nombre) === nombre) : undefined);
-    return celularDeParte(parte);
-  }, [dir.partes, idComprador, c.cliente]);
+  const numero = useMemo(() => celularDelComprador(dir.partes, { parteId: idComprador, nombre: c.cliente }), [dir.partes, idComprador, c.cliente]);
 
   const copiar = () => {
     navigator.clipboard

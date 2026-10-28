@@ -5,6 +5,7 @@
  */
 import { m3DesdePt } from "./cubicacion";
 import { fmtM3, fmtPt, fmtSoles } from "./cubicacion-formato";
+import { normalizarNombreFicha } from "./cubicacion-por-ficha";
 import { precioDeCubicacion, type CubicacionRegistro } from "./cubicacion-registro";
 import { resumenPorEspecie } from "./cubicacion-resumen";
 
@@ -30,6 +31,21 @@ export function celularDeParte(p: {
     if (n) return n;
   }
   return null;
+}
+
+/**
+ * El celular del comprador en el Directorio: por su id, o por su nombre si la
+ * ficha no está atada. `null` = sin ficha o sin celular (wa.me deja elegir).
+ */
+export function celularDelComprador(
+  partes: readonly (Parameters<typeof celularDeParte>[0] & { id: string; nombre: string; activo?: boolean })[],
+  comprador: { parteId?: string | null; nombre?: string | null },
+): string | null {
+  const nombre = comprador.nombre ? normalizarNombreFicha(comprador.nombre) : "";
+  const parte =
+    (comprador.parteId ? partes.find((p) => p.id === comprador.parteId) : undefined) ??
+    (nombre ? partes.find((p) => p.activo && normalizarNombreFicha(p.nombre) === nombre) : undefined);
+  return celularDeParte(parte);
 }
 
 /** `fechaTexto`: la fecha ya escrita («jueves 10/09»). */

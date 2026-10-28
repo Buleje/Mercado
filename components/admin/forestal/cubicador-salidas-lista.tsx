@@ -9,6 +9,8 @@ import { Loader2, Pencil, Trash2, Truck } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type { SalidaCubicacion } from "@/lib/forestal/cubicacion-salidas";
+import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { AccionesDelViaje } from "./cubicador-salidas-acciones";
 import { fechaDeLaGuardada } from "./cubicador-guardadas-fecha";
 import { totalDeSalida } from "./cubicador-salidas-logica";
 
@@ -18,7 +20,7 @@ const BOTON_ICONO = button({ variant: "secondary", className: "w-12 shrink-0 px-
 export const vehiculoDeSalida = (s: Pick<SalidaCubicacion, "vehiculo" | "placa" | "chofer">): string =>
   [s.vehiculo, s.placa, s.chofer && `chofer ${s.chofer}`].filter(Boolean).join(" · ");
 
-export function ListaDeViajes({ salidas, compradorDeLaFicha, editandoId, quitandoId, onEditar, onQuitar }: {
+export function ListaDeViajes({ salidas, compradorDeLaFicha, editandoId, quitandoId, onEditar, onQuitar, guardada, partes }: {
   salidas: readonly SalidaCubicacion[];
   /** Lo que se muestra si el viaje no dice a quién (vacío = el comprador). */
   compradorDeLaFicha?: string;
@@ -26,6 +28,10 @@ export function ListaDeViajes({ salidas, compradorDeLaFicha, editandoId, quitand
   quitandoId?: string | null;
   onEditar?: (s: SalidaCubicacion) => void;
   onQuitar?: (s: SalidaCubicacion) => void;
+  /** La guardada: con ella cada viaje ofrece su «Papel» y «WhatsApp». */
+  guardada?: CubicacionRegistro;
+  /** El Directorio (para el celular del comprador). */
+  partes?: Parameters<typeof AccionesDelViaje>[0]["partes"];
 }) {
   if (salidas.length === 0) return null;
   return (
@@ -66,6 +72,7 @@ export function ListaDeViajes({ salidas, compradorDeLaFicha, editandoId, quitand
                 )}
               </div>
             )}
+            {guardada && <AccionesDelViaje c={guardada} salida={s} indice={i} partes={partes ?? []} />}
           </li>
         );
       })}
