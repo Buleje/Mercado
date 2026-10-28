@@ -6,7 +6,10 @@
  *     vistas que este rol ve (la misma regla que la barra);
  *   - módulos, vistas y secciones, con el mismo filtro;
  *   - lugares que abriste hace poco y coinciden (M06), máx. 3;
- *   - productos, clientes y pedidos de `/api/search`;
+ *   - de `/api/search`: la bodega (productos, clientes, pedidos, proveedores),
+ *     el aserradero (guías, Anexos 04, trozas, permisos, lotes, Directorio) y
+ *     el personal; el servidor ya recorta por rol y acá se descarta lo que
+ *     lleva a una pestaña que este negocio no muestra;
  *   - papeles del Archivo (`use-papeles-del-archivo`), sólo si este rol ve el Archivo.
  * Lo local sale al toque; lo remoto, 300 ms después de dejar de escribir.
  * «cobrar a Juan» busca «Juan» en el servidor: así aparece también su ficha.
@@ -30,6 +33,7 @@ import {
   hrefDeComando,
   type ComandoPanel,
 } from "@/lib/admin/comandos-panel";
+import { GRUPO_DEL_TIPO, type GrupoRemoto, type TipoRemoto } from "@/lib/admin/busqueda-remota";
 import { ICONOS_COMANDO } from "./iconos-comandos";
 import { usePapelesDelArchivo } from "./use-papeles-del-archivo";
 import {
@@ -45,9 +49,15 @@ import {
 export type GrupoBusqueda = keyof GroupedResults;
 
 /** Regla 20-10: nombre que coincide → acciones → lo abierto hace poco → el resto. */
-const ORDEN_NORMAL: GrupoBusqueda[] = ["modulos", "acciones", "recientes", "papeles", "relacionados", "productos", "clientes", "pedidos"];
+const ORDEN_NORMAL: GrupoBusqueda[] = [
+  "modulos", "acciones", "recientes", "guias", "anexos", "permisos", "trozas", "lotes", "trabajadores", "partes",
+  "papeles", "relacionados", "productos", "clientes", "pedidos", "proveedores",
+];
 /** «cobrar a Juan», «nueva cotización»: lo que se pide HACER va primero. */
-const ORDEN_ACCION: GrupoBusqueda[] = ["acciones", "clientes", "recientes", "papeles", "modulos", "relacionados", "productos", "pedidos"];
+const ORDEN_ACCION: GrupoBusqueda[] = [
+  "acciones", "clientes", "trabajadores", "recientes", "papeles", "modulos", "relacionados", "productos", "pedidos", "proveedores",
+  "guias", "anexos", "permisos", "trozas", "lotes", "partes",
+];
 
 /** Campo vacío. */
 const ORDEN_INICIO: GrupoBusqueda[] = ["masUsadas", "recientes"];
@@ -82,7 +92,33 @@ interface RespuestaBusqueda {
   results?: SearchResult[];
 }
 
-type Remotos = Pick<GroupedResults, "productos" | "clientes" | "pedidos">;
+type Remotos = Pick<GroupedResults, GrupoRemoto>;
+
+const GRUPOS_REMOTOS = [...new Set(Object.values(GRUPO_DEL_TIPO))];
+
+/**
+ * Los resultados del servidor por grupo (hasta 5 + la fila de apoyo). Un
+ * resultado con `href` a una pestaña que este negocio no muestra (plan,
+ * plantilla, especialidad) no se ofrece: llevaría a una pestaña vacía.
+ */
+function agruparRemotos(lista: readonly SearchResult[], ctx: ReturnType<typeof useContextoPermiso>): Remotos {
+  const grupos = Object.fromEntries(GRUPOS_REMOTOS.map((g) => [g, [] as SearchResult[]])) as unknown as Remotos;
+  for (const r of lista) {
+    const g = GRUPO_DEL_TIPO[r.type as TipoRemoto];
+    if (!g || !visibleEnElPanel(r, ctx)) continue;
+    if (grupos[g].filter((x) => !x.sinContar).length < 5 || r.sinContar) grupos[g].push(r);
+  }
+  /* Una fila de apoyo («Ver la asistencia») sola, sin resultados, no se ofrece. */
+  for (const g of GRUPOS_REMOTOS) if (grupos[g].every((x) => x.sinContar)) grupos[g] = [];
+  return grupos;
+}
+
+function visibleEnElPanel(r: SearchResult, ctx: ReturnType<typeof useContextoPermiso>): boolean {
+  if (!ctx || !r.href) return true;
+  const p = new URL(r.href, "http://panel.local").searchParams;
+  const tab = p.get("tab");
+  return !tab || destinoPermitido(ctx, tab, p.get("vista") ?? undefined, p.get("sub") ?? undefined);
+}
 
 /** ¿Este rol ve el Archivo? Sin ctx confirmado, no (nada se pide a ciegas). Un boolean: el ctx cambia de identidad. */
 function veElArchivo(ctx: ReturnType<typeof useContextoPermiso>): boolean {
@@ -131,7 +167,7 @@ function inicioDe(ctx: ReturnType<typeof useContextoPermiso>, recientes: readonl
 export function useBusquedaPanel(open: boolean) {
   const [query, setQuery] = useState("");
   /** Lo que trajo el servidor y para qué consulta: mientras llega lo nuevo, queda lo anterior. */
-  const [remotos, setRemotos] = useState<{ q: string; grupos: Remotos } | null>(null);
+  const [remotos, setRemotos] = useState<{ q: string; lista: SearchResult[] } | null>(null);
   const ctx = useContextoPermiso();
   const { recientes } = useRecientes();
   const q = query.trim();
@@ -167,9 +203,7 @@ export function useBusquedaPanel(open: boolean) {
         .then((res) => {
           /* Una respuesta vieja no pisa a la nueva. */
           if (!vigente) return;
-          const lista = res.results ?? [];
-          const de = (tipo: SearchResult["type"]) => lista.filter((r) => r.type === tipo).slice(0, 5);
-          setRemotos({ q, grupos: { productos: de("producto"), clientes: de("cliente"), pedidos: de("pedido") } });
+          setRemotos({ q, lista: res.results ?? [] });
         });
     }, 300);
     return () => {
@@ -178,13 +212,16 @@ export function useBusquedaPanel(open: boolean) {
     };
   }, [q]);
 
+  /* Se agrupa al dibujar: el contexto de permisos puede llegar después que la respuesta. */
+  const gruposRemotos = useMemo(() => (remotos ? agruparRemotos(remotos.lista, ctx) : null), [remotos, ctx]);
+
   const archivoVisible = veElArchivo(ctx);
   const papeles = usePapelesDelArchivo(q, archivoVisible);
   /* Mientras llegan los nuevos quedan los anteriores (como los remotos), sin el «Buscar … en el Archivo»: ése lleva lo escrito. */
   const filasDePapeles = papeles ? (papeles.q === q ? papeles.filas : papeles.filas.filter((f) => !f.sinContar)) : [];
 
   const grouped: GroupedResults = locales
-    ? { ...SIN_RESULTADOS, ...remotos?.grupos, ...locales, papeles: filasDePapeles }
+    ? { ...SIN_RESULTADOS, ...gruposRemotos, ...locales, papeles: filasDePapeles }
     : inicio
       ? { ...SIN_RESULTADOS, ...inicio }
       : SIN_RESULTADOS;

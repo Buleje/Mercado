@@ -9,7 +9,8 @@
 
 import type { ElementType } from "react";
 import {
-  AlertTriangle, FileText, History, LayoutDashboard, Package, ShoppingCart, TrendingUp, Users, Zap,
+  AlertTriangle, Building2, FileText, History, LayoutDashboard, Layers, Package, ScrollText, ShoppingCart, Stamp, TreePine,
+  TrendingUp, Truck, UserCheck, Users, Warehouse, Zap,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { FilaResultado, ResultSkeleton } from "./FilaResultado";
@@ -23,6 +24,14 @@ export const GROUP_META: Record<keyof GroupedResults, { label: string; icon: Ele
   productos: { label: "Productos",         icon: Package,       color: "text-[var(--data-success-500)]" },
   clientes:  { label: "Clientes",          icon: Users,         color: "text-[var(--text-secondary)]" },
   pedidos:   { label: "Pedidos",           icon: ShoppingCart,  color: "text-[var(--data-warning-500)]" },
+  proveedores: { label: "Proveedores",     icon: Warehouse,     color: "text-[var(--text-secondary)]" },
+  guias:     { label: "Guías GTF",         icon: Truck,         color: "text-primary" },
+  anexos:    { label: "Anexos 04",         icon: ScrollText,    color: "text-primary" },
+  trozas:    { label: "Trozas",            icon: TreePine,      color: "text-[var(--data-success-500)]" },
+  permisos:  { label: "Permisos y contratos", icon: Stamp,      color: "text-[var(--data-warning-500)]" },
+  lotes:     { label: "Lotes de aserrío",  icon: Layers,        color: "text-[var(--data-success-500)]" },
+  partes:    { label: "Directorio",        icon: Building2,      color: "text-[var(--text-secondary)]" },
+  trabajadores: { label: "Personal",       icon: UserCheck,     color: "text-primary" },
   papeles:   { label: "Papeles",           icon: FileText,      color: "text-primary" },
   relacionados: { label: "Relacionados",  icon: LayoutDashboard, color: "text-[var(--text-secondary)]" },
   acciones:  { label: "Hacer",             icon: Zap,           color: "text-[var(--data-success-500)]" },
@@ -57,8 +66,8 @@ export function ResultadosBuscador({ idLista, query, grouped, orden, loading, ac
         </div>
       )}
       <div id={idLista} role="listbox" aria-label="Resultados de la búsqueda" className={cn(total === 0 && "hidden")}>
-        {/* Comandos, módulos y recientes salen al toque; productos, clientes y
-            pedidos llegan del servidor (el esqueleto, abajo). */}
+        {/* Comandos, módulos y recientes salen al toque; la bodega, el
+            aserradero y el personal llegan del servidor (el esqueleto, abajo). */}
         {orden.map((g) => {
           const items = grouped[g];
           if (items.length === 0) return null;

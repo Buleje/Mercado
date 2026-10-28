@@ -5,12 +5,13 @@
  */
 
 import type { ElementType } from "react";
+import type { TipoRemoto } from "@/lib/admin/busqueda-remota";
 import { ALL_TABS } from "@/app/admin/_lib/tab-data";
 import { ANIDADAS_POR_MODULO, CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-export type ResultType = "modulo" | "producto" | "cliente" | "pedido" | "accion" | "reciente" | "papel";
+export type ResultType = "modulo" | "accion" | "reciente" | "papel" | TipoRemoto;
 
 export interface SearchResult {
   id: string;
@@ -52,6 +53,16 @@ export interface GroupedResults {
   productos: SearchResult[];
   clientes: SearchResult[];
   pedidos: SearchResult[];
+  proveedores: SearchResult[];
+  /** Aserradero (28-10): guías GTF, Anexos 04, trozas, permisos, lotes de aserrío y el Directorio. */
+  guias: SearchResult[];
+  anexos: SearchResult[];
+  trozas: SearchResult[];
+  permisos: SearchResult[];
+  lotes: SearchResult[];
+  partes: SearchResult[];
+  /** El personal de RRHH (sin plata ni documento). */
+  trabajadores: SearchResult[];
   /** Papeles del Archivo que coinciden (nombre, carpeta, vencimiento). */
   papeles: SearchResult[];
   acciones: SearchResult[];
@@ -61,6 +72,7 @@ export interface GroupedResults {
 
 export const SIN_RESULTADOS: GroupedResults = {
   masUsadas: [], recientes: [], modulos: [], productos: [], clientes: [], pedidos: [], papeles: [], acciones: [], relacionados: [],
+  proveedores: [], guias: [], anexos: [], trozas: [], permisos: [], lotes: [], partes: [], trabajadores: [],
 };
 
 // ── Índice de módulos ─────────────────────────────────────────────────────────
