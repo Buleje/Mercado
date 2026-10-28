@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Boxes, ClipboardList, Layers, RotateCcw } from "@buleje/design-system/icons";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { ESTADO_LOTE, esLoteDeInventario, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { estadoDeLote, esLoteDeInventario, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { trozasDelLote } from "@/lib/forestal/lote-programacion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
@@ -134,7 +134,7 @@ export function useLoteEnCarga({
         hint: reabrible
           ? "Ya aserrado — se puede reabrir para cargarle más madera"
           : cerrado
-            ? `${ESTADO_LOTE[l.status].label}${inventario ? " · declarado por inventario" : ""}`
+            ? `${estadoDeLote(l).label}${inventario ? " · declarado por inventario" : ""}`
             : inventario
               ? "Declarado por inventario: no tiene trozas que tildar"
               : hay && hay.piezas > 0

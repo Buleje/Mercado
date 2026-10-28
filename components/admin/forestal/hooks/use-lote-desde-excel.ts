@@ -2,43 +2,66 @@
 
 /**
  * use-lote-desde-excel — el estado de «Pegar de Excel» en «Programar un lote»
- * (27-10): lo pegado se lee en el navegador (`leerPegadoLote`), se parte en un
- * lote por cada N° de la columna «Lote» y el servidor cruza cada uno con el
- * libro. Importar vuelve a cruzar allá: lo de acá es la vista previa.
+ * (27-10): una grilla como la del cubicador (se pega desde una celda, se
+ * corrige a mano), partida en un lote por cada N° de la columna «Lote». Cada
+ * lote se cruza con el libro en el servidor medio segundo después del último
+ * cambio; importar vuelve a cruzar allá: lo de acá es la vista previa.
  */
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
+  COLUMNAS_LOTE,
   agruparPorLote,
-  leerPegadoLote,
+  conSobra,
+  filasDeGrilla,
+  pegarEnGrilla,
+  type FilaGrilla,
   type FilaLoteExcel,
 } from "@/lib/forestal/lote-desde-excel";
 import {
   esDiaValido,
   fechaFueraDeRango,
   type CruceLote,
+  type FilaCruzada,
   type ResultadoImportarLote,
 } from "@/lib/forestal/lote-desde-excel-cruce";
 import { limaDateKey } from "@/lib/utils";
 
 const API = "/api/admin/forestal/lotes-aserrio/importar";
+const ESPERA_CRUCE_MS = 500;
+const MAX_DESHACER = 50;
 
 export interface LoteDelExcel {
+  /** El N° de la columna «Lote» tal cual («» = sin columna). */
   clave: string;
   filas: FilaLoteExcel[];
-  /** El N° de lote, editable; el cruce es del `codeCruzado`. */
+  /** El N° con el que se guarda: el de la columna, o el que se escribió en la tarjeta. */
   code: string;
-  codeCruzado: string;
-  /** Día del consumo, `AAAA-MM-DD`: el de la «Fecha del Estado» del SNIFFS. */
+  /** Día del consumo, `AAAA-MM-DD`: el de la «Fecha del estado» del SNIFFS. */
   fecha: string;
   cruce: CruceLote | null;
+  /** Hay cambios que el servidor todavía no cruzó. */
   cargando: boolean;
   error: string | null;
   /** El resultado, una vez importado. */
   hecho: string | null;
+}
+
+/** Un lote recién importado: lo que necesita quien quiera seguir trabajándolo. */
+export interface LoteImportado {
+  id: string;
+  code: string;
+  texto: string;
+}
+
+interface EstadoCruce {
+  firma: string;
+  cruce: CruceLote | null;
+  cargando: boolean;
+  error: string | null;
 }
 
 async function enviar<T>(body: unknown): Promise<T> {
@@ -54,6 +77,7 @@ async function enviar<T>(body: unknown): Promise<T> {
 }
 
 const mensajeDe = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const firmaDe = (code: string, filas: readonly FilaLoteExcel[]) => JSON.stringify([code.trim(), filas]);
 
 /** ¿Este lote se puede importar ya, tal como está en pantalla? */
 export function loteListo(l: LoteDelExcel, hoy: string): boolean {
@@ -62,132 +86,199 @@ export function loteListo(l: LoteDelExcel, hoy: string): boolean {
     !l.cargando &&
     l.cruce != null &&
     l.cruce.bloqueos.length === 0 &&
-    l.code.trim() === l.codeCruzado.trim() &&
     fechaFueraDeRango(l.fecha, l.cruce.fechaMinima, hoy) == null
   );
 }
 
 export function useLoteDesdeExcel() {
-  const [lotes, setLotes] = useState<LoteDelExcel[]>([]);
-  const [errorPegado, setErrorPegado] = useState<string | null>(null);
-  const [conTitulos, setConTitulos] = useState(true);
+  const [filas, setFilas] = useState<FilaGrilla[]>(() => conSobra([]));
+  const filasRef = useRef(filas);
+  filasRef.current = filas;
+  const historial = useRef<FilaGrilla[][]>([]);
+  const [puedeDeshacer, setPuedeDeshacer] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [ajustes, setAjustes] = useState<Record<string, { code?: string; fecha?: string }>>({});
+  const [cruces, setCruces] = useState<Record<string, EstadoCruce>>({});
+  const crucesRef = useRef(cruces);
+  crucesRef.current = cruces;
+  const [hechos, setHechos] = useState<Record<string, string>>({});
+  const [errores, setErrores] = useState<Record<string, string>>({});
   const [importando, setImportando] = useState(false);
-  const hoy = limaDateKey();
-  /* La última consulta de cada lote: una respuesta vieja (el N° cambió dos
-     veces seguidas, o se volvió a pegar) no pisa a la nueva. */
+  /* La última consulta de cada lote: una respuesta vieja no pisa a la nueva. */
   const ultima = useRef(new Map<string, number>());
-  const pegadas = useRef(0);
+  const hoy = limaDateKey();
 
-  const poner = useCallback((clave: string, cambios: Partial<LoteDelExcel>) => {
-    setLotes((ls) => ls.map((l) => (l.clave === clave ? { ...l, ...cambios } : l)));
+  const cambiar = useCallback((nuevas: FilaGrilla[]) => {
+    historial.current = [...historial.current.slice(-(MAX_DESHACER - 1)), filasRef.current];
+    setPuedeDeshacer(true);
+    setFilas(conSobra(nuevas));
   }, []);
 
-  const previsualizar = useCallback(
-    async (clave: string, filas: FilaLoteExcel[], code: string) => {
-      const yo = (ultima.current.get(clave) ?? 0) + 1;
-      ultima.current.set(clave, yo);
-      poner(clave, { cargando: true, error: null, codeCruzado: code });
-      try {
-        const { cruce } = await enviar<{ cruce: CruceLote }>({
-          modo: "previsualizar",
-          code: code.trim() || null,
-          filas,
-        });
-        if (ultima.current.get(clave) === yo) poner(clave, { cruce, cargando: false });
-      } catch (e) {
-        if (ultima.current.get(clave) === yo)
-          poner(clave, { cruce: null, cargando: false, error: mensajeDe(e) });
-      }
+  const escribir = useCallback(
+    (fila: number, col: number, valor: string) => {
+      const clave = COLUMNAS_LOTE[col];
+      if (!clave) return;
+      cambiar(filasRef.current.map((f, i) => (i === fila ? { ...f, [clave]: valor } : f)));
     },
-    [poner],
+    [cambiar],
   );
 
   const pegar = useCallback(
-    (texto: string) => {
-      const p = leerPegadoLote(texto);
-      setErrorPegado(p.error);
-      setConTitulos(p.conTitulos);
-      pegadas.current += 1;
-      const nuevos: LoteDelExcel[] = agruparPorLote(p.filas).map((g, i) => ({
-        clave: `${pegadas.current}:${i}:${g.lote ?? ""}`,
-        filas: g.filas,
-        code: g.lote ?? "",
-        codeCruzado: g.lote ?? "",
-        fecha: esDiaValido(g.fecha) && g.fecha <= hoy ? g.fecha : hoy,
-        cruce: null,
-        cargando: true,
-        error: null,
-        hecho: null,
-      }));
-      setLotes(nuevos);
-      for (const l of nuevos) void previsualizar(l.clave, l.filas, l.code);
+    (texto: string, desde: { fila: number; col: number }) => {
+      const r = pegarEnGrilla(filasRef.current, texto, desde);
+      if (r.pegadas === 0) return;
+      cambiar(r.filas);
+      setAviso(
+        `Pegaste ${r.pegadas} fila${r.pegadas === 1 ? "" : "s"}` +
+          (r.conTitulos
+            ? " con sus títulos: cada columna cayó en la suya."
+            : r.porPosicion
+              ? " sin títulos: se leyeron en el orden de la lista del SNIFFS."
+              : " desde la celda donde hiciste clic."),
+      );
     },
-    [hoy, previsualizar],
+    [cambiar],
   );
 
-  /** El N° cambió: se vuelve a cruzar (puede ser un lote que ya existe). */
-  const cruzarDeNuevo = useCallback(
-    (clave: string) => {
-      const l = lotes.find((x) => x.clave === clave);
-      if (l && l.code.trim() !== l.codeCruzado.trim()) void previsualizar(clave, l.filas, l.code);
-    },
-    [lotes, previsualizar],
-  );
-
-  const limpiar = useCallback(() => {
-    setLotes([]);
-    setErrorPegado(null);
+  const deshacer = useCallback(() => {
+    const anterior = historial.current.pop();
+    if (!anterior) return;
+    setFilas(anterior);
+    setPuedeDeshacer(historial.current.length > 0);
   }, []);
+
+  const vaciar = useCallback(() => {
+    cambiar([]);
+    setAjustes({});
+    setHechos({});
+    setErrores({});
+    setAviso(null);
+  }, [cambiar]);
+
+  const poner = useCallback((clave: string, cambios: { code?: string; fecha?: string }) => {
+    setAjustes((a) => ({ ...a, [clave]: { ...a[clave], ...cambios } }));
+    setErrores((e) => {
+      if (!(clave in e)) return e;
+      const { [clave]: _quitado, ...resto } = e;
+      return resto;
+    });
+  }, []);
+
+  const filasLote = useMemo(() => filasDeGrilla(filas), [filas]);
+  const grupos = useMemo(() => agruparPorLote(filasLote), [filasLote]);
+  const codeDe = useCallback((clave: string, lote: string | null) => ajustes[clave]?.code ?? lote ?? "", [ajustes]);
+
+  const previsualizar = useCallback(async (clave: string, grupo: FilaLoteExcel[], code: string, firma: string) => {
+    const yo = (ultima.current.get(clave) ?? 0) + 1;
+    ultima.current.set(clave, yo);
+    setCruces((c) => ({ ...c, [clave]: { firma, cruce: c[clave]?.cruce ?? null, cargando: true, error: null } }));
+    try {
+      const { cruce } = await enviar<{ cruce: CruceLote }>({ modo: "previsualizar", code: code.trim() || null, filas: grupo });
+      if (ultima.current.get(clave) === yo) setCruces((c) => ({ ...c, [clave]: { firma, cruce, cargando: false, error: null } }));
+    } catch (e) {
+      if (ultima.current.get(clave) === yo) {
+        setCruces((c) => ({ ...c, [clave]: { firma, cruce: null, cargando: false, error: mensajeDe(e) } }));
+      }
+    }
+  }, []);
+
+  /* Medio segundo después del último cambio se cruza lo que cambió. */
+  useEffect(() => {
+    const t = setTimeout(() => {
+      for (const g of grupos) {
+        const clave = g.lote ?? "";
+        if (hechos[clave]) continue;
+        const code = codeDe(clave, g.lote);
+        const firma = firmaDe(code, g.filas);
+        if (crucesRef.current[clave]?.firma !== firma) void previsualizar(clave, g.filas, code, firma);
+      }
+    }, ESPERA_CRUCE_MS);
+    return () => clearTimeout(t);
+  }, [grupos, codeDe, hechos, previsualizar]);
+
+  const lotes = useMemo<LoteDelExcel[]>(
+    () =>
+      grupos.map((g) => {
+        const clave = g.lote ?? "";
+        const code = codeDe(clave, g.lote);
+        const c = cruces[clave];
+        const vigente = c != null && c.firma === firmaDe(code, g.filas);
+        return {
+          clave,
+          filas: g.filas,
+          code,
+          fecha: ajustes[clave]?.fecha ?? (esDiaValido(g.fecha) && g.fecha <= hoy ? g.fecha : hoy),
+          cruce: c?.cruce ?? null,
+          cargando: !vigente || c.cargando,
+          error: errores[clave] ?? (vigente ? c.error : null),
+          hecho: hechos[clave] ?? null,
+        };
+      }),
+    [grupos, codeDe, cruces, ajustes, errores, hechos, hoy],
+  );
+
+  /** Lo que el libro dice de cada fila de la grilla (sólo de cruces al día). */
+  const estadoDeFila = useMemo(() => {
+    const m = new Map<number, FilaCruzada | "importada">();
+    for (const l of lotes) {
+      if (l.hecho) {
+        for (const f of l.filas) m.set(f.fila, "importada");
+        continue;
+      }
+      if (l.cargando || !l.cruce) continue;
+      for (const f of l.cruce.filas) m.set(f.fila, f);
+    }
+    return m;
+  }, [lotes]);
 
   const listos = useMemo(() => lotes.filter((l) => loteListo(l, hoy)), [lotes, hoy]);
 
   /**
    * Importa los lotes listos, de a uno: cada uno es todo o nada en el
-   * servidor, y si uno falla los otros siguen. Devuelve lo hecho y si no
+   * servidor, y si uno falla los otros siguen. Devuelve lo importado y si no
    * quedó ninguno pendiente.
    */
-  const importar = useCallback(async (): Promise<{ hechos: string[]; todos: boolean }> => {
+  const importar = useCallback(async (): Promise<{ importados: LoteImportado[]; todos: boolean }> => {
     setImportando(true);
-    const hechos: string[] = [];
+    const importados: LoteImportado[] = [];
     let fallos = 0;
     for (const l of listos) {
       try {
-        const r = await enviar<ResultadoImportarLote>({
-          modo: "importar",
-          code: l.code.trim() || null,
-          fecha: l.fecha,
-          filas: l.filas,
-        });
+        const r = await enviar<ResultadoImportarLote>({ modo: "importar", code: l.code.trim() || null, fecha: l.fecha, filas: l.filas });
         const texto =
           `Lote ${r.lote.code}${r.sumadoAExistente ? " (el que ya estaba programado)" : ""}: ${r.piezas} troza${r.piezas === 1 ? "" : "s"} · ` +
-          `${fmtM3(r.volumenM3)} m³ consumidos · N° ${r.corrida.lineNo}, producción por declarar` +
+          `${fmtM3(r.volumenM3)} m³ en consumo · N° ${r.corrida.lineNo}, producción por declarar` +
           (r.medidas.guardadas > 0 ? ` · D1/D2 de ${r.medidas.guardadas}` : "") +
           (r.medidas.rechazadas > 0 ? ` · ${r.medidas.rechazadas} sin guardar D1/D2` : "");
-        hechos.push(texto);
-        poner(l.clave, { hecho: texto, error: null });
+        importados.push({ id: r.lote.id, code: r.lote.code, texto });
+        setHechos((h) => ({ ...h, [l.clave]: texto }));
       } catch (e) {
         fallos += 1;
-        poner(l.clave, { error: mensajeDe(e) });
+        setErrores((x) => ({ ...x, [l.clave]: mensajeDe(e) }));
       }
     }
     setImportando(false);
-    if (hechos.length > 0) invalidarCtp("/forestal/");
-    const pendientes = lotes.filter((l) => !l.hecho).length - hechos.length;
-    return { hechos, todos: fallos === 0 && pendientes === 0 };
-  }, [listos, lotes, poner]);
+    if (importados.length > 0) invalidarCtp("/forestal/");
+    const pendientes = lotes.filter((l) => !l.hecho).length - importados.length;
+    return { importados, todos: fallos === 0 && pendientes === 0 };
+  }, [listos, lotes]);
 
   return {
-    lotes,
-    errorPegado,
-    conTitulos,
-    importando,
-    hoy,
-    listos,
+    filas,
+    escribir,
     pegar,
+    deshacer,
+    puedeDeshacer,
+    vaciar,
+    aviso,
+    cerrarAviso: () => setAviso(null),
+    lotes,
+    estadoDeFila,
+    listos,
     poner,
-    cruzarDeNuevo,
-    limpiar,
+    importando,
     importar,
+    hoy,
   };
 }
 

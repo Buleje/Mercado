@@ -23,3 +23,5 @@ El SNIFFS ya tiene los lotes armados y consumidos (lista de trozas con «Lote»,
 - El lote queda consumido con su corrida «producción por declarar»: se declara como cualquier otro.
 - La tarjeta de un lote consumido sin producción dice «Producción por declarar» (antes «Aún sin aserrar», que contradecía al «Aserrado el …»).
 - Auditoría: `ctp_lote_importado_sniffs`.
+- (27-10, 2.ª vuelta) El pegado es una grilla como la del cubicador (`CtpLoteExcelGrilla`: clic en una celda y Ctrl+V; con los títulos del SNIFFS cada columna cae en la suya; columnas sueltas desde la celda). Se cruza solo medio segundo después del último cambio.
+- (27-10) Un lote `consumido` cuya corrida viva no declaró producción se rotula «En consumo» (tarjeta, detalle y cada pieza), no «Aserrado»: `estadoDeLote` / `loteEnConsumo` en `lib/forestal/lotes-aserrio.ts`. El filtro por estado sigue siendo por `status`.

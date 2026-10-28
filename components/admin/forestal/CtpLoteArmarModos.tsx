@@ -3,7 +3,7 @@
 /**
  * Cómo se arma el lote en «Programar un lote de aserrío»: con trozas del patio
  * (se eligen después), inventario sin trozas o pegando el Excel del SNIFFS
- * (ya consumido). Va primero en el modal porque cambia qué pide el resto.
+ * (en consumo). Va primero en el modal porque cambia qué pide el resto.
  */
 
 import { Archive, Boxes, FileSpreadsheet } from "@buleje/design-system/icons";
@@ -13,7 +13,7 @@ export type ModoArmarLote = "trozas" | "inventario" | "excel";
 const MODOS = [
   ["trozas", Boxes, "Con trozas del patio", "Se elige la madera después, en Consumos"],
   ["inventario", Archive, "Inventario (sin trozas)", "Existencia previa: declaras el volumen directo"],
-  ["excel", FileSpreadsheet, "Pegar de Excel", "Lote del SNIFFS con sus trozas, ya consumido"],
+  ["excel", FileSpreadsheet, "Pegar de Excel", "Lote del SNIFFS con sus trozas, en consumo"],
 ] as const;
 
 export default function CtpLoteArmarModos({

@@ -214,9 +214,9 @@ export default function CtpLoteArmarModal({
 
   async function importarExcel() {
     const r = await excel.importar();
-    if (r.hechos.length === 0) return;
+    if (r.importados.length === 0) return;
     onImportado();
-    onListo(r.hechos.join(" · "), "ok");
+    onListo(r.importados.map((x) => x.texto).join(" · "), "ok");
     if (r.todos) onClose();
   }
 
@@ -278,13 +278,15 @@ export default function CtpLoteArmarModal({
       open
       onClose={ocupado ? () => {} : onClose}
       variant="wide"
+      /* La grilla del Excel es una planilla de once columnas: necesita el ancho de una. */
+      size={modo === "excel" ? "planilla" : undefined}
       icon={Boxes}
       title="Programar un lote de aserrío"
       description={
         modo === "trozas"
           ? "Se declara acá; las piezas se eligen en Consumos, filtradas por esta especie"
           : modo === "excel"
-            ? "La lista de trozas del SNIFFS: cada lote entra con sus trozas del patio, ya consumido"
+            ? "Pega la lista de trozas del SNIFFS: cada lote entra con sus trozas del patio, en consumo"
             : "Existencia previa al sistema: declaras cuánto se consumió y en el paso siguiente, qué salió"
       }
       footer={
@@ -293,7 +295,7 @@ export default function CtpLoteArmarModal({
           nota={
             modo === "excel"
               ? excel.lotes.length === 0
-                ? "Pega la lista de trozas del SNIFFS: cada lote entra ya consumido, con su producción por declarar"
+                ? "Pega la lista de trozas del SNIFFS: cada lote entra en consumo, con su producción por declarar"
                 : `${excel.listos.length} de ${pendientesExcel} lote${pendientesExcel === 1 ? "" : "s"} listo${excel.listos.length === 1 ? "" : "s"} para importar`
               : modo === "inventario"
               ? "El siguiente paso pide los paquetes que produjo esta madera"

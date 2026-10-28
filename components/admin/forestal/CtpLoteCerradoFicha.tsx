@@ -14,7 +14,7 @@
  * trozas que el servidor va a rechazar.
  */
 
-import { ESTADO_LOTE, TONO_ESTADO_LOTE, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { estadoDeLote, tonoDeLote, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 
 export default function CtpLoteCerradoFicha({
   lote,
@@ -24,7 +24,7 @@ export default function CtpLoteCerradoFicha({
   /** Sólo se ofrece si hay algo pendiente de declarar. */
   onIrAProduccion?: () => void;
 }) {
-  const estado = ESTADO_LOTE[lote.status];
+  const estado = estadoDeLote(lote);
   const corridas = lote.corridas ?? (lote.produccion ? [lote.produccion] : []);
   const sinDeclarar = corridas.some((c) => c.viva && c.quantity == null);
 
@@ -37,7 +37,7 @@ export default function CtpLoteCerradoFicha({
         </p>
         <span
           title={estado.hint}
-          className={`rounded-full border-2 px-2.5 py-0.5 text-sm font-bold ${TONO_ESTADO_LOTE[lote.status]}`}
+          className={`rounded-full border-2 px-2.5 py-0.5 text-sm font-bold ${tonoDeLote(lote)}`}
         >
           {estado.label}
         </span>

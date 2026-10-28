@@ -290,6 +290,31 @@ export const ESTADO_LOTE: Record<
   },
 };
 
+/**
+ * El lote entró a la sierra pero su producción sigue sin declarar (Brandon
+ * 27-10: «debe estar en estado de consumo… para recién poner la producción de
+ * ese lote»). En la base es `consumido` —sus piezas tienen corrida—, pero
+ * decir «Aserrado» antes de declarar qué salió adelanta un hecho. Con alguna
+ * corrida viva ya declarada, es «Aserrado».
+ */
+export function loteEnConsumo(lote: Pick<LoteAserrio, "status" | "produccion" | "corridas">): boolean {
+  if (lote.status !== "consumido") return false;
+  const todas = lote.corridas && lote.corridas.length > 0 ? lote.corridas : lote.produccion ? [lote.produccion] : [];
+  const vivas = todas.filter((c) => c.viva);
+  return vivas.length > 0 && vivas.every((c) => c.quantity == null);
+}
+
+const ESTADO_EN_CONSUMO = {
+  label: "En consumo",
+  hint: "Sus piezas entraron a la sierra y están consumidas en este lote: falta declarar su producción.",
+  tono: "consumido",
+} as const;
+
+/** El rótulo del lote como se lee en pantalla: «En consumo» hasta que declara su producción. */
+export function estadoDeLote(lote: Pick<LoteAserrio, "status" | "produccion" | "corridas">): (typeof ESTADO_LOTE)[EstadoLoteAserrio] {
+  return loteEnConsumo(lote) ? ESTADO_EN_CONSUMO : ESTADO_LOTE[lote.status];
+}
+
 /** Colores del badge de estado — single source para toda pantalla que lea un lote
  *  (tarjeta, ficha de sólo lectura, combos): el mismo estado se ve igual en todas. */
 export const TONO_ESTADO_LOTE: Record<EstadoLoteAserrio, string> = {
@@ -300,6 +325,13 @@ export const TONO_ESTADO_LOTE: Record<EstadoLoteAserrio, string> = {
     "border-[var(--data-success-500)]/50 bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]",
   cerrado: "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
 };
+
+/** El color del badge, con «En consumo» en coral: pide declarar la producción. */
+export function tonoDeLote(lote: Pick<LoteAserrio, "status" | "produccion" | "corridas">): string {
+  return loteEnConsumo(lote)
+    ? "border-[var(--data-warning-500)]/50 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+    : TONO_ESTADO_LOTE[lote.status];
+}
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
 

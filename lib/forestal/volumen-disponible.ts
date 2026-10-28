@@ -33,7 +33,7 @@ import { estaDisponible, type TrozaConsumible } from "./consumo-trozas";
 import { grafiaPreferida } from "./especies-catalogo";
 import { claveEspecie } from "./loth-constants";
 import {
-  ESTADO_LOTE,
+  estadoDeLote,
   TOLERANCIA_CUADRE_SNIFFS_M3,
   diasDeEspera,
   etiquetaDeSobra,
@@ -492,7 +492,7 @@ export function lotesConSobrante(
         id,
         codigo: (esMixto ? a.t?.loteMixtoCode : (lote?.code ?? a.t?.loteAserrioCode)) || "Sin código",
         esMixto,
-        estado: esMixto ? "Mixto" : lote ? (ESTADO_LOTE[lote.status]?.label ?? lote.status) : null,
+        estado: esMixto ? "Mixto" : lote ? (estadoDeLote(lote)?.label ?? lote.status) : null,
         especie: esMixto ? especies.join(", ") || SIN_ESPECIE : texto(lote?.speciesCommon) || especies[0] || SIN_ESPECIE,
         permisos: [...a.permisos].sort(),
         trozas: a.trozas,

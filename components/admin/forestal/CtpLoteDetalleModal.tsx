@@ -22,7 +22,8 @@ import { leerJson } from "@/lib/errores/sin-dato";
 import { AlertTriangle, Boxes, CheckCircle2, Loader2, Play, RotateCcw, Trash2, X } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import {
-  ESTADO_LOTE,
+  estadoDeLote,
+  loteEnConsumo,
   alertasDeLote,
   juzgarRendimientoLote,
   loteVencido,
@@ -75,6 +76,12 @@ function Dato({ label, children }: { label: string; children: React.ReactNode })
       <dd className="mt-0.5 text-sm font-medium text-[var(--text-primary)]">{children}</dd>
     </div>
   );
+}
+
+/** La pieza consumida dice «En consumo» mientras su corrida no declara producción. */
+function piezaEnConsumo(consumidaEnId: string, corridaDe: ReadonlyMap<string, CorridaDelLote>, loteEnConsumo: boolean): boolean {
+  const c = corridaDe.get(consumidaEnId);
+  return c ? c.quantity == null : loteEnConsumo;
 }
 
 export default function CtpLoteDetalleModal({
@@ -132,7 +139,11 @@ export default function CtpLoteDetalleModal({
   const [desmarcando, setDesmarcando] = useState<string | null>(null);
 
   const abierto = lote.status === "abierto";
-  const estado = ESTADO_LOTE[lote.status];
+  const estado = estadoDeLote(lote);
+  /* Cada pieza dice si su corrida ya declaró: un lote cargado en dos tandas
+     puede tener una aserrada y otra todavía en consumo. */
+  const corridaDe = new Map((lote.corridas ?? (lote.produccion ? [lote.produccion] : [])).map((c) => [c.id, c]));
+  const enConsumo = loteEnConsumo(lote);
   const libres = piezasLibres(lote);
   const rend = rendimientoLote(lote);
   const veredicto = juzgarRendimientoLote(rend);
@@ -623,6 +634,8 @@ export default function CtpLoteDetalleModal({
                           <span className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                             Consumida por otra corrida
                           </span>
+                        ) : piezaEnConsumo(t.consumidaEnId, corridaDe, enConsumo) ? (
+                          <span className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">En consumo</span>
                         ) : (
                           "Aserrada"
                         )

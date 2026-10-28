@@ -21,8 +21,8 @@ import { Archive, Boxes, History, PackageOpen, Play, Plus, Trash2 } from "@bulej
 import { CardTitle } from "@buleje/design-system";
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import {
-  ESTADO_LOTE,
-  TONO_ESTADO_LOTE,
+  estadoDeLote,
+  tonoDeLote,
   alertasDeLote,
   cuadreSniffs,
   esLoteDeInventario,
@@ -90,7 +90,7 @@ export default function CtpLoteCard({
   elegido?: boolean;
   onElegir?: () => void;
 }) {
-  const estado = ESTADO_LOTE[lote.status];
+  const estado = estadoDeLote(lote);
   const abierto = lote.status === "abierto";
   const libres = piezasLibres(lote).length;
   const alertas = alertasDeLote(lote, ahora);
@@ -175,7 +175,7 @@ export default function CtpLoteCard({
           )}
           <span
             title={estado.hint}
-            className={`rounded-full border-2 px-2.5 py-0.5 text-sm font-bold ${TONO_ESTADO_LOTE[lote.status]}`}
+            className={`rounded-full border-2 px-2.5 py-0.5 text-sm font-bold ${tonoDeLote(lote)}`}
           >
             {estado.label}
           </span>

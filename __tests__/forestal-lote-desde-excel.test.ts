@@ -1,10 +1,12 @@
 /**
- * Lote pegado desde el Excel del SNIFFS (27-10): la lectura del pegado —con
- * los títulos corridos como los deja la lista del SNIFFS, o sin títulos— y el
- * cruce con el libro (qué troza es cada fila y si entra al lote).
+ * Lote pegado desde el Excel del SNIFFS (27-10): la grilla como la del
+ * cubicador —pegar con los títulos corridos de la lista del SNIFFS, sin
+ * títulos o columnas sueltas desde una celda— y el cruce con el libro (qué
+ * troza es cada fila y si entra al lote). También el rótulo «En consumo».
  */
 import { describe, expect, it } from "vitest";
-import { agruparPorLote, leerPegadoLote } from "@/lib/forestal/lote-desde-excel";
+import { agruparPorLote, conSobra, filasDeGrilla, pegarEnGrilla } from "@/lib/forestal/lote-desde-excel";
+import { estadoDeLote, loteEnConsumo } from "@/lib/forestal/lotes-aserrio";
 import {
   cruzarLote,
   fechaFueraDeRango,
@@ -67,14 +69,20 @@ const DATOS = [
   fila("019-001-0000013", "38", "13703203", "60", "58", "7,3", "1,996"),
 ];
 
-describe("leerPegadoLote", () => {
-  it("con títulos: cada columna en la suya, el N° de GTF y el código de la troza sin título propio", () => {
-    const p = leerPegadoLote([TITULOS, ...DATOS].join("\n") + "\n");
-    expect(p.error).toBeNull();
+/** Pegar en la grilla vacía desde una celda y leer lo que cruza el servidor. */
+const pegarYLeer = (texto: string, desde = { fila: 0, col: 0 }, antes = conSobra([])) => {
+  const r = pegarEnGrilla(antes, texto, desde);
+  return { ...r, leidas: filasDeGrilla(r.filas) };
+};
+
+describe("pegarEnGrilla + filasDeGrilla", () => {
+  it("con títulos: cada columna en la suya aunque se pegue desde otra celda, y la fila de la grilla manda", () => {
+    const p = pegarYLeer([TITULOS, ...DATOS].join("\n") + "\n", { fila: 2, col: 7 });
     expect(p.conTitulos).toBe(true);
-    expect(p.filas).toHaveLength(3);
-    expect(p.filas[0]).toMatchObject({
-      fila: 2,
+    expect(p.pegadas).toBe(3);
+    expect(p.leidas).toHaveLength(3);
+    expect(p.leidas[0]).toMatchObject({
+      fila: 3,
       gtf: "019-001-0000012",
       codigoTroza: "28",
       codigoPlanta: "13703182",
@@ -88,35 +96,46 @@ describe("leerPegadoLote", () => {
       fecha: "2026-06-09",
     });
     /* «1,911» sola sería 1911: el resto de la hoja escribe con coma decimal. */
-    expect(p.filas[1].volumenM3).toBe(1.911);
+    expect(p.leidas[1].volumenM3).toBe(1.911);
+    // Siempre quedan filas vacías al final para seguir pegando.
+    expect(p.filas.length).toBeGreaterThanOrEqual(12);
   });
 
-  it("sin títulos: se leen en el orden de la lista del SNIFFS", () => {
-    const p = leerPegadoLote(DATOS.join("\r\n"));
-    expect(p.conTitulos).toBe(false);
-    expect(p.filas.map((f) => f.codigoPlanta)).toEqual(["13703182", "13703180", "13703203"]);
-    expect(p.filas[2]).toMatchObject({
-      fila: 3,
-      gtf: "019-001-0000013",
-      volumenM3: 1.996,
-      fecha: "2026-06-09",
-    });
+  it("la lista entera sin títulos: se lee en el orden de la lista del SNIFFS", () => {
+    const p = pegarYLeer(DATOS.join("\r\n"));
+    expect(p.porPosicion).toBe(true);
+    expect(p.leidas.map((f) => f.codigoPlanta)).toEqual(["13703182", "13703180", "13703203"]);
+    expect(p.leidas[2]).toMatchObject({ fila: 3, gtf: "019-001-0000013", volumenM3: 1.996, fecha: "2026-06-09" });
   });
 
-  it("lo que no es la lista del SNIFFS se dice, no se adivina", () => {
-    expect(leerPegadoLote("hola\tmundo\n1\t2").error).toMatch(/No reconozco las columnas/);
-    expect(leerPegadoLote("   ").error).toBe("No hay nada pegado.");
+  it("columnas sueltas: desde la celda donde hiciste clic, hacia la derecha y abajo", () => {
+    // Clic en «Cód. planta» (columna 2) de la fila 1: código · especie.
+    const p = pegarYLeer("13703182\tTornillo\n13703180\tTornillo", { fila: 0, col: 2 });
+    expect(p.conTitulos || p.porPosicion).toBe(false);
+    expect(p.leidas.map((f) => [f.fila, f.codigoPlanta, f.especie])).toEqual([
+      [1, "13703182", "Tornillo"],
+      [2, "13703180", "Tornillo"],
+    ]);
+    // Y la guía se completa después, en su columna, sin tocar lo demás.
+    const g = pegarEnGrilla(p.filas, "019-001-0000012\n019-001-0000012", { fila: 0, col: 0 });
+    expect(filasDeGrilla(g.filas).map((f) => [f.gtf, f.codigoPlanta])).toEqual([
+      ["019-001-0000012", "13703182"],
+      ["019-001-0000012", "13703180"],
+    ]);
+  });
+
+  it("la fila de TOTAL y las vacías no son trozas", () => {
+    const total = ["", "", "", "", "", "", "", "", "", "", "", "", "5,067", "", "", "", ""].join("\t");
+    const p = pegarYLeer([TITULOS, ...DATOS, total].join("\n"));
+    expect(p.pegadas).toBe(3);
+    expect(p.leidas).toHaveLength(3);
   });
 
   it("un pegado con dos lotes son dos lotes, cada uno con su fecha", () => {
-    const p = leerPegadoLote(
-      [
-        TITULOS,
-        ...DATOS,
-        fila("019-001-0000013", "20", "13703205", "57", "57", "5,3", "1,352", "29-2026"),
-      ].join("\n"),
+    const p = pegarYLeer(
+      [TITULOS, ...DATOS, fila("019-001-0000013", "20", "13703205", "57", "57", "5,3", "1,352", "29-2026")].join("\n"),
     );
-    const g = agruparPorLote(p.filas);
+    const g = agruparPorLote(p.leidas);
     expect(g.map((x) => [x.lote, x.filas.length, x.fecha])).toEqual([
       ["28-2026", 3, "2026-06-09"],
       ["29-2026", 1, "2026-06-09"],
@@ -142,7 +161,7 @@ const cand = (extra: Partial<CandidataLote> & { id: string }): CandidataLote => 
 });
 
 describe("cruzarLote", () => {
-  const filas = leerPegadoLote([TITULOS, ...DATOS].join("\n")).filas;
+  const filas = pegarYLeer([TITULOS, ...DATOS].join("\n")).leidas;
 
   it("las tres del libro entran: m³ del LIBRO, D1/D2 sólo donde faltan y la fecha mínima es la del último ingreso", () => {
     const c = cruzarLote(
@@ -185,7 +204,7 @@ describe("cruzarLote", () => {
       null,
     );
     expect(c.filas.map((f) => f.estado)).toEqual(["entra", "ambigua", "no-encontrada", "repetida"]);
-    expect(c.filas[3].motivo).toBe("es la misma troza de la fila 2");
+    expect(c.filas[3].motivo).toBe("es la misma troza de la fila 1");
     expect(c.piezas).toBe(1);
   });
 
@@ -281,5 +300,19 @@ describe("fechaFueraDeRango (T3)", () => {
     expect(fechaFueraDeRango("2026-10-19", "2026-10-19", "2026-10-27")).toBeNull();
     // «31/02/2026» tiene forma de fecha pero no existe: antes llegaba al servidor y daba 500.
     expect(fechaFueraDeRango("2026-02-31", null, "2026-10-27")).toBe("Esa fecha no existe: corrígela.");
+  });
+});
+
+describe("estado del lote: «En consumo» hasta declarar la producción", () => {
+  const corrida = (quantity: number | null, viva = true) => ({
+    id: "c1", lineNo: 7, entryDate: "2026-10-19", productType: null, quantity, unit: "m3", status: "registrado", viva,
+  });
+  it("consumido con su corrida sin declarar → En consumo; declarada → Aserrado; abierto → Abierto", () => {
+    expect(estadoDeLote({ status: "consumido", corridas: [corrida(null)] }).label).toBe("En consumo");
+    expect(loteEnConsumo({ status: "consumido", produccion: corrida(null) })).toBe(true);
+    expect(estadoDeLote({ status: "consumido", corridas: [corrida(12.5)] }).label).toBe("Aserrado");
+    // Una corrida anulada no cuenta: sin corridas vivas no se afirma «en consumo».
+    expect(loteEnConsumo({ status: "consumido", corridas: [corrida(null, false)] })).toBe(false);
+    expect(estadoDeLote({ status: "abierto", corridas: [] }).label).toBe("Abierto");
   });
 });
