@@ -52,7 +52,10 @@ export function JornadaLibro({
         <span className={`${CHIP} border-[var(--data-warning-500)]/50 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Corrida N° {j.lineNo} sin declarar
         </span>
-        <InfoTip title="Falta declarar" what={j.motivo ?? "Consumió sus trozas y falta declarar lo que salió."} />
+        <InfoTip
+          title={j.declarable ? "Declárala desde acá" : "Falta declarar"}
+          what={j.motivo ?? "Consumió sus trozas y falta declarar lo que salió."}
+        />
       </span>
     );
   }

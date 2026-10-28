@@ -84,7 +84,13 @@ export function botonRegistrar(
   const jornadas = pasos.find((p) => p.paso === "jornadas");
   const listos = (p?: PasoEnPantalla) => p?.estado === "hecho" || p?.estado === "no_aplica";
   if (listos(lote) && listos(jornadas)) return { mostrar: false, activo: false, etiqueta: etiquetaBase, motivo: null };
-  const etiqueta = listos(lote) ? "Registrar las jornadas" : etiquetaBase;
+  /* ADR-521: el lote ya consumido trae su corrida abierta; lo que falta es declararla. */
+  const etiqueta =
+    jornadas?.code === "CORRIDA_POR_DECLARAR" && jornadas.motivo
+      ? jornadas.motivo
+      : listos(lote)
+        ? "Registrar las jornadas"
+        : etiquetaBase;
   const sig = estado.siguiente;
   if (sig !== "lote" && sig !== "jornadas") {
     const antes = PASOS_RECORRIDO.find((p) => p.id === sig);

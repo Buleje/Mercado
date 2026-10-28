@@ -223,3 +223,58 @@ describe("registrarJornadas devuelve el id de la corrida (para guardarlo en el b
     ]);
   });
 });
+
+describe("planLibroDeBloque — ADR-521: la corrida abierta que el bloque adoptó", () => {
+  /* Un lote ya consumido: las 4 trozas (4 m³) en la corrida c7, sin producción. */
+  const consumidas = () => cuatroTrozas().map((t) => ({ ...t, consumidaEnId: "c7" }));
+  const adoptado = (extra: Partial<BloqueRolliza> = {}) =>
+    bloque({
+      origen: "lote",
+      dias: 1,
+      trozasElegidas: ["t1", "t2", "t3", "t4"],
+      corridaIds: ["c7"],
+      jornadasLibro: [{ dia: 1, corridaId: "c7", lineNo: 7, estado: "abierta", fecha: "2026-10-01" }],
+      ...extra,
+    });
+  const loteConsumido = (volumeInputM3 = 4) => lote(consumidas(), [corrida("c7", 7, null, { volumeInputM3 })]);
+  const unDia = (m3: number) => [dia(1, [grupo("tipo|comercial", "Comercial", 40, m3)])];
+
+  it("con aserrada bajo el tope: declarable, con las trozas de la corrida y el texto «Declárala desde acá»", () => {
+    const p = planLibroDeBloque({ bloque: adoptado(), porDia: unDia(1.8) }, loteConsumido(), HOY);
+    const j = p.jornadas[0]!;
+    expect(j).toMatchObject({ estado: "abierta", corridaId: "c7", lineNo: 7, corridaDelBloque: true, declarable: true });
+    expect([...j.trozaIds].sort()).toEqual(["t1", "t2", "t3", "t4"]);
+    expect(j.rollizaM3).toBeCloseTo(4, 4);
+    expect(j.rendimientoPct).toBe(45);
+    expect(j.motivo).toMatch(/Declárala desde acá/);
+    expect(p.noDisponibles).toBe(0);
+  });
+
+  it("pasa el 56 % de la materia prima de la corrida: no declarable y lo dice", () => {
+    const p = planLibroDeBloque({ bloque: adoptado(), porDia: unDia(2.5) }, loteConsumido(), HOY);
+    expect(p.jornadas[0]!.declarable).toBeUndefined();
+    expect(p.jornadas[0]!.motivo).toMatch(/tope del 56 %/);
+  });
+
+  it("sin aserrada repartida: pide cargarla en el cubicador", () => {
+    const p = planLibroDeBloque({ bloque: adoptado(), porDia: [dia(1, [])] }, loteConsumido(), HOY);
+    expect(p.jornadas[0]!.declarable).toBeUndefined();
+    expect(p.jornadas[0]!.motivo).toMatch(/carga lo aserrado en el cubicador/);
+  });
+
+  it("aserrada en dos días: la corrida es un día, pide juntarlos", () => {
+    const p = planLibroDeBloque({ bloque: adoptado({ dias: 2 }), porDia: dosDias() }, loteConsumido(), HOY);
+    expect(p.jornadas[0]!.declarable).toBeUndefined();
+    expect(p.jornadas[0]!.motivo).toMatch(/es un día: junta los días/);
+    expect(p.jornadas[1]!.estado).toBe("apagada");
+  });
+
+  it("una abierta que NO consumió justo las trozas del bloque sigue yendo a la tabla del Libro", () => {
+    const trozas = [troza("t1", 1.2, "c7"), troza("t2", 1.1), troza("t3", 0.9), troza("t4", 0.8, "c7")];
+    const p = planLibroDeBloque({ bloque: adoptado(), porDia: unDia(0.9) }, lote(trozas, [corrida("c7", 7, null)]), HOY);
+    expect(p.jornadas[0]!.corridaDelBloque).toBeUndefined();
+    expect(p.jornadas[0]!.declarable).toBeUndefined();
+    expect(p.jornadas[0]!.motivo).toMatch(/desde la tabla del Libro/);
+  });
+});
+

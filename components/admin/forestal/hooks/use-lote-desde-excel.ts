@@ -48,6 +48,8 @@ export interface LoteDelExcel {
   error: string | null;
   /** El resultado, una vez importado. */
   hecho: string | null;
+  /** El lote que quedó en el libro, una vez importado (para llevarlo a la Distribución). */
+  loteId: string | null;
 }
 
 /** Un lote recién importado: lo que necesita quien quiera seguir trabajándolo. */
@@ -101,7 +103,7 @@ export function useLoteDesdeExcel() {
   const [cruces, setCruces] = useState<Record<string, EstadoCruce>>({});
   const crucesRef = useRef(cruces);
   crucesRef.current = cruces;
-  const [hechos, setHechos] = useState<Record<string, string>>({});
+  const [hechos, setHechos] = useState<Record<string, LoteImportado>>({});
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [importando, setImportando] = useState(false);
   /* La última consulta de cada lote: una respuesta vieja no pisa a la nueva. */
@@ -211,7 +213,8 @@ export function useLoteDesdeExcel() {
           cruce: c?.cruce ?? null,
           cargando: !vigente || c.cargando,
           error: errores[clave] ?? (vigente ? c.error : null),
-          hecho: hechos[clave] ?? null,
+          hecho: hechos[clave]?.texto ?? null,
+          loteId: hechos[clave]?.id ?? null,
         };
       }),
     [grupos, codeDe, cruces, ajustes, errores, hechos, hoy],
@@ -250,8 +253,9 @@ export function useLoteDesdeExcel() {
           `${fmtM3(r.volumenM3)} m³ en consumo · N° ${r.corrida.lineNo}, producción por declarar` +
           (r.medidas.guardadas > 0 ? ` · D1/D2 de ${r.medidas.guardadas}` : "") +
           (r.medidas.rechazadas > 0 ? ` · ${r.medidas.rechazadas} sin guardar D1/D2` : "");
-        importados.push({ id: r.lote.id, code: r.lote.code, texto });
-        setHechos((h) => ({ ...h, [l.clave]: texto }));
+        const importado = { id: r.lote.id, code: r.lote.code, texto };
+        importados.push(importado);
+        setHechos((h) => ({ ...h, [l.clave]: importado }));
       } catch (e) {
         fallos += 1;
         setErrores((x) => ({ ...x, [l.clave]: mensajeDe(e) }));

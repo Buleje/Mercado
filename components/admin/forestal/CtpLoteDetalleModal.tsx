@@ -42,6 +42,7 @@ import type { CambiosLote } from "./hooks/use-lotes-aserrio";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, productLabel } from "./ctp-shared";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { IconAction } from "@/components/admin/shared/module-primitives";
+import CtpLoteADistribucionBtn from "./CtpLoteADistribucionBtn";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 import { CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
@@ -274,6 +275,7 @@ export default function CtpLoteDetalleModal({
               <Trash2 className="h-4 w-4" /> Eliminar lote
             </Btn>
           )}
+          {enConsumo && <CtpLoteADistribucionBtn loteId={lote.id} />}
           {abierto && (
             <Btn variant="primary" disabled={libres.length === 0} onClick={onProducir}>
               <Play className="h-4 w-4" /> Producir de este lote

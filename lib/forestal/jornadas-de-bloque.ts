@@ -37,6 +37,7 @@ import { fmtM3 } from "./cubicacion-formato";
 import type { LoteAserrio, TrozaDelLote } from "./lotes-aserrio";
 import { TEXTO_ESTADO_LOCAL } from "./lotes-por-bloque";
 import { corridasAMedioDeclarar, RENDIMIENTO_TOPE_PCT, topeDeclarableM3, type CorridaAMedioDeclarar } from "./produccion-paquetes";
+import { corridaEsDelBloqueEntero } from "./bloque-de-lote-consumido";
 import { repartirEnDias, rollizaNecesariaM3, trozasDelBloque } from "./trozas-para-bloque";
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
@@ -64,6 +65,14 @@ export interface JornadaDelBloque extends Jornada {
   lineNo: number | null;
   /** Aserrada ÷ rolliza del día, en %; `null` sin rolliza asignada. */
   rendimientoPct: number | null;
+  /**
+   * ADR-521: corrida abierta que el bloque adoptó ENTERA (un lote ya consumido
+   * llevado a la Distribución): sus trozas son las del día y se declara desde
+   * el Recorrido del permiso, no desde la tabla del Libro.
+   */
+  corridaDelBloque?: boolean;
+  /** ADR-521: esa corrida ya se puede declarar con lo aserrado del día (bajo el tope). */
+  declarable?: boolean;
 }
 
 export interface PlanLibroDeBloque {
@@ -223,6 +232,39 @@ export function planLibroDeBloque(
   const referenciaM3 = conElegidas ? delBloque.reduce((a, t) => a + vol(t), 0) : Number(b.m3) || 0;
   const faltante = r4(Math.max(0, referenciaM3 - atribuible));
   let sinAtribuirM3 = noDisponibles > 0 && faltante > TOL_GTF_M3 ? faltante : 0;
+
+  /* 3b · ADR-521: la corrida abierta que el bloque ADOPTÓ entera (un lote ya
+     consumido llevado a la Distribución). Sus trozas son las del día y se le
+     declara lo aserrado desde el Recorrido, bajo el mismo tope del 56 % que
+     mide el servidor (sobre la materia prima de la corrida). Una abierta que
+     no es del bloque entero sigue yendo a la tabla del Libro. */
+  for (const j of jornadas) {
+    const corridaId = j.corridaId;
+    if (j.estado !== "abierta" || !corridaId || !corridaEsDelBloqueEntero(b, lote.trozas, corridaId)) continue;
+    const suyas = delBloque.filter((t) => t.consumidaEnId === corridaId);
+    j.corridaDelBloque = true;
+    j.trozaIds = suyas.map((t) => t.id);
+    j.etiquetas = suyas.map(rotulo);
+    j.rollizaM3 = r4(suyas.reduce((a, t) => a + vol(t), 0));
+    j.rendimientoPct = j.rollizaM3 > 0 && j.m3 > 0 ? Math.round((j.m3 / j.rollizaM3) * 1000) / 10 : null;
+    const entradaCorrida = Number(vivas?.get(corridaId)?.volumeInputM3);
+    const tope = topeDeclarableM3(entradaCorrida > 0 ? entradaCorrida : j.rollizaM3);
+    const cual = `La corrida N° ${j.lineNo}`;
+    const trozas = `${j.trozaIds.length} troza${j.trozaIds.length === 1 ? "" : "s"}`;
+    const otrosDias = jornadas.some((x) => x !== j && x.corridaId == null && x.piezas > 0 && x.grupos.length > 0);
+    if (otrosDias) {
+      j.motivo = `${cual} es un día: junta los días del bloque en uno (una troza no se parte entre dos corridas) y declárala desde acá.`;
+    } else if (j.piezas <= 0 || j.grupos.length === 0) {
+      j.motivo = `${cual} ya consumió las ${trozas} del bloque: carga lo aserrado en el cubicador para declararla desde acá.`;
+    } else if (j.m3 > tope + TOL_TOPE_M3) {
+      j.motivo =
+        `${cual} consumió ${fmtM3(j.rollizaM3)} m³ y el tope del ${RENDIMIENTO_TOPE_PCT} % deja declarar ${fmtM3(tope)} m³; ` +
+        `este día lleva ${fmtM3(j.m3)}: revisa lo aserrado en el cubicador.`;
+    } else {
+      j.declarable = true;
+      j.motivo = `${cual} ya consumió las ${trozas} del bloque. Declárala desde acá: «Declarar la corrida N° ${j.lineNo}» en el Recorrido del permiso le pone lo aserrado del día (${fmtM3(j.m3)} m³).`;
+    }
+  }
 
   /* 4 · Trozas enteras a cada día pendiente, en proporción a lo aserrado. */
   const pendientes = jornadas.filter((j) => j.estado === "lista");

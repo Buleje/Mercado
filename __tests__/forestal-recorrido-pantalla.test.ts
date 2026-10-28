@@ -87,6 +87,11 @@ describe("botón «Registrar lote y jornadas»", () => {
   it("se esconde con lote y jornadas hechos", () => {
     expect(botonRegistrar(estado([...base, paso("lote", "hecho"), paso("jornadas", "hecho")], "anexo"), true).mostrar).toBe(false);
   });
+  it("ADR-521: con la corrida del lote consumido por declarar, el botón la nombra", () => {
+    const jornadas = paso("jornadas", "pendiente", { code: "CORRIDA_POR_DECLARAR", motivo: "Declarar la corrida N° 7" });
+    const b = botonRegistrar(estado([...base, paso("lote", "hecho"), jornadas], "jornadas"), true);
+    expect(b).toMatchObject({ mostrar: true, activo: true, etiqueta: "Declarar la corrida N° 7" });
+  });
 });
 
 describe("plazo y rendimiento", () => {

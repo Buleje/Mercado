@@ -14,6 +14,7 @@ import { AlertTriangle, CheckCircle2, Loader2 } from "@buleje/design-system/icon
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { diaLegible, fechaFueraDeRango } from "@/lib/forestal/lote-desde-excel-cruce";
 import { Btn, I } from "./ctp-shared";
+import CtpLoteADistribucionBtn from "./CtpLoteADistribucionBtn";
 import CtpLoteExcelGrilla from "./CtpLoteExcelGrilla";
 import type { LoteDelExcel, LoteDesdeExcel } from "./hooks/use-lote-desde-excel";
 
@@ -26,10 +27,14 @@ function TarjetaLote({ l, estado }: { l: LoteDelExcel; estado: LoteDesdeExcel })
   const fuera = c && !l.cargando ? fechaFueraDeRango(l.fecha, c.fechaMinima, hoy) : null;
   const id = encodeURIComponent(l.clave || "sin-lote");
   if (l.hecho) {
+    /* Queda en consumo: lo que sigue es repartirlo en la Distribución y declarar (ADR-521). */
     return (
-      <p className="flex items-start gap-2 rounded-xl bg-[var(--data-success-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {l.hecho}
-      </p>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-[var(--data-success-500)]/12 px-3 py-2">
+        <p className="flex min-w-0 flex-1 items-start gap-2 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {l.hecho}
+        </p>
+        {l.loteId && <CtpLoteADistribucionBtn loteId={l.loteId} size="sm" />}
+      </div>
     );
   }
   return (

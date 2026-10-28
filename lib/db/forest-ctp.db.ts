@@ -1802,7 +1802,12 @@ export class ForestCtpDB {
     });
     if (!actual) return null;
     await ForestCtpDB.validarDeclaracion(tenantId, actual, campos);
-    const { entry, rendimiento } = await ForestCtpDB.declararProduccionEnTx(prisma, tenantId, actual, campos, user);
+    /* En una transacción: la toma de la corrida (`quantity` null bajo lock) y
+       el UPDATE con sus paquetes quedan juntos o no queda ninguno. */
+    const { entry, rendimiento } = await prisma.$transaction(
+      (tx) => ForestCtpDB.declararProduccionEnTx(tx, tenantId, actual, campos, user),
+      CTP_TX_OPTS,
+    );
     ForestCtpDB.despuesDeDeclarar(tenantId, entry, campos, rendimiento, user);
     return entry;
   }
@@ -1900,6 +1905,12 @@ export class ForestCtpDB {
    * fase 2). No valida —eso es `validarDeclaracion`, antes— ni audita: el
    * renglón va DESPUÉS del commit (`despuesDeDeclarar`), o narraría una
    * declaración que un rollback deshizo.
+   *
+   * Lo único que sí vuelve a mirar es lo que se disputa (ADR-521): que la
+   * corrida siga viva, registrada y SIN producción, con la condición en el
+   * WHERE. Dos declaraciones a la vez (la tabla del Libro y el Recorrido del
+   * permiso) leían las dos `quantity` null antes de la tx y la segunda pisaba
+   * a la primera; ahora la segunda no encuentra fila y tira.
    */
   static async declararProduccionEnTx(
     tx: typeof prisma | Prisma.TransactionClient,
@@ -1909,6 +1920,17 @@ export class ForestCtpDB {
     user: string,
   ) {
     const id = actual.id;
+    const tomada = await tx.forestCtpEntry.updateMany({
+      where: { id, tenantId, deletedAt: null, section: "produccion", status: "registrado", quantity: null },
+      data: { quantity: campos.quantity },
+    });
+    if (tomada.count === 0) {
+      throw new CtpInvariantError(
+        "Esa corrida ya declaró producción (o se anuló) mientras la declarabas: recarga el Libro y revísala.",
+        "LINEA_NO_EDITABLE",
+        { motivo: "CORRIDA_YA_DECLARADA", corridaId: id },
+      );
+    }
     const paquetes = campos.paquetes ?? [];
     const inVol = actual.volumeInputM3 != null ? Number(actual.volumeInputM3) : 0;
     const rendimiento =

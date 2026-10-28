@@ -24,6 +24,11 @@
  *   nada de fila.
  * - Con `anotarEn` (el Recorrido del permiso), la corrida y la anotación del
  *   bloque van en la MISMA transacción (A1, `ForestDistribucionesDB.escribirEnBloque`).
+ *
+ * ADR-521: un lote YA consumido (el del Excel del SNIFFS, ADR-520) llega a la
+ * Distribución con su corrida abierta adoptada; `declararJornadaAbierta` le
+ * declara la producción a ESA corrida (no abre otra) y anota el día en la
+ * misma transacción.
  */
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -70,7 +75,31 @@ export interface JornadaRegistrada {
   bloque?: BloqueRolliza | null;
 }
 
+/** Declarar la corrida abierta que el bloque adoptó (ADR-521): ya consumió sus piezas. */
+export interface JornadaAbiertaParaDeclarar {
+  corridaId: string;
+  /** Las piezas del bloque: la corrida tiene que haber consumido EXACTAMENTE éstas. */
+  trozaIds: string[];
+  produccion: CamposDeclaracion;
+  user: string;
+}
+
+/** Una corrida con TODAS las piezas que consumió, de cualquier lote. */
+export interface CorridaConSusPiezas {
+  id: string;
+  lineNo: number;
+  section: string;
+  status: string;
+  deletedAt: Date | null;
+  entryDate: Date;
+  quantity: number | null;
+  volumeInputM3: number | null;
+  trozaIds: string[];
+}
+
 const redondear4 = (n: number) => Math.round(n * 10000) / 10000;
+/** Más piezas que esto no entran en un bloque (`MAX_TROZAS_POR_BLOQUE`): leer de más sólo confirma que no entra. */
+const TOPE_PIEZAS_LEIDAS = 2000;
 
 export class ForestJornadaBloqueDB {
   /**
@@ -222,6 +251,134 @@ export class ForestJornadaBloqueDB {
       rechazadas: [],
       ...(anotarEn ? { bloque } : {}),
     };
+  }
+
+  /**
+   * La corrida y todas sus piezas (ADR-521). La usan la lectura que arma el
+   * bloque de un lote consumido —para no adoptar una corrida que también
+   * comió piezas de otro lote— y `declararJornadaAbierta`.
+   */
+  static async corridaConSusPiezas(tenantId: string, corridaId: string): Promise<CorridaConSusPiezas | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [c, piezas] = await Promise.all([
+      prisma.forestCtpEntry.findFirst({
+        where: { id: corridaId, tenantId },
+        select: {
+          id: true,
+          lineNo: true,
+          section: true,
+          status: true,
+          deletedAt: true,
+          entryDate: true,
+          quantity: true,
+          volumeInputM3: true,
+        },
+      }),
+      prisma.woodEntryTroza.findMany({
+        where: { tenantId, consumidaEnId: corridaId },
+        select: { id: true },
+        orderBy: { id: "asc" },
+        take: TOPE_PIEZAS_LEIDAS,
+      }),
+    ]);
+    if (!c) return null;
+    return {
+      ...c,
+      quantity: c.quantity == null ? null : Number(c.quantity),
+      volumeInputM3: c.volumeInputM3 == null ? null : Number(c.volumeInputM3),
+      trozaIds: piezas.map((p) => p.id),
+    };
+  }
+
+  /**
+   * Le declara la producción a la corrida ABIERTA que el bloque adoptó
+   * (ADR-521) y anota el día como declarado, en UNA transacción. No abre
+   * corrida ni consume: las piezas ya entraron a la sierra.
+   *
+   * Sólo si la corrida es del bloque entero: de producción, registrada, viva y
+   * con EXACTAMENTE las piezas del bloque. Una con piezas de más (otro lote) o
+   * de menos declararía producción sobre madera que no es la del bloque (I1).
+   * Ya declarada con esas mismas piezas = un reintento: sólo se anota.
+   */
+  static async declararJornadaAbierta(
+    tenantId: string,
+    input: JornadaAbiertaParaDeclarar,
+    anotarEn: AnotarJornadaEn,
+  ): Promise<JornadaRegistrada> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { corridaId, produccion, user } = input;
+    const trozaIds = [...new Set(input.trozaIds.map((t) => t.trim()).filter(Boolean))];
+    if (!corridaId || trozaIds.length === 0) {
+      throw new CtpInvariantError("La jornada no trae la corrida ni sus trozas.", "VALIDACION");
+    }
+    const c = await ForestJornadaBloqueDB.corridaConSusPiezas(tenantId, corridaId);
+    const pedidas = new Set(trozaIds);
+    const mismas = Boolean(c) && c!.trozaIds.length === pedidas.size && c!.trozaIds.every((id) => pedidas.has(id));
+    const noEsDelBloque = (lineNo: number | null) =>
+      new CtpInvariantError(
+        lineNo == null
+          ? "La corrida del bloque ya no está en el Libro: vuelve a llevar el lote a la Distribución."
+          : `La corrida N° ${lineNo} ya no tiene justo las trozas del bloque (se anuló o cambió su consumo): vuelve a llevar el lote a la Distribución o declárala desde el Libro.`,
+        "LINEA_NO_EDITABLE",
+        { motivo: "CORRIDA_NO_ES_DEL_BLOQUE", corridaId, lineNo },
+      );
+    if (!c || c.deletedAt || c.section !== "produccion" || c.status !== "registrado" || !mismas) {
+      throw noEsDelBloque(c?.lineNo ?? null);
+    }
+    const corrida = { id: c.id, lineNo: c.lineNo };
+    const volumenM3 = redondear4(Number(c.volumeInputM3 ?? 0));
+
+    /* Idempotencia: el pedido se cortó DESPUÉS del commit. Sin Libro que
+       escribir: sólo falta que el bloque lo sepa. */
+    if (c.quantity != null) {
+      const bloque = await ForestDistribucionesDB.anotarBloque(
+        tenantId,
+        anotarEn.distribucionId,
+        anotarEn.bloqueId,
+        (b) => anotarEn.parche(b, corrida),
+        user,
+      );
+      return { corrida, piezas: trozaIds.length, volumenM3, yaEstaba: true, rechazadas: [], bloque };
+    }
+
+    /* Las reglas de Declarar (mes cerrado, tope del 56 % sobre SU materia
+       prima, paquetes), antes de abrir la transacción. */
+    await ForestCtpDB.validarDeclaracion(tenantId, c, produccion);
+
+    const r = await ForestDistribucionesDB.escribirEnBloque(
+      tenantId,
+      anotarEn.distribucionId,
+      anotarEn.bloqueId,
+      async (tx, b) => {
+        /* Bajo el candado de la clave: que nadie le haya sumado o quitado
+           piezas desde que se leyó. `declararProduccionEnTx` toma la corrida
+           con `quantity` null en el WHERE: dos declaraciones a la vez, una sola. */
+        const n = await tx.woodEntryTroza.count({ where: { tenantId, consumidaEnId: c.id } });
+        if (n !== trozaIds.length) throw noEsDelBloque(c.lineNo);
+        const h = await ForestCtpDB.declararProduccionEnTx(
+          tx,
+          tenantId,
+          { id: c.id, volumeInputM3: c.volumeInputM3 },
+          produccion,
+          user,
+        );
+        return { parche: anotarEn.parche(b, corrida), resultado: h };
+      },
+      user,
+      CTP_TX_OPTS,
+    );
+
+    ForestCtpDB.despuesDeDeclarar(tenantId, r.resultado.entry, produccion, r.resultado.rendimiento, user);
+    /* El cobro del aserrío, igual que Declarar (ADR-412 §4): después del
+       asiento y sin poder tumbarlo. */
+    await ForestAserrioDB.recotizarSiCobrada(tenantId, c.id, user).catch((err) =>
+      logger.error("[forestal.declararJornadaAbierta] la producción se declaró pero el aserrío no se recotizó", {
+        tenantId,
+        corridaId: c.id,
+        error: String(err),
+      }),
+    );
+    return { corrida, piezas: trozaIds.length, volumenM3, yaEstaba: false, rechazadas: [], bloque: r.bloque };
   }
 
   /** m³ de las piezas pedidas, como los suma el consumo (las sin volumen no pesan). */

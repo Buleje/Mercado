@@ -374,3 +374,42 @@ describe("adopción: sólo lo inequívoco (2.ª revisión de ADR-519)", () => {
     expect(tomadosPorOtros([copia], "d1", "b1").lotes.size).toBe(0);
   });
 });
+
+describe("ADR-521 · el bloque de un lote ya consumido adopta su corrida abierta", () => {
+  /* La corrida c1 consumió JUSTO las trozas elegidas del bloque (t1 y t2). */
+  const adoptado = (x: Partial<DatosDelRecorrido> = {}) =>
+    datos({
+      bloque: bloque({ dias: 1, jornadasLibro: [{ dia: 1, corridaId: "c1", lineNo: 31, estado: "abierta", fecha: "2026-10-20" }] }),
+      trozas: [troza("t1", { consumidaEnId: "c1", motivo: "ya entró a una corrida" }), troza("t2", { consumidaEnId: "c1", motivo: "ya entró a una corrida" })],
+      lote: { ...lote({ t1: "c1", t2: "c1" }, [corrida("c1", 31, { quantity: null })]), status: "consumido" },
+      ...x,
+    });
+
+  it("trozas y lote hechos; jornadas pendiente con «Declarar la corrida N° X» (no con problema)", () => {
+    const e = derivarRecorrido(adoptado());
+    expect(paso(e, "trozas").estado).toBe("hecho");
+    expect(paso(e, "lote").estado).toBe("hecho");
+    expect(paso(e, "jornadas")).toMatchObject({ estado: "pendiente", code: "CORRIDA_POR_DECLARAR", motivo: "Declarar la corrida N° 31" });
+    expect(e.siguiente).toBe("jornadas");
+  });
+
+  it("con los días de la pantalla y uno que no se puede declarar, el paso dice por qué", () => {
+    const e = derivarRecorrido(adoptado({ sinDiasListos: { code: "JORNADA_NO_REGISTRABLE", motivo: "La corrida N° 31 es un día: junta los días del bloque en uno." } }));
+    expect(paso(e, "jornadas")).toMatchObject({ estado: "con_problema", code: "JORNADA_NO_REGISTRABLE" });
+  });
+
+  it("una corrida abierta que no es del bloque entero sigue yendo al Libro (CORRIDA_ABIERTA)", () => {
+    const e = derivarRecorrido(adoptado({ lote: { ...lote({ t1: "c1" }, [corrida("c1", 31, { quantity: null })]), status: "consumido" } }));
+    expect(paso(e, "jornadas")).toMatchObject({ estado: "con_problema", code: "CORRIDA_ABIERTA" });
+  });
+
+  it("faltanDiasListos: la adoptada declarable cuenta como lista; trabada, su motivo", () => {
+    expect(faltanDiasListos({ motivo: null, jornadas: [{ estado: "abierta", corridaDelBloque: true, declarable: true }] })).toBeNull();
+    expect(faltanDiasListos({ motivo: null, jornadas: [{ estado: "abierta", corridaDelBloque: true, motivo: "Pasa el tope." }] })).toEqual({
+      code: "JORNADA_NO_REGISTRABLE",
+      motivo: "Pasa el tope.",
+    });
+    /* La abierta de siempre (no adoptada) la dice el paso con CORRIDA_ABIERTA. */
+    expect(faltanDiasListos({ motivo: null, jornadas: [{ estado: "abierta", motivo: "Declárala en el Libro." }] })).toBeNull();
+  });
+});

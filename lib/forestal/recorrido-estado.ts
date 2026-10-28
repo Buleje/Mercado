@@ -27,6 +27,7 @@ import { claveEspecie } from "./loth-constants";
 import { PT_POR_M3 } from "./cubicacion";
 import { RENDIMIENTO_TOPE_PCT } from "./produccion-paquetes";
 import { sumarDias } from "./consumo-en-jornadas";
+import { corridaEsDelBloqueEntero } from "./bloque-de-lote-consumido";
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
@@ -244,14 +245,25 @@ export function derivarRecorrido(d: DatosDelRecorrido): EstadoRecorrido {
     const base = `${enLibro.length} de ${plural(dias, "día", "días")} en el Libro` + (completados > 0 ? ` · ${completados} con «Completar»` : "");
     if (abiertas.length > 0) {
       const n = vivas.get(abiertas[0].corridaId)?.lineNo ?? abiertas[0].lineNo;
-      pasos.push({
-        paso: "jornadas",
-        estado: "con_problema",
-        ids,
-        code: "CORRIDA_ABIERTA",
-        motivo: `La corrida N° ${n} consumió sus trozas y falta declarar lo que salió: declárale la producción desde el Libro.`,
-        detalle: base,
-      });
+      /* ADR-521: un lote ya consumido llevado a la Distribución trae su corrida
+         abierta ADOPTADA (consumió justo las trozas del bloque): falta
+         declararla, y eso lo hace este paso. Con los días de la pantalla, si no
+         se puede (sin aserrada, pasa el tope, varios días), se dice por qué. */
+      const adoptada = abiertas.length === 1 && corridaEsDelBloqueEntero(b, d.lote.trozas, abiertas[0].corridaId);
+      if (adoptada && d.sinDiasListos) {
+        pasos.push({ paso: "jornadas", estado: "con_problema", ids, code: d.sinDiasListos.code, motivo: d.sinDiasListos.motivo, detalle: base });
+      } else if (adoptada) {
+        pasos.push({ paso: "jornadas", estado: "pendiente", ids, code: "CORRIDA_POR_DECLARAR", motivo: `Declarar la corrida N° ${n}`, detalle: base });
+      } else {
+        pasos.push({
+          paso: "jornadas",
+          estado: "con_problema",
+          ids,
+          code: "CORRIDA_ABIERTA",
+          motivo: `La corrida N° ${n} consumió sus trozas y falta declarar lo que salió: declárale la producción desde el Libro.`,
+          detalle: base,
+        });
+      }
     } else if (enLibro.length >= dias) {
       pasos.push({ paso: "jornadas", estado: "hecho", ids, detalle: base });
     } else if (libres.length === 0 && (enLibro.length > 0 || completados > 0)) {
@@ -442,7 +454,7 @@ export const SIN_ASERRADA = "No hay aserrada repartida en este bloque: carga lo 
 export interface PlanParaDiasListos {
   oculto?: boolean;
   motivo: string | null;
-  jornadas: { estado: string; motivo?: string | null; porOrden?: boolean }[];
+  jornadas: { estado: string; motivo?: string | null; porOrden?: boolean; corridaDelBloque?: boolean; declarable?: boolean }[];
 }
 
 /**
@@ -450,11 +462,16 @@ export interface PlanParaDiasListos {
  * (o si ya están todos en el Libro, o si es una corrida abierta: eso ya lo
  * dice el paso con `CORRIDA_ABIERTA`). Lo usan la ruta (para no cortar en
  * silencio) y el estado derivado (para que el paso diga su motivo).
+ *
+ * ADR-521: la corrida abierta que el bloque adoptó cuenta como lista si ya se
+ * puede declarar; si no (sin aserrada, pasa el tope, varios días), su motivo.
  */
 export function faltanDiasListos(plan: PlanParaDiasListos): { code: string; motivo: string } | null {
   if (plan.oculto) return null;
   if (plan.jornadas.length === 0) return { code: "SIN_DIAS_LISTOS", motivo: SIN_ASERRADA };
-  if (plan.jornadas.some((j) => j.estado === "lista")) return null;
+  if (plan.jornadas.some((j) => j.estado === "lista" || (j.estado === "abierta" && j.declarable))) return null;
+  const trabada = plan.jornadas.find((j) => j.estado === "abierta" && j.corridaDelBloque && j.motivo);
+  if (trabada?.motivo) return { code: "JORNADA_NO_REGISTRABLE", motivo: trabada.motivo };
   const faltan = plan.jornadas.filter((j) => j.estado !== "en-libro");
   if (faltan.length === 0 || faltan.some((j) => j.estado === "abierta")) return null;
   const motivo = plan.motivo ?? faltan.find((j) => j.estado === "apagada" && !j.porOrden && j.motivo)?.motivo;

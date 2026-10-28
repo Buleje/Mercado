@@ -217,7 +217,7 @@ export default function CtpLoteArmarModal({
     if (r.importados.length === 0) return;
     onImportado();
     onListo(r.importados.map((x) => x.texto).join(" · "), "ok");
-    if (r.todos) onClose();
+    /* No se cierra: cada lote importado ofrece «Repartir en la distribución» (ADR-521). */
   }
 
   async function guardar() {

@@ -49,6 +49,11 @@ import {
  * una versión anterior): el lote vivo armado con las trozas del bloque y las
  * corridas declaradas del lote con la fecha de un día y piezas del bloque.
  *
+ * ADR-521: el bloque de un lote YA consumido trae su corrida abierta como
+ * jornada «abierta». El paso de jornadas le DECLARA la producción con lo
+ * aserrado del día (`declararJornadaAbierta`: no abre corrida ni consume),
+ * con la misma anotación en la misma transacción.
+ *
  * Guard: requireAdmin → CSRF (POST) → rate limit (balde propio) → spec:forestal:herramientas.
  */
 
@@ -350,7 +355,7 @@ export const POST = withApiHandler("forestal-recorrido-permiso-ejecutar", async 
            siguiente día recién queda «lista» cuando el anterior entró. */
         for (let vuelta = 0; vuelta < porDia.length; vuelta++) {
           const plan = planDe(bloque, porDia, lote);
-          const j = plan.jornadas.find((x) => x.estado === "lista");
+          const j = plan.jornadas.find((x) => x.estado === "lista" || (x.estado === "abierta" && x.declarable));
           if (!j) {
             /* Ningún día listo: se dice por qué (antes cortaba en silencio y el
                botón no hacía nada). Si este pedido ya registró o adoptó días,
@@ -363,46 +368,77 @@ export const POST = withApiHandler("forestal-recorrido-permiso-ejecutar", async 
             continuar = true;
             break;
           }
+          /* ADR-521: la corrida abierta que el bloque adoptó. Es UN día (una
+             troza no se parte entre dos corridas) y nunca la de otro bloque. */
+          if (j.estado === "abierta" && j.corridaId) {
+            const deOtro = tomados.corridas.get(j.corridaId);
+            if (deOtro) {
+              falla = {
+                paso: "jornadas",
+                code: "CORRIDA_DE_OTRO_BLOQUE",
+                motivo: `La corrida N° ${j.lineNo} ya es del ${deOtro}: se declara desde ese bloque, no dos veces.`,
+              };
+              break;
+            }
+            if (porDia.filter((d) => d.piezas > 0 && d.grupos.length > 0).length > 1) {
+              falla = {
+                paso: "jornadas",
+                code: "UN_SOLO_DIA",
+                motivo: `La corrida N° ${j.lineNo} es un día: junta los días del bloque en uno.`,
+              };
+              break;
+            }
+          }
           try {
             const paquetes = paquetesDeGrupos(j.grupos, j.fecha, existentes, reservados);
             /* B5: la nota nombra el bloque, como la del Libro de bloques. */
             const nota = `Jornada ${j.dia} de ${porDia.length} · bloque ${bloque.etiqueta || "sin etiqueta"} · recorrido del permiso`;
-            const hecho = await ForestJornadaBloqueDB.registrarJornada(
-              tenantId,
-              {
-                loteId: lote?.id ?? "",
-                trozaIds: j.trozaIds,
-                fecha: new Date(`${j.fecha}T12:00:00.000Z`),
-                observaciones: nota,
-                produccion: {
-                  quantity: j.m3,
-                  unit: "m3",
-                  observations: nota,
-                  lineaProduccion: "LP",
-                  pieces: j.piezas,
-                  productType: paquetes[0]?.productType ?? null,
-                  presentacion: paquetes[0]?.presentacion ?? null,
-                  codigoProducto: paquetes[0]?.codigo ?? null,
-                  paquetes,
-                },
-                user,
-              },
-              /* A1: la corrida y la anotación del día, en la misma transacción. */
-              {
-                distribucionId,
-                bloqueId,
-                parche: (prev, corrida) =>
-                  anotarJornadas(prev, [{ dia: j.dia, corridaId: corrida.id, lineNo: corrida.lineNo, estado: "declarada", fecha: j.fecha }]),
-              },
-            );
+            const produccion = {
+              quantity: j.m3,
+              unit: "m3",
+              observations: nota,
+              lineaProduccion: "LP",
+              pieces: j.piezas,
+              productType: paquetes[0]?.productType ?? null,
+              presentacion: paquetes[0]?.presentacion ?? null,
+              codigoProducto: paquetes[0]?.codigo ?? null,
+              paquetes,
+            };
+            /* A1: la corrida y la anotación del día, en la misma transacción. */
+            const anotarEn = {
+              distribucionId,
+              bloqueId,
+              parche: (prev: BloqueRolliza, corrida: { id: string; lineNo: number }) =>
+                anotarJornadas(prev, [{ dia: j.dia, corridaId: corrida.id, lineNo: corrida.lineNo, estado: "declarada", fecha: j.fecha }]),
+            };
+            const hecho =
+              j.estado === "abierta" && j.corridaId
+                ? await ForestJornadaBloqueDB.declararJornadaAbierta(
+                    tenantId,
+                    { corridaId: j.corridaId, trozaIds: j.trozaIds, produccion, user },
+                    anotarEn,
+                  )
+                : await ForestJornadaBloqueDB.registrarJornada(
+                    tenantId,
+                    {
+                      loteId: lote?.id ?? "",
+                      trozaIds: j.trozaIds,
+                      fecha: new Date(`${j.fecha}T12:00:00.000Z`),
+                      observaciones: nota,
+                      produccion,
+                      user,
+                    },
+                    anotarEn,
+                  );
+            const declarada = j.estado === "abierta" ? " declarada" : "";
             bloque = hecho.bloque ?? bloque;
-            ejecutados.push({ paso: "jornadas", detalle: `Día ${j.dia} · corrida N° ${hecho.corrida.lineNo}${hecho.yaEstaba ? " (ya estaba)" : ""}` });
+            ejecutados.push({ paso: "jornadas", detalle: `Día ${j.dia} · corrida N° ${hecho.corrida.lineNo}${declarada}${hecho.yaEstaba ? " (ya estaba)" : ""}` });
             auditCtp({
               tenantId,
               action: "ctp_recorrido_paso",
               entity: "ForestDistribucion",
               entityId: distribucionId,
-              detail: `Recorrido del permiso · bloque ${bloque.etiqueta}: día ${j.dia} en la corrida N° ${hecho.corrida.lineNo}${hecho.yaEstaba ? " (reintento: ya estaba)" : ""}`,
+              detail: `Recorrido del permiso · bloque ${bloque.etiqueta}: día ${j.dia} en la corrida N° ${hecho.corrida.lineNo}${declarada ? " (declaró la corrida abierta del lote)" : ""}${hecho.yaEstaba ? " (reintento: ya estaba)" : ""}`,
               user,
             });
             lote = await leerLote(tenantId, bloque.loteId);

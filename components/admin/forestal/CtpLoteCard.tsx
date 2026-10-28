@@ -22,6 +22,7 @@ import { CardTitle } from "@buleje/design-system";
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import {
   estadoDeLote,
+  loteEnConsumo,
   tonoDeLote,
   alertasDeLote,
   cuadreSniffs,
@@ -41,6 +42,7 @@ import { LoteCifras, LoteLineaPrincipal, unidadLegible } from "./ctp-lote-card-p
 import { LoteCuando } from "./ctp-lote-cuando";
 import { LoteCuadreSniffs } from "./ctp-lote-cuadre-sniffs";
 import { LoteMaderaChip } from "./ctp-lote-madera-chip";
+import CtpLoteADistribucionBtn from "./CtpLoteADistribucionBtn";
 
 /* La pastilla de «¿ya salió esa madera?»: texto primario sobre el tinte del
    tono (el texto de color sobre su propio tinte no llegaba a AA). */
@@ -270,6 +272,7 @@ export default function CtpLoteCard({
             </Btn>
           </>
         )}
+        {loteEnConsumo(lote) && <CtpLoteADistribucionBtn loteId={lote.id} size="sm" />}
         <Btn size="sm" variant="ghost" onClick={onVer} title="Ver las piezas del lote y editarlo">
           <Boxes className="h-4 w-4" /> Piezas
         </Btn>
