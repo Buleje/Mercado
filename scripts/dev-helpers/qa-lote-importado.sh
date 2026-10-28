@@ -19,7 +19,7 @@ cuerpo=$(mktemp)
 trap 'rm -f "$cuerpo"' EXIT
 
 fila() {
-  printf '{"fila":%s,"gtf":"QA19-GTF-A1","codigoPlanta":"%s","codigoTroza":"%s","trozaPadre":null,"especie":"Shihuahuaco","lote":"%s","d1Cm":null,"d2Cm":null,"largoM":null,"volumenM3":null,"tipoProducto":null,"estado":"En consumo","fecha":"2026-10-19"}' "$1" "$2" "$3" "$code"
+  printf '{"fila":%s,"contrato":"QA-ADR430-PERMISO-01","resolucion":null,"tipoDocumento":"GTF","gtf":"QA19-GTF-A1","codigoPlanta":"%s","codigoTroza":"%s","trozaPadre":null,"especie":"Shihuahuaco","lote":"%s","d1Cm":null,"d2Cm":null,"largoM":null,"volumenM3":null,"tipoProducto":null,"estado":"En consumo","fecha":"2026-10-19"}' "$1" "$2" "$3" "$code"
 }
 
 case "$accion" in

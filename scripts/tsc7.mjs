@@ -17,13 +17,32 @@
  * Fallback: si no hay binario nativo para esta plataforma, cae a tsc 5.9 con heap ampliado.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
+
+/* Con todos los hilos el chequeo pide ≈7 GB. Si hay menos libres (dev server
+   + servidor de tipos del editor ocupan ~9 GB), earlyoom lo mata con 137 y el
+   commit cae sin decir por qué (28-10, dos veces). En un hilo da lo mismo y
+   pide bastante menos: se pasa solo. */
+const GB_PARA_HILOS = 8;
+function gbDisponibles() {
+  try {
+    const m = readFileSync("/proc/meminfo", "utf8").match(/^MemAvailable:\s+(\d+)\s+kB/m);
+    return m ? Number(m[1]) / 1024 / 1024 : null;
+  } catch {
+    return null;
+  }
+}
+const libres = gbDisponibles();
+if (libres != null && libres < GB_PARA_HILOS && !args.includes("--singleThreaded")) {
+  args.push("--singleThreaded");
+  console.log(`🧵 ${libres.toFixed(1)} GB libres (< ${GB_PARA_HILOS}): typecheck en un hilo, mismo resultado.`);
+}
 
 const ARCH = { x64: "x64", arm64: "arm64", arm: "arm", ppc64: "ppc64", s390x: "s390x" };
 const pkg = `@typescript/typescript-${process.platform}-${ARCH[process.arch] ?? process.arch}`;
