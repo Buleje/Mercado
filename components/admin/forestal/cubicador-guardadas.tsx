@@ -31,6 +31,8 @@ import { ResumenPorFicha } from "./cubicador-guardadas-resumen";
 import { MargenDelMes } from "./cubicador-guardadas-margen-mes";
 import AtarGuardadasModal from "./cubicador-atar-modal";
 import { AvisosDeGuardadas } from "./cubicador-guardadas-avisos";
+import { SalidasDeLaCubicacionModal } from "./cubicador-salidas-modal";
+import { resumenEnPatio } from "./cubicador-salidas-logica";
 import { useRendimientoDeGuias } from "./hooks/use-rendimiento-de-guias";
 import { necesitaAtar } from "@/lib/forestal/cubicacion-atar";
 import { mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
@@ -65,6 +67,9 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
   const [atarIds, setAtarIds] = useState<string[] | null>(null);
   const sinParte = useMemo(() => lista.filter(necesitaAtar), [lista]);
   const detalle = detalleId ? lista.find((c) => c.id === detalleId) ?? null : null;
+  /* «Salidas» vive acá y no en la tarjeta: con el filtro «en patio», un viaje de «todo» la saca de la grilla. */
+  const [salidasId, setSalidasId] = useState<string | null>(null);
+  const salidasDe = salidasId ? lista.find((c) => c.id === salidasId) : undefined;
   /* Los otros camiones de la misma GTF: el rendimiento y el margen del detalle suman todos. */
   const deLaMismaGuia = useMemo(
     () => (detalle?.gtfNumber ? lista.filter((x) => x.id !== detalle.id && mismoNumeroGtf(x.gtfNumber, detalle.gtfNumber)) : []),
@@ -83,14 +88,20 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
   const [soloSinGuia, setSoloSinGuia] = useState(false);
   const sinGuia = useMemo(() => resumenSinGuia(visibles), [visibles]);
   const filtraSinGuia = soloSinGuia && sinGuia.cantidad > 0;
-  const base = useMemo(() => (filtraSinGuia ? visibles.filter(sinGtf) : visibles), [visibles, filtraSinGuia]);
+  const [soloEnPatio, setSoloEnPatio] = useState(false);
+  const enPatio = useMemo(() => resumenEnPatio(visibles), [visibles]);
+  const filtraEnPatio = soloEnPatio && enPatio.conViajes > 0;
+  const base = useMemo(
+    () => visibles.filter((c) => (!filtraSinGuia || sinGtf(c)) && (!filtraEnPatio || enPatio.ids.has(c.id))),
+    [visibles, filtraSinGuia, filtraEnPatio, enPatio],
+  );
   /* El resumen por comunidad/comprador es de lo visible; tocar una fila filtra las tarjetas. */
   const [por, setPor] = useState<PorFicha>("comunidad");
   const [claveFicha, setClaveFicha] = useState<string | null>(null);
   const filasFicha = useMemo(() => agruparPorFicha(base, por), [base, por]);
   const claveActiva = claveFicha && filasFicha.some((f) => f.clave === claveFicha) ? claveFicha : null;
   const mostradas = useMemo(() => (claveActiva ? deLaFila(base, por, claveActiva) : base), [base, por, claveActiva]);
-  const filtrando = Boolean(busqueda.trim() || especie || claveActiva || filtraSinGuia);
+  const filtrando = Boolean(busqueda.trim() || especie || claveActiva || filtraSinGuia || filtraEnPatio);
   /* «Rinde» por comunidad: las guías de TODA la lista, pedidas juntas (no se repiden al filtrar). */
   const { guias, cargando: cargandoGuias } = useRendimientoDeGuias(useMemo(() => numerosDeGuia(lista), [lista]));
   const rinde = useMemo(() => (por === "comunidad" ? rendimientoPorFicha(base, clasificar(base, por), guias) : null), [base, por, guias]);
@@ -125,7 +136,8 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
     if (await borrar(c.id)) onBorrada?.(c.id);
   };
 
-  const duplicar = (c: CubicacionRegistro) => onAbrir({ ...c, id: "", nombre: `${c.nombre} (copia)`, ctpEntryId: undefined, ctpEntryIds: undefined });
+  /* La copia es otro lote: sin el hilo al Libro ni los viajes del original (los escribe sólo el servidor). */
+  const duplicar = (c: CubicacionRegistro) => onAbrir({ ...c, id: "", nombre: `${c.nombre} (copia)`, ctpEntryId: undefined, ctpEntryIds: undefined, salidas: undefined });
 
   return (
     <section aria-label="Cubicaciones guardadas" className="space-y-3">
@@ -189,6 +201,9 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
           onCompletarComprador={() => setAtarIds(sinParte.map((c) => c.id))}
           onCompletarGuia={() => setAtarIds(sinGuia.ids)}
           onFiltrarSinGuia={() => setSoloSinGuia((v) => !v)}
+          enPatio={enPatio}
+          filtrandoEnPatio={filtraEnPatio}
+          onFiltrarEnPatio={() => setSoloEnPatio((v) => !v)}
         />
       )}
 
@@ -213,10 +228,7 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
         <>
           <ResumenPorFicha
             por={por}
-            onPor={(p) => {
-              setPor(p);
-              setClaveFicha(null);
-            }}
+            onPor={(p) => { setPor(p); setClaveFicha(null); }}
             filas={filasFicha}
             elegida={claveActiva}
             onElegir={setClaveFicha}
@@ -244,6 +256,7 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
                 copiado={copiadoId === c.id}
                 onAbrir={() => onAbrir(c)}
                 onVerDetalle={() => setDetalleId(c.id)}
+                onSalidas={() => setSalidasId(c.id)}
                 onComparar={puedeComparar ? () => setComparar({ aId: c.id }) : undefined}
                 onDuplicar={() => duplicar(c)}
                 onCopiarCodigo={() => copiarCodigo(c)}
@@ -258,9 +271,7 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
         <AtarGuardadasModal
           cubicaciones={atarIds.map((id) => lista.find((x) => x.id === id)).filter((x): x is CubicacionRegistro => Boolean(x))}
           aboveModals={dentroDeVentana}
-          onGuardada={recargar}
-          onRecargar={recargar}
-          onClose={() => setAtarIds(null)}
+          onGuardada={recargar} onRecargar={recargar} onClose={() => setAtarIds(null)}
         />
       )}
       {detalle && (
@@ -271,25 +282,17 @@ export function GuardadasDelCubicador({ onAbrir, onBorrada, abiertaId, recargarT
           aboveModals={dentroDeVentana}
           puedeComparar={puedeComparar}
           onClose={() => setDetalleId(null)}
-          onAbrir={() => {
-            setDetalleId(null);
-            onAbrir(detalle);
-          }}
-          onComparar={() => {
-            setDetalleId(null);
-            setComparar({ aId: detalle.id });
-          }}
+          onAbrir={() => { setDetalleId(null); onAbrir(detalle); }}
+          onComparar={() => { setDetalleId(null); setComparar({ aId: detalle.id }); }}
           onCompraAMano={reemplazar}
         />
       )}
+      {salidasDe && (
+        <SalidasDeLaCubicacionModal c={salidasDe} aboveModals={dentroDeVentana} onClose={() => setSalidasId(null)} onGuardada={reemplazar} />
+      )}
       {comparar && (
-        <CompararCubicacionesModal
-          key={comparar.aId ?? "dos"}
-          lista={lista}
-          inicialA={comparar.aId}
-          aboveModals={dentroDeVentana}
-          onClose={() => setComparar(null)}
-        />
+        <CompararCubicacionesModal key={comparar.aId ?? "dos"} lista={lista} inicialA={comparar.aId}
+          aboveModals={dentroDeVentana} onClose={() => setComparar(null)} />
       )}
     </section>
   );

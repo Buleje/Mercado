@@ -6,8 +6,9 @@
  * con el modo de precio en **Aserrío** o **Venta**, su precio sale del trato de
  * ese cliente para ese servicio —especie → grupo → tipo → su global, la misma
  * regla del cobro (`precioDelCliente`)—. Lo que su trato no cubre, y todo en
- * modo **A mano**, va al precio a mano de siempre: el de la especie si se puso,
- * si no el general.
+ * modo **A mano**, va al precio a mano: el de la especie y el tipo si se puso
+ * (Brandon 28-10: «según tipo y especie… a cuánto lo acordado de corta,
+ * comercial»), si no el de la especie, si no el general.
  *
  * Antes este cálculo vivía copiado en el cubicador y en Resúmenes: dos copias
  * de una cuenta de plata terminan diciendo dos números. Ahora es UNO, y el
@@ -17,6 +18,7 @@
  */
 import type { PiezaCubicada } from "./cubicacion";
 import { tipoDePieza, ORDEN_TIPO, type TipoComercial } from "./cubicacion-tipo";
+import { claveGrupo } from "./cubicacion-salidas";
 import {
   explicarOrigenCliente,
   precioDelCliente,
@@ -50,9 +52,15 @@ export interface PreciosAMano {
    * (`-precios-especie`). Vacío o 0 = usa el general.
    */
   porEspecie: Readonly<Record<string, string | number>>;
+  /**
+   * Especie × tipo → S/ por PT (Brandon 28-10), con la clave `claveGrupo`
+   * («tornillo|Corta»). Le gana al de la especie; vacío o 0 = usa el de la
+   * especie (y si no hay, el general). Sólo para piezas con especie.
+   */
+  porEspecieTipo?: Readonly<Record<string, string | number>>;
 }
 
-export type OrigenPrecioPieza = OrigenPrecioCliente | "mano-especie" | "mano-general";
+export type OrigenPrecioPieza = OrigenPrecioCliente | "mano-especie-tipo" | "mano-especie" | "mano-general";
 
 export interface PrecioDePieza {
   /** S/ por pie tablar. 0 = sin precio (nunca se inventa). */
@@ -74,11 +82,17 @@ export interface ContextoPrecio {
   fecha: string;
 }
 
-type PiezaConPrecio = Pick<PiezaCubicada, "especie" | "duenoParteId" | "tipo" | "espesor" | "ancho" | "largo" | "uEspesor" | "uAncho" | "uLargo">;
+export type PiezaConPrecio = Pick<PiezaCubicada, "especie" | "duenoParteId" | "tipo" | "espesor" | "ancho" | "largo" | "uEspesor" | "uAncho" | "uLargo">;
 
-/** El precio a mano: el de la especie si se puso (> 0), si no el general. */
-export function precioAMano(pieza: Pick<PiezaCubicada, "especie">, aMano: PreciosAMano): PrecioDePieza {
+/**
+ * El precio a mano: el de la especie y el tipo si se puso (> 0), si no el de
+ * la especie (> 0), si no el general. El tipo es `tipoDePieza` (el forzado a
+ * mano gana), el MISMO con que se agrupa y se despacha.
+ */
+export function precioAMano(pieza: PiezaConPrecio, aMano: PreciosAMano): PrecioDePieza {
   const esp = pieza.especie?.trim().toLowerCase();
+  const porTipo = esp && aMano.porEspecieTipo ? Number(aMano.porEspecieTipo[claveGrupo(esp, tipoDePieza(pieza))]) : 0;
+  if (porTipo > 0) return { precioPt: porTipo, desde: "mano-especie-tipo", grupo: null };
   const propio = esp ? Number(aMano.porEspecie[esp]) : 0;
   if (propio > 0) return { precioPt: propio, desde: "mano-especie", grupo: null };
   if (aMano.general > 0) return { precioPt: aMano.general, desde: "mano-general", grupo: null };
@@ -103,6 +117,8 @@ export function explicarPrecioDePieza(p: PrecioDePieza, pieza: PiezaConPrecio): 
   switch (p.desde) {
     case null:
       return "sin precio";
+    case "mano-especie-tipo":
+      return `precio a mano para ${pieza.especie?.trim() || "la especie"} (${tipoDePieza(pieza)})`;
     case "mano-especie":
       return `precio a mano para ${pieza.especie?.trim() || "la especie"}`;
     case "mano-general":
@@ -132,7 +148,7 @@ export interface LineaDePrecio {
   /** Salió del Directorio: el nombre es el de la ficha, no un texto suelto. */
   delDirectorio: boolean;
   especie: string | null;
-  /** Sólo cuando el precio dependió del tipo (trato del cliente «por tipo»). */
+  /** Sólo cuando el precio dependió del tipo (trato del cliente «por tipo» o a mano por especie y tipo). */
   tipo: TipoComercial | null;
   pt: number;
   piezas: number;
@@ -151,7 +167,7 @@ export function desglosePorPrecio(rows: readonly (PiezaConPrecio & Pick<PiezaCub
   const mapa = new Map<string, LineaDePrecio>();
   for (const r of rows) {
     const precio = precioDePieza(r, ctx);
-    const tipo = precio.desde === "cliente-tipo" ? tipoDePieza(r) : null;
+    const tipo = precio.desde === "cliente-tipo" || precio.desde === "mano-especie-tipo" ? tipoDePieza(r) : null;
     const dueno = r.dueno?.trim() || null;
     const especie = r.especie?.trim() || null;
     const clave = [r.duenoParteId ?? dueno ?? "", (especie ?? "").toLowerCase(), tipo ?? "", precio.desde ?? "", precio.precioPt].join("|");

@@ -16,6 +16,7 @@ import { ORDEN_TIPO, type TipoComercial } from "./cubicacion-tipo";
 import { OBSERVACION_MAX } from "./observacion-de-pieza";
 import { ANCHO_CAMION_M_DEFAULT, ANCHO_CAMION_M_MAX, ANCHO_CAMION_M_MIN } from "./camion-croquis";
 import { limaDateKey } from "@/lib/utils";
+import { normalizarSalidas, type SalidaCubicacion } from "./cubicacion-salidas";
 
 export interface CubicacionTotales {
   piezas: number;
@@ -50,10 +51,24 @@ export interface FichaCubicacion {
   destino?: string;
   /** Dónde se cubicó (patio, puerto, playa del río). */
   lugar?: string;
+  /** Quién midió la madera (firma el papel). */
+  cubicadoPor?: string;
+  /** Cómo se paga: «Contado», «Crédito», «Con adelanto» (`CONDICIONES_PAGO`) o lo que se escriba. */
+  condicionPago?: string;
+  /** Adelanto recibido, en soles, como texto («1500.00»). Sólo se anota: no mueve plata. */
+  adelanto?: string;
+  /** Hasta cuándo se paga el saldo (AAAA-MM-DD). */
+  fechaPago?: string;
+  /** Hasta cuándo se entrega la madera (AAAA-MM-DD). */
+  fechaEntrega?: string;
 }
+
+/** Las condiciones de pago que se ofrecen (se puede escribir otra). */
+export const CONDICIONES_PAGO = ["Contado", "Crédito", "Con adelanto"] as const;
 
 export const CAMPOS_FICHA = [
   "clienteParteId", "comunidad", "comunidadParteId", "tituloHabilitante", "placa", "chofer", "destino", "lugar",
+  "cubicadoPor", "condicionPago", "adelanto", "fechaPago", "fechaEntrega",
 ] as const satisfies readonly (keyof FichaCubicacion)[];
 
 /** Tope de cada campo de la ficha (los `*ParteId` son ids: 60). */
@@ -126,6 +141,12 @@ export interface CubicacionRegistro {
   ficha?: FichaCubicacion;
   /** El precio de compra por PT anotado a mano en el margen (sin el campo = no hay). */
   compraAMano?: CompraAMano;
+  /**
+   * Los viajes en que ya se llevó la madera (Brandon 28-10). Se anotan con su
+   * propio PATCH (`ForestCubicacionesDB.anotarSalida`), nunca con el POST del
+   * cubicador: guardar el lote las conserva. Sin el campo = no salió nada.
+   */
+  salidas?: SalidaCubicacion[];
   totales: CubicacionTotales;
   piezas: PiezaCubicada[];
   /** Línea de PRODUCCIÓN del Libro CTP que se creó desde esta cubicación
@@ -278,6 +299,7 @@ export function construirRegistro(input: {
   trasera?: { ids: string[]; anchoM: number };
   ficha?: FichaCubicacion | Record<string, unknown>;
   compraAMano?: CompraAMano | Record<string, unknown> | null;
+  salidas?: unknown;
   createdAt?: string;
   createdBy?: string;
 }): CubicacionRegistro {
@@ -297,6 +319,7 @@ export function construirRegistro(input: {
     valor: r2(piezas.reduce((a, p) => a + p.pieTablar * precioDe(p), 0)),
     ficha: normalizarFicha(input.ficha),
     compraAMano: normalizarCompraAMano(input.compraAMano),
+    salidas: normalizarSalidas(input.salidas),
     totales,
     piezas,
     /* El primero de la lista manda como `ctpEntryId`: lo que ya leía un solo id

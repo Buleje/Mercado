@@ -133,3 +133,39 @@ describe("los lotes guardados antes de ADR-430", () => {
     expect(unificarPorMedida([atada, { ...atada, id: "x", duenoParteId: undefined }])).toHaveLength(2);
   });
 });
+
+describe("precio a mano por especie y tipo (Brandon 28-10)", () => {
+  const aMano = (porEspecieTipo: Record<string, string>) =>
+    ctx({ modo: "manual", aMano: { general: 0.45, porEspecie: { cedro: "0.9" }, porEspecieTipo } });
+
+  it("especie × tipo gana a la especie, y la especie al general", () => {
+    const c = aMano({ "cedro|Corta": "0.7", "tornillo|Corta": "0.5" });
+    expect(precioDePieza(pieza("Cedro", { tipo: "Corta" }), c)).toEqual({ precioPt: 0.7, desde: "mano-especie-tipo", grupo: null });
+    expect(precioDePieza(pieza("Cedro", { tipo: "Comercial" }), c)).toEqual({ precioPt: 0.9, desde: "mano-especie", grupo: null });
+    expect(precioDePieza(pieza("Tornillo", { tipo: "Corta" }), c).desde).toBe("mano-especie-tipo");
+    expect(precioDePieza(pieza("Tornillo", { tipo: "Comercial" }), c)).toEqual({ precioPt: 0.45, desde: "mano-general", grupo: null });
+  });
+
+  it("la clave no distingue mayúsculas ni espacios de la especie", () => {
+    expect(precioDePieza(pieza("  CEDRO ", { tipo: "Corta" }), aMano({ "cedro|Corta": "0.7" })).precioPt).toBe(0.7);
+  });
+
+  it("una celda vacía o en 0 cae a la especie (no deja la pieza en S/ 0)", () => {
+    const c = aMano({ "cedro|Corta": "", "cedro|Tabla": "0" });
+    expect(precioDePieza(pieza("Cedro", { tipo: "Corta" }), c).desde).toBe("mano-especie");
+    expect(precioDePieza(pieza("Cedro", { tipo: "Tabla" }), c).precioPt).toBe(0.9);
+  });
+
+  it("el trato del cliente sigue ganando en Aserrío/Venta", () => {
+    const c = ctx({ aMano: { general: 0.45, porEspecie: {}, porEspecieTipo: { "tornillo|Corta": "0.5" } } });
+    expect(precioDePieza(pieza("Tornillo", { tipo: "Corta", dueno: "Juan", duenoParteId: "juan" }), c).desde).toBe("cliente-especie");
+  });
+
+  it("lo explica en palabras y el desglose lleva el tipo", () => {
+    const c = aMano({ "cedro|Corta": "0.7" });
+    const corta = pieza("Cedro", { tipo: "Corta" });
+    expect(explicarPrecioDePieza(precioDePieza(corta, c), corta)).toContain("precio a mano para Cedro (Corta)");
+    const filas = desglosePorPrecio([corta, pieza("Cedro", { id: "otra", tipo: "Comercial" })], c);
+    expect(filas.map((f) => [f.precio.precioPt, f.tipo])).toEqual(expect.arrayContaining([[0.7, "Corta"], [0.9, null]]));
+  });
+});

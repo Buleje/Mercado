@@ -4,7 +4,8 @@
  * El precio del lote del cubicador (ADR-430): el modo, lo puesto a mano y el
  * trato de cada dueño del Directorio, en un solo lugar.
  *
- * - **A mano**: el de la especie si se puso, si no el general (lo de siempre).
+ * - **A mano**: el de la especie y el tipo si se puso (28-10), si no el de la
+ *   especie, si no el general.
  * - **Aserrío / Venta**: cada pieza con dueño del Directorio usa el trato de
  *   ESE cliente para ese servicio (`precioDePieza`); lo que su trato no cubre
  *   —y las piezas sin dueño o con un dueño escrito a mano— va al precio a mano.
@@ -16,6 +17,9 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { claveGrupo } from "@/lib/forestal/cubicacion-salidas";
+import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
+import type { PreciosAManoDeGuardada } from "@/lib/forestal/precios-de-guardada";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import type { GrupoEspecies } from "@/lib/forestal/precio-cliente";
@@ -45,7 +49,13 @@ const guardar = (clave: string, valor: string) => {
   }
 };
 
-/** Lee `-precios-especie` sin confiar en su forma. */
+/** Sin precios por especie y tipo: una sola referencia, para no rehacer el contexto en cada render. */
+const SIN_PRECIOS: Readonly<Record<string, string>> = Object.freeze({});
+
+/** La especie de una clave `claveGrupo` («tornillo|Corta» → «tornillo»). */
+const especieDeClave = (clave: string) => clave.slice(0, clave.lastIndexOf("|"));
+
+/** Lee `-precios-especie` (y `-precios-especie-tipo`) sin confiar en su forma. */
 export function leerPreciosEspecie(raw: string | null): Record<string, string> {
   if (!raw) return {};
   try {
@@ -63,6 +73,8 @@ export function leerPreciosGuardados(espacio = "") {
   return {
     precioPt: leer(slugKey(`${espacio}-precio`)) ?? "",
     preciosEspecie: leerPreciosEspecie(leer(slugKey(`${espacio}-precios-especie`))),
+    /** Especie × tipo (`claveGrupo`) → texto. Le gana al de la especie (28-10). */
+    preciosEspecieTipo: leerPreciosEspecie(leer(slugKey(`${espacio}-precios-especie-tipo`))),
     modo: esModoPrecio(modo) ? modo : ("manual" as ModoPrecio),
     /** El día del lote con que el cubicador eligió los tratos; `""` = no se guardó. */
     fecha: /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : "",
@@ -79,11 +91,11 @@ export type PreciosGuardados = ReturnType<typeof leerPreciosGuardados>;
  */
 export function useResolverDePrecio(
   rows: readonly PiezaCubicada[],
-  guardados: Pick<PreciosGuardados, "modo" | "precioPt" | "preciosEspecie" | "fecha">,
+  guardados: Pick<PreciosGuardados, "modo" | "precioPt" | "preciosEspecie" | "fecha"> & Partial<Pick<PreciosGuardados, "preciosEspecieTipo">>,
   grupos: readonly GrupoEspecies[],
   cargandoGrupos = false,
 ) {
-  const { modo, precioPt, preciosEspecie, fecha } = guardados;
+  const { modo, precioPt, preciosEspecie, fecha, preciosEspecieTipo = SIN_PRECIOS } = guardados;
   const clientes = useMemo(
     () => [...new Set(rows.map((r) => r.duenoParteId).filter((id): id is string => Boolean(id)))],
     [rows],
@@ -94,12 +106,12 @@ export function useResolverDePrecio(
   const ctx = useMemo<ContextoPrecio>(
     () => ({
       modo,
-      aMano: { general, porEspecie: preciosEspecie },
+      aMano: { general, porEspecie: preciosEspecie, porEspecieTipo: preciosEspecieTipo },
       tratos: lectura.tratos,
       grupos,
       fecha: fecha || hoyEnLima(),
     }),
-    [modo, general, preciosEspecie, lectura.tratos, grupos, fecha],
+    [modo, general, preciosEspecie, preciosEspecieTipo, lectura.tratos, grupos, fecha],
   );
 
   const precioDe = useCallback((r: PiezaCubicada) => precioDePieza(r, ctx).precioPt, [ctx]);
@@ -143,16 +155,20 @@ export function usePrecioCubicador({
   const [inicial] = useState(() => leerPreciosGuardados(espacio));
   const [precioPt, setPrecioPt] = useState(inicial.precioPt);
   const [preciosEspecie, setPreciosEspecie] = useState<Record<string, string>>(inicial.preciosEspecie);
+  /* Se carga en el inicializador como los demás: un efecto que lo leyera
+     correría DESPUÉS del que persiste y escribiría `{}` encima. */
+  const [preciosEspecieTipo, setPreciosEspecieTipo] = useState<Record<string, string>>(inicial.preciosEspecieTipo);
   const [modo, setModo] = useState<ModoPrecio>(inicial.modo);
 
   useEffect(() => guardar(slugKey(`${espacio}-precio`), precioPt), [espacio, precioPt]);
   useEffect(() => guardar(slugKey(`${espacio}-precios-especie`), JSON.stringify(preciosEspecie)), [espacio, preciosEspecie]);
+  useEffect(() => guardar(slugKey(`${espacio}-precios-especie-tipo`), JSON.stringify(preciosEspecieTipo)), [espacio, preciosEspecieTipo]);
   useEffect(() => guardar(slugKey(`${espacio}-modo-precio`), modo), [espacio, modo]);
   /* Resúmenes lee el mismo lote y tiene que elegir el MISMO trato: sin la fecha
      del lote, usaría la de hoy y podría caer en otra versión. */
   useEffect(() => guardar(slugKey(`${espacio}-precio-fecha`), fecha), [espacio, fecha]);
 
-  const resolver = useResolverDePrecio(rows, { modo, precioPt, preciosEspecie, fecha }, grupos, cargandoGrupos);
+  const resolver = useResolverDePrecio(rows, { modo, precioPt, preciosEspecie, preciosEspecieTipo, fecha }, grupos, cargandoGrupos);
   const desglose = useMemo(() => desglosePorPrecio(rows, resolver.ctx), [rows, resolver.ctx]);
 
   const cambiarPrecioEspecie = useCallback((especie: string, texto: string) => {
@@ -160,7 +176,39 @@ export function usePrecioCubicador({
     if (!k) return;
     setPreciosEspecie((p) => ({ ...p, [k]: texto }));
   }, []);
-  const limpiarPreciosEspecie = useCallback(() => setPreciosEspecie({}), []);
+  /** El precio de UNA especie y UN tipo; vacío = vuelve al de la especie. */
+  const cambiarPrecioEspecieTipo = useCallback((especie: string, tipo: TipoComercial, texto: string) => {
+    if (!especie.trim()) return;
+    const k = claveGrupo(especie, tipo);
+    setPreciosEspecieTipo((p) => {
+      if (texto.trim()) return { ...p, [k]: texto };
+      if (!(k in p)) return p;
+      const { [k]: _fuera, ...resto } = p;
+      return resto;
+    });
+  }, []);
+  /** «Limpiar»: los de cada especie y los de cada tipo; queda el general. */
+  const limpiarPreciosEspecie = useCallback(() => {
+    setPreciosEspecie({});
+    setPreciosEspecieTipo({});
+  }, []);
+  /**
+   * Reabrir una guardada (`preciosAManoDeGuardada`): SUS especies quedan con
+   * los precios de ese día —los de cada tipo también, y los tipos que ese día
+   * no tenían precio propio se borran—; las demás especies no se tocan.
+   */
+  const reponerPreciosDeEspecies = useCallback(({ especies, porEspecie, porEspecieTipo }: PreciosAManoDeGuardada) => {
+    const suyas = new Set(especies);
+    setPreciosEspecie((p) => {
+      const n = { ...p };
+      for (const k of suyas) n[k] = porEspecie[k] ?? "";
+      return n;
+    });
+    setPreciosEspecieTipo((p) => ({
+      ...Object.fromEntries(Object.entries(p).filter(([k]) => !suyas.has(especieDeClave(k)))),
+      ...porEspecieTipo,
+    }));
+  }, []);
 
   return {
     ...resolver,
@@ -170,7 +218,10 @@ export function usePrecioCubicador({
     setPrecioPt,
     preciosEspecie,
     cambiarPrecioEspecie,
+    preciosEspecieTipo,
+    cambiarPrecioEspecieTipo,
     limpiarPreciosEspecie,
+    reponerPreciosDeEspecies,
     desglose,
   };
 }

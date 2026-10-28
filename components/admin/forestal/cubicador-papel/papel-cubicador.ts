@@ -160,20 +160,41 @@ export function problemaDelArchivo(f: { type: string; size: number }): string | 
 
 /* ── La ficha en la cabecera de la hoja ────────────────────────────────── */
 
+const DIAS_PAPEL = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;
+
+/** «jueves 10/09/2026» (la hoja es un documento: lleva el año). Lo que no es AAAA-MM-DD, tal cual. */
+function fechaDelPapel(iso: string | undefined): string | undefined {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso.trim())) return iso;
+  const d = new Date(`${iso.trim()}T12:00:00.000Z`);
+  return `${DIAS_PAPEL[d.getUTCDay()]} ${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+}
+
+/** «S/ 1,500.00»; lo que no es un número, tal cual (se anotó a mano). */
+function solesDelPapel(v: string | undefined): string | undefined {
+  const n = Number(v?.trim().replace(",", "."));
+  return v?.trim() && Number.isFinite(n) ? `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : v;
+}
+
 /**
  * Lo que la hoja imprime de la ficha de la cubicación (Brandon 24-10):
- * comprador, CCNN, permiso, GTF, placa, chofer, destino y lugar. Sólo lo que
- * haya, en ese orden.
+ * comprador, CCNN, permiso, GTF, placa, chofer, destino y lugar; desde el
+ * 28-10 también quién cubicó, la condición de pago, el adelanto y las fechas
+ * de pago y de entrega. Sólo lo que haya, en ese orden.
  */
 export function lineasDeFichaParaPapel(c: {
   cliente?: string | null;
   gtfNumber?: string | null;
-  ficha?: { comunidad?: string; tituloHabilitante?: string; placa?: string; chofer?: string; destino?: string; lugar?: string } | null;
+  ficha?: {
+    comunidad?: string; tituloHabilitante?: string; placa?: string; chofer?: string; destino?: string; lugar?: string;
+    cubicadoPor?: string; condicionPago?: string; adelanto?: string; fechaPago?: string; fechaEntrega?: string;
+  } | null;
 }): { etiqueta: string; valor: string }[] {
   const f = c.ficha ?? {};
   const todas: [string, string | null | undefined][] = [
     ["Comprador", c.cliente], ["CCNN", f.comunidad], ["Permiso", f.tituloHabilitante], ["GTF", c.gtfNumber],
     ["Placa", f.placa], ["Chofer", f.chofer], ["Destino", f.destino], ["Lugar", f.lugar],
+    ["Cubicado por", f.cubicadoPor], ["Pago", f.condicionPago], ["Adelanto", solesDelPapel(f.adelanto)],
+    ["Paga hasta", fechaDelPapel(f.fechaPago)], ["Entrega", fechaDelPapel(f.fechaEntrega)],
   ];
   return todas.flatMap(([etiqueta, v]) => (v?.trim() ? [{ etiqueta, valor: v.trim() }] : []));
 }

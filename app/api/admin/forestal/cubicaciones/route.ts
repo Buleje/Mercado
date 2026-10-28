@@ -8,6 +8,7 @@ import {
   CubicacionEnLibroError,
   CubicacionVinculoError,
   ForestCubicacionesDB,
+  SalidaInvalidaError,
 } from "@/lib/db/forest-cubicaciones.db";
 import { veElMargen } from "@/lib/forestal/cubicacion-margen";
 import { corridasDeCubicacion, FICHA_MAX, normalizarFicha, PRECIO_COMPRA_MAX, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
@@ -19,6 +20,7 @@ import { ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { OBSERVACION_MAX } from "@/lib/forestal/observacion-de-pieza";
 import { ANCHO_CAMION_M_MAX, ANCHO_CAMION_M_MIN } from "@/lib/forestal/camion-croquis";
 import { esVariado } from "@/lib/forestal/variado-desglose";
+import { LINEAS_SALIDA_MAX, SALIDA_NOTAS_MAX, SALIDA_TEXTO_MAX } from "@/lib/forestal/cubicacion-salidas";
 
 /**
  * /api/admin/forestal/cubicaciones — historial de cubicaciones del aserradero.
@@ -27,9 +29,11 @@ import { esVariado } from "@/lib/forestal/variado-desglose";
  *           `enLibro`: las que amparan líneas vivas del Libro y por qué no se borran.
  * POST    — guarda una nueva o actualiza por `id`. No acepta `compraAMano`
  *           (Zod lo descarta): re-guardar desde el cubicador lo conserva.
- * PATCH   — `?id=` + `{ compraAMano: { precioPt } | null }`: anota o borra el
- *           precio de compra por PT escrito a mano en el margen del camión. Sólo
- *           admin y dueño (los que ven el margen), sin reenviar la cubicación.
+ * PATCH   — `?id=` + UNA de tres cosas, sin reenviar la cubicación:
+ *           `{ compraAMano: { precioPt } | null }` anota o borra el precio de
+ *           compra por PT del margen del camión (sólo admin y dueño);
+ *           `{ salida }` anota un viaje de la madera (sin `id`) o lo reemplaza
+ *           (con `id`); `{ quitarSalida: id }` lo quita (28-10).
  * DELETE  — borra por `?id=` · 409 `en_libro` si ampara líneas vivas del Libro
  *           (sus medidas pieza por pieza son las del Anexo 04): primero se anula
  *           la línea en el Libro › Producción.
@@ -74,6 +78,12 @@ const fichaSchema = z.object({
   chofer: textoFicha,
   destino: textoFicha,
   lugar: textoFicha,
+  /* Quién midió, cómo y cuándo se paga, cuándo se entrega (28-10). Sólo se anotan: no mueven plata. */
+  cubicadoPor: textoFicha,
+  condicionPago: textoFicha,
+  adelanto: z.string().trim().regex(/^\d{1,9}(\.\d{1,2})?$/, "El adelanto va en soles, con punto decimal (ej.: 1500.00).").nullish().or(z.literal("")),
+  fechaPago: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).nullish().or(z.literal("")),
+  fechaEntrega: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).nullish().or(z.literal("")),
 }).strict();
 
 const saveSchema = z.object({
@@ -116,6 +126,35 @@ const paraElRol = (role: string, lista: CubicacionRegistro[]): CubicacionRegistr
 const compraAManoSchema = z.object({
   compraAMano: z.object({ precioPt: z.number().min(0.01).max(PRECIO_COMPRA_MAX) }).strict().nullable(),
 }).strict();
+
+const textoSalida = z.string().trim().max(SALIDA_TEXTO_MAX).nullish();
+/** Un viaje de la madera (28-10): sin `id` = nuevo; con `id` = reemplaza ese. `registradoAt`/`por` los pone el servidor. */
+const salidaSchema = z.object({
+  id: z.string().trim().min(1).max(60).optional(),
+  fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
+  completo: z.boolean().optional(),
+  cliente: textoSalida,
+  clienteParteId: z.string().trim().max(60).nullish(),
+  placa: textoSalida,
+  vehiculo: textoSalida,
+  chofer: textoSalida,
+  gtf: z.string().trim().max(60).nullish(),
+  destino: textoSalida,
+  notas: z.string().trim().max(SALIDA_NOTAS_MAX).nullish(),
+  lineas: z.array(z.object({
+    especie: z.string().trim().max(60).nullish(),
+    tipo: z.enum(ORDEN_TIPO as [TipoComercial, ...TipoComercial[]]),
+    piezas: z.number().int().min(0).max(1_000_000),
+    pt: z.number().min(0).max(100_000_000),
+  }).strict()).min(1).max(LINEAS_SALIDA_MAX),
+}).strict();
+
+/** El PATCH hace UNA cosa: el precio de compra, anotar un viaje o quitar uno. */
+const patchSchema = z.union([
+  compraAManoSchema,
+  z.object({ salida: salidaSchema }).strict(),
+  z.object({ quitarSalida: z.string().trim().min(1).max(60) }).strict(),
+]);
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:herramientas");
@@ -214,12 +253,8 @@ export const POST = withApiHandler("forestal-cubicaciones-post", async (req: Nex
 });
 
 export const PATCH = withApiHandler("forestal-cubicaciones-patch", async (req: NextRequest) => {
-  const auth = await requireAdmin(req, ["admin", "owner"]);
+  const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
-  /* `requireAdmin` deja pasar al encargado (management tier): el margen es sólo de admin y dueño. */
-  if (!veElMargen(auth.role)) {
-    return NextResponse.json({ error: "forbidden", message: "Sólo el administrador o el dueño anotan el precio de compra." }, { status: 403 });
-  }
   const csrf = assertCsrf(req);
   if (csrf) return csrf;
   const rl = await applyRateLimit(req, "GENEROUS", "cubicaciones");
@@ -231,24 +266,38 @@ export const PATCH = withApiHandler("forestal-cubicaciones-patch", async (req: N
   if (!id) return NextResponse.json({ error: "missing_id" }, { status: 400 });
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
-  const parsed = compraAManoSchema.safeParse(body);
+  const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
+    const deSalida = !!body && typeof body === "object" && ("salida" in body || "quitarSalida" in body);
     return NextResponse.json(
-      { error: "validation_error", message: "El precio de compra por PT va de 0,01 a 99 999.", issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) },
+      {
+        error: "validation_error",
+        message: deSalida
+          ? "Revisa el viaje: la fecha, y piezas o m³ de cada fila (números de 0 para arriba)."
+          : "El precio de compra por PT va de 0,01 a 99 999.",
+        issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+      },
       { status: 400 },
     );
   }
+  const datos = parsed.data;
+  const user = auth.username ?? "unknown";
+  /* `requireAdmin` deja pasar al almacenero y al encargado: el margen es sólo de admin y dueño. */
+  if ("compraAMano" in datos && !veElMargen(auth.role)) {
+    return NextResponse.json({ error: "forbidden", message: "Sólo el administrador o el dueño anotan el precio de compra." }, { status: 403 });
+  }
   try {
-    const cubicacion = await ForestCubicacionesDB.anotarCompraAMano(
-      auth.tenantId,
-      id,
-      parsed.data.compraAMano?.precioPt ?? null,
-      auth.username ?? "unknown",
-    );
+    const cubicacion =
+      "salida" in datos ? await ForestCubicacionesDB.anotarSalida(auth.tenantId, id, datos.salida, user)
+        : "quitarSalida" in datos ? await ForestCubicacionesDB.quitarSalida(auth.tenantId, id, datos.quitarSalida, user)
+          : await ForestCubicacionesDB.anotarCompraAMano(auth.tenantId, id, datos.compraAMano?.precioPt ?? null, user);
     return cubicacion
-      ? NextResponse.json({ cubicacion })
+      ? NextResponse.json({ cubicacion: paraElRol(auth.role, [cubicacion])[0] })
       : NextResponse.json({ error: "not_found", message: "Esa cubicación ya no está entre las guardadas." }, { status: 404 });
   } catch (err) {
+    if (err instanceof SalidaInvalidaError) {
+      return NextResponse.json({ error: err.status === 400 ? "validation_error" : err.status === 404 ? "not_found" : "conflict", message: err.message }, { status: err.status });
+    }
     logger.error("[cubicaciones.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

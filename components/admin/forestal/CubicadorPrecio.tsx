@@ -26,6 +26,9 @@ import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { ETIQUETA_MODO_PRECIO, MODOS_PRECIO, type ModoPrecio } from "@/lib/forestal/precio-de-pieza";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
 import { formatNumber } from "@/lib/format";
+import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { hayPrecioPorEspecie } from "@/lib/forestal/tabla-precio-especie-tipo";
+import TablaPrecioEspecieTipo from "./cubicador-precio-especie-tipo";
 import type { PrecioCubicador } from "./hooks/use-precio-cubicador";
 
 const soles = (n: number) => formatNumber(n, 2);
@@ -36,12 +39,13 @@ const CAMPO =
 const QUE_HACE: Record<ModoPrecio, string> = {
   aserrio: "Cada pieza con dueño del Directorio usa su precio pactado de aserrío",
   venta: "Cada pieza con dueño del Directorio usa su precio pactado de venta",
-  manual: "Todo va al precio a mano: el de la especie si lo pusiste, si no el general.",
+  manual: "Todo va al precio a mano: el de la especie y el tipo si lo pusiste, si no el de la especie, si no el general.",
 };
 
 export default function CubicadorPrecio({
   precios,
   especiesLote,
+  rows,
   fecha,
   nombreDe,
   sinDirectorio,
@@ -54,6 +58,8 @@ export default function CubicadorPrecio({
   precios: PrecioCubicador;
   /** Las especies del lote, para el precio a mano de cada una. */
   especiesLote: readonly string[];
+  /** Las piezas del lote: arman la tabla especie × tipo del precio a mano. */
+  rows: readonly PiezaCubicada[];
   /** El día del lote: con él se elige el trato vigente. */
   fecha: string;
   /** El nombre de un cliente del lote, para nombrarlo en los avisos. */
@@ -74,7 +80,7 @@ export default function CubicadorPrecio({
 }) {
   const [verEspecies, setVerEspecies] = useState(false);
   const { modo } = precios;
-  const hayPreciosEspecie = especiesLote.some((e) => Number(precios.preciosEspecie[e.toLowerCase()]) > 0);
+  const hayPreciosEspecie = hayPrecioPorEspecie(precios.ctx.aMano);
   const valorTxt = precios.calculando ? "…" : precios.conValor ? `S/ ${soles(precios.valorLote)}` : "—";
 
   if (plegado && onPlegado) {
@@ -150,8 +156,8 @@ export default function CubicadorPrecio({
             aria-expanded={verEspecies}
             className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
           >
-            Por especie
-            {hayPreciosEspecie && <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" aria-label="hay precios por especie" />}
+            Por especie y tipo
+            {hayPreciosEspecie && <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" aria-label="hay precios por especie o tipo" />}
             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${verEspecies ? "rotate-180" : ""}`} aria-hidden />
           </button>
         )}
@@ -217,14 +223,14 @@ export default function CubicadorPrecio({
       )}
 
       {verEspecies && especiesLote.length > 0 && (
-        <div className="mt-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text-secondary)]">
-              Precio a mano por especie (S/ por pie tablar)
+              Precio a mano por especie y tipo (S/ por pie tablar)
               <InfoTip
                 icono="ayuda"
-                title="Precio a mano por especie"
-                what="Vacío = usa el general."
+                title="Precio a mano por especie y tipo"
+                what="El de un tipo (Corta, Comercial…) le gana al de su especie, y el de la especie al general. Vacío = usa el de arriba (lo ves en gris)."
                 affects="Se aplica al resumen, la liquidación, WhatsApp, PDF y Excel."
               />
             </span>
@@ -238,25 +244,7 @@ export default function CubicadorPrecio({
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {especiesLote.map((esp) => (
-              <label key={esp.toLowerCase()} className="flex items-center gap-2 rounded-lg bg-[var(--surface-raised)] px-2.5 py-1.5">
-                <span className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--text-primary)]" title={esp}>{esp}</span>
-                <span className="text-xs text-[var(--text-tertiary)]">S/</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  value={precios.preciosEspecie[esp.toLowerCase()] ?? ""}
-                  onChange={(e) => precios.cambiarPrecioEspecie(esp, e.target.value)}
-                  placeholder={precios.general > 0 ? precioTxt(precios.general) : "0.00"}
-                  aria-label={`Precio a mano de ${esp}, en soles por pie tablar`}
-                  className={CAMPO}
-                />
-              </label>
-            ))}
-          </div>
+          <TablaPrecioEspecieTipo precios={precios} rows={rows} />
         </div>
       )}
 

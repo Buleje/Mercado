@@ -9,6 +9,7 @@
 import {
   hoyISO, normalizarFicha, type CubicacionRegistro, type FichaCubicacion,
 } from "@/lib/forestal/cubicacion-registro";
+import type { SalidaCubicacion } from "@/lib/forestal/cubicacion-salidas";
 
 export interface DatosDeLaCubicacion {
   nombre: string;
@@ -20,6 +21,12 @@ export interface DatosDeLaCubicacion {
   /** N° de la GTF con que salió o llegó la madera. */
   gtf: string;
   ficha: FichaCubicacion;
+  /**
+   * Los viajes que ya se anotaron (28-10): sólo para mostrarlos al actualizar.
+   * El POST NUNCA los manda (`cuerpoDeDatos` no los lleva; el servidor los
+   * conserva): se anotan con el PATCH `{ salida }` después de guardar.
+   */
+  salidas?: SalidaCubicacion[];
 }
 
 export const datosVacios = (): DatosDeLaCubicacion => ({
@@ -34,6 +41,7 @@ export const datosDeGuardada = (c: CubicacionRegistro): DatosDeLaCubicacion => (
   notas: c.notas ?? "",
   gtf: c.gtfNumber ?? "",
   ficha: c.ficha ?? {},
+  salidas: c.salidas,
 });
 
 /**

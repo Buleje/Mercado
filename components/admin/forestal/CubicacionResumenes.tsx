@@ -98,7 +98,7 @@ function leerLote(): { rows: PiezaCubicada[]; precios: PreciosGuardados } {
 
 const LOTE_VACIO: { rows: PiezaCubicada[]; precios: PreciosGuardados } = {
   rows: [],
-  precios: { precioPt: "", preciosEspecie: {}, modo: "manual", fecha: "" },
+  precios: { precioPt: "", preciosEspecie: {}, preciosEspecieTipo: {}, modo: "manual", fecha: "" },
 };
 
 /** La vista elegida se recuerda: se vuelve a esta pantalla muchas veces al día. */

@@ -48,7 +48,7 @@ import CuentaDeMadera from "./cubicador-madera-cuenta";
 import { ProveedorCuentaDeMadera } from "./cubicador-madera-cuenta-contexto";
 import GuardarCubicacionModal from "./cubicador-guardar-modal";
 import { cuerpoDeDatos, datosDeGuardada, datosVacios, type DatosDeLaCubicacion } from "./cubicador-guardar-tipos";
-import { preciosParejosPorEspecie } from "@/lib/forestal/precios-de-guardada";
+import { preciosAManoDeGuardada } from "@/lib/forestal/precios-de-guardada";
 import { useTecladoGrilla, enfocarCelda } from "./celdas-excel";
 import CeldaEspecie from "./celda-especie";
 import {
@@ -1988,7 +1988,9 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     : !conValor
       ? "pon el precio en «Precio», arriba de la tabla"
       : precioVariable
-        ? precios.modo === "manual" ? "precio por especie" : "precio de cada cliente"
+        ? precios.modo === "manual"
+          ? Object.values(precios.preciosEspecieTipo).some((v) => Number(v) > 0) ? "precio por especie y tipo" : "precio por especie"
+          : "precio de cada cliente"
         : `S/ ${soles(precio)} por PT`;
   /* Piezas con dueño escrito a mano (sin ficha): en modo Aserrío/Venta van al
      precio a mano. Las que ya se pueden atar —su nombre es de alguien elegido
@@ -2261,15 +2263,13 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
     trasera.restaurar(c.trasera?.ids ?? [], c.trasera?.anchoM);
     setEspecie(c.especie ?? "");
     precios.setPrecioPt(c.precioPt ? String(c.precioPt) : "");
-    /* Cada pieza trae su precio (24-10): si es uno por especie y el cubicador
-       está «A mano», vuelven esos precios y el lote vale lo mismo que el día que
-       se guardó. Sólo se tocan SUS especies (las demás quedan como estaban) y
-       el modo no se cambia: con tratos por dueño, mandan los tratos. */
-    const parejos = precios.modo === "manual" ? preciosParejosPorEspecie(c.piezas, c.precioPt) : null;
-    if (parejos) {
-      const suyas = new Set(c.piezas.map((p) => p.especie?.trim().toLowerCase() ?? "").filter(Boolean));
-      for (const esp of suyas) precios.cambiarPrecioEspecie(esp, parejos[esp] ?? "");
-    }
+    /* Cada pieza trae su precio (24-10): si se puede reproducir «A mano» (uno
+       por especie, o por especie y tipo desde el 28-10) y el cubicador está
+       «A mano», vuelven esos precios y el lote vale lo mismo que el día que se
+       guardó. Sólo se tocan SUS especies (las demás quedan como estaban) y el
+       modo no se cambia: con tratos por dueño, mandan los tratos. */
+    const repuestos = precios.modo === "manual" ? preciosAManoDeGuardada(c.piezas, c.precioPt) : null;
+    if (repuestos) precios.reponerPreciosDeEspecies(repuestos);
     setForm(datosDeGuardada(c));
     setCubicacionActual(c.id ? { id: c.id, nombre: c.nombre, valor: c.valor } : null);
     setShowHistorial(false);
@@ -2767,6 +2767,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             <CubicadorPrecio
               precios={precios}
               especiesLote={especiesLote}
+              rows={rows}
               fecha={form.fecha}
               nombreDe={nombreDeCliente}
               sinDirectorio={sinDirectorio}

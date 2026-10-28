@@ -11,10 +11,11 @@
  * «Borrar» queda apagado y el ⓘ dice qué línea y el camino para sacarla.
  * El papel de la hoja se despliega en la tarjeta: montado siempre, cada tarjeta
  * pediría sus papeles al Archivo (una lista de 40 = 40 pedidos al abrir).
+ * Debajo de las cifras, cuánto salió y cuánto queda (28-10) con «Salidas».
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { BookOpen, ChevronDown, Copy, Eye, FileText, FolderOpen, GitCompareArrows, Loader2, Trash2 } from "@buleje/design-system/icons";
+import { BookOpen, ChevronDown, Copy, Eye, FileText, FolderOpen, GitCompareArrows, Loader2, Trash2, Truck } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
@@ -25,17 +26,12 @@ import { especiesDeCubicacion } from "@/lib/forestal/cubicacion-diferencias";
 import { corridasDeCubicacion, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { m3DesdePt } from "@/lib/forestal/cubicacion";
 import { formatNumber } from "@/lib/format";
+import { fechaDeLaGuardada } from "./cubicador-guardadas-fecha";
+import { BarraDeSaldo, ChipDeSalidas } from "./cubicador-salidas-barra";
+import { saldoDeGuardada } from "./cubicador-salidas-logica";
 
-const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;
-
-/** «2026-09-10» → «jueves 10/09» (con el año si no es el de hoy). Date-only: en UTC. */
-export function fechaDeLaGuardada(iso: string, anioDeHoy = new Date().getUTCFullYear()): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
-  if (!m) return iso ?? "";
-  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  const base = `${DIAS[d.getUTCDay()]} ${m[3]}/${m[2]}`;
-  return Number(m[1]) === anioDeHoy ? base : `${base}/${m[1]}`;
-}
+/* Vive aparte para que la lista de viajes la use sin traer la tarjeta entera. */
+export { fechaDeLaGuardada };
 
 const distintos = (xs: readonly (string | null | undefined)[]): string[] =>
   [...new Set(xs.map((x) => (x ?? "").trim()).filter(Boolean))];
@@ -55,7 +51,7 @@ const YA_DICE_CCNN = /^(ccnn|c\.\s?n\.?|cc\.?\s?nn\.?|comunidad)(\s|$)/i;
 const BOTON_ABRIR = button({ variant: "accent", className: "basis-full px-4 text-base" });
 const BOTON_SECUNDARIO = button({ variant: "secondary", className: "min-w-0 flex-1 gap-1.5 px-4" });
 
-export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiado, onAbrir, onVerDetalle, onComparar, onDuplicar, onCopiarCodigo, onBorrar }: {
+export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiado, onAbrir, onVerDetalle, onSalidas, onComparar, onDuplicar, onCopiarCodigo, onBorrar }: {
   c: CubicacionRegistro;
   /** Las líneas vivas del Libro que ampara (del servidor). Ausente = no está en el Libro. */
   enLibro?: EnLibroDeGuardada;
@@ -68,6 +64,8 @@ export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiad
   onAbrir: () => void;
   /** El detalle en una ventana: datos, cifras y resúmenes, sin abrirla en el cubicador. */
   onVerDetalle: () => void;
+  /** Los viajes de la madera: cuánto se llevó y cuánto queda. */
+  onSalidas: () => void;
   /** Comparar contra otra guardada; ausente = no hay otra. */
   onComparar?: () => void;
   onDuplicar: () => void;
@@ -84,6 +82,12 @@ export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiad
   const comunidad = c.ficha?.comunidad;
   const pt = c.totales.pieTablar;
   const codigo = codigoDeHoja("aserrada", c.id);
+  const saldo = useMemo(() => saldoDeGuardada(c), [c]);
+  const botonSalidas = (
+    <button type="button" onClick={onSalidas} className={button({ variant: "secondary", className: "shrink-0 gap-1.5 px-4" })} data-accion="abrir-salidas">
+      <Truck className="h-4 w-4" aria-hidden /> {saldo.viajes > 0 ? `Salidas (${saldo.viajes})` : "Anotar salida"}
+    </button>
+  );
   const acciones: MenuAccion[] = [
     ...(onComparar
       ? [{ id: "comparar", label: "Comparar con otra…", hint: "Diferencia en PT, m³, piezas y medidas contra otra guardada", icon: GitCompareArrows, onSelect: onComparar }]
@@ -174,6 +178,15 @@ export function TarjetaGuardada({ c, enLibro, abierta, papeles, borrando, copiad
           <dd className="font-mono text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatNumber(c.totales.piezas)}</dd>
         </div>
       </dl>
+
+      {saldo.viajes > 0 ? (
+        <BarraDeSaldo saldo={saldo} accion={botonSalidas} />
+      ) : (
+        <div className="flex flex-wrap items-center gap-2" data-saldo-salidas="sin-salidas">
+          <ChipDeSalidas estado={saldo.estado} />
+          <span className="ml-auto">{botonSalidas}</span>
+        </div>
+      )}
 
       {(c.cliente || comunidad) && (
         <p className="break-words text-sm text-[var(--text-secondary)]" data-dato="cliente-ccnn">

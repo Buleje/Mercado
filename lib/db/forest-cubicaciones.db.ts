@@ -12,6 +12,14 @@ import {
   type CubicacionRegistro,
   type FichaCubicacion,
 } from "@/lib/forestal/cubicacion-registro";
+import {
+  idSalidaNueva,
+  lineasDeLoQueQueda,
+  normalizarSalida,
+  saldoDeLaCubicacion,
+  SALIDAS_MAX,
+  type SalidaCubicacion,
+} from "@/lib/forestal/cubicacion-salidas";
 import { recubicarPiezas, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import type { CubicacionParaVincular } from "@/lib/forestal/origen-y-salida-del-dia";
 
@@ -44,6 +52,18 @@ export class CubicacionDesactualizadaError extends Error {
   constructor(readonly actual: string) {
     super("Esta cubicación cambió mientras la tenías abierta. Vuelve a abrirla para no pisar lo último que se guardó.");
     this.name = "CubicacionDesactualizadaError";
+  }
+}
+
+/**
+ * Un viaje que no se puede anotar (HTTP 400/404/409): sin ninguna cantidad, uno
+ * que ya se quitó, o la cubicación ya tiene el tope de viajes. El mensaje va tal
+ * cual a la pantalla.
+ */
+export class SalidaInvalidaError extends Error {
+  constructor(message: string, readonly status: 400 | 404 | 409 = 400) {
+    super(message);
+    this.name = "SalidaInvalidaError";
   }
 }
 
@@ -203,7 +223,7 @@ async function exigirCorridasLigables(
  * Lo que llega a `save`. Los textos del papel aceptan `null` = «borrarlo»;
  * ausentes (`undefined`) = «dejar el que tenía» (ver `datosQueSeConservan`).
  */
-export type EntradaGuardar = Omit<Parameters<typeof construirRegistro>[0], "cliente" | "notas" | "gtfNumber" | "ficha" | "compraAMano"> & {
+export type EntradaGuardar = Omit<Parameters<typeof construirRegistro>[0], "cliente" | "notas" | "gtfNumber" | "ficha" | "compraAMano" | "salidas"> & {
   cliente?: string | null;
   notas?: string | null;
   gtfNumber?: string | null;
@@ -228,6 +248,7 @@ export function datosQueSeConservan(
   gtfNumber: string | undefined;
   ficha: FichaCubicacion | undefined;
   compraAMano: CompraAMano | undefined;
+  salidas: SalidaCubicacion[] | undefined;
   piezas: Record<string, unknown>[];
 } {
   const tomar = <T,>(nuevo: T | null | undefined, viejo: T | undefined): T | undefined =>
@@ -252,6 +273,8 @@ export function datosQueSeConservan(
     ficha: tomar(input.ficha, existente?.ficha),
     /* El precio de compra anotado en el margen: re-guardar desde el cubicador no lo borra. */
     compraAMano: tomar(input.compraAMano, existente?.compraAMano),
+    /* Los viajes se anotan con su propio PATCH (`anotarSalida`): guardar el lote nunca los toca. */
+    salidas: existente?.salidas,
     piezas: traePrecio || precioViejo.size === 0
       ? input.piezas
       : input.piezas.map((p) => (typeof p.id === "string" && precioViejo.has(p.id) ? { ...p, precio: precioViejo.get(p.id) } : p)),
@@ -403,6 +426,118 @@ export const ForestCubicacionesDB = {
           ? `Cambió el precio de compra de ${soles(antes.precioPt)} a ${soles(compraAMano.precioPt)} por PT en la cubicación "${registro.nombre}"`
           : `Anotó el precio de compra ${soles(compraAMano.precioPt)} por PT en la cubicación "${registro.nombre}"`
         : `Borró el precio de compra anotado${antes ? ` (${soles(antes.precioPt)} por PT)` : ""} de la cubicación "${registro.nombre}"`,
+      user,
+    });
+    return normalizarVolumen(registro);
+  },
+
+  /**
+   * Anota un viaje de la madera (Brandon 28-10: «cuánto se despachó y cuánto
+   * sobra») o, con el `id` de uno que ya está, lo reemplaza. NO reescribe la
+   * cubicación: sólo `salidas`, bajo el mismo lock que `save` y sin tocar
+   * `updatedAt` (es la versión de la MEDICIÓN: el cubicador abierto no da 409
+   * por un viaje anotado desde Guardadas). `registradoAt` y `por` salen de acá;
+   * al editar se conservan los del viaje original. null = no existe la cubicación.
+   */
+  async anotarSalida(
+    tenantId: string,
+    id: string,
+    entrada: Record<string, unknown>,
+    user = "unknown",
+  ): Promise<CubicacionRegistro | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!id) return null;
+    const idSalida = typeof entrada.id === "string" && entrada.id.trim() ? entrada.id.trim() : null;
+    const res = await PlatformSettingsDB.actualizar<unknown[], { registro: CubicacionRegistro; salida: SalidaCubicacion; edito: boolean } | null>(
+      `${KEY_PREFIX}${tenantId}`,
+      async (actual) => {
+        const list = (Array.isArray(actual) ? actual : []).filter(esRegistro);
+        const hallado = list.find((c) => c.id === id);
+        if (!hallado) return { resultado: null };
+        const previas = hallado.salidas ?? [];
+        const original = idSalida ? previas.find((s) => s.id === idSalida) : undefined;
+        if (idSalida && !original) throw new SalidaInvalidaError("Ese viaje ya no está: alguien lo quitó. Vuelve a abrir las salidas.", 404);
+        if (!original && previas.length >= SALIDAS_MAX) {
+          throw new SalidaInvalidaError(`Esta cubicación ya tiene ${SALIDAS_MAX} viajes anotados: junta algunos antes de anotar otro.`, 409);
+        }
+        /* «Se llevó todo lo que quedaba»: las líneas salen de lo guardado, bajo el lock, y no de la
+           pantalla, que puede tener viajes viejos (otro anotó uno desde Guardadas con el lote abierto)
+           y mandaría el saldo dos veces (revisión 28-10). */
+        const otras = original ? previas.filter((s) => s.id !== original.id) : previas;
+        const delServidor = entrada.completo === true
+          ? lineasDeLoQueQueda(saldoDeLaCubicacion(hallado.piezas, otras, hallado.precioPt))
+          : null;
+        if (delServidor && delServidor.length === 0) {
+          throw new SalidaInvalidaError("Ya salió todo lo cubicado: no queda nada para este viaje.", 409);
+        }
+        const salida = normalizarSalida(delServidor ? { ...entrada, lineas: delServidor } : entrada, {
+          id: original?.id ?? idSalidaNueva(),
+          registradoAt: original?.registradoAt ?? new Date().toISOString(),
+          por: original?.por ?? user,
+        });
+        if (!salida) throw new SalidaInvalidaError("El viaje no lleva nada: pon cuántas piezas o cuántos m³ salieron de al menos una fila.");
+        const salidas = (original ? previas.map((s) => (s.id === salida.id ? salida : s)) : [...previas, salida])
+          .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.registradoAt.localeCompare(b.registradoAt));
+        const registro: CubicacionRegistro = { ...hallado, salidas };
+        return { valor: list.map((c) => (c.id === id ? registro : c)), resultado: { registro, salida, edito: Boolean(original) } };
+      },
+      user,
+    );
+    if (!res) return null;
+    const { registro, salida, edito } = res;
+    const saldo = saldoDeLaCubicacion(registro.piezas, registro.salidas, registro.precioPt);
+    const piezas = salida.lineas.reduce((a, l) => a + l.piezas, 0);
+    const pt = salida.lineas.reduce((a, l) => a + l.pt, 0);
+    auditCtp({
+      tenantId,
+      action: "ctp_cubicacion_salida",
+      entity: "ForestCubicacion",
+      entityId: id,
+      detail:
+        `${edito ? "Cambió el viaje" : "Anotó un viaje"} del ${salida.fecha} de la cubicación "${registro.nombre}": ` +
+        `${piezas} piezas · ${pt.toFixed(2)} PT${salida.placa ? ` · placa ${salida.placa}` : ""} · queda ${saldo.queda.pt.toFixed(2)} PT`,
+      user,
+    });
+    return normalizarVolumen(registro);
+  },
+
+  /**
+   * Quita un viaje anotado. Igual que `anotarSalida`: sólo `salidas`, bajo lock,
+   * sin tocar `updatedAt`. null = no existe la cubicación; un viaje que ya no
+   * está da `SalidaInvalidaError` 404.
+   */
+  async quitarSalida(
+    tenantId: string,
+    id: string,
+    salidaId: string,
+    user = "unknown",
+  ): Promise<CubicacionRegistro | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!id || !salidaId) return null;
+    const res = await PlatformSettingsDB.actualizar<unknown[], { registro: CubicacionRegistro; quitada: SalidaCubicacion } | null>(
+      `${KEY_PREFIX}${tenantId}`,
+      async (actual) => {
+        const list = (Array.isArray(actual) ? actual : []).filter(esRegistro);
+        const hallado = list.find((c) => c.id === id);
+        if (!hallado) return { resultado: null };
+        const quitada = (hallado.salidas ?? []).find((s) => s.id === salidaId);
+        if (!quitada) throw new SalidaInvalidaError("Ese viaje ya no está: alguien lo quitó.", 404);
+        const { salidas: _todas, ...resto } = hallado;
+        const quedan = (hallado.salidas ?? []).filter((s) => s.id !== salidaId);
+        const registro: CubicacionRegistro = quedan.length > 0 ? { ...resto, salidas: quedan } : resto;
+        return { valor: list.map((c) => (c.id === id ? registro : c)), resultado: { registro, quitada } };
+      },
+      user,
+    );
+    if (!res) return null;
+    const { registro, quitada } = res;
+    const pt = quitada.lineas.reduce((a, l) => a + l.pt, 0);
+    auditCtp({
+      tenantId,
+      action: "ctp_cubicacion_salida",
+      entity: "ForestCubicacion",
+      entityId: id,
+      detail: `Quitó el viaje del ${quitada.fecha} (${pt.toFixed(2)} PT${quitada.placa ? ` · placa ${quitada.placa}` : ""}) de la cubicación "${registro.nombre}"`,
       user,
     });
     return normalizarVolumen(registro);
