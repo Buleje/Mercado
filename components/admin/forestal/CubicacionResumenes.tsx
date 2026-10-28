@@ -52,6 +52,9 @@ import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 import { leerPreciosGuardados, useResolverDePrecio, type PreciosGuardados } from "./hooks/use-precio-cubicador";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { CSS_IMPRESION_RESUMEN, ID_RESUMEN_LOTE, useExportarResumen } from "./hooks/use-exportar-resumen";
+import { useUsoDelLote } from "./hooks/use-uso-del-lote";
+import { useUiUsoDelLote } from "./cubicador-uso";
+import { filtrarPorUso } from "@/lib/forestal/cubicacion-uso";
 import { formatDateLong } from "@/lib/format";
 import { button } from "@/components/ui-system/button-variants";
 
@@ -120,9 +123,19 @@ function contarBloquesRolliza(): number {
 }
 
 export default function CubicacionResumenes() {
-  const [{ rows, precios: preciosGuardados }, setLote] = useState(() => (typeof window === "undefined" ? LOTE_VACIO : leerLote()));
+  const [{ rows: todas, precios: preciosGuardados }, setLote] = useState(() => (typeof window === "undefined" ? LOTE_VACIO : leerLote()));
+  /**
+   * QUÉ PARTE del lote se usa (Brandon 2026-10-27): la FUENTE ÚNICA. Desde acá
+   * para abajo todo —tablas, Distribución, Metas, Producción al Libro— ve
+   * `rows`, la parte elegida; el lote entero (`todas`) sólo lo ven el precio y
+   * el cuadro para elegir. Sin nada fuera, `rows === todas` (mismo arreglo).
+   */
+  const uso = useUsoDelLote(todas);
+  const rows = useMemo(() => filtrarPorUso(todas, uso.fuera), [todas, uso.fuera]);
+  const usoUi = useUiUsoDelLote(todas, uso);
   const catalogo = useEspeciesCatalogo();
-  const { precioDe, conValor } = useResolverDePrecio(rows, preciosGuardados, catalogo.grupos, catalogo.cargando);
+  /* El precio de cada pieza no depende de qué parte se usa: se arma con el lote entero. */
+  const { precioDe, conValor } = useResolverDePrecio(todas, preciosGuardados, catalogo.grupos, catalogo.cargando);
   /**
    * Sembrar bloques desde otra pantalla (Capacidad de la planta, Resumen por
    * permiso) y encontrarse con «todavía no hay lote cubicado» es perder la
@@ -255,7 +268,16 @@ export default function CubicacionResumenes() {
   /* Sin aserrada cubicada: la Rolliza (trozas y bloques) igual se ve, o el vacío
      si tampoco hay rolliza (`resumen-sin-aserrada`). */
   if (rows.length === 0) {
-    return <ResumenSinAserrada bloquesRolliza={bloquesRolliza} trozas={trozasCubicadas} rows={rows} precioDe={precioDe} onRecargar={recargar} />;
+    const sinAserrada = <ResumenSinAserrada bloquesRolliza={bloquesRolliza} trozas={trozasCubicadas} rows={rows} precioDe={precioDe} onRecargar={recargar} />;
+    /* Hay lote pero la parte elegida quedó vacía: se dice y se puede cambiar. */
+    if (todas.length === 0) return sinAserrada;
+    return (
+      <div className="space-y-4">
+        {usoUi.linea}
+        {sinAserrada}
+        {usoUi.modal}
+      </div>
+    );
   }
 
   return (
@@ -273,6 +295,7 @@ export default function CubicacionResumenes() {
         enPapel={imprimiendo === "todo" ? "Todas las vistas" : vistaLabel}
         variadoPaquetes={variado.des && variado.des.grupos.length > 0 ? variado.paquetes : 0}
         exportar={exportar}
+        acciones={usoUi.boton}
         pestanas={
           <>
             {/* A 400 px los rótulos cortos; de `sm` para arriba, los enteros y
@@ -287,6 +310,8 @@ export default function CubicacionResumenes() {
           </>
         }
       />
+      {/* Usando una parte del lote: se ve en todas las vistas que la usan (no en las trozas del patio). */}
+      {vista !== "cubicacion" || imprimiendo === "todo" ? usoUi.linea : null}
 
       {/* ── Panorama ────────────────────────────────────────────────────────── */}
       {ver("panorama") && (
@@ -469,6 +494,7 @@ export default function CubicacionResumenes() {
 
       {/* El ANEXO N° 04 de lo tildado: las mismas piezas, el mismo papel que
           se emite desde el cubicador o desde el Libro. */}
+      {usoUi.modal}
       {anexoDeElegidas && piezasElegidas.length > 0 && (
         <Anexo04Modal
           rows={piezasElegidas}

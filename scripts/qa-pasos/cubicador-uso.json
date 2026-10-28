@@ -1,0 +1,65 @@
+[
+ {
+  "esperar": 2500
+ },
+ {
+  "eval": "(()=>{const P=(id,c,e,a,l,esp)=>({id,cantidad:c,espesor:e,ancho:a,largo:l,uEspesor:'pulg',uAncho:'pulg',uLargo:'pies',especie:esp,pieTablar:e*a*l*c/12,m3:e*a*l*c/12/424});localStorage.setItem('buleje-cubicacion-main',JSON.stringify([P('u1',40,2,8,10,'Tornillo'),P('u2',12,6,6,10,'Tornillo'),P('u3',30,2,6,4,'Cumala'),P('u4',25,1,8,10,'Cumala'),P('u5',18,2,8,12,'Cumala')]));localStorage.removeItem('buleje-cubicacion-main-uso');localStorage.setItem('buleje-cubicacion-main-rolliza',JSON.stringify([{id:'b1',etiqueta:'GTF QA',especie:'Tornillo',m3:2,origen:'manual',tipo:'rolliza',costoM3:null,aprovechablePct:null,permiso:null,loteId:'qa-falso'}]));localStorage.setItem('buleje-cubicacion-main-vista-resumen','tablas');location.reload();return 'sembrado 125 pzas'})()"
+ },
+ {
+  "esperar": 7000
+ },
+ {
+  "eval": "document.querySelector('[data-uso-linea]')?.innerText ?? 'SIN LINEA'"
+ },
+ {
+  "click": "[data-uso-elegir]"
+ },
+ {
+  "esperar": 2000
+ },
+ {
+  "eval": "(()=>{for(const n of ['Usar Corta','Usar Tabla']){const c=document.querySelector('[aria-label=\"'+n+'\"]');if(!c)return 'falta '+n;if(c.checked)c.click()}return [...document.querySelectorAll('[data-uso-tabla] tbody tr')].map(t=>t.dataset.usada+':'+t.innerText.replace(/\\s+/g,' ')).join(' | ')+' || '+(document.querySelector('[data-uso-nota]')?.innerText)+' || aviso:'+(document.querySelector('[role=dialog]')?.innerText.includes('ya pasó al Libro'))})()"
+ },
+ {
+  "eval": "(()=>{const n=document.querySelector('[data-uso-nota]');return 'nota h='+n?.getBoundingClientRect().height+' aviso:'+!!document.body.innerText.match(/ya pasó al Libro/i)})()"
+ },
+ {
+  "captura": "modal"
+ },
+ {
+  "click": "[data-uso-aplicar]"
+ },
+ {
+  "esperar": 1200
+ },
+ {
+  "eval": "document.querySelector('[data-uso-linea]')?.innerText.replace(/\\s+/g,' ') ?? 'SIN LINEA'"
+ },
+ {
+  "captura": "cubicador-parte"
+ },
+ {
+  "eval": "(()=>{location.href='/admin?tab=forestal-herramientas&vista=resumenes';return 'a resumenes'})()"
+ },
+ {
+  "esperar": 8000
+ },
+ {
+  "eval": "(()=>{const l=document.querySelector('[data-uso-linea]');const tds=[...document.querySelectorAll('table')].slice(0,1).map(t=>t.innerText.replace(/\\s+/g,' ').slice(0,300));return 'h='+l?.getBoundingClientRect().height+' '+(l?l.dataset.usoLinea+': '+l.innerText.replace(/\\s+/g,' '):'SIN LINEA')+' || boton:'+getComputedStyle(document.querySelector('[data-uso-boton]')).display+' tituloH:'+document.querySelector('h2,h1')?.getBoundingClientRect().height+' || '+tds.join('')})()"
+ },
+ {
+  "captura": "resumenes"
+ },
+ {
+  "clicTexto": "Distribución"
+ },
+ {
+  "esperar": 4000
+ },
+ {
+  "eval": "(()=>{const l=document.querySelector('[data-uso-linea]');return (l?l.innerText.replace(/\\s+/g,' '):'SIN LINEA')+' || '+document.body.innerText.match(/[0-9.,]+ pzas[^\\n]{0,80}/g)?.slice(0,4).join(' ## ')})()"
+ },
+ {
+  "captura": "distribucion"
+ }
+]

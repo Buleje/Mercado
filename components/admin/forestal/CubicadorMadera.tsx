@@ -71,6 +71,7 @@ import { ESPECIE_VARIADO, VARIADO_DEFAULT, desglosarVariado, esVariado } from "@
 import { conVariadoHeredado, motivoAbrirVariado } from "@/lib/forestal/variado-aplicar";
 import { MOTIVO_VARIADO_DECLARAR } from "@/lib/forestal/declarar-produccion";
 import CubicadorKpis from "./cubicador-kpis";
+import { UsoDelLoteEnCubicador } from "./cubicador-uso";
 import CubicadorPrecio from "./CubicadorPrecio";
 import { usePrecioCubicador } from "./hooks/use-precio-cubicador";
 import { explicarPrecioDePieza, precioDePieza, type ContextoPrecio } from "@/lib/forestal/precio-de-pieza";
@@ -2394,6 +2395,8 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
             onFiltrarTipo={(t) => { setFiltroTipo(t); irA("lote"); }}
           />
         )}
+        {/* Qué parte del lote usan Resúmenes y la Distribución (Brandon 27-10). */}
+        {enSecciones && !espacio && seccion === "cargar" && <UsoDelLoteEnCubicador rows={rows} />}
         {/* Las Últimas a la DERECHA de Dictar y cargar desde 1280 px (24-10); más angosto, debajo. */}
         <div className={enSecciones ? "grid items-start gap-3 xl:grid-cols-2" : undefined}>
         {/* Panel de voz. Plegado deja una tira con su nombre y el botón para
@@ -2755,6 +2758,7 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               document.getElementById(`cub-tabla-ancla`)?.scrollIntoView({ block: "start", behavior: "smooth" });
             }}
           />
+          {enSecciones && !espacio && seccion === "lote" && <UsoDelLoteEnCubicador rows={rows} />}
 
           {/* El precio del lote (ADR-430): con qué se valoriza cada pieza —el trato
               de su dueño del Directorio o lo puesto a mano— y de dónde salió. Arriba

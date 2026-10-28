@@ -43,7 +43,7 @@ function lecturaCorta(porEspecie: ResumenLote, porTipo: ResumenLote): string | n
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
-export function HeroResumen({ total, renglones, porEspecie, porTipo, porMedida, conValor, pestanas, exportar, fecha, enPapel, variadoPaquetes = 0 }: {
+export function HeroResumen({ total, renglones, porEspecie, porTipo, porMedida, conValor, pestanas, exportar, fecha, enPapel, variadoPaquetes = 0, acciones }: {
   total: ResumenLote["total"];
   /** Renglones del cubicador (no piezas): dice cuánto se tipeó. */
   renglones: number;
@@ -62,6 +62,8 @@ export function HeroResumen({ total, renglones, porEspecie, porTipo, porMedida, 
   enPapel: string;
   /** Paquetes 6×6 Variado que se cuentan abiertos (0 = no hay). */
   variadoPaquetes?: number;
+  /** Botones de ícono extra, antes de «Indicadores» (p. ej. qué parte del lote se usa). */
+  acciones?: ReactNode;
 }) {
   const frase = lecturaCorta(porEspecie, porTipo);
   const tipoManda = porTipo.grupos[0];
@@ -137,6 +139,7 @@ export function HeroResumen({ total, renglones, porEspecie, porTipo, porMedida, 
         {/* A 400 px las pestañas bajan a su propia fila y los botones quedan al lado del título. */}
         <div className="order-3 w-full sm:order-none sm:w-auto print:hidden">{pestanas}</div>
         <div className="ml-auto flex shrink-0 items-center gap-2 print:hidden">
+          {acciones}
           {kpis.boton}
           <ActionMenu label="Exportar" icon={Download} actions={exportar} soloIcono title="Imprimir o bajar el resumen" />
         </div>
