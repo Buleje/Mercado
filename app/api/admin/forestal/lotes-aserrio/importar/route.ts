@@ -26,6 +26,10 @@ const medida = z.number().finite().nonnegative().max(999999).nullable();
 
 const filaSchema = z.object({
   fila: z.number().int().min(1).max(100000),
+  /* Llegaron el 28-10: un cliente que no los manda (un script) sigue valiendo. */
+  contrato: texto(120).optional().transform((v) => v ?? null),
+  resolucion: texto(120).optional().transform((v) => v ?? null),
+  tipoDocumento: texto(40).optional().transform((v) => v ?? null),
   gtf: texto(40),
   codigoPlanta: texto(60),
   codigoTroza: texto(60),

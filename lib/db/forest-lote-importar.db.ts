@@ -14,6 +14,7 @@ import {
 } from "@/lib/forestal/lote-desde-excel-cruce";
 import type { CambioMedidaTroza } from "@/lib/forestal/medidas-troza";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
+import { ForestContratoDB } from "./forest-contrato.db";
 import { ForestLoteAserrioDB, motivoNoElegible } from "./forest-lote-aserrio.db";
 import { WoodEntriesDB } from "./wood-entries.db";
 
@@ -160,7 +161,15 @@ export class ForestLoteImportarDB {
           libres: lote.trozas.map((t) => t.id),
         }
       : null;
-    return cruzarLote(filas, candidatas, existente);
+    const cruce = cruzarLote(filas, candidatas, existente);
+    /* Un permiso que no está cargado se guarda como texto y el lote queda fuera
+       de «Solo este permiso»: se dice antes de importar. */
+    if (cruce.permiso && !existente && !(await ForestContratoDB.idPorCodigo(tenantId, cruce.permiso))) {
+      cruce.avisos.push(
+        `El permiso ${cruce.permiso} no está en tus permisos: el lote lo guarda como texto. Créalo desde el detalle del lote para enlazarlo.`,
+      );
+    }
+    return cruce;
   }
 
   /**

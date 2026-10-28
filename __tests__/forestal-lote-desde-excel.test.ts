@@ -109,19 +109,36 @@ describe("pegarEnGrilla + filasDeGrilla", () => {
   });
 
   it("columnas sueltas: desde la celda donde hiciste clic, hacia la derecha y abajo", () => {
-    // Clic en «Cód. planta» (columna 2) de la fila 1: código · especie.
-    const p = pegarYLeer("13703182\tTornillo\n13703180\tTornillo", { fila: 0, col: 2 });
+    // Clic en «Cód. planta» (columna 6) de la fila 1: código · especie.
+    const p = pegarYLeer("13703182\tTornillo\n13703180\tTornillo", { fila: 0, col: 6 });
     expect(p.conTitulos || p.porPosicion).toBe(false);
     expect(p.leidas.map((f) => [f.fila, f.codigoPlanta, f.especie])).toEqual([
       [1, "13703182", "Tornillo"],
       [2, "13703180", "Tornillo"],
     ]);
     // Y la guía se completa después, en su columna, sin tocar lo demás.
-    const g = pegarEnGrilla(p.filas, "019-001-0000012\n019-001-0000012", { fila: 0, col: 0 });
+    const g = pegarEnGrilla(p.filas, "019-001-0000012\n019-001-0000012", { fila: 0, col: 3 });
     expect(filasDeGrilla(g.filas).map((f) => [f.gtf, f.codigoPlanta])).toEqual([
       ["019-001-0000012", "13703182"],
       ["019-001-0000012", "13703180"],
     ]);
+  });
+
+  it("la grilla tiene las columnas del Excel en su orden: la fila entera desde la columna A cae igual", () => {
+    // Sin títulos y pegada en la 1.ª celda: contrato, resolución, documento, N° de guía… como en el Excel.
+    const p = pegarYLeer(DATOS[0], { fila: 0, col: 0 });
+    expect(p.leidas[0]).toMatchObject({
+      contrato: "19-SEC/REG-PLT-2021-017",
+      resolucion: "19-SEC/REG-RD-0001",
+      tipoDocumento: "GTF",
+      gtf: "019-001-0000012",
+      codigoTroza: "28",
+      codigoPlanta: "13703182",
+      lote: "28-2026",
+      volumenM3: 2.16,
+      tipoProducto: "MADERA EN ROLLO",
+      fecha: "2026-06-09",
+    });
   });
 
   it("la fila de TOTAL y las vacías no son trozas", () => {
@@ -288,6 +305,18 @@ describe("cruzarLote", () => {
     const c = cruzarLote([{ ...filas[0], estado: "Disponible" }], [cand({ id: "a", codigoPlanta: "13703182" })], null);
     expect(c.filas[0].estado).toBe("entra");
     expect(c.avisos).toEqual(["1 troza no figura «En consumo» en el SNIFFS: revisa la columna Estado Actual."]);
+  });
+});
+
+describe("el permiso del lote sale del Excel («Contrato») si las trozas no traen el suyo", () => {
+  const filas = pegarYLeer([TITULOS, ...DATOS].join("\n")).leidas;
+  it("sin permiso en las trozas → el del Excel; con otro en las trozas → el de las guías, con aviso", () => {
+    const sinPermiso = cruzarLote(filas.slice(0, 1), [cand({ id: "a", codigoPlanta: "13703182", permiso: null })], null);
+    expect(sinPermiso.permiso).toBe("19-SEC/REG-PLT-2021-017");
+    expect(sinPermiso.avisos).toEqual([]);
+    const otro = cruzarLote(filas.slice(0, 1), [cand({ id: "a", codigoPlanta: "13703182", permiso: "19-SEC/REG-PLT-2025-167" })], null);
+    expect(otro.permiso).toBe("19-SEC/REG-PLT-2025-167");
+    expect(otro.avisos[0]).toMatch(/^El Excel dice permiso 19-SEC\/REG-PLT-2021-017 y las trozas son del 19-SEC\/REG-PLT-2025-167/);
   });
 });
 

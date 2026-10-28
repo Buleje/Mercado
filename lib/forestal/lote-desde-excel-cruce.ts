@@ -289,6 +289,26 @@ export function cruzarLote(
     );
   }
 
+  /* El permiso del Excel («Contrato», Brandon 28-10: «se guarda poniendo el
+     permiso»): manda si las trozas no traen el suyo; si lo traen y es otro,
+     gana el de sus guías (ADR-393) y se avisa. */
+  const contratos = new Map<string, number>();
+  for (const f of filas) {
+    const c = f.contrato?.trim();
+    if (c) contratos.set(c, (contratos.get(c) ?? 0) + 1);
+  }
+  const permisoExcel = [...contratos.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  if (contratos.size > 1) {
+    avisos.push(
+      `El Excel trae ${contratos.size} contratos en este lote (${[...contratos.keys()].join(", ")}): un lote es de un solo permiso.`,
+    );
+  }
+  if (permisoExcel && permisos.length === 1 && permisos[0] !== permisoExcel) {
+    avisos.push(
+      `El Excel dice permiso ${permisoExcel} y las trozas son del ${permisos[0]} (el de sus guías): el lote queda del ${permisos[0]}.`,
+    );
+  }
+
   const dias = deEntran
     .map((c) => c.ingresoDia)
     .filter((d): d is string => Boolean(d))
@@ -302,7 +322,8 @@ export function cruzarLote(
   return {
     filas: cruzadas,
     especie,
-    permiso: existente?.permiso ?? (permisos.length === 1 ? permisos[0] : null),
+    permiso:
+      existente?.permiso ?? (permisos.length === 1 ? permisos[0] : permisos.length === 0 ? permisoExcel : null),
     bloqueos,
     avisos,
     fechaMinima: dias.at(-1) ?? null,

@@ -5,8 +5,10 @@
  * importación quiero que sea tipo como esto», la tabla para pegar del
  * cubicador). Se usa como Excel: clic en una celda y Ctrl+V pega desde ahí;
  * con la fila de títulos del SNIFFS cada columna cae en la suya. Flechas y
- * Enter mueven, Ctrl+Z deshace. «En el libro» va pegada al N° de fila: con
- * once columnas, a la derecha quedaba fuera de vista (prueba e2e 27-10).
+ * Enter mueven, Ctrl+Z deshace. Las columnas van en el orden de la lista
+ * del SNIFFS (28-10): se copia desde la columna A del Excel y se pega en la
+ * primera celda. «En el libro» va pegada al N° de fila: con dieciséis
+ * columnas, a la derecha quedaría fuera de vista (prueba e2e 27-10).
  */
 
 import { memo, useCallback, useMemo } from "react";
@@ -32,15 +34,20 @@ export const GRILLA_LOTE = "pegar-lote-sniffs";
 
 const IDX = COLUMNAS_LOTE.map((_, k) => k);
 const ANCHO: Record<ColumnaLote, string> = {
+  contrato: "w-52",
+  resolucion: "w-44",
+  tipoDocumento: "w-24",
   gtf: "w-40",
+  trozaPadre: "w-24",
   codigoTroza: "w-24",
   codigoPlanta: "w-28",
-  especie: "w-48",
+  especie: "w-56",
   lote: "w-24",
   d1Cm: "w-20",
   d2Cm: "w-20",
   largoM: "w-24",
   volumenM3: "w-28",
+  tipoProducto: "w-44",
   estado: "w-32",
   fecha: "w-32",
 };
@@ -174,7 +181,7 @@ export default function CtpLoteExcelGrilla({ estado }: { estado: LoteDesdeExcel 
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         <p role="status" className="flex min-w-0 flex-1 items-start gap-1.5 text-sm text-[var(--text-secondary)] max-sm:basis-full">
-          {aviso ?? "Haz clic en una celda y pega con Ctrl+V lo que copiaste del Excel del SNIFFS: con sus títulos, cada columna va a la suya."}
+          {aviso ?? "Copia del Excel del SNIFFS desde la columna A (con o sin títulos), haz clic en la primera celda y pega con Ctrl+V: las columnas van en el mismo orden."}
           {aviso && <IconAction icon={X} tone="muted" label="Cerrar el aviso" onClick={cerrarAviso} />}
         </p>
         <InfoTip
@@ -201,7 +208,7 @@ export default function CtpLoteExcelGrilla({ estado }: { estado: LoteDesdeExcel 
           planilla
           stickyHeader
           wrapperClassName="max-h-[min(52vh,560px)] overflow-auto"
-          className="hoja-grilla min-w-[80rem] table-fixed [&_tbody_td]:!px-1 [&_tbody_td]:!py-1 [&_thead_th]:!px-1.5 [&_thead_th]:!py-1.5"
+          className="hoja-grilla min-w-[124rem] table-fixed [&_tbody_td]:!px-1 [&_tbody_td]:!py-1 [&_thead_th]:!px-1.5 [&_thead_th]:!py-1.5"
         >
           <thead>
             <tr>

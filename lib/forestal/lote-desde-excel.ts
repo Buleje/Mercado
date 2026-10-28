@@ -31,6 +31,11 @@ import {
 export interface FilaLoteExcel {
   /** El N° de fila de la grilla (1-based), el que se ve a la izquierda. */
   fila: number;
+  /** «Contrato» del SNIFFS: el código del permiso (título habilitante). */
+  contrato: string | null;
+  resolucion: string | null;
+  /** «Documento de Ingreso»: el tipo («GTF»); su N° va en `gtf`. */
+  tipoDocumento: string | null;
   gtf: string | null;
   codigoPlanta: string | null;
   /** El código con el que salió del bosque (`codificacion` en el libro). */
@@ -52,6 +57,9 @@ type Clave = Exclude<keyof FilaLoteExcel, "fila">;
 
 /** El orden de la lista de trozas del SNIFFS, para cuando se copian sólo los datos. */
 const POR_POSICION: Partial<Record<Clave, number>> = {
+  contrato: 0,
+  resolucion: 1,
+  tipoDocumento: 2,
   gtf: 3,
   trozaPadre: 4,
   codigoTroza: 5,
@@ -96,6 +104,9 @@ function columnasDeTitulos(titulos: readonly string[]): Partial<Record<Clave, nu
   const poner = (clave: Clave, i: number | null | undefined) => {
     if (i != null) col[clave] = i;
   };
+  poner("contrato", m.contrato);
+  poner("resolucion", m.resolucion);
+  poner("tipoDocumento", m.tipoDocumento);
   poner("gtf", m.numeroDocumento);
   poner("codigoPlanta", m.codigoPlanta);
   poner("codigoTroza", m.codigoTroza);
@@ -146,9 +157,18 @@ function convencionDelPegado(
 
 // ── La grilla: «Pegar desde Excel» como la del cubicador ─────────────────────
 
-/** Las columnas de la grilla, en el orden en que se ven. */
+/**
+ * Las columnas de la grilla, en el MISMO orden que la lista de trozas del
+ * SNIFFS (Brandon 28-10: «tal como la imagen, para simplemente copiar del
+ * Excel todas las columnas y pegarlo ahí»): se copia desde la columna A y cada
+ * dato cae en la suya, con o sin la fila de títulos.
+ */
 export const COLUMNAS_LOTE = [
+  "contrato",
+  "resolucion",
+  "tipoDocumento",
   "gtf",
+  "trozaPadre",
   "codigoTroza",
   "codigoPlanta",
   "especie",
@@ -157,6 +177,7 @@ export const COLUMNAS_LOTE = [
   "d2Cm",
   "largoM",
   "volumenM3",
+  "tipoProducto",
   "estado",
   "fecha",
 ] as const satisfies readonly Clave[];
@@ -165,7 +186,11 @@ export type ColumnaLote = (typeof COLUMNAS_LOTE)[number];
 export type FilaGrilla = Record<ColumnaLote, string>;
 
 export const TITULO_COLUMNA_LOTE: Record<ColumnaLote, string> = {
-  gtf: "Guía (GTF)",
+  contrato: "Contrato (permiso)",
+  resolucion: "N° resolución",
+  tipoDocumento: "Documento",
+  gtf: "N° de guía",
+  trozaPadre: "Troza padre",
   codigoTroza: "Cód. troza",
   codigoPlanta: "Cód. planta",
   especie: "Especie",
@@ -174,7 +199,8 @@ export const TITULO_COLUMNA_LOTE: Record<ColumnaLote, string> = {
   d2Cm: "D2 (cm)",
   largoM: "Largo (m)",
   volumenM3: "Volumen (m³)",
-  estado: "Estado SNIFFS",
+  tipoProducto: "Tipo de producto",
+  estado: "Estado actual",
   fecha: "Fecha del estado",
 };
 
@@ -280,17 +306,20 @@ export function filasDeGrilla(filas: readonly FilaGrilla[]): FilaLoteExcel[] {
     return [
       {
         fila: i + 1,
+        contrato: leerTexto(f.contrato),
+        resolucion: leerTexto(f.resolucion),
+        tipoDocumento: leerTexto(f.tipoDocumento),
         gtf: leerTexto(f.gtf),
         codigoPlanta: leerTexto(f.codigoPlanta),
         codigoTroza: leerTexto(f.codigoTroza),
-        trozaPadre: null,
+        trozaPadre: leerTexto(f.trozaPadre),
         especie: leerTexto(f.especie),
         lote: leerTexto(f.lote),
         d1Cm: leerNumero(f.d1Cm, conv),
         d2Cm: leerNumero(f.d2Cm, conv),
         largoM: leerNumero(f.largoM, conv),
         volumenM3: leerNumero(f.volumenM3, conv),
-        tipoProducto: null,
+        tipoProducto: leerTexto(f.tipoProducto),
         estado: leerTexto(f.estado),
         fecha: leerFecha(f.fecha),
       },
