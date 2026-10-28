@@ -19,6 +19,7 @@ import { CardTitle, WarningAlert } from "@buleje/design-system";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import Plegable from "@/components/admin/shared/Plegable";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { LothCheck, LothNavTarget } from "@/lib/forestal/loth-compliance";
 import { agruparPorSeccion, cuentaPorSeveridad, type FiltroSeveridad, type SeccionDelChequeo } from "@/lib/forestal/loth-chequeo-secciones";
 import { ProblemCard, plural } from "./LothCumplimientoPiezas";
@@ -76,7 +77,7 @@ export default function LothChequeoSecciones({
       )}
 
       {conProblemas.map((s) => (
-        <SeccionConProblemas key={s.id} seccion={s} onNavigate={onNavigate} />
+        <SeccionConProblemas key={s.id} seccion={s} primera={s.id === conProblemas[0]?.id} onNavigate={onNavigate} />
       ))}
 
       {escondidos > 0 && (
@@ -102,32 +103,60 @@ export default function LothChequeoSecciones({
   );
 }
 
-function SeccionConProblemas({ seccion: s, onNavigate }: { seccion: SeccionDelChequeo; onNavigate: (t: LothNavTarget) => void }) {
+function SeccionConProblemas({ seccion: s, primera, onNavigate }: { seccion: SeccionDelChequeo; primera: boolean; onNavigate: (t: LothNavTarget) => void }) {
   const Icono = s.multas > 0 ? ShieldAlert : AlertTriangle;
+  /* En el celular cada sección se pliega (la primera arranca abierta) y la cuenta queda a la vista: 4 secciones apiladas eran 3 pantallas. */
+  const celular = useMediaQuery("(max-width: 639px)");
+  const cuentas = (
+    <span className="flex flex-wrap items-center gap-x-3 text-sm">
+      {s.multas > 0 && (
+        <span className="font-semibold text-[var(--data-error-ink)]">
+          {s.multas} {plural(s.multas, "puede multar", "pueden multar")}
+        </span>
+      )}
+      {s.advertencias > 0 && (
+        <span className="font-semibold text-[var(--data-warning-ink)]">
+          {s.advertencias} {plural(s.advertencias, "advertencia", "advertencias")}
+        </span>
+      )}
+      {s.enOrden.length > 0 && <span className="text-[var(--text-tertiary)]">{s.enOrden.length} en orden</span>}
+    </span>
+  );
+  const tarjetas = (
+    <div className="grid gap-3 lg:grid-cols-2">
+      {s.problemas.map((c) => (
+        <ProblemCard key={c.key} check={c} onNavigate={() => onNavigate(c.navTarget)} />
+      ))}
+    </div>
+  );
+  if (celular) {
+    return (
+      <section aria-label={s.label}>
+        <Plegable
+          clave={`loth:chequeo:sec:${s.id}`}
+          abiertoAlInicio={primera}
+          resumenAbierto={false}
+          titulo={
+            <span className="inline-flex items-center gap-2">
+              <Icono className={`h-5 w-5 ${s.multas > 0 ? "text-[var(--data-error-600)]" : "text-[var(--data-warning-600)]"}`} aria-hidden="true" />
+              {s.label}
+            </span>
+          }
+          resumen={cuentas}
+        >
+          {tarjetas}
+        </Plegable>
+      </section>
+    );
+  }
   return (
     <section className="space-y-3" aria-label={s.label}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <Icono className={`h-5 w-5 ${s.multas > 0 ? "text-[var(--data-error-600)]" : "text-[var(--data-warning-600)]"}`} aria-hidden="true" />
         <CardTitle className="text-sm font-bold">{s.label}</CardTitle>
-        <span className="flex flex-wrap items-center gap-x-3 text-sm">
-          {s.multas > 0 && (
-            <span className="font-semibold text-[var(--data-error-ink)]">
-              {s.multas} {plural(s.multas, "puede multar", "pueden multar")}
-            </span>
-          )}
-          {s.advertencias > 0 && (
-            <span className="font-semibold text-[var(--data-warning-ink)]">
-              {s.advertencias} {plural(s.advertencias, "advertencia", "advertencias")}
-            </span>
-          )}
-          {s.enOrden.length > 0 && <span className="text-[var(--text-tertiary)]">{s.enOrden.length} en orden</span>}
-        </span>
+        {cuentas}
       </div>
-      <div className="grid gap-3 lg:grid-cols-2">
-        {s.problemas.map((c) => (
-          <ProblemCard key={c.key} check={c} onNavigate={() => onNavigate(c.navTarget)} />
-        ))}
-      </div>
+      {tarjetas}
     </section>
   );
 }

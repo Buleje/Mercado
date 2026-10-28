@@ -24,6 +24,8 @@ import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "./filt
 import { FILTROS_GTF, cabecerasGtf, celdasGtf, filasGtf, type FilaGtf, type Gtf } from "./gtf-tabla-columnas";
 import AccionesGtf from "./gtf-acciones-menu";
 import { CasillaFilaGtf, CasillaTodasGtf, ElegirFiltradasMovil } from "./gtf-seleccion-casillas";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { TarjetasGuias } from "./LothGtfTarjetas";
 import type { SeleccionGuias } from "./hooks/use-seleccion-guias";
 import { PapelesGuiasProvider } from "./papeles-guias-contexto";
 import { ColaMonteProvider } from "./cola-monte-contexto";
@@ -60,6 +62,7 @@ export default function LothGtfTabla({
   const columnasFiltro = useMemo(() => FILTROS_GTF.map((c) => ({ ...c, visible: esVisible(c.id) })), [esVisible]);
   const f = useFiltrosTabla(filas, columnasFiltro);
 
+  const celular = useMediaQuery("(max-width: 639px)");
   const [pagina, setPagina] = useState(0);
   useEffect(() => setPagina(0), [f.facetas, f.textos]);
   const filtradas = f.filtradas;
@@ -82,6 +85,19 @@ export default function LothGtfTabla({
     <ColaMonteProvider>
     <div className="space-y-3">
       <BarraFiltrosTabla f={f} />
+      {celular ? (
+      <TarjetasGuias
+        filas={enPagina}
+        seleccion={seleccion}
+        focusGtf={focusGtf}
+        sinIngresar={sinIngresar}
+        onIngresarCtp={onIngresarCtp}
+        onHoja={onHoja}
+        onResumen={onResumen}
+        onAnular={onAnular}
+        onRecargar={onRecargar}
+      />
+      ) : (
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable filtrable className="w-full">
           <thead ref={orden.refCabecera} className="align-top">
@@ -130,6 +146,7 @@ export default function LothGtfTabla({
           </tbody>
         </DataTable>
       </div>
+      )}
       {filtradas.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold text-[var(--text-tertiary)]">

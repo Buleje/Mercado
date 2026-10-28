@@ -160,15 +160,15 @@ export default function LothTraceCard({
 
           {/* fila 3 — las tres zonas */}
           {op && (
-            <div className="mt-2.5 grid gap-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
-              <Zona titulo="Recorrido">
+            <div className="mt-2 grid grid-cols-2 gap-1.5 sm:mt-2.5 sm:gap-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              <Zona titulo="Recorrido" className="col-span-2 lg:col-span-1">
                 <RielEtapas fila={fila} />
               </Zona>
 
               <Zona titulo="Rendimiento">
                 {fila.rendimientoPct != null ? (
                   <>
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex flex-wrap items-baseline gap-x-2">
                       <span className={`text-xl font-black tabular-nums ${tono.texto}`}>{fmtPct(fila.rendimientoPct)}</span>
                       <span className="text-xs text-[var(--text-secondary)]">trozado / talado</span>
                     </div>
@@ -241,10 +241,10 @@ export default function LothTraceCard({
   );
 }
 
-function Zona({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Zona({ titulo, className, children }: { titulo: string; className?: string; children: React.ReactNode }) {
   return (
-    <div className="min-w-0 rounded-xl bg-[var(--surface-sunken)] px-2.5 py-2">
-      <Kicker as="p" className="mb-1 text-[var(--text-secondary)]">
+    <div className={`min-w-0 rounded-xl bg-[var(--surface-sunken)] px-2.5 py-1.5 sm:py-2 ${className ?? ""}`}>
+      <Kicker as="p" className="mb-0.5 text-[var(--text-secondary)] sm:mb-1">
         {titulo}
       </Kicker>
       {children}

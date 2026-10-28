@@ -71,10 +71,35 @@ export function cabecerasSeccion(cols: readonly ColDef[], filtros: FiltrosTabla<
   return out;
 }
 
+/** Etiquetas y notas de una línea (la celda «Observaciones» y la tarjeta del celular). */
+export function ObservacionesDeLinea({ e, corregida }: { e: LothEntryDTO; corregida: number | undefined }) {
+  const anulada = e.status === "anulado";
+  const tarde = !anulada && estaFueraDePlazo(e.entryDate, e.createdAt);
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {e.discarded && <Etiqueta tono="error">descartado</Etiqueta>}
+      {anulada && <Etiqueta tono="error">ANULADA</Etiqueta>}
+      {corregida != null && <Etiqueta tono="info">corregida por N° {corregida}</Etiqueta>}
+      {e.correctsLineNo != null && <Etiqueta tono="info">corrige a N° {e.correctsLineNo}</Etiqueta>}
+      {tarde && (
+        <span
+          title={`Asentada ${diasDeRegistro(e.entryDate, e.createdAt)} días después de la actividad — SERFOR exige registro dentro de ${PLAZO_REGISTRO_DIAS} días`}
+          className="rounded-full bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+        >
+          fuera de plazo · {diasDeRegistro(e.entryDate, e.createdAt)}d
+        </span>
+      )}
+      {e.observations && <span className="text-xs text-[var(--text-tertiary)]">{e.observations}</span>}
+      {anulada && e.annulledReason && (
+        <span className="text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">· {e.annulledReason}</span>
+      )}
+    </div>
+  );
+}
+
 /** Las celdas movibles de una línea. */
 export function celdasLinea(e: LothEntryDTO, cols: readonly ColDef[], corregida: number | undefined): Record<string, ReactNode> {
   const anulada = e.status === "anulado";
-  const tarde = !anulada && estaFueraDePlazo(e.entryDate, e.createdAt);
   const out: Record<string, ReactNode> = {
     lineNo: (
       <td className={`${TD} text-right`}>
@@ -88,24 +113,7 @@ export function celdasLinea(e: LothEntryDTO, cols: readonly ColDef[], corregida:
     ),
     obs: (
       <td className={TD}>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {e.discarded && <Etiqueta tono="error">descartado</Etiqueta>}
-          {anulada && <Etiqueta tono="error">ANULADA</Etiqueta>}
-          {corregida != null && <Etiqueta tono="info">corregida por N° {corregida}</Etiqueta>}
-          {e.correctsLineNo != null && <Etiqueta tono="info">corrige a N° {e.correctsLineNo}</Etiqueta>}
-          {tarde && (
-            <span
-              title={`Asentada ${diasDeRegistro(e.entryDate, e.createdAt)} días después de la actividad — SERFOR exige registro dentro de ${PLAZO_REGISTRO_DIAS} días`}
-              className="rounded-full bg-[var(--data-warning-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-            >
-              fuera de plazo · {diasDeRegistro(e.entryDate, e.createdAt)}d
-            </span>
-          )}
-          {e.observations && <span className="text-xs text-[var(--text-tertiary)]">{e.observations}</span>}
-          {anulada && e.annulledReason && (
-            <span className="text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">· {e.annulledReason}</span>
-          )}
-        </div>
+        <ObservacionesDeLinea e={e} corregida={corregida} />
       </td>
     ),
   };
@@ -147,6 +155,8 @@ export function repartoDelPie(
  * caja no recorta). La usan las secciones, «Por árbol» y el censo.
  */
 export const CAJA_TABLA = "rounded-2xl bg-[var(--surface-raised)] sm:max-h-[62vh]";
+/** Sólo desde `sm`: en el celular la sección se dibuja como tarjetas (`LothSeccionTarjetas`). */
+export const CAJA_TABLA_DESDE_SM = `${CAJA_TABLA} max-sm:hidden`;
 export const TABLA_PIE_FIJO =
   "[&_thead_th]:shadow-[inset_0_-1px_0_var(--rule-base)] sm:[&_tfoot]:sticky sm:[&_tfoot]:bottom-0 sm:[&_tfoot]:z-10 [&_tfoot_td]:shadow-[inset_0_1px_0_var(--rule-base)]";
 

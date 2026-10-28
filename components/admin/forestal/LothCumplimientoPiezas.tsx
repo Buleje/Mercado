@@ -23,7 +23,8 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "@buleje/design-system/icons";
-import { useState } from "react";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useState, type ReactNode } from "react";
 import { ErrorAlert, WarningAlert } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
 import { normaDe } from "@/lib/forestal/loth-chequeo-secciones";
@@ -161,6 +162,13 @@ function TriageChip({ icon: Icon, count, label, tone }: { icon: typeof AlertCirc
 export function ProblemCard({ check, onNavigate }: { check: LothCheck; onNavigate: () => void }) {
   const AlertComp = check.severity === "error" ? ErrorAlert : WarningAlert;
   const norma = normaDe(check);
+  /* En el celular el botón a la derecha le deja al texto 3 de cada 5 palabras por renglón: va debajo y los casos arrancan en 1. */
+  const celular = useMediaQuery("(max-width: 639px)");
+  const boton = (
+    <button type="button" onClick={onNavigate} className={button({ variant: "secondary", className: "shrink-0" })}>
+      {check.navigateLabel}
+    </button>
+  );
   return (
     <AlertComp
       title={check.title}
@@ -168,14 +176,11 @@ export function ProblemCard({ check, onNavigate }: { check: LothCheck; onNavigat
         <>
           <strong>{check.action}</strong>{" "}
           <InfoTip title={check.title} ancho="w-80" what={check.description} affects={norma ? `Norma: ${norma}` : undefined} />
-          {check.casos && check.casos.length > 0 && <CasosDelProblema casos={check.casos} total={check.count} />}
+          {check.casos && check.casos.length > 0 && <CasosDelProblema casos={check.casos} total={check.count} aLaVista={celular ? 1 : CASOS_A_LA_VISTA} accion={celular ? boton : undefined} />}
+          {celular && !(check.casos && check.casos.length > 0) && <span className="mt-2 block">{boton}</span>}
         </>
       }
-      action={
-        <button type="button" onClick={onNavigate} className={button({ variant: "secondary", className: "shrink-0" })}>
-          {check.navigateLabel}
-        </button>
-      }
+      action={celular ? undefined : boton}
     />
   );
 }
@@ -184,9 +189,9 @@ export function ProblemCard({ check, onNavigate }: { check: LothCheck; onNavigat
 const CASOS_A_LA_VISTA = 3;
 
 /** Cuáles son: la guía, el árbol o el plan de cada caso, en una frase. */
-function CasosDelProblema({ casos, total }: { casos: string[]; total: number }) {
+function CasosDelProblema({ casos, total, aLaVista = CASOS_A_LA_VISTA, accion }: { casos: string[]; total: number; aLaVista?: number; accion?: ReactNode }) {
   const [todos, setTodos] = useState(false);
-  const visibles = todos ? casos : casos.slice(0, CASOS_A_LA_VISTA);
+  const visibles = todos ? casos : casos.slice(0, aLaVista);
   const ocultos = casos.length - visibles.length;
   /* El servidor manda hasta 50: lo que no vino se dice, no se esconde. */
   const fuera = total - casos.length;
@@ -201,8 +206,9 @@ function CasosDelProblema({ casos, total }: { casos: string[]; total: number }) 
           </span>
         ))}
       </span>
-      {(ocultos > 0 || (todos && fuera > 0)) && (
-        <span className="mt-1 flex flex-wrap items-center gap-x-3">
+      {(ocultos > 0 || (todos && fuera > 0) || accion) && (
+        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {accion}
           {ocultos > 0 && (
             <button type="button" onClick={() => setTodos(true)} className={button({ variant: "ghost", className: "-ml-3" })}>
               Ver los otros {ocultos}

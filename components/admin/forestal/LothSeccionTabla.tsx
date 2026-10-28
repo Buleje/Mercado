@@ -20,8 +20,19 @@
 import { DataTable } from "@buleje/design-system";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import LothLineaAcciones from "./LothLineaAcciones";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import LothSeccionTarjetas from "./LothSeccionTarjetas";
 import type { FiltrosTabla } from "./filtros-tabla-forestal";
-import { CAJA_TABLA, cabecerasSeccion, celdasLinea, PieSeccion, TABLA_PIE_FIJO, TD, TH, type ColDef } from "./loth-seccion-celdas";
+import {
+  CAJA_TABLA,
+  cabecerasSeccion,
+  celdasLinea,
+  PieSeccion,
+  TABLA_PIE_FIJO,
+  TD,
+  TH,
+  type ColDef,
+} from "./loth-seccion-celdas";
 import { soloEnOrden, useOrdenSeccion } from "./loth-seccion-columnas";
 import { columnaDelTotal, textoTotal } from "./loth-seccion-cifras";
 import type { LothEntryDTO, LothSection } from "@/lib/forestal/loth-constants";
@@ -80,11 +91,35 @@ export default function LothSeccionTabla({
   const { orden: ordenCols, refCabecera } = useOrdenSeccion(cols);
   const cabeceras = cabecerasSeccion(cols, filtros, { orden, dir, onOrdenar });
 
+  /* Celular (≤639 px): tarjetas compactas en vez de la tabla; se monta una sola de las dos. */
+  const celular = useMediaQuery("(max-width: 639px)");
+  if (celular) {
+    return (
+      <LothSeccionTarjetas
+        section={section}
+        entries={entries}
+        filasTotal={filasTotal}
+        cols={cols}
+        orden={ordenCols}
+        seleccion={seleccion}
+        onSeleccionar={onSeleccionar}
+        onSeleccionarTodo={onSeleccionarTodo}
+        corregidaPor={corregidaPor}
+        mesCerrado={mesCerrado}
+        onDetalle={onDetalle}
+        onCadena={onCadena}
+        onDuplicar={onDuplicar}
+        onCorregir={onCorregir}
+        onAnular={onAnular}
+      />
+    );
+  }
+
   return (
     /* Una sola caja con scroll para los dos ejes (la del `DataTable`): la
        cabecera y el total quedan pegados arriba y abajo mientras se recorren
        las 50 líneas de la página, como en el patio del CTP. En el celular la
-       tabla es tarjetas y la caja no recorta. */
+       tabla es tarjetas (`LothSeccionTarjetas`). */
     <DataTable
       stickyHeader
       wrapperClassName={CAJA_TABLA}
@@ -126,7 +161,10 @@ export default function LothSeccionTabla({
                   className="h-4 w-4 cursor-pointer accent-[var(--data-info-600)]"
                 />
               </td>
-              <EnOrden orden={ordenCols} celdas={soloEnOrden(ordenCols, celdasLinea(e, cols, corregidaPor.get(e.lineNo)))} />
+              <EnOrden
+                orden={ordenCols}
+                celdas={soloEnOrden(ordenCols, celdasLinea(e, cols, corregidaPor.get(e.lineNo)))}
+              />
               <td className={`${TD} whitespace-nowrap text-right`}>
                 <LothLineaAcciones
                   e={e}

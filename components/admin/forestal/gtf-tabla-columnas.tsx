@@ -143,7 +143,7 @@ const ESTILO_ESTADO: Record<EstadoGtf, string> = {
   otra_empresa: "bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
 };
 
-function EstadosGtf({ estados }: { estados: readonly EstadoGtf[] }) {
+export function EstadosGtf({ estados }: { estados: readonly EstadoGtf[] }) {
   return (
     <span className="inline-flex flex-col items-start gap-1">
       {estados.map((e) => (

@@ -21,6 +21,8 @@ import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTa
 import AccionesGtf from "./gtf-acciones-menu";
 import type { Gtf } from "./gtf-tabla-columnas";
 import { CasillaFilaGtf, CasillaTodasGtf, ElegirFiltradasMovil } from "./gtf-seleccion-casillas";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { TarjetasBajas } from "./LothGtfTarjetas";
 import type { SeleccionGuias } from "./hooks/use-seleccion-guias";
 
 export type SituacionBaja = "Anulada" | "Eliminada";
@@ -109,6 +111,7 @@ export default function LothGtfBajas({
   /** Casillas para declarar las anuladas en un trámite (07-10). Una eliminada no se declara: sin casilla. */
   seleccion?: SeleccionGuias;
 }) {
+  const celular = useMediaQuery("(max-width: 639px)");
   const filas = useMemo(() => bajas.map(filaDeBaja), [bajas]);
   const f = useFiltrosTabla(filas, FILTROS_BAJAS);
   const filtradas = f.filtradas;
@@ -128,6 +131,9 @@ export default function LothGtfBajas({
   return (
     <div className="space-y-3">
       <BarraFiltrosTabla f={f} />
+      {celular ? (
+        <TarjetasBajas filas={filtradas} seleccion={seleccion} focusGtf={focusGtf} onHoja={onHoja} onResumen={onResumen} conSello={conSello} />
+      ) : (
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable filtrable className="w-full" aria-label="Guías anuladas y eliminadas">
           <thead className="align-top">
@@ -185,6 +191,7 @@ export default function LothGtfBajas({
           </tbody>
         </DataTable>
       </div>
+      )}
       {filtradas.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold text-[var(--text-tertiary)]">
