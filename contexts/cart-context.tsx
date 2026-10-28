@@ -99,6 +99,13 @@ type CartState = {
   confirmModalOpen: boolean;
   confirmFromCheckout: boolean;
   checkoutOpen: boolean;
+  /**
+   * Ya se leyó lo guardado de esta tienda. Vive en el estado (no en un ref)
+   * para que el efecto de guardar no corra en el mismo render que todavía
+   * tiene `items=[]`: antes escribía y difundía `[]` encima de lo guardado
+   * en cada carga (bug de dos pestañas, 02-10).
+   */
+  hidratado: boolean;
 };
 
 type CartAction =
@@ -111,6 +118,8 @@ type CartAction =
   | { type: "OPEN" }
   | { type: "CLOSE" }
   | { type: "HYDRATE"; payload: CartItem[] }
+  | { type: "EMPEZAR_HIDRATACION" }
+  | { type: "TERMINAR_HIDRATACION" }
   | { type: "MARK_ORDER_PENDING" }
   | { type: "CLEAR_PENDING_ORDER" }
   | { type: "OPEN_CONFIRM_MODAL"; fromCheckout?: boolean }
@@ -184,6 +193,10 @@ function reducer(state: CartState, action: CartAction): CartState {
       return { ...state, isOpen: false };
     case "HYDRATE":
       return { ...state, items: action.payload };
+    case "EMPEZAR_HIDRATACION":
+      return { ...state, items: [], hidratado: false };
+    case "TERMINAR_HIDRATACION":
+      return { ...state, hidratado: true };
     case "SET_ITEM_NOTE":
       return { ...state, items: state.items.map(i => i.id === action.payload.id ? { ...i, note: action.payload.note || undefined } : i) };
     default:
@@ -219,11 +232,17 @@ type CartCtx = {
 
 const CartContext = createContext<CartCtx | null>(null);
 
-const defaultState: CartState = { items: [], isOpen: false, hasPendingOrder: false, confirmModalOpen: false, confirmFromCheckout: false, checkoutOpen: false };
+const defaultState: CartState = { items: [], isOpen: false, hasPendingOrder: false, confirmModalOpen: false, confirmFromCheckout: false, checkoutOpen: false, hidratado: false };
 
 export function CartProvider({ children, tenantSlug = "main" }: { children: ReactNode; tenantSlug?: string }) {
   const [state, dispatch] = useReducer(reducer, defaultState);
-  const hydratedRef = useRef(false);
+  // Arrays de items que ya están en localStorage: leídos al hidratar,
+  // recibidos de otra pestaña o escritos por esta. Si `state.items` es uno de
+  // ellos no se vuelve a escribir ni a difundir. Sin esto la pestaña que
+  // recibía un mensaje lo re-difundía y las dos se lo pasaban sin fin
+  // (~10.800 escrituras/s), y cuando React vuelve a correr los efectos con el
+  // estado intacto (pestaña oculta y mostrada) la copia vieja pisaba lo nuevo.
+  const itemsGuardadosRef = useRef<WeakSet<CartItem[]>>(new WeakSet());
   const slugRef = useRef(tenantSlug);
   const channelRef = useRef<BroadcastChannel | null>(null);
 
@@ -292,8 +311,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   // para que no pise el carrito nuevo con datos de la tienda anterior.
   useEffect(() => {
     const s = tenantSlug;
-    hydratedRef.current = false;
-    dispatch({ type: "CLEAR" });
+    dispatch({ type: "EMPEZAR_HIDRATACION" });
     const controller = new AbortController();
 
     try {
@@ -309,8 +327,10 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         // Persistir el cart limpio para que la próxima hidratación sea consistente.
         localStorage.setItem(sk(s, "cart"), JSON.stringify(items));
       }
+      // Siempre (también vacío): así lo leído queda marcado como ya guardado.
+      itemsGuardadosRef.current.add(items);
+      dispatch({ type: "HYDRATE", payload: items });
       if (Array.isArray(items) && items.length > 0) {
-        dispatch({ type: "HYDRATE", payload: items });
 
         /* cart-hydration-patch-v1 */
         // Validate cart items still exist in DB — remove stale/deleted products.
@@ -386,8 +406,9 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         }
       }
     } catch {}
-    // Mark hydration complete AFTER all dispatches above
-    hydratedRef.current = true;
+    // Después de todos los dispatch de arriba: el primer render con
+    // `hidratado=true` ya trae lo guardado (y el reorder, si había).
+    dispatch({ type: "TERMINAR_HIDRATACION" });
 
     return () => { controller.abort(); };
   }, [tenantSlug]);
@@ -411,6 +432,8 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         case "CART_UPDATE":
           // Sync cart items from another tab
           if (Array.isArray(payload)) {
+            // La otra pestaña ya lo guardó: marcarlo para no re-difundirlo.
+            itemsGuardadosRef.current.add(payload);
             dispatch({ type: "HYDRATE", payload });
           }
           break;
@@ -438,7 +461,10 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
 
   // Persist to localStorage — only after hydration to prevent overwriting saved cart
   useEffect(() => {
-    if (!hydratedRef.current) return;
+    if (!state.hidratado) return;
+    // Ya está guardado (vino de localStorage, de otra pestaña o ya se escribió).
+    if (itemsGuardadosRef.current.has(state.items)) return;
+    itemsGuardadosRef.current.add(state.items);
     const s = slugRef.current;
     localStorage.setItem(sk(s, "cart"), JSON.stringify(state.items));
     // Track last-modified timestamp for abandoned-cart recovery
@@ -456,7 +482,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         channel.postMessage({ type: "CART_UPDATE", payload: state.items, tabId: TAB_ID });
       } catch { /* Silently fail */ }
     }
-  }, [state.items]);
+  }, [state.items, state.hidratado]);
 
   // Sync cart to server when customer is identified (debounced).
   //
@@ -466,7 +492,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   // Si no existe token, el sync es opt-in: NO disparamos el fetch para evitar
   // 404 constantes en console + consumo inutil de red.
   useEffect(() => {
-    if (!hydratedRef.current) return;
+    if (!state.hidratado) return;
     const s = slugRef.current;
     const phone = (() => {
       try {
@@ -493,7 +519,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
     }, 2000); // 2s debounce
 
     return () => clearTimeout(timeout);
-  }, [state.items]);
+  }, [state.items, state.hidratado]);
 
   // On mount: si el customer esta identificado Y tenemos cart-token, intenta
   // restaurar desde servidor cuando el carrito local esta vacio. Sin token,
@@ -541,6 +567,9 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   }, []);
 
   useEffect(() => {
+    // Mismo bug que el carrito: antes de hidratar escribía "0" y lo difundía
+    // (la otra pestaña cerraba su modal de confirmar).
+    if (!state.hidratado) return;
     const s = slugRef.current;
     localStorage.setItem(sk(s, "pending"), state.hasPendingOrder ? "1" : "0");
 
@@ -551,7 +580,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         channel.postMessage({ type: "PENDING_STATUS", payload: state.hasPendingOrder, tabId: TAB_ID });
       } catch { /* Silently fail */ }
     }
-  }, [state.hasPendingOrder]);
+  }, [state.hasPendingOrder, state.hidratado]);
 
   const count = state.items.reduce((acc, i) => acc + i.quantity, 0);
   const total = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
