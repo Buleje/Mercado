@@ -15,7 +15,7 @@
  */
 
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, FileText, Loader2 } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import { filtrarGuias, numerosRepetidos, type GuiaEmitida } from "@/lib/forestal/guias-emitidas";
@@ -24,6 +24,8 @@ import CtpGuiasEmitidasLista from "./CtpGuiasEmitidasLista";
 import CtpGuiasEmitidasBarra from "./CtpGuiasEmitidasBarra";
 import { useSeleccionGuias } from "./hooks/use-seleccion-guias";
 import { useGuiasEmitidasKpis } from "./hooks/use-guias-emitidas-kpis";
+import { useGuiaSalidaBuscada } from "./hooks/use-guia-salida-buscada";
+import AvisoRegistroAusente from "@/components/admin/shared/AvisoRegistroAusente";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
@@ -68,6 +70,15 @@ export default function CtpGuiasEmitidasView({
       .finally(() => { if (vivo) setCargando(false); });
     return () => { vivo = false; };
   }, [period.from, period.to]);
+
+  /* ⌘K: `?gtfSalida=` ubica la guía (si es de otro período, trae sus líneas). */
+  const sumarBuscada = useCallback((extra: GuiaEmitida[]) => setGuias((prev) => [...prev, ...extra]), []);
+  const buscada = useGuiaSalidaBuscada(guias, cargando, sumarBuscada);
+  useEffect(() => {
+    if (!buscada.resaltada) return;
+    setQ("");
+    setSoloIncompletas(false);
+  }, [buscada.resaltada]);
 
   const { kpis, delFiltro, resumen } = useGuiasEmitidasKpis(guias, period.label);
   const repetidos = useMemo(() => numerosRepetidos(guias), [guias]);
@@ -135,6 +146,8 @@ export default function CtpGuiasEmitidasView({
 
       {kpis.panel}
 
+      {buscada.noEncontrada && <AvisoRegistroAusente que="Esa GTF de salida" />}
+
       {repetidos.length > 0 && (
         <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-sm font-medium text-[var(--data-warning-700)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -160,7 +173,7 @@ export default function CtpGuiasEmitidasView({
             : "Ninguna guía coincide con el filtro."}
         </p>
       ) : (
-        <CtpGuiasEmitidasLista guias={visibles} todas={guias} sel={seleccion} />
+        <CtpGuiasEmitidasLista guias={visibles} todas={guias} sel={seleccion} resaltada={buscada.resaltada} />
       )}
 
       {cargando && guias.length > 0 && (

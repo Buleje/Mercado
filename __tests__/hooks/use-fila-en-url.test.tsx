@@ -6,6 +6,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { useFilaEnUrl, selectorDeFila } from "@/hooks/use-fila-en-url";
+import { useGuiaSalidaBuscada } from "@/components/admin/forestal/hooks/use-guia-salida-buscada";
+import type { GuiaEmitida } from "@/lib/forestal/guias-emitidas";
 import { useGtfBuscadaEnUrl } from "@/components/admin/forestal/hooks/use-gtf-buscada-en-url";
 
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(window.location.search) }));
@@ -65,6 +67,8 @@ describe("useGtfBuscadaEnUrl", () => {
     const alAtender = vi.fn();
     const { result } = renderHook(() => useGtfBuscadaEnUrl(null, alAtender));
     await waitFor(() => expect(result.current.focusGtf).toBe("19-001-0000771"));
+    /* Vino de ⌘K: si no existe, se dice «ya no existe» y no el aviso de «Por árbol». */
+    expect(result.current.focoDeBusqueda).toBe(true);
     expect(param("gtf")).toBeNull();
     act(() => result.current.onFocusHandled());
     expect(alAtender).toHaveBeenCalledTimes(1);
@@ -75,5 +79,47 @@ describe("useGtfBuscadaEnUrl", () => {
     window.history.replaceState(null, "", "/admin?tab=loth-libro-operaciones&vista=gtf&gtf=URL");
     const { result } = renderHook(() => useGtfBuscadaEnUrl("DE-LA-PANTALLA", undefined));
     expect(result.current.focusGtf).toBe("DE-LA-PANTALLA");
+    expect(result.current.focoDeBusqueda).toBe(false);
+  });
+});
+
+describe("useGuiaSalidaBuscada", () => {
+  const BASE_CTP = "/admin?tab=ctp-libro-operaciones&vista=despacho&sub=guias";
+  const g = (n: string) => ({ despachoId: `d-${n}`, gtfNumber: n }) as GuiaEmitida;
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.stubGlobal("fetch", vi.fn());
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("la guía está en el período: se resalta sin pedir el histórico", async () => {
+    window.history.replaceState(null, "", `${BASE_CTP}&gtfSalida=001-0001`);
+    const { result } = renderHook(() => useGuiaSalidaBuscada([g("001-0001")], false, vi.fn()));
+    await waitFor(() => expect(result.current.resaltada).toBe("001-0001"));
+    expect(fetch).not.toHaveBeenCalled();
+    expect(param("gtfSalida")).toBeNull();
+  });
+
+  it("es de otro período: trae sólo sus líneas del histórico", async () => {
+    window.history.replaceState(null, "", `${BASE_CTP}&gtfSalida=001-0002`);
+    vi.mocked(fetch).mockResolvedValue({ ok: true, json: async () => ({ guias: [g("001-0002"), g("001-0003")] }) } as Response);
+    const sumar = vi.fn();
+    renderHook(() => useGuiaSalidaBuscada([g("001-0001")], false, sumar));
+    await waitFor(() => expect(sumar).toHaveBeenCalledWith([g("001-0002")]));
+  });
+
+  it("no existe ni en el histórico: noEncontrada", async () => {
+    window.history.replaceState(null, "", `${BASE_CTP}&gtfSalida=NADA`);
+    vi.mocked(fetch).mockResolvedValue({ ok: true, json: async () => ({ guias: [g("001-0001")] }) } as Response);
+    const { result } = renderHook(() => useGuiaSalidaBuscada([g("001-0001")], false, vi.fn()));
+    await waitFor(() => expect(result.current.noEncontrada).toBe(true));
+    expect(param("gtfSalida")).toBeNull();
+  });
+
+  it("con la lista cargando no decide ni pide nada", () => {
+    window.history.replaceState(null, "", `${BASE_CTP}&gtfSalida=001-0001`);
+    const { result } = renderHook(() => useGuiaSalidaBuscada([], true, vi.fn()));
+    expect(result.current).toEqual({ resaltada: null, noEncontrada: false });
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

@@ -64,10 +64,12 @@ describe("las filas", () => {
     expect(anexosQueCoinciden(lista, "PLT-2025-167").map((a) => a.id)).toEqual(["1"]);
     expect(anexosQueCoinciden(lista, "0491392").map((a) => a.id)).toEqual(["2"]);
     const fila = deAnexo(lista[0]);
-    expect(fila.href).toBe("/admin?tab=ctp-libro-operaciones&vista=despacho");
+    expect(fila.href).toBe("/admin?tab=ctp-libro-operaciones&vista=despacho&sub=despachos&anexo04=1");
     expect(fila.badge).toBe("Sin registrar");
     expect(fila.subtitle).toContain("20/10/2026");
-    expect(deAnexo({ ...lista[0], despachoIds: ["d1"] }).href).toContain("sub=guias");
+    /* Registrado o no, abre ESE anexo en su modal. */
+    expect(deAnexo({ ...lista[0], despachoIds: ["d1"] }).href).toContain("anexo04=1");
+    expect(deAnexo({ ...lista[0], despachoIds: ["d1"] }).badge).toBeUndefined();
   });
 
   it("guía: ingreso abre su ingreso; del LO-TH a su libro (o a la bandeja del CTP si no hay LO-TH); fecha date-only en UTC", () => {
@@ -81,7 +83,7 @@ describe("las filas", () => {
     expect(baja).toContain("sub=bajas");
     expect(baja).toContain("gtf=19-001-0000071");
     expect(deGuia({ ...base, origen: "loth" }, false).href).toBe("/admin?tab=ctp-libro-operaciones&vista=ingresos");
-    expect(deGuia({ ...base, origen: "salida" }).href).toContain("vista=despacho&sub=guias");
+    expect(deGuia({ ...base, origen: "salida" }).href).toBe("/admin?tab=ctp-libro-operaciones&vista=despacho&sub=guias&gtfSalida=19-001-0000071");
   });
 
   it("troza: su estado y su lote", () => {

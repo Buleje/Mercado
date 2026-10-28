@@ -33,6 +33,7 @@ import { usePapelesGtf } from "./hooks/use-papeles-gtf";
 import { useLothGtfKpis } from "./hooks/use-loth-gtf-kpis";
 import LothGtfCabecera from "./LothGtfCabecera";
 import { AvisoFocoAusente, AvisoGuiasSinEmitir } from "./LothGtfAvisos";
+import AvisoRegistroAusente from "@/components/admin/shared/AvisoRegistroAusente";
 import { useCorreccionesDeGuias } from "./hooks/use-correcciones-de-guias";
 import { CorreccionesGuiasProvider } from "./correccion-guia/contexto";
 
@@ -43,6 +44,8 @@ export interface LothGtfGuiasProps {
   /** Guía a resaltar al entrar (se llega acá desde la trazabilidad por árbol). */
   focusGtf?: string | null;
   onFocusHandled?: () => void;
+  /** El foco viene de ⌘K (`?gtf=`): si la guía no está, se dice «ya no existe» en vez del aviso de «Por árbol». */
+  focoDeBusqueda?: boolean;
   /** «Importar guías despachadas» (ADR-461): el modal vive en el libro, que recarga todo al terminar. */
   onImportarGuias?: () => void;
   /** Sube tras cada escritura del libro (p. ej. guías importadas): la lista se vuelve a pedir. */
@@ -52,6 +55,7 @@ export interface LothGtfGuiasProps {
 export default function LothGtfGuias({
   focusGtf,
   onFocusHandled,
+  focoDeBusqueda = false,
   onImportarGuias,
   reloadSignal,
   seccion,
@@ -118,6 +122,12 @@ export default function LothGtfGuias({
   /* Se llegó buscando una guía que no está emitida acá (`AvisoFocoAusente`). */
   const focoAusente = !!focusGtf && !loading && !bajas.cargando
     && !gtfs.some((g) => g.gtfNumber === focusGtf) && !bajas.bajas.some((g) => g.gtfNumber === focusGtf);
+  /* Buscada con ⌘K y ausente: el aviso dura lo que el de cualquier búsqueda y suelta el foco. */
+  useEffect(() => {
+    if (!focoDeBusqueda || !focoAusente) return;
+    const t = setTimeout(() => onFocusHandled?.(), 5000);
+    return () => clearTimeout(t);
+  }, [focoDeBusqueda, focoAusente, onFocusHandled]);
   const vigentes = useMemo(() => gtfs.filter((g) => g.status !== "anulada"), [gtfs]);
   /* Tildadas para un trámite (07-10): vigentes y anuladas; una borrada no se declara. */
   const seleccion = useSeleccionGuias();
@@ -157,7 +167,7 @@ export default function LothGtfGuias({
 
       <AvisoGuiasSinEmitir numeros={declaradasSinEmitir} onEmitir={() => setShowForm(true)} />
 
-      {focoAusente && focusGtf && <AvisoFocoAusente gtfNumber={focusGtf} />}
+      {focoAusente && focusGtf && (focoDeBusqueda ? <AvisoRegistroAusente que="Esa GTF" /> : <AvisoFocoAusente gtfNumber={focusGtf} />)}
 
       {error && <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><span>{error}</span><button type="button" onClick={() => void load()} className="inline-flex h-12 items-center rounded-lg border-2 border-[var(--data-error-500)] px-3 text-xs font-bold hover:bg-[var(--data-error-100)]">Reintentar</button></div>}
 

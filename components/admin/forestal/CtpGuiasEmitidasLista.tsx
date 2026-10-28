@@ -32,11 +32,14 @@ export default function CtpGuiasEmitidasLista({
   guias,
   todas = guias,
   sel,
+  resaltada = null,
 }: {
   guias: readonly GuiaEmitida[];
   /** Todas las del período (sin filtrar): una guía se elige con TODAS sus líneas, aunque el filtro esconda alguna. */
   todas?: readonly GuiaEmitida[];
   sel: SeleccionGuias;
+  /** El N° de GTF que ⌘K ubicó: sus líneas se marcan (`useGuiaSalidaBuscada`). */
+  resaltada?: string | null;
 }) {
   /* Una fila por LÍNEA de despacho, pero la casilla elige la GUÍA entera (08-10). */
   const porGuia = lineasPorGuia(todas);
@@ -58,8 +61,9 @@ export default function CtpGuiasEmitidasLista({
         {guias.map((g) => (
           <li
             key={g.despachoId}
+            data-fila-url={`gtfSalida:${g.gtfNumber}`}
             className={`flex flex-wrap items-center gap-3 rounded-xl border py-2.5 pl-1 pr-3 ${
-              sel.tiene(g.despachoId)
+              sel.tiene(g.despachoId) || (resaltada !== null && g.gtfNumber === resaltada)
                 ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
             }`}

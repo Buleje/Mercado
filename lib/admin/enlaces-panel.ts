@@ -38,6 +38,8 @@ export type CosaDelPanel =
   | "lote"
   | "lote-aserrio"
   | "guia-loth"
+  | "guia-salida"
+  | "anexo04"
   /* Gente y plata */
   | "colaborador"
   | "cuenta-adelantos"
@@ -128,6 +130,18 @@ export const COSAS_DEL_PANEL: Readonly<Record<CosaDelPanel, FilaDeCosa>> = {
     /* El id es el N° de GTF: la lista de guías del libro la resalta y se desplaza hasta ella. */
     destino: (gtf) => d("loth-libro-operaciones", { vista: "gtf", sub: "guias", gtf }),
     lector: "components/admin/forestal/hooks/use-gtf-buscada-en-url.ts → LothGtfView → LothGtfGuias (focusGtf)",
+  },
+  "guia-salida": {
+    abre: true,
+    /* El id es el N° de GTF de salida: «Guías emitidas» resalta sus líneas (aunque sean de otro período) o dice que ya no existe. */
+    destino: (gtf) => d(CTP, { vista: "despacho", sub: "guias", gtfSalida: gtf }),
+    lector: "components/admin/forestal/hooks/use-guia-salida-buscada.ts → CtpGuiasEmitidasView (useFilaEnUrl)",
+  },
+  anexo04: {
+    abre: true,
+    /* El anexo emitido se abre en su modal (el mismo del historial), cargado con ese papel. */
+    destino: (id) => d(CTP, { vista: "despacho", sub: "despachos", anexo04: id }),
+    lector: "components/admin/forestal/AnexoBuscadoEnUrl.tsx → Anexo04Modal (emitidoId)",
   },
   colaborador: {
     abre: true,

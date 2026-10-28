@@ -25,5 +25,5 @@ export function useGtfBuscadaEnUrl(focusGtf: string | null | undefined, onFocusH
     onFocusHandled?.();
     setBuscada(null);
   }, [onFocusHandled]);
-  return { focusGtf: focusGtf ?? buscada, onFocusHandled: alAtender };
+  return { focusGtf: focusGtf ?? buscada, onFocusHandled: alAtender, focoDeBusqueda: !focusGtf && !!buscada };
 }

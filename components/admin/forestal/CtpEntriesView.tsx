@@ -99,6 +99,8 @@ import {
   type ReferenciaPorPieza,
 } from "@/lib/forestal/hipotesis-de-carga";
 
+import AnexoBuscadoEnUrl from "./AnexoBuscadoEnUrl";
+
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
 /* Cubicación comercial del despacho (ADR-483): se abre poco, va aparte del libro. */
@@ -1412,6 +1414,8 @@ export function CtpEntriesView({
 
   return (
     <div className="space-y-3">
+      {/* ⌘K: `?anexo04=<id>` abre ese Anexo 04 (o dice que ya no existe). */}
+      <AnexoBuscadoEnUrl />
       {/* Ocho KPIs y no tres (`CtpSeccionKpis`): los m³ de materia prima eran el
           subtítulo de otra tarjeta, y merma, stock en planta, corridas sin
           declarar y materia prima sin origen no estaban en ningún lado. */}

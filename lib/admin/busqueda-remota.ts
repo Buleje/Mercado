@@ -234,7 +234,7 @@ export function deGuia(g: GuiaFila, lothActivo = true): ResultadoRemoto {
     g.origen === "ingreso" ? hrefDe("ingreso", g.id)
     : g.origen === "loth" && lothActivo ? hrefGuiaLoth(g)
     : g.origen === "loth" ? hrefDeDestino({ tab: CTP, params: { vista: "ingresos" } })
-    : hrefDeDestino({ tab: CTP, params: { vista: "despacho", sub: "guias" } });
+    : hrefDe("guia-salida", g.gtfNumber) ?? hrefDeDestino({ tab: CTP, params: { vista: "despacho", sub: "guias" } });
   return {
     id: `guia-${g.origen}-${g.id}`, type: "guia", title: `GTF ${g.gtfNumber}`, entidad: ORIGEN_GUIA[g.origen],
     subtitle: unir(g.quien, dia(g.fecha), m3(g.volumenM3)) || ORIGEN_GUIA[g.origen],
@@ -256,8 +256,8 @@ export function deAnexo(a: AnexoEmitido): ResultadoRemoto {
     id: `anexo-${a.id}`, type: "anexo", entidad: "Anexo 04",
     title: a.numero ? `Anexo 04 N° ${a.numero}` : `Anexo 04 de la GTF ${a.gtf}`,
     subtitle: unir(a.gtf && `GTF ${a.gtf}`, a.permiso && `permiso ${a.permiso}`, a.fecha && formatDateNumeric(a.fecha, { soloFecha: true }), m3(a.totalM3)),
-    /* Sin registrar, la salida espera en Despacho; registrada, está en Guías emitidas. */
-    href: hrefDeDestino({ tab: CTP, params: registrado ? { vista: "despacho", sub: "guias" } : { vista: "despacho" } }),
+    /* Se abre ese papel en su modal (Despacho); sin id válido, como antes: registrada → Guías emitidas, si no → Despacho. */
+    href: hrefDe("anexo04", a.id) ?? hrefDeDestino({ tab: CTP, params: registrado ? { vista: "despacho", sub: "guias" } : { vista: "despacho" } }),
     ...(registrado ? {} : { badge: "Sin registrar", badgeColor: "var(--data-warning-500)" }),
   };
 }
