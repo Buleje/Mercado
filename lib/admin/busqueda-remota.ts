@@ -19,7 +19,7 @@
 import type { AdminRole } from "@/lib/session";
 import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { RRHH_MARCAR, nivelDeRol } from "@/lib/rrhh/roles";
-import { hrefDe, hrefDeDestino } from "@/lib/admin/enlaces-panel";
+import { destinoDe, hrefDe, hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { formatCurrency, formatDateNumeric, formatNumber } from "@/lib/format";
 import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 
@@ -217,6 +217,12 @@ export function deProveedor(s: ProveedorFila): ResultadoRemoto {
   return { id: `proveedor-${s.id}`, type: "proveedor", title: s.name, tab: "proveedores", subtitle: unir(s.ruc && `RUC ${s.ruc}`, s.phone && `Tel: ${s.phone}`) || "Proveedor" };
 }
 
+/** La guía en el LO-TH: las anuladas están en «Anuladas y otras»; la lista resalta la fila por su N° de GTF. */
+function hrefGuiaLoth(g: GuiaFila): string | null {
+  const dest = destinoDe("guia-loth", g.gtfNumber);
+  return dest ? hrefDeDestino({ ...dest, params: { ...dest.params, sub: g.anulada ? "bajas" : "guias" } }) : null;
+}
+
 const ORIGEN_GUIA: Record<GuiaFila["origen"], string> = { ingreso: "GTF de ingreso", loth: "GTF del LO-TH", salida: "GTF de salida" };
 
 /**
@@ -226,7 +232,7 @@ const ORIGEN_GUIA: Record<GuiaFila["origen"], string> = { ingreso: "GTF de ingre
 export function deGuia(g: GuiaFila, lothActivo = true): ResultadoRemoto {
   const href =
     g.origen === "ingreso" ? hrefDe("ingreso", g.id)
-    : g.origen === "loth" && lothActivo ? hrefDeDestino({ tab: LOTH, params: { vista: "gtf", sub: g.anulada ? "bajas" : "guias" } })
+    : g.origen === "loth" && lothActivo ? hrefGuiaLoth(g)
     : g.origen === "loth" ? hrefDeDestino({ tab: CTP, params: { vista: "ingresos" } })
     : hrefDeDestino({ tab: CTP, params: { vista: "despacho", sub: "guias" } });
   return {
@@ -293,8 +299,7 @@ export function deLote(l: LoteFila): ResultadoRemoto {
   return {
     id: `lote-${l.id}`, type: "lote", title: `Lote ${l.code}`,
     subtitle: unir(l.especie, l.status, l.permiso && `permiso ${l.permiso}`, dia(l.fechaApertura)),
-    /* Lotes de aserrío todavía no abre uno por URL: lleva a la lista. */
-    href: hrefDeDestino({ tab: CTP, params: { vista: "lotes" } }),
+    href: hrefDe("lote-aserrio", l.id) ?? hrefDeDestino({ tab: CTP, params: { vista: "lotes" } }),
   };
 }
 
@@ -312,6 +317,8 @@ export function deParte(p: ParteFila): ResultadoRemoto {
 
 const ESTADO_TRABAJADOR: Record<string, string> = { ACTIVO: "Activo", VACACIONES: "Vacaciones", LICENCIA: "Licencia", SUSPENDIDO: "Suspendido", CESADO: "Retirado" };
 const HREF_ASISTENCIA = hrefDeDestino({ tab: "rrhh", params: { vista: "asistencia" } });
+/** La hoja de asistencia con la fila de esa persona resaltada (`ListaDelDia`). */
+const hrefAsistenciaDe = (id: string) => hrefDeDestino({ tab: "rrhh", params: { vista: "asistencia", persona: id } });
 
 /**
  * El nivel `marcar` (almacenero, cajero) no abre fichas: su RRHH es sólo
@@ -324,7 +331,7 @@ export function deTrabajadores(filas: readonly TrabajadorFila[], role: AdminRole
     id: `trabajador-${t.id}`, type: "trabajador",
     title: t.apodo ? `${t.nombre} («${t.apodo}»)` : t.nombre,
     subtitle: unir(t.puesto, ESTADO_TRABAJADOR[t.estado] ?? t.estado),
-    href: conFicha ? hrefDe("colaborador", t.id) ?? HREF_ASISTENCIA : HREF_ASISTENCIA,
+    href: conFicha ? hrefDe("colaborador", t.id) ?? hrefAsistenciaDe(t.id) : hrefAsistenciaDe(t.id),
   }));
   if (res.length > 0) {
     res.push({ id: "trabajador-asistencia", type: "trabajador", title: "Ver la asistencia", subtitle: "Quién vino y a qué hora marcó", href: HREF_ASISTENCIA, sinContar: true });

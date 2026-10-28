@@ -79,6 +79,9 @@ export const PARAMS_DE_VISTA = [
   "ingreso",
   "parte",
   "lote",
+  /* El lote de aserrío cuya historia abre ⌘K (Libro CTP › Lotes de aserrío, `CtpLotesView`) y la guía suelta del LO-TH que ⌘K ubica en su lista (`LothGtfView`). */
+  "loteAserrio",
+  "gtf",
   /* El turno de Ventas y Caja → Cuadrar caja (`DesdeTurno` lo lee al montar y no lo borra). */
   "turno",
 ] as const;

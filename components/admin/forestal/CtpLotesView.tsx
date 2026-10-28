@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { Boxes, History } from "@buleje/design-system/icons";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 import CtpLotesLista from "./CtpLotesLista";
@@ -78,6 +79,14 @@ export default function CtpLotesView({
     },
     [irA],
   );
+  /* ⌘K: `?loteAserrio=<id>` abre la historia de ESE lote; el parámetro se consume. */
+  const delBuscador = useFichaEnUrl("loteAserrio");
+  const { id: loteBuscado, cerrar: soltarLoteBuscado } = delBuscador;
+  useEffect(() => {
+    if (!loteBuscado) return;
+    abrirHistoria(loteBuscado);
+    soltarLoteBuscado();
+  }, [loteBuscado, abrirHistoria, soltarLoteBuscado]);
   const pedidoAntes = useRef(loteInicial);
   useEffect(() => {
     if (!loteInicial || loteInicial === pedidoAntes.current) return;

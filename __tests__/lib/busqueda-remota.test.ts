@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  anexosQueCoinciden, deAnexo, deGuia, dePermiso, deTrabajadores, deTroza, nivelDeCoincidencia, normalizarConsulta,
+  anexosQueCoinciden, deAnexo, deGuia, deLote, dePermiso, deTrabajadores, deTroza, nivelDeCoincidencia, normalizarConsulta,
   porParecido, variantesDeNumero, veGrupo, type GrupoRemoto,
 } from "@/lib/admin/busqueda-remota";
 import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
@@ -76,8 +76,10 @@ describe("las filas", () => {
     expect(ingreso.href).toContain("vista=ingresos");
     expect(ingreso.href).toContain("ingreso=g1");
     expect(ingreso.subtitle).toBe("Blas · 20/10/2026 · 12.346 m³");
-    expect(deGuia({ ...base, origen: "loth" }).href).toContain("tab=loth-libro-operaciones&vista=gtf&sub=guias");
-    expect(deGuia({ ...base, origen: "loth", anulada: true }).href).toContain("sub=bajas");
+    expect(deGuia({ ...base, origen: "loth" }).href).toBe("/admin?tab=loth-libro-operaciones&vista=gtf&sub=guias&gtf=19-001-0000071");
+    const baja = deGuia({ ...base, origen: "loth", anulada: true }).href;
+    expect(baja).toContain("sub=bajas");
+    expect(baja).toContain("gtf=19-001-0000071");
     expect(deGuia({ ...base, origen: "loth" }, false).href).toBe("/admin?tab=ctp-libro-operaciones&vista=ingresos");
     expect(deGuia({ ...base, origen: "salida" }).href).toContain("vista=despacho&sub=guias");
   });
@@ -95,6 +97,11 @@ describe("las filas", () => {
     expect(p.href).toContain("contrato=c1");
   });
 
+  it("lote de aserrío: abre la historia de ESE lote", () => {
+    const l = deLote({ id: "lt1", code: "QA-SEM-1", especie: "Tornillo", status: "abierto", permiso: null, fechaApertura: new Date("2026-10-20T00:00:00Z") });
+    expect(l.href).toBe("/admin?tab=ctp-libro-operaciones&vista=lotes&sub=historia&loteAserrio=lt1");
+  });
+
   it("trabajadores: gestión abre la ficha; marcar sólo la asistencia; sin plata", () => {
     const filas = [{ id: "w1", nombre: "Mario Ríos", apodo: "Chato", puesto: "Aserrador", estado: "ACTIVO" }];
     const admin = deTrabajadores(filas, "admin");
@@ -103,7 +110,9 @@ describe("las filas", () => {
     expect(admin[0].href).toContain("vista=personal&persona=w1");
     expect(admin[1]).toMatchObject({ sinContar: true, href: "/admin?tab=rrhh&vista=asistencia" });
     const almacenero = deTrabajadores(filas, "almacenero");
-    expect(almacenero.every((r) => r.href === "/admin?tab=rrhh&vista=asistencia")).toBe(true);
+    /* La persona va en la URL: la hoja de asistencia resalta su fila. */
+    expect(almacenero[0].href).toBe("/admin?tab=rrhh&vista=asistencia&persona=w1");
+    expect(almacenero[1].href).toBe("/admin?tab=rrhh&vista=asistencia");
     expect(deTrabajadores([], "admin")).toEqual([]);
   });
 });

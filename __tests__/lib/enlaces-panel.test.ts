@@ -68,6 +68,8 @@ describe("hrefDe — a dónde lleva cada cosa", () => {
       ["ingreso", "ctp-libro-operaciones", "ingreso"],
       ["parte", "ctp-libro-operaciones", "parte"],
       ["lote", "ctp-libro-operaciones", "lote"],
+      ["lote-aserrio", "ctp-libro-operaciones", "loteAserrio"],
+      ["guia-loth", "loth-libro-operaciones", "gtf"],
       ["pedido", "pedidos", "pedido"],
       ["cliente", "clientes", "cliente"],
       ["producto", "inventario", "producto"],

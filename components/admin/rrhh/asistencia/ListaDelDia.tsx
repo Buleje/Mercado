@@ -12,10 +12,13 @@
  *    tienen marca; los demás quedan plegados en «Eventuales», listos para marcar.
  *  - «No trabajan este día» (vacaciones, licencia, antes de ingresar…).
  */
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { CalendarOff, UserMinus } from "@buleje/design-system/icons";
 import type { ColaboradorMinDTO, FechaKey } from "@/lib/rrhh/tipos";
 import Plegable from "@/components/admin/shared/Plegable";
+import AvisoRegistroAusente from "@/components/admin/shared/AvisoRegistroAusente";
+import { useFilaEnUrl } from "@/hooks/use-fila-en-url";
+import { cn } from "@buleje/design-system";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
 import { motivoNoIncluido, noVienenHace } from "../rrhh-ui";
 import { etiquetaCorta } from "@/lib/rrhh/fechas";
@@ -76,8 +79,22 @@ export default function ListaDelDia({ fecha, esHoy, feriado, fijos, eventualesSi
     }
   };
 
+  /* Llegar desde ⌘K a una persona (`?persona=`): su fila se resalta y se desplaza al centro. */
+  const existe = useCallback((id: string) => [...fijos, ...eventualesSinMarca, ...noIncluidos].some((c) => c.id === id), [fijos, eventualesSinMarca, noIncluidos]);
+  const buscada = useFilaEnUrl("persona", { listo: true, existe });
+  const celda = (c: ColaboradorMinDTO) => (
+    <div
+      key={c.id}
+      data-fila-url={`persona:${c.id}`}
+      className={cn(buscada.resaltada === c.id && "bg-[var(--accent-soft)] outline outline-2 -outline-offset-2 outline-[var(--accent)]")}
+    >
+      {fila(c)}
+    </div>
+  );
+
   return (
     <>
+      {buscada.noEncontrada && <AvisoRegistroAusente que="Esa persona" />}
       {feriado && (
         <AvisoRrhh tono="neutro" icono={CalendarOff}>
           Feriado: {feriado.nombre}. Si nadie vino, no hace falta marcar: no cuenta como día sin marcar.
@@ -126,11 +143,11 @@ export default function ListaDelDia({ fecha, esHoy, feriado, fijos, eventualesSi
       )}
 
       {/* Una lista, no una tarjeta por persona: filas separadas por una raya. */}
-      <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">{fijos.map((c) => fila(c))}</div>
+      <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">{fijos.map(celda)}</div>
 
       {eventualesSinMarca.length > 0 && (
         <BloqueDelDia clave="eventuales" titulo={`Eventuales (${eventualesSinMarca.length})`} ayuda="Vienen algunos días: márcalos si vinieron hoy">
-          <div className="divide-y divide-[var(--rule-soft)] border-t border-[var(--rule-soft)]">{eventualesSinMarca.map((c) => fila(c))}</div>
+          <div className="divide-y divide-[var(--rule-soft)] border-t border-[var(--rule-soft)]">{eventualesSinMarca.map(celda)}</div>
         </BloqueDelDia>
       )}
 

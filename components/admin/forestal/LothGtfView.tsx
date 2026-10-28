@@ -20,6 +20,7 @@ import { Ban, FileText, Printer } from "@buleje/design-system/icons";
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import PestanasDeVista, { type PestanaDeVista } from "./PestanasDeVista";
 import { usePestanaInterna } from "./hooks/use-pestana-interna";
+import { useGtfBuscadaEnUrl } from "./hooks/use-gtf-buscada-en-url";
 import { SUBS_GTF, type SubGtf } from "./loth-vistas-fusionadas";
 import LothGtfGuias, { type LothGtfGuiasProps } from "./LothGtfGuias";
 
@@ -47,11 +48,14 @@ function subPorVistaVieja(): SubGtf | undefined {
 
 export default function LothGtfView({
   pedido = null,
-  ...props
+  ...propios
 }: LothGtfGuiasProps & {
   /** Una pestaña pedida desde el libro estando YA en GTF (ver `usePestanaInterna`). */
   pedido?: { sub: string; n: number } | null;
 } = {}) {
+  /* ⌘K: `?gtf=` ubica la guía en la lista (el mismo foco que «Por árbol»). */
+  const buscada = useGtfBuscadaEnUrl(propios.focusGtf, propios.onFocusHandled);
+  const props = { ...propios, ...buscada };
   const [forzada] = useState(subPorVistaVieja);
   /* Cuántas vigentes y cuántas bajas: las cuenta la lista y se dicen en la pestaña. */
   const [cuentas, setCuentas] = useState<{ guias: number; bajas: number } | null>(null);

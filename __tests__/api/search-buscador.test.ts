@@ -129,7 +129,8 @@ describe("GET /api/search — sesión y roles", () => {
     expect(H.llamadas.map((l) => l.metodo)).not.toContain("clientes");
     const t = r.body.results?.filter((x) => x.type === "trabajador") ?? [];
     expect(t.every((x) => x.href?.includes("vista=asistencia"))).toBe(true);
-    expect(t.some((x) => x.href?.includes("persona="))).toBe(false);
+    /* Sin ficha: el `persona=` de la asistencia sólo resalta su fila. */
+    expect(t.some((x) => x.href?.includes("vista=personal"))).toBe(false);
     expect(H.llamadas.find((l) => l.metodo === "trabajadores")?.extra).toBe(false);
   });
 

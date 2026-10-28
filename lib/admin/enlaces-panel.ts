@@ -36,6 +36,8 @@ export type CosaDelPanel =
   | "ingreso"
   | "parte"
   | "lote"
+  | "lote-aserrio"
+  | "guia-loth"
   /* Gente y plata */
   | "colaborador"
   | "cuenta-adelantos"
@@ -114,6 +116,18 @@ export const COSAS_DEL_PANEL: Readonly<Record<CosaDelPanel, FilaDeCosa>> = {
        llegando por el alias; acá se va directo, sin el salto. */
     destino: (id) => d(CTP, { vista: "despacho", sub: "lotes-qr", lote: id }),
     lector: "components/admin/forestal/CtpDespachoPestanas.tsx → ForestLotesModule embebido (useFichaEnUrl de `lote`)",
+  },
+  "lote-aserrio": {
+    abre: true,
+    /* La historia del lote de la sierra (no confundir con `lote`, los lotes comerciales con QR). */
+    destino: (id) => d(CTP, { vista: "lotes", sub: "historia", loteAserrio: id }),
+    lector: "components/admin/forestal/CtpLotesView.tsx (useFichaEnUrl de `loteAserrio`) → CtpHistoriaLoteView",
+  },
+  "guia-loth": {
+    abre: true,
+    /* El id es el N° de GTF: la lista de guías del libro la resalta y se desplaza hasta ella. */
+    destino: (gtf) => d("loth-libro-operaciones", { vista: "gtf", sub: "guias", gtf }),
+    lector: "components/admin/forestal/hooks/use-gtf-buscada-en-url.ts → LothGtfView → LothGtfGuias (focusGtf)",
   },
   colaborador: {
     abre: true,

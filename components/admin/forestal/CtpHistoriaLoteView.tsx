@@ -28,6 +28,7 @@ import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { esLoteDeInventario } from "@/lib/forestal/lotes-aserrio";
 import { imprimirHistoriaLote } from "@/lib/forestal/historia-lote-print";
 import { formatDate, formatNumber } from "@/lib/format";
+import AvisoRegistroAusente from "@/components/admin/shared/AvisoRegistroAusente";
 
 const n4 = (v: number | null | undefined) => (v == null ? "—" : v.toFixed(4));
 const nf = (v: number) => formatNumber(v);
@@ -88,8 +89,12 @@ export default function CtpHistoriaLoteView({
       : [],
   });
 
+  /* El lote pedido (⌘K, un enlace) ya no existe: la lista llegó y no lo trae. */
+  const ausente = Boolean(loteId && !cargandoLotes && lotes.length > 0 && !lote);
+
   return (
     <div className="space-y-3">
+      {ausente && <AvisoRegistroAusente que="Ese lote" />}
       {/* Dentro del libro el lote, Imprimir, Descargar y Recargar van al riel
           (compactación 17-10). La especie viaja en cada opción del selector:
           la cifra suelta al lado repetía el código. */}
