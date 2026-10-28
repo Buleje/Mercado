@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ProductsDB, CustomersDB, OrdersDB, ReviewsDB, SettingsDB, SuppliersDB, PurchasesDB, SalesDB, PromotionsDB, PayablesDB } from "@/lib/jsondb";
 import { enqueueActivityLog } from "@/lib/queue";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
@@ -26,9 +27,7 @@ export async function GET(req: NextRequest) {
     data: { products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables },
   };
 
-  enqueueActivityLog({ action: "Backup", resource: "configuracion", userId: "admin", tenantId: auth.tenantId, details: { description: "Backup de datos descargado" }, timestamp: new Date().toISOString() }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  enqueueActivityLog({ action: "Backup", resource: "configuracion", userId: "admin", tenantId: auth.tenantId, details: { description: "Backup de datos descargado" }, timestamp: new Date().toISOString() }).catch((err) => { logger.warn("[backup] background task failed", { err: String(err) }); });
 
   return new NextResponse(JSON.stringify(backup, null, 2), {
     headers: {

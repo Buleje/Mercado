@@ -4,6 +4,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 // ── Zod schemas ─────────────────────────────────────────────────────────────
 
@@ -115,9 +116,7 @@ export async function POST(req: NextRequest) {
     `Decisión: ${decision.slice(0, 100)}`,
     note.id,
     auth.username
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  ).catch((err) => { logger.warn("[ai-assistant/decision-log] background task failed", { err: String(err) }); });
 
   return NextResponse.json({ decision: mapDecision(note) }, { status: 201 });
 }
@@ -179,9 +178,7 @@ export async function PATCH(req: NextRequest) {
     `Actualizada decisión ${id}`,
     id,
     auth.username
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  ).catch((err) => { logger.warn("[ai-assistant/decision-log] background task failed", { err: String(err) }); });
 
   return NextResponse.json({ decision: mapDecision(updated) });
 }

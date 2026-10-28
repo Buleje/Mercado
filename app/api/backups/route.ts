@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export type BackupEntry = {
   id: string; name: string; type: "manual" | "auto";
@@ -62,9 +63,7 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const requestId = req.headers.get("x-request-id") ?? undefined;
-  logActivity("Backup", "configuracion", "Backup manual iniciado desde panel", undefined, auth.username ?? "admin", requestId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  logActivity("Backup", "configuracion", "Backup manual iniciado desde panel", undefined, auth.username ?? "admin", requestId).catch((err) => { logger.warn("[backups] background task failed", { err: String(err) }); });
 
   // Disparar la descarga del backup real en el cliente redirigiendo a /api/backup
   return NextResponse.json({ ok: true, downloadUrl: "/api/backup", message: "Backup iniciado correctamente" });

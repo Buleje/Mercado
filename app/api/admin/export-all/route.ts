@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, FiadosDB, SettingsDB } from "@/lib/db";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   // 1. Auth — solo admin puede exportar todos los datos
@@ -98,9 +99,7 @@ export async function GET(req: NextRequest) {
       `Exportación completa del tenant ${auth.tenantId}`,
       auth.tenantId,
       auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[admin/export-all] background task failed", { err: String(err) }); });
 
     const fecha = new Date().toISOString().slice(0, 10);
     const filename = `buleje-export-${auth.tenantId}-${fecha}.json`;

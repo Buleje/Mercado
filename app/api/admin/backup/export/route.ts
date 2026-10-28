@@ -96,9 +96,7 @@ export async function GET(req: NextRequest) {
       "export",
       "backup",
       `backup-${auth.tenantId}-${new Date().toISOString().slice(0, 10)}`
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[admin/backup/export] background task failed", { err: String(err) }); });
 
     const fecha = new Date().toISOString().slice(0, 10);
     const filename = `backup-${auth.tenantId}-${fecha}.json`;

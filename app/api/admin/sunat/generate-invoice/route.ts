@@ -8,6 +8,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { emitirBoleta } from "@/lib/integrations/sunat-nubefact";
 import { calculateIGV } from "@/lib/sunat";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { logger } from "@/lib/logger";
 
 // ── POST /api/admin/sunat/generate-invoice — Emitir boleta/factura ─────────
 
@@ -176,9 +177,7 @@ async function generateInvoice(
       auth.name ?? "admin",
       undefined,
       auth.tenantId,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[admin/sunat/generate-invoice] background task failed", { err: String(err) }); });
 
     if (!result.success) {
       return NextResponse.json(

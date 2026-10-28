@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const CommissionPostSchema = z.object({
   orderId: z.string().min(1, "orderId requerido"),
@@ -99,9 +100,7 @@ export async function POST(req: NextRequest) {
       `Comisión registrada: ${commission.type} — S/${commission.amount} (orden ${commission.orderId})`,
       commission.id,
       auth.username
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[commissions/ledger] background task failed", { err: String(err) }); });
 
     return NextResponse.json(commission, { status: 201 });
   } catch {
@@ -138,9 +137,7 @@ export async function PATCH(req: NextRequest) {
       `${result.count} comisiones liquidadas (ids: ${ids.slice(0, 3).join(", ")}${ids.length > 3 ? "…" : ""})`,
       undefined,
       auth.username
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => { logger.warn("[commissions/ledger] background task failed", { err: String(err) }); });
 
     return NextResponse.json({ settled: result.count, settledAt });
   } catch {

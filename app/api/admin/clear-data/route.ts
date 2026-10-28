@@ -176,9 +176,7 @@ export async function POST(req: NextRequest) {
           user: auth.username,
         },
       })
-      .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      .catch((err) => { logger.warn("[admin/clear-data] background task failed", { err: String(err) }); });
 
     if (!categories || categories.length === 0) {
       // Full nuclear delete in correct FK order — SCOPED TO TENANT
@@ -220,9 +218,7 @@ export async function POST(req: NextRequest) {
         `Borrado masivo: ${deleted.length} tablas (${failed.length} omitidas)`,
         auth.username,
         auth.username,
-      ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      ).catch((err) => { logger.warn("[admin/clear-data] background task failed", { err: String(err) }); });
     } catch { /* logger no disponible */ }
 
     return NextResponse.json({

@@ -156,9 +156,7 @@ export async function POST(req: NextRequest) {
           where: { phone: customerId },
           data: { notifPromotions: granted },
         })
-        .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        .catch((err) => { logger.warn("[compliance/consent] background task failed", { err: String(err) }); });
     } else if (consentType === "whatsapp_notifications") {
       prisma.customer
         .update({
@@ -168,9 +166,7 @@ export async function POST(req: NextRequest) {
             alertasWhatsapp: granted,
           },
         })
-        .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        .catch((err) => { logger.warn("[compliance/consent] background task failed", { err: String(err) }); });
     }
 
     logger.info("[COMPLIANCE] Consent recorded", {

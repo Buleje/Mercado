@@ -13,6 +13,7 @@ import { z } from "zod";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 const AI_SOURCES = [
   "ai.llm.call",
@@ -75,9 +76,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     "system",
     undefined,
     tenantId,
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  ).catch((err) => { logger.warn("[billing/wire-up/ai-hook] background task failed", { err: String(err) }); });
 
   return NextResponse.json({ queued: true }, { status: 202 });
 }

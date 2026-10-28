@@ -105,9 +105,7 @@ export async function DELETE(req: NextRequest) {
         `${deleted} dead letters borradas por ${auth.username}`,
         auth.username,
         auth.username,
-      ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      ).catch((err) => { logger.warn("[admin/cron-dead-letters] background task failed", { err: String(err) }); });
     } catch { /* logger not available */ }
 
     return NextResponse.json({ deleted });
