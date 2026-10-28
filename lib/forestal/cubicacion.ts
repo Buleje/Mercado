@@ -423,7 +423,7 @@ export interface DictadoParse {
  * palabras-número a dígitos y decimales hablados ("dos punto cinco" → 2.5).
  * Base compartida por parseDictado / mejoresNumeros / parseVozLote.
  */
-function normalizeText(input: string): string {
+export function normalizeText(input: string): string {
   let s = " " + stripAccents(input.toLowerCase()) + " ";
   // Puntuación pegada a la palabra ("once," sin espacio antes de la coma) rompe
   // `wordsToDigits`, que tokeniza por espacios: "once," no matchea "once" en la
