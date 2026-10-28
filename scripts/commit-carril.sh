@@ -8,5 +8,9 @@ rutas=(); tras=0
 for a in "$@"; do [ "$tras" = 1 ] && rutas+=("$a"); [ "$a" = "--" ] && tras=1; done
 exec 9>/tmp/bsm-git-commit.lock
 flock -w 600 9 || { echo "commit-carril: otro commit lleva 10 min sin soltar el turno; reintenta" >&2; exit 1; }
-if [ "${#rutas[@]}" -gt 0 ]; then git add -N -- "${rutas[@]}" 2>/dev/null || true; fi
+# 28-10: con `2>/dev/null || true` un .git/index.lock viejo de otro agente hacía fallar el add en
+# silencio y el commit caía con «pathspec … did not match» sobre los archivos nuevos.
+if [ "${#rutas[@]}" -gt 0 ]; then
+  git add -N -- "${rutas[@]}" || { echo "commit-carril: git add -N falló. ¿.git/index.lock viejo? (pgrep -a git vacío → borrarlo)" >&2; exit 1; }
+fi
 git commit "$@"
