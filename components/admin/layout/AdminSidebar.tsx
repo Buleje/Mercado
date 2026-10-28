@@ -38,6 +38,8 @@ import {
   rubroDelPanel,
   type ContextoPermiso,
 } from "@/lib/admin/permiso-vista";
+import { esOrdenDeFabrica } from "@/lib/admin/orden-barra";
+import { guardarOrdenManual } from "@/lib/admin/orden-manual-barra";
 
 // "Ver mi tienda" (storefront público) oculto por defecto — pedido Brandon
 // 2026-05-29: en la barra solo queda "Ver tiendas" (lista del marketplace).
@@ -390,18 +392,14 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     [capaBarra, hiddenTabs, hiddenSubTabs],
   );
 
-  // ── Category order (persisted in localStorage) ──
-  const [categoryOrder, setCategoryOrder] = React.useState<string[]>(() => {
-    if (typeof window === "undefined") return TAB_CATEGORIES.map(c => c.id);
-    try {
-      const stored = localStorage.getItem("admin-sidebar-order");
-      if (stored) {
-        const parsed = JSON.parse(stored) as string[];
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch { /* ignore */ }
-    return TAB_CATEGORIES.map(c => c.id);
-  });
+  // ── Category order ──
+  /* Sólo el borrador del lápiz (vista previa en vivo). Vacío = la barra sigue a
+     `visibleCategories`, que ya viene ordenada (a mano > rubro > uso:
+     `lib/admin/orden-barra.ts`). El orden a mano se guarda en UNA llave
+     (`lib/admin/orden-manual-barra.ts`), la misma de Configuración: hasta el
+     28-10 este estado leía `admin-sidebar-order` con el orden de fábrica entero
+     y tapaba lo que se fijaba en Configuración. */
+  const [categoryOrder, setCategoryOrder] = React.useState<string[]>([]);
 
   // ── Config mode ── con dispatch de evento para que main ajuste margin
   const [configMode, setConfigMode] = React.useState(false);
@@ -438,7 +436,6 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     try {
       localStorage.setItem("admin-sidebar-hidden", JSON.stringify([...config.hiddenCategories]));
       localStorage.setItem("admin-sidebar-hidden-tabs", JSON.stringify([...config.hiddenSubTabs]));
-      localStorage.setItem("admin-sidebar-order", JSON.stringify(config.categoryOrder));
       localStorage.setItem("admin-sidebar-accent", config.accent);
       localStorage.setItem("admin-sidebar-density", config.density);
       localStorage.setItem("admin-sidebar-icon-style", config.iconStyle);
@@ -446,9 +443,17 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     } catch { /* ignore */ }
     guardarTema(config.theme);
     guardarModoMenu(config.navMode);
+    /* El orden se guarda sólo si lo moviste (cambiar el tema no fija un orden a
+       mano); dejarlo como el de fábrica = volver a fábrica (que suba el rubro). */
+    const enPantalla = visibleCategories.map(c => c.id);
+    if (config.categoryOrder.join("|") !== enPantalla.join("|")) {
+      const fabrica = TAB_CATEGORIES.map(c => c.id);
+      guardarOrdenManual(esOrdenDeFabrica(config.categoryOrder, fabrica) ? [] : config.categoryOrder);
+    }
+    setCategoryOrder([]);
     setConfigSnapshot(null);
     setConfigModeSynced(false);
-  }, [setConfigModeSynced]);
+  }, [setConfigModeSynced, visibleCategories]);
 
   /* Open: snapshot del estado committed para poder revertir en cancel. */
   const openConfig = React.useCallback(() => {
@@ -832,6 +837,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                     <button
                       ref={(el) => { categoryRefs.current[category.id] = el; }}
                       data-tour-tab={isSingleTab ? catTabs[0] : category.id}
+                      data-categoria={category.id}
                       aria-expanded={isSingleTab ? undefined : abierta}
                       aria-current={isActive ? (isSingleTab ? "page" : "true") : undefined}
                       onMouseEnter={(e) => {
@@ -1144,7 +1150,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             allCategories={TAB_CATEGORIES}
             hiddenCategories={hiddenCategories}
             hiddenSubTabs={hiddenSubTabs}
-            categoryOrder={categoryOrder}
+            categoryOrder={categoryOrder.length > 0 ? categoryOrder : visibleCategories.map(c => c.id)}
             theme={sidebarTheme}
             accent={accent}
             density={density}

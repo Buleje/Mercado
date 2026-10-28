@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import { GripVertical, ArrowUp, ArrowDown, Save, RotateCcw, Check } from "@buleje/design-system/icons";
 
 interface CategoryItem {
@@ -11,9 +12,11 @@ interface CategoryItem {
 interface SidebarReorderPanelProps {
   categories: CategoryItem[];
   onSave: (order: string[]) => void;
+  /** Hay un orden fijado a mano: recién ahí «Volver al orden de fábrica» hace algo. */
+  hayOrdenManual?: boolean;
 }
 
-export default function SidebarReorderPanel({ categories, onSave }: SidebarReorderPanelProps) {
+export default function SidebarReorderPanel({ categories, onSave, hayOrdenManual = true }: SidebarReorderPanelProps) {
   const [items, setItems] = useState<CategoryItem[]>(categories);
   const [saved, setSaved] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -57,27 +60,21 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
   return (
     <div className="space-y-6">
       {/* El título lo pone el plegable de Configuración › Mi panel. */}
-      <div className="flex items-center justify-end">
-        <div className="flex gap-2">
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
-          >
-            <RotateCcw className="h-3.5 w-3.5" /> Restablecer
-          </button>
-          <button
-            onClick={handleSave}
-            className={cn(
-              "flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
-              saved
-                ? "bg-primary/10 text-white"
-                : "bg-primary text-white hover:bg-primary/90"
-            )}
-          >
-            {saved ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
-            {saved ? "Guardado" : "Guardar orden"}
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {/* Vuelve al orden de fábrica (con lo de tu rubro arriba y lo que más usa tu negocio primero). No toca ocultos ni favoritos. */}
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={!hayOrdenManual}
+          title={hayOrdenManual ? undefined : "Ya está en el orden de fábrica"}
+          className={button({ variant: "secondary", className: "gap-1.5" })}
+        >
+          <RotateCcw className="h-4 w-4" /> Volver al orden de fábrica
+        </button>
+        <button type="button" onClick={handleSave} className={button({ className: "gap-1.5" })}>
+          {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+          {saved ? "Guardado" : "Guardar orden"}
+        </button>
       </div>
 
       <div className="space-y-1 bg-[var(--surface-sunken)] rounded-xl p-2">

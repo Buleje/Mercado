@@ -28,6 +28,7 @@ import {
   useDocumentTitle, useSwipeNavigation, useAdminNavigateEvent, useSidebarShortcuts,
   useClearDataFlow, useCustomShortcuts, useAdminTabsDerived,
   useAdminPageState, useAdminTenantPath, useFuzzyMatch, useVisibleCategories,
+  useOrdenAutomatico, useRegistrarApertura,
 } from "./_hooks";
 
 import { LastLoginToast } from "@/components/admin/LastLoginToast";
@@ -224,7 +225,8 @@ function AdminPage() {
     setSearchOpen, setShowShortcuts, setShowCierreDiario, setPresentationMode,
   });
 
-  const visibleCategories = useVisibleCategories(categoryOrder);
+  const visibleCategories = useVisibleCategories(categoryOrder, useOrdenAutomatico(authReady));
+  useRegistrarApertura(tab, authReady);
 
   const { allowedTabs, filteredTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
     userRole, savedRolePerms, hiddenTabs, visibleCategories,

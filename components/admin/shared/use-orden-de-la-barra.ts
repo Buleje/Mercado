@@ -10,6 +10,7 @@ import {
   useModoOrden,
   type ModoOrden,
 } from "@/hooks/use-uso-de-pestanas";
+import { registrarApertura } from "@/lib/admin/registro-aperturas";
 
 /**
  * El orden de las pestañas de `AdminTabBar`: el que arrastraste a mano
@@ -132,7 +133,14 @@ export function useOrdenDeLaBarra({
   /* Cuenta la vista abierta (sólo la barra del módulo). */
   useEffect(() => {
     if (!conUso || !activeTab) return;
-    const t = setTimeout(() => registrarUsoDePestana(`${prefijoDelPanel(moduleId)}:${activeTab}`), QUIETA_MS);
+    /* La pestaña se lee AHORA, no al vencer el plazo: si te vas antes, la URL ya
+       es la de la siguiente y la vista quedaba anotada en otra («config:fotos», 28-10). */
+    const clave = `${prefijoDelPanel(moduleId)}:${activeTab}`;
+    const t = setTimeout(() => {
+      registrarUsoDePestana(clave);
+      /* «Uso del panel» (Configuración): una vez por sesión, para todo el negocio. */
+      registrarApertura(clave);
+    }, QUIETA_MS);
     return () => clearTimeout(t);
   }, [conUso, activeTab, moduleId]);
 

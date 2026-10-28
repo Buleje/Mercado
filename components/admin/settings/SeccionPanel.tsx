@@ -4,11 +4,17 @@ import { Layers, ChevronRight } from "@buleje/design-system/icons";
 import { Plegable } from "@/components/admin/settings/campos";
 import { LINK_A_OTRA_PANTALLA } from "@/components/admin/settings/enlaces";
 import { AccesosDirectos, type AccesoDirecto } from "@/components/admin/settings/AccesosDirectos";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { useHayOrdenManual } from "@/hooks/use-orden-manual-barra";
 
 const NavDefaultTabsConfig = dynamic(
   () => import("@/components/admin/NavDefaultTabsConfig").then((m) => ({ default: m.NavDefaultTabsConfig })),
 );
 const SidebarReorderPanel = dynamic(() => import("@/components/admin/SidebarReorderPanel"));
+const UsoDelPanel = dynamic(() => import("@/components/admin/settings/UsoDelPanel").then((m) => ({ default: m.UsoDelPanel })));
+
+/** Las cifras del negocio entero: las ven el dueño y el admin (igual que el GET). */
+const ROLES_USO_DEL_PANEL = new Set(["admin", "owner"]);
 
 // Categoría visible para el panel "Reordenar barra lateral".
 // Compat con CategoryItem de components/admin/SidebarReorderPanel.tsx.
@@ -20,6 +26,8 @@ export function SeccionPanel({ reorderCategories, onSaveSidebarOrder }: {
   /** Callback al guardar el nuevo orden del sidebar. */
   onSaveSidebarOrder?: (categoryIds: string[]) => void;
 }) {
+  const rol = useMiRol();
+  const hayOrdenManual = useHayOrdenManual();
   // Custom shortcuts for sidebar
   const [customShortcuts, setCustomShortcuts] = useState<AccesoDirecto[]>(() => {
     try {
@@ -39,7 +47,13 @@ export function SeccionPanel({ reorderCategories, onSaveSidebarOrder }: {
     }
     return (
       <div className="space-y-6">
-        <SidebarReorderPanel categories={reorderCategories} onSave={onSaveSidebarOrder} />
+        {/* La llave remonta la lista cuando el orden cambia afuera (el lápiz de la barra, «Volver al orden de fábrica»). */}
+        <SidebarReorderPanel
+          key={reorderCategories.map((c) => c.id).join("|")}
+          categories={reorderCategories}
+          onSave={onSaveSidebarOrder}
+          hayOrdenManual={hayOrdenManual}
+        />
       </div>
     );
   };
@@ -55,9 +69,18 @@ export function SeccionPanel({ reorderCategories, onSaveSidebarOrder }: {
       <Plegable clave="pestana-defecto" titulo="Pestaña por defecto" resumen="Qué vista se abre al entrar a cada sección">
         <NavDefaultTabsConfig />
       </Plegable>
-      <Plegable clave="barra-lateral" titulo="Orden de la barra lateral" resumen={`${reorderCategories?.length ?? 0} categorías`}>
+      <Plegable
+        clave="barra-lateral"
+        titulo="Orden de la barra lateral"
+        resumen={`${reorderCategories?.length ?? 0} categorías · ${hayOrdenManual ? "tu orden" : "orden de fábrica, con lo de tu rubro arriba si lo usas más que Ventas"}`}
+      >
         {renderSidebarOrder()}
       </Plegable>
+      {rol && ROLES_USO_DEL_PANEL.has(rol) && (
+        <Plegable clave="uso-del-panel" titulo="Uso del panel" resumen="Qué pestañas abre tu negocio y cuáles nadie abre">
+          <UsoDelPanel />
+        </Plegable>
+      )}
       <Plegable clave="accesos-directos" titulo="Accesos directos" resumen={`${customShortcuts.length} de 6 · aparecen como favoritos en tu barra lateral`}>
         {<AccesosDirectos customShortcuts={customShortcuts} setCustomShortcuts={setCustomShortcuts} />}
       </Plegable>

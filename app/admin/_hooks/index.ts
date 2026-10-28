@@ -38,5 +38,8 @@ export { useAdminPageState } from "./useAdminPageState";
 export { useAdminTenantPath } from "./useAdminTenantPath";
 export { useFuzzyMatch } from "./useFuzzyMatch";
 export { useVisibleCategories } from "./useVisibleCategories";
+export { useOrdenAutomatico } from "./useOrdenAutomatico";
+export type { OrdenAutomatico } from "./useOrdenAutomatico";
+export { useRegistrarApertura } from "./useRegistrarApertura";
 export { useAdminMode } from "./useAdminMode";
 export type { AdminMode } from "./useAdminMode";
