@@ -19,6 +19,7 @@ export const SECCIONES_REPORTE = [
   "tala",
   "ingresos",
   "despachos",
+  "anexos",
   "patio",
   "plata",
   "pendientes",
@@ -32,11 +33,24 @@ export const SECCION_META: Record<SeccionReporte, { nombre: string; trae: string
   tala: { nombre: "Tala y trozado", trae: "Lo registrado en el libro de operaciones del bosque (LO-TH)" },
   ingresos: { nombre: "Madera que entró", trae: "Guías, m³, especies, proveedores, recibidas y por recibir" },
   despachos: { nombre: "Despachos y ventas", trae: "Lo que salió con guía: m³, piezas, especies y lo vendido" },
+  anexos: { nombre: "Anexos 04", trae: "Los Anexos 04 emitidos: guías, pies tablares y m³ (el m³ sale del PT ÷ 424)" },
   patio: { nombre: "Patio", trae: "Saldo de madera rolliza, trozas varadas y productos en stock" },
   plata: { nombre: "Plata", trae: "Lo que debes a proveedores, pagos del día y adelantos abiertos" },
   pendientes: { nombre: "Pendientes del libro", trae: "Lo que traba el cierre o se está atrasando" },
   plazos: { nombre: "Plazos SERFOR", trae: "Guías por registrar, lotes y documentos por vencer" },
 };
+
+/**
+ * «Resumen del CTP» (potenciar 28-10): el parte de las 6 pm — lo que pasó hoy,
+ * el patio y el OJO de lo que puede traer multa — armado con las secciones del
+ * parte diario de siempre. Nace APAGADO: a quién llega lo decide el dueño.
+ */
+export const RESUMEN_CTP = {
+  nombre: "Resumen del CTP",
+  hora: "18:00",
+  rango: "hoy",
+  secciones: ["ingresos", "produccion", "anexos", "despachos", "patio", "pendientes"],
+} as const satisfies { nombre: string; hora: string; rango: string; secciones: readonly SeccionReporte[] };
 
 export const RANGOS_REPORTE = ["hoy", "ayer", "semana"] as const;
 export type RangoReporte = (typeof RANGOS_REPORTE)[number];

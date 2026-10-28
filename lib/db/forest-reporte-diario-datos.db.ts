@@ -6,14 +6,18 @@ import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { ForestAnexosDB } from "@/lib/db/forest-anexos.db";
+import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 import { GuiaPlataDB } from "@/lib/db/guia-plata.db";
 import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { MembreteDB } from "@/lib/db/membrete.db";
 import { logger } from "@/lib/logger";
+import { formatNumber } from "@/lib/format";
 import { rendimientoPonderado } from "@/lib/forestal/ctp-kpis-seccion";
 import { pendientesDelLibro, TROZAS_VARADAS_DIAS } from "@/lib/forestal/ctp-pendientes";
 import { construirAviso, fraseLote, frasePlazo } from "@/lib/forestal/ctp-aviso-plazos";
+import { avisosDeVigencia, vencidos } from "@/lib/forestal/vigencia-avisos";
+import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import { documentosVencimientoDeFicha } from "@/lib/forestal/ctp-ficha-types";
 import {
   diasDelRango,
@@ -75,6 +79,7 @@ export async function juntarDatosReporte(tenantId: string, o: OpcionesDatos): Pr
   const saldosAlDia = unaVez(() => ForestCtpDB.saldos(tenantId, { toDate: hastaDia(o.fecha) }));
   const guiasSinIngresar = unaVez(() => ForestGtfDB.sinIngresarAlCtp(tenantId));
   const sinPagar = unaVez(() => GuiaPlataDB.sinPagarPorParte(tenantId));
+  const anexosDelLibro = unaVez(() => ForestAnexosDB.list(tenantId));
   const varadas = unaVez(() => WoodEntriesDB.contarTrozasVaradas(tenantId, TROZAS_VARADAS_DIAS));
 
   const lectores: Record<SeccionReporte, () => Promise<Partial<DatosReporteForestal>>> = {
@@ -166,10 +171,35 @@ export async function juntarDatosReporte(tenantId: string, o: OpcionesDatos): Pr
       };
     },
 
+    async anexos() {
+      /* El anexo manda su PT; el m³ sale de él (PT ÷ 424), como en el papel. */
+      const del = (await anexosDelLibro()).filter((a) => a.fecha >= desde && a.fecha <= hasta);
+      const pt = del.reduce((acc, a) => acc + n(a.totalPt), 0);
+      return {
+        anexos: {
+          cantidad: del.length,
+          pt: Math.round(pt),
+          m3: r2(pt / PT_POR_M3),
+          lista: del.slice(0, TOP).map((a) => ({ numero: a.numero, gtf: a.gtf, pt: Math.round(n(a.totalPt)) })),
+        },
+      };
+    },
+
     async patio() {
-      const [s, v] = await Promise.all([saldosAlDia(), varadas()]);
+      const [s, v, trozas] = await Promise.all([
+        saldosAlDia(),
+        varadas(),
+        /* Un conteo que falla no tumba el patio: se calla esa cifra y el resto sale. */
+        WoodEntriesDB.contarTrozasDelPatio(tenantId).catch((err) => {
+          logger.warn("[reporte-diario] trozas del patio no contadas", { tenantId, err: String(err).slice(0, 200) });
+          return undefined;
+        }),
+      ]);
+      const stockM3 = s.productos.filter((p) => p.stock > 0.0005).reduce((acc, p) => acc + p.stock, 0);
       return {
         patio: {
+          trozasEnPatio: trozas,
+          productoTerminado: { pt: Math.round(stockM3 * PT_POR_M3), m3: r2(stockM3) },
           saldoM3: r2(s.materiaPrima.saldoM3),
           sinValidarM3: r2(s.materiaPrima.pendienteM3),
           especiesEnNegativo: s.materiaPrima.especiesEnNegativo,
@@ -211,17 +241,28 @@ export async function juntarDatosReporte(tenantId: string, o: OpcionesDatos): Pr
     },
 
     async pendientes() {
-      const [stats, gtfs, desp, anexos, saldos, v, sinOrigen, sinFoto, partes] = await Promise.all([
+      const [stats, gtfs, desp, anexos, saldos, v, sinOrigen, sinFoto, partes, contratos] = await Promise.all([
         WoodEntriesDB.stats(tenantId, mes),
         guiasSinIngresar(),
         ForestCtpDB.list(tenantId, { section: "despacho", ...mes }),
-        ForestAnexosDB.list(tenantId),
+        anexosDelLibro(),
         saldosAlDia(),
         varadas(),
         ForestCtpDB.contarCorridasSinOrigen(tenantId, mes),
         WoodEntriesDB.guiasRecibidasSinFoto(tenantId, mes),
         sinPagar(),
+        ForestContratoDB.list(tenantId),
       ]);
+      /* Anexos 04 que salieron y cuya salida no está en el libro (sin período: siguen descontando el patio hoy). */
+      const salidas = await ForestAnexosDB.salidasPorRegistrar(tenantId, o.fecha);
+      const idsSalidas = new Set(salidas.map((x) => x.anexoId));
+      const ptSinSalida = anexos.filter((a) => idsSalidas.has(a.id)).reduce((acc, a) => acc + n(a.totalPt), 0);
+      /* Permisos con la vigencia ya vencida: la MISMA regla que la tira del panel (`avisosDeVigencia`). */
+      const permisosVencidos = vencidos(
+        avisosDeVigencia(
+          contratos.map((c) => ({ id: c.id, codigo: c.codigo || c.alias || "", vigenciaHasta: c.vigenciaHasta, estado: c.estado, clase: "permiso" as const })),
+        ),
+      );
       const conAnexo = new Set(anexos.map((a) => a.ctpEntryId).filter(Boolean));
       const lista = pendientesDelLibro({
         ingresosPendientes: stats.byStatus.pendiente ?? 0,
@@ -238,9 +279,22 @@ export async function juntarDatosReporte(tenantId: string, o: OpcionesDatos): Pr
         guiasSinFoto: sinFoto.guias,
         guiasSinFotoDetalle: sinFoto.detalle,
         guiasSinPagar: partes,
+        guiasSinDespacho: salidas.length,
+        m3SinDespacho: ptSinSalida / PT_POR_M3,
+        permisosVencidos: permisosVencidos.length,
+        permisosVencidosDetalle: permisosVencidos.map((a) => ({ codigo: a.codigo || "sin código", dias: a.dias })),
       });
       return {
-        pendientes: lista.map((p) => ({ titulo: p.titulo, detalle: p.detalle, cantidad: p.cantidad, urgencia: p.urgencia })),
+        pendientes: lista.map((p) => ({
+          /* Dicho con las cifras del papel: «18 Anexos 04 (103.659 PT · 244,53 m³) sin salida en el libro». */
+          titulo:
+            p.clave === "guias-sin-despacho"
+              ? `${p.cantidad} ${p.cantidad === 1 ? "Anexo 04" : "Anexos 04"} (${formatNumber(Math.round(ptSinSalida), 0)} PT · ${formatNumber(ptSinSalida / PT_POR_M3, 2)} m³) sin salida en el libro`
+              : p.titulo,
+          detalle: p.detalle,
+          cantidad: p.cantidad,
+          urgencia: p.urgencia,
+        })),
       };
     },
 

@@ -9,6 +9,7 @@
  * PURO: recibe los datos ya leídos (`DatosReporteForestal`), no consulta nada.
  */
 import { formatCurrency, formatNumber } from "@/lib/format";
+import { PT_POR_M3 } from "./cubicacion";
 import { SECCION_META, type RangoReporte, type SeccionReporte } from "./reporte-diario";
 
 // ── Lo que llega de la base ───────────────────────────────────────────────────
@@ -62,7 +63,19 @@ export interface DatosReporteForestal {
     sinGuia: number;
     porEspecie: FilaNombreM3[];
   };
+  /** Anexos 04 emitidos en el período (el m³ sale del PT ÷ 424). */
+  anexos?: {
+    cantidad: number;
+    pt: number;
+    m3: number;
+    /** Los primeros: N.º del anexo y la guía que ampara. */
+    lista: { numero: string; gtf: string; pt: number }[];
+  };
   patio?: {
+    /** Trozas (piezas) que hay en el patio ahora; falta si no se pudo leer. */
+    trozasEnPatio?: number;
+    /** Producto terminado en stock, todos los productos: pies tablares y m³ (PT ÷ 424). */
+    productoTerminado?: { pt: number; m3: number };
     /** Saldo de rolliza VALIDADA en el libro (no es el conteo físico del patio). */
     saldoM3: number;
     /** m³ de ingresos todavía sin validar: no cuentan en el saldo. */
@@ -208,6 +221,22 @@ function bloqueDespachos(d: NonNullable<DatosReporteForestal["despachos"]>): Blo
   };
 }
 
+function bloqueAnexos(a: NonNullable<DatosReporteForestal["anexos"]>): Bloque {
+  const base = { seccion: "anexos" as const, titulo: SECCION_META.anexos.nombre };
+  if (a.cantidad === 0) return { ...base, resumen: "No se emitió ningún Anexo 04.", detalle: [] };
+  const detalle = a.lista.map((x) => `Anexo ${x.numero} · guía ${x.gtf || "sin guía"} · ${pt(x.pt)} (${m3(x.pt / PT_POR_M3)})`);
+  return {
+    ...base,
+    resumen: `${plural(a.cantidad, "Anexo 04", "Anexos 04")} · ${pt(a.pt)} · ${m3(a.m3)}`,
+    tabla: {
+      cabecera: ["Anexo", "Guía", "pt"],
+      numericas: [2],
+      filas: a.lista.map((x) => [x.numero, x.gtf || "sin guía", num(x.pt)]),
+    },
+    detalle,
+  };
+}
+
 function bloquePatio(p: NonNullable<DatosReporteForestal["patio"]>): Bloque {
   const notas: string[] = [];
   if (p.varadas.piezas > 0) {
@@ -218,10 +247,12 @@ function bloquePatio(p: NonNullable<DatosReporteForestal["patio"]>): Bloque {
   }
   const detalle = [...notas, ...p.productos.map((pr) => `${pr.producto}: ${m3(pr.stock)} en stock`)];
   const sinValidar = p.sinValidarM3 > 0 ? ` · ${m3(p.sinValidarM3)} más sin validar` : "";
+  const trozas = p.trozasEnPatio != null ? `${plural(p.trozasEnPatio, "troza", "trozas")} en patio · ` : "";
+  const terminado = p.productoTerminado && p.productoTerminado.pt > 0 ? ` · producto terminado ${pt(p.productoTerminado.pt)} (${m3(p.productoTerminado.m3)})` : "";
   return {
     seccion: "patio",
     titulo: SECCION_META.patio.nombre,
-    resumen: `Saldo de rolliza en el libro: ${m3(p.saldoM3)}${sinValidar}`,
+    resumen: `${trozas}Saldo de rolliza en el libro: ${m3(p.saldoM3)}${sinValidar}${terminado}`,
     tabla: p.productos.length
       ? { cabecera: ["Producto en stock", "m³"], numericas: [1], filas: p.productos.map((x) => [x.producto, formatNumber(x.stock, 2)]) }
       : undefined,
@@ -328,6 +359,7 @@ export function armarBloques(datos: DatosReporteForestal, secciones: readonly Se
       : s === "tala" && datos.tala ? bloqueTala(datos.tala)
       : s === "ingresos" && datos.ingresos ? bloqueIngresos(datos.ingresos)
       : s === "despachos" && datos.despachos ? bloqueDespachos(datos.despachos)
+      : s === "anexos" && datos.anexos ? bloqueAnexos(datos.anexos)
       : s === "patio" && datos.patio ? bloquePatio(datos.patio)
       : s === "plata" && datos.plata ? bloquePlata(datos.plata)
       : s === "pendientes" && datos.pendientes ? bloquePendientes(datos.pendientes)

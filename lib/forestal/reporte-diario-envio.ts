@@ -5,6 +5,7 @@ import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { sendReporteDiario } from "@/lib/email/resend";
 import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
 import { describirEnvioWhatsApp, sufijoDeFallo } from "@/lib/whatsapp/aviso-plantilla";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { logger } from "@/lib/logger";
 import { armarReporteForestal, type ReporteArmado } from "./reporte-diario-armado";
@@ -304,4 +305,45 @@ async function reintentarLuego(r: ReporteDiario & { tenantId: string }, fecha: s
   const intento = intentosDeHoy(previo, fecha) + 1;
   if (intento >= TOPE_INTENTOS_DIA) return false;
   return ForestReporteDiarioDB.devolverReserva(r.tenantId, r.id, fecha, marcaDeReintento(fecha, intento));
+}
+
+/** «Enviarme una prueba» por día y negocio: va siempre al mismo correo, pero igual se cuenta. */
+export const TOPE_PRUEBAS_DIA = 5;
+const TIPO_PRUEBA = "reporte_diario_prueba";
+
+export type ResultadoPrueba =
+  | { ok: true; destino: string; asunto: string }
+  | { ok: false; motivo: "sin_correo" | "tope" | "fallo"; mensaje: string };
+
+/**
+ * Manda el reporte armado con los datos de hoy a UN solo correo: el del dueño
+ * del negocio (`Tenant.ownerEmail`). El destino no lo elige quien llama —una
+ * prueba que acepta cualquier correo sería un relé—, y los usuarios del panel
+ * no guardan correo propio. Queda en `NotificationLog` con otro prefijo: no gasta el tope diario de mensajes ni ensucia «Cómo salió».
+ */
+export async function enviarPruebaDeReporte(
+  tenantId: string,
+  r: { nombre?: string; secciones: readonly SeccionReporte[]; rango: RangoReporte },
+  usuario: string,
+  ahora: Date,
+): Promise<ResultadoPrueba> {
+  if (!tenantId) throw new Error("tenantId is required");
+  const contacto = await TenantsDB.contactoDelDueno(tenantId);
+  const destino = contacto && contacto.id === tenantId ? contacto.ownerEmail?.trim() : "";
+  if (!destino) {
+    return { ok: false, motivo: "sin_correo", mensaje: "El negocio no tiene un correo del dueño cargado: ponlo en Ajustes del negocio." };
+  }
+  const usadas = await NotificationLogsDB.contarDesde(tenantId, TIPO_PRUEBA, inicioDelDiaLima(ahora));
+  if (usadas >= TOPE_PRUEBAS_DIA) {
+    return { ok: false, motivo: "tope", mensaje: `Ya mandaste ${TOPE_PRUEBAS_DIA} pruebas hoy: la vista previa no tiene tope.` };
+  }
+  const armado = await armarReporteDe(tenantId, r, ahora);
+  const asunto = `[Prueba] ${armado.asunto}`;
+  const res = await porCorreo(destino, { ...armado, asunto });
+  await NotificationLogsDB.add(
+    { type: TIPO_PRUEBA, recipient: destino, status: res.ok ? "sent" : "failed", message: `${usuario}: ${asunto}`.slice(0, 500) },
+    tenantId,
+  ).catch((err) => logger.error("[reporte-diario] no se pudo registrar la prueba", { tenantId, err: String(err).slice(0, 200) }));
+  if (!res.ok) return { ok: false, motivo: "fallo", mensaje: res.explicacion ?? "El correo no salió." };
+  return { ok: true, destino, asunto };
 }

@@ -47,9 +47,11 @@ interface Estado {
   /** El disparador de cada media hora está vivo (latido < 65 min): se promete la hora exacta. */
   horaExacta: boolean;
   canales: { correo: boolean; whatsapp: boolean };
+  /** Correo del dueño del negocio: el destino que propone el «Resumen del CTP». */
+  correoDelDueno: string | null;
 }
 
-const VACIO: Estado = { reportes: [], envios: {}, disparos: [], horaExacta: false, canales: { correo: true, whatsapp: true } };
+const VACIO: Estado = { reportes: [], envios: {}, disparos: [], horaExacta: false, canales: { correo: true, whatsapp: true }, correoDelDueno: null };
 
 /** `{ ok, j }` sin tirar: un 422 trae el motivo que hay que mostrar. */
 async function pedir<T>(url: string, init: RequestInit = {}): Promise<{ ok: true; j: T } | { ok: false; motivo: string }> {
@@ -120,6 +122,15 @@ export function useReportesDiarios() {
     [],
   );
 
+  /** «Enviarme una prueba»: al correo del dueño, con los datos de hoy. Devuelve a dónde salió o el motivo. */
+  const enviarPrueba = useCallback(
+    async (b: { nombre: string; secciones: SeccionReporte[]; rango: RangoReporte }): Promise<{ destino: string } | { motivo: string }> => {
+      const r = await pedir<{ destino: string }>(`${API}/prueba`, { method: "POST", body: JSON.stringify(b) });
+      return r.ok ? { destino: r.j.destino } : { motivo: r.motivo };
+    },
+    [],
+  );
+
   const enviarAhora = useCallback(
     async (id: string): Promise<{ resultados: ResultadoEnvio[] } | { motivo: string }> => {
       const r = await pedir<{ resultados: ResultadoEnvio[] }>(`${API}/${id}/enviar`, { method: "POST" });
@@ -129,5 +140,5 @@ export function useReportesDiarios() {
     [recargar],
   );
 
-  return { ...estado, cargando, error, recargar, guardar, eliminar, vistaPrevia, enviarAhora };
+  return { ...estado, cargando, error, recargar, guardar, eliminar, vistaPrevia, enviarPrueba, enviarAhora };
 }

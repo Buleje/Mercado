@@ -7,7 +7,7 @@
  */
 import { Fragment } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Eye, Loader2, Mail, MessageCircle } from "@buleje/design-system/icons";
+import { Eye, Loader2, Mail, MessageCircle, Send } from "@buleje/design-system/icons";
 import { TOPE_WHATSAPP } from "@/lib/forestal/reporte-diario-armado";
 import { SECCION_META } from "@/lib/forestal/reporte-diario";
 import type { VistaPrevia } from "./hooks/use-reportes-diarios";
@@ -30,11 +30,18 @@ export default function ReporteDiarioVistaPrevia({
   cargando,
   error,
   onPedir,
+  onPrueba,
+  pruebaOcupada = false,
+  pruebaAviso = null,
 }: {
   previa: VistaPrevia | null;
   cargando: boolean;
   error: string | null;
   onPedir: () => void;
+  /** «Enviarme una prueba» (al correo del dueño); ausente = no se ofrece. */
+  onPrueba?: () => void;
+  pruebaOcupada?: boolean;
+  pruebaAviso?: { texto: string; error: boolean } | null;
 }) {
   return (
     <section aria-labelledby="reporte-previa-titulo" className="space-y-3">
@@ -46,7 +53,18 @@ export default function ReporteDiarioVistaPrevia({
           {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
           {previa ? "Actualizar" : "Ver cómo llega"}
         </Btn>
+        {onPrueba && (
+          <Btn size="sm" onClick={onPrueba} disabled={pruebaOcupada} title="Manda este correo, con los datos de hoy, al correo del dueño del negocio">
+            {pruebaOcupada ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Enviarme una prueba
+          </Btn>
+        )}
       </div>
+      {pruebaAviso && (
+        <p className={`text-sm ${pruebaAviso.error ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"}`}>
+          {pruebaAviso.texto}
+        </p>
+      )}
       {error && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
       {!previa && !error && (
         <p className="text-sm text-[var(--text-secondary)]">Arma el reporte con lo que hay hoy en el libro, sin mandar nada.</p>

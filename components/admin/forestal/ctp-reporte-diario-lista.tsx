@@ -1,9 +1,10 @@
 "use client";
 
 /** La lista de reportes diarios del negocio (ADR-439): hora, días, canales y cómo salió el último. */
-import { Mail, MessageCircle, Plus } from "@buleje/design-system/icons";
+import { Mail, MessageCircle, Plus, ScrollText } from "@buleje/design-system/icons";
 import { DIAS_SEMANA, type ReporteDiario } from "@/lib/forestal/reporte-diario";
 import type { EnvioDeReporte } from "./hooks/use-reportes-diarios";
+import { Btn } from "./ctp-shared";
 
 /** «Lun a Sáb», «Todos los días», «Lun, Mié, Vie». */
 export function diasTexto(dias: readonly number[]): string {
@@ -31,12 +32,15 @@ export default function ReporteDiarioLista({
   elegido,
   onElegir,
   onNuevo,
+  onResumenCtp,
 }: {
   reportes: ReporteDiario[];
   envios: Record<string, EnvioDeReporte[]>;
   elegido: string;
   onElegir: (id: string) => void;
   onNuevo: () => void;
+  /** Ofrece el «Resumen del CTP» ya armado; ausente = ya existe uno guardado. */
+  onResumenCtp?: () => void;
 }) {
   return (
     <nav aria-label="Reportes guardados" className="space-y-1.5">
@@ -76,6 +80,11 @@ export default function ReporteDiarioLista({
       >
         <Plus className="h-4 w-4" /> Nuevo reporte
       </button>
+      {onResumenCtp && (
+        <Btn onClick={onResumenCtp} className="w-full justify-start">
+          <ScrollText className="h-4 w-4 shrink-0" /> Recibir el resumen del CTP
+        </Btn>
+      )}
     </nav>
   );
 }

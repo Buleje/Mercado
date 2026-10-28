@@ -14,7 +14,7 @@ import { CardTitle } from "@buleje/design-system";
 import { CalendarClock, Loader2, Save, Send, Trash2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import type { ReporteDiarioInput } from "@/lib/forestal/reporte-diario";
+import { RESUMEN_CTP, type ReporteDiarioInput } from "@/lib/forestal/reporte-diario";
 import {
   useReportesDiarios,
   type ResultadoEnvio,
@@ -66,6 +66,8 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
   const [previa, setPrevia] = useState<VistaPrevia | null>(null);
   const [previaCargando, setPreviaCargando] = useState(false);
   const [previaError, setPreviaError] = useState<string | null>(null);
+  const [pruebaOcupada, setPruebaOcupada] = useState(false);
+  const [pruebaAviso, setPruebaAviso] = useState<{ texto: string; error: boolean } | null>(null);
 
   const guardado = rd.reportes.find((r) => r.id === elegido) ?? null;
   const hayCambios = useMemo(
@@ -84,6 +86,23 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
     setResultado(null);
     setPrevia(null);
     setPreviaError(null);
+    setPruebaAviso(null);
+  };
+
+  /* El «Resumen del CTP»: el parte de las 6 pm ya armado. Nace APAGADO y con el
+     correo del dueño como propuesta; el WhatsApp queda sin activar. */
+  const armarResumenCtp = () => {
+    elegir("nuevo");
+    setBorrador({
+      ...BORRADOR_NUEVO,
+      nombre: RESUMEN_CTP.nombre,
+      activo: false,
+      hora: RESUMEN_CTP.hora,
+      porWhatsapp: false,
+      correos: rd.correoDelDueno ? [rd.correoDelDueno] : [],
+      secciones: [...RESUMEN_CTP.secciones],
+      rango: RESUMEN_CTP.rango,
+    });
   };
 
   /* Al abrir: el primero guardado, o uno nuevo si no hay ninguno. */
@@ -151,6 +170,14 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
     setPreviaCargando(false);
     if ("motivo" in r) setPreviaError(r.motivo);
     else setPrevia(r);
+  }
+
+  async function pedirPrueba() {
+    setPruebaOcupada(true);
+    setPruebaAviso(null);
+    const r = await rd.enviarPrueba({ nombre: borrador.nombre, secciones: borrador.secciones, rango: borrador.rango });
+    setPruebaOcupada(false);
+    setPruebaAviso("motivo" in r ? { texto: r.motivo, error: true } : { texto: `Prueba enviada a ${r.destino}.`, error: false });
   }
 
   const sinCanal = [!rd.canales.correo && "correo", !rd.canales.whatsapp && "WhatsApp"].filter(
@@ -238,6 +265,7 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
               elegido={elegido}
               onElegir={elegir}
               onNuevo={() => elegir("nuevo")}
+              onResumenCtp={rd.reportes.some((r) => r.nombre === RESUMEN_CTP.nombre) ? undefined : armarResumenCtp}
             />
             <div className="min-w-0 space-y-5">
               <ReporteDiarioEditor
@@ -267,6 +295,9 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
                 cargando={previaCargando}
                 error={previaError}
                 onPedir={() => void pedirPrevia()}
+                onPrueba={() => void pedirPrueba()}
+                pruebaOcupada={pruebaOcupada}
+                pruebaAviso={pruebaAviso}
               />
             </div>
           </div>

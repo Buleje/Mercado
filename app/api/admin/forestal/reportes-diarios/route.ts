@@ -3,6 +3,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
 import { ForestReporteDiarioDB } from "@/lib/db/forest-reporte-diario.db";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { DISPAROS_LIMA, horaExactaViva, reporteDiarioSchema } from "@/lib/forestal/reporte-diario";
 import { autorizarReportes, errorDeValidacion, errorInterno, leerJson, SIN_CACHE } from "@/lib/forestal/reporte-diario-ruta";
 
@@ -34,10 +35,12 @@ export const GET = withApiHandler("forestal-reportes-diarios-get", async (req: N
   if (rl) return rl;
   try {
     const reportes = await ForestReporteDiarioDB.listar(auth.tenantId);
-    const [pares, latido] = await Promise.all([
+    const [pares, latido, dueno] = await Promise.all([
       Promise.all(reportes.map(async (r) => [r.id, await ForestReporteDiarioDB.envios(auth.tenantId, r.id, 8)] as const)),
       /* Sin latido legible se promete la ventana de Vercel: prometer de menos, nunca de más. */
       ForestReporteDiarioDB.latidoHoraExacta().catch(() => null),
+      /* El correo del dueño: lo que el «Resumen del CTP» propone como destino (se puede cambiar). */
+      TenantsDB.contactoDelDueno(auth.tenantId).catch(() => null),
     ]);
     const envios = Object.fromEntries(pares);
     return NextResponse.json(
@@ -47,6 +50,7 @@ export const GET = withApiHandler("forestal-reportes-diarios-get", async (req: N
         disparos: DISPAROS_LIMA,
         horaExacta: horaExactaViva(latido, new Date()),
         canales: canalesConfigurados(),
+        correoDelDueno: dueno && dueno.id === auth.tenantId ? (dueno.ownerEmail?.trim() || null) : null,
         moduloHabilitado: auth.moduloHabilitado,
       },
       { headers: SIN_CACHE },
