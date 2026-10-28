@@ -25,7 +25,7 @@ import ValorizarPrecios from "./cubicador-trozas-precios";
 import ValorizarPreciosDelLote from "./cubicador-trozas-precios-del-lote";
 import { ACuentaHecha } from "./cubicador-trozas-a-cuenta";
 import { PapelDelCubicador } from "./cubicador-papel/PapelDelCubicador";
-import type { PreciosSugeridos } from "@/lib/forestal/cubicacion-madera-cuenta";
+import { decimalesDelPrecio, type PreciosSugeridos } from "@/lib/forestal/cubicacion-madera-cuenta";
 import { anularCubicacionTrozas, borrarCubicacionTrozas, ESTADO_CUB, medidasDe, useCubicacionTrozas, type CubicacionTrozas } from "./hooks/use-cubicaciones-trozas";
 
 const ERROR = "flex items-start gap-1.5 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
@@ -159,7 +159,7 @@ export default function ValorizarCubicacionModal({
                   <li key={l.clave} className="flex flex-wrap items-center gap-x-3 px-4 py-2">
                     <span className="flex-1 font-semibold text-[var(--text-primary)]">{l.nombre}</span>
                     <span className="tabular-nums text-[var(--text-tertiary)]">
-                      {aserrada ? (l.n > 0 ? `${l.n} pzs · ` : "") : `${l.n} · `}{fmtVolumen(l.volumen, cub.formula)}{l.precio != null && ` × ${formatCurrency(l.precio)} por ${unidadDe(cub.formula)}`}
+                      {aserrada ? (l.n > 0 ? `${l.n} pzs · ` : "") : `${l.n} · `}{fmtVolumen(l.volumen, cub.formula)}{l.precio != null && ` × ${formatCurrency(l.precio, { decimals: decimalesDelPrecio(l.precio) })} por ${unidadDe(cub.formula)}`}
                     </span>
                     <span className="w-28 text-right font-bold tabular-nums text-[var(--text-primary)]">{l.monto != null ? formatCurrency(l.monto) : "—"}</span>
                   </li>

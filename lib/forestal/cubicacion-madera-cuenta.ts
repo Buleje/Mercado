@@ -16,13 +16,16 @@
  *     (a mano, por especie o el trato de cada cliente) como punto de partida
  *     de «Valorizar»: una especie con dos precios distintos queda marcada y
  *     hay que elegirle el suyo (`valorizarConSugeridos`: el general no la cubre).
+ *     Si el precio cambia SÓLO por el tipo (Brandon 28-10), arranca con el
+ *     ponderado exacto: volumen × él = lo que cobra el cubicador.
  *   - `queHacerAlGuardar`: guardar dos veces el MISMO lote no crea otra
  *     cubicación — actualiza la que sigue en borrador; si ya se cobró en ese
  *     sentido, se frena acá (y el servidor igual responde 409
  *     `REF_YA_VALORIZADA` al aplicar).
  */
 import { claveEspecie } from "./loth-constants";
-import type { PiezaCubicada } from "./cubicacion";
+import { cubicarPieza, type PiezaCubicada } from "./cubicacion";
+import { ORDEN_TIPO, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
 import { cubicarPiezasComercial, DescuentoInvalidoError } from "./cubicacion-comercial";
 import { piezaComercialSchema, type OrigenCubicacion, type PiezaComercialEntrada } from "./cubicacion-comercial-tipos";
 import { EspecieConVariosPreciosError, FaltaPrecioError, valorizar, type AplicarCubicacionInput, type LineaEspecie } from "./cubicacion-cuenta";
@@ -79,7 +82,11 @@ export function vistaPreviaMadera(rows: readonly PiezaCubicada[], especieDelLote
 export interface PreciosSugeridos {
   /** S/ por PT para las especies sin precio propio (el «precio general» del cubicador). */
   general: number | null;
-  /** Por clave de especie (`claveEspecie`): sólo si TODAS sus piezas tienen el mismo precio. */
+  /**
+   * Por clave de especie (`claveEspecie`): si TODAS sus piezas tienen el mismo
+   * precio, ese; si el precio cambia SÓLO por el tipo (`porTipo`), el
+   * ponderado exacto, sin redondear.
+   */
   porEspecie: Record<string, number>;
   /**
    * Las especies con más de un precio en el lote (tratos de dos clientes, o
@@ -88,6 +95,23 @@ export interface PreciosSugeridos {
    * derivado, no el trato.
    */
   variosPrecios: Record<string, EspecieConVariosPrecios>;
+  /**
+   * Las especies cuyo precio cambia SÓLO por el tipo (Brandon 28-10: Corta a
+   * S/ 3, Comercial a S/ 4): mismo dueño (o ninguno) y misma escritura en
+   * todas sus piezas, un precio por tipo y ninguna sin precio. Ahí el
+   * ponderado Σ(PT × precio) / Σ PT no es un promedio inventado: volumen × él
+   * = lo que cobra el cubicador. Igual quedan marcadas (`marcasDeVariosPrecios`):
+   * el general nunca las cubre.
+   */
+  porTipo?: Record<string, EspeciePorTipo>;
+}
+
+export interface EspeciePorTipo {
+  nombre: string;
+  /** Σ(PT × precio) / Σ PT, sin redondear: redondearlo corre el monto (400 PT × 0,005 = S/ 2). */
+  precio: number;
+  /** Cada tipo con su PT y su precio, en el orden de `ORDEN_TIPO`. */
+  tipos: Array<{ tipo: TipoComercial; pt: number; precio: number }>;
 }
 
 export interface EspecieConVariosPrecios {
@@ -108,24 +132,92 @@ export function preciosSugeridosMadera(
   precioDe: (p: PiezaCubicada) => number,
   general: number,
 ): PreciosSugeridos {
-  const vistos = new Map<string, { nombre: string; precios: Set<number>; sinPrecio: boolean }>();
+  type PorTipo = { precios: Set<number>; pt: number; importe: number };
+  const vistos = new Map<string, {
+    nombre: string; precios: Set<number>; sinPrecio: boolean;
+    /* Lo que además de la especie cambia el precio de una pieza (`precioDePieza`): su dueño y cómo se escribió. */
+    duenos: Set<string>; escrituras: Set<string>; tipos: Map<TipoComercial, PorTipo>; ptMal: boolean;
+  }>();
   for (const p of rows) {
     const nombre = especieDeLaPieza(p, especieDelLote);
     const clave = claveEspecie(nombre) || "sin especie";
     const precio = precioDe(p);
-    const v = vistos.get(clave) ?? { nombre, precios: new Set<number>(), sinPrecio: false };
-    if (Number.isFinite(precio) && precio > 0) v.precios.add(Math.round(precio * 100) / 100);
-    else v.sinPrecio = true;
+    const v = vistos.get(clave) ?? { nombre, precios: new Set<number>(), sinPrecio: false, duenos: new Set<string>(), escrituras: new Set<string>(), tipos: new Map(), ptMal: false };
+    v.duenos.add(p.duenoParteId?.trim() || (p.dueno?.trim() ? `texto:${p.dueno.trim().toLowerCase()}` : ""));
+    v.escrituras.add(p.especie?.trim().toLowerCase() ?? "");
+    if (Number.isFinite(precio) && precio > 0) {
+      v.precios.add(Math.round(precio * 100) / 100);
+      /* El PT con que el servidor arma la línea (`piezaNeta` → `cubicarPieza`), no el guardado en la fila. */
+      const pt = cubicarPieza(p).pieTablar;
+      if (!(Number.isFinite(pt) && pt >= 0)) v.ptMal = true;
+      const tipo = tipoDePieza(p);
+      const t = v.tipos.get(tipo) ?? { precios: new Set<number>(), pt: 0, importe: 0 };
+      t.precios.add(Math.round(precio * 100) / 100);
+      t.pt += pt;
+      t.importe += pt * precio;
+      v.tipos.set(tipo, t);
+    } else v.sinPrecio = true;
     vistos.set(clave, v);
   }
   const porEspecie: Record<string, number> = {};
   const variosPrecios: Record<string, EspecieConVariosPrecios> = {};
+  const porTipo: Record<string, EspeciePorTipo> = {};
   for (const [clave, v] of vistos) {
     const precios = [...v.precios].sort((a, b) => a - b);
+    const tipos = [...v.tipos.entries()].sort(([a], [b]) => ORDEN_TIPO.indexOf(a) - ORDEN_TIPO.indexOf(b));
+    const pt = tipos.reduce((s, [, t]) => s + t.pt, 0);
+    const soloPorTipo = precios.length > 1 && !v.sinPrecio && !v.ptMal && v.duenos.size === 1 && v.escrituras.size === 1 &&
+      tipos.every(([, t]) => t.precios.size === 1) && pt > 0;
     if (precios.length === 1 && !v.sinPrecio) porEspecie[clave] = precios[0];
-    else if (precios.length > 0) variosPrecios[clave] = { nombre: v.nombre, precios, sinPrecio: v.sinPrecio };
+    else if (soloPorTipo) {
+      const precio = tipos.reduce((s, [, t]) => s + t.importe, 0) / pt;
+      porEspecie[clave] = precio;
+      porTipo[clave] = { nombre: v.nombre, precio, tipos: tipos.map(([tipo, t]) => ({ tipo, pt: Math.round(t.pt * 100) / 100, precio: [...t.precios][0] })) };
+    } else if (precios.length > 0) variosPrecios[clave] = { nombre: v.nombre, precios, sinPrecio: v.sinPrecio };
   }
-  return { general: Number.isFinite(general) && general > 0 ? general : null, porEspecie, variosPrecios };
+  return { general: Number.isFinite(general) && general > 0 ? general : null, porEspecie, variosPrecios, porTipo };
+}
+
+/** Decimales para escribir un precio: 2; el ponderado que no cierra al céntimo, 4 (el monto sale del exacto). */
+export const decimalesDelPrecio = (precio: number): 2 | 4 => (Math.abs(precio * 100 - Math.round(precio * 100)) < 1e-6 ? 2 : 4);
+
+/** Cómo arranca el campo de precio de una especie sugerida: «3.75», o «3.7333» si es un ponderado que no cierra. */
+export const textoDelPrecio = (precio: number): string => precio.toFixed(decimalesDelPrecio(precio));
+
+/**
+ * El ponderado EXACTO mientras el campo siga diciendo lo sugerido: el campo
+ * muestra «3.7333» pero cobrar 3,7333 en vez de 3,7333… corre el monto. Si se
+ * cambió el texto, `null` (vale lo escrito).
+ */
+export function precioExactoDelCampo(clave: string, texto: string, sugeridos: PreciosSugeridos | null | undefined): number | null {
+  const t = sugeridos?.porTipo?.[clave];
+  return t && texto.trim() === textoDelPrecio(t.precio) ? t.precio : null;
+}
+
+/**
+ * El ponderado vale sólo para el PT con que se calculó. Si la línea del
+ * borrador no tiene ese PT (se agregó madera sin volver a guardar: 3,43 × el
+ * volumen viejo no es lo del cubicador) o la especie viene sin su precio
+ * sugerido (despacho), no hay promedio: pide elegir, como la de dos tratos.
+ */
+export function conPonderadoVigente(
+  sugeridos: PreciosSugeridos | null | undefined,
+  brutas: ReadonlyArray<Pick<LineaEspecie, "clave" | "volumen">>,
+): PreciosSugeridos | null | undefined {
+  if (!sugeridos?.porTipo) return sugeridos;
+  const volumen = new Map(brutas.map((l) => [l.clave, l.volumen]));
+  const vencidos = Object.entries(sugeridos.porTipo).filter(([clave, t]) =>
+    sugeridos.porEspecie[clave] !== t.precio || Math.abs(t.tipos.reduce((s, x) => s + x.pt, 0) - (volumen.get(clave) ?? 0)) > 0.005);
+  if (vencidos.length === 0) return sugeridos;
+  const porTipo = { ...sugeridos.porTipo };
+  const porEspecie = { ...sugeridos.porEspecie };
+  const variosPrecios = { ...sugeridos.variosPrecios };
+  for (const [clave, t] of vencidos) {
+    delete porTipo[clave];
+    delete porEspecie[clave];
+    variosPrecios[clave] = { nombre: t.nombre, precios: [...new Set(t.tipos.map((x) => x.precio))].sort((a, b) => a - b), sinPrecio: false };
+  }
+  return { ...sugeridos, porEspecie, variosPrecios, porTipo };
 }
 
 export type VistaValorizada =
@@ -133,9 +225,16 @@ export type VistaValorizada =
   | { falta: string }
   | { elegir: string };
 
-/** Las especies con más de un precio, como las pide el servidor (`especiesConVariosPrecios`). */
+/**
+ * Las especies con más de un precio, como las pide el servidor
+ * (`especiesConVariosPrecios`). También las de precio por tipo: el general no
+ * las cubre (cobraría Tornillo entero a un solo precio); necesitan el suyo.
+ */
 export function marcasDeVariosPrecios(sugeridos: PreciosSugeridos | null | undefined): Array<{ clave: string; cuantos: number }> {
-  return Object.entries(sugeridos?.variosPrecios ?? {}).map(([clave, v]) => ({ clave, cuantos: v.precios.length + (v.sinPrecio ? 1 : 0) }));
+  return [
+    ...Object.entries(sugeridos?.variosPrecios ?? {}).map(([clave, v]) => ({ clave, cuantos: v.precios.length + (v.sinPrecio ? 1 : 0) })),
+    ...Object.entries(sugeridos?.porTipo ?? {}).map(([clave, t]) => ({ clave, cuantos: new Set(t.tipos.map((x) => x.precio)).size })),
+  ];
 }
 
 /**

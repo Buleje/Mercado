@@ -21,7 +21,11 @@ import {
   unidadDe, type AdelantoAbierto, type LineaEspecie,
 } from "@/lib/forestal/cubicacion-cuenta";
 import { aplicarDescuentoLote, lineasDeEspecie } from "@/lib/forestal/cubicacion-comercial";
-import { preciosParaAplicar, valorizarConSugeridos, type PreciosSugeridos, type VistaValorizada } from "@/lib/forestal/cubicacion-madera-cuenta";
+import {
+  conPonderadoVigente, decimalesDelPrecio, precioExactoDelCampo, preciosParaAplicar, textoDelPrecio, valorizarConSugeridos, type PreciosSugeridos, type VistaValorizada,
+} from "@/lib/forestal/cubicacion-madera-cuenta";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { fmtPt, precioPromedio, ptEquivalente } from "@/lib/adelantos/madera-adelanto";
 import { BOTON_PRIMARIO } from "./ctp-lotes-modal-marco";
 import { ACuentaPrevia } from "./cubicador-trozas-a-cuenta";
@@ -37,15 +41,25 @@ const leerPrecio = (s: string): number | null => {
   return s.trim() && Number.isFinite(n) && n > 0 ? n : null;
 };
 
+/** El ponderado por tipo: vuelve a ponerlo exacto en el campo. */
+const PONDERADO = button({ variant: "secondary", className: "rounded-full tabular-nums" });
+
+/** «A, B y C». */
+const enLista = (xs: readonly string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}` : (xs[0] ?? ""));
+
+/** Las líneas por especie como las congeló el servidor, antes de los descuentos del lote. */
+const lineasBrutas = (cub: CubicacionTrozas): LineaEspecie[] =>
+  lineasDeEspecie({ material: cub.material ?? "troza", modo: cub.modo ?? "pieza", formula: cub.formula, trozas: medidasDe(cub) });
+
 /** Las líneas por especie que se valorizan: brutas → descuentos del lote → netas (lo mismo que `aplicar`). */
 function lineasNetas(cub: CubicacionTrozas): LineaEspecie[] {
-  const brutas = lineasDeEspecie({ material: cub.material ?? "troza", modo: cub.modo ?? "pieza", formula: cub.formula, trozas: medidasDe(cub) });
+  const brutas = lineasBrutas(cub);
   try { return aplicarDescuentoLote(brutas, cub.descuentos, cub.formula).lineas; }
   catch { return brutas; /* el servidor ya lo validó al guardar; si no cuadra, responde 422 al aplicar */ }
 }
 
 export default function ValorizarPrecios({
-  cub, cuenta, preciosSugeridos, onAplicada,
+  cub, cuenta, preciosSugeridos: sugeridosDelLote, onAplicada,
 }: {
   cub: CubicacionTrozas;
   /** Su cuenta forestal: adonde va lo que el adelanto no cubre (null = sin ficha en el directorio). */
@@ -57,8 +71,10 @@ export default function ValorizarPrecios({
   const unidad = unidadDe(cub.formula);
   const aserrada = cub.material === "aserrada";
   const lineas = useMemo(() => lineasNetas(cub), [cub]);
+  /* El promedio por tipo, sólo si el borrador tiene el PT con que se calculó. */
+  const preciosSugeridos = useMemo(() => conPonderadoVigente(sugeridosDelLote, lineasBrutas(cub)), [sugeridosDelLote, cub]);
   const [precios, setPrecios] = useState<Record<string, string>>(() =>
-    Object.fromEntries(Object.entries(preciosSugeridos?.porEspecie ?? {}).map(([k, v]) => [k, v.toFixed(2)])),
+    Object.fromEntries(Object.entries(preciosSugeridos?.porEspecie ?? {}).map(([k, v]) => [k, textoDelPrecio(v)])),
   );
   const [general, setGeneral] = useState(() => preciosSugeridos?.general?.toFixed(2) ?? "");
   const conSugeridos = !!preciosSugeridos && (preciosSugeridos.general != null || Object.keys(preciosSugeridos.porEspecie).length > 0);
@@ -82,13 +98,15 @@ export default function ValorizarPrecios({
   );
   const elegidos = useMemo(() => abiertos.filter((a) => !fuera.has(a.id)), [abiertos, fuera]);
 
-  /* Sólo los precios tipeados (> 0): las especies sin precio propio las cubre el general. */
+  /* Sólo los precios tipeados (> 0): las especies sin precio propio las cubre el general.
+     El ponderado por tipo viaja exacto mientras el campo diga lo sugerido (redondeado, el monto se corre). */
   const propios = useMemo(
     () => lineas.flatMap((l) => {
-      const precio = l.volumen > 0 ? leerPrecio(precios[l.clave] ?? "") : null;
+      const texto = precios[l.clave] ?? "";
+      const precio = l.volumen > 0 ? (precioExactoDelCampo(l.clave, texto, preciosSugeridos) ?? leerPrecio(texto)) : null;
       return precio != null ? [{ clave: l.clave, precio }] : [];
     }),
-    [lineas, precios],
+    [lineas, precios, preciosSugeridos],
   );
   const precioGeneral = leerPrecio(general);
   /* Una especie con varios precios en el lote del cubicador no toma el general:
@@ -147,6 +165,7 @@ export default function ValorizarPrecios({
           const linea = "porEspecie" in vista ? vista.porEspecie.find((x) => x.clave === l.clave) : null;
           const ultimo = ultimos[l.clave];
           const varios = preciosSugeridos?.variosPrecios[l.clave];
+          const porTipo = preciosSugeridos?.porTipo?.[l.clave];
           const sinElegir = !!varios && !propios.some((p) => p.clave === l.clave);
           return (
             <li key={l.clave} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
@@ -171,11 +190,22 @@ export default function ValorizarPrecios({
                     {varios.sinPrecio && <span className="text-xs text-[var(--text-tertiary)]">y piezas sin precio</span>}
                   </div>
                 )}
+                {porTipo && (
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm" data-vista="precio-por-tipo">
+                    <button type="button" onClick={() => { setPrecios({ ...precios, [l.clave]: textoDelPrecio(porTipo.precio) }); setConfirmado(false); }}
+                      className={PONDERADO} data-accion="precio-ponderado">
+                      {formatCurrency(porTipo.precio, { decimals: decimalesDelPrecio(porTipo.precio) })} promedio por tipo
+                    </button>
+                    <InfoTip title={`${l.nombre} ${formatCurrency(porTipo.precio, { decimals: decimalesDelPrecio(porTipo.precio) })}`}
+                      what={`Promedio de ${enLista(porTipo.tipos.map((t) => `${t.tipo} ${formatCurrency(t.precio)} (${fmtVolumen(t.pt, "tablar")})`))}.`}
+                      affects="Volumen × este precio = lo que cobra el cubicador por cada tipo. Lo puedes cambiar." />
+                  </div>
+                )}
               </div>
               <label className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
                 S/
                 <input inputMode="decimal" aria-label={`Precio de ${l.nombre} por ${unidad}`} value={precios[l.clave] ?? ""}
-                  placeholder={varios ? "elige" : precioGeneral != null ? general.trim() : "0,00"}
+                  placeholder={varios || porTipo ? "elige" : precioGeneral != null ? general.trim() : "0,00"}
                   onChange={(e) => { setPrecios({ ...precios, [l.clave]: e.target.value }); setConfirmado(false); }}
                   className="h-11 w-24 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-base font-semibold tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]" />
                 por {unidad}
