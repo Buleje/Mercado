@@ -8,7 +8,7 @@ import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
+import { MAX_OBSERVACION_BLOQUE, MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
 
 /**
  * /api/admin/forestal/distribuciones — distribuciones de rolliza guardadas
@@ -51,6 +51,8 @@ const complementoSchema = z.object({
 const bloqueSchema = z.object({
   id: z.string().trim().min(1).max(80),
   etiqueta: z.string().trim().max(120),
+  /* La guía del lote o una nota (28-10). Sin declararla, Zod la borra en silencio. */
+  observacion: z.string().trim().max(MAX_OBSERVACION_BLOQUE).nullish(),
   especie: z.string().trim().max(60),
   m3: z.coerce.number().nonnegative().max(999999),
   permiso: z.string().trim().max(120).nullish(),
@@ -186,6 +188,7 @@ export const POST = withApiHandler("forestal-distribuciones-post", async (req: N
         bloques: parsed.data.bloques.map((b) => ({
           ...b,
           tipo: b.tipo ?? undefined,
+          observacion: b.observacion || undefined,
           permiso: b.permiso ?? undefined,
           loteId: b.loteId ?? undefined,
           paqueteId: b.paqueteId ?? undefined,

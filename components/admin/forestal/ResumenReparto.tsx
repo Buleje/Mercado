@@ -27,7 +27,7 @@ import {
   agruparPor, ETIQUETA_DIMENSION, type DimensionResumen, type PrecioPt,
 } from "@/lib/forestal/cubicacion-resumen";
 import {
-  APROVECHABLE_DEFAULT, aprovechableDe, bloquesDesdeTrozas, claveOverrideLinea, distribucionACsv,
+  APROVECHABLE_DEFAULT, MAX_OBSERVACION_BLOQUE, aprovechableDe, bloquesDesdeTrozas, claveOverrideLinea, distribucionACsv,
   distribuirPorCapacidad, esAserradaDirecta, juzgarRendimiento,
   type BloqueRolliza, type FiltroLargo,
 } from "@/lib/forestal/cubicacion-reparto";
@@ -206,6 +206,8 @@ const COLUMNAS_REPARTO = [
   { key: "tipo", label: "Cargado como", ancho: 174 },
   { key: "permiso", label: "N° de permiso", ancho: 154 },
   { key: "especie", label: "Especie", ancho: 134 },
+  /* La guía del lote o una nota (Brandon 28-10). */
+  { key: "observacion", label: "Observación", ancho: 244 },
   { key: "m3", label: "m³ (R / A)", ancho: 120 },
   { key: "dias", label: "Días", ancho: 88 },
   { key: "fecha", label: "Fecha", ancho: 176 },
@@ -224,8 +226,8 @@ const COLUMNAS_REPARTO = [
 type ColReparto = (typeof COLUMNAS_REPARTO)[number]["key"];
 /** Etiqueta (164) + la columna del tacho (60): las dos que nunca se esconden. */
 const ANCHO_FIJO_REPARTO = 224;
-/** Las tres que el pie de tabla absorbe dentro del `colSpan` del rótulo «Total». */
-const COLS_IDENTIDAD: readonly ColReparto[] = ["tipo", "permiso", "especie"];
+/** Las que el pie de tabla absorbe dentro del `colSpan` del rótulo «Total». */
+const COLS_IDENTIDAD: readonly ColReparto[] = ["tipo", "permiso", "especie", "observacion"];
 
 /**
  * Lo que el reparto le asignó DE VERDAD a un bloque: el número GRANDE de la
@@ -712,7 +714,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
 
   const editar = (
     id: string,
-    campo: "etiqueta" | "permiso" | "especie" | "fecha" | "m3" | "costoM3" | "aprovechablePct" | "dias" | "amparaManualM3" | "piezasManual" | "tipo",
+    campo: "etiqueta" | "observacion" | "permiso" | "especie" | "fecha" | "m3" | "costoM3" | "aprovechablePct" | "dias" | "amparaManualM3" | "piezasManual" | "tipo",
     valor: string,
   ) =>
     guardar(bloques.map((b) => {
@@ -1233,6 +1235,14 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       node: (
         <ThAyuda alinear="left" ayuda="La especie de la rolliza de este bloque (Tornillo, Cedro, etc.) — se usa para agrupar y declarar por especie.">
           Especie
+        </ThAyuda>
+      ),
+    },
+    {
+      key: "observacion",
+      node: (
+        <ThAyuda alinear="left" ayuda="Una nota de la fila. Un lote llevado desde el Libro trae acá la guía (GTF) a la que pertenecen sus trozas, p. ej. «Guías 019-001-0000012, 019-001-0000013». No cambia el reparto.">
+          Observación
         </ThAyuda>
       ),
     },
@@ -1917,6 +1927,23 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                             vacio="Sin especie"
                             conBoton={false}
                             className="h-10 w-full min-w-[110px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                          />
+                        </td>
+                      ),
+                    },
+                    {
+                      key: "observacion",
+                      node: (
+                        <td>
+                          <input
+                            value={b.observacion ?? ""}
+                            onChange={(e) => editar(b.id, "observacion", e.target.value)}
+                            maxLength={MAX_OBSERVACION_BLOQUE}
+                            placeholder="Guía, nota…"
+                            title={b.observacion || undefined}
+                            aria-label={`Observación del bloque ${b.etiqueta || "sin etiqueta"}`}
+                            data-observacion-bloque
+                            className="h-10 w-full min-w-[200px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                           />
                         </td>
                       ),

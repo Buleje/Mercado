@@ -4,9 +4,10 @@ import {
   bloqueDeLoteConsumido,
   corridaEsDelBloqueEntero,
   diaDeCorrida,
+  observacionDeGuias,
   type LoteConsumido,
 } from "@/lib/forestal/bloque-de-lote-consumido";
-import { MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
+import { MAX_OBSERVACION_BLOQUE, MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
 
 /* El lote 28-2026 de Blas (ADR-520), en chico: 3 trozas consumidas por la corrida N° 7. */
 function lote(over: Partial<LoteConsumido> = {}): LoteConsumido {
@@ -140,5 +141,34 @@ describe("piezas sueltas del helper", () => {
     expect(corridaEsDelBloqueEntero({ trozaIds: ["t1", "t2"] }, t, "c7")).toBe(false);
     expect(corridaEsDelBloqueEntero({ trozaIds: ["t1", "t2", "t3"], trozasElegidas: ["t1"] }, t, "c7")).toBe(false);
     expect(corridaEsDelBloqueEntero({ trozaIds: [] }, t, "c7")).toBe(false);
+  });
+});
+
+describe("la guía del lote en la observación del bloque — 28-10", () => {
+  it("el bloque lleva las GTF de sus trozas, sin repetir y en orden; la etiqueta sigue siendo el lote", () => {
+    const gtf = ["019-001-0000013", "019-001-0000012", "019-001-0000013"];
+    const l = lote({ trozas: lote().trozas.map((t, i) => ({ ...t, gtfNumber: gtf[i] })) });
+    const r = bloqueDeLoteConsumido(l, ["t1", "t2", "t3"]);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.bloque.etiqueta).toBe("Lote 28-2026");
+    expect(r.bloque.observacion).toBe("Guías 019-001-0000012, 019-001-0000013");
+  });
+
+  it("una sola guía en singular; sin guías, sin observación", () => {
+    const una = lote({ trozas: lote().trozas.map((t) => ({ ...t, gtfNumber: "019-001-0000012" })) });
+    const r1 = bloqueDeLoteConsumido(una, ["t1", "t2", "t3"]);
+    expect(r1.ok && r1.bloque.observacion).toBe("Guía 019-001-0000012");
+    const r2 = bloqueDeLoteConsumido(lote(), ["t1", "t2", "t3"]);
+    expect(r2.ok && "observacion" in r2.bloque).toBe(false);
+  });
+
+  it("observacionDeGuias: orden numérico y tope con «y N más» que nunca se pasa", () => {
+    expect(observacionDeGuias(["019-001-10", "019-001-9", null, " ", undefined])).toBe("Guías 019-001-9, 019-001-10");
+    const muchas = Array.from({ length: 40 }, (_, i) => `019-001-${String(i + 1).padStart(7, "0")}`);
+    const txt = observacionDeGuias(muchas);
+    expect(txt!.length).toBeLessThanOrEqual(MAX_OBSERVACION_BLOQUE);
+    expect(txt).toMatch(/^Guías 019-001-0000001, .* y \d+ más$/);
+    expect(observacionDeGuias([])).toBeNull();
   });
 });

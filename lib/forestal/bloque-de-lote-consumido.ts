@@ -18,7 +18,7 @@
  *
  * PURO y client-safe: sin DB, sin React y sin `window`.
  */
-import { MAX_TROZAS_POR_BLOQUE, type BloqueRolliza } from "./cubicacion-reparto";
+import { MAX_OBSERVACION_BLOQUE, MAX_TROZAS_POR_BLOQUE, type BloqueRolliza } from "./cubicacion-reparto";
 import { medidaDeTroza } from "./medida-cabe-en-troza";
 import { permisoDeLasTrozas } from "./panel-lotes-reparto";
 import { topeDeclarableM3 } from "./produccion-paquetes";
@@ -39,6 +39,8 @@ export interface TrozaDeLoteConsumido {
   d2Cm?: number | null;
   diametroCm?: number | null;
   permiso?: string | null;
+  /** La GTF de ingreso de la troza (`entry.gtfNumber`): va en la observación del bloque. */
+  gtfNumber?: string | null;
   /** `null` si sigue libre o si su corrida se anuló (manda el ESTADO de la corrida). */
   consumidaEnId?: string | null;
 }
@@ -91,6 +93,31 @@ export function diaDeCorrida(f: Date | string | null | undefined): string | null
   if (!f) return null;
   const iso = typeof f === "string" ? f : Number.isNaN(f.getTime()) ? "" : f.toISOString();
   return /^\d{4}-\d{2}-\d{2}/.test(iso) ? iso.slice(0, 10) : null;
+}
+
+/**
+ * «Guía 019-001-0000012» o «Guías 019-001-0000012, 019-001-0000013»: las GTF
+ * de las trozas, sin repetir y en orden, para la observación del bloque
+ * (Brandon 28-10: «en observación se pondrá su guía a cuál pertenece ese
+ * lote»). Si no caben en `tope` caracteres, las que entran + «y N más».
+ * `null` si ninguna troza trae guía (un lote de inventario).
+ */
+export function observacionDeGuias(
+  gtfs: readonly (string | null | undefined)[],
+  tope: number = MAX_OBSERVACION_BLOQUE,
+): string | null {
+  const unicas = [...new Set(gtfs.map((g) => (g ?? "").trim()).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b, "es", { numeric: true }),
+  );
+  if (unicas.length === 0) return null;
+  const rotulo = unicas.length === 1 ? "Guía" : "Guías";
+  const entera = `${rotulo} ${unicas.join(", ")}`;
+  if (entera.length <= tope) return entera;
+  for (let n = unicas.length - 1; n >= 1; n--) {
+    const corta = `${rotulo} ${unicas.slice(0, n).join(", ")} y ${unicas.length - n} más`;
+    if (corta.length <= tope) return corta;
+  }
+  return `${unicas.length} guías`;
 }
 
 /** Las corridas vivas y SIN producción que se comieron piezas de este lote, por N°. */
@@ -182,8 +209,12 @@ export function bloqueDeLoteConsumido(lote: LoteConsumido, piezasDeLaCorrida: re
   const permiso = lote.permiso?.trim() || permisoDeLasTrozas(suyas);
   const medidas = suyas.map((t) => medidaDeTroza(t)).filter((m): m is NonNullable<typeof m> => m !== null);
 
+  const observacion = observacionDeGuias(suyas.map((t) => t.gtfNumber));
   const bloque: BloqueSembrable = {
     etiqueta: `Lote ${lote.code}`,
+    /* La etiqueta sigue siendo el lote; la guía (o guías) de sus trozas va en
+       la observación de la fila (28-10). */
+    ...(observacion ? { observacion } : {}),
     especie: lote.speciesCommon,
     m3: rollizaM3,
     permiso,

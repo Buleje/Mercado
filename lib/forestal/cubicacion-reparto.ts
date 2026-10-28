@@ -63,11 +63,21 @@ export const APROVECHABLE_DEFAULT = 55;
  */
 export const MAX_TROZAS_POR_BLOQUE = 500;
 
+/** Largo máximo de la observación de un bloque (el guardado lo rechaza si se pasa). */
+export const MAX_OBSERVACION_BLOQUE = 300;
+
 /** Un bloque de rolliza: lo que entró, con su etiqueta para reconocerlo. */
 export interface BloqueRolliza {
   id: string;
   /** GTF, N° de lote, «troza 14»… lo que el operario use para ubicarlo. */
   etiqueta: string;
+  /**
+   * Observación libre de la fila (Brandon 28-10: «en observación se pondrá su
+   * guía a cuál pertenece ese lote»). Un lote llevado a la Distribución la
+   * trae con sus GTF («Guías 019-001-0000012, …»); a mano se escribe lo que
+   * sirva. No cambia el reparto. Tope `MAX_OBSERVACION_BLOQUE`.
+   */
+  observacion?: string | null;
   /** Vacío = sin especie declarada; sólo se cruza con aserrada sin especie. */
   especie: string;
   /**

@@ -62,6 +62,8 @@ export interface AccionSeleccion {
   icon: LucideIcon;
   onClick: () => void;
   disabled?: boolean;
+  /** Qué hace, al pasar el mouse (p. ej. cuántos de los elegidos se saltan y por qué). */
+  title?: string;
 }
 
 export default function CtpBarraSeleccion({
@@ -192,6 +194,7 @@ export default function CtpBarraSeleccion({
                 type="button"
                 disabled={a.disabled}
                 onClick={a.onClick}
+                title={a.title}
                 className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-50 dark:text-[var(--accent)]"
               >
                 <a.icon className="h-4 w-4" aria-hidden /> {a.label}

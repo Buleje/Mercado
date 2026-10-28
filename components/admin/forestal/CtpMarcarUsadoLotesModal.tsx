@@ -27,7 +27,7 @@ const m3 = (v: number) => formatNumber(v, 2);
 function textoSaltado(motivo: MotivoSaltado, usado: boolean): string {
   switch (motivo) {
     case "sin_produccion":
-      return "todavía no pasó por la sierra";
+      return "todavía no tiene producción declarada";
     case "sin_saldo":
       return "no le queda madera en patio";
     case "ya_marcado":

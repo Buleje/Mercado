@@ -14,6 +14,9 @@
  *   marcado como usado— se dice en la barra y no se manda.
  * - **Salió sin guía** y **Volver a disponibles** abren su modal, que primero
  *   pregunta y cuenta (el servidor decide qué corridas, no la pantalla).
+ * - **Repartir en la distribución (N)** (28-10): los elegidos que están en
+ *   consumo van a la Distribución de una vez, un bloque por lote con su guía
+ *   (`useRepartirLotesElegidos`). Sólo aparece si hay alguno en consumo.
  * - **Más**: cerrar los abiertos y el Excel de lo elegido.
  */
 
@@ -36,6 +39,7 @@ import {
 } from "./ctp-lotes-seleccion";
 import { traerDisponibles } from "./ctp-lotes-seleccion-api";
 import type { SeleccionLotes } from "./hooks/use-seleccion-lotes";
+import { useRepartirLotesElegidos } from "./hooks/use-repartir-lotes-elegidos";
 import type { AvisoLotes } from "./CtpLotesModales";
 import CtpMarcarUsadoLotesModal from "./CtpMarcarUsadoLotesModal";
 import CtpCerrarLotesModal from "./CtpCerrarLotesModal";
@@ -123,6 +127,7 @@ export default function CtpLotesSeleccionBarra({
   /* Más de 200 de una vez: el servidor los rechaza. Se dice y se apaga todo lo que le pide algo. */
   const demasiados = sel.lista.length > TOPE_LOTES_POR_VEZ;
   const frenado = ocupado != null || demasiados;
+  const reparto = useRepartirLotesElegidos(sel.lista, frenado);
 
   const cifras: CifraSeleccion[] = [
     { label: "Lotes", valor: formatNumber(r.lotes, 0), fuerte: true },
@@ -135,12 +140,13 @@ export default function CtpLotesSeleccionBarra({
     ...(r.conMarcada
       ? [{ label: "Volver a disponibles", icon: Undo2, onClick: () => setModal({ tipo: "usado", usado: false }), disabled: frenado }]
       : []),
+    ...(reparto.accion ? [reparto.accion] : []),
   ];
 
   const nDesp = r.despachables.length;
   const aviso = demasiados
     ? `Elige hasta ${TOPE_LOTES_POR_VEZ} lotes por vez (tienes ${sel.lista.length}).`
-    : [avisoDeBloqueados(r.bloqueados), avisoDeCompartidas(corridasCompartidas(r.despachables, todos))]
+    : [reparto.aviso, avisoDeBloqueados(r.bloqueados), avisoDeCompartidas(corridasCompartidas(r.despachables, todos))]
         .filter(Boolean)
         .join(" ") || null;
 
@@ -154,7 +160,7 @@ export default function CtpLotesSeleccionBarra({
         accionDisabled={nDesp === 0 || frenado}
         onAccion={() => void despachar()}
         aviso={aviso}
-        avisoTono={demasiados ? "error" : "aviso"}
+        avisoTono={demasiados || reparto.demasiados ? "error" : "aviso"}
         accionesSecundarias={secundarias}
         menu={
           <ActionMenu

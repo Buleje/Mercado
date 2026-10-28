@@ -44,7 +44,7 @@ export function claseMadera(lote: LoteAserrio): ClaseMadera | null {
 export type BloqueoDespacho = "sin_produccion" | "sin_saldo" | "usada";
 
 export const TEXTO_BLOQUEO: Record<BloqueoDespacho, string> = {
-  sin_produccion: "todavía no pasó por la sierra",
+  sin_produccion: "todavía no tiene producción declarada",
   sin_saldo: "no le queda madera en patio",
   usada: "está marcado como usado: desmárcalo primero",
 };
@@ -117,7 +117,7 @@ export function resumenSeleccion(lotes: readonly LoteAserrio[]): ResumenSeleccio
   };
 }
 
-/** «13-2026 (todavía no pasó por la sierra) · 15-2026 (…)», con tope para que la barra no crezca sin fin. */
+/** «13-2026 (todavía no tiene producción declarada) · 15-2026 (…)», con tope para que la barra no crezca sin fin. */
 export function avisoDeBloqueados(bloqueados: ResumenSeleccion["bloqueados"], tope = 3): string | null {
   if (bloqueados.length === 0) return null;
   const partes = bloqueados.slice(0, tope).map((b) => `${b.code} (${TEXTO_BLOQUEO[b.motivo]})`);

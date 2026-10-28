@@ -163,6 +163,21 @@ export function useVistaModulo<T extends string>(
   );
 }
 
+const claveDeMemoria = (moduleId: string) => `admin-last-tab-${moduleId}`;
+
+/**
+ * Deja recordada la vista de un módulo para la PRÓXIMA vez que se monte sin
+ * vista en la URL: antes de navegar a una pantalla que debe abrir en una
+ * sección (llevar lotes a la Distribución → «Lo que entró», 28-10).
+ */
+export function recordarVistaModulo(moduleId: string, vista: string): void {
+  try {
+    localStorage.setItem(claveDeMemoria(moduleId), vista);
+  } catch {
+    // sin persistencia abre donde quedó la última vez: un click más, sin bug
+  }
+}
+
 /**
  * Igual que `useVistaModulo` pero sobre `?sub=`: para el módulo que se renderiza
  * DENTRO de otro y no puede tocar el parámetro del padre.
@@ -225,7 +240,7 @@ function useVistaEnParam<T extends string>(
   paramsDeVista?: ParamsDeVista<T>,
   alias?: AliasDeVista<T>,
 ): UseVistaModuloResult<T> {
-  const storageKey = `admin-last-tab-${moduleId}`;
+  const storageKey = claveDeMemoria(moduleId);
   /* En un ref: quien llama lo pasa como literal y un objeto nuevo en cada
      render no tiene que regenerar `irA`. */
   const paramsDeVistaRef = useRef(paramsDeVista);
