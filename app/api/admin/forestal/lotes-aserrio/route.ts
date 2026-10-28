@@ -170,6 +170,8 @@ const patchSchema = z.discriminatedUnion("accion", [
     tipoProductoConsumir: z.string().trim().max(60).nullish(),
     /* El título habilitante que el lote va a consumir (ADR-393). */
     permiso: z.string().trim().max(100).nullish(),
+    /* El permiso elegido de la lista (`ForestContrato`): fija código y enlace a la vez. */
+    contratoId: z.string().trim().min(1).max(60).nullish(),
     inicioProceso: dia,
     finProceso: dia,
     notes: z.string().trim().max(500).nullish(),
@@ -552,6 +554,8 @@ export async function PATCH(req: NextRequest) {
            del lote decide qué trozas entran (`agregarTrozas`, ADR-393), no
            poder corregirlo deja el lote trabado sin decir por qué. */
         permiso: d.permiso,
+        /* Elegido de la lista de permisos (27-10): manda sobre el texto. */
+        contratoId: d.contratoId,
         inicioProceso: d.inicioProceso,
         finProceso: d.finProceso,
         notes: d.notes,

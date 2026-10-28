@@ -43,6 +43,7 @@ import { Btn, Field, I, ModalBody, ModalFooter, Seccion, productLabel } from "./
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { IconAction } from "@/components/admin/shared/module-primitives";
 import CtpLoteADistribucionBtn from "./CtpLoteADistribucionBtn";
+import CtpLotePermisoCampo from "./CtpLotePermisoCampo";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 import { CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
@@ -288,6 +289,7 @@ export default function CtpLoteDetalleModal({
       }
     >
       <ModalBody>
+        <CtpLotePermisoCampo lote={lote} onEditar={onEditar} />
         {alertas.map((a) => (
           <p
             key={a.texto}

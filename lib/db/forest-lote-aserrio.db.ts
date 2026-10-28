@@ -2789,6 +2789,61 @@ export class ForestLoteAserrioDB {
     return resultado;
   }
 
+  /**
+   * El permiso que se escribe al editar un lote (Brandon 27-10: «poner a qué
+   * permiso pertenece, escoger según los permisos que tengo»). `null` = no se
+   * tocó. Elegido de la lista (`contratoId`), el código sale del permiso
+   * cargado; tipeado (`permiso`), se enlaza si hay uno con ese código — antes
+   * se guardaba sólo el texto y el lote quedaba fuera de «Solo este permiso»
+   * (ADR-421/431).
+   *
+   * ADR-393, del lado que escribe: si el lote ya tiene trozas con permiso, el
+   * lote es de ESE permiso. Cambiarlo por otro diría que la madera salió de un
+   * título del que no salió.
+   */
+  private static async permisoAEscribir(
+    tenantId: string,
+    loteId: string,
+    code: string,
+    cambios: LoteEditInput,
+  ): Promise<{ permiso: string | null; contratoId: string | null } | null> {
+    if (cambios.contratoId === undefined && cambios.permiso === undefined) return null;
+    let nuevo: { permiso: string | null; contratoId: string | null };
+    if (cambios.contratoId !== undefined) {
+      if (!cambios.contratoId) {
+        nuevo = { permiso: null, contratoId: null };
+      } else {
+        const c = await ForestContratoDB.get(tenantId, cambios.contratoId);
+        if (!c) throw new CtpInvariantError("Ese permiso no existe en este negocio.", "VALIDACION");
+        nuevo = { permiso: c.codigo, contratoId: c.id };
+      }
+    } else {
+      const texto = cambios.permiso?.trim() || null;
+      nuevo = { permiso: texto, contratoId: await ForestContratoDB.idPorCodigo(tenantId, texto) };
+    }
+    const deLasTrozas = await prisma.woodEntryTroza.findMany({
+      where: { tenantId, loteAserrioId: loteId },
+      select: { contratoId: true, entry: { select: { originCode: true, contratoId: true } } },
+    });
+    const ajenas = deLasTrozas.filter((t) => {
+      const contrato = t.contratoId ?? t.entry.contratoId;
+      const codigo = t.entry.originCode?.trim() || null;
+      if (!contrato && !codigo) return false;
+      if (!nuevo.contratoId && !nuevo.permiso) return true;
+      return contrato ? contrato !== nuevo.contratoId : codigo !== nuevo.permiso;
+    });
+    if (ajenas.length > 0) {
+      const de = ajenas[0].entry.originCode?.trim() || "otro permiso";
+      throw new CtpInvariantError(
+        `Las ${ajenas.length === 1 ? "trozas" : `${ajenas.length} trozas`} del lote ${code} son del permiso ${de}: ` +
+          `el lote es de ese permiso. Un lote ampara un solo título habilitante.`,
+        "LOTE_NO_EDITABLE",
+        { permisoDeLasTrozas: de },
+      );
+    }
+    return nuevo;
+  }
+
   /** Saca una pieza del lote (mientras esté abierto). */
   static async quitarTroza(tenantId: string, loteId: string, trozaId: string, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
@@ -2838,6 +2893,8 @@ export class ForestLoteAserrioDB {
     });
     if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
 
+    const permiso = await ForestLoteAserrioDB.permisoAEscribir(tenantId, loteId, lote.code, cambios);
+
     const nuevaEspecie = cambios.speciesCommon?.trim();
     if (
       nuevaEspecie &&
@@ -2886,7 +2943,7 @@ export class ForestLoteAserrioDB {
         ...(cambios.tipoProductoConsumir !== undefined
           ? { tipoProductoConsumir: cambios.tipoProductoConsumir?.trim() || null }
           : {}),
-        ...(cambios.permiso !== undefined ? { permiso: cambios.permiso?.trim() || null } : {}),
+        ...(permiso ?? {}),
         ...(cambios.inicioProceso !== undefined ? { inicioProceso: cambios.inicioProceso } : {}),
         ...(cambios.finProceso !== undefined ? { finProceso: cambios.finProceso } : {}),
       },

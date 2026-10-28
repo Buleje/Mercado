@@ -35,6 +35,8 @@ export interface CambiosLote {
   speciesScientific?: string | null;
   ordenProduccion?: string | null;
   tipoProductoConsumir?: string | null;
+  /** El permiso elegido de la lista; `null` = el lote queda sin permiso. */
+  contratoId?: string | null;
   /** `AAAA-MM-DD` o `null` para borrarla. */
   inicioProceso?: string | null;
   finProceso?: string | null;
