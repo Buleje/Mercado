@@ -74,6 +74,8 @@ type Respuesta = {
   reservasVencidas?: unknown;
   /** `wood-entries?sinFoto=1`: guías recibidas sin foto de la carga. */
   sinFoto?: { guias?: number; detalle?: { gtf: string }[] };
+  /** `wood-entries?sinRecibir=1`: guías vivas sin fecha de llegada al patio. */
+  sinRecibir?: { guias?: number; m3?: number };
   /** `guias/plata?sinPagar=1` (ADR-437): compras con algo por pagar, por proveedor. */
   porParte?: unknown;
   /** `ctp?paquetesSinMedidas=1`: los paquetes sin alguna medida, recortados, y cuántos son en total. */
@@ -231,8 +233,11 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
       /* Sin período: una guía que salió en agosto sin registrar sigue
          descontando el patio hoy. Sólo el conteo (no arma propuestas). */
       json("/api/admin/forestal/anexos/a-despacho?contar=1"),
+      /* Sin período: una guía que llegó en agosto sin fecha de recepción sigue
+         sin ella hoy (las de meses cerrados no cuentan: no se tocan). */
+      json("/api/admin/forestal/wood-entries?sinRecibir=1"),
     ])
-      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos, sinFoto, sinPagar, sinDespacho]) => {
+      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos, sinFoto, sinPagar, sinDespacho, sinRecibir]) => {
         if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
         const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
           .filter((e) => e.status === "registrado");
@@ -281,6 +286,8 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           permisosVencidosDetalle: yaVencidos.map((a) => ({ codigo: a.codigo || "sin código", dias: a.dias })),
           guiasSinFoto: Number(sinFoto?.sinFoto?.guias) || 0,
           guiasSinFotoDetalle: arr<{ gtf: string }>(sinFoto?.sinFoto?.detalle),
+          guiasSinRecibir: Number(sinRecibir?.sinRecibir?.guias) || 0,
+          m3SinRecibir: Number(sinRecibir?.sinRecibir?.m3) || 0,
           guiasSinPagar: arr<GuiasSinPagarDeParte>(sinPagar?.porParte),
           guiasSinDespacho: Number(sinDespacho?.guias) || 0,
           m3SinDespacho: Number(sinDespacho?.totalM3) || 0,

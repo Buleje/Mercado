@@ -15,6 +15,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { CLASE_TEXTO_ACCION, TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
 import { cn } from "@/lib/utils";
 import CtpConteosPatio from "./CtpConteosPatio";
+import CtpGuiasSinRecibir from "./CtpGuiasSinRecibir";
 import { BTN_ACCION_RIEL, CabeceraDeVista } from "./ctp-cabecera-vista";
 import { BTN_ICONO_RIEL } from "./ctp-riel-piezas";
 import { n2 } from "./ctp-trozas-ui";
@@ -81,6 +82,11 @@ export default function CtpTrozasCabecera({
         <Axe className="h-4 w-4" aria-hidden="true" />
         <TextoDeAccion>Plan del día</TextoDeAccion>
       </button>
+      {/* Las guías sin fecha de llegada (las del importador sin la casilla «ya
+          están en el patio»): sin ella los días en el patio cuentan desde el
+          asiento y la guía sin validar queda fuera del conteo. Abre la
+          recepción en bloque. */}
+      <CtpGuiasSinRecibir onRecibidas={onRecargar} />
       {/* El conteo físico del patio (acta del modo patio, 2026-09-26). */}
       <CtpConteosPatio />
       <button

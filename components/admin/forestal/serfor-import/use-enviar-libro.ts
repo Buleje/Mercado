@@ -89,6 +89,11 @@ export interface ContextoDelEnvio {
   filasDe: (f: FormatoCtp) => FilaParseada[] | undefined;
   /** Código de troza → GTF del ingreso que viene en el mismo libro (preview). */
   mapaIngresos: Map<string, string>;
+  /**
+   * «¿Estas trozas ya están en el patio?» marcada: viaja sólo a los ingresos.
+   * `fecha` null = la de cada guía en el archivo. Ausente = entran sin recibir.
+   */
+  recepcion?: { fecha: string | null } | null;
 }
 
 export function useEnviarLibro({
@@ -127,7 +132,7 @@ export function useEnviarLibro({
 
   const enviar = useCallback(
     async (mode: "preview" | "commit", ctx: ContextoDelEnvio) => {
-      const { archivos, permisoDe, filasDe, mapaIngresos } = ctx;
+      const { archivos, permisoDe, filasDe, mapaIngresos, recepcion } = ctx;
       if (archivos.length === 0) return;
       setCargando(true);
       setModoEnvio(mode);
@@ -166,6 +171,7 @@ export function useEnviarLibro({
                 fileName: a.nombre,
                 origen: "libro-oficial",
                 ...(contratoId ? { asignacion: { contratoId } } : {}),
+                ...(recepcion && destino.registro === "ingresos" ? { recepcion } : {}),
                 [CAMPO_BODY[a.formato]]: atribuirSiEsSalida(
                   a.formato,
                   aCuerpoDelLibro(a.formato, a.seccion.parseadas, vecinas),

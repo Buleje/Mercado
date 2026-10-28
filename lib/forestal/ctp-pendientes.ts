@@ -88,6 +88,16 @@ export interface DatosPendientes {
   /** Cuáles (las más recientes primero) — el detalle nombra las tres primeras. */
   guiasSinFotoDetalle?: readonly { gtf: string }[];
   /**
+   * Guías vivas sin fecha de llegada al patio (o con trozas sin decidir), de
+   * todo el libro y fuera de meses cerrados (`WoodEntriesDB.guiasSinRecibir`).
+   * La fecha de recepción es lo primero que pregunta una fiscalización —el día
+   * que la madera bajó del camión— y la que entró por el importador sin la
+   * casilla «ya están en el patio» la espera acá.
+   */
+  guiasSinRecibir?: number;
+  /** m³ de esos asientos sin fecha. */
+  m3SinRecibir?: number;
+  /**
    * Guías de COMPRA con algo por pagar, una fila por proveedor (ADR-437 §10).
    * Tampoco es un papel: es plata que se debe. `atrasado` sólo si la ficha dice
    * crédito y ya pasó el plazo; si no, `pendiente`. Nunca `bloquea`: el libro
@@ -264,6 +274,20 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
     /* Evidencia, no papel: el libro cierra igual sin fotos —por eso
        «pendiente»—, pero una guía recibida sin foto no tiene cómo probar qué
        bajó del camión si después alguien lo discute. */
+    /* La llegada al patio: el libro cierra igual —por eso «pendiente»—, pero
+       sin ella la guía no dice cuándo bajó la madera ni desde cuándo está en
+       el patio. Se resuelve en Trozas con «Sin recepcionar → Recibir en
+       bloque». */
+    {
+      clave: "guias-sin-recibir",
+      urgencia: "pendiente",
+      cantidad: d.guiasSinRecibir ?? 0,
+      titulo: (d.m3SinRecibir ?? 0) > 0
+        ? `${(d.guiasSinRecibir ?? 0) === 1 ? "Guía" : "Guías"} sin fecha de llegada al patio · ${(d.m3SinRecibir ?? 0).toFixed(2)} m³`
+        : (d.guiasSinRecibir ?? 0) === 1 ? "Guía sin fecha de llegada al patio" : "Guías sin fecha de llegada al patio",
+      detalle: "Una fiscalización pregunta el día que la madera bajó del camión: recíbelas en bloque desde Trozas.",
+      vista: "trozas",
+    },
     {
       clave: "guias-sin-foto",
       urgencia: "pendiente",

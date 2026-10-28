@@ -24,6 +24,8 @@ import {
   type PermisoParaImport,
 } from "@/lib/forestal/asignar-permiso-import";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { ddmmDe, diaDeRecepcionAlImportar } from "@/lib/forestal/recepcion-al-importar";
+import { limaDateKey } from "@/lib/utils";
 import {
   claveDeGuiaRef,
   decidirGuiaAlImportar,
@@ -229,6 +231,17 @@ const bodySchema = z.object({
    * corrida que consumió guías lo hereda de ellas.
    */
   asignacion: asignacionSchema,
+  /**
+   * «¿Estas trozas ya están en el patio?» (sólo ingresos). Ausente = casilla
+   * apagada: las guías entran SIN fecha de llegada y quedan en «Sin
+   * recepcionar» de Trozas. La fecha de recepción es dato legal y nunca se
+   * inventa: presente, cada guía nueva se recibe con `fecha` (común) o, sin
+   * ella, con la fecha de la guía en el archivo — nunca futura ni anterior a
+   * la guía. Las que ya estaban no se tocan.
+   */
+  recepcion: z
+    .object({ fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha AAAA-MM-DD").nullish() })
+    .optional(),
 });
 
 type ResultRow = {
@@ -499,7 +512,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
   }
-  const { mode, registro, fileName, origen, ingresos, produccion, salida, asignacion } = parsed.data;
+  const { mode, registro, fileName, origen, ingresos, produccion, salida, asignacion, recepcion } = parsed.data;
 
   /* El permiso del archivo (ADR-503). Asignar el origen legal es lo mismo que
      declarar el título de una guía: sólo admin/dueño (`requireAdmin` deja pasar
@@ -895,6 +908,17 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
      guía: cada fila tiene su lugar. */
   const porPosicion: (ResultRow | undefined)[] = new Array(ingresos.length);
   let creables = 0, saltados = 0, difieren = 0, errores = 0, creados = 0, agrupadas = 0;
+  /* «¿Estas trozas ya están en el patio?»: las guías NUEVAS que se reciben al
+     terminar el alta, juntas por guía y día (la recepción revisa la guía entera
+     antes del primer asiento, ADR-434). Sin casilla, nada: quedan en «Sin
+     recepcionar» de Trozas. */
+  const hoyLima = limaDateKey();
+  const porRecibir = new Map<string, { clave: string; ids: string[]; lideres: ResultRow[]; dia: string }>();
+  let recibidas = 0;
+  /* Por guía, no por especie: una guía de dos especies que no se recibe es UNA. */
+  const sinRecibir = new Set<string>();
+  const llegadaDe = (d: { entryDate?: string | null }) =>
+    recepcion ? diaDeRecepcionAlImportar({ comun: recepcion.fecha, delArchivo: d.entryDate ?? null, hoy: hoyLima }) : null;
 
   const validas: FilaIngreso[] = [];
   ingresos.forEach((raw, pos) => {
@@ -1288,7 +1312,13 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       const otraEspecieDeLaGuia = enBase.length > 0 ? ` · otra especie de la guía ${d.gtfNumber}, que ya estaba con ${[...new Set(enBase.map((e) => e.speciesCommonName))].join(", ")}` : "";
       if (mode === "preview") {
         creables++;
-        anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "crear", message: `${d.speciesCommonName} · ${d.volumeM3} m³${d.speciesCites ? " · CITES" : ""}${deVarias}${otraEspecieDeLaGuia}${proveedor ? ` · proveedor: ${proveedor.providerName}` : ""}${fraseFuente}${avisoGuia}`, permiso: permisoFila }, permisoFila);
+        const llegada = llegadaDe(d);
+        const fraseLlegada = !llegada
+          ? ""
+          : llegada.dia
+            ? ` · se recibe en el patio el ${ddmmDe(llegada.dia)}`
+            : ` · AVISO: no se recibirá al importar: ${llegada.problema}`;
+        anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "crear", message: `${d.speciesCommonName} · ${d.volumeM3} m³${d.speciesCites ? " · CITES" : ""}${deVarias}${otraEspecieDeLaGuia}${proveedor ? ` · proveedor: ${proveedor.providerName}` : ""}${fraseFuente}${avisoGuia}${fraseLlegada}`, permiso: permisoFila }, permisoFila);
         continue;
       }
       /* Si el alta falla después, el permiso ya puesto a la guía vieja se
@@ -1389,6 +1419,18 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
           },
           permisoFila,
         );
+        const llegada = creado?.id ? llegadaDe(d) : null;
+        const lider = porPosicion[g.filas[0].pos];
+        if (llegada?.dia && lider) {
+          const k = `${clave}|${llegada.dia}`;
+          const grupo = porRecibir.get(k) ?? { clave, ids: [], lideres: [], dia: llegada.dia };
+          grupo.ids.push(creado.id);
+          grupo.lideres.push(lider);
+          porRecibir.set(k, grupo);
+        } else if (llegada?.problema && lider) {
+          sinRecibir.add(clave);
+          lider.message += ` · AVISO: no se recibió: ${llegada.problema}`;
+        }
       } catch (e) {
         errores++;
         logger.error("[wood-entries.import] row failed", { gtf: d.gtfNumber, error: String(e) });
@@ -1396,6 +1438,40 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
           ? ` · La guía ${d.gtfNumber} que ya estaba sin permiso SÍ quedó con el permiso: vuelve a subir el archivo y esta especie entra en ella.`
           : "";
         anotarGrupo(g, { row: g.filas[0].row, gtf: d.gtfNumber, action: "error", message: `${e instanceof Error ? e.message : String(e)}${yaPuesto}` }, undefined);
+      }
+    }
+    /* La llegada al patio, guía por guía, por la MISMA puerta que la recepción
+       en bloque (`recepcionarGuia`: mes cerrado, vencimiento, sierra, rastro
+       `ctp_ingreso_recepcion`). Que una no se pueda recibir no deshace el alta:
+       queda en «Sin recepcionar» con el motivo en su fila. */
+    for (const { clave, ids, lideres, dia } of porRecibir.values()) {
+      let frase: string;
+      /* Recibir valida la guía pendiente: su «(pendiente de validar)» ya no es verdad. */
+      let validada = false;
+      try {
+        const r = await WoodEntriesDB.recepcionarGuia(
+          auth.tenantId,
+          ids,
+          dia,
+          auth.username ?? "import",
+          `Llegada al patio declarada al importar${fileName ? ` «${fileName}»` : ""}`,
+        );
+        if (r.fallo) {
+          sinRecibir.add(clave);
+          frase = ` · AVISO: no se recibió: ${r.fallo.motivo}`;
+        } else {
+          recibidas++;
+          validada = origen !== "libro-oficial";
+          frase = ` · recibida en el patio el ${ddmmDe(dia)}` + (validada ? " y validada" : "");
+        }
+      } catch (e) {
+        sinRecibir.add(clave);
+        frase = ` · AVISO: no se recibió: ${e instanceof Error ? e.message : String(e)}`;
+        logger.error("[wood-entries.import] no se pudo recibir la guía importada", { error: String(e) });
+      }
+      for (const l of lideres) {
+        if (validada) l.message = l.message.replace("Importado (pendiente de validar)", "Importado");
+        l.message += frase;
       }
     }
   } finally {
@@ -1420,6 +1496,8 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       /* Filas que entraron en el ingreso de otra (misma guía y especie). */
       agrupadas,
       ...(permiso ? { permiso: resumirPermiso(permiso.codigo, permisos) } : {}),
+      /* Con la casilla del patio: guías recibidas al importar y las que quedaron sin recibir. */
+      ...(recepcion && mode === "commit" ? { recibidas, sinRecibir: sinRecibir.size } : {}),
     },
     detalle,
   });

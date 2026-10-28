@@ -428,6 +428,14 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const porGuia = url.searchParams.get("agrupar") === "guia";
 
   try {
+    /* ?sinRecibir=1 → las guías vivas sin fecha de llegada al patio, para el
+       aviso «Sin recepcionar» de Trozas y de los pendientes. De todo el libro a
+       propósito: una guía sin recibir sigue pendiente aunque el período elegido
+       sea otro. Sólo el agregado y los N° para abrir la recepción en bloque. */
+    if (url.searchParams.get("sinRecibir") === "1") {
+      const sinRecibir = await WoodEntriesDB.guiasSinRecibir(auth.tenantId);
+      return NextResponse.json({ sinRecibir });
+    }
     /* ?sinFoto=1 → las guías RECIBIDAS sin foto de la carga, para la tira de
        pendientes (período + permiso, como el resto). Sólo el agregado. */
     if (url.searchParams.get("sinFoto") === "1") {

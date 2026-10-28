@@ -30,7 +30,7 @@ import { useMemo, useRef, useState } from "react";
 import { AlertTriangle, FileText, Upload } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { filasQueEntran } from "@/lib/forestal/ctp-serfor-a-libro";
+import { ENDPOINT_DE, filasQueEntran } from "@/lib/forestal/ctp-serfor-a-libro";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
 import { usePermisosForestal } from "@/hooks/use-permisos-forestal";
@@ -48,6 +48,7 @@ import RevisionDelLibro from "./serfor-import/RevisionDelLibro";
 import { etiquetaDe, useArchivosDelLibro, type ArchivoCargado } from "./serfor-import/use-archivos-del-libro";
 import { useEnviarLibro, type ResultadoDeArchivo } from "./serfor-import/use-enviar-libro";
 import ZonaDelLibro from "./serfor-import/ZonaDelLibro";
+import RecepcionAlImportar, { PATIO_APAGADO, type PatioAlImportar } from "./serfor-import/RecepcionAlImportar";
 
 const MODOS = [
   ["libro", "Un solo archivo", "El Excel con las cinco hojas"],
@@ -75,6 +76,8 @@ export default function CtpSerforImportModal({
   reporteInicial?: ImportadoDelLibro | null;
 }) {
   const [guardado, setGuardado] = useState<ImportadoDelLibro | null>(reporteInicial ?? null);
+  /* «¿Estas trozas ya están en el patio?»: apagada por defecto (la llegada es dato legal). */
+  const [patio, setPatio] = useState<PatioAlImportar>(PATIO_APAGADO);
   /* Los datos del reporte se leen al terminar el envío, no al crear el hook: van por ref. */
   const paraReporte = useRef<(r: ResultadoDeArchivo[]) => ImportadoDelLibro>(() => ({ reporte: armarReporte([]), nombreArchivo: null }));
   const envio = useEnviarLibro({
@@ -141,8 +144,15 @@ export default function CtpSerforImportModal({
 
   const totalListas = ordenados.reduce((s, a) => s + filasQueEntran(a.formato, a.seccion.parseadas).length, 0);
 
+  const conIngresos = ordenados.filter((a) => ENDPOINT_DE[a.formato].registro === "ingresos");
   const enviar = (mode: "preview" | "commit") =>
-    void envio.enviar(mode, { archivos: ordenados, permisoDe, filasDe, mapaIngresos: mapaCodigoAGuia(filasDe("ingresos")) });
+    void envio.enviar(mode, {
+      archivos: ordenados,
+      permisoDe,
+      filasDe,
+      mapaIngresos: mapaCodigoAGuia(filasDe("ingresos")),
+      recepcion: patio.marcada ? { fecha: patio.fecha || null } : null,
+    });
 
   const tomarLibro = async (f: File) => {
     const error = await libro.tomarLibro(f);
@@ -292,6 +302,17 @@ export default function CtpSerforImportModal({
           avisosEntreArchivos={avisosEntreArchivos}
         />
         <LoQueDeclaraElLibro filasDe={filasDe} hay={hay} />
+        {conIngresos.length > 0 && (
+          <RecepcionAlImportar
+            valor={patio}
+            onCambiar={(v) => {
+              setPatio(v);
+              envio.limpiar(); // la revisión anterior decía otra llegada
+            }}
+            sinFechaEnElArchivo={conIngresos.some((a) => a.formato === "inventarioTrozas")}
+            deshabilitado={cargando}
+          />
+        )}
         <AvanceDelEnvio
           avance={envio.avance}
           modoEnvio={modoEnvio}

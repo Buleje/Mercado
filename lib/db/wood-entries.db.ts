@@ -58,6 +58,7 @@ import type { DatosKpiPatio } from "@/lib/forestal/trozas-patio-kpis";
 import { asignarCorrelativos, planearEtiquetado, tieneCodigoPlanta } from "@/lib/forestal/etiquetado-trozas";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
+import { resumirGuiasSinRecibir, type GuiasSinRecibir } from "@/lib/forestal/recepcion-al-importar";
 import { CTP_TX_OPTS, CtpInvariantError, exigirIngresoAntesDeLaCorrida } from "./forest-ctp-consumo.db";
 import { GtfNumeroDB } from "./gtf-numero.db";
 import { puedeSerDelDueno } from "@/lib/forestal/loth-talonario";
@@ -5776,6 +5777,56 @@ export class WoodEntriesDB {
       m3: Math.round(sin.reduce((a, g) => a + g.m3, 0) * 1000) / 1000,
       detalle: sin.slice(0, 20),
     };
+  }
+
+  /**
+   * Las guías vivas que todavía no tienen fecha de llegada al patio (o con
+   * trozas sin decidir), para el aviso «Sin recepcionar» de Trozas y de los
+   * pendientes del libro. Mismo criterio que la recepción en bloque
+   * (`faltaRecibirMadera`); las de un mes cerrado se cuentan aparte porque no
+   * se tocan sin reabrirlo. Sólo lectura.
+   */
+  static async guiasSinRecibir(tenantId: string): Promise<GuiasSinRecibir> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.woodEntry.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        status: { notIn: ["rechazado", "anulado"] },
+        OR: [
+          { fechaRecepcion: null },
+          { trozas: { some: { trozaOrigenId: null, fechaRecepcion: null, noRecepcionada: false } } },
+        ],
+      },
+      select: {
+        id: true,
+        gtfNumber: true,
+        gtfSeries: true,
+        status: true,
+        entryDate: true,
+        fechaRecepcion: true,
+        volumeM3: true,
+      },
+      orderBy: { entryDate: "asc" },
+      take: 5000,
+    });
+    const [trozas, cierres] = await Promise.all([
+      WoodEntriesDB.resumenTrozasDe(filas.map((f) => f.id)),
+      ForestCtpCierreDB.list(tenantId),
+    ]);
+    return resumirGuiasSinRecibir(
+      filas.map((f) => ({
+        gtfNumber: f.gtfNumber,
+        gtfSeries: f.gtfSeries,
+        status: f.status,
+        entryDate: f.entryDate,
+        fechaRecepcion: f.fechaRecepcion,
+        volumeM3: Number(f.volumeM3 ?? 0),
+        trozasCount: trozas.get(f.id)?.trozasCount ?? 0,
+        trozasDecididas: trozas.get(f.id)?.trozasDecididas ?? 0,
+      })),
+      cierres,
+    );
   }
 
   static async update(tenantId: string, id: string, input: WoodEntryUpdateInput, user: string) {
