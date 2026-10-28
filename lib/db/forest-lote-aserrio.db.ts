@@ -1719,6 +1719,8 @@ export class ForestLoteAserrioDB {
       fecha?: Date;
       observaciones?: string | null;
       user: string;
+      /** Si UNA de las pedidas no entra, no entra ninguna (el lote importado del SNIFFS). */
+      exigirTodas?: boolean;
     },
   ): Promise<{
     corrida: { id: string; lineNo: number };
@@ -1727,9 +1729,9 @@ export class ForestLoteAserrioDB {
     rechazadas: { id: string; codigo: string | null; motivo: string }[];
   }> {
     if (!tenantId) throw new Error("tenantId is required");
-    const { loteId, trozaIds = [], fecha, observaciones, user } = input;
+    const { loteId, trozaIds = [], fecha, observaciones, user, exigirTodas } = input;
 
-    const agregado = await ForestLoteAserrioDB.apartarParaConsumir(tenantId, loteId, trozaIds, fecha, user);
+    const agregado = await ForestLoteAserrioDB.apartarParaConsumir(tenantId, loteId, trozaIds, fecha, user, { exigirTodas });
 
     const lote = await prisma.forestLoteAserrio.findFirst({
       where: { id: loteId, tenantId, deletedAt: null },

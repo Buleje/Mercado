@@ -143,6 +143,8 @@ export type CtpAuditAction =
   // Lote declarado como inventario (Brandon, 2026-08-31): entra y sale en el
   // mismo acto, sin trozas reales — ver `ORIGEN_LOTE_INVENTARIO`.
   | "ctp_lote_aserrio_inventario_create"
+  /** Abrió (o completó) un lote ya consumido pegando el Excel del SNIFFS (27-10). */
+  | "ctp_lote_importado_sniffs"
   | "ctp_lote_aserrio_update"
   /** Guardó (o borró) lo que el SNIFFS declara del lote, para cotejar (ADR-398). */
   | "ctp_lote_aserrio_sniffs"

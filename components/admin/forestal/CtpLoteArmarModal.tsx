@@ -22,10 +22,13 @@
  * pero no la pieza por pieza. Este modal sólo declara el volumen consumido; los
  * paquetes de producción se cargan después en `CtpRegistrarProduccionModal`
  * (mismo formulario que usa el resto del libro, sin duplicar esa UI acá).
+ *
+ * **Modo EXCEL (Brandon, 2026-10-27):** la lista de trozas del SNIFFS pegada
+ * entra como lote YA consumido, con sus trozas del patio (`CtpLoteDesdeExcel`).
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Archive, Boxes, Loader2, Plus } from "@buleje/design-system/icons";
+import { Boxes, FileSpreadsheet, Loader2, Plus } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
@@ -35,6 +38,9 @@ import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar } from 
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import CtpPegarSniffsLote from "./CtpPegarSniffsLote";
+import CtpLoteDesdeExcel from "./CtpLoteDesdeExcel";
+import CtpLoteArmarModos, { type ModoArmarLote } from "./CtpLoteArmarModos";
+import { useLoteDesdeExcel } from "./hooks/use-lote-desde-excel";
 import { CtpEspecieInput, CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
 import { formatNumber } from "@/lib/format";
@@ -79,6 +85,7 @@ export default function CtpLoteArmarModal({
   crear,
   onIniciarInventario,
   onListo,
+  onImportado,
   onClose,
 }: {
   /** El patio, para ofrecer las especies que de verdad hay. */
@@ -90,10 +97,13 @@ export default function CtpLoteArmarModal({
    */
   onIniciarInventario: (input: MaterialDeInventario) => void;
   onListo: (mensaje: string, tono: "ok" | "aviso") => void;
+  /** Se importó al menos un lote desde el Excel: hay que releer los lotes. */
+  onImportado: () => void;
   onClose: () => void;
 }) {
   const hoy = new Date().toISOString().slice(0, 10);
-  const [modo, setModo] = useState<"trozas" | "inventario">("trozas");
+  const [modo, setModo] = useState<ModoArmarLote>("trozas");
+  const excel = useLoteDesdeExcel();
   /* El permiso va PRIMERO y acota lo que sigue (ADR-393). Un lote con madera de
      dos títulos habilitantes no puede decir después de cuál salió su corrida.
      Vacío = «todos», que es lo que necesita un CTP de una sola fuente: lo que
@@ -194,12 +204,28 @@ export default function CtpLoteArmarModal({
   const elegida = especies.find((e) => e.nombre === especie) ?? null;
   const fechasAlReves = Boolean(inicio && fin && fin < inicio);
   const puedeGuardar =
-    modo === "trozas"
-      ? especie.trim().length > 0 && !fechasAlReves && !guardando
-      : especie.trim().length > 0 && Number(volumenConsumido) > 0 && !fechasAlReves && !guardando;
+    modo === "excel"
+      ? excel.listos.length > 0 && !excel.importando
+      : modo === "trozas"
+        ? especie.trim().length > 0 && !fechasAlReves && !guardando
+        : especie.trim().length > 0 && Number(volumenConsumido) > 0 && !fechasAlReves && !guardando;
+  const ocupado = guardando || excel.importando;
+  const pendientesExcel = excel.lotes.filter((l) => !l.hecho).length;
+
+  async function importarExcel() {
+    const r = await excel.importar();
+    if (r.hechos.length === 0) return;
+    onImportado();
+    onListo(r.hechos.join(" · "), "ok");
+    if (r.todos) onClose();
+  }
 
   async function guardar() {
     if (!puedeGuardar) return;
+    if (modo === "excel") {
+      await importarExcel();
+      return;
+    }
     if (modo === "inventario") {
       /* No crea nada acá: el lote y la corrida nacen juntos recién cuando se
          declaran los paquetes, para no dejar un lote de inventario a medio
@@ -250,20 +276,26 @@ export default function CtpLoteArmarModal({
   return (
     <AdminModal
       open
-      onClose={guardando ? () => {} : onClose}
+      onClose={ocupado ? () => {} : onClose}
       variant="wide"
       icon={Boxes}
       title="Programar un lote de aserrío"
       description={
         modo === "trozas"
           ? "Se declara acá; las piezas se eligen en Consumos, filtradas por esta especie"
-          : "Existencia previa al sistema: declarás cuánto se consumió y en el paso siguiente, qué salió"
+          : modo === "excel"
+            ? "La lista de trozas del SNIFFS: cada lote entra con sus trozas del patio, ya consumido"
+            : "Existencia previa al sistema: declaras cuánto se consumió y en el paso siguiente, qué salió"
       }
       footer={
         <ModalFooter
           error={error ?? (fechasAlReves ? "El fin del proceso no puede ser anterior al inicio." : null)}
           nota={
-            modo === "inventario"
+            modo === "excel"
+              ? excel.lotes.length === 0
+                ? "Pega la lista de trozas del SNIFFS: cada lote entra ya consumido, con su producción por declarar"
+                : `${excel.listos.length} de ${pendientesExcel} lote${pendientesExcel === 1 ? "" : "s"} listo${excel.listos.length === 1 ? "" : "s"} para importar`
+              : modo === "inventario"
               ? "El siguiente paso pide los paquetes que produjo esta madera"
               : elegida
                 ? `Disponible de ${elegida.nombre}: ${elegida.piezas} pza · ${fmtM3(elegida.volumen)} m³ · ${formatNumber(pieTablarDe(elegida.volumen))} pt`
@@ -275,48 +307,33 @@ export default function CtpLoteArmarModal({
                   : "Elige la especie que va a aserrarse en este lote"
           }
         >
-          <Btn variant="secondary" onClick={onClose} disabled={guardando}>
+          <Btn variant="secondary" onClick={onClose} disabled={ocupado}>
             Cerrar
           </Btn>
           <Btn variant="primary" onClick={() => void guardar()} disabled={!puedeGuardar}>
-            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            {modo === "inventario" ? "Seguir a declarar producción" : "Guardar"}
+            {ocupado ? <Loader2 className="h-4 w-4 animate-spin" /> : modo === "excel" ? <FileSpreadsheet className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {modo === "inventario"
+              ? "Seguir a declarar producción"
+              : modo === "excel"
+                ? (excel.listos.length || pendientesExcel) > 1
+                  ? `Importar ${excel.listos.length || pendientesExcel} lotes`
+                  : "Importar lote"
+                : "Guardar"}
           </Btn>
         </ModalFooter>
       }
     >
       <ModalBody ref={refCuerpo}>
         {/* El toggle de modo, primero: cambia qué pide el resto del formulario. */}
-        <div role="tablist" aria-label="Cómo armar el lote" className="mb-3 flex flex-wrap gap-2">
-          {(
-            [
-              ["trozas", Boxes, "Con trozas del patio", "Se elige la madera después, en Consumos"],
-              ["inventario", Archive, "Inventario (sin trozas)", "Existencia previa: declarás el volumen directo"],
-            ] as const
-          ).map(([m, Icon, titulo, sub]) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={modo === m}
-              onClick={() => setModo(m)}
-              className={`flex-1 rounded-xl border-2 px-3 min-h-10 text-left transition-colors ${
-                modo === m ? "border-primary bg-primary/10" : "border-[var(--rule-base)] hover:border-primary/50"
-              }`}
-            >
-              <span className="flex items-center gap-1.5 text-sm font-extrabold text-[var(--text-primary)]">
-                <Icon className="h-4 w-4 shrink-0" aria-hidden /> {titulo}
-              </span>
-              <span className="block text-sm text-[var(--text-tertiary)]">{sub}</span>
-            </button>
-          ))}
-        </div>
+        <CtpLoteArmarModos modo={modo} onModo={setModo} disabled={ocupado} />
 
         {/**
          * Traer del SNIFFS (ADR-398): la misma captura llena el lote entero.
          * Va ARRIBA del formulario porque lo llena: ofrecerlo después sería
          * pedir que se tipee primero y se corrija con lo pegado.
          */}
+        {modo === "excel" && <CtpLoteDesdeExcel estado={excel} />}
+
         {modo === "inventario" && (
           <CtpPegarSniffsLote detalle={sniffs} onDetalle={tomarDelSniffs} onDescartar={() => setSniffs(null)} />
         )}

@@ -73,7 +73,9 @@ export function LoteMaderaChip({ lote }: { lote: LoteAserrio }) {
   const m = maderaDe(lote);
   if (!m) return null;
   const tono = TONO[m.estado];
-  const texto = textoMadera(m);
+  /* Consumido y sin producción declarada ya pasó por la sierra: «Aún sin
+     aserrar» contradecía al «Aserrado el …» de la misma tarjeta. */
+  const texto = m.estado === "sin_produccion" && lote.status !== "abierto" ? "Producción por declarar" : textoMadera(m);
   return (
     <p
       data-madera={m.estado}

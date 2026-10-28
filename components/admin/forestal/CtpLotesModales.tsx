@@ -174,6 +174,7 @@ export default function CtpLotesModales({
             m.setArmar(false);
           }}
           onListo={(texto, tono) => setAviso({ texto, tono })}
+          onImportado={() => void recargar()}
           onClose={() => m.setArmar(false)}
         />
       )}
