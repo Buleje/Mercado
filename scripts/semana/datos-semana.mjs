@@ -65,16 +65,21 @@ function vencimientos() {
   if (!existsSync(f)) return { error: "no está vencimientos.csv" };
   const [cab, ...filas] = readFileSync(f, "utf8").trim().split(/\r?\n/);
   const cols = cab.split(",");
-  const iC = cols.indexOf("concepto"), iF = cols.indexOf("fecha de vencimiento");
+  const iC = cols.indexOf("concepto"), iF = cols.indexOf("fecha de vencimiento"), iE = cols.indexOf("estado");
   const hoy = Date.now();
   const proximos = [];
   let sinFecha = 0;
   for (const l of filas) {
+    /* Las observaciones traen comas entre comillas: sólo se leen las primeras columnas, que no las tienen. */
     const c = l.split(",");
     const fecha = c[iF]?.trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha ?? "")) { sinFecha++; continue; }
+    const estado = c[iE]?.trim() ?? "";
+    /* Lo ya resuelto o pagado no es «lo que falta» (28-10: el Acta de 2023 salía cada domingo). */
+    if (/resuelto|cerrado|pagado|cumplido/i.test(estado)) continue;
+    if (/^no vence$/i.test(fecha ?? "")) continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha ?? "")) { if (!/recurrente/i.test(estado)) sinFecha++; continue; }
     const dias = Math.round((Date.parse(`${fecha}T12:00:00Z`) - hoy) / 86_400_000);
-    if (dias <= 30) proximos.push({ concepto: c[iC], fecha, dias });
+    if (dias <= 30) proximos.push({ concepto: c[iC], fecha, dias, estado });
   }
   return { proximos: proximos.sort((a, b) => a.dias - b.dias), sinFecha };
 }
