@@ -86,6 +86,7 @@ const MAPA: Record<RolParte, Partial<Record<Clave, Fila>>> = {
   establecimiento: filasDe("partida", { nombre: ["p17"], direccion: ["p20a"], ubigeo: ["p20b", "p20c", "p20d"], autorizacion: ["p18"], tipoEstablecimiento: ["p19"] }),
   conductor: filasDe("conductor", { nombre: ["32"], documento: ["33"], licencia: ["34"] }),
   transportista: {},
+  cubicador: {},
 };
 
 const LLENA: Parte = {

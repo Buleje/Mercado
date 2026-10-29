@@ -33,6 +33,8 @@ export default function CtpVehiculoModal({
   vehiculo,
   transportistas,
   existentes = [],
+  placaInicial = "",
+  aboveModals = false,
   onGuardar,
   onClose,
 }: {
@@ -40,6 +42,10 @@ export default function CtpVehiculoModal({
   transportistas: Parte[];
   /** Las placas ya cargadas — para avisar del duplicado ANTES de guardar. */
   existentes?: Vehiculo[];
+  /** Alta desde otro formulario (Guardar cubicación, 28-10): la placa que ya se escribió allá. */
+  placaInicial?: string;
+  /** Abierto encima de otro modal. */
+  aboveModals?: boolean;
   onGuardar: (input: Borrador) => Promise<void>;
   onClose: () => void;
 }) {
@@ -59,7 +65,7 @@ export default function CtpVehiculoModal({
           notas: vehiculo.notas ?? "",
           activo: vehiculo.activo,
         }
-      : { placa: "", capacidadM3: null },
+      : { placa: placaInicial, capacidadM3: null },
   );
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,6 +125,7 @@ export default function CtpVehiculoModal({
     <AdminModal
       open
       onClose={cerrar}
+      aboveModals={aboveModals}
       title={vehiculo ? `Editar ${formatearPlaca(vehiculo.placa)}` : "Agregar vehículo"}
       description={vehiculo?.transportistaNombre ?? "La placa que va en la guía de transporte"}
       icon={Truck}

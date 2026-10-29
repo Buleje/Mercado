@@ -21,14 +21,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
-  cubicacionVigente, duenosDelLote, personaSugerida, queHacerAlGuardar, vistaPreviaMadera,
+  cubicacionVigente, duenosDelLote, personaDelComprador, personaSugerida, queHacerAlGuardar, vistaPreviaMadera,
 } from "@/lib/forestal/cubicacion-madera-cuenta";
 import { limaDateKey } from "@/lib/utils";
 import { usePersonasOrdenadas } from "../cubicacion-cuenta-persona";
 import { guardarCubicacionComercial, type CuerpoAserrada } from "./use-cubicacion-comercial-despacho";
 import {
   jsonPost, pedir, RUTA_CUBICACIONES_TROZAS, unaCubicacion, usePersonasDeLaCuenta,
-  type CubicacionTrozas, type Resultado, type SentidoCubicacion,
+  type CubicacionTrozas, type PersonaCuenta, type Resultado, type SentidoCubicacion,
 } from "./use-cubicaciones-trozas";
 
 /** La fecha del lote si sirve (date-only, no futura); si no, hoy en Lima. */
@@ -66,6 +66,8 @@ export function useSubirMaderaACuenta({
   const alIniciarRef = useRef(alIniciar);
   useEffect(() => { alIniciarRef.current = alIniciar; }, [alIniciar]);
 
+  /* «Subir a la cuenta del comprador» (28-10) pedido antes de que llegaran las personas: se elige al llegar. */
+  const compradorPedido = useRef<{ parteId?: string | null; nombre: string } | null>(null);
   /* Una vez: con la cubicación vigente de este lote, su sentido; si no, la persona que el lote ya nombra. */
   const iniciado = useRef({ lote: false, persona: false });
   useEffect(() => {
@@ -80,11 +82,29 @@ export function useSubirMaderaACuenta({
     iniciado.current.persona = true;
     const dePrevia = vigente && personas.find((p) =>
       vigente.beneficiarioId ? p.beneficiarioId === vigente.beneficiarioId : !!vigente.parteId && p.parteId === vigente.parteId);
-    const p = dePrevia ?? personaSugerida(personas, rows, cliente);
+    const pedida = compradorPedido.current ? personaDelComprador(personas, compradorPedido.current) : null;
+    compradorPedido.current = null;
+    const p = pedida ?? dePrevia ?? personaSugerida(personas, rows, cliente);
     if (p) setClave(p.clave);
   }, [delLote, personas, vigente, rows, cliente]);
 
   const ordenadas = usePersonasOrdenadas(personas, sentido);
+
+  /**
+   * A la cuenta del comprador, en «Se la entregas» (se la vendes). Con las
+   * personas ya cargadas se elige ahora; si no, cuando lleguen. Devuelve la
+   * elegida, o null si todavía no llegaron o no hay una con ese nombre.
+   */
+  const elegirComprador = (comprador: { parteId?: string | null; nombre: string }): PersonaCuenta | null => {
+    setSentido("venta");
+    if (!personas || !iniciado.current.persona) {
+      compradorPedido.current = comprador;
+      return null;
+    }
+    const p = personaDelComprador(personas, comprador);
+    if (p) setClave(p.clave);
+    return p;
+  };
   const persona = ordenadas.find((p) => p.clave === clave) ?? null;
   const vista = useMemo(() => vistaPreviaMadera(rows, especieDelLote), [rows, especieDelLote]);
   const duenos = useMemo(() => duenosDelLote(rows), [rows]);
@@ -132,7 +152,7 @@ export function useSubirMaderaACuenta({
   };
 
   return {
-    personas, cargando, errorPersonas, ordenadas, persona, clave, setClave, sentido, setSentido,
+    personas, cargando, errorPersonas, ordenadas, persona, clave, setClave, sentido, setSentido, elegirComprador,
     vista, duenos, accion, actualiza, cobrada, enDespacho, verificando, puede, subir,
   };
 }

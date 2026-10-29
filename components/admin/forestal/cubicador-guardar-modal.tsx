@@ -21,7 +21,7 @@ import { button } from "@/components/ui-system/button-variants";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
-import { esDelCubicador } from "@/lib/forestal/cubicacion-madera-cuenta";
+import { esDelCubicador, personaDelComprador } from "@/lib/forestal/cubicacion-madera-cuenta";
 import { saldoDeLaCubicacion, type SalidaCubicacion } from "@/lib/forestal/cubicacion-salidas";
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
 import CuentaDeGuardar from "./cubicador-guardar-cuenta";
@@ -84,6 +84,21 @@ export default function GuardarCubicacionModal({
     alIniciar: (v) => { if (v.estado === "borrador" && esDelCubicador(v)) setACuenta(true); },
   });
   const subir = conCuenta && aCuenta;
+  /* «Subir a la cuenta de …» (28-10): Blas tenía 3 de 3 guardadas con comprador y 0 en una cuenta.
+     Se esconde si ya está en su cuenta, o si con las personas a la vista no hay una con ese nombre. */
+  const compradorEscrito = { parteId: datos.ficha.clienteParteId, nombre: datos.cliente.trim() };
+  const delComprador = subida.personas ? personaDelComprador(subida.personas, compradorEscrito) : null;
+  const sinSuCuenta = subir && !!subida.personas && (!delComprador || subida.persona?.clave === delComprador.clave);
+  const aLaCuenta = conCuenta && compradorEscrito.nombre && !sinSuCuenta
+    ? {
+        nombre: compradorEscrito.nombre.length > 28 ? `${compradorEscrito.nombre.slice(0, 27)}…` : compradorEscrito.nombre,
+        onClick: () => {
+          setACuenta(true);
+          subida.elegirComprador(compradorEscrito);
+          document.getElementById("cubg-cuenta")?.scrollIntoView({ block: "center", behavior: "smooth" });
+        },
+      }
+    : null;
   /* El viaje (si ya salió madera): pendiente hasta que el lote tenga id. Los ya anotados, sólo se muestran. */
   const [viaje, setViaje] = useState<BorradorSalida | null>(null);
   const [previas, setPrevias] = useState<SalidaCubicacion[]>(() => inicial.salidas ?? []);
@@ -196,7 +211,8 @@ export default function GuardarCubicacionModal({
       <div className={`${MODAL_BODY} space-y-6`} data-vista="cubicador-madera-guardar">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           <div className="min-w-0 space-y-6">
-            <DatosDeGuardar datos={datos} actualizar={setDatos} nombreSugerido={nombreSugerido} libreta={libreta} celular={celular} />
+            <DatosDeGuardar datos={datos} actualizar={setDatos} nombreSugerido={nombreSugerido} libreta={libreta} celular={celular}
+              actualizando={actualizando} aLaCuenta={aLaCuenta} />
             <PrecioDeGuardar precios={precios} especiesLote={especiesLote} rows={rows} />
             <PagoDeGuardar datos={datos} actualizar={setDatos} importe={conValor ? total : null} />
             {cambiaImporte && valorGuardado !== null && (

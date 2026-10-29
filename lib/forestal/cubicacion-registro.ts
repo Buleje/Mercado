@@ -47,6 +47,8 @@ export interface FichaCubicacion {
   tituloHabilitante?: string;
   placa?: string;
   chofer?: string;
+  /** Empresa o persona dueña del camión (28-10): la placa del Directorio la trae. */
+  transportista?: string;
   /** Adónde va la madera (ciudad, aserradero, depósito). */
   destino?: string;
   /** Dónde se cubicó (patio, puerto, playa del río). */
@@ -67,7 +69,7 @@ export interface FichaCubicacion {
 export const CONDICIONES_PAGO = ["Contado", "Crédito", "Con adelanto"] as const;
 
 export const CAMPOS_FICHA = [
-  "clienteParteId", "comunidad", "comunidadParteId", "tituloHabilitante", "placa", "chofer", "destino", "lugar",
+  "clienteParteId", "comunidad", "comunidadParteId", "tituloHabilitante", "placa", "chofer", "transportista", "destino", "lugar",
   "cubicadoPor", "condicionPago", "adelanto", "fechaPago", "fechaEntrega",
 ] as const satisfies readonly (keyof FichaCubicacion)[];
 

@@ -15,6 +15,7 @@ import { sugerirPersonaDeAdelantos } from "@/lib/adelantos/madera-adelanto";
 import { unirConFicha } from "@/lib/adelantos/unir-con-ficha";
 import { formatCurrency } from "@/lib/currency";
 import { etiquetaPersonaCubicacion } from "@/lib/forestal/cubicacion-a-cuenta";
+import { SaldoDeLaPersona } from "./cuenta-persona-saldo";
 import { avisarPersonasCambiaron, type PersonaCuenta, type SentidoCubicacion } from "./hooks/use-cubicaciones-trozas";
 
 export const CAMPO_CUENTA =
@@ -57,6 +58,8 @@ export function CampoPersonaCuenta({
         {ordenadas.map((p) => <option key={p.clave} value={p.clave}>{etiquetaPersonaCubicacion(p, sentido)}</option>)}
       </select>
       {error && <p className="mt-1 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}
+      {/* 28-10: el saldo de HOY (a favor o en contra) y su cuenta entera a un clic. */}
+      {persona && <SaldoDeLaPersona key={persona.clave} persona={persona} />}
       {persona && !persona.beneficiarioId && (
         <SugerirUnirConAdelantos persona={persona} ordenadas={ordenadas} onUnida={(id) => onClave(`benef:${id}`)} />
       )}

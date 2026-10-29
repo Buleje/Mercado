@@ -38,6 +38,7 @@ const SIN_PARTES: Parte[] = [];
 export default function CtpParteModal({
   parte,
   rolInicial,
+  nombreInicial,
   existentes = SIN_PARTES,
   vehiculos: vehiculosDeLaLibreta = SIN_VEHICULOS,
   onUsarExistente,
@@ -49,6 +50,8 @@ export default function CtpParteModal({
   /** `null` = alta. */
   parte: Parte | null;
   rolInicial: RolParte;
+  /** Alta con el nombre ya escrito en el formulario de donde se abrió. */
+  nombreInicial?: string;
   /** La libreta de vehículos ya cargada, para listar los de este transportista. */
   vehiculos?: readonly Vehiculo[];
   /**
@@ -84,6 +87,7 @@ export default function CtpParteModal({
   const form = useParteForm({
     parte,
     rolInicial,
+    nombreInicial,
     existentes,
     vehiculos: vehiculosDeLaLibreta,
     onGuardar,

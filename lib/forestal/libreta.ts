@@ -406,6 +406,9 @@ function reglasDe(rol: RolParte): Reglas {
       /* La hoja no tiene casillero del transportista: todo es interno, pero el
          puesto de control pide su documento, así que se sigue pidiendo. */
       return { nombre: { sello: "interno", pide: true }, documento: { sello: "interno", pide: true }, registroMtc: INTERNO, direccion: INTERNO, ubigeo: INTERNO };
+    case "cubicador":
+      /* Quien mide la madera (28-10): no va en la guía, todo es de la ficha. */
+      return { nombre: INTERNO, documento: INTERNO, direccion: INTERNO, ubigeo: INTERNO };
   }
 }
 

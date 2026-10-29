@@ -50,6 +50,7 @@ export default function FilaCuentaPersona({
   liquidacionResaltada = null,
   onLiquidarPedidoAtendido,
   onCambio,
+  movimientosAbiertos = false,
 }: {
   persona: CuentaPersona;
   /** El tenant tiene la especialización forestal habilitada. */
@@ -76,8 +77,10 @@ export default function FilaCuentaPersona({
    * en el navegador, LIQ-2026-0005).
    */
   onCambio: () => void;
+  /** Abre con los movimientos a la vista (la ficha suelta de una persona, desde el Cubicador 28-10). */
+  movimientosAbiertos?: boolean;
 }) {
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState(movimientosAbiertos);
   const [liquidando, setLiquidando] = useState(false);
   // El token base no pasa AA en 16px 800 (medido: contraste 2.03) — el
   // `-700`/`-500` es el mismo patrón que ya usa CtpCuentaCorriente.tsx.
@@ -135,8 +138,10 @@ export default function FilaCuentaPersona({
 
   return (
     <li ref={filaRef} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      {/* `basis-48`: con un saldo largo («Le debes S/ 4,479.60 a COMUNIDAD NATIVA…») el nombre
+          se encogía a 0 en vez de mandar el saldo a la línea de abajo (ventana de 670 px, 28-10). */}
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-48">
           <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{persona.nombre}</p>
           {persona.documento && <p className="text-sm text-[var(--text-tertiary)]">{persona.documento}</p>}
           {(chips.length > 0 || sinCuentaForestal) && (

@@ -61,7 +61,7 @@ export const SUBS_CUMPLIMIENTO = ["chequeo", "cerrar"] as const;
 export type SubCumplimiento = (typeof SUBS_CUMPLIMIENTO)[number];
 
 /**
- * Directorio: los seis roles de `ROLES_PARTE` (lib/forestal/directorio.ts), los
+ * Directorio: los siete roles de `ROLES_PARTE` (lib/forestal/directorio.ts), los
  * vehículos y `tu-ctp` = la Ficha del CTP (`ficha`), los datos que llenan la guía.
  * Escrita a mano (no `...ROLES_PARTE`): el guardián de subvistas lee la lista literal.
  */
@@ -72,6 +72,7 @@ export const SUBS_DIRECTORIO = [
   "conductor",
   "cliente",
   "establecimiento",
+  "cubicador",
   "vehiculos",
   "tu-ctp",
 ] as const;

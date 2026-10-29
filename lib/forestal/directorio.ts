@@ -37,8 +37,11 @@ import { leerPlaca } from "./placa-peru";
  * «establecimiento» (15-10-2026): el depósito, lugar de acopio o centro de
  * comercialización de donde sale la carga — «Datos del punto de partida» de la
  * GTF 2024. También al final, por lo mismo.
+ *
+ * «cubicador» (28-10-2026): quien mide la madera en el patio, el puerto o el
+ * camión —el «Cubicado por» de la cubicación—. No sale en la guía; va al final.
  */
-export const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor", "cliente", "establecimiento"] as const;
+export const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor", "cliente", "establecimiento", "cubicador"] as const;
 export type RolParte = (typeof ROLES_PARTE)[number];
 
 export const ROL_LABEL: Record<RolParte, string> = {
@@ -48,6 +51,7 @@ export const ROL_LABEL: Record<RolParte, string> = {
   conductor: "Conductor",
   cliente: "Cliente",
   establecimiento: "Establecimiento",
+  cubicador: "Cubicador",
 };
 
 /** Plural explícito: "destinatarioes" no existe y el `+ "es"` lo fabricaba. */
@@ -58,6 +62,7 @@ export const ROL_PLURAL: Record<RolParte, string> = {
   conductor: "Conductores",
   cliente: "Clientes",
   establecimiento: "Establecimientos",
+  cubicador: "Cubicadores",
 };
 
 /** Qué hace cada rol, en el idioma del patio. Para la ayuda de la UI. */
@@ -68,6 +73,7 @@ export const ROL_DESCRIPCION: Record<RolParte, string> = {
   conductor: "Quien maneja: el control le pide licencia y DNI",
   cliente: "A quien le cobras el aserrío o le vendes la madera: su precio del pie va en su ficha",
   establecimiento: "Depósito, lugar de acopio o centro de comercialización de donde sale la carga: punto de partida de la guía",
+  cubicador: "Quien mide la madera (cubica) en el patio, el puerto o el camión: el «Cubicado por» de la cubicación",
 };
 
 export function esRolValido(v: string): v is RolParte {

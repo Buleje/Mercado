@@ -76,6 +76,7 @@ const fichaSchema = z.object({
   tituloHabilitante: textoFicha,
   placa: textoFicha,
   chofer: textoFicha,
+  transportista: textoFicha,
   destino: textoFicha,
   lugar: textoFicha,
   /* Quién midió, cómo y cuándo se paga, cuándo se entrega (28-10). Sólo se anotan: no mueven plata. */

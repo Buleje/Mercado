@@ -325,6 +325,27 @@ export function personaSugerida<P extends { nombre: string; parteId: string | nu
   return null;
 }
 
+/**
+ * La persona de la cuenta que es el COMPRADOR (Brandon 28-10, «Subir a la
+ * cuenta de él»): su ficha del Directorio o, si se escribió a mano, el único
+ * con ese nombre. A diferencia de `personaSugerida`, el dueño de las piezas no
+ * cuenta: acá se pidió al que compra.
+ */
+export function personaDelComprador<P extends { nombre: string; parteId: string | null }>(
+  personas: readonly P[],
+  comprador: { parteId?: string | null; nombre: string },
+): P | null {
+  const id = comprador.parteId?.trim();
+  if (id) {
+    const p = personas.find((x) => x.parteId === id);
+    if (p) return p;
+  }
+  const t = normalizar(comprador.nombre);
+  if (!t) return null;
+  const iguales = personas.filter((x) => normalizar(x.nombre) === t);
+  return iguales.length === 1 ? iguales[0] : null;
+}
+
 /** Lo mínimo de una cubicación comercial ya hecha de este lote. */
 export interface CubicacionDelLote {
   id: string;

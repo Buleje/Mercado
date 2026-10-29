@@ -37,7 +37,8 @@ export default function ResumenDeGuardar({ rows, precioDe, conValor }: {
   precioDe: (p: PiezaCubicada) => number;
   conValor: boolean;
 }) {
-  const [vista, setVista] = useState<Vista>("especie");
+  /* Brandon 28-10: abre en «Especie × tipo» (cada especie con sus tipos y su importe). */
+  const [vista, setVista] = useState<Vista>("especie-tipo");
   const porEspecie = useMemo(() => agruparOficial(rows, "especie", precioDe), [rows, precioDe]);
   const tabla = useMemo(
     () => (vista === "especie" ? porEspecie : vista === "especie-tipo" ? null : agruparOficial(rows, vista, precioDe)),

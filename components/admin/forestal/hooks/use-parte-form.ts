@@ -76,8 +76,8 @@ export type BorradorDeParte = ParteInput & { id?: string };
  * `id` sí pisa con `null` lo que no llega, guardar los BORRABA. Es el mismo
  * patrón que costó dos rondas en RRHH con `PuestoInput`/`ColaboradorInput`.
  */
-function aBorrador(p: Parte | null, rolInicial: RolParte): BorradorDeParte {
-  if (!p) return { roles: [rolInicial], nombre: "", categoria: "ccnn", docTipo: "RUC" };
+function aBorrador(p: Parte | null, rolInicial: RolParte, nombreInicial = ""): BorradorDeParte {
+  if (!p) return { roles: [rolInicial], nombre: nombreInicial.trim(), categoria: "ccnn", docTipo: "RUC" };
   return {
     ...parteAInput(p),
     roles: p.roles.length ? p.roles : [rolInicial],
@@ -91,6 +91,8 @@ function aBorrador(p: Parte | null, rolInicial: RolParte): BorradorDeParte {
 export interface OpcionesFichaParte {
   parte: Parte | null;
   rolInicial: RolParte;
+  /** Alta con el nombre que ya se escribió en otro formulario (el comprador del Cubicador, 28-10). */
+  nombreInicial?: string;
   existentes: Parte[];
   vehiculos: readonly Vehiculo[];
   onGuardar: (input: BorradorDeParte) => Promise<Parte | void>;
@@ -102,8 +104,8 @@ export interface OpcionesFichaParte {
   anidada?: boolean;
 }
 
-export function useParteForm({ parte, rolInicial, existentes, vehiculos, onGuardar, onClose, anidada = false }: OpcionesFichaParte) {
-  const [b, setB] = useState<BorradorDeParte>(() => aBorrador(parte, rolInicial));
+export function useParteForm({ parte, rolInicial, nombreInicial, existentes, vehiculos, onGuardar, onClose, anidada = false }: OpcionesFichaParte) {
+  const [b, setB] = useState<BorradorDeParte>(() => aBorrador(parte, rolInicial, nombreInicial));
   const [copiado, setCopiado] = useState<string | null>(null);
   const [estado, setEstado] = useState<"idle" | "consultando" | "guardando">("idle");
   const [error, setError] = useState<string | null>(null);

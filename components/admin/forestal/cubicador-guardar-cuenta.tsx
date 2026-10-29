@@ -13,6 +13,8 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Interruptor } from "@/components/ui-system/Interruptor";
 import { fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { CampoPersonaCuenta, CampoSentidoCuenta } from "./cubicacion-cuenta-persona";
+import { claseSaldo, textoSaldo } from "./CtpParteSaldo";
+import { netoDePersonaCuenta } from "./cuenta-persona-saldo";
 import { AvisosDelLote, EstadoDelLoteEnLaCuenta } from "./cubicador-madera-cuenta-avisos";
 import type { CuentaDeMaderaDelLote } from "./cubicador-madera-cuenta-contexto";
 import type { SubidaACuenta } from "./hooks/use-subir-madera-a-cuenta";
@@ -28,6 +30,11 @@ export default function CuentaDeGuardar({ cuenta, subida, encendido, onEncendido
   onAbrir: (id: string) => void;
 }) {
   const { vista, persona, cobrada, enDespacho } = subida;
+  /* Vista previa (28-10): «te la trae» baja lo que te debe; «se la entregas» lo sube. */
+  const hoy = persona ? netoDePersonaCuenta(persona) : null;
+  const despues = hoy !== null && importe != null
+    ? Math.round((hoy + (subida.sentido === "venta" ? importe : -importe)) * 100) / 100
+    : null;
   return (
     <section aria-labelledby="cubg-cuenta" className="min-w-0 space-y-3 rounded-2xl border border-[var(--rule-base)] p-3 sm:p-4" data-bloque="guardar-a-cuenta">
       <div className="flex items-center gap-1.5">
@@ -52,6 +59,11 @@ export default function CuentaDeGuardar({ cuenta, subida, encendido, onEncendido
               Va a la cuenta de <b className="text-[var(--text-primary)]">{persona.nombre}</b>: {fmtPt(vista.pt)} PT
               {importe != null ? <> · <b className="text-[var(--text-primary)]">S/ {fmtSoles(importe)}</b> con este precio</> : " · sin precio todavía"}
               <InfoTip what="El importe de la cuenta lo calcula el servidor al valorizar, con el PT de cada pieza guardada y su precio." />
+              {despues !== null && (
+                <span className="mt-1 block" data-saldo-despues={despues}>
+                  Si se valoriza así, su saldo queda: <b className={claseSaldo(despues)}>{textoSaldo(despues)}</b>
+                </span>
+              )}
             </p>
           )}
         </div>

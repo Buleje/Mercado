@@ -185,14 +185,14 @@ export function lineasDeFichaParaPapel(c: {
   cliente?: string | null;
   gtfNumber?: string | null;
   ficha?: {
-    comunidad?: string; tituloHabilitante?: string; placa?: string; chofer?: string; destino?: string; lugar?: string;
+    comunidad?: string; tituloHabilitante?: string; placa?: string; chofer?: string; transportista?: string; destino?: string; lugar?: string;
     cubicadoPor?: string; condicionPago?: string; adelanto?: string; fechaPago?: string; fechaEntrega?: string;
   } | null;
 }): { etiqueta: string; valor: string }[] {
   const f = c.ficha ?? {};
   const todas: [string, string | null | undefined][] = [
     ["Comprador", c.cliente], ["CCNN", f.comunidad], ["Permiso", f.tituloHabilitante], ["GTF", c.gtfNumber],
-    ["Placa", f.placa], ["Chofer", f.chofer], ["Destino", f.destino], ["Lugar", f.lugar],
+    ["Placa", f.placa], ["Chofer", f.chofer], ["Transportista", f.transportista], ["Destino", f.destino], ["Lugar", f.lugar],
     ["Cubicado por", f.cubicadoPor], ["Pago", f.condicionPago], ["Adelanto", solesDelPapel(f.adelanto)],
     ["Paga hasta", fechaDelPapel(f.fechaPago)], ["Entrega", fechaDelPapel(f.fechaEntrega)],
   ];

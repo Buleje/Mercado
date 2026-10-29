@@ -57,6 +57,7 @@ export const EXTRAS: Record<RolParte, readonly Extra[]> = {
     { clave: "contactoNombre", label: "Encargado", hint: "Interno: a quién llamar. No sale en la guía.", span: 6 },
     TELEFONO,
   ],
+  cubicador: [TELEFONO],
 };
 
 export const CLAVES_EXTRA: readonly ClaveExtra[] = ["codigoCtp", "tipoEstablecimiento", "registroMtc", "licencia", "telefono", "contactoNombre", "acopioReferencia"];

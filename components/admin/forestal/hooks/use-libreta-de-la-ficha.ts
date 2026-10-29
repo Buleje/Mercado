@@ -4,7 +4,7 @@
  * Las sugerencias del Directorio para la ficha de una cubicación (modal
  * «Guardar cubicación», 24-10): compradores, comunidades (las CCNN son
  * proveedores, p. ej. «COMUNIDAD NATIVA SAN LUIS DE CHINCHIHUANI»), permisos,
- * placas y choferes. Se puede escribir cualquier otro nombre: el Directorio
+ * placas, choferes y (28-10) lugares —los establecimientos— y cubicadores. Se puede escribir cualquier otro nombre: el Directorio
  * sólo sugiere y, si el nombre coincide, ata la ficha (`*ParteId`).
  */
 import { useCallback, useMemo } from "react";
@@ -33,10 +33,13 @@ export function useLibretaDeLaFicha(activo: boolean) {
     const vivas = partes.filter((p) => p.activo);
     /* Primero los clientes y destinatarios; después cualquiera de la libreta. */
     const compradores = [...receptores(), ...vivas.filter((p) => !p.roles.includes("cliente") && !p.roles.includes("destinatario"))];
-    /* Las CCNN primero; después los demás proveedores (predios, titulares). */
+    /* Las CCNN primero; después los demás proveedores (predios, titulares). Sólo
+       proveedores: el alta marca «CCNN» a cualquier ficha nueva y en Blas (28-10)
+       los compradores «Lucho» y «WASACO» salían como comunidad de origen. */
+    const proveedores = porRol("proveedor");
     const comunidades = [
-      ...vivas.filter((p) => p.categoria === "ccnn"),
-      ...porRol("proveedor").filter((p) => p.categoria !== "ccnn"),
+      ...proveedores.filter((p) => p.categoria === "ccnn"),
+      ...proveedores.filter((p) => p.categoria !== "ccnn"),
     ];
     const destinos = [...porRol("establecimiento"), ...receptores()];
     return {
@@ -46,6 +49,10 @@ export function useLibretaDeLaFicha(activo: boolean) {
       nombresComunidades: unicos(comunidades.map((p) => p.nombre)),
       nombresDestinos: unicos(destinos.map((p) => p.nombre)),
       choferes: unicos(porRol("conductor").map((p) => p.nombre)),
+      nombresTransportistas: unicos(porRol("transportista").map((p) => p.nombre)),
+      /* El patio, el puerto o el depósito donde se midió: un establecimiento del Directorio. */
+      lugares: unicos(porRol("establecimiento").map((p) => p.nombre)),
+      cubicadores: unicos(porRol("cubicador").map((p) => p.nombre)),
       placas: unicos(vehiculosActivos.map((v) => v.placa)),
       permisos: unicos(contratos.filter((c) => c.isActive).map((c) => c.codigo)),
     };
@@ -66,5 +73,8 @@ export function useLibretaDeLaFicha(activo: boolean) {
 
   /* `partes` y `vehiculos`: el «+ Nuevo» abre el editor del Directorio con la
      libreta entera (avisa duplicados y lista los camiones del transportista). */
-  return { ...libreta, buscar, permisoDe, cargando: dir.cargando, guardarParte: dir.guardarParte, partes, vehiculos: dir.vehiculos };
+  return {
+    ...libreta, buscar, permisoDe, cargando: dir.cargando, guardarParte: dir.guardarParte, guardarVehiculo: dir.guardarVehiculo,
+    transportistas: porRol("transportista"), partes, vehiculos: dir.vehiculos,
+  };
 }
