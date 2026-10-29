@@ -9,6 +9,7 @@
  * documento del Archivo con `papel-cubicador` + `cubicacion:<id>` + el código
  * de la hoja en minúsculas (así el buscador del Archivo también lo encuentra).
  */
+import { formatNumber } from "@/lib/format";
 import type { PlanillaId } from "@/lib/forestal/planillas/tipos";
 
 export type TipoPapel = "aserrada" | "trozas";
@@ -172,7 +173,7 @@ function fechaDelPapel(iso: string | undefined): string | undefined {
 /** «S/ 1,500.00»; lo que no es un número, tal cual (se anotó a mano). */
 function solesDelPapel(v: string | undefined): string | undefined {
   const n = Number(v?.trim().replace(",", "."));
-  return v?.trim() && Number.isFinite(n) ? `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : v;
+  return v?.trim() && Number.isFinite(n) ? `S/ ${formatNumber(n, 2)}` : v;
 }
 
 /**
