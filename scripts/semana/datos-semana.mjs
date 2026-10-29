@@ -89,11 +89,33 @@ const [semana, lunes] = existsSync(marca) ? readFileSync(marca, "utf8").replace(
 const desde = Date.now() - SEMANA_MS;
 const T = `"tenantId"=$1`;
 
+// «Semana N (26-oct al 1-nov)»: el mismo nombre que la carpeta del registro y el archivo del lunes (Semana 1 = 26-10-2026).
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"];
+function nombreDeSemana(lun) {
+  if (!lun) return null;
+  const l = new Date(`${lun}T12:00:00Z`);
+  const d = new Date(l.getTime() + 6 * 86_400_000);
+  const n = Math.round((l - new Date("2026-10-26T12:00:00Z")) / SEMANA_MS) + 1;
+  return `Semana ${n} (${l.getUTCDate()}-${MESES[l.getUTCMonth()]} al ${d.getUTCDate()}-${MESES[d.getUTCMonth()]})`;
+}
+
 const datos = {
   generado: new Date().toISOString(),
-  semana, lunes,
+  semana, lunes, nombreSemana: nombreDeSemana(lunes),
   enSemanaActual: Object.fromEntries(CATEGORIAS.map((c) => [c, archivos(path.join(ACTUAL, c)).map((a) => a.ruta)])),
   cambiadosEstaSemana: Object.fromEntries(CATEGORIAS.map((c) => [c, archivos(path.join(ESC, c), desde, 60)])),
+  // Carpetas de casos de la semana: `sigue` = tienen la marca .en-curso (comando `semana sigue`) y el lunes pasan a la semana nueva.
+  casos: CATEGORIAS.flatMap((c) => {
+    let hijos = [];
+    try { hijos = readdirSync(path.join(ACTUAL, c), { withFileTypes: true }); } catch { return []; }
+    return hijos
+      .filter((h) => h.isDirectory() && !h.name.startsWith(".") && !(c === "BLAS SAC" && h.name.startsWith("Semana ")))
+      .map((h) => ({
+        categoria: c, carpeta: h.name,
+        archivos: archivos(path.join(ACTUAL, c, h.name)).length,
+        sigue: existsSync(path.join(ACTUAL, c, h.name, ".en-curso")),
+      }));
+  }),
   blas: {
     adelantosAbiertos: sql(`select direccion, count(*)::int n, round(sum("saldoPendiente")::numeric,2) saldo from "Adelanto" where ${T} and status='ABIERTO' group by direccion`),
     adelantosDeLaSemana: sql(`select count(*)::int n, round(coalesce(sum("montoAdelantado"),0)::numeric,2) monto from "Adelanto" where ${T} and "fechaAdelanto" >= now() - interval '7 days'`),

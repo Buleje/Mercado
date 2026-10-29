@@ -10,8 +10,8 @@
  * Corre en el hook Stop. Es `async: true` y falla en silencio a propósito: un aviso
  * que no suena no puede además romper el cierre del turno.
  */
-import { execFile, spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFile, execFileSync, spawn } from "node:child_process";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -38,7 +38,7 @@ async function avisarTelegram(mensaje) {
     await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ chat_id: cfg.chatId, text: `🤖 Buleje\n${mensaje}` }),
+      body: JSON.stringify({ chat_id: cfg.chatId, text: mensaje, disable_web_page_preview: true }),
       signal: AbortSignal.timeout(5000),
     });
   } catch {
@@ -212,6 +212,67 @@ async function generarVoz(texto) {
   });
 }
 
+// ── Telegram con el chat y su enlace (Brandon 29-10: «mejora las notificaciones para que me avisen mejor») ──
+// Con 5 chats abiertos, «te necesito en la terminal» no decía cuál; ahora va el nombre del chat, qué pide
+// (la pregunta con sus opciones o el permiso) y el enlace que lo abre en la app Claude del celular.
+
+/** Nombre del chat: el de `claude agents` (--name) o, si no tiene, su 1.er pedido (aviso del globo). */
+function nombreDelChat(id) {
+  if (!id) return "";
+  try {
+    const lista = JSON.parse(execFileSync(join(homedir(), ".local", "bin", "claude"), ["agents", "--json"], { timeout: 8000, encoding: "utf8" }));
+    const n = lista.find((s) => s.sessionId === id)?.name;
+    if (n) return n;
+  } catch {
+    /* sin la lista: se usa el aviso del globo */
+  }
+  try {
+    const pedido = (readFileSync(`/mnt/c/Users/Usuario/.claude-tune/globo/sesiones/${id}.txt`, "utf8").split("|")[3] ?? "").trim();
+    return pedido.length > 40 ? `${pedido.slice(0, 38)}…` : pedido;
+  } catch {
+    return "";
+  }
+}
+
+/** Enlace claude.ai/code/session_… del chat (está en su transcripción si tiene Remote Control); lee hasta 8 MB. */
+function enlaceDelChat(transcripcion) {
+  if (!transcripcion || !existsSync(transcripcion)) return "";
+  let fd;
+  try {
+    fd = openSync(transcripcion, "r");
+    const buf = Buffer.alloc(8 * 1024 * 1024);
+    const n = readSync(fd, buf, 0, buf.length, 0);
+    return buf.toString("utf8", 0, n).match(/https:\/\/claude\.ai\/code\/session_[A-Za-z0-9]+/)?.[0] ?? "";
+  } catch {
+    return "";
+  } finally {
+    if (fd !== undefined) closeSync(fd);
+  }
+}
+
+/** «Claude needs your permission to use Bash» → «Necesita tu permiso para usar Bash». */
+function queNecesita(input) {
+  if (input?.hook_event_name === "PreToolUse" && input?.tool_name === "AskUserQuestion") {
+    const q = input?.tool_input?.questions?.[0] ?? {};
+    const opciones = (q.options ?? []).map((o) => `• ${o.label}`).join("\n");
+    return `❓ Te pregunta: ${q.question ?? ""}${opciones ? `\n${opciones}` : ""}`;
+  }
+  if (input?.hook_event_name === "Notification") {
+    const m = String(input?.message ?? "").match(/permission to use (.+)$/i);
+    return input?.notification_type === "permission_prompt"
+      ? `🔐 Necesita tu permiso${m ? ` para usar ${m[1]}` : ""}`
+      : "❓ Te necesita para seguir";
+  }
+  return null;
+}
+
+function textoTelegram(input, resumen) {
+  const nombre = nombreDelChat(String(input?.session_id ?? ""));
+  const enlace = enlaceDelChat(input?.transcript_path);
+  const cuerpo = queNecesita(input) ?? (input?.hook_event_name === "StopFailure" ? resumen : `✅ ${resumen}`);
+  return `🤖 ${nombre || "Claude"}\n${cuerpo}${enlace ? `\n👉 Abrir el chat: ${enlace}` : ""}`;
+}
+
 /** Escapa comillas simples para incrustar texto en un string de PowerShell. */
 function psEscape(s) {
   return s.replace(/'/g, "''").replace(/[\r\n]+/g, " ");
@@ -248,7 +309,7 @@ async function main() {
   const mensaje = psEscape(resumen);
 
   // Corre en paralelo con el toast local — no esperar a Telegram para sonar.
-  avisarTelegram(resumen).catch(() => {});
+  avisarTelegram(textoTelegram(input, resumen)).catch(() => {});
 
   // La voz se genera antes de lanzar PowerShell (el hook es async: el turno no espera).
   const mp3 = await generarVoz(textoParaLeer(input));
