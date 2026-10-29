@@ -221,7 +221,8 @@ const SUDO_DENYLIST = [
 
 const BLOCK_PATTERNS = [
   { pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/, label: "rm -rf (recursivo)", severity: "critical", reason: "Borrado recursivo fuera de las carpetas temporales (/tmp, /var/tmp, ~/.cache, %TEMP% de Windows). Usá `git rm` o `rimraf` si es node_modules.", sobre: "ejecutable" },
-  { pattern: /\brm\b.*(--no-preserve-root|\s\/\*?(?:\s|$)|\s(?:~|\$HOME)\/?\*?(?:\s|$))/, label: "rm sobre / o ~", severity: "critical", reason: "rm apuntando a raíz o home. Bloqueado siempre.", sobre: "ejecutable" },
+  // [^;&|\n]* = sólo los argumentos de ESE rm (28-10: `df -h / ; ollama rm x` se bloqueaba por el `/` del df).
+  { pattern: /\brm\b[^;&|\n]*(--no-preserve-root|\s\/\*?(?:\s|$)|\s(?:~|\$HOME)\/?\*?(?:\s|$))/, label: "rm sobre / o ~", severity: "critical", reason: "rm apuntando a raíz o home. Bloqueado siempre.", sobre: "ejecutable" },
   { pattern: /\bDROP\s+(TABLE|DATABASE|SCHEMA|INDEX)\b/i, label: "DROP SQL", severity: "critical", reason: "La base de .env.local es PRODUCCIÓN. Escribí el .sql con Write en prisma/migrations/<carpeta>/ y aplicalo con `node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <archivo.sql> --ensayo dotenv_config_path=.env.local` (DIRECT_URL no resuelve desde esta red)." },
   { pattern: /\bvitest\b[^|;&]*--root[= ]\/(?:\s|$)/, label: "vitest --root /", severity: "critical", reason: "Recorre TODO el disco: el 05-10 quedó 87 min colgado con 8,2 GB y tumbó el dev 2 veces. Agregá el caso a un test del repo o usá --root del proyecto." },
   { pattern: /\bTRUNCATE\s+TABLE\b/i, label: "TRUNCATE TABLE", severity: "critical", reason: "Usá soft-delete o migration formal." },
@@ -262,6 +263,9 @@ const RAICES_SEGURAS = [
   /^\/var\/tmp\/[^/*\s]/,
   /^(?:~|\$HOME|\/home\/usuario)\/\.cache\/[^/*\s]/,
   /^\/mnt\/c\/Users\/Usuario\/AppData\/Local\/Temp\/[^/*\s]/,
+  // 28-10: cachés de descargas (npm) y la caché de Windows; se rehacen solas.
+  /^(?:~|\$HOME|\/home\/usuario)\/\.(?:npm-cache|npm)\/[^/*\s]/,
+  /^\/mnt\/c\/Users\/Usuario\/(?:\.cache|AppData\/Local\/npm-cache)\/[^/*\s]/,
 ];
 
 /** true si TODOS los borrados recursivos del comando apuntan solo a temporales o cachés. */
