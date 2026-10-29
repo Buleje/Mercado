@@ -1,0 +1,19 @@
+{
+  "name": "mcp-buleje",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MCP «buleje»: Claude Code habla con el panel de localhost:3000 como el usuario «claude»; plata, stock y borrar piden el OK de Brandon en una ventana de Windows (ADR-523).",
+  "type": "module",
+  "main": "servidor.mjs",
+  "scripts": {
+    "start": "node servidor.mjs",
+    "configurar": "node configurar.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.4.3"
+  }
+}

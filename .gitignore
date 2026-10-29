@@ -91,6 +91,7 @@ SESSION_HANDOFF*.md
 /tools/mcp-bodega/node_modules/
 /tools/mcp-bodega/dist/
 /tools/mcp-bodega/.env
+/tools/mcp-buleje/node_modules/
 
 # typescript
 *.tsbuildinfo
