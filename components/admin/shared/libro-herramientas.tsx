@@ -138,6 +138,14 @@ export function MasDelLibro({
   onAtajos?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  /* Lo de adentro queda MONTADO tras la primera apertura (30-10): la campana de
+     avisos abre un `AdminModal`, el observador de abajo cierra el panel y, si el
+     panel se desmontaba, se llevaba la ventana recién abierta (no abría nada
+     debajo de 1600 px, donde la campana vive acá). Cerrado = oculto, no borrado. */
+  const [montado, setMontado] = useState(false);
+  useEffect(() => {
+    if (open) setMontado(true);
+  }, [open]);
   const anclaRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -210,14 +218,15 @@ export function MasDelLibro({
      panel se cierra al elegir y, sin esto, no quedaba señal de que algo corría. */
   const generando = acciones?.some((a) => a.busy) ?? false;
 
-  const panel = open && pos && (
+  const panel = (open || montado) && pos && (
     <>
-      <div className="fixed inset-0 z-modal-2" onClick={() => setOpen(false)} aria-hidden="true" />
+      {open && <div className="fixed inset-0 z-modal-2" onClick={() => setOpen(false)} aria-hidden="true" />}
       <div
         ref={panelRef}
         role="dialog"
         aria-label="Herramientas y acciones del libro"
         tabIndex={-1}
+        hidden={!open}
         /* Sin overflow: los controles de arriba (la campana de avisos, el
            período) abren sus propios desplegables `absolute`, y un overflow
            acá los recortaría al tamaño del panel. */
