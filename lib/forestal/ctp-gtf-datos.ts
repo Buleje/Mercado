@@ -361,8 +361,10 @@ export const gtfDatosSchema = z.object({
     /** (9) Tipo de plan de manejo: DEMA, PMFI, PGMF… */
     planManejoTipo: texto(80).default(""),
     /**
-     * (29) N° de guía de remisión del transportista. NO es el comprobante de
-     * compra/venta (20)(21): son dos papeles distintos y el control pide los dos.
+     * N° de guía de remisión del transportista: se imprime en el casillero
+     * (25) del formato 2024 (la clave interna sigue siendo "29", numeración
+     * 2015; ver `CASILLEROS_GTF_2024`). NO es el comprobante de compra/venta
+     * (20)(21): son dos papeles distintos y el control pide los dos.
      */
     guiaRemisionNro: texto(40).default(""),
     /** (35) N° de la lista de trozas o cuartones que acompaña la guía. */

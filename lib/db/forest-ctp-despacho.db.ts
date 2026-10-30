@@ -39,7 +39,7 @@ import { permisoAjeno } from "@/lib/forestal/anexo-a-despacho";
 import { agregarPnl, decidirMargen, type FilaPnl, type MargenMotivo, type PnlAgregado } from "@/lib/forestal/ctp-pnl";
 import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
-import { mismoNumeroSunat } from "@/lib/ventas/comprobante-sunat";
+import { formasDelNumero, mismoNumeroSunat } from "@/lib/ventas/comprobante-sunat";
 import {
   correlativoEnSerie, gtfEnUso, leerGtfConfirmada, mismoNumeroGtf, proponerGtf, saltoDeCorrelativo,
   type GtfUsada, type PropuestaGtf,
@@ -49,6 +49,24 @@ import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { sinDato } from "@/lib/errores/sin-dato";
 
 const CACHE_PREFIX = "forest-ctp";
+
+/** Un JSON de la base como objeto plano (o `{}` si es null, array o escalar). */
+function objetoJson(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+
+/**
+ * El cuerpo de la guía a guardar, con la guía de remisión que YA estaba
+ * anotada si el que llega la trae vacía. Exportada para el test.
+ */
+export function conservarGuiaRemision(datos: unknown, enBase: unknown): unknown {
+  const anotada = String(objetoJson(objetoJson(enBase).guia).guiaRemisionNro ?? "").trim();
+  if (!anotada) return datos;
+  const cuerpo = objetoJson(datos);
+  const guia = objetoJson(cuerpo.guia);
+  if (String(guia.guiaRemisionNro ?? "").trim()) return datos;
+  return { ...cuerpo, guia: { ...guia, guiaRemisionNro: anotada } };
+}
 /** 4 decimales — precisión forestal (volúmenes/cantidades). */
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
@@ -1159,12 +1177,12 @@ export class ForestCtpDespachoDB {
     despachoEntryId: string,
     datos: unknown,
     user = "unknown",
-  ): Promise<{ ok: true } | { ok: false; reason: "no_despacho" | "anulado" | "emitida"; gtf?: string }> {
+  ): Promise<{ ok: true; datos: unknown } | { ok: false; reason: "no_despacho" | "anulado" | "emitida"; gtf?: string }> {
     if (!tenantId) throw new Error("tenantId is required");
 
     const desp = await prisma.forestCtpEntry.findFirst({
       where: { id: despachoEntryId, tenantId, deletedAt: null },
-      select: { id: true, section: true, status: true, lineNo: true, entryDate: true, gtfNumber: true },
+      select: { id: true, section: true, status: true, lineNo: true, entryDate: true, gtfNumber: true, gtfDatos: true },
     });
     if (!desp || desp.section !== "despacho") return { ok: false, reason: "no_despacho" };
     if (desp.status !== "registrado") return { ok: false, reason: "anulado" };
@@ -1194,10 +1212,16 @@ export class ForestCtpDespachoDB {
       );
     }
 
-    await prisma.forestCtpEntry.update({
-      where: { id: desp.id },
-      data: { gtfDatos: datos as Prisma.InputJsonValue },
+    // La guía de remisión anotada aparte (`anotarGuiaRemision`, casilla (25))
+    // no se borra por guardar el formulario con esa casilla vacía: la pantalla
+    // que se abrió antes de anotarla la mandaría en blanco. Quitarla es
+    // `guia_remision` con `quitar`.
+    const guardar = conservarGuiaRemision(datos, desp.gtfDatos);
+    await prisma.forestCtpEntry.updateMany({
+      where: { id: desp.id, tenantId },
+      data: { gtfDatos: guardar as Prisma.InputJsonValue },
     });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
 
     auditCtp({
       tenantId,
@@ -1207,7 +1231,7 @@ export class ForestCtpDespachoDB {
       detail: `Completó los datos de la guía del despacho #${desp.lineNo}${desp.gtfNumber ? ` (GTF ${desp.gtfNumber})` : ""}`,
       user,
     });
-    return { ok: true };
+    return { ok: true, datos: guardar };
   }
 
   /**
@@ -1233,58 +1257,90 @@ export class ForestCtpDespachoDB {
     | { ok: true; cambio: boolean; guiaRemisionNro: string }
     | { ok: false; reason: "no_despacho" | "anulado" }
     | { ok: false; reason: "ya_tiene"; actual: string }
+    | { ok: false; reason: "duplicado"; otroDespachoId: string; otraLinea: number; otraGtf: string | null }
   > {
     if (!tenantId) throw new Error("tenantId is required");
-    const desp = await prisma.forestCtpEntry.findFirst({
-      where: { id: despachoEntryId, tenantId, deletedAt: null },
-      select: { id: true, section: true, status: true, lineNo: true, entryDate: true, gtfNumber: true, gtfDatos: true },
-    });
-    if (!desp || desp.section !== "despacho") return { ok: false, reason: "no_despacho" };
-    if (desp.status !== "registrado") return { ok: false, reason: "anulado" };
+    // Compare-and-set sobre `updatedAt`: dos pestañas que anotan a la vez leen
+    // la misma fila; la segunda no escribe (count 0), relee y ve el número de
+    // la primera → `ya_tiene`. Un cambio ajeno a la GRE también mueve
+    // `updatedAt`: por eso se reintenta en vez de rendirse al primer choque.
+    for (let intento = 0; intento < 3; intento++) {
+      const desp = await prisma.forestCtpEntry.findFirst({
+        where: { id: despachoEntryId, tenantId, deletedAt: null },
+        select: { id: true, section: true, status: true, lineNo: true, entryDate: true, gtfNumber: true, gtfDatos: true, updatedAt: true },
+      });
+      if (!desp || desp.section !== "despacho") return { ok: false, reason: "no_despacho" };
+      if (desp.status !== "registrado") return { ok: false, reason: "anulado" };
 
-    const cuerpo =
-      desp.gtfDatos && typeof desp.gtfDatos === "object" && !Array.isArray(desp.gtfDatos)
-        ? (desp.gtfDatos as Record<string, unknown>)
-        : {};
-    const guia =
-      cuerpo.guia && typeof cuerpo.guia === "object" && !Array.isArray(cuerpo.guia)
-        ? (cuerpo.guia as Record<string, unknown>)
-        : {};
-    const actual = String(guia.guiaRemisionNro ?? "").trim();
-    if (actual && numero && !mismoNumeroSunat(actual, numero) && !opts.reemplazar) {
-      return { ok: false, reason: "ya_tiene", actual };
+      const cuerpo = objetoJson(desp.gtfDatos);
+      const guia = objetoJson(cuerpo.guia);
+      const actual = String(guia.guiaRemisionNro ?? "").trim();
+      if (actual && numero && !mismoNumeroSunat(actual, numero) && !opts.reemplazar) {
+        return { ok: false, reason: "ya_tiene", actual };
+      }
+      if (numero ? mismoNumeroSunat(actual, numero) : !actual) {
+        return { ok: true, cambio: false, guiaRemisionNro: actual };
+      }
+
+      // La misma GRE en OTRO despacho del negocio es un tipeo (o la misma
+      // guía anotada dos veces). Las líneas de la misma GTF sí la comparten:
+      // un traslado = una GTF = una GRE, aunque la GTF lleve varias líneas.
+      if (numero && !opts.reemplazar) {
+        const gtf = desp.gtfNumber?.trim() || null;
+        const otro = await prisma.forestCtpEntry.findFirst({
+          where: {
+            tenantId,
+            section: "despacho",
+            deletedAt: null,
+            id: { not: desp.id },
+            AND: [
+              { OR: formasDelNumero(numero).map((f) => ({ gtfDatos: { path: ["guia", "guiaRemisionNro"], equals: f } })) },
+              // `not` deja afuera los NULL: la línea sin GTF también cuenta.
+              ...(gtf ? [{ OR: [{ gtfNumber: null }, { gtfNumber: { not: gtf } }] }] : []),
+            ],
+          },
+          select: { id: true, lineNo: true, gtfNumber: true },
+        });
+        if (otro) {
+          return { ok: false, reason: "duplicado", otroDespachoId: otro.id, otraLinea: otro.lineNo, otraGtf: otro.gtfNumber };
+        }
+      }
+
+      const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, desp.entryDate);
+      if (cerrado) {
+        throw new CtpInvariantError(
+          `El período ${cerrado.label} está cerrado: no se puede anotar la guía de remisión de un mes cerrado.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerrado.periodKey },
+        );
+      }
+
+      const datos = { ...cuerpo, guia: { ...guia, guiaRemisionNro: numero } };
+      const hecho = await prisma.forestCtpEntry.updateMany({
+        where: { id: desp.id, tenantId, updatedAt: desp.updatedAt },
+        data: { gtfDatos: datos as Prisma.InputJsonValue },
+      });
+      if (hecho.count === 0) continue;
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+
+      const de = opts.fecha ? ` del ${opts.fecha}` : "";
+      auditCtp({
+        tenantId,
+        action: "ctp_gtf_datos",
+        entity: "ForestCtpEntry",
+        entityId: desp.id,
+        detail: numero
+          ? `Anotó la guía de remisión ${numero}${de} en la guía del despacho #${desp.lineNo}${desp.gtfNumber ? ` (GTF ${desp.gtfNumber})` : ""}${actual ? `; antes ${actual}` : ""}`
+          : `Quitó la guía de remisión ${actual} de la guía del despacho #${desp.lineNo}${desp.gtfNumber ? ` (GTF ${desp.gtfNumber})` : ""}`,
+        user: opts.user,
+      });
+      return { ok: true, cambio: true, guiaRemisionNro: numero };
     }
-    if (numero ? mismoNumeroSunat(actual, numero) : !actual) {
-      return { ok: true, cambio: false, guiaRemisionNro: actual };
-    }
-
-    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, desp.entryDate);
-    if (cerrado) {
-      throw new CtpInvariantError(
-        `El período ${cerrado.label} está cerrado: no se puede anotar la guía de remisión de un mes cerrado.`,
-        "PERIODO_CERRADO",
-        { periodKey: cerrado.periodKey },
-      );
-    }
-
-    const datos = { ...cuerpo, guia: { ...guia, guiaRemisionNro: numero } };
-    await prisma.forestCtpEntry.updateMany({
-      where: { id: desp.id, tenantId },
-      data: { gtfDatos: datos as Prisma.InputJsonValue },
-    });
-
-    const de = opts.fecha ? ` del ${opts.fecha}` : "";
-    auditCtp({
-      tenantId,
-      action: "ctp_gtf_datos",
-      entity: "ForestCtpEntry",
-      entityId: desp.id,
-      detail: numero
-        ? `Anotó la guía de remisión ${numero}${de} en la guía del despacho #${desp.lineNo}${desp.gtfNumber ? ` (GTF ${desp.gtfNumber})` : ""}${actual ? `; antes ${actual}` : ""}`
-        : `Quitó la guía de remisión ${actual} de la guía del despacho #${desp.lineNo}${desp.gtfNumber ? ` (GTF ${desp.gtfNumber})` : ""}`,
-      user: opts.user,
-    });
-    return { ok: true, cambio: true, guiaRemisionNro: numero };
+    throw new CtpInvariantError(
+      "La guía del despacho se está editando en otra pestaña: vuelve a intentarlo.",
+      "LIBRO_OCUPADO",
+      { despachoEntryId },
+    );
   }
 
   /**

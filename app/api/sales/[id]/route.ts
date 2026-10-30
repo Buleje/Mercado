@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SalesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -41,9 +42,10 @@ export async function GET(
  * el cajero emite boletas en el mostrador.
  *
  * Cuerpo: `{ tipo: "factura"|"boleta", numero: "E001-318", ruc?, reemplazar? }`.
- * 400 = número/serie/RUC mal formados · 404 = no existe en este negocio (otro
- * tenant incluido: el WHERE lleva el tenant de la sesión) · 409 = ya tiene
- * OTRO número y no se pidió `reemplazar`.
+ * 400 = número/serie/RUC mal formados · 403 = `reemplazar`/`quitar` sin ser
+ * admin o dueño · 404 = no existe en este negocio (otro tenant incluido: el
+ * WHERE lleva el tenant de la sesión) · 409 = ya tiene OTRO número (o el mismo
+ * con otro tipo/RUC), el número ya está en otra venta, o es una cotización.
  */
 export async function PATCH(
   req: NextRequest,
@@ -75,12 +77,41 @@ export async function PATCH(
     );
   }
 
+  // Anotar por primera vez lo hace quien emitió (el cajero, en el mostrador);
+  // cambiar o quitar un N.º ya anotado es corregir un documento tributario:
+  // sólo admin y dueño (encargado incluido en el bloqueo: `requireAdmin` lo
+  // deja pasar siempre por el bypass de gestión).
+  if (parsed.data.reemplazar === true || parsed.data.quitar === true) {
+    const prohibido = soloAdminODueno(auth.role, "cambiar o quitar el comprobante ya anotado de una venta");
+    if (prohibido) return prohibido;
+  }
+
   try {
     const r = await SalesDB.anotarComprobante(auth.tenantId, id, comprobanteAGuardar(parsed.data), {
       reemplazar: parsed.data.reemplazar === true,
       user: auth.username ?? "unknown",
     });
     if (!r.ok && r.reason === "no_existe") return NextResponse.json({ error: "Sale not found" }, { status: 404 });
+    if (!r.ok && r.reason === "no_es_venta") {
+      return NextResponse.json(
+        {
+          error: "no_es_venta",
+          tipo: r.tipo,
+          message: `Es una ${r.tipo === "proforma" ? "proforma" : "cotización"}: primero conviértela en venta y después anota su comprobante.`,
+        },
+        { status: 409 },
+      );
+    }
+    if (!r.ok && r.reason === "duplicado") {
+      return NextResponse.json(
+        {
+          error: "duplicado",
+          otraVentaId: r.otraVentaId,
+          message: `Ese número ya está anotado en otra venta (${r.otraVentaId}). Si de verdad es el mismo comprobante, manda reemplazar: true.`,
+        },
+        { status: 409 },
+      );
+    }
     if (!r.ok) {
       return NextResponse.json(
         {

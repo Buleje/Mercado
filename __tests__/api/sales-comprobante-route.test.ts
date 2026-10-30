@@ -3,7 +3,9 @@
  * Ruta: sin sesión 401 (nunca 404), roles explícitos, validación de serie/RUC,
  * el tenant de la sesión es el que llega a la DB, 404 y 409 bien mapeados.
  * DB class: aislamiento por tenant en el WHERE, 409 por número distinto,
- * mismo número = sin escribir, carrera = 409, quitar.
+ * mismo número = sin escribir, carrera = 409, quitar. Revisión 30-10: 403 al
+ * reemplazar/quitar sin ser admin/dueño, otro tipo/RUC, duplicado en otra
+ * venta, cotización intocable, quitar sin número = nada.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
@@ -27,7 +29,12 @@ vi.mock("@/lib/caja/invalidar-ventas-overview", () => ({ invalidarVentasOverview
 vi.mock("@/lib/prisma-rls", () => {
   type Fila = { id: string; tenantId: string; comprobanteTipo: string | null; comprobanteNumero: string | null; comprobanteRuc: string | null };
   const coincide = (f: Fila, w: Record<string, unknown>) =>
-    Object.entries(w).every(([k, v]) => (f as Record<string, unknown>)[k] === v);
+    Object.entries(w).every(([k, v]) => {
+      const x = (f as Record<string, unknown>)[k];
+      if (v && typeof v === "object" && "not" in v) return x !== (v as { not: unknown }).not;
+      if (v && typeof v === "object" && "in" in v) return (v as { in: unknown[] }).in.includes(x);
+      return x === v;
+    });
   const tx = {
     sale: {
       findFirst: async ({ where }: { where: Record<string, unknown> }) => {
@@ -108,6 +115,29 @@ describe("PATCH /api/sales/[id] — puerta", () => {
     expect(r.status).toBe(404);
     expect(H.anotar).toHaveBeenCalledWith("t-propio", "v-ajena", { tipo: "factura", numero: "E001-318", ruc: RUC_OK }, { reemplazar: false, user: "cajera" });
   });
+  it("reemplazar o quitar: el cajero y el encargado 403 sin tocar la DB; admin y dueño pasan", async () => {
+    for (const role of ["cajero", "manager"]) {
+      H.requireAdmin.mockResolvedValue({ tenantId: "t-propio", username: "u", role });
+      expect((await PATCH(req({ tipo: "boleta", numero: "EB01-12", reemplazar: true }), ctx())).status).toBe(403);
+      expect((await PATCH(req({ quitar: true }), ctx())).status).toBe(403);
+    }
+    expect(H.anotar).not.toHaveBeenCalled();
+    H.anotar.mockResolvedValue({ ok: true, cambio: true, venta: {} });
+    for (const role of ["admin", "owner"]) {
+      H.requireAdmin.mockResolvedValue({ tenantId: "t-propio", username: "u", role });
+      expect((await PATCH(req({ tipo: "boleta", numero: "EB01-12", reemplazar: true }), ctx())).status).toBe(200);
+    }
+  });
+  it("cotización y número de otra venta = 409 con el motivo", async () => {
+    H.anotar.mockResolvedValueOnce({ ok: false, reason: "no_es_venta", tipo: "cotizacion" });
+    const r = await PATCH(req({ tipo: "boleta", numero: "EB01-12" }), ctx());
+    expect(r.status).toBe(409);
+    expect((await r.json()).message).toMatch(/cotización: primero conviértela en venta/);
+    H.anotar.mockResolvedValueOnce({ ok: false, reason: "duplicado", otraVentaId: "v9" });
+    const r2 = await PATCH(req({ tipo: "boleta", numero: "EB01-12" }), ctx());
+    expect(r2.status).toBe(409);
+    expect(await r2.json()).toMatchObject({ error: "duplicado", otraVentaId: "v9" });
+  });
   it("otro número ya anotado = 409 con el actual", async () => {
     H.anotar.mockResolvedValue({ ok: false, reason: "ya_tiene", actual: { tipo: "boleta", numero: "EB01-3" } });
     const r = await PATCH(req({ tipo: "boleta", numero: "EB01-12" }), ctx());
@@ -139,7 +169,7 @@ describe("SalesDB.anotarComprobante — reglas en la DB class", () => {
   });
   it("otro número = ya_tiene (409) salvo reemplazar", async () => {
     const r = await SalesDB.anotarComprobante("t-propio", "v2", nuevo, { reemplazar: false, user: "x" });
-    expect(r).toEqual({ ok: false, reason: "ya_tiene", actual: { tipo: "boleta", numero: "EB01-00000003" } });
+    expect(r).toEqual({ ok: false, reason: "ya_tiene", actual: { tipo: "boleta", numero: "EB01-00000003", ruc: null } });
     expect(H.updates).toBe(0);
     const r2 = await SalesDB.anotarComprobante("t-propio", "v2", nuevo, { reemplazar: true, user: "x" });
     expect(r2.ok).toBe(true);
@@ -153,7 +183,38 @@ describe("SalesDB.anotarComprobante — reglas en la DB class", () => {
   it("si otro lo anotó entre la lectura y la escritura, vuelve ya_tiene", async () => {
     H.carrera = true;
     const r = await SalesDB.anotarComprobante("t-propio", "v1", nuevo, { reemplazar: false, user: "x" });
-    expect(r).toEqual({ ok: false, reason: "ya_tiene", actual: { tipo: "ticket", numero: "B001-99" } });
+    expect(r).toEqual({ ok: false, reason: "ya_tiene", actual: { tipo: "ticket", numero: "B001-99", ruc: null } });
+  });
+  it("mismo número con otro tipo, o con otro RUC cuando ya había uno = ya_tiene; el RUC que faltaba se completa", async () => {
+    H.filas.set("v3", { id: "v3", tenantId: "t-propio", comprobanteTipo: "factura", comprobanteNumero: "E001-318", comprobanteRuc: "20601234565" });
+    H.filas.set("v4", { id: "v4", tenantId: "t-propio", comprobanteTipo: "boleta", comprobanteNumero: "EB01-7", comprobanteRuc: null });
+    const otroTipo = await SalesDB.anotarComprobante("t-propio", "v4", { tipo: "factura", numero: "EB01-7", ruc: "20601234565" }, { reemplazar: false, user: "x" });
+    expect(otroTipo).toMatchObject({ ok: false, reason: "ya_tiene" });
+    const otroRuc = await SalesDB.anotarComprobante("t-propio", "v3", { tipo: "factura", numero: "E001-318", ruc: "10123456786" }, { reemplazar: false, user: "x" });
+    expect(otroRuc).toMatchObject({ ok: false, reason: "ya_tiene", actual: { ruc: "20601234565" } });
+    expect(H.updates).toBe(0);
+    const completa = await SalesDB.anotarComprobante("t-propio", "v4", { tipo: "boleta", numero: "EB01-7", ruc: "12345678" }, { reemplazar: false, user: "x" });
+    expect(completa.ok && completa.cambio).toBe(true);
+    expect(H.filas.get("v4")?.comprobanteRuc).toBe("12345678");
+  });
+  it("el mismo número en OTRA venta del negocio = duplicado (con o sin ceros); en otro tenant no cuenta", async () => {
+    const r = await SalesDB.anotarComprobante("t-propio", "v1", { tipo: "boleta", numero: "EB01-3", ruc: null }, { reemplazar: false, user: "x" });
+    expect(r).toEqual({ ok: false, reason: "duplicado", otraVentaId: "v2" });
+    expect(H.updates).toBe(0);
+    H.filas.set("w1", { id: "w1", tenantId: "t-ajeno", comprobanteTipo: "boleta", comprobanteNumero: "EB01-12", comprobanteRuc: null });
+    const r2 = await SalesDB.anotarComprobante("t-propio", "v1", nuevo, { reemplazar: false, user: "x" });
+    expect(r2.ok).toBe(true);
+  });
+  it("cotización/proforma = no_es_venta y no se pisa (ni al quitar); quitar sin número = nada", async () => {
+    H.filas.set("c1", { id: "c1", tenantId: "t-propio", comprobanteTipo: "cotizacion", comprobanteNumero: null, comprobanteRuc: null });
+    expect(await SalesDB.anotarComprobante("t-propio", "c1", nuevo, { reemplazar: true, user: "x" })).toEqual({ ok: false, reason: "no_es_venta", tipo: "cotizacion" });
+    expect(await SalesDB.anotarComprobante("t-propio", "c1", { tipo: "ticket", numero: null, ruc: null }, { reemplazar: false, user: "x" })).toMatchObject({ reason: "no_es_venta" });
+    const v1 = H.filas.get("v1");
+    if (v1) v1.comprobanteTipo = "boleta";
+    const q = await SalesDB.anotarComprobante("t-propio", "v1", { tipo: "ticket", numero: null, ruc: null }, { reemplazar: false, user: "x" });
+    expect(q.ok && q.cambio).toBe(false);
+    expect(H.filas.get("v1")?.comprobanteTipo).toBe("boleta");
+    expect(H.updates).toBe(0);
   });
   it("quitar deja la venta en ticket sin número", async () => {
     const r = await SalesDB.anotarComprobante("t-propio", "v2", { tipo: "ticket", numero: null, ruc: null }, { reemplazar: false, user: "x" });

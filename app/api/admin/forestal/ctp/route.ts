@@ -15,6 +15,7 @@ import { ForestEspeciesDB } from "@/lib/db/forest-especies.db";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
@@ -1082,6 +1083,12 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
       const motivo = d.quitar ? null : motivoSerieInvalida("gre", d.numero);
       if (motivo) return NextResponse.json({ error: "datos_invalidos", message: motivo }, { status: 400 });
       const numero = d.quitar ? "" : (leerNumeroSunat(d.numero)?.canonico ?? "");
+      // Igual que en la venta: anotar la primera vez sí; cambiar o quitar una GRE
+      // ya anotada, sólo admin y dueño (el encargado pasa `requireAdmin`).
+      if (d.reemplazar === true || d.quitar === true) {
+        const prohibido = soloAdminODueno(auth.role, "cambiar o quitar la guía de remisión ya anotada");
+        if (prohibido) return prohibido;
+      }
       const r = await ForestCtpDespachoDB.anotarGuiaRemision(auth.tenantId, d.id, numero, {
         reemplazar: d.reemplazar === true,
         fecha: d.fecha ?? null,
@@ -1090,6 +1097,16 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
       if (!r.ok && r.reason === "ya_tiene") {
         return NextResponse.json(
           { error: "ya_tiene_guia_remision", actual: r.actual, message: `La guía ya tiene anotada la guía de remisión ${r.actual}. Para cambiarla manda reemplazar: true.` },
+          { status: 409 },
+        );
+      }
+      if (!r.ok && r.reason === "duplicado") {
+        return NextResponse.json(
+          {
+            error: "duplicado",
+            otroDespachoId: r.otroDespachoId,
+            message: `La guía de remisión ${numero} ya está anotada en el despacho #${r.otraLinea}${r.otraGtf ? ` (GTF ${r.otraGtf})` : ""}. Si de verdad es la misma, manda reemplazar: true.`,
+          },
           { status: 409 },
         );
       }
@@ -1134,9 +1151,10 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
           { status: r.reason === "no_despacho" ? 404 : 422 },
         );
       }
-      // Se devuelve lo NORMALIZADO por Zod: la UI se queda con lo que quedó
-      // guardado y no con lo que creía estar mandando.
-      return NextResponse.json({ ok: true, datos: parsed.data.datos });
+      // Se devuelve lo GUARDADO (lo normalizado por Zod + la guía de remisión
+      // que ya estaba anotada): la UI se queda con lo que quedó en la base y no
+      // con lo que creía estar mandando.
+      return NextResponse.json({ ok: true, datos: r.datos });
     }
 
     if (parsed.data.action === "emitir_gtf") {

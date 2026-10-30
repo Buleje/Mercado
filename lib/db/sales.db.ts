@@ -23,7 +23,7 @@ import { invalidarVentasOverview, tagVentasOverview } from "@/lib/caja/invalidar
 import { desglosarPago } from "@/lib/caja/desglosar-pago";
 import { cacheLife, cacheTag } from "next/cache";
 import { ActivityLogDB } from "@/lib/db/activity-log.db";
-import { mismoNumeroSunat, type ComprobanteAnotado } from "@/lib/ventas/comprobante-sunat";
+import { formasDelNumero, mismoNumeroSunat, type ComprobanteAnotado } from "@/lib/ventas/comprobante-sunat";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -396,7 +396,9 @@ export const SalesDB = {
   ): Promise<
     | { ok: true; cambio: boolean; venta: DbSale }
     | { ok: false; reason: "no_existe" }
-    | { ok: false; reason: "ya_tiene"; actual: { tipo: string | null; numero: string } }
+    | { ok: false; reason: "no_es_venta"; tipo: string }
+    | { ok: false; reason: "duplicado"; otraVentaId: string }
+    | { ok: false; reason: "ya_tiene"; actual: { tipo: string | null; numero: string; ruc: string | null } }
   > {
     if (!tenantId) throw new Error("tenantId is required");
     const r = await withRlsTx(tenantId, async (tx) => {
@@ -405,25 +407,46 @@ export const SalesDB = {
         select: { comprobanteTipo: true, comprobanteNumero: true, comprobanteRuc: true },
       });
       if (!antes) return { ok: false as const, reason: "no_existe" as const };
+      const tipoAntes = antes.comprobanteTipo ?? "ticket";
+      // Una cotización/proforma todavía no es una venta: ni se factura ni se le
+      // pisa el tipo (ni al quitar). Primero se convierte.
+      if (tipoAntes === "cotizacion" || tipoAntes === "proforma") {
+        return { ok: false as const, reason: "no_es_venta" as const, tipo: tipoAntes };
+      }
       const numeroAntes = antes.comprobanteNumero?.trim() || null;
-      // Quitar es una orden explícita (`quitar: true`): no pide `reemplazar`.
-      const otro = Boolean(numeroAntes && nuevo.numero && !mismoNumeroSunat(numeroAntes, nuevo.numero));
-      if (otro && !opts.reemplazar && numeroAntes) {
-        return { ok: false as const, reason: "ya_tiene" as const, actual: { tipo: antes.comprobanteTipo, numero: numeroAntes } };
+      const actual = { tipo: antes.comprobanteTipo, numero: numeroAntes ?? "", ruc: antes.comprobanteRuc };
+      if (!nuevo.numero) {
+        // Quitar sin nada anotado = nada que hacer (no baja una «boleta» pedida en el POS a ticket).
+        if (!numeroAntes) return { ok: true as const, cambio: false };
+      } else {
+        const mismo = numeroAntes !== null && mismoNumeroSunat(numeroAntes, nuevo.numero);
+        // Mismo N.º con otro tipo, o con otro RUC cuando ya había uno: también es
+        // pisar lo emitido (el RUC que faltaba sí se completa sin reemplazar).
+        const docDistinto = mismo && (tipoAntes !== nuevo.tipo || (antes.comprobanteRuc !== null && antes.comprobanteRuc !== nuevo.ruc));
+        if (((numeroAntes !== null && !mismo) || docDistinto) && !opts.reemplazar) {
+          return { ok: false as const, reason: "ya_tiene" as const, actual };
+        }
+        if (!opts.reemplazar) {
+          const otra = await tx.sale.findFirst({
+            where: { tenantId, id: { not: id }, comprobanteNumero: { in: formasDelNumero(nuevo.numero) } },
+            select: { id: true },
+          });
+          if (otra) return { ok: false as const, reason: "duplicado" as const, otraVentaId: otra.id };
+        }
       }
       const igual =
-        (antes.comprobanteTipo ?? "ticket") === nuevo.tipo &&
+        tipoAntes === nuevo.tipo &&
         (numeroAntes === null ? nuevo.numero === null : mismoNumeroSunat(numeroAntes, nuevo.numero)) &&
         (antes.comprobanteRuc ?? null) === nuevo.ruc;
       if (igual) return { ok: true as const, cambio: false };
       const hecho = await tx.sale.updateMany({
-        where: { id, tenantId, comprobanteNumero: antes.comprobanteNumero },
+        where: { id, tenantId, comprobanteNumero: antes.comprobanteNumero, comprobanteTipo: antes.comprobanteTipo, comprobanteRuc: antes.comprobanteRuc },
         data: { comprobanteTipo: nuevo.tipo, comprobanteNumero: nuevo.numero, comprobanteRuc: nuevo.ruc },
       });
       if (hecho.count === 0) {
-        const ahora = await tx.sale.findFirst({ where: { id, tenantId }, select: { comprobanteTipo: true, comprobanteNumero: true } });
+        const ahora = await tx.sale.findFirst({ where: { id, tenantId }, select: { comprobanteTipo: true, comprobanteNumero: true, comprobanteRuc: true } });
         if (!ahora) return { ok: false as const, reason: "no_existe" as const };
-        return { ok: false as const, reason: "ya_tiene" as const, actual: { tipo: ahora.comprobanteTipo, numero: ahora.comprobanteNumero ?? "" } };
+        return { ok: false as const, reason: "ya_tiene" as const, actual: { tipo: ahora.comprobanteTipo, numero: ahora.comprobanteNumero ?? "", ruc: ahora.comprobanteRuc } };
       }
       return { ok: true as const, cambio: true, antes };
     });

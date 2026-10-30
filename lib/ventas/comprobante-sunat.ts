@@ -49,6 +49,17 @@ export function mismoNumeroSunat(a: string | null | undefined, b: string | null 
   return String(a ?? "").trim().toUpperCase() === String(b ?? "").trim().toUpperCase();
 }
 
+/**
+ * Cómo puede estar escrito el mismo comprobante en la base: el canónico
+ * («EB01-12», el que se anota acá) y el de 8 cifras de SUNAT («EB01-00000012»,
+ * el que guarda la emisión del POS). Para buscar duplicados con un `IN`.
+ */
+export function formasDelNumero(numero: string): string[] {
+  const n = leerNumeroSunat(numero);
+  if (!n) return [String(numero ?? "").trim().toUpperCase()];
+  return [n.canonico, `${n.serie}-${String(n.correlativo).padStart(8, "0")}`];
+}
+
 /** La serie corresponde al tipo; devuelve el motivo o `null` si está bien. */
 export function motivoSerieInvalida(tipo: TipoComprobanteVenta | "gre", numero: string): string | null {
   const n = leerNumeroSunat(numero);
