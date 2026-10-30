@@ -56,6 +56,10 @@ export interface SaleRecord {
   total: number;
   payment: string;
   items: { quantity: number }[];
+  /** factura | boleta | ticket | cotizacion | proforma */
+  comprobanteTipo?: string;
+  /** El N.º de SUNAT anotado (E001-318, EB01-12); sin él la venta no está facturada. */
+  comprobanteNumero?: string;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

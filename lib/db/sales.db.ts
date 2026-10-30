@@ -22,6 +22,8 @@ import { liquidacionDelMovimiento, medioCorregible, type PagoDeLiquidacion } fro
 import { invalidarVentasOverview, tagVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 import { desglosarPago } from "@/lib/caja/desglosar-pago";
 import { cacheLife, cacheTag } from "next/cache";
+import { ActivityLogDB } from "@/lib/db/activity-log.db";
+import { mismoNumeroSunat, type ComprobanteAnotado } from "@/lib/ventas/comprobante-sunat";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -373,6 +375,76 @@ export const SalesDB = {
       return taxType ? { ...it, taxType } : it;
     });
     return sale;
+  },
+  /**
+   * Anota el comprobante que SUNAT emitió para esta venta (o lo quita).
+   *
+   * - De otro negocio o inexistente → `no_existe` (la ruta responde 404).
+   * - Ya tiene OTRO número y no se pidió `reemplazar` → `ya_tiene` (409): pisar
+   *   una factura emitida con otra deja sin rastro la primera.
+   * - El mismo número otra vez → `cambio: false`, sin escribir (reintentos).
+   *
+   * La condición «el número sigue siendo el que leí» va en el WHERE del
+   * `updateMany`: dos anotaciones a la vez no se pisan (la segunda ve 0 filas
+   * y vuelve como `ya_tiene`).
+   */
+  async anotarComprobante(
+    tenantId: string,
+    id: string,
+    nuevo: ComprobanteAnotado,
+    opts: { reemplazar: boolean; user: string },
+  ): Promise<
+    | { ok: true; cambio: boolean; venta: DbSale }
+    | { ok: false; reason: "no_existe" }
+    | { ok: false; reason: "ya_tiene"; actual: { tipo: string | null; numero: string } }
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    const r = await withRlsTx(tenantId, async (tx) => {
+      const antes = await tx.sale.findFirst({
+        where: { id, tenantId },
+        select: { comprobanteTipo: true, comprobanteNumero: true, comprobanteRuc: true },
+      });
+      if (!antes) return { ok: false as const, reason: "no_existe" as const };
+      const numeroAntes = antes.comprobanteNumero?.trim() || null;
+      // Quitar es una orden explícita (`quitar: true`): no pide `reemplazar`.
+      const otro = Boolean(numeroAntes && nuevo.numero && !mismoNumeroSunat(numeroAntes, nuevo.numero));
+      if (otro && !opts.reemplazar && numeroAntes) {
+        return { ok: false as const, reason: "ya_tiene" as const, actual: { tipo: antes.comprobanteTipo, numero: numeroAntes } };
+      }
+      const igual =
+        (antes.comprobanteTipo ?? "ticket") === nuevo.tipo &&
+        (numeroAntes === null ? nuevo.numero === null : mismoNumeroSunat(numeroAntes, nuevo.numero)) &&
+        (antes.comprobanteRuc ?? null) === nuevo.ruc;
+      if (igual) return { ok: true as const, cambio: false };
+      const hecho = await tx.sale.updateMany({
+        where: { id, tenantId, comprobanteNumero: antes.comprobanteNumero },
+        data: { comprobanteTipo: nuevo.tipo, comprobanteNumero: nuevo.numero, comprobanteRuc: nuevo.ruc },
+      });
+      if (hecho.count === 0) {
+        const ahora = await tx.sale.findFirst({ where: { id, tenantId }, select: { comprobanteTipo: true, comprobanteNumero: true } });
+        if (!ahora) return { ok: false as const, reason: "no_existe" as const };
+        return { ok: false as const, reason: "ya_tiene" as const, actual: { tipo: ahora.comprobanteTipo, numero: ahora.comprobanteNumero ?? "" } };
+      }
+      return { ok: true as const, cambio: true, antes };
+    });
+    if (!r.ok) return r;
+    const antes = "antes" in r ? r.antes : undefined;
+    if (r.cambio && antes) {
+      invalidarVentasOverview(tenantId);
+      await ActivityLogDB.create(tenantId, {
+        action: nuevo.numero ? "sale_comprobante_anotado" : "sale_comprobante_quitado",
+        entity: "Sale",
+        entityId: id,
+        detail: JSON.stringify({
+          antes: { tipo: antes.comprobanteTipo, numero: antes.comprobanteNumero, ruc: antes.comprobanteRuc },
+          despues: nuevo,
+        }),
+        user: opts.user,
+      }).catch((err) => logger.error("[sales.db] audit de comprobante falló", { error: String(err), id, tenantId }));
+    }
+    const venta = await SalesDB.getById(tenantId, id);
+    if (!venta) return { ok: false, reason: "no_existe" };
+    return { ok: true, cambio: r.cambio, venta };
   },
   async add(tenantId: string, sale: DbSale): Promise<DbSale> {
     // Pre-validate product IDs to avoid FK violations (products may have been deleted since the sale was queued offline)

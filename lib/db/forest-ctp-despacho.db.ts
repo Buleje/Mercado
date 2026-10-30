@@ -39,6 +39,7 @@ import { permisoAjeno } from "@/lib/forestal/anexo-a-despacho";
 import { agregarPnl, decidirMargen, type FilaPnl, type MargenMotivo, type PnlAgregado } from "@/lib/forestal/ctp-pnl";
 import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
+import { mismoNumeroSunat } from "@/lib/ventas/comprobante-sunat";
 import {
   correlativoEnSerie, gtfEnUso, leerGtfConfirmada, mismoNumeroGtf, proponerGtf, saltoDeCorrelativo,
   type GtfUsada, type PropuestaGtf,
@@ -1207,6 +1208,83 @@ export class ForestCtpDespachoDB {
       user,
     });
     return { ok: true };
+  }
+
+  /**
+   * Anota (o quita, con `numero: ""`) el N.º de la guía de remisión SUNAT en
+   * la GTF de un despacho: `gtfDatos.guia.guiaRemisionNro`, casilla (25) del
+   * formato 2024. Sólo esa clave: el resto del cuerpo se conserva tal cual
+   * (merge sobre el JSON crudo, no `leerGtfDatos`, que con un cuerpo de un
+   * formato viejo devolvería uno vacío y lo pisaría).
+   *
+   * Excepción a ADR-374, a propósito: la GTF del talonario ya tiene número al
+   * registrar el despacho, y la GRE se emite en SOL después; en el papel su
+   * número se escribe a mano en la casilla (25). Anotarlo acá copia el papel,
+   * no cambia el traslado (destinatario, volumen y vehículo siguen cerrados).
+   * Lo que sí se respeta: despacho anulado, mes cerrado, y OTRO número ya
+   * anotado sólo se pisa con `reemplazar`.
+   */
+  static async anotarGuiaRemision(
+    tenantId: string,
+    despachoEntryId: string,
+    numero: string,
+    opts: { reemplazar: boolean; fecha?: string | null; user: string },
+  ): Promise<
+    | { ok: true; cambio: boolean; guiaRemisionNro: string }
+    | { ok: false; reason: "no_despacho" | "anulado" }
+    | { ok: false; reason: "ya_tiene"; actual: string }
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    const desp = await prisma.forestCtpEntry.findFirst({
+      where: { id: despachoEntryId, tenantId, deletedAt: null },
+      select: { id: true, section: true, status: true, lineNo: true, entryDate: true, gtfNumber: true, gtfDatos: true },
+    });
+    if (!desp || desp.section !== "despacho") return { ok: false, reason: "no_despacho" };
+    if (desp.status !== "registrado") return { ok: false, reason: "anulado" };
+
+    const cuerpo =
+      desp.gtfDatos && typeof desp.gtfDatos === "object" && !Array.isArray(desp.gtfDatos)
+        ? (desp.gtfDatos as Record<string, unknown>)
+        : {};
+    const guia =
+      cuerpo.guia && typeof cuerpo.guia === "object" && !Array.isArray(cuerpo.guia)
+        ? (cuerpo.guia as Record<string, unknown>)
+        : {};
+    const actual = String(guia.guiaRemisionNro ?? "").trim();
+    if (actual && numero && !mismoNumeroSunat(actual, numero) && !opts.reemplazar) {
+      return { ok: false, reason: "ya_tiene", actual };
+    }
+    if (numero ? mismoNumeroSunat(actual, numero) : !actual) {
+      return { ok: true, cambio: false, guiaRemisionNro: actual };
+    }
+
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, desp.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede anotar la guía de remisión de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+
+    const datos = { ...cuerpo, guia: { ...guia, guiaRemisionNro: numero } };
+    await prisma.forestCtpEntry.updateMany({
+      where: { id: desp.id, tenantId },
+      data: { gtfDatos: datos as Prisma.InputJsonValue },
+    });
+
+    const de = opts.fecha ? ` del ${opts.fecha}` : "";
+    auditCtp({
+      tenantId,
+      action: "ctp_gtf_datos",
+      entity: "ForestCtpEntry",
+      entityId: desp.id,
+      detail: numero
+        ? `Anotó la guía de remisión ${numero}${de} en la guía del despacho #${desp.lineNo}${desp.gtfNumber ? ` (GTF ${desp.gtfNumber})` : ""}${actual ? `; antes ${actual}` : ""}`
+        : `Quitó la guía de remisión ${actual} de la guía del despacho #${desp.lineNo}${desp.gtfNumber ? ` (GTF ${desp.gtfNumber})` : ""}`,
+      user: opts.user,
+    });
+    return { ok: true, cambio: true, guiaRemisionNro: numero };
   }
 
   /**

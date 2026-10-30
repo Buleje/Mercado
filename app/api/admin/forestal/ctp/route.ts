@@ -3,6 +3,7 @@ import { z } from "zod";
 import { motivoLegible, motivoOpcionalSchema } from "@/lib/forestal/motivo";
 import { leerContratoId } from "@/lib/forestal/contrato-filtro";
 import { requireAdmin } from "@/lib/require-admin";
+import { leerNumeroSunat, motivoSerieInvalida } from "@/lib/ventas/comprobante-sunat";
 import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
@@ -212,6 +213,20 @@ const patchSchema = z.discriminatedUnion("action", [
   // Cuerpo de la guía de transporte: propietario, destinatario, transportista,
   // vehículo, traslado y títulos. La forma la valida `gtfDatosSchema`.
   z.object({ id: z.string().trim().min(1), action: z.literal("gtf_datos"), datos: gtfDatosSchema }),
+  /**
+   * Anotar el N.º de la guía de remisión SUNAT (GRE) en la GTF del despacho,
+   * sin tocar el resto de la guía y aunque la GTF ya tenga número (la GRE se
+   * emite después; ver `ForestCtpDespachoDB.anotarGuiaRemision`). `quitar`
+   * la borra; otro número ya anotado sólo se pisa con `reemplazar`.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("guia_remision"),
+    numero: z.string().trim().max(24).default(""),
+    fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    reemplazar: z.boolean().optional(),
+    quitar: z.boolean().optional(),
+  }),
   /**
    * AMPLIAR una corrida que ya declaró (ADR-361): el lote no sale de la sierra
    * en un solo acto. Suma paquetes a los que ya están —no los reemplaza— y el
@@ -1061,6 +1076,30 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         auth.username ?? "unknown",
       );
       return NextResponse.json({ aserrio });
+    }
+    if (parsed.data.action === "guia_remision") {
+      const d = parsed.data;
+      const motivo = d.quitar ? null : motivoSerieInvalida("gre", d.numero);
+      if (motivo) return NextResponse.json({ error: "datos_invalidos", message: motivo }, { status: 400 });
+      const numero = d.quitar ? "" : (leerNumeroSunat(d.numero)?.canonico ?? "");
+      const r = await ForestCtpDespachoDB.anotarGuiaRemision(auth.tenantId, d.id, numero, {
+        reemplazar: d.reemplazar === true,
+        fecha: d.fecha ?? null,
+        user: auth.username ?? "unknown",
+      });
+      if (!r.ok && r.reason === "ya_tiene") {
+        return NextResponse.json(
+          { error: "ya_tiene_guia_remision", actual: r.actual, message: `La guía ya tiene anotada la guía de remisión ${r.actual}. Para cambiarla manda reemplazar: true.` },
+          { status: 409 },
+        );
+      }
+      if (!r.ok) {
+        return NextResponse.json(
+          { error: r.reason, message: r.reason === "anulado" ? "El despacho está anulado." : "No se encontró ese despacho." },
+          { status: r.reason === "no_despacho" ? 404 : 422 },
+        );
+      }
+      return NextResponse.json({ ok: true, cambio: r.cambio, guiaRemisionNro: r.guiaRemisionNro });
     }
     if (parsed.data.action === "gtf_datos") {
       const r = await ForestCtpDespachoDB.guardarGtfDatos(

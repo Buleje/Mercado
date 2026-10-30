@@ -8,6 +8,28 @@ import { formatTime } from "@/lib/format";
 import { fmt, type SaleRecord } from "@/components/admin/pos/pos-shared";
 import { etiquetaMedio, useResumenHoy, useVentasDelDia, VENTAS_POR_PAGINA } from "@/components/admin/pos/use-resumen-hoy";
 
+// ── Comprobante SUNAT anotado (factura/boleta emitida en SOL) ────────────────
+
+const NOMBRE_COMPROBANTE: Record<string, string> = { factura: "Factura", boleta: "Boleta", cotizacion: "Cotización", proforma: "Proforma" };
+
+/** «Boleta EB01-12» si la venta ya tiene su número de SUNAT; si no, «Sin comprobante». */
+function ComprobanteDeLaVenta({ sale }: { sale: SaleRecord }) {
+  const numero = sale.comprobanteNumero?.trim();
+  if (!numero) {
+    return (
+      <span className="truncate rounded-full border border-[var(--rule-base)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+        Sin comprobante
+      </span>
+    );
+  }
+  const tipo = NOMBRE_COMPROBANTE[sale.comprobanteTipo ?? ""] ?? "Comprobante";
+  return (
+    <span className="truncate rounded-full bg-[var(--data-success-500)]/12 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+      {tipo} {numero}
+    </span>
+  );
+}
+
 // ── Sale History Item (Mejora 2: expandable) ─────────────────────────────────
 
 function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
@@ -25,7 +47,10 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
           <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(sale.total)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{itemCount} {itemCount === 1 ? "articulo" : "articulos"}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{itemCount} {itemCount === 1 ? "articulo" : "articulos"}</span>
+            <ComprobanteDeLaVenta sale={sale} />
+          </span>
           <span className={cn(
             "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
             sale.payment === "efectivo" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :

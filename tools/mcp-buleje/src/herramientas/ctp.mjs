@@ -345,4 +345,29 @@ export const herramientas = [
     },
     formatear: () => "Asiento corregido.",
   },
+  {
+    nombre: "ctp_anotar_gre",
+    grupo: "ctp",
+    soloEn: ["forestal"],
+    tipo: "escritura",
+    descripcion: "Anota el N.º de la guía de remisión SUNAT (GRE) emitida en SOL en la GTF de un despacho del libro CTP (PATCH /api/admin/forestal/ctp, action=guia_remision): casilla (25), sin tocar el resto de la guía y aunque la GTF ya tenga número. Series EG07 (portal SOL), EG02, T001/V001 (sistemas propios). Si ya tiene OTRO número responde 409: manda reemplazar:true. quitar:true la borra. Solo admin/owner. Ej.: {id:\"cm…\", numero:\"EG07-189\", fecha:\"2026-10-30\"}.",
+    entrada: {
+      negocio,
+      id: idRuta.describe("Id de la línea de despacho (ctp_ver vista=lista, sección despacho)"),
+      numero: z.string().trim().max(24).optional().describe("N.º de la GRE, ej. EG07-189 o EG07-00000189"),
+      fecha: dia.optional().describe("Fecha de emisión de la GRE (queda en el registro de actividad)"),
+      reemplazar: z.boolean().optional().describe("Pisar otro N.º ya anotado"),
+      quitar: z.boolean().optional().describe("Borrar el N.º anotado"),
+    },
+    pedido: (a) => ({
+      metodo: "PATCH",
+      ruta: "/api/admin/forestal/ctp",
+      cuerpo: limpiar({ id: a.id, action: "guia_remision", numero: a.quitar ? undefined : a.numero, fecha: a.fecha, reemplazar: a.reemplazar, quitar: a.quitar }),
+    }),
+    formatear: (d) => {
+      const r = /** @type {any} */ (d) ?? {};
+      if (!r.guiaRemisionNro) return "Guía de remisión quitada de la GTF.";
+      return r.cambio === false ? `La GTF ya tenía anotada la guía de remisión ${r.guiaRemisionNro}.` : `Guía de remisión ${r.guiaRemisionNro} anotada en la GTF.`;
+    },
+  },
 ];

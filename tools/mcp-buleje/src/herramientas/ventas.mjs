@@ -10,6 +10,7 @@ const COLS_VENTA = [
   ["Cliente", ["customerName", "cliente"]],
   ["Total", ["total"], "s"],
   ["Pago", ["payment", "paymentMethod"]],
+  ["Comprobante", ["comprobanteNumero"]],
 ];
 
 /** @type {import("../tipos.mjs").DefHerramienta<any>[]} */
@@ -38,7 +39,7 @@ export const herramientas = [
     descripcion: "Detalle de una venta por id (GET /api/sales/[id]): productos, total en S/, pago y cliente.",
     entrada: { negocio, id: idRuta },
     pedido: (a) => ({ metodo: "GET", ruta: `/api/sales/${a.id}` }),
-    formatear: (d) => ficha(d, { titulo: "Venta", campos: [["N.º", ["number", "numero", "id"]], ["Fecha", ["createdAt", "date"], "f"], ["Cliente", ["customerName"]], ["Total", ["total"], "s"], ["Pago", ["payment", "paymentMethod"]]] }),
+    formatear: (d) => ficha(d, { titulo: "Venta", campos: [["N.º", ["number", "numero", "id"]], ["Fecha", ["createdAt", "date"], "f"], ["Cliente", ["customerName"]], ["Total", ["total"], "s"], ["Pago", ["payment", "paymentMethod"]], ["Comprobante", ["comprobanteTipo"]], ["N.º SUNAT", ["comprobanteNumero"]]] }),
   },
   {
     nombre: "ventas_resumen_hoy",
@@ -48,6 +49,33 @@ export const herramientas = [
     entrada: { negocio },
     pedido: () => ({ metodo: "GET", ruta: "/api/sales/resumen-hoy" }),
     formatear: (d) => ficha(d, { titulo: "Ventas de hoy", campos: [["Total", ["total", "totalHoy", "monto"], "s"], ["Ventas", ["count", "cantidad", "ventas"], "n"]] }),
+  },
+  {
+    nombre: "venta_anotar_comprobante",
+    grupo: "ventas",
+    tipo: "escritura",
+    descripcion: "Anota en la venta el comprobante que SUNAT emitió en SOL (PATCH /api/sales/[id]): tipo factura o boleta, N.º (E001-318, F001-12, EB01-12, B001-5) y RUC (factura, 11 dígitos) o DNI (boleta, opcional). No mueve plata ni stock. Si la venta ya tiene OTRO número responde 409: manda reemplazar:true. quitar:true deshace la anotación (vuelve a ticket).",
+    entrada: {
+      negocio,
+      venta: idRuta.describe("Id de la venta (ventas_listar)"),
+      tipo: z.enum(["factura", "boleta"]).optional().describe("factura o boleta (obligatorio salvo quitar)"),
+      numero: z.string().trim().max(24).optional().describe("N.º emitido, ej. E001-318 o EB01-00000012"),
+      ruc: z.string().trim().max(15).optional().describe("RUC del cliente (factura) o DNI (boleta)"),
+      reemplazar: z.boolean().optional().describe("Pisar otro N.º ya anotado"),
+      quitar: z.boolean().optional().describe("Deshacer la anotación"),
+    },
+    pedido: (a) => ({
+      metodo: "PATCH",
+      ruta: `/api/sales/${a.venta}`,
+      cuerpo: a.quitar ? { quitar: true } : limpiar({ tipo: a.tipo, numero: a.numero, ruc: a.ruc, reemplazar: a.reemplazar }),
+    }),
+    formatear: (d) => {
+      const v = /** @type {any} */ (d)?.venta ?? {};
+      if (!v.comprobanteNumero) return `Venta ${v.id ?? ""}: sin comprobante (ticket).`.replace("  ", " ");
+      const tipo = v.comprobanteTipo === "factura" ? "Factura" : "Boleta";
+      const ya = /** @type {any} */ (d)?.cambio === false ? " (ya estaba anotada)" : "";
+      return `Venta ${v.id}: ${tipo} ${v.comprobanteNumero}${v.comprobanteRuc ? `, doc. ${v.comprobanteRuc}` : ""}${ya}.`;
+    },
   },
   {
     nombre: "venta_registrar",
