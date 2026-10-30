@@ -18,13 +18,14 @@
  */
 
 import { useMemo, useState } from "react";
-import { Boxes, Loader2, Plus, RefreshCw, ScanBarcode, Truck, Upload } from "@buleje/design-system/icons";
+import { Boxes, FileText, Loader2, Plus, RefreshCw, ScanBarcode, Truck, Upload } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { AccionesDeLaVista, ORDEN_ACCION, TextoDeAccion, useEnElLibro } from "@/components/admin/shared/libro-acciones-vista";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { libresDelPatio, resumenPatio } from "@/lib/forestal/patio-resumen";
 import { alertasDeLote, facetasDeLotes, filtrarLotes, ordenarLotes, resumenLotes } from "@/lib/forestal/lotes-aserrio";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
@@ -133,6 +134,19 @@ export default function CtpLotesLista({
       onSelect: () => m.setImportar(true),
     },
     {
+      id: "hojas-cubicacion",
+      label: "Hojas de cubicación",
+      hint: "Una hoja para llenar a mano por cada lote abierto, con su Lote ya escrito",
+      icon: FileText,
+      onSelect: () =>
+        void import("@/lib/forestal/hoja-cubicacion-en-blanco")
+          .then((h) => h.descargarHojaCubicacionEnBlanco(h.hojasDeLotesAbiertos(lotes)))
+          .catch((err: unknown) => {
+            logger.error("[lotes] hoja de cubicación falló", { error: String(err) });
+            setAviso({ tono: "aviso", texto: "No se pudo generar la hoja. Vuelve a intentarlo." });
+          }),
+    },
+    {
       id: "recargar",
       label: "Recargar",
       hint: "Vuelve a leer los lotes y el patio",
@@ -188,7 +202,7 @@ export default function CtpLotesLista({
         menu={
           <ActionMenu
             label="Opciones"
-            title="Armar escaneando, despachar desde lotes, traer del SNIFFS y recargar"
+            title="Armar escaneando, despachar desde lotes, traer del SNIFFS, hojas de cubicación y recargar"
             actions={opciones}
             size="md"
             compactoEnMovil

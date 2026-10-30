@@ -2714,6 +2714,18 @@ function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onI
               alineacion="derecha"
               items={[
                 {
+                  key: "hoja-lote-blanco",
+                  label: "Hoja de cubicación en blanco",
+                  Icono: FileText,
+                  hint: "Para llenar a mano, con la casilla Lote en cada fila",
+                  onClick: () =>
+                    descargarConAviso(
+                      import("@/lib/forestal/hoja-cubicacion-en-blanco").then((h) => h.descargarHojaCubicacionEnBlanco()),
+                      "Hoja de cubicación descargada",
+                      "No se pudo generar el PDF.",
+                    ),
+                },
+                {
                   key: "anexo-blanco",
                   label: "Anexo 04 en blanco (1 hoja)",
                   Icono: FileText,

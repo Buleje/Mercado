@@ -39,6 +39,7 @@ import { formatDateTimeShort } from "@/lib/format";
 import { resumenReservasVencidas } from "@/lib/forestal/reservas-vencidas";
 import CtpReservasVencidas from "./CtpReservasVencidas";
 import CtpPaquetesSinMedidas from "./CtpPaquetesSinMedidas";
+import CtpPropuestaLotes from "./CtpPropuestaLotes";
 import { resumenPaquetesSinMedidas } from "@/lib/forestal/paquetes-sin-medidas";
 
 const TONO: Record<Pendiente["urgencia"], string> = {
@@ -72,7 +73,7 @@ export default function CtpPendientes({
 }) {
   const {
     lista, seViene, reservasVencidas, reservaResuelta, paquetesSinMedidas, paquetesSinMedidasTotal, paquetesSinMedidasEnElPatio,
-    cargando, falló, recargar,
+    cargando, falló, recargar, datos,
   } = estado;
   const [abierto, setAbierto] = useState(false);
 
@@ -242,6 +243,13 @@ export default function CtpPendientes({
                 : ""
             }
           />
+          {/* La madera suelta se arma acá mismo, sin ir a Lotes: un toque por
+              especie y permiso (mismo bloque y misma regla que en Lotes). */}
+          {(datos.maderaSinLote?.trozas ?? 0) > 0 && (
+            <div className="mt-4">
+              <CtpPropuestaLotes onCreado={recargar} />
+            </div>
+          )}
         </div>
       </AdminModal>
     </>

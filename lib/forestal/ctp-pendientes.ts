@@ -29,7 +29,31 @@ export interface Pendiente {
 
 import type { CorridaSinOrigen } from "./loctp-consumos-analisis";
 import type { GuiasSinPagarDeParte } from "./plata-de-guia";
+import type { PropuestasDelPatio } from "./propuesta-de-lotes";
 import { formatCurrency } from "@/lib/format";
+
+/** Un grupo de madera suelta: lo que entraría en UN lote (una especie, un permiso). */
+export interface GrupoSinLote {
+  especie: string;
+  permiso: string;
+  trozas: number;
+  m3: number;
+}
+
+/**
+ * Madera en el patio que todavía no está en ningún lote (Brandon 30-10, «Lote
+ * para la madera suelta»): sin lote, la producción se reparte «a ojo» entre las
+ * guías. Los grupos son los que ya se pueden armar —guía recibida, especie y
+ * permiso conocidos—; lo que no tiene especie o permiso se cuenta aparte porque
+ * no hay lote que lo reciba hasta corregir el ingreso.
+ */
+export interface MaderaSinLote {
+  trozas: number;
+  m3: number;
+  grupos: readonly GrupoSinLote[];
+  /** Trozas sin especie o sin permiso: tampoco tienen lote, pero no se pueden armar. */
+  sinDato: { trozas: number; m3: number };
+}
 
 export interface DatosPendientes {
   /** Ingresos de materia prima en estado "pendiente". */ ingresosPendientes: number;
@@ -112,6 +136,48 @@ export interface DatosPendientes {
    */
   guiasSinDespacho?: number;
   m3SinDespacho?: number;
+  /** Madera del patio sin lote (`maderaSinLoteDe`, sobre las propuestas del servidor). */
+  maderaSinLote?: MaderaSinLote;
+}
+
+const r3 = (n: number) => Math.round(n * 1000) / 1000;
+
+/**
+ * Qué troza cuenta como «madera en patio sin lote»: la que el servidor ya
+ * propone para un lote (en el patio, sin lote, sin consumir, elegible por
+ * `motivoNoElegible`, con su guía recibida). La que espera su guía NO entra:
+ * todavía no está en el patio para el libro, y ese aviso es otro («Guías sin
+ * fecha de llegada»). Sin especie o sin permiso: van aparte, en `sinDato`.
+ */
+export function maderaSinLoteDe(p: PropuestasDelPatio | null | undefined): MaderaSinLote {
+  const grupos: GrupoSinLote[] = (p?.propuestas ?? [])
+    .filter((g) => g.trozas > 0)
+    .map((g) => ({ especie: g.especie, permiso: g.permiso ?? "sin permiso", trozas: g.trozas, m3: r3(g.m3) }))
+    .sort((a, b) => b.m3 - a.m3 || a.especie.localeCompare(b.especie, "es"));
+  const sinDato = {
+    trozas: (p?.sinEspecie?.trozas ?? 0) + (p?.sinPermiso?.trozas ?? 0),
+    m3: r3((p?.sinEspecie?.m3 ?? 0) + (p?.sinPermiso?.m3 ?? 0)),
+  };
+  return {
+    trozas: grupos.reduce((a, g) => a + g.trozas, 0),
+    m3: r3(grupos.reduce((a, g) => a + g.m3, 0)),
+    grupos,
+    sinDato,
+  };
+}
+
+/** «Tornillo · PLT-2025-096: 31.09 m³ (12 trozas)», los tres más grandes. */
+function detalleMaderaSinLote(m: MaderaSinLote): string {
+  const trozas = (n: number) => `${n} ${n === 1 ? "troza" : "trozas"}`;
+  const lista = m.grupos
+    .slice(0, 3)
+    .map((g) => `${g.especie} · ${g.permiso}: ${g.m3.toFixed(2)} m³ (${trozas(g.trozas)})`)
+    .join("; ");
+  const resto = m.grupos.length > 3 ? ` y ${m.grupos.length - 3} grupos más` : "";
+  const sinDato = m.sinDato.trozas > 0
+    ? ` Otras ${trozas(m.sinDato.trozas)} no dicen su especie o permiso.`
+    : "";
+  return `${lista}${resto}. Ármales su lote abajo: así la producción sale exacta por lote.${sinDato}`;
 }
 
 /** A partir de acá una troza parada empieza a costar. Mismo corte que el patio. */
@@ -270,6 +336,16 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       titulo: `Trozas paradas hace ${TROZAS_VARADAS_DIAS} días o más`,
       detalle: "La madera en troza se mancha y se raja: conviene aserrarlas primero.",
       vista: "trozas",
+    },
+    /* Madera, no papel: el libro cierra igual —por eso «pendiente»—, pero
+       sin lote la producción se reparte a ojo entre las guías. */
+    {
+      clave: "madera-sin-lote",
+      urgencia: "pendiente",
+      cantidad: d.maderaSinLote?.trozas ?? 0,
+      titulo: `Madera en patio sin lote · ${(d.maderaSinLote?.m3 ?? 0).toFixed(2)} m³`,
+      detalle: d.maderaSinLote ? detalleMaderaSinLote(d.maderaSinLote) : "",
+      vista: "lotes",
     },
     /* Evidencia, no papel: el libro cierra igual sin fotos —por eso
        «pendiente»—, pero una guía recibida sin foto no tiene cómo probar qué

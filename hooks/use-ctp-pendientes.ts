@@ -13,7 +13,7 @@ import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period"
 import type { CorridaSinOrigen } from "@/lib/forestal/loctp-consumos-analisis";
 import type { GuiasSinPagarDeParte } from "@/lib/forestal/plata-de-guia";
 import {
-  diaDeFechaOnly, diaDeLimiteLocal, diaEnPeriodo, pendientesDelLibro, TROZAS_VARADAS_DIAS,
+  diaDeFechaOnly, diaDeLimiteLocal, diaEnPeriodo, maderaSinLoteDe, pendientesDelLibro, TROZAS_VARADAS_DIAS,
   type DatosPendientes, type Pendiente,
 } from "@/lib/forestal/ctp-pendientes";
 import {
@@ -26,6 +26,7 @@ import {
 import type { ReservaVencida } from "@/lib/forestal/reservas-vencidas";
 import { alCambiarApartados } from "@/lib/forestal/apartados-evento";
 import type { PaqueteSinMedidas } from "@/lib/forestal/paquetes-sin-medidas";
+import type { PropuestasDelPatio } from "@/lib/forestal/propuesta-de-lotes";
 import { alCambiarEscuadrias } from "@/lib/forestal/escuadria-guardar";
 
 const VACIO: DatosPendientes = {
@@ -76,6 +77,10 @@ type Respuesta = {
   sinFoto?: { guias?: number; detalle?: { gtf: string }[] };
   /** `wood-entries?sinRecibir=1`: guías vivas sin fecha de llegada al patio. */
   sinRecibir?: { guias?: number; m3?: number };
+  /** `lotes-aserrio/propuestas` (ADR-443): la madera del patio que ya se puede llevar a un lote. */
+  propuestas?: PropuestasDelPatio["propuestas"];
+  sinEspecie?: PropuestasDelPatio["sinEspecie"];
+  sinPermiso?: PropuestasDelPatio["sinPermiso"];
   /** `guias/plata?sinPagar=1` (ADR-437): compras con algo por pagar, por proveedor. */
   porParte?: unknown;
   /** `ctp?paquetesSinMedidas=1`: los paquetes sin alguna medida, recortados, y cuántos son en total. */
@@ -236,8 +241,12 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
       /* Sin período: una guía que llegó en agosto sin fecha de recepción sigue
          sin ella hoy (las de meses cerrados no cuentan: no se tocan). */
       json("/api/admin/forestal/wood-entries?sinRecibir=1"),
+      /* Sin período: la madera suelta del patio está hoy, entró cuando entró.
+         Es la misma lectura que «Lotes que puedes armar» (`ctpGet` reusa la
+         promesa en vuelo si los dos piden a la vez). */
+      json("/api/admin/forestal/lotes-aserrio/propuestas"),
     ])
-      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos, sinFoto, sinPagar, sinDespacho, sinRecibir]) => {
+      .then(([we, gtf, desp, anexos, saldos, varadas, porVarar, ficha, sinOrigen, contratos, sinFoto, sinPagar, sinDespacho, sinRecibir, propuestas]) => {
         if (miCarga !== cargaRef.current) return;   // llegó tarde: manda la más nueva
         const despachos = arr<{ status?: string; gtfNumber?: string | null; id: string }>(desp?.entries)
           .filter((e) => e.status === "registrado");
@@ -291,6 +300,16 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
           guiasSinPagar: arr<GuiasSinPagarDeParte>(sinPagar?.porParte),
           guiasSinDespacho: Number(sinDespacho?.guias) || 0,
           m3SinDespacho: Number(sinDespacho?.totalM3) || 0,
+          maderaSinLote: maderaSinLoteDe(
+            propuestas
+              ? {
+                  propuestas: arr<PropuestasDelPatio["propuestas"][number]>(propuestas.propuestas),
+                  esperanGuia: { trozas: 0, m3: 0, guias: 0 },
+                  sinEspecie: propuestas.sinEspecie ?? { trozas: 0, m3: 0 },
+                  sinPermiso: propuestas.sinPermiso ?? { trozas: 0, m3: 0 },
+                }
+              : null,
+          ),
         });
 
         /* ── Lo que se viene ──────────────────────────────────────────────

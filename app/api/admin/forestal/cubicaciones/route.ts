@@ -60,6 +60,8 @@ const piezaSchema = z.object({
   tipo: z.enum(ORDEN_TIPO as [TipoComercial, ...TipoComercial[]]).nullish(),
   /** Nota de patio de esta pieza (candado o suelta, ver observacion-de-pieza.ts). */
   observacion: z.string().trim().max(OBSERVACION_MAX).nullish(),
+  /** Lote de aserrío de la pieza («29-2026»): en la Distribución va sólo a ese lote. */
+  lote: z.string().trim().max(40).nullish(),
   /** S/ por PT de esta pieza (especie, trato del dueño). El valor lo suma el servidor. */
   precio: z.coerce.number().nonnegative().max(999999).nullish(),
   /** Cuándo se registró la medida (ISO): la columna «Fecha (hora)» del cubicador. */

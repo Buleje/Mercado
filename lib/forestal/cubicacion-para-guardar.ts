@@ -35,6 +35,8 @@ export function piezasParaGuardar(rows: PiezaCubicada[], orden: OrdenFilas, prec
     duenoParteId: p.duenoParteId ?? null,
     tipo: p.tipo ?? null,
     observacion: p.observacion ?? null,
+    /* El lote de aserrío de la hoja (30-10): sin él, al reabrir la pieza vuelve a repartirse «a ojo». */
+    ...(p.lote ? { lote: p.lote } : {}),
     ...(p.registradoAt ? { registradoAt: p.registradoAt } : {}),
     /* El precio de cada pieza (especie, trato del dueño): sin él, el valor guardado sería PT × un solo precio. */
     ...(precioDe ? { precio: precioDe(p) } : {}),

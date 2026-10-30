@@ -49,6 +49,15 @@ export interface PiezaCubicada {
    */
   observacion?: string;
   /**
+   * Lote de aserrío del que salió la pieza («29-2026»), de la casilla Lote de
+   * la hoja de cubicación (Brandon 30-10, «Lote para la madera suelta»). En la
+   * Distribución de rolliza la pieza va SÓLO al bloque de ese lote
+   * (`cubicacion-reparto-por-lote.ts`): así la línea de producción del lote
+   * toma su volumen exacto y no uno repartido a ojo. Cuenta en
+   * `unificarPorMedida`: dos lotes no se juntan en una fila (se perdería a cuál va cada pieza).
+   */
+  lote?: string;
+  /**
    * Cuántas de las `cantidad` piezas salieron de abrir un paquete «Variado»
    * 6×6 (ADR-463). Marca SOLO de pantalla (la vista previa del Anexo 04 las
    * resalta): no se manda al servidor, no se imprime, no entra en ningún total
@@ -229,7 +238,7 @@ export function recubicarPiezas<T extends PiezaCubicada>(piezas: T[]): T[] {
 export function unificarPorMedida(piezas: PiezaCubicada[]): PiezaCubicada[] {
   const mapa = new Map<string, PiezaCubicada>();
   for (const p of piezas) {
-    const clave = [p.especie ?? "", p.tipo ?? "", p.dueno ?? "", p.duenoParteId ?? "", p.espesor, p.uEspesor, p.ancho, p.uAncho, p.largo, p.uLargo].join("|");
+    const clave = [p.especie ?? "", p.tipo ?? "", p.dueno ?? "", p.duenoParteId ?? "", p.lote ?? "", p.espesor, p.uEspesor, p.ancho, p.uAncho, p.largo, p.uLargo].join("|");
     const acc = mapa.get(clave);
     if (acc) {
       acc.cantidad += p.cantidad;

@@ -32,11 +32,11 @@ export interface ResultadoImport {
   columnas: Record<Campo, number | null>;
 }
 
-export type Campo = "cantidad" | "espesor" | "ancho" | "largo" | "especie" | "uEspesor" | "uAncho" | "uLargo";
+export type Campo = "cantidad" | "espesor" | "ancho" | "largo" | "especie" | "uEspesor" | "uAncho" | "uLargo" | "lote";
 
 /** `columnas` no aplica cuando el origen no es una matriz de celdas (foto/audio). */
 const COLUMNAS_SIN_MAPEO: Record<Campo, number | null> = {
-  cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null,
+  cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null, lote: null,
 };
 
 export const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -51,7 +51,20 @@ export const ALIAS: Record<Campo, string[]> = {
   uEspesor: ["u.esp", "uesp", "unidad espesor", "und espesor"],
   uAncho: ["u.anc", "uanc", "unidad ancho", "und ancho"],
   uLargo: ["u.lar", "ular", "unidad largo", "und largo"],
+  /* El lote de aserrío de la pieza (casilla Lote de la hoja de cubicación). */
+  lote: ["lote", "lote de aserrio", "n lote", "n° lote", "nro lote", "nro. lote", "numero de lote", "lote n°", "lote nro"],
 };
+
+/**
+ * La casilla Lote como la escribe el patio («29-2026», «Lote 29-2026», «29»).
+ * Se guarda sin la palabra «lote»: el cruce con el bloque del lote compara
+ * códigos (`codigoDeLote`, `cubicacion-reparto-por-lote.ts`).
+ */
+export function normalizarLote(v: Celda): string | undefined {
+  if (typeof v === "number") return Number.isFinite(v) && v > 0 ? String(Math.round(v)) : undefined;
+  const s = String(v ?? "").trim().replace(/^lote\s*(n[°º.o]?\s*)?/i, "").trim().slice(0, 40);
+  return s || undefined;
+}
 
 const UNIDADES_VALIDAS: Unidad[] = ["pulg", "cm", "pies", "m"];
 function normalizarUnidad(v: Celda, def: Unidad): Unidad {
@@ -131,7 +144,7 @@ export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
     return {
       piezas: [],
       errores: [{ fila: 1, motivo: "No encontré las columnas Especie, Espesor, Ancho y Largo. Revisa que la primera fila tenga esos títulos." }],
-      columnas: { cantidad: null, espesor: null, ancho: null, largo: null, especie: null, uEspesor: null, uAncho: null, uLargo: null },
+      columnas: { ...COLUMNAS_SIN_MAPEO },
     };
   }
 
@@ -174,6 +187,7 @@ export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
     const uAncho = normalizarUnidad(cel(fila, "uAncho"), "pulg");
     const uLargo = normalizarUnidad(cel(fila, "uLargo"), "pies");
     const especie = normalizarEspecie(cel(fila, "especie"));
+    const lote = normalizarLote(cel(fila, "lote"));
 
     const base = { cantidad, espesor, ancho, largo, uEspesor, uAncho, uLargo };
     const { pieTablar, m3 } = cubicarPieza(base);
@@ -181,6 +195,7 @@ export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
       id: `imp-${Date.now()}-${contador++}`,
       ...base,
       especie,
+      ...(lote ? { lote } : {}),
       pieTablar,
       m3,
       filaOrigen: filaNro,
@@ -374,11 +389,12 @@ export function interpretarDictadoAudio(
 
 /** Encabezado + una fila de ejemplo para la plantilla descargable. */
 export const PLANTILLA_IMPORT: { headers: string[]; ejemplo: (string | number)[][] } = {
-  headers: ["Especie", "Cantidad", "Espesor", "Ancho", "Largo"],
+  /* «Lote» al final: una planilla vieja sin esa columna se sigue leyendo igual. */
+  headers: ["Especie", "Cantidad", "Espesor", "Ancho", "Largo", "Lote"],
   ejemplo: [
-    ["Tornillo", 5, 2, 8, 10],
-    ["Cedro", 3, 2, 6, 8],
-    ["Capirona", 10, 1.5, 4, 12],
+    ["Tornillo", 5, 2, 8, 10, "29-2026"],
+    ["Cedro", 3, 2, 6, 8, ""],
+    ["Capirona", 10, 1.5, 4, 12, ""],
   ],
 };
 

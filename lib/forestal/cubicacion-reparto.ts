@@ -46,6 +46,7 @@ import { agruparPor, claveYLabel, type DimensionResumen, type GrupoResumen, type
 /* La regla única de «la pieza cabe en la troza» (ADR-505): no importa este archivo, así no hay ciclo. */
 import { elegibilidad, holguraM, motivoSinTroza, subcapacidadM3, type MotivoMedida, type PiezaMedida, type TrozaMedida } from "./medida-cabe-en-troza";
 import { umbralRendimientoAlto } from "./ctp-rendimiento";
+import { partirPorLote, porPermisoDe, unirPorciones } from "./cubicacion-reparto-por-lote";
 
 /**
  * Aprovechamiento supuesto cuando el bloque no lo trae.
@@ -769,6 +770,185 @@ export function repartirPorDia(asignado: readonly AsignacionGrupo[], dias: numbe
 }
 
 /**
+ * El reparto de UNA especie (o de una porción de ella, ver
+ * `cubicacion-reparto-por-lote.ts`): llenado por capacidad, repesca,
+ * intercambio, tolerancia y cifras. Sacado tal cual del ciclo de
+ * `distribuirPorCapacidad` para poder correrlo por lote.
+ */
+function distribuirEspecie(
+  b: { label: string; bloques: BloqueRolliza[]; piezas: PiezaCubicada[] },
+  dimInterna: DimensionResumen,
+  precio: PrecioPt | undefined,
+): EspecieDistribucion {
+  /* Los dos volúmenes de entrada se cuentan por separado: la troza que hay
+     que aserrar y la madera que ya vino aserrada. Sumarlos sería declarar
+     como rolliza algo que nunca pasó por la sierra. */
+  const rollizaM3 = r4(b.bloques.filter((x) => !esAserradaDirecta(x)).reduce((a, x) => a + (Number(x.m3) || 0), 0));
+  const aserradaDirectaM3 = r4(b.bloques.filter((x) => esAserradaDirecta(x)).reduce((a, x) => a + (Number(x.m3) || 0), 0));
+  const respaldoM3 = r4(rollizaM3 + aserradaDirectaM3);
+  const resumen = agruparPor(b.piezas, dimInterna, precio);
+  const aserradaM3 = r4(resumen.total.m3);
+  const aserradaPt = r2(resumen.total.pieTablar);
+
+  /* «sin-rolliza» = sin NINGÚN respaldo declarado (ni troza ni aserrada
+     directa): sólo ahí la aserrada queda realmente huérfana. Mirando sólo
+     `rollizaM3`, un lote respaldado enteramente por bloques de aserrada
+     directa se avisaba como «sin rolliza declarada» aunque estuviera
+     cubierto pieza por pieza. */
+  const estado: EstadoEspecie =
+    respaldoM3 <= EPS ? "sin-rolliza" : aserradaM3 <= EPS ? "sin-aserrada" : "ok";
+
+  // ── El llenado: bloque por bloque, en el orden cargado ────────────────
+  const distribuidos: BloqueDistribuido[] = b.bloques.map((bl) => ({
+    bloque: bl,
+    aprovechablePct: aprovechableDe(bl),
+    capacidadM3: capacidadDe(bl),
+    usadoM3: 0,
+    libreM3: capacidadDe(bl),
+    piezasLibres: null,
+    asignado: [],
+    dias: diasDe(bl),
+    porDia: [],
+    costoRolliza: bl.costoM3 == null ? null : r2((Number(bl.m3) || 0) * bl.costoM3),
+    costoPorM3Aserrada: null,
+  }));
+
+  // Lo que queda por asignar de cada grupo, con sus medidas. Se descuenta en
+  // vez de acumularse: así asignado + faltante da EXACTO el m³ del grupo.
+  const pendientes: Pendiente[] = resumen.grupos.map((g) => pendienteDeGrupo(g, b.piezas, dimInterna));
+
+  /* ADR-505: con medidas de troza, lo que ninguna troza da sale del reparto
+     y lo exigente va primero a la troza más justa. Sin medidas, `null` y
+     todo sigue exactamente como antes. */
+  const med = prepararMedidas(distribuidos, pendientes, dimInterna, b.label);
+  if (med) repartirExigentes(distribuidos, pendientes, dimInterna, med);
+  const exigentes = med?.exigentes;
+
+  for (const d of distribuidos) {
+    /*
+     * Un bloque con capacidad 0 (rolliza en blanco, "Rolliza nueva" recién
+     * creada) igual tiene que correr `llenarBloque` si el operario ya le
+     * puso un override de línea (Brandon, 2026-09-02: armar el bloque
+     * directamente desde lo aserrado, sin cargar rolliza) — si no, el
+     * override queda mudo: ni la línea declarada aparece, ni un piezas-only
+     * (sin m³) llega a calcular su m³ real. `libreM3 <= EPS` sólo puede
+     * saltear el bloque cuando NO hay overrides que procesar.
+     */
+    const tieneOverrides = Object.values(d.bloque.overridesLinea ?? {}).some(
+      (ov) => ov?.piezas != null || ov?.m3 != null,
+    );
+    if (d.libreM3 <= EPS && !tieneOverrides) continue;
+    llenarBloque(d, pendientes, dimInterna, false, exigentes);
+  }
+
+  /*
+   * REPESCA. El llenado va bloque por bloque en el orden cargado, así que el
+   * primero se lleva su parte sin saber qué va a necesitar el último: al
+   * terminar la vuelta pueden convivir un bloque con capacidad libre y madera
+   * sin amparar que le entraba perfecto (Brandon, 2026-09-02: «0,587 m³
+   * libres · 0,587 m³ sin amparar»). Una segunda vuelta le ofrece a cada
+   * bloque con hueco lo que quedó pendiente DESPUÉS de que pasaron todos.
+   *
+   * Se repite mientras siga cerrando huecos, con un tope: cada vuelta sólo
+   * puede asignar piezas que antes no entraban, así que converge sola —el
+   * tope es una red, no el mecanismo.
+   */
+  for (let vuelta = 0; vuelta < REPESCA_MAX_VUELTAS; vuelta++) {
+    if (!pendientes.some((p) => piezasDe(p) > 0)) break;
+    const antes = distribuidos.reduce((a, d) => a + d.usadoM3, 0);
+    for (const d of distribuidos) {
+      if (d.libreM3 <= EPS) continue;
+      llenarBloque(d, pendientes, dimInterna, true, exigentes);
+    }
+    /* Y si con agregar no alcanza, INTERCAMBIAR: un bloque que llegó a su
+       tope de piezas con volumen libre no necesita una pieza más, necesita
+       que las que tiene sean más grandes. Después de cambiarlas, la vuelta
+       siguiente reubica las chicas que quedaron sueltas. */
+    /* El intercambio entre bloques es NEUTRO en volumen amparado —mueve una
+       pieza de un lado al otro—, así que se le da la repesca inmediatamente
+       después para que materialice lo que liberó. El progreso se mide al
+       final de la vuelta: si el amparado no subió, no hay más que hacer. */
+    if (intercambiarParaCerrar(distribuidos, pendientes, dimInterna, exigentes)) {
+      for (const d of distribuidos) {
+        if (d.libreM3 <= EPS) continue;
+        llenarBloque(d, pendientes, dimInterna, true, exigentes);
+      }
+    }
+    if (distribuidos.reduce((a, d) => a + d.usadoM3, 0) <= antes + EPS) break;
+  }
+
+  /* Y recién ahora, cuando repesca e intercambio ya no pueden más, el último
+     recurso: la pieza que no entró en NINGÚN bloque dentro de su capacidad se
+     ubica igual, si con pasarse unos litros alcanza. Va al FINAL a propósito
+     —adentro del ciclo gastaba el margen de un bloque temprano y le cortaba
+     el trabajo al intercambio—. El exceso queda a la vista en el bloque (su
+     `libreM3` en negativo): dejar una tabla real fuera de todo papel por
+     cuatro litros era peor. */
+  cerrarConTolerancia(distribuidos, pendientes, dimInterna, aserradaM3, exigentes);
+
+  const cierreMed = med ? cerrarMedidas(distribuidos, pendientes, med) : null;
+  const faltante: FaltanteGrupo[] = pendientes
+    .filter((p) => piezasDe(p) > 0)
+    .map((p) => {
+      const f = faltanteDePendiente(p, distribuidos);
+      const sinTroza = cierreMed?.sinTroza.get(p.clave);
+      return sinTroza ? { ...f, sinTroza } : f;
+    });
+
+  for (const d of distribuidos) {
+    d.costoPorM3Aserrada =
+      d.costoRolliza != null && d.usadoM3 > EPS ? r2(d.costoRolliza / d.usadoM3) : null;
+    // La jornada se calcula una sola vez y acá: la pantalla, el Excel y el PDF
+    // tienen que declarar EL MISMO día, no cada uno el suyo.
+    d.porDia = repartirPorDia(d.asignado, d.dias);
+  }
+
+  const amparadaM3 = r4(distribuidos.reduce((a, d) => a + d.usadoM3, 0));
+  /* Lo que se llevaron los bloques de aserrada directa: sale del numerador
+     del rendimiento, porque esa madera no la produjo esta rolliza. */
+  const amparadaDirectaM3 = r4(distribuidos.filter((d) => esAserradaDirecta(d.bloque)).reduce((a, d) => a + d.usadoM3, 0));
+  // El PT de lo amparado se suma de las asignaciones, no se toma del lote: en
+  // una fila que dice «TOTAL AMPARADO 9 m³», poner el pie tablar de los 10
+  // producidos es declarar de más justo en el renglón del respaldo.
+  const amparadaPt = r2(distribuidos.reduce((a, d) => a + d.asignado.reduce((s, g) => s + g.pieTablar, 0), 0));
+  const libreM3 = r4(distribuidos.reduce((a, d) => a + d.libreM3, 0));
+  const faltanteM3 = r4(faltante.reduce((a, f) => a + f.m3, 0));
+  const costoRolliza = b.bloques.some((x) => x.costoM3 == null)
+    ? null
+    : r2(b.bloques.reduce((a, x) => a + (Number(x.m3) || 0) * (x.costoM3 ?? 0), 0));
+  /**
+   * Rendimiento = la aserrada que SALIÓ DE ESTA TROZA ÷ la troza que entró.
+   * Lo amparado por bloques de aserrada directa se descuenta del numerador:
+   * esa madera ya venía aserrada y contarla ahí inflaría el rendimiento de
+   * la sierra con volumen que la sierra nunca cortó. Sin bloques de aserrada
+   * directa el término es 0 y la cuenta es exactamente la de siempre.
+   */
+  const rendimientoPct = rollizaM3 > EPS ? r2(((aserradaM3 - amparadaDirectaM3) / rollizaM3) * 100) : null;
+
+  const porPermiso = porPermisoDe(distribuidos);
+
+  return {
+    especie: b.label,
+    estado,
+    bloques: distribuidos,
+    faltante,
+    rollizaM3,
+    aserradaDirectaM3,
+    amparadaDirectaM3,
+    capacidadM3: r4(distribuidos.reduce((a, d) => a + d.capacidadM3, 0)),
+    aserradaM3, aserradaPt, amparadaM3, amparadaPt, faltanteM3, libreM3,
+    rollizaFaltanteM3: r4(faltante.reduce((a, f) => a + f.rollizaNecesariaM3, 0)),
+    rendimientoPct,
+    imposible: rendimientoPct != null && rendimientoPct > 100,
+    costoRolliza,
+    ...(med && cierreMed
+      ? { medidas: { aplicado: true, exigentes: med.exigentes.size, sinTrozaPiezas: cierreMed.sinTrozaPiezas, sinComprobarPiezas: cierreMed.sinComprobarPiezas } }
+      : {}),
+    porPermiso,
+  };
+}
+
+/**
  * Distribuye la aserrada sobre los bloques de rolliza, por especie y por
  * capacidad.
  *
@@ -798,191 +978,20 @@ export function distribuirPorCapacidad(
   const aserradaHuerfana: { especie: string; m3: number }[] = [];
 
   for (const [, b] of porEspecie) {
-    /* Los dos volúmenes de entrada se cuentan por separado: la troza que hay
-       que aserrar y la madera que ya vino aserrada. Sumarlos sería declarar
-       como rolliza algo que nunca pasó por la sierra. */
-    const rollizaM3 = r4(b.bloques.filter((x) => !esAserradaDirecta(x)).reduce((a, x) => a + (Number(x.m3) || 0), 0));
-    const aserradaDirectaM3 = r4(b.bloques.filter((x) => esAserradaDirecta(x)).reduce((a, x) => a + (Number(x.m3) || 0), 0));
-    const respaldoM3 = r4(rollizaM3 + aserradaDirectaM3);
-    const resumen = agruparPor(b.piezas, dimInterna, precio);
-    const aserradaM3 = r4(resumen.total.m3);
-    const aserradaPt = r2(resumen.total.pieTablar);
-
-    /* «sin-rolliza» = sin NINGÚN respaldo declarado (ni troza ni aserrada
-       directa): sólo ahí la aserrada queda realmente huérfana. Mirando sólo
-       `rollizaM3`, un lote respaldado enteramente por bloques de aserrada
-       directa se avisaba como «sin rolliza declarada» aunque estuviera
-       cubierto pieza por pieza. */
-    const estado: EstadoEspecie =
-      respaldoM3 <= EPS ? "sin-rolliza" : aserradaM3 <= EPS ? "sin-aserrada" : "ok";
-    if (estado === "sin-rolliza" && aserradaM3 > EPS) aserradaHuerfana.push({ especie: b.label, m3: aserradaM3 });
-    if (estado === "sin-aserrada" && respaldoM3 > EPS) rollizaHuerfana.push({ especie: b.label, m3: respaldoM3 });
-
-    // ── El llenado: bloque por bloque, en el orden cargado ────────────────
-    const distribuidos: BloqueDistribuido[] = b.bloques.map((bl) => ({
-      bloque: bl,
-      aprovechablePct: aprovechableDe(bl),
-      capacidadM3: capacidadDe(bl),
-      usadoM3: 0,
-      libreM3: capacidadDe(bl),
-      piezasLibres: null,
-      asignado: [],
-      dias: diasDe(bl),
-      porDia: [],
-      costoRolliza: bl.costoM3 == null ? null : r2((Number(bl.m3) || 0) * bl.costoM3),
-      costoPorM3Aserrada: null,
-    }));
-
-    // Lo que queda por asignar de cada grupo, con sus medidas. Se descuenta en
-    // vez de acumularse: así asignado + faltante da EXACTO el m³ del grupo.
-    const pendientes: Pendiente[] = resumen.grupos.map((g) => pendienteDeGrupo(g, b.piezas, dimInterna));
-
-    /* ADR-505: con medidas de troza, lo que ninguna troza da sale del reparto
-       y lo exigente va primero a la troza más justa. Sin medidas, `null` y
-       todo sigue exactamente como antes. */
-    const med = prepararMedidas(distribuidos, pendientes, dimInterna, b.label);
-    if (med) repartirExigentes(distribuidos, pendientes, dimInterna, med);
-    const exigentes = med?.exigentes;
-
-    for (const d of distribuidos) {
-      /*
-       * Un bloque con capacidad 0 (rolliza en blanco, "Rolliza nueva" recién
-       * creada) igual tiene que correr `llenarBloque` si el operario ya le
-       * puso un override de línea (Brandon, 2026-09-02: armar el bloque
-       * directamente desde lo aserrado, sin cargar rolliza) — si no, el
-       * override queda mudo: ni la línea declarada aparece, ni un piezas-only
-       * (sin m³) llega a calcular su m³ real. `libreM3 <= EPS` sólo puede
-       * saltear el bloque cuando NO hay overrides que procesar.
-       */
-      const tieneOverrides = Object.values(d.bloque.overridesLinea ?? {}).some(
-        (ov) => ov?.piezas != null || ov?.m3 != null,
-      );
-      if (d.libreM3 <= EPS && !tieneOverrides) continue;
-      llenarBloque(d, pendientes, dimInterna, false, exigentes);
-    }
-
-    /*
-     * REPESCA. El llenado va bloque por bloque en el orden cargado, así que el
-     * primero se lleva su parte sin saber qué va a necesitar el último: al
-     * terminar la vuelta pueden convivir un bloque con capacidad libre y madera
-     * sin amparar que le entraba perfecto (Brandon, 2026-09-02: «0,587 m³
-     * libres · 0,587 m³ sin amparar»). Una segunda vuelta le ofrece a cada
-     * bloque con hueco lo que quedó pendiente DESPUÉS de que pasaron todos.
-     *
-     * Se repite mientras siga cerrando huecos, con un tope: cada vuelta sólo
-     * puede asignar piezas que antes no entraban, así que converge sola —el
-     * tope es una red, no el mecanismo.
-     */
-    for (let vuelta = 0; vuelta < REPESCA_MAX_VUELTAS; vuelta++) {
-      if (!pendientes.some((p) => piezasDe(p) > 0)) break;
-      const antes = distribuidos.reduce((a, d) => a + d.usadoM3, 0);
-      for (const d of distribuidos) {
-        if (d.libreM3 <= EPS) continue;
-        llenarBloque(d, pendientes, dimInterna, true, exigentes);
-      }
-      /* Y si con agregar no alcanza, INTERCAMBIAR: un bloque que llegó a su
-         tope de piezas con volumen libre no necesita una pieza más, necesita
-         que las que tiene sean más grandes. Después de cambiarlas, la vuelta
-         siguiente reubica las chicas que quedaron sueltas. */
-      /* El intercambio entre bloques es NEUTRO en volumen amparado —mueve una
-         pieza de un lado al otro—, así que se le da la repesca inmediatamente
-         después para que materialice lo que liberó. El progreso se mide al
-         final de la vuelta: si el amparado no subió, no hay más que hacer. */
-      if (intercambiarParaCerrar(distribuidos, pendientes, dimInterna, exigentes)) {
-        for (const d of distribuidos) {
-          if (d.libreM3 <= EPS) continue;
-          llenarBloque(d, pendientes, dimInterna, true, exigentes);
-        }
-      }
-      if (distribuidos.reduce((a, d) => a + d.usadoM3, 0) <= antes + EPS) break;
-    }
-
-    /* Y recién ahora, cuando repesca e intercambio ya no pueden más, el último
-       recurso: la pieza que no entró en NINGÚN bloque dentro de su capacidad se
-       ubica igual, si con pasarse unos litros alcanza. Va al FINAL a propósito
-       —adentro del ciclo gastaba el margen de un bloque temprano y le cortaba
-       el trabajo al intercambio—. El exceso queda a la vista en el bloque (su
-       `libreM3` en negativo): dejar una tabla real fuera de todo papel por
-       cuatro litros era peor. */
-    cerrarConTolerancia(distribuidos, pendientes, dimInterna, aserradaM3, exigentes);
-
-    const cierreMed = med ? cerrarMedidas(distribuidos, pendientes, med) : null;
-    const faltante: FaltanteGrupo[] = pendientes
-      .filter((p) => piezasDe(p) > 0)
-      .map((p) => {
-        const f = faltanteDePendiente(p, distribuidos);
-        const sinTroza = cierreMed?.sinTroza.get(p.clave);
-        return sinTroza ? { ...f, sinTroza } : f;
-      });
-
-    for (const d of distribuidos) {
-      d.costoPorM3Aserrada =
-        d.costoRolliza != null && d.usadoM3 > EPS ? r2(d.costoRolliza / d.usadoM3) : null;
-      // La jornada se calcula una sola vez y acá: la pantalla, el Excel y el PDF
-      // tienen que declarar EL MISMO día, no cada uno el suyo.
-      d.porDia = repartirPorDia(d.asignado, d.dias);
-    }
-
-    const amparadaM3 = r4(distribuidos.reduce((a, d) => a + d.usadoM3, 0));
-    /* Lo que se llevaron los bloques de aserrada directa: sale del numerador
-       del rendimiento, porque esa madera no la produjo esta rolliza. */
-    const amparadaDirectaM3 = r4(distribuidos.filter((d) => esAserradaDirecta(d.bloque)).reduce((a, d) => a + d.usadoM3, 0));
-    // El PT de lo amparado se suma de las asignaciones, no se toma del lote: en
-    // una fila que dice «TOTAL AMPARADO 9 m³», poner el pie tablar de los 10
-    // producidos es declarar de más justo en el renglón del respaldo.
-    const amparadaPt = r2(distribuidos.reduce((a, d) => a + d.asignado.reduce((s, g) => s + g.pieTablar, 0), 0));
-    const libreM3 = r4(distribuidos.reduce((a, d) => a + d.libreM3, 0));
-    const faltanteM3 = r4(faltante.reduce((a, f) => a + f.m3, 0));
-    const costoRolliza = b.bloques.some((x) => x.costoM3 == null)
-      ? null
-      : r2(b.bloques.reduce((a, x) => a + (Number(x.m3) || 0) * (x.costoM3 ?? 0), 0));
-    /**
-     * Rendimiento = la aserrada que SALIÓ DE ESTA TROZA ÷ la troza que entró.
-     * Lo amparado por bloques de aserrada directa se descuenta del numerador:
-     * esa madera ya venía aserrada y contarla ahí inflaría el rendimiento de
-     * la sierra con volumen que la sierra nunca cortó. Sin bloques de aserrada
-     * directa el término es 0 y la cuenta es exactamente la de siempre.
-     */
-    const rendimientoPct = rollizaM3 > EPS ? r2(((aserradaM3 - amparadaDirectaM3) / rollizaM3) * 100) : null;
-
-    // Agrupado SOLO para mostrar (ver el comentario en `EspecieDistribucion.
-    // porPermiso`) — el `Map` conserva el orden de inserción, que es el orden
-    // en que se cargaron los bloques, así que el primer permiso listado es
-    // el mismo que se llenó primero.
-    const permisos = new Map<string | null, BloqueDistribuido[]>();
-    for (const d of distribuidos) {
-      const k = (d.bloque.permiso ?? "").trim() || null;
-      const arr = permisos.get(k);
-      if (arr) arr.push(d); else permisos.set(k, [d]);
-    }
-    const porPermiso = [...permisos.entries()].map(([permiso, ds]) => ({
-      permiso,
-      bloques: ds,
-      rollizaM3: r4(ds.reduce((a, d) => a + (Number(d.bloque.m3) || 0), 0)),
-      capacidadM3: r4(ds.reduce((a, d) => a + d.capacidadM3, 0)),
-      amparadaM3: r4(ds.reduce((a, d) => a + d.usadoM3, 0)),
-      amparadaPt: r2(ds.reduce((a, d) => a + d.asignado.reduce((s, g) => s + g.pieTablar, 0), 0)),
-    }));
-
-    especies.push({
-      especie: b.label,
-      estado,
-      bloques: distribuidos,
-      faltante,
-      rollizaM3,
-      aserradaDirectaM3,
-      amparadaDirectaM3,
-      capacidadM3: r4(distribuidos.reduce((a, d) => a + d.capacidadM3, 0)),
-      aserradaM3, aserradaPt, amparadaM3, amparadaPt, faltanteM3, libreM3,
-      rollizaFaltanteM3: r4(faltante.reduce((a, f) => a + f.rollizaNecesariaM3, 0)),
-      rendimientoPct,
-      imposible: rendimientoPct != null && rendimientoPct > 100,
-      costoRolliza,
-      ...(med && cierreMed
-        ? { medidas: { aplicado: true, exigentes: med.exigentes.size, sinTrozaPiezas: cierreMed.sinTrozaPiezas, sinComprobarPiezas: cierreMed.sinComprobarPiezas } }
-        : {}),
-      porPermiso,
-    });
+    /* La casilla Lote de la hoja (30-10): la pieza anotada con su lote va sólo
+       al bloque de ese lote. Sin piezas anotadas hay UNA porción y el
+       resultado es el de siempre. */
+    const e = unirPorciones(
+      b.label,
+      partirPorLote(b.bloques, b.piezas).map((p) =>
+        distribuirEspecie({ label: b.label, bloques: p.bloques, piezas: p.piezas }, dimInterna, precio),
+      ),
+      b.bloques,
+    );
+    const respaldoM3 = r4(e.rollizaM3 + e.aserradaDirectaM3);
+    if (e.estado === "sin-rolliza" && e.aserradaM3 > EPS) aserradaHuerfana.push({ especie: b.label, m3: e.aserradaM3 });
+    if (e.estado === "sin-aserrada" && respaldoM3 > EPS) rollizaHuerfana.push({ especie: b.label, m3: respaldoM3 });
+    especies.push(e);
   }
 
   especies.sort((a, x) => {

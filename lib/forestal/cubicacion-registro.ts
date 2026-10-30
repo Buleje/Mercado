@@ -251,6 +251,8 @@ function normalizarPieza(raw: Record<string, unknown>, i: number): PiezaCubicada
       typeof raw.observacion === "string" && raw.observacion.trim()
         ? raw.observacion.trim().slice(0, OBSERVACION_MAX)
         : undefined,
+    /* La casilla Lote de la hoja (30-10): el reparto la usa para dar a cada lote sus tablas. */
+    lote: typeof raw.lote === "string" && raw.lote.trim() ? raw.lote.trim().slice(0, 40) : undefined,
     /* 0 es un precio válido («esta pieza no se cobra»); sólo lo que no es número se descarta. */
     precio: precioValido(raw.precio),
     registradoAt: fechaHoraValida(raw.registradoAt),

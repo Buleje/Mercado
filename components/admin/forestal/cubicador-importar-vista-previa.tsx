@@ -13,6 +13,8 @@ import type { OrigenImport } from "./cubicador-importar-ayuda";
 const fmtPt = (v: number) => formatNumber(v, 2);
 
 export default function VistaPreviaImportacion({ resultado, modo }: { resultado: ResultadoImport; modo: OrigenImport }) {
+  /* La casilla Lote de la hoja (30-10): la columna sólo aparece si el archivo la trae. */
+  const conLote = resultado.piezas.some((p) => p.lote);
   return (
     <div className="mt-4 space-y-3">
       {resultado.errores.length > 0 && (
@@ -34,7 +36,7 @@ export default function VistaPreviaImportacion({ resultado, modo }: { resultado:
             <DataTable className="w-full min-w-[420px]">
               <thead className="sticky top-0">
                 <tr>
-                  <th>Cant.</th><th>Medida</th><th>Especie</th><th className="text-right">Pie tablar</th>
+                  <th>Cant.</th><th>Medida</th><th>Especie</th>{conLote && <th>Lote</th>}<th className="text-right">Pie tablar</th>
                 </tr>
               </thead>
               <tbody>
@@ -46,6 +48,7 @@ export default function VistaPreviaImportacion({ resultado, modo }: { resultado:
                       {p.sospechosa && <AlertTriangle className="ml-1 inline h-3 w-3 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" />}
                     </td>
                     <td className="text-[var(--text-secondary)]">{p.especie ?? "—"}</td>
+                    {conLote && <td className="font-mono tabular-nums text-[var(--text-secondary)]">{p.lote ?? "—"}</td>}
                     <td className="text-right font-mono tabular-nums">{fmtPt(p.pieTablar)}</td>
                   </tr>
                 ))}

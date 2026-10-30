@@ -19,7 +19,7 @@ export default function AyudaDelOrigen({ modo }: { modo: OrigenImport }) {
         <InfoTip
           icono="ayuda"
           title="Importar desde Excel"
-          what="Cantidad es opcional (por defecto 1). Espesor y ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad."
+          what="Cantidad es opcional (por defecto 1). Espesor y ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad. Lote también es opcional: con el N.º del lote de aserrío, cada tabla va sólo a su lote en la Distribución."
           example="La plantilla trae al lado un resumen en vivo (piezas · pie tablar · m³ · especies distintas) que se calcula solo mientras la vas llenando, para ver qué se va a importar sin salir del Excel."
         />
       </p>
