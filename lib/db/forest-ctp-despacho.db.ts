@@ -41,6 +41,10 @@ import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
 import { formasDelNumero, mismoNumeroSunat } from "@/lib/ventas/comprobante-sunat";
 import {
+  diaCorto, diaDeDespacho, mismoViaje, m3DeDespacho, ptDeDespacho, repartirPrecioViaje,
+  type GreEnLinea, type LineaDelViaje, type RepartoViaje, type ViajeDeDespacho,
+} from "@/lib/forestal/despacho-viaje";
+import {
   correlativoEnSerie, gtfEnUso, leerGtfConfirmada, mismoNumeroGtf, proponerGtf, saltoDeCorrelativo,
   type GtfUsada, type PropuestaGtf,
 } from "@/lib/forestal/gtf-talonario";
@@ -67,6 +71,17 @@ export function conservarGuiaRemision(datos: unknown, enBase: unknown): unknown 
   if (String(guia.guiaRemisionNro ?? "").trim()) return datos;
   return { ...cuerpo, guia: { ...guia, guiaRemisionNro: anotada } };
 }
+
+/** Lo que hace falta leer de una línea para decidir su viaje y repartirle el precio. */
+const SELECT_VIAJE = {
+  id: true, lineNo: true, gtfNumber: true, entryDate: true, destino: true, gtfDatos: true,
+  productType: true, speciesCommon: true, pieces: true, quantity: true, unit: true,
+  observations: true, valorVenta: true, moneda: true, updatedAt: true,
+} satisfies Prisma.ForestCtpEntrySelect;
+
+/** Una línea del viaje cambió entre la lectura y la escritura: se deshace todo. */
+class ViajeCambiado extends Error {}
+
 /** 4 decimales — precisión forestal (volúmenes/cantidades). */
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
@@ -1257,7 +1272,7 @@ export class ForestCtpDespachoDB {
     | { ok: true; cambio: boolean; guiaRemisionNro: string }
     | { ok: false; reason: "no_despacho" | "anulado" }
     | { ok: false; reason: "ya_tiene"; actual: string }
-    | { ok: false; reason: "duplicado"; otroDespachoId: string; otraLinea: number; otraGtf: string | null }
+    | { ok: false; reason: "duplicado"; otroDespachoId: string; otraLinea: number; otraGtf: string | null; motivo: string }
   > {
     if (!tenantId) throw new Error("tenantId is required");
     // Compare-and-set sobre `updatedAt`: dos pestañas que anotan a la vez leen
@@ -1267,7 +1282,7 @@ export class ForestCtpDespachoDB {
     for (let intento = 0; intento < 3; intento++) {
       const desp = await prisma.forestCtpEntry.findFirst({
         where: { id: despachoEntryId, tenantId, deletedAt: null },
-        select: { id: true, section: true, status: true, lineNo: true, entryDate: true, gtfNumber: true, gtfDatos: true, updatedAt: true },
+        select: { id: true, section: true, status: true, lineNo: true, entryDate: true, gtfNumber: true, gtfDatos: true, destino: true, updatedAt: true },
       });
       if (!desp || desp.section !== "despacho") return { ok: false, reason: "no_despacho" };
       if (desp.status !== "registrado") return { ok: false, reason: "anulado" };
@@ -1285,9 +1300,12 @@ export class ForestCtpDespachoDB {
       // La misma GRE en OTRO despacho del negocio es un tipeo (o la misma
       // guía anotada dos veces). Las líneas de la misma GTF sí la comparten:
       // un traslado = una GTF = una GRE, aunque la GTF lleve varias líneas.
+      // Y las GTF del MISMO VIAJE también (mismo día + misma placa o mismo
+      // destinatario): un camión con tres permisos sale con tres GTF y SUNAT
+      // ampara todo con una GRE (Blas, 28-10: EG07-189 en las GTF 69, 70 y 71).
       if (numero && !opts.reemplazar) {
         const gtf = desp.gtfNumber?.trim() || null;
-        const otro = await prisma.forestCtpEntry.findFirst({
+        const otros = await prisma.forestCtpEntry.findMany({
           where: {
             tenantId,
             section: "despacho",
@@ -1299,10 +1317,15 @@ export class ForestCtpDespachoDB {
               ...(gtf ? [{ OR: [{ gtfNumber: null }, { gtfNumber: { not: gtf } }] }] : []),
             ],
           },
-          select: { id: true, lineNo: true, gtfNumber: true },
+          select: { id: true, lineNo: true, gtfNumber: true, entryDate: true, destino: true, gtfDatos: true },
+          orderBy: { lineNo: "asc" },
+          take: 50,
         });
-        if (otro) {
-          return { ok: false, reason: "duplicado", otroDespachoId: otro.id, otraLinea: otro.lineNo, otraGtf: otro.gtfNumber };
+        for (const otro of otros) {
+          const v = mismoViaje(desp, otro);
+          if (!v.mismo) {
+            return { ok: false, reason: "duplicado", otroDespachoId: otro.id, otraLinea: otro.lineNo, otraGtf: otro.gtfNumber, motivo: v.motivo };
+          }
         }
       }
 
@@ -1341,6 +1364,224 @@ export class ForestCtpDespachoDB {
       "LIBRO_OCUPADO",
       { despachoEntryId },
     );
+  }
+
+  /** Las filas vivas del MISMO viaje que `despachoEntryId` (ella incluida), por N.º de línea. */
+  private static async filasDelViaje(tenantId: string, despachoEntryId: string) {
+    const base = await prisma.forestCtpEntry.findFirst({
+      where: { id: despachoEntryId, tenantId, deletedAt: null, section: "despacho", status: "registrado" },
+      select: SELECT_VIAJE,
+    });
+    if (!base) return null;
+    const desde = new Date(`${diaDeDespacho(base.entryDate)}T00:00:00.000Z`);
+    const candidatas = await prisma.forestCtpEntry.findMany({
+      where: {
+        tenantId, section: "despacho", deletedAt: null, status: "registrado",
+        entryDate: { gte: desde, lt: new Date(desde.getTime() + 86_400_000) },
+      },
+      select: SELECT_VIAJE,
+      orderBy: { lineNo: "asc" },
+      take: 200,
+    });
+    return { base, filas: candidatas.filter((c) => c.id === base.id || mismoViaje(base, c).mismo) };
+  }
+
+  /**
+   * El viaje de un despacho (mismo día + misma placa o mismo destinatario,
+   * `mismoViaje`): sus líneas con volumen, precio, GRE y comprobante, para la
+   * pantalla que anota la GRE una vez y pone el precio del viaje entero.
+   */
+  static async viajeDe(tenantId: string, despachoEntryId: string): Promise<ViajeDeDespacho | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const v = await ForestCtpDespachoDB.filasDelViaje(tenantId, despachoEntryId);
+    if (!v) return null;
+    const lineas = v.filas.map((f): LineaDelViaje => {
+      const quantity = f.quantity != null ? Number(f.quantity) : null;
+      const pt = ptDeDespacho({ quantity, unit: f.unit, observations: f.observations });
+      const cuerpo = objetoJson(f.gtfDatos);
+      return {
+        id: f.id,
+        lineNo: f.lineNo,
+        gtfNumber: f.gtfNumber,
+        productType: f.productType,
+        speciesCommon: f.speciesCommon,
+        pieces: f.pieces,
+        quantity,
+        unit: f.unit,
+        observations: f.observations,
+        m3: m3DeDespacho({ quantity, unit: f.unit }),
+        pt: pt?.pt ?? null,
+        ptFuente: pt?.fuente ?? null,
+        valorVenta: f.valorVenta != null ? Number(f.valorVenta) : null,
+        moneda: f.moneda ?? "PEN",
+        gre: String(objetoJson(cuerpo.guia).guiaRemisionNro ?? "").trim(),
+        comprobante: String(objetoJson(cuerpo.comprobante).numero ?? "").trim(),
+      };
+    });
+    return {
+      dia: diaDeDespacho(v.base.entryDate),
+      guias: [...new Set(lineas.map((l) => l.gtfNumber?.trim()).filter((g): g is string => Boolean(g)))],
+      lineas,
+    };
+  }
+
+  /**
+   * Anota la GRE en ESTA línea y, con ella, en las demás líneas del mismo
+   * viaje (las otras GTF del camión). La propia decide: si rebota (otro N.º,
+   * duplicado de otro viaje, anulada), no se toca ninguna. Las demás sólo se
+   * llenan si están vacías o ya tienen esa misma: una con OTRO N.º no se pisa
+   * aunque la propia vaya con `reemplazar` (se informa como `tenia_otra`).
+   */
+  static async anotarGuiaRemisionEnViaje(
+    tenantId: string,
+    despachoEntryId: string,
+    numero: string,
+    opts: { reemplazar: boolean; fecha?: string | null; user: string },
+  ): Promise<
+    | { ok: true; cambio: boolean; guiaRemisionNro: string; lineas: GreEnLinea[] }
+    | Exclude<Awaited<ReturnType<typeof ForestCtpDespachoDB.anotarGuiaRemision>>, { ok: true }>
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!numero) throw new Error("Para todo el viaje hace falta el N.º de la guía de remisión");
+    const propia = await ForestCtpDespachoDB.anotarGuiaRemision(tenantId, despachoEntryId, numero, opts);
+    if (!propia.ok) return propia;
+    const viaje = await ForestCtpDespachoDB.viajeDe(tenantId, despachoEntryId);
+    const lineas: GreEnLinea[] = [];
+    // De a una y en orden: cada anotación es su propio compare-and-set (7 líneas ≈ 1 s).
+    for (const l of viaje?.lineas ?? []) {
+      const base = { id: l.id, lineNo: l.lineNo, gtfNumber: l.gtfNumber };
+      if (l.id === despachoEntryId) {
+        lineas.push({ ...base, estado: propia.cambio ? "anotada" : "ya_estaba" });
+        continue;
+      }
+      const r = await ForestCtpDespachoDB.anotarGuiaRemision(tenantId, l.id, numero, { reemplazar: false, fecha: opts.fecha, user: opts.user });
+      lineas.push(
+        r.ok
+          ? { ...base, estado: r.cambio ? "anotada" : "ya_estaba" }
+          : r.reason === "ya_tiene"
+            ? { ...base, estado: "tenia_otra", actual: r.actual }
+            : { ...base, estado: "no_se_pudo", motivo: r.reason === "duplicado" ? r.motivo : r.reason },
+      );
+    }
+    return { ok: true, cambio: propia.cambio, guiaRemisionNro: propia.guiaRemisionNro, lineas };
+  }
+
+  /**
+   * «Poner precio a este viaje»: el total en soles se reparte en el
+   * `valorVenta` de cada línea del viaje por volumen (`repartirPrecioViaje`:
+   * PT si todas lo tienen, si no m³; a céntimos, residuo en la última) y el
+   * N.º del comprobante queda en la casilla de la venta de cada GTF
+   * (`gtfDatos.comprobante`, como la GRE: un merge que no toca el resto).
+   *
+   * - Ya con precio (o con otro comprobante) no se pisa sin `reemplazar`.
+   *   Con `reemplazar`, una línea sin volumen que tenía precio queda en
+   *   `null`: el viaje suma lo que se escribió, y sin volumen no hay parte.
+   * - Mes cerrado no se toca (ADR-139, como `setValorVenta`).
+   * - Todo o nada: compare-and-set sobre `updatedAt` de cada línea en una
+   *   transacción; si alguien la cambió mientras tanto, no se escribe ninguna.
+   */
+  static async ponerPrecioViaje(
+    tenantId: string,
+    despachoEntryId: string,
+    pedido: {
+      total: number;
+      comprobante: { tipo: "factura" | "boleta"; numero: string } | null;
+      /** Sólo para el registro de actividad: la comparación la arma la ruta. */
+      liquidacion: number | null;
+      reemplazar: boolean;
+      user: string;
+    },
+  ): Promise<
+    | { ok: true; dia: string; guias: string[]; reparto: Extract<RepartoViaje, { ok: true }>; previo: number | null }
+    | { ok: false; reason: "no_despacho" | "otra_moneda" | "cambio" | Extract<RepartoViaje, { ok: false }>["motivo"] }
+    | { ok: false; reason: "ya_tiene_precio"; previo: number; conPrecio: number; lineas: number }
+    | { ok: false; reason: "otro_comprobante"; actual: string; lineNo: number }
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    const v = await ForestCtpDespachoDB.filasDelViaje(tenantId, despachoEntryId);
+    if (!v) return { ok: false, reason: "no_despacho" };
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, v.base.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede cambiar el precio de un viaje de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+    const filas = v.filas;
+    if (filas.some((f) => (f.moneda ?? "PEN").toUpperCase() !== "PEN")) return { ok: false, reason: "otra_moneda" };
+
+    const conPrecio = filas.filter((f) => f.valorVenta != null);
+    const previo = conPrecio.length ? Math.round(conPrecio.reduce((t, f) => t + Number(f.valorVenta) * 100, 0)) / 100 : null;
+    if (previo != null && !pedido.reemplazar) {
+      return { ok: false, reason: "ya_tiene_precio", previo, conPrecio: conPrecio.length, lineas: filas.length };
+    }
+    const comprobante = pedido.comprobante;
+    if (comprobante && !pedido.reemplazar) {
+      for (const f of filas) {
+        const actual = String(objetoJson(objetoJson(f.gtfDatos).comprobante).numero ?? "").trim();
+        if (actual && !mismoNumeroSunat(actual, comprobante.numero)) return { ok: false, reason: "otro_comprobante", actual, lineNo: f.lineNo };
+      }
+    }
+
+    const reparto = repartirPrecioViaje(
+      pedido.total,
+      filas.map((f) => ({ id: f.id, lineNo: f.lineNo, quantity: f.quantity != null ? Number(f.quantity) : null, unit: f.unit, observations: f.observations })),
+    );
+    if (!reparto.ok) return { ok: false, reason: reparto.motivo };
+    const montoDe = new Map(reparto.lineas.map((l) => [l.id, l.monto]));
+
+    const escritas: { fila: (typeof filas)[number]; monto: number | null }[] = [];
+    try {
+      await prisma.$transaction(async (tx) => {
+        for (const f of filas) {
+          const monto = montoDe.get(f.id) ?? null;
+          const data: Prisma.ForestCtpEntryUpdateManyMutationInput = {};
+          // Sin volumen: no recibe. Sólo se vacía si tenía precio y se está reemplazando.
+          if (monto != null) data.valorVenta = new Prisma.Decimal(monto.toFixed(2));
+          else if (f.valorVenta != null) data.valorVenta = null;
+          if (comprobante) {
+            const cuerpo = objetoJson(f.gtfDatos);
+            data.gtfDatos = { ...cuerpo, comprobante: { ...objetoJson(cuerpo.comprobante), tipo: comprobante.tipo, numero: comprobante.numero } } as Prisma.InputJsonValue;
+          }
+          if (Object.keys(data).length === 0) continue;
+          const hecho = await tx.forestCtpEntry.updateMany({
+            where: { id: f.id, tenantId, section: "despacho", status: "registrado", deletedAt: null, updatedAt: f.updatedAt },
+            data,
+          });
+          if (hecho.count !== 1) throw new ViajeCambiado();
+          escritas.push({ fila: f, monto });
+        }
+      }, CTP_TX_OPTS);
+    } catch (err) {
+      if (err instanceof ViajeCambiado) return { ok: false, reason: "cambio" };
+      throw err;
+    }
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    // ADR-451: el precio de un despacho es la madera vendida del resultado del negocio.
+    try { invalidateByPrefix(`${claveCacheResultado(tenantId)}:`); } catch { /* cache best-effort */ }
+
+    const dia = diaDeDespacho(v.base.entryDate);
+    const guias = [...new Set(filas.map((f) => f.gtfNumber?.trim()).filter((g): g is string => Boolean(g)))];
+    const s = (n: number) => `S/ ${n.toFixed(2)}`;
+    const resumen =
+      `viaje del ${diaCorto(dia)}${guias.length ? ` (GTF ${guias.join(", ")})` : ""}: total ${s(reparto.total)}` +
+      ` repartido por ${reparto.base === "pt" ? "PT" : "m³"}, ${reparto.precioPorPt.toFixed(4)} por PT` +
+      (comprobante ? ` · ${comprobante.tipo} ${comprobante.numero}` : "") +
+      (pedido.liquidacion != null ? ` · liquidación ${s(pedido.liquidacion)}` : "");
+    for (const { fila, monto } of escritas) {
+      auditCtp({
+        tenantId,
+        action: "ctp_venta_set",
+        entity: "ForestCtpEntry",
+        entityId: fila.id,
+        detail:
+          `Puso el precio del ${resumen}. Despacho #${fila.lineNo}: ${monto != null ? s(monto) : "sin parte (no tiene volumen)"}` +
+          (fila.valorVenta != null ? `; antes ${s(Number(fila.valorVenta))}` : ""),
+        user: pedido.user,
+      });
+    }
+    return { ok: true, dia, guias, reparto, previo };
   }
 
   /**

@@ -34,6 +34,7 @@ import { printCertificadoTrazabilidad } from "@/lib/forestal/ctp-certificado";
 import { permisoCitesDeEspecie } from "@/lib/forestal/ctp-ficha-types";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
+import CtpDespachoViaje from "./CtpDespachoViaje";
 import CtpGtfSeccion from "./CtpGtfSeccion";
 import CtpHistorial from "./CtpHistorial";
 import { Btn, MODAL_BODY } from "./ctp-shared";
@@ -356,6 +357,9 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                 </p>
               )}
             </section>
+
+            {/* El viaje: la GRE y el precio se ponen una vez para todas sus líneas. */}
+            <CtpDespachoViaje despachoId={entry.id} gtfNumber={guia?.gtfNumber ?? entry.gtfNumber} />
 
             {/* 5. Certificado — gate ADR-135 D3 */}
             <div className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-4">

@@ -350,7 +350,7 @@ export const herramientas = [
     grupo: "ctp",
     soloEn: ["forestal"],
     tipo: "escritura",
-    descripcion: "Anota el N.º de la guía de remisión SUNAT (GRE) emitida en SOL en la GTF de un despacho del libro CTP (PATCH /api/admin/forestal/ctp, action=guia_remision): casilla (25), sin tocar el resto de la guía y aunque la GTF ya tenga número. Series EG07 (portal SOL), EG02, T001/V001 (sistemas propios). Si ya tiene OTRO número responde 409: manda reemplazar:true. quitar:true la borra. Solo admin/owner. Ej.: {id:\"cm…\", numero:\"EG07-189\", fecha:\"2026-10-30\"}.",
+    descripcion: "Anota el N.º de la guía de remisión SUNAT (GRE) emitida en SOL en la GTF de un despacho del libro CTP (PATCH /api/admin/forestal/ctp, action=guia_remision): casilla (25), sin tocar el resto de la guía y aunque la GTF ya tenga número. Series EG07 (portal SOL), EG02, T001/V001 (sistemas propios). Si ya tiene OTRO número responde 409: manda reemplazar:true. quitar:true la borra. todoElViaje:true la anota también en las demás líneas del MISMO viaje (mismo día y misma placa o mismo destinatario: un camión con 3 GTF y una sola GRE); la misma GRE en OTRO viaje responde 409 duplicado con la guía donde ya está. Solo admin/owner. Ej.: {id:\"cm…\", numero:\"EG07-189\", fecha:\"2026-10-30\", todoElViaje:true}.",
     entrada: {
       negocio,
       id: idRuta.describe("Id de la línea de despacho (ctp_ver vista=lista, sección despacho)"),
@@ -358,15 +358,32 @@ export const herramientas = [
       fecha: dia.optional().describe("Fecha de emisión de la GRE (queda en el registro de actividad)"),
       reemplazar: z.boolean().optional().describe("Pisar otro N.º ya anotado"),
       quitar: z.boolean().optional().describe("Borrar el N.º anotado"),
+      todoElViaje: z.boolean().optional().describe("Anotarla también en las otras GTF/líneas del mismo viaje"),
     },
     pedido: (a) => ({
       metodo: "PATCH",
       ruta: "/api/admin/forestal/ctp",
-      cuerpo: limpiar({ id: a.id, action: "guia_remision", numero: a.quitar ? undefined : a.numero, fecha: a.fecha, reemplazar: a.reemplazar, quitar: a.quitar }),
+      cuerpo: limpiar({
+        id: a.id,
+        action: "guia_remision",
+        numero: a.quitar ? undefined : a.numero,
+        fecha: a.fecha,
+        reemplazar: a.reemplazar,
+        quitar: a.quitar,
+        todoElViaje: a.quitar ? undefined : a.todoElViaje,
+      }),
     }),
     formatear: (d) => {
       const r = /** @type {any} */ (d) ?? {};
       if (!r.guiaRemisionNro) return "Guía de remisión quitada de la GTF.";
+      if (Array.isArray(r.lineas)) {
+        const puestas = r.lineas.filter((l) => l.estado === "anotada" || l.estado === "ya_estaba").length;
+        const otras = r.lineas.filter((l) => l.estado === "tenia_otra" || l.estado === "no_se_pudo");
+        return (
+          `Guía de remisión ${r.guiaRemisionNro} en ${puestas} de ${r.lineas.length} líneas del viaje.` +
+          (otras.length ? ` Sin tocar: ${otras.map((l) => `#${l.lineNo}${l.actual ? ` (ya tiene ${l.actual})` : l.motivo ? ` (${l.motivo})` : ""}`).join(", ")}.` : "")
+        );
+      }
       return r.cambio === false ? `La GTF ya tenía anotada la guía de remisión ${r.guiaRemisionNro}.` : `Guía de remisión ${r.guiaRemisionNro} anotada en la GTF.`;
     },
   },

@@ -16,6 +16,8 @@ import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
+import { diferenciaConLiquidacion } from "@/lib/forestal/despacho-viaje";
+import { formatNumber } from "@/lib/format";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
@@ -227,6 +229,22 @@ const patchSchema = z.discriminatedUnion("action", [
     fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     reemplazar: z.boolean().optional(),
     quitar: z.boolean().optional(),
+    /** Anotarla también en las demás líneas del mismo viaje (las otras GTF del camión). */
+    todoElViaje: z.boolean().optional(),
+  }),
+  /**
+   * «Poner precio a este viaje»: el total en soles se reparte en el valor de
+   * venta de cada línea del viaje por volumen (PT; si falta, m³), a céntimos y
+   * con el residuo en la última. El cálculo es del servidor (regla 6): la
+   * pantalla sólo lo previsualiza. `liquidacion` sólo se compara.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("precio_viaje"),
+    total: z.number().positive().max(9_999_999_999.99),
+    comprobante: z.string().trim().max(24).optional(),
+    liquidacion: z.number().positive().max(9_999_999_999.99).nullable().optional(),
+    reemplazar: z.boolean().optional(),
   }),
   /**
    * AMPLIAR una corrida que ya declaró (ADR-361): el lote no sale de la sierra
@@ -591,6 +609,14 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
      * no aparece en la foto del depósito — y sus medidas hay que poder verlas
      * igual, que es contra lo que se decide de qué lote salió.
      */
+    /* El viaje de un despacho: las líneas del mismo camión (mismo día + misma
+       placa o mismo destinatario) con su GRE, su precio y su volumen. */
+    const viajeDe = url.searchParams.get("viaje")?.trim();
+    if (viajeDe) {
+      const viaje = await ForestCtpDespachoDB.viajeDe(auth.tenantId, viajeDe);
+      if (!viaje) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ viaje });
+    }
     const idDeLaCorrida = url.searchParams.get("entryId")?.trim();
     if (idDeLaCorrida) {
       const entry = await ForestCtpDB.getById(auth.tenantId, idDeLaCorrida);
@@ -1089,11 +1115,11 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         const prohibido = soloAdminODueno(auth.role, "cambiar o quitar la guía de remisión ya anotada");
         if (prohibido) return prohibido;
       }
-      const r = await ForestCtpDespachoDB.anotarGuiaRemision(auth.tenantId, d.id, numero, {
-        reemplazar: d.reemplazar === true,
-        fecha: d.fecha ?? null,
-        user: auth.username ?? "unknown",
-      });
+      const opts = { reemplazar: d.reemplazar === true, fecha: d.fecha ?? null, user: auth.username ?? "unknown" };
+      const r =
+        d.todoElViaje === true && numero
+          ? await ForestCtpDespachoDB.anotarGuiaRemisionEnViaje(auth.tenantId, d.id, numero, opts)
+          : await ForestCtpDespachoDB.anotarGuiaRemision(auth.tenantId, d.id, numero, opts);
       if (!r.ok && r.reason === "ya_tiene") {
         return NextResponse.json(
           { error: "ya_tiene_guia_remision", actual: r.actual, message: `La guía ya tiene anotada la guía de remisión ${r.actual}. Para cambiarla manda reemplazar: true.` },
@@ -1105,7 +1131,7 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
           {
             error: "duplicado",
             otroDespachoId: r.otroDespachoId,
-            message: `La guía de remisión ${numero} ya está anotada en el despacho #${r.otraLinea}${r.otraGtf ? ` (GTF ${r.otraGtf})` : ""}. Si de verdad es la misma, manda reemplazar: true.`,
+            message: `La guía de remisión ${numero} ya está en ${r.otraGtf ? `la GTF ${r.otraGtf} (despacho #${r.otraLinea})` : `el despacho #${r.otraLinea}`}, que es de otro viaje: ${r.motivo}. Revisa el número: cada viaje lleva su propia guía de remisión.`,
           },
           { status: 409 },
         );
@@ -1116,7 +1142,75 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
           { status: r.reason === "no_despacho" ? 404 : 422 },
         );
       }
-      return NextResponse.json({ ok: true, cambio: r.cambio, guiaRemisionNro: r.guiaRemisionNro });
+      return NextResponse.json({
+        ok: true,
+        cambio: r.cambio,
+        guiaRemisionNro: r.guiaRemisionNro,
+        ...("lineas" in r ? { lineas: r.lineas } : {}),
+      });
+    }
+    if (parsed.data.action === "precio_viaje") {
+      const d = parsed.data;
+      let comprobante: { tipo: "factura" | "boleta"; numero: string } | null = null;
+      if (d.comprobante) {
+        const tipo = !motivoSerieInvalida("factura", d.comprobante) ? "factura" : !motivoSerieInvalida("boleta", d.comprobante) ? "boleta" : null;
+        const canonico = leerNumeroSunat(d.comprobante)?.canonico;
+        if (!tipo || !canonico) {
+          return NextResponse.json(
+            { error: "datos_invalidos", message: motivoSerieInvalida("factura", d.comprobante) ?? "El comprobante va como E001-318 o EB01-12." },
+            { status: 400 },
+          );
+        }
+        comprobante = { tipo, numero: canonico };
+      }
+      // Poner el precio la primera vez sí; cambiar uno ya puesto, sólo admin y dueño.
+      if (d.reemplazar === true) {
+        const prohibido = soloAdminODueno(auth.role, "cambiar el precio del viaje ya puesto");
+        if (prohibido) return prohibido;
+      }
+      const r = await ForestCtpDespachoDB.ponerPrecioViaje(auth.tenantId, d.id, {
+        total: d.total,
+        comprobante,
+        liquidacion: d.liquidacion ?? null,
+        reemplazar: d.reemplazar === true,
+        user: auth.username ?? "unknown",
+      });
+      if (!r.ok) {
+        const soles = (n: number) => `S/ ${formatNumber(n, 2)}`;
+        const [status, message]: [number, string] =
+          r.reason === "ya_tiene_precio"
+            ? [409, `El viaje ya tiene precio: ${soles(r.previo)} en ${r.conPrecio} de ${r.lineas} líneas. Para cambiarlo manda reemplazar: true.`]
+            : r.reason === "otro_comprobante"
+              ? [409, `El despacho #${r.lineNo} ya tiene el comprobante ${r.actual}. Para cambiarlo manda reemplazar: true.`]
+              : r.reason === "cambio"
+                ? [409, "Alguien cambió una línea del viaje mientras tanto. Vuelve a abrirlo y prueba otra vez."]
+                : r.reason === "otra_moneda"
+                  ? [422, "Una línea del viaje no está en soles: pon su precio a mano."]
+                  : r.reason === "sin_volumen"
+                    ? [422, "Ninguna línea del viaje tiene PT ni m³: no hay cómo repartir el precio."]
+                    : r.reason === "no_despacho" || r.reason === "sin_lineas"
+                      ? [404, "No se encontró ese despacho (o está anulado)."]
+                      : [400, "El total tiene que ser mayor a 0."];
+        return NextResponse.json({ error: r.reason, message, ...("previo" in r ? { previo: r.previo } : {}) }, { status });
+      }
+      const dif = d.liquidacion != null ? diferenciaConLiquidacion(r.reparto.total, d.liquidacion) : null;
+      return NextResponse.json({
+        ok: true,
+        dia: r.dia,
+        guias: r.guias,
+        reparto: r.reparto,
+        previo: r.previo,
+        comprobante,
+        diferencia: dif && {
+          ...dif,
+          texto:
+            dif.estado === "cuadra"
+              ? "Cuadra con la liquidación."
+              : dif.estado === "falta"
+                ? `Faltan S/ ${formatNumber(dif.diferencia, 2)} por facturar.`
+                : `La factura pasa a la liquidación por S/ ${formatNumber(-dif.diferencia, 2)}.`,
+        },
+      });
     }
     if (parsed.data.action === "gtf_datos") {
       const r = await ForestCtpDespachoDB.guardarGtfDatos(

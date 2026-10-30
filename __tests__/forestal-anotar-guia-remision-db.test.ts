@@ -4,9 +4,12 @@
  *
  * - Dos pestañas a la vez con números distintos: una anota, la otra recibe
  *   `ya_tiene` (compare-and-set sobre `updatedAt`, no «el último gana»).
- * - La misma GRE en OTRO despacho del negocio = `duplicado`; las líneas de la
- *   misma GTF la comparten; una línea sin GTF también cuenta (Prisma `not`
- *   deja afuera los NULL: el fake lo imita).
+ * - La misma GRE en OTRO viaje = `duplicado` con el motivo; las líneas de la
+ *   misma GTF y las GTF del mismo viaje (mismo día + placa o destinatario) la
+ *   comparten; una línea sin GTF también cuenta (Prisma `not` deja afuera los
+ *   NULL: el fake lo imita). `anotarGuiaRemisionEnViaje` la pone en todas.
+ * - `ponerPrecioViaje`: reparto al céntimo, null nunca 0, no pisa sin
+ *   reemplazar, todo o nada.
  * - Guardar el formulario de la guía con la casilla (25) vacía no borra la
  *   GRE ya anotada.
  * - Cada escritura invalida la caché del libro.
@@ -24,6 +27,12 @@ const H = vi.hoisted(() => {
     lineNo: number;
     gtfNumber: string | null;
     gtfDatos: unknown;
+    destino?: string | null;
+    quantity?: unknown;
+    unit?: string | null;
+    observations?: string | null;
+    valorVenta?: unknown;
+    moneda?: string | null;
     entryDate: Date;
     updatedAt: Date;
     deletedAt: Date | null;
@@ -33,9 +42,11 @@ const H = vi.hoisted(() => {
     filas: [] as Fila[],
     escrituras: 0,
     invalidados: [] as string[],
-    audit: [] as { action: string; detail: string }[],
+    audit: [] as { action: string; detail: string; entityId?: string }[],
     /** Las primeras N lecturas por id esperan a que lleguen todas: así las dos pestañas leen lo mismo. */
     barrera: 0,
+    /** Se llama después de cada `findMany`: simula a otro que escribe entre la lectura y la escritura. */
+    trasLeer: null as null | (() => void),
   };
   let enEspera: (() => void)[] = [];
 
@@ -46,9 +57,13 @@ const H = vi.hoisted(() => {
       const x = r[k];
       if (v instanceof Date) return x instanceof Date && x.getTime() === v.getTime();
       if (v && typeof v === "object") {
-        const o = v as { not?: unknown; path?: string[]; equals?: unknown };
+        const o = v as { not?: unknown; path?: string[]; equals?: unknown; gte?: Date; lt?: Date };
         // SQL `<>`: el NULL no es «distinto de X».
         if ("not" in o) return x !== null && x !== undefined && x !== o.not;
+        if (o.gte || o.lt) {
+          const t = x instanceof Date ? x.getTime() : NaN;
+          return (!o.gte || t >= o.gte.getTime()) && (!o.lt || t < o.lt.getTime());
+        }
         if (o.path) {
           let cur: unknown = x;
           for (const p of o.path) cur = cur && typeof cur === "object" ? (cur as Record<string, unknown>)[p] : undefined;
@@ -74,10 +89,19 @@ const H = vi.hoisted(() => {
       }
       return copia;
     },
-    updateMany: async ({ where, data }: { where: Where; data: Partial<Fila> }) => {
+    findMany: async ({ where }: { where: Where }) => {
+      const hits = estado.filas.filter((r) => cumple(r, where)).sort((a, b) => a.lineNo - b.lineNo).map((f) => structuredClone(f));
+      estado.trasLeer?.();
+      return hits;
+    },
+    updateMany: async ({ where, data }: { where: Where; data: Record<string, unknown> }) => {
       const hits = estado.filas.filter((r) => cumple(r, where));
+      // Prisma.Decimal → number: structuredClone le borraría el prototipo.
+      const plano = Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [k, v && typeof (v as { toNumber?: unknown }).toNumber === "function" ? (v as { toNumber: () => number }).toNumber() : v]),
+      );
       for (const r of hits) {
-        Object.assign(r, structuredClone(data));
+        Object.assign(r, structuredClone(plano));
         r.updatedAt = new Date(r.updatedAt.getTime() + 1000);
         estado.escrituras++;
       }
@@ -96,7 +120,7 @@ vi.mock("@/lib/cache", () => ({
   getOrSet: () => null,
 }));
 vi.mock("@/lib/forestal/ctp-audit", () => ({
-  auditCtp: (a: { action: string; detail: string }) => { H.estado.audit.push(a); },
+  auditCtp: (a: { action: string; detail: string; entityId?: string }) => { H.estado.audit.push(a); },
   auditCtpEsperando: async () => {},
 }));
 vi.mock("@/lib/db/forest-ctp-ficha.db", () => ({ ForestCtpFichaDB: { getFresco: async () => ({}), get: async () => ({}) } }));
@@ -105,15 +129,21 @@ vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({ ForestCtpCierreDB: { closedPer
 
 import { ForestCtpDespachoDB, conservarGuiaRemision } from "@/lib/db/forest-ctp-despacho.db";
 
-const despacho = (id: string, lineNo: number, gtfNumber: string | null, gre = "", tenantId = T) => ({
+const despacho = (id: string, lineNo: number, gtfNumber: string | null, gre = "", tenantId = T, dia = "2026-10-28") => ({
   id,
   tenantId,
   section: "despacho",
   status: "registrado",
   lineNo,
   gtfNumber,
-  gtfDatos: { guia: { autoridad: "ARFFS Ucayali", guiaRemisionNro: gre }, destinatario: { nombre: "Maderas SAC" } },
-  entryDate: new Date("2026-10-28T00:00:00Z"),
+  gtfDatos: { guia: { autoridad: "ARFFS Ucayali", guiaRemisionNro: gre }, destinatario: { nombre: "Maderas SAC" } } as unknown,
+  destino: null as string | null,
+  quantity: 1 as unknown,
+  unit: "m3",
+  observations: "100 PT" as string | null,
+  valorVenta: null as unknown,
+  moneda: "PEN",
+  entryDate: new Date(`${dia}T00:00:00Z`),
   updatedAt: new Date("2026-10-28T15:00:00Z"),
   deletedAt: null,
 });
@@ -128,6 +158,7 @@ beforeEach(() => {
   H.estado.invalidados = [];
   H.estado.audit = [];
   H.estado.barrera = 0;
+  H.estado.trasLeer = null;
 });
 
 describe("anotarGuiaRemision — dos pestañas a la vez", () => {
@@ -151,21 +182,95 @@ describe("anotarGuiaRemision — dos pestañas a la vez", () => {
 });
 
 describe("anotarGuiaRemision — la misma GRE en otro despacho", () => {
-  it("en el despacho de OTRA GTF = duplicado (también si allá quedó con ceros); con reemplazar pasa", async () => {
-    H.estado.filas[2].gtfDatos = { guia: { guiaRemisionNro: "EG07-00000012" } };
-    expect(await anotar("d1", "EG07-12")).toEqual({ ok: false, reason: "duplicado", otroDespachoId: "d3", otraLinea: 3, otraGtf: "19-001-000065" });
+  it("en la GTF de OTRO viaje (salió otro día) = duplicado con el motivo, también con ceros; con reemplazar pasa", async () => {
+    H.estado.filas[2] = despacho("d3", 3, "19-001-000065", "EG07-00000012", T, "2026-10-27");
+    expect(await anotar("d1", "EG07-12")).toEqual({
+      ok: false, reason: "duplicado", otroDespachoId: "d3", otraLinea: 3, otraGtf: "19-001-000065", motivo: "salió otro día (27-10)",
+    });
     expect(H.estado.escrituras).toBe(0);
     expect((await anotar("d1", "EG07-12", true)).ok).toBe(true);
   });
-  it("otra línea de la MISMA GTF sí la comparte; una línea sin GTF cuenta como otra", async () => {
+  it("en otra GTF del MISMO viaje (mismo día y destinatario) sí se comparte; otra placa = otro camión", async () => {
+    H.estado.filas[2].gtfDatos = { guia: { guiaRemisionNro: "EG07-12" }, destinatario: { nombre: "Maderas SAC" } };
+    expect(await anotar("d1", "EG07-12")).toEqual({ ok: true, cambio: true, guiaRemisionNro: "EG07-12" });
+    H.estado.filas[1].gtfDatos = { vehiculo: { placa: "W2D-853" }, destinatario: { nombre: "Maderas SAC" } };
+    H.estado.filas[2].gtfDatos = { guia: { guiaRemisionNro: "EG07-12" }, vehiculo: { placa: "V2H-901" }, destinatario: { nombre: "Maderas SAC" } };
+    expect(await anotar("d2", "EG07-12")).toMatchObject({ ok: false, reason: "duplicado", otroDespachoId: "d3", motivo: "otro camión (placa V2H901)" });
+  });
+  it("otra línea de la MISMA GTF la comparte; una línea sin GTF de otro día cuenta como otra", async () => {
     H.estado.filas[1].gtfDatos = { guia: { guiaRemisionNro: "EG07-12" } };
     expect((await anotar("d1", "EG07-12")).ok).toBe(true);
-    H.estado.filas.push({ ...despacho("d4", 4, null, "EG07-20") });
-    expect(await anotar("d3", "EG07-20")).toMatchObject({ ok: false, reason: "duplicado", otroDespachoId: "d4" });
+    H.estado.filas.push(despacho("d4", 4, null, "EG07-20", T, "2026-10-20"));
+    expect(await anotar("d3", "EG07-20")).toMatchObject({ ok: false, reason: "duplicado", otroDespachoId: "d4", motivo: "salió otro día (20-10)" });
   });
   it("la de otro negocio no cuenta", async () => {
-    H.estado.filas.push(despacho("x1", 1, "19-001-000099", "EG07-12", "t-otro"));
+    H.estado.filas.push(despacho("x1", 1, "19-001-000099", "EG07-12", "t-otro", "2026-10-01"));
     expect((await anotar("d1", "EG07-12")).ok).toBe(true);
+  });
+});
+
+describe("anotarGuiaRemisionEnViaje — una GRE para todo el camión", () => {
+  const enViaje = (id: string, numero: string) =>
+    ForestCtpDespachoDB.anotarGuiaRemisionEnViaje(T, id, numero, { reemplazar: false, user: "blasadmin" });
+  it("la anota en las 3 líneas del viaje (2 GTF), no en la de otro día ni en la de otro negocio", async () => {
+    H.estado.filas.push(despacho("d5", 5, "19-001-000066", "", T, "2026-10-27"), despacho("x1", 1, "19-001-000064", "", "t-otro"));
+    const r = await enViaje("d1", "EG07-189");
+    expect(r).toMatchObject({ ok: true, cambio: true, guiaRemisionNro: "EG07-189" });
+    expect(r.ok && r.lineas.map((l) => [l.id, l.estado])).toEqual([["d1", "anotada"], ["d2", "anotada"], ["d3", "anotada"]]);
+    expect(["d1", "d2", "d3", "d5", "x1"].map(greDe)).toEqual(["EG07-189", "EG07-189", "EG07-189", "", ""]);
+  });
+  it("una línea del viaje con OTRA GRE no se pisa: queda como tenia_otra", async () => {
+    H.estado.filas[2].gtfDatos = { guia: { guiaRemisionNro: "EG07-99" }, destinatario: { nombre: "Maderas SAC" } };
+    const r = await enViaje("d2", "EG07-189");
+    expect(r.ok && r.lineas).toEqual([
+      { id: "d1", lineNo: 1, gtfNumber: "19-001-000064", estado: "anotada" },
+      { id: "d2", lineNo: 2, gtfNumber: "19-001-000064", estado: "anotada" },
+      { id: "d3", lineNo: 3, gtfNumber: "19-001-000065", estado: "tenia_otra", actual: "EG07-99" },
+    ]);
+    expect(greDe("d3")).toBe("EG07-99");
+  });
+  it("si la propia rebota (GRE de otro viaje), no toca ninguna", async () => {
+    H.estado.filas.push(despacho("d5", 5, "19-001-000066", "EG07-189", T, "2026-10-27"));
+    expect(await enViaje("d1", "EG07-189")).toMatchObject({ ok: false, reason: "duplicado", otroDespachoId: "d5" });
+    expect(H.estado.escrituras).toBe(0);
+  });
+});
+
+describe("ponerPrecioViaje — el precio del viaje en el libro", () => {
+  const precio = (id: string, total: number, extra: Partial<{ comprobante: { tipo: "factura" | "boleta"; numero: string } | null; reemplazar: boolean }> = {}) =>
+    ForestCtpDespachoDB.ponerPrecioViaje(T, id, { total, comprobante: null, liquidacion: null, reemplazar: false, user: "blasadmin", ...extra });
+  const valorDe = (id: string) => H.estado.filas.find((f) => f.id === id)?.valorVenta ?? null;
+  it("reparte por PT al céntimo con el residuo en la última, anota la factura sin pisar la guía y no toca otro día", async () => {
+    H.estado.filas.push(despacho("d5", 5, "19-001-000066", "", T, "2026-10-27"));
+    const r = await precio("d2", 100, { comprobante: { tipo: "factura", numero: "E001-318" } });
+    expect(r).toMatchObject({ ok: true, dia: "2026-10-28", guias: ["19-001-000064", "19-001-000065"], previo: null });
+    expect(["d1", "d2", "d3", "d5"].map(valorDe)).toEqual([33.33, 33.33, 33.34, null]);
+    const cuerpo = H.estado.filas[0].gtfDatos as { guia: { autoridad: string }; comprobante: { tipo: string; numero: string } };
+    expect(cuerpo.comprobante).toEqual({ tipo: "factura", numero: "E001-318" });
+    expect(cuerpo.guia.autoridad).toBe("ARFFS Ucayali");
+    expect(H.estado.audit.map((a) => [a.action, a.entityId])).toEqual([["ctp_venta_set", "d1"], ["ctp_venta_set", "d2"], ["ctp_venta_set", "d3"]]);
+    expect(H.estado.invalidados).toEqual([`forest-ctp:${T}`, expect.stringMatching(new RegExp(`:${T}:$`))]);
+  });
+  it("una línea sin volumen queda en null (nunca 0) y las demás suman el total", async () => {
+    H.estado.filas[1].quantity = null;
+    H.estado.filas[1].observations = null;
+    expect((await precio("d1", 1000)).ok).toBe(true);
+    expect(["d1", "d2", "d3"].map(valorDe)).toEqual([500, null, 500]);
+  });
+  it("con precio ya puesto no se pisa sin reemplazar; otro comprobante tampoco", async () => {
+    H.estado.filas[0].valorVenta = 40;
+    expect(await precio("d1", 100)).toEqual({ ok: false, reason: "ya_tiene_precio", previo: 40, conPrecio: 1, lineas: 3 });
+    expect(H.estado.escrituras).toBe(0);
+    expect((await precio("d1", 90, { reemplazar: true })).ok).toBe(true);
+    expect(["d1", "d2", "d3"].map(valorDe)).toEqual([30, 30, 30]);
+    H.estado.filas.forEach((f) => { f.valorVenta = null; });
+    H.estado.filas[2].gtfDatos = { comprobante: { tipo: "factura", numero: "E001-300" }, destinatario: { nombre: "Maderas SAC" } };
+    expect(await precio("d1", 100, { comprobante: { tipo: "factura", numero: "E001-318" } })).toEqual({ ok: false, reason: "otro_comprobante", actual: "E001-300", lineNo: 3 });
+  });
+  it("si otro cambió una línea entre la lectura y la escritura, responde cambio", async () => {
+    H.estado.trasLeer = () => { H.estado.filas[2].updatedAt = new Date("2026-10-29T00:00:00Z"); };
+    expect(await precio("d1", 100)).toEqual({ ok: false, reason: "cambio" });
+    expect(H.estado.audit).toHaveLength(0);
   });
 });
 
