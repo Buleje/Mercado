@@ -21,6 +21,18 @@
 export const KPI_GRID_6 =
   "grid grid-cols-2 gap-3 sm:grid-cols-3 min-[106.25rem]:grid-cols-6 max-sm:[&_[data-stat-card]>div:first-child>svg]:hidden";
 
-/** Cinco KPIs: 5 en fila desde ≈1500 px (tarjeta ≥ 218 px); antes 3 + 2. */
+/**
+ * Cinco KPIs: 5 en fila desde ≈1500 px (tarjeta ≥ 218 px); antes 3 + 2 (o
+ * 2 + 2 + 1 en el celular). 2026-10-29: la última ocupa dos columnas hasta que
+ * entran las 5 en fila, así la segunda fila no queda con un hueco al lado.
+ */
 export const KPI_GRID_5 =
-  "grid grid-cols-2 gap-3 sm:grid-cols-3 min-[93.75rem]:grid-cols-5 max-sm:[&_[data-stat-card]>div:first-child>svg]:hidden";
+  "grid grid-cols-2 gap-3 sm:grid-cols-3 min-[93.75rem]:grid-cols-5 [&>*:last-child]:col-span-2 min-[93.75rem]:[&>*:last-child]:col-span-1 max-sm:[&_[data-stat-card]>div:first-child>svg]:hidden";
+
+/**
+ * Cuatro KPIs (Ventas sin costo cargado: sin utilidad ni margen, 2026-10-29):
+ * 2 + 2 hasta 1280 px; desde ahí 4 en fila (a 1280 px con la barra lateral,
+ * ≈ 230 px por tarjeta: «S/ 12,345.00» pide 204).
+ */
+export const KPI_GRID_4 =
+  "grid grid-cols-2 gap-3 xl:grid-cols-4 max-sm:[&_[data-stat-card]>div:first-child>svg]:hidden";

@@ -50,7 +50,11 @@ interface Props {
   items: DraggableItem[];
   /** localStorage key to persist order + hidden. Scope por módulo. */
   storageKey?: string;
-  /** gap in rem entre secciones — default 1 */
+  /**
+   * gap in rem entre secciones — default 0.75 (12 px, el mismo aire que el
+   * tablero del Resumen). 2026-10-29: las pestañas pasaban 1-4 rem (hasta 64 px
+   * entre bloques en Inventario y Clientes); ahora todas usan el default.
+   */
   gap?: number;
   /**
    * Layout mode:
@@ -99,7 +103,7 @@ interface PersistState {
  *  - Toast "Layout guardado" en primer drag
  *  - Persiste en localStorage (orden + hidden)
  */
-export function DraggableSections({ items, storageKey, gap = 1, layout = "column", minColumnWidth = "36rem", mobileCollapseAfter }: Props) {
+export function DraggableSections({ items, storageKey, gap = 0.75, layout = "column", minColumnWidth = "36rem", mobileCollapseAfter }: Props) {
   const [state, setState] = useState<PersistState>(() => ({
     order: items.map((i) => i.id),
     hidden: [],
@@ -250,11 +254,12 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
                     display: "grid",
                     gap: `${gap}rem`,
                     gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minColumnWidth}), 1fr))`,
-                    // 2026-04-24: gridAutoRows 1fr asegura que todas las
-                    // secciones de una misma fila compartan altura.
-                    // Combinado con h-full dentro de DashboardSection el
-                    // chart rellena el espacio y no quedan huecos.
-                    gridAutoRows: "1fr",
+                    // 2026-10-29: filas «auto». Con «1fr» TODAS las filas
+                    // medían lo que la más alta (un ranking de 10 filas
+                    // estiraba a las de un solo gráfico y dejaba huecos de
+                    // 200-300 px). Las de una MISMA fila se siguen igualando
+                    // (alignItems: stretch + h-full en DashboardSection).
+                    gridAutoRows: "auto",
                     // Brandon mayo 2026 v6: gridAutoFlow "dense" rellena
                     // huecos automáticos cuando un chart con span="half"
                     // queda solo en su fila (porque el compañero está

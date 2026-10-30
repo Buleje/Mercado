@@ -6,7 +6,7 @@ import { ChevronDown } from "@buleje/design-system/icons";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useChartRegistration } from "@/lib/admin/charts-visibility";
-import { KpiTile, esKpiSinDato, gridDeKpis, type SectionKPI } from "./KpiTile";
+import { KpiTile, LineaSinDato, esKpiSinDato, gridDeKpis, type SectionKPI } from "./KpiTile";
 
 // El tipo vive con la tarjeta; se re-exporta acá para no romper los imports.
 export type { SectionKPI };
@@ -124,6 +124,10 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
     );
   }
   const bajadaEnInfo = !!description && description.length > BAJADA_A_LA_VISTA_MAX;
+  // Sin dato no ocupa una casilla con «—» (2026-10-29): va en una línea al pie
+  // de las cifras, con su motivo en el ⓘ.
+  const conDato = (kpis ?? []).filter((k) => !esKpiSinDato(k));
+  const sinDato = (kpis ?? []).filter((k) => esKpiSinDato(k));
 
   return (
     <section
@@ -135,27 +139,28 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
         // secciones de la misma fila.
         // @container: la fila de KPIs elige columnas por el ancho de la SECCIÓN.
         // Plegada no se estira al alto de la vecina de fila (self-start).
-        "@container border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 flex flex-col " +
+        // 2026-10-29 (tablero denso): p-4 como las tarjetas del Resumen (era p-5 sm:p-6).
+        "@container border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col " +
         (abierto ? "h-full " : "self-start w-full ") +
         (className ?? "")
       }
     >
       {hideHeader ? (
         rightSlot && (
-          <div className="mb-4 flex justify-end">
+          <div className="mb-3 flex justify-end">
             <div className="flex-shrink-0 pr-10">{rightSlot}</div>
           </div>
         )
       ) : (
         // Brandon mayo 2026 v2: header agrandado — eyebrow text-xs (era 2xs),
         // título text-lg sm:text-xl (era base) para que se lea a 1m del monitor.
-        <header className={(abierto ? "mb-5 " : "") + "flex items-start justify-between gap-3"}>
+        <header className={(abierto ? "mb-3 " : "") + "flex items-start justify-between gap-3"}>
           <div className={plegable ? "min-w-0 flex-1" : "min-w-0"}>
-            <p className="text-sm font-bold text-[var(--text-tertiary)] mb-1">
+            <p className="text-sm font-bold text-[var(--text-tertiary)] mb-0.5">
               {kicker}
             </p>
             <div className="flex min-w-0 items-center gap-1.5">
-              <CardTitle className="min-w-0 text-[length:var(--ts-xl)] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
+              <CardTitle className="min-w-0 text-[length:var(--ts-lg)] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
                 {plegable ? (
                   // -my-2.5 + min-h-12: 48 px para el dedo sin agrandar la cabecera.
                   <button
@@ -191,18 +196,21 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
           {rightSlot && <div className="flex-shrink-0 pr-10">{rightSlot}</div>}
         </header>
       )}
-      {abierto && kpis && kpis.length > 0 && (
-        <div className={gridDeKpis(kpis.length) + " mb-6 shrink-0"}>
-          {kpis.map((k) => (
+      {abierto && conDato.length > 0 && (
+        <div className={gridDeKpis(conDato.length) + (sinDato.length > 0 ? " mb-2" : " mb-3") + " shrink-0"}>
+          {conDato.map((k) => (
             <KpiTile key={k.label} kpi={k} />
           ))}
         </div>
       )}
+      {abierto && sinDato.length > 0 && <LineaSinDato kpis={sinDato} />}
       {/* children wrapper con flex-1 min-h-0 para que el chart (ResponsiveContainer
           de Recharts) se estire al espacio restante sin desbordar. Plegado no se
           monta: el gráfico sigue anotado en «Gráficos» (lo registra esta sección). */}
       {abierto ? (
-        <div id={idCuerpo} className="flex-1 min-h-0 flex flex-col justify-end">{children}</div>
+        // Arriba, pegado a sus cifras (era justify-end: con la fila estirada el
+        // aire quedaba ENTRE las cifras y el gráfico).
+        <div id={idCuerpo} className="flex-1 min-h-0 flex flex-col">{children}</div>
       ) : (
         <div id={idCuerpo} hidden />
       )}

@@ -5,7 +5,7 @@ import {
 import { kpiSinDato } from "@/lib/admin/inicio/hay-datos";
 import { cantidad, porcentaje, soles } from "@/lib/admin/inicio/formato-tablero";
 
-import { KpiTile, type SectionKPI } from "./_shared";
+import { KpiTile, LineaSinDato, esKpiSinDato, type SectionKPI } from "./_shared";
 import { margenLegible, type CajaData } from "./caja-presentacion";
 
 /** Variación contra el período anterior; «— 0%» se lee mejor como frase. */
@@ -69,20 +69,23 @@ export default function CajaResumen({ data, periodo }: { data: CajaData; periodo
     <section
       data-dashboard-section=""
       aria-label="Caja del período"
-      className="@container border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"
+      className="@container border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
     >
-      <p className="mb-1.5 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        Caja · {periodo}
-      </p>
-      <CardTitle className="mb-5 text-[length:var(--ts-xl)] font-bold leading-tight tracking-tight text-[var(--text-primary)]">
+      {/* Mismo encabezado que `DashboardSection` (2026-10-29, tablero denso). */}
+      <p className="mb-0.5 text-sm font-bold text-[var(--text-tertiary)]">Caja · {periodo}</p>
+      <CardTitle className="mb-3 text-[length:var(--ts-lg)] font-bold leading-tight tracking-tight text-[var(--text-primary)]">
         Lo que entró y salió
       </CardTitle>
-      {/* 3 × 2: seis cifras en una fila no entran enteras a 1280 px. */}
+      {/* 3 × 2: seis cifras en una fila no entran enteras a 1280 px. Sin dato no
+          ocupa casilla con «—»: va en la línea de abajo con su ⓘ. */}
       <div className="grid grid-cols-2 gap-3 @xl:grid-cols-3">
-        {kpis.map((k) => (
-          <KpiTile key={k.label} kpi={k} />
-        ))}
+        {kpis
+          .filter((k) => !esKpiSinDato(k))
+          .map((k) => (
+            <KpiTile key={k.label} kpi={k} />
+          ))}
       </div>
+      {kpis.some(esKpiSinDato) && <LineaSinDato kpis={kpis.filter(esKpiSinDato)} className="mt-2" />}
     </section>
   );
 }

@@ -19,7 +19,7 @@ import {
   porcentaje,
   soles,
 } from "@/lib/admin/inicio/formato-tablero";
-import { SinDatoHero, HoyVsAyer, queSeMuestraVentas, sparkSiHayTendencia } from "./VentasHero";
+import { HoyVsAyer, queSeMuestraVentas, sparkSiHayTendencia } from "./VentasHero";
 import { margenLegible } from "./caja-presentacion";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
@@ -30,7 +30,7 @@ const VentasAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision en render body.
-import { BulejeDashboardSkeleton, KPI_GRID_6 } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_4, KPI_GRID_5, KPI_GRID_6, LineaSinDato } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -593,12 +593,28 @@ export default function VentasDashboard({
   const avisoCosto =
     "Carga el costo de tus productos (Inventario › editar producto) para saber cuánto ganas en cada venta.";
   const parcial = data.margenIncompleto && !sinCosto ? "parcial: faltan costos" : undefined;
+  const margenOk = !sinCosto && margenLegible(data.margen, data.ventasNetas);
+  const nHero = 4 + (sinCosto ? 0 : 1) + (margenOk ? 1 : 0);
+  const sinDatoHero = [
+    ...(sinCosto ? [{ label: "Utilidad bruta", hint: avisoCosto }] : []),
+    ...(margenOk
+      ? []
+      : [
+          {
+            label: "Margen",
+            hint: sinCosto
+              ? avisoCosto
+              : "Lo cobrado es muy chico frente al costo (un descuento casi total): el porcentaje no dice nada. Mira la utilidad bruta.",
+          },
+        ]),
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Fila héroe: lo que el dueño mira primero. Sin dato = «—» con ⓘ (R3), nunca «S/ 0.00». */}
-      <div className={KPI_GRID_6}>
+      <div className={nHero >= 6 ? KPI_GRID_6 : nHero === 5 ? KPI_GRID_5 : KPI_GRID_4}>
         <StatCard
+          density="compact"
           label="Ventas"
           value={soles(data.ventasNetas)}
           icon={DollarSign}
@@ -606,48 +622,32 @@ export default function VentasDashboard({
           deltaLabel={data.dVentas != null ? "vs período anterior" : undefined}
           sparkline={sparkSiHayTendencia(data.sparkVentas)}
         />
+        {/* Sin costo cargado no hay utilidad ni margen: no ocupan casilla con «—»;
+            van en la línea «Sin dato» de abajo (2026-10-29, tablero denso). */}
+        {!sinCosto && (
+          <StatCard
+            density="compact"
+            label="Utilidad bruta"
+            value={soles(data.utilidadBruta)}
+            subValue={parcial}
+            icon={TrendingUp}
+            delta={data.dUtilidad}
+            sparkline={sparkSiHayTendencia(data.sparkUtilidad)}
+          />
+        )}
+        {margenOk && (
+          <StatCard
+            density="compact"
+            label="Margen"
+            value={porcentaje(data.margen, 1)}
+            subValue={parcial ?? "a costo real"}
+            icon={Percent}
+            delta={data.dMargen}
+            emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"}
+          />
+        )}
         <StatCard
-          label="Utilidad bruta"
-          value={
-            sinCosto ? (
-              <SinDatoHero titulo="Utilidad bruta" motivo={avisoCosto} />
-            ) : (
-              soles(data.utilidadBruta)
-            )
-          }
-          subValue={parcial}
-          icon={TrendingUp}
-          delta={sinCosto ? null : data.dUtilidad}
-          sparkline={sinCosto ? undefined : sparkSiHayTendencia(data.sparkUtilidad)}
-        />
-        <StatCard
-          label="Margen"
-          value={
-            sinCosto ? (
-              <SinDatoHero titulo="Margen" motivo={avisoCosto} />
-            ) : !margenLegible(data.margen, data.ventasNetas) ? (
-              <SinDatoHero
-                titulo="Margen"
-                motivo="Lo cobrado es muy chico frente al costo (un descuento casi total): el porcentaje no dice nada. Mira la utilidad bruta."
-              />
-            ) : (
-              porcentaje(data.margen, 1)
-            )
-          }
-          subValue={sinCosto ? undefined : (parcial ?? "a costo real")}
-          icon={Percent}
-          delta={sinCosto ? null : data.dMargen}
-          emphasis={
-            sinCosto
-              ? "neutral"
-              : data.margen >= 25
-                ? "success"
-                : data.margen >= 15
-                  ? "warning"
-                  : "error"
-          }
-        />
-        <StatCard
+          density="compact"
           label="Tickets"
           value={cantidad(data.tickets)}
           icon={Receipt}
@@ -655,6 +655,7 @@ export default function VentasDashboard({
           sparkline={sparkSiHayTendencia(data.sparkTickets)}
         />
         <StatCard
+          density="compact"
           label="Ticket promedio"
           value={soles(data.ticketPromedio)}
           icon={ShoppingCart}
@@ -662,6 +663,7 @@ export default function VentasDashboard({
         />
         {/* El cero acá es la noticia («Ninguno»), no un relleno. */}
         <StatCard
+          density="compact"
           label="Cancelados"
           value={data.cancelados > 0 ? cantidad(data.cancelados) : "Ninguno"}
           subValue={data.cancelados > 0 ? "pedidos del período" : undefined}
@@ -671,6 +673,7 @@ export default function VentasDashboard({
           emphasis={data.cancelados > 0 ? "error" : "neutral"}
         />
       </div>
+      {sinDatoHero.length > 0 && <LineaSinDato kpis={sinDatoHero} className="-mt-1" />}
 
       {/* Hoy vs ayer: sólo si el rango no es ya «Hoy» y hubo algo que comparar. */}
       {/* Si el gráfico por hora está a la vista, ya trae «Vendido hoy · vs ayer»: no se repite. */}

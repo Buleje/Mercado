@@ -581,7 +581,6 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       items={sections}
       storageKey="caja-advanced-order"
       layout="grid"
-      gap={1}
       minColumnWidth="22rem"
     />
   );

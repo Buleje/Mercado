@@ -116,7 +116,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
 
   const periodo = describeRange(dateRange);
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <DashboardSection kicker={`Resumen · ${periodo}`} title="Tus clientes" kpis={kpisDeResumen(data, periodo)} className="pb-0 sm:pb-0">
         {null}
       </DashboardSection>

@@ -18,7 +18,7 @@ const InventarioAdvancedCharts = dynamic(
   { ssr: false },
 );
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, LineaSinDato } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
 import { formatNumber } from "@/lib/format";
 import { COLOR_CONCEPTO, fechaCorta } from "@/lib/admin/inicio/formato-tablero";
@@ -273,15 +273,15 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
   const categorias = data.stockPorCategoria.length;
   const periodo = describeRange(dateRange);
   // Sin ventas en el rango, «sin movimiento» (= todos) y la rotación (= 0) no
-  // dicen nada: van como «—» atenuado con el porqué (regla R3).
+  // dicen nada: no ocupan casilla, van en la línea «Sin dato» (2026-10-29).
   const huboVentas = data.unidadesVendidas > 0;
-  const sinDato = <span data-sin-dato="true" className="text-[var(--text-tertiary)]">—</span>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* ── Cifras de cabecera · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className={huboVentas ? "grid grid-cols-2 gap-3 lg:grid-cols-4" : "grid grid-cols-2 gap-3"}>
         <StatCard
+          density="compact"
           label="Valor inventario"
           value={fmt(data.valorInventario)}
           subValue={
@@ -292,27 +292,43 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
           icon={DollarSign}
         />
         <StatCard
+          density="compact"
           label="Productos activos"
           value={formatNumber(data.totalProductos)}
           subValue={`${categorias} ${categorias === 1 ? "categoría" : "categorías"}`}
           icon={Package}
         />
-        <StatCard
-          label="Sin vender"
-          value={huboVentas ? formatNumber(data.sinMovimiento) : sinDato}
-          subValue={huboVentas ? `de ${formatNumber(data.totalProductos)} · ${periodo}` : `no hubo ventas ${periodo}`}
-          icon={Timer}
-          emphasis={huboVentas && data.sinMovimiento > 5 ? "warning" : "neutral"}
-        />
-        <StatCard
-          label="Rotación"
-          value={huboVentas ? `${formatNumber(data.rotacionGeneral, 2)}×` : sinDato}
-          subValue={huboVentas ? `${formatNumber(data.unidadesVendidas)} u vendidas` : "sale cuando vendas"}
-          icon={TrendingUp}
-          delta={huboVentas ? data.dValor : null}
-          deltaLabel={huboVentas && data.dValor != null ? "vs período anterior" : undefined}
-        />
+        {huboVentas && (
+          <>
+            <StatCard
+              density="compact"
+              label="Sin vender"
+              value={formatNumber(data.sinMovimiento)}
+              subValue={`de ${formatNumber(data.totalProductos)} · ${periodo}`}
+              icon={Timer}
+              emphasis={data.sinMovimiento > 5 ? "warning" : "neutral"}
+            />
+            <StatCard
+              density="compact"
+              label="Rotación"
+              value={`${formatNumber(data.rotacionGeneral, 2)}×`}
+              subValue={`${formatNumber(data.unidadesVendidas)} u vendidas`}
+              icon={TrendingUp}
+              delta={data.dValor}
+              deltaLabel={data.dValor != null ? "vs período anterior" : undefined}
+            />
+          </>
+        )}
       </div>
+      {!huboVentas && (
+        <LineaSinDato
+          className="-mt-1"
+          kpis={[
+            { label: "Sin vender", hint: `No hubo ventas ${periodo}: sale cuando vendas.` },
+            { label: "Rotación", hint: `No hubo ventas ${periodo}: sale cuando vendas.` },
+          ]}
+        />
+      )}
 
       {/* Lo que pide reponer, en una línea (`BarraDeuda`).
           Antes eran dos tarjetas en la grilla MÁS un cartel rojo debajo que

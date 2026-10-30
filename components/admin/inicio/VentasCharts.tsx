@@ -403,7 +403,6 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       storageKey="ventas-base-order"
       layout="grid"
       minColumnWidth="26rem"
-      gap={1.5}
     />
   );
 }

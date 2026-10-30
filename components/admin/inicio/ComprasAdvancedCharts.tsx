@@ -223,5 +223,5 @@ export const ComprasAdvancedCharts = memo(function ComprasAdvancedCharts({
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="compras-advanced-order" layout="column" gap={1.5} />;
+  return <DraggableSections items={sections} storageKey="compras-advanced-order" layout="column" />;
 });

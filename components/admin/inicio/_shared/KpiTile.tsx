@@ -7,8 +7,10 @@
  *   rótulo + ⓘ  →  CIFRA grande  →  variación con flecha / línea de apoyo.
  * Todo el texto ≥14 px (2026-10-11: el rótulo en mayúsculas de 12 px no se leía a 1 m).
  *
- * Sin dato (regla R3 del tablero): nada de «S/ 0.00» de relleno. La cifra sale
- * como «—» atenuado y el ⓘ dice por qué. Se activa con `value` null/«—»/vacío
+ * Sin dato (regla R3 del tablero): nada de «S/ 0.00» de relleno. Dentro de una
+ * `DashboardSection` la casilla ni se dibuja (2026-10-29: va en la línea «Sin
+ * dato en el período: …» con su ⓘ); suelta, sale «—» atenuado y el ⓘ dice por
+ * qué. Se activa con `value` null/«—»/vacío
  * o con `sinDato: true` (para cuando la cifra viene formateada en cero; decidirlo
  * con `kpiSinDato()` de `lib/admin/inicio/hay-datos`).
  *
@@ -105,13 +107,14 @@ export function KpiTile({ kpi }: { kpi: SectionKPI }) {
       data-kpi-tile=""
       data-sin-dato={sinDato ? "true" : undefined}
       className={
-        "@container min-w-0 border px-4 py-3.5 " +
+        // 2026-10-29 (tablero denso): px-3 py-2.5 (era px-4 py-3.5).
+        "@container min-w-0 border px-3 py-2.5 " +
         (sinDato
           ? "border-dashed border-[var(--rule-base)] bg-transparent"
           : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)]")
       }
     >
-      <div className="mb-1.5 flex min-w-0 items-center gap-1">
+      <div className="mb-1 flex min-w-0 items-center gap-1">
         {Icono && <Icono className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />}
         <p className="min-w-0 truncate text-sm font-bold text-[var(--text-secondary)]" title={kpi.label}>
           {kpi.label}
@@ -158,4 +161,25 @@ export function gridDeKpis(n: number): string {
   if (n === 3) return "grid grid-cols-2 @xl:grid-cols-3 gap-3";
   if (n === 4) return "grid grid-cols-2 @3xl:grid-cols-4 gap-3";
   return "grid grid-cols-2 @xl:grid-cols-3 @5xl:grid-cols-5 gap-3";
+}
+
+/** «Sin dato en el período: Margen, Utilidad ⓘ» — las cifras que no se pueden calcular todavía. */
+export function LineaSinDato({
+  kpis,
+  className = "mb-3",
+}: {
+  kpis: Pick<SectionKPI, "label" | "hint" | "sinDatoHint">[];
+  className?: string;
+}) {
+  const nombres = kpis.map((k) => k.label).join(", ");
+  const motivos = [...new Set(kpis.map((k) => k.sinDatoHint ?? k.hint ?? SIN_DATO_HINT))].join(" ");
+  return (
+    <p
+      data-kpis-sin-dato=""
+      className={`${className} flex min-w-0 items-center gap-1 text-sm font-medium text-[var(--text-tertiary)]`}
+    >
+      <span className="min-w-0 truncate">Sin dato en el período: {nombres}</span>
+      <InfoTip title="Sin dato" what={motivos} className="-my-1 shrink-0" ariaLabel={`Por qué no hay dato de ${nombres}`} />
+    </p>
+  );
 }

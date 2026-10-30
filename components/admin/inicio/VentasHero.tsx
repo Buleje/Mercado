@@ -4,8 +4,8 @@
  * Piezas de la fila héroe de Inicio › Ventas (Brandon 2026-10-09, regla R3:
  * «ningún tile grande en cero de relleno»).
  *
- *  - `SinDatoHero`: la cifra de una `StatCard` que no se puede saber → «—»
- *    atenuado + ⓘ con el porqué (p. ej. sin costos cargados no hay utilidad).
+ *  - (2026-10-29) La cifra que no se puede saber ya no ocupa una `StatCard` con
+ *    «—»: VentasDashboard la nombra en `LineaSinDato` con su ⓘ.
  *  - `HoyVsAyer`: la franja «Hoy S/ 120.00 · ayer S/ 95.00 ↑ 26%». Se esconde
  *    si ni hoy ni ayer hubo ventas, y no dibuja «S/ 0.00»: dice «sin ventas».
  *  - `sparkSiHayTendencia`: la mini-línea sólo con 2+ días con venta (un punto
@@ -15,7 +15,6 @@
  */
 
 import { ArrowDownRight, ArrowUpRight, Clock } from "@buleje/design-system/icons";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   MIN_PUNTOS_TENDENCIA,
   hayDatosEnSerie,
@@ -26,17 +25,6 @@ import {
 } from "@/lib/admin/inicio/hay-datos";
 import { porcentaje, soles } from "@/lib/admin/inicio/formato-tablero";
 import type { VentasData } from "./VentasDashboard";
-
-export function SinDatoHero({ titulo, motivo }: { titulo: string; motivo: string }) {
-  return (
-    <span data-sin-dato="true" className="inline-flex items-center gap-1.5">
-      <span className="text-[var(--text-tertiary)] opacity-70" aria-label="Sin dato">
-        —
-      </span>
-      <InfoTip title={titulo} what={motivo} ariaLabel={`Por qué «${titulo}» no tiene dato`} />
-    </span>
-  );
-}
 
 /** La serie para la sparkline de `StatCard`, o nada si no hay tendencia que mostrar. */
 export function sparkSiHayTendencia(serie: readonly number[]): { data: number[] } | undefined {

@@ -411,7 +411,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
   return (
     <>
       <AltoPropioEnUnaColumna>
-        <DraggableSections items={sections} storageKey="inventario-base-order" layout="grid" gap={4} minColumnWidth="22rem" />
+        <DraggableSections items={sections} storageKey="inventario-base-order" layout="grid" minColumnWidth="22rem" />
       </AltoPropioEnUnaColumna>
       <ReorderModal open={reorderOpen} candidates={reorderCandidates} onClose={() => setReorderOpen(false)} />
     </>

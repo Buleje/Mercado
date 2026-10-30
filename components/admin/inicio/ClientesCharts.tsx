@@ -295,6 +295,6 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
   // layout="grid": las secciones sin span van de a dos (gasto + frecuencia lado a
   // lado); minColumnWidth="22rem" deja las 2 columnas aun con la barra lateral.
   return (
-    <DraggableSections items={sections} storageKey="clientes-base-order" layout="grid" gap={4} minColumnWidth="22rem" />
+    <DraggableSections items={sections} storageKey="clientes-base-order" layout="grid" minColumnWidth="22rem" />
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { StatCard } from "@buleje/design-system";
 import {
@@ -21,7 +21,7 @@ import { valorConDato } from "@/lib/admin/inicio/hay-datos";
 import { cantidadDelPeriodo, type InicioForestal } from "@/lib/forestal/inicio-forestal";
 import { describeRange, type DateRange } from "./DashboardDateRange";
 import EmptyDateRangeState from "./EmptyDateRangeState";
-import { BulejeDashboardSkeleton, KPI_GRID_5, KPI_GRID_6 } from "./_shared";
+import { BulejeDashboardSkeleton, KPI_GRID_4, KPI_GRID_5, KPI_GRID_6, LineaSinDato } from "./_shared";
 import { ForestalCharts } from "./ForestalCharts";
 import { ForestalAvisoPapeles } from "./ForestalAvisoPapeles";
 import { ForestalPermisos } from "./ForestalPermisos";
@@ -31,12 +31,24 @@ const CTP = "/admin?tab=ctp-libro-operaciones";
 const LOTH = "/admin?tab=loth-libro-operaciones";
 const m3 = (n: number) => `${formatNumber(n, 2)} m³`;
 
-/** La cifra de una tarjeta sin dato: «—» atenuado; la línea de abajo dice por qué (regla R3). */
+/**
+ * Marca de «sin dato» en la cifra de una tarjeta (regla R3). Desde 2026-10-29
+ * la tarjeta que la lleva no se dibuja: `esTarjetaSinDato` la saca de la grilla.
+ */
 const SIN_DATO = (
   <span data-sin-dato="true" aria-label="Sin dato" className="text-[var(--text-tertiary)] opacity-70">
     —
   </span>
 );
+
+type PropsTarjeta = { label?: unknown; value?: unknown; subValue?: unknown };
+
+const conMayuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/** La tarjeta cuya cifra es `SIN_DATO` (no se dibuja: va en `LineaSinDato`). */
+function esTarjetaSinDato(t: ReactNode): t is ReactElement<PropsTarjeta> {
+  return isValidElement<PropsTarjeta>(t) && t.props.value === SIN_DATO;
+}
 
 interface Props {
   dateRange: DateRange;
@@ -97,7 +109,7 @@ export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRan
   // R1: nada en el período y nada a hoy → sólo el paiche.
   if (!movimiento && !foto) {
     return (
-      <div className="space-y-4" aria-busy={cargando}>
+      <div className="space-y-3" aria-busy={cargando}>
         {aviso}
         <EmptyDateRangeState {...vacio} />
       </div>
@@ -105,9 +117,16 @@ export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRan
   }
 
   const deHoy = tarjetasDeHoy(data, ir);
-  const tarjetas = movimiento ? [...tarjetasDelPeriodo(data, periodo, ir), ...deHoy] : deHoy;
+  const todas = movimiento ? [...tarjetasDelPeriodo(data, periodo, ir), ...deHoy] : deHoy;
+  // Sin dato no ocupa una tarjeta con «—» (2026-10-29): se nombra en una línea
+  // con su motivo (la misma línea de abajo que decía la tarjeta) en el ⓘ.
+  const tarjetas = todas.filter((t) => !esTarjetaSinDato(t));
+  const sinDato = todas.filter(esTarjetaSinDato).map((t) => ({
+    label: String(t.props.label),
+    hint: typeof t.props.subValue === "string" ? conMayuscula(`${t.props.subValue}.`) : undefined,
+  }));
   return (
-    <div className="space-y-6" aria-busy={cargando}>
+    <div className="space-y-3" aria-busy={cargando}>
       {/* Sin movimiento, el paiche ya dice qué es del período y qué es de hoy. */}
       {movimiento && (
         <p className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
@@ -134,10 +153,21 @@ export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRan
       )}
 
       {tarjetas.length > 0 && (
-        <div className={tarjetas.length >= 6 ? KPI_GRID_6 : tarjetas.length >= 3 ? KPI_GRID_5 : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"}>
+        <div
+          className={
+            tarjetas.length >= 6
+              ? KPI_GRID_6
+              : tarjetas.length === 5
+                ? KPI_GRID_5
+                : tarjetas.length === 4
+                  ? KPI_GRID_4
+                  : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          }
+        >
           {tarjetas}
         </div>
       )}
+      {sinDato.length > 0 && <LineaSinDato kpis={sinDato} className="-mt-1" />}
 
       {data.ctp && <ForestalCharts ctp={data.ctp} />}
       {data.loth && <ForestalPermisos permisos={data.loth.permisos} onIr={() => ir(`${LOTH}&vista=tablero`)} />}
@@ -168,6 +198,7 @@ function tarjetasDelPeriodo(data: InicioForestal, periodo: string, ir: (href: st
         : `sin corridas ${periodo}`;
     out.push(
       <StatCard
+        density="compact"
         key="ingreso"
         label="Ingresado al CTP"
         value={valorConDato(ctp.ingresoM3) ? m3(ctp.ingresoM3) : SIN_DATO}
@@ -176,6 +207,7 @@ function tarjetasDelPeriodo(data: InicioForestal, periodo: string, ir: (href: st
         onClick={() => ir(`${CTP}&vista=tablero`)}
       />,
       <StatCard
+        density="compact"
         key="producido"
         label="Producido"
         value={hayProd ? cantidadDelPeriodo(ctp.producido, ctp.unidadProducido) : SIN_DATO}
@@ -186,6 +218,7 @@ function tarjetasDelPeriodo(data: InicioForestal, periodo: string, ir: (href: st
         onClick={() => ir(`${CTP}&vista=produccion`)}
       />,
       <StatCard
+        density="compact"
         key="despachado"
         label="Despachado"
         value={valorConDato(ctp.despachado) ? cantidadDelPeriodo(ctp.despachado, ctp.unidadDespachado) : SIN_DATO}
@@ -208,6 +241,7 @@ function tarjetasDelPeriodo(data: InicioForestal, periodo: string, ir: (href: st
     const anuladas = g.anuladas > 0 ? ` · ${g.anuladas} anulada${g.anuladas === 1 ? "" : "s"} aparte` : "";
     out.push(
       <StatCard
+        density="compact"
         key="guias"
         label="Guías emitidas"
         value={vigentes > 0 ? formatNumber(vigentes) : SIN_DATO}
@@ -229,6 +263,7 @@ function tarjetasDeHoy(data: InicioForestal, ir: (href: string) => void): ReactN
     const conTrozas = !!patio && (valorConDato(patio.trozas) || valorConDato(patio.m3));
     out.push(
       <StatCard
+        density="compact"
         key="patio"
         label="En el patio hoy"
         value={!patio ? SIN_DATO : conTrozas ? m3(patio.m3) : "Vacío"}
@@ -251,6 +286,7 @@ function tarjetasDeHoy(data: InicioForestal, ir: (href: string) => void): ReactN
     const abiertos = conSaldo.reduce((a, m) => a + m.abiertos, 0);
     out.push(
       <StatCard
+        density="compact"
         key="adelantos"
         label="Adelantos por cobrar"
         value={fmtMonedas(porMoneda)}

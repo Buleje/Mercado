@@ -7,14 +7,13 @@ import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import { describeRange, type DateRange } from "./DashboardDateRange";
 import BarraDeuda from "@/components/admin/shared/BarraDeuda";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 const ComprasCharts = dynamic(() => import("./ComprasCharts"), { ssr: false });
 const ComprasAdvancedCharts = dynamic(
   () => import("./ComprasAdvancedCharts").then((m) => ({ default: m.ComprasAdvancedCharts })),
   { ssr: false },
 );
-import { BulejeDashboardSkeleton } from "./_shared";
+import { BulejeDashboardSkeleton, LineaSinDato } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
 import { algunDato } from "@/lib/admin/inicio/hay-datos";
 import { cantidad, soles } from "@/lib/admin/inicio/formato-tablero";
@@ -39,16 +38,6 @@ interface Supplier {
 /** Cuatro cifras héroe: 2 por fila en celular, 4 desde 1024 px. */
 const KPI_GRID_4 =
   "grid grid-cols-2 gap-3 lg:grid-cols-4 max-sm:[&_[data-stat-card]>div:first-child>svg]:hidden";
-
-/** «—» atenuado con ⓘ para la cifra que no se puede saber (R3). */
-function SinDato({ titulo, motivo }: { titulo: string; motivo: string }) {
-  return (
-    <span data-sin-dato="true" className="inline-flex items-center gap-1.5">
-      <span className="text-[var(--text-tertiary)] opacity-70" aria-label="Sin dato">—</span>
-      <InfoTip title={titulo} what={motivo} ariaLabel={`Por qué «${titulo}» no tiene dato`} />
-    </span>
-  );
-}
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -163,35 +152,64 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
   const periodo = describeRange(dateRange);
   const hayCompras = data.totalCompras !== 0 || data.cantidadOrdenes > 0;
   const plural = (n: number, una: string, varias: string) => `${cantidad(n)} ${n === 1 ? una : varias}`;
+  // Sin dato no ocupa una tarjeta con «—» (2026-10-29): va en la línea de abajo.
+  const hayProveedores = data.proveedoresActivos > 0;
+  const nHero = 1 + (hayCompras ? 2 : 0) + (hayProveedores ? 1 : 0);
+  const sinDatoHero = [
+    ...(hayCompras
+      ? []
+      : [
+          { label: "Compraste", hint: `No registraste compras ${periodo}.` },
+          { label: "Órdenes", hint: `Ninguna orden ${periodo}.` },
+        ]),
+    ...(hayProveedores
+      ? []
+      : [
+          {
+            label: "Proveedores",
+            hint: `Ningún proveedor te vendió ${periodo} (tienes ${plural(data.totalProveedores, "registrado", "registrados")}).`,
+          },
+        ]),
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Fila héroe: cuánto compraste, cuántas órdenes, a cuántos, cuánto debes. Sin dato = «—» con ⓘ.
+    <div className="space-y-3">
+      {/* Fila héroe: cuánto compraste, cuántas órdenes, a cuántos, cuánto debes. Sin dato = línea «Sin dato» con ⓘ.
           Sin sparkline: repetía «Compras por día» y, escalada de mínimo a máximo, un 3 % parecía un salto. */}
-      <div className={KPI_GRID_4}>
-        <StatCard
-          label="Compraste"
-          value={hayCompras ? soles(data.totalCompras) : <SinDato titulo="Compraste" motivo={`No registraste compras ${periodo}.`} />}
-          subValue={hayCompras ? periodo : undefined}
-          icon={DollarSign}
-          delta={hayCompras ? data.dCompras : null}
-          deltaLabel={data.dCompras != null ? "vs antes" : undefined}
-          deltaPolarity="neutral"
-        />
-        <StatCard
-          label="Órdenes"
-          value={hayCompras ? cantidad(data.cantidadOrdenes) : <SinDato titulo="Órdenes" motivo={`Ninguna orden ${periodo}.`} />}
-          subValue={hayCompras ? `${soles(data.promedioOrden)} en promedio` : undefined}
-          icon={ShoppingCart}
-        />
-        <StatCard
-          label="Proveedores"
-          value={data.proveedoresActivos > 0 ? cantidad(data.proveedoresActivos) : <SinDato titulo="Proveedores" motivo={`Ningún proveedor te vendió ${periodo}.`} />}
-          subValue={data.proveedoresActivos > 0 ? `te vendieron ${periodo}` : plural(data.totalProveedores, "registrado", "registrados")}
-          icon={Truck}
-        />
+      <div className={nHero >= 4 ? KPI_GRID_4 : nHero === 3 ? "grid grid-cols-2 gap-3 lg:grid-cols-3 max-lg:[&>*:last-child]:col-span-2" : "grid grid-cols-2 gap-3"}>
+        {hayCompras && (
+          <>
+            <StatCard
+              density="compact"
+              label="Compraste"
+              value={soles(data.totalCompras)}
+              subValue={periodo}
+              icon={DollarSign}
+              delta={data.dCompras}
+              deltaLabel={data.dCompras != null ? "vs antes" : undefined}
+              deltaPolarity="neutral"
+            />
+            <StatCard
+              density="compact"
+              label="Órdenes"
+              value={cantidad(data.cantidadOrdenes)}
+              subValue={`${soles(data.promedioOrden)} en promedio`}
+              icon={ShoppingCart}
+            />
+          </>
+        )}
+        {hayProveedores && (
+          <StatCard
+            density="compact"
+            label="Proveedores"
+            value={cantidad(data.proveedoresActivos)}
+            subValue={`te vendieron ${periodo}`}
+            icon={Truck}
+          />
+        )}
         {/* El cero acá es la noticia («Nada»), no un relleno. */}
         <StatCard
+          density="compact"
           label="Por pagar"
           value={data.deudaPendiente > 0 ? soles(data.deudaPendiente) : "Nada"}
           subValue={
@@ -205,6 +223,7 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
           emphasis={data.deudaPendiente > 0 ? (data.cuentasVencidas > 0 ? "error" : "warning") : "neutral"}
         />
       </div>
+      {sinDatoHero.length > 0 && <LineaSinDato kpis={sinDatoHero} className="-mt-1" />}
 
       {/* Lo que pide trabajo, en una línea (`BarraDeuda`): sólo si hay cuentas por pagar.
           Sin `href`: las cuentas por pagar viven en un sub-tab de Facturación cuyo

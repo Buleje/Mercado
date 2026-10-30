@@ -287,5 +287,5 @@ export default function ComprasCharts({ data, periodo }: { data: ComprasData; pe
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="compras-base-v2" layout="column" gap={1.5} />;
+  return <DraggableSections items={sections} storageKey="compras-base-v2" layout="column" />;
 }

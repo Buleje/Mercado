@@ -669,7 +669,7 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
 
   return (
     <AltoPropioEnUnaColumna>
-      <DraggableSections items={sections} storageKey="inventario-advanced-order" layout="grid" gap={4} minColumnWidth="22rem" />
+      <DraggableSections items={sections} storageKey="inventario-advanced-order" layout="grid" minColumnWidth="22rem" />
     </AltoPropioEnUnaColumna>
   );
 });

@@ -208,7 +208,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
 
   const periodo = describeRange(dateRange);
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <CajaResumen data={data} periodo={periodo} />
       <CajaCharts data={data} periodo={periodo} />
       <CajaAdvancedCharts />

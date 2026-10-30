@@ -307,5 +307,5 @@ export default function CajaCharts({ data, periodo }: { data: CajaData; periodo:
 
   // Columna, no grilla: la grilla iguala TODAS las filas a la más alta
   // (gridAutoRows 1fr) y dejaba ~200 px en blanco sobre «Mes a mes» y «Por hora».
-  return <DraggableSections items={sections} storageKey="caja-base-order" layout="column" gap={1} />;
+  return <DraggableSections items={sections} storageKey="caja-base-order" layout="column" />;
 }
