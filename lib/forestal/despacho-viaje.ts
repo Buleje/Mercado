@@ -11,6 +11,7 @@
  * Sin servidor ni base: lo usan la DB class (que decide y escribe) y la
  * pantalla (que sólo previsualiza; el total lo vuelve a calcular el backend).
  */
+import { mismoNumeroSunat } from "@/lib/ventas/comprobante-sunat";
 import { leerPlaca } from "./placa-peru";
 import { PT_POR_M3 } from "./cubicacion";
 
@@ -41,9 +42,47 @@ export function diaCorto(dia: string): string {
   return d && m ? `${d}-${m}` : dia;
 }
 
-/** La placa del camión anotada en la GTF, normalizada para comparar; null si no hay. */
-export function placaDeDespacho(gtfDatos: unknown): string | null {
+/**
+ * Los datos de la VENTA del viaje: van en `gtfDatos.ventaViaje`, FUERA de las
+ * casillas impresas. `leerGtfDatos()` los descarta (su schema no los conoce),
+ * así que poner el precio o la placa del viaje no cambia la GTF en el papel:
+ * una guía emitida no se edita (ADR-374) y el comprobante impreso (casillas
+ * 20-21) y la GRE (casilla 29) siguen como estaban.
+ */
+export const CLAVE_VENTA_VIAJE = "ventaViaje";
+export interface VentaDelViaje {
+  /** La placa que el dueño escribió para agrupar el viaje (la GTF no la tenía). */
+  placa?: string;
+  comprobante?: { tipo: "factura" | "boleta"; numero: string };
+  liquidacion?: number;
+}
+export function ventaDelViaje(gtfDatos: unknown): VentaDelViaje {
+  const v = objeto(objeto(gtfDatos)[CLAVE_VENTA_VIAJE]);
+  const c = objeto(v.comprobante);
+  const tipo = c.tipo === "factura" || c.tipo === "boleta" ? c.tipo : null;
+  const numero = textoDe(c.numero);
+  const out: VentaDelViaje = {};
+  if (textoDe(v.placa)) out.placa = textoDe(v.placa);
+  if (tipo && numero) out.comprobante = { tipo, numero };
+  if (typeof v.liquidacion === "number" && Number.isFinite(v.liquidacion)) out.liquidacion = v.liquidacion;
+  return out;
+}
+
+/** La placa impresa en la GTF (casilla 31), normalizada; null si no hay. */
+export function placaImpresa(gtfDatos: unknown): string | null {
   const l = leerPlaca(textoDe(objeto(objeto(gtfDatos).vehiculo).placa));
+  return l.estado === "vacia" ? null : l.normalizada;
+}
+
+/**
+ * La placa del camión para agrupar el viaje: la impresa en la GTF o, si no
+ * tiene, la que el dueño escribió para el viaje (`ventaViaje.placa`); null si
+ * no hay ninguna.
+ */
+export function placaDeDespacho(gtfDatos: unknown): string | null {
+  const impresa = placaImpresa(gtfDatos);
+  if (impresa) return impresa;
+  const l = leerPlaca(ventaDelViaje(gtfDatos).placa ?? "");
   return l.estado === "vacia" ? null : l.normalizada;
 }
 
@@ -72,34 +111,135 @@ export function destinatarioDeDespacho(l: Pick<LineaDeViaje, "destino" | "gtfDat
   return { doc, nombre: nombre || null };
 }
 
-export type MismoViaje = { mismo: true } | { mismo: false; motivo: string };
+export type Compatibles = { ok: true } | { ok: false; motivo: string };
+
+/** ¿Mismo destinatario? true / false / null (no se sabe: a alguna le falta). El documento manda sobre el nombre. */
+function mismoDestinatario(a: LineaDeViaje, b: LineaDeViaje): boolean | null {
+  const destA = destinatarioDeDespacho(a);
+  const destB = destinatarioDeDespacho(b);
+  // «PAC & JAL» y «Pac y Jal SAC» con el mismo RUC son uno.
+  if (destA.doc && destB.doc) return destA.doc === destB.doc;
+  if (destA.nombre && destB.nombre) return destA.nombre === destB.nombre;
+  return null;
+}
 
 /**
- * ¿Las dos líneas salieron en el mismo camión? Mismo día y, además, la misma
- * placa o el mismo destinatario (una GRE lleva un solo punto de llegada). Una
- * placa o un destinatario DISTINTO lo descarta aunque lo otro coincida. Sin
- * placa ni destinatario en ninguna de las dos no hay cómo saberlo: no es el
- * mismo (ante la duda, la GRE repetida sigue siendo un tipeo).
+ * ¿Pueden ir las dos líneas en el MISMO viaje (una GRE)? Mismo día, mismo
+ * destinatario (una GRE lleva un solo punto de llegada) y sin dos placas
+ * distintas. Es un PAR: un grupo es un viaje sólo si TODOS sus pares lo son
+ * (`validarGrupoDeViaje`); comparar cada línea sólo con la abierta juntaba a
+ * dos camiones a través de una línea sin placa.
+ *
+ * Sin placa no hay cómo probar que es el mismo camión: compatible no es
+ * «probado» (`mismoCamionProbado`), y por eso el grupo lo confirma el dueño.
  */
-export function mismoViaje(a: LineaDeViaje, b: LineaDeViaje): MismoViaje {
+export function compatiblesEnViaje(a: LineaDeViaje, b: LineaDeViaje): Compatibles {
   const diaA = diaDeDespacho(a.entryDate);
   const diaB = diaDeDespacho(b.entryDate);
-  if (!diaA || diaA !== diaB) return { mismo: false, motivo: `salió otro día (${diaCorto(diaB)})` };
+  if (!diaA || diaA !== diaB) return { ok: false, motivo: `salió otro día (${diaCorto(diaB)})` };
 
   const placaA = placaDeDespacho(a.gtfDatos);
   const placaB = placaDeDespacho(b.gtfDatos);
-  if (placaA && placaB && placaA !== placaB) return { mismo: false, motivo: `otro camión (placa ${placaB})` };
+  if (placaA && placaB && placaA !== placaB) return { ok: false, motivo: `otro camión (placa ${placaB})` };
 
-  const destA = destinatarioDeDespacho(a);
-  const destB = destinatarioDeDespacho(b);
-  const docIgual = destA.doc && destB.doc ? destA.doc === destB.doc : null;
-  const nombreIgual = destA.nombre && destB.nombre ? destA.nombre === destB.nombre : null;
-  // El documento manda sobre el nombre («PAC & JAL» y «Pac y Jal SAC» con el mismo RUC son uno).
-  const destIgual = docIgual ?? nombreIgual;
-  if (destIgual === false) return { mismo: false, motivo: "va a otro destinatario" };
+  const dest = mismoDestinatario(a, b);
+  if (dest === false) return { ok: false, motivo: "va a otro destinatario" };
+  // Sin destinatario en alguna, sólo la misma placa en las dos las junta.
+  if (dest === null && !(placaA && placaA === placaB)) return { ok: false, motivo: "no tiene destinatario para saber si es el mismo viaje" };
+  return { ok: true };
+}
 
-  if ((placaA && placaA === placaB) || destIgual === true) return { mismo: true };
-  return { mismo: false, motivo: "no tiene placa ni destinatario para saber si es el mismo camión" };
+/** Compatibles Y con la misma placa en las dos: el mismo camión sin que nadie lo confirme. */
+export function mismoCamionProbado(a: LineaDeViaje, b: LineaDeViaje): boolean {
+  const placa = placaDeDespacho(a.gtfDatos);
+  return Boolean(placa) && placa === placaDeDespacho(b.gtfDatos) && compatiblesEnViaje(a, b).ok;
+}
+
+/** Lo mínimo para nombrar una línea en un aviso. */
+export type LineaDeGrupo = LineaDeViaje & { id: string; lineNo: number };
+
+/**
+ * ¿El grupo confirmado es UN viaje? Todos los pares compatibles. El primer par
+ * que no lo es se devuelve con su motivo («#3 y #1: otro camión (placa XYZ)»).
+ */
+export function validarGrupoDeViaje(filas: readonly LineaDeGrupo[]): Compatibles {
+  const orden = [...filas].sort((x, y) => x.lineNo - y.lineNo);
+  for (let i = 0; i < orden.length; i++) {
+    for (let j = i + 1; j < orden.length; j++) {
+      const c = compatiblesEnViaje(orden[i], orden[j]);
+      if (!c.ok) return { ok: false, motivo: `#${orden[j].lineNo} y #${orden[i].lineNo}: ${c.motivo}` };
+    }
+  }
+  return { ok: true };
+}
+
+/** Una línea candidata al viaje y si va marcada por defecto. */
+export interface CandidataDeViaje {
+  id: string;
+  /** Compatible con la línea abierta. */
+  compatible: boolean;
+  /** Marcada por defecto: compatible con la abierta Y con todas las demás compatibles. */
+  marcada: boolean;
+  /** Por qué no va (o no va marcada); null si va. */
+  motivo: string | null;
+}
+
+/**
+ * Las líneas que PODRÍAN ser el viaje de `base`: las del mismo día que
+ * comparten destinatario o placa con ella (la propia, primera y marcada). Se
+ * marcan por defecto sólo las que no chocan con ninguna otra: con A placa ABC,
+ * B sin placa y C placa XYZ, abriendo B ni A ni C van marcadas (no pueden ir
+ * juntas y no hay cómo saber cuál es). El dueño confirma la lista y el
+ * servidor vuelve a validar todos los pares.
+ */
+export function posibleViaje<T extends LineaDeGrupo>(
+  base: T,
+  delDia: readonly T[],
+): { filas: T[]; candidatas: Map<string, CandidataDeViaje>; choques: { a: string; b: string; motivo: string }[] } {
+  const dia = diaDeDespacho(base.entryDate);
+  const placaBase = placaDeDespacho(base.gtfDatos);
+  const relacionadas = delDia.filter((c) => {
+    if (c.id === base.id || diaDeDespacho(c.entryDate) !== dia) return false;
+    const placa = placaDeDespacho(c.gtfDatos);
+    return mismoDestinatario(base, c) === true || (placaBase != null && placa === placaBase);
+  });
+  const compatibles = relacionadas.filter((c) => compatiblesEnViaje(base, c).ok);
+  const candidatas = new Map<string, CandidataDeViaje>([[base.id, { id: base.id, compatible: true, marcada: true, motivo: null }]]);
+  for (const c of relacionadas) {
+    const conBase = compatiblesEnViaje(base, c);
+    if (!conBase.ok) {
+      candidatas.set(c.id, { id: c.id, compatible: false, marcada: false, motivo: conBase.motivo });
+      continue;
+    }
+    const choque = compatibles.find((o) => o.id !== c.id && !compatiblesEnViaje(c, o).ok);
+    candidatas.set(c.id, {
+      id: c.id,
+      compatible: true,
+      marcada: !choque,
+      motivo: choque ? `no puede ir con la #${choque.lineNo}: ${(compatiblesEnViaje(c, choque) as { motivo: string }).motivo}` : null,
+    });
+  }
+  const filas = [base, ...relacionadas].sort((x, y) => x.lineNo - y.lineNo);
+  // Los pares que no pueden ir juntos aunque cada uno sí vaya con la abierta.
+  const choques: { a: string; b: string; motivo: string }[] = [];
+  const orden = [...compatibles].sort((x, y) => x.lineNo - y.lineNo);
+  for (let i = 0; i < orden.length; i++) {
+    for (let j = i + 1; j < orden.length; j++) {
+      const c = compatiblesEnViaje(orden[i], orden[j]);
+      if (!c.ok) choques.push({ a: orden[i].id, b: orden[j].id, motivo: `#${orden[j].lineNo} y #${orden[i].lineNo}: ${c.motivo}` });
+    }
+  }
+  return { filas, candidatas, choques };
+}
+
+/** Las GRE distintas ya anotadas en el grupo (la misma escrita de dos formas cuenta una). */
+export function gresDistintas(gres: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const g of gres) {
+    const t = g.trim();
+    if (t && !out.some((o) => mismoNumeroSunat(o, t))) out.push(t);
+  }
+  return out;
 }
 
 // ─── Volumen de una línea ────────────────────────────────────────────────────
@@ -163,7 +303,8 @@ export type RepartoViaje =
       /** Las líneas que no recibieron precio por no tener volumen. */
       sinVolumen: number[];
     }
-  | { ok: false; motivo: "sin_lineas" | "total_invalido" | "sin_volumen" };
+  /** `monto_muy_chico`: alguna línea con volumen quedaría en S/ 0,00 (nunca 0: o recibe o no va). */
+  | { ok: false; motivo: "sin_lineas" | "total_invalido" | "sin_volumen" | "monto_muy_chico" };
 
 const ESCALA_VOLUMEN = 10_000; // 4 decimales: los del libro (Decimal 14,4)
 const aCentimos = (n: number) => Math.round(Number((n * 100).toFixed(6)));
@@ -174,7 +315,9 @@ const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
  * por PT si TODAS las que tienen volumen tienen su PT; si no, por m³ (las dos
  * unidades no se mezclan en un mismo reparto). Cada línea redondea a céntimos y
  * la ÚLTIMA (por N.º de línea) se lleva el residuo, así la suma es el total
- * exacto. La línea sin volumen no recibe: `monto: null`, nunca 0.
+ * exacto. La línea sin volumen no recibe: `monto: null`, nunca 0; y si el
+ * total es tan chico que a alguna con volumen le tocaría 0,00, no se reparte
+ * (`monto_muy_chico`).
  */
 export function repartirPrecioViaje(total: number, lineas: readonly LineaConVolumen[]): RepartoViaje {
   if (lineas.length === 0) return { ok: false, motivo: "sin_lineas" };
@@ -221,6 +364,8 @@ export function repartirPrecioViaje(total: number, lineas: readonly LineaConVolu
   // Con muchas líneas y una última diminuta, el redondeo de las otras podría
   // dejarla negativa: con piso el residuo siempre es ≥ 0.
   if ((centimos.get(ultima) as bigint) < CERO) centimos = partir(false);
+  // Un céntimo entre dos líneas deja una en 0,00: eso no es un precio.
+  if ([...centimos.values()].some((c) => c <= CERO)) return { ok: false, motivo: "monto_muy_chico" };
 
   const ptTotal = vol.reduce((t, v) => t + (v.pt ?? (v.m3 != null ? v.m3 * PT_POR_M3 : 0)), 0);
   const m3s = vol.filter((v) => v.m3 != null);
@@ -262,15 +407,25 @@ export interface LineaDelViaje {
   moneda: string;
   /** GRE anotada en su guía ("" = ninguna). */
   gre: string;
-  /** N.º de factura/boleta anotado en su guía ("" = ninguno). */
+  /** N.º de factura/boleta de la venta del viaje (`ventaViaje`, no la casilla impresa; "" = ninguno). */
   comprobante: string;
+  /** Placa para agrupar: la impresa o la escrita para el viaje; null = sin placa. */
+  placa: string | null;
+  /** Compatible con la línea abierta (si no, `motivo` dice por qué). */
+  compatible: boolean;
+  /** Marcada por defecto en la lista del viaje. */
+  marcada: boolean;
+  motivo: string | null;
 }
 export interface ViajeDeDespacho {
   /** Día de salida (AAAA-MM-DD, UTC: es date-only). */
   dia: string;
-  /** Las GTF del viaje, sin repetir, en orden de línea. */
+  /** Las GTF de las líneas marcadas por defecto, sin repetir, en orden de línea. */
   guias: string[];
+  /** La abierta primero en `lineas` por N.º; incluye las que no van (con su motivo). */
   lineas: LineaDelViaje[];
+  /** Pares de líneas compatibles con la abierta que NO pueden ir juntas: la pantalla avisa al marcarlas. */
+  choques: { a: string; b: string; motivo: string }[];
 }
 /** Cómo quedó cada línea del viaje al anotar la GRE en todas. */
 export type GreEnLinea = { id: string; lineNo: number; gtfNumber: string | null } & (
@@ -297,16 +452,42 @@ export function diferenciaConLiquidacion(total: number, liquidacion: number): { 
 
 /**
  * Un monto en soles tal como lo tipea el dueño: «26234.67», «26,234.67»,
- * «26.234,67», «S/ 1 713,62». El último separador seguido de 1-2 dígitos es
- * el decimal; los demás son miles. Vacío o ilegible = null (nunca 0).
+ * «26.234,67», «1.713,62», «S/ 1 713,62». Lo que viene después del ÚLTIMO
+ * separador decide:
+ * - 1 o 2 dígitos: son los céntimos; lo de antes, miles en grupos de 3.
+ * - 3 dígitos: es ambiguo («713.625» ¿713 mil o 713 con 625?; «1,234.567»):
+ *   sólo se acepta si el MISMO separador se repite («1.000.000» = un millón).
+ *   Si no, null: la pantalla pide escribirlo sin separador de miles.
+ * Vacío, ilegible o 0 = null (nunca 0).
  */
 export function leerSoles(texto: string): number | null {
   const t = texto.replace(/s\/|\s/gi, "");
   if (!/^\d[\d.,]*$/.test(t)) return null;
-  const dec = /[.,](\d{1,2})$/.exec(t);
-  const entero = dec ? t.slice(0, -dec[0].length) : t;
-  // Miles en grupos de 3 («26,234» / «1.000.000») o el número pelado.
+  const dec = /([.,])(\d{1,2})$/.exec(t);
+  let entero: string;
+  let centimos = "0";
+  if (dec) {
+    entero = t.slice(0, -dec[0].length);
+    centimos = dec[2];
+    // Los miles usan el OTRO signo: «26.234,67» sí, «26,234,67» no.
+    const miles = entero.match(/[.,]/g) ?? [];
+    if (miles.some((m) => m === dec[1])) return null;
+  } else {
+    entero = t;
+    const seps = entero.match(/[.,]/g) ?? [];
+    // Sin decimales, sólo miles repetidos con un mismo signo («1.000.000»); uno solo es ambiguo.
+    if (seps.length === 1 || new Set(seps).size > 1) return null;
+  }
   if (!/^(?:\d+|\d{1,3}(?:[.,]\d{3})+)$/.test(entero)) return null;
-  const n = Number(`${entero.replace(/[.,]/g, "")}.${dec ? dec[1] : "0"}`);
+  if (new Set(entero.match(/[.,]/g) ?? []).size > 1) return null;
+  const n = Number(`${entero.replace(/[.,]/g, "")}.${centimos}`);
   return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
+}
+
+/** Por qué `leerSoles` no leyó el monto, en palabras del dueño (null = se leyó o está vacío). */
+export function avisoDeSoles(texto: string): string | null {
+  if (!texto.trim() || leerSoles(texto) != null) return null;
+  return /[.,]\d{3,}\s*$/.test(texto.trim())
+    ? "No se sabe si es miles o céntimos: escríbelo sin separador de miles, por ejemplo 26234.67."
+    : "Escribe el monto en soles, por ejemplo 26234.67.";
 }

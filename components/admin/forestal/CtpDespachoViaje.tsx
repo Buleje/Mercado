@@ -9,18 +9,22 @@
  * Aquí se anota la GRE una vez para todo el viaje y se le pone el precio,
  * que el servidor reparte en cada línea por volumen.
  *
- * El viaje lo decide el servidor (`ForestCtpDespachoDB.viajeDe`): mismo día
- * y misma placa o mismo destinatario.
+ * El servidor PROPONE el viaje (`ForestCtpDespachoDB.viajeDe`: mismo día y
+ * mismo cliente, sin dos placas distintas) y el dueño lo confirma con las
+ * casillas (`CtpDespachoViajeLineas`): la GRE y el precio van sólo a las
+ * líneas marcadas, y el servidor vuelve a validar todos los pares.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Banknote, Loader2, Truck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatNumber } from "@/lib/format";
-import { diaCorto, gtfCorta, type GreEnLinea, type ViajeDeDespacho } from "@/lib/forestal/despacho-viaje";
+import { diaCorto, gresDistintas, gtfCorta, type GreEnLinea, type ViajeDeDespacho } from "@/lib/forestal/despacho-viaje";
+import { mismoNumeroSunat } from "@/lib/ventas/comprobante-sunat";
 import { Btn, I } from "./ctp-shared";
+import CtpDespachoViajeLineas, { bloqueoDelViaje } from "./CtpDespachoViajeLineas";
 import CtpDespachoViajePrecioModal from "./CtpDespachoViajePrecioModal";
 
 /** «S/» y la cifra nunca se parten en dos renglones (espacio duro). */
@@ -37,12 +41,14 @@ function resumenGre(numero: string, lineas: GreEnLinea[] | undefined): string {
   return `${base} No se tocó ${lista(otras.map((l) => `#${l.lineNo}${l.estado === "tenia_otra" ? ` (ya tiene ${l.actual})` : ""}`))}.`;
 }
 
-export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId: string; gtfNumber: string | null }) {
+/** `gtfNumber` queda por compatibilidad con quien la monta: las GTF salen de las líneas marcadas. */
+export default function CtpDespachoViaje({ despachoId }: { despachoId: string; gtfNumber?: string | null }) {
   const [viaje, setViaje] = useState<ViajeDeDespacho | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gre, setGre] = useState("");
-  const [todoElViaje, setTodoElViaje] = useState(true);
+  /** Las líneas confirmadas como el viaje: al abrir, las que el servidor marcó; al recargar, lo que eligió el dueño. */
+  const [marcadas, setMarcadas] = useState<Set<string> | null>(null);
   const [anotando, setAnotando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [precioAbierto, setPrecioAbierto] = useState(false);
@@ -53,7 +59,13 @@ export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId
       const r = await fetch(`/api/admin/forestal/ctp?viaje=${encodeURIComponent(despachoId)}`, { credentials: "include" });
       const json = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(json.message ?? `HTTP ${r.status}`);
-      setViaje(json.viaje ?? null);
+      const v: ViajeDeDespacho | null = json.viaje ?? null;
+      setViaje(v);
+      setMarcadas((antes) => {
+        if (!v) return null;
+        const ids = new Set(v.lineas.map((l) => l.id));
+        return antes ? new Set([...antes].filter((id) => ids.has(id))) : new Set(v.lineas.filter((l) => l.marcada).map((l) => l.id));
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -62,6 +74,22 @@ export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId
   }, [despachoId]);
   useEffect(() => { void cargar(); }, [cargar]);
 
+  /** El viaje tal como lo confirmó el dueño: sólo las líneas marcadas y sus GTF. */
+  const elegido = useMemo((): ViajeDeDespacho | null => {
+    if (!viaje || !marcadas) return null;
+    const ls = viaje.lineas.filter((l) => marcadas.has(l.id));
+    const guias = [...new Set(ls.map((l) => l.gtfNumber?.trim()).filter((g): g is string => Boolean(g)))];
+    return { ...viaje, lineas: ls, guias };
+  }, [viaje, marcadas]);
+  const marcar = useCallback((id: string, si: boolean) => {
+    setMarcadas((antes) => {
+      const n = new Set(antes ?? []);
+      if (si) n.add(id);
+      else n.delete(id);
+      return n;
+    });
+  }, []);
+
   if (cargando) {
     return (
       <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
@@ -69,17 +97,18 @@ export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId
       </p>
     );
   }
-  if (!viaje) return error ? <p className="text-sm font-bold text-[var(--data-error-700)]">{error}</p> : null;
+  if (!viaje || !marcadas || !elegido) return error ? <p className="text-sm font-bold text-[var(--data-error-700)]">{error}</p> : null;
 
-  const propia = viaje.lineas.find((l) => l.id === despachoId);
-  const otrasGuias = viaje.guias.filter((g) => g !== (gtfNumber ?? "").trim());
-  const otrasLineas = viaje.lineas.length - 1;
-  const conGre = viaje.lineas.filter((l) => l.gre).length;
-  const conPrecio = viaje.lineas.filter((l) => l.valorVenta != null);
+  const lineas = elegido.lineas;
+  const otras = lineas.map((l) => l.id).filter((id) => id !== despachoId);
+  const bloqueo = bloqueoDelViaje(viaje, marcadas);
+  const conGre = lineas.filter((l) => l.gre).length;
+  const conPrecio = lineas.filter((l) => l.valorVenta != null);
   const totalPuesto = conPrecio.reduce((t, l) => t + Math.round((l.valorVenta ?? 0) * 100), 0) / 100;
-  const ptTotal = viaje.lineas.reduce((t, l) => t + (l.pt ?? 0), 0);
-  const m3Total = viaje.lineas.reduce((t, l) => t + (l.m3 ?? 0), 0);
-  const greActual = propia?.gre ?? "";
+  const ptTotal = lineas.reduce((t, l) => t + (l.pt ?? 0), 0);
+  const m3Total = lineas.reduce((t, l) => t + (l.m3 ?? 0), 0);
+  const greActual = gresDistintas(lineas.map((l) => l.gre))[0] ?? "";
+  const comprobante = lineas.find((l) => l.comprobante)?.comprobante ?? "";
 
   async function anotar() {
     const numero = gre.trim();
@@ -92,7 +121,14 @@ export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId
         method: "PATCH",
         credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ id: despachoId, action: "guia_remision", numero, todoElViaje: todoElViaje && otrasLineas > 0 }),
+        // Otra GRE ya anotada en el viaje: cambiarla es reemplazar (admin y dueño).
+        body: JSON.stringify({
+          id: despachoId,
+          action: "guia_remision",
+          numero,
+          viaje: otras,
+          ...(greActual && !mismoNumeroSunat(greActual, numero) ? { reemplazar: true } : {}),
+        }),
       });
       const json = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(json.message ?? `HTTP ${r.status}`);
@@ -112,23 +148,31 @@ export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId
         <Truck className="h-4 w-4 text-[var(--text-tertiary)]" />
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Viaje del {diaCorto(viaje.dia)}</CardTitle>
         <InfoTip
-          what="Las salidas que van en el mismo camión: mismo día y misma placa, o el mismo cliente."
-          affects="La guía de remisión y el precio se ponen una vez y quedan en todas las líneas del viaje."
+          what="Las salidas que van en el mismo camión: mismo día y mismo cliente, sin dos placas distintas. Marca las que van."
+          affects="La guía de remisión y el precio se ponen una vez y quedan en las líneas marcadas."
           example="GTF 69, 70 y 71 del 28-10 van con una sola guía de remisión, EG07-189."
         />
       </div>
       <p className="text-sm text-[var(--text-secondary)]">
-        {viaje.guias.length ? `GTF ${lista(viaje.guias.map(gtfCorta))}` : "Sin GTF"} · {viaje.lineas.length} {viaje.lineas.length === 1 ? "línea" : "líneas"}
+        {elegido.guias.length ? `GTF ${lista(elegido.guias.map(gtfCorta))}` : "Sin GTF"} · {lineas.length} {lineas.length === 1 ? "línea" : "líneas"}
         {ptTotal > 0 && <> · <span className="font-mono tabular-nums">{formatNumber(ptTotal, 2)}</span> PT</>}
         {m3Total > 0 && <> · <span className="font-mono tabular-nums">{formatNumber(m3Total, 3)}</span> m³</>}
       </p>
+
+      <CtpDespachoViajeLineas
+        despachoId={despachoId}
+        viaje={viaje}
+        marcadas={marcadas}
+        onMarcar={marcar}
+        onPlacaGuardada={(texto) => { setAviso(texto); void cargar(); }}
+      />
 
       {/* Guía de remisión */}
       <div className="space-y-2 border-t border-[var(--rule-soft)] pt-3">
         <p className="text-sm text-[var(--text-secondary)]">
           Guía de remisión:{" "}
           {greActual ? <strong className="font-mono text-[var(--text-primary)]">{greActual}</strong> : <span className="text-[var(--text-tertiary)]">sin anotar</span>}
-          {viaje.lineas.length > 1 && <span className="text-[var(--text-tertiary)]"> · en {conGre} de {viaje.lineas.length} líneas</span>}
+          {lineas.length > 1 && <span className="text-[var(--text-tertiary)]"> · en {conGre} de {lineas.length} líneas</span>}
         </p>
         <div className="flex gap-2">
           <input
@@ -140,21 +184,11 @@ export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId
             aria-label="N.º de la guía de remisión"
             maxLength={24}
           />
-          <Btn variant="primary" disabled={anotando || !gre.trim()} onClick={() => void anotar()}>
+          <Btn variant="primary" disabled={anotando || !gre.trim() || Boolean(bloqueo)} onClick={() => void anotar()}>
             {anotando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Anotar
+            {greActual ? "Cambiar" : "Anotar"}
           </Btn>
         </div>
-        {otrasLineas > 0 && (
-          <label className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-            <input type="checkbox" className="mt-0.5 h-4 w-4" checked={todoElViaje} onChange={(e) => setTodoElViaje(e.target.checked)} />
-            <span>
-              {otrasGuias.length
-                ? `Anotar también en ${otrasGuias.length === 1 ? "la otra guía" : `las otras ${otrasGuias.length} guías`} de este viaje (GTF ${lista(otrasGuias.map(gtfCorta))})`
-                : `Anotar también en ${otrasLineas === 1 ? "la otra línea" : `las otras ${otrasLineas} líneas`} de esta guía`}
-            </span>
-          </label>
-        )}
       </div>
 
       {/* Precio del viaje */}
@@ -164,15 +198,15 @@ export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId
           {conPrecio.length ? (
             <>
               Precio: <strong className="font-mono tabular-nums text-[var(--text-primary)]">{soles(totalPuesto)}</strong>
-              {conPrecio.length < viaje.lineas.length && <> en {conPrecio.length} de {viaje.lineas.length} líneas</>}
+              {conPrecio.length < lineas.length && <> en {conPrecio.length} de {lineas.length} líneas</>}
               {ptTotal > 0 && <> · {soles(totalPuesto / ptTotal)} por PT</>}
-              {propia?.comprobante && <> · {propia.comprobante}</>}
+              {comprobante && <> · {comprobante}</>}
             </>
           ) : (
             <span className="text-[var(--text-tertiary)]">Sin precio de venta</span>
           )}
         </p>
-        <Btn variant="secondary" size="sm" onClick={() => setPrecioAbierto(true)}>
+        <Btn variant="secondary" size="sm" disabled={Boolean(bloqueo)} onClick={() => setPrecioAbierto(true)}>
           {conPrecio.length ? "Cambiar el precio" : "Poner precio a este viaje"}
         </Btn>
       </div>
@@ -183,7 +217,8 @@ export default function CtpDespachoViaje({ despachoId, gtfNumber }: { despachoId
       {precioAbierto && (
         <CtpDespachoViajePrecioModal
           despachoId={despachoId}
-          viaje={viaje}
+          viaje={elegido}
+          otras={otras}
           onClose={() => setPrecioAbierto(false)}
           onGuardado={(texto) => { setAviso(texto); setPrecioAbierto(false); void cargar(); }}
         />

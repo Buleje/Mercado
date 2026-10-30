@@ -350,7 +350,7 @@ export const herramientas = [
     grupo: "ctp",
     soloEn: ["forestal"],
     tipo: "escritura",
-    descripcion: "Anota el N.º de la guía de remisión SUNAT (GRE) emitida en SOL en la GTF de un despacho del libro CTP (PATCH /api/admin/forestal/ctp, action=guia_remision): casilla (25), sin tocar el resto de la guía y aunque la GTF ya tenga número. Series EG07 (portal SOL), EG02, T001/V001 (sistemas propios). Si ya tiene OTRO número responde 409: manda reemplazar:true. quitar:true la borra. todoElViaje:true la anota también en las demás líneas del MISMO viaje (mismo día y misma placa o mismo destinatario: un camión con 3 GTF y una sola GRE); la misma GRE en OTRO viaje responde 409 duplicado con la guía donde ya está. Solo admin/owner. Ej.: {id:\"cm…\", numero:\"EG07-189\", fecha:\"2026-10-30\", todoElViaje:true}.",
+    descripcion: "Anota el N.º de la guía de remisión SUNAT (GRE) emitida en SOL en la GTF de un despacho del libro CTP (PATCH /api/admin/forestal/ctp, action=guia_remision): casilla (25), sin tocar el resto de la guía y aunque la GTF ya tenga número. Series EG07 (portal SOL), EG02, T001/V001 (sistemas propios). Si ya tiene OTRO número responde 409 (cambiarlo es reemplazar:true, sólo admin/dueño). quitar:true la borra. viaje = ids de las OTRAS líneas del mismo camión (un camión con 3 GTF y una sola GRE): primero ctp_ver para ver las del mismo día y cliente y confirmarlas con Brandon; el servidor rechaza el grupo si dos no pueden ir juntas (otro día, otro cliente, dos placas distintas) o si ya tienen dos GRE distintas. Sin placa, la misma GRE en otra GTF sólo se acepta si esa línea va en viaje. Ej.: {id:\"cm…\", numero:\"EG07-189\", fecha:\"2026-10-30\", viaje:[\"cm…\",\"cm…\"]}.",
     entrada: {
       negocio,
       id: idRuta.describe("Id de la línea de despacho (ctp_ver vista=lista, sección despacho)"),
@@ -358,7 +358,11 @@ export const herramientas = [
       fecha: dia.optional().describe("Fecha de emisión de la GRE (queda en el registro de actividad)"),
       reemplazar: z.boolean().optional().describe("Pisar otro N.º ya anotado"),
       quitar: z.boolean().optional().describe("Borrar el N.º anotado"),
-      todoElViaje: z.boolean().optional().describe("Anotarla también en las otras GTF/líneas del mismo viaje"),
+      viaje: z
+        .array(z.string().trim().min(1).max(60))
+        .max(199)
+        .optional()
+        .describe("Ids de las OTRAS líneas del mismo viaje (de ctp_ver), confirmadas con Brandon: la GRE queda en todas"),
     },
     pedido: (a) => ({
       metodo: "PATCH",
@@ -370,7 +374,7 @@ export const herramientas = [
         fecha: a.fecha,
         reemplazar: a.reemplazar,
         quitar: a.quitar,
-        todoElViaje: a.quitar ? undefined : a.todoElViaje,
+        viaje: a.quitar ? undefined : a.viaje,
       }),
     }),
     formatear: (d) => {

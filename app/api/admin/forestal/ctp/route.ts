@@ -188,6 +188,38 @@ const plazoDeReserva = z.coerce
   .nullable()
   .optional();
 
+const enLista = (xs: readonly string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`);
+
+/** Los rechazos del viaje confirmado, en palabras del dueño (los comparten la GRE, el precio y la placa). */
+function rechazoDelViaje(r: { reason: string; motivo?: string; gres?: string[] }): NextResponse | null {
+  if (r.reason === "linea_no_esta") {
+    return NextResponse.json(
+      { error: r.reason, message: "Una de las líneas marcadas ya no está (se anuló o no es de este negocio). Vuelve a abrir el viaje." },
+      { status: 404 },
+    );
+  }
+  if (r.reason === "grupo_incompatible") {
+    return NextResponse.json(
+      { error: r.reason, message: `Las líneas marcadas no pueden ir en un solo viaje: ${r.motivo}. Desmarca la que no va.` },
+      { status: 409 },
+    );
+  }
+  if (r.reason === "gres_distintas") {
+    return NextResponse.json(
+      {
+        error: r.reason,
+        gres: r.gres,
+        message: `Las líneas marcadas tienen guías de remisión distintas (${enLista(r.gres ?? [])}): no son el mismo viaje. Desmarca las que no van.`,
+      },
+      { status: 409 },
+    );
+  }
+  return null;
+}
+
+/** Las líneas de un viaje confirmado: ids, sin repetir lo que no hace falta (tope = lo que lee `?viaje=`). */
+const idsDelViaje = z.array(z.string().trim().min(1).max(60)).max(199);
+
 const patchSchema = z.discriminatedUnion("action", [
   z.object({
     id: z.string().trim().min(1),
@@ -229,8 +261,12 @@ const patchSchema = z.discriminatedUnion("action", [
     fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     reemplazar: z.boolean().optional(),
     quitar: z.boolean().optional(),
-    /** Anotarla también en las demás líneas del mismo viaje (las otras GTF del camión). */
-    todoElViaje: z.boolean().optional(),
+    /**
+     * Las OTRAS líneas que el dueño confirmó como el mismo viaje (ids, de la
+     * lista de `?viaje=`): la GRE va en todas. El servidor vuelve a validar
+     * que todos los pares puedan ir juntos.
+     */
+    viaje: idsDelViaje.optional(),
   }),
   /**
    * «Poner precio a este viaje»: el total en soles se reparte en el valor de
@@ -245,6 +281,18 @@ const patchSchema = z.discriminatedUnion("action", [
     comprobante: z.string().trim().max(24).optional(),
     liquidacion: z.number().positive().max(9_999_999_999.99).nullable().optional(),
     reemplazar: z.boolean().optional(),
+    /** Las otras líneas confirmadas como el viaje (sin esto, el precio va sólo a esta). */
+    viaje: idsDelViaje.optional(),
+  }),
+  /**
+   * La placa del camión para un viaje cuyas GTF no la tienen: queda aparte de
+   * la casilla impresa (la GTF emitida no cambia) y sirve para agrupar.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("placa_viaje"),
+    placa: z.string().trim().min(1).max(12),
+    viaje: idsDelViaje.default([]),
   }),
   /**
    * AMPLIAR una corrida que ya declaró (ADR-361): el lote no sale de la sierra
@@ -1117,26 +1165,36 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
       }
       const opts = { reemplazar: d.reemplazar === true, fecha: d.fecha ?? null, user: auth.username ?? "unknown" };
       const r =
-        d.todoElViaje === true && numero
-          ? await ForestCtpDespachoDB.anotarGuiaRemisionEnViaje(auth.tenantId, d.id, numero, opts)
+        d.viaje && numero
+          ? await ForestCtpDespachoDB.anotarGuiaRemisionEnViaje(auth.tenantId, d.id, numero, { ...opts, viaje: d.viaje })
           : await ForestCtpDespachoDB.anotarGuiaRemision(auth.tenantId, d.id, numero, opts);
       if (!r.ok && r.reason === "ya_tiene") {
+        const donde = r.lineNo ? ` (despacho #${r.lineNo})` : "";
         return NextResponse.json(
-          { error: "ya_tiene_guia_remision", actual: r.actual, message: `La guía ya tiene anotada la guía de remisión ${r.actual}. Para cambiarla manda reemplazar: true.` },
+          {
+            error: "ya_tiene_guia_remision",
+            actual: r.actual,
+            message: `Ya está anotada la guía de remisión ${r.actual}${donde}. Cambiarla lo puede hacer el administrador o el dueño.`,
+          },
           { status: 409 },
         );
       }
       if (!r.ok && r.reason === "duplicado") {
+        const donde = r.otraGtf ? `la GTF ${r.otraGtf} (despacho #${r.otraLinea})` : `el despacho #${r.otraLinea}`;
         return NextResponse.json(
           {
             error: "duplicado",
             otroDespachoId: r.otroDespachoId,
-            message: `La guía de remisión ${numero} ya está en ${r.otraGtf ? `la GTF ${r.otraGtf} (despacho #${r.otraLinea})` : `el despacho #${r.otraLinea}`}, que es de otro viaje: ${r.motivo}. Revisa el número: cada viaje lleva su propia guía de remisión.`,
+            message: r.sinPlaca
+              ? `La guía de remisión ${numero} ya está en ${donde} y sin placa no se sabe si es el mismo camión. Si es el mismo viaje, márcala en la lista del viaje; si no, revisa el número.`
+              : `La guía de remisión ${numero} ya está en ${donde}, que es de otro viaje: ${r.motivo}. Revisa el número: cada viaje lleva su propia guía de remisión.`,
           },
           { status: 409 },
         );
       }
       if (!r.ok) {
+        const viaje = rechazoDelViaje(r);
+        if (viaje) return viaje;
         return NextResponse.json(
           { error: r.reason, message: r.reason === "anulado" ? "El despacho está anulado." : "No se encontró ese despacho." },
           { status: r.reason === "no_despacho" ? 404 : 422 },
@@ -1173,15 +1231,21 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         comprobante,
         liquidacion: d.liquidacion ?? null,
         reemplazar: d.reemplazar === true,
+        viaje: d.viaje ?? [],
         user: auth.username ?? "unknown",
       });
       if (!r.ok) {
+        const viaje = rechazoDelViaje(r);
+        if (viaje) return viaje;
         const soles = (n: number) => `S/ ${formatNumber(n, 2)}`;
+        const nLineas = new Set([d.id, ...(d.viaje ?? [])]).size;
         const [status, message]: [number, string] =
           r.reason === "ya_tiene_precio"
-            ? [409, `El viaje ya tiene precio: ${soles(r.previo)} en ${r.conPrecio} de ${r.lineas} líneas. Para cambiarlo manda reemplazar: true.`]
+            ? [409, `El viaje ya tiene precio: ${soles(r.previo)} en ${r.conPrecio} de ${r.lineas} líneas. Cambiarlo lo puede hacer el administrador o el dueño.`]
             : r.reason === "otro_comprobante"
-              ? [409, `El despacho #${r.lineNo} ya tiene el comprobante ${r.actual}. Para cambiarlo manda reemplazar: true.`]
+              ? [409, `El despacho #${r.lineNo} ya tiene el comprobante ${r.actual}. Cambiarlo lo puede hacer el administrador o el dueño.`]
+              : r.reason === "monto_muy_chico"
+                ? [422, `El monto es muy chico para repartirlo entre ${nLineas} líneas: a alguna le tocaría S/ 0,00.`]
               : r.reason === "cambio"
                 ? [409, "Alguien cambió una línea del viaje mientras tanto. Vuelve a abrirlo y prueba otra vez."]
                 : r.reason === "otra_moneda"
@@ -1211,6 +1275,24 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
                 : `La factura pasa a la liquidación por S/ ${formatNumber(-dif.diferencia, 2)}.`,
         },
       });
+    }
+    if (parsed.data.action === "placa_viaje") {
+      const d = parsed.data;
+      const r = await ForestCtpDespachoDB.anotarPlacaViaje(auth.tenantId, d.id, d.placa, { viaje: d.viaje, user: auth.username ?? "unknown" });
+      if (!r.ok) {
+        const viaje = rechazoDelViaje(r);
+        if (viaje) return viaje;
+        const [status, message]: [number, string] =
+          r.reason === "placa_invalida"
+            ? [400, `La placa no se entiende: ${r.motivo}.`]
+            : r.reason === "otra_placa"
+              ? [409, `El despacho #${r.lineNo} va en otro camión (placa ${r.placa}): desmárcalo si no es de este viaje.`]
+              : r.reason === "cambio"
+                ? [409, "Alguien cambió una línea del viaje mientras tanto. Vuelve a abrirlo y prueba otra vez."]
+                : [404, "No se encontró ese despacho (o está anulado)."];
+        return NextResponse.json({ error: r.reason, message }, { status });
+      }
+      return NextResponse.json({ ok: true, placa: r.placa, anotadas: r.anotadas });
     }
     if (parsed.data.action === "gtf_datos") {
       const r = await ForestCtpDespachoDB.guardarGtfDatos(

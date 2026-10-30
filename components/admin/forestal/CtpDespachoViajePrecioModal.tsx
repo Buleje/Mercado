@@ -18,6 +18,7 @@ import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatNumber } from "@/lib/format";
 import {
+  avisoDeSoles,
   diaCorto,
   diferenciaConLiquidacion,
   gtfCorta,
@@ -25,6 +26,7 @@ import {
   repartirPrecioViaje,
   type ViajeDeDespacho,
 } from "@/lib/forestal/despacho-viaje";
+import { mismoNumeroSunat } from "@/lib/ventas/comprobante-sunat";
 import { Btn, Field, I } from "./ctp-shared";
 
 /** «S/» y la cifra nunca se parten en dos renglones (espacio duro). */
@@ -33,11 +35,15 @@ const soles = (n: number) => `S/\u00a0${formatNumber(n, 2)}`;
 export default function CtpDespachoViajePrecioModal({
   despachoId,
   viaje,
+  otras,
   onClose,
   onGuardado,
 }: {
   despachoId: string;
+  /** Sólo las líneas que el dueño marcó como el viaje. */
   viaje: ViajeDeDespacho;
+  /** Las ids de las otras líneas marcadas: el servidor reparte entre ellas y la abierta. */
+  otras: string[];
   onClose: () => void;
   onGuardado: (aviso: string) => void;
 }) {
@@ -56,8 +62,11 @@ export default function CtpDespachoViajePrecioModal({
   const dif = total != null && liquidacion != null ? diferenciaConLiquidacion(total, liquidacion) : null;
 
   async function guardar() {
-    if (total == null) return setError("Escribe el total de la venta en soles, por ejemplo 26234.67.");
-    if (liquidacionTexto.trim() && liquidacion == null) return setError("El monto de la liquidación no se entiende: escríbelo como 26234.67.");
+    if (total == null) return setError(avisoDeSoles(totalTexto) ?? "Escribe el total de la venta en soles, por ejemplo 26234.67.");
+    if (liquidacionTexto.trim() && liquidacion == null) return setError(`La liquidación: ${avisoDeSoles(liquidacionTexto) ?? "escríbela como 26234.67."}`);
+    const nuevo = comprobante.trim();
+    // Sólo es «cambiar» si había otro número y se escribió uno distinto: borrar el campo no pisa nada.
+    const cambiaComprobante = Boolean(nuevo) && Boolean(comprobantePrevio) && !mismoNumeroSunat(nuevo, comprobantePrevio);
     setGuardando(true);
     setError(null);
     try {
@@ -69,9 +78,10 @@ export default function CtpDespachoViajePrecioModal({
           id: despachoId,
           action: "precio_viaje",
           total,
-          ...(comprobante.trim() ? { comprobante: comprobante.trim() } : {}),
+          ...(nuevo ? { comprobante: nuevo } : {}),
           liquidacion,
-          reemplazar: yaTienePrecio || (Boolean(comprobantePrevio) && comprobante.trim() !== comprobantePrevio),
+          viaje: otras,
+          reemplazar: yaTienePrecio || cambiaComprobante,
         }),
       });
       const json = await r.json().catch(() => ({}));
@@ -110,13 +120,13 @@ export default function CtpDespachoViajePrecioModal({
     >
       <div className={`${MODAL_BODY} space-y-4`}>
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="Total de la venta (S/)" required hint="Lo que se cobra por todo el viaje." ejemplo="26234.67">
+          <Field label="Total de la venta (S/)" required hint="Lo que se cobra por todo el viaje." ejemplo="26234.67" error={avisoDeSoles(totalTexto)}>
             <input className={I} inputMode="decimal" autoFocus value={totalTexto} onChange={(e) => setTotalTexto(e.target.value)} placeholder="26234.67" />
           </Field>
-          <Field label="Factura o boleta" hint="El N.º que emitió SUNAT. Queda anotado en cada guía del viaje." ejemplo="E001-318">
+          <Field label="Factura o boleta" hint="El N.º que emitió SUNAT. Queda con la venta del viaje; la GTF impresa no cambia." ejemplo="E001-318">
             <input className={I} value={comprobante} onChange={(e) => setComprobante(e.target.value)} placeholder="E001-318" maxLength={24} />
           </Field>
-          <Field label="Monto de la liquidación (S/)" hint="Sólo para comparar con la factura: no se guarda como precio." ejemplo="26234.67">
+          <Field label="Monto de la liquidación (S/)" hint="Para comparar con la factura: queda con la venta del viaje, no como precio." ejemplo="26234.67" error={avisoDeSoles(liquidacionTexto)}>
             <input className={I} inputMode="decimal" value={liquidacionTexto} onChange={(e) => setLiquidacionTexto(e.target.value)} placeholder="Opcional" />
           </Field>
         </div>
@@ -135,6 +145,9 @@ export default function CtpDespachoViajePrecioModal({
         ))}
         {reparto && !reparto.ok && reparto.motivo === "sin_volumen" && (
           <WarningAlert>Ninguna línea tiene PT ni m³: no hay cómo repartir el precio.</WarningAlert>
+        )}
+        {reparto && !reparto.ok && reparto.motivo === "monto_muy_chico" && (
+          <WarningAlert>{`El monto es muy chico para repartirlo entre ${viaje.lineas.length} líneas: a alguna le tocaría S/\u00a00,00.`}</WarningAlert>
         )}
         {reparto?.ok && reparto.base === "m3" && (
           <WarningAlert>Una línea no tiene PT anotado: el precio se reparte por m³.</WarningAlert>

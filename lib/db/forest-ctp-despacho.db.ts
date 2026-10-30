@@ -41,9 +41,11 @@ import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
 import { formasDelNumero, mismoNumeroSunat } from "@/lib/ventas/comprobante-sunat";
 import {
-  diaCorto, diaDeDespacho, mismoViaje, m3DeDespacho, ptDeDespacho, repartirPrecioViaje,
+  CLAVE_VENTA_VIAJE, compatiblesEnViaje, diaCorto, diaDeDespacho, gresDistintas, mismoCamionProbado, m3DeDespacho,
+  placaDeDespacho, posibleViaje, ptDeDespacho, repartirPrecioViaje, validarGrupoDeViaje, ventaDelViaje,
   type GreEnLinea, type LineaDelViaje, type RepartoViaje, type ViajeDeDespacho,
 } from "@/lib/forestal/despacho-viaje";
+import { leerPlaca } from "@/lib/forestal/placa-peru";
 import {
   correlativoEnSerie, gtfEnUso, leerGtfConfirmada, mismoNumeroGtf, proponerGtf, saltoDeCorrelativo,
   type GtfUsada, type PropuestaGtf,
@@ -71,6 +73,20 @@ export function conservarGuiaRemision(datos: unknown, enBase: unknown): unknown 
   if (String(guia.guiaRemisionNro ?? "").trim()) return datos;
   return { ...cuerpo, guia: { ...guia, guiaRemisionNro: anotada } };
 }
+
+/**
+ * El cuerpo a guardar con los datos de la venta del viaje que YA estaban
+ * (`ventaViaje`: placa, factura y liquidación del viaje). El formulario de la
+ * guía no los conoce (`leerGtfDatos` los descarta): sin esto, guardarlo los
+ * borraría. Exportada para el test.
+ */
+export function conservarDatosDelViaje(datos: unknown, enBase: unknown): unknown {
+  const previo = objetoJson(enBase)[CLAVE_VENTA_VIAJE];
+  if (previo === undefined || previo === null) return datos;
+  return { ...objetoJson(datos), [CLAVE_VENTA_VIAJE]: previo };
+}
+
+const greDe = (gtfDatos: unknown) => String(objetoJson(objetoJson(gtfDatos).guia).guiaRemisionNro ?? "").trim();
 
 /** Lo que hace falta leer de una línea para decidir su viaje y repartirle el precio. */
 const SELECT_VIAJE = {
@@ -1231,7 +1247,8 @@ export class ForestCtpDespachoDB {
     // no se borra por guardar el formulario con esa casilla vacía: la pantalla
     // que se abrió antes de anotarla la mandaría en blanco. Quitarla es
     // `guia_remision` con `quitar`.
-    const guardar = conservarGuiaRemision(datos, desp.gtfDatos);
+    // Lo mismo con la placa y la venta del viaje (`ventaViaje`), que no salen en el formulario.
+    const guardar = conservarDatosDelViaje(conservarGuiaRemision(datos, desp.gtfDatos), desp.gtfDatos);
     await prisma.forestCtpEntry.updateMany({
       where: { id: desp.id, tenantId },
       data: { gtfDatos: guardar as Prisma.InputJsonValue },
@@ -1267,12 +1284,33 @@ export class ForestCtpDespachoDB {
     tenantId: string,
     despachoEntryId: string,
     numero: string,
-    opts: { reemplazar: boolean; fecha?: string | null; user: string },
+    opts: {
+      reemplazar: boolean;
+      fecha?: string | null;
+      user: string;
+      /** Las líneas que el dueño confirmó como el MISMO viaje: la misma GRE en ellas no es un tipeo. */
+      viaje?: readonly string[];
+      /**
+       * Saltar el aviso de la misma GRE en otro despacho (por defecto, lo que
+       * diga `reemplazar`). El viaje lo apaga: `reemplazar` ahí es «cambiar la
+       * GRE del viaje», no «aceptar que otro camión tenga la misma».
+       */
+      pisarDuplicado?: boolean;
+    },
   ): Promise<
     | { ok: true; cambio: boolean; guiaRemisionNro: string }
     | { ok: false; reason: "no_despacho" | "anulado" }
-    | { ok: false; reason: "ya_tiene"; actual: string }
-    | { ok: false; reason: "duplicado"; otroDespachoId: string; otraLinea: number; otraGtf: string | null; motivo: string }
+    | { ok: false; reason: "ya_tiene"; actual: string; lineNo?: number }
+    | {
+        ok: false;
+        reason: "duplicado";
+        otroDespachoId: string;
+        otraLinea: number;
+        otraGtf: string | null;
+        motivo: string;
+        /** Podría ser el mismo viaje, pero sin placa no se sabe: se confirma en la lista del viaje. */
+        sinPlaca: boolean;
+      }
   > {
     if (!tenantId) throw new Error("tenantId is required");
     // Compare-and-set sobre `updatedAt`: dos pestañas que anotan a la vez leen
@@ -1300,10 +1338,12 @@ export class ForestCtpDespachoDB {
       // La misma GRE en OTRO despacho del negocio es un tipeo (o la misma
       // guía anotada dos veces). Las líneas de la misma GTF sí la comparten:
       // un traslado = una GTF = una GRE, aunque la GTF lleve varias líneas.
-      // Y las GTF del MISMO VIAJE también (mismo día + misma placa o mismo
-      // destinatario): un camión con tres permisos sale con tres GTF y SUNAT
-      // ampara todo con una GRE (Blas, 28-10: EG07-189 en las GTF 69, 70 y 71).
-      if (numero && !opts.reemplazar) {
+      // Y las GTF del MISMO VIAJE también: un camión con tres permisos sale
+      // con tres GTF y SUNAT ampara todo con una GRE (Blas, 28-10: EG07-189 en
+      // las GTF 69, 70 y 71). «Mismo viaje» sin que nadie lo diga sólo con la
+      // MISMA placa en las dos; sin placa (las 7 de Blas no la tienen), sólo si
+      // el dueño la confirmó en la lista del viaje (`opts.viaje`).
+      if (numero && !(opts.pisarDuplicado ?? opts.reemplazar)) {
         const gtf = desp.gtfNumber?.trim() || null;
         const otros = await prisma.forestCtpEntry.findMany({
           where: {
@@ -1321,11 +1361,19 @@ export class ForestCtpDespachoDB {
           orderBy: { lineNo: "asc" },
           take: 50,
         });
+        const confirmadas = new Set(opts.viaje ?? []);
         for (const otro of otros) {
-          const v = mismoViaje(desp, otro);
-          if (!v.mismo) {
-            return { ok: false, reason: "duplicado", otroDespachoId: otro.id, otraLinea: otro.lineNo, otraGtf: otro.gtfNumber, motivo: v.motivo };
-          }
+          if (confirmadas.has(otro.id) || mismoCamionProbado(desp, otro)) continue;
+          const c = compatiblesEnViaje(desp, otro);
+          return {
+            ok: false,
+            reason: "duplicado",
+            otroDespachoId: otro.id,
+            otraLinea: otro.lineNo,
+            otraGtf: otro.gtfNumber,
+            motivo: c.ok ? "no tiene placa para saber si es el mismo camión" : c.motivo,
+            sinPlaca: c.ok,
+          };
         }
       }
 
@@ -1366,15 +1414,15 @@ export class ForestCtpDespachoDB {
     );
   }
 
-  /** Las filas vivas del MISMO viaje que `despachoEntryId` (ella incluida), por N.º de línea. */
-  private static async filasDelViaje(tenantId: string, despachoEntryId: string) {
+  /** La línea abierta y las demás líneas vivas de despacho de su mismo día, por N.º de línea. */
+  private static async filasDelDia(tenantId: string, despachoEntryId: string) {
     const base = await prisma.forestCtpEntry.findFirst({
       where: { id: despachoEntryId, tenantId, deletedAt: null, section: "despacho", status: "registrado" },
       select: SELECT_VIAJE,
     });
     if (!base) return null;
     const desde = new Date(`${diaDeDespacho(base.entryDate)}T00:00:00.000Z`);
-    const candidatas = await prisma.forestCtpEntry.findMany({
+    const delDia = await prisma.forestCtpEntry.findMany({
       where: {
         tenantId, section: "despacho", deletedAt: null, status: "registrado",
         entryDate: { gte: desde, lt: new Date(desde.getTime() + 86_400_000) },
@@ -1383,22 +1431,60 @@ export class ForestCtpDespachoDB {
       orderBy: { lineNo: "asc" },
       take: 200,
     });
-    return { base, filas: candidatas.filter((c) => c.id === base.id || mismoViaje(base, c).mismo) };
+    return { base, delDia };
   }
 
   /**
-   * El viaje de un despacho (mismo día + misma placa o mismo destinatario,
-   * `mismoViaje`): sus líneas con volumen, precio, GRE y comprobante, para la
-   * pantalla que anota la GRE una vez y pone el precio del viaje entero.
+   * Las líneas que el dueño confirmó como UN viaje: la abierta y las `otras`
+   * (ids), todas vivas, de despacho y de ESTE negocio (el `tenantId` va en el
+   * WHERE: un id ajeno no aparece y se responde `linea_no_esta`).
+   */
+  private static async filasConfirmadas(tenantId: string, despachoEntryId: string, otras: readonly string[]) {
+    const ids = [...new Set([despachoEntryId, ...otras])];
+    const filas = await prisma.forestCtpEntry.findMany({
+      where: { tenantId, id: { in: ids }, section: "despacho", deletedAt: null, status: "registrado" },
+      select: SELECT_VIAJE,
+      orderBy: { lineNo: "asc" },
+    });
+    const base = filas.find((f) => f.id === despachoEntryId);
+    if (!base) return { ok: false as const, reason: "no_despacho" as const };
+    if (filas.length !== ids.length) return { ok: false as const, reason: "linea_no_esta" as const };
+    return { ok: true as const, base, filas };
+  }
+
+  /**
+   * ¿El grupo confirmado puede ser UN viaje? Todos los pares compatibles
+   * (mismo día, mismo destinatario, sin dos placas distintas) y a lo sumo UNA
+   * GRE ya anotada entre todas: dos GRE distintas son dos viajes, y ni la GRE
+   * ni el precio se ponen sobre eso.
+   */
+  private static revisarGrupo(filas: readonly Prisma.ForestCtpEntryGetPayload<{ select: typeof SELECT_VIAJE }>[]):
+    | { ok: true; gre: string | null }
+    | { ok: false; reason: "grupo_incompatible"; motivo: string }
+    | { ok: false; reason: "gres_distintas"; gres: string[] } {
+    const v = validarGrupoDeViaje(filas);
+    if (!v.ok) return { ok: false, reason: "grupo_incompatible", motivo: v.motivo };
+    const gres = gresDistintas(filas.map((f) => greDe(f.gtfDatos)));
+    if (gres.length > 1) return { ok: false, reason: "gres_distintas", gres };
+    return { ok: true, gre: gres[0] ?? null };
+  }
+
+  /**
+   * El POSIBLE viaje de un despacho, para que el dueño lo confirme: la línea
+   * abierta y las de su mismo día que comparten destinatario o placa con ella,
+   * cada una con `compatible` / `marcada` / `motivo` (`posibleViaje`: van
+   * marcadas sólo las que no chocan con ninguna otra) y los pares que no
+   * pueden ir juntos. Volumen, precio, GRE y comprobante de cada una.
    */
   static async viajeDe(tenantId: string, despachoEntryId: string): Promise<ViajeDeDespacho | null> {
     if (!tenantId) throw new Error("tenantId is required");
-    const v = await ForestCtpDespachoDB.filasDelViaje(tenantId, despachoEntryId);
-    if (!v) return null;
-    const lineas = v.filas.map((f): LineaDelViaje => {
+    const d = await ForestCtpDespachoDB.filasDelDia(tenantId, despachoEntryId);
+    if (!d) return null;
+    const { filas, candidatas, choques } = posibleViaje(d.base, d.delDia);
+    const lineas = filas.map((f): LineaDelViaje => {
       const quantity = f.quantity != null ? Number(f.quantity) : null;
       const pt = ptDeDespacho({ quantity, unit: f.unit, observations: f.observations });
-      const cuerpo = objetoJson(f.gtfDatos);
+      const c = candidatas.get(f.id);
       return {
         id: f.id,
         lineNo: f.lineNo,
@@ -1414,47 +1500,66 @@ export class ForestCtpDespachoDB {
         ptFuente: pt?.fuente ?? null,
         valorVenta: f.valorVenta != null ? Number(f.valorVenta) : null,
         moneda: f.moneda ?? "PEN",
-        gre: String(objetoJson(cuerpo.guia).guiaRemisionNro ?? "").trim(),
-        comprobante: String(objetoJson(cuerpo.comprobante).numero ?? "").trim(),
+        gre: greDe(f.gtfDatos),
+        comprobante: ventaDelViaje(f.gtfDatos).comprobante?.numero ?? "",
+        placa: placaDeDespacho(f.gtfDatos),
+        compatible: c?.compatible ?? false,
+        marcada: c?.marcada ?? false,
+        motivo: c?.motivo ?? null,
       };
     });
+    const marcadas = lineas.filter((l) => l.marcada);
     return {
-      dia: diaDeDespacho(v.base.entryDate),
-      guias: [...new Set(lineas.map((l) => l.gtfNumber?.trim()).filter((g): g is string => Boolean(g)))],
+      dia: diaDeDespacho(d.base.entryDate),
+      guias: [...new Set(marcadas.map((l) => l.gtfNumber?.trim()).filter((g): g is string => Boolean(g)))],
       lineas,
+      choques,
     };
   }
 
   /**
-   * Anota la GRE en ESTA línea y, con ella, en las demás líneas del mismo
-   * viaje (las otras GTF del camión). La propia decide: si rebota (otro N.º,
-   * duplicado de otro viaje, anulada), no se toca ninguna. Las demás sólo se
-   * llenan si están vacías o ya tienen esa misma: una con OTRO N.º no se pisa
-   * aunque la propia vaya con `reemplazar` (se informa como `tenia_otra`).
+   * Anota la GRE en las líneas que el dueño confirmó como el viaje (`viaje`:
+   * ids; la abierta va siempre). Antes de tocar ninguna: el grupo tiene que
+   * ser UN viaje (`revisarGrupo`) y, si ya hay otra GRE anotada en alguna,
+   * sólo se cambia con `reemplazar`. La propia decide: si rebota (duplicado de
+   * otro viaje, anulada), no se toca ninguna.
    */
   static async anotarGuiaRemisionEnViaje(
     tenantId: string,
     despachoEntryId: string,
     numero: string,
-    opts: { reemplazar: boolean; fecha?: string | null; user: string },
+    opts: { reemplazar: boolean; fecha?: string | null; user: string; viaje: readonly string[] },
   ): Promise<
     | { ok: true; cambio: boolean; guiaRemisionNro: string; lineas: GreEnLinea[] }
     | Exclude<Awaited<ReturnType<typeof ForestCtpDespachoDB.anotarGuiaRemision>>, { ok: true }>
+    | { ok: false; reason: "linea_no_esta" }
+    | { ok: false; reason: "grupo_incompatible"; motivo: string }
+    | { ok: false; reason: "gres_distintas"; gres: string[] }
   > {
     if (!tenantId) throw new Error("tenantId is required");
     if (!numero) throw new Error("Para todo el viaje hace falta el N.º de la guía de remisión");
-    const propia = await ForestCtpDespachoDB.anotarGuiaRemision(tenantId, despachoEntryId, numero, opts);
+    const g = await ForestCtpDespachoDB.filasConfirmadas(tenantId, despachoEntryId, opts.viaje);
+    if (!g.ok) return g;
+    const grupo = ForestCtpDespachoDB.revisarGrupo(g.filas);
+    if (!grupo.ok) return grupo;
+    if (grupo.gre && !mismoNumeroSunat(grupo.gre, numero) && !opts.reemplazar) {
+      const conOtra = g.filas.find((f) => greDe(f.gtfDatos));
+      return { ok: false, reason: "ya_tiene", actual: grupo.gre, lineNo: conOtra?.lineNo };
+    }
+    const ids = g.filas.map((f) => f.id);
+    // La misma GRE fuera de la lista confirmada sigue siendo duplicado aunque se cambie la del viaje.
+    const cada = { reemplazar: opts.reemplazar, pisarDuplicado: false, fecha: opts.fecha, user: opts.user, viaje: ids };
+    const propia = await ForestCtpDespachoDB.anotarGuiaRemision(tenantId, despachoEntryId, numero, cada);
     if (!propia.ok) return propia;
-    const viaje = await ForestCtpDespachoDB.viajeDe(tenantId, despachoEntryId);
     const lineas: GreEnLinea[] = [];
     // De a una y en orden: cada anotación es su propio compare-and-set (7 líneas ≈ 1 s).
-    for (const l of viaje?.lineas ?? []) {
-      const base = { id: l.id, lineNo: l.lineNo, gtfNumber: l.gtfNumber };
-      if (l.id === despachoEntryId) {
+    for (const f of g.filas) {
+      const base = { id: f.id, lineNo: f.lineNo, gtfNumber: f.gtfNumber };
+      if (f.id === despachoEntryId) {
         lineas.push({ ...base, estado: propia.cambio ? "anotada" : "ya_estaba" });
         continue;
       }
-      const r = await ForestCtpDespachoDB.anotarGuiaRemision(tenantId, l.id, numero, { reemplazar: false, fecha: opts.fecha, user: opts.user });
+      const r = await ForestCtpDespachoDB.anotarGuiaRemision(tenantId, f.id, numero, cada);
       lineas.push(
         r.ok
           ? { ...base, estado: r.cambio ? "anotada" : "ya_estaba" }
@@ -1467,12 +1572,91 @@ export class ForestCtpDespachoDB {
   }
 
   /**
+   * La placa del camión para un viaje cuyas GTF no la tienen (las 7 de Blas
+   * del 28-10): queda en `gtfDatos.ventaViaje.placa` de las líneas
+   * confirmadas SIN placa, fuera de la casilla impresa (la GTF emitida no
+   * cambia en el papel, ADR-374). Con ella el viaje se agrupa solo la próxima
+   * vez. Una línea con OTRA placa (impresa o del viaje) es otro camión: no se
+   * pisa, se responde `otra_placa`.
+   */
+  static async anotarPlacaViaje(
+    tenantId: string,
+    despachoEntryId: string,
+    placaTexto: string,
+    opts: { viaje: readonly string[]; user: string },
+  ): Promise<
+    | { ok: true; placa: string; anotadas: number }
+    | { ok: false; reason: "no_despacho" | "linea_no_esta" | "cambio" }
+    | { ok: false; reason: "placa_invalida"; motivo: string }
+    | { ok: false; reason: "otra_placa"; placa: string; lineNo: number }
+    | { ok: false; reason: "grupo_incompatible"; motivo: string }
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    const leida = leerPlaca(placaTexto);
+    if (leida.estado === "vacia") return { ok: false, reason: "placa_invalida", motivo: "escribe la placa del camión" };
+    if (leida.estado === "invalida") return { ok: false, reason: "placa_invalida", motivo: leida.motivo };
+    const placa = leida.normalizada;
+    const g = await ForestCtpDespachoDB.filasConfirmadas(tenantId, despachoEntryId, opts.viaje);
+    if (!g.ok) return g;
+    for (const f of g.filas) {
+      const actual = placaDeDespacho(f.gtfDatos);
+      if (actual && actual !== placa) return { ok: false, reason: "otra_placa", placa: actual, lineNo: f.lineNo };
+    }
+    const sinPlaca = g.filas.filter((f) => !placaDeDespacho(f.gtfDatos));
+    const conPlaca = (f: (typeof g.filas)[number]) =>
+      sinPlaca.includes(f)
+        ? { ...f, gtfDatos: { ...objetoJson(f.gtfDatos), [CLAVE_VENTA_VIAJE]: { ...objetoJson(objetoJson(f.gtfDatos)[CLAVE_VENTA_VIAJE]), placa } } }
+        : f;
+    const v = validarGrupoDeViaje(g.filas.map(conPlaca));
+    if (!v.ok) return { ok: false, reason: "grupo_incompatible", motivo: v.motivo };
+    if (sinPlaca.length === 0) return { ok: true, placa, anotadas: 0 };
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, g.base.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede anotar la placa de un viaje de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+    try {
+      await prisma.$transaction(async (tx) => {
+        for (const f of sinPlaca) {
+          const hecho = await tx.forestCtpEntry.updateMany({
+            where: { id: f.id, tenantId, section: "despacho", status: "registrado", deletedAt: null, updatedAt: f.updatedAt },
+            data: { gtfDatos: conPlaca(f).gtfDatos as Prisma.InputJsonValue },
+          });
+          if (hecho.count !== 1) throw new ViajeCambiado();
+        }
+      }, CTP_TX_OPTS);
+    } catch (err) {
+      if (err instanceof ViajeCambiado) return { ok: false, reason: "cambio" };
+      throw err;
+    }
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    for (const f of sinPlaca) {
+      auditCtp({
+        tenantId,
+        action: "ctp_gtf_datos",
+        entity: "ForestCtpEntry",
+        entityId: f.id,
+        detail: `Anotó la placa ${placa} del viaje del ${diaCorto(diaDeDespacho(f.entryDate))} en el despacho #${f.lineNo}${f.gtfNumber ? ` (GTF ${f.gtfNumber})` : ""}: sólo para agrupar el viaje, la GTF impresa no cambia`,
+        user: opts.user,
+      });
+    }
+    return { ok: true, placa, anotadas: sinPlaca.length };
+  }
+
+  /**
    * «Poner precio a este viaje»: el total en soles se reparte en el
-   * `valorVenta` de cada línea del viaje por volumen (`repartirPrecioViaje`:
-   * PT si todas lo tienen, si no m³; a céntimos, residuo en la última) y el
-   * N.º del comprobante queda en la casilla de la venta de cada GTF
-   * (`gtfDatos.comprobante`, como la GRE: un merge que no toca el resto).
+   * `valorVenta` de cada línea que el dueño confirmó como el viaje (`viaje`:
+   * ids; la abierta va siempre) por volumen (`repartirPrecioViaje`: PT si
+   * todas lo tienen, si no m³; a céntimos, residuo en la última). La factura
+   * o boleta y la liquidación quedan en `gtfDatos.ventaViaje`, FUERA de las
+   * casillas impresas: la GTF emitida no cambia en el papel (ADR-374) y la
+   * casilla (29) sigue mostrando la GRE.
    *
+   * - El grupo tiene que ser UN viaje: todos los pares compatibles y a lo
+   *   sumo una GRE anotada (`revisarGrupo`).
    * - Ya con precio (o con otro comprobante) no se pisa sin `reemplazar`.
    *   Con `reemplazar`, una línea sin volumen que tenía precio queda en
    *   `null`: el viaje suma lo que se escribió, y sin volumen no hay parte.
@@ -1486,21 +1670,25 @@ export class ForestCtpDespachoDB {
     pedido: {
       total: number;
       comprobante: { tipo: "factura" | "boleta"; numero: string } | null;
-      /** Sólo para el registro de actividad: la comparación la arma la ruta. */
       liquidacion: number | null;
       reemplazar: boolean;
+      viaje: readonly string[];
       user: string;
     },
   ): Promise<
     | { ok: true; dia: string; guias: string[]; reparto: Extract<RepartoViaje, { ok: true }>; previo: number | null }
-    | { ok: false; reason: "no_despacho" | "otra_moneda" | "cambio" | Extract<RepartoViaje, { ok: false }>["motivo"] }
+    | { ok: false; reason: "no_despacho" | "linea_no_esta" | "otra_moneda" | "cambio" | Extract<RepartoViaje, { ok: false }>["motivo"] }
+    | { ok: false; reason: "grupo_incompatible"; motivo: string }
+    | { ok: false; reason: "gres_distintas"; gres: string[] }
     | { ok: false; reason: "ya_tiene_precio"; previo: number; conPrecio: number; lineas: number }
     | { ok: false; reason: "otro_comprobante"; actual: string; lineNo: number }
   > {
     if (!tenantId) throw new Error("tenantId is required");
-    const v = await ForestCtpDespachoDB.filasDelViaje(tenantId, despachoEntryId);
-    if (!v) return { ok: false, reason: "no_despacho" };
-    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, v.base.entryDate);
+    const g = await ForestCtpDespachoDB.filasConfirmadas(tenantId, despachoEntryId, pedido.viaje);
+    if (!g.ok) return g;
+    const grupo = ForestCtpDespachoDB.revisarGrupo(g.filas);
+    if (!grupo.ok) return grupo;
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, g.base.entryDate);
     if (cerrado) {
       throw new CtpInvariantError(
         `El período ${cerrado.label} está cerrado: no se puede cambiar el precio de un viaje de un mes cerrado.`,
@@ -1508,7 +1696,7 @@ export class ForestCtpDespachoDB {
         { periodKey: cerrado.periodKey },
       );
     }
-    const filas = v.filas;
+    const filas = g.filas;
     if (filas.some((f) => (f.moneda ?? "PEN").toUpperCase() !== "PEN")) return { ok: false, reason: "otra_moneda" };
 
     const conPrecio = filas.filter((f) => f.valorVenta != null);
@@ -1519,7 +1707,7 @@ export class ForestCtpDespachoDB {
     const comprobante = pedido.comprobante;
     if (comprobante && !pedido.reemplazar) {
       for (const f of filas) {
-        const actual = String(objetoJson(objetoJson(f.gtfDatos).comprobante).numero ?? "").trim();
+        const actual = ventaDelViaje(f.gtfDatos).comprobante?.numero ?? "";
         if (actual && !mismoNumeroSunat(actual, comprobante.numero)) return { ok: false, reason: "otro_comprobante", actual, lineNo: f.lineNo };
       }
     }
@@ -1530,6 +1718,10 @@ export class ForestCtpDespachoDB {
     );
     if (!reparto.ok) return { ok: false, reason: reparto.motivo };
     const montoDe = new Map(reparto.lineas.map((l) => [l.id, l.monto]));
+    const venta = {
+      ...(comprobante ? { comprobante: { tipo: comprobante.tipo, numero: comprobante.numero } } : {}),
+      ...(pedido.liquidacion != null ? { liquidacion: pedido.liquidacion } : {}),
+    };
 
     const escritas: { fila: (typeof filas)[number]; monto: number | null }[] = [];
     try {
@@ -1540,9 +1732,10 @@ export class ForestCtpDespachoDB {
           // Sin volumen: no recibe. Sólo se vacía si tenía precio y se está reemplazando.
           if (monto != null) data.valorVenta = new Prisma.Decimal(monto.toFixed(2));
           else if (f.valorVenta != null) data.valorVenta = null;
-          if (comprobante) {
+          if (Object.keys(venta).length > 0) {
+            // Un merge en la clave aparte: el resto del cuerpo (lo impreso) queda igual.
             const cuerpo = objetoJson(f.gtfDatos);
-            data.gtfDatos = { ...cuerpo, comprobante: { ...objetoJson(cuerpo.comprobante), tipo: comprobante.tipo, numero: comprobante.numero } } as Prisma.InputJsonValue;
+            data.gtfDatos = { ...cuerpo, [CLAVE_VENTA_VIAJE]: { ...objetoJson(cuerpo[CLAVE_VENTA_VIAJE]), ...venta } } as Prisma.InputJsonValue;
           }
           if (Object.keys(data).length === 0) continue;
           const hecho = await tx.forestCtpEntry.updateMany({
@@ -1561,8 +1754,8 @@ export class ForestCtpDespachoDB {
     // ADR-451: el precio de un despacho es la madera vendida del resultado del negocio.
     try { invalidateByPrefix(`${claveCacheResultado(tenantId)}:`); } catch { /* cache best-effort */ }
 
-    const dia = diaDeDespacho(v.base.entryDate);
-    const guias = [...new Set(filas.map((f) => f.gtfNumber?.trim()).filter((g): g is string => Boolean(g)))];
+    const dia = diaDeDespacho(g.base.entryDate);
+    const guias = [...new Set(filas.map((f) => f.gtfNumber?.trim()).filter((x): x is string => Boolean(x)))];
     const s = (n: number) => `S/ ${n.toFixed(2)}`;
     const resumen =
       `viaje del ${diaCorto(dia)}${guias.length ? ` (GTF ${guias.join(", ")})` : ""}: total ${s(reparto.total)}` +
