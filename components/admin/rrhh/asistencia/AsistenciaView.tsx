@@ -23,10 +23,13 @@
  */
 
 import { useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { BarraDeSecciones } from "@/components/admin/shared/BarraDeSecciones";
 import { limaDateKey } from "@/lib/utils";
 import { diasDelMes, mesDe, semanaDe } from "@/lib/rrhh/fechas";
 import HojaDelDia from "./HojaDelDia";
+
+const PasarListaHoy = dynamic(() => import("./PasarListaHoy"), { ssr: false });
 import HojaDelMes from "./HojaDelMes";
 import HojaDeLaSemana from "./HojaDeLaSemana";
 import MotivoCorreccionModal from "./MotivoCorreccionModal";
@@ -48,6 +51,14 @@ const MODOS = [
 
 export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: NivelRrhh; onCambioPersonal?: () => void }) {
   const [modo, setModo] = useState<Modo>("dia");
+  // «Pasar lista de hoy» (30-10): se abre con `?pasar=hoy` y se cierra quitando ese parámetro.
+  const [pasando, setPasando] = useState<boolean>(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("pasar") === "hoy");
+  const cerrarPasarLista = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("pasar");
+    window.history.replaceState(window.history.state, "", url);
+    setPasando(false);
+  };
   const [fecha, setFecha] = useState<string>(() => limaDateKey());
   const [mes, setMes] = useState<string>(() => mesDe(limaDateKey()));
   const [semana, setSemana] = useState<string>(() => semanaDe(limaDateKey()).desde);
@@ -81,8 +92,10 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
   const selectorModo = <BarraDeSecciones secciones={MODOS} activa={modo} onCambiar={elegirModo} etiqueta="Ver la asistencia por" idPanel={ID_PANEL_ASISTENCIA} />;
 
   let hoja: ReactNode;
-  if (modo === "dia") {
-    hoja = <HojaDelDia fecha={fecha} onCambiarFecha={setFecha} nivel={nivel} onCambioPersonal={onCambioPersonal} selectorModo={selectorModo} />;
+  if (pasando) {
+    hoja = <PasarListaHoy onSalir={cerrarPasarLista} onCambioPersonal={onCambioPersonal} />;
+  } else if (modo === "dia") {
+    hoja = <HojaDelDia fecha={fecha} onCambiarFecha={setFecha} nivel={nivel} onCambioPersonal={onCambioPersonal} selectorModo={selectorModo} onPasarLista={() => setPasando(true)} />;
   } else if (modo === "semana") {
     hoja = <HojaDeLaSemana desde={semana} onCambiarSemana={setSemana} nivel={nivel} selectorModo={selectorModo} />;
   } else {
@@ -91,8 +104,9 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
 
   return (
     <ProveedorAdelantoDeLaFila nivel={nivel} pago={nivel === "completo" ? pago : null}>
-      {nivel === "completo" && <BarraPagoSemana pago={pago} />}
-      {nivel !== "marcar" && (
+      {/* Pasando lista (celular) sólo se ve la lista: lo demás empuja los botones fuera de la pantalla. */}
+      {!pasando && nivel === "completo" && <BarraPagoSemana pago={pago} />}
+      {!pasando && nivel !== "marcar" && (
         <MarcasParaRevisar
           clave={`${modo}|${fecha}|${semana}|${mes}`}
           hoy={limaDateKey()}

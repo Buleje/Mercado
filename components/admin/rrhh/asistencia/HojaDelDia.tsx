@@ -24,6 +24,7 @@ import { limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
 import { dentroDeVentana, motivoFueraDeVentana, pluralizar } from "../rrhh-ui";
 import AvisoDiasAbiertos from "./AvisoDiasAbiertos";
+import AvisoPasarLista from "./AvisoPasarLista";
 import FilaMarcaDelDia from "./FilaMarcaDelDia";
 import { useRetirarPersona } from "./use-retirar-persona";
 import ListaDelDia from "./ListaDelDia";
@@ -54,9 +55,11 @@ interface Props {
   onCambioPersonal?: () => void;
   /** Día / Semana / Mes: va en la fila del título. */
   selectorModo?: ReactNode;
+  /** Abre «Pasar lista de hoy» (vista del celular). */
+  onPasarLista?: () => void;
 }
 
-export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPersonal, selectorModo }: Props) {
+export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPersonal, selectorModo, onPasarLista }: Props) {
   const { hoja, loading, error, guardando, pendientes, erroresPorCelda, marcar, masivo, guardarAhora, recargar, guardarNota } = useRrhhAsistencia(fecha, fecha);
   const { confirm } = useConfirm();
   const [historialDe, setHistorialDe] = useState<ColaboradorMinDTO | null>(null);
@@ -167,6 +170,9 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   const menu: MenuAccion[] = !puedeGestionar
     ? []
     : [
+        ...(onPasarLista && esHoy && editable && sinMarcar.length > 0
+          ? [{ id: "pasar-lista", label: "Pasar lista de hoy", meta: String(sinMarcar.length), hint: "Vista para el celular: todos Presente, tocas a quien faltó", icon: CheckCheck, onSelect: onPasarLista }]
+          : []),
         ...(marcadosIncluidos.length > 0
           ? [{ id: "reemplazar", label: "Presentes también los ya marcados", meta: String(marcadosIncluidos.length), hint: "Cambia por Presente lo ya marcado hoy; pide confirmar", icon: CheckCheck, tone: "danger" as const, disabled: !editable || guardando, onSelect: () => void reemplazarMarcados() }]
           : []),
@@ -261,6 +267,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
       <div {...(selectorModo ? propsPanelAsistencia("dia") : {})} className="space-y-3">
       {/* Los días del mes que nadie marcó (ADR-417): sigue al mes que se está
           mirando, no siempre al actual, y no pinta nada si no hay ninguno. */}
+      {hoja && onPasarLista && editable && <AvisoPasarLista hoja={hoja} fecha={fecha} onPasar={onPasarLista} />}
       <AvisoDiasAbiertos mes={mesDe(fecha)} onIrAlDia={(destino) => void irAFecha(destino)} />
 
       {contenido}
