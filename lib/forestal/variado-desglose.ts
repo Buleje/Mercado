@@ -420,6 +420,8 @@ export function desglosarVariado(
           ...(p.duenoParteId !== undefined ? { duenoParteId: p.duenoParteId } : {}),
           ...(p.codigo !== undefined ? { codigo: p.codigo } : {}),
           ...(p.observacion !== undefined ? { observacion: p.observacion } : {}),
+          /* El lote de aserrío de la hoja: las filas abiertas siguen yendo a SU lote en la Distribución. */
+          ...(p.lote !== undefined ? { lote: p.lote } : {}),
           /* Las filas abiertas son la MISMA medida del paquete: conservan su hora. */
           ...(p.registradoAt !== undefined ? { registradoAt: p.registradoAt } : {}),
           tipo: m.tipo,
@@ -461,6 +463,8 @@ export function agruparPiezasIguales(piezas: readonly PiezaCubicada[]): PiezaCub
     const clave = JSON.stringify([
       claveEspecieMotor(p.especie), p.espesor, p.ancho, p.largo, p.uEspesor, p.uAncho, p.uLargo,
       tipoDePieza(p), p.dueno ?? null, p.duenoParteId ?? null, p.codigo ?? null, p.observacion ?? null,
+      /* Dos lotes no se juntan: la fila de uno se llevaría las tablas del otro. */
+      p.lote ?? null,
     ]);
     const g = grupos.get(clave);
     const cant = p.cantidad > 0 ? p.cantidad : 1;

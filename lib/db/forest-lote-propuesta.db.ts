@@ -125,8 +125,11 @@ function motivoDeFalla(e: unknown, tenantId: string): string {
   return "No se pudo armar este lote. Vuelve a intentar.";
 }
 
+/** Tope de trozas que se leen del patio de una vez. Pasarlo se avisa (`truncado`), no se calla. */
+export const TOPE_TROZAS_PATIO = 5000;
+
 export class ForestLotePropuestaDB {
-  /** El patio sin lote, clasificado con la regla del servidor. */
+  /** El patio sin lote, clasificado con la regla del servidor (una de más para saber si se cortó). */
   private static async trozasDelPatio(tenantId: string): Promise<FilaTroza[]> {
     return prisma.woodEntryTroza.findMany({
       where: {
@@ -137,7 +140,7 @@ export class ForestLotePropuestaDB {
       },
       select: SELECT_TROZA,
       orderBy: [{ createdAt: "asc" }, { orden: "asc" }],
-      take: 5000,
+      take: TOPE_TROZAS_PATIO + 1,
     });
   }
 
@@ -275,7 +278,8 @@ export class ForestLotePropuestaDB {
   static async leer(tenantId: string): Promise<PropuestasDelPatio> {
     if (!tenantId) throw new Error("tenantId is required");
     const filas = await ForestLotePropuestaDB.trozasDelPatio(tenantId);
-    return proponerLotes(filas.map((t) => ForestLotePropuestaDB.aTroza(t)));
+    const r = proponerLotes(filas.slice(0, TOPE_TROZAS_PATIO).map((t) => ForestLotePropuestaDB.aTroza(t)));
+    return filas.length > TOPE_TROZAS_PATIO ? { ...r, truncado: true } : r;
   }
 
   /** `create` con UN reintento si otro equipo tomó el mismo correlativo en el mismo instante. */
@@ -319,7 +323,7 @@ export class ForestLotePropuestaDB {
     if (!tenantId) throw new Error("tenantId is required");
     /* El patio de AHORA, con la regla del servidor: lo que la pantalla vio puede
        tener minutos. Una sola lectura sirve para la propuesta y para el volumen. */
-    const filas = await ForestLotePropuestaDB.trozasDelPatio(tenantId);
+    const filas = (await ForestLotePropuestaDB.trozasDelPatio(tenantId)).slice(0, TOPE_TROZAS_PATIO);
     const { propuestas } = proponerLotes(filas.map((t) => ForestLotePropuestaDB.aTroza(t)));
     const porClave = new Map(propuestas.map((p) => [p.clave, p]));
     const m3De = new Map(filas.map((t) => [t.id, Number(t.volumenM3 ?? 0)]));

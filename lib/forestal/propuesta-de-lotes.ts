@@ -91,6 +91,8 @@ export interface PropuestasDelPatio {
    * arregla poniéndole el permiso a la guía en Ingresos.
    */
   sinPermiso: { trozas: number; m3: number };
+  /** El patio pasó el tope de lectura (5000 trozas): las cifras son de las primeras, no de todo. */
+  truncado?: true;
 }
 
 /* ── Lo que va y vuelve al crear (lo comparten el servidor y la pantalla) ── */

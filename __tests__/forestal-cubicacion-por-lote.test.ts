@@ -5,10 +5,16 @@
  * volumen exacto. Sin casilla llena, todo sigue igual que antes.
  */
 import { describe, expect, it } from "vitest";
-import { normalizarLote, parsearFilasImportadas, PLANTILLA_IMPORT } from "@/lib/forestal/cubicacion-import";
+import { loteQueEsFecha, normalizarLote, parsearFilasImportadas, PLANTILLA_IMPORT } from "@/lib/forestal/cubicacion-import";
 import { PT_POR_M3, unificarPorMedida, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { distribuirPorCapacidad, type BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
-import { codigoDeLote, codigoLoteDeBloque, partirPorLote } from "@/lib/forestal/cubicacion-reparto-por-lote";
+import {
+  avisoLotesSinBloque,
+  codigoDeLote,
+  codigoLoteDeBloque,
+  lotesSinBloqueDe,
+  partirPorLote,
+} from "@/lib/forestal/cubicacion-reparto-por-lote";
 
 /* Mil tablas por renglón: el reparto asigna piezas ENTERAS (ver forestal-cubicacion-reparto.test). */
 function pieza(id: string, m3: number, lote?: string, especie = "Tornillo"): PiezaCubicada {
@@ -44,6 +50,24 @@ describe("la casilla Lote al importar el Excel", () => {
     expect(r.piezas.map((p) => p.lote)).toEqual(["29-2026", undefined, "30"]);
   });
 
+  /* Excel guarda «10-2026» como el 1-oct-2026 (serial 46296): leído así no cruza con su bloque. */
+  it("un lote que Excel volvió fecha entra sin lote y con aviso", () => {
+    expect(loteQueEsFecha(46296)).toBe("10-2026");
+    expect(loteQueEsFecha("2026-10-01")).toBe("10-2026");
+    expect(loteQueEsFecha("oct-26")).toBe("10-2026");
+    expect(loteQueEsFecha("29/10/2026")).toBe("29-10");
+    for (const lote of [29, "29-2026", "Lote 30", "", null, 2026]) expect(loteQueEsFecha(lote)).toBeNull();
+    const r = parsearFilasImportadas([
+      ["Especie", "Espesor", "Ancho", "Largo", "Lote"],
+      ["Tornillo", 2, 8, 10, 46296],
+      ["Tornillo", 2, 8, 10, "29-2026"],
+    ]);
+    expect(r.errores).toEqual([]);
+    expect(r.piezas.map((p) => p.lote)).toEqual([undefined, "29-2026"]);
+    expect(r.avisos).toEqual([{ fila: 2, motivo: expect.stringContaining("«10-2026»") }]);
+    expect(parsearFilasImportadas([["Espesor", "Ancho", "Largo"], [2, 8, 10]]).avisos).toBeUndefined();
+  });
+
   it("normalizarLote limpia lo que el operario escribe", () => {
     expect(normalizarLote("  lote n° 29-2026 ")).toBe("29-2026");
     expect(normalizarLote(29)).toBe("29");
@@ -73,12 +97,14 @@ describe("el código del lote se compara sin ceros ni prefijos", () => {
   it("«29» a secas va al 29-2026 sólo si no hay otro 29", () => {
     const uno = partirPorLote([bloque("a", "Lote 29-2026", 20)], [pieza("p", 1, "29")]);
     expect(uno.find((p) => p.lote === "29-2026")?.piezas).toHaveLength(1);
+    /* Con dos lotes 29 no se adivina: queda aparte (faltante con aviso), en ninguno de los dos. */
     const dos = partirPorLote(
       [bloque("a", "Lote 29-2026", 20), bloque("b", "Lote 29-2025", 20)],
       [pieza("p", 1, "29")],
     );
-    expect(dos).toHaveLength(1);
-    expect(dos[0]?.lote).toBeNull();
+    expect(dos.find((p) => p.sinBloque)).toMatchObject({ lote: "29", bloques: [] });
+    expect(dos.find((p) => p.sinBloque)?.piezas.map((p) => p.id)).toEqual(["p"]);
+    expect(dos.filter((p) => !p.sinBloque).flatMap((p) => p.piezas)).toEqual([]);
   });
 });
 
@@ -108,14 +134,35 @@ describe("la Distribución de rolliza respeta el lote de cada pieza", () => {
   });
 
   /* El lote 30 no tiene ninguna tabla anotada: sigue en el reparto de siempre. */
-  it("la pieza sin lote o con un lote sin bloque va a los demás bloques, como siempre", () => {
+  it("la pieza SIN lote va a los demás bloques; la de un lote sin bloque queda faltante con aviso", () => {
     const d = distribuirPorCapacidad(
       [...bloques, bloque("G", "GTF 019-001-0000012", 20)],
       [pieza("a", 4, "29-2026"), pieza("b", 2), pieza("c", 1, "77-2026")],
     );
     expect(usado(d, "L29")).toBeCloseTo(4, 3);
-    expect((usado(d, "L30") ?? 0) + (usado(d, "G") ?? 0)).toBeCloseTo(3, 3);
-    expect(d.especies[0]?.faltanteM3).toBe(0);
+    expect((usado(d, "L30") ?? 0) + (usado(d, "G") ?? 0)).toBeCloseTo(2, 3);
+    expect(d.especies[0]?.faltanteM3).toBeCloseTo(1, 3);
+    expect(d.especies[0]?.lotesSinBloque).toEqual([{ lote: "77-2026", piezas: 1000, m3: 1 }]);
+  });
+
+  /* Revisión 30-10: el lote mal escrito llenaba EN SILENCIO el bloque de otro lote. */
+  it("un lote que no existe no se mete en el bloque del otro lote", () => {
+    const d = distribuirPorCapacidad(bloques, [pieza("a", 2, "29-2026"), pieza("x", 5, "77-2026")]);
+    expect(usado(d, "L29")).toBeCloseTo(2, 3);
+    expect(usado(d, "L30") ?? 0).toBe(0);
+    expect(d.especies[0]?.faltanteM3).toBeCloseTo(5, 3);
+    expect(d.especies[0]?.faltante.reduce((a, f) => a + f.piezas, 0)).toBe(1000);
+    expect(avisoLotesSinBloque(d.especies[0]?.lotesSinBloque ?? [])).toBe(
+      "1000 piezas con lote que no está en esta especie (77-2026): no se reparten a otro lote. " +
+        "Revisa el lote anotado o carga el bloque de ese lote.",
+    );
+  });
+
+  it("sin piezas de un lote sin bloque no hay aviso", () => {
+    const d = distribuirPorCapacidad(bloques, [pieza("a", 2, "29-2026"), pieza("b", 1)]);
+    expect(d.especies[0]?.lotesSinBloque).toBeUndefined();
+    expect(lotesSinBloqueDe(partirPorLote(bloques, [pieza("a", 2, "29-2026")]))).toEqual([]);
+    expect(avisoLotesSinBloque([])).toBeNull();
   });
 
   it("con bloques sin lote, anotar el lote en la pieza no cambia nada", () => {

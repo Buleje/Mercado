@@ -54,6 +54,9 @@ export function cuerpoDelVinculo(c: CubicacionRegistro, corridas: readonly strin
       duenoParteId: p.duenoParteId ?? null,
       tipo: p.tipo ?? null,
       observacion: p.observacion ?? null,
+      /* El servidor guarda las piezas TAL CUAL llegan: sin esto, vincular la
+         cubicación a una guía borraba el lote de cada pieza (30-10). */
+      lote: p.lote ?? null,
     })),
   };
 }

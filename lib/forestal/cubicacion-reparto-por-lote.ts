@@ -9,10 +9,17 @@
  * del lote toma su volumen exacto.
  *
  * Cómo: dentro de cada especie se parte en una porción por lote anotado (sus
- * bloques + sus piezas) y el resto (los demás bloques + las piezas sin lote o
- * con un lote que no tiene bloque). Cada porción se reparte con LA MISMA regla
- * de siempre y después se unen en una sola especie. Sin ninguna pieza anotada,
- * no se parte nada: el resultado es idéntico al de antes.
+ * bloques + sus piezas) y el resto (los demás bloques + las piezas sin lote).
+ * Cada porción se reparte con LA MISMA regla de siempre y después se unen en
+ * una sola especie. Sin ninguna pieza anotada, no se parte nada: el resultado
+ * es idéntico al de antes.
+ *
+ * La pieza con un lote que NO tiene bloque en su especie (lote cerrado, de
+ * otra especie, o «29» con dos lotes 29) va a una porción SIN bloques: queda
+ * en «Falta por distribuir» con su aviso (`lotesSinBloque`). Repartirla con el
+ * resto la metía en silencio en el bloque de OTRO lote (revisión 30-10).
+ * Excepción: si la especie no tiene ningún bloque de lote (sólo guías), la
+ * casilla no se puede cumplir ni violar y todo se reparte como siempre.
  *
  * PURO. Sólo tipos del reparto: el reparto importa esto, no al revés.
  */
@@ -74,6 +81,16 @@ export interface PorcionDeEspecie {
   lote: string | null;
   bloques: BloqueRolliza[];
   piezas: PiezaCubicada[];
+  /** El lote anotado no tiene bloque en esta especie: sus piezas quedan como faltante. */
+  sinBloque?: true;
+}
+
+/** Lote anotado en piezas que no tiene bloque en su especie: se avisa en la Distribución. */
+export interface LoteSinBloque {
+  /** Como lo escribió la hoja, ya limpio («77-2026», «29»). */
+  lote: string;
+  piezas: number;
+  m3: number;
 }
 
 /**
@@ -90,25 +107,52 @@ export function partirPorLote(
   if (codigos.size === 0 || !piezas.some((p) => p.lote)) return todo;
 
   const porLote = new Map<string, PiezaCubicada[]>();
+  const sinBloque = new Map<string, PiezaCubicada[]>();
   const sueltas: PiezaCubicada[] = [];
+  const meter = (m: Map<string, PiezaCubicada[]>, k: string, p: PiezaCubicada) =>
+    (m.get(k) ?? m.set(k, []).get(k)!).push(p);
   for (const p of piezas) {
+    const escrito = codigoDeLote(p.lote);
     const k = loteDeLaPieza(p.lote, codigos);
-    if (!k) sueltas.push(p);
-    else (porLote.get(k) ?? porLote.set(k, []).get(k)!).push(p);
+    if (k) meter(porLote, k, p);
+    else if (escrito) meter(sinBloque, escrito, p);
+    else sueltas.push(p);
   }
-  if (porLote.size === 0) return todo;
+  if (porLote.size === 0 && sinBloque.size === 0) return todo;
 
   const porciones: PorcionDeEspecie[] = [...porLote.entries()].map(([lote, ps]) => ({
     lote,
     bloques: bloques.filter((b) => codigoDe.get(b) === lote),
     piezas: ps,
   }));
+  for (const [lote, ps] of sinBloque) porciones.push({ lote, bloques: [], piezas: ps, sinBloque: true });
   porciones.push({
     lote: null,
     bloques: bloques.filter((b) => !porLote.has(codigoDe.get(b) ?? "")),
     piezas: sueltas,
   });
   return porciones;
+}
+
+/** Las porciones sin bloque, para el aviso «N piezas con lote que no está en esta especie». */
+export function lotesSinBloqueDe(porciones: readonly PorcionDeEspecie[]): LoteSinBloque[] {
+  return porciones
+    .filter((p) => p.sinBloque && p.piezas.length > 0)
+    .map((p) => ({
+      lote: p.lote ?? "",
+      piezas: p.piezas.reduce((a, x) => a + (x.cantidad > 0 ? x.cantidad : 1), 0),
+      m3: r4(p.piezas.reduce((a, x) => a + (Number(x.m3) || 0), 0)),
+    }));
+}
+
+/** «3 piezas con lote que no está en esta especie (77-2026): …», o `null` sin nada que avisar. */
+export function avisoLotesSinBloque(lotes: readonly LoteSinBloque[]): string | null {
+  if (lotes.length === 0) return null;
+  const n = lotes.reduce((a, l) => a + l.piezas, 0);
+  return (
+    `${n} ${n === 1 ? "pieza" : "piezas"} con lote que no está en esta especie (${lotes.map((l) => l.lote).join(", ")}): ` +
+    "no se reparten a otro lote. Revisa el lote anotado o carga el bloque de ese lote."
+  );
 }
 
 /** Agrupado por permiso SÓLO para mostrar, en el orden en que se cargaron los bloques. */

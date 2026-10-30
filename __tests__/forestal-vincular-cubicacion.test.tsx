@@ -201,6 +201,14 @@ describe("el modal «Agregar cubicación»", () => {
     expect(cuerpoDelVinculo(CORTA, ["c1"]).ctpEntryIds).toEqual(["viejo-1", "c1"]);
     expect(cuerpoDelVinculo(CORTA, ["c1"]).fecha).toBe("2026-09-10");
   });
+
+  /* Revisión 30-10: el servidor guarda las piezas tal cual llegan; sin el campo, vincular borraba el lote. */
+  it("vincular conserva el lote de cada pieza", async () => {
+    const { cuerpoDelVinculo } = await import("@/components/admin/forestal/hooks/use-vincular-cubicacion");
+    const [p1, p2] = LUNES.piezas;
+    const conLote = { ...LUNES, piezas: [{ ...p1!, lote: "29-2026" }, p2!] };
+    expect(cuerpoDelVinculo(conLote, ["c1"]).piezas.map((p) => p.lote)).toEqual(["29-2026", null]);
+  });
 });
 
 describe("un asiento que no nombra tipo", () => {

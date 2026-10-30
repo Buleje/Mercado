@@ -59,6 +59,8 @@ interface FilaCubicada {
   especie: string;
   /** Tipo forzado a mano; vacío = lo decide la medida. */
   tipoManual: TipoComercial | "";
+  /** Lote de aserrío de la pieza (si vino de una cubicación con la casilla Lote): no se edita acá, se conserva. */
+  lote?: string;
 }
 
 const GRILLA = "cubicar-producto";
@@ -95,6 +97,7 @@ function cubicar(f: FilaCubicada): PiezaCubicada | null {
     uEspesor: f.uEspesor, uAncho: f.uAncho, uLargo: f.uLargo,
     especie: f.especie || undefined,
     tipo: f.tipoManual || undefined,
+    ...(f.lote ? { lote: f.lote } : {}),
     pieTablar, m3,
   };
 }
@@ -253,6 +256,7 @@ export default function CtpCubicarProductoModal({
             id: p.id, cantidad: p.cantidad, espesor: p.espesor, ancho: p.ancho, largo: p.largo,
             uEspesor: p.uEspesor, uAncho: p.uAncho, uLargo: p.uLargo, especie: p.especie ?? null,
             tipo: p.tipo ?? null,
+            ...(p.lote ? { lote: p.lote } : {}),
           })),
         };
     try {
@@ -440,6 +444,7 @@ export default function CtpCubicarProductoModal({
                     uLargo: p.uLargo,
                     especie: p.especie ?? "",
                     tipoManual: p.tipo ?? "",
+                    ...(p.lote ? { lote: p.lote } : {}),
                   })),
                 );
                 setNombre(reg.nombre);

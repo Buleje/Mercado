@@ -83,6 +83,16 @@ describe("el aviso del libro", () => {
     expect(p!.detalle).toContain("Tornillo · PLT-2025-167: 15.20 m³ (1 troza)");
   });
 
+  /* Revisión 30-10: el servidor lee 5000 trozas del patio; pasarlas se dice, no se calla. */
+  it("con el patio cortado en 5000 trozas dice «más de»", () => {
+    const maderaSinLote = maderaSinLoteDe({ ...proponerLotes([troza({ volumenM3: 2 })]), truncado: true });
+    expect(maderaSinLote.truncado).toBe(true);
+    const [p] = pendientesDelLibro({ ...VACIO, maderaSinLote });
+    expect(p!.titulo).toBe("Madera en patio sin lote · más de 2.00 m³");
+    expect(p!.detalle).toContain("Hay más de 5000 trozas sin lote");
+    expect(maderaSinLoteDe(proponerLotes([troza({})])).truncado).toBeUndefined();
+  });
+
   it("con todo en su lote no avisa", () => {
     expect(pendientesDelLibro({ ...VACIO, maderaSinLote: maderaSinLoteDe(proponerLotes([])) })).toEqual([]);
   });

@@ -30,6 +30,19 @@ export default function VistaPreviaImportacion({ resultado, modo }: { resultado:
         </div>
       )}
 
+      {resultado.avisos && resultado.avisos.length > 0 && (
+        <div className="rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 dark:bg-[var(--data-warning-500)]/12">
+          <p className="mb-1 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            {resultado.avisos.length} {resultado.avisos.length === 1 ? "fila entra con algo que revisar" : "filas entran con algo que revisar"}:
+          </p>
+          <ul className="max-h-24 space-y-0.5 overflow-y-auto text-xs text-[var(--text-secondary)]">
+            {resultado.avisos.slice(0, 20).map((e) => (
+              <li key={e.fila}>Fila {e.fila}: {e.motivo}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {resultado.piezas.length > 0 ? (
         <>
           <div className="max-h-56 overflow-auto rounded-xl border border-[var(--rule-base)]">

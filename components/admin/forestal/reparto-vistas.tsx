@@ -20,6 +20,7 @@ import {
   esAserradaDirecta, gruposAdmitidos,
   type AsignacionGrupo, type BloqueDistribuido, type BloqueRolliza, type DiaDistribuido, type EspecieDistribucion, type FaltanteGrupo,
 } from "@/lib/forestal/cubicacion-reparto";
+import { avisoLotesSinBloque } from "@/lib/forestal/cubicacion-reparto-por-lote";
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { colorDeBloque } from "./reparto-colores";
 import { TipoBadge } from "./tipo-badge";
@@ -509,6 +510,13 @@ export function BloqueEspecie({
               </button>
             )}
           </div>
+          {/* La casilla Lote (30-10): el lote anotado no tiene bloque en esta especie,
+              así que esas tablas esperan acá en vez de entrar al bloque de otro lote. */}
+          {e.lotesSinBloque && e.lotesSinBloque.length > 0 && (
+            <p className="px-3 pb-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              {avisoLotesSinBloque(e.lotesSinBloque)}
+            </p>
+          )}
           <div className="overflow-x-auto">
             {/* Mismo `table-fixed` + ancho fijo por columna que la tabla de
                 arriba: la de Cedro y la de Bolaina son DOS `<table>`

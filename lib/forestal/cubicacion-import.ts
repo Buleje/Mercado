@@ -28,6 +28,8 @@ export interface ResultadoImport {
   piezas: PiezaImportada[];
   /** Filas que no se pudieron leer, con el motivo. */
   errores: { fila: number; motivo: string }[];
+  /** Filas que SÍ se importan pero con algo que revisar (p. ej. un lote que Excel volvió fecha). */
+  avisos?: { fila: number; motivo: string }[];
   /** Encabezados detectados → índice de columna. */
   columnas: Record<Campo, number | null>;
 }
@@ -64,6 +66,40 @@ export function normalizarLote(v: Celda): string | undefined {
   if (typeof v === "number") return Number.isFinite(v) && v > 0 ? String(Math.round(v)) : undefined;
   const s = String(v ?? "").trim().replace(/^lote\s*(n[°º.o]?\s*)?/i, "").trim().slice(0, 40);
   return s || undefined;
+}
+
+const MESES: Record<string, number> = {
+  ene: 1, jan: 1, feb: 2, mar: 3, abr: 4, apr: 4, may: 5, jun: 6, jul: 7, ago: 8, aug: 8,
+  sep: 9, set: 9, oct: 10, nov: 11, dic: 12, dec: 12,
+};
+
+/**
+ * Excel vuelve fecha el lote escrito «10-2026» (lo guarda como el 1-oct-2026:
+ * serial 46296) y «29-10» (el 29-oct). Leído tal cual, ese lote no cruza
+ * con ningún bloque. Devuelve cómo se habría escrito («10-2026») o null si la
+ * celda no parece una fecha. Formas que llegan: el serial (número), la fecha
+ * ISO que da `celdaExcel` para una celda de fecha, «oct-26» y «1/10/2026» de
+ * un CSV guardado por Excel.
+ */
+export function loteQueEsFecha(v: Celda): string | null {
+  let d: number | null = null, m: number | null = null, y: number | null = null;
+  if (typeof v === "number") {
+    /* 36526 = 1-ene-2000 · 73050 = 31-dic-2099: ningún lote se numera tan alto. */
+    if (!Number.isInteger(v) || v < 36526 || v > 73050) return null;
+    const f = new Date(Date.UTC(1899, 11, 30) + v * 86_400_000);
+    [d, m, y] = [f.getUTCDate(), f.getUTCMonth() + 1, f.getUTCFullYear()];
+  } else {
+    const s = String(v ?? "").trim().toLowerCase();
+    let x: RegExpExecArray | null;
+    if ((x = /^(\d{4})-(\d{2})-(\d{2})(?:t[\d:.]+z?)?$/.exec(s))) [y, m, d] = [Number(x[1]), Number(x[2]), Number(x[3])];
+    else if ((x = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s))) [d, m, y] = [Number(x[1]), Number(x[2]), Number(x[3])];
+    else if ((x = /^([a-z]{3})[a-z]*\.?[-/ ](\d{2}|\d{4})$/.exec(s)) && MESES[x[1]]) {
+      [d, m, y] = [1, MESES[x[1]], x[2].length === 2 ? 2000 + Number(x[2]) : Number(x[2])];
+    } else return null;
+  }
+  if (!(m >= 1 && m <= 12 && d >= 1 && d <= 31)) return null;
+  /* Día 1 = se escribió «mes-año» («10-2026»); otro día = «día-mes» («3-25»). */
+  return d === 1 ? `${m}-${y}` : `${d}-${m}`;
 }
 
 const UNIDADES_VALIDAS: Unidad[] = ["pulg", "cm", "pies", "m"];
@@ -136,6 +172,7 @@ let contador = 0;
  */
 export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
   const errores: { fila: number; motivo: string }[] = [];
+  const avisos: { fila: number; motivo: string }[] = [];
   const piezas: PiezaImportada[] = [];
 
   const filas = matriz.filter((f) => Array.isArray(f));
@@ -187,7 +224,16 @@ export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
     const uAncho = normalizarUnidad(cel(fila, "uAncho"), "pulg");
     const uLargo = normalizarUnidad(cel(fila, "uLargo"), "pies");
     const especie = normalizarEspecie(cel(fila, "especie"));
-    const lote = normalizarLote(cel(fila, "lote"));
+    const loteCelda = cel(fila, "lote");
+    const comoFecha = loteQueEsFecha(loteCelda);
+    /* Un lote que Excel volvió fecha NO se guarda: no cruzaría con su bloque. Se avisa. */
+    const lote = comoFecha ? undefined : normalizarLote(loteCelda);
+    if (comoFecha) {
+      avisos.push({
+        fila: filaNro,
+        motivo: `el lote parece una fecha (Excel lo cambió); entra sin lote. Si era «${comoFecha}», ponle un apóstrofo delante en Excel ('${comoFecha}) o escríbelo en la tabla.`,
+      });
+    }
 
     const base = { cantidad, espesor, ancho, largo, uEspesor, uAncho, uLargo };
     const { pieTablar, m3 } = cubicarPieza(base);
@@ -206,7 +252,7 @@ export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
     });
   }
 
-  return { piezas, errores, columnas };
+  return { piezas, errores, ...(avisos.length > 0 ? { avisos } : {}), columnas };
 }
 
 /** Una pieza tal como la devuelve el OCR de la foto (sin cubicar todavía). */

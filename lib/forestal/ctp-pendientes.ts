@@ -53,6 +53,8 @@ export interface MaderaSinLote {
   grupos: readonly GrupoSinLote[];
   /** Trozas sin especie o sin permiso: tampoco tienen lote, pero no se pueden armar. */
   sinDato: { trozas: number; m3: number };
+  /** El servidor leyó sólo las primeras 5000 trozas del patio: las cifras son «más de». */
+  truncado?: true;
 }
 
 export interface DatosPendientes {
@@ -163,6 +165,7 @@ export function maderaSinLoteDe(p: PropuestasDelPatio | null | undefined): Mader
     m3: r3(grupos.reduce((a, g) => a + g.m3, 0)),
     grupos,
     sinDato,
+    ...(p?.truncado ? { truncado: true as const } : {}),
   };
 }
 
@@ -177,7 +180,8 @@ function detalleMaderaSinLote(m: MaderaSinLote): string {
   const sinDato = m.sinDato.trozas > 0
     ? ` Otras ${trozas(m.sinDato.trozas)} no dicen su especie o permiso.`
     : "";
-  return `${lista}${resto}. Ármales su lote abajo: así la producción sale exacta por lote.${sinDato}`;
+  const corte = m.truncado ? " Hay más de 5000 trozas sin lote: las cifras son de las primeras 5000." : "";
+  return `${lista}${resto}. Ármales su lote abajo: así la producción sale exacta por lote.${sinDato}${corte}`;
 }
 
 /** A partir de acá una troza parada empieza a costar. Mismo corte que el patio. */
@@ -343,7 +347,7 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       clave: "madera-sin-lote",
       urgencia: "pendiente",
       cantidad: d.maderaSinLote?.trozas ?? 0,
-      titulo: `Madera en patio sin lote · ${(d.maderaSinLote?.m3 ?? 0).toFixed(2)} m³`,
+      titulo: `Madera en patio sin lote · ${d.maderaSinLote?.truncado ? "más de " : ""}${(d.maderaSinLote?.m3 ?? 0).toFixed(2)} m³`,
       detalle: d.maderaSinLote ? detalleMaderaSinLote(d.maderaSinLote) : "",
       vista: "lotes",
     },

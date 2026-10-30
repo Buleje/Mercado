@@ -66,6 +66,9 @@ export function notasDelPatio(p: PropuestasDelPatio): string[] {
       `${plural(sinEspecie.trozas, "troza", "trozas")} (${fmtM3(sinEspecie.m3)} m³) sin especie: corrígela en su guía.`,
     );
   }
+  if (p.truncado) {
+    notas.push("Hay más de 5000 trozas libres en el patio: la lista muestra las primeras 5000 (por fecha de ingreso). Arma esos lotes y aparecerán las demás.");
+  }
   if (notas.length === 0 && p.propuestas.length === 0) {
     notas.push("No hay trozas libres en el patio: todas están en un lote, ya se aserraron o salieron despachadas.");
   }

@@ -103,6 +103,10 @@ async function leerXlsx(buf: ArrayBuffer): Promise<Celda[][]> {
 function celdaExcel(v: unknown): Celda {
   if (v === null || v === undefined) return null;
   if (typeof v === "number" || typeof v === "string") return v;
+  /* Celda con formato de fecha (Excel volvió fecha un lote «10-2026»): exceljs da
+     un Date en UTC. Como «2026-10-01» el importador la reconoce y avisa
+     (`loteQueEsFecha`); antes salía «Thu Oct 01 2026 …» como lote. */
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v.toISOString().slice(0, 10);
   if (typeof v === "object") {
     const o = v as { text?: unknown; result?: unknown; richText?: { text?: string }[] };
     if (Array.isArray(o.richText)) return o.richText.map((r) => r.text ?? "").join("");

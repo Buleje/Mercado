@@ -46,7 +46,7 @@ import { agruparPor, claveYLabel, type DimensionResumen, type GrupoResumen, type
 /* La regla única de «la pieza cabe en la troza» (ADR-505): no importa este archivo, así no hay ciclo. */
 import { elegibilidad, holguraM, motivoSinTroza, subcapacidadM3, type MotivoMedida, type PiezaMedida, type TrozaMedida } from "./medida-cabe-en-troza";
 import { umbralRendimientoAlto } from "./ctp-rendimiento";
-import { partirPorLote, porPermisoDe, unirPorciones } from "./cubicacion-reparto-por-lote";
+import { lotesSinBloqueDe, partirPorLote, porPermisoDe, unirPorciones, type LoteSinBloque } from "./cubicacion-reparto-por-lote";
 
 /**
  * Aprovechamiento supuesto cuando el bloque no lo trae.
@@ -465,6 +465,11 @@ export interface EspecieDistribucion {
   costoRolliza: number | null;
   /** Sólo si algún bloque de la especie trae medidas de troza (ADR-505). */
   medidas?: ResumenMedidasEspecie;
+  /**
+   * Piezas con un lote anotado que no tiene bloque en esta especie (casilla
+   * Lote, 30-10): quedan en `faltante`, nunca en el bloque de otro lote.
+   */
+  lotesSinBloque?: LoteSinBloque[];
   /**
    * `bloques` agrupados por su `permiso` (Brandon, 2026-09-01) — SOLO para
    * mostrar. El llenado sigue siendo uno solo por especie, en el orden en
@@ -981,13 +986,14 @@ export function distribuirPorCapacidad(
     /* La casilla Lote de la hoja (30-10): la pieza anotada con su lote va sólo
        al bloque de ese lote. Sin piezas anotadas hay UNA porción y el
        resultado es el de siempre. */
-    const e = unirPorciones(
+    const porciones = partirPorLote(b.bloques, b.piezas);
+    const unida = unirPorciones(
       b.label,
-      partirPorLote(b.bloques, b.piezas).map((p) =>
-        distribuirEspecie({ label: b.label, bloques: p.bloques, piezas: p.piezas }, dimInterna, precio),
-      ),
+      porciones.map((p) => distribuirEspecie({ label: b.label, bloques: p.bloques, piezas: p.piezas }, dimInterna, precio)),
       b.bloques,
     );
+    const sinBloque = lotesSinBloqueDe(porciones);
+    const e = sinBloque.length > 0 ? { ...unida, lotesSinBloque: sinBloque } : unida;
     const respaldoM3 = r4(e.rollizaM3 + e.aserradaDirectaM3);
     if (e.estado === "sin-rolliza" && e.aserradaM3 > EPS) aserradaHuerfana.push({ especie: b.label, m3: e.aserradaM3 });
     if (e.estado === "sin-aserrada" && respaldoM3 > EPS) rollizaHuerfana.push({ especie: b.label, m3: respaldoM3 });

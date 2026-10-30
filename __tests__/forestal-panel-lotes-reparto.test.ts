@@ -64,6 +64,10 @@ describe("notasDelPatio — por qué el patio propone menos, y dónde se arregla
     expect(n[1]).toContain("sin especie: corrígela en su guía");
   });
 
+  it("patio de más de 5000 trozas: avisa que la lista muestra las primeras", () => {
+    expect(notasDelPatio({ ...vacio, truncado: true })).toEqual([expect.stringContaining("más de 5000 trozas libres")]);
+  });
+
   it("patio vacío: una frase, no una lista en blanco", () => {
     expect(notasDelPatio(vacio)).toEqual([expect.stringContaining("No hay trozas libres en el patio")]);
   });

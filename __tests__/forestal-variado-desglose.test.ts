@@ -89,6 +89,19 @@ describe("desglosarVariado", () => {
     }
   });
 
+  /* Revisión 30-10: abrir el paquete perdía la casilla Lote y sus tablas se iban a cualquier lote. */
+  it("las filas abiertas conservan el lote del paquete, y dos lotes no se juntan al agrupar", () => {
+    const r = desglosarVariado([{ ...pieza("v", 4, 6, 6, 8, ESPECIE_VARIADO), lote: "29-2026" }], bloques, VARIADO_DEFAULT);
+    expect(r.piezas.length).toBeGreaterThan(0);
+    expect(r.piezas.every((p) => p.lote === "29-2026")).toBe(true);
+    const iguales = [
+      { ...pieza("a", 5, 2, 8, 10, "Tornillo"), lote: "29-2026" },
+      { ...pieza("b", 5, 2, 8, 10, "Tornillo"), lote: "30-2026" },
+      { ...pieza("c", 5, 2, 8, 10, "Tornillo"), lote: "29-2026" },
+    ];
+    expect(agruparPiezasIguales(iguales).map((p) => `${p.lote}:${p.cantidad}`).sort()).toEqual(["29-2026:10", "30-2026:5"]);
+  });
+
   it("tipo = el de cada MEDIDA abierta, ya no «Paquetería» (Brandon 03-10); mismo largo, ids estables", () => {
     const largo = desglosarVariado([pieza("v", 4, 6, 6, 8, ESPECIE_VARIADO)], bloques, VARIADO_DEFAULT);
     expect(largo.piezas.every((p) => p.largo === 8)).toBe(true);
