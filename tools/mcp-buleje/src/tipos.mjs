@@ -51,7 +51,7 @@
  * @template A
  * @typedef {Object} DefHerramienta
  * @property {string} nombre                     snake_case, en español (ej. "adelanto_dar")
- * @property {string} grupo                      "sistema"|"hoy"|"ventas"|"caja"|"pedidos"|"inventario"|"compras"|"clientes"|"adelantos"|"ctp"|"gtf"|"cubicacion"|"documentos"|"rrhh"|"tareas"
+ * @property {string} grupo                      "sistema"|"hoy"|"ventas"|"caja"|"pedidos"|"inventario"|"compras"|"clientes"|"adelantos"|"ctp"|"gtf"|"cubicacion"|"documentos"|"rrhh"|"tareas"|"loth"|"ingresos"|"lotes"|"directorio"
  * @property {Tipo} tipo
  * @property {string} descripcion                español, dice la unidad (S/, PT, m³) y qué devuelve
  * @property {import("zod").ZodRawShape} entrada SIEMPRE incluye negocio?: string

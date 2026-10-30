@@ -19,6 +19,15 @@ describe("datos personales", () => {
     expect(r).toEqual({ cliente: { nombre: "Ana", dni: "••••8912", phone: "••• ••• 321", carnet: "••••4567" }, numeroGuia: "00012345", sueldo: "(oculto: sueldo)" });
   });
 
+  it("3.ª pasada: documentos con prefijo, correo y cuenta; ids, tipos y tarifas del negocio quedan", () => {
+    const r = taparPorClaves({ representanteDni: "45678912", titularDoc: "10456789123", titularNumeroDocumento: "45678912", proveedorDocumento: "20123456789",
+      conductorDni: "41234567", licencia: "Q41234567", email: "ana.perez@gmail.com", cuentaNumero: "1912345678901", cci: "00219100123456789012",
+      documentId: "cmabc123", tipoDocumento: "DNI", tarifa: 45, sueldo: 1200 });
+    expect(r).toEqual({ representanteDni: "••••8912", titularDoc: "••••9123", titularNumeroDocumento: "••••8912", proveedorDocumento: "••••6789",
+      conductorDni: "••••4567", licencia: "••••4567", email: "a•••@gmail.com", cuentaNumero: "••••8901", cci: "••••9012",
+      documentId: "cmabc123", tipoDocumento: "DNI", tarifa: 45, sueldo: "(oculto: sueldo)" });
+  });
+
   it("clientes_ver ya no le devuelve al modelo el celular ni el DNI completos", async () => {
     const { defs } = await cargarHerramientas();
     const pedir = vi.fn(async () => ({ ok: true, status: 200, ms: 2, datos: [{ id: "c1", name: "Ana Pérez", phone: "987654321", documento: "45678912", balance: 30 }] }));

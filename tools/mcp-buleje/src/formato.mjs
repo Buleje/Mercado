@@ -45,6 +45,10 @@ export function recortar(filas, max = 50) {
 
 /** Fecha ISO o Date → «dd-mm-aaaa» en hora de Lima. */
 export function fechaLima(v) {
+  // Fechas de negocio guardadas como día suelto o medianoche UTC («2026-10-29», «…T00:00:00.000Z»): ese día tal cual.
+  // Pasarlas a Lima (UTC-5) las mostraba un día antes (carril B, 29-10).
+  const dia = typeof v === "string" ? v.match(/^(\d{4})-(\d{2})-(\d{2})(?:T00:00(?::00(?:\.0+)?)?(?:Z|\+00:00))?$/) : null;
+  if (dia) return `${dia[3]}-${dia[2]}-${dia[1]}`;
   const d = v instanceof Date ? v : new Date(v);
   if (Number.isNaN(d.getTime())) return "—";
   const p = new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", day: "2-digit", month: "2-digit", year: "numeric" }).formatToParts(d);

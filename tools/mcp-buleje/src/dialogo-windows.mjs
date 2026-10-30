@@ -57,12 +57,17 @@ public static class CandadoMouse {
   [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Punto p);
   [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr h, uint cual);
   [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern IntPtr GetModuleHandle(string nombre);
+  [StructLayout(LayoutKind.Sequential)] public struct Rect { public int L; public int T; public int R; public int B; }
+  [DllImport("user32.dll")] static extern bool GetClipCursor(out Rect r);
+  [DllImport("user32.dll")] static extern int GetSystemMetrics(int i);
   static readonly Proc proc = new Proc(Llamada);
   static IntPtr gancho = IntPtr.Zero;
   static IntPtr ventana = IntPtr.Zero;
   static int inyectados = 0;
   static int fisicoTick = 0;
   static bool hayFisico = false;
+  static IntPtr bajoDown = IntPtr.Zero;
+  static IntPtr bajoUp = IntPtr.Zero;
   public static int Inyectados { get { return inyectados; } }
   public static bool EsBoton(int msg) { return (msg >= 0x201 && msg <= 0x209) || (msg >= 0x20B && msg <= 0x20D); }
   public static bool Descartar(int msg, uint flags) { return EsBoton(msg) && (flags & 0x3u) != 0; }
@@ -72,9 +77,11 @@ public static class CandadoMouse {
         int msg = w.ToInt32();
         if (EsBoton(msg)) {
           Msll info = (Msll)Marshal.PtrToStructure(l, typeof(Msll));
+          // Todo DOWN cuenta, caiga donde caiga (4.ª pasada): uno soltado fuera no deja vivo el de un clic anterior.
+          if (msg == 0x201) { bajoDown = (info.Flags & 0x3u) == 0 ? WindowFromPoint(info.Pt) : IntPtr.Zero; }
           if (GetAncestor(WindowFromPoint(info.Pt), 2) == ventana) {
             if (Descartar(msg, info.Flags)) { inyectados++; return (IntPtr)1; }
-            if (msg == 0x202) { fisicoTick = Environment.TickCount; hayFisico = true; }
+            if (msg == 0x202) { bajoUp = WindowFromPoint(info.Pt); fisicoTick = Environment.TickCount; hayFisico = true; }
           }
         }
       }
@@ -87,8 +94,23 @@ public static class CandadoMouse {
     return gancho != IntPtr.Zero;
   }
   public static void Quitar() { if (gancho != IntPtr.Zero) { UnhookWindowsHookEx(gancho); gancho = IntPtr.Zero; } ventana = IntPtr.Zero; }
-  public static bool TomarFisico(int ms) { bool ok = hayFisico && unchecked(Environment.TickCount - fisicoTick) <= ms; hayFisico = false; return ok; }
+  // 3.ª pasada de security (29-10): no alcanza con que haya habido un clic físico reciente; el DOWN y el UP físicos tienen
+  // que haber caído sobre ESTE botón. Si no, un programa podía esperar un clic de Brandon en «No» o en el texto y postear
+  // en ese instante un clic al botón correcto.
+  public static bool TomarFisico(int ms, IntPtr boton) {
+    bool ok = hayFisico && unchecked(Environment.TickCount - fisicoTick) <= ms && boton != IntPtr.Zero && bajoDown == boton && bajoUp == boton && !Encerrado();
+    hayFisico = false; bajoDown = IntPtr.Zero; bajoUp = IntPtr.Zero;
+    return ok;
+  }
   public static void Anotar() { inyectados++; }
+  // Un programa que encierra el puntero (ClipCursor) sobre el botón correcto haría que el clic de Brandon caiga ahí:
+  // con el puntero encerrado, ningún clic aprueba (4.ª pasada de security, 29-10). Uso normal = nunca encerrado.
+  static bool Encerrado() {
+    Rect r;
+    if (!GetClipCursor(out r)) return false;
+    int x = GetSystemMetrics(76), y = GetSystemMetrics(77), w = GetSystemMetrics(78), h = GetSystemMetrics(79);
+    return r.L > x || r.T > y || r.R < x + w || r.B < y + h;
+  }
 }`;
 
 /** Nombre que ve Brandon (sin claves de código). */
@@ -197,10 +219,10 @@ ${CANDADO_CS}
     $b.Add_MouseClick({ param($s, $e)
       $ms = $script:sw.ElapsedMilliseconds
       if ($e.Button -eq [System.Windows.Forms.MouseButtons]::Left -and $s.Enabled -and $ms -ge $script:bloqueoHasta) {
-        # Sin un LBUTTONUP físico visto por el gancho = clic armado por programa (PostMessage, gancho caído): no vale.
-        if (-not [CandadoMouse]::TomarFisico(${FISICO_MS})) {
+        # Sin un DOWN y un UP físicos vistos por el gancho SOBRE este botón = clic armado por programa: no vale.
+        if (-not [CandadoMouse]::TomarFisico(${FISICO_MS}, $s.Handle)) {
           [CandadoMouse]::Anotar()
-          [Console]::Error.Write("clic en el boton $($s.Tag) sin rastro de mouse fisico: descartado")
+          [Console]::Error.Write("clic en el boton $($s.Tag) sin mouse fisico sobre ese boton: descartado")
           return
         }
         $script:resp = 'b' + [string]$s.Tag

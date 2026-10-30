@@ -20,6 +20,7 @@ export const ARRANQUE = join(AQUI, "arrancar.sh");
 const CLAUDE = join(CASA, ".local/bin/claude");
 const AVISO = join(CASA, ".local/bin/aviso-telegram");
 const ESTADO = join(CASA, ".local/state/buleje-vigia.json");
+export const APAGADO = join(CASA, ".local/state/buleje-vigia.apagado");
 const SEIS_HORAS = 6 * 3600_000;
 const MIN_HERRAMIENTAS = 70;
 /** El entorno que lo tumbó el 29-10: sin nvm en el PATH y con las opciones de red de ~/.bashrc. */
@@ -36,16 +37,20 @@ export function revisarRegistro({ config = join(CASA, ".claude.json"), arreglar 
   const apagadoEn = Object.entries(c?.projects ?? {}).filter(([, p]) => (p?.disabledMcpServers ?? []).includes("buleje")).map(([k]) => k);
   if (bien(c)) return { ok: true, apagadoEn };
   if (!arreglar) return { ok: false, problema: "no está registrado en Claude Code", apagadoEn };
+  // Se conservan las variables del registro anterior (BULEJE_MCP_SECO=1 = modo a seco): re-registrar no cambia el modo.
+  const env = Object.entries(c?.mcpServers?.buleje?.env ?? {}).filter(([k]) => /^BULEJE_MCP_[A-Z_]+$/.test(k)).flatMap(([k, v]) => ["-e", `${k}=${String(v).replace(/[^\w.-]/g, "")}`]);
   correr(CLAUDE, ["mcp", "remove", "buleje", "-s", "user"], { encoding: "utf8", timeout: 60_000 });
-  const r = correr(CLAUDE, ["mcp", "add", "buleje", "--scope", "user", "--", ARRANQUE], { encoding: "utf8", timeout: 60_000 });
+  const r = correr(CLAUDE, ["mcp", "add", "buleje", "--scope", "user", ...env, "--", ARRANQUE], { encoding: "utf8", timeout: 60_000 });
   if (bien(leer())) return { ok: true, arreglado: true, apagadoEn };
   return { ok: false, problema: `no se pudo registrar: ${String(r.stderr || r.stdout || r.error || "").trim().slice(0, 160)}`, apagadoEn };
 }
 
 /** Arranca el MCP como lo haría una sesión sin nvm y le pide `estado`. */
-export async function probarArranque({ conSesion }) {
+export async function probarArranque({ conSesion, envRegistro = {} }) {
   const t0 = Date.now();
-  const transporte = new StdioClientTransport({ command: ARRANQUE, args: [], env: ENTORNO_PELADO, stderr: "pipe" });
+  // Con las variables del registro (p. ej. BULEJE_MCP_SECO=1) `estado` dice el modo que de verdad tienen los chats.
+  const propias = Object.fromEntries(Object.entries(envRegistro).filter(([k]) => /^BULEJE_MCP_[A-Z_]+$/.test(k)));
+  const transporte = new StdioClientTransport({ command: ARRANQUE, args: [], env: { ...ENTORNO_PELADO, ...propias }, stderr: "pipe" });
   let errores = "";
   transporte.stderr?.on("data", (b) => { errores = (errores + String(b)).slice(-600); });
   const cliente = new Client({ name: "buleje-vigia", version: "1.0.0" });
@@ -92,12 +97,15 @@ function instalar() {
 async function main() {
   const args = process.argv.slice(2);
   if (args.includes("--instalar")) return instalar();
+  // Quitado a propósito (security 3.ª pasada): con este archivo el vigía no re-registra ni avisa.
+  if (existsSync(APAGADO) && !args.includes("--ver")) { console.log(`apagado a propósito (${APAGADO}); no hago nada`); return; }
   const ver = args.includes("--ver");
   const antes = leerJson(ESTADO, { problemas: [], ultimaSesion: 0 });
   const conSesion = args.includes("--sesion") || Date.now() - (antes.ultimaSesion ?? 0) > SEIS_HORAS;
 
   const reg = revisarRegistro({ arreglar: !ver });
-  const arr = existsSync(ARRANQUE) ? await probarArranque({ conSesion }) : { ok: false, problema: `falta ${ARRANQUE}` };
+  const envRegistro = leerJson(join(CASA, ".claude.json"), {})?.mcpServers?.buleje?.env ?? {};
+  const arr = existsSync(ARRANQUE) ? await probarArranque({ conSesion, envRegistro }) : { ok: false, problema: `falta ${ARRANQUE}` };
   const problemas = [
     ...(reg.ok ? [] : [`registro: ${reg.problema}`]),
     ...(arr.ok ? [] : [`arranque: ${arr.problema}`]),

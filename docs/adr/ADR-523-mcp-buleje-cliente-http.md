@@ -32,3 +32,18 @@ Claude operaba el panel con `curl`, cookies sueltas o Playwright. `tools/mcp-bod
 - Si Brandon está solo en el celular, la ventana vence (`sin_respuesta`). La v2 sería mandar un código al celular.
 - El usuario de Blas real lo crea Brandon (no hay clave de admin de Blas en la PC), con `node tools/mcp-buleje/configurar.mjs`.
 - Las rutas que auditan con `"admin"` literal en vez de `auth.username` se van viendo en `actividad_ver` y se corrigen de a una.
+
+## Actualización 29-10 noche — «que no se desactive» y catálogo completo
+
+Pedido de Brandon (29-10, ~19:30): «configura para que se active, porque a veces se desactiva y te tengo que pedir cada rato… quiero un MCP maduro para anotar, editar, borrar, modificar y consultar todo».
+
+- **Causa medida del «se desactiva»:** el registro decía `node servidor.mjs`. Una sesión de Claude abierta sin nvm en el PATH tomaba `/usr/bin/node` v18, que rechaza `--no-network-family-autoselection` del `NODE_OPTIONS` de `~/.bashrc`: el MCP moría en 127 ms (`CONNECTION_CLOSED`, log `mcp-logs-buleje` 30-10 00:20Z) y esa sesión quedaba sin herramientas.
+- **Lanzador** `tools/mcp-buleje/arrancar.sh`: Node de nvm (≥20) y `NODE_OPTIONS` limpio (solo `ipv4first`). El registro en scope user apunta a él.
+- **Vigía** `vigilar.mjs` + `mcp-buleje-vigia.timer` (cada 30 min): si el registro falta o apunta a otro lado lo rehace con `claude mcp add`; arranca el MCP en un entorno pelado (PATH sin nvm + el NODE_OPTIONS que lo tumbó) y le pide `estado`; cada 6 h revisa la sesión del usuario `claude`. Avisa por Telegram solo cuando algo se rompe o se cura. El panel apagado no avisa (es normal de noche).
+- **Sesión que se cura sola:** `/api/auth/me` responde 200 `{authenticated:false}` con la sesión vencida (no 401): el cliente lo trata como 401 (refresh → login). Un 403 de CSRF renueva la cookie y reintenta una vez (el proxy corta antes del handler, no duplica). Un error suelto ya no tumba el proceso.
+- **Herramienta `estado`** (sistema): panel, sesión por negocio, negocio sin activar, modo seco/real y propuestas vivas, en una llamada.
+- **Catálogo:** de 70 a 148 + 7 del sistema (47 lectura, 30 escritura, 71 con OK). Grupos nuevos `loth`, `ingresos`, `lotes`, `directorio`; mapa en `.claude/autonomo/mcp-buleje/cobertura-2026-10-29.md`. Regla que no cambia: toda escritura por el endpoint de la pantalla; plata, stock, saldo de madera, estados, borrar, anular y emitir documentos oficiales piden OK con los datos de la `previa`.
+- **`pedido()` nunca lanza:** si falta un dato, el resumen avisa con «OJO» y el panel lo rechaza (los tests del catálogo lo llaman con lo mínimo).
+- **Datos personales:** RRHH y `leer_get` tapan por clave y por forma; el resto de los grupos tapa por clave (DNI, celular, carné, sueldo) sin tocar números sueltos (guías, comprobantes).
+- **Probador** `probar.mjs`: un servidor y un login por corrida; lo que pide OK y `confirmar` van siempre a seco (nunca abre la ventana); con `--real` escribe solo en `qa-forestal`.
+- **Riesgo aceptado:** `app_launch` de desktop-control todavía deja pasar algunos programas; la ventana de OK descarta todo clic inyectado (`WH_MOUSE_LL` + `LLMHF_INJECTED`), así que no sirve para aprobarla. La barrera de fondo sigue siendo el rol del usuario `claude` (ver «Consecuencias»).

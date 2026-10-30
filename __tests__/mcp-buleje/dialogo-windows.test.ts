@@ -185,7 +185,7 @@ describe("dialogo-windows", () => {
     // 2.ª pasada 29-10: gancho WH_MOUSE_LL mientras la ventana está abierta; sin gancho, «no»; el clic necesita un LBUTTONUP físico.
     expect(s).toContain("class CandadoMouse");
     expect(s).toContain("[CandadoMouse]::Instalar($f.Handle)");
-    expect(s).toContain("[CandadoMouse]::TomarFisico(600)");
+    expect(s).toContain("[CandadoMouse]::TomarFisico(600, $s.Handle)");
     expect(s).toContain("[CandadoMouse]::Quitar()");
     expect(s).toContain('[Console]::Error.WriteLine("pid=$PID")');
     expect(s).toContain('"inyectados":');

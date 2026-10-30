@@ -12,6 +12,8 @@ describe("lista blanca de leer_get", () => {
     "/api/cierre-diario/preview",
     "/api/admin/documents",
     "/api/activity-log",
+    "/api/admin/forestal/cubicaciones-trozas",
+    "/api/admin/forestal/plantaciones",
   ])("permite %s y devuelve esa misma ruta", (r) => expect(rutaLecturaPermitida(r)).toEqual({ ok: true, motivo: "ok", ruta: r }));
 
   // Revisión de seguridad 29-10 (hallazgo 1): «%3F» cortaba la ruta en el filtro y el «..» lo resolvía new URL.

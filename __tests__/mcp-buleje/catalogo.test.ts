@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 const RAIZ = process.cwd();
-const GRUPOS = ["sistema", "hoy", "ventas", "caja", "pedidos", "inventario", "compras", "clientes", "adelantos", "ctp", "gtf", "cubicacion", "documentos", "rrhh", "tareas"];
+const GRUPOS = ["sistema", "hoy", "ventas", "caja", "pedidos", "inventario", "compras", "clientes", "adelantos", "ctp", "gtf", "cubicacion", "documentos", "rrhh", "tareas", "loth", "ingresos", "lotes", "directorio"];
 
 const modulos = await Promise.all(GRUPOS.map((g) => import(`../../tools/mcp-buleje/src/herramientas/${g}.mjs`)));
 const TODAS = modulos.flatMap((m) => m.herramientas);

@@ -1,5 +1,5 @@
 // Grupo «ctp»: libro CTP y madera en el negocio forestal (Blas). Madera siempre en PT primero, después m³ y piezas.
-import { z, negocio, idRuta, dia, limpiar, lista, madera, pick, soles, claveCantidad, leerSeguro, linea60 } from "../util-herramientas.mjs";
+import { z, negocio, idRuta, dia, limpiar, lista, madera, pick, soles, claveCantidad, leerSeguro, linea60, NO_VERIFICADO } from "../util-herramientas.mjs";
 
 const COL_MADERA = { pt: ["pt", "pies", "ptTotal", "totalPt", "piesTablares"], m3: ["m3", "volumeM3", "volumenM3", "volumeInputM3", "totalM3"], piezas: ["piezas", "pieces", "totalPiezas"] };
 const COLS_CTP = [["Fecha", ["entryDate", "fecha"], "f"], ["Sección", ["section"]], ["Especie", ["speciesCommon", "especie", "speciesCommonName"]], ["Producto", ["productType", "producto"]], ["Guía", ["gtfNumber", "gtf"]], ["Destino", ["destino"]]];
@@ -20,6 +20,37 @@ function claveVolumen(m) {
   const piezas = num(m.piezas);
   return piezas ? claveCantidad(piezas, { etiqueta: "Piezas", unidad: "pzas" }) : null;
 }
+
+/** El asiento CTP tal como lo tiene el panel (GET ?entryId=) o null. @param {string} id @param {any} leer */
+async function asientoDelPanel(id, leer) {
+  const r = await leerSeguro(leer, "/api/admin/forestal/ctp", { entryId: id }, { sinRecorte: true });
+  const e = /** @type {any} */ (r.datos)?.entry;
+  return r.ok && e && typeof e === "object" ? e : null;
+}
+/** Lo que salió de una corrida (PT, m³, kg o unidad) o null si no declaró. @param {any} e */
+const producto = (e) => {
+  const c = num(e.quantity), u = String(e.unit ?? "").toLowerCase();
+  if (!c) return null;
+  return u === "pt" ? madera({ pt: c, piezas: num(e.pieces) }) : u === "m3" ? madera({ m3: c, piezas: num(e.pieces) }) : `${c} ${linea60(u, 10)}`;
+};
+/** «corrida N.º 12 de producción · Shihuahuaco · tablas · salió 850 PT de 3,2 m³ de troza · registrado» del panel. @param {any} e */
+const queAsiento = (e) => {
+  if (!e) return `línea del libro CTP que ${NO_VERIFICADO} (no la pude leer del panel)`;
+  const prod = e.section === "produccion";
+  const vol = prod
+    ? `${producto(e) ? `salió ${producto(e)}` : "sin declarar"}${num(e.volumeInputM3) ? ` de ${madera({ m3: num(e.volumeInputM3) })} de troza` : ""}`
+    : madera({ pt: String(e.unit).toLowerCase() === "pt" ? num(e.quantity) : undefined, m3: num(e.volumeInputM3) ?? (String(e.unit).toLowerCase() === "m3" ? num(e.quantity) : undefined), piezas: num(e.pieces) });
+  return `${prod ? "corrida" : "línea"} N.º ${e.lineNo ?? "?"} de ${prod ? "producción" : linea60(e.section ?? "?", 20)} · ${linea60(e.speciesCommon ?? "?", 40)}${e.productType ? ` · ${linea60(e.productType, 30)}` : ""} · ${vol} · ${e.status ?? "?"}${e.usadoAt ? " · ya marcada como usada" : ""}`;
+};
+/** Botones = volumen del asiento según el panel (en una corrida, lo que salió; si no declaró, lo que entró). @param {any} e */
+const ventanaAsiento = (e) => ({
+  clave: !e ? null : e.section === "produccion" && num(e.quantity)
+    ? claveVolumen({ cantidad: e.quantity, unidad: e.unit, piezas: e.pieces })
+    : claveVolumen({ cantidad: e.quantity, unidad: e.unit, m3: e.volumeInputM3, piezas: e.pieces }),
+  filas: e
+    ? [{ etiqueta: "Asiento", valor: linea60(`${e.section ?? "?"} N.º ${e.lineNo ?? "?"}`) }, { etiqueta: "Especie / producto", valor: linea60(`${e.speciesCommon ?? "?"} · ${e.productType ?? "?"}`) }, { etiqueta: "Fecha / estado", valor: `${String(e.entryDate ?? "").slice(0, 10) || "?"} · ${e.status ?? "?"}` }]
+    : [{ etiqueta: "Asiento", valor: NO_VERIFICADO }],
+});
 
 const VISTAS_CTP = ["lista", "saldos", "disponibles", "conciliacion", "saldo_permisos", "kardex", "historial", "sin_origen", "resumen_jornadas"];
 
@@ -89,18 +120,6 @@ export const herramientas = [
     entrada: { negocio, buscar: z.string().max(120).optional(), especie: z.string().max(120).optional(), desde: dia.optional(), hasta: dia.optional() },
     pedido: (a) => ({ metodo: "GET", ruta: "/api/admin/forestal/wood-entries/aggregate", query: limpiar({ search: a.buscar, species: a.especie, from: a.desde, to: a.hasta }) }),
     formatear: (d) => (d && typeof d === "object" ? `Totales de ingresos: ${madera({ pt: pick(d, COL_MADERA.pt), m3: pick(d, COL_MADERA.m3), piezas: pick(d, COL_MADERA.piezas) })}\n${JSON.stringify(d).slice(0, 1500)}` : "Sin datos."),
-  },
-  {
-    nombre: "lotes_ver",
-    grupo: "ctp",
-    soloEn: ["forestal"],
-    tipo: "lectura",
-    descripcion: "Lotes de producción. vista=lotes (GET /api/admin/forestal/lotes; filtros estado y texto) o aserrio (GET /api/admin/forestal/lotes-aserrio; con id trae un lote). Volumen en PT, m³ y piezas.",
-    entrada: { negocio, vista: z.enum(["lotes", "aserrio"]).default("lotes"), estado: z.string().max(40).optional(), buscar: z.string().max(120).optional(), id: idRuta.optional() },
-    pedido: (a) => a.vista === "aserrio"
-      ? { metodo: "GET", ruta: "/api/admin/forestal/lotes-aserrio", query: limpiar({ id: a.id }) }
-      : { metodo: "GET", ruta: "/api/admin/forestal/lotes", query: limpiar({ status: a.estado, search: a.buscar }) },
-    formatear: (d) => lista(d, { titulo: "Lotes", cols: [["Lote", ["code", "codigo", "name", "id"]], ["Estado", ["status"]], ["Especie", ["speciesCommon", "especie"]]], colMadera: COL_MADERA }),
   },
   {
     nombre: "ctp_registrar",
@@ -199,5 +218,131 @@ export const herramientas = [
       clave: claveCantidad(a.volumenM3, { etiqueta: "Volumen", unidad: "m³" }),
       filas: [{ etiqueta: "Proveedor (como lo escribiste)", valor: a.proveedor }, { etiqueta: "Guía", valor: a.guia }, { etiqueta: "Especie", valor: a.especie }],
     }),
+  },
+  {
+    nombre: "ctp_marcar_usado",
+    grupo: "ctp",
+    soloEn: ["forestal"],
+    tipo: "confirmar",
+    descripcion: "Marca (o desmarca) una corrida de producción del libro CTP como «ya se usó» (PATCH /api/admin/forestal/ctp, action=marcar_usado): sale de Productos disponibles sin despacharse; reversible con usado=false. Marcar pide motivo. Solo admin/owner. Volumen en PT o m³. Ej.: {id:\"cm…\", usado:true, motivo:\"se usó en la casa\"}.",
+    entrada: {
+      negocio,
+      id: idRuta.describe("Id de la corrida de producción (ctp_ver vista=lista, sección produccion)"),
+      usado: z.boolean().describe("true = ya se usó · false = vuelve a disponibles"),
+      motivo: z.string().trim().max(500).optional().describe("Para qué se usó (obligatorio si usado=true)"),
+    },
+    pedido: (a) => {
+      return { metodo: "PATCH", ruta: "/api/admin/forestal/ctp", cuerpo: limpiar({ id: a.id, action: "marcar_usado", usado: a.usado, motivo: a.motivo }) };
+    },
+    previa: (a, leer) => asientoDelPanel(a.id, leer),
+    resumen: (a, previa) => `${a.usado ? "Marcar como ya usada" : "Volver a disponibles"} la ${queAsiento(previa)}.${a.usado ? ` Motivo: ${a.motivo ?? "?"}. Sale de Productos disponibles.` : ""}${a.usado && !(a.motivo && a.motivo.length >= 3) ? " OJO: sin motivo (3+ letras) el panel lo rechaza." : ""}${previa && previa.section !== "produccion" ? " OJO: no es una corrida de producción y el panel la va a rechazar." : ""}`,
+    ventana: (_a, previa) => ventanaAsiento(previa),
+  },
+  {
+    nombre: "ctp_declarar_produccion",
+    grupo: "ctp",
+    soloEn: ["forestal"],
+    tipo: "confirmar",
+    descripcion: "Declara lo que produjo una corrida abierta del libro CTP (PATCH /api/admin/forestal/ctp, action=declarar_produccion): producto, cantidad y unidad (PT, m³, kg o unidad). Si la madera es de un tercero, el cobro de aserrío se recalcula. Solo admin/owner. Ej.: {id:\"cm…\", cantidad:850, unidad:\"pt\", producto:\"tablas\", piezas:48}.",
+    entrada: {
+      negocio,
+      id: idRuta.describe("Id de la corrida (ctp_ver vista=lista, sección produccion)"),
+      cantidad: z.number().positive().max(9999999).describe("Cuánto salió, en la unidad"),
+      unidad: z.enum(["pt", "m3", "kg", "unidad"]).describe("Unidad de la cantidad"),
+      producto: z.string().trim().max(80).optional().describe("Tipo de producto (ej. tablas)"),
+      presentacion: z.string().trim().max(80).optional().describe("Presentación (ej. 1x8x10)"),
+      piezas: z.number().int().nonnegative().max(999999).optional().describe("Piezas producidas"),
+      codigoProducto: z.string().trim().max(80).optional().describe("Código del producto"),
+      lineaProduccion: z.string().trim().max(10).optional().describe("Línea de producción"),
+      observaciones: z.string().trim().max(1000).optional().describe("Notas"),
+    },
+    pedido: (a) => ({
+      metodo: "PATCH",
+      ruta: "/api/admin/forestal/ctp",
+      cuerpo: limpiar({ id: a.id, action: "declarar_produccion", quantity: a.cantidad, unit: a.unidad, productType: a.producto, presentacion: a.presentacion, pieces: a.piezas, codigoProducto: a.codigoProducto, lineaProduccion: a.lineaProduccion, observations: a.observaciones }),
+    }),
+    previa: (a, leer) => asientoDelPanel(a.id, leer),
+    resumen: (a, previa) => {
+      const e = /** @type {any} */ (previa);
+      const tercero = e && (e.duenoMadera === "tercero" || e.duenoParteId) ? ` La madera es de un tercero${e.titularNombre ? ` (${linea60(e.titularNombre, 60)})` : ""}: el cobro de aserrío se recalcula.` : "";
+      return `Declarar en la ${queAsiento(e)} lo producido: ${madera({ pt: a.unidad === "pt" ? a.cantidad : undefined, m3: a.unidad === "m3" ? a.cantidad : undefined, piezas: a.piezas })}${a.unidad === "kg" || a.unidad === "unidad" ? ` ${a.cantidad} ${a.unidad}` : ""}${a.producto ? ` de ${a.producto}` : ""}. Cambia el saldo de producto.${tercero}`;
+    },
+    // Cantidad NUEVA: el dato de los botones es lo que se declara (atado al pedido); la corrida y su entrada, del panel.
+    ventana: (a, previa) => {
+      const e = /** @type {any} */ (previa);
+      return {
+        clave: claveVolumen({ cantidad: a.cantidad, unidad: a.unidad, piezas: a.piezas }),
+        filas: [...ventanaAsiento(e).filas.slice(0, 3), { etiqueta: "Entró a la corrida", valor: e ? madera({ m3: num(e.volumeInputM3) }) : "no se pudo leer" }],
+      };
+    },
+  },
+  {
+    nombre: "ctp_corregir_linea",
+    grupo: "ctp",
+    soloEn: ["forestal"],
+    tipo: "escritura",
+    descripcion: "Corrige campos de un asiento del libro CTP (PATCH /api/admin/forestal/ctp, action=corregir_linea) sin anularlo: observaciones, presentación, especie, producto, origen, dueño, unidad, cantidad o volumen de entrada. Tocar cantidad, volumen, unidad, especie, producto, origen (permiso) o dueño pide OK de Brandon. Solo admin/owner. Ej.: {id:\"cm…\", observaciones:\"corrida del turno tarde\"}.",
+    entrada: {
+      negocio,
+      id: idRuta.describe("Id del asiento (ctp_ver vista=lista)"),
+      observaciones: z.string().trim().max(2000).optional().describe("Observaciones"),
+      presentacion: z.string().trim().max(120).optional().describe("Presentación"),
+      materiaPrima: z.string().trim().max(200).optional().describe("Referencia de la materia prima"),
+      especie: z.string().trim().max(120).optional().describe("Nombre común"),
+      especieCientifica: z.string().trim().max(160).optional().describe("Nombre científico"),
+      producto: z.string().trim().max(120).optional().describe("Tipo de producto"),
+      origen: z.string().trim().max(120).optional().describe("Código de origen"),
+      dueno: z.enum(["propia", "tercero"]).optional().describe("De quién es la madera"),
+      titular: z.string().trim().max(160).optional().describe("Titular (si es de un tercero)"),
+      unidad: z.string().trim().max(20).optional().describe("Unidad (pt, m3, kg, unidad)"),
+      cantidad: z.number().nonnegative().max(9999999999).optional().describe("Cantidad corregida (hasta 4 decimales)"),
+      volumenEntradaM3: z.number().nonnegative().max(99999999).optional().describe("Volumen de entrada corregido en m³ (hasta 4 decimales)"),
+    },
+    confirmarSi: (a) => ["cantidad", "volumenEntradaM3", "unidad", "especie", "producto", "dueno", "titular", "origen"].some((k) => a[k] !== undefined),
+    pedido: (a) => {
+      const decimal = (n) => (n === undefined ? undefined : String(Math.round(n * 10000) / 10000));
+      const campos = limpiar({
+        observations: a.observaciones, presentacion: a.presentacion, materiaPrimaRef: a.materiaPrima, speciesCommon: a.especie, speciesScientific: a.especieCientifica,
+        productType: a.producto, originCode: a.origen, duenoMadera: a.dueno, titularNombre: a.titular, unit: a.unidad, quantity: decimal(a.cantidad), volumeInputM3: decimal(a.volumenEntradaM3),
+      });
+      return { metodo: "PATCH", ruta: "/api/admin/forestal/ctp", cuerpo: { id: a.id, action: "corregir_linea", campos } };
+    },
+    previa: (a, leer) => asientoDelPanel(a.id, leer),
+    resumen: (a, previa) => {
+      const e = /** @type {any} */ (previa);
+      const cambios = [
+        a.cantidad !== undefined && `cantidad ${e?.quantity ?? "?"} → ${a.cantidad}`,
+        a.volumenEntradaM3 !== undefined && `volumen de entrada ${e ? madera({ m3: num(e.volumeInputM3) }) : "?"} → ${madera({ m3: a.volumenEntradaM3 })}`,
+        a.unidad !== undefined && `unidad ${e?.unit ?? "?"} → ${a.unidad}`,
+        a.especie !== undefined && `especie ${e?.speciesCommon ?? "?"} → ${a.especie}`,
+        a.producto !== undefined && `producto ${e?.productType ?? "?"} → ${a.producto}`,
+        a.dueno !== undefined && `dueño ${e?.duenoMadera ?? "?"} → ${a.dueno}`,
+        a.titular !== undefined && `titular → ${linea60(a.titular, 60)}`,
+        a.origen !== undefined && `origen ${e?.originCode ?? "—"} → ${a.origen}`,
+      ].filter(Boolean);
+      // ctp/route.ts corregir_linea: cantidad, especie o producto recotizan el aserrío que se le cobra al tercero.
+      const tocaPrecio = a.cantidad !== undefined || a.especie !== undefined || a.producto !== undefined;
+      const tercero = e && (e.duenoMadera === "tercero" || e.duenoParteId);
+      return `Corregir la ${queAsiento(e)}: ${cambios.join(", ") || "notas y datos de texto"}.${tercero && tocaPrecio ? ` OJO: la madera es de un tercero (${linea60(e.titularNombre ?? "sin titular", 40)}): el cobro de aserrío se recalcula.` : ""}`;
+    },
+    // La clave = lo que va a QUEDAR (cantidad o volumen nuevo, atado al pedido); lo de antes va en una fila.
+    ventana: (a, previa) => {
+      const e = /** @type {any} */ (previa);
+      const unidad = a.unidad ?? e?.unit;
+      const clave = a.cantidad !== undefined ? claveVolumen({ cantidad: a.cantidad, unidad })
+        : a.volumenEntradaM3 !== undefined ? claveVolumen({ m3: a.volumenEntradaM3 })
+        : ventanaAsiento(e ? { ...e, unit: unidad } : null).clave;
+      const cambio = (etiqueta, antes, despues) => ({ etiqueta, valor: linea60(`${antes ?? "—"} → ${despues}`) });
+      const filas = [
+        e ? { etiqueta: "Antes (panel)", valor: linea60(`${e.quantity ?? "?"} ${e.unit ?? ""} · entrada ${madera({ m3: num(e.volumeInputM3) })}`) } : { etiqueta: "Asiento", valor: NO_VERIFICADO },
+        e && { etiqueta: "Asiento", valor: linea60(`${e.section ?? "?"} N.º ${e.lineNo ?? "?"} · ${e.speciesCommon ?? "?"}`) },
+        a.origen !== undefined && cambio("Origen (panel → nuevo)", e?.originCode, a.origen),
+        a.dueno !== undefined && cambio("Dueño (panel → nuevo)", e?.duenoMadera, a.dueno),
+        a.especie !== undefined && cambio("Especie (panel → nueva)", e?.speciesCommon, a.especie),
+        a.producto !== undefined && cambio("Producto (panel → nuevo)", e?.productType, a.producto),
+      ].filter(Boolean);
+      return { clave, filas: filas.slice(0, 4) };
+    },
+    formatear: () => "Asiento corregido.",
   },
 ];

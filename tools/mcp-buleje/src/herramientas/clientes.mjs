@@ -140,4 +140,22 @@ export const herramientas = [
       };
     },
   },
+  {
+    nombre: "cliente_borrar",
+    grupo: "clientes",
+    tipo: "confirmar",
+    descripcion: "Borra un cliente por teléfono (DELETE /api/customers/[phone], solo admin; deja registro por la Ley 29733). Pide OK de Brandon; nombre, deuda y últimos dígitos del teléfono los saca el panel.",
+    entrada: { negocio, telefono: idRuta.describe("Teléfono del cliente: el nombre del aviso lo saca el panel") },
+    pedido: (a) => ({ metodo: "DELETE", ruta: `/api/customers/${a.telefono}` }),
+    previa: (a, leer) => clientePorTelefono(a.telefono, leer),
+    resumen: (a, previa) => {
+      const p = /** @type {any} */ (previa);
+      const deuda = p?.creditBalance !== undefined && Number(p.creditBalance) > 0 ? ` Debe ${soles(Number(p.creditBalance))}: esa deuda se pierde.` : "";
+      return `Borrar al cliente ${verificado(p?.name)} (tel. ${colaDe4(a.telefono)}).${deuda} No se puede deshacer.`;
+    },
+    ventana: (a, previa) => {
+      const p = /** @type {any} */ (previa);
+      return { clave: p?.name ? claveNombre(p.name, [], { etiqueta: "Cliente", palabra: "nombre" }) : null, filas: [filaIdentidad(p), { etiqueta: "Debe hoy", valor: p?.creditBalance === undefined ? "no se pudo leer" : soles(Number(p.creditBalance)) }] };
+    },
+  },
 ];

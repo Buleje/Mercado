@@ -3,7 +3,7 @@
 
 const PERMITIDO = [
   /^\/api\/admin\/(today-summary|inicio|dashboard|overview|ventas-overview|por-cobrar|agenda\/hoy|agenda\/calendario|documents)(\/|$)/,
-  /^\/api\/admin\/forestal\/(ctp|gtf|lotes|lotes-aserrio|lotes-mixtos|wood-entries|cubicaciones|anexos|distribuciones|reportes-diarios|especies|directorio|fletes|tramites|plan|loth|contratos|salidas-por-registrar|cuenta|operaciones)(\/|$)/,
+  /^\/api\/admin\/forestal\/(ctp|gtf|lotes|lotes-aserrio|lotes-mixtos|wood-entries|cubicaciones|cubicaciones-trozas|plantaciones|anexos|distribuciones|reportes-diarios|especies|directorio|fletes|tramites|plan|loth|contratos|salidas-por-registrar|cuenta|operaciones)(\/|$)/,
   /^\/api\/(sales|orders|inventory|inventory-movements|products|purchases|compras|suppliers|customers|fiados|adelantos|rrhh|treasury|cash-registers|daily-report|daily-digest|tasks|notes|search|activity-log|audit-trail|stats)(\/|$)/,
   /^\/api\/cierre-diario\/preview(\/|$)/,
 ];

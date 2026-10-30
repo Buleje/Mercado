@@ -134,3 +134,14 @@ describe("vigía", () => {
     expect(problemasDeEstado("bodega: SIN SESIÓN — clave")).toHaveLength(1);
   });
 });
+
+describe("vigía: registro con modo a seco", () => {
+  it("al re-registrar conserva BULEJE_MCP_SECO=1 (no pasa a real sin querer)", () => {
+    const d = mkdtempSync(join(tmpdir(), "vigia-"));
+    const f = join(d, "claude.json");
+    writeFileSync(f, JSON.stringify({ mcpServers: { buleje: { command: "node", args: ["x"], env: { BULEJE_MCP_SECO: "1", OTRA: "no" } } } }));
+    const correr = vi.fn((_c, args) => { if (args[1] === "add") writeFileSync(f, JSON.stringify({ mcpServers: { buleje: { command: ARRANQUE, args: [] } } })); return { status: 0 }; });
+    revisarRegistro({ config: f, correr });
+    expect(correr.mock.calls[1][1]).toEqual(["mcp", "add", "buleje", "--scope", "user", "-e", "BULEJE_MCP_SECO=1", "--", ARRANQUE]);
+  });
+});

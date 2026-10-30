@@ -1,6 +1,6 @@
 // @ts-nocheck — importa .mjs del MCP
 import { describe, it, expect } from "vitest";
-import { soles, madera, numero, recortar } from "../../tools/mcp-buleje/src/formato.mjs";
+import { soles, madera, numero, recortar, fechaLima } from "../../tools/mcp-buleje/src/formato.mjs";
 
 describe("formato", () => {
   it("soles con punto de miles y coma decimal", () => {
@@ -21,5 +21,11 @@ describe("formato", () => {
     expect(r).toMatchObject({ truncado: true, total: 70 });
     expect(r.filas).toHaveLength(50);
     expect(recortar([1, 2]).truncado).toBe(false);
+  });
+  it("fechaLima: el día de negocio guardado a medianoche UTC no se corre al día anterior", () => {
+    expect(fechaLima("2026-10-29")).toBe("29-10-2026");
+    expect(fechaLima("2026-10-29T00:00:00.000Z")).toBe("29-10-2026");
+    expect(fechaLima("2026-10-30T02:30:00.000Z")).toBe("29-10-2026"); // 21:30 en Lima
+    expect(fechaLima("x")).toBe("—");
   });
 });

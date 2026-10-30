@@ -1,5 +1,5 @@
 // Grupo «compras»: compras a proveedores. Registrar una compra mueve plata y stock → pide OK.
-import { z, negocio, idRuta, limpiar, lista, soles, claveMonto, claveNombre, fichaPorId, filaIdentidad, colaDe4, antesDelPanel, conMarca, linea60, verificado, NO_VERIFICADO } from "../util-herramientas.mjs";
+import { z, negocio, idRuta, limpiar, lista, ficha, soles, claveMonto, claveNombre, fichaPorId, filasCompletas, otrosNombres, filaIdentidad, colaDe4, antesDelPanel, conMarca, linea60, verificado, NO_VERIFICADO } from "../util-herramientas.mjs";
 
 /** Subtotal estimado (el servidor recalcula): costo × cantidad − descuento + flete + otros. */
 const subtotal = (a) => a.items.reduce((s, i) => s + i.costoUnitario * i.cantidad, 0) * (1 - (a.descuentoPct ?? 0) / 100) + (a.flete ?? 0) + (a.otrosCostos ?? 0);
@@ -8,6 +8,105 @@ function proveedorVisto(a, previa) {
   if (a.proveedorId) return verificado(/** @type {any} */ (previa)?.name);
   return a.proveedor ? `${NO_VERIFICADO} (proveedor sin id: «${linea60(a.proveedor, 40)}»)` : "sin proveedor";
 }
+
+// ── Carril C (29-10): ver, cancelar, recibir y borrar una compra; borrar un proveedor ───────────────
+const numOrNull = (v) => (v !== undefined && v !== null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : undefined);
+/** La orden de compra del panel (nombre del proveedor, total en S/ y estado salen de acá, nunca del modelo). */
+const compraPorId = async (id, leer) => {
+  const c = /** @type {any} */ (await fichaPorId(leer, `/api/purchases/${id}`, "purchase"));
+  return c ? { ...c, proveedor: c.supplierName ?? c.supplier?.name, total: numOrNull(c.total), items: Array.isArray(c.items) ? c.items.length : undefined } : undefined;
+};
+const filasCompra = (p) => [{ etiqueta: "Proveedor", valor: verificado(p?.proveedor) }, { etiqueta: "Total", valor: p?.total === undefined ? "no se pudo leer" : soles(p.total) }, { etiqueta: "Estado hoy", valor: p?.status ? String(p.status) : "no se pudo leer" }, { etiqueta: "Productos", valor: p?.items === undefined ? "no se pudo leer" : String(p.items) }];
+const claveCompra = (p, etiqueta) => (p?.total !== undefined ? claveMonto(p.total, { etiqueta }) : null);
+
+/** @type {import("../tipos.mjs").DefHerramienta<any>[]} */
+const herramientasCompra = [
+  {
+    nombre: "compra_ver",
+    grupo: "compras",
+    tipo: "lectura",
+    descripcion: "Una compra por id (GET /api/purchases/[id], admin o almacenero): proveedor, estado, productos, total y pagos en S/. El id sale de compras_listar. Ej.: id de una compra pendiente.",
+    entrada: { negocio, id: idRuta.describe("Id de la compra (compras_listar)") },
+    pedido: (a) => ({ metodo: "GET", ruta: `/api/purchases/${a.id}` }),
+    formatear: (d) => {
+      const c = /** @type {any} */ (d);
+      const base = ficha(c, { titulo: "Compra", campos: [["Proveedor", ["supplierName"]], ["Estado", ["status"]], ["Total", ["total"], "s"], ["Forma de pago", ["paymentMethod"]], ["Comprobante", ["invoiceNumber"]], ["Flete", ["flete"], "s"], ["Entrega", ["deliveryDate"], "f"], ["Notas", ["notes"]], ["Id", ["id"]]] });
+      const items = Array.isArray(c?.items) ? c.items.slice(0, 30).map((i) => `- ${i.name ?? i.productName ?? `producto ${i.productId}`}: ${i.quantity} × ${soles(Number(i.unitCost ?? 0))}`) : [];
+      return items.length ? `${base}\nProductos (${items.length}):\n${items.join("\n")}` : base;
+    },
+  },
+  {
+    nombre: "compra_cancelar",
+    grupo: "compras",
+    tipo: "confirmar",
+    descripcion: "Cancela una compra (PATCH /api/purchases/[id], status=cancelado, admin o almacenero; si tiene deuda en Por pagar solo dueño, admin o encargado): cierra su deuda. Exige un motivo real. Pide OK de Brandon. Ej.: id=<id>, motivo=\"El proveedor no entregó\".",
+    entrada: { negocio, id: idRuta.describe("Id de la compra: proveedor y total del aviso los saca el panel"), motivo: z.string().min(3).max(300).describe("Por qué se cancela (≥3 letras)") },
+    pedido: (a) => ({ metodo: "PATCH", ruta: `/api/purchases/${a.id}`, cuerpo: { status: "cancelado", cancelReason: a.motivo } }),
+    previa: (a, leer) => compraPorId(a.id, leer),
+    resumen: (a, previa) => {
+      const p = /** @type {any} */ (previa);
+      return `Cancelar la compra a ${verificado(p?.proveedor)} por ${p?.total === undefined ? NO_VERIFICADO : soles(p.total)} (hoy: ${p?.status ?? "no se pudo leer"}). Si tiene deuda en Por pagar, se cierra. Motivo: ${linea60(a.motivo, 100)}.`;
+    },
+    ventana: (a, previa) => {
+      const p = /** @type {any} */ (previa);
+      return { clave: claveCompra(p, "Total de la compra"), filas: filasCompra(p) };
+    },
+  },
+  {
+    nombre: "compra_recibir",
+    grupo: "compras",
+    tipo: "confirmar",
+    descripcion: "Cambia el estado de una compra (PATCH /api/purchases/[id]): recibido = llegó entera (suma stock y costo), parcial = solo cambia el estado (NO suma stock). Pide OK de Brandon. Ej.: id=<id>, estado=\"recibido\".",
+    entrada: { negocio, id: idRuta.describe("Id de la compra: proveedor y total del aviso los saca el panel"), estado: z.enum(["recibido", "parcial"]).describe("recibido o parcial") },
+    pedido: (a) => ({ metodo: "PATCH", ruta: `/api/purchases/${a.id}`, cuerpo: { status: a.estado } }),
+    previa: (a, leer) => compraPorId(a.id, leer),
+    resumen: (a, previa) => {
+      const p = /** @type {any} */ (previa);
+      const quien = `la compra a ${verificado(p?.proveedor)} por ${p?.total === undefined ? NO_VERIFICADO : soles(p.total)} (hoy: ${p?.status ?? "no se pudo leer"})`;
+      return a.estado === "parcial"
+        ? `Marcar como parcial ${quien}. Solo cambia el estado: NO suma stock ni actualiza el costo.`
+        : `Marcar como recibido ${quien}. Suma stock de ${p?.items ?? "?"} producto(s) y actualiza su costo.`;
+    },
+    ventana: (a, previa) => ({ clave: claveCompra(/** @type {any} */ (previa), "Total de la compra"), filas: [...filasCompra(previa), { etiqueta: "Pasa a", valor: a.estado === "parcial" ? "parcial (sin sumar stock)" : "recibido (suma stock)" }] }),
+  },
+  {
+    nombre: "compra_borrar",
+    grupo: "compras",
+    tipo: "confirmar",
+    descripcion: "Borra una compra del panel (DELETE /api/purchases/[id], solo admin). No devuelve stock ni cierra deuda: para anular usa compra_cancelar. Pide OK de Brandon.",
+    entrada: { negocio, id: idRuta.describe("Id de la compra: proveedor y total del aviso los saca el panel") },
+    pedido: (a) => ({ metodo: "DELETE", ruta: `/api/purchases/${a.id}` }),
+    previa: (a, leer) => compraPorId(a.id, leer),
+    resumen: (a, previa) => {
+      const p = /** @type {any} */ (previa);
+      const st = String(p?.status ?? "");
+      const entro = st === "recibido" || st === "parcial";
+      return `Borrar la compra a ${verificado(p?.proveedor)} por ${p?.total === undefined ? NO_VERIFICADO : soles(p.total)} (estado: ${p?.status ?? "no se pudo leer"}). El stock y la deuda NO se revierten. No se puede deshacer.${entro ? " OJO: ya está " + st + " (su stock ya entró): se recomienda cancelarla (compra_cancelar) en vez de borrarla." : ""}`;
+    },
+    ventana: (a, previa) => {
+      const st = String(/** @type {any} */ (previa)?.status ?? "");
+      return { clave: claveCompra(/** @type {any} */ (previa), "Total de la compra"), filas: [...filasCompra(previa), { etiqueta: "Ojo", valor: "borrar NO revierte stock ni deuda" + (st === "recibido" || st === "parcial" ? `; ya está ${st}: mejor cancelar` : "") }] };
+    },
+  },
+  {
+    nombre: "proveedor_borrar",
+    grupo: "compras",
+    tipo: "confirmar",
+    descripcion: "Borra un proveedor (DELETE /api/suppliers/[id], solo admin). Pide OK de Brandon; nombre y RUC del aviso los saca el panel.",
+    entrada: { negocio, id: idRuta.describe("Id del proveedor (compras_listar vista=proveedores)") },
+    pedido: (a) => ({ metodo: "DELETE", ruta: `/api/suppliers/${a.id}` }),
+    previa: async (a, leer) => {
+      const f = /** @type {any} */ (await fichaPorId(leer, `/api/suppliers/${a.id}`, "supplier"));
+      const lis = await filasCompletas(leer, "/api/suppliers");
+      return f ? { ...f, otros: otrosNombres(lis, a.id, ["name"]) } : undefined;
+    },
+    resumen: (a, previa) => `Borrar al proveedor «${verificado(/** @type {any} */ (previa)?.name)}». No se puede deshacer.`,
+    ventana: (a, previa) => {
+      const p = /** @type {any} */ (previa);
+      return { clave: p?.name ? claveNombre(p.name, p.otros, { etiqueta: "Proveedor", palabra: "nombre" }) : null, filas: [filaIdentidad(p)] };
+    },
+  },
+];
 
 /** @type {import("../tipos.mjs").DefHerramienta<any>[]} */
 export const herramientas = [
@@ -134,4 +233,5 @@ export const herramientas = [
       };
     },
   },
+  ...herramientasCompra,
 ];
