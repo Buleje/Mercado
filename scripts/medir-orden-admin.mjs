@@ -64,6 +64,8 @@
  *   SALIDA=reports/orden-admin/ola2.json   otro archivo (por defecto orden-<ANCHO>-vistas.json)
  *   ANCHO=400 · ALTO=900 · TENANT=<slug> · TOPE_MS=30000 (tope de espera por lugar)
  *   LS='{"loth:plan:pestana":"censo"}'   siembra localStorage (lo que no vive en la URL)
+ *   CAPTURAS=<carpeta>   guarda la 1.ª pantalla de cada lugar · con ANCHO<640 suma `celular`
+ *               (blancos táctiles <44 px en todo el documento, alto del encabezado)
  *
  * Con lugares por argumento se MEZCLA con el reporte que había (reemplaza sólo
  * esos lugares). ~3-6 s por lugar: correr en background, no en un turno que espera.
@@ -73,6 +75,7 @@ import { chromium } from "playwright";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
 
 const RAIZ = new URL("../", import.meta.url);
 const BASE = process.env.DEV_BASE ?? "http://localhost:3000";
@@ -81,6 +84,8 @@ const ALTO = Number(process.env.ALTO ?? 900);
 const TENANT = process.env.TENANT ?? "main";
 const TOPE_MS = Number(process.env.TOPE_MS ?? 30_000);
 const SOLO_TABS = process.env.SOLO_TABS === "1";
+/** `CAPTURAS=<carpeta>`: guarda la primera pantalla de cada lugar (`<lugar>-<ANCHO>.png`). */
+const CAPTURAS = process.env.CAPTURAS ?? "";
 /* SOLO_TABS escribe en el reporte de sólo pestañas: una corrida corta no pisa el de 214 lugares. */
 const SALIDA = new URL(process.env.SALIDA ?? `reports/orden-admin/orden-${ANCHO}${SOLO_TABS ? "" : "-vistas"}.json`, RAIZ);
 /** Sin pedidos en vuelo durante este rato = la red se aquietó. */
@@ -452,6 +457,68 @@ function medirEnPagina() {
   };
 }
 
+/**
+ * Lo que sólo importa en el celular (29-10, «el panel en el celular»). A
+ * diferencia de `medirEnPagina` mira TODO el documento —encabezado, menú y
+ * barras incluidos—, porque en 400 px el armazón es la mitad de la pantalla.
+ *   tactiles   controles visibles con un lado < 44 px (la regla táctil del DS);
+ *              un checkbox/radio cuenta con su <label> si lo envuelve
+ *   cabecera   alto del encabezado del panel (px) y de la banda de título+pestañas
+ *   fuera      elementos fuera del contenido que se salen por la derecha
+ * Corre en la página.
+ */
+function medirCelularEnPagina() {
+  const W = window.innerWidth;
+  const seVe = (e) => {
+    const r = e.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.right < 0 || r.left > W) return false;
+    return !e.checkVisibility || e.checkVisibility({ visibilityProperty: true, opacityProperty: true });
+  };
+  const nombre = (e) =>
+    (e.getAttribute("aria-label") || e.innerText || e.getAttribute("title") || e.getAttribute("placeholder") || e.tagName.toLowerCase())
+      .trim()
+      .replace(/\s+/g, " ")
+      .slice(0, 24);
+  const sel = "a[href],button,[role=button],[role=tab],[role=menuitem],[role=switch],[role=checkbox],select,input:not([type=hidden]),summary,textarea";
+  const chicos = [];
+  let total = 0;
+  for (const e of document.querySelectorAll(sel)) {
+    if (!seVe(e) || e.closest("[aria-hidden=true],[inert]")) continue;
+    /* Un control dentro de otro (un ícono-botón dentro de un <summary>) cuenta una vez: el de afuera. */
+    if (e.parentElement?.closest(sel) && e.parentElement.closest(sel) !== e) continue;
+    total++;
+    let r = e.getBoundingClientRect();
+    const envuelve = e.matches("input[type=checkbox],input[type=radio]") ? e.closest("label") : null;
+    if (envuelve) r = envuelve.getBoundingClientRect();
+    /* Área de toque invisible (`after:absolute after:-inset-y-2.5`): cuenta el ::after si es más grande. */
+    const pa = getComputedStyle(e, "::after");
+    if (!envuelve && pa.content !== "none" && pa.position === "absolute") {
+      const px = (v) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : 0);
+      const ancho = Math.max(r.width, r.width - px(pa.left) - px(pa.right));
+      const alto = Math.max(r.height, r.height - px(pa.top) - px(pa.bottom));
+      r = { width: ancho, height: alto };
+    }
+    if (Math.min(r.width, r.height) < 44) {
+      const zona = e.closest("header") ? "cab" : e.closest("[data-admin-tabbar],[role=tablist]") ? "pest" : e.closest("table,.admin-mobile-cards") ? "tabla" : e.closest("[role=dialog]") ? "modal" : "cont";
+      chicos.push({ zona, t: `${nombre(e)} ${Math.round(r.width)}×${Math.round(r.height)}` });
+    }
+  }
+  const porZona = chicos.reduce((a, c) => ((a[c.zona] = (a[c.zona] ?? 0) + 1), a), {});
+  const cab = document.querySelector("header");
+  const banda = document.querySelector("[data-admin-tabbar]");
+  const main = document.querySelector("main#main-content") ?? document.querySelector("main");
+  const fuera = [...document.body.querySelectorAll("*")]
+    .filter((e) => !(main && main.contains(e)) && seVe(e) && e.getBoundingClientRect().right > W + 1)
+    .filter((e, _i, arr) => !arr.includes(e.parentElement))
+    .slice(0, 4)
+    .map((e) => `${e.tagName.toLowerCase()} «${nombre(e)}» +${Math.round(e.getBoundingClientRect().right - W)}px`);
+  return {
+    tactiles: { chicos: chicos.length, de: total, porZona, ej: chicos.slice(0, 8).map((c) => `${c.zona}:${c.t}`) },
+    cabecera: { alto: cab ? Math.round(cab.getBoundingClientRect().height) : null, banda: banda ? Math.round(banda.getBoundingClientRect().height) : null },
+    fuera,
+  };
+}
+
 async function entrar(page) {
   /* Pedido de la ola 1 (09-10): si el login no contesta en 60 s, esperar 1 min
      y reintentar UNA vez; el dev server no se reinicia desde acá. */
@@ -477,6 +544,11 @@ async function medirLugar(page, red, lugar, tope) {
   await page.goto(`${BASE}/admin?${q}`, { waitUntil: "domcontentloaded", timeout: 90_000 });
   const espera = await esperarContenido(page, red, tope);
   const m = await page.evaluate(medirEnPagina);
+  if (ANCHO < 640) m.celular = await page.evaluate(medirCelularEnPagina);
+  if (CAPTURAS) {
+    await mkdir(CAPTURAS, { recursive: true });
+    await page.screenshot({ path: `${CAPTURAS}/${idDe(lugar).replace(/:/g, "_")}-${ANCHO}.png` });
+  }
   const { llegada } = m;
   const llegadaId = llegada.ruta === "/admin" && llegada.tab ? idDe(llegada) : llegada.ruta;
   const redirigida = llegada.tab !== lugar.tab || (lugar.vista ? llegada.vista !== lugar.vista : false) || (lugar.sub ? llegada.sub !== lugar.sub : false);
@@ -499,6 +571,9 @@ function lineaDe(f) {
     f.tituloCero ? "TÍTULO APLASTADO" : "",
     f.minW?.anulados ? `min-w anulados ${f.minW.anulados} (cortos ${f.minW.cortos}${f.minW.ejemplos.length ? `: ${f.minW.ejemplos.join(", ")}` : ""})` : "",
     f.minW?.scrollX ? `scroll x ${f.minW.scrollX}: ${f.minW.scrollXEj.join(", ")}` : "",
+    f.celular
+      ? `táctil<44 ${f.celular.tactiles.chicos}/${f.celular.tactiles.de} ${JSON.stringify(f.celular.tactiles.porZona)} · cab ${f.celular.cabecera.alto}px banda ${f.celular.cabecera.banda}px${f.celular.fuera.length ? ` · fuera: ${f.celular.fuera.join(", ")}` : ""}`
+      : "",
   ].filter(Boolean);
   return `${marca} ${String(f.puntaje).padStart(5)}  ${f.lugar.padEnd(38)} ${String(f.pantallas).padStart(5)} pant · ${String(f.botones).padStart(3)} bot · ${f.tablas} tab · ${String(f.ayuda).padStart(4)} pal. ayuda · h2/h3/h4 ${f.h2}/${f.h3}/${f.h4} · ${(f.espera.ms / 1000).toFixed(1)} s${extra.length ? ` · ${extra.join(" · ")}` : ""}`;
 }
@@ -523,7 +598,8 @@ async function main() {
 
   console.log(`📐 midiendo el orden de ${lugares.length} lugares a ${ANCHO}×${ALTO} (tenant ${TENANT})\n`);
   const t0 = Date.now();
-  const browser = await chromium.launch();
+  /* 29-10: el Chromium que trae el paquete puede no estar bajado; el de qa-capturas sí. */
+  const browser = await chromium.launch({ executablePath: resolverChromium() ?? undefined });
   const ctx = await browser.newContext({ viewport: { width: ANCHO, height: ALTO }, extraHTTPHeaders: { "x-tenant-id": TENANT } });
   let page = await ctx.newPage();
   /* Un formulario con «¿salir sin guardar?» colgaría el `goto` siguiente: se sale.
