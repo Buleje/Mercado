@@ -113,6 +113,11 @@ interface PropsPorDia<T extends { day: string; iso: string }> {
   promedio?: number | null;
   /** Sin eje Y ni grilla: para el hero, donde la cifra grande ya da la escala. */
   compacto?: boolean;
+  /**
+   * Estirar al alto que le deje la tarjeta (`alto` pasa a ser el mínimo): en
+   * el tablero, la fila la marca la tarjeta vecina más alta.
+   */
+  estirar?: boolean;
 }
 
 /** Barras por día, un solo eje. El mejor día de una serie única va resaltado. */
@@ -124,11 +129,12 @@ export function BarrasPorDia<T extends { day: string; iso: string }>({
   apiladas = false,
   promedio,
   compacto = false,
+  estirar = false,
 }: PropsPorDia<T>) {
   const unica = series.length === 1 ? series[0] : null;
   let mejor = -1;
+  let max = 0;
   if (unica) {
-    let max = 0;
     data.forEach((f, i) => {
       const v = Number((f as Record<string, unknown>)[unica.key] ?? 0);
       if (v > max) {
@@ -138,86 +144,105 @@ export function BarrasPorDia<T extends { day: string; iso: string }>({
     });
   }
   const esHora = data[0]?.day.endsWith("h");
-  return (
-    <div style={{ height: alto }} className="w-full min-w-0">
-      <ResponsiveContainer
-        initialDimension={{ width: 1, height: 1 }}
-        minWidth={0}
-        width="100%"
-        height="100%"
+  // El rótulo «promedio S/ 10» pegado al eje se montaba sobre las fechas: sólo
+  // se escribe si la línea queda lejos del piso (la cifra está en los datos).
+  const rotuloPromedio = promedio != null && max > 0 && promedio / max >= 0.15;
+  const grafico = (
+    <ResponsiveContainer
+      initialDimension={{ width: 1, height: 1 }}
+      minWidth={0}
+      width="100%"
+      height="100%"
+    >
+      <BarChart
+        data={data}
+        margin={{ top: 8, right: 4, left: compacto ? 4 : 0, bottom: 0 }}
+        barGap={2}
       >
-        <BarChart
-          data={data}
-          margin={{ top: 8, right: 4, left: compacto ? 4 : 0, bottom: 0 }}
-          barGap={2}
-        >
-          {!compacto && (
-            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--rule-soft)" />
-          )}
-          <XAxis
-            dataKey="day"
-            tick={TICK}
-            axisLine={false}
-            tickLine={false}
-            interval="preserveStartEnd"
-            minTickGap={14}
-          />
-          <YAxis
-            hide={compacto}
-            tick={TICK}
-            axisLine={false}
-            tickLine={false}
-            width={64}
-            tickFormatter={(v) => fmtEje(formato, v)}
-          />
-          <Tooltip
-            cursor={{ fill: "var(--surface-sunken)" }}
-            content={(p) => (
-              <TooltipResumen
-                active={p.active}
-                payload={p.payload}
-                label={p.label}
-                formato={formato}
-                titulo={esHora ? undefined : (f) => fechaConDia(String(f.iso ?? ""))}
-              />
-            )}
-          />
-          {promedio != null && promedio > 0 && (
-            <ReferenceLine
-              y={promedio}
-              stroke={COLOR_CONCEPTO.referencia}
-              strokeDasharray="4 4"
-              label={{
-                value: `promedio ${fmtEje(formato, promedio)}`,
-                position: "insideTopRight",
-                fill: "var(--text-tertiary)",
-                fontSize: 14,
-              }}
+        {!compacto && (
+          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--rule-soft)" />
+        )}
+        <XAxis
+          dataKey="day"
+          tick={TICK}
+          axisLine={false}
+          tickLine={false}
+          interval="preserveStartEnd"
+          minTickGap={14}
+        />
+        <YAxis
+          hide={compacto}
+          tick={TICK}
+          axisLine={false}
+          tickLine={false}
+          width={64}
+          tickFormatter={(v) => fmtEje(formato, v)}
+        />
+        <Tooltip
+          cursor={{ fill: "var(--surface-sunken)" }}
+          content={(p) => (
+            <TooltipResumen
+              active={p.active}
+              payload={p.payload}
+              label={p.label}
+              formato={formato}
+              titulo={esHora ? undefined : (f) => fechaConDia(String(f.iso ?? ""))}
             />
           )}
-          {series.map((s) => (
-            <Bar
-              key={s.key}
-              dataKey={s.key}
-              name={s.nombre}
-              fill={s.color}
-              stackId={apiladas ? "a" : undefined}
-              radius={apiladas ? 0 : [4, 4, 0, 0]}
-              maxBarSize={32}
-              isAnimationActive={false}
-            >
-              {unica &&
-                data.map((f, i) => (
-                  <Cell
-                    key={f.iso}
-                    fill={s.color}
-                    fillOpacity={mejor < 0 || i === mejor ? 1 : 0.55}
-                  />
-                ))}
-            </Bar>
-          ))}
-        </BarChart>
-      </ResponsiveContainer>
+        />
+        {promedio != null && promedio > 0 && (
+          <ReferenceLine
+            y={promedio}
+            stroke={COLOR_CONCEPTO.referencia}
+            strokeDasharray="4 4"
+            label={
+              rotuloPromedio
+                ? {
+                    value: `promedio ${fmtEje(formato, promedio)}`,
+                    position: "insideTopRight",
+                    fill: "var(--text-tertiary)",
+                    fontSize: 14,
+                  }
+                : undefined
+            }
+          />
+        )}
+        {series.map((s) => (
+          <Bar
+            key={s.key}
+            dataKey={s.key}
+            name={s.nombre}
+            fill={s.color}
+            stackId={apiladas ? "a" : undefined}
+            radius={apiladas ? 0 : [4, 4, 0, 0]}
+            maxBarSize={32}
+            isAnimationActive={false}
+          >
+            {unica &&
+              data.map((f, i) => (
+                <Cell
+                  key={f.iso}
+                  fill={s.color}
+                  fillOpacity={mejor < 0 || i === mejor ? 1 : 0.55}
+                />
+              ))}
+          </Bar>
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
+  if (estirar) {
+    // absolute: el gráfico toma el alto de la celda sin empujarla (sin bucle
+    // de ResizeObserver que la haga crecer).
+    return (
+      <div style={{ minHeight: alto }} className="relative w-full min-w-0 flex-1">
+        <div className="absolute inset-0">{grafico}</div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ height: alto }} className="w-full min-w-0">
+      {grafico}
     </div>
   );
 }

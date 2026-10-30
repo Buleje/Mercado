@@ -108,7 +108,7 @@ export function ParaHoy({ dateRange }: { dateRange?: DateRange }) {
         {saludo} · {fechaConDia(new Date())}
         {brief && <> · Ayer vendiste <span className="font-bold tabular-nums text-[var(--text-primary)]">{soles(brief.ventasAyer)}</span></>}
       </span>
-      <span className="mt-0.5 block text-xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)]">
+      <span className="mt-0.5 block text-lg font-extrabold leading-tight tracking-tight text-[var(--text-primary)] sm:text-xl">
         {n === 0 ? "Todo en orden por ahora" : `Tienes ${n} ${n === 1 ? "cosa" : "cosas"} por resolver`}
       </span>
     </span>
@@ -130,7 +130,7 @@ export function ParaHoy({ dateRange }: { dateRange?: DateRange }) {
 
   return (
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <div className="flex flex-wrap items-center gap-3 px-5 py-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-2.5 sm:py-3">
         <CardTitle as="h2" className="min-w-0 flex-1 basis-56">
           <button
             type="button"
@@ -157,7 +157,7 @@ export function ParaHoy({ dateRange }: { dateRange?: DateRange }) {
           ) : (
             <ListaDeAlertas
               alerts={alertas}
-              tamano="amplio"
+              tamano="compacto"
               className={cn(
                 n > 1 && "lg:grid lg:grid-cols-2 lg:divide-y-0 lg:[&>li]:border-b lg:[&>li]:border-[var(--rule-soft)] lg:-mb-px",
               )}

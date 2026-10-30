@@ -4,26 +4,28 @@ import { useEffect, useRef } from "react";
 import type { DateRange } from "./DashboardDateRange";
 import { useOverview } from "@/components/admin/hoy/use-overview";
 import { SkeletonEditorial } from "@/components/ui-system";
-import { InicioMultiCharts } from "./InicioMultiCharts";
 import EmptyDateRangeState from "./EmptyDateRangeState";
-import { RitmoDelPeriodo, type DiaDeVenta } from "./resumen/RitmoDelPeriodo";
+import { TableroResumen } from "./resumen/TableroResumen";
+import type { DiaDeVenta } from "./resumen/tarjetas-ventas";
 import { useResumenMulti } from "./resumen/use-resumen-multi";
 import { periodoSinVentas } from "@/lib/admin/vista-inicial-inicio";
-import { algunDato, hayDatosEnSerie } from "@/lib/admin/inicio/hay-datos";
+import { algunDato } from "@/lib/admin/inicio/hay-datos";
 import { fechaCorta } from "@/lib/admin/inicio/formato-tablero";
 
 /**
- * Debajo del hero de Inicio › Resumen (`TodayHub`): el ritmo del período y los
- * bloques de caja, productos, compras, inventario y clientes, plegados
- * (`InicioMultiCharts`). Las alertas viven en «Para hoy» (`resumen/ParaHoy`).
+ * Inicio › Resumen debajo de «Para hoy»: el tablero denso (`TableroResumen`,
+ * 29-10) con la tira de cifras del período y las tarjetas de ventas, cobros,
+ * horarios, stock, caja, compras y clientes. Reemplaza al hero de `TodayHub`,
+ * a «Cómo van tus días» y a los bloques plegables. Las alertas viven en «Para
+ * hoy» (`resumen/ParaHoy`).
  *
  * Regla de Brandon (2026-10-09): si en el rango no se movió NADA (ventas,
  * pedidos, clientes, plata que entró o salió, compras) la pestaña muestra sólo
  * el estado vacío del paiche con los otros períodos y «Registrar venta manual».
  * Un bloque sin dato se oculta hasta que llegue uno.
  *
- * Lee `/api/admin/overview` con `useOverview` (el mismo pedido que TodayHub,
- * compartido en caché) en vez de un segundo fetch propio.
+ * Lee `/api/admin/overview` con `useOverview` (compartido en caché) y los
+ * bloques con `useResumenMulti` (`/api/admin/dashboard`).
  */
 
 interface Props {
@@ -113,14 +115,23 @@ export default function InicioDashboardV2({ dateRange, onChangeRange, onSinVenta
     iso: iso[i] ?? "",
     ventas,
   }));
-  const hayRitmo = hayDatosEnSerie(dias, ["ventas"]);
+  // Rangos de más de 35 días: el servidor arma ≤14 tramos de varios días.
+  const paso = iso.length > 1 ? (new Date(iso[1]).getTime() - new Date(iso[0]).getTime()) / 86_400_000 : 1;
+  const diasPorTramo = porHoras ? 1 : Math.max(1, Math.round(paso));
 
   return (
-    <div className="space-y-4">
-      {/* Las alertas que iban al lado pasaron a «Para hoy», arriba del Resumen (11-10). */}
-      {hayRitmo && <RitmoDelPeriodo dias={dias} rango={RANGO[preset] ?? "el período"} porHoras={porHoras} horaPico={resumen.horaPico} />}
-      {resumen.fallo ? (
-        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-4">
+    <div className="space-y-3">
+      <TableroResumen
+        data={data}
+        resumen={resumen}
+        preset={preset}
+        dias={dias}
+        porHoras={porHoras}
+        diasPorTramo={diasPorTramo}
+        rango={RANGO[preset] ?? "el período"}
+      />
+      {resumen.fallo && (
+        <div role="alert" className="flex flex-wrap items-center gap-3 border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-4">
           <p className="min-w-0 flex-1 text-sm font-semibold text-[var(--text-primary)]">
             No se pudieron cargar caja, compras, inventario y clientes.
           </p>
@@ -132,8 +143,6 @@ export default function InicioDashboardV2({ dateRange, onChangeRange, onSinVenta
             Reintentar
           </button>
         </div>
-      ) : (
-        <InicioMultiCharts dateRange={dateRange} resumen={resumen} />
       )}
     </div>
   );

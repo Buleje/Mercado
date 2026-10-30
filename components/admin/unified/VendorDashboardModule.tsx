@@ -56,12 +56,6 @@ const StorePublicCard = dynamic(() => import("@/components/admin/inicio/StorePub
 // Brandon 2026-10-24: «Esenciales en Inicio» — lo vencido de las carpetas esenciales y sus carpetas a un clic.
 const EsencialesInicio = dynamic(() => import("@/components/admin/vendor-dashboard/EsencialesInicio"), { ssr: false });
 
-// ADR-064 Ola B — TodayHub hero unificado (drop-in al tab "general")
-const TodayHub = dynamic(
-  () => import("@/components/admin/hoy/TodayHub").then((m) => ({ default: m.TodayHub })),
-  { ssr: false, loading: DashboardLoading },
-);
-
 // ADR-066 Ola M — InicioDashboardV2 con compound charts + multi-signal KPIs
 const InicioDashboardV2 = dynamic(
   () => import("@/components/admin/inicio/InicioDashboardV2"),
@@ -321,12 +315,11 @@ export default function VendorDashboardModule() {
           // Resumen en ≤2 pantallas (2026-10-11, medido 3,01 → ver reporte de la
           // tanda 5): arriba «Para hoy» (el saludo, el día y lo que hay por
           // resolver: funde la tarjeta del día con las alertas, que repetían
-          // fiados, pedidos y stock), después la venta del período, el ritmo y
-          // el detalle plegado; la tienda pública, al pie.
+          // fiados, pedidos y stock), después el tablero denso del período (tira
+          // de cifras + tarjetas, 29-10); la tienda pública, al pie.
           <div className="space-y-4">
             <ParaHoy dateRange={dateRange} />
-            {/* La venta del período y sus cuatro cifras. Sin saludo propio: vive en «Para hoy». */}
-            <TodayHub dateRange={dateRange} hideAlerts greeting="" />
+            {/* El tablero del período (29-10): la tira de cifras reemplaza al hero de TodayHub. */}
             <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} onSinVentas={(sin) => setVentas(sin ? "sin" : "con")} />
             {/* Sólo la gestión y con Documentos en el plan; pide sus datos al asomar. Por el
                 plan y no por la plantilla: la plantilla esconde Documentos del menú por

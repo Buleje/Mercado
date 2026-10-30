@@ -8,7 +8,6 @@ import { hayDatosEnSerie, valorConDato } from "@/lib/admin/inicio/hay-datos";
 import {
   buildBuckets,
   cajaPorDia,
-  horaPico,
   clientesPorDia,
   comprasPorProveedor,
   inventarioPorCategoria,
@@ -25,6 +24,7 @@ import {
   type Purchase,
   type Sale,
 } from "./calculos-resumen";
+import { conteoPorTramo, gananciaDelPeriodo, mapaDiaHora, metodosDePago, stockEnRiesgo } from "./calculos-tablero";
 
 function ultimos7(): { from: Date; to: Date } {
   const to = new Date();
@@ -38,7 +38,7 @@ function ultimos7(): { from: Date; to: Date } {
 /**
  * Las cuentas de los bloques del Resumen (caja, inventario, compras, clientes,
  * productos) para el rango del tablero. Lo usa `InicioDashboardV2` para decidir
- * si la pestaña entera está vacía (R1) y se lo pasa a `InicioMultiCharts`.
+ * si la pestaña entera está vacía (R1) y se lo pasa a `TableroResumen`.
  */
 export function useResumenMulti(dateRange?: DateRange) {
   const minimoGlobal = useStockMinimoGlobal();
@@ -87,7 +87,12 @@ export function useResumenMulti(dateRange?: DateRange) {
       cliKpis,
       productos,
       prodKpis: kpisProductos(productos),
-      horaPico: horaPico(orders, sales),
+      /** Tablero denso (29-10): cómo te pagan, cuándo te compran, stock en riesgo y ganancia. */
+      metodos: metodosDePago(orders, sales, desde, hasta),
+      mapaHoras: mapaDiaHora(orders, sales, desde, hasta),
+      riesgo: stockEnRiesgo(products, minimoGlobal),
+      ganancia: gananciaDelPeriodo(products, orders, sales, desde, hasta),
+      pedidosPorTramo: conteoPorTramo(orders, sales, buckets),
       /**
        * ¿Se movió algo EN EL RANGO? (plata que entró o salió, compras, clientes
        * nuevos). El inventario no cuenta: es la foto de hoy y siempre tiene algo.

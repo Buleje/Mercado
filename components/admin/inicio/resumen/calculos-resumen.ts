@@ -197,9 +197,9 @@ export function inventarioPorCategoria(products: Product[]): FilaInventario[] {
     cur.skus += 1;
     m.set(cat, cur);
   });
+  // Todas, de más a menos valor: la tarjeta muestra las primeras y nombra al pie cuántas quedan.
   return Array.from(m.entries())
     .sort(([, a], [, b]) => b.valor - a.valor)
-    .slice(0, 7)
     .map(([cat, v]) => ({
       categoria: CAT_LABEL[cat] ?? cat,
       stock: v.stock,
