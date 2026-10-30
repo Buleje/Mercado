@@ -9,7 +9,8 @@
  * propio (`ctp-parte-paso-*`). Pasos: `lib/forestal/directorio-pasos.ts`.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { direccionSinLugar, planDeAutocompletado, ubigeoPorDistrito, type CambioPropuesto } from "@/lib/documento/autocompletar";
 import { logger } from "@/lib/logger";
 import { navegarTrasCerrar } from "./use-parte-form-salir";
 import {
@@ -102,16 +103,18 @@ export interface OpcionesFichaParte {
    * sin los accesos que llevan al Libro TH, que dejarían ese otro a medias.
    */
   anidada?: boolean;
+  /** «Completar» desde la lista de fichas por completar: el paso donde falta lo primero. */
+  pasoInicial?: PasoFicha;
 }
 
-export function useParteForm({ parte, rolInicial, nombreInicial, existentes, vehiculos, onGuardar, onClose, anidada = false }: OpcionesFichaParte) {
+export function useParteForm({ parte, rolInicial, nombreInicial, existentes, vehiculos, onGuardar, onClose, anidada = false, pasoInicial }: OpcionesFichaParte) {
   const [b, setB] = useState<BorradorDeParte>(() => aBorrador(parte, rolInicial, nombreInicial));
   const [copiado, setCopiado] = useState<string | null>(null);
   const [estado, setEstado] = useState<"idle" | "consultando" | "guardando">("idle");
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   /** El paso que se ve (`directorio-pasos`): una cosa a la vez. */
-  const [pasoElegido, setPaso] = useState<PasoFicha>("quien");
+  const [pasoElegido, setPaso] = useState<PasoFicha>(pasoInicial ?? "quien");
   /** Recién después del primer «Guardar» el nombre vacío se marca en rojo. */
   const [intento, setIntento] = useState(false);
   /** Permisos cargados durante el ALTA: se crean cuando la ficha tiene id. */
@@ -252,35 +255,73 @@ export function useParteForm({ parte, rolInicial, nombreInicial, existentes, veh
     set({ roles: tiene ? b.roles.filter((r) => r !== rol) : [...b.roles, rol] });
   }
 
-  async function traerDelPadron() {
+  /** Lo que el padrón dice distinto de lo ya escrito: se pregunta, nunca se pisa. */
+  const [propuestaPadron, setPropuestaPadron] = useState<CambioPropuesto[]>([]);
+
+  /**
+   * `auto` = lo disparó el último dígito del documento, no un clic. Lo vacío se
+   * llena solo (el ubigeo sale del catálogo por distrito + provincia); lo que
+   * ya tiene algo distinto queda en `propuestaPadron` para «Usar dato de SUNAT».
+   */
+  async function traerDelPadron(auto = false) {
     setEstado("consultando");
     setError(null);
     setAviso(null);
+    setPropuestaPadron([]);
     try {
       const datos = await consultarDocumento(docTipo, b.docNumero ?? "");
       if (!datos) {
-        setError(`No se encontró el ${docTipo} en ${fuente}.`);
+        if (!auto) setError(`No se encontró el ${docTipo} en ${fuente}.`);
         return;
       }
-      set({
-        nombre: datos.nombre,
-        direccion: datos.direccion ?? b.direccion,
-        region: datos.region ?? b.region,
-        provincia: datos.provincia ?? b.provincia,
-        distrito: datos.distrito ?? b.distrito,
-        ubigeo: datos.ubigeo ?? b.ubigeo,
-      });
+      const lugar = { departamento: datos.region, provincia: datos.provincia, distrito: datos.distrito };
+      const plan = planDeAutocompletado(
+        { nombre: b.nombre, direccion: b.direccion, region: b.region, provincia: b.provincia, distrito: b.distrito, ubigeo: b.ubigeo },
+        {
+          nombre: datos.nombre,
+          direccion: direccionSinLugar(datos.direccion, lugar),
+          region: datos.region,
+          provincia: datos.provincia,
+          distrito: datos.distrito,
+          ubigeo: datos.ubigeo || ubigeoPorDistrito(datos.region, datos.provincia, datos.distrito),
+        },
+      );
+      if (Object.keys(plan.llenar).length > 0) set(plan.llenar);
+      setPropuestaPadron(plan.preguntar);
+      const baja = datos.estado && datos.estado.toUpperCase() !== "ACTIVO";
       setAviso(
-        datos.estado && datos.estado.toUpperCase() !== "ACTIVO"
-          ? `Traído de ${fuente}. Ojo: figura ${datos.estado}.`
-          : `Traído de ${fuente}.`,
+        plan.preguntar.length > 0
+          ? `${fuente} trae ${plan.preguntar.length === 1 ? "un dato distinto" : `${plan.preguntar.length} datos distintos`} de lo que escribiste.`
+          : baja
+            ? `Traído de ${fuente}. Ojo: figura ${datos.estado}.`
+            : `Traído de ${fuente}.`,
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (!auto) setError(e instanceof Error ? e.message : String(e));
     } finally {
       setEstado("idle");
     }
   }
+
+  /** «Usar dato de SUNAT»: la persona vio el cambio y lo aceptó. */
+  function usarDatoDelPadron() {
+    const cambios: Record<string, string> = {};
+    for (const c of propuestaPadron) cambios[c.campo] = c.nuevo;
+    set(cambios);
+    setPropuestaPadron([]);
+    setAviso(`Traído de ${fuente}.`);
+  }
+
+  // Con el documento completo y bien escrito (y distinto del que ya estaba), los datos se traen solos.
+  const ultimoConsultado = useRef((parte?.docNumero ?? "").replace(/\D/g, ""));
+  useEffect(() => {
+    const n = (b.docNumero ?? "").replace(/\D/g, "");
+    if (!fuente || docMal || estado !== "idle" || n === ultimoConsultado.current) return;
+    if (n.length !== (docTipo === "DNI" ? 8 : 11)) return;
+    ultimoConsultado.current = n;
+    void traerDelPadron(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [b.docNumero, docMal, fuente, docTipo]);
 
   /** Dice el error y lleva al paso donde se arregla: con un paso a la vez, el campo podía estar escondido. */
   function fallar(mensaje: string, en: PasoFicha) {
@@ -428,7 +469,7 @@ export function useParteForm({ parte, rolInicial, nombreInicial, existentes, veh
     permisosPendientes, setPermisosPendientes, setPermisosDelTitular, camposPendientes, setCamposPendientes,
     setPreciosPendientes, vinculosPendientes, setVinculosPendientes,
     saldo, historial, pasos, paso, setPaso, pendientesDe,
-    alternarRol, traerDelPadron, guardar, bodyRef, cerrar, verCuenta, anidada, irAlLibro,
+    alternarRol, traerDelPadron, propuestaPadron, usarDatoDelPadron, guardar, bodyRef, cerrar, verCuenta, anidada, irAlLibro,
   };
 }
 

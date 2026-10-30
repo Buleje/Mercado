@@ -45,6 +45,8 @@ import FotochecksVista from "./FotochecksVista";
 import FichaColaboradorModal from "./FichaColaboradorModal";
 import TraerDesdeAdelantosModal from "./TraerDesdeAdelantosModal";
 import TablaPersonal from "./TablaPersonal";
+import FichasPorCompletar from "@/components/admin/shared/FichasPorCompletar";
+import { personasPorCompletar, resumenDeFaltas, type ClaveFaltaPersona } from "@/lib/rrhh/fichas-por-completar";
 import FiltrosPersonal, { type ChipEstado } from "./FiltrosPersonal";
 import { useContratosDelPersonal } from "./use-contratos-del-personal";
 import type { EstadoColaborador, NivelRrhh } from "@/lib/rrhh/tipos";
@@ -101,6 +103,13 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const contratos = useContratosDelPersonal(puedeEditar);
   const porVencer = (id: string) => contratos.porPersona?.get(id)?.estado === "POR_VENCER";
   const cuantosPorVencer = contratos.porPersona ? colaboradores.filter((c) => porVencer(c.id)).length : 0;
+  // «Fichas por completar»: sólo activos y sólo para quien puede editar (el nivel marcar no ve documento ni celular).
+  const porCompletar = useMemo(() => (puedeEditar ? personasPorCompletar(colaboradores) : []), [puedeEditar, colaboradores]);
+  const [completar, setCompletar] = useState<ClaveFaltaPersona | null>(null);
+  const completarFicha = (id: string) => {
+    setCompletar(porCompletar.find((p) => p.id === id)?.primerCampo ?? null);
+    ficha.abrir(id);
+  };
   const porEstado = chip === "TODOS" ? colaboradores : colaboradores.filter((c) => c.estado === chip);
   const filtrados = soloPorVencer ? porEstado.filter((c) => porVencer(c.id)) : porEstado;
   // Un cesado no lleva fotocheck: se excluye de la vista y del PDF, aunque el chip lo muestre.
@@ -172,6 +181,12 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   return (
     <div className="space-y-3">
       {encabezado}
+
+      <FichasPorCompletar
+        items={porCompletar.map((p) => ({ id: p.id, nombre: p.nombre, faltan: p.faltan }))}
+        resumen={resumenDeFaltas(porCompletar)}
+        onCompletar={completarFicha}
+      />
 
       {contratos.sinPersona > 0 && (
         <p className="flex flex-wrap items-center gap-x-2 text-sm text-[var(--text-secondary)]">
@@ -247,7 +262,8 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
         <FichaColaboradorModal
           open
           colaboradorId={ficha.id}
-          onClose={ficha.cerrar}
+          onClose={() => { setCompletar(null); ficha.cerrar(); }}
+          completar={completar}
           nivel={nivel}
           onCambio={() => {
             recargar();

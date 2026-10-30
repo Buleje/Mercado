@@ -8,7 +8,7 @@
  * lista de afuera también se refresque.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Ban, HandCoins, Pencil, RefreshCw, RotateCcw, Trash2, User } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -19,6 +19,7 @@ import { AvisoRrhh, BOTON, CLASE_CHIP } from "../rrhh-form";
 import { COLABORADOR_ESTADO_META, etiquetaModalidad, formatearFecha, formatearPEN } from "../rrhh-ui";
 import BotonFotocheck from "./BotonFotocheck";
 import ColaboradorFormModal from "./ColaboradorFormModal";
+import type { ClaveFaltaPersona } from "@/lib/rrhh/fichas-por-completar";
 import CesarColaboradorModal from "./CesarColaboradorModal";
 import FichaCambioEstado from "./FichaCambioEstado";
 import DarAdelantoModal from "../pagos/DarAdelantoModal";
@@ -39,9 +40,11 @@ interface Props {
   onCambio?: () => void;
   /** Se abrió desde otro modal («Traer de Adelantos» → «Completar datos»). */
   aboveModals?: boolean;
+  /** «Completar» desde la lista de fichas: abre el formulario parado en este casillero. */
+  completar?: ClaveFaltaPersona | null;
 }
 
-export default function FichaColaboradorModal({ open, onClose, colaboradorId, nivel, onCambio, aboveModals }: Props) {
+export default function FichaColaboradorModal({ open, onClose, colaboradorId, nivel, onCambio, aboveModals, completar }: Props) {
   const { ficha, loading, error, guardando, recargar, eliminar, guardarTarifa, quitarTarifa, accion } = useRrhhFicha(open ? colaboradorId : null);
   const { confirm } = useConfirm();
   const [seccion, setSeccion] = useState<Seccion>("datos");
@@ -62,6 +65,14 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
   };
 
   const c = ficha?.colaborador;
+
+  // «Completar»: apenas llega la ficha se abre el formulario (una sola vez por apertura).
+  const completarHecho = useRef(false);
+  useEffect(() => {
+    if (!completar || !ficha || !puedeGestionar || completarHecho.current) return;
+    completarHecho.current = true;
+    setEditando(true);
+  }, [completar, ficha, puedeGestionar]);
 
   const eliminarPersona = async () => {
     if (!c) return;
@@ -248,6 +259,7 @@ export default function FichaColaboradorModal({ open, onClose, colaboradorId, ni
           colaboradorId={colaboradorId}
           initial={ficha.colaborador}
           aboveModals
+          enfocar={completar}
           onGuardado={() => {
             setEditando(false);
             avisar();

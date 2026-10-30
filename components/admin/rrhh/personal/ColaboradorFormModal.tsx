@@ -21,6 +21,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { crearColaborador } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { esDniValido } from "@/lib/rrhh/documento";
+import { mismoTexto } from "@/lib/documento/autocompletar";
+import type { ClaveFaltaPersona } from "@/lib/rrhh/fichas-por-completar";
 import { cn, limaDateKey } from "@/lib/utils";
 import { BOTON, CLASE_AREA, CLASE_CAMPO, SeccionForm } from "../rrhh-form";
 import { etiquetaModalidad, formatearPEN } from "../rrhh-ui";
@@ -35,13 +37,15 @@ interface Props {
   colaboradorId?: string;
   initial?: ColaboradorDTO;
   aboveModals?: boolean;
+  /** «Completar» desde la lista de fichas: el casillero donde se para el cursor al abrir. */
+  enfocar?: ClaveFaltaPersona | null;
 }
 
 const FORM_ID = "rrhh-form-colaborador";
 type ModalidadPagada = Exclude<Modalidad, "SIN_PAGO">;
 const MODALIDADES: ModalidadPagada[] = ["HORA", "DIA", "SEMANA", "MES"];
 
-export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado, colaboradorId, initial, aboveModals }: Props) {
+export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado, colaboradorId, initial, aboveModals, enfocar }: Props) {
   const editando = Boolean(colaboradorId);
   const conTarifaInicial = nivel === "completo" && !editando;
   const { puestos, crear: crearPuesto } = useRrhhPuestos();
@@ -101,11 +105,18 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
 
   // ── RENIEC ────────────────────────────────────────────────────────────────
   const [dni, setDni] = useState<{ cargando: boolean; msg: string; esError: boolean }>({ cargando: false, msg: "", esError: false });
+  /** RENIEC dice otro nombre que el escrito: no se pisa, se ofrece («Usar dato de RENIEC»). */
+  const [nombreReniec, setNombreReniec] = useState<string | null>(null);
   const dniListo = tipoDocumento === "DNI" && esDniValido(documento);
 
-  const buscarDni = async () => {
+  /**
+   * `auto` = lo disparó el décimo dígito, no un clic. Con el nombre vacío se
+   * llena solo; con uno distinto escrito, se pregunta en vez de pisarlo.
+   */
+  const buscarDni = async (auto = false) => {
     if (!dniListo) return;
     setDni({ cargando: true, msg: "", esError: false });
+    setNombreReniec(null);
     try {
       const res = await fetch(`/api/reniec/lookup?dni=${encodeURIComponent(documento.trim())}`);
       const data = (await res.json().catch(() => ({}))) as { nombreCompleto?: string; error?: string; _mock?: boolean };
@@ -113,12 +124,34 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
         setDni({ cargando: false, msg: data.error ?? "RENIEC no devolvió un nombre para ese DNI.", esError: true });
         return;
       }
-      setNombre(data.nombreCompleto);
-      setDni({ cargando: false, msg: data._mock ? "Nombre de prueba: RENIEC no está conectado." : "Nombre traído de RENIEC.", esError: false });
+      const quien = data._mock ? "Nombre de prueba: RENIEC no está conectado." : "Nombre traído de RENIEC.";
+      if (auto && nombre.trim() && !mismoTexto(nombre, data.nombreCompleto)) {
+        setNombreReniec(data.nombreCompleto);
+        setDni({ cargando: false, msg: `RENIEC dice «${data.nombreCompleto}».`, esError: false });
+        return;
+      }
+      if (!auto || !nombre.trim()) setNombre(data.nombreCompleto);
+      setDni({ cargando: false, msg: quien, esError: false });
     } catch {
       setDni({ cargando: false, msg: "No se pudo consultar RENIEC. Escribe el nombre a mano.", esError: true });
     }
   };
+
+  // Con los 8 dígitos buenos (DNI nuevo o cambiado), el nombre se trae solo.
+  const dniYaConsultado = useRef(initial?.documento ?? "");
+  useEffect(() => {
+    if (!dniListo || documento.trim() === dniYaConsultado.current) return;
+    dniYaConsultado.current = documento.trim();
+    void buscarDni(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dniListo, documento]);
+
+  // «Completar»: el cursor cae en el primer casillero vacío.
+  useEffect(() => {
+    if (!enfocar) return;
+    const t = setTimeout(() => document.getElementById(FORM_ID)?.querySelector<HTMLElement>(`[data-foco="${enfocar}"]`)?.focus(), 250);
+    return () => clearTimeout(t);
+  }, [enfocar]);
 
   const crearPuestoEnLinea = async () => {
     const nombrePuesto = nuevoPuesto.trim();
@@ -256,7 +289,7 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
             label="Documento"
             className="sm:col-span-2"
             error={dni.esError ? dni.msg : undefined}
-            hint={!dni.esError && dni.msg ? dni.msg : tipoDocumento === "DNI" ? "Con los 8 dígitos, el botón RENIEC trae el nombre." : undefined}
+            hint={!dni.esError && dni.msg ? dni.msg : tipoDocumento === "DNI" ? "Con los 8 dígitos, el nombre se trae solo de RENIEC." : undefined}
           >
             {(id) => (
               <div className="flex gap-2">
@@ -273,6 +306,7 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
                 </select>
                 <input
                   id={id}
+                  data-foco="documento"
                   value={documento}
                   onChange={(e) => {
                     setDocumento(e.target.value);
@@ -287,7 +321,7 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
                 {tipoDocumento === "DNI" && (
                   <button
                     type="button"
-                    onClick={buscarDni}
+                    onClick={() => void buscarDni()}
                     disabled={!dniListo || dni.cargando}
                     className={BOTON.secundario}
                     aria-label="Traer el nombre de RENIEC"
@@ -301,7 +335,18 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
           </Field>
           <Field label="Nombre y apellidos" required>
             {(id) => (
-              <input id={id} value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. María Torres Ramírez" />
+              <div className="space-y-2">
+                <input id={id} value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={120} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. María Torres Ramírez" />
+                {nombreReniec && (
+                  <button
+                    type="button"
+                    onClick={() => { setNombre(nombreReniec); setNombreReniec(null); setDni({ cargando: false, msg: "Nombre traído de RENIEC.", esError: false }); }}
+                    className={cn(BOTON.secundario, "h-auto min-h-12 w-full justify-start text-left")}
+                  >
+                    <Search className="h-4 w-4 shrink-0" aria-hidden /> Usar dato de RENIEC: {nombreReniec}
+                  </button>
+                )}
+              </div>
             )}
           </Field>
           <Field label="Apodo" hint="Cómo le dicen en el trabajo.">
@@ -314,7 +359,7 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
         <SeccionForm titulo="Contacto">
           <Field label="Celular">
             {(id) => (
-              <input id={id} type="tel" inputMode="tel" value={celular} onChange={(e) => setCelular(e.target.value)} maxLength={20} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. 987 654 321" />
+              <input id={id} data-foco="celular" type="tel" inputMode="tel" value={celular} onChange={(e) => setCelular(e.target.value)} maxLength={20} autoComplete="off" className={CLASE_CAMPO} placeholder="Ej. 987 654 321" />
             )}
           </Field>
           <Field label="Dirección">
@@ -324,7 +369,7 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
           </Field>
           <Field label="Contacto de emergencia">
             {(id) => (
-              <input id={id} value={contactoNombre} onChange={(e) => setContactoNombre(e.target.value)} maxLength={120} autoComplete="off" className={CLASE_CAMPO} placeholder="Nombre y parentesco" />
+              <input id={id} data-foco="emergencia" value={contactoNombre} onChange={(e) => setContactoNombre(e.target.value)} maxLength={120} autoComplete="off" className={CLASE_CAMPO} placeholder="Nombre y parentesco" />
             )}
           </Field>
           <Field label="Celular del contacto">
@@ -371,7 +416,7 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
           >
             {(id) => (
               <div className="space-y-2">
-                <select id={id} value={puestoId} onChange={(e) => setPuestoId(e.target.value)} className={CLASE_CAMPO}>
+                <select id={id} data-foco="puesto" value={puestoId} onChange={(e) => setPuestoId(e.target.value)} className={CLASE_CAMPO}>
                   <option value="">Sin puesto</option>
                   {opcionesPuesto.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -405,7 +450,7 @@ export default function ColaboradorFormModal({ open, onClose, nivel, onGuardado,
             )}
           </Field>
           <Field label="Fecha de ingreso" hint="Desde cuándo trabaja contigo.">
-            {(id) => <input id={id} type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)} className={CLASE_CAMPO} />}
+            {(id) => <input id={id} data-foco="fechaIngreso" type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)} className={CLASE_CAMPO} />}
           </Field>
 
           {conTarifaInicial && (

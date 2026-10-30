@@ -42,6 +42,9 @@ import { partesACsv } from "@/lib/forestal/directorio-importar";
 import CtpDirectorioPestanas from "./CtpDirectorioPestanas";
 import { ListaPartes, ListaVehiculos } from "./CtpDirectorioListas";
 import CtpFichaEditor from "./CtpFichaEditor";
+import FichasPorCompletar from "@/components/admin/shared/FichasPorCompletar";
+import { partesPorCompletar, resumenDeFaltasParte } from "@/lib/forestal/fichas-por-completar";
+import type { PasoFicha } from "@/lib/forestal/directorio-pasos";
 import { BuscarDirectorio, RielDirectorio } from "./CtpDirectorioBarra";
 import { SUBS_DIRECTORIO, subPedidoPorVistaVieja, type SubDirectorio } from "./ctp-vistas-fusionadas";
 import { usePestanaInterna } from "./hooks/use-pestana-interna";
@@ -73,6 +76,9 @@ export default function CtpDirectorioView({
   /** Titular cuya cadena se está mirando (ADR-319). */
   const [trazando, setTrazando] = useState<string | null>(null);
   const [importando, setImportando] = useState(false);
+  /* «Completar» abre la ficha parada en el paso donde falta lo primero. */
+  const [pasoAlCompletar, setPasoAlCompletar] = useState<PasoFicha | undefined>(undefined);
+  const porCompletar = useMemo(() => partesPorCompletar(dir.partes, dir.vehiculos), [dir.partes, dir.vehiculos]);
   /* `?parte=<id>`: la ficha de esa parte, encima de su pestaña, con el enlace copiable. */
   const fichaParte = useParteEnUrl(dir.partes, dir.cargando, (p) => {
     if (!p.roles.includes(pestaña as RolParte) && p.roles[0]) setPestaña(p.roles[0]);
@@ -178,6 +184,18 @@ export default function CtpDirectorioView({
         />
       )}
 
+      {!esTuCtp && !dir.cargando && (
+        <FichasPorCompletar
+          items={porCompletar.map((x) => ({ id: x.id, nombre: x.nombre, detalle: x.papel ? ROL_LABEL[x.papel] : undefined, faltan: x.faltan }))}
+          resumen={resumenDeFaltasParte(porCompletar)}
+          onCompletar={(id) => {
+            const x = porCompletar.find((f) => f.id === id);
+            setPasoAlCompletar(x?.faltan[0]?.paso);
+            fichaParte.abrir(id);
+          }}
+        />
+      )}
+
       <CtpDirectorioPestanas activa={pestaña} onCambiar={setPestaña} conteo={conteo}>
         {esTuCtp ? (
           <CtpFichaEditor />
@@ -239,6 +257,7 @@ export default function CtpDirectorioView({
         <CtpParteModal
           key={parteAbierta?.id ?? "nueva"}
           parte={parteAbierta}
+          pasoInicial={pasoAlCompletar}
           rolInicial={rol ?? "destinatario"}
           existentes={dir.partes}
           // La misma ficha abierta desde el picker lista los camiones del
@@ -248,6 +267,7 @@ export default function CtpDirectorioView({
           // permisos que se cargaron durante el alta (ADR-425).
           onGuardar={(input) => dir.guardarParte(input)}
           onClose={() => {
+            setPasoAlCompletar(undefined);
             if (fichaParte.parte) fichaParte.cerrar();
             else setEditando(null);
           }}

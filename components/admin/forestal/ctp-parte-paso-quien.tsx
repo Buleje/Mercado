@@ -24,6 +24,15 @@ export const CHIP_ON = "border-[var(--accent)] bg-primary/10 ring-1 ring-[var(--
 export const CHIP_OFF =
   "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]";
 
+const ETIQUETA_CAMPO: Record<string, string> = {
+  nombre: "Nombre",
+  direccion: "Dirección",
+  region: "Departamento",
+  provincia: "Provincia",
+  distrito: "Distrito",
+  ubigeo: "Ubigeo",
+};
+
 export default function CtpPartePasoQuien({
   form,
   onUsarExistente,
@@ -105,6 +114,19 @@ export default function CtpPartePasoQuien({
             </Btn>
           )}
         </div>
+        {form.propuestaPadron.length > 0 && (
+          <div role="status" className="sm:col-span-12 space-y-2 rounded-xl border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-100)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
+            <p className="font-bold">{fuente} dice otra cosa que lo que escribiste:</p>
+            <ul className="space-y-1">
+              {form.propuestaPadron.map((c) => (
+                <li key={c.campo}>
+                  <span className="font-semibold">{ETIQUETA_CAMPO[c.campo] ?? c.campo}:</span> {c.actual} <span aria-hidden>→</span> <span className="sr-only">cambiaría a</span> <strong>{c.nuevo}</strong>
+                </li>
+              ))}
+            </ul>
+            <Btn variant="secondary" onClick={form.usarDatoDelPadron}>Usar dato de {fuente}</Btn>
+          </div>
+        )}
         <Field
           label="Nombre o razón social"
           required

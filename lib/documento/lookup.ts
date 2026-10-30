@@ -20,6 +20,7 @@ import "server-only";
 import { logger } from "@/lib/logger";
 import { lookupDniInReniec } from "@/lib/reniec";
 import { verifyRuc } from "@/lib/integrations/sunat-ruc";
+import { direccionSinLugar, ubigeoPorDistrito } from "./autocompletar";
 import { normalizarNumero, tipoDeDocumento, type ResultadoDocumento } from "./tipos";
 
 export type * from "./tipos";
@@ -77,6 +78,11 @@ async function consultarSinTecho(numeroCrudo: string): Promise<ResultadoDocument
   try {
     if (tipo === "DNI") {
       const persona = await lookupDniInReniec(numero);
+      /* Un DNI que no existe puede volver como «"" "" ""»: letras de nada. Eso
+         no es un nombre y no se ofrece para llenar nada (30-10, DNI 10000000). */
+      if (!/[\p{L}]{2,}/u.test(persona.nombreCompleto ?? "")) {
+        return { encontrado: false, tipo, numero, motivo: "RENIEC no tiene ese DNI. Revisa el número." };
+      }
       return {
         encontrado: true,
         tipo,
@@ -112,6 +118,8 @@ async function consultarSinTecho(numeroCrudo: string): Promise<ResultadoDocument
       departamento: ruc.departamento,
       provincia: ruc.provincia,
       distrito: ruc.distrito,
+      ubigeo: ubigeoPorDistrito(ruc.departamento, ruc.provincia, ruc.distrito) || undefined,
+      direccionCalle: direccionSinLugar(ruc.direccion, ruc) || undefined,
       estado: ruc.estado,
       condicion: ruc.condicion,
       fuente: esDemo ? "datos de demostración" : `SUNAT${ruc.source === "cache" ? " (guardado)" : ""}`,

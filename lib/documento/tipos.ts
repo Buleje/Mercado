@@ -23,6 +23,10 @@ export type DocumentoEncontrado = {
   departamento?: string;
   provincia?: string;
   distrito?: string;
+  /** Sólo RUC. Código INEI de 6 dígitos sacado del catálogo por distrito + provincia; vacío si no hay certeza. */
+  ubigeo?: string;
+  /** Sólo RUC. La dirección SIN «, DISTRITO, PROVINCIA, DEPARTAMENTO» al final (la ficha los tiene en casilleros). */
+  direccionCalle?: string;
   /** Sólo RUC. "ACTIVO" | "BAJA DE OFICIO" | … */
   estado?: string;
   /** Sólo RUC. "HABIDO" | "NO HABIDO" — decide si su factura es deducible. */

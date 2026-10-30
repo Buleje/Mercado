@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Pencil, Save, X as XIcon } from "@buleje/design-system/icons";
 import { LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { ubigeoPorDistrito } from "@/lib/documento/autocompletar";
 import CtpFichaReadView from "./CtpFichaReadView";
 import CtpFichaCompletitud from "./CtpFichaCompletitud";
 import CtpFichaFormIdentidad, { type EstadoPadron } from "./CtpFichaFormIdentidad";
@@ -93,7 +94,8 @@ export default function CtpFichaEditor() {
         region: d.region || body.departamento || "",
         provincia: d.provincia || body.provincia || "",
         distrito: d.distrito || body.distrito || "",
-        ubigeo: d.ubigeo || body.ubigeo || "",
+        // Si el padrón no trae el ubigeo, sale del catálogo INEI por distrito + provincia.
+        ubigeo: d.ubigeo || body.ubigeo || ubigeoPorDistrito(d.region || body.departamento, d.provincia || body.provincia, d.distrito || body.distrito),
       }));
       const baja = typeof body.estado === "string" && !/activo/i.test(body.estado);
       setPadron({

@@ -24,6 +24,7 @@ import { AnteriorSiguiente, BarraDePasos } from "@/components/admin/shared/barra
 import { ROL_LABEL, type Parte, type RolParte, type Vehiculo } from "@/lib/forestal/directorio";
 import { Btn, FormularioClaro, ModalBody, ModalFooter } from "./ctp-shared";
 import { useParteForm, type BorradorDeParte } from "./hooks/use-parte-form";
+import type { PasoFicha } from "@/lib/forestal/directorio-pasos";
 import { ResumenDeSalud } from "./ctp-parte-salud";
 import CtpPartePasoQuien from "./ctp-parte-paso-quien";
 import CtpPartePasoPapel from "./ctp-parte-paso-papel";
@@ -46,7 +47,10 @@ export default function CtpParteModal({
   onClose,
   aboveModals = false,
   desdeOtroFormulario = false,
+  pasoInicial,
 }: {
+  /** «Completar» desde la lista de fichas por completar: abre en el paso donde falta lo primero. */
+  pasoInicial?: PasoFicha;
   /** `null` = alta. */
   parte: Parte | null;
   rolInicial: RolParte;
@@ -93,6 +97,7 @@ export default function CtpParteModal({
     onGuardar,
     onClose,
     anidada: aboveModals || desdeOtroFormulario,
+    pasoInicial,
   });
   const { b, error, aviso, coincide, coincideBloquea, dandoDeBaja, estado, cerrar, pasos, paso, setPaso, hayPapel } = form;
 
