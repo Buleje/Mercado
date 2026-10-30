@@ -133,18 +133,29 @@ export const PlatformSettingsDB = {
     return getOrSet<Record<string, unknown>>(
       cacheKey("__all__"),
       CACHE_TTL_SEC,
-      async () => {
-        const rows = await prisma.platformSetting.findMany({
-          where: { NOT: { key: { startsWith: PREFIJO_INTERNO } } },
-          select: { key: true, value: true },
-        });
-        const out: Record<string, unknown> = {};
-        for (const row of rows) {
-          out[row.key] = row.value;
-        }
-        return out;
-      },
+      () => PlatformSettingsDB.getAllFresco(),
     );
+  },
+
+  /**
+   * Como {@link getAll}, pero SIN la caché en memoria ni su `inFlight` (29-10).
+   *
+   * Para quien ya cachea con `"use cache"` (la marca del root layout): el
+   * `inFlight` de `getOrSet` es un Map de promesas compartido entre renders, y
+   * la doc de Next 16 («Build Hangs (Cache Timeout)») lo nombra como causa del
+   * USE_CACHE_TIMEOUT del `next build`: el caché espera una promesa que nació
+   * en otro render (aquí, las rutas GET que también llaman `getAll`).
+   */
+  async getAllFresco(): Promise<Record<string, unknown>> {
+    const rows = await prisma.platformSetting.findMany({
+      where: { NOT: { key: { startsWith: PREFIJO_INTERNO } } },
+      select: { key: true, value: true },
+    });
+    const out: Record<string, unknown> = {};
+    for (const row of rows) {
+      out[row.key] = row.value;
+    }
+    return out;
   },
 
   /**

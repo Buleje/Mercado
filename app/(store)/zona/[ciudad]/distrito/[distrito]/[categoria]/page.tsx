@@ -58,9 +58,15 @@ interface Props {
 }
 
 // ── Static params: district × category combos ───────────────────────
+// 29-10: en el build solo las ciudades donde operamos (lanzamiento + Pucallpa):
+// las 64 × 6 combinaciones eran 384 de las 2.273 páginas del `next build` (quedan 42).
+// El resto se arma la primera vez que alguien entra (con Cache Components no
+// hay `dynamicParams`: lo que no está en la lista se renderiza bajo demanda).
+const CIUDADES_EN_BUILD = new Set(["ciudad-constitucion", "pucallpa"]);
+
 export function generateStaticParams() {
   const combos: { ciudad: string; distrito: string; categoria: string }[] = [];
-  for (const d of districts) {
+  for (const d of districts.filter((x) => CIUDADES_EN_BUILD.has(x.cityslug))) {
     for (const cat of realCategories) {
       combos.push({
         ciudad: d.cityslug,

@@ -77,6 +77,9 @@ const FrauncesDisplay = Fraunces({
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { prisma } from "@/lib/prisma";
+import { leerPlatformConfigConTope, brandColorOverridesCss } from "@/lib/platform-config.server";
+import { PLATFORM_CONFIG_DEFAULTS } from "@/lib/platform-config";
+import { logger } from "@/lib/logger";
 import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -280,13 +283,26 @@ async function CachedSchemaMarkup() {
  * `cacheTag` y no sólo `cacheLife`: la marca cambia cuando el superadmin la
  * edita, y eso tiene que verse ya. Los endpoints que la escriben revalidan
  * este tag (`platform-config`).
+ *
+ * `next build` (29-10): 4 de 4 builds caídos lo fueron AQUÍ con
+ * USE_CACHE_TIMEOUT (50 s), nunca en `getCachedReviewStats`, que lee directo.
+ * Por eso: import estático (no `await import()` dentro del caché), lectura sin
+ * el `inFlight` compartido y tope de 10 s. Sin respuesta, la marca por defecto
+ * con `cacheLife("seconds")`: en el build queda como hueco dinámico (está en
+ * <Suspense>) y se reintenta en el pedido, en vez de hornear los defaults por
+ * horas o tumbar la compilación.
  */
 async function getCachedBrandOverrides() {
   "use cache";
   cacheTag("platform-config");
+  const { cfg, ms } = await leerPlatformConfigConTope(10_000);
+  if (!cfg) {
+    cacheLife("seconds");
+    logger.warn("[layout] marca sin respuesta de la base: va la de defecto", { ms, fase: process.env.NEXT_PHASE });
+    return { css: brandColorOverridesCss(PLATFORM_CONFIG_DEFAULTS), faviconUrl: PLATFORM_CONFIG_DEFAULTS.brand.faviconUrl };
+  }
   cacheLife("hours");
-  const { getPlatformConfigSSR, brandColorOverridesCss } = await import("@/lib/platform-config.server");
-  const cfg = await getPlatformConfigSSR();
+  if (ms > 5_000) logger.warn("[layout] marca lenta", { ms, fase: process.env.NEXT_PHASE });
   return { css: brandColorOverridesCss(cfg), faviconUrl: cfg.brand.faviconUrl };
 }
 

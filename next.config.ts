@@ -177,6 +177,14 @@ const nextConfig: NextConfig = {
     // NOTE: instrumentation.ts is detected automatically since Next.js 15.
     // The `instrumentationHook` flag was removed in Next.js 16.
 
+    // ── Procesos del `next build` local (29-10) ─────────────────────────
+    // Por defecto Next abre núcleos − 1 = 11 procesos para prerenderizar las 2.273 páginas, ~1,4 GB
+    // cada uno: la PC bajaba a 600 MB libres, earlyoom mataba el build y, con el dev server
+    // prendido, el swap hacía que `getCachedBrandOverrides` del layout pasara los 50 s de
+    // «use cache» (USE_CACHE_TIMEOUT en /admin/kiosk). Con 4 el kiosko prerenderiza bien. Vercel
+    // queda con su valor por defecto.
+    ...(process.env.VERCEL ? {} : { cpus: 4 }),
+
     // ── Router cache TTL (fix back-nav blanco en Next 16) ────────────────
     // Next 15+ default: dynamic=0 → cada navegación back refetcha desde server.
     // Si el RSC payload streaming queda incompleto al volver, la página queda

@@ -19,16 +19,45 @@ import {
  */
 export async function getPlatformConfigSSR(): Promise<PlatformConfig> {
   try {
-    const all = await PlatformSettingsDB.getAll();
-    const flat: Record<string, unknown> = {};
-    for (const k of Object.keys(PLATFORM_CONFIG_KEYS)) {
-      if (k in all) flat[k] = all[k];
-    }
-    return flatToNested(flat);
+    return aPlatformConfig(await PlatformSettingsDB.getAll());
   } catch {
     // Si la DB no responde, defaults — el sitio sigue funcionando con la
     // identidad por defecto de Buleje. Mejor degradar que romper.
     return PLATFORM_CONFIG_DEFAULTS;
+  }
+}
+
+function aPlatformConfig(all: Record<string, unknown>): PlatformConfig {
+  const flat: Record<string, unknown> = {};
+  for (const k of Object.keys(PLATFORM_CONFIG_KEYS)) {
+    if (k in all) flat[k] = all[k];
+  }
+  return flatToNested(flat);
+}
+
+/**
+ * La config para un `"use cache"` (la marca del root layout, 29-10): lee
+ * directo de la base —sin el `inFlight` compartido de `getAll`, ver
+ * `PlatformSettingsDB.getAllFresco`— y con tope. Si la base no contesta en
+ * `topeMs` o falla, devuelve `null`: quien llama decide no cachear los
+ * defaults por horas. El tope tiene que quedar MUY por debajo de los 50 s que
+ * Next da para llenar un caché en el `next build` (USE_CACHE_TIMEOUT).
+ */
+export async function leerPlatformConfigConTope(
+  topeMs: number,
+): Promise<{ cfg: PlatformConfig | null; ms: number }> {
+  const inicio = Date.now();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const tope = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), topeMs);
+  });
+  try {
+    const all = await Promise.race([PlatformSettingsDB.getAllFresco(), tope]);
+    return { cfg: all ? aPlatformConfig(all) : null, ms: Date.now() - inicio };
+  } catch {
+    return { cfg: null, ms: Date.now() - inicio };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
