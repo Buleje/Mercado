@@ -13,12 +13,14 @@ import { crearConfirmador, VENTANA_MS } from "./src/confirmaciones.mjs";
 import { preguntarEnWindows } from "./src/dialogo-windows.mjs";
 import { registrarPrompts } from "./src/prompts.mjs";
 import { registrarRecursos } from "./src/recursos.mjs";
-import { taparPersonales } from "./src/tapar.mjs";
+import { taparPersonales, taparPorClaves } from "./src/tapar.mjs";
 import { NO_VERIFICADO } from "./src/util-herramientas.mjs";
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 /** Las registra siempre el servidor; una def de src/herramientas con este nombre se ignora. */
-export const RESERVADAS = ["confirmar", "pendientes", "cancelar", "leer_get", "panel_prender", "negocios"];
+export const RESERVADAS = ["confirmar", "pendientes", "cancelar", "leer_get", "panel_prender", "negocios", "estado"];
+/** Los negocios que Brandon usa; si falta uno en credenciales.json, `estado` dice cómo activarlo. */
+export const NEGOCIOS_ESPERADOS = ["bodega", "blas", "qa-forestal"];
 /** Locales con respaldo: si src/herramientas no la trae, la registra el servidor. */
 const LOCALES_OPCIONALES = ["panel_estado"];
 const TIPOS = new Set(["lectura", "escritura", "confirmar"]);
@@ -160,7 +162,8 @@ export function crearServidor(d) {
     }
     const nota = (extra2) => anotar({ herramienta: def.nombre, tipo: pideOk ? "confirmar" : def.tipo, negocio, metodo: pedidos[0]?.metodo, ruta: pedidos[0]?.ruta, ms: Date.now() - t0, ...extra2 });
     // RRHH: DNI, celulares y sueldos tapados antes de que el modelo los vea (Ley 29733; hallazgo 6).
-    const tapar = (v) => (def.grupo === "rrhh" ? taparPersonales(v) : v);
+    // El resto de los grupos (clientes, pedidos, adelantos…): por clave, sin tocar números sueltos (guías, comprobantes).
+    const tapar = (v) => (def.grupo === "rrhh" ? taparPersonales(v) : taparPorClaves(v));
 
     if (def.tipo === "lectura") {
       if (pedidos.some((p) => p?.metodo !== "GET")) { nota({ error: "servidor" }); return error("servidor", `«${def.nombre}» es de lectura pero armó un pedido que escribe; no se mandó.`); }
@@ -247,7 +250,7 @@ export function crearServidor(d) {
     if (r.seco) return ok(json({ seco: true, nota: "Modo a seco: ni ventana ni red. Esto es lo que se mandaría.", herramienta: r.herramienta, negocio: r.negocio, pedidos: r.pedidos }));
     const def = porNombre.get(r.herramienta);
     const datos = r.resultados.length === 1 ? r.resultados[0].datos : r.resultados.map((x) => x.datos);
-    const visibles = def?.grupo === "rrhh" ? taparPersonales(datos) : datos;
+    const visibles = def?.grupo === "rrhh" ? taparPersonales(datos) : taparPorClaves(datos);
     let texto;
     try { texto = def?.formatear ? def.formatear(visibles, {}) : json(visibles); } catch { texto = json(visibles); }
     texto = seguro(texto, visibles);
@@ -312,6 +315,51 @@ export function crearServidor(d) {
     }, async () => (d.estadoPanel ? ok(json(await d.estadoPanel({ base: config.base }))) : error("servidor", "falta src/panel-local.mjs")));
   }
 
+  servidor.registerTool("estado", {
+    description: "Revisión de la conexión en UNA llamada: si el panel de la PC responde, si Claude tiene sesión en cada negocio (usuario, rol), " +
+      "si está en modo a seco (prueba) o real, qué negocio falta activar y cuántas propuestas esperan OK. Si la sesión venció, vuelve a entrar sola. " +
+      "Usala primero cuando algo falle. Ej.: estado {} → «Panel: responde · bodega: claude (admin) · blas: falta activar · Modo: real». No cambia nada.",
+    inputSchema: {
+      negocio: z.string().optional().describe("solo este negocio (vacío = todos)"),
+      sesion: z.boolean().optional().describe("false = no revisar las sesiones (no entra al panel)"),
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  }, async (a) => {
+    const t0 = Date.now();
+    const lineas = [];
+    const detalle = { modo: seco() ? "seco" : "real", node: process.version, herramientas: d.herramientas.length + RESERVADAS.length, pendientes: confirmador.pendientes().length };
+    if (d.sinConfig) return error("sin_sesion", `${d.sinConfig}. Configurar: node tools/mcp-buleje/configurar.mjs`);
+    const panel = d.estadoPanel ? await d.estadoPanel({ base: config.base }).catch((e) => ({ abierto: false, saludable: false, error: String(e) })) : null;
+    detalle.panel = panel;
+    if (!panel) lineas.push("Panel: no sé (falta src/panel-local.mjs)");
+    else if (!panel.abierto) lineas.push(`Panel: APAGADO en ${config.base}. Prenderlo: herramienta \`panel_prender\` o \`panel\` en la terminal.`);
+    else if (!panel.saludable) lineas.push(`Panel: prendido pero no responde${panel.status ? ` (${panel.status})` : ""}: puede estar compilando; reintentá en 30-60 s.`);
+    else lineas.push(`Panel: responde (${panel.ms} ms)`);
+    const nombres = a.negocio ? [a.negocio] : [...new Set([...NEGOCIOS_ESPERADOS, ...Object.keys(config.negocios)])];
+    detalle.negocios = {};
+    for (const n of nombres) {
+      if (!config.negocios[n]) {
+        detalle.negocios[n] = { configurado: false };
+        lineas.push(`${n}: falta activar (Brandon: node tools/mcp-buleje/crear-usuario.mjs ${n})`);
+        continue;
+      }
+      if (a.sesion === false || !panel?.saludable) { detalle.negocios[n] = { configurado: true, revisado: false }; lineas.push(`${n}: configurado (sesión sin revisar)`); continue; }
+      const r = await d.pedir(n, { metodo: "GET", ruta: "/api/auth/me" });
+      const u = r?.datos;
+      if (r?.ok && u?.authenticated) {
+        detalle.negocios[n] = { configurado: true, usuario: u.username, rol: u.role, slug: config.negocios[n].slug };
+        lineas.push(`${n}: ${u.username} (${u.role})`);
+      } else {
+        detalle.negocios[n] = { configurado: true, error: r?.error?.codigo ?? "sin_sesion", mensaje: r?.error?.mensaje };
+        lineas.push(`${n}: SIN SESIÓN — ${r?.error?.mensaje ?? "el panel dice que no hay sesión"}`);
+      }
+    }
+    lineas.push(seco() ? "Modo: A SECO (prueba): las escrituras solo muestran el pedido" : "Modo: real (lo de plata, stock y borrar pide OK en la ventana)");
+    if (detalle.pendientes) lineas.push(`Esperando OK: ${detalle.pendientes}`);
+    anotar({ herramienta: "estado", tipo: "lectura", ms: Date.now() - t0 });
+    return ok(`${lineas.join("\n")}\n\n${json(detalle)}`);
+  });
+
   function listaNegocios() {
     return Object.entries(config.negocios).map(([nombre, c]) => ({ nombre, slug: c.slug, rubro: rubroDe(config, nombre) }));
   }
@@ -332,6 +380,9 @@ export function crearServidor(d) {
 }
 
 async function main() {
+  // Un error suelto en una herramienta no tumba el servidor: si muere, esa sesión de Claude queda sin conexión.
+  process.on("uncaughtException", (e) => log(`error suelto (sigo vivo): ${String(e?.stack ?? e).slice(0, 500)}`));
+  process.on("unhandledRejection", (e) => log(`promesa sin atrapar (sigo vivo): ${String(/** @type {any} */ (e)?.stack ?? e).slice(0, 500)}`));
   const { leerCredenciales } = await import("./src/credenciales.mjs");
   const { crearCliente } = await import("./src/cliente.mjs");
   const opcional = (ruta) => import(ruta).catch((e) => { log(`${ruta} no carga: ${String(e?.message ?? e)}`); return {}; });

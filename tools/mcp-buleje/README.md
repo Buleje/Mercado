@@ -16,15 +16,25 @@ Funciona con el panel de esta PC (`http://localhost:3000`). Si el panel está ap
 npm --prefix tools/mcp-buleje ci                 # instala lo que necesita
 node tools/mcp-buleje/configurar.mjs             # te pide usuario y clave de cada negocio (no se ven al escribir)
 node tools/mcp-buleje/configurar.mjs --probar    # entra una vez en cada negocio para ver que la clave sirve
-claude mcp add buleje --scope user -- /home/usuario/.local/bin/node-default /home/usuario/proyectos/Mercado/tools/mcp-buleje/servidor.mjs
+claude mcp add buleje --scope user -- /home/usuario/proyectos/Mercado/tools/mcp-buleje/arrancar.sh
+tools/mcp-buleje/arrancar.sh --vigilar --instalar   # vigía cada 30 min (registro, arranque, sesión) con aviso por Telegram
 ```
 
+`arrancar.sh` usa el Node de nvm y limpia `NODE_OPTIONS`. Sin eso, una sesión de Claude abierta sin nvm usaba el Node 18 del sistema, que rechaza una opción de `~/.bashrc`, y el MCP moría al arrancar (29-10).
+
 Las claves quedan en `~/.config/buleje-mcp/credenciales.json`, que solo tú puedes leer y que no entra al repo.
+
+## Si algo falla
+
+- En el chat: herramienta **`estado`**. Dice si el panel responde, si hay sesión en cada negocio, cuál falta activar y si está a seco o en real. Si la sesión venció, vuelve a entrar sola.
+- En la terminal: `tools/mcp-buleje/arrancar.sh --vigilar --ver --sesion`.
+- El vigía (`mcp-buleje-vigia.timer`) re-registra el MCP si alguien lo borra y avisa por Telegram solo cuando algo se rompe o se cura. El panel apagado no avisa.
 
 ## Quitarlo
 
 ```bash
 claude mcp remove buleje --scope user
+systemctl --user disable --now mcp-buleje-vigia.timer   # si no, el vigía lo vuelve a registrar
 ```
 
 Si además quieres borrar las claves guardadas: `rm ~/.config/buleje-mcp/credenciales.json`.

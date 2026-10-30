@@ -70,6 +70,19 @@ export function crearCliente(op) {
     return null;
   };
 
+  /** @param {import("./tipos.mjs").Pedido} pedido @param {Response} res */
+  async function meSinSesion(pedido, res) {
+    if (pedido.ruta !== "/api/auth/me" || res.status !== 200 || typeof res.clone !== "function") return false;
+    const j = await res.clone().json().catch(() => null);
+    return j?.authenticated === false;
+  }
+
+  /** @param {Response} res */
+  async function esCsrf(res) {
+    if (typeof res.clone !== "function") return false;
+    return /csrf/i.test(await res.clone().text().catch(() => ""));
+  }
+
   async function leerCuerpo(res) {
     const txt = await res.text().catch(() => "");
     if (!txt) return { txt, datos: undefined };
@@ -139,13 +152,20 @@ export function crearCliente(op) {
 
     try {
       let res = await mandar();
-      if (res.status === 401) {
+      // /api/auth/me responde 200 {authenticated:false} con la sesión vencida (no 401): se cura igual.
+      if (res.status === 401 || (await meSinSesion(pedido, res))) {
         await res.text().catch(() => "");
         // 1 refresh; si no, 1 login; si no, sin_sesion. Jamás bucle.
         let ok = await sesion.refrescar();
         if (!ok) { sesion.olvidar(); const l = await sesion.entrar(); ok = l.ok; }
         if (!ok) return fallo("sin_sesion", `La sesión de «${nombre}» venció y no se pudo renovar. Revisá el usuario «claude» (¿desactivado?).`, 401, ms());
         res = await mandar();
+      }
+      // 403 del CSRF (cookie vencida a las 24 h o tirada por el panel): el proxy corta antes del handler, así que
+      // reintentar 1 vez con cookie nueva no duplica nada.
+      if (res.status === 403 && (await esCsrf(res))) {
+        await res.text().catch(() => "");
+        if (await sesion.renovarCsrf()) res = await mandar();
       }
       if (res.status === 429) {
         const ra = Number(res.headers.get("retry-after"));

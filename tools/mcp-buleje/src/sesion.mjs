@@ -85,6 +85,13 @@ export class Sesion {
     }
   }
 
+  /** El proxy rechazó el CSRF (403): se tira la cookie y se siembra otra. */
+  async renovarCsrf() {
+    this.jar.delete("csrf-token");
+    await this.sembrarCsrf();
+    return Boolean(this.csrf);
+  }
+
   /** Un único login. Si falla por credenciales, bloquea nuevos intentos 15 min. @returns {Promise<{ok:boolean, status:number, mensaje:string, compilando?:boolean}>} */
   async entrar() {
     if (this.ahora() < this.bloqueadoHasta) {
