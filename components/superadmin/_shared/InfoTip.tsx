@@ -197,7 +197,9 @@ export function InfoTip({ title, what, body, affects, example, side = "right", c
           if (teclado) show();
         }}
         onBlur={alPerderFoco}
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        // Celular (29-10): 44×44 de toque sin mover nada: el margen de -10 px devuelve lo que crece
+        // (box-content no sirve: globals.css:288 fija border-box sin capa y le gana a Tailwind).
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full max-sm:-m-2.5 max-sm:h-11 max-sm:w-11 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       >
         {icono === "ayuda" ? (
           <HelpCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden />

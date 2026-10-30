@@ -172,7 +172,7 @@ export function useKpisPlegables({
             ? `Ver los indicadores · ${resumen}`
             : "Ver los indicadores"
       }
-      className={`inline-flex min-w-0 shrink items-center gap-2 border-[1.5px] px-3 text-sm font-bold transition-colors print:hidden ${
+      className={`inline-flex min-w-0 shrink items-center gap-2 border-[1.5px] px-3 text-sm font-bold transition-colors print:hidden max-sm:gap-1.5 max-sm:px-2.5 ${
         /* En una barra (h-12) el botón no pasa de 24rem: el titular se corta
            con «…» y el buscador conserva su lugar (medido en Ingresos: con el
            titular entero, el buscador quedaba en 70 px). */
@@ -217,7 +217,8 @@ export function useKpisPlegables({
           {compacto ? <span className="sr-only">{`${filtrosActivos} filtro${filtrosActivos === 1 ? "" : "s"}`}</span> : `${filtrosActivos} filtro${filtrosActivos === 1 ? "" : "s"}`}
         </span>
       )}
-      <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
+      {/* En el celular sin la flecha (29-10): 24 px menos y las acciones entran junto a las pestañas. */}
+      <ChevronDown className={`h-4 w-4 shrink-0 transition-transform max-sm:hidden ${abierto ? "rotate-180" : ""}`} aria-hidden />
     </button>
   );
   const enSuLugar = pintar(false);

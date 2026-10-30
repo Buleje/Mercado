@@ -173,12 +173,12 @@ export const PIE_BOTONES_48 =
  * fichas densas que se leen en 2 columnas sin scrollear de más.
  */
 const TAMANO_CLASES: Record<TamanoModal, string> = {
-  sm: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[24rem] sm:rounded-2xl sm:max-h-[85vh]",
-  md: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[32rem] sm:rounded-2xl sm:max-h-[85vh]",
-  lg: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[42rem] sm:rounded-2xl sm:max-h-[85vh]",
-  xl: "w-full rounded-t-2xl max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-[64rem] sm:rounded-2xl sm:max-h-[92vh]",
+  sm: "w-full rounded-t-2xl max-h-[90dvh] sm:w-[calc(100vw-2rem)] sm:max-w-[24rem] sm:rounded-2xl sm:max-h-[85vh]",
+  md: "w-full rounded-t-2xl max-h-[90dvh] sm:w-[calc(100vw-2rem)] sm:max-w-[32rem] sm:rounded-2xl sm:max-h-[85vh]",
+  lg: "w-full rounded-t-2xl max-h-[90dvh] sm:w-[calc(100vw-2rem)] sm:max-w-[42rem] sm:rounded-2xl sm:max-h-[85vh]",
+  xl: "w-full rounded-t-2xl max-h-[92dvh] sm:w-[calc(100vw-2rem)] sm:max-w-[64rem] sm:rounded-2xl sm:max-h-[92vh]",
   planilla:
-    "w-full rounded-t-2xl max-h-[92vh] sm:w-[min(96vw,100rem)] sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl sm:max-h-[95vh]",
+    "w-full rounded-t-2xl max-h-[92dvh] sm:w-[min(96vw,100rem)] sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl sm:max-h-[95vh]",
 };
 
 /** El ancho que traían los nombres viejos de `variant`. */
@@ -196,9 +196,9 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   info: TAMANO_CLASES.xl,
   // Brandon 2026-05-16: variant `pos` para checkouts con 2-columnas desktop.
   // max-w-6xl + 92vh para que en PC quepa TODO el flujo de cobro sin scroll.
-  pos: "w-full rounded-t-2xl max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-2xl",
-  fullscreen: "w-screen h-screen rounded-none",
-  side: "h-screen w-full max-w-[28rem] rounded-l-2xl",
+  pos: "w-full rounded-t-2xl max-h-[92dvh] sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-2xl",
+  fullscreen: "w-screen h-dvh rounded-none",
+  side: "h-dvh w-full max-w-[28rem] rounded-l-2xl",
 };
 
 const VARIANT_POSITION: Record<Variant, string> = {

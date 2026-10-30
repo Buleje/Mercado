@@ -38,7 +38,8 @@ const PESTANA: Record<EstiloPestana, { base: string; activa: string; inactiva: s
   },
   fase: {
     fila: "gap-0.5",
-    base: "relative inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm font-bold transition-colors duration-[var(--dur-base)]",
+    // 44 px en celular (mínimo táctil, 29-10); 36 desde sm, donde manda el mouse.
+    base: "relative inline-flex h-11 sm:h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm font-bold transition-colors duration-[var(--dur-base)]",
     activa: "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]",
     inactiva: "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
   },
@@ -68,6 +69,10 @@ const TEXTO_TITULO_EN_GRILLA = "grid grid-cols-[auto_1fr] justify-items-start [&
  */
 const MINIMO_AL_LADO = 2;
 const MARGEN_AL_LADO = 4;
+/** Dónde van las pestañas en la banda con título (el `lugar` del reparto). */
+const LUGAR_AL_LADO = 0;
+const LUGAR_ABAJO = 1;
+const LUGAR_COMPARTIDA = 2;
 
 /** La pestaña del panel (`?tab=`), para el rótulo. Cambia de pestaña = otro módulo montado. */
 const suscribirUrl = (avisar: () => void) => {
@@ -189,16 +194,8 @@ export default function AdminTabBar({
   const tabDeLaUrl = useSyncExternalStore(suscribirUrl, leerTabDeUrl, sinTabEnServidor);
   const rotulo = heading ? (heading.eyebrow ?? rotuloDelMenu(tabDeLaUrl, heading.title)) : undefined;
 
-  /**
-   * Cuando las pestañas bajan a su propia fila (`order-3 basis-full`), las
-   * acciones se quedan junto al título vía `order`: la fila de arriba queda
-   * «título … acciones» y la de abajo, las pestañas.
-   */
-  const acciones = bandaConTitulo && heading?.actions ? (
-    <div ref={accionesRef} className="order-2 ml-auto flex max-w-full shrink-0 flex-wrap items-center gap-2">
-      {heading.actions}
-    </div>
-  ) : null;
+  /** Las acciones del módulo van en la banda (su caja se arma tras el reparto). */
+  const conAccionesArriba = Boolean(bandaConTitulo && heading?.actions);
   // Anidada: las acciones van dentro del riel, junto al `rightSlot`.
   const accionesEnRiel = !bandaConTitulo && heading?.actions ? heading.actions : null;
   const idDeTab = (id: string) => `${barraId}-tab-${id}`;
@@ -243,21 +240,42 @@ export default function AdminTabBar({
       const caja = paddingX(riel);
       const titulo = tituloRef.current?.getBoundingClientRect().width ?? 0;
       const conAcciones = anchoConSeparacion(accionesRef.current, sep);
-      return elegirLugar(
-        [
-          { ancho: libre - titulo - sep - MARGEN_AL_LADO - caja - slot - conAcciones, minimo: MINIMO_AL_LADO },
-          { ancho: libre - caja - slot, minimo: 0 },
-        ],
-        base,
-      );
+      const alLado = { ancho: libre - titulo - sep - MARGEN_AL_LADO - caja - slot - conAcciones, minimo: MINIMO_AL_LADO };
+      const abajo = { ancho: libre - caja - slot, minimo: 0 };
+      /* Las acciones no entran junto al título (celular): antes quedaban en una
+         fila sola, entre el título y las pestañas (3 filas, 170 px a 400). Si al
+         lado de las pestañas entra al menos la activa, comparten la 2.ª fila. */
+      if (conAcciones > 0 && titulo + conAcciones > libre) {
+        const compartida = { ancho: libre - caja - slot - conAcciones, minimo: 1 };
+        const r = elegirLugar([alLado, compartida, abajo], base);
+        return { ...r, lugar: [LUGAR_AL_LADO, LUGAR_COMPARTIDA, LUGAR_ABAJO][r.lugar] ?? LUGAR_ABAJO };
+      }
+      return elegirLugar([alLado, abajo], base);
     },
     () => [filaRef.current, tituloRef.current, accionesRef.current, slotRef.current, medidorRef.current, bandaConTitulo ? null : rielRef.current],
-    [conMedidor, bandaConTitulo, orden.idsBarra.join(","), orden.aMas.join(","), activeTab, orden.masFijo, conSlot, Boolean(acciones)].join("|"),
+    [conMedidor, bandaConTitulo, orden.idsBarra.join(","), orden.aMas.join(","), activeTab, orden.masFijo, conSlot, conAccionesArriba].join("|"),
   );
   const visibles = reparto ? reparto.visibles.map((id) => porId.get(id)).filter((t): t is AdminTab => Boolean(t)) : tabsBarra;
   const escondidas = reparto ? reparto.escondidas.map((id) => porId.get(id)).filter((t): t is AdminTab => Boolean(t)) : [];
   const mostrarMas = escondidas.length > 0 || orden.masFijo;
-  const pestanasAbajo = bandaConTitulo && reparto?.lugar === 1;
+  const pestanasAbajo = bandaConTitulo && reparto?.lugar === LUGAR_ABAJO;
+  /** Título solo arriba; pestañas y acciones juntas en la 2.ª fila. */
+  const compartida = bandaConTitulo && reparto?.lugar === LUGAR_COMPARTIDA;
+
+  /**
+   * Cuando las pestañas bajan a su propia fila (`order-3 basis-full`), las
+   * acciones se quedan junto al título vía `order`: la fila de arriba queda
+   * «título … acciones» y la de abajo, las pestañas. Compartida: título ·
+   * corte · pestañas + acciones.
+   */
+  const acciones = conAccionesArriba ? (
+    <div
+      ref={accionesRef}
+      className={cn("ml-auto flex max-w-full shrink-0 flex-wrap items-center gap-2", compartida ? "order-4" : "order-2")}
+    >
+      {heading?.actions}
+    </div>
+  ) : null;
 
   /** Elegir una del «Más»: pasa a verse (es la activa) y el foco la sigue. */
   const elegirDelMas = (id: string) => {
@@ -449,12 +467,14 @@ export default function AdminTabBar({
         // que no entra va al «Más».
         estilo === "fase"
           ? cn(
-              "order-1 min-w-0 max-w-full flex-none items-center gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-1",
+              "order-1 min-w-0 max-w-full flex-none items-center gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-0.5 sm:p-1",
               reparto === null
                 ? "sm:ml-1 @max-[60rem]/banda:order-3 @max-[60rem]/banda:basis-full"
                 : pestanasAbajo
                   ? "order-3 basis-full"
-                  : "sm:ml-1",
+                  : compartida
+                    ? "order-3"
+                    : "sm:ml-1",
             )
           : "-mx-1 gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
         // Sin medir todavía (primer cuadro, servidor): todas, recortadas a la
@@ -561,7 +581,7 @@ export default function AdminTabBar({
         // Si no entra todo: las acciones se quedan junto al título y las
         // pestañas bajan a su fila. La descripción va al ⓘ, no debajo
         // (regla «explicar con ⓘ», Brandon 09-24 y 01-10).
-        <div ref={filaRef} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4">
+        <div ref={filaRef} className={cn("flex flex-wrap items-center gap-x-3 px-3 py-2.5 sm:px-4", compartida ? "gap-y-0" : "gap-y-2")}>
           <div ref={tituloRef} className={FILA_TITULO_MODULO}>
             <TituloModulo
               icon={heading.icon}
@@ -576,6 +596,8 @@ export default function AdminTabBar({
               }
             />
           </div>
+          {/* El corte hace de separación (h-2 = el gap-y que se apaga en compartida). */}
+          {compartida && <div aria-hidden className="order-2 h-2 basis-full" />}
           {estilo === "fase" && rielDePestanas}
           {acciones}
         </div>

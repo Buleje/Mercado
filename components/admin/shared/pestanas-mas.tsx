@@ -76,7 +76,7 @@ export function contadorDelMas(escondidas: readonly { badge?: number | string }[
  * `linea` = la barra subrayada; `seccion` = BarraDeSecciones (48 px).
  */
 export const CLASE_MAS = {
-  fase: "h-9! gap-1! rounded-lg! border-0! bg-transparent! px-2.5! text-[var(--text-tertiary)]! hover:text-[var(--text-primary)]! aria-expanded:bg-[var(--surface-raised)]! [&>svg:first-child]:hidden",
+  fase: "h-11! sm:h-9! gap-1! rounded-lg! border-0! bg-transparent! px-2.5! text-[var(--text-tertiary)]! hover:text-[var(--text-primary)]! aria-expanded:bg-[var(--surface-raised)]! [&>svg:first-child]:hidden",
   linea:
     "h-auto! gap-1.5! self-stretch rounded-none! border-0! border-b-[3px]! border-transparent! bg-transparent! px-3! py-2.5! text-[var(--text-secondary)]! hover:text-[var(--text-primary)]! [&>svg:first-child]:hidden",
   seccion:

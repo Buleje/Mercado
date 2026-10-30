@@ -315,6 +315,8 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false, 
           onClick={() => irAEnlace(first.href)}
           className={cn(
             "shrink-0 inline-flex items-center gap-1 h-7 px-3 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition-all hover:gap-1.5",
+            // Celular (29-10): 44 px de toque con un ::after invisible; se ve igual.
+            "max-sm:relative max-sm:after:absolute max-sm:after:-inset-y-2 max-sm:after:inset-x-0 max-sm:after:content-['']",
             ctaCls,
           )}
         >
@@ -330,6 +332,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false, 
             aria-expanded={expanded}
             className={cn(
               "shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider border transition-colors",
+              "max-sm:relative max-sm:after:absolute max-sm:after:-inset-y-2 max-sm:after:inset-x-0 max-sm:after:content-['']",
               headerTone === "urgent"
                 ? "border-[var(--data-error-300,#fca5a5)] text-[var(--data-error-700,#b91c1c)] hover:bg-[var(--data-error-100,#fee2e2)]"
                 : "border-[var(--data-warning-300,#ff8676)] text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
@@ -350,7 +353,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false, 
           onClick={() => handleDismiss(first.id)}
           aria-label={`Descartar: ${first.label}`}
           className={cn(
-            "shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
+            "shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors max-sm:h-11 max-sm:w-11 max-sm:-my-2",
             headerTone === "urgent"
               ? "text-[var(--data-error-700,#b91c1c)] hover:bg-[var(--data-error-100,#fee2e2)]"
               : "text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",

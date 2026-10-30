@@ -36,7 +36,9 @@ export function EtiquetaAlcance({ tab, vista, className }: { tab: string; vista?
       )}
     >
       <Icono aria-hidden className="h-3.5 w-3.5 shrink-0" />
-      <span>{texto.etiqueta}</span>
+      {/* Celular (29-10): sólo el ícono y el ⓘ; el rótulo entero dejaba el chip
+          solo en una fila de la banda, entre el título y las pestañas. */}
+      <span className="max-sm:sr-only">{texto.etiqueta}</span>
       <InfoTip
         title={`Esto cambia: ${texto.etiqueta}`}
         what={texto.quien}
