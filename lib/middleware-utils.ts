@@ -332,10 +332,18 @@ export function buildCSP(pathname: string, nonce?: string): string {
       }
     : { script: "", frame: "", connect: "", style: "" };
 
+  /* Panel liviano de la PC (`next start` de `panel-trabajo`, 29-10): con
+     `cacheComponents` el shell estático de cada página se arma en el build, sin
+     request y por lo tanto sin nonce, y `'strict-dynamic'` bloqueaba 46 de 75
+     scripts de /admin (panel en blanco). La doc de Next lo dice: «Partial
+     Prerendering is incompatible with nonce-based CSP». Sólo con la variable y
+     nunca en Vercel: allá la regla sigue igual. */
+  const sinNonceLocal = process.env.BSM_CSP_SIN_NONCE === "1" && !process.env.VERCEL;
+
   let scriptSrc: string;
   if (isDev) {
     scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com${gis.script}`;
-  } else if (nonce) {
+  } else if (nonce && !sinNonceLocal) {
     scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com${gis.script}`;
   } else {
     scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com${gis.script}`;

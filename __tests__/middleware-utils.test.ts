@@ -331,6 +331,33 @@ describe("buildCSP", () => {
     }
   });
 
+  it("panel liviano de la PC (BSM_CSP_SIN_NONCE=1, fuera de Vercel): sin nonce ni strict-dynamic", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("BSM_CSP_SIN_NONCE", "1");
+    vi.stubEnv("VERCEL", "");
+    try {
+      const scriptSrc = buildCSP("/admin", "abc123").split(";").find(d => d.trim().startsWith("script-src")) ?? "";
+      expect(scriptSrc).toContain("'unsafe-inline'");
+      expect(scriptSrc).not.toContain("'strict-dynamic'");
+      expect(scriptSrc).not.toContain("'nonce-abc123'");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("BSM_CSP_SIN_NONCE en Vercel no cambia nada: sigue nonce + strict-dynamic", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("BSM_CSP_SIN_NONCE", "1");
+    vi.stubEnv("VERCEL", "1");
+    try {
+      const csp = buildCSP("/admin", "abc123");
+      expect(csp).toContain("'nonce-abc123'");
+      expect(csp).toContain("'strict-dynamic'");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("with nonce in dev: script-src has unsafe-inline (HMR scripts inline sin nonce)", () => {
     vi.stubEnv("NODE_ENV", "development");
     try {
