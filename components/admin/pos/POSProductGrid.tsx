@@ -126,7 +126,8 @@ function Tarjeta({ p, enCarrito, isFav, addToCart, toggleFavorite }: ItemProps) 
         </span>
       </button>
       {/* 11 px = borde 1 + padding 8 + 2 adentro de la franja. */}
-      <BotonFavorito p={p} isFav={isFav} toggleFavorite={toggleFavorite} className="absolute left-[11px] top-[11px] z-10 h-6 w-6 rounded-full bg-[var(--surface-raised)]/90 backdrop-blur-sm hover:bg-[var(--surface-raised)]" />
+      {/* La estrella mide 24 px; en el celular un ::after invisible la lleva a 44 de toque. */}
+      <BotonFavorito p={p} isFav={isFav} toggleFavorite={toggleFavorite} className="absolute left-[11px] top-[11px] z-10 h-6 w-6 rounded-full bg-[var(--surface-raised)]/90 backdrop-blur-sm hover:bg-[var(--surface-raised)] max-sm:after:absolute max-sm:after:-inset-2.5 max-sm:after:content-['']" />
     </div>
   );
 }

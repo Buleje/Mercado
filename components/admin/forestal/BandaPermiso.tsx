@@ -23,7 +23,7 @@ export default function BandaPermiso() {
     <div
       role="group"
       aria-label="Permiso de trabajo"
-      className={`flex h-10 min-w-0 items-stretch rounded-xl bg-[var(--surface-raised)] ${
+      className={`flex h-12 sm:h-10 min-w-0 items-stretch rounded-xl bg-[var(--surface-raised)] ${
         !listo || activo
           ? "border border-[var(--rule-base)]"
           : "border-2 border-dashed border-[var(--rule-base)]"

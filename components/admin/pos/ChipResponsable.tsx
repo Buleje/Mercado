@@ -27,6 +27,8 @@ export function ChipResponsable({ r, onTurnoPropio, onIrATurnos }: { r: Responsa
       aria-label={`Vendes como ${yo}, ${estado}. ${explica}`}
       className={cn(
         "inline-flex max-w-full items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold transition-colors",
+        // Celular (29-10): 44 px de toque con un ::after invisible; el chip se ve igual.
+        "max-sm:relative max-sm:after:absolute max-sm:after:-inset-y-2.5 max-sm:after:inset-x-0 max-sm:after:content-['']",
         r.turnoAbierto && r.turnoEsMio
           ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] hover:bg-primary/10 dark:text-[var(--data-success-500)]"
           : deOtro

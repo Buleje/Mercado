@@ -27,7 +27,10 @@ export default function InventarioCabecera({ inv, indicadores }: { inv: Inventar
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
       <div className="flex shrink-0 items-center gap-2">
-        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Productos y stock</SectionTitle>
+        {/* En el celular el título se lee en la banda («Productos e inventario» ›
+            Productos) y aquí sólo queda el ⓘ: con él las acciones bajaban a una
+            fila propia (regla 6, «cabecera en una fila»). */}
+        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)] max-sm:sr-only">Productos y stock</SectionTitle>
         <InfoTip
           title="Productos y stock"
           what="Tu catálogo con lo que hay de cada producto: búscalo, fíltralo y edítalo; el ⋯ de cada fila trae el resto."

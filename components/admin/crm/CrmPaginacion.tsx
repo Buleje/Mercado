@@ -21,7 +21,7 @@ export default function CrmPaginacion({ crm }: { crm: Crm }) {
             <button aria-label="Anterior"
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={effectivePage === 1}
-              className="p-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+              className="grid h-11 w-11 sm:h-8 sm:w-8 place-items-center rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
             </button>
@@ -31,7 +31,8 @@ export default function CrmPaginacion({ crm }: { crm: Crm }) {
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={cn("w-8 h-8 text-xs rounded-lg font-semibold transition-colors",
+                  // En el celular sólo ‹ ›: cinco números de 44 px no entran con el «Página 1 de N».
+                  className={cn("w-8 h-8 text-xs rounded-lg font-semibold transition-colors max-sm:hidden",
                     effectivePage === p
                       ? "bg-primary text-white"
                       : "border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)]"
@@ -44,7 +45,7 @@ export default function CrmPaginacion({ crm }: { crm: Crm }) {
             <button aria-label="Siguiente"
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={effectivePage === totalPages}
-              className="p-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+              className="grid h-11 w-11 sm:h-8 sm:w-8 place-items-center rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
             >
               <ChevronRight className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
             </button>

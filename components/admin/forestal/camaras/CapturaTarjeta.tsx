@@ -80,7 +80,7 @@ export default function CapturaTarjeta({
             disabled={guardando}
             aria-label="Borrar esta foto del historial"
             title={`Borrar del historial la foto del ${cuando}`}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-ink)] disabled:opacity-50"
+            className="grid h-11 w-11 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-ink)] disabled:opacity-50"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>

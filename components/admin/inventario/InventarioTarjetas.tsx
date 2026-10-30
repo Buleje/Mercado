@@ -55,6 +55,8 @@ export default function InventarioTarjetas({ inv }: { inv: Inventario }) {
                 title={p.active ? "Activo — toca para desactivar" : "Inactivo — toca para activar"}
                 className={cn(
                   "absolute right-2 top-2 z-10 inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition-colors",
+                  // 44 px de toque en el celular sin agrandar la píldora (29-10).
+                  "max-sm:after:absolute max-sm:after:-inset-y-0.5 max-sm:after:inset-x-0 max-sm:after:content-['']",
                   p.active
                     ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:brightness-95"
                     : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"

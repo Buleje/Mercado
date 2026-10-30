@@ -38,7 +38,10 @@ export default function InventarioAlertaOC({ inv }: { inv: Inventario }) {
       <div className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1 sm:px-4">
         <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-ink)]" aria-hidden />
         <p className="min-w-0 text-sm text-[var(--text-primary)]">
-          <span className="font-bold tabular-nums">{n}</span> producto{n > 1 ? "s necesitan" : " necesita"} reposición
+          <span className="font-bold tabular-nums">{n}</span>
+          {/* Corto en el celular: con la frase entera «Ver cuáles» bajaba a otra línea. */}
+          <span className="sm:hidden"> por reponer</span>
+          <span className="max-sm:hidden"> producto{n > 1 ? "s necesitan" : " necesita"} reposición</span>
         </p>
         <InfoTip
           what="Activos con stock en su mínimo o debajo. «Ver cuáles» abre Compras › Comprar con esos productos ya filtrados para armar la compra."

@@ -23,8 +23,10 @@ export default function ListaParaVender({ inv }: { inv: Inventario }) {
   const items: Array<{ falta: FaltaDeCatalogo; n: number; texto: string; icono: typeof Coins }> = [
     { falta: "sin-codigo", n: conteo.sinCodigo, texto: "Sin código", icono: Barcode },
     { falta: "sin-costo", n: conteo.sinCosto, texto: "Sin costo", icono: Coins },
-    { falta: "sin-control", n: conteo.sinControl, texto: "Sin control de stock", icono: Boxes },
+    { falta: "sin-control", n: conteo.sinControl, texto: "Sin control", icono: Boxes },
   ];
+  /* Celular (29-10): «Sin control» y el lector sólo con ícono: eran 3 filas de
+     botones (170 px) antes del buscador; así entran en 2. */
   return (
     <section aria-label="Lista para vender" className="flex flex-wrap items-center gap-2">
       <span className="flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)]">
@@ -36,12 +38,19 @@ export default function ListaParaVender({ inv }: { inv: Inventario }) {
         if (n === 0 && !activo) return null;
         return (
           <button key={falta} type="button" aria-pressed={activo} onClick={() => setFaltaDato(activo ? null : falta)} className={atajo(activo)}>
-            <Icono className="h-4 w-4" aria-hidden /> {texto} <span className={cn("tabular-nums", !activo && "font-bold")}>({n})</span>
+            <Icono className="h-4 w-4" aria-hidden /> {texto}
+            {falta === "sin-control" && <span className="max-sm:hidden">de stock</span>} <span className={cn("tabular-nums", !activo && "font-bold")}>({n})</span>
           </button>
         );
       })}
-      <button type="button" onClick={() => lista.setAbierto(true)} className={button({ variant: "accent", className: "shrink-0 gap-1.5 rounded-xl px-3 text-sm" })}>
-        <ScanBarcode className="h-4 w-4" aria-hidden /> Pasar el lector
+      <button
+        type="button"
+        onClick={() => lista.setAbierto(true)}
+        aria-label="Pasar el lector"
+        title="Pasar el lector"
+        className={button({ variant: "accent", className: "shrink-0 gap-1.5 rounded-xl px-3 text-sm max-sm:w-12 max-sm:px-0" })}
+      >
+        <ScanBarcode className="h-4 w-4" aria-hidden /> <span className="max-sm:hidden">Pasar el lector</span>
       </button>
       <LectorGondola lista={lista} />
     </section>

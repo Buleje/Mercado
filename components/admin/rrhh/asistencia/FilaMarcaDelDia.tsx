@@ -118,7 +118,8 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
               data-qa="rrhh-completar-ficha"
               onClick={onCompletar}
               title={`Falta: ${faltaFicha.join(" y ")}. Sin puesto no hay horario y la tardanza no se marca sola`}
-              className={cn(CLASE_CHIP, "py-0 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] underline-offset-2 hover:underline dark:text-[var(--data-warning-500)]")}
+              // 44 px de toque en el celular con un ::after invisible (era 20 de alto).
+              className={cn(CLASE_CHIP, "py-0 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] underline-offset-2 hover:underline dark:text-[var(--data-warning-500)]", "max-sm:relative max-sm:after:absolute max-sm:after:-inset-y-2.5 max-sm:after:inset-x-0 max-sm:after:content-['']")}
             >
               Completar
             </button>

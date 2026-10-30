@@ -35,7 +35,7 @@ const FORMA = {
   icono: cn(BTN, "w-12 justify-center px-0"),
   /* Igual que «Borrar» de la tarjeta de la foto: al lado, mismo tamaño. */
   tarjeta:
-    "grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--accent-ink)]",
+    "grid h-11 w-11 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--accent-ink)]",
 } as const;
 
 interface Props {
