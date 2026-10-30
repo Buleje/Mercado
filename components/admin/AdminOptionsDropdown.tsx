@@ -127,11 +127,13 @@ export default function AdminOptionsDropdown({
         aria-haspopup="menu"
         aria-label="Opciones del panel"
         className={cn(
-          // Brandon 2026-05-28: en MOBILE círculo branded teal-soft + accent
-          // (mismo lenguaje que hamburguesa + lupa). En md+ vuelve al pill
-          // compacto con "Opciones" + chevron.
+          // Brandon 2026-05-28: en MOBILE círculo branded teal-soft + accent. 29-10: en
+          // el celular (cabecera siempre clara) va liso como chat y campana: con
+          // cuatro botones teñidos y tres lisos la fila se veía remendada. En md+
+          // vuelve al pill compacto con "Opciones" + chevron.
           "inline-flex items-center justify-center md:justify-start h-11 w-11 md:w-auto md:h-8 md:px-2.5 md:gap-1.5 rounded-xl md:rounded-xl text-xs font-semibold transition-colors shrink-0",
-          "max-md:bg-primary/10 max-md:text-[var(--accent)] max-md:ring-1 max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
+          "max-sm:text-[var(--text-secondary)] max-sm:hover:bg-[var(--surface-sunken)] max-sm:hover:text-[var(--accent-ink)] max-sm:dark:hover:text-[var(--accent)]",
+          "sm:max-md:bg-primary/10 sm:max-md:text-[var(--accent)] sm:max-md:ring-1 sm:max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
           onDarkHeader
             ? "md:border md:border-white/15 md:text-white/70 md:hover:bg-white/10 md:hover:text-white"
             : cn(
@@ -140,8 +142,8 @@ export default function AdminOptionsDropdown({
                 "hover:bg-[var(--rule-soft)] md:dark:hover:bg-[var(--surface-sunken)] md:hover:text-primary",
               ),
           open && (onDarkHeader
-            ? "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] md:bg-white/10 md:text-white"
-            : "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] md:bg-gray-100 md:dark:bg-[var(--surface-sunken)] md:text-primary"),
+            ? "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] max-sm:text-[var(--accent-ink)] md:bg-white/10 md:text-white"
+            : "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] max-sm:text-[var(--accent-ink)] max-sm:dark:text-[var(--accent)] md:bg-gray-100 md:dark:bg-[var(--surface-sunken)] md:text-primary"),
         )}
       >
         <Settings2 className="h-5 w-5 md:h-4 md:w-4" />

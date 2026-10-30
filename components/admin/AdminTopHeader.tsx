@@ -23,14 +23,12 @@
 
 import { memo, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Menu } from "@buleje/design-system/icons";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import GlobalSearch from "@/components/admin/GlobalSearch";
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
-import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useRegistrarRecientes } from "@/hooks/use-recientes-panel";
 import { useCabeceraOculta, useCabeceraEnBarra } from "@/hooks/use-cabecera-oculta";
 import { cn } from "@/lib/utils";
@@ -74,7 +72,8 @@ export interface AdminTopHeaderProps {
   /** Nombre y logo del tenant: respaldo del botón de identidad mientras llega el membrete. */
   activeTenantName?: string | null;
   activeTenantLogo?: string | null;
-  onOpenMobileNav: () => void;
+  /** @deprecated 29-10: en celular el menú se abre desde la barra de abajo («Menú»). */
+  onOpenMobileNav?: () => void;
   /** @deprecated 20-10: el buscador es el campo de la cabecera; Ctrl+K lo enfoca solo. */
   onOpenSearch?: () => void;
   onOpenCierreDiario: () => void;
@@ -99,7 +98,6 @@ export const AdminTopHeader = memo(function AdminTopHeader({
   tenantSlug,
   activeTenantName,
   activeTenantLogo,
-  onOpenMobileNav,
   onOpenCierreDiario,
   onToggleFocus,
   onTogglePresentation,
@@ -188,24 +186,10 @@ export const AdminTopHeader = memo(function AdminTopHeader({
         oculta && "md:hidden!"
       )}
     >
-      {/* Left: hamburger (mobile) + search */}
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <AdminTooltip content="Abrir menú" side="bottom">
-          <button
-            onClick={onOpenMobileNav}
-            // Brandon 2026-05-28: estilo branded — círculo teal-soft con icono
-            // accent (mismo lenguaje visual que el resto del DS de Buleje).
-            className={cn(
-              "sm:hidden inline-flex items-center justify-center h-11 w-11 rounded-xl transition-colors shrink-0 ring-1",
-              "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
-              "hover:bg-[color-mix(in_oklab,var(--accent)_12%,var(--surface-raised))]"
-            )}
-            aria-label="Menú"
-          >
-            <Menu className="h-5 w-5" strokeWidth={2.25} />
-          </button>
-        </AdminTooltip>
-
+      {/* Left: buscador + accesos. En celular el menú se abre desde la barra
+          de abajo («Menú», al alcance del pulgar, 29-10): la hamburguesa de
+          arriba repetía ese botón y empujaba los íconos hasta encimarse a 400 px. */}
+      <div className="flex items-center gap-0.5 sm:gap-2 flex-1 min-w-0">
         {/* Brandon 20-10: el campo busca ahí mismo, sin ventana. En celular es
             una lupa que despliega el campo sobre esta misma cabecera.
             El ancho va en un token propio (`--panel-search-max`, 30 → 36/44 rem
@@ -218,7 +202,7 @@ export const AdminTopHeader = memo(function AdminTopHeader({
       </div>
 
       {/* Right: actions */}
-      <div className="flex min-w-0 items-center gap-1">
+      <div className="flex min-w-0 items-center gap-0.5 sm:gap-1">
         {/* Chat con clientes + mensajes de la plataforma en UN botón con el
             total sin leer. Eran dos íconos sueltos con badges que competían
             entre sí y llenaban la barra (ADR-132 + Messenger 2026-06-06). */}

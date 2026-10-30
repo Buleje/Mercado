@@ -94,7 +94,8 @@ export default function AdminMensajesMenu({ onDarkHeader = false, enBarra = fals
             // El override a blanco sólo aplica desde `sm:`, donde el fondo
             // oscuro del tema realmente se pinta.
             "relative inline-flex shrink-0 items-center justify-center rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
-            enBarra ? "h-11 w-11" : "h-10 w-10",
+            // 44 px: era 40 y quedaba bajo el mínimo táctil en la cabecera del celular.
+            enBarra ? "h-11 w-11" : "h-11 w-11 sm:h-10 sm:w-10",
             "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)]",
             onDarkHeader && "sm:text-white/60 sm:hover:bg-white/10 sm:hover:text-white",
           )}

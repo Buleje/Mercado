@@ -200,7 +200,7 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
         aria-expanded={open}
         title={`Notificaciones${totalBadge > 0 ? ` (${totalBadge} pendientes)` : ""}${textoAvisos} — tecla N`}
         className={cn(
-          "relative flex items-center justify-center h-12 w-12 shrink-0 rounded-xl transition-colors",
+          "relative flex items-center justify-center h-11 w-11 sm:h-12 sm:w-12 shrink-0 rounded-xl transition-colors",
           open && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
           !open && !onDarkHeader && "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]",
           // onDarkHeader usa el token en vez de la clase literal `text-gray-400`

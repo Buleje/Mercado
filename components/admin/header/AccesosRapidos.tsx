@@ -50,8 +50,9 @@ interface Props {
   onDarkHeader?: boolean;
 }
 
+// 44 px en celular (siete íconos en 360 px sin encimarse), 48 desde sm.
 const BOTON =
-  "grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+  "grid h-11 w-11 sm:h-12 sm:w-12 shrink-0 place-items-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
 const CLARO =
   "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
 // En celular la cabecera es SIEMPRE clara (AdminTopHeader): el tono oscuro sólo desde sm.
@@ -181,9 +182,9 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
             className={cn(
               BOTON,
               "relative",
+              // 29-10: en celular, liso como cámara, chat y campana (tinte sólo abierto);
+              // el único botón con fondo es la lupa, la acción de siempre.
               abierto ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : tono,
-              // En celular, el mismo lenguaje que la hamburguesa y la lupa.
-              "max-sm:bg-primary/10 max-sm:text-[var(--accent-ink)] max-sm:ring-1 max-sm:ring-[var(--accent)]/20",
             )}
           >
             <LayoutGrid className="h-5 w-5" aria-hidden />
