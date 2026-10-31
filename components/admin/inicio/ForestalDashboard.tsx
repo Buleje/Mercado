@@ -1,54 +1,26 @@
 "use client";
 
-import { isValidElement, type ReactElement, type ReactNode } from "react";
+import { AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
-import { StatCard } from "@buleje/design-system";
-import {
-  AlertTriangle,
-  Boxes,
-  FileText,
-  HandCoins,
-  Layers,
-  PackageCheck,
-  RefreshCw,
-  TreePine,
-} from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { fmtMonedas } from "@/components/admin/adelantos/shared";
-import { formatNumber } from "@/lib/format";
-import { porcentaje } from "@/lib/admin/inicio/formato-tablero";
-import { valorConDato } from "@/lib/admin/inicio/hay-datos";
-import { cantidadDelPeriodo, type InicioForestal } from "@/lib/forestal/inicio-forestal";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 import { describeRange, type DateRange } from "./DashboardDateRange";
 import EmptyDateRangeState from "./EmptyDateRangeState";
-import { BulejeDashboardSkeleton, KPI_GRID_4, KPI_GRID_5, KPI_GRID_6, LineaSinDato } from "./_shared";
-import { ForestalCharts } from "./ForestalCharts";
+import { BulejeDashboardSkeleton } from "./_shared";
 import { ForestalAvisoPapeles } from "./ForestalAvisoPapeles";
+import { ForestalCharts } from "./ForestalCharts";
 import { ForestalPermisos } from "./ForestalPermisos";
-import { estadoInicioForestal, guiasVigentes, useForestalInicio } from "./use-forestal-inicio";
-
-const CTP = "/admin?tab=ctp-libro-operaciones";
-const LOTH = "/admin?tab=loth-libro-operaciones";
-const m3 = (n: number) => `${formatNumber(n, 2)} m³`;
-
-/**
- * Marca de «sin dato» en la cifra de una tarjeta (regla R3). Desde 2026-10-29
- * la tarjeta que la lleva no se dibuja: `esTarjetaSinDato` la saca de la grilla.
- */
-const SIN_DATO = (
-  <span data-sin-dato="true" aria-label="Sin dato" className="text-[var(--text-tertiary)] opacity-70">
-    —
-  </span>
-);
-
-type PropsTarjeta = { label?: unknown; value?: unknown; subValue?: unknown };
-
-const conMayuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
-
-/** La tarjeta cuya cifra es `SIN_DATO` (no se dibuja: va en `LineaSinDato`). */
-function esTarjetaSinDato(t: ReactNode): t is ReactElement<PropsTarjeta> {
-  return isValidElement<PropsTarjeta>(t) && t.props.value === SIN_DATO;
-}
+import { CaminoDeLaMadera } from "./forestal/CaminoDeLaMadera";
+import { cifrasForestal, consejoForestal } from "./forestal/cifras-forestal";
+import { CTP, LOTH } from "./forestal/comun";
+import { TarjetaEspecies } from "./forestal/TarjetaEspecies";
+import { TarjetaAdelantos, TarjetaGuias } from "./forestal/TarjetaGuias";
+import { TarjetaPatio } from "./forestal/TarjetaPatio";
+import { hayGraficoForestal } from "./forestal/serie";
+import { GrillaTablero, PilaTablero } from "./resumen/TarjetaTablero";
+import { TiraDeCifras } from "./resumen/TiraDeCifras";
+import { estadoInicioForestal, useForestalInicio } from "./use-forestal-inicio";
 
 interface Props {
   dateRange: DateRange;
@@ -59,21 +31,29 @@ interface Props {
 }
 
 /**
- * Inicio · Forestal (2026-10-08): el aserradero y la plantación en una mirada.
+ * Inicio · Forestal: el aserradero y la plantación en una mirada.
+ *
+ * 2026-10-31 (Brandon: «algo más novedoso y más completo… más presentable»):
+ * el mismo tablero denso del Resumen. Arriba la tira de cifras con su
+ * mini-serie y la variación contra el período anterior, y el consejo de lo
+ * primero que hay que mirar; debajo, tarjetas: el movimiento por semana, el
+ * camino de la madera (entró → sierra → producto → salió), el patio de hoy
+ * por especie, las especies del período, las guías, los adelantos y una ficha
+ * por permiso con su vigencia y el plazo corrido.
  *
  * Ninguna cifra se calcula acá: todas vienen armadas de
- * `GET /api/admin/inicio/forestal`, que a su vez llama a las funciones de cada
- * pantalla del libro. Cada tarjeta lleva a la pantalla que muestra el MISMO
- * número para el mismo período.
+ * `GET /api/admin/inicio/forestal`, que llama a las funciones de cada pantalla
+ * del libro. Cada tarjeta lleva (enlace al pie) a la pantalla que muestra el
+ * MISMO número para el mismo período.
  *
  * Vacíos (Brandon 09-10, reglas R1-R3 del tablero): sin movimiento en el
  * período ni nada «a hoy» → sólo el paiche con los otros períodos y «Registrar
  * ingreso». Sin movimiento pero con patio o permisos → el paiche reemplaza a
- * las cifras del período y la foto de hoy queda debajo. Una cifra en cero sale
- * «—» con su porqué, no «0.00 m³».
+ * las tarjetas del período y la foto de hoy queda debajo. Una cifra sin dato
+ * no se dibuja: se nombra en «Sin movimiento en el período».
  */
 export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRange }: Props) {
-  const { data, cargando, error, reintentar } = useForestalInicio(dateRange, conAdelantos);
+  const { data, cargando, error, reintentar, actualizado } = useForestalInicio(dateRange, conAdelantos);
 
   if (cargando && !data) return <BulejeDashboardSkeleton />;
   if (error && !data) {
@@ -81,11 +61,7 @@ export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRan
       <div role="alert" className="flex flex-col items-center justify-center gap-4 py-16 text-center">
         <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" aria-hidden />
         <p className="text-sm font-medium text-[var(--text-primary)]">{error}</p>
-        <button
-          type="button"
-          onClick={reintentar}
-          className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-        >
+        <button type="button" onClick={reintentar} className={button({ variant: "secondary", size: "xl" })}>
           <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
         </button>
       </div>
@@ -93,10 +69,9 @@ export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRan
   }
   if (!data) return null;
 
-  const ir = (href: string) => irAEnlace(href);
   const periodo = describeRange(dateRange);
   const { movimiento, foto } = estadoInicioForestal(data);
-  const aviso = <ForestalAvisoPapeles activo={!!data.ctp} onIr={() => ir(`${CTP}&vista=ingresos`)} />;
+  const aviso = <ForestalAvisoPapeles activo={!!data.ctp} onIr={() => irAEnlace(`${CTP}&vista=ingresos`)} />;
   const vacio = {
     dateRange,
     onChangeRange,
@@ -116,30 +91,35 @@ export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRan
     );
   }
 
-  const deHoy = tarjetasDeHoy(data, ir);
-  const todas = movimiento ? [...tarjetasDelPeriodo(data, periodo, ir), ...deHoy] : deHoy;
-  // Sin dato no ocupa una tarjeta con «—» (2026-10-29): se nombra en una línea
-  // con su motivo (la misma línea de abajo que decía la tarjeta) en el ⓘ.
-  const tarjetas = todas.filter((t) => !esTarjetaSinDato(t));
-  const sinDato = todas.filter(esTarjetaSinDato).map((t) => ({
-    label: String(t.props.label),
-    hint: typeof t.props.subValue === "string" ? conMayuscula(`${t.props.subValue}.`) : undefined,
-  }));
+  const { cifras, sinMovimiento } = cifrasForestal(data, movimiento);
+  const consejo = consejoForestal(data, movimiento);
+  const { ctp, loth } = data;
+  /* Sin el gráfico (2 columnas) quedan 4 tarjetas de 1: la última fila tendría
+     un hueco de 2 al lado de las guías. Ahí los permisos ocupan esas 2. */
+  const conGrafico = !!ctp && movimiento && hayGraficoForestal(ctp.serie);
+
   return (
-    <div className="space-y-3" aria-busy={cargando}>
+    <div
+      data-inicio-forestal=""
+      // `.charts-forestal`: los colores del Libro CTP (entra, sierra, producto,
+      // sale y la rampa del patio) para TODO el tablero, en claro y en oscuro.
+      className={cn("charts-forestal space-y-3 transition-opacity duration-[var(--dur-base)]", cargando && "opacity-70")}
+      aria-busy={cargando}
+    >
       {/* Sin movimiento, el paiche ya dice qué es del período y qué es de hoy. */}
       {movimiento && (
         <p className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
           <span>
-            Movimiento de <strong className="text-[var(--text-primary)]">{periodo}</strong> · el patio y los permisos, a hoy
+            Movimiento de <strong className="text-[var(--text-primary)]">{periodo}</strong> · el patio, los permisos y
+            los adelantos, a hoy
           </span>
           <InfoTip
             title="De dónde sale cada cifra"
-            what="Del Libro CTP: ingresado, producido y despachado salen del Tablero; el patio, de Volumen disponible; las guías, de Guías emitidas. Del Libro TH: las GTF y Control del permiso. Adelantos: lo que te deben hoy."
-            affects="Cada tarjeta abre la pantalla que muestra el mismo número. Producido y despachado llevan unidad sólo si todo el período se declaró en una (m³ o pt); si mezcla, van sin unidad, como en el Tablero: la suma no convierte pt a m³. El patio, los permisos y los adelantos son una foto de hoy: no dependen del rango."
+            what="Del Libro CTP: ingresado, producido, despachado y las especies salen del Tablero; el patio, de Volumen disponible; las guías, de Guías emitidas. Del Libro TH: las GTF y Control del permiso. Adelantos: lo que te deben hoy."
+            affects="Producido y despachado llevan unidad sólo si todo el período se declaró en una (m³ o pt): la suma no convierte pt a m³. La variación compara con el período anterior del mismo largo. El patio, los permisos y los adelantos son una foto de hoy: no dependen del rango."
             example="Ingresado 56.92 m³ en el mes = la barra «Ingresado» del Tablero del Libro CTP con el mismo rango."
           />
-          {error && <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">· {error}</span>}
+          {error && <span className="text-[var(--data-warning-ink)]">· {error}</span>}
         </p>
       )}
 
@@ -152,149 +132,26 @@ export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRan
         />
       )}
 
-      {tarjetas.length > 0 && (
-        <div
-          className={
-            tarjetas.length >= 6
-              ? KPI_GRID_6
-              : tarjetas.length === 5
-                ? KPI_GRID_5
-                : tarjetas.length === 4
-                  ? KPI_GRID_4
-                  : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
-          }
-        >
-          {tarjetas}
-        </div>
+      {(cifras.length > 0 || consejo) && (
+        <TiraDeCifras cifras={cifras} sinMovimiento={sinMovimiento} insight={consejo} generatedAt={actualizado} />
       )}
-      {sinDato.length > 0 && <LineaSinDato kpis={sinDato} className="-mt-1" />}
 
-      {data.ctp && <ForestalCharts ctp={data.ctp} />}
-      {data.loth && <ForestalPermisos permisos={data.loth.permisos} onIr={() => ir(`${LOTH}&vista=tablero`)} />}
+      <GrillaTablero>
+        {ctp && movimiento && <ForestalCharts ctp={ctp} className="@2xl:col-span-2" />}
+        {ctp && movimiento && <CaminoDeLaMadera ctp={ctp} />}
+        {ctp && <TarjetaPatio patio={ctp.patio} />}
+        {ctp && movimiento && <TarjetaEspecies ctp={ctp} />}
+        <PilaTablero>
+          {movimiento && <TarjetaGuias data={data} />}
+          <TarjetaAdelantos adelantos={data.adelantos} />
+        </PilaTablero>
+        {loth && (
+          <ForestalPermisos
+            permisos={loth.permisos}
+            className={conGrafico ? "@2xl:col-span-2 @4xl:col-span-3" : "@2xl:col-span-2"}
+          />
+        )}
+      </GrillaTablero>
     </div>
   );
-}
-
-/**
- * Lo que pasó en el período, en el orden en que viaja la madera. Sólo se pinta
- * si hubo algún movimiento: entonces una cifra en cero es la noticia de esa
- * tarjeta («no salió producto este mes») y va como «—» con su porqué.
- */
-function tarjetasDelPeriodo(data: InicioForestal, periodo: string, ir: (href: string) => void): ReactNode[] {
-  const { ctp, loth } = data;
-  const out: ReactNode[] = [];
-  if (ctp) {
-    const hayProd = valorConDato(ctp.producido);
-    const subProducido = hayProd
-      ? [
-          ctp.rendimiento > 0 ? `rinde ${porcentaje(ctp.rendimiento, 1)}` : null,
-          `de ${m3(ctp.consumoM3)} de troza`,
-          ctp.unidadProducido == null ? "varias unidades" : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")
-      : valorConDato(ctp.consumoM3)
-        ? `${m3(ctp.consumoM3)} de troza a la sierra, sin producción declarada`
-        : `sin corridas ${periodo}`;
-    out.push(
-      <StatCard
-        density="compact"
-        key="ingreso"
-        label="Ingresado al CTP"
-        value={valorConDato(ctp.ingresoM3) ? m3(ctp.ingresoM3) : SIN_DATO}
-        subValue={valorConDato(ctp.ingresoM3) ? "guías validadas · ver Tablero" : `no entró madera ${periodo}`}
-        icon={TreePine}
-        onClick={() => ir(`${CTP}&vista=tablero`)}
-      />,
-      <StatCard
-        density="compact"
-        key="producido"
-        label="Producido"
-        value={hayProd ? cantidadDelPeriodo(ctp.producido, ctp.unidadProducido) : SIN_DATO}
-        subValue={subProducido}
-        // Sin `emphasis="success"`: ese verde sale del color del negocio dentro de
-        // /admin y era un tercer color para lo mismo que el gráfico pinta turquesa.
-        icon={Layers}
-        onClick={() => ir(`${CTP}&vista=produccion`)}
-      />,
-      <StatCard
-        density="compact"
-        key="despachado"
-        label="Despachado"
-        value={valorConDato(ctp.despachado) ? cantidadDelPeriodo(ctp.despachado, ctp.unidadDespachado) : SIN_DATO}
-        subValue={
-          !valorConDato(ctp.despachado)
-            ? `no salió producto ${periodo}`
-            : ctp.unidadDespachado == null
-              ? "salida de producto · varias unidades"
-              : "salida de producto del CTP"
-        }
-        icon={PackageCheck}
-        onClick={() => ir(`${CTP}&vista=despacho`)}
-      />,
-    );
-  }
-  if (ctp || loth) {
-    const g = guiasVigentes(data);
-    const vigentes = g.ctp + g.th;
-    const partes = [ctp ? `CTP ${g.ctp}` : null, loth ? `TH ${g.th}` : null].filter(Boolean).join(" · ");
-    const anuladas = g.anuladas > 0 ? ` · ${g.anuladas} anulada${g.anuladas === 1 ? "" : "s"} aparte` : "";
-    out.push(
-      <StatCard
-        density="compact"
-        key="guias"
-        label="Guías emitidas"
-        value={vigentes > 0 ? formatNumber(vigentes) : SIN_DATO}
-        subValue={vigentes > 0 ? `${partes}${anuladas}` : `ninguna ${periodo}${anuladas}`}
-        icon={FileText}
-        onClick={() => ir(ctp ? `${CTP}&vista=despacho&sub=guias` : `${LOTH}&vista=gtf`)}
-      />,
-    );
-  }
-  return out;
-}
-
-/** La foto de hoy: no depende del rango, así que se ve aunque el período esté vacío. */
-function tarjetasDeHoy(data: InicioForestal, ir: (href: string) => void): ReactNode[] {
-  const { ctp, adelantos } = data;
-  const out: ReactNode[] = [];
-  if (ctp) {
-    const { patio } = ctp;
-    const conTrozas = !!patio && (valorConDato(patio.trozas) || valorConDato(patio.m3));
-    out.push(
-      <StatCard
-        density="compact"
-        key="patio"
-        label="En el patio hoy"
-        value={!patio ? SIN_DATO : conTrozas ? m3(patio.m3) : "Vacío"}
-        subValue={
-          !patio
-            ? "no se pudo leer el patio"
-            : conTrozas
-              ? `${formatNumber(patio.trozas)} trozas · ≈ ${formatNumber(patio.pt)} pt${patio.truncado ? " · lectura parcial" : ""}`
-              : "no queda troza por aserrar"
-        }
-        icon={Boxes}
-        emphasis={patio ? "neutral" : "warning"}
-        onClick={() => ir(`${CTP}&vista=disponibles`)}
-      />,
-    );
-  }
-  const conSaldo = (adelantos ?? []).filter((a) => valorConDato(a.saldoPendiente));
-  if (conSaldo.length > 0) {
-    const porMoneda = Object.fromEntries(conSaldo.map((a) => [a.moneda, a.saldoPendiente]));
-    const abiertos = conSaldo.reduce((a, m) => a + m.abiertos, 0);
-    out.push(
-      <StatCard
-        density="compact"
-        key="adelantos"
-        label="Adelantos por cobrar"
-        value={fmtMonedas(porMoneda)}
-        subValue={`${abiertos} abierto${abiertos === 1 ? "" : "s"} · saldo de hoy`}
-        icon={HandCoins}
-        onClick={() => ir("/admin?tab=adelantos")}
-      />,
-    );
-  }
-  return out;
 }

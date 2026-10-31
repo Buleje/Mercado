@@ -64,6 +64,8 @@ export function useForestalInicio(dateRange: DateRange, conAdelantos: boolean) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [intento, setIntento] = useState(0);
+  /** Hora de la última lectura buena («Actualizado 10:42» de la tira). */
+  const [actualizado, setActualizado] = useState("");
 
   const desde = dateRange.from.toISOString();
   const hasta = dateRange.to.toISOString();
@@ -78,6 +80,7 @@ export function useForestalInicio(dateRange: DateRange, conAdelantos: boolean) {
         const j = (await r.json().catch(() => null)) as (InicioForestal & { message?: string }) | null;
         if (!r.ok || !j) throw new Error(j?.message ?? `No se pudo cargar el resumen forestal (${r.status}).`);
         setData(j);
+        setActualizado(new Date().toISOString());
       })
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
@@ -90,5 +93,5 @@ export function useForestalInicio(dateRange: DateRange, conAdelantos: boolean) {
   }, [desde, hasta, conAdelantos, intento]);
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
-  return { data, cargando, error, reintentar };
+  return { data, cargando, error, reintentar, actualizado };
 }

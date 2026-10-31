@@ -161,6 +161,20 @@ export interface PermisoInicio {
    * eso se muestra aparte en vez de perderse.
    */
   taladoSinRegistrarM3: number;
+  /**
+   * Cuánto le queda al permiso (2026-10-31): `estadoVigencia`, la MISMA lectura
+   * de la cabecera del plan en el Libro TH. Opcional: un caché viejo no la trae.
+   */
+  vigencia?: VigenciaInicio | null;
+  /** % del período del permiso que ya corrió (`avanceDelPeriodo`); `null` sin fechas. */
+  avanceTiempoPct?: number | null;
+}
+
+export interface VigenciaInicio {
+  nivel: string;
+  texto: string;
+  tono: "ok" | "warn" | "danger" | "neutral";
+  diasRestantes: number | null;
 }
 
 /** Une el plan con el total de SU cascada (la de Control del permiso). */
@@ -220,9 +234,82 @@ export interface InicioForestalCtp {
   serie: SerieInicioForestal;
   /** El Tablero cortó el eje (más de 400 cubos). */
   serieTruncada: boolean;
-  guias: { total: number; anuladas: number; truncado: boolean };
+  /** El detalle (completas, sin verificar…) es el de `resumirGuias`; opcional para el caché viejo. */
+  guias: {
+    total: number;
+    anuladas: number;
+    truncado: boolean;
+    completas?: number;
+    incompletas?: number;
+    sinVerificar?: number;
+    sinOrigen?: number;
+  };
   /** `null` = no se pudo leer el patio (la tarjeta lo dice, no inventa un 0). */
-  patio: { trozas: number; m3: number; pt: number; truncado: boolean } | null;
+  patio: PatioInicio | null;
+  /** `ingreso − consumo` del Tablero: lo que el patio ganó (o soltó) en el período. */
+  variacionPatioM3?: number;
+  /** Las especies del período (ingresado y aserrado), las de más movimiento primero. */
+  porEspecie?: { especie: string; ingresoM3: number; consumoM3: number }[];
+  /** Contra el período anterior del mismo largo; `null` si no se pudo leer. */
+  comparacion?: ComparacionInicio | null;
+}
+
+export interface VolumenInicio {
+  trozas: number;
+  m3: number;
+}
+
+/**
+ * «En el patio» de Volumen disponible (`resumenDisponibles` + `porEspecieDisponible`).
+ * Todo lo que no es `trozas/m3/pt/truncado` es opcional: un caché viejo no lo trae.
+ */
+export interface PatioInicio {
+  trozas: number;
+  m3: number;
+  pt: number;
+  truncado: boolean;
+  libres?: VolumenInicio;
+  enLote?: VolumenInicio;
+  /** APARTE: su guía sigue en la bandeja de recepción; no suma al patio. */
+  sinRecepcionar?: VolumenInicio & { guias: number };
+  /** En el patio desde hace `diasAneja` días o más. */
+  anejas?: VolumenInicio;
+  diasAneja?: number;
+  masViejaDias?: number | null;
+  especies?: number;
+  permisos?: number;
+  promedioM3?: number | null;
+  porEspecie?: { especie: string; trozas: number; m3: number; pctM3: number }[];
+}
+
+/** % contra el período anterior (`variacionPct`); `null` = sin base para comparar. */
+export interface ComparacionInicio {
+  /** Días `YYYY-MM-DD` de Lima del período con el que se compara. */
+  desde: string;
+  hasta: string;
+  ingreso: number | null;
+  producido: number | null;
+  despachado: number | null;
+}
+
+/**
+ * El período del MISMO largo que termina justo antes del pedido: «Mes» se
+ * compara con los 30-31 días anteriores, «Hoy» con ayer.
+ */
+export function ventanaAnterior(fromDate: Date, toDate: Date): { fromDate: Date; toDate: Date } {
+  const largo = Math.max(0, toDate.getTime() - fromDate.getTime());
+  const fin = new Date(fromDate.getTime() - 1);
+  return { fromDate: new Date(fin.getTime() - largo), toDate: fin };
+}
+
+/**
+ * Cuánto cambió una cifra contra el período anterior, en % con un decimal.
+ * Sin nada en el anterior no hay base: `null`, no un «+100 %» inventado. Las
+ * cantidades en unidades distintas tampoco se comparan (lo decide quien llama).
+ */
+export function variacionPct(actual: number, anterior: number): number | null {
+  if (!Number.isFinite(actual) || !Number.isFinite(anterior) || anterior <= 0) return null;
+  return Math.round(((actual - anterior) / anterior) * 1000) / 10;
 }
 
 export interface InicioForestalLoth {

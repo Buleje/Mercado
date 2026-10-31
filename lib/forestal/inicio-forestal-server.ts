@@ -21,16 +21,24 @@ import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
 import { guiasDeDespachos, resumirGuias, type FilaDespachoGuia } from "./guias-emitidas";
 import {
+  DIAS_ANEJA,
   FILTRO_DISPONIBLES_VACIO,
   filtrarDisponibles,
+  porEspecieDisponible,
   resumenDisponibles,
   trozasDisponibles,
 } from "./trozas-disponibles";
 import { cascadaDelPlan } from "./loth-saldo-cascada";
+import { avanceDelPeriodo, estadoVigencia } from "./loth-plan-vigencia";
+import { hoyDelLibro } from "./vigencia-avisos";
+import type { MovimientoDelLibro } from "./movimiento-libro";
 import {
   guiasLothDelPeriodo,
   permisoInicio,
   serieSemanal,
+  variacionPct,
+  ventanaAnterior,
+  type ComparacionInicio,
   type InicioForestal,
   type InicioForestalCtp,
   type InicioForestalLoth,
@@ -49,11 +57,19 @@ export interface OpcionesInicioForestal {
 /** Tope de `ForestCtpDB.list` y de `ForestGtfDB.list`: llegar a él es «puede faltar». */
 const TOPE_LISTA_CTP = 500;
 const TOPE_LISTA_GTF = 200;
+/** Cuántas especies viajan al Inicio (las de más volumen); el resto se cuenta. */
+const TOPE_ESPECIES = 6;
 
 async function piezaCtp(tenantId: string, fromDate: Date, toDate: Date): Promise<InicioForestalCtp> {
-  const [mov, despachos, patio] = await Promise.all([
+  const previo = ventanaAnterior(fromDate, toDate);
+  const [mov, anterior, despachos, patio] = await Promise.all([
     /* El Tablero del Libro CTP: los tres números y su serie salen de acá. */
     ForestCtpDB.movimientoDelLibro(tenantId, { fromDate, toDate }),
+    /* El mismo Tablero, el período anterior del mismo largo: la tendencia. */
+    ForestCtpDB.movimientoDelLibro(tenantId, previo).catch((err: unknown) => {
+      logger.error("[inicio-forestal] periodo anterior failed", { tenantId, error: String(err) });
+      return null;
+    }),
     /* Guías emitidas: la misma lectura que `/ctp/guias-emitidas` (anuladas
        incluidas: la pantalla las cuenta en su total). */
     ForestCtpDB.list(tenantId, { section: "despacho", includeAnnulled: true, fromDate, toDate }),
@@ -91,8 +107,44 @@ async function piezaCtp(tenantId: string, fromDate: Date, toDate: Date): Promise
     unidadDespachado: mov.totales.unidadDespachado,
     serie: serieSemanal(mov),
     serieTruncada: mov.truncado,
-    guias: { total: guias.total, anuladas: guias.anuladas, truncado: despachos.entries.length >= TOPE_LISTA_CTP },
+    guias: {
+      total: guias.total,
+      anuladas: guias.anuladas,
+      truncado: despachos.entries.length >= TOPE_LISTA_CTP,
+      completas: guias.completas,
+      incompletas: guias.incompletas,
+      sinVerificar: guias.sinVerificar,
+      sinOrigen: guias.sinOrigen,
+    },
     patio,
+    variacionPatioM3: mov.totales.variacionPatioM3,
+    porEspecie: mov.porEspecie
+      .filter((e) => e.ingresoM3 > 0 || e.consumoM3 > 0)
+      .slice(0, TOPE_ESPECIES)
+      .map((e) => ({ especie: e.especie, ingresoM3: e.ingresoM3, consumoM3: e.consumoM3 })),
+    comparacion: anterior ? comparar(mov, anterior, previo) : null,
+  };
+}
+
+/**
+ * Las tres cifras del período contra las del anterior. Producido y despachado
+ * se comparan sólo si los dos períodos declaran en la MISMA unidad: 30 m³
+ * contra 300 pt no es «+900 %».
+ */
+function comparar(
+  mov: MovimientoDelLibro,
+  ant: MovimientoDelLibro,
+  previo: { fromDate: Date; toDate: Date },
+): ComparacionInicio {
+  const a = mov.totales;
+  const b = ant.totales;
+  const misma = (x: string | null, y: string | null) => x != null && x === y;
+  return {
+    desde: limaDateKey(previo.fromDate),
+    hasta: limaDateKey(previo.toDate),
+    ingreso: variacionPct(a.ingresoM3, b.ingresoM3),
+    producido: misma(a.unidadProducido, b.unidadProducido) ? variacionPct(a.producido, b.producido) : null,
+    despachado: misma(a.unidadDespachado, b.unidadDespachado) ? variacionPct(a.despachado, b.despachado) : null,
   };
 }
 
@@ -109,8 +161,28 @@ async function leerPatio(tenantId: string): Promise<InicioForestalCtp["patio"]> 
     ]);
     const ahora = new Date();
     const vivas = filtrarDisponibles(trozasDisponibles(todas), FILTRO_DISPONIBLES_VACIO, ahora);
-    const { enPatio } = resumenDisponibles(vivas, ahora);
-    return { trozas: enPatio.trozas, m3: enPatio.m3, pt: enPatio.pt, truncado: todas.length < total };
+    const r = resumenDisponibles(vivas, ahora);
+    const especies = porEspecieDisponible(vivas, ahora)
+      .filter((e) => e.trozas > 0)
+      .sort((x, y) => y.m3 - x.m3)
+      .slice(0, TOPE_ESPECIES)
+      .map((e) => ({ especie: e.especie, trozas: e.trozas, m3: e.m3, pctM3: e.pctM3 }));
+    return {
+      trozas: r.enPatio.trozas,
+      m3: r.enPatio.m3,
+      pt: r.enPatio.pt,
+      truncado: todas.length < total,
+      libres: r.libres,
+      enLote: r.enLote,
+      sinRecepcionar: { trozas: r.sinRecepcionar.trozas, m3: r.sinRecepcionar.m3, guias: r.sinRecepcionar.guias },
+      anejas: r.anejas,
+      diasAneja: DIAS_ANEJA,
+      masViejaDias: r.masVieja?.dias ?? null,
+      especies: r.especies,
+      permisos: r.permisos,
+      promedioM3: r.promedioM3,
+      porEspecie: especies,
+    };
   } catch (err) {
     logger.error("[inicio-forestal] patio failed", { tenantId, error: String(err) });
     return null;
@@ -123,11 +195,19 @@ async function piezaLoth(tenantId: string, desdeKey: string, hastaKey: string): 
      orden (el más nuevo primero). Un negocio puede tener varios a la vez. */
   const activos = planes.filter((p) => p.isActive);
   const balances = await Promise.all(activos.map((p) => ForestPlanDB.balanceExtraccion(tenantId, p.id)));
+  /* Vigencia: la misma lectura que la cabecera del plan (`estadoVigencia`),
+     con el «hoy» de Lima (a las 20:00 el UTC ya es mañana). */
+  const hoy = hoyDelLibro();
   return {
     guias: { ...guiasLothDelPeriodo(gtfs, desdeKey, hastaKey), truncado: gtfs.length >= TOPE_LISTA_GTF },
-    permisos: activos.map((p, i) =>
-      permisoInicio(p, cascadaDelPlan(balances[i].rows).total, balances[i].sinRegistrar),
-    ),
+    permisos: activos.map((p, i) => {
+      const v = estadoVigencia(p.vigenciaHasta, p.estado, hoy);
+      return {
+        ...permisoInicio(p, cascadaDelPlan(balances[i].rows).total, balances[i].sinRegistrar),
+        vigencia: { nivel: v.nivel, texto: v.texto, tono: v.tono, diasRestantes: v.diasRestantes },
+        avanceTiempoPct: avanceDelPeriodo(p.vigenciaDesde, p.vigenciaHasta, hoy),
+      };
+    }),
   };
 }
 

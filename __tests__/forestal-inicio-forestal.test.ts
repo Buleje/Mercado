@@ -7,6 +7,8 @@ import {
   permisoInicio,
   puedeVerInicioForestal,
   serieSemanal,
+  variacionPct,
+  ventanaAnterior,
 } from "@/lib/forestal/inicio-forestal";
 
 const d = (s: string) => new Date(`${s}T12:00:00.000Z`);
@@ -162,5 +164,34 @@ describe("cantidadDelPeriodo — producido y despachado llevan unidad sólo si e
     const mov = movimientoDeSetiembre();
     expect(mov.totales.unidadDespachado).toBe("m3");
     expect(cantidadDelPeriodo(mov.totales.despachado, mov.totales.unidadDespachado)).toMatch(/^3[.,]50 m³$/);
+  });
+});
+
+describe("ventanaAnterior — el período de antes, del mismo largo y sin pisarse", () => {
+  it("un mes de Lima → los 31 días que terminan justo antes", () => {
+    const desde = new Date("2026-10-01T05:00:00.000Z");
+    const hasta = new Date("2026-11-01T04:59:59.999Z");
+    const previo = ventanaAnterior(desde, hasta);
+    expect(previo.toDate.getTime()).toBe(desde.getTime() - 1);
+    expect(previo.toDate.getTime() - previo.fromDate.getTime()).toBe(hasta.getTime() - desde.getTime());
+    expect(previo.fromDate.toISOString()).toBe("2026-08-31T05:00:00.000Z");
+  });
+
+  it("un rango al revés no da un largo negativo", () => {
+    const desde = new Date("2026-10-10T00:00:00.000Z");
+    const previo = ventanaAnterior(desde, new Date("2026-10-01T00:00:00.000Z"));
+    expect(previo.fromDate.getTime()).toBe(previo.toDate.getTime());
+  });
+});
+
+describe("variacionPct — contra el período anterior, sin inventar", () => {
+  it("redondea a un decimal", () => {
+    expect(variacionPct(15, 10)).toBe(50);
+    expect(variacionPct(10, 30)).toBe(-66.7);
+  });
+
+  it("sin período anterior (0) no hay variación: no es «+100 %»", () => {
+    expect(variacionPct(12, 0)).toBeNull();
+    expect(variacionPct(Number.NaN, 5)).toBeNull();
   });
 });

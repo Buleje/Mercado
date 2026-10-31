@@ -24,7 +24,8 @@ export interface CifraTira {
   /** Mini-serie del período (una barra por día o tramo). */
   serie?: number[];
   serieColor?: string;
-  serieFormato?: "soles" | "cantidad";
+  /** `m3` = volumen con dos decimales («8.47 m³», el Inicio forestal). */
+  serieFormato?: "soles" | "cantidad" | "m3";
   serieEtiquetas?: string[];
 }
 

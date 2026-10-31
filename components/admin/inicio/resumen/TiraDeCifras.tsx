@@ -35,13 +35,14 @@ function MiniBarras({
 }: {
   serie: number[];
   color: string;
-  formato: "soles" | "cantidad";
+  formato: "soles" | "cantidad" | "m3";
   etiquetas?: string[];
   nombre: string;
 }) {
   const max = Math.max(0, ...serie.map((v) => Math.abs(v)));
   // Soles enteros: la serie de ventas llega redondeada por tramo desde el servidor.
-  const fmt = (v: number) => (formato === "soles" ? solesEje(v) : cantidad(v));
+  const fmt = (v: number) =>
+    formato === "soles" ? solesEje(v) : formato === "m3" ? `${cantidad(v, 2)} m³` : cantidad(v);
   const iMax = serie.findIndex((v) => Math.abs(v) === max);
   const resumen =
     max > 0 ? `${nombre}: lo más alto ${fmt(serie[iMax])}${etiquetas?.[iMax] ? ` (${etiquetas[iMax]})` : ""}` : nombre;
