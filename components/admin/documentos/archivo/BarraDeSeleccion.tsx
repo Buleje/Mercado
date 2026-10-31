@@ -1,8 +1,9 @@
 "use client";
 
-import { Star, MoreHorizontal, FileArchive, MessageCircle, Combine, FolderArchive, Hash, Tag, Trash2, Undo2 } from "@buleje/design-system/icons";
+import { Star, MoreHorizontal, FileArchive, MessageCircle, Combine, FolderArchive, Hash, QrCode, Tag, Trash2, Undo2 } from "@buleje/design-system/icons";
 import { type EstadoDoc, ORDEN_ESTADOS, META_ESTADO } from "@/lib/documents/estados-doc";
 import { button } from "@/components/ui-system/button-variants";
+import { abrirEtiquetas } from "@/lib/documentos/etiquetas-evento";
 import type { ModeloArchivo } from "./use-archivo";
 
 /** ADR-516 — los botones del código en el físico, del DS (la barra es turquesa). */
@@ -51,6 +52,17 @@ export default function BarraDeSeleccion({ arch }: { arch: ModeloArchivo }) {
                   data-qa="bulk-codigo-fisico"
                 >
                   <Hash className="h-3 w-3" /> Marcar registrado
+                </button>
+              )}
+              {!enPapelera && (
+                <button
+                  type="button"
+                  onClick={() => abrirEtiquetas(Array.from(selectedIds))}
+                  className={BOTON_DE_LA_BARRA}
+                  title="Imprime una hoja de stickers con el código y un QR de cada papel"
+                  data-qa="bulk-etiquetas-qr"
+                >
+                  <QrCode className="h-3 w-3" /> Etiquetas QR
                 </button>
               )}
 

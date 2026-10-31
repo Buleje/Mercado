@@ -97,7 +97,7 @@ export interface UseDocumentsResult {
   refresh: (opciones?: { silencioso?: boolean; soloDocumentos?: boolean }) => Promise<void>;
   upload: (files: File[], opts?: OpcionesSubida) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
-  patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
+  patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null; ubicacionFisica: string | null }>) => Promise<void>;
   remove: (id: string) => Promise<void>;
   restore: (id: string) => Promise<void>;
   purge: (id: string) => Promise<void>;
@@ -112,7 +112,7 @@ export interface UseDocumentsResult {
   /** Nombre+peso de lo que ya hay en esas carpetas (clave "" = raíz). */
   existingNames: (folderIds: (string | null)[]) => Promise<Record<string, { id: string; name: string; size: number }[]>>;
   moveFolder: (id: string, parentId: string | null) => Promise<void>;
-  updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null; emoji?: string | null; tags?: string[]; allowedRoles?: string[] }) => Promise<void>;
+  updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null; emoji?: string | null; tags?: string[]; allowedRoles?: string[]; ubicacionFisica?: string | null }) => Promise<void>;
   /** Acciones sobre VARIAS carpetas. Devuelve cuántas cambió el servidor. */
   bulkFolders: (ids: string[], accion: BulkFolderAccion) => Promise<number>;
   deleteFolder: (id: string, opciones?: { conDocumentos?: boolean }) => Promise<void>;
@@ -506,8 +506,9 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
 
   /**
    * El código anotado en el papel físico (ADR-516): al instante en la lista, y
-   * después lo que dijo el servidor (quién lo marcó). Un id que el servidor no
-   * cambió —sin código, ya marcado— vuelve a como estaba.
+   * después lo que dijo el servidor (quién lo marcó y, ADR-526, dónde quedó
+   * guardado el original). Un id que el servidor no cambió —sin código, ya
+   * marcado— vuelve a como estaba.
    */
   const marcarCodigoFisico = useCallback(async (ids: string[], puesto: boolean): Promise<number> => {
     const conCodigo = new Set(ids);
@@ -520,7 +521,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     const r = await optimista(() => {}, revertir, () => marcarCodigoFisicoEnServidor(ids, puesto));
     const cambiados = new Set(r.ids);
     setDocuments((docs) => docs.map((d) => (cambiados.has(d.id)
-      ? { ...d, codigoFisicoAt: r.codigoFisicoAt, codigoFisicoPor: r.codigoFisicoPor }
+      ? { ...d, codigoFisicoAt: r.codigoFisicoAt, codigoFisicoPor: r.codigoFisicoPor, ubicacionFisica: r.ubicaciones[d.id] ?? null }
       : d)));
     return r.ids.length;
   }, [optimista, cambiarLocal]);
@@ -743,7 +744,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
   }, [optimista, cambiarCarpetas]);
 
   // Editar metadata de la carpeta (nombre / color / ícono).
-  const updateFolder = useCallback(async (id: string, patch: { name?: string; color?: string | null; icon?: string | null; emoji?: string | null; tags?: string[]; allowedRoles?: string[] }) => {
+  const updateFolder = useCallback(async (id: string, patch: { name?: string; color?: string | null; icon?: string | null; emoji?: string | null; tags?: string[]; allowedRoles?: string[]; ubicacionFisica?: string | null }) => {
     const revertir = cambiarCarpetas((f) => f.map((c) => (c.id === id ? { ...c, ...patch } : c)));
     await optimista(() => {}, revertir, () =>
       http(`${BASE}/folders/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
@@ -1030,6 +1031,8 @@ export async function patchDocument(
     orderId: string | null;
     /** Descripción escrita por el usuario (entra al texto buscable). */
     descripcion: string;
+    /** ADR-526 — dónde está guardado el original; `null`/`""` lo borra. */
+    ubicacionFisica: string | null;
   }>
 ): Promise<DbDocument> {
   const r = await http<{ document: DbDocument }>(`${BASE}/${id}`, {
@@ -1049,6 +1052,23 @@ export interface CodigoFisicoMarcado {
   ids: string[];
   codigoFisicoAt: string | null;
   codigoFisicoPor: string | null;
+  /** ADR-526 — id → dónde quedó guardado el original (al marcar hereda el de su carpeta), o null. */
+  ubicaciones: Record<string, string | null>;
+}
+
+/**
+ * ADR-526 — dónde quedó guardado cada papel recién marcado, para el aviso de
+ * «registrado» (`menu-registrado`): el `marcar` que recibe devuelve sólo
+ * cuántos cambiaron y su firma la comparten varias pantallas. Lo llena
+ * `marcarCodigoFisicoEnServidor`, por donde pasa TODO marcado; acotado para
+ * que una sesión larga no lo haga crecer sin fin.
+ */
+const ubicacionesRecienMarcadas = new Map<string, string | null>();
+const TOPE_RECIEN_MARCADAS = 1000;
+
+/** `undefined` = ese papel no se marcó en esta pestaña; `null` = se marcó y no tiene ubicación. */
+export function ubicacionRecienMarcada(id: string): string | null | undefined {
+  return ubicacionesRecienMarcadas.get(id);
 }
 
 /**
@@ -1057,7 +1077,7 @@ export interface CodigoFisicoMarcado {
  * `marcarCodigoFisico` del hook, que además cambia la lista a la vista.
  */
 export async function marcarCodigoFisicoEnServidor(ids: string[], puesto: boolean): Promise<CodigoFisicoMarcado> {
-  const out: CodigoFisicoMarcado = { ids: [], codigoFisicoAt: null, codigoFisicoPor: null };
+  const out: CodigoFisicoMarcado = { ids: [], codigoFisicoAt: null, codigoFisicoPor: null, ubicaciones: {} };
   for (const lote of enLotes(ids, IDS_POR_LOTE)) {
     const r = await http<CodigoFisicoMarcado>(`${BASE}/codigo-fisico`, {
       method: "PATCH",
@@ -1066,7 +1086,11 @@ export async function marcarCodigoFisicoEnServidor(ids: string[], puesto: boolea
     out.ids.push(...r.ids);
     out.codigoFisicoAt = r.codigoFisicoAt;
     out.codigoFisicoPor = r.codigoFisicoPor;
+    // Un servidor viejo (sin ADR-526) no la manda: queda «sin ubicación».
+    Object.assign(out.ubicaciones, r.ubicaciones ?? {});
   }
+  if (ubicacionesRecienMarcadas.size > TOPE_RECIEN_MARCADAS) ubicacionesRecienMarcadas.clear();
+  for (const id of out.ids) ubicacionesRecienMarcadas.set(id, out.ubicaciones[id] ?? null);
   return out;
 }
 

@@ -280,8 +280,11 @@ try {
   const pasosArg = arg("pasos", "[]");
   const pasosEsRuta = !/^\s*[[{]/.test(pasosArg) && existsSync(pasosArg);
   const crudo = arg("pasos-archivo") ? readFileSync(arg("pasos-archivo"), "utf8") : pasosEsRuta ? readFileSync(pasosArg, "utf8") : pasosArg;
-  const propios = JSON.parse(crudo);
-  if (!Array.isArray(propios)) throw new Error("los pasos van en un array");
+  const leido = JSON.parse(crudo);
+  /* 31-10: un preset en formato objeto ({"tenant","ruta","pasos"}) pasado a --pasos-archivo daba
+     «pasos inválidos»: se toman sus pasos (para su tenant/ruta, usá --preset <nombre>). */
+  const propios = Array.isArray(leido) ? leido : Array.isArray(leido?.pasos) ? leido.pasos : null;
+  if (!propios) throw new Error("los pasos van en un array (o en {\"pasos\": [...]})");
   // Un {"preset": "x"} dentro de --pasos/--pasos-archivo también se abre (15-10: sólo lo hacía --preset).
   pasos = [...dePresets, ...propios.flatMap((p) => (p && typeof p === "object" && typeof p.preset === "string" ? leerPreset(p.preset).pasos : [p]))];
   /* {"medir": "<selector raíz>" | true} (10-10): la medición de una vista del panel que 3

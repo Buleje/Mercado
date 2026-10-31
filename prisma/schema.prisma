@@ -5448,6 +5448,10 @@ model Document {
   /// Cuándo y quién marcó «ya puse el código en el papel físico».
   codigoFisicoAt  DateTime?
   codigoFisicoPor String?
+  /// ADR-526 — dónde está guardado el papel original («Archivador Guías 2026 ·
+  /// separador octubre», ≤120). Al marcarlo registrado hereda el de su carpeta
+  /// si no tiene uno propio. NULL = no se anotó.
+  ubicacionFisica String?
 
   folder    DocumentFolder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
   versions  DocumentVersion[]
@@ -5485,6 +5489,9 @@ model DocumentFolder {
   /// Etiquetas de la carpeta ("legal", "sunat"): agrupan carpetas que no están
   /// juntas en el árbol. Distintas de las etiquetas de documento.
   tags         String[] @default([])
+  /// ADR-526 — en qué archivador/separador están los papeles físicos de esta
+  /// carpeta (≤120). Sus papeles lo heredan al marcarlos registrados.
+  ubicacionFisica String?
   // Permisos por carpeta: vacío = todos los admins; con roles = solo esos.
   // Los documentos dentro heredan esta restricción.
   allowedRoles String[] @default([])

@@ -104,7 +104,11 @@ export default function DetallePapelEsencial({ doc, donde, uso, ahora, arch, onA
       </div>
 
       {/* ADR-516 — su código único y si ya se anotó en el papel físico. */}
-      <CodigoFisicoControl doc={doc} onMarcar={(puesto) => arch.marcarCodigoFisico([doc.id], puesto)} />
+      <CodigoFisicoControl
+        doc={doc}
+        onMarcar={(puesto) => arch.marcarCodigoFisico([doc.id], puesto)}
+        onUbicacion={(texto) => arch.patch(doc.id, { ubicacionFisica: texto })}
+      />
 
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 rounded-xl bg-[var(--surface-sunken)] p-3 text-sm">
         {datos.map(([k, v]) => (

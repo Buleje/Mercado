@@ -169,7 +169,7 @@ export default function TarjetaEsencial({ e, elegida, ahora, puesto, acciones }:
             { id: "ver", label: "Ver lo que tiene", icon: Eye, onSelect: () => acciones.ver(f) },
             { id: "abrir", label: "Abrir en el Archivo", icon: FolderOpen, onSelect: () => acciones.abrirEnArchivo(f) },
             { id: "escanear", label: "Escanear aquí", hint: "Con la cámara; el papel queda en esta carpeta", icon: ScanLine, onSelect: () => acciones.escanear(f) },
-            { id: "icono", label: "Cambiar ícono", icon: Palette, onSelect: () => acciones.cambiarIcono(f) },
+            { id: "icono", label: "Ícono y archivador", icon: Palette, onSelect: () => acciones.cambiarIcono(f) },
             { id: "compartir", label: "Compartir carpeta", icon: Share2, onSelect: () => acciones.compartir(f) },
             { id: "expediente", label: "Armar expediente PDF", icon: FileArchive, disabled: e.docs === 0, onSelect: () => acciones.expediente(f) },
             {

@@ -2,6 +2,7 @@ import { Check, Copy, Undo2 } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { codigoFisicoPendiente, formatoCodigoDocumento } from "@/lib/documentos/codigo-documento";
 import type { DbDocument } from "@/lib/types/documents";
+import { ubicacionRecienMarcada } from "@/hooks/use-documents";
 import type { ExtraDelMenu } from "./MenuDocumento";
 
 type Marcar = (ids: string[], puesto: boolean) => Promise<number>;
@@ -9,7 +10,8 @@ type Marcar = (ids: string[], puesto: boolean) => Promise<number>;
 /**
  * Marca (o quita) «el código ya está en la hoja física» y lo DICE: antes sólo
  * avisaba si fallaba, y Brandon (31-10) leyó el menú cerrándose sin aviso como
- * «no hace nada». Al marcar, el aviso trae «Deshacer» por si fue el papel de al lado.
+ * «no hace nada». Al marcar, el aviso trae «Deshacer» por si fue el papel de al lado
+ * y, si quedó con ubicación (la suya o la de su carpeta, ADR-526), dónde guardarlo.
  */
 export function marcarRegistradoConAviso(doc: Pick<DbDocument, "id" | "codigo">, marcar: Marcar, puesto: boolean): void {
   const codigo = formatoCodigoDocumento(doc.codigo) ?? "El papel";
@@ -17,7 +19,8 @@ export function marcarRegistradoConAviso(doc: Pick<DbDocument, "id" | "codigo">,
     .then((n) => {
       if (n === 0) { toast.info("No se pudo cambiar: revisa que tenga código."); return; }
       if (puesto) {
-        toast.success(`${codigo} registrado: ya está en la hoja física`, {
+        const donde = ubicacionRecienMarcada(doc.id);
+        toast.success(`${codigo} registrado: ya está en la hoja física${donde ? ` · guárdalo en ${donde}` : ""}`, {
           action: { label: "Deshacer", onClick: () => marcarRegistradoConAviso(doc, marcar, false) },
         });
       } else {

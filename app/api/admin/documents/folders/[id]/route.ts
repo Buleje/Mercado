@@ -6,6 +6,7 @@ import { CarpetaAjenaError, CicloDeCarpetasError, DocumentsDB } from "@/lib/db/d
 import { assertCsrf } from "@/lib/auth/csrf";
 import { isPrivilegedRole, veTodoElDrive } from "@/lib/documents/doc-access";
 import { logger } from "@/lib/logger";
+import { ubicacionFisicaSchema } from "@/lib/documentos/ubicacion-fisica";
 
 
 const PatchBody = z.object({
@@ -14,6 +15,8 @@ const PatchBody = z.object({
   color: z.string().max(20).nullable().optional(),
   icon: z.string().max(40).nullable().optional(),
   allowedRoles: z.array(z.string().max(30)).max(10).optional(),
+  /** ADR-526 — archivador/separador de sus papeles físicos (vacío → null, ≤120). */
+  ubicacionFisica: ubicacionFisicaSchema,
 });
 
 type Ctx = { params: Promise<{ id: string }> };

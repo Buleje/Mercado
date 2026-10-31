@@ -25,9 +25,11 @@ export interface DocBuscable {
   uploadedAt?: string;
   /** ADR-516 — correlativo del negocio: buscar «DOC-000123» lo pone primero. */
   codigo?: number | null;
+  /** ADR-526 — dónde está el original: buscar «archivador guías» lo encuentra y lo dice. */
+  ubicacionFisica?: string | null;
 }
 
-export type CampoCoincidencia = "codigo" | "nombre" | "propia" | "descripcion" | "datos" | "etiqueta" | "contenido";
+export type CampoCoincidencia = "codigo" | "nombre" | "propia" | "guardado" | "descripcion" | "datos" | "etiqueta" | "contenido";
 
 export interface Fragmento {
   antes: string;
@@ -48,6 +50,7 @@ const PESO: Record<CampoCoincidencia, number> = {
   codigo: 100,
   nombre: 10,
   propia: 8,
+  guardado: 7,
   descripcion: 6,
   datos: 5,
   etiqueta: 4,
@@ -58,6 +61,7 @@ export const ETIQUETA_CAMPO: Record<CampoCoincidencia, string> = {
   codigo: "Por su código",
   nombre: "En el nombre",
   propia: "En tu descripción",
+  guardado: "Guardado en",
   descripcion: "En la descripción",
   datos: "En los datos",
   etiqueta: "En una etiqueta",
@@ -163,6 +167,7 @@ function camposDe(doc: DocBuscable): { campo: CampoCoincidencia; texto: string }
   return [
     { campo: "nombre", texto: [doc.name, doc.originalName].filter(Boolean).join(" ") },
     { campo: "propia", texto: descripcionPropia(doc) },
+    { campo: "guardado", texto: doc.ubicacionFisica ?? "" },
     { campo: "descripcion", texto: descripcionIA(doc) },
     { campo: "datos", texto: datosDe(doc) },
     { campo: "etiqueta", texto: [...(doc.tags ?? []), ...(doc.aiTags ?? [])].join(" ") },

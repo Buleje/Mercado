@@ -134,6 +134,8 @@ function mapDoc(
     codigo: d.codigo ?? null,
     codigoFisicoAt: toISO(d.codigoFisicoAt),
     codigoFisicoPor: d.codigoFisicoPor ?? null,
+    // ADR-526 — dónde está el papel original.
+    ubicacionFisica: d.ubicacionFisica ?? null,
     versionCount: d._count?.versions,
     shareCount: d._count?.shares,
   };
@@ -151,6 +153,7 @@ function mapFolder(
     icon: f.icon,
     emoji: f.emoji ?? null,
     tags: f.tags ?? [],
+    ubicacionFisica: f.ubicacionFisica ?? null,
     allowedRoles: f.allowedRoles ?? [],
     createdAt: toISOReq(f.createdAt),
     updatedAt: toISOReq(f.updatedAt),
@@ -351,7 +354,7 @@ export class DocumentsDB {
     const intentar = async (esquema: "extensions." | ""): Promise<string[]> => {
       // Todo lo que puede nombrar al documento, en un solo texto plegado.
       const campos = Prisma.raw(
-        `${esquema}unaccent(lower(coalesce("name",'') || ' ' || coalesce("originalName",'') || ' ' || coalesce("ocrText",'') || ' ' || array_to_string("tags",' ')))`,
+        `${esquema}unaccent(lower(coalesce("name",'') || ' ' || coalesce("originalName",'') || ' ' || coalesce("ocrText",'') || ' ' || array_to_string("tags",' ') || ' ' || coalesce("ubicacionFisica",'')))`,
       );
       const cond = palabras.map(
         (p) => Prisma.sql`${campos} LIKE '%' || ${Prisma.raw(`${esquema}unaccent`)}(lower(${p})) || '%'`,
@@ -423,6 +426,8 @@ export class DocumentsDB {
       { originalName: { contains: t, mode: "insensitive" } },
       { ocrText: { contains: t, mode: "insensitive" } },
       { tags: { hasSome: [t.toLowerCase()] } },
+      // ADR-526 — «archivador guías» encuentra lo que está guardado ahí.
+      { ubicacionFisica: { contains: t, mode: "insensitive" } },
     ];
 
     // Primero se intenta la búsqueda que IGNORA TILDES (Postgres `ILIKE` no lo
@@ -1442,25 +1447,57 @@ export class DocumentsDB {
    * esos ids (para la auditoría). SQL crudo a propósito: NO toca `updatedAt`,
    * que es la versión que mira la sincronización con la PC (`drive-sync`) — una
    * marca en el papel no es un archivo nuevo que bajar.
+   *
+   * ADR-526 — en el MISMO UPDATE, «dónde está el original»:
+   *  · al marcar, el papel sin ubicación propia hereda la de su carpeta (la de
+   *    ESTE negocio: la subconsulta filtra por el tenant de la fila);
+   *  · al desmarcar («Deshacer»: era el papel de al lado), se suelta la que es
+   *    igual a la de su carpeta — volver a marcarlo la vuelve a heredar, así que
+   *    no se pierde nada; una ubicación distinta, escrita a mano, se queda.
    */
   static async marcarCodigoFisico(
     tenantId: string,
     ids: readonly string[],
     puesto: boolean,
     actor: string,
-  ): Promise<{ id: string; codigo: number }[]> {
+  ): Promise<{ id: string; codigo: number; ubicacionFisica: string | null }[]> {
     if (ids.length === 0) return [];
-    const filas = await prisma.$queryRaw<{ id: string; codigo: number }[]>`
-      UPDATE "Document"
+    const filas = await prisma.$queryRaw<{ id: string; codigo: number; ubicacionFisica: string | null }[]>`
+      UPDATE "Document" AS d
          SET "codigoFisicoAt" = CASE WHEN ${puesto} THEN CURRENT_TIMESTAMP ELSE NULL END,
-             "codigoFisicoPor" = CASE WHEN ${puesto} THEN ${actor}::text ELSE NULL END
-       WHERE "tenantId" = ${tenantId}
-         AND "id" = ANY(${[...ids]}::text[])
-         AND "deletedAt" IS NULL
-         AND "codigo" IS NOT NULL
-         AND ("codigoFisicoAt" IS NULL) = ${puesto}
-      RETURNING "id", "codigo"`;
+             "codigoFisicoPor" = CASE WHEN ${puesto} THEN ${actor}::text ELSE NULL END,
+             "ubicacionFisica" = CASE
+               WHEN ${puesto} THEN COALESCE(
+                 NULLIF(btrim(d."ubicacionFisica"), ''),
+                 (SELECT NULLIF(btrim(f."ubicacionFisica"), '') FROM "DocumentFolder" f
+                   WHERE f."id" = d."folderId" AND f."tenantId" = d."tenantId"))
+               WHEN d."ubicacionFisica" = (SELECT f."ubicacionFisica" FROM "DocumentFolder" f
+                   WHERE f."id" = d."folderId" AND f."tenantId" = d."tenantId") THEN NULL
+               ELSE d."ubicacionFisica"
+             END
+       WHERE d."tenantId" = ${tenantId}
+         AND d."id" = ANY(${[...ids]}::text[])
+         AND d."deletedAt" IS NULL
+         AND d."codigo" IS NOT NULL
+         AND (d."codigoFisicoAt" IS NULL) = ${puesto}
+      RETURNING d."id", d."codigo", d."ubicacionFisica"`;
     return filas;
+  }
+
+  /**
+   * ADR-526 — «Guardado en: …» de un papel, escrito a mano (`null` lo borra).
+   * Mismo criterio que `marcarCodigoFisico`: SQL crudo que NO toca `updatedAt`
+   * (un dato del papel, no un archivo nuevo para la PC). Doble filtro
+   * `tenantId + id` y sólo vivos; devuelve si cambió la fila.
+   */
+  static async ponerUbicacionFisica(tenantId: string, id: string, ubicacion: string | null): Promise<boolean> {
+    const n = await prisma.$executeRaw`
+      UPDATE "Document"
+         SET "ubicacionFisica" = ${ubicacion}::text
+       WHERE "tenantId" = ${tenantId}
+         AND "id" = ${id}
+         AND "deletedAt" IS NULL`;
+    return n > 0;
   }
 
   /**
@@ -1777,6 +1814,8 @@ export class DocumentsDB {
       emoji?: string | null;
       tags?: string[];
       allowedRoles?: string[];
+      /** ADR-526 — archivador/separador de sus papeles físicos; `null` lo borra. */
+      ubicacionFisica?: string | null;
     }
   ): Promise<DbDocumentFolder | null> {
     const existing = await prisma.documentFolder.findFirst({ where: { id, tenantId }, select: { parentId: true } });

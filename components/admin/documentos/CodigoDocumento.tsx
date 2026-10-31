@@ -6,7 +6,10 @@ import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { codigoFisicoPendiente, formatoCodigoDocumento } from "@/lib/documentos/codigo-documento";
 import type { DbDocument } from "@/lib/types/documents";
+import { ubicacionLimpia } from "@/lib/documentos/ubicacion-fisica";
+import { patchDocument } from "@/hooks/use-documents";
 import { fechaLarga } from "./explorador/propiedades-explorador";
+import GuardadoEnEditable from "./GuardadoEnEditable";
 
 /**
  * ADR-516 — El código único del papel (`DOC-000123`) y si ya se anotó en el
@@ -15,7 +18,7 @@ import { fechaLarga } from "./explorador/propiedades-explorador";
  * un negocio que todavía no numera) no se dibuja nada.
  */
 
-type ConCodigo = Pick<DbDocument, "codigo" | "codigoFisicoAt" | "codigoFisicoPor" | "deletedAt">;
+type ConCodigo = Pick<DbDocument, "codigo" | "codigoFisicoAt" | "codigoFisicoPor" | "deletedAt" | "ubicacionFisica">;
 
 /** Copiar al portapapeles y avisar un momento con «Copiado». */
 function useCopiar(texto: string | null) {
@@ -34,11 +37,15 @@ function useCopiar(texto: string | null) {
   return { copiado, copiar };
 }
 
-/** Cuándo y quién lo registró, en una frase («Registrado el 25 oct · ana»). */
+/**
+ * Cuándo y quién lo registró, en una frase («Registrado el 25 oct · ana»), y
+ * dónde está el original si se anotó (ADR-526: «… · guardado en Archivador Guías»).
+ */
 export function textoCodigoPuesto(doc: ConCodigo): string {
   if (!doc.codigoFisicoAt) return "Por registrar: todavía no está en el papel físico";
   const quien = doc.codigoFisicoPor ? ` · ${doc.codigoFisicoPor}` : "";
-  return `Registrado el ${fechaLarga(doc.codigoFisicoAt)}${quien}`;
+  const donde = ubicacionLimpia(doc.ubicacionFisica);
+  return `Registrado el ${fechaLarga(doc.codigoFisicoAt)}${quien}${donde ? ` · guardado en ${donde}` : ""}`;
 }
 
 /** Estilo de la pastilla verde «Registrado» (tokens de éxito del DS, claro y oscuro). */
@@ -130,10 +137,15 @@ export function CodigoChip({ doc, className, onMarcar }: {
  * El bloque del detalle: el código grande para copiarlo y «Ya lo puse en el
  * físico» (o, si ya está, cuándo y quién, con deshacer).
  */
-export function CodigoFisicoControl({ doc, onMarcar, className }: {
-  doc: ConCodigo;
+export function CodigoFisicoControl({ doc, onMarcar, onUbicacion, className }: {
+  doc: ConCodigo & { id?: string };
   /** Guarda el cambio; si falla, lanza (se muestra el motivo). */
   onMarcar: (puesto: boolean) => Promise<unknown>;
+  /**
+   * ADR-526 — guarda «Guardado en: …» (`null` = borrar). Sin esto, y con `id`,
+   * va directo al PATCH del papel (el bloque muestra lo guardado al instante).
+   */
+  onUbicacion?: (texto: string | null) => Promise<unknown>;
   className?: string;
 }) {
   const codigo = formatoCodigoDocumento(doc.codigo);
@@ -142,6 +154,8 @@ export function CodigoFisicoControl({ doc, onMarcar, className }: {
   const [error, setError] = useState<string | null>(null);
   if (!codigo) return null;
   const pendiente = codigoFisicoPendiente(doc);
+  const id = doc.id;
+  const guardarUbicacion = onUbicacion ?? (id ? (texto: string | null) => patchDocument(id, { ubicacionFisica: texto }) : null);
   const marcar = async (puesto: boolean) => {
     setGuardando(true);
     setError(null);
@@ -198,8 +212,12 @@ export function CodigoFisicoControl({ doc, onMarcar, className }: {
         )}
       </div>
       <p className={cn("text-sm", pendiente ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>
-        {pendiente ? "Por registrar: falta escribirlo en el papel." : textoCodigoPuesto(doc)}
+        {pendiente ? "Por registrar: falta escribirlo en el papel." : textoCodigoPuesto({ ...doc, ubicacionFisica: null })}
       </p>
+      {/* ADR-526 — dónde está el original: se ve (y se cambia) una vez registrado, o si ya se anotó. */}
+      {guardarUbicacion && (!pendiente || ubicacionLimpia(doc.ubicacionFisica)) && (
+        <GuardadoEnEditable valor={doc.ubicacionFisica} onGuardar={guardarUbicacion} />
+      )}
       {pendiente && (
         <p className="text-sm text-[var(--text-secondary)]">
           Copia el código, escríbelo en el papel con la palabra Registrado y márcalo aquí.

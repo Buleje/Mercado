@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import type { DbDocument } from "@/lib/types/documents";
 import { formatoCodigoDocumento } from "@/lib/documentos/codigo-documento";
+import { ubicacionDelOriginal } from "@/lib/documentos/ubicacion-fisica";
 import { formatBytes } from "../archivo-visual";
 import { daysUntil } from "../archivo/compartido";
 import type { ModeloArchivo } from "../archivo/use-archivo";
@@ -43,6 +44,8 @@ export default function PreviaDoc({ arch, doc, nav }: { arch: ModeloArchivo; doc
   }
   const dias = daysUntil(doc.expiresAt);
   const codigo = formatoCodigoDocumento(doc.codigo);
+  // ADR-526 — dónde está el papel original: el suyo, o el de su carpeta mientras no tenga uno.
+  const original = ubicacionDelOriginal(doc, doc.folderId ? folderById.get(doc.folderId) : null);
 
   return (
     <div className="space-y-3">
@@ -96,6 +99,12 @@ export default function PreviaDoc({ arch, doc, nav }: { arch: ModeloArchivo; doc
           </Fila>
         )}
         {codigo && <Fila etiqueta="Código"><span className="font-mono font-semibold">{codigo}</span></Fila>}
+        {original && (
+          <Fila etiqueta="Original">
+            <span className="font-semibold" data-qa="previa-original">{original.texto}</span>
+            {original.deLaCarpeta && <span className="text-[var(--text-tertiary)]"> · el de su carpeta</span>}
+          </Fila>
+        )}
         {doc.tags.length > 0 && (
           <Fila etiqueta="Etiquetas">
             <span className="flex flex-wrap gap-1">

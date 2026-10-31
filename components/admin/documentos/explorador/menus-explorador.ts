@@ -70,7 +70,7 @@ export function itemsDeCarpeta(f: DbDocumentFolder, a: AccionesCarpeta): ItemMen
     SEP("s1"),
     { id: "nueva", label: "Nueva subcarpeta", Icon: FolderPlus, onSelect: () => a.nuevaCarpeta(f.id) },
     { id: "renombrar", label: "Cambiar nombre", Icon: Pencil, atajo: "F2", onSelect: () => a.renombrar(f) },
-    { id: "personalizar", label: "Cambiar ícono", Icon: Palette, onSelect: () => a.personalizar(f) },
+    { id: "personalizar", label: "Ícono y archivador", Icon: Palette, onSelect: () => a.personalizar(f) },
     {
       id: "imagen",
       label: conImagen ? "Cambiar la imagen del ícono" : "Poner una imagen de ícono",

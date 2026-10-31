@@ -81,6 +81,11 @@ export interface DbDocument {
   codigoFisicoAt?: string | null;
   /** Usuario que lo marcó. */
   codigoFisicoPor?: string | null;
+  /**
+   * Dónde está guardado el papel original («Archivador Guías 2026 · octubre»). Al marcar «Ya lo
+   * anoté» se copia el de su carpeta si no tiene uno propio (31-10, Brandon). null = sin anotar.
+   */
+  ubicacionFisica?: string | null;
   versionCount?: number;
   shareCount?: number;
 }
@@ -92,6 +97,8 @@ export interface DbDocumentFolder {
   name: string;
   color: string | null;
   icon: string | null;
+  /** Dónde se guardan los papeles físicos de esta carpeta («Archivador Guías 2026»): lo heredan al marcarlos. */
+  ubicacionFisica?: string | null;
   /** Emoji elegido por el usuario. Gana sobre `icon` al dibujar la carpeta. */
   emoji: string | null;
   /** Etiquetas de la CARPETA (distintas de las del documento). */

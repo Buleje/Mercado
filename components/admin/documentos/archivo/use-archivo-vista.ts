@@ -59,6 +59,10 @@ export function useArchivoVista() {
   const [repasoVence, setRepasoVence] = useState(false);
   /** Fechas anotadas en este repaso («Listo: N fechas anotadas»). */
   const [repasoHechas, setRepasoHechas] = useState(0);
+  /** Repaso de «Por registrar» (31-10): anotar el código en la hoja física, de a uno en el panel. */
+  const [repasoRegistro, setRepasoRegistro] = useState(false);
+  /** Papeles marcados «ya lo anoté» en este repaso. */
+  const [registroHechos, setRegistroHechos] = useState(0);
   // Cuántas tarjetas se dibujan: una carpeta de 300 documentos no es 300
   // tarjetas de golpe. «Ver más» suma otro tanto; cambiar de vista vuelve a 10.
   const [tarjetasVisibles, setTarjetasVisibles] = useState(10);
@@ -139,7 +143,7 @@ export function useArchivoVista() {
   );
   return { confirm, prompt, view, setView, sidebarWidth, setSidebarWidth, otrosAbierto, setOtrosAbierto,
     colsVisibles, setColsVisibles, colsMenuOpen, setColsMenuOpen, sortBy, setSortBy, statusFilter,
-    setStatusFilter, soloSinDescribir, setSoloSinDescribir, repasoVence, setRepasoVence, repasoHechas, setRepasoHechas, tarjetasVisibles, setTarjetasVisibles, filtros,
+    setStatusFilter, soloSinDescribir, setSoloSinDescribir, repasoVence, setRepasoVence, repasoHechas, setRepasoHechas, repasoRegistro, setRepasoRegistro, registroHechos, setRegistroHechos, tarjetasVisibles, setTarjetasVisibles, filtros,
     setFiltros, filtrosAbiertos, setFiltrosAbiertos, progresoDesc, setProgresoDesc, avisoIA, setAvisoIA,
     search, setSearch, searchDebounced, setSearchDebounced, semantic, setSemantic, filterMode, irAModo,
     activeFolderId, setActiveFolderIdRaw, setActiveFolderId, etiquetaFiltro, setEtiquetaFiltroRaw,

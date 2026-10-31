@@ -13,7 +13,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
-import { CalendarClock, Download, Eye, FolderOpen, MessageCircle, X } from "@buleje/design-system/icons";
+import { CalendarClock, Download, Eye, Hash, FolderOpen, MessageCircle, X } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import { formatBytes } from "../archivo-visual";
@@ -23,6 +23,7 @@ import IconoCarpeta from "../explorador/IconoCarpeta";
 import { fechaLarga, plural } from "../explorador/propiedades-explorador";
 import { fechasAnotadas } from "./CabeceraRepaso";
 import PreviaDoc from "./PreviaDoc";
+import RegistrarEnPanel, { anotasteTexto, CabeceraRegistro } from "./RegistrarEnPanel";
 import { useContenidoCarpeta } from "./use-datos-panel";
 
 const ACCION = button({ variant: "secondary", className: "flex-1 gap-1.5 px-3" });
@@ -128,11 +129,24 @@ export default function PanelVistaPrevia({ arch }: { arch: ModeloArchivo }) {
       className="sticky top-[76px] max-h-[calc(100dvh-92px)] self-start overflow-y-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 pb-20"
     >
       {o.tipo === "doc" ? (
-        <PreviaDoc key={o.doc.id} arch={arch} doc={o.doc} />
+        p.registrando ? (
+          <div className="space-y-3">
+            <CabeceraRegistro arch={arch} />
+            <RegistrarEnPanel key={o.doc.id} arch={arch} doc={o.doc} />
+            <PreviaDoc key={`p-${o.doc.id}`} arch={arch} doc={o.doc} />
+          </div>
+        ) : (
+          <PreviaDoc key={o.doc.id} arch={arch} doc={o.doc} />
+        )
       ) : o.tipo === "carpeta" ? (
         <PreviaCarpeta key={o.carpeta.id} arch={arch} carpeta={o.carpeta} />
       ) : o.tipo === "varios" ? (
         <PreviaVarios arch={arch} docs={o.docs} carpetas={o.carpetas} />
+      ) : p.registrando && arch.registroHechos > 0 && arch.displayDocs.length === 0 ? (
+        <div className="space-y-3">
+          <Cabecera titulo={`Listo: ${anotasteTexto(arch.registroHechos)}`} sub="No queda ningún papel por registrar" icono={<Hash className="mt-1 h-5 w-5 shrink-0 text-primary" />} onCerrar={p.alternar} />
+          <button type="button" onClick={() => arch.setRepasoRegistro(false)} className={button({ variant: "primary", fullWidth: true })}>Volver a mis papeles</button>
+        </div>
       ) : arch.repasoVence && arch.displayDocs.length === 0 ? (
         <div className="space-y-3">
           <Cabecera titulo={`Listo: ${fechasAnotadas(arch.repasoHechas)}`} sub="No queda ningún papel por repasar" icono={<CalendarClock className="mt-1 h-5 w-5 shrink-0 text-primary" />} onCerrar={p.alternar} />

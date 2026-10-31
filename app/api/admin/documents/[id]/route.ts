@@ -11,6 +11,7 @@ import { conDescripcionPropia } from "@/lib/documents/texto-buscable";
 import { isPrivilegedRole } from "@/lib/documents/doc-access";
 import { ROLES_PAPELES_GUIA } from "@/lib/forestal/documentos-guia";
 import { cambioDeEtiquetasVedado } from "@/lib/documents/etiquetas-de-maquina";
+import { ubicacionFisicaSchema } from "@/lib/documentos/ubicacion-fisica";
 
 const esEtiquetaDeGuia = (t: string) => /^(gtf|casillero):/i.test(t);
 
@@ -35,6 +36,8 @@ const PatchBody = z.object({
   // entra al texto buscable, así el archivo aparece por lo que vos dijiste
   // que es. Vacío = borrarla.
   descripcion: z.string().max(2000).optional(),
+  /** ADR-526 — «Guardado en: …» del papel original (vacío → null, ≤120). */
+  ubicacionFisica: ubicacionFisicaSchema,
 });
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -155,6 +158,26 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
             },
             ocrText: conDescripcionPropia(before.ocrText, descripcion),
           };
+
+    // ADR-526 — la ubicación del original va por su propio UPDATE, que no mueve
+    // `updatedAt` (la versión que mira la PC). Si es lo único que cambia, no hay
+    // otra escritura: se relee el papel para devolverlo como quedó.
+    const { ubicacionFisica, ...resto } = parsed.data;
+    if (ubicacionFisica !== undefined) {
+      await DocumentsDB.ponerUbicacionFisica(auth.tenantId, id, ubicacionFisica);
+      DocumentsDB.log(auth.tenantId, {
+        documentId: id,
+        actorId: auth.username,
+        action: "tag",
+        metadata: { ubicacionFisica: { de: before.ubicacionFisica ?? null, a: ubicacionFisica } },
+      }).catch((err) => logger.warn("documents.audit.ubicacion_fail", { err: String(err) }));
+      const soloUbicacion = Object.values(resto).every((v) => v === undefined) && allowedRoles === undefined;
+      if (soloUbicacion) {
+        const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
+        if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
+        return NextResponse.json({ document: doc });
+      }
+    }
 
     const updated = await DocumentsDB.update(auth.tenantId, id, {
       ...metaDesc,

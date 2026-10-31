@@ -74,8 +74,9 @@ export function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { 
         className="rounded-2xl bg-[var(--surface-raised)] p-4 xl:col-span-2"
         onMarcar={async (puesto) => {
           const r = await marcarCodigoFisicoEnServidor([doc.id], puesto);
-          if (r.ids.length > 0) onPatched({ ...doc, codigoFisicoAt: r.codigoFisicoAt, codigoFisicoPor: r.codigoFisicoPor });
+          if (r.ids.length > 0) onPatched({ ...doc, codigoFisicoAt: r.codigoFisicoAt, codigoFisicoPor: r.codigoFisicoPor, ubicacionFisica: r.ubicaciones[doc.id] ?? null });
         }}
+        onUbicacion={async (texto) => onPatched(await patchDocument(doc.id, { ubicacionFisica: texto }))}
       />
       {/* Carpeta — dónde vive el documento, y mover sin salir del detalle */}
       <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">

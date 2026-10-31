@@ -1,0 +1,67 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=documentos&vista=drive&sub=all#documentos",
+  "ls": {
+    "doc-view-mode": "grandes",
+    "doc-vista-previa": "1"
+  },
+  "pasos": [
+    {
+      "esperar": "[data-qa=explorador] [data-clave^='d:']"
+    },
+    {
+      "esperar": 800
+    },
+    {
+      "eval": "(()=>{const b=document.querySelector('[data-qa=repasar-por-registrar]');if(!b)return {boton:false};b.click();return {boton:true}})()"
+    },
+    {
+      "esperar": "[data-qa=codigo-grande]"
+    },
+    {
+      "esperar": 2500
+    },
+    {
+      "eval": "(()=>{const p=document.querySelector('[data-qa=panel-vista-previa]');return {cabecera:p?.querySelector('[data-qa=repaso-posicion]')?.textContent.trim()||null,hechos:p?.querySelector('[data-qa=repaso-hechos]')?.textContent.trim()||null,codigo:p?.querySelector('[data-qa=codigo-grande]')?.textContent.trim()||null,etiquetas:p?.querySelector('[data-qa=repaso-etiquetas]')?.textContent.trim()||null}})()"
+    },
+    {
+      "captura": "registro-primero"
+    },
+    {
+      "click": "[data-qa=saltar-registro]"
+    },
+    {
+      "esperar": 1500
+    },
+    {
+      "eval": "(()=>{const p=document.querySelector('[data-qa=panel-vista-previa]');return {cabecera:p?.querySelector('[data-qa=repaso-posicion]')?.textContent.trim()||null,hechos:p?.querySelector('[data-qa=repaso-hechos]')?.textContent.trim()||null,codigo:p?.querySelector('[data-qa=codigo-grande]')?.textContent.trim()||null,etiquetas:p?.querySelector('[data-qa=repaso-etiquetas]')?.textContent.trim()||null}})()"
+    },
+    {
+      "click": "[data-qa=ya-lo-anote]"
+    },
+    {
+      "esperar": 2000
+    },
+    {
+      "eval": "(()=>{const p=document.querySelector('[data-qa=panel-vista-previa]');return {cabecera:p?.querySelector('[data-qa=repaso-posicion]')?.textContent.trim()||null,hechos:p?.querySelector('[data-qa=repaso-hechos]')?.textContent.trim()||null,codigo:p?.querySelector('[data-qa=codigo-grande]')?.textContent.trim()||null,etiquetas:p?.querySelector('[data-qa=repaso-etiquetas]')?.textContent.trim()||null}})()"
+    },
+    {
+      "captura": "registro-segundo"
+    },
+    {
+      "eval": "(()=>{const b=[...document.querySelectorAll('[data-sonner-toast] button')].find(e=>/Deshacer/.test(e.textContent||''));b?.click();return !!b})()"
+    },
+    {
+      "esperar": 1500
+    },
+    {
+      "eval": "(()=>{const b=[...document.querySelectorAll('[data-qa=panel-vista-previa] button')].find(e=>/Terminar/.test(e.textContent||''));b?.click();return !!b})()"
+    },
+    {
+      "esperar": 800
+    },
+    {
+      "eval": "(document.body.textContent.match(/\\d+\\s*por registrar/)||[''])[0]"
+    }
+  ]
+}

@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { codigoFisicoPendiente } from "@/lib/documentos/codigo-documento";
 import { paraRepasarVencimiento } from "@/lib/documentos/parece-que-vence";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { VISTAS_CON_CONTENIDO_PROPIO } from "./compartido";
@@ -50,7 +51,7 @@ function guardar(clave: string, valor: string) {
 }
 
 export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
-  const { ex, filterMode, activeFolderId, view, setPreview, folderById, displayDocs, selectedIds, repasoVence, setRepasoHechas } = previo;
+  const { ex, filterMode, activeFolderId, view, setPreview, folderById, displayDocs, selectedIds, repasoVence, setRepasoHechas, repasoRegistro, setRepasoRegistro, setRegistroHechos } = previo;
   const ancho = useSyncExternalStore(suscribirAncho, esAncho, () => false);
   // Prendido por defecto: es lo que pidió. Ver › Panel de vista previa (o Alt+P) lo apaga.
   const [prendido, setPrendido] = useState(() => leer(CLAVE_PRENDIDO) !== "0");
@@ -162,6 +163,35 @@ export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
     [indice, ordenDocs, irA, setRepasoHechas],
   );
 
+  /**
+   * Repaso de «Por registrar»: igual, sobre la vista de códigos pendientes. «Ya lo anoté» marca y
+   * pasa al siguiente (el marcado sale de la lista); «Saltar» pasa sin marcar y da la vuelta al final.
+   */
+  const registrando = repasoRegistro && filterMode === "codigo";
+  const esperandoRegistro = useRef(false);
+  const antesRegistro = useRef(false);
+  useEffect(() => {
+    if (registrando && !antesRegistro.current) { esperandoRegistro.current = true; setPrendido(true); }
+    // Salió de «Por registrar» a mitad del repaso: el repaso termina (no se reanuda al volver).
+    if (!registrando && antesRegistro.current) setRepasoRegistro(false);
+    antesRegistro.current = registrando;
+    if (!registrando) esperandoRegistro.current = false;
+    if (esperandoRegistro.current && ordenDocs.length > 0 && ordenDocs.every(codigoFisicoPendiente)) {
+      esperandoRegistro.current = false;
+      irA(ordenDocs[0]);
+    }
+  }, [registrando, ordenDocs, irA, setRepasoRegistro]);
+  const avanzarRegistro = useCallback(
+    (anotado: boolean) => {
+      if (anotado) setRegistroHechos((n) => n + 1);
+      const destino = anotado
+        ? (ordenDocs[indice + 1] ?? ordenDocs[indice - 1])
+        : (ordenDocs[indice + 1] ?? ordenDocs.find((d) => d.id !== docActual?.id));
+      if (destino) irA(destino);
+    },
+    [indice, ordenDocs, irA, setRegistroHechos, docActual],
+  );
+
   const alternar = useCallback(() => {
     setPrendido((v) => {
       guardar(CLAVE_PRENDIDO, v ? "0" : "1");
@@ -198,6 +228,8 @@ export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
       anterior,
       siguiente,
       avanzarRepaso,
+      avanzarRegistro,
+      registrando,
       posicion: indice >= 0 ? { actual: indice + 1, total: ordenDocs.length } : null,
       ancho: anchoPanel,
       setAncho: setAnchoPanel,

@@ -12,6 +12,10 @@ import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
  * para una selección. Pueden marcarlo los mismos que editan un documento (todo
  * rol del panel), y sólo sobre lo que su rol ve: un id de un papel restringido
  * se descarta en silencio, como en el lote del drive. El negocio sale del JWT.
+ *
+ * ADR-526 — al marcar, el papel sin ubicación propia hereda la de su carpeta
+ * (en el mismo UPDATE); la respuesta trae `ubicaciones` (id → dónde quedó
+ * guardado, o null) para que la lista y el aviso lo digan al instante.
  */
 const Body = z.object({
   ids: z.array(z.string().min(1).max(64)).min(1).max(IDS_POR_LOTE),
@@ -49,6 +53,7 @@ export async function PATCH(req: NextRequest) {
       ids: cambiados.map((c) => c.id),
       codigoFisicoAt: puesto ? new Date().toISOString() : null,
       codigoFisicoPor: puesto ? auth.username : null,
+      ubicaciones: Object.fromEntries(cambiados.map((c) => [c.id, c.ubicacionFisica ?? null])),
     });
   } catch (e) {
     logger.error("[documents/codigo-fisico] error", { err: e instanceof Error ? e.message : String(e) });

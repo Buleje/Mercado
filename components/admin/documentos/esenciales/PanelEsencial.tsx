@@ -242,7 +242,7 @@ export default function PanelEsencial({ e, dentroDe, setDentroDe, orden, setOrde
           size="md"
           actions={[
             ...(onEscanear ? [{ id: "escanear", label: "Escanear aquí", hint: `Queda en «${destino.name}»`, icon: ScanLine, onSelect: () => onEscanear(destino) }] : []),
-            ...(onCambiarIcono ? [{ id: "icono", label: "Cambiar ícono", icon: Palette, onSelect: () => onCambiarIcono(f) }] : []),
+            ...(onCambiarIcono ? [{ id: "icono", label: "Ícono y archivador", icon: Palette, onSelect: () => onCambiarIcono(f) }] : []),
             { id: "zip", label: "Descargar todo (ZIP)", icon: Download, disabled: todos.length === 0, onSelect: () => void zipAndDownload(todos, `${nombreZip}.zip`) },
             { id: "expediente", label: "Armar expediente PDF", hint: "La carpeta en un PDF con carátula e índice", icon: FileArchive, disabled: todos.length === 0, onSelect: () => setExpediente({ tipo: "carpeta", folderId: f.id, nombre: f.name }) },
             { id: "whatsapp", label: "Enviar por WhatsApp", icon: MessageCircle, disabled: todos.length === 0, onSelect: () => setWhatsappDoc(todos) },

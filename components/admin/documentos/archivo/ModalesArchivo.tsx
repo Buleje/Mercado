@@ -9,6 +9,7 @@ import {
 import { descendantIds } from "@/lib/documentos/folder-tree";
 import { tagsVisibles } from "./compartido";
 import type { ModeloArchivo } from "./use-archivo";
+import ModalEtiquetas from "./ModalEtiquetas";
 export default function ModalesArchivo({ arch }: { arch: ModeloArchivo }) {
   const { estadoSubida, showTemplates, setShowTemplates, refresh, movingDoc, folders, bulk, setMovingDoc,
     importandoCarpeta, destinoImport, folderById, createFolderTree, existingNames, soltado, upload,
@@ -23,6 +24,7 @@ export default function ModalesArchivo({ arch }: { arch: ModeloArchivo }) {
   const vinculando = vinculandoId ? folderById.get(vinculandoId) ?? null : null;
   return (
     <>
+      <ModalEtiquetas arch={arch} />
       {/* Panel de progreso por archivo (subida en curso) */}
       {estadoSubida && estadoSubida.size > 0 && (
         <div className="fixed bottom-24 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-xl">
