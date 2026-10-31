@@ -1,0 +1,76 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=documentos&vista=drive&sub=all#documentos",
+ "ls": {
+  "doc-view-mode": "grandes",
+  "doc-vista-previa": "0"
+ },
+ "pasos": [
+  {
+   "esperar": "[data-qa=explorador] [data-clave^='d:']"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "(()=>{const f=document.querySelector(\"[data-qa=explorador] [data-clave^='d:']\");f.click();f.dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));return f.textContent.trim().slice(0,40)})()"
+  },
+  {
+   "esperar": 1500
+  },
+  {
+   "eval": "(()=>{const t=[...document.querySelectorAll('[role=dialog] button,[role=dialog] [role=tab]')].find(e=>/^Detalles/i.test((e.getAttribute('aria-label')||e.title||e.textContent||'').trim()));t?.click();return !!t})()"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "esperar": "[data-qa=codigo-fisico-marcar]"
+  },
+  {
+   "click": "[data-qa=codigo-fisico-marcar]"
+  },
+  {
+   "esperar": "[data-qa=guardado-en]"
+  },
+  {
+   "eval": "(()=>{const g=document.querySelector('[data-qa=guardado-en]');g.scrollIntoView({block:'center',behavior:'instant'});const r=g.getBoundingClientRect();return {sw:document.documentElement.scrollWidth,iw:innerWidth,der:Math.round(r.right),txt:g.textContent.trim()}})()"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "captura": "guardado-en"
+  },
+  {
+   "click": "[data-qa=guardado-en-editar]"
+  },
+  {
+   "esperar": "[data-qa=guardado-en-input]"
+  },
+  {
+   "eval": "(()=>{const g=document.querySelector('[data-qa=guardado-en-editor]');g.scrollIntoView({block:'center',behavior:'instant'});const r=g.getBoundingClientRect();return {der:Math.round(r.right),iw:innerWidth,sw:document.documentElement.scrollWidth}})()"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "captura": "guardado-en-editando"
+  },
+  {
+   "tecla": "Escape"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "eval": "(()=>{const b=document.querySelector('[data-qa=codigo-fisico-deshacer]');b?.click();return !!b})()"
+  },
+  {
+   "esperar": 1500
+  },
+  {
+   "eval": "!!document.querySelector('[data-qa=codigo-fisico-marcar]')"
+  }
+ ]
+}

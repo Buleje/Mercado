@@ -26,6 +26,13 @@ const H = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: H.requireAdmin }));
+/* `after()` fuera de un pedido real tira: acá corre al toque, para mirar el historial. */
+vi.mock("next/server", async (original) => ({
+  ...(await original<typeof import("next/server")>()),
+  after: (fn: () => unknown) => {
+    void fn();
+  },
+}));
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: () => null }));
 vi.mock("@/lib/auth/csrf", () => ({ assertCsrf: () => null }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
@@ -95,6 +102,31 @@ describe("PATCH codigo-fisico", () => {
     const j = await (await patch({ ids: ["d1"], puesto: false })).json();
     expect(H.marcarCodigoFisico).toHaveBeenCalledWith("t-a", ["d1"], false, "karla");
     expect(j).toMatchObject({ codigoFisicoAt: null, codigoFisicoPor: null });
+  });
+
+  it("el historial guarda el antes/después de la ubicación heredada, por papel (Ley 29733)", async () => {
+    H.marcarCodigoFisico.mockResolvedValue([
+      { id: "d1", codigo: 1, ubicacionAntes: null, ubicacionFisica: "Archivador 2 · Cartas" },
+      { id: "d2", codigo: 2, ubicacionAntes: "Caja propia", ubicacionFisica: "Caja propia" },
+      { id: "d3", codigo: 3, ubicacionAntes: null, ubicacionFisica: "Archivador 2 · Cartas" },
+    ]);
+    const j = await (await patch({ ids: ["d1", "d2", "d3"], puesto: true })).json();
+    expect(j.ubicaciones).toEqual({ d1: "Archivador 2 · Cartas", d2: "Caja propia", d3: "Archivador 2 · Cartas" });
+    expect(H.logMany).toHaveBeenCalledTimes(2);
+    expect(H.logMany).toHaveBeenCalledWith("t-a", ["d1", "d3"], expect.objectContaining({
+      action: "codigo_fisico",
+      metadata: { puesto: true, total: 3, ubicacionFisica: { de: null, a: "Archivador 2 · Cartas", deLaCarpeta: true } },
+    }));
+    // El de ubicación propia no cambió: sin antes/después inventado.
+    expect(H.logMany).toHaveBeenCalledWith("t-a", ["d2"], expect.objectContaining({ metadata: { puesto: true, total: 3 } }));
+  });
+
+  it("deshacer anota la ubicación que se soltó", async () => {
+    H.marcarCodigoFisico.mockResolvedValue([{ id: "d1", codigo: 1, ubicacionAntes: "Archivador 2 · Cartas", ubicacionFisica: null }]);
+    await patch({ ids: ["d1"], puesto: false });
+    expect(H.logMany).toHaveBeenCalledWith("t-a", ["d1"], expect.objectContaining({
+      metadata: { puesto: false, total: 1, ubicacionFisica: { de: "Archivador 2 · Cartas", a: null, deLaCarpeta: true } },
+    }));
   });
 
   it("si nada cambió no ensucia el historial", async () => {

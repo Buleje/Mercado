@@ -124,7 +124,7 @@ function Contenido({ docs, carpetaDe, marcar, onClose }: {
               />
             </p>
             {m.sinCodigo > 0 && (
-              <p className="text-xs text-[var(--text-secondary)]">{m.sinCodigo} {m.sinCodigo === 1 ? "papel no tiene" : "papeles no tienen"} código y se {m.sinCodigo === 1 ? "salta" : "saltan"}.</p>
+              <p className="text-sm text-[var(--text-secondary)]">{m.sinCodigo} {m.sinCodigo === 1 ? "papel no tiene" : "papeles no tienen"} código y se {m.sinCodigo === 1 ? "salta" : "saltan"}.</p>
             )}
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
               <label htmlFor="etiquetas-empezar">Empezar en la etiqueta</label>
@@ -141,8 +141,14 @@ function Contenido({ docs, carpetaDe, marcar, onClose }: {
               <InfoTip title="Hoja ya empezada" what={`Si ya gastaste las primeras de la hoja, pon el número de la primera libre (1 a ${ETIQUETAS_POR_HOJA}). Se cuentan de izquierda a derecha, de arriba hacia abajo.`} />
             </div>
             {enLocal && (
-              <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)]" data-qa="etiquetas-aviso-local">
-                Este QR apunta a {origen}: un celular fuera de esta red no lo abrirá. Imprímelo desde la dirección real del negocio.
+              <p className="flex items-start gap-2 rounded-xl bg-[var(--data-warning-100)] px-3 py-2 text-sm font-semibold text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/15" data-qa="etiquetas-aviso-local">
+                <span className="min-w-0 flex-1 break-words">Este QR apunta a {origen}: solo lo abre un celular de esta red.</span>
+                <InfoTip
+                  title="QR de prueba"
+                  what={`Un celular fuera de esta red no abrirá el QR, porque apunta a ${origen}.`}
+                  affects="Los stickers pegados en los papeles no servirían."
+                  example="Imprímelo desde la dirección real del negocio."
+                />
               </p>
             )}
           </>

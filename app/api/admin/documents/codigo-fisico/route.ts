@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { requireAdmin } from "@/lib/require-admin";
@@ -6,6 +6,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
+import { agruparCambiosDeUbicacion } from "@/lib/documentos/ubicacion-fisica";
 
 /**
  * ADR-516 — «Ya puse el código en el papel físico» (o lo deshago), para uno o
@@ -39,12 +40,20 @@ export async function PATCH(req: NextRequest) {
     const ids = await DocumentsDB.idsVisibles(auth.tenantId, [...new Set(parsed.data.ids)], auth.role);
     const cambiados = await DocumentsDB.marcarCodigoFisico(auth.tenantId, ids, puesto, auth.username);
 
-    if (cambiados.length > 0) {
-      DocumentsDB.logMany(
-        auth.tenantId,
-        cambiados.map((c) => c.id),
-        { actorId: auth.username, action: "codigo_fisico", metadata: { puesto, total: cambiados.length } },
-      ).catch((err) => logger.warn("documents.audit.fail", { err: String(err) }));
+    /* Historial por papel: si heredó (o soltó) la ubicación de su carpeta, queda el antes/después.
+       En `after()`: no demora la respuesta, pero el servidor espera a que se escriba (sin `after`,
+       en Vercel una promesa suelta se puede cortar al responder y el registro se perdía). */
+    const grupos = agruparCambiosDeUbicacion(cambiados);
+    if (grupos.length > 0) {
+      after(() =>
+        Promise.all(grupos.map((g) =>
+          DocumentsDB.logMany(auth.tenantId, g.ids, {
+            actorId: auth.username,
+            action: "codigo_fisico",
+            metadata: { puesto, total: cambiados.length, ...(g.ubicacionFisica && { ubicacionFisica: { ...g.ubicacionFisica, deLaCarpeta: true } }) },
+          }),
+        )).catch((err) => logger.warn("documents.audit.fail", { err: String(err) })),
+      );
     }
 
     return NextResponse.json({

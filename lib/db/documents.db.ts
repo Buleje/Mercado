@@ -1454,15 +1454,25 @@ export class DocumentsDB {
    *  · al desmarcar («Deshacer»: era el papel de al lado), se suelta la que es
    *    igual a la de su carpeta — volver a marcarlo la vuelve a heredar, así que
    *    no se pierde nada; una ubicación distinta, escrita a mano, se queda.
+   *
+   * Devuelve también `ubicacionAntes` (la de antes del UPDATE, leída en el mismo
+   * comando con la fila bloqueada) para que el historial guarde el antes/después
+   * de lo heredado (Ley 29733, revisión de security 31-10).
    */
   static async marcarCodigoFisico(
     tenantId: string,
     ids: readonly string[],
     puesto: boolean,
     actor: string,
-  ): Promise<{ id: string; codigo: number; ubicacionFisica: string | null }[]> {
+  ): Promise<{ id: string; codigo: number; ubicacionFisica: string | null; ubicacionAntes: string | null }[]> {
     if (ids.length === 0) return [];
-    const filas = await prisma.$queryRaw<{ id: string; codigo: number; ubicacionFisica: string | null }[]>`
+    const filas = await prisma.$queryRaw<{ id: string; codigo: number; ubicacionFisica: string | null; ubicacionAntes: string | null }[]>`
+      WITH antes AS (
+        SELECT a."id", a."ubicacionFisica" FROM "Document" a
+         WHERE a."tenantId" = ${tenantId}
+           AND a."id" = ANY(${[...ids]}::text[])
+         FOR UPDATE
+      )
       UPDATE "Document" AS d
          SET "codigoFisicoAt" = CASE WHEN ${puesto} THEN CURRENT_TIMESTAMP ELSE NULL END,
              "codigoFisicoPor" = CASE WHEN ${puesto} THEN ${actor}::text ELSE NULL END,
@@ -1475,12 +1485,14 @@ export class DocumentsDB {
                    WHERE f."id" = d."folderId" AND f."tenantId" = d."tenantId") THEN NULL
                ELSE d."ubicacionFisica"
              END
-       WHERE d."tenantId" = ${tenantId}
+        FROM antes
+       WHERE d."id" = antes."id"
+         AND d."tenantId" = ${tenantId}
          AND d."id" = ANY(${[...ids]}::text[])
          AND d."deletedAt" IS NULL
          AND d."codigo" IS NOT NULL
          AND (d."codigoFisicoAt" IS NULL) = ${puesto}
-      RETURNING d."id", d."codigo", d."ubicacionFisica"`;
+      RETURNING d."id", d."codigo", d."ubicacionFisica", antes."ubicacionFisica" AS "ubicacionAntes"`;
     return filas;
   }
 

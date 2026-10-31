@@ -27,6 +27,28 @@ export const ubicacionFisicaSchema = z
   .transform((v) => v || null)
   .optional();
 
+/**
+ * ADR-526 — el historial del marcado (Ley 29733): los papeles que cambiaron
+ * juntos, agrupados por su cambio de ubicación (`{ de, a }`, mismo formato que
+ * el PATCH del papel), o `null` en el grupo de los que no cambiaron. Una carpeta
+ * entera da un solo grupo: una sola escritura al historial.
+ */
+export function agruparCambiosDeUbicacion(
+  filas: readonly { id: string; ubicacionFisica: string | null; ubicacionAntes: string | null }[],
+): { ids: string[]; ubicacionFisica: { de: string | null; a: string | null } | null }[] {
+  const grupos = new Map<string, { ids: string[]; ubicacionFisica: { de: string | null; a: string | null } | null }>();
+  for (const f of filas) {
+    const de = f.ubicacionAntes ?? null;
+    const a = f.ubicacionFisica ?? null;
+    const cambio = de === a ? null : { de, a };
+    const clave = JSON.stringify(cambio);
+    const g = grupos.get(clave);
+    if (g) g.ids.push(f.id);
+    else grupos.set(clave, { ids: [f.id], ubicacionFisica: cambio });
+  }
+  return [...grupos.values()];
+}
+
 /** Lo que se muestra: la ubicación limpia, o `null` si no hay ninguna escrita. */
 export function ubicacionLimpia(texto: string | null | undefined): string | null {
   const t = texto?.trim();

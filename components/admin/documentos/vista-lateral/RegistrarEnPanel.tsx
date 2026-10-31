@@ -39,7 +39,7 @@ export function CabeceraRegistro({ arch }: { arch: ModeloArchivo }) {
         </button>
       </div>
       {ids.length > 0 && (
-        <button type="button" onClick={() => abrirEtiquetas(ids)} className={button({ variant: "ghost", className: "gap-1.5 px-2 text-xs" })} data-qa="repaso-etiquetas">
+        <button type="button" onClick={() => abrirEtiquetas(ids)} className={button({ variant: "ghost", className: "gap-1.5 px-2 text-sm text-[var(--data-warning-ink)] hover:bg-transparent hover:underline" })} data-qa="repaso-etiquetas">
           <Printer className="h-4 w-4" aria-hidden /> Imprimir etiquetas de estos {ids.length}
         </button>
       )}

@@ -47,7 +47,7 @@ export default function GuardadoEnEditable({ valor, onGuardar }: {
   if (editando) {
     return (
       <div className="space-y-1" data-qa="guardado-en-editor">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             type="text"
             value={borrador}
@@ -61,7 +61,7 @@ export default function GuardadoEnEditable({ valor, onGuardar }: {
             aria-label="¿Dónde guardas el papel original?"
             autoFocus
             disabled={guardando}
-            className={CAMPO_INPUT}
+            className={cn(CAMPO_INPUT, "w-auto min-w-0 flex-1 basis-40")}
             data-qa="guardado-en-input"
           />
           <button type="button" onClick={() => void guardar()} disabled={guardando} title="Guardar" aria-label="Guardar dónde está el original" className={button({ variant: "primary", size: "icon" })}>
@@ -90,7 +90,7 @@ export default function GuardadoEnEditable({ valor, onGuardar }: {
         type="button"
         onClick={abrir}
         title={actual ? "Cambiar dónde está guardado el original" : "Anotar en qué archivador está el original"}
-        className={cn(button({ variant: "ghost", size: "xs" }), "gap-1")}
+        className={cn(button({ variant: "ghost" }), "gap-1 px-3")}
         data-qa="guardado-en-editar"
       >
         <PenLine className="h-4 w-4" aria-hidden /> {actual ? "Cambiar" : "Anotar"}

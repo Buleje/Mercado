@@ -1,0 +1,52 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=documentos&vista=drive&sub=all#documentos",
+ "ls": {
+  "doc-view-mode": "grandes",
+  "doc-vista-previa": "1"
+ },
+ "pasos": [
+  {
+   "esperar": "[data-qa=explorador] [data-clave^='d:']"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "(()=>{const b=document.querySelector('[data-qa=repasar-por-registrar]');if(!b)return {boton:false};b.click();return {boton:true}})()"
+  },
+  {
+   "esperar": "[data-qa=codigo-grande]"
+  },
+  {
+   "esperar": 2500
+  },
+  {
+   "captura": "repaso-panel"
+  },
+  {
+   "click": "[data-qa=repaso-etiquetas]"
+  },
+  {
+   "esperar": "[data-qa=etiquetas-cuenta]"
+  },
+  {
+   "esperar": 600
+  },
+  {
+   "eval": "(()=>{const d=document.querySelector('[role=dialog]');return {sw:document.documentElement.scrollWidth,dw:d?.scrollWidth,dc:d?.clientWidth,aviso:!!document.querySelector('[data-qa=etiquetas-aviso-local]')}})()"
+  },
+  {
+   "captura": "etiquetas-1"
+  },
+  {
+   "eval": "(()=>{const i=document.querySelector('[data-qa=etiquetas-aviso-local]');if(!i)return null;const c=getComputedStyle(i);return {color:c.color,bg:c.backgroundColor}})()"
+  },
+  {
+   "tecla": "Escape"
+  },
+  {
+   "esperar": 500
+  }
+ ]
+}

@@ -60,10 +60,19 @@ describe("marcarCodigoFisico", () => {
     // La carpeta, de la del papel y del MISMO negocio (no una de otro tenant con el mismo id).
     expect(s).toContain(`f."id" = d."folderId" AND f."tenantId" = d."tenantId"`);
     // El negocio en el WHERE y por parámetro, nunca pegado al texto.
-    expect(s).toContain(`WHERE d."tenantId" = ?`);
+    expect(s).toContain(`WHERE d."id" = antes."id" AND d."tenantId" = ?`);
     expect(valores).toContain("t-a");
     expect(sql).not.toContain("t-a");
     expect(s).toContain(`RETURNING d."id", d."codigo", d."ubicacionFisica"`);
+  });
+
+  it("devuelve la ubicación de ANTES (fila bloqueada, del mismo negocio) para el historial", async () => {
+    await DocumentsDB.marcarCodigoFisico("t-a", ["d1"], true, "karla");
+    const s = plano(P.llamadas[0].sql);
+    expect(s).toMatch(/^ ?WITH antes AS \( SELECT a\."id", a\."ubicacionFisica" FROM "Document" a WHERE a\."tenantId" = \? AND a\."id" = ANY\(\?::text\[\]\) FOR UPDATE \)/);
+    expect(s).toContain(`FROM antes WHERE d."id" = antes."id" AND d."tenantId" = ?`);
+    expect(s).toContain(`antes."ubicacionFisica" AS "ubicacionAntes"`);
+    expect(P.llamadas[0].valores.filter((v) => v === "t-a")).toHaveLength(2);
   });
 
   it("deshacer suelta sólo la heredada (igual a la de la carpeta), no una propia", async () => {
