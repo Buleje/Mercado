@@ -4,7 +4,7 @@ description: >
   Schema Prisma, migraciones sobre Supabase, índices, DB classes y queries. Zona de peligro:
   prisma/schema.prisma. Usar para cualquier cambio de columna, tabla o índice, drift
   (P2021/P2022) o consulta lenta.
-model: inherit
+model: sonnet
 autoCompactWindow: 200000
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP
 memory: project

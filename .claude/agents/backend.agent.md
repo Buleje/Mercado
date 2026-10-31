@@ -4,7 +4,7 @@ description: >
   Rutas API (app/api), DB classes (lib/db/*.db.ts), auth/RBAC, validación Zod, lógica de
   servidor, integraciones (WhatsApp, Stripe, Mercado Pago, SUNAT) y features de IA
   (claude-router). Usar para cualquier endpoint, cálculo en backend o cambio de datos.
-model: inherit
+model: sonnet
 autoCompactWindow: 200000
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP
 memory: project

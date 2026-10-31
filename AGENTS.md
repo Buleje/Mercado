@@ -23,18 +23,19 @@ AUDIT → Workflow; INITIATIVE → Workflow por fases; DANGER → + `security`).
 | Agente | Modelo | Herramientas | Preload (`skills:`) | Para qué |
 |---|---|---|---|---|
 | `architect` | inherit | lectura + Bash | — | contrato (tipos, Zod, Prisma + plan de migración, rutas, DB class, ADR) antes de construir |
-| `backend` | inherit | edición + Bash | — (reglas de tenant en `rules/db-classes`) | rutas, DB classes, RBAC, integraciones, IA |
-| `frontend` | inherit | edición + Bash (sin MCP desde 02-10; `qa-capturas` con `eval`) | bsm-design-system (tipografía y tamaños: regla `ui-components`) | UI al estándar del DS; qa-capturas en 1 llamada, 1 imagen leída salvo color/layout (02-10) |
-| `database` | inherit | edición + Bash | — | schema, migraciones (`resolve --applied`), índices, drift |
-| `tester` | inherit | edición + Bash + **Playwright MCP** | — | Vitest, VRT, e2e por el camino del usuario, k6 |
-| `reviewer` | inherit | edición + Bash | — | review / diagnose / refactor con contexto fresco; refuta antes de reportar |
+| `backend` | sonnet | edición + Bash | — (reglas de tenant en `rules/db-classes`) | rutas, DB classes, RBAC, integraciones, IA |
+| `frontend` | sonnet | edición + Bash (sin MCP desde 02-10; `qa-capturas` con `eval`) | bsm-design-system (tipografía y tamaños: regla `ui-components`) | UI al estándar del DS; qa-capturas en 1 llamada, 1 imagen leída salvo color/layout (02-10) |
+| `database` | sonnet | edición + Bash | — | schema, migraciones (`resolve --applied`), índices, drift |
+| `tester` | sonnet | edición + Bash + **Playwright MCP** | — | Vitest, VRT, e2e por el camino del usuario, k6 |
+| `reviewer` | sonnet | edición + Bash | — | review / diagnose / refactor con contexto fresco; refuta antes de reportar |
 | `security` | inherit | lectura + Bash | multi-tenant-guard | OWASP + pentest contra el dev server; veto en críticos |
 | `healer` | sonnet (effort medium) | edición + Bash | — | gates rojos → fix mínimo, 3 intentos |
 
 Decisiones de frontmatter (v2.1.270):
-- **`model: inherit`**: corren en el modelo de la sesión (el que Brandon elige con `/model`). Antes estaban clavados
-  en `sonnet` y por eso se los esquivaba con `general-purpose`. Para trabajo mecánico se baja
-  por invocación (`model: haiku|sonnet` en el `Agent` call), no en el def.
+- **`model: sonnet`** en `backend`/`frontend`/`database`/`tester`/`reviewer` (30-10, Brandon: «cuando lo delegas es muy
+  lento»): sin override heredaban Opus en xhigh (un carril, 27 min y 186 turnos; los sonnet del mismo pedido, 2-5 min).
+  Dinero, permisos, estados o diseño nuevo se suben por invocación (`model: "opus"`). El viejo esquive a `general-purpose`
+  lo frena `pre-tool-guard` (Agent sin `model`). `architect`/`security` siguen en `inherit`.
 - **Sin `maxTurns`** en los constructores (una feature real usa 400-500 tool calls; el tope de 40
   cortaba a mitad). `architect`/`security` 40, `reviewer` 60, `healer` 20 — al llegar, el
   resultado vuelve marcado parcial y se continúa con `SendMessage`.

@@ -462,6 +462,9 @@ function bloquearBash(p) {
   process.exit(2);
 }
 
+const DEFS_SONNET = new Set(["frontend", "backend", "database", "tester", "reviewer"]);
+const PIDE_OPUS = /components\/checkout|CheckoutModal|orders\.db|role-permissions|proxy\.ts|lib\/middleware|schema\.prisma|cart-context|marketplace\.db|commissions|\bRBAC\b|state machine|m[aá]quina de estados|migraci[oó]n|idempoten|comisi[oó]n|dinero|saldo|cobranza/i;
+
 let input;
 try { input = JSON.parse(readFileSync(0, "utf8")); } catch { process.exit(0); }
 if (!input) process.exit(0);
@@ -503,6 +506,30 @@ if (["Edit", "Write", "MultiEdit"].includes(tool)) {
       process.exit(2);
     }
   }
+}
+
+// Agent (30-10, Brandon: «cuando lo delegas es muy lento»): los defs de dominio corren en sonnet por
+// defecto; el carril «Personas» sin `model` heredó Opus xhigh = 27 min y 186 turnos (los sonnet, 2-5).
+// Se frena sólo el olvido: sin `model`, general-purpose (heredaría Opus) o un prompt que nombra
+// dinero/permisos/zona de peligro (merece `opus`). Con `model` puesto, pasa.
+if (tool === "Agent" || tool === "Task") {
+  const tipo = String(toolInput.subagent_type || "general-purpose");
+  if (!toolInput.model) {
+    const texto = `${toolInput.description || ""}\n${toolInput.prompt || ""}`;
+    const pideOpus = texto.match(PIDE_OPUS);
+    let razon = "";
+    if (tipo === "general-purpose" || tipo === "claude") {
+      razon = `«${tipo}» sin \`model\` hereda Opus en xhigh (27 min el 30-10). Usá el def de dominio o pasá \`model\`.`;
+    } else if (DEFS_SONNET.has(tipo) && pideOpus) {
+      razon = `El prompt nombra «${pideOpus[0]}» (dinero/permisos/zona de peligro) y \`${tipo}\` corre en sonnet por defecto. ` +
+        `Pasá \`model: "opus"\` si toca esa lógica, o \`model: "sonnet"\` si sólo la menciona.`;
+    }
+    if (razon) {
+      process.stderr.write(`🛑 agente sin modelo: ${razon}\n`);
+      process.exit(2);
+    }
+  }
+  process.exit(0);
 }
 
 const motivo = memGuard(tool, toolInput);

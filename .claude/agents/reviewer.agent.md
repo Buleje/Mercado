@@ -4,7 +4,7 @@ description: >
   Revisor con contexto fresco (generator ≠ evaluator). Tres modos: review (diff pre-merge),
   diagnose (root cause de un bug a partir del síntoma) y refactor (deuda). Usar después de
   que otro agente construyó algo, o cuando Brandon reporta «no funciona / se lagea».
-model: inherit
+model: sonnet
 autoCompactWindow: 300000
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP
 maxTurns: 60

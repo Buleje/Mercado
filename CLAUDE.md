@@ -66,7 +66,7 @@ Código: strict, alias `@/*` y `@buleje/design-system`; sin hex en UI (tokens DS
 | Tier | Criterio | Dispatch | Gates |
 |---|---|---|---|
 | **HOTFIX** | 1 archivo, <20 líneas | inline (o `healer` sonnet si es gate rojo) | `typecheck` si es TS; el commit hace el resto |
-| **FEATURE** | 2-5 archivos, 1 área | 1-2 subagentes con `name` (modelo según tabla de `agentic-style`) | typecheck + test del área si hay lógica + 1 captura si cambia lo que se dibuja; `reviewer` solo si la tabla «Economía» lo pide |
+| **FEATURE** | 2-5 archivos, 1 área | 1-3 archivos: inline (Brandon ve cada paso) · 4-5: un subagente por parte independiente, en una tanda (sonnet por defecto; `opus` según tabla de `agentic-style`) | typecheck + test del área si hay lógica + 1 captura si cambia lo que se dibuja; `reviewer` solo si la tabla «Economía» lo pide |
 | **DANGER** | zona de peligro (§6) | subagente de dominio + `security` antes del merge | full pipeline |
 | **INITIATIVE** | 5+ archivos, ≥2 áreas | Workflow por fases (construir → verificar con refutador) | todos |
 

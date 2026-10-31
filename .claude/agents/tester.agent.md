@@ -4,7 +4,7 @@ description: >
   Escribe tests de lógica nueva (dinero, stock, estados, aislamiento por tenant), reproduce
   un bug con un test que falla antes del arreglo, o recorre una pantalla con Playwright.
   Usar solo si hay lógica que proteger; para copy, estilos o config, no.
-model: inherit
+model: sonnet
 autoCompactWindow: 200000
 tools: Read, Edit, Write, Grep, Glob, Bash, LSP, mcp__playwright
 mcpServers:
