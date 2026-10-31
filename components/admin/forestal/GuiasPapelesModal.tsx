@@ -17,6 +17,8 @@ import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import type { CasilleroGuia } from "@/lib/forestal/documentos-guia";
 import CtpDocumentosGuiaCasilleros from "./CtpDocumentosGuiaCasilleros";
 import { PastillaPapeles } from "./ctp-documentos-guia-contexto";
+import { usePapelAlCostado } from "@/components/admin/documentos/vista-lateral/use-doc-suelto";
+import PapelAlCostado from "./PapelAlCostado";
 
 export default function GuiasPapelesModal({
   gtfs,
@@ -31,8 +33,12 @@ export default function GuiasPapelesModal({
   onCambio: () => void;
   onClose: () => void;
 }) {
-  const [abierta, setAbierta] = useState<string | null>(gtfs.length === 1 ? (gtfs[0] ?? null) : null);
+  const [abierta, setAbierta] = useState<string | null>(
+    gtfs.length === 1 ? (gtfs[0] ?? null) : null,
+  );
   const completas = gtfs.filter((g) => faltan[g]?.length === 0).length;
+  /* Un clic en un papel = verlo al costado de las guías (Brandon 31-10). */
+  const lado = usePapelAlCostado();
 
   return (
     <AdminModal
@@ -42,9 +48,10 @@ export default function GuiasPapelesModal({
       icon={Paperclip}
       title="Papeles de las guías elegidas"
       description={`Completas: ${completas} de ${gtfs.length} · factura, guía de remisión, GTF y lista de trozas firmada`}
+      size={lado.id ? "xl" : undefined}
       claveVentana="guias-papeles"
     >
-      <div className={MODAL_BODY}>
+      <PapelAlCostado lado={lado} cerradoClassName={MODAL_BODY}>
         <ul className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)]">
           {gtfs.map((g) => {
             const f = faltan[g];
@@ -52,9 +59,15 @@ export default function GuiasPapelesModal({
             return (
               <li key={g}>
                 <div className="flex min-h-12 items-center gap-3 px-3 py-1.5">
-                  <span className="font-mono text-sm font-bold text-[var(--text-primary)]">GTF {g}</span>
+                  <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
+                    GTF {g}
+                  </span>
                   {f ? (
-                    <PastillaPapeles gtf={g} faltan={f} onClick={() => setAbierta(esta ? null : g)} />
+                    <PastillaPapeles
+                      gtf={g}
+                      faltan={f}
+                      onClick={() => setAbierta(esta ? null : g)}
+                    />
                   ) : (
                     <span className="text-xs text-[var(--text-tertiary)]">Contando…</span>
                   )}
@@ -73,14 +86,23 @@ export default function GuiasPapelesModal({
                 </div>
                 {esta && (
                   <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
-                    <CtpDocumentosGuiaCasilleros gtf={g} onCambio={onCambio} />
+                    <CtpDocumentosGuiaCasilleros
+                      gtf={g}
+                      onCambio={onCambio}
+                      onVer={(d, lista) =>
+                        lado.abrir(
+                          d.id,
+                          lista.map((x) => x.id),
+                        )
+                      }
+                    />
                   </div>
                 )}
               </li>
             );
           })}
         </ul>
-      </div>
+      </PapelAlCostado>
     </AdminModal>
   );
 }

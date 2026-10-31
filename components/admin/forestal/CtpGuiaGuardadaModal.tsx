@@ -29,6 +29,8 @@ import { useGuiaDesdeFoto } from "@/hooks/use-guia-desde-foto";
 import type { GuiaGuardadaDetalle, GuiaGuardadaVista } from "@/lib/forestal/guias-guardadas";
 import { Btn, ModalFooter, useCierreSeguro } from "./ctp-shared";
 import CtpDocumentosGuiaCasilleros from "./CtpDocumentosGuiaCasilleros";
+import { usePapelAlCostado } from "@/components/admin/documentos/vista-lateral/use-doc-suelto";
+import PapelAlCostado from "./PapelAlCostado";
 import CtpGuiaDesdeFoto, { LecturaDeFoto } from "./CtpGuiaDesdeFoto";
 import {
   AyudaDeGuia,
@@ -61,10 +63,20 @@ export default function CtpGuiaGuardadaModal({
   onCambio,
   onIngresar,
 }: CtpGuiaGuardadaModalProps) {
-  const { id, abrir, guia, cargando, error: errorCarga, guardando, guardar } = useGuiaGuardada(guiaId);
+  const {
+    id,
+    abrir,
+    guia,
+    cargando,
+    error: errorCarga,
+    guardando,
+    guardar,
+  } = useGuiaGuardada(guiaId);
   const { contratos } = usePermisosForestal();
   const { confirm } = useConfirm();
   const rol = useMiRol();
+  /* Un clic en un papel = verlo al costado de la guía (Brandon 31-10). */
+  const lado = usePapelAlCostado();
   const puedeEliminar = rol == null || rol === "admin" || rol === "owner" || rol === "superadmin";
 
   const vista: GuiaGuardadaVista | null = guia ?? (inicial?.id === id ? inicial : null);
@@ -73,7 +85,10 @@ export default function CtpGuiaGuardadaModal({
   const [error, setError] = useState<string | null>(null);
   /* Lo que el servidor avisó al guardar (SERFOR corrigió lo tipeado, no
      respondió…): queda a la vista, no sólo en un toast que se va. */
-  const [delServidor, setDelServidor] = useState<{ corregidos: string[]; aviso: string | null } | null>(null);
+  const [delServidor, setDelServidor] = useState<{
+    corregidos: string[];
+    aviso: string | null;
+  } | null>(null);
   const [eliminando, setEliminando] = useState(false);
   /* Algo cambió de verdad (guardado, eliminado, un papel subido): la lista de
      atrás se relee al cerrar, no en cada tecla. */
@@ -102,15 +117,24 @@ export default function CtpGuiaGuardadaModal({
       huboCambios.current = true;
       void foto.subirA(r.guia.gtfNumber); // la foto leída que esperaba a la guía, si hay
       setError(null);
-      setDelServidor(r.corregidos.length || r.aviso ? { corregidos: r.corregidos, aviso: r.aviso } : null);
+      setDelServidor(
+        r.corregidos.length || r.aviso ? { corregidos: r.corregidos, aviso: r.aviso } : null,
+      );
       toast.success(
-        desdeSerfor ? "Guía traída de SERFOR y guardada" : eraNueva ? "Guía guardada" : "Cambios guardados",
+        desdeSerfor
+          ? "Guía traída de SERFOR y guardada"
+          : eraNueva
+            ? "Guía guardada"
+            : "Cambios guardados",
       );
       if (r.corregidos.length)
-        toast.warning(`SERFOR corrigió ${r.corregidos.length === 1 ? "un dato" : `${r.corregidos.length} datos`}`, {
-          description: r.corregidos.join(" · "),
-          duration: 12_000,
-        });
+        toast.warning(
+          `SERFOR corrigió ${r.corregidos.length === 1 ? "un dato" : `${r.corregidos.length} datos`}`,
+          {
+            description: r.corregidos.join(" · "),
+            duration: 12_000,
+          },
+        );
       if (r.aviso) toast.warning(r.aviso, { duration: 10_000 });
       return r.guia;
     }
@@ -131,7 +155,10 @@ export default function CtpGuiaGuardadaModal({
   };
 
   /* `f`: la lectura de una foto guarda con el número que todavía no llegó al estado. */
-  const guardarGuia = async (desdeSerfor = false, f: FormGuia = form): Promise<GuiaGuardadaDetalle | null> => {
+  const guardarGuia = async (
+    desdeSerfor = false,
+    f: FormGuia = form,
+  ): Promise<GuiaGuardadaDetalle | null> => {
     if (desdeSerfor && !f.numeroRegistro.trim()) {
       setError("Escribe el N° de registro de la guía (ej. 1-19-0313629).");
       return null;
@@ -196,6 +223,7 @@ export default function CtpGuiaGuardadaModal({
     <AdminModal
       open
       onClose={() => void cerrar()}
+      size={lado.id ? "xl" : undefined}
       title={titulo}
       description={descripcion}
       icon={FolderPlus}
@@ -233,107 +261,132 @@ export default function CtpGuiaGuardadaModal({
         </ModalFooter>
       }
     >
-      <div className={`${MODAL_BODY} flex flex-col gap-5`} data-testid="guia-guardada">
-        <section aria-labelledby="guia-guardada-datos" className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <CardTitle id="guia-guardada-datos" as="h3" className="text-sm font-bold">
-              La guía
-            </CardTitle>
-            <AyudaDeGuia />
-            {vista?.verificadaEnSerfor && <SelloSerfor en={vista.serforConsultadaEn} />}
-            {!id && (
-              <CtpGuiaDesdeFoto
-                foto={foto}
-                form={form}
-                onForm={setForm}
-                guardarConSerfor={(f) => guardarGuia(true, f)}
-                bloqueado={ocupado || cargando}
-              />
-            )}
-          </div>
-          {/* Pegado al botón: en el celular, debajo de los campos no se veía. */}
-          <LecturaDeFoto foto={foto} gtf={vista?.gtfNumber ?? null} />
-          <CamposDeGuia
-            form={form}
-            onChange={setForm}
-            contratos={contratos}
-            onBuscarSerfor={() => void guardarGuia(true)}
-            buscando={guardando === "serfor"}
-            /* Mientras llega el detalle, nada se tipea: al llegar pisa el
-               formulario (abierto con los datos de la lista) y se perdía. */
-            bloqueado={ocupado || cargando}
-            oficial={Boolean(vista?.verificadaEnSerfor)}
-            ingresada={Boolean(vista?.ingreso)}
-          />
-          {delServidor && (
-            <div
-              role="status"
-              className="rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3 text-sm text-[var(--text-primary)]"
-            >
-              {delServidor.aviso && <p className="font-bold text-[var(--data-warning-ink)]">{delServidor.aviso}</p>}
-              {delServidor.corregidos.length > 0 && (
-                <>
-                  <p className="font-bold text-[var(--data-warning-ink)]">La ficha de SERFOR corrigió lo escrito:</p>
-                  <ul className="mt-1 list-disc pl-5">
-                    {delServidor.corregidos.map((c) => (
-                      <li key={c}>{c}</li>
-                    ))}
-                  </ul>
-                </>
+      <PapelAlCostado lado={lado}>
+        <div
+          className={`${lado.id ? "" : MODAL_BODY} flex flex-col gap-5`}
+          data-testid="guia-guardada"
+        >
+          <section aria-labelledby="guia-guardada-datos" className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle id="guia-guardada-datos" as="h3" className="text-sm font-bold">
+                La guía
+              </CardTitle>
+              <AyudaDeGuia />
+              {vista?.verificadaEnSerfor && <SelloSerfor en={vista.serforConsultadaEn} />}
+              {!id && (
+                <CtpGuiaDesdeFoto
+                  foto={foto}
+                  form={form}
+                  onForm={setForm}
+                  guardarConSerfor={(f) => guardarGuia(true, f)}
+                  bloqueado={ocupado || cargando}
+                />
               )}
             </div>
-          )}
-          {vista && <FichaResumen g={vista} />}
-        </section>
-
-        {vista && (
-          <section
-            aria-label="Frente al libro"
-            className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3"
-          >
-            {vista.ingreso ? (
-              <PastillaIngresada ingreso={vista.ingreso} />
-            ) : (
-              <>
-                <span className="text-sm font-bold text-[var(--text-primary)]">
-                  {vista.libroTh?.recibible
-                    ? `Por recibir · viene de tu Libro TH con ${vista.libroTh.trozas} ${vista.libroTh.trozas === 1 ? "troza" : "trozas"}`
-                    : "Por ingresar"}
-                </span>
-                {onIngresar && (
-                  <Btn variant="primary" onClick={() => void ingresar()} disabled={ocupado} className="max-sm:w-full sm:ml-auto">
-                    {vista.libroTh?.recibible ? "Recibir con sus trozas" : "Registrar el ingreso"}{" "}
-                    <ArrowRight className="h-4 w-4" aria-hidden />
-                  </Btn>
+            {/* Pegado al botón: en el celular, debajo de los campos no se veía. */}
+            <LecturaDeFoto foto={foto} gtf={vista?.gtfNumber ?? null} />
+            <CamposDeGuia
+              form={form}
+              onChange={setForm}
+              contratos={contratos}
+              onBuscarSerfor={() => void guardarGuia(true)}
+              buscando={guardando === "serfor"}
+              /* Mientras llega el detalle, nada se tipea: al llegar pisa el
+               formulario (abierto con los datos de la lista) y se perdía. */
+              bloqueado={ocupado || cargando}
+              oficial={Boolean(vista?.verificadaEnSerfor)}
+              ingresada={Boolean(vista?.ingreso)}
+            />
+            {delServidor && (
+              <div
+                role="status"
+                className="rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3 text-sm text-[var(--text-primary)]"
+              >
+                {delServidor.aviso && (
+                  <p className="font-bold text-[var(--data-warning-ink)]">{delServidor.aviso}</p>
                 )}
+                {delServidor.corregidos.length > 0 && (
+                  <>
+                    <p className="font-bold text-[var(--data-warning-ink)]">
+                      La ficha de SERFOR corrigió lo escrito:
+                    </p>
+                    <ul className="mt-1 list-disc pl-5">
+                      {delServidor.corregidos.map((c) => (
+                        <li key={c}>{c}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+            {vista && <FichaResumen g={vista} />}
+          </section>
+
+          {vista && (
+            <section
+              aria-label="Frente al libro"
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3"
+            >
+              {vista.ingreso ? (
+                <PastillaIngresada ingreso={vista.ingreso} />
+              ) : (
+                <>
+                  <span className="text-sm font-bold text-[var(--text-primary)]">
+                    {vista.libroTh?.recibible
+                      ? `Por recibir · viene de tu Libro TH con ${vista.libroTh.trozas} ${vista.libroTh.trozas === 1 ? "troza" : "trozas"}`
+                      : "Por ingresar"}
+                  </span>
+                  {onIngresar && (
+                    <Btn
+                      variant="primary"
+                      onClick={() => void ingresar()}
+                      disabled={ocupado}
+                      className="max-sm:w-full sm:ml-auto"
+                    >
+                      {vista.libroTh?.recibible ? "Recibir con sus trozas" : "Registrar el ingreso"}{" "}
+                      <ArrowRight className="h-4 w-4" aria-hidden />
+                    </Btn>
+                  )}
+                </>
+              )}
+            </section>
+          )}
+
+          <section aria-labelledby="guia-guardada-docs" className="flex flex-col gap-3">
+            <CardTitle id="guia-guardada-docs" as="h3" className="text-sm font-bold">
+              Documentos
+            </CardTitle>
+            {vista ? (
+              <>
+                <p className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                  <FolderOpen
+                    className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]"
+                    aria-hidden
+                  />
+                  <span className="min-w-0 break-words">{vista.carpeta.join(" › ")}</span>
+                </p>
+                <CtpDocumentosGuiaCasilleros
+                  key={foto.subidas}
+                  gtf={vista.gtfNumber}
+                  onVer={(d, lista) =>
+                    lado.abrir(
+                      d.id,
+                      lista.map((x) => x.id),
+                    )
+                  }
+                  onCambio={(n) => {
+                    if (n !== vista.docsLlenos) huboCambios.current = true;
+                  }}
+                />
               </>
+            ) : (
+              <p className="text-sm text-[var(--text-tertiary)]">
+                Guarda la guía y aquí subes sus papeles.
+              </p>
             )}
           </section>
-        )}
-
-        <section aria-labelledby="guia-guardada-docs" className="flex flex-col gap-3">
-          <CardTitle id="guia-guardada-docs" as="h3" className="text-sm font-bold">
-            Documentos
-          </CardTitle>
-          {vista ? (
-            <>
-              <p className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-                <FolderOpen className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-                <span className="min-w-0 break-words">{vista.carpeta.join(" › ")}</span>
-              </p>
-              <CtpDocumentosGuiaCasilleros
-                key={foto.subidas}
-                gtf={vista.gtfNumber}
-                onCambio={(n) => {
-                  if (n !== vista.docsLlenos) huboCambios.current = true;
-                }}
-              />
-            </>
-          ) : (
-            <p className="text-sm text-[var(--text-tertiary)]">Guarda la guía y aquí subes sus papeles.</p>
-          )}
-        </section>
-      </div>
+        </div>
+      </PapelAlCostado>
     </AdminModal>
   );
 }

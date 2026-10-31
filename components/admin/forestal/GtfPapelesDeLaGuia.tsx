@@ -42,12 +42,15 @@ export default function GtfPapelesDeLaGuia({
   gtf,
   onArchivos,
   onCambio,
+  onVer,
 }: {
   gtf: string;
   /** Los papeles subidos, para elegirlos junto a las carpetas del plan. */
   onArchivos: (a: ArchivoDelPlan[]) => void;
   /** Cambió cuántos casilleros tienen archivo (quien no está bajo la tabla del Libro TH). */
   onCambio?: () => void;
+  /** Ver un papel al costado (id y lista de ids para ‹ ›). */
+  onVer?: (id: string, lista: string[]) => void;
 }) {
   const ctx = usePapelesGuias();
   /* El primer conteo es la lectura al abrir, no un cambio: no se repide la tabla. */
@@ -108,6 +111,7 @@ export default function GtfPapelesDeLaGuia({
         <CtpDocumentosGuiaCasilleros
           gtf={gtf}
           onDatos={alLeer}
+          onVer={onVer ? (d, lista) => onVer(d.id, lista.map((x) => x.id)) : undefined}
           onCambio={() => {
             if (!leido.current) {
               leido.current = true;

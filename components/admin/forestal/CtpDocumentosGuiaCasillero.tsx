@@ -6,7 +6,7 @@
  * agrega uno — la cámara del celular o un archivo de la PC.
  */
 
-import { useRef, useState } from "react";
+import { useRef, useState, type MouseEvent } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Camera, FileText, FileUp, Loader2, RefreshCw, Trash2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -32,8 +32,11 @@ function Archivo({
   puedeQuitar,
   onReemplazar,
   onQuitar,
+  onVer,
 }: {
   doc: DocumentoDeGuia;
+  /** Un clic en el papel lo ve al costado (si la ventana lo ofrece) en vez de abrir otra pestaña. */
+  onVer?: () => void;
   ocupado: boolean;
   /** `false` = el rol no puede quitar (sólo admin/dueño): el botón se deshabilita con el motivo. */
   puedeQuitar: boolean;
@@ -41,12 +44,21 @@ function Archivo({
   onQuitar: () => void;
 }) {
   const esImagen = doc.mimeType.startsWith("image/");
+  /* Clic normal = al costado; Ctrl/Cmd/clic medio siguen abriendo la pestaña. */
+  const alVer = onVer
+    ? (e: MouseEvent<HTMLAnchorElement>) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        onVer();
+      }
+    : undefined;
   return (
     <li className="flex items-center gap-2 rounded-xl bg-[var(--surface-sunken)] p-2">
       <a
         href={doc.src}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={alVer}
         title={`Ver «${doc.name}»`}
         className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]"
       >
@@ -62,6 +74,7 @@ function Archivo({
           href={doc.src}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={alVer}
           className="block truncate text-sm font-semibold text-[var(--text-primary)] underline-offset-2 hover:underline"
           title={doc.name}
         >
@@ -107,8 +120,10 @@ export default function CtpDocumentosGuiaCasillero({
   onSubir,
   onQuitar,
   onArmarGtf,
+  onVer,
 }: {
   casillero: CasilleroConDocs;
+  onVer?: (doc: DocumentoDeGuia) => void;
   subiendo: boolean;
   /** `false` = el rol no puede quitar (sólo admin/dueño): «Quitar» se deshabilita con el motivo. */
   puedeQuitar?: boolean;
@@ -166,6 +181,7 @@ export default function CtpDocumentosGuiaCasillero({
                 reemplazoRef.current?.click();
               }}
               onQuitar={() => onQuitar(d)}
+              onVer={onVer ? () => onVer(d) : undefined}
             />
           ))}
         </ul>

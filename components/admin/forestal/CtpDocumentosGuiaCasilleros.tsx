@@ -32,6 +32,8 @@ export interface CtpDocumentosGuiaCasillerosProps {
   onArmarGtf?: () => void;
   /** Los casilleros con sus archivos cada vez que se leen (ADR-482: el modal del Libro TH los ofrece para enviar). */
   onDatos?: (d: DocumentosDeGuia) => void;
+  /** Ver un papel al costado: llega el papel y la lista de todos los de la guía (para ‹ ›). Sin esto abre otra pestaña. */
+  onVer?: (doc: DocumentoDeGuia, lista: DocumentoDeGuia[]) => void;
 }
 
 export default function CtpDocumentosGuiaCasilleros({
@@ -39,6 +41,7 @@ export default function CtpDocumentosGuiaCasilleros({
   onCambio,
   onArmarGtf,
   onDatos,
+  onVer,
 }: CtpDocumentosGuiaCasillerosProps) {
   const { datos, cargando, error, subiendo, subir, quitar } = useDocumentosGuia(gtf);
   const onDatosRef = useRef(onDatos);
@@ -144,6 +147,7 @@ export default function CtpDocumentosGuiaCasilleros({
               onSubir={(files, reemplaza) => void alSubir(c.clave, files, reemplaza)}
               onQuitar={(d) => void alQuitar(d)}
               onArmarGtf={c.clave === "gtf" ? onArmarGtf : undefined}
+              onVer={onVer ? (d) => onVer(d, datos.casilleros.flatMap((k) => k.docs)) : undefined}
             />
           ))}
         </div>

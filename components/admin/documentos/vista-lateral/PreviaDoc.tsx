@@ -6,9 +6,7 @@
  * clic (abrir grande, descargar, WhatsApp y el «⋯» de siempre).
  */
 
-import type { ReactNode } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { CalendarClock, ChevronLeft, ChevronRight, Download, Loader2, Maximize2, MessageCircle, Sparkles, X } from "@buleje/design-system/icons";
+import { CalendarClock, Download, Maximize2, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import type { DbDocument } from "@/lib/types/documents";
@@ -16,7 +14,6 @@ import { formatoCodigoDocumento } from "@/lib/documentos/codigo-documento";
 import { formatBytes } from "../archivo-visual";
 import { daysUntil } from "../archivo/compartido";
 import type { ModeloArchivo } from "../archivo/use-archivo";
-import IconoArchivo from "../explorador/IconoArchivo";
 import { tipoDeArchivo } from "../explorador/orden-agrupar";
 import { fechaLarga } from "../explorador/propiedades-explorador";
 import MenuDocumento from "../MenuDocumento";
@@ -24,50 +21,16 @@ import { ESTADOS_DEL_MENU } from "../archivo/estado-doc";
 import OrdenarEnPanel from "./OrdenarEnPanel";
 import VistaRapidaDoc from "./VistaRapidaDoc";
 import { useDetalleDoc } from "./use-datos-panel";
+import { ACCION, CabeceraPrevia, Fila, QueEs, chipsDe, descripcionDe, type Meta, type NavPrevia } from "./PiezasPrevia";
 
-type Entidades = { people?: string[]; orgs?: string[]; places?: string[]; dates?: string[]; amounts?: string[] };
-type Meta = { description?: string; summary?: string; descripcionUsuario?: string; entities?: Entidades };
-
-const ACCION = button({ variant: "secondary", className: "flex-1 gap-1.5 px-3" });
-const ICONO = button({ variant: "ghost", size: "icon", className: "shrink-0" });
-
-/** Los datos que la IA sacó del papel, en una sola fila de chips (hasta 8). */
-function chipsDe(e: Entidades | undefined): string[] {
-  if (!e) return [];
-  const todos = [...(e.amounts ?? []), ...(e.dates ?? []), ...(e.people ?? []), ...(e.orgs ?? []), ...(e.places ?? [])];
-  return [...new Set(todos.map((x) => x.trim()).filter(Boolean))].slice(0, 8);
-}
-
-function Fila({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
-  return (
-    <div className="grid grid-cols-[6.5rem_1fr] gap-2 py-1.5 text-sm">
-      <dt className="text-[var(--text-tertiary)]">{etiqueta}</dt>
-      <dd className="min-w-0 break-words text-[var(--text-primary)]">{children}</dd>
-    </div>
-  );
-}
-
-/**
- * Cómo se navega el panel. El Archivo usa su panel de vista previa (Alt+P); Esenciales y
- * Terceros lo muestran en su columna derecha, con ‹ › por los papeles de esa carpeta o
- * tercero y «‹ Volver» a la lista (ver `use-doc-al-costado`).
- */
-export interface NavPrevia {
-  anterior?: () => void;
-  siguiente?: () => void;
-  posicion: { actual: number; total: number } | null;
-  onCerrar: () => void;
-  cerrarTitulo: string;
-  /** «Volver a Juana Pérez»: un botón arriba que vuelve a la lista. */
-  volver?: string;
-}
+export type { NavPrevia };
 
 export default function PreviaDoc({ arch, doc, nav }: { arch: ModeloArchivo; doc: DbDocument; nav?: NavPrevia }) {
   const { panelPrevia: p, setPreview, handleDownload, setWhatsappDoc, accionesDe, ex, folderById, abrirCarpetaExp } = arch;
   const n: NavPrevia = nav ?? { anterior: p.anterior, siguiente: p.siguiente, posicion: p.posicion, onCerrar: p.alternar, cerrarTitulo: "Cerrar la vista previa (Alt+P)" };
   const { detalle, cargando } = useDetalleDoc(doc);
   const meta = (detalle?.ocrMetadata ?? {}) as Meta;
-  const descripcion = (meta.descripcionUsuario || meta.description || meta.summary || "").trim();
+  const descripcion = descripcionDe(meta);
   const chips = chipsDe(meta.entities);
 
   // «Archivo › Blas › 2026-10-08», de la raíz a la carpeta del archivo.
@@ -83,28 +46,7 @@ export default function PreviaDoc({ arch, doc, nav }: { arch: ModeloArchivo; doc
 
   return (
     <div className="space-y-3">
-      {n.volver && (
-        <button type="button" onClick={n.onCerrar} className={button({ variant: "ghost", className: "gap-1 px-2 text-[var(--accent-ink)] dark:text-[var(--accent)]" })}>
-          <ChevronLeft className="h-4 w-4" /> {n.volver}
-        </button>
-      )}
-      {/* Cabecera: el nombre, ‹ 3 de 75 › y cerrar el panel. */}
-      <div className="flex items-start gap-2">
-        <IconoArchivo doc={doc} tam="chico" />
-        <div className="min-w-0 flex-1">
-          <CardTitle className="line-clamp-2 break-words text-sm font-bold">{doc.name}</CardTitle>
-          {n.posicion && <p className="text-xs tabular-nums text-[var(--text-tertiary)]">{n.posicion.actual} de {n.posicion.total}</p>}
-        </div>
-        <button type="button" onClick={n.anterior} disabled={!n.anterior} className={ICONO} aria-label="Archivo anterior" title="Anterior">
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <button type="button" onClick={n.siguiente} disabled={!n.siguiente} className={ICONO} aria-label="Archivo siguiente" title="Siguiente">
-          <ChevronRight className="h-5 w-5" />
-        </button>
-        <button type="button" onClick={n.onCerrar} className={ICONO} aria-label={n.cerrarTitulo} title={n.cerrarTitulo}>
-          <X className="h-5 w-5" />
-        </button>
-      </div>
+      <CabeceraPrevia doc={doc} nav={n} />
 
       {/* El archivo: doble clic lo abre en grande, igual que en la lista. */}
       <div onDoubleClick={() => setPreview(doc)}>
@@ -128,26 +70,7 @@ export default function PreviaDoc({ arch, doc, nav }: { arch: ModeloArchivo; doc
         </div>
       </div>
 
-      {/* Qué es: lo que leyó la IA (o lo que escribiste tú, que pesa más). */}
-      <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
-        <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
-          <Sparkles className="h-4 w-4 text-primary" /> Qué es
-        </p>
-        {cargando ? (
-          <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Leyendo…</p>
-        ) : descripcion ? (
-          <p className="line-clamp-6 whitespace-pre-line text-sm text-[var(--text-primary)]">{descripcion}</p>
-        ) : (
-          <p className="text-sm text-[var(--text-tertiary)]">Todavía sin describir: ábrelo y usa «Analizar» para que la IA lo lea.</p>
-        )}
-        {chips.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {chips.map((c) => (
-              <span key={c} className="rounded-full bg-[var(--surface-raised)] px-2 py-0.5 text-xs font-semibold text-[var(--text-secondary)]">{c}</span>
-            ))}
-          </div>
-        )}
-      </div>
+      <QueEs cargando={cargando} descripcion={descripcion} chips={chips} />
 
       <OrdenarEnPanel arch={arch} doc={doc} detalle={detalle} />
 

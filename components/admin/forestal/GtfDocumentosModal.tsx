@@ -35,11 +35,12 @@ import {
   type CarpetaConArchivos,
 } from "./gtf-documentos-acciones";
 import { DocumentosNoDisponibles, leerVista } from "./plan-documentos/plan-documentos-api";
-import VistaPreviaDoc from "./plan-documentos/VistaPreviaDoc";
 import EnviarPorWhatsApp from "./EnviarPorWhatsApp";
 import GtfDocumentosCarpeta from "./GtfDocumentosCarpeta";
 import GtfPapelesDeLaGuia from "./GtfPapelesDeLaGuia";
 import { button } from "@/components/ui-system/button-variants";
+import PapelAlCostado from "./PapelAlCostado";
+import { usePapelAlCostado } from "@/components/admin/documentos/vista-lateral/use-doc-suelto";
 
 
 const BOTON =
@@ -67,10 +68,11 @@ export default function GtfDocumentosModal({
   const [vista, setVista] = useState<PlanDocumentosVista | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [elegidos, setElegidos] = useState<Set<string>>(new Set());
-  const [verId, setVerId] = useState<string | null>(null);
   const [enviar, setEnviar] = useState(false);
   const [imprimiendo, setImprimiendo] = useState(false);
   const [papeles, setPapeles] = useState<ArchivoDelPlan[]>([]);
+  /* Un clic en un papel = verlo al costado de la lista (Brandon 31-10); «Abrir» o doble clic, la ventana grande. */
+  const lado = usePapelAlCostado();
 
   useEffect(() => {
     if (!planId) return;
@@ -125,6 +127,7 @@ export default function GtfDocumentosModal({
       open
       onClose={onClose}
       variant="wide"
+      size={lado.id ? "xl" : undefined}
       icon={FolderOpen}
       title={planId ? "Documentos del permiso" : "Documentos de la guía"}
       /* El código del permiso va acá y no en el título: a 42rem el título largo se cortaba (08-10). */
@@ -178,13 +181,22 @@ export default function GtfDocumentosModal({
         ) : undefined
       }
     >
-      <div className="space-y-3 px-5 py-4 sm:px-6">
+      <PapelAlCostado
+        lado={lado}
+        cerradoClassName="space-y-3 px-5 py-4 sm:px-6"
+        onEnviar={(id) => {
+          setElegidos(new Set([id]));
+          lado.cerrar();
+          setEnviar(true);
+        }}
+      >
+        <div className="space-y-3">
         {sinPapeles ? (
           <p className="text-sm text-[var(--text-secondary)]">
             Guía anulada: ya no recibe papeles. Los que tenía siguen en Documentos.
           </p>
         ) : (
-          <GtfPapelesDeLaGuia gtf={gtfNumber} onArchivos={setPapeles} onCambio={onCambioPapeles} />
+          <GtfPapelesDeLaGuia gtf={gtfNumber} onArchivos={setPapeles} onCambio={onCambioPapeles} onVer={lado.abrir} />
         )}
 
         {!planId ? (
@@ -222,7 +234,7 @@ export default function GtfDocumentosModal({
             elegidos={elegidos}
             imprimiendo={imprimiendo}
             onAlternar={alternar}
-            onVer={setVerId}
+            onVer={(id) => lado.abrir(id, todos.map((a) => a.documentId))}
             onDescargar={(a) => descargar([a])}
             onImprimir={(a) => void imprimir([a])}
           />
@@ -236,8 +248,8 @@ export default function GtfDocumentosModal({
             onCerrar={() => setEnviar(false)}
           />
         )}
-      </div>
-      <VistaPreviaDoc docId={verId} onClose={() => setVerId(null)} />
+        </div>
+      </PapelAlCostado>
     </AdminModal>
   );
 }

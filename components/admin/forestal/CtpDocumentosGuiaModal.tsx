@@ -17,7 +17,9 @@
 
 import { FolderOpen } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { usePapelAlCostado } from "@/components/admin/documentos/vista-lateral/use-doc-suelto";
 import CtpDocumentosGuiaCasilleros from "./CtpDocumentosGuiaCasilleros";
+import PapelAlCostado from "./PapelAlCostado";
 
 export interface CtpDocumentosGuiaModalProps {
   gtf: string;
@@ -37,6 +39,8 @@ export default function CtpDocumentosGuiaModal({
   onCambio,
   onArmarGtf,
 }: CtpDocumentosGuiaModalProps) {
+  /* Un clic en un papel = verlo al costado de los casilleros (Brandon 31-10). */
+  const lado = usePapelAlCostado();
   return (
     <AdminModal
       open
@@ -45,11 +49,17 @@ export default function CtpDocumentosGuiaModal({
       description={contexto}
       icon={FolderOpen}
       variant="wide"
+      size={lado.id ? "xl" : undefined}
       claveVentana="ctp-documentos-guia"
     >
-      <div className={MODAL_BODY}>
-        <CtpDocumentosGuiaCasilleros gtf={gtf} onCambio={onCambio} onArmarGtf={onArmarGtf} />
-      </div>
+      <PapelAlCostado lado={lado} cerradoClassName={MODAL_BODY}>
+        <CtpDocumentosGuiaCasilleros
+          gtf={gtf}
+          onCambio={onCambio}
+          onArmarGtf={onArmarGtf}
+          onVer={(d, lista) => lado.abrir(d.id, lista.map((x) => x.id))}
+        />
+      </PapelAlCostado>
     </AdminModal>
   );
 }
