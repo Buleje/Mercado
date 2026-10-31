@@ -267,7 +267,8 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
           // history no disponible
         }
       }
-      setTab(deLaUrl?.tab ?? INICIO);
+      // 30-10: popstate llega mientras Next dibuja su Router; el setState va en microtask (si no: «Cannot update a component while rendering … Router»).
+      queueMicrotask(() => setTab(deLaUrl?.tab ?? INICIO));
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);

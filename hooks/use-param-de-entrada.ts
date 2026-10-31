@@ -36,7 +36,9 @@ export function useParamDeEntrada(
       aplicarRef.current(valor);
     };
     revisar();
-    window.addEventListener("popstate", revisar);
-    return () => window.removeEventListener("popstate", revisar);
+    // 30-10: popstate llega mientras Next dibuja su Router; aplicar cambia estado, va en microtask.
+    const onPop = () => queueMicrotask(revisar);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, [param]);
 }

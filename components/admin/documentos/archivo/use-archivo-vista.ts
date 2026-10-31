@@ -109,10 +109,12 @@ export function useArchivoVista() {
 
   /** Atrás/adelante: la carpeta y la etiqueta las dicta la URL, igual que el modo. */
   useEffect(() => {
-    const onPop = () => {
-      setActiveFolderIdRaw(leerCarpetaDeUrl());
-      setEtiquetaFiltroRaw(leerEtiquetaDeUrl());
-    };
+    // 30-10: popstate llega mientras Next dibuja su Router; los setState van en microtask.
+    const onPop = () =>
+      queueMicrotask(() => {
+        setActiveFolderIdRaw(leerCarpetaDeUrl());
+        setEtiquetaFiltroRaw(leerEtiquetaDeUrl());
+      });
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);

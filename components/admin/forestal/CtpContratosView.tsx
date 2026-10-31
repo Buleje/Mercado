@@ -54,7 +54,8 @@ export default function CtpContratosView() {
   /* El «atrás» del navegador, y el salto desde el chip de la banda con el
      libro ya abierto (`abrirFichaDelPermiso` dispara un popstate). */
   useEffect(() => {
-    const onPop = () => setElegido(contratoDeUrl());
+    // 30-10: popstate llega mientras Next dibuja su Router; el setState va en microtask.
+    const onPop = () => queueMicrotask(() => setElegido(contratoDeUrl()));
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);

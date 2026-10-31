@@ -609,11 +609,13 @@ export default function TiendasClient({
         softRetry();
       }
     };
-    window.addEventListener("popstate", softRetry);
+    // 30-10: popstate llega mientras Next dibuja su Router; softRetry cambia estado, va en microtask.
+    const onPop = () => queueMicrotask(softRetry);
+    window.addEventListener("popstate", onPop);
     window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
-      window.removeEventListener("popstate", softRetry);
+      window.removeEventListener("popstate", onPop);
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisible);
     };

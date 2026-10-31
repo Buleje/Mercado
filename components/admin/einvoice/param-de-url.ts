@@ -34,7 +34,9 @@ export function useParamsDeUnaVez(nombres: readonly string[], alLeer: (valores: 
       cb.current(valores);
     };
     leer();
-    window.addEventListener("popstate", leer);
-    return () => window.removeEventListener("popstate", leer);
+    // 30-10: popstate llega mientras Next dibuja su Router; el callback cambia estado, va en microtask.
+    const onPop = () => queueMicrotask(leer);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, [clave]);
 }

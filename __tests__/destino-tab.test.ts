@@ -228,10 +228,10 @@ describe("useAdminTabs con alias (camino del panel)", () => {
     expect(aviso).toHaveBeenCalledWith(expect.any(String), { id: "zzz-test-nav", fuente: "navigateTab" });
   });
 
-  it("popstate con un alias en la URL (lo escribe irAEnlace) corrige la entrada", () => {
+  it("popstate con un alias en la URL (lo escribe irAEnlace) corrige la entrada", async () => {
     ir("/admin?tab=inventario");
     const { result } = renderHook(() => useAdminTabs(() => undefined));
-    act(() => {
+    await act(async () => {
       ir("/admin?tab=demand-prediction&cliente=c9");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });

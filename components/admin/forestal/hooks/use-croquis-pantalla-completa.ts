@@ -30,7 +30,8 @@ export function useCroquisPantallaCompleta() {
 
   useEffect(() => {
     if (!abierta) return;
-    const alAtras = () => { empujada.current = false; setAbierta(false); };
+    // 30-10: popstate llega mientras Next dibuja su Router; el setState va en microtask.
+    const alAtras = () => { empujada.current = false; queueMicrotask(() => setAbierta(false)); };
     window.addEventListener("popstate", alAtras);
     return () => window.removeEventListener("popstate", alAtras);
   }, [abierta]);

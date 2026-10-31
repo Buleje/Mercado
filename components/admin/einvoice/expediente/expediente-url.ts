@@ -28,8 +28,10 @@ export function useExpedienteDeLaUrl() {
   useEffect(() => {
     const sync = () => setRef(leer());
     sync();
-    window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
+    // 30-10: popstate llega mientras Next dibuja su Router; el setState va en microtask.
+    const onPop = () => queueMicrotask(sync);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
   const cerrar = useCallback(() => {
     const url = new URL(window.location.href);

@@ -21,7 +21,8 @@ export function usePiezaActiva(ids: readonly string[]): { activa: string | null;
   const [pedida, setPedida] = useState<string | null>(leerDeLaUrl);
 
   useEffect(() => {
-    const alVolver = () => setPedida(leerDeLaUrl());
+    // 30-10: popstate llega mientras Next dibuja su Router; el setState va en microtask.
+    const alVolver = () => queueMicrotask(() => setPedida(leerDeLaUrl()));
     window.addEventListener("popstate", alVolver);
     return () => window.removeEventListener("popstate", alVolver);
   }, []);

@@ -121,7 +121,8 @@ export default function CotizacionesModule() {
       if (url.searchParams.get("sub") !== "nueva") return;
       url.searchParams.set("sub", "en-curso");
       window.history.replaceState(window.history.state, "", url.toString());
-      abrirForm();
+      // 30-10: popstate llega mientras Next dibuja su Router; el setState va en microtask (si no: «Cannot update a component while rendering … Router»).
+      queueMicrotask(abrirForm);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);

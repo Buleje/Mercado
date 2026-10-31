@@ -140,7 +140,9 @@ export function useAbrirDesdeUrl({ documents, loading, preview, setPreview, setB
       if (q) setBuscar(q);
     };
     aplicar();
-    window.addEventListener("popstate", aplicar);
-    return () => window.removeEventListener("popstate", aplicar);
+    // 30-10: popstate llega mientras Next dibuja su Router; aplicar cambia estado, va en microtask.
+    const onPop = () => queueMicrotask(aplicar);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, [setBuscar]);
 }

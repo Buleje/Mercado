@@ -72,8 +72,10 @@ export function usePermisoDeRolliza(bloques: readonly BloqueRolliza[]) {
   useEffect(() => {
     const releer = () => setPedido(leerUrl());
     releer();
-    window.addEventListener("popstate", releer);
-    return () => window.removeEventListener("popstate", releer);
+    // 30-10: popstate llega mientras Next dibuja su Router; el setState va en microtask.
+    const onPop = () => queueMicrotask(releer);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
   const grupos = useMemo(() => gruposDePermiso(bloques), [bloques]);

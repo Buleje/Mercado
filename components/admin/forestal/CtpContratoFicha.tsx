@@ -82,7 +82,8 @@ function useSeccionDeFicha(): [SeccionFicha, (s: SeccionFicha) => void] {
     () => seccionDeUrl() ?? SECCION_FICHA_DEFAULT,
   );
   useEffect(() => {
-    const onPop = () => setSeccion(seccionDeUrl() ?? SECCION_FICHA_DEFAULT);
+    // 30-10: popstate llega mientras Next dibuja su Router; el setState va en microtask.
+    const onPop = () => queueMicrotask(() => setSeccion(seccionDeUrl() ?? SECCION_FICHA_DEFAULT));
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);

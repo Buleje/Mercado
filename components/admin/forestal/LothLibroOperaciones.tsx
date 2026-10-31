@@ -375,8 +375,10 @@ export default function LothLibroOperaciones() {
       }
     };
     leer();
-    window.addEventListener("popstate", leer);
-    return () => window.removeEventListener("popstate", leer);
+    // 30-10: popstate llega mientras Next dibuja su Router; leer cambia estado, va en microtask.
+    const onPop = () => queueMicrotask(leer);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
   /**
