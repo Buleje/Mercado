@@ -1,5 +1,6 @@
 import "server-only";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetasSistemaDB } from "@/lib/db/carpetas-sistema.db";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
 import { logger } from "@/lib/logger";
 import { horaLimaParaArchivo, nombreCarpetaCamara } from "@/lib/camaras/personas-drive.server";
@@ -66,9 +67,7 @@ function olvidar(tenantId: string): void {
 
 async function asegurarCarpetaAsistencia(tenantId: string): Promise<string> {
   return conMemoria(`${tenantId}|asistencia`, async () => {
-    const ruta = CARPETA_ASISTENCIA.join("/");
-    const { idPorRuta } = await DocumentsDB.createFolderTree(tenantId, { parentId: null, rutas: [ruta] });
-    const id = idPorRuta[ruta];
+    const id = await CarpetasSistemaDB.carpetaDeRuta(tenantId, "camaras", CARPETA_ASISTENCIA);
     if (!id) throw new Error("carpeta_asistencia_no_creada");
     const carpeta = (await DocumentsDB.listFolders(tenantId)).find((f) => f.id === id);
     if (carpeta && carpeta.allowedRoles.length === 0) {

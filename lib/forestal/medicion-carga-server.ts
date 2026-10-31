@@ -14,6 +14,7 @@ import "server-only";
  * así aparecen en los papeles de la guía sin subirlas dos veces.
  */
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetasSistemaDB } from "@/lib/db/carpetas-sistema.db";
 import { ForestMedicionCargaDB } from "@/lib/db/forest-medicion-carga.db";
 import { auditCtp } from "./ctp-audit";
 import { CtpGuiaDocumentosDB, type DatosDeGuia } from "@/lib/db/ctp-guia-documentos.db";
@@ -62,9 +63,8 @@ export function nombreDeFotoDeCarga(c: Pick<CargaMedida, "filas" | "creada">, ti
 }
 
 async function carpetaId(tenantId: string, ruta: string[]): Promise<string | null> {
-  const r = ruta.join("/");
   try {
-    return (await DocumentsDB.createFolderTree(tenantId, { rutas: [r] })).idPorRuta[r] ?? null;
+    return await CarpetasSistemaDB.carpetaDeRuta(tenantId, "guias", ruta);
   } catch (e) {
     /* Sin carpeta va a la raíz: perder la foto por la carpeta sería cambiar lo
        importante por lo accesorio (mismo criterio que los papeles de la guía). */

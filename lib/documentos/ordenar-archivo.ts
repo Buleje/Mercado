@@ -24,6 +24,7 @@ import { CARPETA_PERSONAS } from "@/lib/camaras/personas";
 import { CARPETA_ASISTENCIA } from "@/lib/rrhh/asistencia-fotos";
 import { CARPETA_GUIAS } from "@/lib/forestal/documentos-guia";
 import { RAIZ_DRIVE_LOTH } from "@/lib/forestal/plan-documentos-tipos";
+import { esTagDeSistema } from "@/lib/documentos/carpetas-del-sistema";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,8 @@ export interface CarpetaParaOrdenar {
   id: string;
   name: string;
   parentId: string | null;
+  /** Etiquetas de la carpeta: `sistema:*` la marca como raíz del sistema aunque esté movida. */
+  tags?: readonly string[] | null;
   /** Documentos adentro CONTANDO la papelera y las fotos de las cámaras. */
   documentos: number;
   subcarpetas: number;
@@ -351,6 +354,20 @@ const RAICES = new Set(RAICES_DEL_SISTEMA.map(plegar));
 /** Carpetas que nacieron hace menos de esto se respetan: la acabas de crear para llenarla. */
 const RESPIRO_CARPETA_MS = 24 * 3600_000;
 
+/** La carpeta, o una madre, lleva la marca `sistema:*` (raíz del sistema movida a otra carpeta). */
+function cuelgaDeRaizEtiquetada(id: string, carpetas: ReadonlyMap<string, CarpetaParaOrdenar>): boolean {
+  const vistas = new Set<string>();
+  let actual: string | null = id;
+  while (actual && !vistas.has(actual) && vistas.size < 200) {
+    vistas.add(actual);
+    const c = carpetas.get(actual);
+    if (!c) return false;
+    if ((c.tags ?? []).some(esTagDeSistema)) return true;
+    actual = c.parentId;
+  }
+  return false;
+}
+
 // ── Plan ─────────────────────────────────────────────────────────────────────
 
 const ORDEN_TIPOS: readonly TipoPropuesta[] = ["nombre", "basura", "carpeta", "duplicado", "ia"];
@@ -462,6 +479,7 @@ export function planOrdenar(e: EntradaOrden): PlanOrden {
     if (Number.isFinite(creada) && ahora - creada < RESPIRO_CARPETA_MS) continue;
     const camino = ruta(c.id);
     if (RAICES.has(plegar(camino[0] ?? c.name))) continue;
+    if (cuelgaDeRaizEtiquetada(c.id, carpetas)) continue;
     propuestas.push({
       id: `carpeta:${c.id}`, tipo: "carpeta", objetoId: c.id,
       antes: c.name, despues: "Se borra", motivo: "no tiene papeles ni subcarpetas",

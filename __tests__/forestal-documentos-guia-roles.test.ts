@@ -20,6 +20,7 @@ vi.mock("@/lib/db/documents.db", () => ({
     log: vi.fn(async () => undefined),
   },
 }));
+vi.mock("@/lib/db/carpetas-sistema.db", () => ({ CarpetasSistemaDB: { carpetaDeRuta: vi.fn(async () => "carpeta-1") } }));
 vi.mock("@/lib/documents/storage", () => ({
   buildStoragePath: () => "t/doc/v1/archivo.pdf",
   uploadToStorage: vi.fn(async () => ({ ok: true })),

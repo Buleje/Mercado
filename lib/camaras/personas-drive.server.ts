@@ -1,6 +1,8 @@
 import "server-only";
 import { z } from "zod";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetasSistemaDB } from "@/lib/db/carpetas-sistema.db";
+import { idDeRutaDelSistema } from "@/lib/documentos/carpetas-del-sistema";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
 import { logger } from "@/lib/logger";
 import { limaDateKey, STORE_TIMEZONE } from "@/lib/utils";
@@ -99,9 +101,7 @@ function olvidar(tenantId: string): void {
 /** Crea «Cámaras / Personas» si falta y se asegura de que lleve los roles del video. */
 async function asegurarCarpetaPersonas(tenantId: string): Promise<string> {
   return conMemoria(`${tenantId}|personas`, async () => {
-    const ruta = CARPETA_PERSONAS.join("/");
-    const { idPorRuta } = await DocumentsDB.createFolderTree(tenantId, { parentId: null, rutas: [ruta] });
-    const id = idPorRuta[ruta];
+    const id = await CarpetasSistemaDB.carpetaDeRuta(tenantId, "camaras", CARPETA_PERSONAS);
     if (!id) throw new Error("carpeta_personas_no_creada");
     const carpeta = (await DocumentsDB.listFolders(tenantId)).find((f) => f.id === id);
     // Sin roles = la ve cualquiera con acceso al Drive (cajero incluido): se cierra.
@@ -229,12 +229,9 @@ export async function estadoCarpetaPersonas(
   const hijoDe = (padre: string | null, nombre: string) =>
     carpetas.find((f) => (f.parentId ?? null) === padre && f.name.trim().toLowerCase() === nombre.toLowerCase());
 
-  let actual: string | null = null;
-  for (const nombre of CARPETA_PERSONAS) {
-    const f = hijoDe(actual, nombre);
-    if (!f) return { carpetaId: null, hoy: {} };
-    actual = f.id;
-  }
+  // «Cámaras» puede estar movida: se sigue por su marca (`sistema:camaras`).
+  const actual = idDeRutaDelSistema(carpetas, "camaras", CARPETA_PERSONAS);
+  if (!actual) return { carpetaId: null, hoy: {} };
   const hoy: Record<string, number> = {};
   const dia = limaDateKey(cuando);
   for (const c of camaras) {

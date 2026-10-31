@@ -6,6 +6,7 @@ import { auditCtp } from "@/lib/forestal/ctp-audit";
 import type { DbDocument } from "@/lib/types/documents";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import { DocumentsDB } from "./documents.db";
+import { CarpetasSistemaDB } from "./carpetas-sistema.db";
 import { ForestContratoDB } from "./forest-contrato.db";
 import { CtpGuiaDocumentosDB } from "./ctp-guia-documentos.db";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
@@ -753,8 +754,8 @@ export class GuiasGuardadasDB {
       titular: f.titularNombre,
       permiso: f.permisoCodigo,
       gtfNumber: f.gtfNumber,
-    }).join("/");
-    return (await DocumentsDB.createFolderTree(tenantId, { rutas: [ruta] })).idPorRuta[ruta] ?? null;
+    });
+    return CarpetasSistemaDB.carpetaDeRuta(tenantId, "guias", ruta);
   }
 
   /**

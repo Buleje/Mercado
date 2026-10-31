@@ -15,6 +15,7 @@
  */
 
 import { CARPETA_PERSONAS, MOTIVOS_FOTO_PERSONA, MOTIVO_FOTO_PERSONA_LABEL, type MotivoFotoPersona } from "./personas";
+import { idDeRutaDelSistema } from "@/lib/documentos/carpetas-del-sistema";
 import type { PersonasPorHora } from "./resumen";
 import { leerCajasGuardadas, type CajaGuardada } from "./apariencia";
 
@@ -74,6 +75,7 @@ export interface CarpetaGaleria {
   id: string;
   parentId: string | null;
   name: string;
+  tags?: readonly string[] | null;
 }
 
 export interface DocGaleria {
@@ -111,12 +113,8 @@ const mismo = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLo
  * `null` si no existe en las carpetas que el rol ve. No crea nada.
  */
 export function arbolPersonas(carpetas: readonly CarpetaGaleria[]): { personasId: string; ids: string[] } | null {
-  let actual: string | null = null;
-  for (const nombre of CARPETA_PERSONAS) {
-    const f = carpetas.find((c) => (c.parentId ?? null) === actual && mismo(c.name, nombre));
-    if (!f) return null;
-    actual = f.id;
-  }
+  // «Cámaras» puede estar movida: se sigue por su marca (`sistema:camaras`).
+  const actual = idDeRutaDelSistema(carpetas, "camaras", CARPETA_PERSONAS);
   if (!actual) return null;
   const hijas = new Map<string, string[]>();
   for (const c of carpetas) {

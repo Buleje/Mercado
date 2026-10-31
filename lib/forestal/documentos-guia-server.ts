@@ -11,6 +11,7 @@ import "server-only";
  */
 import sharp from "sharp";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetasSistemaDB } from "@/lib/db/carpetas-sistema.db";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
 import { analyzeDocumentContent, isAnalyzableMime } from "@/lib/documents/analyze-document";
 import { enColaDeAnalisis } from "@/lib/documents/cola-analisis";
@@ -106,11 +107,10 @@ export async function guardarDocumentoDeGuia(o: GuardarDocGuia): Promise<DbDocum
     titular: o.guia.titular,
     permiso: o.guia.permiso,
     gtfNumber: o.guia.gtfNumber,
-  }).join("/");
+  });
   let folderId: string | null = null;
   try {
-    folderId =
-      (await DocumentsDB.createFolderTree(tenantId, { rutas: [ruta] })).idPorRuta[ruta] ?? null;
+    folderId = await CarpetasSistemaDB.carpetaDeRuta(tenantId, "guias", ruta);
   } catch (e) {
     /* Sin carpeta se guarda en la raíz: perder el papel por la carpeta sería
        cambiar lo importante por lo accesorio. */

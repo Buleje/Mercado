@@ -19,6 +19,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { logger } from "@/lib/logger";
 import { CARPETA_GUIAS } from "./documentos-guia";
+import { RAICES_SISTEMA } from "@/lib/documentos/carpetas-del-sistema";
 
 /** Dónde viven las guías del libro. Un solo nombre, para que no se dispersen:
  *  vive en `documentos-guia.ts` porque el servidor también archiva ahí (ADR-438). */
@@ -28,6 +29,7 @@ interface CarpetaDrive {
   id: string;
   name: string;
   parentId?: string | null;
+  tags?: string[];
 }
 
 const normalizar = (s: string) =>
@@ -46,14 +48,18 @@ export async function carpetaDelExpediente(nombre = CARPETA_GUIAS): Promise<stri
     });
     if (r.ok) {
       const { folders = [] } = (await r.json()) as { folders?: CarpetaDrive[] };
-      const ya = folders.find((f) => normalizar(f.name) === normalizar(nombre) && !f.parentId);
+      // La marca del sistema manda (Brandon pudo mover la carpeta); si no, la de la raíz con su nombre.
+      const marca = nombre === CARPETA_GUIAS ? RAICES_SISTEMA.guias.tag : null;
+      const ya =
+        (marca ? folders.find((f) => f.tags?.includes(marca)) : undefined) ??
+        folders.find((f) => normalizar(f.name) === normalizar(nombre) && !f.parentId);
       if (ya) return ya.id;
     }
     const c = await fetch("/api/admin/documents/folders", {
       method: "POST",
       credentials: "include",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ name: nombre }),
+      body: JSON.stringify({ name: nombre, ...(nombre === CARPETA_GUIAS ? { tags: [RAICES_SISTEMA.guias.tag] } : {}) }),
     });
     if (!c.ok) return null;
     const { folder } = (await c.json()) as { folder?: CarpetaDrive };

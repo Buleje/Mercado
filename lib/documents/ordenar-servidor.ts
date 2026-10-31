@@ -6,6 +6,7 @@ import {
   type DatosParaOrdenar,
   type PapelDeOrdenar,
 } from "@/lib/db/documents.db";
+import { esTagDeSistema } from "@/lib/documentos/carpetas-del-sistema";
 import { contenidoIdentico } from "@/lib/documents/contenido-identico";
 import { isPrivilegedRole, ROL_CANDADO_DUENO, veTodoElDrive } from "@/lib/documents/doc-access";
 import {
@@ -123,11 +124,15 @@ export interface OpcionesPlan {
 }
 
 export async function armarPlan(tenantId: string, role: string, o: OpcionesPlan = {}): Promise<PlanOrden> {
-  const [datos, identicos] = await Promise.all([
+  const [datos, identicos, conMarca] = await Promise.all([
     DocumentsDB.datosParaOrdenar(tenantId, role),
     o.duplicados ? identicosDe(tenantId, role, o.repetidosDe) : Promise.resolve([]),
+    // `datosParaOrdenar` no trae etiquetas: se necesitan las `sistema:*` (raíz del sistema movida).
+    DocumentsDB.listFolders(tenantId, role),
   ]);
-  return planOrdenar(entradaDesdeDatos(datos, { identicos, descartadas: new Set(o.descartadas ?? []) }));
+  const marcas = new Map(conMarca.filter((f) => f.tags.some(esTagDeSistema)).map((f) => [f.id, f.tags]));
+  const entrada = entradaDesdeDatos(datos, { identicos, descartadas: new Set(o.descartadas ?? []) });
+  return planOrdenar({ ...entrada, carpetas: entrada.carpetas.map((c) => (marcas.has(c.id) ? { ...c, tags: marcas.get(c.id) } : c)) });
 }
 
 // ── Aplicar ──────────────────────────────────────────────────────────────────

@@ -106,6 +106,8 @@ vi.mock("@/lib/db/documents.db", () => ({
     log: async () => undefined,
   },
 }));
+// La raíz de guías se busca por su etiqueta (`sistema:guias`): sin esto iría a la base real y se colgaría.
+vi.mock("@/lib/db/carpetas-sistema.db", () => ({ CarpetasSistemaDB: { carpetaDeRuta: async () => null, raizDelSistema: async () => "raiz-guias" } }));
 vi.mock("@/lib/documents/storage", () => ({ buildStoragePath: () => "x", uploadToStorage: vi.fn() }));
 vi.mock("@/lib/documents/precalcular-miniatura", () => ({ precalcularMiniatura: vi.fn(async () => undefined) }));
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: H.audit }));

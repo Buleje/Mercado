@@ -5,6 +5,8 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { limaDateKey } from "@/lib/utils";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetasSistemaDB } from "@/lib/db/carpetas-sistema.db";
+import { RAICES_SISTEMA } from "@/lib/documentos/carpetas-del-sistema";
 import { isPrivilegedRole, veTodoElDrive } from "@/lib/documents/doc-access";
 import { invalidarCamposPersonalizados } from "@/lib/db/campos-personalizados.db";
 import { segmentoDeCarpeta } from "@/lib/forestal/documentos-guia";
@@ -260,9 +262,12 @@ async function asegurarRaiz(db: Db, tenantId: string, plan: PlanFila): Promise<{
 
   const [nLibro, nTitular, nPlan] = rutaPropuestaDelPlan(plan);
   let creadas = 0;
-  let libro = (await hijasPorNombre(db, tenantId, null, nLibro))[0];
+  /* «Libro TH» sigue a su carpeta donde esté (etiqueta `sistema:libro-th`); si no
+     hay, la de la raíz con su nombre (se etiqueta) y recién después se crea. */
+  const idLibro = await CarpetasSistemaDB.raizDelSistema(tenantId, "libro-th", db, ROLES_CARPETA);
+  let libro = await db.documentFolder.findFirst({ where: { id: idLibro, tenantId }, select: SELECT_CARPETA });
   if (!libro) {
-    libro = await crearCarpetaDrive(db, tenantId, null, nLibro, []);
+    libro = await crearCarpetaDrive(db, tenantId, null, nLibro, [RAICES_SISTEMA["libro-th"].tag]);
     creadas++;
   }
   let titular = (await hijasPorNombre(db, tenantId, libro.id, nTitular))[0];

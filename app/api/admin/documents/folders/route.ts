@@ -12,6 +12,8 @@ const CreateBody = z.object({
   parentId: z.string().nullable().optional(),
   color: z.string().max(20).optional(),
   icon: z.string().max(40).optional(),
+  /** Solo la marca de carpeta del sistema (`sistema:*`); las etiquetas humanas van por PATCH. */
+  tags: z.array(z.string().max(40).regex(/^sistema:[a-z-]+$/)).max(3).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -48,7 +50,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const folder = await DocumentsDB.createFolder(auth.tenantId, parsed.data, auth.role);
+    const { tags, ...datos } = parsed.data;
+    let folder = await DocumentsDB.createFolder(auth.tenantId, datos, auth.role);
+    if (tags?.length) folder = (await DocumentsDB.updateFolder(auth.tenantId, folder.id, { tags })) ?? folder;
     return NextResponse.json({ folder });
 
   } catch (e) {

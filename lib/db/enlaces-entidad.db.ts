@@ -1,5 +1,7 @@
 import "server-only";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetasSistemaDB } from "@/lib/db/carpetas-sistema.db";
+import type { ClaveSistema } from "@/lib/documentos/carpetas-del-sistema";
 import { buildStoragePath, uploadToStorage } from "@/lib/documents/storage";
 import { CARPETA_ENTIDAD, ROLES_ENTIDAD_SENSIBLE, etiquetasDeEntidad, rutaCarpetaEntidad, tagEntidad, type TipoEntidad } from "@/lib/documentos/enlaces-entidad";
 import { ROL_CANDADO_DUENO } from "@/lib/documents/doc-access";
@@ -21,6 +23,27 @@ export class SubidaFallidaError extends Error {
   }
 }
 
+/** Tipos cuya carpeta cuelga de una raíz que el sistema sigue por etiqueta (donde Brandon la ponga). */
+const RAIZ_SISTEMA_DEL_TIPO: Partial<Record<TipoEntidad, ClaveSistema>> = { permiso: "guias" };
+
+/**
+ * `createFolderTree` de una ruta de entidad. Si el tipo vive bajo una raíz del
+ * sistema («Guías forestales (GTF)»), cuelga de ESA carpeta y no de la raíz por nombre.
+ * `clave` = la ruta tal como la devuelve `idPorRuta`.
+ */
+async function arbolDeRuta(
+  tenantId: string,
+  tipo: TipoEntidad,
+  ruta: readonly string[],
+  rol?: string,
+): Promise<{ idPorRuta: Record<string, string>; clave: string }> {
+  const sistema = RAIZ_SISTEMA_DEL_TIPO[tipo];
+  const raizId = sistema ? await CarpetasSistemaDB.raizDelSistema(tenantId, sistema) : null;
+  const clave = (raizId ? ruta.slice(1) : ruta).join("/");
+  const { idPorRuta } = await DocumentsDB.createFolderTree(tenantId, { parentId: raizId, rutas: [clave] }, rol);
+  return { idPorRuta, clave };
+}
+
 /**
  * EnlacesEntidadDB — orquesta `DocumentsDB` para el cableado único
  * documento↔entidad (tag `<tipo>:<id>` + carpeta por tipo). No toca Prisma:
@@ -31,8 +54,8 @@ export const EnlacesEntidadDB = {
   async carpetaDe(tenantId: string, tipo: TipoEntidad, entidad: Entidad, rol?: string): Promise<string> {
     if (!tenantId) throw new Error("tenantId is required");
     const ruta = rutaCarpetaEntidad(tipo, entidad.nombre, entidad.periodo);
-    const { idPorRuta } = await DocumentsDB.createFolderTree(tenantId, { parentId: null, rutas: [ruta.join("/")] }, rol);
-    const id = idPorRuta[ruta.join("/")];
+    const { idPorRuta, clave } = await arbolDeRuta(tenantId, tipo, ruta, rol);
+    const id = idPorRuta[clave];
     if (!id) throw new Error("folder_not_resolved");
     if (TIPOS_SENSIBLES.has(tipo)) await this.cerrarARolesSensibles(tenantId, tipo, id, rol);
     return id;
@@ -44,8 +67,7 @@ export const EnlacesEntidadDB = {
    * los NOMBRES del árbol aunque no abra el PDF. Idempotente: sólo escribe lo que difiere.
    */
   async cerrarARolesSensibles(tenantId: string, tipo: TipoEntidad, carpetaEntidadId: string, rol?: string): Promise<void> {
-    const raizRuta = CARPETA_ENTIDAD[tipo].join("/");
-    const { idPorRuta } = await DocumentsDB.createFolderTree(tenantId, { parentId: null, rutas: [raizRuta] }, rol);
+    const { idPorRuta, clave: raizRuta } = await arbolDeRuta(tenantId, tipo, CARPETA_ENTIDAD[tipo], rol);
     const objetivo = [...ALLOWED_SENSIBLE].sort().join(",");
     const carpetas = await DocumentsDB.listFolders(tenantId);
     for (const id of [idPorRuta[raizRuta], carpetaEntidadId]) {

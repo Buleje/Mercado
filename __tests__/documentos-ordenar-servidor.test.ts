@@ -12,6 +12,7 @@ vi.mock("@/lib/documents/contenido-identico", () => ({ contenidoIdentico: vi.fn(
 
 const db = vi.hoisted(() => ({
   datosParaOrdenar: vi.fn(),
+  listFolders: vi.fn(async () => []),
   gruposDuplicados: vi.fn(async () => []),
   update: vi.fn(),
   log: vi.fn(async () => undefined),

@@ -17,6 +17,7 @@ import { hrefDe } from "@/lib/admin/enlaces-panel";
 import { CARPETA_GUIAS } from "@/lib/forestal/documentos-guia";
 import { RAIZ_DRIVE_LOTH } from "@/lib/forestal/plan-documentos-tipos";
 import { CARPETA_ENTIDAD } from "./enlaces-entidad";
+import { RAICES_SISTEMA, esTagDeSistema } from "./carpetas-del-sistema";
 import { leerVinculo, nombrePorDefecto, vinculosDeCarpeta, type NombreTercero, type TipoTercero } from "./terceros-vinculo";
 
 /** Igual que `CARPETA_CARGAS` (`lib/forestal/medicion-carga-server.ts`, que es server-only). */
@@ -112,6 +113,14 @@ function delPlan(f: CarpetaParaVinculo): VinculoSistema | null {
 
 /** La carpeta (o una madre) es de un módulo por su ruta. */
 function delModulo(ruta: readonly CarpetaParaVinculo[]): VinculoSistema | null {
+  /* Si una carpeta de la ruta lleva la marca `sistema:*` (Brandon la movió dentro
+     de otra), la ruta empieza ahí y esa carpeta cuenta con su nombre de siempre. */
+  const iMarca = ruta.findIndex((c) => (c.tags ?? []).some(esTagDeSistema));
+  if (iMarca > 0) {
+    const m = ruta[iMarca].tags?.find(esTagDeSistema);
+    const base = (Object.values(RAICES_SISTEMA).find((r) => r.tag === m)?.nombre) ?? ruta[iMarca].name;
+    return delModulo([{ ...ruta[iMarca], name: base, parentId: null }, ...ruta.slice(iMarca + 1)]);
+  }
   const nombres = ruta.map((c) => c.name.trim());
   for (const r of RUTAS_MODULO) {
     if (nombres.length < r.ruta.length || !r.ruta.every((n, i) => nombres[i] === n)) continue;
@@ -145,7 +154,7 @@ export function vinculosConMarca(f: CarpetaParaVinculo): VinculoSistema[] {
   const lista = ligados(f);
   const plan = delPlan(f);
   if (plan) lista.push(plan);
-  if (!plan && !f.parentId && RAICES_CON_MARCA.has(f.name.trim())) {
+  if (!plan && (!f.parentId || (f.tags ?? []).some(esTagDeSistema)) && RAICES_CON_MARCA.has(f.name.trim())) {
     const m = delModulo([f]);
     if (m) lista.push(m);
   }

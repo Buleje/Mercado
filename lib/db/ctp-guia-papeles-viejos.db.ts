@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { DocumentsDB } from "./documents.db";
+import { CarpetasSistemaDB } from "./carpetas-sistema.db";
+import { RAICES_SISTEMA, mismoNombre } from "@/lib/documentos/carpetas-del-sistema";
 import { canRoleSeeEnCadena, rolesDeLaCadena } from "@/lib/documents/doc-access";
 import { CtpGuiaDocumentosDB } from "./ctp-guia-documentos.db";
 import {
@@ -52,11 +54,12 @@ export class CtpGuiaPapelesViejosDB {
     if (!tenantId) throw new Error("tenantId is required");
     const carpetas = await prisma.documentFolder.findMany({
       where: { tenantId },
-      select: { id: true, name: true, parentId: true, allowedRoles: true },
+      select: { id: true, name: true, parentId: true, allowedRoles: true, tags: true },
     });
-    const raiz = carpetas.find(
-      (c) => c.parentId === null && c.name.trim().toLowerCase() === CARPETA_GUIAS.toLowerCase(),
-    );
+    // La que lleva la etiqueta `sistema:guias` (esté donde esté); si no, la de la raíz con el nombre de siempre.
+    const raiz =
+      carpetas.find((c) => c.tags.includes(RAICES_SISTEMA.guias.tag)) ??
+      carpetas.find((c) => c.parentId === null && mismoNombre(c.name, CARPETA_GUIAS));
     if (!raiz) return [];
     const anios = carpetas.filter((c) => c.parentId === raiz.id && ES_ANIO.test(c.name.trim()));
     const meses = carpetas.filter(
@@ -134,12 +137,13 @@ export class CtpGuiaPapelesViejosDB {
     const papeles = await CtpGuiaPapelesViejosDB.pendientes(tenantId);
     if (papeles.length === 0) return { movidos: 0, carpetasQuitadas: 0 };
 
-    const rutas = [...new Set(papeles.map((p) => p.destino.join("/")))];
-    const { idPorRuta } = await DocumentsDB.createFolderTree(tenantId, { rutas });
+    const rutas = [...new Set(papeles.map((p) => p.destino.slice(1).join("/")))];
+    const raizId = await CarpetasSistemaDB.raizDelSistema(tenantId, "guias");
+    const { idPorRuta } = await DocumentsDB.createFolderTree(tenantId, { parentId: raizId, rutas });
     let movidos = 0;
     const origenes = new Set<string>();
     for (const p of papeles) {
-      const folderId = idPorRuta[p.destino.join("/")];
+      const folderId = idPorRuta[p.destino.slice(1).join("/")];
       if (!folderId) continue;
       const doc = await DocumentsDB.getById(tenantId, p.id);
       if (!doc) continue;
