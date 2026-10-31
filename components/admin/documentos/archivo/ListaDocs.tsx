@@ -16,12 +16,13 @@ import { StatusControl } from "./estado-doc";
 import { tagsVisibles } from "./compartido";
 import { formatDateShort } from "@/lib/format";
 import { CodigoChip } from "../CodigoDocumento";
+import { marcarRegistradoConAviso } from "../menu-registrado";
 import { codigoFisicoPendiente } from "@/lib/documentos/codigo-documento";
 import type { ModeloArchivo } from "./use-archivo";
 export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
   const { selectedIds, setSelectedIds, displayDocs, clearSelection, sortBy, setSortBy, colsVisibles,
     explorandoVista, ex, abrirCarpetaExp, dropDocOnFolder, abrirMenuEn, setPreview, toggleSelect, renaming,
-    setRenaming, commitRename, startRename, terminosBusqueda, patch, filterMode, folderById, setFilterMode,
+    setRenaming, commitRename, marcarCodigoFisico, terminosBusqueda, patch, filterMode, folderById, setFilterMode,
     setActiveFolderId, menuDe, panelPrevia } = arch;
   const base = explorandoVista ? ex.contenido.docs : displayDocs;
   // Filtros de columna sobre lo que ya dejaron la búsqueda y los filtros de arriba; el orden sigue siendo el de «Ordenar por».
@@ -133,7 +134,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                       <tr
                         key={doc.id}
                         onContextMenu={(e) => abrirMenuEn(e, doc.id)}
-                        onClick={(e) => { if (panelPrevia.visible && !(e.target as HTMLElement).closest("button, input, a, select")) panelPrevia.mostrar(doc); }}
+                        onClick={(e) => { if (!(e.target as HTMLElement).closest("button, input, a, select")) panelPrevia.mostrar(doc); }}
                         onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest("button, input, a")) setPreview(doc); }}
                         className={cn("", (selectedIds.has(doc.id) || panelPrevia.enPanelId === doc.id) && "bg-primary/5")}
                       >
@@ -160,7 +161,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                             />
                           ) : (
                             <div className="flex min-w-0 items-center gap-2">
-                            <button onClick={() => panelPrevia.mostrar(doc)} onDoubleClick={(e) => { e.preventDefault(); startRename(doc); }} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors" title="Doble-click para renombrar">
+                            <button onClick={() => panelPrevia.mostrar(doc)} onDoubleClick={(e) => { e.preventDefault(); setPreview(doc); }} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors" title="Clic: al costado · doble clic: completo · renombrar: ⋯ › Renombrar">
                               <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg shrink-0", bg)}>
                                 <Icon className={cn("h-4 w-4", tint)} />
                               </span>
@@ -172,7 +173,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                               <ExpiryBadge expiresAt={doc.expiresAt} />
                             </button>
                             {/* ADR-516 — fuera del botón del nombre: clic = copiar el código. */}
-                            <CodigoChip doc={doc} />
+                            <CodigoChip doc={doc} onMarcar={() => marcarRegistradoConAviso(doc, marcarCodigoFisico, true)} />
                             </div>
                           )}
                           {/* Fuera del botón a propósito: un <p> adentro de un

@@ -12,6 +12,18 @@ import type { HastaArchivoAcciones } from "./use-archivo-acciones";
 import { esEsencial } from "@/lib/documentos/esenciales";
 import { marcarEsenciales } from "../esenciales/marcar-esencial";
 import { extrasRegistrado } from "../menu-registrado";
+import { toast } from "sonner";
+
+/** Lo que se guardó, en un aviso; si falló, el hook ya revirtió la lista y aquí se dice. */
+function avisar(pedido: Promise<unknown>, hecho: string): void {
+  pedido
+    .then(() => toast.success(hecho))
+    .catch((err) => {
+      console.warn("[documentos] no se pudo guardar el cambio", err);
+      toast.error("No se pudo guardar. Prueba otra vez.");
+    });
+}
+
 export function useArchivoMenu(previo: HastaArchivoAcciones) {
   const { setFilterMode, setActiveFolderId, setExpandedFolders, vistaConDatos, filterMode, setSoloVencimiento,
     setPreview, handleAnalyze, handleDownload, startRename, setMovingDoc, setTagDocId, setWhatsappDoc,
@@ -65,8 +77,9 @@ export function useArchivoMenu(previo: HastaArchivoAcciones) {
     onRotate: () => void handleRotate(doc),
     onSplit: () => void handleSplit(doc),
     onEditPages: () => setPageEditorDoc(doc),
-    onToggleFav: () => void patch(doc.id, { favorite: !doc.favorite }),
-    onSetStatus: (st) => void patch(doc.id, { status: st }),
+    // Con aviso (31-10): el menú se cerraba sin decir nada y parecía que no hizo nada.
+    onToggleFav: () => avisar(patch(doc.id, { favorite: !doc.favorite }), doc.favorite ? "Quitado de favoritos" : "Agregado a favoritos"),
+    onSetStatus: (st) => avisar(patch(doc.id, { status: st }), st === "none" ? "Sin estado" : `Estado: ${STATUS_META[st]?.label ?? st}`),
     onDelete: async () => {
       if (!(await confirm({ title: `¿Eliminar "${doc.name}"?`, intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
       // Acá había un `patch(doc.id, {})` "para calentar el camino": un PATCH

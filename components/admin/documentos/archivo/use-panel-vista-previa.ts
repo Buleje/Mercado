@@ -62,7 +62,9 @@ export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
   const lugar = `${filterMode}:${activeFolderId ?? ""}:${view}`;
   const [elegido, setElegido] = useState<{ id: string; lugar: string } | null>(null);
 
-  const visible = ancho && prendido && filterMode !== "trash" && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode);
+  /** Hay lugar para el panel en esta pantalla y en esta vista (prendido o no). */
+  const cabe = ancho && filterMode !== "trash" && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode);
+  const visible = cabe && prendido;
   const sel = ex.propsVista?.sel ?? null;
   const grupos = ex.propsVista?.grupos;
 
@@ -108,13 +110,18 @@ export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
     return { tipo: "nada" };
   }, [sel, folderById, ex.docPorId, selectedIds, displayDocs, elegido, lugar]);
 
-  /** Clic en una tarjeta o fila: al panel si está a la vista; si no, la ventana de siempre. */
+  /**
+   * Clic en una tarjeta o fila: al panel (Brandon 31-10: «1 clic = la vista al costado, doble clic =
+   * completo»). Si lo apagaste con Alt+P, el clic lo vuelve a prender; la ventana grande queda para
+   * el doble clic y para la pantalla angosta (celular), donde el panel no cabe.
+   */
   const mostrar = useCallback(
     (doc: DbDocument) => {
-      if (visible) setElegido({ id: doc.id, lugar });
-      else setPreview(doc);
+      if (!cabe) { setPreview(doc); return; }
+      if (!prendido) { setPrendido(true); guardar(CLAVE_PRENDIDO, "1"); }
+      setElegido({ id: doc.id, lugar });
     },
-    [visible, lugar, setPreview],
+    [cabe, prendido, lugar, setPreview],
   );
 
   const docActual = objetivo.tipo === "doc" ? objetivo.doc : null;
@@ -181,7 +188,7 @@ export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
       /** El panel se dibuja (pantalla ancha + prendido + una vista con archivos). */
       visible,
       /** Hay lugar para él: el menú Ver ofrece prenderlo. */
-      disponible: ancho && filterMode !== "trash" && !VISTAS_CON_CONTENIDO_PROPIO.has(filterMode),
+      disponible: cabe,
       prendido,
       alternar,
       objetivo,

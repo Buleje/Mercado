@@ -1,10 +1,11 @@
 "use client";
 
 import { DocCard } from "./DocCard";
+import { marcarRegistradoConAviso } from "../menu-registrado";
 import type { ModeloArchivo } from "./use-archivo";
 export default function GrillaDocs({ arch }: { arch: ModeloArchivo }) {
   const { displayDocs, tarjetasVisibles, selectedIds, renaming, terminosBusqueda, filterMode, folderById,
-    toggleSelect, setPreview, filtros, patch, reloadAllTags, menuDe, abrirMenuEn, startRename, commitRename,
+    toggleSelect, setPreview, filtros, patch, reloadAllTags, menuDe, abrirMenuEn, commitRename, marcarCodigoFisico,
     setRenaming, setDraggingDocId, setDragOverFolderId, draggingDocId, setTarjetasVisibles, panelPrevia } = arch;
   return (
     <>
@@ -26,6 +27,7 @@ export default function GrillaDocs({ arch }: { arch: ModeloArchivo }) {
                   onPreview={() => panelPrevia.mostrar(doc)}
                   onAbrir={() => setPreview(doc)}
                   enPanel={panelPrevia.enPanelId === doc.id}
+                  onMarcarCodigo={() => marcarRegistradoConAviso(doc, marcarCodigoFisico, true)}
                   tagsActivos={filtros.tags}
                   onPromoteAiTag={(t) => {
                     if (doc.tags.includes(t)) return;
@@ -35,7 +37,6 @@ export default function GrillaDocs({ arch }: { arch: ModeloArchivo }) {
                   onSetStatus={(s) => patch(doc.id, { status: s })}
                   menu={menuDe(doc, "flotante")}
                   onMenuContextual={(e) => abrirMenuEn(e, doc.id)}
-                  onStartRename={() => startRename(doc)}
                   onCommitRename={commitRename}
                   onCancelRename={() => setRenaming(null)}
                   onRenameChange={(v) => setRenaming(renaming ? { ...renaming, value: v } : null)}

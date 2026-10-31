@@ -22,6 +22,7 @@
  *     [--resumen]   (stdout sólo con lo esencial —los evals recortados a 400 caracteres—; el JSON completo igual queda en <salida>/reporte.json) \
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
  *     (sin QA_BASE prueba :3000 y :3001 y usa el que contesta: el dev reiniciado vuelve a veces en :3001) \
+ *     (QA_IP=10.9.0.7 = entrar como otra IP: «login 429» en el panel compilado; el dev en :3001 va con localhost, no 127.0.0.1) \
  *     [--voz-falsa]   (la voz anota cada frase en window.__qaVoz en vez de hablar: verificar «Leer») \
  *     [--candado]   (toma /tmp/bsm-pesado.lock por su cuenta y avisa por stderr cuánto lleva esperándolo;
  *                    si ya lo corres con `flock /tmp/bsm-pesado.lock node …`, lo detecta y no lo pide otra vez)
@@ -327,6 +328,10 @@ if (superadmin) {
 /* `--media-falso` (23-10, grabadora del cubicador): micrófono y cámara de mentira (un pitido
    y un patrón) y el permiso dado, para probar getUserMedia/MediaRecorder sin hardware. */
 const mediaFalso = process.argv.includes("--media-falso");
+/* QA_IP=10.9.0.7 (31-10): el panel compilado (`next start`) frena el login a 20 por hora y por IP, y las
+   sesiones de fondo lo gastan («login 429» trabó 2 corridas). El freno toma la IP de x-forwarded-for:
+   con QA_IP la corrida entra como otra máquina de la red. Sólo para el servidor local. */
+const ipDePrueba = process.env.QA_IP ? { "x-forwarded-for": process.env.QA_IP } : {};
 const browser = await chromium.launch({
   headless: true,
   executablePath: chrome,
@@ -335,7 +340,7 @@ const browser = await chromium.launch({
 const ctx = await browser.newContext({
   viewport: { width: anchos[0] ?? 1280, height: altoVentana },
   ...(mediaFalso ? { permissions: ["microphone", "camera"] } : {}),
-  ...(sesionSa ? { userAgent: sesionSa.userAgent } : { extraHTTPHeaders: { "x-tenant-id": tenant } }),
+  ...(sesionSa ? { userAgent: sesionSa.userAgent } : { extraHTTPHeaders: { "x-tenant-id": tenant, ...ipDePrueba } }),
 });
 if (sesionSa) await ctx.addCookies(sesionSa.cookies);
 // El onboarding tapa el panel y se come los clics. `useOnboardingTrigger` arma

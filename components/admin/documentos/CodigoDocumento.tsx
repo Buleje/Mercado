@@ -65,7 +65,15 @@ export function EtiquetaRegistrado({ doc, className }: { doc: ConCodigo; classNa
  * La pastilla con el código, para la tarjeta y la fila: clic = copiarlo. En
  * coral mientras falta anotarlo en el físico; con ✓ cuando ya está.
  */
-export function CodigoChip({ doc, className }: { doc: ConCodigo; className?: string }) {
+export function CodigoChip({ doc, className, onMarcar }: {
+  doc: ConCodigo;
+  className?: string;
+  /**
+   * Con esto, mientras falta, va al lado «Ya lo anoté»: copiar el código,
+   * escribirlo en la hoja y marcarlo sin abrir el papel (Brandon 31-10).
+   */
+  onMarcar?: () => void;
+}) {
   const codigo = formatoCodigoDocumento(doc.codigo);
   const { copiado, copiar } = useCopiar(codigo);
   if (!codigo) return null;
@@ -95,7 +103,25 @@ export function CodigoChip({ doc, className }: { doc: ConCodigo; className?: str
       {copiado ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Hash className="h-3.5 w-3.5" aria-hidden />}
       {copiado ? "Copiado" : codigo}
     </button>
-    <EtiquetaRegistrado doc={doc} />
+    {pendiente && onMarcar ? (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onMarcar(); }}
+        onDoubleClick={(e) => e.stopPropagation()}
+        title={`Clic cuando ya escribiste ${codigo} en la hoja física: pasa a «Registrado»`}
+        aria-label={`Ya anoté ${codigo} en la hoja física`}
+        data-qa="marcar-registrado"
+        className={button({
+          variant: "secondary",
+          size: "xs",
+          className: "h-auto shrink-0 gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold",
+        })}
+      >
+        <Check className="h-3.5 w-3.5" aria-hidden /> Ya lo anoté
+      </button>
+    ) : (
+      <EtiquetaRegistrado doc={doc} />
+    )}
     </>
   );
 }

@@ -14,11 +14,21 @@ import { FolderChip, ExpiryBadge } from "./piezas-sueltas";
 import { StructuredChip, tagsVisibles } from "./compartido";
 import { CodigoChip } from "../CodigoDocumento";
 
+/**
+ * ¿El clic es de la tarjeta misma? No si vino de un control (botón, casilla, enlace, campo) ni de
+ * algo en un portal: React sube los clics del menú «⋯» por la tarjeta aunque en la página esté afuera.
+ */
+function esDeLaTarjeta(e: React.MouseEvent<HTMLElement>): boolean {
+  const t = e.target as HTMLElement;
+  if (!e.currentTarget.contains(t)) return false;
+  return !t.closest("button, input, textarea, select, a, label, [role=button], [role=menuitem]");
+}
+
 export function DocCard({
   doc, selected, isRenaming, renameValue, terminos, folderNombre,
   onSelect, onPreview, onSetStatus, menu, onMenuContextual,
-  onStartRename, onCommitRename, onCancelRename, onRenameChange,
-  onDragStart, onDragEnd, dragging, tagsActivos, onPromoteAiTag, onAbrir, enPanel = false,
+  onCommitRename, onCancelRename, onRenameChange,
+  onDragStart, onDragEnd, dragging, tagsActivos, onPromoteAiTag, onAbrir, enPanel = false, onMarcarCodigo,
 }: {
   doc: DbDocument;
   selected: boolean;
@@ -30,8 +40,10 @@ export function DocCard({
   folderNombre?: string | null;
   onSelect: () => void;
   onPreview: () => void;
-  /** Doble clic en la miniatura: la ventana grande (el clic simple va al panel de vista previa). */
+  /** Doble clic en la tarjeta: la ventana grande con sus detalles (el clic simple va al panel de vista previa). */
   onAbrir?: () => void;
+  /** «Ya lo anoté»: el código quedó escrito en la hoja física (ADR-516). Sin esto no se ofrece. */
+  onMarcarCodigo?: () => void;
   /** Es la que se ve en el panel de vista previa: va resaltada. */
   enPanel?: boolean;
   onSetStatus: (s: string) => void;
@@ -39,7 +51,6 @@ export function DocCard({
   menu: React.ReactNode;
   /** Clic derecho sobre la tarjeta: abre ese mismo menú donde está el mouse. */
   onMenuContextual: (e: React.MouseEvent) => void;
-  onStartRename: () => void;
   onCommitRename: () => void;
   onCancelRename: () => void;
   onRenameChange: (v: string) => void;
@@ -55,7 +66,14 @@ export function DocCard({
   // `none` no pinta nada: si todo tuviera color, el color no diría nada.
   const marca = doc.status && doc.status !== "none" ? pinta(doc.status) : null;
   return (
+    // Toda la tarjeta (31-10, Brandon: «1 clic = la vista al costado, doble clic = sus detalles
+    // completos»), no sólo la miniatura. Los botones, la casilla y el campo de renombrar hacen lo suyo;
+    // el menú «⋯» va en un portal (no es hijo en el DOM) y sus clics no deben abrir nada acá.
+    // La miniatura es el botón con teclado; esto es el atajo del mouse.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
+      onClick={(e) => { if (esDeLaTarjeta(e)) onPreview(); }}
+      onDoubleClick={(e) => { if (esDeLaTarjeta(e)) onAbrir?.(); }}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -100,7 +118,7 @@ export function DocCard({
       />
 
       {/* Thumbnail — imagen real para imágenes, 1ª página para PDFs, ícono para el resto. */}
-      <button onClick={onPreview} onDoubleClick={onAbrir} className="block w-full aspect-[4/3] bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
+      <button onClick={(e) => { e.stopPropagation(); onPreview(); }} onDoubleClick={(e) => { e.stopPropagation(); onAbrir?.(); }} className="block w-full aspect-[4/3] bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
         <DocThumb doc={doc} Icon={Icon} tint={tint} bg={bg} completo />
       </button>
 
@@ -126,14 +144,11 @@ export function DocCard({
             className="min-w-0 flex-1 px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none"
           />
         ) : (
-          // El nombre es un dato, no un botón más: la miniatura ya abre la vista
-          // previa con teclado; acá el doble clic renombra.
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+          // El nombre es un dato, no un botón más: el clic y el doble clic son los de
+          // la tarjeta (31-10: antes el doble clic renombraba; ahora es «⋯ › Renombrar»).
           <p
-            onClick={onPreview}
-            onDoubleClick={(e) => { e.preventDefault(); onStartRename(); }}
             className="min-w-0 flex-1 cursor-pointer truncate text-left text-sm font-bold text-[var(--text-primary)] transition-colors hover:text-primary"
-            title={`${doc.name}${descripcionDe(doc) ? `\n${descripcionDe(doc)!.texto}` : ""}\n(doble clic para renombrar)`}
+            title={`${doc.name}${descripcionDe(doc) ? `\n${descripcionDe(doc)!.texto}` : ""}\n(doble clic para abrirlo completo · renombrar: ⋯ › Renombrar)`}
           >
             {doc.name}
           </p>
@@ -151,7 +166,7 @@ export function DocCard({
         <PorQueAparecio doc={doc} terminos={terminos} />
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {/* ADR-516 — el código del papel; en coral mientras falta anotarlo en el físico. */}
-          <CodigoChip doc={doc} />
+          <CodigoChip doc={doc} onMarcar={onMarcarCodigo} />
           {folderNombre !== undefined && <FolderChip nombre={folderNombre} />}
           {/* Sin estado no se dibuja nada: ponerlo es «⋯ › Estado». */}
           {marca && <StatusControl status={doc.status} onChange={onSetStatus} />}
