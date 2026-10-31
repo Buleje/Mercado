@@ -1,0 +1,52 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=documentos&vista=drive&sub=all#documentos",
+  "ls": {
+    "doc-view-mode": "grandes",
+    "doc-vista-previa": "1"
+  },
+  "pasos": [
+    {
+      "esperar": "[data-qa=explorador] [data-clave^='d:']"
+    },
+    {
+      "esperar": 800
+    },
+    {
+      "eval": "(()=>{const b=[...document.querySelectorAll('button')].find(e=>/sin vencimiento/i.test(e.textContent||''));if(!b)return {pastilla:false};b.scrollIntoView({block:'center'});b.click();return {pastilla:true,texto:b.textContent.trim()}})()"
+    },
+    {
+      "esperar": 1500
+    },
+    {
+      "esperar": "[data-qa=panel-vista-previa]"
+    },
+    {
+      "esperar": 3500
+    },
+    {
+      "eval": "(()=>{const p=document.querySelector('[data-qa=panel-vista-previa]');return {cabecera:p.querySelector('[data-qa=repaso-posicion]')?.textContent.trim()||null,fechaAbierta:!!p.querySelector('input[type=date]'),noVence:/No vence/.test(p.textContent),pastilla:(document.body.textContent.match(/\\d+ sin vencimiento|Repaso: quedan \\d+/)||[''])[0],items:document.querySelectorAll(\"[data-qa=explorador] [data-clave^='d:']\").length}})()"
+    },
+    {
+      "captura": "repaso-primero"
+    },
+    {
+      "click": "[data-qa=panel-vista-previa] [aria-label='Archivo siguiente']"
+    },
+    {
+      "esperar": 1500
+    },
+    {
+      "eval": "(()=>{const p=document.querySelector('[data-qa=panel-vista-previa]');return {cabecera:p.querySelector('[data-qa=repaso-posicion]')?.textContent.trim()||null,fechaAbierta:!!p.querySelector('input[type=date]')}})()"
+    },
+    {
+      "eval": "(()=>{const b=[...document.querySelectorAll('[data-qa=panel-vista-previa] button')].find(e=>/Salir/.test(e.textContent||''));b?.click();return !!b})()"
+    },
+    {
+      "esperar": 1200
+    },
+    {
+      "eval": "document.querySelectorAll(\"[data-qa=explorador] [data-clave^='d:']\").length"
+    }
+  ]
+}

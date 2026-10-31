@@ -39,12 +39,18 @@ function nombresConFecha(items: readonly { d: DbDocument; n: number }[]): string
   return items.length > 3 ? `${vistos} y ${items.length - 3} más` : vistos;
 }
 
+/** «DNI del jefe, Licencia y 2 más» para el tooltip. */
+function nombresSimples(items: readonly DbDocument[]): string {
+  const vistos = items.slice(0, 3).map((d) => d.name).join(" · ");
+  return items.length > 3 ? `${vistos} y ${items.length - 3} más` : vistos;
+}
+
 export function useAvisosArchivo(arch: ModeloArchivo) {
   const { vencidosDocs, expiringDocs, expiryBannerDismissed, verVencimientos, setExpiryBannerDismissed,
     sugerenciasIA, aplicarSugerencia, aplicarTodasLasSugerencias, aplicandoTodas, setOrdenando, ordenVersion,
     vistaGeneral, filterMode, fotosEsc, verFotosDeMaquina, refresh, documents, folders, bulk, hayBusqueda,
     setMovingDoc, indexableDocs, soloSinDescribir, setSoloSinDescribir, describirFaltantes, progresoDesc,
-    avisoIA } = arch;
+    avisoIA, sinVenceDocs, repasoVence, setRepasoVence, repasoHechas, setRepasoHechas } = arch;
 
   // «¿Va a "X"?» para lo que acabas de subir y quedó suelto (24-10).
   const propuesta = usePropuestaCarpeta({ documents, folders, bulk, refresh, activo: filterMode !== "trash" && !hayBusqueda });
@@ -137,6 +143,22 @@ export function useAvisosArchivo(arch: ModeloArchivo) {
       opciones: n > 1
         ? [{ id: "ia-todas", label: `Aplicar las ${n}`, hint: "Guardar las carpetas y los vencimientos sugeridos de todos", icon: Check, busy: aplicandoTodas || aplicandoSinRepetir, onSelect: () => void aplicarTodas() }]
         : [],
+    });
+  }
+
+  // Un vencimiento sin anotar es un aviso que nunca llega: el cron mira `expiresAt`.
+  if (!VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && filterMode !== "trash" && (sinVenceDocs.length > 0 || repasoVence)) {
+    const n = sinVenceDocs.length;
+    avisos.push({
+      id: "sin-vencimiento", tono: "warning", icono: CalendarClock,
+      corto: repasoVence ? (n > 0 ? `Repaso: quedan ${n}` : "Repaso listo") : `${n} sin vencimiento`,
+      titulo: "Papeles sin fecha de vencimiento",
+      detalle: repasoVence
+        ? `${repasoHechas === 1 ? "1 fecha anotada" : `${repasoHechas} fechas anotadas`} en este repaso. «No vence» saca el papel del repaso.`
+        : `${nombresSimples(sinVenceDocs)} parecen vencer (DNI, licencia, permiso, contrato…) y no tienen fecha: sin ella no te avisamos cuando se acerque. «Repasar» los pasa uno por uno al costado, para anotar la fecha sin abrir nada más.`,
+      accion: repasoVence
+        ? { id: "sin-vence-salir", label: "Salir del repaso", icon: X, onSelect: () => setRepasoVence(false) }
+        : { id: "sin-vence-repasar", label: "Repasar", icon: ListChecks, onSelect: () => { setRepasoHechas(0); setRepasoVence(true); } },
     });
   }
 

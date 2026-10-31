@@ -13,7 +13,8 @@
  *   abre la ventana como siempre.
  */
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { paraRepasarVencimiento } from "@/lib/documentos/parece-que-vence";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { VISTAS_CON_CONTENIDO_PROPIO } from "./compartido";
 import { claveDoc } from "../explorador/contenido-explorador";
@@ -49,7 +50,7 @@ function guardar(clave: string, valor: string) {
 }
 
 export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
-  const { ex, filterMode, activeFolderId, view, setPreview, folderById, displayDocs, selectedIds } = previo;
+  const { ex, filterMode, activeFolderId, view, setPreview, folderById, displayDocs, selectedIds, repasoVence, setRepasoHechas } = previo;
   const ancho = useSyncExternalStore(suscribirAncho, esAncho, () => false);
   // Prendido por defecto: es lo que pidió. Ver › Panel de vista previa (o Alt+P) lo apaga.
   const [prendido, setPrendido] = useState(() => leer(CLAVE_PRENDIDO) !== "0");
@@ -128,6 +129,32 @@ export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
   const anterior = indice > 0 ? () => irA(ordenDocs[indice - 1]) : undefined;
   const siguiente = indice >= 0 && indice < ordenDocs.length - 1 ? () => irA(ordenDocs[indice + 1]) : undefined;
 
+  /**
+   * Repaso de vencimientos: al empezar se prende el panel y se abre el primer
+   * papel de la lista ya filtrada; «Anotar» / «Poner fecha» / «No vence» pasan
+   * solos al siguiente (si era el último, al anterior).
+   */
+  const esperandoPrimero = useRef(false);
+  const antesRepaso = useRef(false);
+  useEffect(() => {
+    if (repasoVence && !antesRepaso.current) { esperandoPrimero.current = true; setPrendido(true); }
+    antesRepaso.current = repasoVence;
+    if (!repasoVence) esperandoPrimero.current = false;
+    // Espera a que la lista ya sea la filtrada (la vista del explorador la arma un render después).
+    if (esperandoPrimero.current && ordenDocs.length > 0 && ordenDocs.every(paraRepasarVencimiento)) {
+      esperandoPrimero.current = false;
+      irA(ordenDocs[0]);
+    }
+  }, [repasoVence, ordenDocs, irA]);
+  const avanzarRepaso = useCallback(
+    (anotada: boolean) => {
+      if (anotada) setRepasoHechas((n) => n + 1);
+      const destino = indice >= 0 ? (ordenDocs[indice + 1] ?? ordenDocs[indice - 1]) : undefined;
+      if (destino) irA(destino);
+    },
+    [indice, ordenDocs, irA, setRepasoHechas],
+  );
+
   const alternar = useCallback(() => {
     setPrendido((v) => {
       guardar(CLAVE_PRENDIDO, v ? "0" : "1");
@@ -163,6 +190,7 @@ export function usePanelVistaPrevia(previo: HastaArchivoMenu) {
       mostrar,
       anterior,
       siguiente,
+      avanzarRepaso,
       posicion: indice >= 0 ? { actual: indice + 1, total: ordenDocs.length } : null,
       ancho: anchoPanel,
       setAncho: setAnchoPanel,

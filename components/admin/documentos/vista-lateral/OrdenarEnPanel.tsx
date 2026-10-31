@@ -11,6 +11,8 @@
  * - Poner la fecha a mano: ves «Fecha de caducidad 12/05/2030» en el DNI de la
  *   izquierda y la escribes acá mismo.
  * - Carpeta… y Etiquetas, con las ventanas de siempre.
+ * - En el repaso de vencimientos (aviso «N sin vencimiento»): la fecha se pide
+ *   de entrada y «Anotar» / «Guardar» / «No vence» pasan solos al siguiente.
  */
 
 import { useState } from "react";
@@ -18,7 +20,9 @@ import { CalendarClock, Check, FolderInput, Loader2, Tag, X } from "@buleje/desi
 import { cn } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import type { DbDocument } from "@/lib/types/documents";
+import { paraRepasarVencimiento, TAG_NO_VENCE } from "@/lib/documentos/parece-que-vence";
 import type { ModeloArchivo } from "../archivo/use-archivo";
+import CabeceraRepaso from "./CabeceraRepaso";
 
 type Sugerencia = { folderId?: string; folderName?: string; expiresAt?: string };
 type Leido = { fecha?: string; anotado?: boolean; motivo?: string };
@@ -32,9 +36,11 @@ const ICONO = button({ variant: "secondary", size: "icon", className: "shrink-0"
 const PRIMARIO = button({ variant: "primary", className: "gap-1 px-3" });
 
 export default function OrdenarEnPanel({ arch, doc, detalle }: { arch: ModeloArchivo; doc: DbDocument; detalle: DbDocument | null }) {
-  const { folderById, aplicarSugerencia, descartarSugerencia, sugDescartadas, setMovingDoc, setTagDocId, patch } = arch;
+  const { folderById, aplicarSugerencia, descartarSugerencia, sugDescartadas, setMovingDoc, setTagDocId, patch, repasoVence, panelPrevia } = arch;
   const [ocupado, setOcupado] = useState<string | null>(null);
-  const [fechaAMano, setFechaAMano] = useState<string | null>(null);
+  // Al montar (el panel remonta por papel): una anotación no lo saca del repaso a medio gesto.
+  const [enRepaso] = useState(() => repasoVence && paraRepasarVencimiento(doc));
+  const [fechaAMano, setFechaAMano] = useState<string | null>(enRepaso ? "" : null);
 
   const meta = (detalle ?? doc).ocrMetadata as { sugerencias?: Sugerencia | null; vencimientoLeido?: Leido | null } | null;
   const sug = meta?.sugerencias ?? null;
@@ -54,7 +60,7 @@ export default function OrdenarEnPanel({ arch, doc, detalle }: { arch: ModeloArc
 
   return (
     <div className="space-y-2 rounded-xl border border-[var(--rule-soft)] p-3">
-      <p className="text-xs font-bold text-[var(--text-secondary)]">Ordenar</p>
+      {enRepaso ? <CabeceraRepaso arch={arch} /> : <p className="text-xs font-bold text-[var(--text-secondary)]">Ordenar</p>}
 
       {carpeta && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg bg-primary/5 px-2 py-1.5">
@@ -73,7 +79,7 @@ export default function OrdenarEnPanel({ arch, doc, detalle }: { arch: ModeloArc
         <div className="flex flex-wrap items-center gap-2 rounded-lg bg-[var(--data-warning-100)] px-2 py-1.5 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">
           <CalendarClock className="h-4 w-4 shrink-0" />
           <span className="min-w-0 flex-1 text-sm">Vence el <b>{ddmmaaaa(vence)}</b>{venceLeido ? " (leído del papel)" : " (sugerido)"}</span>
-          <button type="button" disabled={!!ocupado} onClick={() => void hacer("vence", () => aplicarSugerencia(doc.id, { expiresAt: vence.length === 10 ? aIso(vence) : vence }))} className={PRIMARIO}>
+          <button type="button" disabled={!!ocupado} onClick={() => void hacer("vence", async () => { await aplicarSugerencia(doc.id, { expiresAt: vence.length === 10 ? aIso(vence) : vence }); if (enRepaso) panelPrevia.avanzarRepaso(true); })} className={PRIMARIO}>
             {ocupado === "vence" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Anotar
           </button>
         </div>
@@ -92,7 +98,7 @@ export default function OrdenarEnPanel({ arch, doc, detalle }: { arch: ModeloArc
           <button
             type="button"
             disabled={!fechaAMano || !!ocupado}
-            onClick={() => void hacer("mano", async () => { await patch(doc.id, { expiresAt: aIso(fechaAMano) }); setFechaAMano(null); })}
+            onClick={() => void hacer("mano", async () => { await patch(doc.id, { expiresAt: aIso(fechaAMano) }); setFechaAMano(null); if (enRepaso) panelPrevia.avanzarRepaso(true); })}
             className={PRIMARIO}
           >
             {ocupado === "mano" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar
@@ -102,9 +108,21 @@ export default function OrdenarEnPanel({ arch, doc, detalle }: { arch: ModeloArc
               Quitar
             </button>
           )}
-          <button type="button" onClick={() => setFechaAMano(null)} className={ICONO} aria-label="Cancelar">
-            <X className="h-4 w-4" />
-          </button>
+          {enRepaso ? (
+            <button
+              type="button"
+              disabled={!!ocupado}
+              onClick={() => void hacer("novence", async () => { await patch(doc.id, { tags: [...doc.tags, TAG_NO_VENCE] }); panelPrevia.avanzarRepaso(false); })}
+              className={SECUNDARIO}
+              title="Este papel no vence: sale del repaso (la etiqueta «no vence» se puede quitar)"
+            >
+              {ocupado === "novence" && <Loader2 className="h-4 w-4 animate-spin" />} No vence
+            </button>
+          ) : (
+            <button type="button" onClick={() => setFechaAMano(null)} className={ICONO} aria-label="Cancelar">
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">

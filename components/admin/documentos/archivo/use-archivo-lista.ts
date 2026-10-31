@@ -10,12 +10,13 @@ import { cuantosFiltrosActivos, cumpleFiltros } from "@/lib/documentos/filtros-d
 import { tipoDeArchivo } from "../explorador/orden-agrupar";
 import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { codigoFisicoPendiente } from "@/lib/documentos/codigo-documento";
+import { paraRepasarVencimiento } from "@/lib/documentos/parece-que-vence";
 import type { HastaArchivoEstados } from "./use-archivo-estados";
 export function useArchivoLista(previo: HastaArchivoEstados) {
   const { etiquetaFiltro, searchDebounced, semantic, filterMode, activeFolderId, escondeFotos, preview,
     setPreview, setSearch, importsTerminados, setUploadProgress, setScanResult, setSortBy,
     setTarjetasVisibles, soloVencimiento, activeSmartId, smartFolders, statusFilter, soloSinDescribir,
-    filtros, sortBy } = previo;
+    filtros, sortBy, repasoVence } = previo;
   const filters = useMemo(
     () =>
       etiquetaFiltro
@@ -139,6 +140,7 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
       if (soloSinDescribir) list = list.filter((d) => !tieneDescripcion(d));
       if (cuantosFiltrosActivos(filtros) > 0) list = list.filter((d) => cumpleFiltros(d, filtros));
     }
+    if (repasoVence) list = list.filter(paraRepasarVencimiento);
     if (sortBy === "relevancia") return ordenarPorRelevancia(list, terminosBusqueda);
     const sorted = [...list];
     sorted.sort((a, b) => {
@@ -161,7 +163,7 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
       }
     });
     return sorted;
-  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda, filtros, etiquetaFiltro, soloVencimiento]);
+  }, [documents, filterMode, sortBy, statusFilter, activeSmartId, smartFolders, soloSinDescribir, terminosBusqueda, filtros, etiquetaFiltro, soloVencimiento, repasoVence]);
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = { draft: 0, review: 0, approved: 0, archived: 0 };
@@ -177,10 +179,12 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
     () => documents.filter((d) => isAnalyzableMime(d.mimeType) && !tieneDescripcion(d) && !esFotoDeMaquina(d)),
     [documents]
   );
+  // Papeles que parecen vencer (DNI, licencia, contrato…) y no tienen fecha: el aviso «N sin vencimiento».
+  const sinVenceDocs = useMemo(() => documents.filter(paraRepasarVencimiento), [documents]);
   // Todos los documentos analizables, estén o no ya indexados. Sirve para
   return { filters, documents, semanticTerms, folders, loading, error, refresh, upload, scan, patch, bulk,
     restore, purge, restoreMany, purgeMany, createFolder, createFolderTree, existingNames, moveFolder,
     updateFolder, bulkFolders, deleteFolder, terminosBusqueda, handleScan, hayBusqueda, displayDocs,
-    statusCounts, indexableDocs, marcarCodigoFisico };
+    statusCounts, indexableDocs, sinVenceDocs, marcarCodigoFisico };
 }
 export type HastaArchivoLista = HastaArchivoEstados & ReturnType<typeof useArchivoLista>;

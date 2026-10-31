@@ -13,7 +13,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
-import { Download, Eye, FolderOpen, MessageCircle, X } from "@buleje/design-system/icons";
+import { CalendarClock, Download, Eye, FolderOpen, MessageCircle, X } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import { formatBytes } from "../archivo-visual";
@@ -21,6 +21,7 @@ import type { ModeloArchivo } from "../archivo/use-archivo";
 import IconoArchivo from "../explorador/IconoArchivo";
 import IconoCarpeta from "../explorador/IconoCarpeta";
 import { fechaLarga, plural } from "../explorador/propiedades-explorador";
+import { fechasAnotadas } from "./CabeceraRepaso";
 import PreviaDoc from "./PreviaDoc";
 import { useContenidoCarpeta } from "./use-datos-panel";
 
@@ -132,6 +133,11 @@ export default function PanelVistaPrevia({ arch }: { arch: ModeloArchivo }) {
         <PreviaCarpeta key={o.carpeta.id} arch={arch} carpeta={o.carpeta} />
       ) : o.tipo === "varios" ? (
         <PreviaVarios arch={arch} docs={o.docs} carpetas={o.carpetas} />
+      ) : arch.repasoVence && arch.displayDocs.length === 0 ? (
+        <div className="space-y-3">
+          <Cabecera titulo={`Listo: ${fechasAnotadas(arch.repasoHechas)}`} sub="No queda ningún papel por repasar" icono={<CalendarClock className="mt-1 h-5 w-5 shrink-0 text-primary" />} onCerrar={p.alternar} />
+          <button type="button" onClick={() => arch.setRepasoVence(false)} className={button({ variant: "primary", fullWidth: true })}>Volver a mis papeles</button>
+        </div>
       ) : (
         <div className="flex items-start gap-2">
           <p className="flex-1 py-2 text-sm text-[var(--text-tertiary)]">Haz clic en un archivo o carpeta para ver aquí qué tiene.</p>
