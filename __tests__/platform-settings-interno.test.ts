@@ -43,7 +43,15 @@ beforeEach(() => {
 describe("PlatformSettingsDB — claves interno:", () => {
   it("getAll() no trae las claves interno:", async () => {
     await PlatformSettingsDB.getAll();
-    expect(H.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { NOT: { key: { startsWith: "interno:" } } } }));
+    expect(H.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { AND: ["interno:", "ctp-", "gtf-", "loth-"].map((p) => ({ NOT: { key: { startsWith: p } } })) },
+    }));
+  });
+
+  it("guardar datos forestales (ctp-anexos) no invalida __all__: no viajan en getAll", async () => {
+    await PlatformSettingsDB.set("ctp-anexos:t1", { anexos: [] });
+    expect(H.invalidate).toHaveBeenCalledWith("platform-settings:ctp-anexos:t1");
+    expect(H.invalidate).not.toHaveBeenCalledWith("platform-settings:__all__");
   });
 
   it("set de una clave interna invalida sólo su clave, no __all__", async () => {
@@ -60,7 +68,7 @@ describe("PlatformSettingsDB — claves interno:", () => {
 
   it("una clave de configuración sigue invalidando __all__", async () => {
     await PlatformSettingsDB.set("plan-prices", { pro: 89 });
-    await PlatformSettingsDB.actualizar("ctp-cubicaciones:t1", () => ({ valor: [], resultado: null }));
+    await PlatformSettingsDB.actualizar("admin-template:tenant:t1", () => ({ valor: [], resultado: null }));
     expect(H.invalidate.mock.calls.filter(([k]) => k === "platform-settings:__all__")).toHaveLength(2);
   });
 });

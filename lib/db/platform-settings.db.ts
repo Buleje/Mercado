@@ -51,7 +51,14 @@ function cacheKeyConAusencia(key: string): string {
  * vía `getPlatformConfigSSR`) ni viajar dentro de `getAll()`.
  */
 export const PREFIJO_INTERNO = "interno:";
-const esInterna = (key: string) => key.startsWith(PREFIJO_INTERNO);
+/**
+ * Datos forestales por negocio (30-10-2026): ficha, anexos, cubicaciones, GTF, LO-TH. Cada DB class los lee
+ * por su clave; dentro de `getAll()` eran 1,41 MB de 1,6 por lectura (15.244 lecturas medidas en
+ * `pg_stat_statements`) y la causa principal del egress que pasó la cuota del plan free de Supabase.
+ */
+export const PREFIJOS_DATOS = ["ctp-", "gtf-", "loth-"] as const;
+const esInterna = (key: string) =>
+  key.startsWith(PREFIJO_INTERNO) || PREFIJOS_DATOS.some((p) => key.startsWith(p));
 
 /** Invalida la clave y —si es de configuración— la foto de `getAll()`. */
 function invalidarClave(key: string): void {
@@ -148,7 +155,7 @@ export const PlatformSettingsDB = {
    */
   async getAllFresco(): Promise<Record<string, unknown>> {
     const rows = await prisma.platformSetting.findMany({
-      where: { NOT: { key: { startsWith: PREFIJO_INTERNO } } },
+      where: { AND: [PREFIJO_INTERNO, ...PREFIJOS_DATOS].map((p) => ({ NOT: { key: { startsWith: p } } })) },
       select: { key: true, value: true },
     });
     const out: Record<string, unknown> = {};
