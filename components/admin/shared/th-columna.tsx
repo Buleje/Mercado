@@ -73,9 +73,12 @@ export function ThColumna<T>({
             {ids.map((id) => (
               <FiltroEnCabecera key={id} id={id} f={f} compacto />
             ))}
+            {/* Con embudos, lo propio va en su misma fila: un renglón más hacía
+                el encabezado de 78 a 98 px (Personas › «Tope», 30-10). */}
+            {children}
           </span>
         )}
-        {children && <span className="inline-flex items-center gap-1 [&>span]:ml-0">{children}</span>}
+        {children && !(f && ids.length > 0) && <span className="inline-flex items-center gap-1 [&>span]:ml-0">{children}</span>}
       </span>
     </th>
   );

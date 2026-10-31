@@ -29,10 +29,15 @@ import { logger } from "@/lib/logger";
 /** Calidad de JPEG: un recibo se lee perfecto y pesa un tercio que el PNG. */
 const CALIDAD = 0.85;
 
-type PropsCaptura = { onCerrar: () => void; onFoto: (jpeg: string) => void };
+type PropsCaptura = {
+  onCerrar: () => void;
+  onFoto: (jpeg: string) => void;
+  /** Qué se fotografía. Por defecto, el comprobante (la foto del DNI usa la misma cámara). */
+  titulo?: string;
+};
 
 export default function CapturaFoto(props: PropsCaptura) {
-  const { onCerrar } = props;
+  const { onCerrar, titulo = "Foto del comprobante" } = props;
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
   const cajaRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -107,11 +112,11 @@ export default function CapturaFoto(props: PropsCaptura) {
       <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label="Tomar foto del comprobante"
+        aria-label={`Tomar ${titulo.toLowerCase()}`}
         className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-3">
-          <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Foto del comprobante</p>
+          <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{titulo}</p>
           <span className="ml-auto flex items-center gap-1">
             <ControlesDeVentana ventana={ventana} />
             <button

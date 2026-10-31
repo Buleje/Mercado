@@ -9,6 +9,9 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { CAMPOS_PERSONA } from "@/lib/adelantos/persona-campos";
+import { borrarFirmaPrivada } from "@/lib/adelantos/firma-storage";
+import { esRutaFotoDocumento } from "@/lib/adelantos/foto-documento.server";
 
 /**
  * Tres formas de PATCH: editar la ficha, anotar un recordatorio, o vincular la
@@ -45,7 +48,27 @@ const UpdateSchema = z.object({
   cuentaBancaria: z.string().max(40).nullable().optional(),
   cci: z.string().max(40).nullable().optional(),
   activo: z.boolean().optional(),
+  /** ADR-525: relación, Yape/Plin, referencia y nacimiento (`""` → null). */
+  ...CAMPOS_PERSONA,
 });
+
+// GET /api/adelantos/beneficiarios/[id] — la ficha de una persona (ADR-525: con
+// `tieneFotoDocumento`, nunca la clave del archivo). Otro negocio → 404.
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "read");
+  if (sinPermiso) return sinPermiso;
+  try {
+    const { id } = await params;
+    const benef = await AdelantosDB.getBeneficiario(auth.tenantId, id);
+    if (!benef) return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
+    return NextResponse.json(benef);
+  } catch (e) {
+    logger.error("[adelantos/beneficiarios/id] GET error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+}
 
 // PATCH /api/adelantos/beneficiarios/[id] — editar persona
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -130,12 +153,16 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (sinPermiso) return sinPermiso;
   try {
     const { id } = await params;
+    /* ADR-525: la clave de la foto del DNI la devuelve el mismo borrado: borrada la fila, ninguna
+       columna alcanza el archivo y el DNI quedaría para siempre en el bucket. */
     const res = await AdelantosDB.deleteBeneficiario(auth.tenantId, id);
     if (!res.ok) {
       if (res.reason === "not_found") return NextResponse.json({ error: "Persona no encontrada" }, { status: 404 });
       return NextResponse.json({ error: "No se puede eliminar: la persona tiene adelantos registrados." }, { status: 409 });
     }
-    logActivity("Eliminar", "adelanto", `Beneficiario ${id}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    const foto = res.fotoDocumentoKey;
+    if (foto && esRutaFotoDocumento(foto, auth.tenantId, id)) await borrarFirmaPrivada(foto);
+    logActivity("Eliminar", "adelanto", `Beneficiario ${id}${foto ? " y su foto del DNI" : ""}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[adelantos/beneficiarios/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });

@@ -7,6 +7,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { CAMPOS_PERSONA } from "@/lib/adelantos/persona-campos";
 
 const CreateSchema = z.object({
   nombre: z.string().min(1).max(200),
@@ -29,6 +30,8 @@ const CreateSchema = z.object({
   cuentaBancaria: z.string().max(40).nullable().optional(),
   cci: z.string().max(40).nullable().optional(),
   activo: z.boolean().optional(),
+  /** ADR-525: relación, Yape/Plin, referencia y nacimiento (`""` → null). */
+  ...CAMPOS_PERSONA,
 });
 
 // GET /api/adelantos/beneficiarios — personas + saldo consolidado

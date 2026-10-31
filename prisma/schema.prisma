@@ -5658,6 +5658,18 @@ model AdelantoBeneficiario {
   /// Esta persona es tal parte del directorio forestal (ADR-412): con esto su
   /// cuenta junta adelantos y aserríos en una sola fila.
   forestPartyId      String?
+  // ── Ficha de la persona (ADR-525) ── todo opcional; listas en TS, nunca enum de Postgres.
+  /// TIPOS_RELACION (`lib/adelantos/persona-campos.ts`): trabajador | proveedor | chofer | cliente | familia | otro.
+  tipoRelacion       String?
+  /// Yape o Plin: 9 dígitos que empiezan con 9.
+  yape               String?
+  referenciaNombre   String?
+  referenciaTelefono String?
+  fechaNacimiento    DateTime?            @db.Date
+  /// Ruta de la foto del DNI en el bucket PRIVADO `forestal-privado`
+  /// (`<tenantId>/adelantos-personas/<id>/…-dni-….webp`). Nunca una URL pública
+  /// y nunca sale en un JSON: se ve sólo por GET …/beneficiarios/[id]/foto-documento.
+  fotoDocumentoKey   String?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)

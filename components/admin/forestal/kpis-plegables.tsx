@@ -194,7 +194,7 @@ export function useKpisPlegables({
           a la vista sin gastar una fila propia. */}
       {!compacto && !abierto && resumen && (
         <span
-          className={`min-w-0 truncate font-mono text-sm font-normal tabular-nums text-[var(--text-secondary)] ${
+          className={`min-w-0 truncate text-sm font-normal tabular-nums text-[var(--text-secondary)] ${
             sinTitular ? "sr-only" : soloIcono ? "max-xl:sr-only" : compactoEnMovil ? "max-sm:hidden" : ""
           } ${CLASE_TITULAR_EN_RIEL}`}
         >

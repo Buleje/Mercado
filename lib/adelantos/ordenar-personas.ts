@@ -88,3 +88,29 @@ export function ordenarPersonas<T extends PersonaOrdenable>(personas: readonly T
     }
   });
 }
+
+/**
+ * El sentido del primer clic en el encabezado de cada columna (30-10: el
+ * desplegable «Orden: …» se fue a los encabezados, como en Adelantos › Lista).
+ * Es el sentido en que `ordenarPersonas` ya devuelve cada orden.
+ */
+export const SENTIDO_NATURAL: Record<OrdenPersonas, "asc" | "desc"> = {
+  saldo: "desc",
+  riesgo: "desc",
+  nombre: "asc",
+  adelantado: "desc",
+  cumplimiento: "asc",
+  reciente: "desc",
+};
+
+/**
+ * El mismo orden, o al revés (segundo clic en la columna). Al revés, quien no
+ * tiene el dato —nunca sacó, sin tope— sigue al final: arriba no dice nada.
+ */
+export function ordenarPersonasEnSentido<T extends PersonaOrdenable>(personas: readonly T[], orden: OrdenPersonas, invertido: boolean): T[] {
+  const ordenadas = ordenarPersonas(personas, orden);
+  if (!invertido) return ordenadas;
+  const tieneDato = (p: T) =>
+    orden === "cumplimiento" ? cumplimientoDe(p) != null : orden === "reciente" ? !!p.ultimoAdelanto : orden === "riesgo" ? usoDelTope(p) >= 0 : true;
+  return [...ordenadas.filter(tieneDato).reverse(), ...ordenadas.filter((p) => !tieneDato(p))];
+}

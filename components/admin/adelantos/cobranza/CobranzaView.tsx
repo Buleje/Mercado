@@ -42,7 +42,7 @@ import {
 import { armarMensaje, guardarPlantillas, leerPlantillas, type Plantillas } from "@/lib/adelantos/plantillas-cobranza";
 import { deudoresDeCobranza, ordenarPorUrgencia, type DeudorCobranza } from "@/lib/adelantos/urgencia-cobranza";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { EmptyState, SkeletonGrid, sinTildes, fmtMon, sumByMoneda, fmtMonedas } from "../shared";
+import { EmptyState, SkeletonGrid, chipSituacion, sinTildes, fmtMon, sumByMoneda, fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 import CrearPersonaModal from "../personas/CrearPersonaModal";
 import ProximosVencimientos from "./ProximosVencimientos";
@@ -289,12 +289,7 @@ export default function CobranzaView({
     return <EmptyState icon={CheckCircle} title="Nada por cobrar" hint="No hay adelantos abiertos con saldo pendiente." />;
   }
 
-  const chip = (activo: boolean) =>
-    `h-12 shrink-0 rounded-xl px-3.5 text-sm font-bold transition-colors ${
-      activo
-        ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]"
-        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-    }`;
+  const chip = chipSituacion;
 
   return (
     <div className="space-y-3">

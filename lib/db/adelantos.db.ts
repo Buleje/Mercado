@@ -114,6 +114,18 @@ export type DbBeneficiario = {
    * `null` = todavía sin vincular (se intenta por documento, nunca por nombre).
    */
   forestPartyId?: string | null;
+  /** ADR-525: TIPOS_RELACION (`lib/adelantos/persona-campos.ts`). */
+  tipoRelacion?: string | null;
+  yape?: string | null;
+  referenciaNombre?: string | null;
+  referenciaTelefono?: string | null;
+  /** «AAAA-MM-DD» (columna DATE). */
+  fechaNacimiento?: string | null;
+  /**
+   * Si hay foto del DNI guardada. La CLAVE del archivo nunca sale de la base:
+   * la imagen se pide a `GET /api/adelantos/beneficiarios/[id]/foto-documento`.
+   */
+  tieneFotoDocumento?: boolean;
   createdAt: string;
 };
 
@@ -526,6 +538,8 @@ type BeneficiarioRow = {
   email?: string | null; estadoSunat?: string | null; condicionSunat?: string | null;
   verificadoEn?: Date | null; banco?: string | null; cuentaBancaria?: string | null;
   cci?: string | null; activo?: boolean; forestPartyId?: string | null;
+  tipoRelacion?: string | null; yape?: string | null; referenciaNombre?: string | null;
+  referenciaTelefono?: string | null; fechaNacimiento?: Date | null; fotoDocumentoKey?: string | null;
 };
 
 function mapBeneficiario(b: BeneficiarioRow): DbBeneficiario {
@@ -550,6 +564,13 @@ function mapBeneficiario(b: BeneficiarioRow): DbBeneficiario {
        asumen activos, que es lo que eran. */
     activo: b.activo ?? true,
     forestPartyId: b.forestPartyId ?? null,
+    tipoRelacion: b.tipoRelacion ?? null,
+    yape: b.yape ?? null,
+    referenciaNombre: b.referenciaNombre ?? null,
+    referenciaTelefono: b.referenciaTelefono ?? null,
+    fechaNacimiento: b.fechaNacimiento ? b.fechaNacimiento.toISOString().slice(0, 10) : null,
+    /* ADR-525: sólo SI hay foto; la clave del bucket privado no se publica. */
+    tieneFotoDocumento: !!b.fotoDocumentoKey,
     createdAt: b.createdAt.toISOString(),
   };
 }
@@ -557,6 +578,7 @@ function mapBeneficiario(b: BeneficiarioRow): DbBeneficiario {
 /** Los campos opcionales de la ficha, normalizados: "" y "   " son NULL. */
 function camposFicha(data: BeneficiarioInput) {
   const t = (v?: string | null) => (v == null ? undefined : v.trim() || null);
+  const nulo = (v: string | null) => v?.trim() || null;
   return {
     tipoDocumento: t(data.tipoDocumento),
     razonSocial: t(data.razonSocial),
@@ -572,6 +594,17 @@ function camposFicha(data: BeneficiarioInput) {
     cuentaBancaria: t(data.cuentaBancaria),
     cci: t(data.cci),
     activo: data.activo,
+    /* ADR-525: sólo las claves que llegaron. Un PATCH que no las manda deja
+       lo guardado, y quien no las conoce (RRHH, el asistente) no las pisa.
+       Acá `null` SÍ borra (el `t` de arriba lo toma como «no tocar»): la ruta
+       ya convirtió el casillero vaciado (`""`) en `null`. */
+    ...(data.tipoRelacion !== undefined ? { tipoRelacion: nulo(data.tipoRelacion) } : {}),
+    ...(data.yape !== undefined ? { yape: nulo(data.yape) } : {}),
+    ...(data.referenciaNombre !== undefined ? { referenciaNombre: nulo(data.referenciaNombre) } : {}),
+    ...(data.referenciaTelefono !== undefined ? { referenciaTelefono: nulo(data.referenciaTelefono) } : {}),
+    ...(data.fechaNacimiento !== undefined
+      ? { fechaNacimiento: data.fechaNacimiento ? new Date(`${data.fechaNacimiento}T00:00:00.000Z`) : null }
+      : {}),
   };
 }
 
@@ -651,6 +684,13 @@ export type BeneficiarioInput = {
   cuentaBancaria?: string | null;
   cci?: string | null;
   activo?: boolean;
+  /** ADR-525 — validados en la ruta con `CAMPOS_PERSONA`. */
+  tipoRelacion?: string | null;
+  yape?: string | null;
+  referenciaNombre?: string | null;
+  referenciaTelefono?: string | null;
+  /** «AAAA-MM-DD». */
+  fechaNacimiento?: string | null;
 };
 
 export type EntregaPactadaInput = {
@@ -2521,6 +2561,31 @@ export const AdelantosDB = {
   },
 
   /**
+   * ADR-525: la clave PRIVADA de la foto del DNI de una persona de ESTE negocio
+   * (`null` = no existe acá: el tenant del JWT va en el WHERE). Sólo la usa la
+   * ruta `…/foto-documento`; nunca va a un JSON.
+   */
+  async fotoDocumentoDe(tenantId: string, id: string): Promise<{ nombre: string; fotoDocumentoKey: string | null } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId }, select: { nombre: true, fotoDocumentoKey: true } });
+  },
+
+  /**
+   * Compara-y-cambia la clave de la foto: sólo escribe si la columna sigue en
+   * `esperada` (lo que leyó quien llama; `null` = no tenía). Dos subidas a la
+   * vez → gana una y la otra recibe `false` y borra su archivo: si no, el DNI
+   * del perdedor quedaba en el bucket sin columna que lo alcance.
+   */
+  async cambiarFotoDocumento(tenantId: string, id: string, esperada: string | null, nueva: string | null): Promise<boolean> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const r = await prisma.adelantoBeneficiario.updateMany({
+      where: { id, tenantId, fotoDocumentoKey: esperada },
+      data: { fotoDocumentoKey: nueva },
+    });
+    return r.count === 1;
+  },
+
+  /**
    * Vincula (o desvincula con `null`) a esta persona con una parte del
    * directorio forestal — la unión explícita de ADR-412 §5, que
    * `/api/adelantos/cuentas` prioriza sobre el match por documento.
@@ -2581,13 +2646,18 @@ export const AdelantosDB = {
   },
 
   /** Elimina una persona. Bloquea si tiene adelantos registrados (integridad). */
-  async deleteBeneficiario(tenantId: string, id: string): Promise<{ ok: true } | { ok: false; reason: "not_found" | "has_adelantos" }> {
+  async deleteBeneficiario(
+    tenantId: string,
+    id: string,
+  ): Promise<{ ok: true; fotoDocumentoKey: string | null } | { ok: false; reason: "not_found" | "has_adelantos" }> {
     const existing = await prisma.adelantoBeneficiario.findFirst({ where: { id, tenantId } });
     if (!existing) return { ok: false, reason: "not_found" };
     const adelantos = await prisma.adelanto.count({ where: { tenantId, beneficiarioId: id } });
     if (adelantos > 0) return { ok: false, reason: "has_adelantos" };
     await prisma.adelantoBeneficiario.deleteMany({ where: { id, tenantId } });
-    return { ok: true };
+    /* ADR-525: la clave de la foto del DNI va con el borrado (revisión 30-10): leída aparte en la ruta, una
+       subida entre la lectura y el borrado dejaba ese DNI huérfano en el bucket. */
+    return { ok: true, fotoDocumentoKey: existing.fotoDocumentoKey };
   },
 
   // ── Adelantos recurrentes (ADR-118) ──

@@ -4,7 +4,7 @@
  * Personas de Adelantos — la libreta: a quién le das (o te da) plata.
  *
  * 11-10 (patrón del panel): título · Indicadores plegables · Nueva persona ·
- * «⋯» en una fila; buscador, situación y orden en otra, pegada a la tabla; cada
+ * «⋯» en una fila; buscador y situación pegados a la tabla (orden: encabezados, 30-10); cada
  * persona una fila (`FilaPersona`) con Entregar a la vista y lo demás en «⋯».
  * Antes: tarjetas de tres en fondo, una banda de totales aparte y el CSV como
  * botón suelto (1,96 pantallas, 42 botones bajos con 12 personas).
@@ -15,7 +15,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SectionTitle } from "@buleje/design-system";
-import { Coins, Download, MoreHorizontal, Plus, Search, TrendingUp, Users, Wallet } from "@buleje/design-system/icons";
+import { Coins, Download, FileSpreadsheet, MoreHorizontal, Plus, Search, TrendingUp, Users, Wallet } from "@buleje/design-system/icons";
+import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
@@ -24,8 +26,9 @@ import { button } from "@/components/ui-system/button-variants";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { useFiltrosTabla } from "@/components/admin/forestal/filtros-tabla-forestal";
 import { COLUMNAS_FILTRO_PERSONAS } from "../filtros-columnas-tablas";
-import { FILTROS, cumpleFiltro, ordenarPersonas, type FiltroPersonas, type OrdenPersonas } from "@/lib/adelantos/ordenar-personas";
-import { descargarCsvPersonas } from "@/lib/adelantos/exportar-csv";
+import { FILTROS, cumpleFiltro, ordenarPersonasEnSentido, type FiltroPersonas } from "@/lib/adelantos/ordenar-personas";
+import { descargarCsvPersonas, personasAFilasExcel } from "@/lib/adelantos/exportar-csv";
+import { useOrdenPersonas } from "../hooks/use-orden-personas";
 import { cuentaDePersona } from "@/lib/adelantos/modos-alta";
 import { faltaTelefono, faltanDatos } from "@/lib/adelantos/datos-persona";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
@@ -37,6 +40,7 @@ import CompletarDatosModal from "./CompletarDatosModal";
 import CrearPersonaModal from "./CrearPersonaModal";
 import EliminarPersonaModal from "./EliminarPersonaModal";
 import FichaPersonaModal from "./FichaPersonaModal";
+import BarraPersonas from "./BarraPersonas";
 import TablaPersonas from "./TablaPersonas";
 
 export default function PersonasView({
@@ -65,7 +69,8 @@ export default function PersonasView({
   const [ficha, setFicha] = useState<BeneficiarioConSaldo | null>(null);
   const [detalleAdelanto, setDetalleAdelanto] = useState<DbAdelanto | null>(null);
   const [q, setQ] = useState("");
-  const [orden, setOrden] = useState<OrdenPersonas>("saldo");
+  /* El orden se elige en los encabezados de la tabla (30-10). */
+  const { orden, invertido, columnas: ordenColumnas, elegir: elegirOrden } = useOrdenPersonas();
   /* `?filtro=sin-telefono` (lo enlaza el Resumen) abre la libreta ya filtrada. */
   const filtroUrl = useSearchParams().get("filtro");
   const [filtro, setFiltro] = useState<FiltroPersonas>(
@@ -95,7 +100,7 @@ export default function PersonasView({
     });
   }, [beneficiarios, q, filtro]);
 
-  const ordenados = useMemo(() => ordenarPersonas(filtradas, orden), [filtradas, orden]);
+  const ordenados = useMemo(() => ordenarPersonasEnSentido(filtradas, orden, invertido), [filtradas, orden, invertido]);
   /* Los filtros tipo Excel del encabezado afinan lo que dejan el buscador y los chips. */
   const ft = useFiltrosTabla(ordenados, COLUMNAS_FILTRO_PERSONAS);
 
@@ -146,13 +151,16 @@ export default function PersonasView({
     ],
   });
 
-  /* h-12 (patrón del panel): eran chips de 40 px. */
-  const chip = (activo: boolean) =>
-    `h-12 shrink-0 px-3.5 rounded-xl border-2 text-sm font-bold transition-colors ${
-      activo
-        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-        : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-    }`;
+  /* «Bajar a Excel» (30-10): lo que ves, con las mismas columnas del CSV y las cifras como número. */
+  const bajarExcel = async () => {
+    try {
+      const { exportToExcel } = await import("@/lib/export-excel");
+      await exportToExcel(personasAFilasExcel(ft.filtradas), `personas-${new Date().toISOString().slice(0, 10)}`, "Personas");
+    } catch (err) {
+      logger.error("[personas] no se pudo armar el Excel", { error: String(err) });
+      toast.error("No se pudo bajar el Excel. Inténtalo otra vez.");
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -179,6 +187,14 @@ export default function PersonasView({
             className="w-12 shrink-0"
             actions={[
               {
+                id: "excel",
+                label: "Bajar a Excel",
+                hint: `Las ${ft.filtradas.length} personas que ves, con sus cifras`,
+                icon: FileSpreadsheet,
+                disabled: ft.filtradas.length === 0,
+                onSelect: () => void bajarExcel(),
+              },
+              {
                 id: "csv",
                 label: "Descargar CSV",
                 hint: `Las ${ft.filtradas.length} personas que ves (con filtro y búsqueda)`,
@@ -194,66 +210,15 @@ export default function PersonasView({
       {beneficiarios.length > 0 && kpis.panel}
 
       {beneficiarios.length > 0 && (
-        /* Buscador + situación + orden en UNA fila, pegada a la tabla. */
-        <div className="flex flex-wrap items-center gap-2">
-          {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
-          <div className="relative flex-1 sm:max-w-sm" style={{ minWidth: 240 }}>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por nombre, documento o teléfono…"
-              aria-label="Buscar persona"
-              className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar por situación">
-            <button type="button" aria-pressed={filtro === "todas"} className={chip(filtro === "todas")} onClick={() => setFiltro("todas")}>
-              Todas {beneficiarios.length}
-            </button>
-            {conSaldo > 0 && (
-              <button type="button" aria-pressed={filtro === "deben"} className={chip(filtro === "deben")} onClick={() => setFiltro("deben")}>
-                Deben {conSaldo}
-              </button>
-            )}
-            <button type="button" aria-pressed={filtro === "al-dia"} className={chip(filtro === "al-dia")} onClick={() => setFiltro("al-dia")}>
-              Al día {beneficiarios.length - conSaldo}
-            </button>
-            {/* Sólo si hay topes cargados: un filtro que siempre da cero
-                enseña a no confiar en los filtros. */}
-            {hayTopes && enRiesgo > 0 && (
-              <button type="button" aria-pressed={filtro === "riesgo"} className={chip(filtro === "riesgo")} onClick={() => setFiltro("riesgo")}>
-                Sin margen {enRiesgo}
-              </button>
-            )}
-            {/* Sólo si falta alguien: un filtro que da cero enseña a no confiar. */}
-            {sinTelefono > 0 && (
-              <button type="button" aria-pressed={filtro === "sin-telefono"} className={button({ variant: "secondary", className: chip(filtro === "sin-telefono") })} onClick={() => setFiltro("sin-telefono")}>
-                Sin teléfono {sinTelefono}
-              </button>
-            )}
-            {conDatosFaltantes > 0 && (
-              <button type="button" aria-pressed={filtro === "faltan-datos"} className={button({ variant: "secondary", className: chip(filtro === "faltan-datos") })} onClick={() => setFiltro("faltan-datos")}>
-                Faltan datos {conDatosFaltantes}
-              </button>
-            )}
-          </div>
-          {/* El orden, en un desplegable: las mismas seis opciones de siempre. */}
-          <select
-            value={orden}
-            onChange={(e) => setOrden(e.target.value as OrdenPersonas)}
-            aria-label="Ordenar personas por"
-            title="Ordenar por"
-            className="ml-auto h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary"
-          >
-            <option value="saldo">Orden: saldo</option>
-            {hayTopes && <option value="riesgo">Orden: cerca del tope</option>}
-            <option value="nombre">Orden: nombre</option>
-            <option value="adelantado">Orden: adelantado</option>
-            <option value="cumplimiento">Orden: quien menos devolvió</option>
-            <option value="reciente">Orden: último adelanto</option>
-          </select>
-        </div>
+        <BarraPersonas
+          q={q}
+          onQ={setQ}
+          filtro={filtro}
+          onFiltro={setFiltro}
+          orden={orden}
+          onOrden={elegirOrden}
+          cuentas={{ todas: beneficiarios.length, deben: conSaldo, riesgo: enRiesgo, sinTelefono, faltanDatos: conDatosFaltantes, hayTopes }}
+        />
       )}
 
       {loading && beneficiarios.length === 0 ? (
@@ -266,7 +231,9 @@ export default function PersonasView({
         <>
           <TablaPersonas
             ft={ft}
-            reinicio={JSON.stringify([q, orden, filtro, ft.facetas, ft.textos])}
+            orden={ordenColumnas}
+            hayTopes={hayTopes}
+            reinicio={JSON.stringify([q, orden, invertido, filtro, ft.facetas, ft.textos])}
             onVerFicha={setFicha}
             onEditar={setEditPersona}
             onEliminar={setDeletePersona}

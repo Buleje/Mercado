@@ -159,6 +159,49 @@ export function personasACsv(
   return `﻿${COLUMNAS_PERSONAS.join(";")}\n${filas.join("\n")}`;
 }
 
+/**
+ * Una cifra para Excel: en soles sola, número (se suma y se filtra en la
+ * hoja); con otra moneda, el mismo texto del CSV («S/ 10.00 · $ 5.00»).
+ */
+const montoExcel = (m: Record<string, number> | undefined): number | string => {
+  const partes = Object.entries(m ?? {}).filter(([, v]) => v !== 0);
+  if (partes.length === 0) return 0;
+  if (partes.length === 1 && partes[0][0] === "PEN") return Math.round(partes[0][1] * 100) / 100;
+  return montoCsv(m);
+};
+
+/**
+ * La libreta para `exportToExcel` (30-10, «Bajar a Excel» de Personas): las
+ * MISMAS columnas que el CSV, con las cifras como número.
+ */
+export function personasAFilasExcel(
+  personas: readonly (DbBeneficiario & ResumenPersona)[],
+): Record<string, string | number>[] {
+  return personas.map((p) => {
+    const cumplimiento = cumplimientoDe(p);
+    const valores: (string | number)[] = [
+      p.nombre,
+      p.documento ?? "",
+      p.telefono ?? "",
+      p.limiteCredito != null ? p.limiteCredito : "",
+      montoExcel(p.saldoPendiente),
+      montoExcel(p.totalAdelantado),
+      montoExcel(p.totalEntregado),
+      cumplimiento ?? "",
+      montoExcel(p.saldoAFavor),
+      montoExcel(p.teDebe ?? p.saldoPendiente),
+      montoExcel(p.leDebes ?? p.saldoAFavor),
+      p.adelantosAbiertos,
+      p.adelantosLiquidados,
+      p.adelantosCancelados,
+      dia(p.ultimoAdelanto),
+      dia(p.ultimoRecordatorio),
+      p.notas ?? "",
+    ];
+    return Object.fromEntries(COLUMNAS_PERSONAS.map((c, i) => [c, valores[i]]));
+  });
+}
+
 /** Baja el CSV de personas al disco. Sólo en el navegador. */
 export function descargarCsvPersonas(
   personas: readonly (DbBeneficiario & ResumenPersona)[],

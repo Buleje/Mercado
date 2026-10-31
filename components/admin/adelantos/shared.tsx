@@ -102,6 +102,18 @@ export function fmtMonedas(map: Record<string, number>): string {
  * Un total por moneda con cada moneda en su renglón y sin partirse: «S/ 573.00»
  * cortado en «S/» y «573.00» no se lee como plata (visto a 400 px, 28-09).
  */
+/**
+ * El chip de situación sobre las tablas de Adelantos (Personas: Todas / Deben /
+ * Al día…; Cobranza: los tramos). Una sola pieza (30-10): Personas los tenía con
+ * borde doble y Cobranza en fondo hundido, dos estilos para el mismo control.
+ */
+export const chipSituacion = (activo: boolean): string =>
+  `h-12 shrink-0 rounded-xl px-3.5 text-sm font-bold tabular-nums transition-colors ${
+    activo
+      ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]"
+      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+  }`;
+
 export function MontosEnLineas({ map }: { map: Record<string, number> }) {
   return (
     <>

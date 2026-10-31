@@ -6,7 +6,7 @@ import {
   revisarDocumento,
   revisarTelefono,
 } from "@/lib/adelantos/persona-validacion";
-import { cumpleFiltro, ordenarPersonas, type PersonaOrdenable } from "@/lib/adelantos/ordenar-personas";
+import { ORDENES, SENTIDO_NATURAL, cumpleFiltro, ordenarPersonas, ordenarPersonasEnSentido, type PersonaOrdenable } from "@/lib/adelantos/ordenar-personas";
 
 const p = (x: Partial<PersonaOrdenable> & { nombre: string }): PersonaOrdenable => ({
   totalAdelantado: {},
@@ -236,5 +236,38 @@ describe("cumpleFiltro", () => {
     const soloDolares = p({ nombre: "Solo USD", saldoPendiente: { USD: 500 }, limiteCredito: 300 });
     expect(cumpleFiltro(soloDolares, "riesgo")).toBe(false);
     expect(cumpleFiltro(soloDolares, "deben")).toBe(true);
+  });
+});
+
+/* 30-10: el orden pasó del desplegable a los encabezados, que dan vuelta el sentido. */
+describe("ordenarPersonasEnSentido", () => {
+  const lista = [
+    p({ nombre: "Ana", saldoPendiente: pen(100), totalAdelantado: pen(1000), totalEntregado: pen(900), limiteCredito: 5000, ultimoAdelanto: "2026-01-01T00:00:00.000Z" }),
+    p({ nombre: "Beto", saldoPendiente: pen(400), totalAdelantado: pen(500), totalEntregado: pen(100), limiteCredito: 500, ultimoAdelanto: "2026-06-01T00:00:00.000Z" }),
+    p({ nombre: "Carla", saldoPendiente: pen(900), totalAdelantado: pen(900), totalEntregado: pen(0), ultimoAdelanto: "2026-03-01T00:00:00.000Z" }),
+    p({ nombre: "Novato" }),
+  ];
+
+  it("sin invertir es el orden de siempre", () => {
+    for (const o of ORDENES) expect(nombres(ordenarPersonasEnSentido(lista, o, false))).toEqual(nombres(ordenarPersonas(lista, o)));
+  });
+
+  it("al revés por saldo, primero quien menos debe", () => {
+    expect(nombres(ordenarPersonasEnSentido(lista, "saldo", true))).toEqual(["Novato", "Ana", "Beto", "Carla"]);
+  });
+
+  it("al revés por nombre, de la Z a la A", () => {
+    expect(nombres(ordenarPersonasEnSentido(lista, "nombre", true))).toEqual(["Novato", "Carla", "Beto", "Ana"]);
+  });
+
+  it("al revés, quien no tiene el dato sigue al final (no encabeza el mejor cumplimiento ni el último adelanto)", () => {
+    expect(nombres(ordenarPersonasEnSentido(lista, "cumplimiento", true))).toEqual(["Ana", "Beto", "Carla", "Novato"]);
+    expect(nombres(ordenarPersonasEnSentido(lista, "reciente", true))).toEqual(["Ana", "Carla", "Beto", "Novato"]);
+    expect(nombres(ordenarPersonasEnSentido(lista, "riesgo", true)).slice(-2).sort()).toEqual(["Carla", "Novato"]);
+    expect(nombres(ordenarPersonasEnSentido(lista, "riesgo", true)).slice(0, 2)).toEqual(["Ana", "Beto"]);
+  });
+
+  it("los sentidos naturales son los del desplegable que reemplaza", () => {
+    expect(SENTIDO_NATURAL).toEqual({ saldo: "desc", riesgo: "desc", nombre: "asc", adelantado: "desc", cumplimiento: "asc", reciente: "desc" });
   });
 });

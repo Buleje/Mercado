@@ -54,7 +54,7 @@ export default function FilaDeudor({
   const sinGestion = diasSinGestion(ultima);
 
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 py-3">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 py-2.5">
       <input
         type="checkbox"
         checked={enTanda}
