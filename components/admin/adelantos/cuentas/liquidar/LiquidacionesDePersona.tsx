@@ -9,13 +9,15 @@
  * `ControlVinculo`: nada de un diálogo sobre un diálogo).
  */
 
+import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Ban, FileDown } from "@buleje/design-system/icons";
 import { useSettingsSafe } from "@/contexts/settings-context";
 import type { LiquidacionDTO } from "@/lib/db/liquidacion-cuenta.db";
 import type { CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
 import { ORIGENES_CAJA } from "../../crear-adelanto/campos";
-import { fmtMon, inputCls } from "../../shared";
+import { fmtMon } from "../../shared";
+import { AREA } from "../../personas/crear-persona/clases";
 import { textoResultadoCaja } from "./caja-texto";
 import { formatDate } from "@/lib/format";
 
@@ -182,7 +184,7 @@ export default function LiquidacionesDePersona({
                       onChange={(e) => setMotivo(e.target.value)}
                       rows={2}
                       maxLength={300}
-                      className={`${inputCls} py-2`}
+                      className={AREA}
                     />
                   </label>
                   {liq.caja.resultado === "movida" && (

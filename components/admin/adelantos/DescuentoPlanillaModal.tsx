@@ -13,6 +13,7 @@
  * persona es exactamente lo que nadie quiere firmar.
  */
 
+import { cn } from "@/lib/utils";
 import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, Check, Users } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
@@ -165,7 +166,7 @@ export default function DescuentoPlanillaModal({
                 onChange={(e) => { setTope(e.target.value); setAjustes({}); }}
                 placeholder="Sin tope: se descuenta todo el saldo"
                 aria-label="Tope por persona"
-                className={`${inputCls} tabular-nums`}
+                className={cn(inputCls, "tabular-nums")}
               />
             </label>
           </div>
@@ -243,7 +244,7 @@ export default function DescuentoPlanillaModal({
 
           {resultado && (
             <div
-              className={`rounded-2xl border-2 px-4 py-3 text-sm ${
+              className={`rounded-xl border px-3.5 py-2.5 text-sm ${
                 resultado.fallidos.length > 0
                   ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                   : "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"

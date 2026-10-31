@@ -12,6 +12,7 @@
  * aserríos). Nunca los dos a la vez: la cuenta forestal está de un solo lado.
  */
 
+import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { Banknote, ChevronDown, HandCoins, Scale, Wallet } from "@buleje/design-system/icons";
 import {
@@ -221,7 +222,7 @@ export default function FormularioLiquidacion({
                 min={0}
                 value={monto}
                 onChange={(e) => setMonto(e.target.value)}
-                className={`${inputCls} h-11`}
+                className={cn(inputCls, "h-11")}
               />
             </label>
           )}
@@ -261,11 +262,11 @@ export default function FormularioLiquidacion({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block space-y-1">
               <span className="text-sm font-semibold text-[var(--text-secondary)]">Fecha</span>
-              <input type="date" value={fecha} max={HOY()} onChange={(e) => setFecha(e.target.value)} className={`${inputCls} h-11 tabular-nums`} />
+              <input type="date" value={fecha} max={HOY()} onChange={(e) => setFecha(e.target.value)} className={cn(inputCls, "h-11 tabular-nums")} />
             </label>
             <label className="block space-y-1">
               <span className="text-sm font-semibold text-[var(--text-secondary)]">Notas (opcional)</span>
-              <input type="text" value={notas} onChange={(e) => setNotas(e.target.value)} maxLength={500} className={`${inputCls} h-11`} />
+              <input type="text" value={notas} onChange={(e) => setNotas(e.target.value)} maxLength={500} className={cn(inputCls, "h-11")} />
             </label>
           </div>
 
@@ -292,7 +293,7 @@ export default function FormularioLiquidacion({
                         max={a.saldo}
                         value={repartoPorAdelanto[a.adelantoId] ?? "0"}
                         onChange={(e) => setRepartoPorAdelanto((r) => ({ ...r, [a.adelantoId]: e.target.value }))}
-                        className={`${inputCls} h-9 w-28 text-right`}
+                        className={cn(inputCls, "h-9 w-28 text-right")}
                       />
                     </div>
                   ))}

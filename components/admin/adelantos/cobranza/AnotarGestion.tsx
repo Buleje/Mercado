@@ -12,12 +12,14 @@
  * reaparecer el día que vence.
  */
 
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { TIPOS_GESTION, type TipoGestion } from "@/lib/adelantos/gestion-cobranza";
 import { ModalActions, ModalShell, inputCls } from "../shared";
+import { AREA } from "../personas/crear-persona/clases";
 import { formatCurrency, formatNumber } from "@/lib/format";
 
 const isoDia = (d: Date) => {
@@ -144,7 +146,7 @@ export default function AnotarGestion({
             min={isoDia(new Date())}
             onChange={(e) => setFechaPrometida(e.target.value)}
             aria-label="Fecha prometida"
-            className={`${inputCls} h-11 tabular-nums`}
+            className={cn(inputCls, "h-11 tabular-nums")}
           />
           <input
             type="number"
@@ -153,7 +155,7 @@ export default function AnotarGestion({
             onChange={(e) => setMontoPrometido(e.target.value)}
             placeholder={`¿Cuánto? (vacío = todo, ${formatCurrency(saldo)})`}
             aria-label="Monto prometido"
-            className={`${inputCls} h-11 tabular-nums`}
+            className={cn(inputCls, "h-11 tabular-nums")}
           />
         </div>
       )}
@@ -164,7 +166,7 @@ export default function AnotarGestion({
         rows={3}
         placeholder="Qué dijo, con quién hablaste…"
         aria-label="Nota de la gestión"
-        className={`${inputCls} h-auto py-3`}
+        className={AREA}
       />
 
       {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}

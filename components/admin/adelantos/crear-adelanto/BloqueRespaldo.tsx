@@ -20,6 +20,7 @@ import CapturaFoto from "../CapturaFoto";
 import { FORMULARIO_ADELANTO, type AltaAdelanto } from "../hooks/use-alta-adelanto";
 import { cn } from "@/lib/utils";
 import { Field, fmtPt, inputCls } from "../shared";
+import { AREA } from "../personas/crear-persona/clases";
 import { Comprobante, NotasRapidas, PiesTablares } from "./campos-respaldo";
 import { CLASE_BLOQUE } from "./piezas";
 
@@ -111,7 +112,7 @@ export default function BloqueRespaldo({
                   onChange={(e) => alta.setReciboManual(e.target.value)}
                   maxLength={60}
                   placeholder="Ej. 001-04578"
-                  className={`${inputCls} tabular-nums`}
+                  className={cn(inputCls, "tabular-nums")}
                 />
               </Field>
               <Field label="Motivo o notas (opcional)">
@@ -122,7 +123,7 @@ export default function BloqueRespaldo({
                   maxLength={alta.abono.sinFoto && modo === "abono" ? 500 : 1000}
                   rows={2}
                   placeholder={modo === "dar" ? "Para qué es la plata…" : modo === "servicio" ? "Ej. aserrío de 3 462 pt a 0,50" : "Qué se acordó…"}
-                  className={cn(inputCls, "h-auto py-3")}
+                  className={AREA}
                 />
               </Field>
               {modo === "dar" && (

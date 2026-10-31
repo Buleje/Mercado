@@ -10,6 +10,7 @@
  * (antigüedad) y las columnas de la base quedaban muertas.
  */
 
+import { cn } from "@/lib/utils";
 import { CalendarDays, Plus, Trash2, Wand2 } from "@buleje/design-system/icons";
 import { RITMOS, diaLocal, diferenciaDelPlan, planCuadra, repartirCuotas } from "@/lib/adelantos/plan-cuotas";
 import { formatCurrency } from "@/lib/currency";
@@ -113,7 +114,7 @@ export default function PlanDeEntregas({
                 onChange={(e) => editar(c.key, "descripcion", e.target.value)}
                 placeholder="Qué te entrega"
                 aria-label={`Descripción de la cuota ${i + 1}`}
-                className={`${inputCls} h-11 flex-1`}
+                className={cn(inputCls, "h-11 flex-1")}
               />
               <input
                 type="number"
@@ -123,14 +124,14 @@ export default function PlanDeEntregas({
                 onChange={(e) => editar(c.key, "valor", e.target.value)}
                 placeholder="0.00"
                 aria-label={`Valor de la cuota ${i + 1}`}
-                className={`${inputCls} h-11 w-28 tabular-nums`}
+                className={cn(inputCls, "h-11 w-28 tabular-nums")}
               />
               <input
                 type="date"
                 value={c.fecha}
                 onChange={(e) => editar(c.key, "fecha", e.target.value)}
                 aria-label={`Fecha de la cuota ${i + 1}`}
-                className={`${inputCls} h-11 w-40 tabular-nums`}
+                className={cn(inputCls, "h-11 w-40 tabular-nums")}
               />
               <button
                 type="button"

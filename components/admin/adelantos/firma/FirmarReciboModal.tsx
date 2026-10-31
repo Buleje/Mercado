@@ -15,6 +15,7 @@
  * quién recibe): nadie debería firmar sin verlo.
  */
 
+import { CAMPO } from "../personas/crear-persona/clases";
 import {
   AlertTriangle,
   Check,
@@ -33,8 +34,7 @@ import { useFirmarRecibo, type FirmarRecibo } from "./use-firmar-recibo";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 
-const INPUT =
-  "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-[var(--accent-muted)]";
+const INPUT = CAMPO;
 const SECUNDARIO =
   "inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--text-primary)] disabled:opacity-50";
 /* `sm:flex-1`, no `flex-1`: en la columna del celular la base 0 aplastaba el botón a 24 px (QA 400).

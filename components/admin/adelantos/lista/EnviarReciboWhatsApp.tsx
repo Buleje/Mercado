@@ -7,6 +7,7 @@
  * carpeta de la persona, y el mensaje lleva un enlace que vence a las 72 h.
  */
 
+import { cn } from "@/lib/utils";
 import { useId } from "react";
 import { CheckCircle2, Lock, MessageCircle, Share2 } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
@@ -108,7 +109,7 @@ export default function EnviarReciboWhatsApp({ adelanto: a, onClose, onEnviado }
               placeholder="987 654 321"
               aria-invalid={!!r.errorCelular}
               disabled={r.preparando || r.sinPermiso}
-              className={`${inputCls} h-12 text-base tabular-nums`}
+              className={cn(inputCls, "h-12 text-base tabular-nums")}
               data-recibo-celular
             />
           </div>

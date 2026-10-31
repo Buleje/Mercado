@@ -6,6 +6,8 @@
  * navegador lee QR, el fotocheck. Elegida, queda una tarjeta con «Cambiar».
  */
 
+import { cn } from "@/lib/utils";
+import { CAMPO } from "../personas/crear-persona/clases";
 import { useState, type ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Loader2, QrCode, RefreshCw, Search } from "@buleje/design-system/icons";
@@ -151,7 +153,7 @@ export default function PasoPersona({ e }: { e: EntregaAdelanto }) {
             onChange={(ev) => personas.setQ(ev.target.value)}
             placeholder="Buscar por nombre o DNI"
             autoComplete="off"
-            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
+            className={cn(CAMPO, "pl-10")}
             data-buscar-persona
           />
         </label>

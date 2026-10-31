@@ -17,7 +17,7 @@ import { leerJson } from "@/lib/errores/sin-dato";
 import { Pencil } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
-import { inputCls } from "../shared";
+import { AREA } from "../personas/crear-persona/clases";
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
 
@@ -92,7 +92,7 @@ export default function EditarNotasModal({
           rows={4}
           placeholder="Para qué era la plata…"
           aria-label="Motivo / notas del adelanto"
-          className={`${inputCls} h-auto py-3`}
+          className={AREA}
         />
       </div>
     </AdminModal>

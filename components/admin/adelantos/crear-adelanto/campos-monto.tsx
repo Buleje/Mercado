@@ -7,6 +7,7 @@
  * mover caja). Salió de `campos.tsx` (510 líneas) sin cambiar comportamiento.
  */
 
+import { cn } from "@/lib/utils";
 import {
   ArrowRightLeft,
   Banknote,
@@ -123,7 +124,7 @@ export function FechaAdelanto({ fecha, onCambiar }: { fecha: string; onCambiar: 
         max={hoy}
         onChange={(e) => onCambiar(e.target.value)}
         aria-label="Fecha del adelanto"
-        className={`${inputCls} h-11 tabular-nums`}
+        className={cn(inputCls, "h-11 tabular-nums")}
       />
     </div>
   );

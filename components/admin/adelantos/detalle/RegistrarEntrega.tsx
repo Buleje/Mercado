@@ -6,6 +6,7 @@
  * negocio, y si devuelve en plata la caja da un egreso, no un ingreso.
  */
 
+import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, CheckCircle, FileText } from "@buleje/design-system/icons";
@@ -63,7 +64,7 @@ export default function RegistrarEntrega({
             key={t}
             type="button"
             onClick={() => f.setTipo(t)}
-            className={`h-12 rounded-2xl border-2 text-base font-semibold transition-colors ${
+            className={`h-12 rounded-xl border text-sm font-semibold transition-colors ${
               f.tipo === t ? "border-primary bg-primary/10 text-[var(--accent-ink)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"
             }`}
           >
@@ -90,7 +91,7 @@ export default function RegistrarEntrega({
               </option>
             ))}
           </select>
-          <input type="number" min={1} value={f.cantidad} onChange={(e) => f.setCantidad(e.target.value)} placeholder="Cantidad" aria-label="Cantidad" className={`${inputCls} tabular-nums`} />
+          <input type="number" min={1} value={f.cantidad} onChange={(e) => f.setCantidad(e.target.value)} placeholder="Cantidad" aria-label="Cantidad" className={cn(inputCls, "tabular-nums")} />
         </div>
       )}
       {f.tipo === "PRODUCTO" && prodSel && f.cantidad && Number(f.cantidad) > 0 && !f.valor && (
@@ -104,7 +105,7 @@ export default function RegistrarEntrega({
         onChange={(e) => f.setValor(e.target.value)}
         placeholder={f.tipo === "LIBRE" ? "Valor en S/" : "Valor S/ (vacío = precio × cantidad)"}
         aria-label="Valor de la entrega"
-        className={`${inputCls} tabular-nums`}
+        className={cn(inputCls, "tabular-nums")}
       />
       {/* Lo recibido se paga con producto del negocio: sumarlo al stock sería una compra. */}
       {f.tipo === "PRODUCTO" && !recibido && (

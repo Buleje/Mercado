@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { InfoTip, type InfoTipProps } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/currency";
 import { formatNumber } from "@/lib/format";
+import { CAMPO } from "./personas/crear-persona/clases";
 
 /**
  * Los cuatro estados de un adelanto, con su color.
@@ -166,16 +167,11 @@ export function SkeletonGrid() {
 // propio archivo sin importar el módulo entero (sería circular).
 
 /**
- * El campo de texto del módulo.
- *
- * Antes era `border-2` en gris fuerte sobre fondo elevado: con ocho campos en
- * pantalla, ocho rectángulos grises compitiendo entre sí y con las tarjetas que
- * los contienen. Ahora el campo se dibuja como un HUECO —fondo hundido, borde
- * de un pixel apenas visible— y el color aparece sólo al enfocar, que es cuando
- * importa. Menos líneas, la misma estructura.
+ * El campo de texto del módulo: el campo estándar del panel (ADR-489, 48 px,
+ * borde de 1 px `--rule-base`, foco turquesa). Es el mismo de «Nueva persona»;
+ * la cadena vive en `personas/crear-persona/clases.ts` para no duplicarla.
  */
-export const inputCls =
-  "w-full h-12 px-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-base font-semibold text-[var(--text-primary)] outline-none transition-[border-color,box-shadow,background-color] focus:border-primary focus:bg-[var(--surface-raised)] focus:ring-4 focus:ring-primary/15";
+export const inputCls = CAMPO;
 
 export function Field({
   label,
@@ -209,7 +205,7 @@ export function Field({
     <span className="text-sm font-semibold text-[var(--text-secondary)]">{label}</span>
   );
   const pie = hint ? (
-    <span className="block text-sm font-medium text-[var(--text-tertiary)]">{hint}</span>
+    <span className="block text-sm text-[var(--text-tertiary)]">{hint}</span>
   ) : null;
   if (grupo) {
     return (

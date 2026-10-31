@@ -13,6 +13,7 @@
  * accesos directos; este modal es el "buscar entre todas / crear nueva".
  */
 
+import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { AlertTriangle, Plus, Search, UserPlus, X } from "@buleje/design-system/icons";
@@ -21,6 +22,7 @@ import { logger } from "@/lib/logger";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { avisoCelular } from "@/lib/adelantos/recibo-whatsapp";
 import { Field, ModalShell, fmtMonedas, inputCls, sinTildes } from "../shared";
+import { campo } from "../personas/crear-persona/clases";
 import type { BeneficiarioConSaldo } from "./tipos";
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
@@ -75,7 +77,7 @@ export default function SeleccionarPersonaModal({
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por nombre, documento o teléfono…"
             aria-label="Buscar persona"
-            className={`${inputCls} pl-11 pr-10`}
+            className={cn(inputCls, "pl-11 pr-10")}
           />
           {q && (
             <button
@@ -272,7 +274,7 @@ function NuevaPersonaInline({
             placeholder="9XX XXX XXX"
             inputMode="tel"
             aria-label="Celular"
-            className={`${inputCls} tabular-nums ${avisoCelular(telefono) ? "border-[var(--data-warning)]" : ""}`}
+            className={campo(!!avisoCelular(telefono), "tabular-nums")}
           />
         </Field>
         <input
@@ -282,7 +284,7 @@ function NuevaPersonaInline({
           type="number"
           min={0}
           aria-label="Tope de crédito"
-          className={`${inputCls} tabular-nums`}
+          className={cn(inputCls, "tabular-nums")}
         />
       </div>
       {err && <p className="text-sm font-semibold text-[var(--data-error)]">{err}</p>}

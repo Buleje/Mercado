@@ -12,6 +12,8 @@
  * es de admin o dueño; los demás ven a quién está unida.
  */
 
+import { cn } from "@/lib/utils";
+import { CAMPO } from "./crear-persona/clases";
 import { useCallback, useEffect, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Link2, Link2Off, Search } from "@buleje/design-system/icons";
@@ -183,7 +185,7 @@ export function UnirConDirectorio({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Busca su ficha por nombre, RUC o DNI"
-              className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-3 text-base text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
+              className={cn(CAMPO, "pl-10")}
               data-buscar-directorio
             />
           </label>

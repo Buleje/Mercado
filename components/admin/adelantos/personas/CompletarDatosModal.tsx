@@ -22,7 +22,8 @@ import { revisarDocumento } from "@/lib/adelantos/persona-validacion";
 import { avisoCelular } from "@/lib/adelantos/recibo-whatsapp";
 import { cuerpoPatch } from "@/lib/adelantos/datos-persona";
 import { useLookupDocumento } from "@/hooks/use-lookup-documento";
-import { Field, ModalActions, ModalShell, inputCls } from "../shared";
+import { Field, ModalActions, ModalShell } from "../shared";
+import { campo } from "./crear-persona/clases";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
 
 type Hallado = Extract<ResultadoDocumento, { encontrado: true }>;
@@ -112,7 +113,7 @@ export default function CompletarDatosModal({
           inputMode="tel"
           placeholder="9XX XXX XXX"
           aria-label="Teléfono"
-          className={`${inputCls} tabular-nums ${avisoTel ? "border-[var(--data-warning)]" : ""}`}
+          className={campo(!!avisoTel, "tabular-nums")}
         />
       </Field>
 
@@ -127,7 +128,7 @@ export default function CompletarDatosModal({
             inputMode="numeric"
             placeholder="12345678"
             aria-label="DNI o RUC"
-            className={`${inputCls} pr-12 tabular-nums ${avisoDoc ? "border-[var(--data-warning)]" : ""}`}
+            className={campo(!!avisoDoc, "pr-12 tabular-nums")}
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2">
             {estado.fase === "consultando" ? (

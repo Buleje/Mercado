@@ -11,7 +11,8 @@ import { useState } from "react";
 import { RotateCcw } from "@buleje/design-system/icons";
 import { TRAMOS } from "@/lib/adelantos/gestion-cobranza";
 import { PLANTILLAS_POR_DEFECTO, armarMensaje, type Plantillas } from "@/lib/adelantos/plantillas-cobranza";
-import { ModalActions, ModalShell, inputCls } from "../shared";
+import { ModalActions, ModalShell } from "../shared";
+import { AREA } from "../personas/crear-persona/clases";
 
 export default function PlantillasModal({
   plantillas,
@@ -55,7 +56,7 @@ export default function PlantillasModal({
             onChange={(e) => setBorrador((b) => ({ ...b, [t.id]: e.target.value }))}
             rows={2}
             aria-label={`Mensaje para ${t.label}`}
-            className={`${inputCls} h-auto py-2.5 text-sm`}
+            className={AREA}
           />
           {/* Cómo se va a leer de verdad: los huecos sin reemplazar son el error
               más fácil de cometer y el más difícil de ver en el propio texto. */}

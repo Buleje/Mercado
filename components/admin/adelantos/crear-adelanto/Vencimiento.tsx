@@ -12,6 +12,7 @@
  * mes». Nadie dice «el 31 de agosto de 2026».
  */
 
+import { cn } from "@/lib/utils";
 import { CalendarClock, X } from "@buleje/design-system/icons";
 import { inputCls } from "../shared";
 
@@ -93,7 +94,7 @@ export default function Vencimiento({
           min={fechaAdelanto}
           onChange={(e) => onCambiar(e.target.value)}
           aria-label="Fecha de devolución acordada"
-          className={`${inputCls} h-11 tabular-nums`}
+          className={cn(inputCls, "h-11 tabular-nums")}
         />
         {vencimiento && (
           <button

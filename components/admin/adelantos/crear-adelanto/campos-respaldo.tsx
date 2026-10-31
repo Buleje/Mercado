@@ -6,6 +6,7 @@
  * comportamiento.
  */
 
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Camera, Plus, FileText, Ruler, X } from "@buleje/design-system/icons";
 import { ACEPTA_ADJUNTO, esPdfLocal, leerAdjuntoLocal } from "@/lib/adelantos/adjunto-local";
@@ -87,7 +88,7 @@ export function NotasRapidas({
             }}
             placeholder="Agregar una nota rápida…"
             aria-label="Nueva nota rápida"
-            className={`${inputCls} h-10`}
+            className={cn(inputCls, "h-10")}
           />
           <button
             type="button"
@@ -241,7 +242,7 @@ export function PiesTablares({
           onChange={(e) => onCambiarCantidad(e.target.value)}
           placeholder="Cantidad"
           aria-label="Cantidad de pies tablares"
-          className={`${inputCls} h-11 w-32 tabular-nums`}
+          className={cn(inputCls, "h-11 w-32 tabular-nums")}
         />
         <button type="button" onClick={() => onCambiarTipo("COMPRADO")} className={chipCls(tipo === "COMPRADO")}>
           Comprado

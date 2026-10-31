@@ -14,6 +14,7 @@
  *   imagen de la huella: el ⓘ lo dice.
  */
 
+import { CAMPO } from "../personas/crear-persona/clases";
 import { useState } from "react";
 import { Fingerprint, ScanLine, Smartphone } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
@@ -31,8 +32,7 @@ import { useGuardarHuella } from "./use-guardar-huella";
 
 type Forma = "camara" | "celular" | "passkey";
 
-const INPUT =
-  "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-[var(--accent-muted)]";
+const INPUT = CAMPO;
 
 export default function RegistrarHuellaModal({ adelanto: a, onCerrar, onGuardada }: { adelanto: DbAdelanto; onCerrar: () => void; onGuardada: () => void }) {
   const [forma, setForma] = useState<Forma>("camara");

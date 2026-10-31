@@ -7,14 +7,14 @@
  * en negro sobre blanco al guardarla (`LienzoFirma` + `firmaEnCanvas`).
  */
 
+import { CAMPO } from "../personas/crear-persona/clases";
 import LienzoFirma from "@/components/ui-system/LienzoFirma";
 import { enmascararDocumento } from "@/lib/adelantos/entregar-tipos";
 import CapturaHuella from "../firma/CapturaHuella";
 import { CabezaPaso } from "./PasoPersona";
 import type { EntregaAdelanto } from "./use-entregar-adelanto";
 
-const INPUT =
-  "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-60";
+const INPUT = CAMPO;
 
 export default function FirmaYHuella({ e }: { e: EntregaAdelanto }) {
   const ocupado = e.fase === "guardando";

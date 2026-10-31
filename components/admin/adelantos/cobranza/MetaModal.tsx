@@ -8,6 +8,7 @@
  * pasa de lista a tablero.
  */
 
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { formatCurrency } from "@/lib/currency";
 import { avanceDeMeta } from "@/lib/adelantos/gestion-cobranza";
@@ -44,7 +45,7 @@ export default function MetaModal({
           onChange={(e) => setValor(e.target.value)}
           placeholder="5000"
           autoFocus
-          className={`${inputCls} tabular-nums text-lg`}
+          className={cn(inputCls, "tabular-nums text-lg")}
         />
       </Field>
 

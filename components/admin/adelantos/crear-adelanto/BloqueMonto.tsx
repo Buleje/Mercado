@@ -63,7 +63,7 @@ export default function BloqueMonto({
                   value={servicio.pt}
                   onChange={(e) => servicio.setPt(e.target.value)}
                   placeholder="3462"
-                  className={`${inputCls} tabular-nums`}
+                  className={cn(inputCls, "tabular-nums")}
                 />
               </Field>
               <Field label="S/ por pt">
@@ -75,7 +75,7 @@ export default function BloqueMonto({
                   value={servicio.precioPt}
                   onChange={(e) => servicio.setPrecioPt(e.target.value)}
                   placeholder="0.50"
-                  className={`${inputCls} tabular-nums`}
+                  className={cn(inputCls, "tabular-nums")}
                 />
               </Field>
               {servicio.tarifa && (
