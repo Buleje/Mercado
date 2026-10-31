@@ -3,7 +3,8 @@
 import { fijarArrastre, MIME_EXPLORADOR, leerCarga, arrastreActual } from "../explorador/destino-soltar";
 import { cn } from "@/lib/utils";
 import { descendantIds } from "@/lib/documentos/folder-tree";
-import { ChevronRight, Plus, Palette, Share2, Trash2, Check } from "@buleje/design-system/icons";
+import { ChevronRight, Check, MoreHorizontal } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 import { FolderGlyph } from "../folder-visuals";
 import MarcasCarpeta from "../explorador/MarcasCarpeta";
 import { tagsVisibles } from "./compartido";
@@ -13,7 +14,7 @@ export default function FilaCarpeta({ arch, f, depth, hasChildren }: { arch: Mod
   const { filterMode, activeFolderId, dragOverFolderId, expandedFolders, setDraggingFolderId,
     setDragOverFolderId, setRootDropActive, draggingFolderId, ex, childrenMap, dropFolderOnFolder,
     dropDocOnFolder, selectingFolders, selectedFolderIds, toggleFolderSelected, toggleExpand, setFilterMode,
-    setActiveFolderId, openCreateChild, setEditingFolder, setSharingFolder, handleDeleteFolder,
+    setActiveFolderId,
     newFolderParent, newFolderName, setNewFolderName, handleCreateFolder, setNewFolderParent } = arch;
               const active = filterMode === "folder" && activeFolderId === f.id;
               const dropTarget = dragOverFolderId === f.id;
@@ -107,20 +108,17 @@ export default function FilaCarpeta({ arch, f, depth, hasChildren }: { arch: Mod
                       <button
                         onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
                         onContextMenu={(e) => { e.preventDefault(); ex.abrirMenu({ tipo: "carpeta", carpeta: f }, { x: e.clientX, y: e.clientY }); }}
+                        // El nombre completo con el aviso del navegador: el cartel oscuro de antes salía
+                        // al instante y tapaba la carpeta de abajo (Brandon 31-10).
+                        title={f.name}
                         className={cn(
-                          "relative group/folderrow flex-1 min-w-0 flex items-center gap-2 py-2 pr-14 rounded-xl text-sm font-bold transition-colors",
+                          "relative flex-1 min-w-0 flex items-center gap-2 py-2 pr-1 rounded-xl text-sm font-bold transition-colors",
                           active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                         )}
                       >
                         <FolderGlyph folder={f} active={active} className="h-4 w-4 shrink-0" />
                         <span className="flex-1 text-left truncate">{f.name}</span>
                         <MarcasCarpeta carpeta={f} />
-                        {/* Nombre completo al hover — el sidebar es redimensionable
-                            (puede llegar a 180px) y el `truncate` de arriba no
-                            avisaba en absoluto qué decía el nombre cortado. */}
-                        <span className="pointer-events-none absolute left-6 top-full z-50 mt-1 hidden whitespace-nowrap rounded-lg bg-[var(--text-primary)] px-2.5 py-1.5 text-xs font-bold text-white shadow-[var(--shadow-lg)] group-hover/folderrow:block dark:bg-[var(--surface-raised)] dark:border dark:border-[var(--rule-base)]">
-                          {f.name}
-                        </span>
                         {/* Con el checkbox puesto, el ancho del sidebar no alcanza
                             para nombre + etiquetas: en modo selección hay que poder
                             LEER qué se marca, así que los chips se guardan. */}
@@ -148,43 +146,21 @@ export default function FilaCarpeta({ arch, f, depth, hasChildren }: { arch: Mod
                           </span>
                         )}
                       </button>
-                    </div>
-                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5">
+                      {/* Un «⋯» con su propio lugar (no encima de la estrella, el vínculo ni la cifra):
+                          abre el mismo menú del clic derecho, que trae Nueva subcarpeta, Cambiar ícono,
+                          Compartir, Eliminar y el resto (Brandon 31-10: «que no se superpongan»). */}
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); openCreateChild(f.id); }}
-                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
-                        aria-label={`Nueva subcarpeta en ${f.name}`}
-                        title="Nueva subcarpeta"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const r = e.currentTarget.getBoundingClientRect();
+                          ex.abrirMenu({ tipo: "carpeta", carpeta: f }, { x: r.left, y: r.bottom });
+                        }}
+                        className={button({ variant: "ghost", size: "icon", className: "h-9 w-8 shrink-0 self-center rounded-lg text-[var(--text-tertiary)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100" })}
+                        aria-label={`Opciones de ${f.name}`}
+                        title="Opciones (también con clic derecho)"
                       >
-                        <Plus className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setEditingFolder(f); }}
-                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
-                        aria-label={`Cambiar ícono de ${f.name}`}
-                        title="Cambiar ícono"
-                      >
-                        <Palette className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSharingFolder(f); }}
-                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
-                        aria-label={`Compartir carpeta ${f.name}`}
-                        title="Compartir carpeta por link"
-                      >
-                        <Share2 className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f); }}
-                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)] transition-all"
-                        aria-label={`Eliminar carpeta ${f.name}`}
-                        title="Eliminar carpeta"
-                      >
-                        <Trash2 className="h-3 w-3" />
+                        <MoreHorizontal className="h-4 w-4" />
                       </button>
                     </div>
                   </div>

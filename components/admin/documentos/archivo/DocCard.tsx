@@ -101,7 +101,7 @@ export function DocCard({
 
       {/* Thumbnail — imagen real para imágenes, 1ª página para PDFs, ícono para el resto. */}
       <button onClick={onPreview} onDoubleClick={onAbrir} className="block w-full aspect-[4/3] bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
-        <DocThumb doc={doc} Icon={Icon} tint={tint} bg={bg} />
+        <DocThumb doc={doc} Icon={Icon} tint={tint} bg={bg} completo />
       </button>
 
       {/* El «⋯» de la tarjeta: los cuatro íconos de 28 px que aparecían al

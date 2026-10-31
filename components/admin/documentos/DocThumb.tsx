@@ -18,8 +18,12 @@ import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import { familiaDe, esImagenRenderizable, esImagenConvertible } from "@/lib/documents/tipos-archivo";
 
 export default function DocThumb({
-  doc, Icon, tint, bg, iconClassName = "h-12 w-12",
-}: { doc: DbDocument; Icon: LucideIcon; tint: string; bg: string; iconClassName?: string }) {
+  doc, Icon, tint, bg, iconClassName = "h-12 w-12", completo = false,
+}: {
+  doc: DbDocument; Icon: LucideIcon; tint: string; bg: string; iconClassName?: string;
+  /** La hoja o la foto ENTERA, achicada (Tarjetas, Brandon 31-10: «que se vea completo el documento»); sin esto, recortada para llenar. */
+  completo?: boolean;
+}) {
   // HEIC, TIFF o PSD son imágenes que el navegador NO dibuja: pedirlas en un
   // <img> daba un roto y recién ahí caía al ícono. Se filtra antes.
   const isImage = esImagenRenderizable(doc.name, doc.mimeType);
@@ -49,7 +53,9 @@ export default function DocThumb({
         alt={doc.name}
         loading="lazy"
         onError={() => setFailed(true)}
-        className={cn("w-full h-full object-cover", (isPdf || dibujable) && "object-top bg-[var(--surface-raised)]")}
+        className={completo
+          ? "h-full w-full object-contain p-1.5 drop-shadow-sm"
+          : cn("w-full h-full object-cover", (isPdf || dibujable) && "object-top bg-[var(--surface-raised)]")}
       />
     );
   }

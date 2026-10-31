@@ -1,75 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import AvisosDelArchivo from "../AvisosDelArchivo";
-import { fmtFechaCorta, MODOS_CON_LINEA_DE_FOTOS } from "./compartido";
-import FotosEscondidas from "../FotosEscondidas";
+import ListaSugerenciasIA from "../AvisosDelArchivo";
+import AvisosCabecera from "../AvisosCabecera";
+import { fmtFechaCorta } from "./compartido";
 import { Wand2, CalendarDays, X } from "@buleje/design-system/icons";
 import { formatDateLong } from "@/lib/format";
-import { logger } from "@/lib/logger";
 import type { ModeloArchivo } from "./use-archivo";
-import { sinCarpetaRepetida, usePropuestaCarpeta } from "./use-propuesta-carpeta";
-import { ListaPropuestas, PastillaPropuesta } from "./PropuestaCarpeta";
+import { ListaPropuestas } from "./PropuestaCarpeta";
+import { useAvisosArchivo } from "./use-avisos-archivo";
 export default function AvisosArchivo({ arch }: { arch: ModeloArchivo }) {
-  const { vencidosDocs, expiringDocs, expiryBannerDismissed, verVencimientos, setExpiryBannerDismissed,
-    sugerenciasIA, aplicarSugerencia, descartarSugerencia, aplicarTodasLasSugerencias, aplicandoTodas,
-    setOrdenando, ordenVersion, vistaGeneral, filterMode, fotosEsc, verFotosDeMaquina, scanResult,
-    setScanResult, analyzingId, analyzeResult, setAnalyzeResult, error, refresh,
-    documents, folders, bulk, hayBusqueda, setMovingDoc } = arch;
-  // «¿Va a "X"?» para lo que acabas de subir y quedó suelto (24-10).
-  const propuesta = usePropuestaCarpeta({ documents, folders, bulk, refresh, activo: filterMode !== "trash" && !hayBusqueda });
-  const [verPropuestas, setVerPropuestas] = useState(false);
-  // La pastilla de la IA no repite la carpeta de un papel que ya pregunta «¿Va a…?».
-  const sugerencias = sinCarpetaRepetida(sugerenciasIA, propuesta.items);
-  const repetidas = sugerencias.length !== sugerenciasIA.length || sugerencias.some((s, i) => s !== sugerenciasIA[i]);
-  const [aplicandoSinRepetir, setAplicandoSinRepetir] = useState(false);
-  const aplicarTodas = async () => {
-    if (!repetidas) return aplicarTodasLasSugerencias();
-    setAplicandoSinRepetir(true);
-    try {
-      for (const { doc, carpeta, vence } of sugerencias) {
-        await aplicarSugerencia(doc.id, { ...(carpeta ? { folderId: carpeta.folderId } : {}), ...(vence ? { expiresAt: vence } : {}) })
-          .catch((err) => logger.warn("[documentos] sugerencia fail", { docId: doc.id, err: String(err) }));
-      }
-      await refresh();
-    } finally {
-      setAplicandoSinRepetir(false);
-    }
-  };
-  const fotos = vistaGeneral && MODOS_CON_LINEA_DE_FOTOS.has(filterMode) && (fotosEsc.conteo?.total ?? 0) > 0
-    ? <FotosEscondidas conteo={fotosEsc.conteo} onVerFotos={verFotosDeMaquina} />
-    : null;
-  const hayPastilla = propuesta.items.length > 0 || propuesta.leyendo.length > 0;
+  const { aplicarSugerencia, descartarSugerencia, scanResult, setScanResult, analyzingId, analyzeResult,
+    setAnalyzeResult, error, refresh, setMovingDoc } = arch;
+  const { avisos, propuesta, verPropuestas, sugerencias, verSugerencias } = useAvisosArchivo(arch);
   return (
     <>
-      {/* Avisos en una fila: por vencer (la promesa del módulo) y lo que la IA
-          sugiere ordenar, cada uno con su acción. */}
-      <AvisosDelArchivo
-        vencidos={vencidosDocs}
-        porVencer={expiringDocs}
-        porVencerDescartado={expiryBannerDismissed}
-        onVerVencidos={() => verVencimientos("vencidos")}
-        onVerPorVencer={() => verVencimientos("porVencer")}
-        onDescartarPorVencer={() => setExpiryBannerDismissed(true)}
-        sugerencias={sugerencias}
-        onAplicar={(id, cambios) => void aplicarSugerencia(id, cambios)}
-        onDescartar={descartarSugerencia}
-        onAplicarTodas={() => void aplicarTodas()}
-        aplicandoTodas={aplicandoTodas || aplicandoSinRepetir}
-        fechaCorta={fmtFechaCorta}
-        orden={{ onRevisar: () => setOrdenando(true), version: ordenVersion }}
-        // Las fotos de las cámaras no se mezclan con tus papeles: la línea que dice
-        // cuántas hay va al final de la fila de avisos, no en una fila propia (23-10).
-        // «¿Va a…?» va en la misma fila, antes.
-        extra={hayPastilla || fotos ? (
-          <>
-            <PastillaPropuesta modelo={propuesta} abierta={verPropuestas} onAbrir={() => setVerPropuestas((v) => !v)} />
-            {fotos}
-          </>
-        ) : undefined}
-      />
+      {/* Vencidos · por vencer · ¿Va a…? · lo que sugiere la IA · ordenar · sin
+          descripción · fotos escondidas: en la fila de las pestañas de
+          Documentos (31-10), tres a la vista según el ancho y todos en «Avisos». */}
+      <AvisosCabecera avisos={avisos} enLinea={3} />
+      {verSugerencias && (
+        <ListaSugerenciasIA
+          sugerencias={sugerencias}
+          onAplicar={(id, cambios) => void aplicarSugerencia(id, cambios)}
+          onDescartar={descartarSugerencia}
+          fechaCorta={fmtFechaCorta}
+        />
+      )}
       {verPropuestas && <ListaPropuestas modelo={propuesta} onOtraCarpeta={setMovingDoc} />}
-
 
       {/* Resultado del escaneo IA */}
       {scanResult && (

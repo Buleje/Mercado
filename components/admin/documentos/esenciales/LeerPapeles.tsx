@@ -19,20 +19,14 @@ import type { ModeloArchivo } from "../archivo/use-archivo";
  * de cada papel —gratis, sin clave— y la IA lo describe si hay cupo. Con el
  * texto guardado, la búsqueda de Esenciales los encuentra por contenido.
  */
-export default function LeerPapeles({ docs, arch, className }: {
-  /** Los papeles de la carpeta (con sus subcarpetas). */
-  docs: readonly DbDocument[];
-  arch: ModeloArchivo;
-  className?: string;
-}) {
+/** La lectura de una lista de papeles: cuáles faltan, el avance y el «leerlos» (31-10: también lo usa el aviso de la cabecera). */
+export function useLeerPapeles(docs: readonly DbDocument[], arch: ModeloArchivo) {
   const { runIndex } = arch;
   const [progreso, setProgreso] = useState<{ hechos: number; total: number } | null>(null);
   const faltan = useMemo(
     () => docs.filter((d) => !d.deletedAt && isAnalyzableMime(d.mimeType) && !tieneDescripcion(d) && !esFotoDeMaquina(d)),
     [docs],
   );
-  if (faltan.length === 0 && !progreso) return null;
-
   const leer = async () => {
     if (progreso) return;
     const lista = [...faltan];
@@ -46,6 +40,17 @@ export default function LeerPapeles({ docs, arch, className }: {
       setProgreso(null);
     }
   };
+  return { faltan, progreso, leer };
+}
+
+export default function LeerPapeles({ docs, arch, className }: {
+  /** Los papeles de la carpeta (con sus subcarpetas). */
+  docs: readonly DbDocument[];
+  arch: ModeloArchivo;
+  className?: string;
+}) {
+  const { faltan, progreso, leer } = useLeerPapeles(docs, arch);
+  if (faltan.length === 0 && !progreso) return null;
 
   return (
     <div

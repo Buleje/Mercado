@@ -97,6 +97,12 @@ export interface ActionMenuProps {
   /** Clases extra del botón (ej. `max-sm:flex-1` para que el CTA se estire). */
   className?: string;
   /**
+   * Clases del rótulo (ej. `@max-[80rem]/riel:sr-only`: el rótulo se esconde
+   * cuando el contenedor aprieta y queda ícono + contador, sin perder el nombre
+   * accesible). Los avisos de Documentos en la fila de pestañas (31-10).
+   */
+  claseEtiqueta?: string;
+  /**
    * Abrir desde afuera (un atajo de teclado). Cada incremento abre el menú; no
    * es un booleano porque apretar `N` dos veces seguidas tiene que volver a
    * abrirlo después de haberlo cerrado con Escape.
@@ -189,6 +195,7 @@ export default function ActionMenu({
   compactoEnMovil = false,
   soloIcono = false,
   className = "",
+  claseEtiqueta = "",
   abrirSignal,
   vacio,
 }: ActionMenuProps) {
@@ -536,7 +543,7 @@ export default function ActionMenu({
         } ${className}`}
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BotonIcono className="h-4 w-4 shrink-0" />}
-        {!soloIcono && <span className={compactoEnMovil ? "max-sm:sr-only" : ""}>{busy ? "Generando…" : label}</span>}
+        {!soloIcono && <span className={`${compactoEnMovil ? "max-sm:sr-only" : ""} ${claseEtiqueta}`.trim() || undefined}>{busy ? "Generando…" : label}</span>}
         {badge != null && badge > 0 && (
           <span
             className={`rounded-full px-1.5 text-xs font-bold tabular-nums ${

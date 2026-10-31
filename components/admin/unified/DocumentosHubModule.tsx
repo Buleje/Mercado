@@ -10,6 +10,7 @@ import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 import { ProveedorAccionesDeLaVista } from "@/components/admin/shared/libro-acciones-vista";
 import { ProveedorHuecoLateral } from "@/components/admin/documentos/esenciales/hueco-lateral";
+import { ProveedorHuecoAvisos } from "@/components/admin/documentos/AvisosCabecera";
 import { useColumnaDerecha } from "@/components/admin/layout/columna-derecha";
 
 // ── Documentos (`?tab=documentos`, grupo Gestión) ────────────────────────────
@@ -75,6 +76,11 @@ export default function DocumentosHubModule({ initialTab }: { initialTab?: strin
      El `@container/riel` de afuera mide el ancho: por debajo de 80rem los
      rótulos quedan en ícono (con su nombre en el tooltip). */
   const [hueco, setHueco] = useState<HTMLElement | null>(null);
+  /* Los avisos de la vista (vencidos, por ordenar, papeles sin leer…) en la
+     fila de las pestañas, a su derecha (Brandon 31-10: «que pase arriba… para
+     que ocupe menos espacio»): antes eran una o dos filas propias encima de
+     los documentos. Cada vista los manda con `AvisosCabecera`. */
+  const [huecoAvisos, setHuecoAvisos] = useState<HTMLElement | null>(null);
   /* La columna de la derecha del PANEL (24-10: de arriba hasta abajo, al lado
      del encabezado, que se corre): ahí Esenciales pone el panel de la carpeta
      elegida. Fuera del panel (`null`) no hay columna y el panel va al costado. */
@@ -93,8 +99,10 @@ export default function DocumentosHubModule({ initialTab }: { initialTab?: strin
         activeTab={vista}
         onTabChange={(id) => irA(id as Vista)}
         moduleId={MODULE_ID}
+        rightSlot={<div ref={setHuecoAvisos} className="flex items-center gap-1.5" data-qa="avisos-documentos" />}
       >
         <ProveedorAccionesDeLaVista value={hueco}>
+          <ProveedorHuecoAvisos value={huecoAvisos}>
           <ProveedorHuecoLateral value={lateral}>
             {vista === "drive" && <DriveDocumentos />}
             {vista === "esenciales" && (
@@ -102,6 +110,7 @@ export default function DocumentosHubModule({ initialTab }: { initialTab?: strin
             )}
             {vista === "contratos" && <ContratosModule />}
           </ProveedorHuecoLateral>
+          </ProveedorHuecoAvisos>
         </ProveedorAccionesDeLaVista>
       </AdminTabBar>
     </div>

@@ -134,7 +134,7 @@ export default function PanelVistaPrevia({ arch }: { arch: ModeloArchivo }) {
         <PreviaVarios arch={arch} docs={o.docs} carpetas={o.carpetas} />
       ) : (
         <div className="flex items-start gap-2">
-          <p className="flex-1 py-10 text-center text-sm text-[var(--text-tertiary)]">Haz clic en un archivo o carpeta para ver aquí qué tiene.</p>
+          <p className="flex-1 py-2 text-sm text-[var(--text-tertiary)]">Haz clic en un archivo o carpeta para ver aquí qué tiene.</p>
           <button type="button" onClick={p.alternar} className={ICONO} aria-label="Cerrar la vista previa" title="Cerrar la vista previa (Alt+P)">
             <X className="h-5 w-5" />
           </button>
