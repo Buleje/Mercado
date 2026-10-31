@@ -2,5 +2,10 @@
   "carpeta": "C:\\Users\\Usuario\\Buleje-Drive",
   "api": "https://tu-dominio.com",
   "clave": "sk_pegar-aca-la-clave-que-genera-el-panel",
-  "intervaloSegundos": 30
+  "intervaloSegundos": 30,
+
+  "_opcionales_solo_subir": "Borrá estas 4 claves para el modo normal (bidireccional).",
+  "soloSubir": false,
+  "estado": "/ruta/fuera/de/la/carpeta/estado.json",
+  "excluir": ["Blas-Operaciones/**", "desktop.ini", "*.ini", "Thumbs.db", "~$*", "*.tmp", "*.lnk", "*(con clave)*", "*Clave SOL*"]
 }

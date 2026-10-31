@@ -42,6 +42,40 @@ Para probarlo a mano antes de instalarlo: copiá `buleje-sync.config.example.jso
 **Conflictos.** Si el mismo archivo cambió de los dos lados, no se pisa nada: tu versión
 queda en el archivo original y la del panel se guarda al lado como `nombre (del panel).ext`.
 
+## Modo «solo subir» (PC → panel)
+
+Para una carpeta que solo alimenta al Drive y nunca debe recibir nada de vuelta (ej. el
+escritorio `BLAS SAC` → Archivo de Blas). Se activa con `"soloSubir": true` en el config.
+
+```bash
+node agente.mjs --config ~/.config/buleje-sync/blas-sac.json --ensayo   # no escribe nada
+node agente.mjs --config ~/.config/buleje-sync/blas-sac.json            # servicio
+```
+
+- **Opciones de línea:** `--config <ruta>` (por defecto `buleje-sync.config.json` junto al
+  agente), `--ensayo` (vuelta completa sin escribir panel, estado ni latido; imprime
+  adoptados / a subir / distintos / excluidos por patrón / ignorados del panel),
+  `--una-vez` (una vuelta y sale), `--subir-distintos` (sube como versión nueva los que
+  tienen el mismo nombre que el panel pero otro tamaño).
+- **Qué hace:** archivo nuevo → sube a su ruta; archivo cambiado desde lo sellado → versión
+  nueva; lo que solo está en el panel → se ignora (no baja, no borra); movido o renombrado en
+  la PC (mismo tamaño y hash, 1 a 1) → se MUEVE en el panel con `/api/sync/move` (sin
+  repetidos; si hay dos candidatos iguales sin hash, se sube como nuevo); borrado en la PC →
+  NO se toca el panel, solo deja de seguirse (el latido lo anota en `motivo`). Nunca
+  escribe en la carpeta: el estado va a `"estado": "<ruta>"` (si falta, `.buleje-sync.json`
+  dentro de la carpeta).
+- **Primera vuelta sin estado:** misma ruta + nombre + tamaño que un documento del panel →
+  se **adopta** (se sella sin subir ni leer el archivo). Mismo nombre y otro tamaño → queda
+  como «distinto» y no se sube. Nunca crea copias.
+- **`"excluir"`:** comodines `*` `**` `?`, sin distinguir mayúsculas. Sin `/` se prueba
+  contra el nombre de cada archivo y carpeta; con `/` contra la ruta relativa
+  (`Blas-Operaciones/**`). Por defecto en este modo: `desktop.ini`, `*.ini`, `Thumbs.db`,
+  `~$*`, `*.tmp`, `*.lnk`.
+- **Rendimiento:** el escaneo solo hace `stat` (tamaño + fecha); lee el contenido únicamente
+  de lo que cambió. Para `/mnt/c` usar `"intervaloSegundos": 120`.
+- **Timeouts:** cada llamada al panel corta a los 20 s (120 s al mover contenido). En WSL
+  mirrored un puerto cerrado de 127.0.0.1 cuelga sin error.
+
 ## Detalles que conviene saber
 
 - **El estado vive en `.buleje-sync.json`**, dentro de la carpeta. Recuerda qué archivo es

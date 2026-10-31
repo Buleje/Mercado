@@ -22,7 +22,7 @@ import { fileURLToPath } from "node:url";
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /** Se reporta al panel para saber si hay un agente viejo dando vueltas. */
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 
 /**
  * Identidad del equipo: hostname + usuario. Estable entre reinicios (el panel
@@ -37,8 +37,25 @@ function identidadEquipo() {
 
 // ── Configuración ────────────────────────────────────────────────────────────
 
-function cargarConfig() {
-  const archivo = path.join(AQUI, "buleje-sync.config.json");
+/** Excluidos por defecto en modo soloSubir si el config no trae `excluir`. */
+const EXCLUIR_BASE = ["desktop.ini", "*.ini", "Thumbs.db", "~$*", "*.tmp", "*.lnk"];
+
+/** Opciones de línea de comandos: `--config <ruta>`, `--ensayo`, `--subir-distintos`, `--una-vez`. */
+function leerArgs(argv) {
+  const a = { config: null, ensayo: false, subirDistintos: false, unaVez: false };
+  for (let i = 0; i < argv.length; i++) {
+    const x = argv[i];
+    if (x === "--config") a.config = argv[++i];
+    else if (x.startsWith("--config=")) a.config = x.slice(9);
+    else if (x === "--ensayo") a.ensayo = true;
+    else if (x === "--subir-distintos") a.subirDistintos = true;
+    else if (x === "--una-vez") a.unaVez = true;
+  }
+  return a;
+}
+
+function cargarConfig(args) {
+  const archivo = args.config ? path.resolve(args.config) : path.join(AQUI, "buleje-sync.config.json");
   let desdeArchivo = {};
   if (fs.existsSync(archivo)) {
     try {
@@ -46,19 +63,31 @@ function cargarConfig() {
     } catch (e) {
       salirCon(`El archivo de configuración tiene un error de formato: ${e.message}`);
     }
+  } else if (args.config) {
+    salirCon(`No existe el archivo de configuración ${archivo}`);
   }
 
+  const soloSubir = desdeArchivo.soloSubir === true;
   const cfg = {
     carpeta: process.env.BULEJE_CARPETA ?? desdeArchivo.carpeta,
     api: (process.env.BULEJE_API ?? desdeArchivo.api ?? "").replace(/\/+$/, ""),
     clave: process.env.BULEJE_CLAVE ?? desdeArchivo.clave,
     /** Cada cuánto se revisa el panel por cambios que no vinieron del disco. */
     intervaloSegundos: Number(desdeArchivo.intervaloSegundos ?? 30),
+    /** PC → panel únicamente: no baja, no borra, no escribe en la carpeta. */
+    soloSubir,
+    /** Ruta del archivo de estado; por defecto dentro de la carpeta. */
+    estado: desdeArchivo.estado ? path.resolve(desdeArchivo.estado) : null,
+    excluir: Array.isArray(desdeArchivo.excluir) ? desdeArchivo.excluir : soloSubir ? EXCLUIR_BASE : [],
+    ensayo: args.ensayo,
+    subirDistintos: args.subirDistintos,
+    unaVez: args.unaVez,
   };
 
   if (!cfg.carpeta) salirCon("Falta 'carpeta' en la configuración.");
   if (!cfg.api) salirCon("Falta 'api' en la configuración (ej: https://tu-dominio.com).");
   if (!cfg.clave) salirCon("Falta 'clave' (la API key sk_… que genera el panel).");
+  if (cfg.ensayo && !cfg.soloSubir) salirCon("--ensayo solo existe con \"soloSubir\": true.");
   return cfg;
 }
 
@@ -75,7 +104,7 @@ function salirCon(mensaje) {
 const NOMBRE_ESTADO = ".buleje-sync.json";
 
 function rutaEstado(cfg) {
-  return path.join(cfg.carpeta, NOMBRE_ESTADO);
+  return cfg.estado ?? path.join(cfg.carpeta, NOMBRE_ESTADO);
 }
 
 function leerEstado(cfg) {
@@ -128,6 +157,91 @@ function rutaSeguraWindows(rutaLogica) {
   return rutaLogica.split("/").map(nombreSeguroWindows).join(path.sep);
 }
 
+/**
+ * Comodines simples: `*` (sin cruzar `/`), `**` (cruza `/`), `?`. Un patrón sin `/`
+ * se prueba contra el NOMBRE de cada archivo y de cada carpeta; con `/` contra la
+ * ruta relativa completa. Sin distinguir mayúsculas (Windows).
+ */
+function compilarExcluir(patrones) {
+  return patrones.map((p) => {
+    const conRuta = p.includes("/");
+    const re = new RegExp(
+      "^" +
+        p
+          .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+          .replace(/\*\*/g, "\u0000")
+          .replace(/\*/g, "[^/]*")
+          .replace(/\u0000/g, ".*")
+          .replace(/\?/g, "[^/]") +
+        "$",
+      "i",
+    );
+    return { patron: p, conRuta, re };
+  });
+}
+
+/** Devuelve el patrón que excluye esta entrada, o null. `rel` usa `/`. */
+function patronQueExcluye(reglas, rel, esCarpeta) {
+  const nombre = rel.split("/").pop();
+  for (const r of reglas) {
+    if (r.conRuta ? r.re.test(esCarpeta ? rel + "/" : rel) : r.re.test(nombre)) return r.patron;
+  }
+  return null;
+}
+
+/** Cuenta archivos bajo una carpeta excluida (solo para informar en el ensayo). */
+async function contarArchivos(dir) {
+  let n = 0;
+  try {
+    for (const e of await fsp.readdir(dir, { withFileTypes: true })) {
+      n += e.isDirectory() ? await contarArchivos(path.join(dir, e.name)) : 1;
+    }
+  } catch {
+    // carpeta ilegible: no cuenta
+  }
+  return n;
+}
+
+/**
+ * Escaneo liviano para soloSubir: solo `stat`, sin leer contenido. Devuelve
+ * `rel -> {size, mtime, completo}` y cuántos se excluyeron por cada patrón.
+ */
+async function escanearLiviano(base, reglas, dir = base, salida = new Map(), excl = new Map()) {
+  let entradas;
+  try {
+    entradas = await fsp.readdir(dir, { withFileTypes: true });
+  } catch {
+    return { salida, excl };
+  }
+  for (const e of entradas) {
+    const completo = path.join(dir, e.name);
+    const rel = path.relative(base, completo).split(path.sep).join("/");
+    if (e.isDirectory()) {
+      if (CARPETAS_IGNORADAS.has(e.name)) continue;
+      const p = patronQueExcluye(reglas, rel, true);
+      if (p) {
+        excl.set(p, (excl.get(p) ?? 0) + (await contarArchivos(completo)));
+        continue;
+      }
+      await escanearLiviano(base, reglas, completo, salida, excl);
+      continue;
+    }
+    if (!e.isFile() || e.name === NOMBRE_ESTADO) continue;
+    const p = patronQueExcluye(reglas, rel, false);
+    if (p) {
+      excl.set(p, (excl.get(p) ?? 0) + 1);
+      continue;
+    }
+    try {
+      const st = await fsp.stat(completo);
+      salida.set(rel, { size: st.size, mtime: Math.round(st.mtimeMs), completo });
+    } catch {
+      // bloqueado o desapareció: se reintenta en la próxima vuelta
+    }
+  }
+  return { salida, excl };
+}
+
 /** Recorre la carpeta y devuelve `ruta lógica -> {hash, size, mtime}`. */
 async function escanearCarpeta(dir, base = dir, salida = new Map()) {
   let entradas;
@@ -164,9 +278,12 @@ async function escanearCarpeta(dir, base = dir, salida = new Map()) {
 function crearCliente(cfg) {
   const cabeceras = { Authorization: `Bearer ${cfg.clave}` };
 
-  async function pedir(ruta, init = {}) {
+  // En esta PC (WSL mirrored) un puerto cerrado de 127.0.0.1 CUELGA sin error:
+  // todo fetch lleva tope. 20 s para llamadas chicas, más para mover contenido.
+  async function pedir(ruta, init = {}, topeMs = 20_000) {
     const res = await fetch(`${cfg.api}${ruta}`, {
       ...init,
+      signal: AbortSignal.timeout(topeMs),
       headers: { ...cabeceras, ...(init.headers ?? {}) },
     });
     if (!res.ok) {
@@ -187,12 +304,12 @@ function crearCliente(cfg) {
       form.append("file", new Blob([buffer]), path.basename(ruta));
       form.append("ruta", ruta);
       if (documentId) form.append("documentId", documentId);
-      const res = await pedir("/api/sync/push", { method: "POST", body: form });
+      const res = await pedir("/api/sync/push", { method: "POST", body: form }, 120_000);
       return res.json();
     },
 
     async bajar(id) {
-      const res = await pedir(`/api/sync/pull/${id}`);
+      const res = await pedir(`/api/sync/pull/${id}`, {}, 120_000);
       return Buffer.from(await res.arrayBuffer());
     },
 
@@ -454,16 +571,257 @@ async function correrCiclo(cfg, cliente, log) {
   };
 }
 
+// ── Modo soloSubir (PC → panel) ──────────────────────────────────────────────
+
+/** Clave de comparación con el panel: NFC, sin distinguir mayúsculas, partes recortadas. */
+function claveRuta(ruta) {
+  return ruta
+    .split("/")
+    .map((x) => x.trim())
+    .filter((x) => x && x !== ".")
+    .join("/")
+    .normalize("NFC")
+    .toLowerCase();
+}
+
+/**
+ * Una vuelta de PC → panel. Nunca baja, nunca borra en el panel, nunca escribe en
+ * la carpeta del usuario. Con `cfg.ensayo` tampoco escribe el estado ni late.
+ *
+ * Estado por ruta: `{documentId|null, size, mtime, hash|null}`. `hash: null` = se
+ * adoptó por nombre+tamaño sin leer el archivo; si luego cambia size/mtime, se
+ * sube como versión nueva.
+ */
+async function correrCicloSoloSubir(cfg, cliente, log) {
+  const previos = leerEstado(cfg);
+  const primeraVuelta = Object.keys(previos).length === 0;
+  const reglas = compilarExcluir(cfg.excluir);
+  const { salida: locales, excl } = await escanearLiviano(cfg.carpeta, reglas);
+
+  const manifiesto = await cliente.manifiesto();
+  const remotos = new Map();
+  for (const i of manifiesto.items) remotos.set(claveRuta(i.ruta), i);
+  const clavesLocales = new Set([...locales.keys()].map(claveRuta));
+
+  const nuevos = { ...previos };
+  const r = {
+    adoptados: [], aSubir: [], subidos: 0, versiones: [], distintos: [], movidos: [],
+    sinSeguir: [], errores: 0, ignoradosPanel: 0,
+  };
+
+  // Candidatos a "esto es un movimiento/renombre": seguidos que ya no están en disco
+  // y cuyo documento sigue vivo en el panel. Se empareja 1 a 1; ante la duda, se sube.
+  const idsVivos = new Set(manifiesto.items.map((i) => i.id));
+  const desaparecidos = Object.entries(previos)
+    .filter(([ruta, pv]) => !locales.has(ruta) && !clavesLocales.has(claveRuta(ruta)) && pv.documentId && idsVivos.has(pv.documentId))
+    .map(([ruta, pv]) => ({ ruta, ...pv }));
+  const sinHashPorTam = new Map();
+  for (const d of desaparecidos) if (!d.hash) sinHashPorTam.set(d.size, (sinHashPorTam.get(d.size) ?? 0) + 1);
+  const nuevosPorTam = new Map();
+  for (const [ruta, loc] of locales) {
+    if (!previos[ruta] && !remotos.has(claveRuta(ruta))) nuevosPorTam.set(loc.size, (nuevosPorTam.get(loc.size) ?? 0) + 1);
+  }
+  const usados = new Set();
+  const rutasMovidas = new Set();
+
+  /** Devuelve {candidato, buf, hash} si `ruta` es un movimiento claro; si no, null. */
+  async function buscarMovimiento(loc) {
+    const cands = desaparecidos.filter((d) => d.size === loc.size && !usados.has(d.ruta));
+    if (cands.length === 0) return null;
+    let buf;
+    try {
+      buf = await fsp.readFile(loc.completo);
+    } catch {
+      return null;
+    }
+    const hash = hashDe(buf);
+    const conHash = cands.filter((d) => d.hash === hash);
+    if (conHash.length === 1) return { cand: conHash[0], buf, hash };
+    if (conHash.length > 1) return null;
+    const sinHash = cands.filter((d) => !d.hash);
+    if (sinHash.length === 1 && sinHashPorTam.get(loc.size) === 1 && nuevosPorTam.get(loc.size) === 1) {
+      return { cand: sinHash[0], buf, hash };
+    }
+    return null;
+  }
+
+  for (const [ruta, loc] of locales) {
+    const previo = previos[ruta];
+    const remoto = remotos.get(claveRuta(ruta));
+
+    if (previo) {
+      if (previo.size === loc.size && previo.mtime === loc.mtime) continue; // sin cambios
+      let buf;
+      try {
+        buf = await fsp.readFile(loc.completo);
+      } catch {
+        continue; // bloqueado: próxima vuelta
+      }
+      const hash = hashDe(buf);
+      if (previo.hash && previo.hash === hash) {
+        nuevos[ruta] = { ...previo, size: loc.size, mtime: loc.mtime };
+        continue;
+      }
+      r.versiones.push(ruta);
+      if (cfg.ensayo) continue;
+      try {
+        const res = await cliente.subir({ ruta, buffer: buf, documentId: previo.documentId ?? remoto?.id ?? null });
+        if (!res.ok) throw new Error(res.error ?? "push falló");
+        nuevos[ruta] = { documentId: res.documentId, size: loc.size, mtime: loc.mtime, hash };
+        r.subidos++;
+        log(`  ↑ versión nueva  ${ruta}`);
+      } catch (e) {
+        r.errores++;
+        log(`  ! error en ${ruta}: ${e.message}`);
+      }
+      continue;
+    }
+
+    // Archivo que el estado no conoce.
+    if (remoto && remoto.size === loc.size) {
+      r.adoptados.push(ruta);
+      nuevos[ruta] = { documentId: remoto.id, size: loc.size, mtime: loc.mtime, hash: null };
+      continue;
+    }
+    if (remoto && !cfg.subirDistintos) {
+      r.distintos.push({ ruta, local: loc.size, panel: remoto.size });
+      continue;
+    }
+
+    if (!remoto) {
+      const mov = await buscarMovimiento(loc);
+      if (mov) {
+        usados.add(mov.cand.ruta);
+        rutasMovidas.add(mov.cand.ruta);
+        r.movidos.push({ de: mov.cand.ruta, a: ruta });
+        if (cfg.ensayo) continue;
+        try {
+          const res = await cliente.mover(mov.cand.documentId, ruta);
+          if (!res.ok) throw new Error(res.error ?? "move falló");
+          delete nuevos[mov.cand.ruta];
+          nuevos[ruta] = { documentId: mov.cand.documentId, size: loc.size, mtime: loc.mtime, hash: mov.hash };
+          log(`  → movido  ${mov.cand.ruta}  ⇒  ${ruta}`);
+        } catch (e) {
+          r.errores++;
+          r.movidos.pop();
+          rutasMovidas.delete(mov.cand.ruta);
+          log(`  ! no se pudo mover ${ruta}: ${e.message} (se reintenta en la próxima vuelta)`);
+        }
+        continue;
+      }
+    }
+
+    r.aSubir.push({ ruta, size: loc.size });
+    if (cfg.ensayo) continue;
+    try {
+      const buf = await fsp.readFile(loc.completo);
+      const res = await cliente.subir({ ruta, buffer: buf, documentId: remoto?.id ?? null });
+      if (!res.ok) throw new Error(res.error ?? "push falló");
+      nuevos[ruta] = { documentId: res.documentId, size: loc.size, mtime: loc.mtime, hash: hashDe(buf) };
+      r.subidos++;
+      log(`  ↑ subido  ${ruta}`);
+    } catch (e) {
+      r.errores++;
+      log(`  ! error en ${ruta}: ${e.message}`);
+    }
+  }
+
+  // Lo que el estado seguía y ya no está en disco: se deja de seguir, el panel no se toca.
+  for (const ruta of Object.keys(previos)) {
+    if (!locales.has(ruta) && !clavesLocales.has(claveRuta(ruta)) && !rutasMovidas.has(ruta)) {
+      r.sinSeguir.push(ruta);
+      delete nuevos[ruta];
+    }
+  }
+  r.ignoradosPanel = [...remotos.keys()].filter((k) => !clavesLocales.has(k)).length;
+
+  if (!cfg.ensayo && (r.adoptados.length || r.subidos || r.movidos.length || r.sinSeguir.length || JSON.stringify(nuevos) !== JSON.stringify(previos))) {
+    await fsp.mkdir(path.dirname(rutaEstado(cfg)), { recursive: true });
+    await guardarEstado(cfg, nuevos);
+  }
+  return { ...r, archivos: locales.size, excluidos: excl, primeraVuelta, nuevosEstado: nuevos };
+}
+
+function imprimirEnsayo(r, cfg) {
+  const L = (m) => console.log(m);
+  L(`\n  ENSAYO (no se escribió nada) · ${cfg.carpeta}`);
+  L(`  archivos locales considerados: ${r.archivos}${r.primeraVuelta ? " (primera vuelta, sin estado)" : ""}`);
+  L(`  adoptados (mismo nombre y tamaño): ${r.adoptados.length}`);
+  L(`  a subir (nuevos): ${r.aSubir.length}`);
+  for (const x of r.aSubir) L(`      + ${x.ruta}  (${x.size} B)`);
+  L(`  movidos/renombrados (se mueven en el panel, no se suben): ${r.movidos.length}`);
+  for (const x of r.movidos) L(`      → ${x.de}  ⇒  ${x.a}`);
+  L(`  versiones nuevas (cambiaron): ${r.versiones.length}`);
+  for (const x of r.versiones) L(`      ~ ${x}`);
+  L(`  distintos (mismo nombre, otro tamaño; NO se suben): ${r.distintos.length}`);
+  for (const x of r.distintos) L(`      ≠ ${x.ruta}  (PC ${x.local} B · panel ${x.panel} B)`);
+  const totEx = [...r.excluidos.values()].reduce((a, b) => a + b, 0);
+  L(`  excluidos: ${totEx}`);
+  for (const [p, n] of [...r.excluidos].sort((a, b) => b[1] - a[1])) L(`      ${String(n).padStart(5)}  ${p}`);
+  L(`  sin seguir (borrados/movidos en la PC): ${r.sinSeguir.length}`);
+  L(`  ignorados del panel (solo existen allá): ${r.ignoradosPanel}\n`);
+}
+
 // ── Arranque ─────────────────────────────────────────────────────────────────
 
 function ahora() {
   return new Date().toLocaleTimeString("es-PE", { hour12: false });
 }
 
+/** Bucle del modo soloSubir: sin fs.watch (por 9p no es confiable), solo intervalo. */
+async function mainSoloSubir(cfg, cliente, equipo, log) {
+  console.log(`\n  Buleje · solo subir (PC → panel)`);
+  console.log(`  carpeta : ${cfg.carpeta}`);
+  console.log(`  panel   : ${cfg.api}`);
+  console.log(`  revisión: cada ${cfg.intervaloSegundos}s · excluye ${cfg.excluir.length} patrones\n`);
+
+  let corriendo = false;
+  async function vuelta(motivo) {
+    if (corriendo) return;
+    corriendo = true;
+    try {
+      const r = await correrCicloSoloSubir(cfg, cliente, log);
+      if (r.distintos.length) log(`  [${ahora()}] ${r.distintos.length} archivo(s) con el mismo nombre pero otro tamaño que en el panel (no se suben)`);
+      const nota = r.sinSeguir.length ? ` · ${r.sinSeguir.length} sin seguir` : "";
+      await cliente.latir({
+        ...equipo,
+        carpeta: cfg.carpeta.slice(0, 300),
+        version: VERSION,
+        motivo: `${motivo} · solo subir${nota}`.slice(0, 60),
+        subidos: r.subidos,
+        bajados: 0,
+        borrados: 0,
+        archivos: r.archivos,
+        error: null,
+      });
+    } catch (e) {
+      console.error(`  [${ahora()}] no se pudo sincronizar: ${e.message}`);
+      await cliente.latir({ ...equipo, carpeta: cfg.carpeta.slice(0, 300), version: VERSION, motivo, error: e.message.slice(0, 300) });
+    } finally {
+      corriendo = false;
+    }
+  }
+
+  await vuelta("arranque");
+  if (cfg.unaVez) return;
+  setInterval(() => vuelta("revisión periódica"), Math.max(10, cfg.intervaloSegundos) * 1000);
+}
+
 async function main() {
-  const cfg = cargarConfig();
+  const args = leerArgs(process.argv.slice(2));
+  const cfg = cargarConfig(args);
   const log = (m) => console.log(m);
   const equipo = identidadEquipo();
+  const cliente = crearCliente(cfg);
+
+  if (cfg.soloSubir) {
+    if (!fs.existsSync(cfg.carpeta)) salirCon(`No existe la carpeta ${cfg.carpeta}`);
+    if (cfg.ensayo) {
+      imprimirEnsayo(await correrCicloSoloSubir(cfg, cliente, log), cfg);
+      return;
+    }
+    return mainSoloSubir(cfg, cliente, equipo, log);
+  }
 
   await fsp.mkdir(cfg.carpeta, { recursive: true });
 
@@ -471,8 +829,6 @@ async function main() {
   console.log(`  carpeta : ${cfg.carpeta}`);
   console.log(`  panel   : ${cfg.api}`);
   console.log(`  revisión: cada ${cfg.intervaloSegundos}s (y al toque cuando tocás un archivo)\n`);
-
-  const cliente = crearCliente(cfg);
 
   let corriendo = false;
   let pendiente = false;
@@ -519,5 +875,6 @@ async function main() {
 
   setInterval(() => ciclo("revisión periódica"), Math.max(10, cfg.intervaloSegundos) * 1000);
 }
+
 
 main().catch((e) => salirCon(e.message));
