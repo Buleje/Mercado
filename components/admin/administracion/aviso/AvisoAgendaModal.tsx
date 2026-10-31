@@ -217,7 +217,8 @@ function Centro(p: Props) {
         open
         onClose={onCerrar}
         variant="wide"
-        className="h-[100dvh] max-h-[100dvh] rounded-none sm:h-[88vh] sm:max-h-[88vh] sm:max-w-[min(72rem,94vw)] sm:rounded-2xl"
+        /* Brandon 31-10: «amplía el modal» → 92 % del alto y hasta 88 rem de ancho (antes 88 % y 72 rem). */
+        className="h-[100dvh] max-h-[100dvh] rounded-none sm:h-[92vh] sm:max-h-[92vh] sm:max-w-[min(88rem,96vw)] sm:rounded-2xl"
         hideCloseButton
         /* Sin los botones de ventana (agrandar/fijar): el alfiler de acá es «fijar al costado». */
         ventana={false}
@@ -240,7 +241,11 @@ function Centro(p: Props) {
           )
         }
       >
-        <div className="flex h-full min-h-0 flex-col">
+        {/* `relative` + `overflow-clip`: nada de adentro puede estirar el cuerpo del modal. Brandon 31-10:
+            el cuerpo entero scrolleaba ~200 px (la cabecera se iba arriba y abajo quedaba una franja
+            blanca hasta el pie); ahora sólo scrollea la lista, y `overscroll-contain` no le pasa la
+            rueda al cuerpo al llegar al final. */}
+        <div className="relative flex h-full min-h-0 flex-col overflow-clip">
           <CabeceraPropia
             /* A 400 px los 6 botones no dejan lugar al título: baja la fila de botones a su propia línea, a la derecha. */
             className={cn("flex shrink-0 items-center justify-between gap-2 border-b border-[var(--rule-soft)] py-2 max-sm:flex-wrap max-sm:[&>div:last-child]:ml-auto", MODAL_GUTTER)}
@@ -266,7 +271,7 @@ function Centro(p: Props) {
           </CabeceraPropia>
           <div className="flex min-h-0 flex-1 flex-col md:flex-row">
             {pestanas}
-            <div className={cn("min-h-0 flex-1 overflow-y-auto pb-6 pt-4", MODAL_GUTTER)} data-lenis-prevent>
+            <div className={cn("relative min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 pt-4", MODAL_GUTTER)} data-lenis-prevent>
               {contenido}
             </div>
           </div>

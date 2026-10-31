@@ -17,6 +17,7 @@ import { useAgenda } from "@/hooks/use-agenda";
 import type { OcurrenciaDTO } from "@/lib/agenda/tipos";
 import { ListaOcurrencias } from "../comun/ListaOcurrencias";
 import { ListaSeguimientos } from "../hoy/SeguimientoClientas";
+import { AtrasadasAgrupadas } from "./AtrasadasAgrupadas";
 
 const PonermeAlDia = dynamic(() => import("./PonermeAlDia"), { ssr: false });
 
@@ -111,7 +112,7 @@ export function CuerpoAviso({ falta, densa, alDia, onAlDia, alIr }: Props) {
                   Ponerme al día
                 </button>
               </Titulo>
-              <ListaOcurrencias etiqueta="Lo atrasado" ocurrencias={falta.atrasadas} conFecha densa={densa} />
+              <AtrasadasAgrupadas atrasadas={falta.atrasadas} densa={densa} />
             </section>
           )}
           {seguimientos.length > 0 && (
