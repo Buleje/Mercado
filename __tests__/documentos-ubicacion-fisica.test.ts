@@ -40,6 +40,13 @@ const H = vi.hoisted(() => ({
 
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: H.requireAdmin }));
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: () => null }));
+/* `after()` (historial de codigo-fisico) fuera de un pedido real tira: acá corre al toque. */
+vi.mock("next/server", async (original) => ({
+  ...(await original<typeof import("next/server")>()),
+  after: (fn: () => unknown) => {
+    void fn();
+  },
+}));
 vi.mock("@/lib/auth/csrf", () => ({ assertCsrf: () => null }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/documents/storage", () => ({ getSignedUrl: async () => "", deleteFromStorage: async () => {} }));
