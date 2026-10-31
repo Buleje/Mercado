@@ -27,11 +27,12 @@ import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelan
 import { cumplimientoDe } from "@/lib/adelantos/saldo-persona";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
 import { cuentaDePersona, hayDeuda } from "@/lib/adelantos/modos-alta";
-import { movimientosDePersona, saldoDeLaCuenta, textoEstadoDeCuenta } from "@/lib/adelantos/estado-cuenta";
+import { movimientosDePersona, textoEstadoDeCuenta } from "@/lib/adelantos/estado-cuenta";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { ModalShell, fmtMon, fmtMonedas } from "../shared";
+import { ModalShell, fmtMonedas } from "../shared";
 import type { BeneficiarioConSaldo } from "../crear-adelanto/tipos";
-import { Aviso, Kpi } from "./FichaPiezas";
+import { Aviso, FotoDelDni, Kpi, NotasFicha } from "./FichaPiezas";
+import { exportarEstadoDeCuenta } from "./exportar-estado-cuenta";
 import SusAdelantos from "./SusAdelantos";
 import TablaCuentaPersona from "./TablaCuentaPersona";
 import PasskeysDeLaPersona from "./PasskeysDeLaPersona";
@@ -93,25 +94,7 @@ export default function FichaPersonaModal({
   );
   const waCuenta = enlaceWhatsAppConTexto(persona.telefono, textoEstadoDeCuenta(persona.nombre, movimientos));
 
-  const exportarPdf = async () => {
-    const { abrirPapel } = await import("@/lib/documentos/membrete-papel");
-    const papel = await abrirPapel({ tipo: "Estado de cuenta" });
-    papel.linea(persona.nombre, { tam: 12, negrita: true, alto: 6 });
-    if (persona.documento) papel.linea(`Doc: ${persona.documento}`, { tam: 9, alto: 5 });
-    if (persona.telefono) papel.linea(`Tel: ${persona.telefono}`, { tam: 9, alto: 5 });
-    papel.y += 2;
-    papel.tabla({
-      head: [["Fecha", "Concepto", "Monto", "Saldo"]],
-      body: movimientos.map((m) => [
-        dia(m.fecha),
-        m.concepto,
-        `${m.monto >= 0 ? "+" : "−"}${fmtMon(Math.abs(m.monto), m.moneda)}`,
-        fmtMon(m.saldo, m.moneda),
-      ]),
-      foot: [["", "", "Saldo pendiente", fmtMonedas(saldoDeLaCuenta(movimientos))]],
-    });
-    papel.cerrar(`estado-cuenta-${persona.nombre.replace(/\s+/g, "-")}.pdf`);
-  };
+  const exportarPdf = () => exportarEstadoDeCuenta(persona, movimientos);
 
   return (
     <ModalShell
@@ -230,14 +213,10 @@ export default function FichaPersonaModal({
             <Clock className="h-4 w-4 shrink-0" aria-hidden /> Último recordatorio {dia(persona.ultimoRecordatorio)}
           </Aviso>
         )}
+        {persona.tieneFotoDocumento && <FotoDelDni personaId={persona.id} />}
       </div>
 
-      {persona.notas && (
-        <div className="rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">
-          <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Notas de la ficha</p>
-          <p className="mt-1 whitespace-pre-wrap text-base text-[var(--text-primary)]">{persona.notas}</p>
-        </div>
-      )}
+      {persona.notas && <NotasFicha notas={persona.notas} />}
 
       {/* ── Acciones de contacto y edición ───────────────────────────────── */}
       <div className="flex flex-wrap gap-2">

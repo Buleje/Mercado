@@ -8,6 +8,7 @@
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { cumplimientoDe, type ResumenPersona } from "@/lib/adelantos/saldo-persona";
 import { faltaTelefono, faltanDatos } from "@/lib/adelantos/datos-persona";
+import { TIPOS_RELACION, type TipoRelacion } from "@/lib/adelantos/persona-campos";
 
 /** Lo mínimo para ordenar y filtrar: no hace falta el registro entero. */
 export type PersonaOrdenable = ResumenPersona & {
@@ -15,6 +16,7 @@ export type PersonaOrdenable = ResumenPersona & {
   limiteCredito?: number | null;
   telefono?: string | null;
   documento?: string | null;
+  tipoRelacion?: string | null;
 };
 
 export const ORDENES = ["saldo", "riesgo", "nombre", "adelantado", "cumplimiento", "reciente"] as const;
@@ -36,6 +38,54 @@ export function cumpleFiltro(p: PersonaOrdenable, filtro: FiltroPersonas): boole
     case "faltan-datos": return faltanDatos(p);
     case "todas": return true;
   }
+}
+
+/** Los chips de «qué es para el negocio» (ADR-525): los seis tipos y quien todavía no tiene. */
+export const FILTROS_TIPO = [...TIPOS_RELACION, "sin-tipo"] as const;
+export type FiltroTipo = (typeof FILTROS_TIPO)[number];
+
+/** Sin tipo, o uno que ya no está en la lista, cuenta como «sin-tipo». */
+export function tipoDePersona(p: Pick<PersonaOrdenable, "tipoRelacion">): FiltroTipo {
+  const t = (p.tipoRelacion ?? "").trim();
+  return (TIPOS_RELACION as readonly string[]).includes(t) ? (t as TipoRelacion) : "sin-tipo";
+}
+
+/** `null` = todos los tipos. */
+export function cumpleTipo(p: Pick<PersonaOrdenable, "tipoRelacion">, tipo: FiltroTipo | null): boolean {
+  return tipo == null || tipoDePersona(p) === tipo;
+}
+
+/** Cuántas personas hay de cada tipo (para el número de cada chip). */
+export function cuentasPorTipo(personas: readonly Pick<PersonaOrdenable, "tipoRelacion">[]): Record<FiltroTipo, number> {
+  const out = Object.fromEntries(FILTROS_TIPO.map((t) => [t, 0])) as Record<FiltroTipo, number>;
+  for (const p of personas) out[tipoDePersona(p)] += 1;
+  return out;
+}
+
+/** Igual que `sinTildes` de la pantalla (components/admin/adelantos/shared): «maria» encuentra a «María». */
+const sinTildes = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+/**
+ * Se busca por nombre, documento Y teléfono, sin tildes: un número a mano
+ * («987 654 321») encuentra al que lo tiene guardado sin espacios.
+ */
+export function coincideBusqueda(p: Pick<PersonaOrdenable, "nombre" | "documento" | "telefono">, q: string): boolean {
+  const t = sinTildes(q);
+  if (!t) return true;
+  const soloDigitos = t.replace(/\D/g, "");
+  return (
+    sinTildes(p.nombre).includes(t) ||
+    (p.documento ?? "").includes(t) ||
+    (!!soloDigitos && (p.telefono ?? "").replace(/\D/g, "").includes(soloDigitos))
+  );
+}
+
+/** El tipo, la situación y el buscador juntos (AND): lo que muestra la tabla de Personas. */
+export function filtrarPersonas<T extends PersonaOrdenable>(
+  personas: readonly T[],
+  f: { filtro: FiltroPersonas; tipo: FiltroTipo | null; q: string },
+): T[] {
+  return personas.filter((p) => cumpleTipo(p, f.tipo) && cumpleFiltro(p, f.filtro) && coincideBusqueda(p, f.q));
 }
 
 /** Qué proporción de su tope tiene usada. −1 = sin tope, va al final. */

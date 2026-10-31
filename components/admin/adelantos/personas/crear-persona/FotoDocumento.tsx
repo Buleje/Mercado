@@ -5,12 +5,17 @@
  * su miniatura. No sube nada todavía: se manda DESPUÉS de guardar la persona,
  * a su ruta privada (dato personal, Ley 29733). Al editar, la que ya tenía se
  * ve, se abre en grande o se quita (se borra recién al guardar).
+ *
+ * 30-10: quien no edita adelantos (el analista) ve que HAY foto pero el GET de
+ * la imagen le da 403 a propósito (Ley 29733): en vez de una miniatura rota ve
+ * un recuadro con candado, y la imagen no se pide (tampoco mientras el rol carga).
  */
 import { useRef, useState, type ReactNode } from "react";
-import { Camera, ExternalLink, ImageIcon, Trash2, Upload } from "@buleje/design-system/icons";
+import { Camera, ExternalLink, ImageIcon, Lock, Trash2, Upload } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import CapturaFoto from "../../CapturaFoto";
+import { usePuedeEditarAdelantos } from "../../hooks/use-puede-editar-adelantos";
 import { MAX_FOTO_BYTES, TIPOS_FOTO, blobDeDataUrl, urlFotoDocumento, type FotoElegida } from "./acciones";
 import { PIE, PIE_AVISO, PIE_AYUDA, ROTULO } from "./clases";
 
@@ -50,6 +55,8 @@ export default function FotoDocumento({
   const [camara, setCamara] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const guardada = tieneGuardada && !quitarGuardada && !!personaId;
+  /* `null` = el rol todavía no llegó: no se pide la imagen hasta saberlo. */
+  const puedeVer = usePuedeEditarAdelantos();
 
   const elegirArchivo = (f: File | undefined) => {
     setError(null);
@@ -63,14 +70,24 @@ export default function FotoDocumento({
   };
 
   let fila: ReactNode;
-  if (foto || guardada) {
+  if (!foto && guardada && puedeVer === false) {
+    fila = (
+      <div
+        className="flex min-h-12 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-strong)] bg-[var(--surface-sunken)] px-3 py-2"
+        data-foto-bloqueada
+      >
+        <Lock className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+        <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-[var(--text-secondary)]">Solo quien edita adelantos ve la foto</span>
+      </div>
+    );
+  } else if (foto || guardada) {
     fila = (
       <div className="flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-1 dark:bg-[var(--surface-sunken)]">
-        <Miniatura src={foto ? foto.vista : personaId ? urlFotoDocumento(personaId) : null} />
+        <Miniatura src={foto ? foto.vista : personaId && puedeVer ? urlFotoDocumento(personaId) : null} />
         <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text-primary)]">
           {foto ? "Foto nueva" : "Foto guardada"}
         </span>
-        {guardada && !foto && personaId && (
+        {guardada && !foto && personaId && puedeVer && (
           <a href={urlFotoDocumento(personaId)} target="_blank" rel="noopener noreferrer" className={ICONO} aria-label="Ver la foto del DNI" title="Ver en grande">
             <ExternalLink className="h-5 w-5" aria-hidden />
           </a>

@@ -26,6 +26,16 @@ export const ETIQUETA_RELACION: Record<TipoRelacion, string> = {
   otro: "Otro",
 };
 
+/** Para los chips de Personas cuando son dos o más («Choferes 3»; con uno, la etiqueta de arriba). */
+export const ETIQUETA_RELACION_PLURAL: Record<TipoRelacion, string> = {
+  trabajador: "Trabajadores",
+  proveedor: "Proveedores",
+  chofer: "Choferes",
+  cliente: "Clientes",
+  familia: "Familia",
+  otro: "Otros",
+};
+
 /** Celular peruano (Yape/Plin también): 9 dígitos que empiezan con 9. */
 export const CELULAR_PE = /^9\d{8}$/;
 /** La fecha más vieja que se acepta como nacimiento. */

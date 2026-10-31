@@ -5,10 +5,16 @@
  * Salió de `PersonasView` (30-10) cuando el orden se fue a los encabezados: el
  * desplegable «Orden: saldo» ya no cabía al lado de los chips y bajaba solo a
  * una fila propia. Los chips son los mismos de Cobranza (`chipSituacion`).
+ *
+ * 30-10: al lado, los chips por tipo (Choferes 3, Sin tipo 12): elegir uno
+ * recorta la tabla y los indicadores; tocarlo otra vez lo apaga. Con «Faltan
+ * datos» elegido aparece «Completar en lote».
  */
 
-import { Search } from "@buleje/design-system/icons";
-import { ORDENES, type FiltroPersonas, type OrdenPersonas } from "@/lib/adelantos/ordenar-personas";
+import { ListChecks, Search, X } from "@buleje/design-system/icons";
+import { FILTROS_TIPO, ORDENES, type FiltroPersonas, type FiltroTipo, type OrdenPersonas } from "@/lib/adelantos/ordenar-personas";
+import { ETIQUETA_RELACION, ETIQUETA_RELACION_PLURAL } from "@/lib/adelantos/persona-campos";
+import { button } from "@/components/ui-system/button-variants";
 import { chipSituacion as chip } from "../shared";
 
 /** Las seis maneras de ordenar, dichas como uno las pediría. */
@@ -21,6 +27,12 @@ const ETIQUETA_ORDEN: Record<OrdenPersonas, string> = {
   reciente: "Orden: último adelanto",
 };
 
+/** «1 Chofer» / «3 Choferes»: el chip se lee como se diría. */
+function etiquetaTipo(t: FiltroTipo, n: number): string {
+  if (t === "sin-tipo") return "Sin tipo";
+  return n === 1 ? ETIQUETA_RELACION[t] : ETIQUETA_RELACION_PLURAL[t];
+}
+
 export default function BarraPersonas({
   q,
   onQ,
@@ -29,6 +41,10 @@ export default function BarraPersonas({
   orden,
   onOrden,
   cuentas,
+  tipo,
+  onTipo,
+  cuentasTipo,
+  onCompletarLote,
 }: {
   q: string;
   onQ: (v: string) => void;
@@ -39,6 +55,12 @@ export default function BarraPersonas({
   onOrden: (o: OrdenPersonas) => void;
   /** Cuántas personas hay en cada situación (un chip en cero no se muestra, salvo Todas y Al día). */
   cuentas: { todas: number; deben: number; riesgo: number; sinTelefono: number; faltanDatos: number; hayTopes: boolean };
+  tipo: FiltroTipo | null;
+  onTipo: (t: FiltroTipo | null) => void;
+  /** Cuántas hay de cada tipo, sobre TODAS. `null` = nadie tiene tipo: no se muestra el grupo. */
+  cuentasTipo: Record<FiltroTipo, number> | null;
+  /** Sin él (el rol no edita adelantos) no se ofrece completar en lote. */
+  onCompletarLote?: () => void;
 }) {
   const c = cuentas;
   const boton = (f: FiltroPersonas, texto: string) => (
@@ -68,7 +90,33 @@ export default function BarraPersonas({
         {c.hayTopes && c.riesgo > 0 && boton("riesgo", `Sin margen ${c.riesgo}`)}
         {c.sinTelefono > 0 && boton("sin-telefono", `Sin teléfono ${c.sinTelefono}`)}
         {c.faltanDatos > 0 && boton("faltan-datos", `Faltan datos ${c.faltanDatos}`)}
+        {filtro === "faltan-datos" && onCompletarLote && (
+          <button type="button" onClick={onCompletarLote} className={button({ variant: "secondary", className: "shrink-0 px-3.5" })}>
+            <ListChecks className="h-4 w-4" aria-hidden /> Completar en lote
+          </button>
+        )}
       </div>
+      {cuentasTipo && (
+        <div className="flex flex-wrap items-center gap-1.5 sm:border-l sm:border-[var(--rule-base)] sm:pl-2" role="group" aria-label="Filtrar por tipo">
+          {FILTROS_TIPO.filter((t) => cuentasTipo[t] > 0).map((t) => {
+            const activo = tipo === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={activo}
+                title={activo ? "Toca otra vez para ver todos los tipos" : undefined}
+                className={`${chip(activo)} inline-flex items-center gap-1.5`}
+                onClick={() => onTipo(activo ? null : t)}
+                data-chip-tipo={t}
+              >
+                {etiquetaTipo(t, cuentasTipo[t])} {cuentasTipo[t]}
+                {activo && <X className="h-4 w-4" aria-hidden />}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {/* Bajo 640 px las filas son tarjetas (`.admin-mobile-cards` esconde el
           thead): sin esto, en el celular no se podía ordenar. Arriba, se ordena
           desde los encabezados y el desplegable no ocupa una fila. */}

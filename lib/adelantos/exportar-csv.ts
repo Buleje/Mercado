@@ -10,6 +10,7 @@ import { MODALIDAD_LABEL, STATUS_BADGE } from "@/components/admin/adelantos/shar
 import { cumplimientoDe, type ResumenPersona } from "@/lib/adelantos/saldo-persona";
 import type { DbAdelanto, DbBeneficiario } from "@/lib/db/adelantos.db";
 import { direccionDe, ETIQUETA_CONCEPTO, ETIQUETA_DIRECCION } from "@/lib/adelantos/direccion";
+import { ETIQUETA_RELACION, TIPOS_RELACION, type TipoRelacion } from "@/lib/adelantos/persona-campos";
 
 /**
  * La celda vive en `lib/csv/celda.ts` (17-10): separador `;` porque Excel en
@@ -112,6 +113,7 @@ const COLUMNAS_PERSONAS = [
   "Nombre",
   "Documento",
   "Teléfono",
+  "Tipo",
   "Tope de crédito",
   "Debe hoy",
   "Adelantado histórico",
@@ -128,6 +130,12 @@ const COLUMNAS_PERSONAS = [
   "Notas",
 ] as const;
 
+/** «Chofer», «Familia»… como en los chips (ADR-525); sin tipo, vacío. */
+const tipoCsv = (t: string | null | undefined): string => {
+  const v = (t ?? "").trim();
+  return (TIPOS_RELACION as readonly string[]).includes(v) ? ETIQUETA_RELACION[v as TipoRelacion] : "";
+};
+
 /** La libreta de personas tal como se ve en pantalla, para abrir en Excel. */
 export function personasACsv(
   personas: readonly (DbBeneficiario & ResumenPersona)[],
@@ -138,6 +146,7 @@ export function personasACsv(
       p.nombre,
       p.documento ?? "",
       p.telefono ?? "",
+      tipoCsv(p.tipoRelacion),
       p.limiteCredito != null ? p.limiteCredito.toFixed(2) : "",
       montoCsv(p.saldoPendiente),
       montoCsv(p.totalAdelantado),
@@ -183,6 +192,7 @@ export function personasAFilasExcel(
       p.nombre,
       p.documento ?? "",
       p.telefono ?? "",
+      tipoCsv(p.tipoRelacion),
       p.limiteCredito != null ? p.limiteCredito : "",
       montoExcel(p.saldoPendiente),
       montoExcel(p.totalAdelantado),

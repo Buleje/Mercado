@@ -5,6 +5,10 @@
  * una línea. Salieron de `FichaPersonaModal` sin cambiar nada.
  */
 
+import { ImageIcon, Lock } from "@buleje/design-system/icons";
+import { urlFotoDocumento } from "./crear-persona/acciones";
+import { usePuedeEditarAdelantos } from "../hooks/use-puede-editar-adelantos";
+
 export function Kpi({
   label,
   valor,
@@ -44,5 +48,44 @@ export function Aviso({ tono, children }: { tono: "error" | "info" | "neutro"; c
         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
   return (
     <div className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold ${cls}`}>{children}</div>
+  );
+}
+
+/** Toque de 44 px para el enlace chico sin agrandar la línea (memoria panel-celular-toque-44). */
+const TOQUE = "relative after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']";
+
+/**
+ * «Foto del DNI: guardada» (ADR-525, 30-10). Quien edita adelantos la abre en
+ * grande; quien sólo mira (el analista) ve el candado: el GET de la imagen le
+ * da 403 a propósito (Ley 29733) y no se pide.
+ */
+export function FotoDelDni({ personaId }: { personaId: string }) {
+  const puede = usePuedeEditarAdelantos();
+  return (
+    <Aviso tono="neutro">
+      {puede === false ? <Lock className="h-4 w-4 shrink-0" aria-hidden /> : <ImageIcon className="h-4 w-4 shrink-0" aria-hidden />}
+      Foto del DNI: guardada
+      {puede === true && (
+        <a
+          href={urlFotoDocumento(personaId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${TOQUE} underline text-[var(--accent-ink)] dark:text-[var(--accent)]`}
+        >
+          Ver
+        </a>
+      )}
+      {puede === false && <span className="font-normal">· Solo quien edita adelantos ve la foto</span>}
+    </Aviso>
+  );
+}
+
+/** Las notas de la ficha (salieron de `FichaPersonaModal`, que pasaba las 300 líneas). */
+export function NotasFicha({ notas }: { notas: string }) {
+  return (
+    <div className="rounded-2xl bg-[var(--surface-sunken)] px-4 py-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Notas de la ficha</p>
+      <p className="mt-1 whitespace-pre-wrap text-base text-[var(--text-primary)]">{notas}</p>
+    </div>
   );
 }
