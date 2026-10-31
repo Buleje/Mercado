@@ -158,18 +158,23 @@ export async function guardAdminPages(
 
   if (await hasValidAdminSession(req)) return null;
 
+  /* El destino lleva su `?…` (31-10): el QR de una etiqueta abre `/admin?tab=documentos&doc=<id>`
+     y, sin sesión, el login devolvía a `/admin` pelado. El login lo filtra con `safeRedirectPath`
+     (sólo rutas internas). */
+  const destino = `${pathname}${req.nextUrl.search}`;
+
   // Si viene del superadmin (cookie de plataforma válida) pero todavía no
   // impersonó ningún tenant, lo mandamos al listado de tenants donde un
   // clic basta para entrar al admin de cualquier negocio sin loguearse.
   if (await hasValidPlatformSession(req)) {
     const url = new URL("/superadmin/tenants", req.url);
     url.searchParams.set("reason", "pick-tenant");
-    url.searchParams.set("from", pathname);
+    url.searchParams.set("from", destino);
     return NextResponse.redirect(url);
   }
 
   const loginUrl = new URL("/admin/login", req.url);
-  loginUrl.searchParams.set("from", pathname);
+  loginUrl.searchParams.set("from", destino);
   return NextResponse.redirect(loginUrl);
 }
 

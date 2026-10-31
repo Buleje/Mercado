@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { getKeepAlive, motivoDeCierre, setKeepAlive, tomarUltimoCierre } from "@/lib/session-keepalive";
 import { formatCurrency } from "@/lib/format";
 import { limpiarVistaSuplantada } from "@/lib/auth/suplantacion-vista";
+import { destinoSeguroLogin } from "@/lib/auth/destino-login";
 
 // Brandon mayo 14 2026 v3: layout editorial con dashboard preview.
 //   - Lado izquierdo: form de login dentro de una card flotante, brand
@@ -52,21 +53,7 @@ export default function AdminLoginPage() {
    * Antes: `router.push(decodeURIComponent(fromRef.current))` aceptaba
    * cualquier URL externa → phishing via WhatsApp post-login.
    */
-  const safeRedirectPath = (raw: string | null | undefined, fallback: string): string => {
-    if (!raw) return fallback;
-    let dest = raw;
-    try {
-      dest = decodeURIComponent(raw);
-    } catch {
-      return fallback;
-    }
-    if (!dest.startsWith("/")) return fallback;
-    if (dest.startsWith("//")) return fallback;      // protocol-relative
-    if (dest.includes("://")) return fallback;        // absolute URL
-    if (/^[a-z]+:/i.test(dest)) return fallback;      // javascript:, data:, etc.
-    if (dest.includes("\\")) return fallback;          // backslash tricks
-    return dest;
-  };
+  const safeRedirectPath = destinoSeguroLogin; // 31-10: también rechaza `/\t/evil.com` (ver el módulo)
 
   const [username, setUsername] = useState("");
   const [pw, setPw] = useState("");

@@ -20,6 +20,7 @@ import { ShieldCheck, Loader2, AlertTriangle, KeyRound } from "@buleje/design-sy
 import { csrfHeaders } from "@/lib/csrf-client";
 
 import { PageTitle } from "@buleje/design-system";
+import { destinoSeguroLogin } from "@/lib/auth/destino-login";
 export default function TwoFactorPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +90,7 @@ export default function TwoFactorPage() {
         typeof window !== "undefined" ? window.location.search : ""
       );
       const from = params.get("from");
-      router.push(from ? decodeURIComponent(from) : "/admin");
+      router.push(destinoSeguroLogin(from, "/admin")); // 31-10: antes iba crudo (open redirect latente)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setCode(""); // Limpiar para reintentar
