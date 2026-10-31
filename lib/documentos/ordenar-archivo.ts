@@ -340,7 +340,8 @@ const plegar = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").trim().t
 export const RAICES_DEL_SISTEMA: readonly string[] = [
   CARPETA_PERSONAS[0], // «Cámaras» (Personas, Asistencia)
   CARPETA_ASISTENCIA[0],
-  "Llegó por WhatsApp", // lib/whatsapp/archivar-papel.ts (server-only)
+  "Llegó por WhatsApp", // CARPETA_DEL_CANAL de lib/documentos/papel-entrante.ts (server-only)
+  "Llegó por Telegram", // ídem: el buzón de la PC (31-10)
   CARPETA_GUIAS,
   RAIZ_DRIVE_LOTH, // «Libro TH»: las carpetas del plan son su lista de papeles (forest-plan-documentos.db.ts)
   ...Object.values(CARPETA_ENTIDAD).map((r) => r[0]),

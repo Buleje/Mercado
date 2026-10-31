@@ -90,13 +90,13 @@ const DE_PASO = new Set([
   "entrada", "entradas", "varios", "otros", "otro", "general", "generales", "sin clasificar", "sin ordenar",
   "por ordenar", "por clasificar", "pendientes", "pendiente", "nueva carpeta", "escaneos", "escaneados",
   "escaneado", "descargas", "importados", "importado", "recibidos", "bandeja", "bandeja de entrada",
-  "documentos", "archivos", "fotos", "imagenes", "llego por whatsapp", "whatsapp", "camaras", "temporal",
-  "papeles", "mis documentos", "subidos",
+  "documentos", "archivos", "fotos", "imagenes", "llego por whatsapp", "whatsapp", "llego por telegram", "telegram",
+  "camaras", "temporal", "papeles", "mis documentos", "subidos",
 ]);
 
 const clave = (nombre: string) => palabras(nombre).map((p) => p.n).join(" ");
 
-/** «Otros», «Escaneos», «Llegó por WhatsApp»: carpetas de paso. */
+/** «Otros», «Escaneos», «Llegó por WhatsApp/Telegram»: carpetas de paso. */
 export const esNombreDePaso = (nombre: string): boolean => DE_PASO.has(clave(nombre));
 
 /** «09», «2026», «2026-10-17», «2026-10-12 a 2026-10-18»: sólo fechas o cifras. */
