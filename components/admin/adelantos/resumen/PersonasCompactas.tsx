@@ -43,9 +43,11 @@ export default function PersonasCompactas({ onGoTab }: { onGoTab: (tab: string) 
   const [abierto, setAbierto] = useState(() => leerPedidoLiquidar() !== null);
   /* El «atrás» o un enlace dentro del panel pueden traer el pedido de liquidar con la vista ya montada. */
   useEffect(() => {
-    const releer = () => {
-      if (leerPedidoLiquidar()) setAbierto(true);
-    };
+    // Diferido: el popstate puede llegar mientras Next dibuja su Router (ver use-vistas-permitidas, 30-10).
+    const releer = () =>
+      queueMicrotask(() => {
+        if (leerPedidoLiquidar()) setAbierto(true);
+      });
     window.addEventListener("popstate", releer);
     return () => window.removeEventListener("popstate", releer);
   }, []);

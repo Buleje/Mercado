@@ -163,7 +163,9 @@ export default function AdelantosModule() {
   }, []);
   /* El Resumen manda a la lista con la acción ya en la URL. */
   useEffect(() => {
-    const onPop = () => setHojaAbierta(new URLSearchParams(window.location.search).get("accion") === "hoja-de-firmas");
+    // Diferido: el popstate puede llegar mientras Next dibuja su Router (ver use-vistas-permitidas, 30-10).
+    const onPop = () =>
+      queueMicrotask(() => setHojaAbierta(new URLSearchParams(window.location.search).get("accion") === "hoja-de-firmas"));
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);

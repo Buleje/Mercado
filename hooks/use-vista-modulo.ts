@@ -344,10 +344,14 @@ function useVistaEnParam<T extends string>(
   /** Atrás/adelante → seguir a la URL. Sin esto el historial mentiría. */
   useEffect(() => {
     if (embebida) return;
-    const onPop = () => {
-      const deUrl = vistaDeUrl(validas, param, aliasRef.current);
-      if (deUrl) setVista(deUrl as T);
-    };
+    // 30-10: el popstate puede llegar mientras Next dibuja su Router (irAEnlace y useAdminTabs lo disparan tras
+    // replaceState) y cambiar el estado ahí daba «Cannot update a component (HubDePlata) while rendering a
+    // different component (Router)». queueMicrotask lo pasa a después del dibujo.
+    const onPop = () =>
+      queueMicrotask(() => {
+        const deUrl = vistaDeUrl(validas, param, aliasRef.current);
+        if (deUrl) setVista(deUrl as T);
+      });
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [validas, param, embebida]);

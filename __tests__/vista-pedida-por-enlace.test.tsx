@@ -17,9 +17,10 @@ import { useParamPedido } from "@/hooks/use-vistas-permitidas";
 import { subvistasVisibles } from "@/components/admin/sistema/subvistas-sistema";
 import { SIN_FILTRO, idsDelPlan, type ContextoPermiso } from "@/lib/admin/permiso-vista";
 
-/** Lo que hace `irAEnlace` con el módulo montado: URL nueva + `popstate`. */
-function seguirEnlace(query: string) {
-  act(() => {
+/** Lo que hace `irAEnlace` con el módulo montado: URL nueva + `popstate`. Async: los hooks releen la URL en un
+ *  microtask (30-10, «Cannot update a component while rendering Router»), y el act async lo deja correr. */
+async function seguirEnlace(query: string) {
+  await act(async () => {
     window.history.replaceState(null, "", `/admin?${query}`);
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
@@ -31,15 +32,15 @@ afterEach(() => {
 });
 
 describe("useParamPedido", () => {
-  it("relee la URL en cada popstate, no sólo al montar", () => {
+  it("relee la URL en cada popstate, no sólo al montar", async () => {
     window.history.replaceState(null, "", "/admin?tab=config&vista=sistema&sub=actividad");
     const { result } = renderHook(() => useParamPedido("sub"));
     expect(result.current).toBe("actividad");
-    seguirEnlace("tab=config&vista=sistema&sub=velocidad");
+    await seguirEnlace("tab=config&vista=sistema&sub=velocidad");
     expect(result.current).toBe("velocidad");
   });
 
-  it("lo que se elige adentro (pushState, sin popstate) no cambia lo pedido", () => {
+  it("lo que se elige adentro (pushState, sin popstate) no cambia lo pedido", async () => {
     window.history.replaceState(null, "", "/admin?tab=pagina-inicio&vista=apariencia");
     const { result } = renderHook(() => useParamPedido("vista"));
     act(() => window.history.pushState(null, "", "/admin?tab=pagina-inicio&vista=redes"));
@@ -61,21 +62,21 @@ function useHub() {
 }
 
 describe("hub cuya barra crece con el enlace", () => {
-  it("desde Redes, un enlace a Apariencia (escondida por la plantilla) cambia la pantalla", () => {
+  it("desde Redes, un enlace a Apariencia (escondida por la plantilla) cambia la pantalla", async () => {
     window.history.replaceState(null, "", "/admin?tab=pagina-inicio&vista=redes");
     const { result } = renderHook(() => useHub());
     expect(result.current.vista).toBe("redes");
-    seguirEnlace("tab=pagina-inicio&vista=apariencia");
+    await seguirEnlace("tab=pagina-inicio&vista=apariencia");
     expect(result.current.vista).toBe("apariencia");
     // Y el siguiente enlace, en fila, también.
-    seguirEnlace("tab=pagina-inicio&vista=contenido");
+    await seguirEnlace("tab=pagina-inicio&vista=contenido");
     expect(result.current.vista).toBe("contenido");
   });
 
-  it("una vista que no existe en el hub no se inventa", () => {
+  it("una vista que no existe en el hub no se inventa", async () => {
     window.history.replaceState(null, "", "/admin?tab=pagina-inicio&vista=redes");
     const { result } = renderHook(() => useVistaModulo<V>("hub-test", VISIBLES, "redes"));
-    seguirEnlace("tab=pagina-inicio&vista=apariencia");
+    await seguirEnlace("tab=pagina-inicio&vista=apariencia");
     expect(result.current.vista).toBe("redes");
   });
 });
@@ -84,14 +85,14 @@ describe("subvistasVisibles con la pedida", () => {
   const max: ContextoPermiso = { ...SIN_FILTRO, plan: idsDelPlan("max") };
   const escondeRendimiento: ContextoPermiso = { ...max, plantilla: (id) => id === "rendimiento" || id === "colas" };
 
-  it("la plantilla la escondía y el enlace la pide: aparece", () => {
+  it("la plantilla la escondía y el enlace la pide: aparece", async () => {
     const ids = (pedida: string | null) => subvistasVisibles(escondeRendimiento, true, pedida).map((s) => s.id);
     expect(ids("actividad")).not.toContain("velocidad");
     expect(ids("velocidad")).toContain("velocidad");
     expect(ids("colas")).toContain("colas");
   });
 
-  it("pedirla por URL no se salta el plan: Básico no ve Velocidad", () => {
+  it("pedirla por URL no se salta el plan: Básico no ve Velocidad", async () => {
     const basico: ContextoPermiso = { ...SIN_FILTRO, plan: idsDelPlan("basico") };
     expect(subvistasVisibles(basico, true, "velocidad").map((s) => s.id)).toEqual(["preferencias"]);
   });

@@ -204,7 +204,10 @@ export function useParamPedido(param: string): string | null {
   const [pedido, setPedido] = useState<string | null>(() => (embebida ? null : paramDeUrl(param)));
   useEffect(() => {
     if (embebida) return;
-    const releer = () => setPedido(paramDeUrl(param));
+    // 30-10: el popstate puede llegar mientras Next dibuja su Router (irAEnlace y useAdminTabs lo disparan tras
+    // replaceState) y cambiar el estado ahí daba «Cannot update a component (HubDePlata) while rendering a
+    // different component (Router)». queueMicrotask lo pasa a después del dibujo.
+    const releer = () => queueMicrotask(() => setPedido(paramDeUrl(param)));
     window.addEventListener("popstate", releer);
     return () => window.removeEventListener("popstate", releer);
   }, [param, embebida]);

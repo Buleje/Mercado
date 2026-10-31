@@ -52,13 +52,14 @@ afterEach(() => {
 });
 
 describe("Proveedores: un proveedor por enlace abre la lista", () => {
-  it("desde Comparar, el enlace a un proveedor monta la lista sin apilar otra entrada", () => {
+  it("desde Comparar, el enlace a un proveedor monta la lista sin apilar otra entrada", async () => {
     window.history.replaceState(null, "", "/admin?tab=compras&vista=proveedores&sub=comparar");
     render(<ProveedoresVista onCrearOC={() => {}} />);
     expect(montada()).toEqual(["seccion-comparar"]);
 
     const largo = window.history.length;
-    act(() => {
+    // Async: el módulo relee la URL en un microtask tras el popstate (30-10).
+    await act(async () => {
       irAEnlace("/admin?tab=compras&vista=proveedores&proveedor=prov-1");
     });
 
@@ -85,12 +86,13 @@ describe("Proveedores: un proveedor por enlace abre la lista", () => {
 });
 
 describe("Órdenes y recepción: una orden por enlace abre Órdenes", () => {
-  it("desde Recibir, el enlace a una orden monta Órdenes", () => {
+  it("desde Recibir, el enlace a una orden monta Órdenes", async () => {
     window.history.replaceState(null, "", "/admin?tab=compras&vista=ordenes-compra&sub=recibir");
     render(<OrdenesYRecepcion />);
     expect(montada()).toEqual(["seccion-recibir"]);
 
-    act(() => {
+    // Async: el módulo relee la URL en un microtask tras el popstate (30-10).
+    await act(async () => {
       irAEnlace("/admin?tab=compras&vista=ordenes-compra&oc=oc-9");
     });
 

@@ -49,7 +49,8 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
   const [liquidacionResaltada, setLiquidacionResaltada] = useState<{ clave: string; codigo: string } | null>(null);
   const [verTodas, setVerTodas] = useState(false);
   useEffect(() => {
-    const releer = () => setPedido(leerPedidoLiquidar());
+    // Diferido: el popstate puede llegar mientras Next dibuja su Router (ver use-vistas-permitidas, 30-10).
+    const releer = () => queueMicrotask(() => setPedido(leerPedidoLiquidar()));
     window.addEventListener("popstate", releer);
     return () => window.removeEventListener("popstate", releer);
   }, []);
