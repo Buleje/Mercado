@@ -18,9 +18,9 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { type LucideIcon } from "@buleje/design-system/icons";
+import { Layers, type LucideIcon } from "@buleje/design-system/icons";
 import { TituloModulo } from "./titulo-modulo";
-import { type MenuAccion } from "./action-menu";
+import { ActionMenu, type MenuAccion } from "./action-menu";
 import { MasDelLibro, useMideAlMenos } from "./libro-herramientas";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
@@ -275,6 +275,8 @@ export default function LibroChrome({
 
   const alertasDe = (g: LibroGroup) =>
     g.views.reduce((n, v) => n + (alerts?.[v.key] ?? 0), 0);
+  /** Lo pendiente fuera de la fase elegida: el punto del botón de fase del celular. */
+  const otrasConPendientes = groups.reduce((n, g) => n + (g.id === activeGroup?.id ? 0 : alertasDe(g)), 0);
 
   const herramientasEnElMas =
     tools || (!herramientasALaVista && (context || avisos)) ? (
@@ -329,8 +331,10 @@ export default function LibroChrome({
           {/* La FASE del libro comparte fila con el título (Brandon 2026-09-07):
               las cuatro fases siempre a la vista; las vistas de la activa, en
               el riel de abajo. Debajo de 56rem bajan al último renglón. */}
+          {/* En el celular esta fila no se dibuja: la fase va como botón «Operación ▾»
+              al inicio de la fila de las vistas (31-10: 5 filas de banda → 4). */}
           {flat.length > 1 && groups.length > 1 && (
-          <div className="order-last flex min-w-0 basis-full @min-[56rem]/banda:order-none @min-[56rem]/banda:basis-auto @min-[56rem]/banda:shrink-0">
+          <div className="order-last flex min-w-0 basis-full max-sm:hidden @min-[56rem]/banda:order-none @min-[56rem]/banda:basis-auto @min-[56rem]/banda:shrink-0">
           <div
             ref={rielFases}
             role="tablist"
@@ -429,11 +433,41 @@ export default function LibroChrome({
               (antes el tablist cedía y escondía vistas: a 1280 en Lotes,
               «Volumen disponible» y «Despacho» quedaban tapadas, 17-10). */}
           <div className="flex flex-wrap items-center gap-1 px-2 py-1 sm:px-3">
+          {/* Celular: la fase elegida abre el menú de las cuatro (con sus pendientes);
+              las vistas de esa fase se deslizan a su lado. */}
+          {groups.length > 1 && activeGroup && (
+            <div className="relative shrink-0 sm:hidden">
+              {/* El número es el de ESTA fase (como en la fila de fases); lo pendiente
+                  de las otras va en un punto aparte y en el menú, fase por fase. */}
+              {otrasConPendientes > 0 && (
+                <span className="pointer-events-none absolute -right-0.5 -top-0.5 z-10 h-3 w-3 rounded-full border-2 border-[var(--surface-raised)] bg-[var(--data-warning-500)]">
+                  <span className="sr-only">{`${otrasConPendientes} pendiente${otrasConPendientes === 1 ? "" : "s"} en otras fases`}</span>
+                </span>
+              )}
+              <ActionMenu
+                label={activeGroup.label}
+                icon={Layers}
+                title={otrasConPendientes > 0 ? `Cambiar de fase · ${otrasConPendientes} pendientes en otras fases` : "Cambiar de fase del libro"}
+                badge={alertasDe(activeGroup) || undefined}
+                actions={groups.map((g) => {
+                  const n = alertasDe(g);
+                  return {
+                    id: g.id,
+                    label: g.label,
+                    icon: g.views[0]?.icon ?? Layers,
+                    activo: g.id === activeGroup.id,
+                    meta: n > 0 ? `${n} pendiente${n === 1 ? "" : "s"}` : undefined,
+                    onSelect: () => g.id !== activeGroup.id && onView?.(g.views[0].key),
+                  };
+                })}
+              />
+            </div>
+          )}
           <div
             ref={rielVistas}
             role="tablist"
             aria-label={activeGroup?.label}
-            className="flex min-w-0 max-w-full basis-full items-center gap-1 overflow-x-auto scrollbar-none @min-[40rem]/riel:@max-[60rem]/riel:contents @min-[60rem]/riel:flex-none @min-[60rem]/riel:basis-auto"
+            className="flex min-w-0 max-w-full basis-full items-center gap-1 overflow-x-auto scrollbar-none max-sm:basis-0 max-sm:flex-1 @min-[40rem]/riel:@max-[60rem]/riel:contents @min-[60rem]/riel:flex-none @min-[60rem]/riel:basis-auto"
             /* Mismo aislamiento que el riel de fases de arriba: sin `contain`
                este riel (7 vistas con sus badges) era el que realmente
                empujaba la página entera a 551px de ancho a 400px de viewport

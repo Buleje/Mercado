@@ -581,7 +581,7 @@ export default function AdminTabBar({
         // Si no entra todo: las acciones se quedan junto al título y las
         // pestañas bajan a su fila. La descripción va al ⓘ, no debajo
         // (regla «explicar con ⓘ», Brandon 09-24 y 01-10).
-        <div ref={filaRef} className={cn("flex flex-wrap items-center gap-x-3 px-3 py-2.5 sm:px-4", compartida ? "gap-y-0" : "gap-y-2")}>
+        <div ref={filaRef} className={cn("flex flex-wrap items-center gap-x-3 px-3 py-2 sm:px-4 sm:py-2.5", compartida ? "gap-y-0" : "gap-y-2")}>
           <div ref={tituloRef} className={FILA_TITULO_MODULO}>
             <TituloModulo
               icon={heading.icon}
@@ -609,7 +609,7 @@ export default function AdminTabBar({
            adentro (lo que llega por portal no avisa cuándo llega). */
         <div
           data-segundo-nivel=""
-          className="border-t border-transparent px-3 py-2 has-[[role=tablist]]:border-[var(--rule-soft)] sm:px-4"
+          className="border-t border-transparent px-3 py-1.5 has-[[role=tablist]]:border-[var(--rule-soft)] sm:px-4 sm:py-2"
         >
           <div className="flex min-h-12 min-w-0 flex-wrap items-center gap-2">{heading.segundoNivel}</div>
         </div>

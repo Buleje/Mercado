@@ -228,9 +228,11 @@ export function useKpisPlegables({
       {filtros}
       {encabezado}
       {/* `auto-fit`: plegado son dos y desplegado cinco; un número fijo de
-          columnas dejaba huecos del alto de una tarjeta. */}
+          columnas dejaba huecos del alto de una tarjeta. En el celular, dos por
+          fila (31-10): con el mínimo de 230 px iba UNA, y cuatro cifras de Mi
+          Plata eran ~450 px antes del primer dato de la tabla. */}
       <div
-        className={`grid gap-3 ${
+        className={`grid gap-3 max-sm:grid-cols-2 max-sm:gap-2 ${
           anchoFijo ? "grid-cols-[repeat(auto-fill,minmax(230px,1fr))]" : "grid-cols-[repeat(auto-fit,minmax(230px,1fr))]"
         }`}
       >

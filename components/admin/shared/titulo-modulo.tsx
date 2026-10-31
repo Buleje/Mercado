@@ -26,9 +26,13 @@ export const BANDA_MODULO =
 /** Fila del cuadro + texto, con el mismo espacio que la banda del libro. */
 export const FILA_TITULO_MODULO = "flex min-w-0 items-center gap-x-3 lg:gap-x-2";
 
-/** Cuadro del ícono: degradado del acento, ícono en blanco (claro y oscuro). */
+/**
+ * Cuadro del ícono: degradado del acento, ícono en blanco (claro y oscuro).
+ * En el celular, 32 px (Brandon 31-10: «el panel lo más cómodo en celular»):
+ * los 8 px que suelta son de ancho para que las acciones entren junto al título.
+ */
 export const ICONO_MODULO =
-  "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white shadow-[var(--shadow-sm)]";
+  "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white shadow-[var(--shadow-sm)] max-sm:h-8 max-sm:w-8 max-sm:rounded-lg";
 
 /**
  * Tamaño, peso e interlineado los pone `.libro-title` (globals.css, bloque
@@ -37,7 +41,11 @@ export const ICONO_MODULO =
 export const TITULO_MODULO =
   "libro-title font-display text-[length:var(--ts-xl)] font-normal sm:text-[length:var(--ts-2xl)] @max-[88rem]/banda:[--ts-libro-title:1.25rem]";
 
-export const ROTULO_MODULO = "libro-kicker block leading-none";
+/**
+ * El rótulo de arriba («GESTIÓN», el grupo del menú) no se dibuja en el celular
+ * (31-10): la barra de abajo ya dice dónde estás y eran 16 px por banda.
+ */
+export const ROTULO_MODULO = "libro-kicker block leading-none max-sm:hidden";
 
 /**
  * Bloque de texto con rótulo Y ⓘ: grilla en vez del flex que envuelve. Un
