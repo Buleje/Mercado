@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import AccesoRapido from "../explorador/AccesoRapido";
 import FolderBulkBar from "../FolderBulkBar";
-import { Check, ChevronUp, ChevronDown, Tag } from "@buleje/design-system/icons";
+import { Check, ChevronUp, ChevronDown, FolderTree, Tag } from "@buleje/design-system/icons";
 import VistasDelPanel from "./VistasDelPanel";
 import RaizDelArbol from "./RaizDelArbol";
 import FilaCarpeta from "./FilaCarpeta";
@@ -16,11 +17,43 @@ export default function PanelLateralArchivo({ arch }: { arch: ModeloArchivo }) {
     setSelectedFolderIds, bulkFolders, salirSeleccion, newFolderParent, newFolderName, setNewFolderName,
     handleCreateFolder, setNewFolderParent, visibleFolderRows, CARPETAS_A_LA_VISTA, setTodasLasCarpetas,
     todasLasCarpetas, filasDeCarpeta, setShowTags } = arch;
+  /* En Tarjetas, debajo de 1024 px el panel iba ENCIMA de los papeles: a 400 px
+     eran ~520 px de vistas y carpetas antes del primero (Brandon 31-10: «el panel
+     lo más cómodo en celular»). Ahí queda plegado tras «Carpetas y vistas» y se
+     vuelve a plegar al elegir una carpeta o una vista. El explorador no lo usa:
+     en el celular lo suyo va en «Lugares», al lado de Atrás. */
+  const plegable = !sinPanel && !enExplorador;
+  const [abiertoAngosto, setAbiertoAngosto] = useState(false);
+  useEffect(() => {
+    setAbiertoAngosto(false);
+  }, [filterMode, activeFolderId]);
+  const carpetaAbierta = filterMode === "folder" && activeFolderId ? folderById.get(activeFolderId)?.name : null;
   return (
     <>
+        {plegable && (
+          <button
+            type="button"
+            onClick={() => setAbiertoAngosto((v) => !v)}
+            aria-expanded={abiertoAngosto}
+            aria-controls="panel-archivo"
+            data-qa="panel-archivo-plegado"
+            className="flex min-h-12 w-full items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-left text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] lg:hidden"
+          >
+            <FolderTree className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">
+              Carpetas y vistas
+              {carpetaAbierta ? <span className="font-semibold text-[var(--text-tertiary)]"> · {carpetaAbierta}</span> : null}
+            </span>
+            {abiertoAngosto ? <ChevronUp className="h-4 w-4 shrink-0" aria-hidden /> : <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />}
+          </button>
+        )}
         {/* ─── Sidebar ─── */}
         <aside
-          className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 h-fit", sinPanel ? "hidden" : enExplorador && "hidden lg:block")}
+          id="panel-archivo"
+          className={cn(
+            "bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 h-fit",
+            sinPanel ? "hidden" : enExplorador ? "hidden lg:block" : !abiertoAngosto && "max-lg:hidden",
+          )}
           data-qa="panel-archivo"
           onPointerOver={() => precargarArchivo(...DEL_PANEL)}
           onFocusCapture={() => precargarArchivo(...DEL_PANEL)}

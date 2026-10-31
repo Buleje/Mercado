@@ -21,8 +21,11 @@ export default function BotonTabletEntrada() {
   
   return (
     <>
-      <Button type="button" variant="secondary" onClick={() => setAbierto(true)}>
-        <Tablet className="h-4 w-4" aria-hidden /> Poner la tablet en la entrada
+      {/* En el celular «Tablet» (31-10): así entra en la fila de «Sin marcas dudosas». */}
+      <Button type="button" variant="secondary" onClick={() => setAbierto(true)} title="Poner la tablet en la entrada">
+        <Tablet className="h-4 w-4" aria-hidden />
+        <span className="max-sm:hidden">Poner la tablet en la entrada</span>
+        <span className="sm:hidden">Tablet</span>
       </Button>
       <AdminModal
         open={abierto}

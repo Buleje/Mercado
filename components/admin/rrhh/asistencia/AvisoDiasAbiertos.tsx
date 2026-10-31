@@ -87,7 +87,8 @@ export default function AvisoDiasAbiertos({ mes, onIrAlDia, className }: Props) 
     <AvisoRrhh tono="aviso" icono={CalendarOff} accion={accion} className={cn("items-center py-1.5", className)}>
       <p className="font-semibold">
         {tituloDiasAbiertos(abiertos, mesRevisado)}
-        {nota && <span className="font-normal text-[var(--text-secondary)]"> · {nota}</span>}
+        {/* La nota de los domingos se ve al desplegar los días (cada chip dice su día): en el celular era un renglón más. */}
+        {nota && <span className="font-normal text-[var(--text-secondary)] max-sm:hidden"> · {nota}</span>}
       </p>
       {!unico && (
         <ul id={idLista} hidden={!desplegado} aria-label="Días sin ninguna marca" className="mt-2 flex flex-wrap items-center gap-1.5">

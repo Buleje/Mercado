@@ -54,9 +54,9 @@ export default function MarcasParaRevisar({ clave, hoy, onCorregir, acciones }: 
             {abierta ? <ChevronUp className="h-4 w-4" aria-hidden /> : <ChevronDown className="h-4 w-4" aria-hidden />}
           </Button>
         ) : (
-          <span className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          <span className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]" title={`Sin marcas dudosas en los últimos ${DIAS_A_REVISAR} días`}>
             <Check className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" aria-hidden />
-            Sin marcas dudosas en los últimos {DIAS_A_REVISAR} días
+            Sin marcas dudosas<span className="max-sm:hidden"> en los últimos {DIAS_A_REVISAR} días</span>
           </span>
         )}
       </div>

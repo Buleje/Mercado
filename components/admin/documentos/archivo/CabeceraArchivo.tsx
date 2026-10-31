@@ -99,10 +99,13 @@ export default function CabeceraArchivo({ arch }: { arch: ModeloArchivo }) {
   if (enFila) {
     return (
       <>
-        <AccionesDeLaVista orden={ORDEN_ACCION.info} fueraDelLibro={null}>{ayuda}</AccionesDeLaVista>
+        {/* En el celular (31-10) la ⓘ del Archivo y el estado del escritorio no van:
+            la ⓘ de «Documentos», pegada al título, ya explica; y vincular la carpeta
+            de la PC no se puede desde el teléfono. Así los botones entran en UNA fila. */}
+        <AccionesDeLaVista orden={ORDEN_ACCION.info} fueraDelLibro={null} className="max-sm:hidden">{ayuda}</AccionesDeLaVista>
         {/* Los indicadores del drive: el botón va solo a la fila (orden «indicadores»). */}
         {filterMode !== "trash" && kpis.boton}
-        <AccionesDeLaVista fueraDelLibro={null}>{escritorio}</AccionesDeLaVista>
+        <AccionesDeLaVista fueraDelLibro={null} className="max-sm:hidden">{escritorio}</AccionesDeLaVista>
         {/* ADR-516 — «N por registrar»: no se dibuja si estás al día. */}
         <AccionesDeLaVista fueraDelLibro={null}><AvisoCodigoPendiente arch={arch} /></AccionesDeLaVista>
         <AccionesDeLaVista orden={ORDEN_ACCION.principal} fueraDelLibro={null}>

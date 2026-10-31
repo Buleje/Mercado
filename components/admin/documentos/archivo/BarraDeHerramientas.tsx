@@ -3,17 +3,40 @@
 import { VISTAS_CON_CONTENIDO_PROPIO } from "./compartido";
 import MigasRuta from "../explorador/MigasRuta";
 import { cn } from "@/lib/utils";
-import { Sparkles, PanelLeft, PanelRight, Columns3 } from "@buleje/design-system/icons";
+import { Sparkles, PanelLeft, PanelRight, Columns3, Clock, ArrowDownAZ, ArrowUpDown, HardDrive, CalendarClock, type LucideIcon } from "@buleje/design-system/icons";
 import FiltrosDoc from "@/components/admin/documentos/FiltrosDoc";
 import { familiasPresentes, tagsPresentes } from "@/lib/documentos/filtros-doc";
 import { VISTAS_ARCHIVO } from "../explorador/vista-archivo";
 import { ActionMenu } from "@/components/admin/shared/action-menu";
 import type { ModeloArchivo } from "./use-archivo";
+
+type Orden = ModeloArchivo["sortBy"];
+/** Los órdenes del Archivo: el `<select>` de la barra y la sección «Ordenar» del menú Ver. */
+const ORDENES: readonly { id: Orden; label: string; Icon: LucideIcon }[] = [
+  { id: "relevancia", label: "Más parecidos", Icon: Sparkles },
+  { id: "recent", label: "Más recientes", Icon: Clock },
+  { id: "name", label: "Nombre A–Z", Icon: ArrowDownAZ },
+  { id: "type", label: "Tipo", Icon: ArrowUpDown },
+  { id: "size", label: "Tamaño", Icon: HardDrive },
+  { id: "expiry", label: "Vence primero", Icon: CalendarClock },
+];
+
+/**
+ * En el celular (Brandon 31-10: «el panel lo más cómodo en celular») el buscador
+ * se estira y comparte fila con IA, Filtros y Ver: el `<select>` de orden se
+ * esconde porque el menú Ver lo trae en su sección «Ordenar», como el Ver de
+ * Windows. Antes eran tres filas (barra de dirección, buscador, comandos).
+ */
+const BUSCADOR_EN_FILA = "contents max-sm:[&>*]:min-w-0 max-sm:[&>*]:flex-1 max-sm:[&>*]:basis-0";
+
 export default function BarraDeHerramientas({ arch }: { arch: ModeloArchivo }) {
   const { filterMode, barraExplorador, ex, activePath, abrirCarpetaExp, displayDocs, downloadFolderZip,
     zipping, buscador, setSemantic, semantic, filtros, setFiltros, documents, filtrosAbiertos,
     setFiltrosAbiertos, sortBy, setSortBy, terminosBusqueda, view, enExplorador, sinPanel, setColsMenuOpen,
     colsMenuOpen, colsVisibles, setColsVisibles, panelPrevia } = arch;
+  /* Buscando, el orden por defecto pasa a ser el parecido con lo que pediste;
+     sin búsqueda no tiene sentido ofrecerlo. */
+  const ordenes = ORDENES.filter((o) => o.id !== "relevancia" || terminosBusqueda.length > 0);
   return (
     <>
           {/* Toolbar — solo en vistas tipo lista (no en resumen/asistente/actividad/calendario/enlaces) */}
@@ -25,18 +48,18 @@ export default function BarraDeHerramientas({ arch }: { arch: ModeloArchivo }) {
                 Subir, Lugares y la ruta) y el buscador a su derecha van en una
                 fila propia; los comandos (IA, Filtros, Orden, Ver), debajo. */}
             {barraExplorador ? (
-              <div className="flex basis-full flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex basis-full flex-col gap-2 max-sm:contents sm:flex-row sm:items-center">
                 <MigasRuta
                   {...ex.barra}
                   ruta={activePath}
                   raiz="Archivo"
                   onIr={abrirCarpetaExp}
                   zip={filterMode === "folder" && displayDocs.length > 0 ? { onClick: () => void downloadFolderZip(), ocupado: zipping } : undefined}
-                  className="min-w-0 flex-1"
+                  className="min-w-0 flex-1 max-sm:basis-full"
                 />
-                {buscador}
+                <div className={BUSCADOR_EN_FILA}>{buscador}</div>
               </div>
-            ) : buscador}
+            ) : <div className={BUSCADOR_EN_FILA}>{buscador}</div>}
             <button
               onClick={() => setSemantic((s) => !s)}
               aria-pressed={semantic}
@@ -63,18 +86,15 @@ export default function BarraDeHerramientas({ arch }: { arch: ModeloArchivo }) {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary"
+              className={cn(
+                "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary",
+                // En la papelera no hay menú Ver: ahí el orden sigue a la vista.
+                filterMode !== "trash" && "max-sm:hidden",
+              )}
               aria-label="Ordenar documentos"
               title="Ordenar documentos"
             >
-              {/* Buscando, el orden por defecto pasa a ser el parecido con lo
-                  que pediste; sin búsqueda no tiene sentido ofrecerlo. */}
-              {terminosBusqueda.length > 0 && <option value="relevancia">Más parecidos</option>}
-              <option value="recent">Más recientes</option>
-              <option value="name">Nombre A–Z</option>
-              <option value="type">Tipo</option>
-              <option value="size">Tamaño</option>
-              <option value="expiry">Vence primero</option>
+              {ordenes.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
             </select>
             {/* La papelera es siempre una lista con sus propias acciones:
                 grilla/lista y columnas no le cambian nada (11-10). */}
@@ -99,6 +119,7 @@ export default function BarraDeHerramientas({ arch }: { arch: ModeloArchivo }) {
                     ...(panelPrevia.disponible
                       ? [{ id: "vista-previa", label: "Panel de vista previa", hint: "Alt+P · un clic muestra el archivo a la derecha", icon: PanelRight, activo: panelPrevia.prendido, seccion: "Mostrar", onSelect: panelPrevia.alternar }]
                       : []),
+                    ...ordenes.map((o) => ({ id: `orden-${o.id}`, label: o.label, icon: o.Icon, activo: o.id === sortBy, seccion: "Ordenar", onSelect: () => setSortBy(o.id) })),
                   ]}
                 />
               );
