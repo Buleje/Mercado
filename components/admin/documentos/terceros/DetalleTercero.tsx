@@ -30,11 +30,14 @@ const ORDENES: { id: OrdenDocsTercero; label: string }[] = [
   { id: "vencimiento", label: "Lo que vence antes" },
 ];
 
-export default function DetalleTercero({ tercero, arch, onVolver }: {
+export default function DetalleTercero({ tercero, arch, onVolver, abrir, enPanelId = null }: {
   tercero: TerceroVinculado;
   arch: ModeloArchivo;
   /** Sólo en una columna (celular o vista angosta): vuelve a la lista. */
   onVolver?: () => void;
+  /** Mostrar un papel al costado, con la lista por la que pasan ‹ › (31-10). */
+  abrir?: (doc: DbDocument, lista: readonly DbDocument[]) => void;
+  enPanelId?: string | null;
 }) {
   const { folders, documents, folderById, setExpediente, setWhatsappDoc, zipAndDownload } = arch;
   const [q, setQ] = useState("");
@@ -160,7 +163,16 @@ export default function DetalleTercero({ tercero, arch, onVolver }: {
           {aguja ? `No hay papeles con «${q.trim()}».` : "Sus carpetas están vacías."}
         </p>
       ) : (
-        grupos.map((g) => <PapelesDeCarpeta key={g.carpeta.id} grupo={g} arch={arch} miniaturas={miniaturas} />)
+        grupos.map((g) => (
+          <PapelesDeCarpeta
+            key={g.carpeta.id}
+            grupo={g}
+            arch={arch}
+            miniaturas={miniaturas}
+            abrir={abrir ? (d) => abrir(d, grupos.flatMap((x) => x.docs)) : undefined}
+            enPanelId={enPanelId}
+          />
+        ))
       )}
     </div>
   );

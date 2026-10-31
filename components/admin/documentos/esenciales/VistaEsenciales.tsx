@@ -29,6 +29,8 @@ import CabeceraEsenciales from "./CabeceraEsenciales";
 import { useUsoDocs } from "./use-uso-docs";
 import { useOrdenEsenciales } from "./use-orden-esenciales";
 import { useVisorEsenciales } from "./use-visor-esenciales";
+import PreviaDoc from "../vista-lateral/PreviaDoc";
+import { useDocAlCostado } from "../vista-lateral/use-doc-al-costado";
 import { archivosSoltados, subirACarpeta, traeArchivos } from "./subir-a-carpeta";
 import { useColumnaDerecha } from "@/components/admin/layout/columna-derecha";
 import { useHuecoLateral } from "./hueco-lateral";
@@ -126,6 +128,9 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
     return masAbiertos(vivos.filter((d) => !!d.folderId && ids.has(d.folderId)), uso, 3);
   }, [todas, vivos, uso]);
   const visor = useVisorEsenciales({ preview, setPreview, elegida, todas, vivos, orden: ordenPapeles });
+  // Con panel al lado, un clic en un papel de la carpeta lo muestra a la derecha y la
+  // lista de la carpeta pasa a la izquierda (31-10); sin lugar, la ventana grande de siempre.
+  const costado = useDocAlCostado(documents, elegida?.carpeta.id ?? null);
 
   // «Mi orden»: siempre sobre TODAS las esenciales (no sólo las que deja ver el buscador).
   const ordenActual = ordenarEsenciales(todas, orden, manual.orden).map((e) => e.carpeta.id);
@@ -169,6 +174,9 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
 
   if (loading && folders.length === 0) return <CargandoVista />;
 
+  const previa = costado.doc && elegida && conPanel && !enGrande ? (
+    <PreviaDoc key={costado.doc.id} arch={arch} doc={costado.doc} nav={costado.nav(`Volver a ${elegida.carpeta.name}`)} />
+  ) : null;
   const panel = elegida && mirando && !enGrande && (
     <PanelEsencial
       key={elegida.carpeta.id}
@@ -177,7 +185,8 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
       setDentroDe={setDentroDe}
       orden={ordenPapeles}
       setOrden={setOrdenPapeles}
-      abrir={visor.abrir}
+      abrir={conPanel ? costado.abrir : visor.abrir}
+      unaColumna={!!previa}
       arch={arch}
       uso={uso}
       ahora={ahora}
@@ -257,7 +266,10 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
         <>
         {!q && <AvisosEsenciales arch={arch} todas={todas} vivos={vivos} uso={uso} abrir={visor.abrir} />}
         <div className={cn("grid items-start gap-4", conPanel && !acoplado && elegida && "grid-cols-[minmax(0,1fr)_26rem]")}>
-          {lista.length === 0 ? (
+          {previa && !acoplado ? (
+            // El papel a la derecha: la lista de la carpeta pasa a esta columna.
+            <div className="min-w-0 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">{panel}</div>
+          ) : lista.length === 0 ? (
             resultados.length === 0 && (
               <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">Ninguna carpeta con «{q.trim()}».</p>
             )
@@ -266,7 +278,7 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
           )}
           {conPanel && !acoplado && panel && (
             <aside className="sticky top-4 max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4" aria-label={`Lo que tiene ${elegida?.carpeta.name ?? ""}`}>
-              {panel}
+              {previa ?? panel}
             </aside>
           )}
         </div>
@@ -277,7 +289,7 @@ export default function VistaEsenciales({ arch, onAbrirEnArchivo }: {
           cuadro) el cajón no se abre: parpadearía antes del panel al costado. */}
       {panel && (acoplado || (!conPanel && ancho > 0 && (lateral === undefined || anchoSeccion > 0))) && (
         <LadoEsencial hueco={acoplado ? (lateral ?? null) : null} etiqueta={`Lo que tiene ${elegida?.carpeta.name ?? ""}`} medida={medida} onCerrar={() => setElegida(null)}>
-          {panel}
+          {previa ?? panel}
         </LadoEsencial>
       )}
 

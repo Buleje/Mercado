@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { CalendarClock, ChevronLeft, ChevronRight, Download, Loader2, Maximize2, MessageCircle, Sparkles, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import type { DbDocument } from "@/lib/types/documents";
 import { formatoCodigoDocumento } from "@/lib/documentos/codigo-documento";
 import { formatBytes } from "../archivo-visual";
@@ -20,14 +21,15 @@ import { tipoDeArchivo } from "../explorador/orden-agrupar";
 import { fechaLarga } from "../explorador/propiedades-explorador";
 import MenuDocumento from "../MenuDocumento";
 import { ESTADOS_DEL_MENU } from "../archivo/estado-doc";
+import OrdenarEnPanel from "./OrdenarEnPanel";
 import VistaRapidaDoc from "./VistaRapidaDoc";
 import { useDetalleDoc } from "./use-datos-panel";
 
 type Entidades = { people?: string[]; orgs?: string[]; places?: string[]; dates?: string[]; amounts?: string[] };
 type Meta = { description?: string; summary?: string; descripcionUsuario?: string; entities?: Entidades };
 
-const BOTON = "inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary";
-const FLECHA = "inline-flex h-10 w-10 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-primary disabled:opacity-30 disabled:hover:bg-transparent";
+const ACCION = button({ variant: "secondary", className: "flex-1 gap-1.5 px-3" });
+const ICONO = button({ variant: "ghost", size: "icon", className: "shrink-0" });
 
 /** Los datos que la IA sacó del papel, en una sola fila de chips (hasta 8). */
 function chipsDe(e: Entidades | undefined): string[] {
@@ -45,8 +47,24 @@ function Fila({ etiqueta, children }: { etiqueta: string; children: ReactNode })
   );
 }
 
-export default function PreviaDoc({ arch, doc }: { arch: ModeloArchivo; doc: DbDocument }) {
+/**
+ * Cómo se navega el panel. El Archivo usa su panel de vista previa (Alt+P); Esenciales y
+ * Terceros lo muestran en su columna derecha, con ‹ › por los papeles de esa carpeta o
+ * tercero y «‹ Volver» a la lista (ver `use-doc-al-costado`).
+ */
+export interface NavPrevia {
+  anterior?: () => void;
+  siguiente?: () => void;
+  posicion: { actual: number; total: number } | null;
+  onCerrar: () => void;
+  cerrarTitulo: string;
+  /** «Volver a Juana Pérez»: un botón arriba que vuelve a la lista. */
+  volver?: string;
+}
+
+export default function PreviaDoc({ arch, doc, nav }: { arch: ModeloArchivo; doc: DbDocument; nav?: NavPrevia }) {
   const { panelPrevia: p, setPreview, handleDownload, setWhatsappDoc, accionesDe, ex, folderById, abrirCarpetaExp } = arch;
+  const n: NavPrevia = nav ?? { anterior: p.anterior, siguiente: p.siguiente, posicion: p.posicion, onCerrar: p.alternar, cerrarTitulo: "Cerrar la vista previa (Alt+P)" };
   const { detalle, cargando } = useDetalleDoc(doc);
   const meta = (detalle?.ocrMetadata ?? {}) as Meta;
   const descripcion = (meta.descripcionUsuario || meta.description || meta.summary || "").trim();
@@ -65,20 +83,25 @@ export default function PreviaDoc({ arch, doc }: { arch: ModeloArchivo; doc: DbD
 
   return (
     <div className="space-y-3">
+      {n.volver && (
+        <button type="button" onClick={n.onCerrar} className={button({ variant: "ghost", className: "gap-1 px-2 text-[var(--accent-ink)] dark:text-[var(--accent)]" })}>
+          <ChevronLeft className="h-4 w-4" /> {n.volver}
+        </button>
+      )}
       {/* Cabecera: el nombre, ‹ 3 de 75 › y cerrar el panel. */}
       <div className="flex items-start gap-2">
         <IconoArchivo doc={doc} tam="chico" />
         <div className="min-w-0 flex-1">
           <CardTitle className="line-clamp-2 break-words text-sm font-bold">{doc.name}</CardTitle>
-          {p.posicion && <p className="text-xs tabular-nums text-[var(--text-tertiary)]">{p.posicion.actual} de {p.posicion.total}</p>}
+          {n.posicion && <p className="text-xs tabular-nums text-[var(--text-tertiary)]">{n.posicion.actual} de {n.posicion.total}</p>}
         </div>
-        <button type="button" onClick={p.anterior} disabled={!p.anterior} className={FLECHA} aria-label="Archivo anterior" title="Anterior">
+        <button type="button" onClick={n.anterior} disabled={!n.anterior} className={ICONO} aria-label="Archivo anterior" title="Anterior">
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <button type="button" onClick={p.siguiente} disabled={!p.siguiente} className={FLECHA} aria-label="Archivo siguiente" title="Siguiente">
+        <button type="button" onClick={n.siguiente} disabled={!n.siguiente} className={ICONO} aria-label="Archivo siguiente" title="Siguiente">
           <ChevronRight className="h-5 w-5" />
         </button>
-        <button type="button" onClick={p.alternar} className={FLECHA} aria-label="Cerrar la vista previa" title="Cerrar la vista previa (Alt+P)">
+        <button type="button" onClick={n.onCerrar} className={ICONO} aria-label={n.cerrarTitulo} title={n.cerrarTitulo}>
           <X className="h-5 w-5" />
         </button>
       </div>
@@ -89,13 +112,13 @@ export default function PreviaDoc({ arch, doc }: { arch: ModeloArchivo; doc: DbD
       </div>
 
       <div className="flex gap-2">
-        <button type="button" onClick={() => setPreview(doc)} className={cn(BOTON, "border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)]")} title="Abrir en grande con todas sus pestañas">
+        <button type="button" onClick={() => setPreview(doc)} className={button({ variant: "primary", className: "flex-1 gap-1.5 px-3" })} title="Abrir en grande con todas sus pestañas">
           <Maximize2 className="h-4 w-4" /> Abrir
         </button>
-        <button type="button" onClick={() => void handleDownload(doc)} className={BOTON} title="Descargar">
+        <button type="button" onClick={() => void handleDownload(doc)} className={ACCION} title="Descargar">
           <Download className="h-4 w-4" /> <span className="hidden 2xl:inline">Descargar</span>
         </button>
-        <button type="button" onClick={() => setWhatsappDoc([doc])} className={BOTON} title="Enviar por WhatsApp">
+        <button type="button" onClick={() => setWhatsappDoc([doc])} className={ACCION} title="Enviar por WhatsApp">
           <MessageCircle className="h-4 w-4" /> <span className="hidden 2xl:inline">WhatsApp</span>
         </button>
         {/* El «⋯» propio del panel, sin `abrirEn`: el clic derecho sobre este
@@ -126,13 +149,15 @@ export default function PreviaDoc({ arch, doc }: { arch: ModeloArchivo; doc: DbD
         )}
       </div>
 
+      <OrdenarEnPanel arch={arch} doc={doc} detalle={detalle} />
+
       <dl className="divide-y divide-[var(--rule-soft)]">
         <Fila etiqueta="Tipo">{tipoDeArchivo(doc)} · {formatBytes(doc.size)}</Fila>
         <Fila etiqueta="Carpeta">
           {ruta.length === 0 ? (
             <span className="text-[var(--text-tertiary)]">Archivo (sin carpeta)</span>
           ) : (
-            <button type="button" onClick={() => abrirCarpetaExp(ruta[ruta.length - 1].id)} className="text-left font-semibold hover:text-primary" title="Ir a la carpeta">
+            <button type="button" onClick={() => abrirCarpetaExp(ruta[ruta.length - 1].id)} className={button({ variant: "link", className: "h-auto justify-start p-0 text-left font-semibold whitespace-normal" })} title="Ir a la carpeta">
               {ruta.map((r) => r.name).join(" › ")}
             </button>
           )}

@@ -38,8 +38,10 @@ import { haceCuanto, papeles, quienLaVe, veces } from "./compartido";
 /** Ancho de adentro (38rem del panel menos su relleno) desde el que van dos columnas. */
 const DOS_COLUMNAS_DESDE = 576;
 
-export default function PanelEsencial({ e, dentroDe, setDentroDe, orden, setOrden, abrir, arch, uso, ahora, medida, onCerrar, onAbrirEnArchivo, onQuitar, onAmpliar, onEscanear, onCambiarIcono }: {
+export default function PanelEsencial({ e, dentroDe, setDentroDe, orden, setOrden, abrir, arch, uso, ahora, medida, onCerrar, onAbrirEnArchivo, onQuitar, onAmpliar, onEscanear, onCambiarIcono, unaColumna = false }: {
   e: CarpetaEsencial<DbDocumentFolder>;
+  /** Con el papel abierto a su derecha (31-10), la lista va sola: su detalle de dos columnas duplicaría la vista previa. */
+  unaColumna?: boolean;
   /** La carpeta que se mira adentro (la esencial o una de sus subcarpetas). Vive en la vista:
    *  al pasar del costado al cajón (girar la tableta) el panel se vuelve a montar y no se pierde. */
   dentroDe: string;
@@ -70,7 +72,7 @@ export default function PanelEsencial({ e, dentroDe, setDentroDe, orden, setOrde
   const destino = folderById.get(dentroDe) ?? f;
   const [refPanel, anchoPanel] = useAnchoDelContenedor();
   const [refLado, altoScroll] = useAltoDelScroll();
-  const dosColumnas = anchoPanel >= DOS_COLUMNAS_DESDE;
+  const dosColumnas = !unaColumna && anchoPanel >= DOS_COLUMNAS_DESDE;
   // El papel elegido vale para la carpeta en que lo elegiste: al moverte por el árbol, vuelven los de la carpeta.
   const [sel, setSel] = useState<{ id: string; lista: readonly DbDocument[]; en: string } | null>(null);
   const papel = dosColumnas && sel?.en === dentroDe ? (documents.find((d) => d.id === sel.id && !d.deletedAt) ?? null) : null;

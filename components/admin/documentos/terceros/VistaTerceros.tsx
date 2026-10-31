@@ -11,6 +11,8 @@ import type { ModeloArchivo } from "../archivo/use-archivo";
 import { useTerceros } from "./use-terceros";
 import ListaTerceros from "./ListaTerceros";
 import DetalleTercero from "./DetalleTercero";
+import PreviaDoc from "../vista-lateral/PreviaDoc";
+import { useDocAlCostado } from "../vista-lateral/use-doc-al-costado";
 
 /**
  * Archivo › Terceros (`?sub=terceros`, Brandon 23-10): las carpetas vinculadas
@@ -29,6 +31,8 @@ const PARAM = "tercero";
  * lista o detalle (con «volver»), como en el celular.
  */
 const ANCHO_DOS_COLUMNAS = 840;
+/** Desde acá un papel se ve a la derecha de la lista de papeles (26rem + lo que quede, 31-10). */
+const ANCHO_CON_PAPEL = 760;
 
 /** Ancho del contenedor con ResizeObserver (ref de React 19 con limpieza). */
 function useAnchoDelContenedor(): [(el: HTMLDivElement | null) => (() => void) | undefined, number] {
@@ -75,6 +79,10 @@ export default function VistaTerceros({ arch }: { arch: ModeloArchivo }) {
   // A dos columnas, sin elegir, se abre el más usado: la derecha nunca queda en blanco.
   // Angosto (celular o panel del Archivo abierto) la lista va primero y el detalle ocupa todo.
   const elegido = terceros.find((t) => t.clave === clave) ?? (dosColumnas ? lista[0] ?? null : null);
+  // Un clic en un papel lo muestra a la derecha (31-10); angosto, la ventana grande de siempre.
+  const costado = useDocAlCostado(documents, elegido?.clave ?? null);
+  const cabePapel = anchoVista >= ANCHO_CON_PAPEL;
+  const conPapel = cabePapel && !!costado.doc;
 
   if ((loading && documents.length === 0 && folders.length === 0) || (cargando && terceros.length === 0 && folders.length === 0)) {
     return <CargandoVista />;
@@ -104,11 +112,11 @@ export default function VistaTerceros({ arch }: { arch: ModeloArchivo }) {
   return (
     <div
       ref={refVista}
-      className={cn("grid gap-4", dosColumnas && "grid-cols-[18rem_minmax(0,1fr)]")}
+      className={cn("grid gap-4", conPapel ? "grid-cols-[minmax(0,1fr)_26rem]" : dosColumnas && "grid-cols-[18rem_minmax(0,1fr)]")}
       data-qa="vista-terceros"
       data-columnas={dosColumnas ? 2 : 1}
     >
-      <aside className={cn("min-w-0", dosColumnas ? "sticky top-4 self-start" : elegido && "hidden")}>
+      <aside className={cn("min-w-0", conPapel ? "hidden" : dosColumnas ? "sticky top-4 self-start" : elegido && "hidden")}>
         <ListaTerceros
           todos={terceros}
           lista={lista}
@@ -127,8 +135,24 @@ export default function VistaTerceros({ arch }: { arch: ModeloArchivo }) {
       </aside>
       {elegido && (
         <div className="min-w-0 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <DetalleTercero key={elegido.clave} tercero={elegido} arch={arch} onVolver={dosColumnas ? undefined : () => setClave(null)} />
+          <DetalleTercero
+            key={elegido.clave}
+            tercero={elegido}
+            arch={arch}
+            onVolver={dosColumnas ? undefined : () => setClave(null)}
+            abrir={cabePapel ? costado.abrir : undefined}
+            enPanelId={costado.doc?.id ?? null}
+          />
         </div>
+      )}
+      {conPapel && costado.doc && elegido && (
+        <aside
+          aria-label="Vista previa"
+          data-qa="papel-al-costado"
+          className="sticky top-[76px] max-h-[calc(100dvh-92px)] self-start overflow-y-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 pb-20"
+        >
+          <PreviaDoc key={costado.doc.id} arch={arch} doc={costado.doc} nav={costado.nav(`Volver a ${elegido.nombre}`)} />
+        </aside>
       )}
     </div>
   );

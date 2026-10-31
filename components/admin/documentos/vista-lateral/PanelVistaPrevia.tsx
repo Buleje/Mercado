@@ -12,6 +12,7 @@
  */
 
 import { CardTitle } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
 import { Download, Eye, FolderOpen, MessageCircle, X } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { urlMiniatura } from "@/lib/documents/miniatura-version";
@@ -23,8 +24,8 @@ import { fechaLarga, plural } from "../explorador/propiedades-explorador";
 import PreviaDoc from "./PreviaDoc";
 import { useContenidoCarpeta } from "./use-datos-panel";
 
-const BOTON = "inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary";
-const CERRAR = "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-primary";
+const ACCION = button({ variant: "secondary", className: "flex-1 gap-1.5 px-3" });
+const ICONO = button({ variant: "ghost", size: "icon", className: "shrink-0" });
 const MAX_MINIATURAS = 12;
 
 /** Una grilla de miniaturas: clic abre ese archivo en grande. */
@@ -39,7 +40,7 @@ function Miniaturas({ docs, onAbrir }: { docs: DbDocument[]; onAbrir: (d: DbDocu
           onClick={() => onAbrir(d)}
           title={d.name}
           aria-label={`Ver ${d.name}`}
-          className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] transition-colors hover:border-primary"
+          className={button({ variant: "ghost", className: "relative aspect-square h-auto overflow-hidden rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-0 hover:border-primary" })}
         >
           <span className="absolute inset-0 flex items-center justify-center"><IconoArchivo doc={d} tam="chico" /></span>
           {/* eslint-disable-next-line @next/next/no-img-element -- miniatura del drive, ya optimizada */}
@@ -58,7 +59,7 @@ function Cabecera({ titulo, sub, icono, onCerrar }: { titulo: string; sub: strin
         <CardTitle className="line-clamp-2 break-words text-sm font-bold">{titulo}</CardTitle>
         <p className="text-xs tabular-nums text-[var(--text-tertiary)]">{sub}</p>
       </div>
-      <button type="button" onClick={onCerrar} className={CERRAR} aria-label="Cerrar la vista previa" title="Cerrar la vista previa (Alt+P)">
+      <button type="button" onClick={onCerrar} className={ICONO} aria-label="Cerrar la vista previa" title="Cerrar la vista previa (Alt+P)">
         <X className="h-5 w-5" />
       </button>
     </div>
@@ -80,7 +81,7 @@ function PreviaCarpeta({ arch, carpeta }: { arch: ModeloArchivo; carpeta: DbDocu
         icono={<IconoCarpeta carpeta={carpeta} tam="chico" />}
         onCerrar={p.alternar}
       />
-      <button type="button" onClick={() => abrirCarpetaExp(carpeta.id)} className={`${BOTON} w-full border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
+      <button type="button" onClick={() => abrirCarpetaExp(carpeta.id)} className={button({ variant: "primary", fullWidth: true, className: "gap-1.5" })}>
         <FolderOpen className="h-4 w-4" /> Abrir carpeta
       </button>
       {docs && <Miniaturas docs={docs} onAbrir={setPreview} />}
@@ -101,10 +102,10 @@ function PreviaVarios({ arch, docs, carpetas }: { arch: ModeloArchivo; docs: DbD
       <Cabecera titulo={`${partes.join(" y ")} elegidos`} sub={docs.length > 0 ? `${formatBytes(bytes)} en total` : "Sólo carpetas"} icono={<Eye className="mt-1 h-5 w-5 shrink-0 text-primary" />} onCerrar={p.alternar} />
       {docs.length > 0 && (
         <div className="flex gap-2">
-          <button type="button" onClick={() => void zipAndDownload(docs, `documentos-${docs.length}.zip`)} className={BOTON}>
+          <button type="button" onClick={() => void zipAndDownload(docs, `documentos-${docs.length}.zip`)} className={ACCION}>
             <Download className="h-4 w-4" /> Descargar ZIP
           </button>
-          <button type="button" onClick={() => setWhatsappDoc(docs)} className={BOTON}>
+          <button type="button" onClick={() => setWhatsappDoc(docs)} className={ACCION}>
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>
         </div>
@@ -123,7 +124,7 @@ export default function PanelVistaPrevia({ arch }: { arch: ModeloArchivo }) {
     <aside
       aria-label="Vista previa"
       data-qa="panel-vista-previa"
-      className="sticky top-[76px] max-h-[calc(100dvh-92px)] self-start overflow-y-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3"
+      className="sticky top-[76px] max-h-[calc(100dvh-92px)] self-start overflow-y-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 pb-20"
     >
       {o.tipo === "doc" ? (
         <PreviaDoc key={o.doc.id} arch={arch} doc={o.doc} />
@@ -134,7 +135,7 @@ export default function PanelVistaPrevia({ arch }: { arch: ModeloArchivo }) {
       ) : (
         <div className="flex items-start gap-2">
           <p className="flex-1 py-10 text-center text-sm text-[var(--text-tertiary)]">Haz clic en un archivo o carpeta para ver aquí qué tiene.</p>
-          <button type="button" onClick={p.alternar} className={CERRAR} aria-label="Cerrar la vista previa" title="Cerrar la vista previa (Alt+P)">
+          <button type="button" onClick={p.alternar} className={ICONO} aria-label="Cerrar la vista previa" title="Cerrar la vista previa (Alt+P)">
             <X className="h-5 w-5" />
           </button>
         </div>

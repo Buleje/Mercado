@@ -24,13 +24,18 @@ export interface GrupoDeCarpeta {
  * papel abre la vista previa del Archivo; el «⋯» y el clic derecho, su menú
  * de siempre (descargar, WhatsApp, renombrar, mover…).
  */
-export default function PapelesDeCarpeta({ grupo, arch, miniaturas }: {
+export default function PapelesDeCarpeta({ grupo, arch, miniaturas, abrir, enPanelId = null }: {
   grupo: GrupoDeCarpeta;
   arch: ModeloArchivo;
   miniaturas: boolean;
+  /** Con espacio, el clic muestra el papel en la columna derecha (31-10); sin esto, la ventana grande. */
+  abrir?: (doc: DbDocument) => void;
+  /** El papel que se ve al costado: va resaltado. */
+  enPanelId?: string | null;
 }) {
   const { carpeta, ruta, docs } = grupo;
   const { abrirCarpetaExp, setSharingFolder, setExpediente, setVinculando, setPreview, menuDe, abrirMenuEn } = arch;
+  const ver = abrir ?? setPreview;
   return (
     <section className="space-y-2" data-qa="tercero-carpeta">
       <div className="flex flex-wrap items-center gap-2">
@@ -67,8 +72,8 @@ export default function PapelesDeCarpeta({ grupo, arch, miniaturas }: {
           {docs.map((doc) => {
             const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
             return (
-              <li key={doc.id} onContextMenu={(e) => abrirMenuEn(e, doc.id)} className="relative overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                <button type="button" onClick={() => setPreview(doc)} className="block w-full text-left" aria-label={`Ver ${doc.name}`}>
+              <li key={doc.id} onContextMenu={(e) => abrirMenuEn(e, doc.id)} className={cn("relative overflow-hidden rounded-xl border bg-[var(--surface-raised)]", enPanelId === doc.id ? "border-primary ring-2 ring-primary/30" : "border-[var(--rule-base)]")}>
+                <button type="button" onClick={() => ver(doc)} onDoubleClick={() => setPreview(doc)} className="block w-full text-left" aria-label={`Ver ${doc.name}`}>
                   <span className="flex aspect-[4/3] items-center justify-center overflow-hidden bg-[var(--surface-sunken)]">
                     <DocThumb doc={doc} Icon={Icon} tint={tint} bg={bg} />
                   </span>
@@ -105,7 +110,7 @@ export default function PapelesDeCarpeta({ grupo, arch, miniaturas }: {
                   onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest("button, input, a")) setPreview(doc); }}
                 >
                   <td>
-                    <button type="button" onClick={() => setPreview(doc)} className="flex min-w-0 items-center gap-3 text-left hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]">
+                    <button type="button" onClick={() => ver(doc)} className={cn("flex min-w-0 items-center gap-3 text-left hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]", enPanelId === doc.id && "text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
                       <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", bg)}>
                         <Icon className={cn("h-4 w-4", tint)} />
                       </span>
