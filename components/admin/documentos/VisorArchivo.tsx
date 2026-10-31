@@ -18,7 +18,7 @@
  * del navegador los muestra de a pedazos.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Loader2, Search } from "@buleje/design-system/icons";
 import { pedirArchivo } from "@/lib/documentos/archivo-remoto";
 import { VERSION_MINIATURA } from "@/lib/documents/miniatura-version";
@@ -226,12 +226,16 @@ function VisorPdfPaginas({ docId, nombre }: { docId: string; nombre: string }) {
   );
 }
 
-export function VisorPdf({ url, nombre, tamano, docId }: {
+export function VisorPdf({ url, nombre, tamano, docId, alto = "h-[78vh]", cargando }: {
   url: string;
   nombre: string;
   tamano: number;
   /** Para dibujar las páginas en el servidor si el navegador no sabe abrir PDFs. */
   docId?: string;
+  /** Alto del visor: la ventana usa casi toda la pantalla; el panel lateral, su caja. */
+  alto?: string;
+  /** Lo que se ve mientras bajan los bytes (el panel lateral muestra la 1.ª página). */
+  cargando?: ReactNode;
 }) {
   const [intento, setIntento] = useState(0);
   const [comoImagenes, setComoImagenes] = useState(false);
@@ -250,7 +254,7 @@ export function VisorPdf({ url, nombre, tamano, docId }: {
   }
 
   if (!porBlob) {
-    return <iframe src={url} title={nombre} className={MARCO} />;
+    return <iframe src={url} title={nombre} className={`${MARCO} ${alto}`} />;
   }
   if (error) {
     // Si bajar el archivo falló, todavía queda un camino que funciona: las
@@ -276,15 +280,16 @@ export function VisorPdf({ url, nombre, tamano, docId }: {
     );
   }
   if (!blob) {
+    if (cargando) return <>{cargando}</>;
     return (
-      <div className="flex h-[78vh] w-full items-center justify-center gap-2 text-sm text-[var(--text-tertiary)]">
+      <div className={`flex ${alto} w-full items-center justify-center gap-2 text-sm text-[var(--text-tertiary)]`}>
         <Loader2 className="h-4 w-4 animate-spin" /> Abriendo el documento…
       </div>
     );
   }
   return (
     <div className="relative">
-      <iframe src={blob} title={nombre} className={MARCO} />
+      <iframe src={blob} title={nombre} className={`${MARCO} ${alto}`} />
       {docId && (
         // Escape a mano: si el visor del navegador queda en blanco (pasa con
         // algunas extensiones y con PDFs que sólo abre Acrobat), esto muestra
@@ -326,4 +331,4 @@ export function VisorImagen({ url, nombre }: { url: string; nombre: string }) {
   return <img src={blob} alt={nombre} className="max-h-full max-w-full rounded-lg object-contain shadow-md" />;
 }
 
-const MARCO = "w-full h-[78vh] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]";
+const MARCO = "w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]";

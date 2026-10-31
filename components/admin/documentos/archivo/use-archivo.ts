@@ -6,6 +6,7 @@ import { useArchivoIndice } from "./use-archivo-indice";
 import { useArchivoLista } from "./use-archivo-lista";
 import { useArchivoEstados } from "./use-archivo-estados";
 import { useArchivoVista } from "./use-archivo-vista";
+import { usePanelVistaPrevia } from "./use-panel-vista-previa";
 /** El estado entero del componente, por hooks encadenados en el MISMO orden del original. */
 export function useArchivo() {
   const h0 = useArchivoVista();
@@ -16,6 +17,7 @@ export function useArchivo() {
   const h5 = { ...h4, ...useArchivoSubidas(h4) };
   const h6 = { ...h5, ...useArchivoAcciones(h5) };
   const h7 = { ...h6, ...useArchivoMenu(h6) };
-  return h7;
+  const h8 = { ...h7, ...usePanelVistaPrevia(h7) };
+  return h8;
 }
 export type ModeloArchivo = ReturnType<typeof useArchivo>;

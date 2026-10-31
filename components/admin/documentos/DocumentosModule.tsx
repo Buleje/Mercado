@@ -35,12 +35,14 @@ import VistasArchivo from "./archivo/VistasArchivo";
 import VistaPreviaArchivo from "./archivo/VistaPreviaArchivo";
 import ModalesArchivo from "./archivo/ModalesArchivo";
 import { useArchivo } from "./archivo/use-archivo";
+import { PANEL_PREVIA_DEFAULT, PANEL_PREVIA_MAX, PANEL_PREVIA_MIN } from "./archivo/use-panel-vista-previa";
+import PanelVistaPrevia from "./vista-lateral/PanelVistaPrevia";
 import { precargarArchivo, DE_LOS_DOCUMENTOS } from "./archivo/perezosos";
 
 export default function DocumentosModule() {
   const arch = useArchivo();
   const { onDrop, onDragOver, onDragLeave, dragOver, filterMode, kpis, sinPanel, sidebarWidth,
-    setSidebarWidth, ex, docDelMenu, menuDe } = arch;
+    setSidebarWidth, ex, docDelMenu, menuDe, panelPrevia } = arch;
   return (
     <div
       className="space-y-4 relative"
@@ -78,9 +80,14 @@ export default function DocumentosModule() {
       {/* Explorador estilo Windows: sin panel lateral (Ver › Panel lateral lo
           vuelve a mostrar) y en el celular nunca; lo del panel queda en
           «Lugares», al lado de Atrás. */}
+      {/* Con la vista previa (Alt+P, sólo desde 1280 px) se suma una columna a
+          la derecha con su tirador; el ancho de cada lado se recuerda. */}
       <div
-        className={cn("grid grid-cols-1 gap-5", !sinPanel && "lg:grid-cols-[var(--docs-sidebar-w)_12px_1fr] lg:gap-x-0")}
-        style={{ "--docs-sidebar-w": `${sidebarWidth}px` } as React.CSSProperties}
+        className={cn("grid grid-cols-1 gap-5", (!sinPanel || panelPrevia.visible) && "lg:gap-x-0", !sinPanel && !panelPrevia.visible && "lg:grid-cols-[var(--docs-sidebar-w)_12px_1fr]")}
+        style={{
+          "--docs-sidebar-w": `${sidebarWidth}px`,
+          ...(panelPrevia.visible ? { gridTemplateColumns: `${sinPanel ? "" : `${sidebarWidth}px 12px `}minmax(0,1fr) 12px ${panelPrevia.ancho}px` } : {}),
+        } as React.CSSProperties}
       >
         <PanelLateralArchivo arch={arch} />
 
@@ -110,6 +117,22 @@ export default function DocumentosModule() {
 
           <VistasArchivo arch={arch} />
         </div>
+
+        {panelPrevia.visible && (
+          <>
+            <SidebarResizeHandle
+              width={panelPrevia.ancho}
+              min={PANEL_PREVIA_MIN}
+              max={PANEL_PREVIA_MAX}
+              invertido
+              porDefecto={PANEL_PREVIA_DEFAULT}
+              etiqueta="Redimensionar la vista previa"
+              onChange={panelPrevia.setAncho}
+              onCommit={panelPrevia.guardarAncho}
+            />
+            <PanelVistaPrevia arch={arch} />
+          </>
+        )}
       </div>
 
       {/* Clic derecho del explorador (carpetas, fondo, Acceso rápido), la

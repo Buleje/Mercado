@@ -18,7 +18,7 @@ export function DocCard({
   doc, selected, isRenaming, renameValue, terminos, folderNombre,
   onSelect, onPreview, onSetStatus, menu, onMenuContextual,
   onStartRename, onCommitRename, onCancelRename, onRenameChange,
-  onDragStart, onDragEnd, dragging, tagsActivos, onPromoteAiTag,
+  onDragStart, onDragEnd, dragging, tagsActivos, onPromoteAiTag, onAbrir, enPanel = false,
 }: {
   doc: DbDocument;
   selected: boolean;
@@ -30,6 +30,10 @@ export function DocCard({
   folderNombre?: string | null;
   onSelect: () => void;
   onPreview: () => void;
+  /** Doble clic en la miniatura: la ventana grande (el clic simple va al panel de vista previa). */
+  onAbrir?: () => void;
+  /** Es la que se ve en el panel de vista previa: va resaltada. */
+  enPanel?: boolean;
   onSetStatus: (s: string) => void;
   /** El «⋯» del documento (MenuDocumento): favorito, WhatsApp, descargar, eliminar y el resto. */
   menu: React.ReactNode;
@@ -69,9 +73,10 @@ export function DocCard({
         // El estado manda sobre el borde: es lo que permite barrer la carpeta
         // con la vista y ver cuáles hay que corregir sin leer un solo nombre.
         // La selección gana, porque es lo que estás haciendo en ese momento.
-        selected ? "border-primary shadow-md"
+        selected || enPanel ? "border-primary shadow-md"
           : marca ? cn(marca.borde, "hover:shadow-md")
           : "border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md",
+        enPanel && "ring-2 ring-primary/30",
         dragging && "opacity-40"
       )}>
       {/* Franja del estado: el color se ve incluso con la tarjeta llena de texto. */}
@@ -95,7 +100,7 @@ export function DocCard({
       />
 
       {/* Thumbnail — imagen real para imágenes, 1ª página para PDFs, ícono para el resto. */}
-      <button onClick={onPreview} className="block w-full aspect-[4/3] bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
+      <button onClick={onPreview} onDoubleClick={onAbrir} className="block w-full aspect-[4/3] bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
         <DocThumb doc={doc} Icon={Icon} tint={tint} bg={bg} />
       </button>
 

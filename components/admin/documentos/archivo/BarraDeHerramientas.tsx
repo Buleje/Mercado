@@ -3,7 +3,7 @@
 import { VISTAS_CON_CONTENIDO_PROPIO } from "./compartido";
 import MigasRuta from "../explorador/MigasRuta";
 import { cn } from "@/lib/utils";
-import { Sparkles, PanelLeft, Columns3 } from "@buleje/design-system/icons";
+import { Sparkles, PanelLeft, PanelRight, Columns3 } from "@buleje/design-system/icons";
 import FiltrosDoc from "@/components/admin/documentos/FiltrosDoc";
 import { familiasPresentes, tagsPresentes } from "@/lib/documentos/filtros-doc";
 import { VISTAS_ARCHIVO } from "../explorador/vista-archivo";
@@ -13,7 +13,7 @@ export default function BarraDeHerramientas({ arch }: { arch: ModeloArchivo }) {
   const { filterMode, barraExplorador, ex, activePath, abrirCarpetaExp, displayDocs, downloadFolderZip,
     zipping, buscador, setSemantic, semantic, filtros, setFiltros, documents, filtrosAbiertos,
     setFiltrosAbiertos, sortBy, setSortBy, terminosBusqueda, view, enExplorador, sinPanel, setColsMenuOpen,
-    colsMenuOpen, colsVisibles, setColsVisibles } = arch;
+    colsMenuOpen, colsVisibles, setColsVisibles, panelPrevia } = arch;
   return (
     <>
           {/* Toolbar — solo en vistas tipo lista (no en resumen/asistente/actividad/calendario/enlaces) */}
@@ -94,6 +94,10 @@ export default function BarraDeHerramientas({ arch }: { arch: ModeloArchivo }) {
                     // Como en Windows: el panel de navegación se prende y se apaga desde Ver.
                     ...(enExplorador
                       ? [{ id: "panel", label: "Panel lateral", hint: "Carpetas, vistas y etiquetas a la izquierda", icon: PanelLeft, activo: !sinPanel, seccion: "Mostrar", onSelect: ex.alternarPanel }]
+                      : []),
+                    // Como el «Panel de vista previa» de Windows (Alt+P): un clic muestra el archivo a la derecha.
+                    ...(panelPrevia.disponible
+                      ? [{ id: "vista-previa", label: "Panel de vista previa", hint: "Alt+P · un clic muestra el archivo a la derecha", icon: PanelRight, activo: panelPrevia.prendido, seccion: "Mostrar", onSelect: panelPrevia.alternar }]
                       : []),
                   ]}
                 />

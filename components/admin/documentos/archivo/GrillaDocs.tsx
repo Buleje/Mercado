@@ -5,11 +5,14 @@ import type { ModeloArchivo } from "./use-archivo";
 export default function GrillaDocs({ arch }: { arch: ModeloArchivo }) {
   const { displayDocs, tarjetasVisibles, selectedIds, renaming, terminosBusqueda, filterMode, folderById,
     toggleSelect, setPreview, filtros, patch, reloadAllTags, menuDe, abrirMenuEn, startRename, commitRename,
-    setRenaming, setDraggingDocId, setDragOverFolderId, draggingDocId, setTarjetasVisibles } = arch;
+    setRenaming, setDraggingDocId, setDragOverFolderId, draggingDocId, setTarjetasVisibles, panelPrevia } = arch;
   return (
     <>
-            <div className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+            {/* Columnas según el ancho que QUEDA (no el de la pantalla): con la
+                barra de carpetas y la vista previa abiertas, 4 tarjetas en 430 px
+                cortaban todos los nombres (31-10). */}
+            <div className="@container space-y-3">
+            <div className="grid grid-cols-2 @xl:grid-cols-3 @4xl:grid-cols-4 @6xl:grid-cols-5 gap-3">
               {displayDocs.slice(0, tarjetasVisibles).map((doc) => (
                 <DocCard
                   key={doc.id}
@@ -20,7 +23,9 @@ export default function GrillaDocs({ arch }: { arch: ModeloArchivo }) {
                   terminos={terminosBusqueda}
                   folderNombre={filterMode === "folder" ? undefined : (doc.folderId ? folderById.get(doc.folderId)?.name ?? null : null)}
                   onSelect={() => toggleSelect(doc.id)}
-                  onPreview={() => setPreview(doc)}
+                  onPreview={() => panelPrevia.mostrar(doc)}
+                  onAbrir={() => setPreview(doc)}
+                  enPanel={panelPrevia.enPanelId === doc.id}
                   tagsActivos={filtros.tags}
                   onPromoteAiTag={(t) => {
                     if (doc.tags.includes(t)) return;

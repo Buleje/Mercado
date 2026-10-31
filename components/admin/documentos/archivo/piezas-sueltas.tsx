@@ -19,13 +19,18 @@ import { formatDate } from "@/lib/format";
  * sería cientos de writes a localStorage por un solo drag.
  */
 export function SidebarResizeHandle({
-  width, onChange, onCommit, min, max,
+  width, onChange, onCommit, min, max, invertido = false, porDefecto = SIDEBAR_DEFAULT_W, etiqueta = "Redimensionar barra lateral",
 }: {
   width: number;
   onChange: (w: number) => void;
   onCommit: (w: number) => void;
   min: number;
   max: number;
+  /** Panel a la DERECHA del tirador (la vista previa): arrastrar a la izquierda lo agranda. */
+  invertido?: boolean;
+  /** El ancho al que vuelve con doble clic. */
+  porDefecto?: number;
+  etiqueta?: string;
 }) {
   const dragging = useRef(false);
   const startX = useRef(0);
@@ -35,7 +40,8 @@ export function SidebarResizeHandle({
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       if (!dragging.current) return;
-      const next = Math.min(max, Math.max(min, startW.current + (e.clientX - startX.current)));
+      const dx = (e.clientX - startX.current) * (invertido ? -1 : 1);
+      const next = Math.min(max, Math.max(min, startW.current + dx));
       lastW.current = next;
       onChange(next);
     };
@@ -52,13 +58,13 @@ export function SidebarResizeHandle({
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [onChange, onCommit, min, max]);
+  }, [onChange, onCommit, min, max, invertido]);
 
   return (
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label="Redimensionar barra lateral"
+      aria-label={etiqueta}
       title="Arrastra para achicar o alargar · doble click para restaurar"
       onPointerDown={(e) => {
         dragging.current = true;
@@ -68,7 +74,7 @@ export function SidebarResizeHandle({
         document.body.style.cursor = "col-resize";
         document.body.style.userSelect = "none";
       }}
-      onDoubleClick={() => { onChange(SIDEBAR_DEFAULT_W); onCommit(SIDEBAR_DEFAULT_W); }}
+      onDoubleClick={() => { onChange(porDefecto); onCommit(porDefecto); }}
       className="group hidden lg:flex cursor-col-resize items-center justify-center"
     >
       <div className="h-10 w-1 rounded-full bg-[var(--rule-base)] group-hover:bg-primary transition-colors" />

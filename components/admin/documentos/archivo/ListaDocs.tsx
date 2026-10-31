@@ -22,7 +22,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
   const { selectedIds, setSelectedIds, displayDocs, clearSelection, sortBy, setSortBy, colsVisibles,
     explorandoVista, ex, abrirCarpetaExp, dropDocOnFolder, abrirMenuEn, setPreview, toggleSelect, renaming,
     setRenaming, commitRename, startRename, terminosBusqueda, patch, filterMode, folderById, setFilterMode,
-    setActiveFolderId, menuDe } = arch;
+    setActiveFolderId, menuDe, panelPrevia } = arch;
   const base = explorandoVista ? ex.contenido.docs : displayDocs;
   // Filtros de columna sobre lo que ya dejaron la búsqueda y los filtros de arriba; el orden sigue siendo el de «Ordenar por».
   const columnas = useMemo<readonly ColumnaFiltro<DbDocument>[]>(() => [
@@ -133,8 +133,9 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                       <tr
                         key={doc.id}
                         onContextMenu={(e) => abrirMenuEn(e, doc.id)}
+                        onClick={(e) => { if (panelPrevia.visible && !(e.target as HTMLElement).closest("button, input, a, select")) panelPrevia.mostrar(doc); }}
                         onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest("button, input, a")) setPreview(doc); }}
-                        className={cn("", selectedIds.has(doc.id) && "bg-primary/5")}
+                        className={cn("", (selectedIds.has(doc.id) || panelPrevia.enPanelId === doc.id) && "bg-primary/5")}
                       >
                         <td>
                           <input
@@ -159,7 +160,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                             />
                           ) : (
                             <div className="flex min-w-0 items-center gap-2">
-                            <button onClick={() => setPreview(doc)} onDoubleClick={(e) => { e.preventDefault(); startRename(doc); }} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors" title="Doble-click para renombrar">
+                            <button onClick={() => panelPrevia.mostrar(doc)} onDoubleClick={(e) => { e.preventDefault(); startRename(doc); }} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors" title="Doble-click para renombrar">
                               <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg shrink-0", bg)}>
                                 <Icon className={cn("h-4 w-4", tint)} />
                               </span>
