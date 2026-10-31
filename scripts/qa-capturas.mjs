@@ -23,6 +23,9 @@
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
  *     (sin QA_BASE prueba :3000 y :3001 y usa el que contesta: el dev reiniciado vuelve a veces en :3001) \
  *     (QA_IP=10.9.0.7 = entrar como otra IP: «login 429» en el panel compilado; el dev en :3001 va con localhost, no 127.0.0.1) \
+ *     (Archivo de Documentos: el visor grande abre con DOBLE clic — un clic = al costado — y desde un paso va por
+ *      {"eval": "…dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))"}; carpetas del explorador = [data-clave^='c:'],
+ *      papeles = [data-clave^='d:'], tarjeta = main [draggable=true]) \
  *     [--voz-falsa]   (la voz anota cada frase en window.__qaVoz en vez de hablar: verificar «Leer») \
  *     [--candado]   (toma /tmp/bsm-pesado.lock por su cuenta y avisa por stderr cuánto lleva esperándolo;
  *                    si ya lo corres con `flock /tmp/bsm-pesado.lock node …`, lo detecta y no lo pide otra vez)
