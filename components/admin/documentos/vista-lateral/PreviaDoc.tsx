@@ -69,7 +69,7 @@ export default function PreviaDoc({ arch, doc }: { arch: ModeloArchivo; doc: DbD
       <div className="flex items-start gap-2">
         <IconoArchivo doc={doc} tam="chico" />
         <div className="min-w-0 flex-1">
-          <CardTitle className="line-clamp-2 break-words text-base">{doc.name}</CardTitle>
+          <CardTitle className="line-clamp-2 break-words text-sm font-bold">{doc.name}</CardTitle>
           {p.posicion && <p className="text-xs tabular-nums text-[var(--text-tertiary)]">{p.posicion.actual} de {p.posicion.total}</p>}
         </div>
         <button type="button" onClick={p.anterior} disabled={!p.anterior} className={FLECHA} aria-label="Archivo anterior" title="Anterior">

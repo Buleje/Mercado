@@ -55,7 +55,7 @@ function Cabecera({ titulo, sub, icono, onCerrar }: { titulo: string; sub: strin
     <div className="flex items-start gap-2">
       {icono}
       <div className="min-w-0 flex-1">
-        <CardTitle className="line-clamp-2 break-words text-base">{titulo}</CardTitle>
+        <CardTitle className="line-clamp-2 break-words text-sm font-bold">{titulo}</CardTitle>
         <p className="text-xs tabular-nums text-[var(--text-tertiary)]">{sub}</p>
       </div>
       <button type="button" onClick={onCerrar} className={CERRAR} aria-label="Cerrar la vista previa" title="Cerrar la vista previa (Alt+P)">
