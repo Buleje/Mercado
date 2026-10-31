@@ -47,7 +47,7 @@ export default function HomeTrustBar() {
         {TRUST.map(({ Icon, title, desc, href }) => {
           const inner = (
             <span className="flex items-center gap-3 px-2 py-2 rounded-xl transition-colors">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
               </span>
               <span className="flex min-w-0 flex-col leading-tight">

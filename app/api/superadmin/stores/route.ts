@@ -8,6 +8,7 @@ import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { sendWelcomeTenant } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { invalidateByPrefix } from "@/lib/cache";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
 /**
@@ -158,6 +159,12 @@ export async function PATCH(req: NextRequest) {
   // "superadmin:stores". Sin invalidar acá, el refetch tras un PATCH devolvía
   // data vieja → "el cambio no se aplica". Invalida SIEMPRE.
   revalidateTag("superadmin:stores", "max");
+  // 2026-10-10: despublicar (o cambiar rubro/zona) tiene que sacar la tienda de la home
+  // del marketplace al instante; sus listados viven en getOrSet con 60-300 s de vida.
+  if (data.isPublished !== undefined || data.category !== undefined || data.zone !== undefined) {
+    invalidateByPrefix("marketplace:");
+    revalidateTag("marketplace:stores", "max");
+  }
 
   // displayTier vive fuera del schema Prisma (columna parcheada en DB, mismo
   // patrón que cover/hoursJson) → update por raw SQL parametrizado. Invalida

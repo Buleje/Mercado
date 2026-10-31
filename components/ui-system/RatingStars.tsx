@@ -106,7 +106,6 @@ export default function RatingStars({
     >
       <div className="inline-flex items-center">
         {Array.from({ length: max }).map((_, i) => {
-          const starValue = i + 1;
           const diff = displayValue - i;
           if (diff >= 1) {
             return (

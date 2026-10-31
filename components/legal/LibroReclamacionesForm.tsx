@@ -41,7 +41,7 @@ function Section({
   return (
     <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)] sm:p-6">
       <header className="mb-5 flex items-center gap-3">
-        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Icon className="h-5 w-5" strokeWidth={2.5} />
         </span>
         <div>
@@ -116,7 +116,7 @@ export default function LibroReclamacionesForm() {
 
   if (done) {
     return (
-      <div className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] p-8 text-center shadow-[var(--shadow-sm)]">
+      <div className="rounded-2xl border border-[var(--accent)]/30 bg-primary/10 p-8 text-center shadow-[var(--shadow-sm)]">
         <CheckCircle2 className="mx-auto h-14 w-14 text-[var(--accent)]" strokeWidth={2} />
         <h2 className="mt-4 text-2xl font-extrabold text-[var(--text-primary)]">
           Reclamo registrado
@@ -146,7 +146,7 @@ export default function LibroReclamacionesForm() {
       {/* Tipo de solicitud */}
       <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)] sm:p-6">
         <h2 className="mb-4 flex items-center gap-3 text-lg font-extrabold text-[var(--text-primary)]">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <MessageSquareWarning className="h-5 w-5" strokeWidth={2.5} />
           </span>
           ¿Qué deseas registrar?
@@ -164,7 +164,7 @@ export default function LibroReclamacionesForm() {
               onClick={() => setTipoReclamo(o.v)}
               className={`rounded-2xl border-2 p-4 text-left transition-all ${
                 tipoReclamo === o.v
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                  ? "border-[var(--accent)] bg-primary/10"
                   : "border-[var(--rule-base)] hover:border-[var(--accent)]/40"
               }`}
             >
@@ -232,7 +232,7 @@ export default function LibroReclamacionesForm() {
               onClick={() => setTipoBien(o)}
               className={`h-12 rounded-2xl border-2 text-base font-bold capitalize transition-all ${
                 tipoBien === o
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]"
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40"
               }`}
             >

@@ -1,0 +1,27 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=documentos&vista=esenciales",
+ "pasos": [
+  {
+   "esperar": "[data-qa=esencial-tarjeta]"
+  },
+  {
+   "click": "[data-qa=esencial-tarjeta] >> text=QA Expediente CCNN 22-10"
+  },
+  {
+   "esperar": "[data-qa=esencial-subcarpeta]"
+  },
+  {
+   "click": "[data-qa=esencial-subcarpeta] >> nth=0"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "({conPanel: document.querySelector('[data-qa=vista-esenciales]')?.dataset.conPanel, ruta: document.querySelector('[data-qa=esencial-contenido] nav')?.textContent, papeles: document.querySelectorAll('[data-qa=esencial-papel]').length, cajon: !!document.querySelector('[data-qa=esencial-cajon]'), filas: document.querySelector('[data-qa=vista-esenciales] > div')?.getBoundingClientRect().height})"
+  },
+  {
+   "captura": "sub"
+  }
+ ]
+}

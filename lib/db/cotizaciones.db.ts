@@ -1,9 +1,13 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { getOrSet } from "@/lib/cache";
+import { candidatosPorTexto, type Candidato, type ProductoDelCatalogo } from "@/lib/ventas/emparejar-pedido";
+import { CotizacionCambioDeEstadoError } from "@/lib/cotizaciones/estados";
 import type {
   Cotizacion as PCotizacion,
   CotizacionItem as PCotizacionItem,
+  Prisma,
 } from "@/lib/generated/prisma/client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -90,13 +94,17 @@ function mapCotizacion(
 
 async function getDocPrefix(tenantId: string): Promise<string> {
   try {
-    const settings = await prisma.settings.findFirst({
-      where: { tenantId },
-      select: { businessName: true },
-    });
-    if (settings?.businessName) {
+    // El nombre configurado y, si está vacío (Blas: ""), el registrado: es el
+    // mismo respaldo que el membrete. Antes caía en «Buleje» y el cliente de
+    // cualquier negocio recibía «Cotización Buleje-COT-0001».
+    const [settings, tenant] = await Promise.all([
+      prisma.settings.findFirst({ where: { tenantId }, select: { businessName: true } }),
+      prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
+    ]);
+    const nombre = settings?.businessName?.trim() || tenant?.name?.trim() || "";
+    if (nombre) {
       // Use first 3 letters of business name
-      const prefix = settings.businessName
+      const prefix = nombre
         .replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "")
         .trim()
         .slice(0, 3)
@@ -109,7 +117,7 @@ async function getDocPrefix(tenantId: string): Promise<string> {
       { err: e instanceof Error ? e.message : String(e), op: "CotizacionesDB.getDocPrefix", tenantId },
     );
   }
-  return "Buleje";
+  return "DOC";
 }
 
 export const CotizacionesDB = {
@@ -223,24 +231,33 @@ export const CotizacionesDB = {
     return mapCotizacion(row);
   },
 
+  /**
+   * `siEstadoEs` (seguridad 17-10, punto 2): el cambio de estado sólo se
+   * escribe si la cotización sigue como se leyó. Sin eso, «Enviada» de una
+   * pestaña vieja pisaba una CONVERTIDA recién hecha y quedaba lista para un
+   * segundo pedido. Si perdió la carrera: `CotizacionCambioDeEstadoError`.
+   */
   async update(
     id: string,
     tenantId: string,
-    data: { status?: string; notas?: string; validoHasta?: Date }
+    data: { status?: string; notas?: string; validoHasta?: Date },
+    opts?: { siEstadoEs?: string },
   ): Promise<DbCotizacion | null> {
     const existing = await prisma.cotizacion.findFirst({
       where: { id, tenantId },
     });
     if (!existing) return null;
-    const row = await prisma.cotizacion.update({
-      where: { id },
+    const res = await prisma.cotizacion.updateMany({
+      where: { id, tenantId, ...(opts?.siEstadoEs ? { status: opts.siEstadoEs as never } : {}) },
       data: {
         ...(data.status && { status: data.status as never }),
         ...(data.notas !== undefined && { notas: data.notas }),
         ...(data.validoHasta && { validoHasta: data.validoHasta }),
       },
-      include: { items: true },
     });
+    const row = await prisma.cotizacion.findFirst({ where: { id, tenantId }, include: { items: true } });
+    if (!row) return null;
+    if (res.count === 0) throw new CotizacionCambioDeEstadoError(row.status);
     return mapCotizacion(row);
   },
 
@@ -252,4 +269,138 @@ export const CotizacionesDB = {
     await prisma.cotizacion.delete({ where: { id } });
     return true;
   },
+
+  // ── F25: elegir el cliente ────────────────────────────────────────────────
+
+  /**
+   * Clientes del negocio que coinciden con lo escrito (nombre, razón social,
+   * documento o celular). Sin caché: el que se acaba de dar de alta tiene que
+   * salir en la búsqueda siguiente.
+   */
+  async buscarClientes(tenantId: string, q: string, limite = 8): Promise<ClienteParaCotizar[]> {
+    const texto = q.trim();
+    if (texto.length < 2) return [];
+    const digitos = texto.replace(/\D/g, "");
+    const or: Prisma.CustomerWhereInput[] = [
+      { name: { contains: texto, mode: "insensitive" } },
+      { razonSocial: { contains: texto, mode: "insensitive" } },
+    ];
+    if (digitos.length >= 3) or.push({ documento: { contains: digitos } }, { phone: { contains: digitos } });
+    const filas = await prisma.customer.findMany({
+      where: { tenantId, OR: or },
+      select: SELECT_CLIENTE,
+      orderBy: { updatedAt: "desc" },
+      take: Math.min(Math.max(limite, 1), 20),
+    });
+    return filas.map(aClienteParaCotizar);
+  },
+
+  /** El cliente de este negocio con ese celular, o null (el FK va por `phone`, que es único en TODA la plataforma). */
+  async clienteDelNegocio(tenantId: string, phone: string): Promise<ClienteParaCotizar | null> {
+    const fila = await prisma.customer.findFirst({ where: { tenantId, phone }, select: SELECT_CLIENTE });
+    return fila ? aClienteParaCotizar(fila) : null;
+  },
+
+  // ── F26: lo que hay de cada producto ──────────────────────────────────────
+
+  /** Existencias de HOY (sin la caché de 5 min del catálogo) de los productos del negocio. */
+  async productosParaCotizar(tenantId: string, ids: readonly number[]): Promise<ProductoParaCotizar[]> {
+    const unicos = [...new Set(ids.filter((n) => Number.isSafeInteger(n) && n > 0))].slice(0, 100);
+    if (unicos.length === 0) return [];
+    const filas = await prisma.product.findMany({
+      where: { tenantId, id: { in: unicos }, deletedAt: null },
+      select: { id: true, name: true, unit: true, type: true, stock: true, stockMin: true, active: true, price: true, taxType: true },
+    });
+    return filas.map((p) => ({
+      id: p.id,
+      nombre: p.name,
+      unidad: p.unit,
+      tipo: p.type,
+      stock: p.stock,
+      stockMin: p.stockMin,
+      activo: p.active,
+      precio: Number(p.price),
+      taxType: p.taxType,
+    }));
+  },
+
+  // ── Venta desde una foto (18-10): el pedido escrito contra el catálogo ────
+
+  /**
+   * Para cada texto leído del papel, los `limite` productos del negocio que más
+   * se le parecen (`lib/ventas/emparejar-pedido.ts`). El catálogo liviano se
+   * guarda 60 s por negocio: una foto con 20 líneas lo lee una vez. Sólo lee;
+   * el precio que vale al guardar lo vuelve a leer `productosParaCotizar`.
+   */
+  async productosPorTexto(tenantId: string, textos: readonly string[], limite = 3): Promise<Candidato[][]> {
+    if (textos.length === 0) return [];
+    const catalogo = await getOrSet<ProductoDelCatalogo[]>(`cotizaciones:catalogo-pedido:${tenantId}`, 60, async () => {
+      const filas = await prisma.product.findMany({
+        where: { tenantId, active: true, deletedAt: null },
+        select: { id: true, name: true, price: true, unit: true, barcode: true, sku: true, taxType: true },
+        // Product no tiene updatedAt: por id, lo último dado de alta primero.
+        orderBy: { id: "desc" },
+        take: MAX_CATALOGO_PEDIDO,
+      });
+      return filas.map((p) => ({
+        id: p.id,
+        nombre: p.name,
+        precio: Number(p.price),
+        unidad: p.unit,
+        codigos: [p.barcode, p.sku].filter((c): c is string => typeof c === "string" && c.trim().length > 0),
+        taxType: p.taxType,
+      }));
+    });
+    return candidatosPorTexto(textos, catalogo, limite);
+  },
 };
+
+/** Tope del catálogo que se compara con una foto (los más tocados primero). */
+const MAX_CATALOGO_PEDIDO = 5000;
+
+export type ClienteParaCotizar = {
+  /** Celular normalizado: es la clave a la que apunta `Cotizacion.customerId`. */
+  phone: string;
+  nombre: string;
+  razonSocial?: string;
+  documento?: string;
+  tipoDocumento?: string;
+};
+
+export type ProductoParaCotizar = {
+  id: number;
+  nombre: string;
+  unidad: string;
+  tipo: string;
+  stock: number | null;
+  stockMin: number | null;
+  activo: boolean;
+  /** Precio de venta del catálogo, de HOY. */
+  precio: number;
+  /** `Product.taxType`: gravado | exonerado | inafecto (vacío = gravado). */
+  taxType: string | null;
+};
+
+const SELECT_CLIENTE = {
+  phone: true,
+  name: true,
+  razonSocial: true,
+  documento: true,
+  tipoDocumento: true,
+} as const;
+
+function aClienteParaCotizar(c: {
+  phone: string;
+  name: string;
+  razonSocial: string | null;
+  documento: string | null;
+  tipoDocumento: string | null;
+}): ClienteParaCotizar {
+  return {
+    phone: c.phone,
+    nombre: c.name,
+    ...(c.razonSocial && { razonSocial: c.razonSocial }),
+    ...(c.documento && { documento: c.documento }),
+    ...(c.tipoDocumento && { tipoDocumento: c.tipoDocumento }),
+  };
+}

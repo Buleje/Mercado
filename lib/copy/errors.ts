@@ -15,9 +15,9 @@ export const ERROR = {
   networkOffline:
     "Estás sin internet. Revisa tu WiFi o datos y vuelve a intentar.",
   networkSlow:
-    "La conexión está lenta. Esperá un momento — no cierres la página.",
+    "La conexión está lenta. Espera un momento — no cierres la página.",
   serverDown:
-    "Nuestros servidores tienen un problema. Ya lo estamos arreglando — intentá en 2 minutos.",
+    "Nuestros servidores tienen un problema. Ya lo estamos arreglando — intenta en 2 minutos.",
 
   // ── Auth ──────────────────────────────────────────────────
   loginWrongCode:
@@ -25,9 +25,9 @@ export const ERROR = {
   loginExpiredCode:
     "Tu código venció. Pide uno nuevo — llega en 30 segundos.",
   loginBlocked:
-    "Muchos intentos fallidos. Esperá 5 minutos antes de volver a probar.",
+    "Muchos intentos fallidos. Espera 5 minutos antes de volver a probar.",
   phoneInvalid:
-    "El número debe tener 9 dígitos y empezar con 9. Revisalo.",
+    "El número debe tener 9 dígitos y empezar con 9. Revísalo.",
   emailInvalid:
     "Ese email no parece válido. Revisa que tenga @ y punto.",
 
@@ -39,15 +39,15 @@ export const ERROR = {
 
   // ── Yape / pagos ──────────────────────────────────────────
   yapeNumberInvalid:
-    "Tu número de Yape debe empezar con 9 y tener 9 dígitos. Revisalo.",
+    "Tu número de Yape debe empezar con 9 y tener 9 dígitos. Revísalo.",
   yapeCaptureUnreadable:
-    "No pudimos leer la captura. Toma otra más clara o ingresá el código manual.",
+    "No pudimos leer la captura. Toma otra más clara o ingresa el código manual.",
   yapeAmountMismatch: (expected: string, got: string) =>
-    `El monto de tu Yape (${got}) no coincide con el pedido (${expected}). Contactá a la tienda.`,
+    `El monto de tu Yape (${got}) no coincide con el pedido (${expected}). Contacta a la tienda.`,
   paymentFailed:
-    "Tu pago no se procesó. No te cobramos — intentá de nuevo o elige otro método.",
+    "Tu pago no se procesó. No te cobramos — intenta de nuevo o elige otro método.",
   paymentTimeout:
-    "Tardamos demasiado en confirmar el pago. Tu dinero está seguro — contactá a soporte si no lo ves en 5 min.",
+    "Tardamos demasiado en confirmar el pago. Tu dinero está seguro — contacta a soporte si no lo ves en 5 min.",
 
   // ── Checkout ──────────────────────────────────────────────
   cartEmpty:
@@ -55,13 +55,13 @@ export const ERROR = {
   stockInsufficient: (productName: string, available: number) =>
     `Solo quedan ${available} de "${productName}". Ajusta la cantidad.`,
   addressIncomplete:
-    "Falta tu dirección. Escribila para que llegue tu pedido.",
+    "Falta tu dirección. Escríbela para que llegue tu pedido.",
   deliveryZoneOutside:
     "Tu dirección queda fuera de nuestra zona. Contáctanos por WhatsApp para ver opciones.",
 
   // ── Admin ─────────────────────────────────────────────────
   notAuthorized:
-    "No tienes permiso para esta acción. Hablá con el dueño de la tienda.",
+    "No tienes permiso para esta acción. Habla con el dueño de la tienda.",
   notFound:
     "Ese elemento ya no existe. Puede que alguien lo haya borrado.",
   duplicateEntry: (what: string) =>
@@ -71,9 +71,9 @@ export const ERROR = {
 
   // ── SUNAT / facturación ───────────────────────────────────
   sunatRucInvalid:
-    "El RUC debe tener 11 dígitos. Revisalo y vuelve a intentar.",
+    "El RUC debe tener 11 dígitos. Revísalo y vuelve a intentar.",
   sunatDniInvalid:
-    "El DNI debe tener 8 dígitos. Revisalo.",
+    "El DNI debe tener 8 dígitos. Revísalo.",
   sunatServiceDown:
     "SUNAT está caído. Tu boleta quedó guardada — se enviará automáticamente cuando vuelva.",
 
@@ -81,7 +81,7 @@ export const ERROR = {
   fileTooBig: (maxMb: number) =>
     `El archivo pesa más de ${maxMb}MB. Usa una imagen más liviana.`,
   fileWrongType:
-    "Solo aceptamos imágenes JPG o PNG. Convertí tu archivo.",
+    "Solo aceptamos imágenes JPG o PNG. Convierte tu archivo.",
 
   // ── Genéricos (evitar usar — preferir específicos) ────────
   unknown:
@@ -101,6 +101,6 @@ export function errorFromUnknown(error: unknown, context?: string): string {
     if (error.message.toLowerCase().includes("timeout")) return ERROR.networkSlow;
     return error.message;
   }
-  if (context) return `No pudimos ${context}. Intentá de nuevo.`;
+  if (context) return `No pudimos ${context}. Intenta de nuevo.`;
   return ERROR.unknown;
 }

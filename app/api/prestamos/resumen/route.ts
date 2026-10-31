@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrestamosDB } from "@/lib/db/prestamos.db";
 import { requireAdmin } from "@/lib/require-admin";
+import { ROLES_PRESTAMOS } from "@/lib/prestamos/roles";
 import { logger } from "@/lib/logger";
 
 // GET /api/prestamos/resumen — portfolio summary for dashboard widgets
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_PRESTAMOS);
   if (auth instanceof NextResponse) return auth;
 
   try {

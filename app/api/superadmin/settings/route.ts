@@ -1,9 +1,10 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
-import { DEFAULT_PLAN_PRICES, type PlanId } from "@/lib/plans";
+import { PlatformSettingsDB, PREFIJO_INTERNO } from "@/lib/db/platform-settings.db";
+import { DEFAULT_PLAN_PRICES } from "@/lib/plans";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
@@ -11,8 +12,8 @@ import { assertCsrf } from "@/lib/auth/csrf";
  * /api/superadmin/settings
  *
  * GET  — devuelve TODAS las platform settings (key → value).
- *        Si "plan-prices" no existe aún, devuelve los defaults canónicos
- *        para que el formulario del superadmin tenga algo que editar.
+ *        "plan-prices" siempre sale de plan-tiers (un solo precio por plan,
+ *        2026-10-09): ya no se guarda acá (POST lo rechaza o lo ignora).
  *
  * POST — upserta 1 o N settings:
  *        · body = { key, value, updatedBy? }            → 1 setting
@@ -42,12 +43,10 @@ export async function GET(req: NextRequest) {
 
   const settings = await PlatformSettingsDB.getAll();
 
-  // Seed en caliente: si no hay "plan-prices" todavía (migración no corrida o
-  // fresh install), devolvemos los defaults para que el frontend tenga algo que
-  // mostrar. No escribimos — el primer POST persiste el row.
-  if (!settings["plan-prices"]) {
-    settings["plan-prices"] = { ...DEFAULT_PLAN_PRICES };
-  }
+  // Un solo precio por plan (2026-10-09): siempre el de `plan-tiers`, el mismo
+  // que cobra Facturación y ve el cliente. Una fila vieja de "plan-prices" en
+  // la base ya no manda (no la lee nadie).
+  settings["plan-prices"] = { ...DEFAULT_PLAN_PRICES };
 
   return NextResponse.json({ settings });
 }
@@ -67,13 +66,6 @@ const BatchSettingsSchema = z.object({
   updatedBy: z.string().optional(),
 });
 
-const PlanPricesSchema = z.object({
-  free: z.number().min(0).max(100_000),
-  pro: z.number().min(0).max(100_000),
-  business: z.number().min(0).max(100_000),
-  enterprise: z.number().min(0).max(100_000),
-});
-
 export async function POST(req: NextRequest) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const rateLimited = applyRateLimit(req, "MODERATE", "sa-settings-post");
@@ -91,47 +83,53 @@ export async function POST(req: NextRequest) {
 
   const updatedBy = session.username;
 
+  // Las claves `interno:*` son de trabajo de la plataforma (candado de credenciales
+  // con su hash, cachés, contadores): nunca se escriben desde Ajustes. Sin esto, un
+  // POST con `interno:candado-credenciales:<sa>` pisaba el candado ajeno (11-10).
+  const claveInterna = (k: string) => k.trim().toLowerCase().startsWith(PREFIJO_INTERNO);
+  const rechazoInterna = () =>
+    NextResponse.json(
+      { error: "clave_interna", message: `Las claves «${PREFIJO_INTERNO}…» no se escriben desde acá.` },
+      { status: 400 },
+    );
+
   // ── Shape 1: single setting ──
   const single = SingleSettingSchema.safeParse(body);
   if (single.success) {
     const { key, value } = single.data;
+    if (claveInterna(key)) return rechazoInterna();
 
     // Validación fuerte para "plan-prices" — nunca dejar que un payload
     // malformado rompa el cálculo del MRR en toda la plataforma.
     if (key === "plan-prices") {
-      const priceCheck = PlanPricesSchema.safeParse(value);
-      if (!priceCheck.success) {
-        return NextResponse.json(
-          { error: "invalid_plan_prices", detail: priceCheck.error.flatten() },
-          { status: 400 },
-        );
-      }
-      await PlatformSettingsDB.set("plan-prices", priceCheck.data, updatedBy);
-      return NextResponse.json({ ok: true, key, value: priceCheck.data });
+      return NextResponse.json(
+        {
+          error: "plan_prices_fijos",
+          message: "El precio de cada plan es uno solo (el que ve el cliente) y se cambia en la tabla de planes, no acá.",
+        },
+        { status: 409 },
+      );
     }
 
     await PlatformSettingsDB.set(key, value, updatedBy);
+    // Esta ruta escribe las MISMAS keys que /platform-config, así que revalida
+    // el mismo tag: el root layout lee la marca desde ese caché.
+    revalidateTag("platform-config", "max");
     return NextResponse.json({ ok: true, key, value });
   }
 
   // ── Shape 2: batch settings ──
   const batch = BatchSettingsSchema.safeParse(body);
   if (batch.success) {
+    if (Object.keys(batch.data.settings).some(claveInterna)) return rechazoInterna();
     const sanitized: Record<string, unknown> = { ...batch.data.settings };
 
-    // Si el batch incluye "plan-prices", valídalo antes de tocar la DB.
-    if ("plan-prices" in sanitized) {
-      const priceCheck = PlanPricesSchema.safeParse(sanitized["plan-prices"]);
-      if (!priceCheck.success) {
-        return NextResponse.json(
-          { error: "invalid_plan_prices", detail: priceCheck.error.flatten() },
-          { status: 400 },
-        );
-      }
-      sanitized["plan-prices"] = priceCheck.data satisfies Record<PlanId, number>;
-    }
+    // "plan-prices" ya no se guarda: un solo precio por plan (plan-tiers). Si
+    // un cliente viejo lo manda en el lote, se ignora y se guarda el resto.
+    delete sanitized["plan-prices"];
 
     await PlatformSettingsDB.setMany(sanitized, updatedBy);
+    revalidateTag("platform-config", "max");
     return NextResponse.json({ ok: true, keys: Object.keys(sanitized) });
   }
 

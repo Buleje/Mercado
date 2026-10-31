@@ -12,7 +12,6 @@
  */
 
 import Link from "next/link";
-import Image from "next/image";
 import { Flame, Package, Clock } from "@buleje/design-system/icons";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import { cn } from "@/lib/utils";

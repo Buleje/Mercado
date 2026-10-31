@@ -1,0 +1,79 @@
+{
+ "nota": "preset despacho-guia-asignar-permiso: la troza del libro DEMO-023-A (Tornillo) + 1 a mano de OTRA especie → «Asignar permiso» compara con lo autorizado: PO-2026-001 (sólo Tornillo) bloquea por T7 en la ventana Y en el servidor (422); QA-PERMISO-2 (sin especies) asigna. Al final se anula.",
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+ "pasos": [
+  {
+   "eval": "(() => { /* despacho-abrir deja en la lista sólo la troza del libro DEMO-023-A (Tornillo). */ window.__qaDejarTrozas = 'DEMO-023-A'; return 'dejar DEMO-023-A'; })()"
+  },
+  {
+   "preset": "despacho-abrir"
+  },
+  {
+   "eval": "[...document.querySelectorAll('[role=dialog] input[type=checkbox][aria-label^=\"Todas las trozas del árbol\"]')].map((x) => x.getAttribute('aria-label'))"
+  },
+  {
+   "marcar": "[aria-label=\"Todas las trozas del árbol 023-TOR\"]"
+  },
+  {
+   "eval": "(() => { /* La especie de la troza a mano (15-10: la fila de alta la pide). Una que NO esté en PO-2026-001 (sólo Tornillo): T7. */ const s = document.querySelector('select[aria-label=\"Especie de las trozas a mano\"]'); if (!s) return 'sin campo de especie'; const ops = [...s.options].filter((o) => o.value); const o = ops.find((x) => /capirona/i.test(x.textContent)) ?? ops.find((x) => !/tornillo/i.test(x.textContent)); if (!o) return { sinOpcion: ops.map((x) => x.textContent) }; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, o.value); s.dispatchEvent(new Event('change', { bubbles: true })); return { elegida: o.textContent, opciones: ops.map((x) => x.textContent) }; })()"
+  },
+  {
+   "click": "[data-testid=trozas-a-mano] button[aria-pressed]"
+  },
+  {
+   "preset": "despacho-dos-a-mano"
+  },
+  {
+   "preset": "despacho-datos-y-registrar"
+  },
+  {
+   "eval": "(async () => { /* La fila de la guía recién registrada (por su N°). */ const g = window.__qaGuia; if (!g || !g.gtfNumber) return { sinGuia: g ?? null }; for (let k = 0; k < 40; k++) { const b = [...document.querySelectorAll('tr')].filter((t) => t.textContent.includes(g.gtfNumber)).flatMap((t) => [...t.querySelectorAll('button')]).find((x) => x.textContent.trim() === 'Asignar permiso'); if (b) { b.setAttribute('data-qa', 'asignar-fila'); return { fila: g.gtfNumber }; } await new Promise((r) => setTimeout(r, 500)); } return { noEsta: g.gtfNumber }; })()"
+  },
+  {
+   "click": "[data-qa=asignar-fila]"
+  },
+  {
+   "esperar": "#gtf-asignar-permiso"
+  },
+  {
+   "eval": "(() => { const s = document.querySelector('#gtf-asignar-permiso'); const o = [...s.options].find((x) => /PO-2026-001/.test(x.textContent)); if (!o) return { sinPO: [...s.options].map((x) => x.textContent) }; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, o.value); s.dispatchEvent(new Event('change', { bubbles: true })); window.__qaPlanPO = o.value; return { elegido: o.textContent }; })()"
+  },
+  {
+   "esperar": "[data-testid=saldo-del-permiso]"
+  },
+  {
+   "eval": "(() => { const d = [...document.querySelectorAll('[role=dialog]')].find((x) => x.querySelector('#gtf-asignar-permiso')); const b = [...d.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Asignar permiso'); return { saldo: d.querySelector('[data-testid=saldo-del-permiso]').innerText.replace(/\\s+/g, ' '), botonApagado: b ? b.disabled : 'sin botón' }; })()"
+  },
+  {
+   "captura": "asignar-po-bloqueado"
+  },
+  {
+   "eval": "(async () => { /* El servidor re-chequea: aunque la ventana apague el botón, el POST directo rebota con el mismo «no». */ const g = window.__qaGuia; const tok = (document.cookie.match(/(?:^|;\\s*)csrf-token=([^;]+)/) || [])[1]; const r = await fetch('/api/admin/forestal/loth/guia-permiso', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(tok ? { 'x-csrf-token': decodeURIComponent(tok) } : {}) }, body: JSON.stringify({ gtfId: g.id, planId: window.__qaPlanPO }) }); const j = await r.json().catch(() => null); return { status: r.status, error: j && j.error, message: j && j.message }; })()"
+  },
+  {
+   "eval": "(() => { const s = document.querySelector('#gtf-asignar-permiso'); const o = [...s.options].find((x) => /QA-PERMISO-2/.test(x.textContent)); if (!o) return { sinQA2: [...s.options].map((x) => x.textContent) }; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, o.value); s.dispatchEvent(new Event('change', { bubbles: true })); return { elegido: o.textContent }; })()"
+  },
+  {
+   "esperar": "[data-testid=saldo-permiso-sin-especies]"
+  },
+  {
+   "eval": "(() => { const d = [...document.querySelectorAll('[role=dialog]')].find((x) => x.querySelector('#gtf-asignar-permiso')); const b = [...d.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Asignar permiso'); return { saldo: d.querySelector('[data-testid=saldo-del-permiso]').innerText.replace(/\\s+/g, ' '), botonApagado: b ? b.disabled : 'sin botón' }; })()"
+  },
+  {
+   "captura": "asignar-qa2"
+  },
+  {
+   "click": "[role=dialog] button:has-text(\"Asignar permiso\")"
+  },
+  {
+   "esperar": 3000
+  },
+  {
+   "eval": "(() => { const g = window.__qaGuia; const filas = [...document.querySelectorAll('tr')].filter((t) => t.textContent.includes(g.gtfNumber)); return { posts: window.__qaPermiso ?? null, dialogoAbierto: !!document.querySelector('#gtf-asignar-permiso'), filaSigueSinPermiso: filas.some((t) => [...t.querySelectorAll('button')].some((x) => x.textContent.trim() === 'Asignar permiso')) }; })()"
+  },
+  {
+   "preset": "despacho-anular-al-final"
+  }
+ ]
+}

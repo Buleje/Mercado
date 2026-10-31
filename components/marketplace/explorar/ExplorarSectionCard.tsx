@@ -50,7 +50,7 @@ export default function ExplorarSectionCard({
         <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 sm:px-5 py-3">
           <div className="min-w-0 flex items-center gap-3">
             {kicker && (
-              <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[0.15em] text-[var(--accent)]">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[0.15em] text-[var(--accent)]">
                 {kicker}
               </span>
             )}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getTenantIdFromRequest } from "@/lib/tenant";
-import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import { getCustomerPayload, telefonoDeLaSesion, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizePhone } from "@/lib/jsondb";
 import { logger } from "@/lib/logger";
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     if (!payload?.customerId) {
       return NextResponse.json({ data: [] });
     }
-    if (normalizePhone(payload.customerId) !== requestedPhone) {
+    if (telefonoDeLaSesion(payload) !== requestedPhone) {
       logger.info("[marketplace/notifications] customerId mismatch — empty", {
         ip,
         requestedPhone: requestedPhone.slice(0, 4) + "***",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { RotateCcw, ShoppingCart, X, Loader2 } from "@buleje/design-system/icons";
+import { RotateCcw, ShoppingCart, X } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useCustomer } from "@/contexts/customer-context";

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { CheckoutDispatch } from "./useCheckoutState";
+import { enlaceMapa } from "../parts/ubicacion-en-notas";
 
 /**
  * useGeolocation — pide GPS al navegador, hace reverse geocoding contra
@@ -57,9 +58,13 @@ export function buildReferenceSuggestions(addr: ReverseAddress): string[] {
   return [...new Set(suggestions)].slice(0, 6);
 }
 
-type Args = { dispatch: CheckoutDispatch };
+type Args = {
+  dispatch: CheckoutDispatch;
+  /** `pedidosCliente.pedirUbicacion`: el GPS también llena el enlace de Maps del pedido. */
+  compartirEnlace?: boolean;
+};
 
-export function useGeolocation({ dispatch }: Args) {
+export function useGeolocation({ dispatch, compartirEnlace = false }: Args) {
   const requestGeolocation = useCallback(() => {
     if (!navigator.geolocation) {
       dispatch({
@@ -81,7 +86,10 @@ export function useGeolocation({ dispatch }: Args) {
       async (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        dispatch({ type: "SET_ADDRESS", patch: { mapLat: lat, mapLon: lon } });
+        dispatch({
+          type: "SET_ADDRESS",
+          patch: { mapLat: lat, mapLon: lon, ...(compartirEnlace && { ubicacionEnVivo: enlaceMapa(lat, lon) }) },
+        });
 
         try {
           const url = `${NOMINATIM_REVERSE}?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
@@ -147,7 +155,7 @@ export function useGeolocation({ dispatch }: Args) {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-  }, [dispatch]);
+  }, [dispatch, compartirEnlace]);
 
   const fetchReferenceSuggestion = useCallback(
     async (lat: number, lon: number) => {

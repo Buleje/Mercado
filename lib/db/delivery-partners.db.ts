@@ -1,6 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { ESTADOS_CERRADOS, minutosDeEntrega, resumenDeFicha, tramosDeEntrega, type PasoPedido } from "@/lib/delivery/ficha-repartidor";
+import { PedidoHistorialDB } from "@/lib/db/pedido-historial.db";
 
 /**
  * DeliveryPartnersDB
@@ -89,6 +91,179 @@ export const DeliveryPartnersDB = {
       select: { id: true },
     });
     return { partnerId: created.id, wasNew: true };
+  },
+
+  // ── Reparto › Equipo (panel del negocio) ───────────────────────────────
+  // 17-10: el panel editaba, borraba y pausaba contra `/api/delivery/partners/[id]`,
+  // una ruta que nunca existió (404 en todo). Estas son sus operaciones, siempre
+  // con `tenantId` en el where y SIN `passwordHash` (la lista lo mandaba al navegador).
+
+  /** La lista de Equipo, sin el hash de la contraseña de la app. */
+  async listForAdmin(
+    tenantId: string,
+    filtros: { zone?: string | null; active?: boolean; search?: string | null } = {},
+  ) {
+    const where: Record<string, unknown> = { tenantId };
+    if (filtros.zone) where.zone = filtros.zone;
+    if (filtros.active !== undefined) where.isActive = filtros.active;
+    if (filtros.search) {
+      where.OR = [
+        { name: { contains: filtros.search, mode: "insensitive" } },
+        { phone: { contains: filtros.search } },
+      ];
+    }
+    return prisma.deliveryPartner.findMany({
+      where,
+      omit: { passwordHash: true },
+      orderBy: { createdAt: "desc" },
+    });
+  },
+
+  /** Otro repartidor del negocio con ese teléfono (para no dar de alta dos veces a la misma persona). */
+  async findByPhone(tenantId: string, phone: string, exceptoId?: string) {
+    return prisma.deliveryPartner.findFirst({
+      where: { tenantId, phone, ...(exceptoId ? { NOT: { id: exceptoId } } : {}) },
+      select: { id: true, name: true, isActive: true },
+    });
+  },
+
+  async findForAdmin(tenantId: string, id: string) {
+    return prisma.deliveryPartner.findFirst({
+      where: { tenantId, id },
+      omit: { passwordHash: true },
+    });
+  },
+
+  async createForAdmin(
+    tenantId: string,
+    data: { name: string; phone: string; email?: string; zone: string; vehicleType?: string; fee?: number; isActive?: boolean },
+  ) {
+    return prisma.deliveryPartner.create({
+      data: { ...data, tenantId },
+      omit: { passwordHash: true },
+    });
+  },
+
+  /** Editar: el where lleva `tenantId` (un id de otro negocio no toca nada → `null`). */
+  async updateForAdmin(
+    tenantId: string,
+    id: string,
+    data: { name?: string; phone?: string; email?: string | null; zone?: string; vehicleType?: string; fee?: number; isActive?: boolean },
+  ) {
+    const { count } = await prisma.deliveryPartner.updateMany({ where: { tenantId, id }, data });
+    if (count === 0) return null;
+    return prisma.deliveryPartner.findFirst({ where: { tenantId, id }, omit: { passwordHash: true } });
+  },
+
+  /**
+   * Lo que se perdería al borrarlo: sus entregas (se borran en cascada, con la
+   * tarifa ganada) y sus retiros (la base no deja borrar si tiene). Con algo de
+   * eso, el panel ofrece pausarlo en vez de borrarlo.
+   */
+  async contarHistorial(tenantId: string, id: string) {
+    const [entregas, retiros] = await Promise.all([
+      prisma.deliveryAssignment.count({ where: { tenantId, partnerId: id } }),
+      prisma.partnerPayout.count({ where: { partnerId: id, partner: { tenantId } } }),
+    ]);
+    return { entregas, retiros };
+  },
+
+  /**
+   * Ficha del repartidor (17-10, P24/P41/P42): sus entregas del período (por
+   * el día en que se asignaron, como el ranking), las incidencias, lo ganado
+   * (tarifas + propinas de lo entregado), lo pagado en retiros en el período y
+   * lo que se le debe hoy. Las cifras salen de TODAS las filas del período (no
+   * de las `take` que viajan). `null` = no es de este negocio.
+   */
+  async fichaForAdmin(tenantId: string, id: string, desde: Date | null, take = 100) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const repartidor = await prisma.deliveryPartner.findFirst({
+      where: { tenantId, id },
+      select: {
+        id: true, name: true, phone: true, zone: true, vehicleType: true, isActive: true,
+        fee: true, rating: true, acceptanceRate: true, createdAt: true, lastPingAt: true,
+      },
+    });
+    if (!repartidor) return null;
+    const enPeriodo = desde ? { createdAt: { gte: desde } } : {};
+    const [entregas, grupos, abiertas, retiros, pagado, porPagar] = await Promise.all([
+      prisma.deliveryAssignment.findMany({
+        where: { tenantId, partnerId: id, ...enPeriodo },
+        orderBy: { createdAt: "desc" },
+        take,
+        select: {
+          id: true, orderId: true, status: true, fee: true, tipAmount: true, notes: true,
+          createdAt: true, pickedUpAt: true, deliveredAt: true,
+          order: { select: { customerName: true, total: true, createdAt: true } },
+        },
+      }),
+      prisma.deliveryAssignment.groupBy({
+        by: ["status"],
+        where: { tenantId, partnerId: id, ...enPeriodo },
+        _sum: { fee: true, tipAmount: true },
+        _count: { _all: true },
+      }),
+      prisma.deliveryAssignment.count({
+        where: { tenantId, partnerId: id, status: { notIn: [...ESTADOS_CERRADOS] } },
+      }),
+      prisma.partnerPayout.findMany({
+        where: { tenantId, partnerId: id, ...enPeriodo },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        select: { id: true, amount: true, status: true, note: true, createdAt: true, resolvedAt: true },
+      }),
+      prisma.partnerPayout.aggregate({
+        where: { tenantId, partnerId: id, status: "paid", ...(desde ? { resolvedAt: { gte: desde } } : {}) },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+      prisma.partnerPayout.aggregate({
+        where: { tenantId, partnerId: id, status: { in: ["pending", "approved"] } },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+    ]);
+    // P39/P40 (17-10): el historial de estados de cada pedido que llevó, de la misma fuente que el detalle del pedido.
+    const historial = await PedidoHistorialDB.deVarios(tenantId, entregas.map((e) => e.orderId));
+    const resumen = resumenDeFicha(
+      grupos.map((g) => ({
+        status: g.status,
+        cantidad: g._count?._all ?? 0,
+        tarifas: Number(g._sum?.fee ?? 0),
+        propinas: Number(g._sum?.tipAmount ?? 0),
+      })),
+    );
+    return {
+      repartidor: { ...repartidor, fee: Number(repartidor.fee) },
+      resumen,
+      abiertas,
+      pagado: { cantidad: pagado._count._all, monto: Number(pagado._sum.amount ?? 0) },
+      porPagar: { cantidad: porPagar._count._all, monto: Number(porPagar._sum.amount ?? 0) },
+      entregas: entregas.map((e) => ({
+        id: e.id,
+        orderId: e.orderId,
+        status: e.status,
+        fee: Number(e.fee),
+        propina: Number(e.tipAmount),
+        notes: e.notes,
+        cliente: e.order?.customerName ?? null,
+        createdAt: e.createdAt,
+        pickedUpAt: e.pickedUpAt,
+        deliveredAt: e.deliveredAt,
+        minutos: minutosDeEntrega(e.pickedUpAt, e.deliveredAt),
+        pedidoCreadoAt: e.order?.createdAt ?? null,
+        tramos: tramosDeEntrega({ pedidoCreado: e.order?.createdAt, asignado: e.createdAt, recogido: e.pickedUpAt, entregado: e.deliveredAt }),
+        historial: (historial[e.orderId] ?? []).flatMap((h): PasoPedido[] =>
+          h.tipo === "estado" ? [{ estado: h.a, cuando: h.cuando, quien: h.quien, nota: h.nota }] : [],
+        ),
+      })),
+      retiros: retiros.map((r) => ({ ...r, amount: Number(r.amount) })),
+    };
+  },
+
+  async deleteForAdmin(tenantId: string, id: string): Promise<boolean> {
+    const { count } = await prisma.deliveryPartner.deleteMany({ where: { tenantId, id } });
+    return count > 0;
   },
 };
 

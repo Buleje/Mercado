@@ -1,0 +1,29 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+ "pasos": [
+  {"preset": "talonario-gtf"},
+  {"eval": "window.print = () => {}; 'ok'"},
+  {"clicTexto": "Con formato"},
+  {"esperar": 400},
+  {"captura": "menu-con-formato"},
+  {"click": "role=menuitem[name=/Tinta negra/]"},
+  {"clicTexto": "Con formato"},
+  {"bajar": "role=menuitem[name=/PDF de la guía/]"},
+  {"esperar": 600},
+  {"tecla": "Escape"},
+  {"esperar": 800},
+  {"click": "role=button[name=\"Acciones de la GTF 019-001-0000771\"]"},
+  {"click": "role=menuitem[name=/Imprimir con formato/]"},
+  {"esperar": 3000},
+  {"eval": "(() => { const d = document.getElementById('gtf-matricial-marco')?.contentDocument; if (!d) return 'sin marco'; const h = d.documentElement.outerHTML; return JSON.stringify({ hojas: d.querySelectorAll('.hoja').length, valores: d.querySelectorAll('.v').length, marcas: d.querySelectorAll('[data-marca-copia]').length, celeste: h.includes('#16759f'), negro: h.includes('#000000') }); })()"},
+  {"eval": "(() => { const c = [...document.querySelectorAll('input[aria-label^=\"Elegir la guía\"]')].slice(0, 2); c.forEach((i) => i.click()); return c.map((i) => i.getAttribute('aria-label')).join(' | '); })()"},
+  {"esperar": 800},
+  {"captura": "barra-varias"},
+  {"bajar": "role=button[name=/PDF con formato/]"},
+  {"esperar": 600},
+  {"eval": "(() => { const html = document.getElementById('gtf-matricial-marco').srcdoc; document.open(); document.write(html); document.close(); return html.length; })()"},
+  {"esperar": 800},
+  {"pdf": "con-formato"}
+ ]
+}

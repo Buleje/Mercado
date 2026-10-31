@@ -30,7 +30,7 @@ export async function GET(
         <div
           style={{
             fontSize: titleSize,
-            color: "#f97316",
+            color: "#ff6b5b",
             fontWeight: 900,
             lineHeight: 1,
             fontFamily: "Arial Black, Arial, sans-serif",

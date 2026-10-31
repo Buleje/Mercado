@@ -57,3 +57,34 @@ export function isActiveOrder(
   if (!status) return false;
   return (ACTIVE_ORDER_STATUSES as ReadonlyArray<string>).includes(status);
 }
+
+/**
+ * Máquina de estados del pedido: a qué estado puede pasar cada uno. Única
+ * fuente para el cambio de a uno (`PATCH /api/orders/[id]`) y el cambio en
+ * lote (`OrdersDB.cambiarEstadoEnLote`). La copia del panel vive en
+ * `components/admin/OrdersTab/types.ts:VALID_TRANSITIONS`.
+ *
+ * FIX 2026-05-07: confirmado/preparando pueden saltar a «entregado» directo
+ * (entrega en mostrador, sin repartidor). `entregado` y `cancelado` son
+ * finales: no se revive un cancelado ni se cancela lo ya entregado.
+ */
+export const TRANSICIONES_PEDIDO: Readonly<Record<OrderStatus, ReadonlyArray<OrderStatus>>> = {
+  pendiente: ["confirmado", "cancelado"],
+  confirmado: ["preparando", "en_camino", "entregado", "cancelado"],
+  preparando: ["en_camino", "entregado", "cancelado"],
+  en_camino: ["entregado", "cancelado"],
+  entregado: [],
+  cancelado: [],
+};
+
+/** Estados a los que puede pasar `desde` (vacío si es final o desconocido). */
+export function transicionesDesde(desde: string): ReadonlyArray<OrderStatus> {
+  return (TRANSICIONES_PEDIDO as Record<string, ReadonlyArray<OrderStatus>>)[desde] ?? [];
+}
+
+/** Estados desde los que se puede llegar a `hacia` (para el WHERE de un update). */
+export function estadosQuePuedenPasarA(hacia: OrderStatus): OrderStatus[] {
+  return (Object.keys(TRANSICIONES_PEDIDO) as OrderStatus[]).filter((d) =>
+    TRANSICIONES_PEDIDO[d].includes(hacia),
+  );
+}

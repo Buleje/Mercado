@@ -38,6 +38,7 @@ vi.mock("@/lib/feature-flags", () => ({
 
 // ─── Mock cache ────────────────────────────────────────────────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: async <T>(_k: string, _ttl: number, fn: () => Promise<T>) => fn(),
   invalidateByPrefix: vi.fn(),
 }));
@@ -73,6 +74,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/db/chat.db", () => ({
+  HiloYaAbiertoError: class HiloYaAbiertoError extends Error {},
   ChatThreadsDB: {
     openOrGet: mockThreadsOpenOrGet,
   },
@@ -85,6 +87,10 @@ vi.mock("@/lib/db/chat.db", () => ({
 
 // Import AFTER mocks
 import { POST, GET } from "@/app/api/chat/public/route";
+import { firmarTokenHilo } from "@/lib/chat/thread-token";
+
+/** Token del hilo de prueba (privacidad 17-10: leer/escribir lo exige sin sesión). */
+const TOKEN_OK = firmarTokenHilo("tenant-main", "thread-1", "+51987654321");
 
 const STORE_PUBLISHED = {
   id: "store-1",
@@ -225,6 +231,7 @@ describe("POST action=open", () => {
     const json = await res.json();
     expect(json.data.threadId).toBe("thread-1");
     expect(json.data.storeName).toBe("Bodega Demo");
+    expect(json.data.threadToken).toBe(TOKEN_OK);
     // NO debe exponer tenantId, customerName ni unreadForSeller
     expect(json.data.tenantId).toBeUndefined();
     expect(json.data.customerName).toBeUndefined();
@@ -312,6 +319,7 @@ describe("POST action=send — ownership validation", () => {
           customerPhone: "+51987654321",
           customerName: "María",
           body: "Hola",
+          threadToken: TOKEN_OK,
         }),
       }),
     );
@@ -351,6 +359,7 @@ describe("GET /api/chat/public — listado", () => {
     const res = await GET(
       mkRequest(
         "/api/chat/public?threadId=thread-1&storeSlug=bodega-demo&customerPhone=%2B51987654321",
+        { headers: { "x-chat-token": TOKEN_OK } },
       ),
     );
     expect(res.status).toBe(200);
@@ -383,6 +392,7 @@ describe("GET /api/chat/public — listado", () => {
     await GET(
       mkRequest(
         "/api/chat/public?threadId=thread-1&storeSlug=bodega-demo&customerPhone=%2B51987654321",
+        { headers: { "x-chat-token": TOKEN_OK } },
       ),
     );
     // markAsRead debe haberse llamado con "buyer"

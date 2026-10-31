@@ -16,7 +16,7 @@ import type { ReactNode } from "react";
  *   - The Yape panel and CashChangeCalculator render only for the active method.
  *   - Validation hint text (showPaymentHint) reflects the correct state.
  *   - Tip buttons + coupon flow (apply, enter key, validating spinner, applied state, remove).
- *   - Totals row rendering with promo / coupon / tier discount / tip.
+ *   - Totals row rendering with promo / coupon / descuento automático / tip.
  *   - Submit button state machine (submitting toggles label + disabled).
  *   - Parent form onSubmit fires when clicking the type=submit CTA.
  *   - submitError is displayed without crashing.
@@ -87,12 +87,8 @@ function buildProps(
     finalTotal: 50,
     discount: 0,
     promo: null,
-    tierDiscount: 0,
-    tierDiscountPct: 0,
-    loyaltyTier: null,
+    descuentoAutomatico: null,
     loyaltyPoints: null,
-    redemptionSoles: 0,
-    onRedemptionChange: vi.fn(),
     paymentMethod: null,
     onPaymentMethodChange: vi.fn(),
     yapeEnabled: true,
@@ -231,7 +227,7 @@ describe("CheckoutPaymentSection — validation hints", () => {
   it("shows 'Selecciona un metodo de pago' when showPaymentHint and no method picked", () => {
     renderSection({ showPaymentHint: true, paymentMethod: null });
     expect(
-      screen.getByText(/eleg[ií] un m[eé]todo para continuar/i)
+      screen.getByText(/elige un m[eé]todo para continuar/i)
     ).toBeInTheDocument();
   });
 
@@ -274,22 +270,21 @@ describe("CheckoutPaymentSection — tip", () => {
     expect(props.onTipChange).toHaveBeenCalledWith(5);
   });
 
-  it("renders a tip row in the totals summary when tip > 0", () => {
-    renderSection({ tip: 3 });
-    // The totals row renders "+S/3.00" when tip>0.
-    expect(screen.getByText(/\+S\/ 3\.00/)).toBeInTheDocument();
-    // Hay 2 elementos con texto "Propina": el SectionHeader (siempre visible)
-    // y la fila de totals (solo cuando tip > 0).
-    const propinaLabels = screen.getAllByText(/^propina$/i);
-    expect(propinaLabels.length).toBe(2);
+  it("tip > 0: se muestra como «en mano al repartidor», sin sumar al total", () => {
+    renderSection({ tip: 3, finalTotal: 20 });
+    // La propina no entra en lo que se cobra en línea (el pedido no la
+    // guarda): sin «+S/ 3.00» y el total sigue siendo el del pedido.
+    expect(screen.queryByText(/\+S\/ 3\.00/)).not.toBeInTheDocument();
+    const fila = screen.getByTestId("propina-en-mano");
+    expect(fila).toHaveTextContent(/se da en mano al repartidor/i);
+    expect(fila).toHaveTextContent(/S\/ 3\.00/);
   });
 
   it("does not render a tip row when tip = 0", () => {
     renderSection({ tip: 0 });
-    // Cuando tip=0, solo el SectionHeader con "Propina" aparece; la fila de
-    // totals está oculta. Exactamente 1 coincidencia.
-    const matches = screen.queryAllByText(/^propina$/i);
-    expect(matches.length).toBe(1);
+    expect(screen.queryByTestId("propina-en-mano")).not.toBeInTheDocument();
+    // Solo el SectionHeader con "Propina".
+    expect(screen.queryAllByText(/^propina$/i).length).toBe(1);
   });
 });
 
@@ -406,14 +401,21 @@ describe("CheckoutPaymentSection — totals rendering", () => {
     expect(screen.getByText(/−S\/ 4\.50/)).toBeInTheDocument();
   });
 
-  it("renders the tier discount row when tierDiscount > 0 and loyaltyTier is set", () => {
+  it("muestra la línea del descuento automático que cotizó el servidor (primera compra)", () => {
     renderSection({
-      tierDiscount: 2.25,
-      tierDiscountPct: 5,
-      loyaltyTier: "Gold",
+      descuentoAutomatico: {
+        monto: 0.6,
+        porcentaje: 5,
+        etiqueta: "Descuento de primera compra",
+      },
     });
-    expect(screen.getByText(/tier gold \(5%\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/−s\/ 2\.25/i)).toBeInTheDocument();
+    expect(screen.getByText("Descuento de primera compra −5 %")).toBeInTheDocument();
+    expect(screen.getByText(/−s\/ 0\.60/i)).toBeInTheDocument();
+  });
+
+  it("sin descuento automático no dibuja la línea", () => {
+    renderSection({ descuentoAutomatico: null });
+    expect(screen.queryByTestId("linea-descuento-automatico")).not.toBeInTheDocument();
   });
 
   it("renders the final total value", () => {

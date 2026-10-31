@@ -50,7 +50,11 @@ interface Props {
   items: DraggableItem[];
   /** localStorage key to persist order + hidden. Scope por módulo. */
   storageKey?: string;
-  /** gap in rem entre secciones — default 1 */
+  /**
+   * gap in rem entre secciones — default 0.75 (12 px, el mismo aire que el
+   * tablero del Resumen). 2026-10-29: las pestañas pasaban 1-4 rem (hasta 64 px
+   * entre bloques en Inventario y Clientes); ahora todas usan el default.
+   */
   gap?: number;
   /**
    * Layout mode:
@@ -99,7 +103,7 @@ interface PersistState {
  *  - Toast "Layout guardado" en primer drag
  *  - Persiste en localStorage (orden + hidden)
  */
-export function DraggableSections({ items, storageKey, gap = 1, layout = "column", minColumnWidth = "36rem", mobileCollapseAfter }: Props) {
+export function DraggableSections({ items, storageKey, gap = 0.75, layout = "column", minColumnWidth = "36rem", mobileCollapseAfter }: Props) {
   const [state, setState] = useState<PersistState>(() => ({
     order: items.map((i) => i.id),
     hidden: [],
@@ -250,11 +254,12 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
                     display: "grid",
                     gap: `${gap}rem`,
                     gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minColumnWidth}), 1fr))`,
-                    // 2026-04-24: gridAutoRows 1fr asegura que todas las
-                    // secciones de una misma fila compartan altura.
-                    // Combinado con h-full dentro de DashboardSection el
-                    // chart rellena el espacio y no quedan huecos.
-                    gridAutoRows: "1fr",
+                    // 2026-10-29: filas «auto». Con «1fr» TODAS las filas
+                    // medían lo que la más alta (un ranking de 10 filas
+                    // estiraba a las de un solo gráfico y dejaba huecos de
+                    // 200-300 px). Las de una MISMA fila se siguen igualando
+                    // (alignItems: stretch + h-full en DashboardSection).
+                    gridAutoRows: "auto",
                     // Brandon mayo 2026 v6: gridAutoFlow "dense" rellena
                     // huecos automáticos cuando un chart con span="half"
                     // queda solo en su fila (porque el compañero está
@@ -300,7 +305,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           <button
             type="button"
             onClick={() => setShowAllMobile((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] active:scale-95 transition-all"
+            className="inline-flex min-h-12 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] active:scale-95 transition-all"
             aria-expanded={showAllMobile}
           >
             {showAllMobile ? (
@@ -323,9 +328,9 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors px-3 py-1.5 rounded-md hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]"
+            className="inline-flex min-h-12 items-center gap-1.5 text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors px-4 rounded-xl hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-4 w-4" />
             Restaurar orden
           </button>
         </div>
@@ -441,7 +446,7 @@ function DraggableSection({
             onClick={onPresent}
             aria-label="Presentar en pantalla completa"
             title="Presentar (abre en modal para navegación)"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
           >
             <Maximize2 className="h-4 w-4" />
           </button>
@@ -450,7 +455,7 @@ function DraggableSection({
             onClick={onToggle}
             aria-label={hidden ? "Mostrar sección" : "Ocultar sección"}
             title={hidden ? "Mostrar" : "Ocultar"}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
           >
             {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -461,7 +466,7 @@ function DraggableSection({
             title="Arrastrar para reordenar"
             {...attributes}
             {...listeners}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors touch-none select-none cursor-grab active:cursor-grabbing"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors touch-none select-none cursor-grab active:cursor-grabbing"
           >
             <GripVertical className="h-4 w-4" />
           </button>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Mail, Loader2, CheckCircle2, Copy } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface InviteModalProps {
   tenantSlug: string;
@@ -21,7 +22,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
     if (!email.trim()) { setError("Introduce un email"); return; }
     setSending(true); setError("");
     try {
-      const res = await fetch("/api/invite", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug }, body: JSON.stringify({ email: email.trim(), role }) });
+      const res = await fetch("/api/invite", { method: "POST", credentials: "include", headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }), body: JSON.stringify({ email: email.trim(), role }) });
       const data = await res.json() as { inviteUrl?: string; error?: string };
       if (!res.ok) { setError(data.error ?? "Error"); return; }
       setInviteUrl(data.inviteUrl ?? null);
@@ -41,12 +42,12 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-bold text-[var(--text-primary)]">Invitar usuario</h2>
-            <p className="text-gray-500 text-xs mt-0.5">
+            <p className="text-[var(--text-secondary)] text-xs mt-0.5">
               <span className="text-[var(--text-secondary)]">{tenantName}</span>{" "}
               <span className="font-mono">({tenantSlug})</span>
             </p>
           </div>
-          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] text-gray-400">
+          <button type="button" onClick={onClose} className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -61,7 +62,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="usuario@empresa.com"
-                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                 />
               </div>
               <div>
@@ -69,7 +70,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as typeof role)}
-                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                  className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                 >
                   <option value="admin">Administrador</option>
                   <option value="editor">Editor</option>
@@ -82,7 +83,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
               type="button"
               onClick={() => void handleSend()}
               disabled={sending}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl disabled:opacity-50 text-white text-sm font-semibold"
+              className="w-full flex items-center justify-center gap-2 min-h-11 rounded-xl disabled:opacity-50 text-white text-sm font-semibold"
               style={{ background: "linear-gradient(135deg, #00A0A0 0%, #14C2C2 100%)" }}
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
@@ -102,7 +103,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
             >
               <Copy className="w-4 h-4" /> {copied ? "¡Copiado!" : "Copiar enlace"}
             </button>
-            <p className="text-gray-400 text-xs text-center">El enlace expira en 72 horas.</p>
+            <p className="text-[var(--text-tertiary)] text-xs text-center">El enlace expira en 72 horas.</p>
           </div>
         )}
       </div>

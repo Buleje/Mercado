@@ -1,23 +1,22 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  startTransition,
-  type ReactNode,
-} from "react";
-import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
+import { useMemo } from "react";
+import { useFavorites } from "@/contexts/favorites-context";
 
 /**
- * #17 Wishlist favoritos cross-store.
- * Persistencia en localStorage, sync opcional al backend cuando hay sesion.
- * Degrada graciosamente si no hay cliente autenticado.
+ * Vista de los favoritos de la tienda con forma de «lista de deseos»
+ * (`{ productId, addedAt }`), para `/favoritos` y el menú de cuenta.
+ *
+ * NO guarda nada propio (2026-10-11): antes tenía su lista aparte
+ * (`<negocio>-wishlist`) y el corazón del catálogo guardaba en
+ * `contexts/favorites-context`, así que `/favoritos` salía siempre vacía.
+ * La única lista es la de `FavoritesProvider`, que además migra la vieja.
+ *
+ * `addedAt` es el orden de guardado (0 = el más viejo), no una fecha: sólo
+ * sirve para ordenar «más recientes / más antiguos».
  */
 
-type WishlistItem = {
+export type WishlistItem = {
   productId: string;
   addedAt: number;
 };
@@ -30,69 +29,8 @@ type WishlistCtx = {
   count: number;
 };
 
-const WishlistContext = createContext<WishlistCtx | null>(null);
-
-function loadItems(key: string): WishlistItem[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw) as WishlistItem[];
-  } catch { /* silent */ }
-  return [];
-}
-
-function saveItems(key: string, items: WishlistItem[]) {
-  try {
-    localStorage.setItem(key, JSON.stringify(items));
-  } catch { /* silent */ }
-}
-
-export function WishlistProvider({ children }: { children: ReactNode }) {
-  const slug = useTenantSlug();
-  const storageKey = tenantKey(slug, "wishlist");
-  const [items, setItems] = useState<WishlistItem[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-
-  // Hidratar desde localStorage evitando mismatch SSR
-  useEffect(() => {
-    startTransition(() => {
-      setItems(loadItems(storageKey));
-      setHydrated(true);
-    });
-  }, [storageKey]);
-
-  // Persistir cambios
-  useEffect(() => {
-    if (hydrated) saveItems(storageKey, items);
-  }, [items, hydrated, storageKey]);
-
-  const addToWishlist = useCallback((productId: string) => {
-    setItems((prev) => {
-      if (prev.some((i) => i.productId === productId)) return prev;
-      return [...prev, { productId, addedAt: Date.now() }];
-    });
-  }, []);
-
-  const removeFromWishlist = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.productId !== productId));
-  }, []);
-
-  const isInWishlist = useCallback(
-    (productId: string) => items.some((i) => i.productId === productId),
-    [items]
-  );
-
-  return (
-    <WishlistContext.Provider
-      value={{ items, addToWishlist, removeFromWishlist, isInWishlist, count: items.length }}
-    >
-      {children}
-    </WishlistContext.Provider>
-  );
-}
-
-export function useWishlist() {
-  const ctx = useContext(WishlistContext);
-  if (!ctx) throw new Error("useWishlist must be inside WishlistProvider");
-  return ctx;
+export function useWishlist(): WishlistCtx {
+  const { ids, agregar, quitar, isFavorite, count } = useFavorites();
+  const items = useMemo(() => ids.map((productId, addedAt) => ({ productId, addedAt })), [ids]);
+  return { items, addToWishlist: agregar, removeFromWishlist: quitar, isInWishlist: isFavorite, count };
 }

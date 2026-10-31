@@ -96,11 +96,15 @@ const hotFiles = Object.entries(fileFrequency)
 
 // ── 3. Update learning patterns ──────────────────────────────────
 const patternsPath = join(projectRoot, ".claude/learning/patterns.json");
-let patterns = readJSON(patternsPath) || {
-  patterns: [],
-  totalScanned: 0,
-  totalLearned: 0,
-  lastScan: null
+// Fallback robusto por-array (mismo fix que auto-learn.mjs): patterns.json puede
+// existir pero estar parcial → readJSON devuelve objeto truthy sin `.patterns` →
+// `.push`/`.find` sobre undefined. Garantizamos la array explícitamente.
+const rawPatterns = readJSON(patternsPath) || {};
+const patterns = {
+  patterns: Array.isArray(rawPatterns.patterns) ? rawPatterns.patterns : [],
+  totalScanned: rawPatterns.totalScanned ?? 0,
+  totalLearned: rawPatterns.totalLearned ?? 0,
+  lastScan: rawPatterns.lastScan ?? null,
 };
 
 if (hotFiles.length > 0) {
@@ -133,7 +137,10 @@ if (hotFiles.length > 0) {
 
 // ── 4. Update session state for handoff ──────────────────────────
 const sessionStatePath = join(projectRoot, ".claude/session-state.json");
-const existingState = readJSON(sessionStatePath) || {};
+// `nextActions` NO se arrastra: el spread lo mantuvo vivo desde abril y el
+// arranque lo mostraba como «pendiente de la sesión anterior». El pendiente
+// real lo lee session-start-context de SESSION_HANDOFF.md (2026-09-23).
+const { nextActions: _pendientesViejos, ...existingState } = readJSON(sessionStatePath) || {};
 
 const sessionState = {
   ...existingState,
@@ -158,7 +165,7 @@ if (dirtyLines.length > 0) {
 }
 
 if (commitCount > 0) {
-  messageParts.push(`📊 ${commitCount} commits en esta sesion.`);
+  messageParts.push(`📊 ${commitCount} commits en las últimas 8 h.`);
 }
 
 if (hotFiles.length > 0) {
@@ -167,13 +174,19 @@ if (hotFiles.length > 0) {
   );
 }
 
-messageParts.push("💾 Session state guardado para handoff.");
+// 2026-10-26 (Brandon: «evitar ruido visual»): el resumen salía igual al final de CADA turno.
+// Ahora sólo aparece cuando cambió algo desde el turno anterior; el estado se guarda igual.
+const huella = (archivos, commits, calientes) => [archivos, commits, calientes.join(",")].join("|");
+const huellaAnterior = huella(
+  existingState.filesUncommitted,
+  existingState.commitsThisSession,
+  (existingState.hotFilesDetected || []).map(h => h.file)
+);
+const huellaActual = huella(dirtyLines.length, commitCount, hotFiles.map(([f]) => f));
 
-const response = {
-  continue: true,
-  suppressOutput: false,
-  systemMessage: messageParts.join(" "),
-};
+const response = huellaActual === huellaAnterior || messageParts.length === 0
+  ? { continue: true, suppressOutput: true }
+  : { continue: true, suppressOutput: false, systemMessage: messageParts.join(" ") };
 
 process.stdout.write(JSON.stringify(response));
 process.exit(0);

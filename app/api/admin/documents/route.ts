@@ -1,17 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import {
   buildStoragePath,
   isMimeAllowed,
   uploadToStorage,
 } from "@/lib/documents/storage";
 import { aiCategorize } from "@/lib/documents/ai-categorize";
+import { analyzeDocumentContent, isAnalyzableMime } from "@/lib/documents/analyze-document";
+import { enColaDeAnalisis } from "@/lib/documents/cola-analisis";
+import { precalcularMiniatura } from "@/lib/documents/precalcular-miniatura";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
+import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { interpretarBusqueda, quitarVacias, type BusquedaInterpretada } from "@/lib/documentos/busqueda-natural";
+import { leerCodigoDocumento } from "@/lib/documentos/codigo-documento";
 
 
 const ListQuery = z.object({
@@ -19,6 +25,7 @@ const ListQuery = z.object({
   category: z.string().optional(),
   q: z.string().optional(),
   tags: z.string().optional(), // CSV
+  excluir: z.string().optional(), // CSV — deja fuera lo que tenga alguno de estos tags
   favorite: z.enum(["1", "0", "true", "false"]).optional(),
   customerId: z.string().optional(),
   orderId: z.string().optional(),
@@ -27,10 +34,19 @@ const ListQuery = z.object({
   expiring: z.coerce.number().int().min(1).max(365).optional(),
   // ADR-119 — búsqueda semántica IA (expande la query antes de buscar).
   semantic: z.enum(["1", "true"]).optional(),
+  // Vista "Papelera": sólo documentos soft-deleted.
+  deleted: z.enum(["1", "true"]).optional(),
+  // Sólo contar: con `tags`, devuelve `{ conteo }` (total, bytes y por etiqueta) en vez de la lista.
+  conteo: z.enum(["1", "true"]).optional(),
+  // Tope de filas: el buscador del panel pide unas pocas, no el drive entero.
+  limite: z.coerce.number().int().min(1).max(50).optional(),
+  // ADR-516 — «Código pendiente de poner»: con código y sin marcar en el físico.
+  // Con `conteo`, devuelve `{ codigoPendiente: { pendientes, atrasados } }`.
+  codigoPendiente: z.enum(["1", "true"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
-  const rl = await applyRateLimit(req, "MODERATE", "documents:list");
+  const rl = await applyRateLimit(req, "DRIVE_READ", "documents:list");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -46,36 +62,101 @@ export async function GET(req: NextRequest) {
 
   // ADR-119 — vista "Por vencer": atajo dedicado, ignora el resto de filtros.
   if (f.expiring) {
-    const expiring = await DocumentsDB.listExpiring(auth.tenantId, f.expiring);
+    // Filtrado por rol como el listado (antes devolvía el OCR de lo restringido).
+    const expiring = await DocumentsDB.listExpiring(auth.tenantId, f.expiring, auth.role);
     return NextResponse.json({ documents: expiring });
   }
 
-  // ADR-119 — búsqueda semántica: expandimos la query a términos y los OR-eamos.
+  // ADR-516 — la cifra de la cabecera: cuántos códigos faltan poner en el físico.
+  if (f.conteo && f.codigoPendiente) {
+    const codigoPendiente = await DocumentsDB.conteoCodigoPendiente(auth.tenantId, auth.role);
+    return NextResponse.json({ codigoPendiente });
+  }
+
+  // «Escondidas N fotos de las cámaras»: contar sin traer las fotos.
+  if (f.conteo) {
+    const etiquetas = f.tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
+    const conteo = await DocumentsDB.contarPorTags(auth.tenantId, etiquetas, auth.role);
+    return NextResponse.json({ conteo });
+  }
+
+  // «Buscar como hablas»: lo que es fecha, tipo, origen o carpeta pasa a filtro
+  // y sólo lo que queda se busca como texto (todas las palabras). Las carpetas
+  // se piden únicamente si quedó alguna palabra que podría nombrar a una.
+  let interp: BusquedaInterpretada | undefined;
+  // ADR-516 — «DOC-000123» / «doc 123» / «#123» es un código, no una frase: va
+  // tal cual (la interpretación se comía el «doc»). Un número pelado sigue
+  // interpretándose («2026» es el año del papel); si queda como texto, la
+  // lista lo cruza igual con el código.
+  const esCodigo = leerCodigoDocumento(f.q) != null && !/^\s*\d+\s*$/.test(f.q ?? "");
+  if (f.q?.trim() && !esCodigo) {
+    interp = interpretarBusqueda(f.q);
+    if (interp.necesitaCarpetas) {
+      const carpetas = await DocumentsDB.carpetasParaBuscar(auth.tenantId, auth.role);
+      interp = interpretarBusqueda(f.q, { carpetas });
+    }
+  }
+  // Una frase que es toda relleno («de la», «lo que llegó») no busca nada: la
+  // vista normal (la pantalla avisa «escribe algo más concreto»). Buscar «de» Y
+  // «la» como subcadena traía 35 de 436 papeles sin ningún criterio.
+  const textoLibre = interp ? interp.texto.trim() : esCodigo ? f.q?.trim() : undefined;
+
+  // ADR-119 — búsqueda semántica: la IA expande SÓLO las palabras que sobran
+  // (sin relleno) y se OR-ean. «vencidos» con IA ya no le manda nada.
   let qAny: string[] | undefined;
   let semanticTerms: string[] | undefined;
-  if (f.semantic && f.q?.trim()) {
+  if (f.semantic && textoLibre && !esCodigo) {
     const { expandSearchTerms } = await import("@/lib/documents/ai-search");
-    qAny = await expandSearchTerms(f.q);
+    qAny = quitarVacias(await expandSearchTerms(textoLibre));
+    if (qAny.length === 0) qAny = undefined;
     semanticTerms = qAny;
   }
 
+  // La vista general esconde las fotos de las cámaras; si las pidió («fotos de
+  // las cámaras»), esa etiqueta deja de esconderse.
+  const pedidas = new Set(interp?.grupos.flatMap((g) => g.etiquetas ?? []) ?? []);
+  const sinTags = f.excluir?.split(",").map((s) => s.trim()).filter((s) => s && !pedidas.has(s));
+
+  const deletedOnly = f.deleted === "1" || f.deleted === "true";
   const docs = await DocumentsDB.list(auth.tenantId, {
-    folderId: f.folderId === "null" ? null : f.folderId,
+    // En la papelera no aplicamos folder (mostramos TODO lo eliminado del tenant).
+    folderId: deletedOnly ? undefined : f.folderId === "null" ? null : f.folderId,
     category: f.category,
-    q: qAny ? undefined : f.q,
+    q: qAny ? undefined : textoLibre || undefined,
     qAny,
+    vence: interp?.vence,
+    subido: interp?.subido,
+    folderIds: interp?.carpetas,
+    grupos: interp?.grupos.length ? interp.grupos : undefined,
     tags: f.tags?.split(",").map((s) => s.trim()).filter(Boolean),
-    favorite: f.favorite ? f.favorite === "1" || f.favorite === "true" : undefined,
+    sinTags,
+    favorite: f.favorite ? f.favorite === "1" || f.favorite === "true" : interp?.favoritos ? true : undefined,
     customerId: f.customerId,
     orderId: f.orderId,
     supplierId: f.supplierId,
-  });
+    deletedOnly,
+    limite: f.limite,
+    codigoPendiente: f.codigoPendiente ? true : undefined,
+    // El texto indexado sólo se manda cuando hay una búsqueda escrita: es lo
+    // único que lo usa del lado del cliente (resaltar la coincidencia y
+    // ordenar por relevancia). Abrir el drive es el caso común y ahí no hace
+    // falta ni un byte de contenido.
+    // Sólo con texto libre: «vencidos» o «de ayer» son filtros y no resaltan nada.
+    conTextoCompleto: Boolean(textoLibre) || Boolean(qAny?.length),
+  }, auth.role);
 
-  return NextResponse.json({ documents: docs, ...(semanticTerms ? { semanticTerms } : {}) });
+  return NextResponse.json({
+    documents: docs,
+    ...(semanticTerms ? { semanticTerms } : {}),
+    // Lo que se entendió de la búsqueda (chips «Entendí: …»); campo nuevo y opcional.
+    ...(interp ? { entendi: interp.entendi.map(({ tipo, texto }) => ({ tipo, texto })) } : {}),
+  });
 }
 
 export async function POST(req: NextRequest) {
-  const rl = await applyRateLimit(req, "STRICT", "documents:upload");
+  // DRIVE y no STRICT: cada archivo es un request y el drive recibe carpetas
+  // enteras — con 10 cada 15 min el importador moría al décimo (ADR-306).
+  const rl = await applyRateLimit(req, "DRIVE", "documents:upload");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -93,8 +174,13 @@ export async function POST(req: NextRequest) {
         { status: 413 }
       );
     }
-    const mime = file.type || "application/octet-stream";
-    if (!isMimeAllowed(mime)) {
+    // El navegador deja en blanco (u octet-stream) todo lo que su tabla no
+    // conoce: HEIC del iPhone, .ods de LibreOffice, un .dwg. Guardar ESO hace
+    // que después el drive no sepa ni qué ícono poner. Se resuelve por extensión.
+    const mime = resolverMime(file.name, file.type);
+    // El NOMBRE importa: la extensión es la que decide qué hace el sistema
+    // operativo al abrirlo, y es más difícil de disfrazar que el MIME.
+    if (!isMimeAllowed(mime, file.name)) {
       return NextResponse.json({ error: "mime_not_allowed", mime }, { status: 415 });
     }
 
@@ -108,6 +194,8 @@ export async function POST(req: NextRequest) {
     const originalName = file.name || "archivo";
 
     // 1) Crear row con storagePath temporal (lo necesitamos para el path estable)
+    // `viewerRole`: una carpeta con roles que este rol no ve se responde 404
+    // `folder_not_found`, igual que una que no existe (no se confirma que esté).
     const draft = await DocumentsDB.create(auth.tenantId, {
       folderId,
       name: originalName,
@@ -116,6 +204,7 @@ export async function POST(req: NextRequest) {
       size: file.size,
       storagePath: "pending",
       uploadedById: auth.username,
+      viewerRole: auth.role,
     });
 
     const storagePath = buildStoragePath({
@@ -139,14 +228,15 @@ export async function POST(req: NextRequest) {
       textSnippet: mime.startsWith("text/") ? buffer.slice(0, 4096).toString("utf8") : undefined,
     });
 
+    // Una sola escritura: la categoría y la ruta del archivo se guardan juntas.
+    // Eran dos viajes a la base por archivo, y en un import de 400 eso se nota.
     const updated = await DocumentsDB.update(auth.tenantId, draft.id, {
+      storagePath,
       category: heur.category,
       tags: heur.tags,
       aiCategory: heur.source === "ai" ? heur.category : undefined,
       aiTags: heur.source === "ai" ? heur.tags : undefined,
     });
-
-    await DocumentsDB.setStoragePath(auth.tenantId, draft.id, storagePath);
 
     DocumentsDB.log(auth.tenantId, {
       documentId: draft.id,
@@ -155,6 +245,27 @@ export async function POST(req: NextRequest) {
       metadata: { mime, size: file.size, source: heur.source },
       ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
     }).catch((err) => logger.warn("documents.audit.upload_fail", { err: String(err) }));
+
+    // Auto-análisis de contenido (fire-and-forget): los PDFs/texto se indexan solos
+    // para que el asistente los pueda leer sin apretar "Analizar con IA".
+    if (isAnalyzableMime(mime)) {
+      // En cola: subir una carpeta de 30 fotos disparaba 30 análisis a la vez
+      // y con un modelo local eso tumba la máquina (ver `cola-analisis`).
+      // `after`: en Vercel la función puede congelarse apenas sale la respuesta
+      // y el análisis (OCR incluido) quedaba a medias hasta el cron nocturno.
+      after(() =>
+        enColaDeAnalisis(draft.id, () =>
+          analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role),
+        ).catch((err) => logger.warn("documents.autoanalyze_fail", { err: String(err) })),
+      );
+    }
+
+    // La carita del archivo se dibuja ahora, no cuando alguien abra la carpeta.
+    // Sin esto, quien sube los archivos es justamente quien paga el render de
+    // todos ellos al volver a la grilla.
+    precalcularMiniatura(storagePath, originalName, mime, file.size).catch((err) =>
+      logger.warn("documents.miniatura.precalculo_fail", { err: String(err) }),
+    );
 
     return NextResponse.json({
       document: {
@@ -166,6 +277,11 @@ export async function POST(req: NextRequest) {
       ai: { source: heur.source, suggestedCategory: heur.category, suggestedTags: heur.tags },
     });
   } catch (err) {
+    // `folderId` de otro negocio (o inexistente): 404, nunca un documento
+    // colgado de la carpeta de otro tenant. Se corta antes de subir el archivo.
+    if (err instanceof CarpetaAjenaError) {
+      return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
+    }
     logger.error("documents.upload.exception", { err: String(err) });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

@@ -80,13 +80,13 @@ export default function ClosedNowBanner({ hours, nextOpeningAt, storeName }: Clo
                 </p>
                 <p className="text-[length:var(--ts-xs)] sm:text-sm text-white/70 leading-tight truncate">
                   hasta que <strong className="font-bold text-white">{storeName}</strong> abra ·
-                  podés armar tu pedido ahora.
+                  puedes armar tu pedido ahora.
                 </p>
               </>
             ) : (
               <p className="text-sm text-white/85 leading-tight truncate">
                 <strong className="font-extrabold text-white">{storeName}</strong> está cerrada ·
-                podés armar tu pedido y lo entregamos al abrir.
+                puedes armar tu pedido y lo entregamos al abrir.
               </p>
             )}
           </div>

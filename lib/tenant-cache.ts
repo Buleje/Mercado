@@ -29,6 +29,8 @@
  *   - localStorage[<key>-<tenantSlug>] = data prefixada (opt-in para nuevos)
  */
 
+import { invalidateCachedJson } from "@/lib/client-cache-fetch";
+
 /** Lista de keys que deben borrarse cuando cambia el tenant. */
 const TENANT_SCOPED_KEYS: readonly string[] = [
   // useAdminPrefetch
@@ -52,6 +54,10 @@ const TENANT_SCOPED_PREFIXES: readonly string[] = [
   "dashboard-data-",
   "buleje-admin-",
   "morning-summary-",
+  // La foto del arqueo (`arqueo-foto-<fecha>` en CashRegisterTab) no matcheaba
+  // ningún prefijo: al cambiar de negocio, el cajón fotografiado de una bodega
+  // seguía apareciendo en el arqueo de la otra.
+  "arqueo-",
 ];
 
 /**
@@ -80,6 +86,9 @@ export function getActiveTenantSlug(): string | null {
 /** Borra TODAS las keys conocidas (lista + prefijos). */
 export function clearAllTenantCache(): number {
   if (typeof window === "undefined") return 0;
+  // Lo leído en memoria por `cachedJson` (settings, plan, auth/me…) también es
+  // del tenant anterior: sin esto se serviría hasta 60 s en el nuevo.
+  invalidateCachedJson();
   let removed = 0;
   try {
     // 0) sessionStorage: cualquier key con prefijo de tenant

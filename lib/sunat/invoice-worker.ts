@@ -14,14 +14,42 @@
 import "server-only";
 import { SunatDB } from "@/lib/db/sunat.db";
 import { sendInvoice } from "@/lib/sunat/nubefact-client";
-import { buildBoleta, buildFactura } from "@/lib/sunat/invoice-builder";
-import { calculateIGV } from "@/lib/sunat";
+import {
+  buildBoleta,
+  buildFactura,
+  lineasDeOrden,
+  type BuilderOrderItem,
+} from "@/lib/sunat/invoice-builder";
+import { montosParaRegistro } from "@/lib/sunat/lineas-comprobante";
+import { calcularDetraccion, type DetraccionCalculada } from "@/lib/sunat/detraccion";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { DomainEvents } from "@/lib/domain-events";
 import { sunatEventBus } from "@/lib/sunat/sale-events";
 import type { SaleCreatedEvent } from "@/lib/sunat/sale-events";
+
+/** Ítems de la orden con la afectación del IGV de su producto. */
+const ITEMS_CON_AFECTACION = {
+  items: { include: { product: { select: { taxType: true } } } },
+} as const;
+
+/** Un ítem de la orden tal como lo pide el comprobante (con su afectación). */
+function itemParaComprobante(item: {
+  name: string;
+  quantity: number;
+  price: Parameters<typeof toNumOrZero>[0];
+  unit: string;
+  product: { taxType: string | null } | null;
+}): BuilderOrderItem {
+  return {
+    name: item.name,
+    quantity: item.quantity,
+    price: toNumOrZero(item.price),
+    unit: item.unit,
+    taxType: item.product?.taxType ?? null,
+  };
+}
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -145,7 +173,7 @@ async function processInvoice(
 
   const order = await prisma.order.findFirst({
     where: { id: orderId, tenantId },
-    include: { items: true },
+    include: ITEMS_CON_AFECTACION,
   });
 
   if (!order) {
@@ -163,12 +191,7 @@ async function processInvoice(
     customerName: order.customerName,
     customerPhone: order.customerPhone,
     total: toNumOrZero(order.total),
-    items: order.items.map((item) => ({
-      name: item.name,
-      quantity: item.quantity,
-      price: toNumOrZero(item.price),
-      unit: item.unit,
-    })),
+    items: order.items.map(itemParaComprobante),
   };
 
   const builderTenant = {
@@ -184,12 +207,44 @@ async function processInvoice(
     nextFacturaNum: invoice.number,
   };
 
+  // Detracción (SPOT): si el registro quedó como operación sujeta (tipoOperacion
+  // "1001"), hay que reconstruirla desde la orden y mandarla de nuevo; si no, el
+  // reintento saldría como sunat_transaction 1 (sin SPOT) contradiciendo el 1001
+  // guardado. Si no se puede reconstruir, se ABORTA el reintento (no se reenvía
+  // sin SPOT: un comprobante de madera sin detracción es un error tributario).
+  let detraccion: DetraccionCalculada | undefined;
+  if (!isBoleta && invoice.tipoOperacion === "1001") {
+    const totalesFac = lineasDeOrden(builderOrder).totales;
+    const totalGravadoConIgv =
+      Math.round((totalesFac.gravada + totalesFac.igv) * 100) / 100;
+    detraccion = calcularDetraccion({
+      tipoComprobante: "factura",
+      totalGravadoConIgv,
+      total: totalesFac.total,
+      bienSujeto: invoice.detraccionCodigo === "008" ? "008" : null,
+    });
+    if (!detraccion.aplica) {
+      await SunatDB.updateInvoice(tenantId, invoiceId, {
+        sunatStatus: "rejected",
+        errorMessage:
+          "No se puede reintentar: comprobante sujeto a detracción (1001) y no se pudo reconstruir el SPOT desde la orden",
+      });
+      return;
+    }
+  }
+
   const payload = isBoleta
     ? buildBoleta(builderOrder, builderTenant, builderSettings)
-    : buildFactura(builderOrder, builderTenant, builderSettings, {
-        ruc: invoice.customerRuc ?? "",
-        razonSocial: invoice.customerName,
-      });
+    : buildFactura(
+        builderOrder,
+        builderTenant,
+        builderSettings,
+        {
+          ruc: invoice.customerRuc ?? "",
+          razonSocial: invoice.customerName,
+        },
+        detraccion,
+      );
 
   // Marcar como retrying antes de enviar
   await SunatDB.updateInvoice(tenantId, invoiceId, {
@@ -215,14 +270,13 @@ async function processInvoice(
     });
 
     if (sunatStatus === "accepted") {
-      const igvCalc = calculateIGV(toNumOrZero(order.total));
       DomainEvents.facturaEmitida(tenantId, {
         facturaId: invoiceId,
         orderId,
         customerDocument: invoice.customerRuc ?? "",
         customerName: invoice.customerName,
         documentType: invoiceType as "factura" | "boleta" | "nota_credito",
-        total: +igvCalc.total.toFixed(2),
+        total: payload.total,
         sunatHash: response.nubefact_id ?? undefined,
         cdrUrl: response.enlace_del_pdf ?? undefined,
       }).catch(() => {
@@ -314,7 +368,7 @@ export function initSunatWorkerSubscription(): void {
       // Obtener datos de la sale/order para calcular totales
       const order = await prisma.order.findFirst({
         where: { id: saleId, tenantId },
-        include: { items: true },
+        include: ITEMS_CON_AFECTACION,
       });
 
       if (!order) {
@@ -322,8 +376,13 @@ export function initSunatWorkerSubscription(): void {
         return;
       }
 
-      const total = toNumOrZero(order.total);
-      const igvCalc = calculateIGV(total);
+      // Montos con el IGV de cada producto (exonerados de la Amazonía = 0 de IGV)
+      const montos = montosParaRegistro(
+        lineasDeOrden({
+          total: toNumOrZero(order.total),
+          items: order.items.map(itemParaComprobante),
+        }).totales,
+      );
 
       // Crear registro pending — el cron lo procesará
       await SunatDB.createInvoice(tenantId, {
@@ -333,9 +392,9 @@ export function initSunatWorkerSubscription(): void {
         number: nextNumber,
         customerRuc: comprobanteTipo === "factura" ? comprobanteRuc : undefined,
         customerName: customerName ?? order.customerName ?? "CONSUMIDOR FINAL",
-        subtotal: +igvCalc.gravado.toFixed(2),
-        igv: +igvCalc.igv.toFixed(2),
-        total: +igvCalc.total.toFixed(2),
+        subtotal: montos.subtotal,
+        igv: montos.igv,
+        total: montos.total,
       });
 
       logger.info("[SunatWorker] Factura encolada desde sale.created", {

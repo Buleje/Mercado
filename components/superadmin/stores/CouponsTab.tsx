@@ -50,7 +50,7 @@ const COUPON_COLUMNS: SAColumn<MarketplaceCoupon>[] = [
     label: "Estado",
     render: (row) => (
       <span
-        className={`inline-flex items-center gap-1 text-xs font-semibold ${row.active ? "text-[var(--data-success-500)]" : "text-gray-400"}`}
+        className={`inline-flex items-center gap-1 text-xs font-semibold ${row.active ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]"}`}
       >
         {row.active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
         {row.active ? "Activo" : "Inactivo"}
@@ -61,7 +61,7 @@ const COUPON_COLUMNS: SAColumn<MarketplaceCoupon>[] = [
     key: "expiresAt",
     label: "Expira",
     render: (row) => (
-      <span className="text-xs text-gray-400 tabular-nums">
+      <span className="text-xs text-[var(--text-tertiary)] tabular-nums">
         {row.expiresAt ? fmtDate(row.expiresAt) : "Sin fecha"}
       </span>
     ),

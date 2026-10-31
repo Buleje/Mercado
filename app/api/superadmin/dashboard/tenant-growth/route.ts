@@ -5,6 +5,7 @@ import { prismaReadonly as prisma } from "@/lib/prisma-readonly";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { startOfLimaDayDaysAgo, limaDateKey } from "@/lib/utils";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -52,9 +53,7 @@ export async function GET(req: NextRequest) {
     const topN = Math.max(1, Math.min(20, parseInt(url.searchParams.get("top") ?? "8", 10) || 8));
 
     const now = new Date();
-    const start = new Date(now);
-    start.setDate(now.getDate() - days);
-    start.setHours(0, 0, 0, 0);
+    const start = new Date(startOfLimaDayDaysAgo(days)); // días de Lima
 
     // Top N tenants por volumen total en el rango
     const topTenants = await prisma.order.groupBy({
@@ -89,8 +88,7 @@ export async function GET(req: NextRequest) {
       select: { tenantId: true, createdAt: true, total: true },
     });
 
-    const dayKey = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const dayKey = (d: Date) => limaDateKey(d);
 
     const dates: string[] = [];
     for (let i = 0; i < days; i++) {
@@ -118,7 +116,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Asignar colores rotando una paleta accesible.
-    const PALETTE = ["#00A0A0", "#10B981", "#0EA5E9", "#8B5CF6", "#F59E0B", "#F43F5E", "#84CC16", "#EC4899"];
+    const PALETTE = ["#00A0A0", "#10B981", "#0EA5E9", "#8B5CF6", "#ff6b5b", "#F43F5E", "#84CC16", "#EC4899"];
 
     const series = topTenants.map((t, i) => {
       const info = byId.get(t.tenantId);

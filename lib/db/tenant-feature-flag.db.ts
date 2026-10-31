@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { olvidarEspecializaciones } from "@/lib/specializations";
 
 /**
  * TenantFeatureFlagDB — flags de feature por tenant en tabla dedicada
@@ -27,5 +28,7 @@ export const TenantFeatureFlagDB = {
       create: { tenantId, flagKey, enabled },
       update: { enabled },
     });
+    // Si es una `spec:*`, el sidebar y los gates la leen cacheada 60 s.
+    olvidarEspecializaciones(tenantId);
   },
 };

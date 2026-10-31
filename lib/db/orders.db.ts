@@ -18,11 +18,18 @@ import {
   normalizePhone,
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { estadosQuePuedenPasarA } from "@/lib/order-status";
 import { DomainEvents } from "@/lib/domain-events";
 import { notifyOwnerNewOrder } from "@/lib/whatsapp-order-notify";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { checkAndIssueCoupons } from "@/lib/coupons/auto-coupon-triggers";
 import { logger } from "@/lib/logger";
+import { DropshipDB } from "./dropship.db";
+import {
+  CANAL_CANJE_TIENDA,
+  loyaltyDevolverCanjeWithinTx,
+  loyaltyRedeemWithinTx,
+} from "./loyalty.db";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -165,6 +172,23 @@ export const OrdersDB = {
     }));
   },
 
+  /**
+   * Pedidos recientes ANONIMIZADOS para la prueba social del storefront (Brandon
+   * 2026-06-26, Modo Creativo). Solo nombre del 1er producto + fecha — SIN datos
+   * del cliente (privacidad Ley 29733). Excluye cancelados. Máx 8.
+   */
+  async recentForSocialProof(tenantId: string, since: Date): Promise<Array<{ product: string; at: string }>> {
+    const rows = await withRlsTx(tenantId, (tx) => tx.order.findMany({
+      where: { tenantId, createdAt: { gt: since }, status: { not: "cancelado" as never } },
+      select: { createdAt: true, items: { select: { name: true }, take: 1 } },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }));
+    return rows
+      .filter((r) => r.items.length > 0 && !!r.items[0].name)
+      .map((r) => ({ product: r.items[0].name, at: toISO(r.createdAt) }));
+  },
+
   async getAll(tenantId: string): Promise<DbOrder[]> {
     const where: Record<string, unknown> = { tenantId };
     return (await withRlsTx(tenantId, (tx) => tx.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" }, take: 1000 }))).map(mapOrder);
@@ -214,6 +238,8 @@ export const OrdersDB = {
     status?: string;
     since?: string;
     phone?: string;
+    /** Solo estos pedidos (token de seguimiento de un invitado). */
+    ids?: string[];
     tenantId: string;
   }): Promise<{ orders: DbOrder[]; nextCursor: string | null; total: number }> {
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
@@ -233,6 +259,9 @@ export const OrdersDB = {
     }
     if (opts.phone) {
       where.customerPhone = normalizePhone(opts.phone);
+    }
+    if (opts.ids) {
+      where.id = { in: opts.ids };
     }
 
     // TD-116: batch-tx → Promise.all dentro de la tx interactiva de withRlsTx
@@ -306,25 +335,61 @@ export const OrdersDB = {
   // edge multi-tenant TD-040, stubs de Product vía $executeRaw + setval, y
   // cascada fire-and-forget post-create). Merece PR propio con checkout-squad
   // y QA dedicado. Bajo políticas fail-open sigue funcionando idéntico.
-  async add(order: DbOrder, tenantId: string): Promise<DbOrder> {
+  /**
+   * `opts.canjePuntos` (2026-10-08): el pedido se crea y los puntos se
+   * descuentan en UNA transacción (`loyaltyRedeemWithinTx`, guard atómico
+   * `saldo + débito >= 0`): si no alcanzan, el pedido no queda. La clave de
+   * idempotencia entra en el mismo INSERT: un reintento simultáneo con la
+   * misma clave choca con el `@unique` y no gasta los puntos dos veces.
+   */
+  async add(
+    order: DbOrder,
+    tenantId: string,
+    opts?: { canjePuntos?: { clienteId: string; puntos: number; soles: number } },
+  ): Promise<DbOrder> {
     // Ensure the customer exists in the DB before linking via FK
     const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
     if (phone) {
-      await prisma.customer.upsert({
+      /**
+       * `Customer.phone` es `@unique` GLOBAL (TD-040 fase 1), o sea que hay UNA
+       * ficha por teléfono en toda la plataforma. El `upsert` de antes hacía
+       * `update` sin mirar de quién era: si el 987654321 ya era cliente de la
+       * bodega A y pedía en la bodega B, el pedido de B le reescribía a la
+       * ficha de A el nombre, la dirección y la referencia. La bodega A abría
+       * su lista de clientes y encontraba otro nombre y otra dirección — y su
+       * próximo delivery salía hacia allá.
+       *
+       * El pedido no pierde nada: `Order` guarda su propia copia
+       * (`customerName`, `customerLocation`), que es la que usa el reparto.
+       * Cuando la FK compuesta `(tenantId, phone)` exista (fase 3), esto se
+       * puede volver a simplificar a un upsert.
+       */
+      const existente = await prisma.customer.findUnique({
         where: { phone },
-        create: {
-          phone,
-          name: order.customer.name,
-          location: order.customer.location ?? "",
-          reference: order.customer.reference ?? "",
-          tenantId,
-        },
-        update: {
-          name: order.customer.name,
-          location: order.customer.location ?? "",
-          reference: order.customer.reference ?? "",
-        },
+        select: { tenantId: true },
       });
+      if (!existente) {
+        await prisma.customer.create({
+          data: {
+            phone,
+            name: order.customer.name,
+            location: order.customer.location ?? "",
+            reference: order.customer.reference ?? "",
+            tenantId,
+          },
+        });
+      } else if (existente.tenantId === tenantId) {
+        await prisma.customer.update({
+          where: { phone },
+          data: {
+            name: order.customer.name,
+            location: order.customer.location ?? "",
+            reference: order.customer.reference ?? "",
+          },
+        });
+      }
+      // Si la ficha es de otro negocio no se toca: el pedido se vincula igual
+      // por el teléfono, que es la PK global.
     }
     // Ensure all catalog products exist in the Product table so the FK constraint is
     // always satisfied. Store-catalog IDs come from data/products.ts and may differ
@@ -364,10 +429,12 @@ export const OrdersDB = {
         await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"Product"', 'id'), (SELECT MAX(id) FROM "Product"))`;
       }
     }
-    const row = await prisma.order.create({
+    const canje = opts?.canjePuntos;
+    const crearPedido = (db: Prisma.TransactionClient) => db.order.create({
       data: {
         id: order.id,
         tenantId,
+        ...(canje && order.idempotencyKey && { idempotencyKey: order.idempotencyKey }),
         customerName: order.customer.name,
         customerPhone: phone,
         customerLocation: order.customer.location ?? "",
@@ -390,8 +457,20 @@ export const OrdersDB = {
       },
       include: { items: true },
     });
+    const row = canje
+      ? await prisma.$transaction(async (tx) => {
+          const creado = await crearPedido(tx);
+          await loyaltyRedeemWithinTx(tx, tenantId, canje.clienteId, canje.puntos, "redemption", {
+            orderId: order.id,
+            soles: canje.soles,
+            canal: CANAL_CANJE_TIENDA,
+            ...(order.idempotencyKey && { idempotencyKey: order.idempotencyKey }),
+          });
+          return creado;
+        })
+      : await crearPedido(prisma);
     // Persist idempotency key via raw SQL (field added in migration 20260316; types update after prisma generate)
-    if (order.idempotencyKey) {
+    if (order.idempotencyKey && !canje) {
       await prisma.$executeRaw`UPDATE "Order" SET "idempotencyKey" = ${order.idempotencyKey} WHERE id = ${row.id}`.catch((err) => logger.error("[orders.db] persist idempotencyKey failed", { error: String(err), orderId: row.id }));
     }
     // PERF 2026-05-24: invalidar el lookup "última orden del customer" — sin
@@ -515,7 +594,24 @@ export const OrdersDB = {
       if (!existing) return null;
       return tx.order.update({ where: { id, tenantId }, data, include: { items: true } });
     });
-    return row ? mapOrder(row) : null;
+    const mapped = row ? mapOrder(row) : null;
+
+    // ── Dropshipping (ADR-298) ──────────────────────────────────────────
+    // Al confirmar un pedido en una tienda con dropship activado, crear el
+    // fulfillment al proveedor. FIRE-AND-FORGET: nunca rompe el flujo de la
+    // orden (si falla, se loguea y queda para reenvío manual).
+    if (mapped && patch.status === "confirmado") {
+      void (async () => {
+        if (await DropshipDB.isEnabled(tenantId)) {
+          const n = await DropshipDB.createFulfillmentsFromOrder(tenantId, id);
+          if (n > 0) logger.info("[dropship] fulfillments creados", { tenantId, orderId: id, n });
+        }
+      })().catch((err) =>
+        logger.error("[dropship] fallo al crear fulfillment", { tenantId, orderId: id, error: String(err) }),
+      );
+    }
+
+    return mapped;
   },
   /**
    * Delete an order scoped to the given tenant.
@@ -554,6 +650,164 @@ export const OrdersDB = {
         deletedAt: null,
       },
     }));
+  },
+
+  /**
+   * Cuántas compras tiene un teléfono en ESTE negocio: pedidos vivos o
+   * entregados (no cuentan los cancelados ni los borrados: un pedido
+   * cancelado no es una compra y no debe quitar la «primera compra»).
+   * Decide el descuento automático (primera compra / cliente frecuente): la
+   * cotización del checkout y `POST /api/orders` leen este mismo conteo
+   * (`calcularDescuentoAutomatico`). Normaliza con `normalizePhone` (últimos 9
+   * dígitos), igual que se guarda `customerPhone`: «51…», «+51 …» o
+   * «999-888…» cuentan las mismas compras (audit pagos M004, security 08-10).
+   */
+  async contarComprasPorTelefono(tenantId: string, telefono: string): Promise<number> {
+    const normalizado = normalizePhone(telefono);
+    if (!normalizado) return 0;
+    return withRlsTx(tenantId, (tx) =>
+      tx.order.count({
+        where: {
+          tenantId,
+          customerPhone: normalizado,
+          status: { not: "cancelado" },
+          deletedAt: null,
+        },
+      }),
+    );
+  },
+
+  /**
+   * Cancela un pedido y devuelve su stock (y los puntos que canjeó) UNA sola
+   * vez, en una transacción.
+   * La usan todas las vías de cancelar (PATCH /api/orders/[id], cancelar en
+   * lote, rechazo del pago Yape). Solo la llamada que marca `cancelledAt`
+   * (condición en el WHERE) repone: dos cancelaciones simultáneas, o cancelar
+   * en lote algo que ya estaba cancelado, no devuelven el stock dos veces.
+   * Un pedido `entregado` no se repone (la mercadería ya salió).
+   */
+  async cancelarConReposicion(
+    tenantId: string,
+    id: string,
+    cancelReason: string | null,
+  ): Promise<{ repuesto: boolean; items: number; puntosDevueltos: number }> {
+    const res = await withRlsTx(tenantId, async (tx) => {
+      const marcado = await tx.order.updateMany({
+        where: { id, tenantId, cancelledAt: null, status: { not: "entregado" } },
+        data: { status: "cancelado", cancelReason, cancelledAt: new Date() },
+      });
+      if (marcado.count === 0) return { repuesto: false, items: 0, puntosDevueltos: 0 };
+      const items = await tx.orderItem.findMany({
+        where: { orderId: id },
+        select: { productId: true, quantity: true },
+      });
+      for (const it of items) {
+        await tx.$executeRaw`
+          UPDATE "Product"
+             SET "stock" = "stock" + ${it.quantity}
+           WHERE "id" = ${it.productId}
+             AND "tenantId" = ${tenantId}
+             AND "stock" IS NOT NULL
+        `;
+      }
+      // Puntos canjeados en el pedido: vuelven en la misma tx (una sola vez,
+      // por el `cancelledAt` de arriba). Los puntos GANADOS no se tocan: se
+      // acreditan al pasar a «entregado» y un entregado no se cancela.
+      const devueltos = await loyaltyDevolverCanjeWithinTx(tx, tenantId, id);
+      return { repuesto: true, items: items.length, puntosDevueltos: devueltos.puntos };
+    });
+    if (res.repuesto) {
+      logger.info("[orders/cancel] stock repuesto", {
+        tenantId,
+        orderId: id,
+        items: res.items,
+        puntosDevueltos: res.puntosDevueltos,
+      });
+    }
+    return res;
+  },
+
+  /**
+   * Cambia el estado de varios pedidos respetando la máquina de estados
+   * (`TRANSICIONES_PEDIDO`, la misma del cambio de a uno). Antes el lote
+   * hacía un `updateMany` ciego: pasaba de entregado a cancelado, revivía
+   * cancelados y cada vuelta a «cancelado» reponía stock otra vez.
+   *
+   *  - Mismo estado → no se toca (`sinCambio`).
+   *  - Transición inválida → no se toca (`rechazados`, con su estado actual).
+   *  - «cancelado» → `cancelarConReposicion` por pedido (cancelledAt + stock
+   *    una sola vez). Si ya tenía `cancelledAt` (lo revivió el lote viejo), se
+   *    marca cancelado SIN reponer: el stock ya se devolvió esa vez.
+   *  - Otro estado → `updateMany` con los estados de origen válidos en el
+   *    WHERE: si otro cambió el pedido entre la lectura y el write, no pisa.
+   */
+  async cambiarEstadoEnLote(
+    tenantId: string,
+    ids: string[],
+    estado: OrderStatus,
+  ): Promise<{
+    actualizados: string[];
+    rechazados: { id: string; desde: string }[];
+    sinCambio: string[];
+    noEncontrados: string[];
+    stockRepuesto: number;
+  }> {
+    const unicos = [...new Set(ids)];
+    const filas = await withRlsTx(tenantId, (tx) =>
+      tx.order.findMany({
+        where: { tenantId, id: { in: unicos }, deletedAt: null },
+        select: { id: true, status: true },
+      }),
+    );
+    const porId = new Map(filas.map((f) => [f.id, f.status]));
+    const origenes = estadosQuePuedenPasarA(estado);
+    const candidatos: string[] = [];
+    const rechazados: { id: string; desde: string }[] = [];
+    const sinCambio: string[] = [];
+    const noEncontrados: string[] = [];
+    for (const id of unicos) {
+      const desde = porId.get(id);
+      if (desde === undefined) noEncontrados.push(id);
+      else if (desde === estado) sinCambio.push(id);
+      else if ((origenes as string[]).includes(desde)) candidatos.push(id);
+      else rechazados.push({ id, desde });
+    }
+
+    const actualizados: string[] = [];
+    let stockRepuesto = 0;
+    if (estado === "cancelado") {
+      for (const id of candidatos) {
+        const r = await OrdersDB.cancelarConReposicion(tenantId, id, null);
+        if (r.repuesto) {
+          stockRepuesto++;
+          actualizados.push(id);
+          continue;
+        }
+        const soloEstado = await withRlsTx(tenantId, (tx) =>
+          tx.order.updateMany({
+            where: { id, tenantId, status: { in: origenes } },
+            data: { status: "cancelado", updatedAt: new Date() },
+          }),
+        );
+        if (soloEstado.count > 0) actualizados.push(id);
+      }
+    } else if (candidatos.length > 0) {
+      const res = await withRlsTx(tenantId, async (tx) => {
+        const r = await tx.order.updateMany({
+          where: { tenantId, id: { in: candidatos }, status: { in: origenes } },
+          data: { status: estado, updatedAt: new Date() },
+        });
+        // Cuáles quedaron en el estado pedido (el WHERE pudo saltar alguno).
+        if (r.count === candidatos.length) return candidatos;
+        const ahora = await tx.order.findMany({
+          where: { tenantId, id: { in: candidatos }, status: estado },
+          select: { id: true },
+        });
+        return ahora.map((o) => o.id);
+      });
+      actualizados.push(...res);
+    }
+    return { actualizados, rechazados, sinCambio, noEncontrados, stockRepuesto };
   },
 
   /**

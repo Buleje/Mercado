@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { TenantsDB } from "@/lib/db/tenants.db";
 
 /**
  * TenantCustomDomainDB
@@ -31,9 +32,11 @@ export const TenantCustomDomainDB = {
   },
 
   async setCustomDomain(tenantId: string, customDomain: string | null) {
-    return prisma.tenant.update({
+    const t = await prisma.tenant.update({
       where: { id: tenantId },
       data: { customDomain },
     });
+    TenantsDB.olvidarPublico(); // la portada resuelve `custom--<host>` cacheado
+    return t;
   },
 };

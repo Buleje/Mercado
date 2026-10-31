@@ -150,7 +150,7 @@ function PopularSearches() {
           <Link
             key={term}
             href={`/marketplace/buscar?q=${encodeURIComponent(term)}`}
-            className="inline-flex items-center rounded-full border border-primary/30 bg-primary/5 dark:bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 hover:border-primary/50 transition-all duration-150"
+            className="inline-flex items-center rounded-full border border-primary/30 bg-primary/5 dark:bg-primary/10 px-4 py-1.5 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-primary/20 hover:border-primary/50 transition-all duration-150"
           >
             {term}
           </Link>
@@ -352,7 +352,7 @@ function InspirationStrip() {
         </div>
         <Link
           href="/recetas"
-          className="inline-flex items-center gap-2 rounded-lg border border-primary/40 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 transition-colors flex-shrink-0"
+          className="inline-flex items-center gap-2 rounded-lg border border-primary/40 px-4 py-2 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors flex-shrink-0"
         >
           Ver recetas
           <ArrowRight

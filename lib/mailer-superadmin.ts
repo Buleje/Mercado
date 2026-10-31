@@ -1,4 +1,5 @@
 import "server-only";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
 import nodemailer from "nodemailer";
 
 interface SuperAdminAlert {
@@ -17,6 +18,7 @@ export async function sendSuperAdminAlert(alert: SuperAdminAlert): Promise<void>
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) return;
+  if (!(await avisoCorreoPlataformaActivo("superadmin"))) return;
 
   const to = process.env.SUPERADMIN_NOTIFY_EMAIL ?? smtpUser;
 
@@ -65,5 +67,53 @@ export async function sendSuperAdminAlert(alert: SuperAdminAlert): Promise<void>
         </div>
       </div>
     `,
+  });
+}
+
+/** Texto del usuario dentro del HTML del correo: nunca crudo. */
+function escaparHtml(v: string): string {
+  return v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export interface AvisoCorreccionGuia {
+  tenantName: string;
+  guiaNumero: string;
+  /** «Libro TH» / «Guía de salida del CTP». */
+  dondeEtiqueta: string;
+  createdBy: string;
+  motivo: string;
+  cambios: readonly { etiqueta: string | null; clave: string; dice: string | null; correcto: string }[];
+}
+
+/**
+ * ADR-512: un negocio pidió corregir una guía EMITIDA. Mismo correo de
+ * plataforma (respeta el interruptor «superadmin» de avisos por correo); todo
+ * lo que escribió el negocio va escapado.
+ */
+export async function avisarCorreccionGuiaAlSuperadmin(a: AvisoCorreccionGuia): Promise<void> {
+  const base = (process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe").replace(/\/$/, "");
+  const recorte = (v: string, n: number) => (v.length > n ? `${v.slice(0, n - 1)}…` : v);
+  const cambios = a.cambios.slice(0, 8).map((c) => ({
+    label: escaparHtml(recorte(c.etiqueta ?? c.clave, 60)),
+    value: `${escaparHtml(recorte(c.dice ?? "(en blanco)", 80))} → ${escaparHtml(recorte(c.correcto, 80))}`,
+  }));
+  if (a.cambios.length > 8) cambios.push({ label: "…", value: `y ${a.cambios.length - 8} cambio(s) más` });
+  await sendSuperAdminAlert({
+    subject: recorte(`Corrección de guía ${a.guiaNumero} — ${a.tenantName}`, 150),
+    title: "Piden corregir una guía emitida",
+    items: [
+      { label: "Negocio", value: escaparHtml(a.tenantName) },
+      { label: "Guía", value: `${escaparHtml(a.guiaNumero)} (${escaparHtml(a.dondeEtiqueta)})` },
+      { label: "Pidió", value: escaparHtml(a.createdBy) },
+      { label: "Motivo", value: escaparHtml(recorte(a.motivo, 400)) },
+      ...cambios,
+    ],
+    actionUrl: `${base}/superadmin/support?kind=correccion_guia`,
+    actionLabel: "Ver la solicitud",
   });
 }

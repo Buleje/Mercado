@@ -113,7 +113,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
     if (!sessionToken) {
       return NextResponse.json(
-        { error: "Iniciá sesión para dejar una reseña" },
+        { error: "Inicia sesión para dejar una reseña" },
         { status: 401 },
       );
     }

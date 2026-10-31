@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     // la nuclear-delete con solo la string "BORRAR_TODO".
     if (body?.confirmUsername !== auth.username) {
       return NextResponse.json(
-        { error: "Para confirmar, escribí tu usuario actual exactamente." },
+        { error: "Para confirmar, escribe tu usuario actual exactamente." },
         { status: 400 },
       );
     }

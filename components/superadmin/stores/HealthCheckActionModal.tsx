@@ -17,6 +17,9 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
@@ -63,6 +66,20 @@ export default function HealthCheckActionModal({
   currentValue,
   onSaved,
 }: HealthCheckActionModalProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "health-check-action",
+  });
   const fieldType = fieldTypeFor(checkId);
   const [value, setValue] = useState<string>(currentValue ?? "");
   const [yapeEnabled, setYapeEnabled] = useState(false);
@@ -180,17 +197,20 @@ export default function HealthCheckActionModal({
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Editar ${checkLabel}`}
       className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="w-full max-w-lg rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden">
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Editar ${checkLabel}`}
+        className="relative w-full max-w-lg rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden"
+      >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)]">
+        <div {...ventana.asaProps} className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)]">
           <div className="min-w-0">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               {tenantName}
@@ -199,6 +219,9 @@ export default function HealthCheckActionModal({
               {checkLabel}
             </p>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -230,7 +253,7 @@ export default function HealthCheckActionModal({
                 }}
                 className={`relative w-full ${
                   checkId === "banner" ? "aspect-[16/7]" : "aspect-[4/3]"
-                } rounded-lg overflow-hidden border-2 transition-all ${
+                } rounded-xl overflow-hidden border-2 transition-all ${
                   isDragging
                     ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/30"
                     : "border-dashed border-[var(--rule-base)] hover:border-[var(--accent)]/50"
@@ -303,7 +326,7 @@ export default function HealthCheckActionModal({
                 onChange={(e) => setYapePhone(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="Número Yape (9 dígitos)"
                 disabled={!yapeEnabled}
-                className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none disabled:opacity-60"
+                className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none disabled:opacity-60"
               />
             </>
           )}
@@ -315,7 +338,7 @@ export default function HealthCheckActionModal({
               value={value}
               onChange={(e) => setValue(e.target.value.replace(/[^0-9+\s-]/g, ""))}
               placeholder="Número de teléfono"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
             />
           )}
 
@@ -339,13 +362,13 @@ export default function HealthCheckActionModal({
               onChange={(e) => setValue(e.target.value)}
               rows={checkId === "description" ? 3 : 2}
               placeholder={`Escribir ${checkLabel.toLowerCase()}...`}
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
             />
           )}
 
           {/* Errores */}
           {errorMsg && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-[var(--data-error-500)]">
+            <div className="flex items-start gap-2 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] px-3 py-2 text-xs text-[var(--data-error-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -366,7 +389,7 @@ export default function HealthCheckActionModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-bold rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
+            className="px-4 min-h-10 text-sm font-semibold rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
           >
             Cancelar
           </button>
@@ -374,7 +397,7 @@ export default function HealthCheckActionModal({
             type="button"
             onClick={save}
             disabled={status === "uploading" || status === "saving"}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-4 min-h-10 text-sm font-semibold rounded-xl transition-colors ${
               status === "saved"
                 ? "bg-[var(--data-success-500)] text-white"
                 : "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"
@@ -395,6 +418,8 @@ export default function HealthCheckActionModal({
             )}
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

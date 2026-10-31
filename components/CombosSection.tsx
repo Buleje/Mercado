@@ -133,7 +133,7 @@ function ComboCard({ combo }: { combo: Combo; categories: Category[] }) {
   return (
     <div className="group relative bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] shadow-sm hover:shadow-xl transition-all duration-[var(--dur-base)] overflow-hidden flex flex-col">
       {/* Discount badge — accent-soft sin rojo decorativo (DS rule) */}
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/20 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm">
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-[var(--accent)]/20 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm">
         <Tag className="h-3 w-3" />
         -{combo.discountPercent}%
       </div>
@@ -267,7 +267,7 @@ export default function CombosSection({ serverProducts, showEmpty = false, empty
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-[var(--accent-soft)] border border-[var(--accent)]/20 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-4">
+          <div className="inline-flex items-center gap-2 bg-primary/10 border border-[var(--accent)]/20 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-4">
             <Sparkles className="h-3.5 w-3.5" />
             Combos Ahorro
           </div>

@@ -248,7 +248,7 @@ export default function MarketplaceNavLinks({
                 "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-semibold transition-all",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 moreOpen
-                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
               )}
             >

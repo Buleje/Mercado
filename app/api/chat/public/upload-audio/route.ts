@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isFeatureEnabled } from "@/lib/feature-flags";
+import { exigirHiloDelComprador } from "@/lib/chat/acceso-hilo-publico";
 
 /**
  * POST /api/chat/public/upload-audio — Tanda 4 · Notas de voz (Brandon
@@ -10,7 +11,8 @@ import { isFeatureEnabled } from "@/lib/feature-flags";
  *
  * Recibe el audio grabado con MediaRecorder (webm/mp4/mpeg) y lo guarda tal
  * cual en media/chat-audio. Devuelve `{ url }`; el cliente manda un mensaje con
- * metadataJson.voice. Público + rate-limited (igual que el upload de imagen).
+ * metadataJson.voice. Rate-limited y, desde el 17-10 (T4), con el hilo y su
+ * token, igual que el upload de imagen (`lib/chat/acceso-hilo-publico`).
  *
  * NO re-encodea (a diferencia de las imágenes): validamos type + tamaño +
  * magic bytes básicos y subimos el blob original.
@@ -38,6 +40,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData();
+    // Security 17-10 (T4): sólo el dueño del hilo abierto sube (token o sesión).
+    const hilo = await exigirHiloDelComprador(req, formData);
+    if (!hilo.ok) return hilo.res;
     const file = formData.get("file") as File | null;
 
     if (!file) {

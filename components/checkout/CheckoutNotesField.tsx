@@ -40,7 +40,7 @@ export function CheckoutNotesField({
           style={{ color: "var(--color-primary, #00A0A0)" }}
         />
         Mensaje especial
-        <span className="text-xs text-muted font-medium">(opcional)</span>
+        <span className="text-xs text-muted dark:text-[var(--text-tertiary)] font-medium">(opcional)</span>
       </label>
       <textarea
         value={notes}
@@ -49,7 +49,7 @@ export function CheckoutNotesField({
         }}
         rows={rows}
         placeholder="Ej: Feliz cumpleaños María, dejar en portería..."
-        className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-muted/60 px-4 py-3 text-sm focus:border-[var(--color-primary,#00A0A0)] focus:outline-none transition-colors resize-none"
+        className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-muted/60 dark:placeholder:text-[var(--text-tertiary)] px-4 py-3 text-sm focus:border-[var(--color-primary,#00A0A0)] focus:outline-none transition-colors resize-none"
       />
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex flex-wrap gap-1.5">
@@ -76,7 +76,7 @@ export function CheckoutNotesField({
             "text-xs font-semibold tabular-nums shrink-0",
             notes.length > 180
               ? "text-[var(--data-warning-600)]"
-              : "text-muted",
+              : "text-muted dark:text-[var(--text-tertiary)]",
           )}
         >
           {notes.length}/200

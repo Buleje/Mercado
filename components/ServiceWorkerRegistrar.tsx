@@ -7,7 +7,11 @@ export default function ServiceWorkerRegistrar() {
     // Desactivar Service Worker durante desarrollo para evitar conflictos
     if (process.env.NODE_ENV === "development") {
       navigator.serviceWorker?.getRegistrations().then(registrations => {
-        registrations.forEach(reg => reg.unregister());
+        // Menos el de avisos de cámaras (`/sw-avisos.js`, 10-10): no cachea
+        // nada, y desregistrarlo mata la suscripción de push del celular.
+        registrations
+          .filter(reg => !reg.scope.endsWith("/sw-avisos/"))
+          .forEach(reg => reg.unregister());
       });
       return;
     }

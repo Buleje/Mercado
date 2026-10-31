@@ -44,9 +44,9 @@ import {
   generateSoftwareApplicationLD,
   generateFAQPageLD,
   generateDistrictCategoryLD,
-  districtBreadcrumbs,
-} from "@/lib/seo/json-ld";
+  districtBreadcrumbs, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
@@ -58,9 +58,15 @@ interface Props {
 }
 
 // ── Static params: district × category combos ───────────────────────
+// 29-10: en el build solo las ciudades donde operamos (lanzamiento + Pucallpa):
+// las 64 × 6 combinaciones eran 384 de las 2.273 páginas del `next build` (quedan 42).
+// El resto se arma la primera vez que alguien entra (con Cache Components no
+// hay `dynamicParams`: lo que no está en la lista se renderiza bajo demanda).
+const CIUDADES_EN_BUILD = new Set(["ciudad-constitucion", "pucallpa"]);
+
 export function generateStaticParams() {
   const combos: { ciudad: string; distrito: string; categoria: string }[] = [];
-  for (const d of districts) {
+  for (const d of districts.filter((x) => CIUDADES_EN_BUILD.has(x.cityslug))) {
     for (const cat of realCategories) {
       combos.push({
         ciudad: d.cityslug,
@@ -217,14 +223,14 @@ async function DistrictCategoryContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateSoftwareApplicationLD(zone)),
+          __html: safeJsonLdStringify(generateSoftwareApplicationLD(zone)),
         }}
       />
       {products.length > 0 && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
+            __html: safeJsonLdStringify(
               generateDistrictCategoryLD(
                 district,
                 zone,
@@ -238,7 +244,7 @@ async function DistrictCategoryContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateFAQPageLD(faqs)),
+          __html: safeJsonLdStringify(generateFAQPageLD(faqs)),
         }}
       />
 
@@ -282,7 +288,7 @@ async function DistrictCategoryContent({
             href="/registro"
             className="mt-4 inline-block rounded-lg bg-[var(--data-success-600)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--data-success-700)]"
           >
-            Registrate gratis
+            Regístrate gratis
           </Link>
         </div>
       )}
@@ -382,11 +388,7 @@ export default function DistrictCategoryPage({ params }: Props) {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="animate-pulse text-sm text-slate-400">
-            Cargando productos del distrito...
-          </div>
-        </div>
+        <CargaPagina modo="bloque" etiqueta="Cargando productos del distrito" />
       }
     >
       <DistrictCategoryContentWrapper params={params} />

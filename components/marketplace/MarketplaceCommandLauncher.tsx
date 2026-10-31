@@ -293,7 +293,7 @@ export default function MarketplaceCommandLauncher({ stores = [], sections = [] 
                             onMouseMove={() => setActiveIdx(idx)}
                             className={cn(
                               "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                              isActive ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-sunken)]",
+                              isActive ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]",
                             )}
                           >
                             <span

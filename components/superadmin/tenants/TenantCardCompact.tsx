@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Clock, ExternalLink, ShoppingBag } from "@buleje/design-system/icons";
+import { Bell, Clock, ExternalLink, Eye, ClipboardList, Mail, ShoppingBag } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
+import { CodigoTienda } from "@/components/superadmin/_shared/CodigoTienda";
+import { etiquetaDePlan } from "@/lib/billing/plan-tiers";
 import { PendingOrdersModal } from "./PendingOrdersModal";
+import type { TenantCardProps } from "./TenantCard";
+import { TenantCardModal } from "./TenantCardModal";
 
 /**
  * Vista compacta de tenant — Brandon 2026-06-05:
@@ -17,16 +21,10 @@ import { PendingOrdersModal } from "./PendingOrdersModal";
 
 type Health = "healthy" | "warning" | "critical";
 
-const PLAN_LABEL: Record<string, string> = {
-  free: "Free",
-  pro: "Pro",
-  business: "Business",
-  enterprise: "Enterprise",
-};
 
 const HEALTH_DOT: Record<Health, string> = {
   healthy: "bg-[var(--data-success-500)]",
-  warning: "bg-[var(--data-warning-500)]",
+  warning: "bg-teal-500",
   critical: "bg-[var(--data-error-500)]",
 };
 
@@ -39,12 +37,19 @@ const HEALTH_TITLE: Record<Health, string> = {
 interface TenantCardCompactProps {
   tenant: TenantRow;
   health: Health;
-  onDetail: (t: TenantRow) => void;
-  onImpersonate: (slug: string) => void;
+  /** Las mismas acciones de la tarjeta completa: «Detalles» las abre en una ventana. */
+  acciones: Omit<TenantCardProps, "tenant" | "health">;
 }
 
-export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: TenantCardCompactProps) {
+export function TenantCardCompact({
+  tenant,
+  health,
+  acciones,
+}: TenantCardCompactProps) {
   const t = tenant;
+  const { onDetail, onImpersonate } = acciones;
+  const [tarjetaAbierta, setTarjetaAbierta] = useState(false);
+  const correo = t.avisosCorreo;
   const initials = t.name.slice(0, 2).toUpperCase();
   const pendingCount = t.pendingOrders ?? 0;
   const revenue = t.monthRevenue ?? 0;
@@ -60,17 +65,18 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
       : null;
 
   return (
+    <>
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onDetail(t)}
+      onClick={() => setTarjetaAbierta(true)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onDetail(t);
+          setTarjetaAbierta(true);
         }
       }}
-      title={`${t.name} — click para ver detalle`}
+      title={`${t.name} — click para ver los detalles`}
       className="group relative cursor-pointer rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-sm)] transition-all hover:-translate-y-0.5 hover:border-[var(--rule-strong)] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
     >
       {/* Identidad: logo + nombre + estado */}
@@ -101,10 +107,12 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
               className={`h-2 w-2 shrink-0 rounded-full ${HEALTH_DOT[health]}`}
               title={HEALTH_TITLE[health]}
             />
-            <span className="truncate text-sm font-bold text-[var(--text-primary)]">{t.name}</span>
+            <span className="truncate text-sm font-bold text-[var(--text-primary)]" title={`${t.name} · ${t.slug}`}>{t.name}</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
-            <span className="truncate font-mono">{t.slug}</span>
+            {/* Con ID, el slug (cortado a «m…» en la tarjeta compacta) pasa al title del nombre. */}
+            {!t.codigo && <span className="min-w-0 truncate font-mono">{t.slug}</span>}
+            <CodigoTienda codigo={t.codigo} />
             {isOnMarketplace && (
               <ShoppingBag
                 className="h-3 w-3 shrink-0 text-[var(--accent)]"
@@ -122,7 +130,7 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
           }}
           title={`Abrir panel admin de ${t.name}`}
           aria-label={`Abrir panel admin de ${t.name}`}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70 transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] group-hover:opacity-100"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70 transition-all hover:border-[var(--accent)] hover:bg-primary/10 hover:text-[var(--accent)] group-hover:opacity-100"
         >
           <ExternalLink className="h-3.5 w-3.5" />
         </button>
@@ -130,8 +138,8 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
 
       {/* Señales: plan + ventas + pendientes + trial — 1 fila */}
       <div className="mt-2.5 flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5">
-        <span className="shrink-0 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-          {PLAN_LABEL[t.plan] ?? t.plan}
+        <span className="shrink-0 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          {etiquetaDePlan(t.plan)}
         </span>
         <span
           className={`truncate text-xs font-bold tabular-nums ${revenue > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
@@ -140,13 +148,22 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
           S/{revenue.toLocaleString("es-PE", { maximumFractionDigits: 0 })}
         </span>
         <span className="flex-1" />
+        {correo && correo.correo && (
+          <span
+            className={`inline-flex shrink-0 items-center ${correo.pausado ? "text-[var(--text-tertiary)] opacity-60" : "text-[var(--accent)]"}`}
+            title={`${correo.correo} — avisos por correo ${correo.pausado ? "pausados" : `activos (${correo.activos} de ${correo.total})`}`}
+          >
+            <Mail className="h-3.5 w-3.5" aria-label={correo.pausado ? "Avisos por correo pausados" : "Avisos por correo activos"} />
+            {correo.pausado && <span aria-hidden className="-ml-3.5 h-px w-4 rotate-45 bg-current" />}
+          </span>
+        )}
         {daysLeft !== null && (
           <span
-            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums ${
               daysLeft <= 0
                 ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-red-950/40 dark:text-red-300"
                 : daysLeft <= 7
-                  ? "bg-amber-50 text-[var(--data-warning-700)] dark:bg-amber-950/40 dark:text-amber-300"
+                  ? "bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
                   : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
             }`}
             title={daysLeft <= 0 ? "Trial expirado" : `${daysLeft} días de prueba restantes`}
@@ -163,12 +180,32 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
               setPendingModalOpen(true);
             }}
             title={`${pendingCount} pedido${pendingCount === 1 ? "" : "s"} pendiente${pendingCount === 1 ? "" : "s"} — click para ver`}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-white transition-colors hover:bg-[var(--data-error-600)]"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-xs font-bold tabular-nums text-white transition-colors hover:bg-[var(--data-error-600)]"
           >
             <Bell className="h-3 w-3" strokeWidth={2.5} />
             {pendingCount}
           </button>
         )}
+      </div>
+
+      {/* Dos botones parejos: la tarjeta completa y la ficha rápida */}
+      <div className="mt-2.5 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setTarjetaAbierta(true); }}
+          title={`Ver la tarjeta completa de ${t.name}`}
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <Eye className="h-3.5 w-3.5" aria-hidden /> Detalles
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDetail(t); }}
+          title={`Abrir la ficha de ${t.name}`}
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <ClipboardList className="h-3.5 w-3.5" aria-hidden /> Ficha
+        </button>
       </div>
 
       {pendingModalOpen && (
@@ -179,5 +216,10 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
         />
       )}
     </div>
+    {/* Fuera de la tarjeta: su clic y su transform (hover) romperían la ventana fija */}
+    {tarjetaAbierta && (
+      <TenantCardModal tenant={t} health={health} acciones={acciones} onClose={() => setTarjetaAbierta(false)} />
+    )}
+    </>
   );
 }

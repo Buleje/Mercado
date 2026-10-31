@@ -1,11 +1,14 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
+import { leerJson } from "@/lib/errores/sin-dato";
 import React, { useState, useEffect } from "react";
 import { UserCircle, Mail, Phone, Shield, Key, Save, Loader2, CheckCircle } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 interface UserProfile {
   username: string;
@@ -14,6 +17,8 @@ interface UserProfile {
   role: string;
   createdAt?: string;
 }
+
+const MODULE_ID = "mi-perfil"; // id de la banda de identidad (sin pestañas)
 
 export default function MiPerfilTab() {
   const [profile, setProfile] = useState<UserProfile>({
@@ -100,7 +105,7 @@ export default function MiPerfilTab() {
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        const d = await res.json().catch(() => null);
+        const d = await leerJson<{ error?: string }>(res);
         setPasswordError(d?.error ?? "Error al cambiar contraseña");
       }
     } catch {
@@ -127,11 +132,16 @@ export default function MiPerfilTab() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <AdminModuleHeader
-        title="Mi Perfil"
-        description="Tu información personal y preferencias de seguridad"
-        icon={UserCircle}
-      />
+      {/* Banda sin pestañas (`:empty` esconde el riel); se llega por el avatar y por
+          Configuración › Usuarios y acceso. La caja evita el aire extra del space-y. */}
+      <div>
+        <AdminTabBar
+          heading={{ title: "Mi perfil", icon: UserCircle,
+            description: "Tu información personal y la seguridad de tu cuenta: datos de contacto y contraseña." }}
+          tabs={[]} activeTab="perfil" onTabChange={() => undefined}
+          moduleId={MODULE_ID} className="[&_[role=tablist]:empty]:hidden"
+        />
+      </div>
 
       {/* Profile Card */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
@@ -146,15 +156,16 @@ export default function MiPerfilTab() {
                 <span className="text-white text-2xl font-bold">{initials}</span>
               </div>
             </div>
-            <div className="pb-1">
-              <SectionTitle className="text-lg font-bold text-[var(--text-primary)] capitalize">{profile.username || "Usuario"}</SectionTitle>
+            {/* Debajo de la franja: con `items-end` el nombre quedaba tapado. */}
+            <div className="min-w-0 self-start pt-11">
+              <CardTitle className="capitalize">{profile.username || "Usuario"}</CardTitle>
               <span className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
-                profile.role === "admin" ? "bg-primary/10 text-primary" :
-                profile.role === "cajero" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" :
-                "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
+                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-semibold",
+                profile.role === "admin" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" :
+                profile.role === "cajero" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" :
+                "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]"
               )}>
-                <Shield className="h-3 w-3" />
+                <Shield className="h-4 w-4" />
                 {profile.role === "admin" ? "Administrador" :
                  profile.role === "cajero" ? "Cajero" :
                  profile.role === "almacenero" ? "Almacenero" : profile.role}
@@ -167,51 +178,51 @@ export default function MiPerfilTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Username */}
               <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nombre</label>
                 {editMode ? (
-                  <input
-                    type="text"
-                    value={profile.username}
-                    onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                  />
+                  <Field label="Nombre" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
+                    <input
+                      type="text"
+                      value={profile.username}
+                      onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
+                      className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                  </Field>
                 ) : (
-                  <p className="text-sm font-medium text-[var(--text-primary)] capitalize px-3 py-2.5">{profile.username || "—"}</p>
+                  <>
+                    <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nombre</span>
+                    <p className="text-sm font-medium text-[var(--text-primary)] capitalize px-3 py-2.5">{profile.username || "—"}</p>
+                  </>
                 )}
               </div>
 
               {/* Email (read-only) */}
               <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
-                  <Mail className="h-3 w-3" /> Correo electrónico
-                </label>
+                <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                  <Mail className="h-4 w-4" /> Correo electrónico
+                </span>
                 <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5">{profile.email || "—"}</p>
               </div>
 
               {/* Phone */}
               <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
-                  <Phone className="h-3 w-3" /> Teléfono
-                </label>
                 {editMode ? (
-                  <input
-                    type="tel"
-                    value={profile.phone}
-                    onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
-                    placeholder="+51 999 999 999"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                  />
+                  <Field label={<><Phone className="h-4 w-4 inline mr-1.5" />Teléfono</>} labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                    <input
+                      type="tel"
+                      value={profile.phone}
+                      onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
+                      placeholder="+51 999 999 999"
+                      className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                  </Field>
                 ) : (
-                  <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5">{profile.phone || "No registrado"}</p>
+                  <>
+                    <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                      <Phone className="h-4 w-4" /> Teléfono
+                    </span>
+                    <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5">{profile.phone || "No registrado"}</p>
+                  </>
                 )}
-              </div>
-
-              {/* Role (read-only) */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
-                  <Shield className="h-3 w-3" /> Rol
-                </label>
-                <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5 capitalize">{profile.role}</p>
               </div>
             </div>
 
@@ -222,14 +233,14 @@ export default function MiPerfilTab() {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className={button({ variant: "accent", className: "h-12 rounded-xl" })}
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Guardar
                   </button>
                   <button
                     onClick={() => setEditMode(false)}
-                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+                    className={button({ variant: "ghost", className: "h-12 rounded-xl" })}
                   >
                     Cancelar
                   </button>
@@ -237,7 +248,7 @@ export default function MiPerfilTab() {
               ) : (
                 <button
                   onClick={() => setEditMode(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                  className={button({ variant: "secondary", className: "h-12 rounded-xl" })}
                 >
                   Editar perfil
                 </button>
@@ -256,61 +267,58 @@ export default function MiPerfilTab() {
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6">
         <div className="flex items-center gap-2 mb-4">
           <Key className="h-5 w-5 text-[var(--text-secondary)]" />
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Seguridad</CardTitle>
+          <CardTitle>Seguridad</CardTitle>
         </div>
 
         {!showPasswordForm ? (
           <button
             onClick={() => setShowPasswordForm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+            className={button({ variant: "secondary", className: "h-12 rounded-xl" })}
           >
             <Key className="h-4 w-4" />
             Cambiar contraseña
           </button>
         ) : (
           <div className="space-y-3 max-w-sm">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Contraseña actual</label>
+            <Field label="Contraseña actual" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nueva contraseña</label>
+            </Field>
+            <Field label="Nueva contraseña" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Confirmar contraseña</label>
+            </Field>
+            <Field label="Confirmar contraseña" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
-            </div>
+            </Field>
             {passwordError && (
-              <p className="text-xs text-[var(--data-error-500)] font-medium">{passwordError}</p>
+              <p className="text-sm text-[var(--data-error-500)] font-medium">{passwordError}</p>
             )}
             <div className="flex items-center gap-3 pt-1">
               <button
                 onClick={handlePasswordChange}
                 disabled={passwordSaving}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className={button({ variant: "accent", className: "h-12 rounded-xl" })}
               >
                 {passwordSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
                 Cambiar
               </button>
               <button
                 onClick={() => { setShowPasswordForm(false); setPasswordError(""); }}
-                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+                className={button({ variant: "ghost", className: "h-12 rounded-xl" })}
               >
                 Cancelar
               </button>

@@ -46,7 +46,7 @@ export async function POST(
         return { error: "Oferta no encontrada", code: 404 };
       }
       if (offer.partnerId !== session.partnerId) {
-        return { error: "Esta oferta no es para vos", code: 403 };
+        return { error: "Esta oferta no es para ti", code: 403 };
       }
       if (offer.status !== "pending") {
         return { error: `Oferta ya está en estado: ${offer.status}`, code: 409 };

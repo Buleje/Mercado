@@ -9,6 +9,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { emitirBoleta } from "@/lib/integrations/sunat";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { limaDateKey } from "@/lib/utils";
 
 /**
  * POST /api/invoices/boleta
@@ -84,7 +85,7 @@ async function boletaHandler(
       serie,
       correlativo,
       numero,
-      fechaEmision: new Date().toISOString().slice(0, 10),
+      fechaEmision: limaDateKey(),
       moneda: "PEN",
       emisor: {
         ruc: process.env.SUNAT_RUC ?? "00000000000",
@@ -117,7 +118,7 @@ async function boletaHandler(
       // campo final. Si AUTH_SECRET no esta disponible se emite sin firma
       // y se loggea warn para alertar al operador.
       qrData: (() => {
-        const qrPayload = `${process.env.SUNAT_RUC ?? "00000000000"}|03|${serie}|${correlativo}|${igv.toFixed(2)}|${total.toFixed(2)}|${new Date().toISOString().slice(0, 10)}|${clienteDocTipo === "DNI" ? "1" : "6"}|${clienteDocNumero ?? "00000000"}`;
+        const qrPayload = `${process.env.SUNAT_RUC ?? "00000000000"}|03|${serie}|${correlativo}|${igv.toFixed(2)}|${total.toFixed(2)}|${limaDateKey()}|${clienteDocTipo === "DNI" ? "1" : "6"}|${clienteDocNumero ?? "00000000"}`;
         const secret = process.env.AUTH_SECRET;
         if (!secret) {
           logger.warn("[invoices/boleta] AUTH_SECRET no configurado — QR emitido sin firma HMAC");

@@ -65,10 +65,14 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
     // read-only) los adicionales de esa tienda sin depender del header reescrito.
     const session = await tryAdmin(req);
     const storeSlugParam = new URL(req.url).searchParams.get("storeSlug");
-    const tenantId = session
-      ? session.tenantId
-      : storeSlugParam
-        ? await resolveTenantSlugToId(storeSlugParam)
+    // 2026-10-10: `?storeSlug=` gana a la sesión. Un admin logueado que miraba la home
+    // recibía 0 adicionales (los buscaba en SU negocio) y el «+» agregaba el pollo sin
+    // abrir «Arma tu pedido». La lectura por slug ya era pública; la sesión sigue
+    // ganándole al header (que es lo que protegía el arreglo de 2026-05-06).
+    const tenantId = storeSlugParam
+      ? await resolveTenantSlugToId(storeSlugParam)
+      : session
+        ? session.tenantId
         : await resolveTenantFromHeaders(req);
 
     const groups = await prisma.productModifierGroup.findMany({

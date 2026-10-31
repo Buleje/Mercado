@@ -17,7 +17,7 @@ import { runSunatWorker } from "@/lib/sunat/invoice-worker";
 import { logger } from "@/lib/logger";
 import { withCronHealth } from "@/lib/cron/with-cron-health";
 
-export const GET = withCronHealth("sunat-retry", async (req: NextRequest) => {
+export const GET = withCronHealth("sunat-retry", async (_req: NextRequest) => {
   // Obtener todos los tenants con configuración SUNAT activa
   const configs = await prisma.tenantSunatConfig.findMany({
     select: { tenantId: true },

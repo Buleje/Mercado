@@ -16,6 +16,7 @@
  * Vista read-only de la matriz definida en lib/auth/role-permissions.ts.
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Users,
@@ -41,7 +42,7 @@ import { cn } from "@/lib/utils";
 const ACCESS_META: Record<RbacAccess, { icon: typeof Check; cls: string; label: string }> = {
   full: {
     icon: Check,
-    cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]",
     label: "Acceso total",
   },
   write: {
@@ -160,7 +161,7 @@ export function PermissionsTab() {
   const toggleGroup = useCallback((group: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
-      next.has(group) ? next.delete(group) : next.add(group);
+      if (next.has(group)) next.delete(group); else next.add(group);
       return next;
     });
   }, []);
@@ -199,26 +200,27 @@ export function PermissionsTab() {
   return (
     <div className="space-y-6">
       {/* ─── Info banner ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start gap-3 rounded-2xl border-2 border-sky-300/60 bg-sky-50 px-5 py-4 dark:border-sky-700/40 dark:bg-sky-500/10">
+      <div className="flex flex-col sm:flex-row items-start gap-3 rounded-2xl border border-sky-300/60 bg-sky-50 px-5 py-4 dark:border-sky-700/40 dark:bg-sky-500/10">
         <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
           <Shield className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="font-display text-sm font-extrabold text-sky-900 dark:text-sky-100">
-            Vista documental — los cambios requieren PR
-          </p>
-          <p className="text-xs text-sky-700 dark:text-sky-300 mt-0.5">
-            La matriz refleja la política vigente en{" "}
-            <code className="font-mono">lib/auth/role-permissions.ts</code>. No hay
-            UI para rotar permisos en caliente — eso reduce superficie de ataque y
-            deja todo cambio trazable en git.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-display text-sm font-extrabold text-sky-900 dark:text-sky-100">
+              Solo lectura: los cambios van por PR
+            </p>
+            <InfoTip
+              title="Matriz de permisos"
+              what={<span>Refleja la política vigente en lib/auth/role-permissions.ts. No hay pantalla para cambiar permisos en caliente: así hay menos superficie de ataque y cada cambio queda en git.</span>}
+              side="bottom"
+            />
+          </div>
         </div>
         <a
           href="https://github.com/Buleje/Mercado/blob/master/bodega-san-martin/lib/auth/role-permissions.ts"
           target="_blank"
           rel="noreferrer"
-          className="shrink-0 inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-sky-300/60 bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-sky-700 hover:bg-sky-100 dark:border-sky-700/40 dark:text-sky-300 dark:hover:bg-sky-500/20"
+          className="shrink-0 inline-flex h-11 items-center gap-1.5 rounded-xl border border-sky-300/60 bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-sky-700 hover:bg-sky-100 dark:border-sky-700/40 dark:text-sky-300 dark:hover:bg-sky-500/20"
         >
           <FileText className="h-4 w-4" aria-hidden />
           Ver código
@@ -232,7 +234,7 @@ export function PermissionsTab() {
           onClick={expandAll}
           disabled={!allCollapsed && collapsedGroups.size === 0}
           title="Expandir todo"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <Maximize2 className="h-4 w-4" aria-hidden />
           Expandir todo
@@ -241,14 +243,14 @@ export function PermissionsTab() {
           onClick={collapseAll}
           disabled={allCollapsed}
           title="Colapsar todo"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <Minimize2 className="h-4 w-4" aria-hidden />
           Colapsar todo
         </button>
         <button
           onClick={exportMatrixCSV}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV matriz
@@ -284,7 +286,7 @@ export function PermissionsTab() {
             </p>
             <div className="mt-1.5 flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               <span className="inline-flex items-center gap-0.5" title={`${s.full} acceso total`}>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
                 {s.full}
               </span>
               <span className="inline-flex items-center gap-0.5" title={`${s.write} read+write`}>
@@ -322,7 +324,7 @@ export function PermissionsTab() {
             onChange={(e) => setFilterRaw(e.target.value)}
             placeholder="Filtrar recurso o grupo…"
             aria-label="Filtrar matriz"
-            className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
       </div>
@@ -360,7 +362,7 @@ export function PermissionsTab() {
             </p>
             <button
               onClick={() => setFilterRaw("")}
-              className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+              className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
             >
               Limpiar filtro
             </button>
@@ -461,24 +463,22 @@ export function PermissionsTab() {
             <FileText className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1 min-w-0">
-            <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              La matriz vive en código, no en DB
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)] mt-1">
-              Cualquier cambio de permisos se hace editando{" "}
-              <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs font-mono">
-                lib/auth/role-permissions.ts
-              </code>{" "}
-              y queda en el git log. Ventaja: cada cambio es revisado por un humano
-              antes de merge y trazable indefinidamente. No hay UI para rotar
-              permisos en caliente — eso reduce superficie de ataque.
-            </p>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                Historial de cambios
+              </h3>
+              <InfoTip
+                title="Historial de cambios"
+                what={<span>Los permisos viven en el código (lib/auth/role-permissions.ts), no en la base de datos. Cada cambio lo revisa una persona antes de unirse y queda en el git log.</span>}
+                side="bottom"
+              />
+            </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <a
                 href="https://github.com/Buleje/Mercado/commits/master/bodega-san-martin/lib/auth/role-permissions.ts"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+                className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
               >
                 <FileText className="h-4 w-4" aria-hidden />
                 Ver historial git
@@ -486,7 +486,7 @@ export function PermissionsTab() {
               </a>
               <a
                 href="/superadmin/activity"
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+                className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
               >
                 <FileText className="h-4 w-4" aria-hidden />
                 Ver audit log de runtime
@@ -497,18 +497,19 @@ export function PermissionsTab() {
       </section>
 
       {/* ─── Roles custom (no disponible) ────────────────────────── */}
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 text-center">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 text-center">
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
           <Users className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
         </div>
         <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
           Roles personalizados no disponibles
         </p>
-        <p className="text-xs text-[var(--text-tertiary)] mt-1 max-w-md mx-auto">
-          La plataforma usa los 6 roles canónicos. Roles custom por tenant
-          aumentarían la superficie de auditoría sin beneficio claro. Si necesitás
-          un permiso específico, agregalo al rol existente.
-        </p>
+        <InfoTip
+          title="Roles personalizados"
+          what="La plataforma usa 6 roles fijos. Roles propios por negocio ampliarían la superficie de auditoría sin beneficio claro."
+          affects="Si necesitas un permiso específico, agrégalo al rol existente."
+          side="top"
+        />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
 import { withRlsTx } from "@/lib/prisma-rls";
 import { logger } from "@/lib/logger";
 import { enqueueActivityLog, type ActivityLogJobData } from "@/lib/queue/queues";
+import { errorSinDatos } from "@/lib/error-sin-datos";
 
 export type ActivityLogEntry = {
   id: string;
@@ -17,6 +17,12 @@ export type ActivityLogEntry = {
 /**
  * Write an activity log entry directly to the database (synchronous path).
  * This is the original function — kept as-is for backward compatibility.
+ *
+ * Nunca tira, salvo `opts.tirar`: quien TIENE que saber si el renglón quedó
+ * (la auditoría del libro CTP, que reintenta) lo pide. Sin la opción, un fallo
+ * ya no se calla: se loguea. Medido 23-09: 8 cobros a la vez sobre la misma
+ * corrida dejaron 13 de 16 renglones — la transacción del log no conseguía
+ * conexión mientras las otras esperaban el lock — y nada lo decía.
  */
 export async function logActivity(
   action: string,
@@ -26,6 +32,7 @@ export async function logActivity(
   user = "admin",
   requestId?: string,
   tenantId?: string,
+  opts: { tirar?: boolean } = {},
 ): Promise<void> {
   try {
     // P1-1 multi-tenant: tenantId omitido => WARN observable.
@@ -41,8 +48,16 @@ export async function logActivity(
     await withRlsTx(effectiveTenantId, (tx) => tx.activityLog.create({
       data: { action, entity, entityId, detail, user, tenantId: effectiveTenantId },
     }));
-  } catch {
-    // Non-critical: never let logging errors break the caller
+  } catch (err) {
+    if (opts.tirar) throw err;
+    // Non-critical: never let logging errors break the caller — but say it.
+    logger.warn("[activity] no se pudo escribir el renglón", {
+      action,
+      entity,
+      entityId,
+      tenantId: tenantId ?? "__unknown__",
+      error: errorSinDatos(err),
+    });
   }
 }
 

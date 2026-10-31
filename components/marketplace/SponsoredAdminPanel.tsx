@@ -20,7 +20,9 @@ import {
   Eye,
   MousePointerClick,
   ShoppingCart,
+  ChevronDown,
 } from "lucide-react";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
 import SponsoredCreateModal from "@/components/marketplace/SponsoredCreateModal";
 
@@ -46,6 +48,8 @@ interface SponsoredBoost {
 
 interface Props {
   storeSlug: string;
+  /** Clave para plegar el bloque y recordarlo (arranca plegado); sin ella va siempre abierto. */
+  plegable?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -98,9 +102,9 @@ function ActionButtons({
           disabled={isLoading}
           aria-label="Pausar boost"
           title="Pausar"
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 disabled:opacity-50 transition-colors"
+          className="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 disabled:opacity-50 transition-colors"
         >
-          {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pause className="h-3.5 w-3.5" />}
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pause className="h-4 w-4" />}
         </button>
       )}
       {canResume && (
@@ -109,9 +113,9 @@ function ActionButtons({
           disabled={isLoading}
           aria-label="Reanudar boost"
           title="Reanudar"
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 hover:bg-green-100 disabled:opacity-50 transition-colors"
+          className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 hover:bg-green-100 disabled:opacity-50 transition-colors"
         >
-          {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
         </button>
       )}
       {canCancel && (
@@ -120,9 +124,9 @@ function ActionButtons({
           disabled={isLoading}
           aria-label="Cancelar boost"
           title="Cancelar"
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-red-400 hover:bg-red-100 disabled:opacity-50 transition-colors"
+          className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-red-400 hover:bg-red-100 disabled:opacity-50 transition-colors"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-4 w-4" />
         </button>
       )}
     </div>
@@ -153,11 +157,11 @@ function BoostCard({
           <p className="text-sm font-bold text-[var(--text-primary)] dark:text-white line-clamp-2 leading-tight">
             {boost.productName}
           </p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-gray-500 mt-0.5">
+          <p className="text-sm text-[var(--text-tertiary)] dark:text-gray-500 mt-0.5">
             {formatDate(boost.startDate)} – {formatDate(boost.endDate)}
           </p>
         </div>
-        <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0", status.className)}>
+        <span className={cn("px-2 py-0.5 rounded-full text-sm font-bold shrink-0", status.className)}>
           {status.label}
         </span>
       </div>
@@ -171,8 +175,8 @@ function BoostCard({
         ].map(({ icon: Icon, label, value }) => (
           <div key={label} className="text-center rounded-xl bg-[var(--surface-alt)] dark:bg-gray-800 py-2">
             <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)] mx-auto mb-0.5" />
-            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-white">{value}</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500">{label}</p>
+            <p className="text-sm font-bold text-[var(--text-primary)] dark:text-white">{value}</p>
+            <p className="text-sm text-[var(--text-tertiary)] dark:text-gray-500">{label}</p>
           </div>
         ))}
       </div>
@@ -180,11 +184,11 @@ function BoostCard({
       {/* Budget + actions */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400">
+          <p className="text-sm text-[var(--text-secondary)] dark:text-gray-400">
             Gasto: <strong className="text-[var(--text-primary)] dark:text-white">{fmt(boost.spentPen)}</strong>
             {" "}/ {fmt(boost.maxBudgetPen)}
           </p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500">
+          <p className="text-sm text-[var(--text-tertiary)] dark:text-gray-500">
             Puja: {fmt(boost.bidAmount)}/1000 · CTR: {ctr(boost.clicks, boost.impressions)}
           </p>
         </div>
@@ -196,7 +200,9 @@ function BoostCard({
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function SponsoredAdminPanel({ storeSlug }: Props) {
+export default function SponsoredAdminPanel({ storeSlug, plegable }: Props) {
+  const [guardado, setGuardado] = useLocalStorage<boolean>(plegable ?? "inicio:sin-plegar", false);
+  const abierto = !plegable || guardado;
   const [boosts, setBoosts] = useState<SponsoredBoost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -256,29 +262,50 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
 
   return (
     <>
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-2">
+        <div className={cn("flex min-h-12 items-center justify-between gap-2 px-4 py-2", abierto && "border-b border-[var(--rule-soft)]")}>
+          <div className="flex min-w-0 items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary shrink-0" />
-            <h2 className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Productos patrocinados</h2>
-            {boosts.length > 0 && (
-              <span className="text-xs text-[var(--text-tertiary)] dark:text-gray-500">
-                · {boosts.length} boost{boosts.length !== 1 ? "s" : ""}
-              </span>
+            {plegable ? (
+              <button
+                type="button"
+                onClick={() => setGuardado(!abierto)}
+                aria-expanded={abierto}
+                className="flex min-h-12 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              >
+                <h2 className="text-sm font-bold text-[var(--text-primary)]">Productos patrocinados</h2>
+                {!loading && !error && (
+                  <span className="text-sm text-[var(--text-secondary)]">
+                    · {boosts.length === 0 ? "ninguno" : `${boosts.length} boost${boosts.length !== 1 ? "s" : ""}`}
+                  </span>
+                )}
+                <ChevronDown className={cn("h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform", abierto && "rotate-180")} aria-hidden />
+              </button>
+            ) : (
+              <>
+                <h2 className="text-sm font-bold text-[var(--text-primary)]">Productos patrocinados</h2>
+                {boosts.length > 0 && (
+                  <span className="text-sm text-[var(--text-tertiary)]">
+                    · {boosts.length} boost{boosts.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </>
             )}
           </div>
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nuevo boost
-          </button>
+          {abierto && (
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="flex h-12 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" />
+              Nuevo boost
+            </button>
+          )}
         </div>
 
         {/* Body */}
-        <div className="p-4">
+        {abierto && <div className="p-4">
           {/* Loading */}
           {loading && (
             <div className="space-y-3">
@@ -304,12 +331,12 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
               <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-gray-400">
                 Aun no tienes productos patrocinados
               </p>
-              <p className="text-xs text-[var(--text-tertiary)] dark:text-gray-500 mt-1">
+              <p className="text-sm text-[var(--text-tertiary)] dark:text-gray-500 mt-1">
                 Crea un boost para destacar tus productos en el marketplace.
               </p>
               <button
                 onClick={() => setCreateOpen(true)}
-                className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+                className="mt-4 inline-flex h-12 items-center gap-2 px-4 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Crear primer boost
@@ -335,7 +362,7 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
                       {["Producto", "Estado", "Fechas", "Impresiones", "Clicks", "Ventas", "Gasto / Max", "Acciones"].map((h) => (
-                        <th key={h} className="pb-2 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] dark:text-gray-500 pr-4 last:pr-0">
+                        <th key={h} className="pb-2 text-left text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)] dark:text-gray-500 pr-4 last:pr-0">
                           {h}
                         </th>
                       ))}
@@ -350,29 +377,29 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
                             <p className="font-semibold text-[var(--text-primary)] dark:text-white line-clamp-1 max-w-36">
                               {b.productName}
                             </p>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500">
+                            <p className="text-sm text-[var(--text-tertiary)] dark:text-gray-500">
                               Puja: {fmt(b.bidAmount)} · CTR: {ctr(b.clicks, b.impressions)}
                             </p>
                           </td>
                           <td className="py-3 pr-4">
-                            <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", status.className)}>
+                            <span className={cn("px-2 py-0.5 rounded-full text-sm font-bold", status.className)}>
                               {status.label}
                             </span>
                           </td>
-                          <td className="py-3 pr-4 text-xs text-[var(--text-secondary)] dark:text-gray-400 whitespace-nowrap">
+                          <td className="py-3 pr-4 text-sm text-[var(--text-secondary)] dark:text-gray-400 whitespace-nowrap">
                             {formatDate(b.startDate)}<br />
                             {formatDate(b.endDate)}
                           </td>
-                          <td className="py-3 pr-4 text-xs font-semibold text-[var(--text-primary)] dark:text-white">
+                          <td className="py-3 pr-4 text-sm font-semibold text-[var(--text-primary)] dark:text-white">
                             {b.impressions.toLocaleString("es-PE")}
                           </td>
-                          <td className="py-3 pr-4 text-xs font-semibold text-[var(--text-primary)] dark:text-white">
+                          <td className="py-3 pr-4 text-sm font-semibold text-[var(--text-primary)] dark:text-white">
                             {b.clicks.toLocaleString("es-PE")}
                           </td>
-                          <td className="py-3 pr-4 text-xs font-semibold text-[var(--text-primary)] dark:text-white">
+                          <td className="py-3 pr-4 text-sm font-semibold text-[var(--text-primary)] dark:text-white">
                             {b.conversions.toLocaleString("es-PE")}
                           </td>
-                          <td className="py-3 pr-4 text-xs text-[var(--text-secondary)] dark:text-gray-400 whitespace-nowrap">
+                          <td className="py-3 pr-4 text-sm text-[var(--text-secondary)] dark:text-gray-400 whitespace-nowrap">
                             {fmt(b.spentPen)} / {fmt(b.maxBudgetPen)}
                           </td>
                           <td className="py-3">
@@ -386,7 +413,7 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
               </div>
             </>
           )}
-        </div>
+        </div>}
       </div>
 
       {/* Modal crear boost */}

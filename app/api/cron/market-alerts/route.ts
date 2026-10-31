@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/create-notification";
 import { ProductsDB } from "@/lib/db/products.db";
 import { timingSafeCompare } from "@/lib/timing-safe";
+import { limaDateKey } from "@/lib/utils";
 
 /**
  * GET /api/cron/market-alerts
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
           severity: "HIGH",
           title: `${outOfStock.length} productos agotados`,
           body: `Productos sin stock: ${outOfStock.slice(0, 5).map(p => p.name).join(", ")}${outOfStock.length > 5 ? ` y ${outOfStock.length - 5} más` : ""}`,
-          entityId: `out-of-stock-${new Date().toISOString().slice(0, 10)}`,
+          entityId: `out-of-stock-${limaDateKey()}`,
           actionUrl: `/admin?tab=inventario`,
           actionLabel: "Reabastecer",
         });
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
           severity: "MEDIUM",
           title: `${lowMargin.length} productos con margen muy bajo`,
           body: `Estos productos ganan menos del 10%: ${lowMargin.slice(0, 3).map(p => `${p.name} (${(((p.price! - p.costPrice!) / p.price!) * 100).toFixed(0)}%)`).join(", ")}. Considera subir precios.`,
-          entityId: `low-margin-${new Date().toISOString().slice(0, 10)}`,
+          entityId: `low-margin-${limaDateKey()}`,
           actionUrl: `/admin?tab=productos`,
           actionLabel: "Revisar precios",
         });
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
           severity: "MEDIUM",
           title: `${inactiveCount} clientes no compran hace +30 días`,
           body: `Envíales un mensaje por WhatsApp o un cupón para que vuelvan. Cada cliente recuperado puede generar S/15+ en ventas.`,
-          entityId: `inactive-customers-${new Date().toISOString().slice(0, 10)}`,
+          entityId: `inactive-customers-${limaDateKey()}`,
           actionUrl: `/admin?tab=clientes`,
           actionLabel: "Ver clientes inactivos",
         });

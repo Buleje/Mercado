@@ -61,13 +61,13 @@ export async function POST(req: NextRequest) {
         ? Math.round(((oldPrice - price) / oldPrice) * 100)
         : null;
 
-    const prompt = `Generá copy para un banner promocional de bodega/minimarket en Perú.
+    const prompt = `Genera copy para un banner promocional de bodega/minimarket en Perú.
 Producto: ${productName}${category ? ` (categoría: ${category})` : ""}
 ${price !== null && price !== undefined ? `Precio: S/ ${price.toFixed(2)}` : ""}
 ${discount ? `Descuento: ${discount}% off` : ""}
 Tono: ${TONE_HINTS[tone]}
 
-Devolvé EXCLUSIVAMENTE un JSON válido con esta forma:
+Devuelve EXCLUSIVAMENTE un JSON válido con esta forma:
 {"productNames":["p1","p2","p3"],"badges":["b1","b2","b3"],"ctas":["c1","c2","c3"]}
 
 Reglas:
@@ -75,7 +75,7 @@ Reglas:
 - "badges": tag corto de impacto, máx 12 caracteres. Ejemplos: "-30%", "2x1", "OFERTA", "NUEVO", "AGOTANDO".
 - "ctas": texto del botón de compra, máx 18 caracteres. Ejemplos: "Comprar ya", "Aprovechar", "Llevarlo", "Lo quiero".
 - Usar emojis solo si el tono lo amerita (max 1 por línea).
-- No inventes precios. Mantené español PE natural.
+- No inventes precios. Mantén español PE natural.
 
 Solo el JSON, sin texto adicional, sin markdown fences.`;
 

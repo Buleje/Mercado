@@ -10,6 +10,10 @@ import {
 } from "react";
 import { type HomepageContent, DEFAULT_HOMEPAGE, NEW_STORE_DEFAULTS } from "@/lib/homepage-content";
 import { cachedJson } from "@/lib/client-cache-fetch";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
+import { leerConfigPedidos } from "@/lib/tienda-cliente/config";
+import type { ConfigPedidosCliente } from "@/lib/tienda-cliente/contrato";
 
 export type StoreMode = "whatsapp" | "checkout";
 
@@ -87,6 +91,8 @@ export type StoreTheme = {
   welcomePopupCoupon?: string;
   // CSS personalizado
   customCSS?: string;
+  /** «Cómo te piden» (Google, celular, ubicación, pedido como imagen); ya con defaults. */
+  pedidosCliente?: ConfigPedidosCliente;
   // Banners promocionales por categoría (Oferta de Temporada custom)
   categoryBanners?: Record<string, {
     image?: string;
@@ -170,15 +176,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             return "main";
           })()
         : "main";
-    const isMainTenant = tenantSlug === "main";
+    const isMainTenant = esMarketplace(tenantSlug);
 
     // cachedJson con clave por tenant (`?_t=`, el server lo ignora): colapsa el
     // doble-invoke de StrictMode (dev) sin mezclar settings entre tenants en
     // navegaciones /t/[slug]. Mantiene el header x-tenant-id. Perf 2026-05-29.
-    cachedJson<Record<string, unknown>>(`/api/settings?_t=${encodeURIComponent(tenantSlug)}`, 30_000, {
-      cache: "no-store",
-      headers: { "x-tenant-id": tenantSlug },
-    })
+    // En el panel decide la sesión (JWT > header, `resolveTenantIdForRoute`):
+    // la misma clave que useAdminAuth, use-vistas-permitidas y el Onboarding,
+    // así el panel lee Ajustes UNA vez al abrir (medido 16-10: eran 3-4).
+    const enPanel = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+    (enPanel
+      ? cachedJson<Record<string, unknown>>("/api/settings", 30_000)
+      : cachedJson<Record<string, unknown>>(`/api/settings?_t=${encodeURIComponent(tenantSlug)}`, 30_000, {
+          cache: "no-store",
+          headers: { "x-tenant-id": tenantSlug },
+        }))
       .then((data) => {
         if (data) {
           if (data.mode) setModeState(data.mode as StoreMode);
@@ -253,6 +265,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
               customCSS: raw.customCSS as string | undefined,
               categoryBanners: raw.categoryBanners as StoreTheme["categoryBanners"],
               socialLinks: raw.socialLinks as StoreTheme["socialLinks"],
+              pedidosCliente: leerConfigPedidos(raw),
             });
           }
         }
@@ -276,7 +289,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         : "main";
     await fetch("/api/settings", {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
+      headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
       body: JSON.stringify({ mode: m }),
     });
     setModeState(m);

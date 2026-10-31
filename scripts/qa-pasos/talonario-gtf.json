@@ -1,0 +1,12 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+  "pasos": [
+    {"esperar": "role=button[name=\"Acciones de la GTF 019-001-0000771\"]"},
+    {"click": "role=button[name=\"Acciones de la GTF 019-001-0000771\"]"},
+    {"click": "role=menuitem[name=/Imprimir en talonario/]"},
+    {"esperar": "svg[data-plantilla-talonario]"},
+    {"esperar": 2500},
+    {"eval": "JSON.stringify({ amarillos: document.querySelectorAll('[data-no-entra]').length })"}
+  ]
+}

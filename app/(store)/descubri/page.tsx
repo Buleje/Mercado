@@ -22,14 +22,14 @@ import { DescubriCTAFinal } from "@/components/descubri/DescubriCTAFinal";
 
 export const metadata: Metadata = {
   title:
-    "Descubrí todo lo que Buleje puede hacer por tu hogar — Ciudad Constitución, Pasco",
+    "Descubre todo lo que Buleje puede hacer por tu hogar — Ciudad Constitución, Pasco",
   description:
     "10 features nuevas gratis: Comparar productos, Bodega al Mes, Gift Cards, Socio Buleje, En Vivo, Asistente IA, Seguimiento en tiempo real, 1-Click Buy y Vende en Buleje.",
   alternates: {
     canonical: "https://www.buleje.pe/descubri",
   },
   openGraph: {
-    title: "Descubrí Buleje — 10 features para tu hogar",
+    title: "Descubre Buleje — 10 features para tu hogar",
     description:
       "Ciudad Constitución, Pasco, ahora en una sola app. De la bodega del barrio al mundo digital.",
     url: "https://www.buleje.pe/descubri",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Descubrí Buleje — 10 features para tu hogar",
+    title: "Descubre Buleje — 10 features para tu hogar",
     description:
       "10 features nuevas gratis: Comparar, Gift Cards, Socio, En Vivo, Asistente IA y más.",
   },

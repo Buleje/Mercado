@@ -9,6 +9,8 @@
 //
 // Usado por components/admin/ImageUpload.tsx y components/admin/ProductsAdminTab.tsx.
 
+import { descartarEsperado } from "@/lib/errores/sin-dato";
+
 // ─── Global drag guard ────────────────────────────────────────────────────────
 
 let dragGuardRefCount = 0;
@@ -63,6 +65,14 @@ const COMPRESS_MAX_DIM = 1600;
 const COMPRESS_QUALITY = 0.82;
 
 /**
+ * Lo único que aceptan `/api/upload` y `/api/admin/forestal/fotos`: lo demás
+ * hay que convertirlo o se rechaza. Exportado para que un consumidor pueda
+ * avisar ANTES de subir si el archivo no va a poder convertirse (HEIC en un
+ * navegador que no lo decodifica) en vez de dejar que el servidor lo rechace.
+ */
+export const TIPOS_QUE_ACEPTA_EL_SERVIDOR = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+/**
  * Comprime una imagen client-side si supera 1.5MB. Redimensiona a max 1600px
  * del lado mayor y exporta a WebP con quality 0.82. Si no aplica (SVG, ya
  * pequeña, server-side, o falló) devuelve el archivo original.
@@ -71,14 +81,35 @@ const COMPRESS_QUALITY = 0.82;
  *  - Foto de teléfono 4MB JPG → ~700KB WebP (5-6× reducción).
  *  - Upload sobre 4G de Pucallpa pasa de ~8s a ~1.5s.
  *  - Sharp en el server hace menos trabajo, devuelve antes.
+ *
+ * El tamaño NO es la única razón para pasar por el canvas (2026-09-15, al subir
+ * la foto del fotocheck desde el celular): un iPhone entrega HEIC, que el
+ * servidor rechaza con «Tipo no permitido» — y una HEIC de menos de 1,5 MB
+ * salía de acá intacta, así que la subida moría siempre. Ahora todo lo que el
+ * servidor no acepta se convierte, pese el peso que pese; si el navegador no
+ * sabe decodificarlo (Chrome con HEIC), se devuelve el original y el error del
+ * servidor es el que manda.
  */
 export async function compressIfLarge(file: File): Promise<File> {
   if (file.type === "image/svg+xml") return file;
-  if (file.size <= COMPRESS_THRESHOLD_BYTES) return file;
+  const debeConvertirse = !TIPOS_QUE_ACEPTA_EL_SERVIDOR.has(file.type);
+  if (file.size <= COMPRESS_THRESHOLD_BYTES && !debeConvertirse) return file;
   if (typeof window === "undefined" || typeof document === "undefined") return file;
 
   try {
-    const bitmap = await createImageBitmap(file).catch(() => null);
+    /* `resizeWidth` le pide al navegador que achique YA en el decode, en vez de
+       materializar los 12 MP completos (~48 MB en RAM) para recién después
+       dibujarlos achicados en el canvas — la diferencia entre que un celular
+       con poca memoria aguante la foto o se quede pegado. Si el navegador no
+       soporta la opción o no decodifica el formato (p. ej. HEIC), cae al
+       decode normal; si tampoco eso funciona, se sube el original sin comprimir. */
+    const bitmap = await createImageBitmap(file, {
+      resizeWidth: COMPRESS_MAX_DIM,
+      resizeQuality: "high",
+      imageOrientation: "from-image",
+    })
+      .catch(() => createImageBitmap(file))
+      .catch(descartarEsperado);
     if (!bitmap) return file;
     const ratio = Math.min(1, COMPRESS_MAX_DIM / Math.max(bitmap.width, bitmap.height));
     const w = Math.round(bitmap.width * ratio);
@@ -96,7 +127,9 @@ export async function compressIfLarge(file: File): Promise<File> {
     const blob: Blob | null = await new Promise((res) =>
       canvas.toBlob(res, "image/webp", COMPRESS_QUALITY),
     );
-    if (!blob || blob.size >= file.size) return file;
+    // Una foto chica en HEIC puede pesar MÁS al pasar a WebP; igual se manda la
+    // convertida, porque el original ni siquiera entra por la puerta del servidor.
+    if (!blob || (blob.size >= file.size && !debeConvertirse)) return file;
     const baseName = file.name.replace(/\.[^.]+$/, "");
     return new File([blob], `${baseName}.webp`, { type: "image/webp" });
   } catch {

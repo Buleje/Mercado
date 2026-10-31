@@ -14,7 +14,6 @@ import {
   Award,
   Trophy,
   Loader2,
-  ChevronRight,
   TrendingUp,
   TrendingDown,
   Clock,
@@ -26,8 +25,6 @@ import {
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -355,7 +352,7 @@ function HowToEarn() {
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4 text-primary" strokeWidth={2.25} />
           <p className="text-xs font-bold uppercase tracking-wider text-primary">
-            Cómo ganás puntos
+            Cómo ganas puntos
           </p>
         </div>
         <ul className="space-y-2.5 text-sm text-muted">
@@ -384,7 +381,7 @@ function HowToEarn() {
               className="h-4 w-4 shrink-0 mt-0.5 text-primary"
               strokeWidth={2.25}
             />
-            <span>Subí de nivel y desbloqueá descuentos auto</span>
+            <span>Sube de nivel y desbloquea descuentos auto</span>
           </li>
         </ul>
       </div>
@@ -646,7 +643,7 @@ export default function PuntosPage() {
         });
       }
     } catch {
-      setError("No pudimos cargar tus puntos. Intentá de nuevo.");
+      setError("No pudimos cargar tus puntos. Intenta de nuevo.");
     }
     setLoading(false);
   }, []);
@@ -753,7 +750,7 @@ export default function PuntosPage() {
                 Identificate para ver tus puntos
               </h2>
               <p className="text-base text-muted mt-2 leading-relaxed">
-                Iniciá sesión con tu teléfono para acceder a tu programa de
+                Inicia sesión con tu teléfono para acceder a tu programa de
                 fidelidad.
               </p>
             </div>
@@ -1006,7 +1003,7 @@ export default function PuntosPage() {
                 }}
               >
                 <ShoppingCart className="h-4 w-4" strokeWidth={2.5} />
-                Sumá puntos comprando
+                Suma puntos comprando
               </Link>
             </aside>
 
@@ -1106,7 +1103,7 @@ export default function PuntosPage() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent-dark)]">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent-dark)] dark:text-[var(--accent)]">
                         Cerca de desbloquearse
                       </p>
                       <p className="text-base font-extrabold text-[var(--text-primary)] truncate">
@@ -1187,10 +1184,10 @@ export default function PuntosPage() {
                       strokeWidth={1.75}
                     />
                     <p className="text-base font-bold text-[var(--text-primary)]">
-                      Aún no tenés movimientos
+                      Aún no tienes movimientos
                     </p>
                     <p className="text-sm text-muted mt-1">
-                      Hacé tu primer pedido y empezá a sumar puntos.
+                      Haz tu primer pedido y empieza a sumar puntos.
                     </p>
                     <Link
                       href="/tienda"

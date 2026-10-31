@@ -13,6 +13,8 @@
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { startOfLimaDay } from "@/lib/utils";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 export type TodaySummaryPayload = {
   ventas: {
@@ -46,8 +48,11 @@ export const AdminTodaySummaryDB = {
    */
   async getSummaryForTenant(tenantId: string): Promise<TodaySummaryPayload> {
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // 00:00 de Lima (el servidor corre en UTC: la medianoche local caía a las
+    // 19:00 de Lima de ayer y «hoy» mezclaba las ventas de anoche).
+    const startOfDay = new Date(startOfLimaDay(now));
     const yesterdayStart = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000);
+    const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
 
     const [
       todaySales,
@@ -81,9 +86,17 @@ export const AdminTodaySummaryDB = {
       prisma.order.count({
         where: { tenantId, status: "pendiente" },
       }),
-      // Productos con stock bajo (1–5)
+      // Productos con stock bajo: quedan unidades y están en o bajo su mínimo
+      // efectivo (el propio o `Settings.globalMinStock`; 09-10, antes «1–5»
+      // fijo: un producto con mínimo 20 y 12 en stock no salía).
       prisma.product.count({
-        where: { tenantId, active: true, deletedAt: null, stock: { lte: 5, gt: 0 } },
+        where: {
+          tenantId, active: true, deletedAt: null, stock: { gt: 0 },
+          OR: [
+            { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+            { stockMin: null, stock: { lte: minimoGlobal } },
+          ],
+        },
       }),
       // Productos sin stock
       prisma.product.count({

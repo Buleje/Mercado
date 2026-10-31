@@ -6,6 +6,7 @@ import type Stripe from "stripe";
 import { logger } from "@/lib/logger";
 import { enqueueWebhookEvent } from "@/lib/stripe-webhook-queue";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
@@ -302,6 +303,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
           cancelAtPeriodEnd: false,
         },
       });
+      TenantsDB.olvidarPublico(); // la página pública del negocio (/t/<slug>, tenants/resolve) cachea 60 s
       await prisma.activityLog.create({
         data: { action: "subscription_canceled", entity: "tenant", entityId: tenantSlug, detail: "Subscription deleted, downgraded to free", user: "stripe-webhook", tenantId: tenantSlug },
       }).catch((err) => { logger.warn("[Stripe Webhook] activityLog create failed", { tenantSlug, error: String(err) }); });
@@ -334,6 +336,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
           plan: planFromSubscription(sub),
         },
       });
+      TenantsDB.olvidarPublico(); // la página pública del negocio (/t/<slug>, tenants/resolve) cachea 60 s
       break;
     }
 
@@ -370,6 +373,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
             where: { id: failedTenant.id },
             data: { active: false },
           });
+          TenantsDB.olvidarPublico(); // la página pública del negocio (/t/<slug>, tenants/resolve) cachea 60 s
           logger.error("[Stripe] Tenant suspendido por pagos fallidos reiterados", {
             tenantSlug: failedTenant.slug,
             subId,

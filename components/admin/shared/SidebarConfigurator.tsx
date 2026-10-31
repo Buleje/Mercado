@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, Kicker } from "@buleje/design-system";
 import {
   DndContext,
   closestCenter,
@@ -35,10 +35,20 @@ import {
 import { cn } from "@/lib/utils";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
+import type { ModoMenu } from "@/components/admin/layout/sidebar-enlaces";
+import { SelectorModoMenu } from "@/components/admin/shared/SelectorModoMenu";
+import {
+  COLOR_DE_ACENTO,
+  TEMAS_ELEGIBLES,
+  normalizarTema,
+  type SidebarTheme,
+} from "@/components/admin/layout/sidebar-temas";
+import { MuestraTema } from "@/components/admin/layout/MuestraTema";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type SidebarTheme = "light" | "dark" | "cristal" | "shaded" | "buleje";
+/** Vive en sidebar-temas.ts junto con las clases de cada diseño (2026-10-20). */
+export type { SidebarTheme };
 
 export type AccentColor = "teal" | "emerald" | "sky" | "violet" | "amber" | "rose";
 export type Density = "compact" | "normal" | "spacious";
@@ -53,6 +63,8 @@ export interface SidebarExtendedConfig {
   density: Density;
   iconStyle: IconStyle;
   applyToHeader: boolean;
+  /** Por categorías (acordeón) o todos los enlaces a la vista (2026-10-20). */
+  navMode: ModoMenu;
 }
 
 type SidebarConfiguratorProps = {
@@ -65,6 +77,7 @@ type SidebarConfiguratorProps = {
   density?: Density;
   iconStyle?: IconStyle;
   applyToHeader?: boolean;
+  navMode?: ModoMenu;
   allTabs: readonly { id: Tab; label: string; icon: React.ElementType }[];
   allowedTabs: Tab[];
   onSave: (config: SidebarExtendedConfig) => void;
@@ -75,13 +88,16 @@ type SidebarConfiguratorProps = {
 
 // ─── Accent color palette ────────────────────────────────────────────────────
 
+/* El color sale de COLOR_DE_ACENTO (un solo mapa con la barra). El turquesa
+   era «var(--accent)», que con otro acento elegido ya valía ESE acento: la
+   muestra turquesa se pintaba rosa. */
 const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string; ring: string }> = [
-  { id: "teal",    label: "Teal",    hex: "var(--accent)", ring: "ring-teal-400" },
-  { id: "emerald", label: "Verde",   hex: "#10B981", ring: "ring-emerald-400" },
-  { id: "sky",     label: "Cielo",   hex: "#0EA5E9", ring: "ring-sky-400" },
-  { id: "violet",  label: "Violeta", hex: "#8B5CF6", ring: "ring-violet-400" },
-  { id: "amber",   label: "Ámbar",   hex: "#F59E0B", ring: "ring-amber-400" },
-  { id: "rose",    label: "Rosa",    hex: "#F43F5E", ring: "ring-rose-400" },
+  { id: "teal",    label: "Turquesa", hex: COLOR_DE_ACENTO.teal,    ring: "ring-teal-400" },
+  { id: "emerald", label: "Verde",    hex: COLOR_DE_ACENTO.emerald, ring: "ring-emerald-400" },
+  { id: "sky",     label: "Cielo",    hex: COLOR_DE_ACENTO.sky,     ring: "ring-sky-400" },
+  { id: "violet",  label: "Violeta",  hex: COLOR_DE_ACENTO.violet,  ring: "ring-violet-400" },
+  { id: "amber",   label: "Coral",    hex: COLOR_DE_ACENTO.amber,   ring: "ring-amber-400" },
+  { id: "rose",    label: "Rosa",     hex: COLOR_DE_ACENTO.rose,    ring: "ring-rose-400" },
 ];
 
 // ─── Diseños preestablecidos ─────────────────────────────────────────────────
@@ -97,50 +113,20 @@ interface Preset {
   applyToHeader: boolean;
 }
 
+/* 2026-10-20 (Brandon: «en Ejecutivo que estén un poco más separados los
+   enlaces… y puedes añadir otros diseños»): Ejecutivo pasa de compacto a normal
+   (fila 33 → 41 px y 1 → 4 px entre filas) con el turquesa del logo (la
+   plantilla ya lo pedía así, 09-24); Vibrante tiene fondo propio; se suman
+   Mínimo, Bosque y Noche. */
 const PRESETS: Preset[] = [
-  {
-    id: "buleje",
-    label: "Buleje",
-    description: "Editorial slate-deep · teal vibrante · branded total.",
-    // Theme dedicado "buleje" — sidebar branded slate-deep con teal var(--accent)
-    // (color de marca real). Active state usa barra inset teal lateral
-    // = firma editorial Buleje. Render en AdminSidebar.tsx → themeClasses.
-    theme: "buleje",
-    accent: "teal",
-    density: "normal",
-    iconStyle: "monochrome",
-    applyToHeader: true,
-  },
-  {
-    id: "ejecutivo",
-    label: "Ejecutivo",
-    description: "Oscuro elegante, ámbar, monocromo, compacto.",
-    theme: "dark",
-    accent: "amber",
-    density: "compact",
-    iconStyle: "monochrome",
-    applyToHeader: true,
-  },
-  {
-    id: "sereno",
-    label: "Sereno",
-    description: "Fondo claro, azul cielo, amplio y descansado.",
-    theme: "light",
-    accent: "sky",
-    density: "spacious",
-    iconStyle: "colored",
-    applyToHeader: false,
-  },
-  {
-    id: "vibrante",
-    label: "Vibrante",
-    description: "Marca con rosa, íconos coloridos, barra superior teñida.",
-    theme: "cristal",
-    accent: "rose",
-    density: "normal",
-    iconStyle: "colored",
-    applyToHeader: true,
-  },
+  { id: "buleje", label: "Buleje", description: "Azul profundo con turquesa: la marca.", theme: "buleje", accent: "teal", density: "normal", iconStyle: "monochrome", applyToHeader: true },
+  { id: "ejecutivo", label: "Ejecutivo", description: "Grafito sobrio, con más aire.", theme: "dark", accent: "teal", density: "normal", iconStyle: "monochrome", applyToHeader: true },
+  { id: "sereno", label: "Sereno", description: "Claro y amplio, azul cielo.", theme: "light", accent: "sky", density: "spacious", iconStyle: "colored", applyToHeader: false },
+  { id: "vibrante", label: "Vibrante", description: "Morado intenso con rosa.", theme: "vibrante", accent: "rose", density: "normal", iconStyle: "colored", applyToHeader: true },
+  { id: "minimo", label: "Mínimo", description: "Blanco limpio, acento fino.", theme: "minimal", accent: "teal", density: "normal", iconStyle: "monochrome", applyToHeader: false },
+  { id: "arena", label: "Arena", description: "Crema cálido con coral.", theme: "arena", accent: "amber", density: "normal", iconStyle: "colored", applyToHeader: false },
+  { id: "bosque", label: "Bosque", description: "Verde profundo del monte.", theme: "bosque", accent: "emerald", density: "normal", iconStyle: "monochrome", applyToHeader: false },
+  { id: "noche", label: "Noche", description: "Negro con alto contraste.", theme: "noche", accent: "violet", density: "normal", iconStyle: "monochrome", applyToHeader: true },
 ];
 
 // ─── Sortable Category Item ──────────────────────────────────────────────────
@@ -188,9 +174,9 @@ function SortableCategoryItem({
           type="button"
           onClick={onToggleVisible}
           className={cn(
-            "h-9 w-9 rounded-md flex items-center justify-center shrink-0 transition-all",
+            "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 transition-all",
             isVisible
-              ? "bg-primary/20 text-primary hover:bg-primary/30"
+              ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/30"
               : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300",
           )}
           title={isVisible ? "Ocultar módulo" : "Mostrar módulo"}
@@ -215,7 +201,7 @@ function SortableCategoryItem({
         {hasMultipleTabs && (
           <button
             onClick={onToggleExpand}
-            className="p-2 rounded-md hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="p-2 rounded-xl hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
             aria-label="Expandir sub-módulos"
           >
             <ChevronDown
@@ -230,7 +216,7 @@ function SortableCategoryItem({
         <button
           {...attributes}
           {...listeners}
-          className="p-2 rounded-md cursor-grab active:cursor-grabbing hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors touch-none"
+          className="p-2 rounded-xl cursor-grab active:cursor-grabbing hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors touch-none"
           aria-label="Arrastrar para reordenar"
         >
           <GripVertical className="h-4 w-4" />
@@ -251,86 +237,15 @@ function SortableCategoryItem({
   );
 }
 
-// ─── Theme preview card (live) ───────────────────────────────────────────────
-
-function ThemePreview({
-  theme,
-  accent,
-  selected,
-}: {
-  theme: SidebarTheme;
-  accent: AccentColor;
-  selected: boolean;
-}) {
-  const styles: Record<string, { bg: string; text: string; border: string; activeBg: string }> = {
-    cristal: {
-      bg: "bg-[#0b1f2b]",
-      text: "text-white/70",
-      border: "border-white/10",
-      activeBg: "bg-white/10",
-    },
-    shaded: {
-      bg: "bg-[#0b1f2b]",
-      text: "text-white/70",
-      border: "border-white/10",
-      activeBg: "bg-white/10",
-    },
-    dark: {
-      bg: "bg-zinc-950",
-      text: "text-zinc-400",
-      border: "border-white/5",
-      activeBg: "bg-white/10",
-    },
-    light: {
-      bg: "bg-white dark:bg-[var(--color-card)]",
-      text: "text-zinc-500",
-      border: "border-zinc-200",
-      activeBg: "bg-zinc-100",
-    },
-  };
-  const s = styles[theme] ?? styles.cristal;
-  const accentHex = ACCENT_COLORS.find((c) => c.id === accent)?.hex ?? "var(--accent)";
-
-  return (
-    <div
-      className={cn(
-        "rounded-md p-2 border transition-all",
-        s.bg,
-        s.border,
-        selected && "ring-2 ring-offset-2 ring-offset-zinc-900",
-      )}
-      style={selected ? { boxShadow: `0 0 0 2px ${accentHex}` } : undefined}
-    >
-      <div
-        className="text-[length:var(--ts-2xs)] px-2 py-1 rounded font-semibold flex items-center gap-1"
-        style={{
-          color: theme === "light" ? accentHex : "#ffffff",
-          background:
-            theme === "light" ? `${accentHex}1A` : `${accentHex}33`,
-        }}
-      >
-        <span
-          className="h-0.5 w-1.5 rounded-full"
-          style={{ background: accentHex }}
-          aria-hidden
-        />
-        Inicio
-      </div>
-      <div className={cn("text-[length:var(--ts-2xs)] px-2 py-1 mt-0.5", s.text)}>Ventas</div>
-      <div className={cn("text-[length:var(--ts-2xs)] px-2 py-1", s.text)}>Compras</div>
-    </div>
-  );
-}
-
 // ─── Section header (jerarquía visual uniforme) ──────────────────────────────
 
 function SectionHeader({ icon: Icon, title, hint }: { icon: React.ElementType; title: string; hint?: string }) {
   return (
     <div className="mb-2">
-      <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400">
+      <Kicker as="h3" className="flex items-center gap-1.5 font-bold text-zinc-400">
         <Icon className="h-3 w-3 text-primary" strokeWidth={2.5} />
         {title}
-      </h3>
+      </Kicker>
       {hint && <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{hint}</p>}
     </div>
   );
@@ -357,7 +272,7 @@ function Switch({ checked, onChange, label, description, id }: { checked: boolea
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform",
+            "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-[var(--surface-raised)] transition-transform",
             checked && "translate-x-4",
           )}
         />
@@ -384,6 +299,7 @@ export default function SidebarConfigurator({
   density: initialDensity = "normal",
   iconStyle: initialIconStyle = "colored",
   applyToHeader: initialApplyToHeader = false,
+  navMode: initialNavMode = "categorias",
   allTabs,
   allowedTabs,
   onSave,
@@ -404,6 +320,7 @@ export default function SidebarConfigurator({
     density: initialDensity,
     iconStyle: initialIconStyle,
     applyToHeader: initialApplyToHeader,
+    navMode: initialNavMode,
   });
 
   // ── Draft state ──
@@ -419,6 +336,7 @@ export default function SidebarConfigurator({
   const [draftDensity, setDraftDensity] = React.useState<Density>(initialDensity);
   const [draftIconStyle, setDraftIconStyle] = React.useState<IconStyle>(initialIconStyle);
   const [draftApplyToHeader, setDraftApplyToHeader] = React.useState<boolean>(initialApplyToHeader);
+  const [draftNavMode, setDraftNavMode] = React.useState<ModoMenu>(initialNavMode);
   const [expandedCats, setExpandedCats] = React.useState<Set<string>>(new Set());
   const [query, setQuery] = React.useState("");
 
@@ -435,7 +353,7 @@ export default function SidebarConfigurator({
   const activePresetId = React.useMemo(() => {
     const match = PRESETS.find(
       (p) =>
-        p.theme === (draftTheme === "shaded" ? "cristal" : draftTheme) &&
+        p.theme === normalizarTema(draftTheme) &&
         p.accent === draftAccent &&
         p.density === draftDensity &&
         p.iconStyle === draftIconStyle &&
@@ -465,10 +383,11 @@ export default function SidebarConfigurator({
       density: draftDensity,
       iconStyle: draftIconStyle,
       applyToHeader: draftApplyToHeader,
+      navMode: draftNavMode,
     });
   }, [
     draftHidden, draftHiddenSubs, draftOrder, draftTheme, draftAccent,
-    draftDensity, draftIconStyle, draftApplyToHeader, onLiveDraftChange,
+    draftDensity, draftIconStyle, draftApplyToHeader, draftNavMode, onLiveDraftChange,
   ]);
 
   const isDirty = React.useMemo(() => {
@@ -477,14 +396,13 @@ export default function SidebarConfigurator({
     // The react-hooks/refs lint disagrees — disable for this block only.
      
     const base = baselineRef.current;
-    // Normalizar alias legacy "shaded" → "cristal" para evitar falsos positivos
-    // cuando initial llega como "shaded" y el preset setea "cristal".
-    const normTheme = (t: SidebarTheme) => (t === "shaded" ? "cristal" : t);
-    if (normTheme(draftTheme) !== normTheme(base.theme)) return true;
+    // Alias legacy «shaded»/«cristal» = «buleje»: no cuentan como cambio.
+    if (normalizarTema(draftTheme) !== normalizarTema(base.theme)) return true;
     if (draftAccent !== base.accent) return true;
     if (draftDensity !== base.density) return true;
     if (draftIconStyle !== base.iconStyle) return true;
     if (draftApplyToHeader !== base.applyToHeader) return true;
+    if (draftNavMode !== base.navMode) return true;
     if (draftOrder.join(",") !== base.order.join(",")) return true;
     if (draftHidden.size !== base.hiddenCategories.size) return true;
     if (draftHiddenSubs.size !== base.hiddenSubTabs.size) return true;
@@ -494,7 +412,7 @@ export default function SidebarConfigurator({
      
   }, [
     draftHidden, draftHiddenSubs, draftOrder, draftTheme, draftAccent, draftDensity,
-    draftIconStyle, draftApplyToHeader,
+    draftIconStyle, draftApplyToHeader, draftNavMode,
   ]);
 
   const sensors = useSensors(
@@ -569,11 +487,12 @@ export default function SidebarConfigurator({
     setDraftHidden(new Set());
     setDraftHiddenSubs(new Set());
     setDraftOrder(allCategories.map((c) => c.id));
-    setDraftTheme("cristal");
+    setDraftTheme("buleje");
     setDraftAccent("teal");
     setDraftDensity("normal");
     setDraftIconStyle("colored");
     setDraftApplyToHeader(false);
+    setDraftNavMode("categorias");
   };
 
   const handleShowAll = () => {
@@ -591,12 +510,13 @@ export default function SidebarConfigurator({
       density: draftDensity,
       iconStyle: draftIconStyle,
       applyToHeader: draftApplyToHeader,
+      navMode: draftNavMode,
     });
   };
 
   const totalCategories = allCategories.length;
   const visibleCategories = totalCategories - draftHidden.size;
-  const themeNormalized = draftTheme === "shaded" ? "cristal" : draftTheme;
+  const themeNormalized = normalizarTema(draftTheme);
 
   return (
     <div className="flex flex-col h-full bg-zinc-900 text-zinc-200">
@@ -604,7 +524,7 @@ export default function SidebarConfigurator({
       <div className="px-5 pt-4 pb-3 border-b border-zinc-800 shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <CardTitle as="h2" className="text-base font-bold text-white leading-tight">
+            <CardTitle as="h2" className="text-sm font-bold text-white leading-tight">
               Personaliza tu navegación
             </CardTitle>
             <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
@@ -620,7 +540,7 @@ export default function SidebarConfigurator({
           </div>
           <button
             onClick={onCancel}
-            className="h-9 w-9 rounded-md flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors shrink-0"
+            className="h-9 w-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors shrink-0"
             title="Cerrar"
             aria-label="Cerrar"
           >
@@ -636,7 +556,7 @@ export default function SidebarConfigurator({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar módulo..."
-            className="w-full bg-zinc-800 text-zinc-100 placeholder-zinc-500 text-sm rounded-md pl-9 pr-8 py-2 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40"
+            className="w-full bg-zinc-800 text-zinc-100 placeholder-zinc-500 text-sm rounded-xl pl-9 pr-8 h-10 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40"
           />
           {query && (
             <button
@@ -653,14 +573,14 @@ export default function SidebarConfigurator({
         <div className="flex items-center gap-2 mt-3">
           <button
             onClick={handleShowAll}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 rounded-md py-2 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 rounded-xl py-2 transition-colors"
           >
             <Eye className="h-3.5 w-3.5" />
             Mostrar todo
           </button>
           <button
             onClick={handleReset}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 rounded-md py-2 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 rounded-xl py-2 transition-colors"
             title="Restablecer al diseño por defecto"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -681,32 +601,27 @@ export default function SidebarConfigurator({
           <div className="grid grid-cols-2 gap-2">
             {PRESETS.map((p) => {
               const selected = activePresetId === p.id;
-              const presetAccent = ACCENT_COLORS.find((c) => c.id === p.accent)?.hex ?? "var(--accent)";
               return (
                 <button
                   key={p.id}
+                  type="button"
                   onClick={() => applyPreset(p)}
+                  aria-pressed={selected}
                   className={cn(
-                    "rounded-md border px-3 py-2.5 text-left transition-all",
+                    "rounded-xl border p-2 text-left transition-all",
                     selected
                       ? "border-primary/60 bg-primary/10"
                       : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/40",
                   )}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className="h-3 w-3 rounded-full shrink-0"
-                      style={{ background: presetAccent }}
-                      aria-hidden
-                    />
-                    <p className="text-sm font-semibold text-zinc-50 leading-tight truncate">
-                      {p.label}
-                    </p>
+                  <MuestraTema tema={p.theme} acento={p.accent} densidad={p.density} filas={2} />
+                  <div className="mt-2 flex items-center gap-1.5 px-0.5">
+                    <p className="text-sm font-semibold text-zinc-50 leading-tight truncate">{p.label}</p>
                     {selected && (
                       <Check className="h-3.5 w-3.5 text-primary ml-auto shrink-0" strokeWidth={2.5} />
                     )}
                   </div>
-                  <p className="text-xs text-zinc-400 leading-snug">{p.description}</p>
+                  <p className="mt-0.5 px-0.5 text-xs text-zinc-400 leading-snug">{p.description}</p>
                 </button>
               );
             })}
@@ -716,6 +631,7 @@ export default function SidebarConfigurator({
         {/* ── Sección: Módulos ── */}
         <div className="px-4 py-4 border-b border-zinc-800">
           <SectionHeader icon={Layout} title="Módulos y orden" hint="Activa, oculta o reordena los módulos de tu navegación." />
+          <SelectorModoMenu value={draftNavMode} onChange={setDraftNavMode} />
           <div className="space-y-1">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext
@@ -757,7 +673,7 @@ export default function SidebarConfigurator({
                                 key={tabId}
                                 onClick={() => toggleSubTabVisible(tabId as Tab)}
                                 className={cn(
-                                  "w-full flex items-center gap-2.5 py-1.5 px-2 rounded-md transition-all text-left",
+                                  "w-full flex items-center gap-2.5 py-1.5 px-2 rounded-lg transition-all text-left",
                                   isSubVisible
                                     ? "text-zinc-100 hover:bg-zinc-800"
                                     : "text-zinc-500 hover:bg-zinc-800/60",
@@ -767,7 +683,7 @@ export default function SidebarConfigurator({
                                   className={cn(
                                     "h-4 w-4 rounded flex items-center justify-center shrink-0 border",
                                     isSubVisible
-                                      ? "bg-primary/25 border-primary/50 text-primary"
+                                      ? "bg-primary/25 border-primary/50 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                       : "bg-zinc-800 border-zinc-600 text-transparent",
                                   )}
                                 >
@@ -794,22 +710,22 @@ export default function SidebarConfigurator({
           {/* Tema */}
           <div>
             <p className="text-xs font-semibold text-zinc-300 mb-2">Tema de fondo</p>
-            <div className="grid grid-cols-3 gap-2">
-              {(["cristal", "dark", "light"] as const).map((t) => (
+            <div className="grid grid-cols-4 gap-2">
+              {TEMAS_ELEGIBLES.map(({ id: t, label }) => (
                 <button
                   key={t}
+                  type="button"
                   onClick={() => setDraftTheme(t)}
+                  aria-pressed={themeNormalized === t}
                   className={cn(
-                    "rounded-md border p-2 text-left transition-all",
+                    "rounded-xl border p-1.5 text-left transition-all",
                     themeNormalized === t
                       ? "border-primary/60 bg-primary/10"
                       : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/40",
                   )}
                 >
-                  <ThemePreview theme={t} accent={draftAccent} selected={themeNormalized === t} />
-                  <p className="text-xs font-semibold mt-2 text-zinc-100">
-                    {t === "cristal" ? "Marca" : t === "dark" ? "Oscuro" : "Claro"}
-                  </p>
+                  <MuestraTema tema={t} acento={draftAccent} filas={2} />
+                  <p className="text-xs font-semibold mt-1.5 text-zinc-100 truncate">{label}</p>
                 </button>
               ))}
             </div>
@@ -856,7 +772,7 @@ export default function SidebarConfigurator({
                   key={s}
                   onClick={() => setDraftIconStyle(s)}
                   className={cn(
-                    "rounded-md border px-3 py-2.5 text-left transition-all",
+                    "rounded-xl border px-3 py-2.5 text-left transition-all",
                     draftIconStyle === s
                       ? "border-primary/60 bg-primary/10 text-zinc-100"
                       : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/40 text-zinc-300",
@@ -882,7 +798,7 @@ export default function SidebarConfigurator({
                   key={d}
                   onClick={() => setDraftDensity(d)}
                   className={cn(
-                    "rounded-md border py-2 text-center text-xs font-semibold transition-all",
+                    "rounded-xl border py-2 text-center text-xs font-semibold transition-all",
                     draftDensity === d
                       ? "border-primary/60 bg-primary/10 text-zinc-100"
                       : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/40 text-zinc-300",
@@ -922,7 +838,7 @@ export default function SidebarConfigurator({
           onClick={handleSave}
           disabled={!isDirty}
           className={cn(
-            "rounded-lg py-2.5 w-full font-semibold text-sm transition-all",
+            "rounded-xl min-h-11 w-full font-semibold text-sm transition-all",
             isDirty
               ? "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-[0_4px_14px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
               : "bg-zinc-800 text-zinc-500 cursor-not-allowed",
@@ -932,7 +848,7 @@ export default function SidebarConfigurator({
         </button>
         <button
           onClick={onCancel}
-          className="border border-zinc-700 text-zinc-300 hover:bg-zinc-800 rounded-lg py-2.5 w-full text-sm font-medium transition-colors"
+          className="border border-zinc-700 text-zinc-300 hover:bg-zinc-800 rounded-xl py-2.5 w-full text-sm font-medium transition-colors"
         >
           Cancelar
         </button>

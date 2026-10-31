@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { fmtSoles, orderTotal, type SharedChatProduct, type ChatOrderItem, type ChatPayment } from "@/lib/chat/shared-product";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import type { ChatThreadView, ChatMessageView, ThreadStatus } from "./types";
 
 // Increment 2b: cita + presencia del lado vendedor.
@@ -24,6 +26,12 @@ export function useChatThreads(initialStatus: ThreadStatus | "all" = "open") {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<ThreadStatus | "all">(initialStatus);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Gate de rol (2026-09-14): /api/admin/sse sólo deja pasar admin/cajero
+  // (requireAdmin). Roles fuera de esa lista abriendo el Chat siguen andando
+  // por el polling de 8s a /api/admin/chat/threads (ruta distinta, sin
+  // restricción acá) — sólo se salta la conexión SSE que iba a 403.
+  const rol = useMiRol();
+  const puedeSSE = puedePedir("/api/admin/sse", rol);
 
   const load = useCallback(async () => {
     try {
@@ -49,14 +57,18 @@ export function useChatThreads(initialStatus: ThreadStatus | "all" = "open") {
     // existente (/api/admin/sse) — eventos chat_message_new y
     // chat_thread_opened disparan reload inmediato. Si SSE conecta,
     // polling baja a 60s (fallback). Si cae, vuelve a 8s.
-    try {
-      es = new EventSource("/api/admin/sse");
-      es.addEventListener("open", () => { pollMs = 60_000; });
-      es.addEventListener("error", () => { pollMs = 8000; });
-      es.addEventListener("chat_thread_opened", () => { void load(); });
-      es.addEventListener("chat_message_new", () => { void load(); });
-    } catch {
-      /* SSE no disponible — polling cubre */
+    // Sin permiso para /api/admin/sse (rol fuera de admin/cajero) el polling
+    // de 8s queda como único canal — no se intenta la conexión.
+    if (puedeSSE) {
+      try {
+        es = new EventSource("/api/admin/sse");
+        es.addEventListener("open", () => { pollMs = 60_000; });
+        es.addEventListener("error", () => { pollMs = 8000; });
+        es.addEventListener("chat_thread_opened", () => { void load(); });
+        es.addEventListener("chat_message_new", () => { void load(); });
+      } catch {
+        /* SSE no disponible — polling cubre */
+      }
     }
 
     const loop = async () => {
@@ -70,7 +82,7 @@ export function useChatThreads(initialStatus: ThreadStatus | "all" = "open") {
       if (timerRef.current) clearTimeout(timerRef.current);
       try { es?.close(); } catch { /* ignore */ }
     };
-  }, [load]);
+  }, [load, puedeSSE]);
 
   const closeThread = useCallback(
     async (threadId: string, reason?: string) => {
@@ -240,7 +252,7 @@ export function useChatMessages(threadId: string | null) {
     async (items: ChatOrderItem[]) => {
       if (!threadId || items.length === 0) return;
       const lines = items.map((i) => `• ${i.quantity}× ${i.name}`).join("\n");
-      const body = `Te armé este pedido (${fmtSoles(orderTotal(items))}):\n${lines}\n¿Lo confirmás?`;
+      const body = `Te armé este pedido (${fmtSoles(orderTotal(items))}):\n${lines}\n¿Lo confirmas?`;
       const res = await tenantFetch(
         `/api/admin/chat/threads/${encodeURIComponent(threadId)}/messages`,
         {
@@ -262,7 +274,7 @@ export function useChatMessages(threadId: string | null) {
       const methodLabel = payment.method === "plin" ? "Plin" : "Yape";
       const numTxt = payment.number ? ` al ${payment.number}` : "";
       const noteTxt = payment.note ? ` — ${payment.note}` : "";
-      const body = `Cobro por ${methodLabel}: ${fmtSoles(payment.amount)}${numTxt}${noteTxt}. Cuando pagues, tocá "Ya pagué".`;
+      const body = `Cobro por ${methodLabel}: ${fmtSoles(payment.amount)}${numTxt}${noteTxt}. Cuando pagues, toca "Ya pagué".`;
       const res = await tenantFetch(
         `/api/admin/chat/threads/${encodeURIComponent(threadId)}/messages`,
         {

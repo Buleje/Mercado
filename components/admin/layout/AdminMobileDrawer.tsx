@@ -4,8 +4,6 @@ import React from "react";
 import Link from "next/link";
 import {
   X,
-  ShoppingBasket,
-  Layers,
   ChevronDown,
   ChevronUp,
   Star,
@@ -16,11 +14,14 @@ import {
   Power,
   Pencil,
   Plus,
+  Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
-import type { TabCategory } from "@/app/admin/_lib/tab-categories";
+import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categories";
+import { useModoMenuGuardado } from "@/components/admin/layout/sidebar-enlaces";
 import type { AllTabsItem, ResolvedShortcut } from "@/app/admin/_hooks/useSidebarShortcuts";
 
 // Re-exportamos AllTabsItem como TabItem para legibilidad
@@ -29,9 +30,6 @@ type TabItem = AllTabsItem;
 export type AdminMobileDrawerProps = {
   open: boolean;
   onClose: () => void;
-
-  // Tenant
-  activeTenantName: string | null;
 
   // Tab activa + navegación
   tab: Tab;
@@ -43,10 +41,8 @@ export type AdminMobileDrawerProps = {
 
   // Categorías
   visibleCategories: TabCategory[];
-  selectedCategory: string | null;
-  onSelectCategory: (id: string | null) => void;
-  categoryDropdownOpen: boolean;
-  onToggleCategoryDropdown: () => void;
+  sidebarSearch: string;
+  onSidebarSearchChange: (v: string) => void;
 
   // Favoritos, recientes y atajos
   favoriteTabItems: TabItem[];
@@ -78,19 +74,17 @@ export type AdminMobileDrawerProps = {
   onLogout: () => void;
 };
 
-export function AdminMobileDrawer({
+// Memoizado por el mismo motivo que AdminSidebar (ver ese archivo) — sólo
+// sirve si `AdminNavigation`/`AdminPage` le pasan props estables.
+export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
   open,
   onClose,
-  activeTenantName,
   tab,
   navigateTab,
   filteredTabs,
-  allowedTabs,
   visibleCategories,
-  selectedCategory,
-  onSelectCategory,
-  categoryDropdownOpen,
-  onToggleCategoryDropdown,
+  sidebarSearch,
+  onSidebarSearchChange,
   favoriteTabItems,
   customShortcutItems,
   recentTabItems,
@@ -113,13 +107,19 @@ export function AdminMobileDrawer({
   onOpenCierreDiario,
 }: AdminMobileDrawerProps) {
   // Plantilla del superadmin — overlay reactivo (mismo que sidebar desktop).
-  const { isHiddenByTemplate } = useAdminTemplateOverlay();
+  useAdminTemplateOverlay();
+  const drawerRef = React.useRef<HTMLElement>(null);
+  useModalAccesible(drawerRef, { onCerrar: onClose, activo: open });
+  // «Sin categorías» de Personaliza tu navegación: los mismos enlaces, sin
+  // títulos de sección ni de categoría; una línea fina entre grupos (2026-10-20).
+  const sinCategorias = useModoMenuGuardado() === "enlaces";
+  let gruposDibujados = 0;
   return (
     <>
       {/* Mobile nav overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 sm:hidden"
+          className="fixed inset-0 z-modal bg-black/50 sm:hidden"
           onClick={onClose}
         />
       )}
@@ -127,113 +127,55 @@ export function AdminMobileDrawer({
       {/* Mobile drawer — ancho fluido para celulares (85vw deja franja
           minima clicable para cerrar) con cap en sm+ para tabletas chicas. */}
       <aside
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de navegación"
+        tabIndex={-1}
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden",
+          "fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-modal bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden outline-none",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/5">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center">
-              <ShoppingBasket className="h-4 w-4" />
-            </div>
-            <span className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">
-              {activeTenantName || "Buleje"}
-            </span>
+        {/* Buscador. Reemplaza al selector "Todas las categorías", que
+            desplegaba las CATORCE categorías para filtrar por una — o sea, la
+            misma organización que ahora se ve agrupada en la lista de abajo,
+            pero escondida detrás de un clic. Y el sidebar de escritorio ya
+            tenía búsqueda… sin input: `sidebarSearch` se leía para filtrar pero
+            NADIE lo escribía, así que era código muerto. Un solo mecanismo,
+            presente en las dos superficies. */}
+        {/* Brandon 23-10: sin la franja de marca arriba (el logo y el nombre del
+            negocio están en el encabezado, en el botón de identidad): el cajón
+            arranca con el buscador y los enlaces; «Cerrar» va al lado del campo. */}
+        <div className="flex items-center gap-2 px-3 py-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+            <input
+              type="text"
+              value={sidebarSearch}
+              onChange={(e) => onSidebarSearchChange(e.target.value)}
+              placeholder="Buscar módulo…"
+              aria-label="Buscar módulo"
+              className="w-full h-12 pl-9 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] focus:border-[var(--accent)]"
+            />
+            {sidebarSearch && (
+              <button
+                onClick={() => onSidebarSearchChange("")}
+                aria-label="Limpiar búsqueda"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-[var(--rule-soft)] transition-colors"
+              >
+                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
+              </button>
+            )}
           </div>
           <button
+            type="button"
+            aria-label="Cerrar"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl hover:bg-[var(--rule-soft)] transition-colors"
           >
-            <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
+            <X className="h-5 w-5 text-[var(--text-secondary)]" />
           </button>
-        </div>
-
-        {/* Category selector (mobile) */}
-        <div className="relative px-3 py-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-          <button
-            onClick={onToggleCategoryDropdown}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent transition-all border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
-          >
-            <div className="flex items-center gap-2">
-              {selectedCategory ? (
-                <>
-                  {visibleCategories.find(c => c.id === selectedCategory)?.icon && (
-                    React.createElement(
-                      visibleCategories.find(c => c.id === selectedCategory)!.icon,
-                      { className: "h-4 w-4 shrink-0" }
-                    )
-                  )}
-                  <span className="truncate">
-                    {visibleCategories.find(c => c.id === selectedCategory)?.label}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span>Todas las categorías</span>
-                </>
-              )}
-            </div>
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 transition-transform shrink-0",
-                categoryDropdownOpen && "rotate-180"
-              )}
-            />
-          </button>
-
-          {categoryDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={onToggleCategoryDropdown}
-              />
-              <div className="absolute top-full left-3 right-3 mt-1 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] z-20 max-h-80 overflow-y-auto py-2">
-                <button
-                  onClick={() => {
-                    onSelectCategory(null);
-                    onToggleCategoryDropdown();
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
-                    !selectedCategory
-                      ? "bg-primary/10 text-primary"
-                      : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
-                  )}
-                >
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span>Todas ({allowedTabs.length})</span>
-                </button>
-                <div className="h-px bg-gray-100 dark:bg-card-border my-1" />
-                {visibleCategories.map(category => {
-                  const count = category.tabs.filter(t => allowedTabs.includes(t) && !isHiddenByTemplate(t)).length;
-                  if (count === 0) return null;
-                  const CategoryIcon = category.icon;
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => {
-                        onSelectCategory(category.id);
-                        onToggleCategoryDropdown();
-                      }}
-                      className={cn(
-                        "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
-                        selectedCategory === category.id
-                          ? "bg-primary/10 text-primary"
-                          : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
-                      )}
-                    >
-                      <CategoryIcon className="h-4 w-4 shrink-0" />
-                      <span className="truncate flex-1 text-left">{category.label}</span>
-                      <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
         </div>
 
         {/* Nav list */}
@@ -241,7 +183,7 @@ export function AdminMobileDrawer({
           {/* Favorite tabs section */}
           {(favoriteTabItems.length > 0 || customShortcutItems.length > 0) && (
             <div className="mb-2">
-              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] px-4 mb-1 flex items-center gap-1">
                 <Star className="h-3 w-3" /> Favoritos
               </p>
               {favoriteTabItems.map(({ id, label, icon: Icon }) => (
@@ -249,10 +191,10 @@ export function AdminMobileDrawer({
                   key={`fav-${id}`}
                   onClick={() => { navigateTab(id as Tab); onClose(); }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
+                    "w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -264,7 +206,7 @@ export function AdminMobileDrawer({
                   key={`sc-${id}-${label}`}
                   onClick={() => { navigateTab(id as Tab); onClose(); }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
+                    "w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
                       : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-accent"
@@ -274,7 +216,7 @@ export function AdminMobileDrawer({
                   <span className="truncate">{label}</span>
                 </button>
               ))}
-              <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
+              <div className="h-px bg-[var(--rule-soft)] mx-2 my-1.5" />
             </div>
           )}
 
@@ -283,7 +225,7 @@ export function AdminMobileDrawer({
             <div className="mb-2">
               <button
                 onClick={onToggleRecentCollapsed}
-                className="w-full text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] transition-colors"
+                className="w-full text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] px-4 mb-1 flex items-center gap-1 hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] transition-colors"
               >
                 <Clock className="h-3 w-3" /> Recientes
                 {recentCollapsed
@@ -295,45 +237,63 @@ export function AdminMobileDrawer({
                   key={`rec-${id}`}
                   onClick={() => { navigateTab(id as Tab); onClose(); }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
+                    "w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{label}</span>
                 </button>
               ))}
-              <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
+              <div className="h-px bg-[var(--rule-soft)] mx-2 my-1.5" />
             </div>
           )}
 
-          {/* All tabs — agrupadas por categoría (como en desktop).
-              Brandon 2026-05-27: antes era lista plana; ahora cada categoría
-              es una sección con header + ícono. filteredTabs ya viene filtrado
-              por rol/búsqueda/categoría, así que respeta el dropdown de arriba. */}
+          {/* All tabs — agrupadas por las MISMAS secciones que el escritorio
+              (SECTION_BEFORE, single source en _lib/tab-categories). Antes acá
+              se ponía un encabezado por CATEGORÍA: 14 títulos en una pantalla
+              de 390px, contra los 6 del sidebar. Mismo menú, dos
+              organizaciones distintas según el ancho.
+              filteredTabs ya viene filtrado por rol/búsqueda/categoría, así que
+              respeta el dropdown de arriba. */}
           {visibleCategories.map((category) => {
             const CategoryIcon = category.icon;
             const catTabs = filteredTabs.filter((t) =>
               (category.tabs as readonly Tab[]).includes(t.id as Tab),
             );
             if (catTabs.length === 0) return null;
+            const sectionLabel = SECTION_BEFORE[category.id];
+            const conLinea = sinCategorias && gruposDibujados++ > 0;
             return (
-              <div key={`cat-${category.id}`} className="mb-2">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-muted px-4 mb-1 flex items-center gap-1.5">
-                  <CategoryIcon className="h-3 w-3 shrink-0" />
-                  {category.label}
-                </p>
+              <div key={`cat-${category.id}`} className={sinCategorias ? "mb-1" : "mb-2"}>
+                {conLinea && <div aria-hidden className="h-px bg-[var(--rule-soft)] mx-4 mb-1.5" />}
+                {sectionLabel && !sinCategorias && (
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] px-4 mt-3 mb-1.5">
+                    {sectionLabel}
+                  </p>
+                )}
+                {/* La categoría sólo se nombra si AGRUPA más de un tab —misma
+                    regla que el sidebar de escritorio (isSingleTab)—. Si no,
+                    quedaban dos encabezados apilados sobre un único enlace
+                    ("INICIO" → "Inicio" → Inicio) y en 390px eso come toda la
+                    pantalla. */}
+                {catTabs.length > 1 && !sinCategorias && (
+                  <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] px-4 mb-1 flex items-center gap-1.5">
+                    <CategoryIcon className="h-3 w-3 shrink-0" />
+                    {category.label}
+                  </p>
+                )}
                 {catTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => { navigateTab(id as Tab); onClose(); }}
               className={cn(
-                "group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all mb-1",
+                "group w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-1",
                 tab === id
                   ? "bg-primary text-white "
-                  : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
@@ -373,8 +333,16 @@ export function AdminMobileDrawer({
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="px-3 py-4 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-1">
+        {/* Footer.
+            `shrink-0` + tope de altura: el bloque de accesos rápidos crece con
+            la cantidad de atajos y se comía ~40% del alto del drawer, dejando
+            el MENÚ —que es a lo que se abre esto— en una ventana de cinco
+            ítems en una pantalla de 390px. Medido en un iPhone 390×844: menú
+            391px contra 321px de atajos, con SEIS entradas de menú visibles de
+            veintiuna. Y los atajos son en su mayoría los mismos tabs que están
+            listados arriba. Con el tope en 24vh el menú se queda con el doble
+            de alto y los atajos scrollean dentro del suyo. */}
+        <div className="shrink-0 max-h-[24vh] overflow-y-auto px-3 py-4 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-1">
           {/* Quick access shortcuts — mobile */}
           <div className="mb-2 space-y-0.5">
             <div className="flex items-center justify-between px-4 mb-1">
@@ -393,14 +361,14 @@ export function AdminMobileDrawer({
               <div key={s.id} className="flex items-center gap-1">
                 {editingShortcuts && (
                   <div className="flex flex-col -mr-1">
-                    <button
+                    <button aria-label="Subir"
                       onClick={() => onMoveShortcut(idx, -1)}
                       disabled={idx === 0}
                       className="text-[var(--text-tertiary)] hover:text-primary disabled:opacity-20 p-0 leading-none"
                     >
                       <ChevronUp className="h-3 w-3" />
                     </button>
-                    <button
+                    <button aria-label="Bajar"
                       onClick={() => onMoveShortcut(idx, 1)}
                       disabled={idx === resolvedShortcuts.length - 1}
                       className="text-[var(--text-tertiary)] hover:text-primary disabled:opacity-20 p-0 leading-none"
@@ -419,8 +387,8 @@ export function AdminMobileDrawer({
                   className={cn(
                     "flex-1 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                     tab === s.id
-                      ? "bg-primary/10 text-primary"
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <s.icon className="h-4 w-4 shrink-0" />
@@ -446,7 +414,7 @@ export function AdminMobileDrawer({
               <div className="relative">
                 <button
                   onClick={onToggleShowAddShortcut}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-[var(--accent-ink)] dark:text-[var(--accent)]/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
                 >
                   <Plus className="h-4 w-4" /> Agregar acceso
                 </button>
@@ -456,7 +424,7 @@ export function AdminMobileDrawer({
                       <button
                         key={t.id}
                         onClick={() => onAddShortcut(t.id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
                       >
                         <t.icon className="h-4 w-4 shrink-0" /> {t.label}
                       </button>
@@ -480,13 +448,13 @@ export function AdminMobileDrawer({
           <Link
             href="/"
             target="_blank"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-primary/20 transition-all"
           >
             <Store className="h-5 w-5" /> Tienda
           </Link>
           <button
             onClick={() => { onOpenCierreDiario(); onClose(); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
+            className="w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
           >
             <Power className="h-5 w-5" /> Cerrar día
           </button>
@@ -494,4 +462,4 @@ export function AdminMobileDrawer({
       </aside>
     </>
   );
-}
+});

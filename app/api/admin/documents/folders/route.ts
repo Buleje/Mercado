@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 
@@ -16,14 +16,15 @@ const CreateBody = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:folders:list");
+    const rl = await applyRateLimit(req, "GENEROUS", "documents:folders:list");
     if (rl) return rl;
     const csrfFail = assertCsrf(req);
     if (csrfFail) return csrfFail;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
 
-    const folders = await DocumentsDB.listFolders(auth.tenantId);
+    // Las carpetas que el rol no ve no aparecen (ni su nombre).
+    const folders = await DocumentsDB.listFolders(auth.tenantId, auth.role);
     return NextResponse.json({ folders });
 
   } catch (e) {
@@ -47,10 +48,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const folder = await DocumentsDB.createFolder(auth.tenantId, parsed.data);
+    const folder = await DocumentsDB.createFolder(auth.tenantId, parsed.data, auth.role);
     return NextResponse.json({ folder });
 
   } catch (e) {
+    // `parentId` de otro negocio (o inexistente): 404, igual que una carpeta que no existe.
+    if (e instanceof CarpetaAjenaError) {
+      return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
+    }
     logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }

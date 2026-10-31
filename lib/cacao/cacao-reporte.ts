@@ -2,6 +2,8 @@
  * Reporte de campaña de cacao imprimible (ADR-128). Client-safe (window.print).
  * Resume acopio + calidad + productores para imprimir/compartir/archivar.
  */
+import { membreteCacao, openPrintable } from "./cacao-print";
+
 export interface ReporteStats {
   lotes: number; productoresActivos: number; kgAcopiados: number; valorPagado: number;
   indiceFermentacionProm: number; pctHumedadEnNorma: number;
@@ -17,9 +19,9 @@ const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "
 const n2 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const GRADO: Record<string, string> = { I: "Grado I", II: "Grado II", fuera_norma: "Fuera de norma", sin_clasificar: "Sin clasificar" };
 
-export function printCacaoReporte(stats: ReporteStats, trends: ReporteTrends | null, acopiador = "Acopio de Cacao") {
+export async function printCacaoReporte(stats: ReporteStats, trends: ReporteTrends | null, acopiador = "Acopio de Cacao") {
   if (typeof window === "undefined") return;
-  const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
+  const m = await membreteCacao("Reporte de campaña · Cacao", { nombreSiFalta: acopiador });
   const row = (k: string, v: string) => `<tr><td>${esc(k)}</td><td class="r">${esc(v)}</td></tr>`;
   const variedad = stats.porVariedad.map((x) => row(x.variedad || "—", `${n2(x.kg)} kg`)).join("");
   const grado = stats.porGrado.map((x) => row(GRADO[x.grado] ?? x.grado, String(x.count))).join("");
@@ -29,6 +31,7 @@ export function printCacaoReporte(stats: ReporteStats, trends: ReporteTrends | n
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/>
 <title>Reporte de campaña — Cacao</title>
 <style>
+  ${m.estilos}
   *{box-sizing:border-box} body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,Arial,sans-serif;color:#1a1a1a;margin:0;padding:32px}
   .doc{max-width:760px;margin:0 auto}
   .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #166534;padding-bottom:14px;margin-bottom:18px}
@@ -48,7 +51,7 @@ export function printCacaoReporte(stats: ReporteStats, trends: ReporteTrends | n
   .foot{margin-top:28px;font-size:11px;color:#999;text-align:center}
   @media print{body{padding:0}@page{margin:14mm}}
 </style></head><body><div class="doc">
-  <div class="head"><div class="brand">${esc(acopiador)}<small>Reporte de campaña · Cacao</small></div><div class="date">${fecha}</div></div>
+  ${m.cabecera}
   <div class="kpis">
     <div class="kpi"><div class="l">Kg acopiados</div><div class="v">${n2(stats.kgAcopiados)}</div></div>
     <div class="kpi"><div class="l">Pagado</div><div class="v">S/ ${n2(stats.valorPagado)}</div></div>
@@ -67,9 +70,8 @@ export function printCacaoReporte(stats: ReporteStats, trends: ReporteTrends | n
     <div><div class="l">Mohoso</div><div class="v">${cal.mohoso}%</div></div></div>` : ""}
   ${trends && trends.humedadFueraCount > 0 ? `<p style="margin-top:14px;color:#b45309;font-size:13px">⚠ ${trends.humedadFueraCount} lote(s) con humedad fuera de norma (&gt;7%).</p>` : ""}
   <div class="foot">Índice de fermentación promedio: ${stats.indiceFermentacionProm}% · Reporte interno de acopio.</div>
+  ${m.pie}
 </div><script>window.onload=function(){window.print()}</script></body></html>`;
 
-  const w = window.open("", "_blank", "width=860,height=900");
-  if (!w) return;
-  w.document.write(html); w.document.close(); w.focus();
+  openPrintable(html);
 }

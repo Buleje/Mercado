@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { TurnosDB } from "@/lib/db/turnos.db";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
+import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 const CreateTurnoSchema = z.object({
   inicioEfectivo: z.number().min(0),
@@ -23,10 +25,26 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const adminUserId = searchParams.get("adminUserId") ?? undefined;
-    const status = searchParams.get("status") ?? undefined;
+    // Igual que /activo: la cajera sólo ve SUS turnos (cada fila trae nombre,
+    // esperado y diferencia de caja; las de sus compañeras no le corresponden).
+    const esGestion = auth.role === "admin" || auth.role === "owner" || auth.role === "manager";
+    const adminUserId = esGestion
+      ? searchParams.get("adminUserId") ?? undefined
+      : (await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username)) ?? "__none__";
+    // El status es un enum de Prisma (ABIERTO | CERRADO). Pasarle cualquier otra
+    // cosa hacía explotar la query y salía un 503 «Database error»: un filtro mal
+    // escrito no es una caída del servidor, es una petición inválida.
+    const statusRaw = searchParams.get("status")?.toUpperCase();
+    const ESTADOS = ["ABIERTO", "CERRADO"] as const;
+    if (statusRaw && !(ESTADOS as readonly string[]).includes(statusRaw)) {
+      return NextResponse.json(
+        { error: "invalid_status", message: `status debe ser ${ESTADOS.join(" o ")}` },
+        { status: 400 },
+      );
+    }
 
-    const turnos = await TurnosDB.list(auth.tenantId, { status, adminUserId });
+    // Con el nombre de quien atendió y la diferencia de caja del servidor (ver listHistorial).
+    const turnos = await TurnosDB.listHistorial(auth.tenantId, { status: statusRaw, adminUserId });
 
     return NextResponse.json(turnos, {
       headers: { "X-Total-Count": String(turnos.length) },
@@ -84,16 +102,80 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // FIX 2026-07-08 (reporte ventas-caja bug 2/4/7/8): vincular el turno a una
+    // CAJA. Antes Turno y CashRegister eran ciclos de vida independientes:
+    // abrir turno NO abría caja, así el POS volcaba movimientos al `getOpen()`
+    // = cualquier register viejo abierto (ej. uno del mes pasado nunca cerrado)
+    // → fechas de apertura inconsistentes, "ventas fantasma" en un cajón que no
+    // era el del turno, y el cierre del turno no cerraba la caja. Ahora:
+    //   - Si ya hay una caja abierta, el turno la ADOPTA (una caja por tenant).
+    //   - Si no hay ninguna, abrimos una fresca con el efectivo inicial del
+    //     turno (misma convención de `notes` que /api/cash-registers para que
+    //     Cuadre derive el nombre del cajero: "Nombre (detalle)").
+    let cashRegisterId = parsed.data.cashRegisterId;
+    /**
+     * Efectivo inicial del turno. Si el turno usa una caja YA abierta, es el
+     * fondo de ESA caja (lo pone el servidor): antes se guardaba la cifra de la
+     * pantalla y el historial decía «S/ 80» con la caja abierta en S/ 50, cuando
+     * el esperado del cierre parte del fondo de la caja. Sólo cuando el turno
+     * abre una caja nueva, la cifra contada es la de los dos.
+     */
+    let inicioEfectivo = parsed.data.inicioEfectivo;
+    /**
+     * La caja que llega por el body tiene que ser de ESTE negocio.
+     *
+     * Venía del cliente y se usaba tal cual: con el id de una caja de otro
+     * tenant, el turno quedaba apuntando ahí y los movimientos del POS —cada
+     * venta del día— se escribían en el cajón de otra empresa.
+     */
+    if (cashRegisterId) {
+      const propia = await CashRegistersDB.getById(auth.tenantId, cashRegisterId).catch(sinDato("api/turnos caja indicada para el turno"));
+      if (!propia) {
+        return NextResponse.json(
+          { error: "Esa caja no existe en este negocio" },
+          { status: 400 },
+        );
+      }
+      if (propia.status === "abierta") inicioEfectivo = Number(propia.openingAmount);
+    }
+    if (!cashRegisterId) {
+      try {
+        const openReg = await CashRegistersDB.getOpen(auth.tenantId);
+        if (openReg) {
+          cashRegisterId = openReg.id;
+          inicioEfectivo = Number(openReg.openingAmount);
+        } else {
+          const operator = (auth.name?.trim() || auth.username || "").trim();
+          const notes = operator ? `${operator} (turno)` : undefined;
+          const reg = await CashRegistersDB.open(auth.tenantId, parsed.data.inicioEfectivo, notes);
+          cashRegisterId = reg.id;
+          // La caja abierta con el turno también deja su «Abrir»: Cuadrar caja lo lee para
+          // decir quién la abrió (sin esto la columna salía «—»).
+          logActivity(
+            "Abrir", "caja",
+            `Apertura con S/${parsed.data.inicioEfectivo.toFixed(2)} al abrir turno`,
+            reg.id, auth.username, undefined, auth.tenantId,
+          ).catch((err) => logger.warn("[turnos] activity log caja failed", { err: String(err) }));
+        }
+      } catch (regErr) {
+        // No bloquear la apertura del turno si la caja falla — se puede abrir
+        // manualmente desde Caja Registradora. Solo lo logueamos.
+        logger.warn("[turnos] vinculación de caja falló (no bloqueante)", {
+          err: regErr instanceof Error ? regErr.message : String(regErr),
+        });
+      }
+    }
+
     const turno = await TurnosDB.abrir({
       tenantId: auth.tenantId,
       adminUserId: resolvedAdminUserId,
-      cashRegisterId: parsed.data.cashRegisterId,
-      inicioEfectivo: parsed.data.inicioEfectivo,
+      cashRegisterId,
+      inicioEfectivo,
     });
 
     logActivity(
       "Abrir", "turno",
-      `Turno abierto con S/${parsed.data.inicioEfectivo.toFixed(2)} de efectivo inicial`,
+      `Turno abierto con S/${inicioEfectivo.toFixed(2)} de efectivo inicial`,
       turno.id, auth.username,
     ).catch((err) => logger.warn("[turnos] activity log failed", { turnoId: turno.id, err: String(err) }));
 

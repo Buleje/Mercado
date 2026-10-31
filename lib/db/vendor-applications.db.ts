@@ -18,6 +18,7 @@ import type {
   VendorDistrict,
   VendorPlan,
 } from "@/lib/generated/prisma/client";
+import { startOfLimaMonth } from "@/lib/utils";
 
 // Re-export public del state machine para no romper callers existentes.
 // Los consumers pueden tambien importar directo desde
@@ -479,7 +480,7 @@ export const VendorApplicationsDB = {
     cacheTag(TAG_STATS);
 
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthStart = new Date(startOfLimaMonth(0, now));
 
     const [
       pending,

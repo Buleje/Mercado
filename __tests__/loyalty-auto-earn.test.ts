@@ -181,4 +181,31 @@ describe("autoEarnLoyaltyPoints", () => {
     // logActivity fue invocado (fire-and-forget)
     expect(mockLogActivity).toHaveBeenCalledOnce();
   });
+  // ─── Prorrateo por lo cobrado (reviewer 2026-10-08) ─────────────────────
+  it("con líneas: los puntos salen de lo COBRADO (canje/descuento), nunca de más", async () => {
+    mockGetHistory.mockResolvedValue({ transactions: [], balance: 0, total: 0 });
+    mockEarn.mockImplementation(async (_t: string, _c: string, amount: number) => ({
+      id: "tx-pr",
+      customerId: CUSTOMER,
+      tenantId: TENANT,
+      amount,
+      reason: "purchase",
+      metadata: { orderId: ORDER_ID },
+      createdAt: new Date().toISOString(),
+    }));
+    mockGetBalance.mockResolvedValue(95);
+    const lineas = [
+      { categorySlug: null, lineTotal: 60 },
+      { categorySlug: null, lineTotal: 40 },
+    ];
+
+    // Líneas S/100, se cobró S/95 (S/5 los pagaron puntos) → 95, no 100.
+    const conCanje = await autoEarnLoyaltyPoints(TENANT, CUSTOMER, ORDER_ID, 95, lineas);
+    expect(conCanje!.pointsEarned).toBe(95);
+
+    // Total mayor que las líneas → no se escala hacia arriba.
+    mockEarn.mockClear();
+    const sinCanje = await autoEarnLoyaltyPoints(TENANT, CUSTOMER, "ord-2", 120, lineas);
+    expect(sinCanje!.pointsEarned).toBe(100);
+  });
 });

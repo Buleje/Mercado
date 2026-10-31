@@ -37,21 +37,26 @@ export const GET = withCronHealth("settle-commissions", async (_req: NextRequest
       return NextResponse.json({ settled: 0, totalAmount: 0, byTenant: [] });
     }
 
-    // Defensa (audit 2026-05-29): NO liquidar comisiones de órdenes canceladas —
-    // serían "comisión fantasma" (venta que no ocurrió). Normalmente la
-    // cancelación ya las marca refunded; esto cubre el caso en que ese refund
-    // no corrió.
+    // Defensa: NO liquidar comisiones de órdenes que aún NO tienen el pago
+    // confirmado. Liquidar = volverlas elegibles para payout al vendor.
+    //   - "cancelado": venta anulada (comisión fantasma) — audit 2026-05-29.
+    //   - "pendiente": pago SIN verificar (Yape/Plin/efectivo por aprobar)
+    //     — fix 2026-06-29: una orden creada y nunca pagada dejaba su comisión
+    //     liquidable → el superadmin podía pagarle al vendor por una venta que
+    //     nunca se cobró. Solo se liquidan comisiones SIN orden (fees de
+    //     plataforma) o de órdenes con pago confirmado (confirmado/preparando/
+    //     en_camino/entregado).
     const orderIds = [...new Set(pendingRaw.map((c) => c.orderId).filter((x): x is string => !!x))];
-    const cancelled = orderIds.length
-      ? await prisma.order.findMany({ where: { id: { in: orderIds }, status: "cancelado" }, select: { id: true } })
+    const unconfirmed = orderIds.length
+      ? await prisma.order.findMany({ where: { id: { in: orderIds }, status: { in: ["pendiente", "cancelado"] } }, select: { id: true } })
       : [];
-    const cancelledSet = new Set(cancelled.map((o) => o.id));
-    const pending = pendingRaw.filter((c) => !c.orderId || !cancelledSet.has(c.orderId));
-    const skippedCancelled = pendingRaw.length - pending.length;
+    const unconfirmedSet = new Set(unconfirmed.map((o) => o.id));
+    const pending = pendingRaw.filter((c) => !c.orderId || !unconfirmedSet.has(c.orderId));
+    const skippedUnconfirmed = pendingRaw.length - pending.length;
 
     if (pending.length === 0) {
-      logger.info("[cron/settle-commissions] Solo había comisiones de órdenes canceladas — nada que liquidar", { skippedCancelled });
-      return NextResponse.json({ settled: 0, totalAmount: 0, byTenant: [], skippedCancelled });
+      logger.info("[cron/settle-commissions] Solo había comisiones de órdenes sin pago confirmado — nada que liquidar", { skippedUnconfirmed });
+      return NextResponse.json({ settled: 0, totalAmount: 0, byTenant: [], skippedUnconfirmed });
     }
 
     const ids = pending.map((c) => c.id);
@@ -87,7 +92,7 @@ export const GET = withCronHealth("settle-commissions", async (_req: NextRequest
       settled: pending.length,
       totalAmount,
       byTenant: tenantsArray,
-      skippedCancelled,
+      skippedUnconfirmed,
     });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);

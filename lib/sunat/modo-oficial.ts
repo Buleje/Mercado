@@ -5,8 +5,10 @@ import { verifyRuc, isInvoiceable } from "@/lib/integrations/sunat-ruc";
 import {
   SUNAT_OFICIAL_FLAG,
   type SunatActivationBlocker,
+  type SunatEmisor,
   type SunatModoOficialState,
 } from "./modo-oficial.types";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * Helpers del Modo SUNAT Oficial. Ver ADR-123 + `modo-oficial.types.ts`.
@@ -26,6 +28,7 @@ export async function computeBlockers(tenantId: string): Promise<{
   configReady: boolean;
   rucVerificado: boolean;
   ambiente: "beta" | "produccion";
+  emisor: SunatEmisor | null;
 }> {
   const config = await SunatDB.getConfig(tenantId);
   if (!config) {
@@ -36,6 +39,7 @@ export async function computeBlockers(tenantId: string): Promise<{
       configReady: false,
       rucVerificado: false,
       ambiente: "beta",
+      emisor: null,
     };
   }
 
@@ -49,7 +53,7 @@ export async function computeBlockers(tenantId: string): Promise<{
     // verifyRuc puede caer a "mock" (siempre válido) si no hay provider real;
     // ante error de red lo tratamos como no verificado (no bloquea duro, pero
     // se refleja en rucVerificado=false para que el superadmin lo sepa).
-    const rucRes = await verifyRuc(config.ruc).catch(() => null);
+    const rucRes = await verifyRuc(config.ruc).catch(sinDato("sunat/modo-oficial verificación del RUC"));
     rucVerificado = rucRes ? isInvoiceable(rucRes) : false;
     if (rucRes && !rucVerificado) bloqueos.push("ruc_invalido");
   }
@@ -59,6 +63,12 @@ export async function computeBlockers(tenantId: string): Promise<{
     configReady: bloqueos.length === 0,
     rucVerificado,
     ambiente: config.isProduction ? "produccion" : "beta",
+    emisor: {
+      ruc: config.ruc,
+      razonSocial: config.razonSocial,
+      serieBoleta: config.boletaSeries,
+      serieFactura: config.facturaSeries,
+    },
   };
 }
 
@@ -74,5 +84,6 @@ export async function getModoOficialState(tenantId: string): Promise<SunatModoOf
     rucVerificado: meta.rucVerificado,
     ambiente: meta.ambiente,
     bloqueos: meta.bloqueos,
+    emisor: meta.emisor,
   };
 }

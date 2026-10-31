@@ -27,7 +27,7 @@
 
 import { useEffect, useState } from "react";
 import { BulejeMark } from "@/components/ui-system/illustrations/BulejeLogo";
-import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
+import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import { cn } from "@/lib/utils";
 
@@ -41,17 +41,15 @@ interface Props {
   /**
    * Ilustración a mostrar:
    *   - "mark" (default): logo bodega con animación respiración
-   *   - "paiche": pez paiche nadando — para secciones amazónicas
-   *     (marketplace, ofertas, descubrí), más cálido y distintivo.
+   *   - "paiche": el aro que gira (antes el pez nadando; Brandon 2026-10-08:
+   *     quieto con «reducir movimiento», parecía página trabada).
    */
   variant?: "mark" | "paiche";
   className?: string;
 }
 
 const LOGO_SIZE = { sm: 40, md: 64, lg: 96 } as const;
-// Paiche más grande y presente — se percibe como identidad amazónica, no
-// como decoración chica. Duplicamos el tamaño previo (2026-04-20).
-const PAICHE_SIZE = { sm: 140, md: 240, lg: 360 } as const;
+const SPINNER_SIZE = { sm: 28, md: 44, lg: 64 } as const;
 
 export function BulejeLoader({
   label = "Cargando",
@@ -72,8 +70,7 @@ export function BulejeLoader({
     return () => clearInterval(id);
   }, []);
 
-  // Paiche variant: delegamos al nuevo PaicheLoading (waves + pulse + dots
-  // de gran formato). El size lg/md/sm mapea a page/section/inline para que
+  // Paiche variant: delegamos a PaicheLoading (aro que gira + texto). El size lg/md/sm mapea a page/section/inline para que
   // las llamadas existentes hereden el look mejorado sin tocar 13 archivos.
   if (variant === "paiche" && !inline) {
     const v = size === "lg" ? "page" : size === "md" ? "section" : "inline";
@@ -92,9 +89,7 @@ export function BulejeLoader({
       )}
     >
       {variant === "paiche" ? (
-        <div className="text-[var(--accent)]">
-          <PaicheMascot size={PAICHE_SIZE[size]} strokeWidth={1.75} animated />
-        </div>
+        <LoadingSpinner size={SPINNER_SIZE[size]} />
       ) : (
         <div
           className="text-[var(--accent)] motion-safe:animate-buleje-breathe"

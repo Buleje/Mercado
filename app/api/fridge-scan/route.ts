@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateObject } from "ai";
+import { GATEWAY_MODEL_IDS } from "@/lib/claude-router";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -9,7 +10,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
  * Entrada: multipart/form-data con campo "image" (File).
  * Salida: { detected: [names], suggested: [{name, qty, reason}] }
  *
- * Modelo: "anthropic/claude-haiku-4-5" soporta input multi-modal (imagen).
+ * Modelo: Haiku 5.5 por el gateway (`GATEWAY_MODEL_IDS.haiku`), lee imágenes.
  * La imagen se pasa como data URL base64 al modelo.
  *
  * Sin AI key → fallback mock con lista tipica peruana.
@@ -133,7 +134,9 @@ export async function POST(req: NextRequest) {
   try {
     const dataUrl = await fileToDataUrl(file);
     const { object } = await generateObject({
-      model: "anthropic/claude-haiku-4-5",
+      model: GATEWAY_MODEL_IDS.haiku,
+      // Haiku 5.5 razona por defecto (effort medium); `low` es lo indicado para rutas cortas.
+      providerOptions: { anthropic: { effort: "low" } },
       schema: DetectedSchema,
       messages: [
         {
@@ -144,7 +147,6 @@ export async function POST(req: NextRequest) {
           ],
         },
       ],
-      temperature: 0.3,
     });
     return NextResponse.json({ ...object, source: "ai" });
   } catch (err) {

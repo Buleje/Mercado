@@ -43,7 +43,7 @@ export default function TiendasLocationBar({
     ? [customer?.addressLine, customer?.districtName ?? customer?.provinceName]
         .filter(Boolean)
         .join(" · ")
-    : "Elegí tu dirección";
+    : "Elige tu dirección";
 
   // CTA chip de la derecha: "Cambiar" si ya hay dirección, "Agregar" si no.
   const actionLabel = hasAddress ? "Cambiar" : "Agregar";

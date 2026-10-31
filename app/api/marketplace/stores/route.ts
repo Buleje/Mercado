@@ -7,6 +7,8 @@ import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
+import { TiendaListaPublicarDB } from "@/lib/db/tienda-lista-publicar.db";
 
 // Brandon 2026-05-18 perf P1 #8: server-side cache para el listado público
 // de tiendas. Antes solo había `Cache-Control` (cliente/CDN); ahora la query
@@ -127,7 +129,17 @@ export async function GET(req: NextRequest) {
         /* ignore */
       }
 
+      // «Lista para publicar» (logo, ubicación, horario, productos con foto y
+      // stock) — solo lectura; si falla, la pestaña muestra el resto igual.
+      let listaPublicar: unknown = null;
+      try {
+        listaPublicar = await TiendaListaPublicarDB.calcular(store.tenantId, store.id);
+      } catch (err) {
+        logger.warn("[marketplace/stores] listaPublicar failed", { error: String(err).slice(0, 200) });
+      }
+
       return NextResponse.json({
+        listaPublicar,
         id:              store.id,
         slug:            store.slug,
         name:            store.name,
@@ -300,6 +312,7 @@ export async function GET(req: NextRequest) {
             (s as Record<string, unknown>).verified = Boolean(b.verified);
             (s as Record<string, unknown>).searchBoost = Boolean(b.searchBoost);
             (s as Record<string, unknown>).ownBanner = Boolean(b.ownBanner);
+            (s as Record<string, unknown>).acceptsFiado = Boolean(b.acceptsFiado);
           }
         } catch {
           // sin cover/hours/tier → marketplace sigue funcionando
@@ -309,6 +322,15 @@ export async function GET(req: NextRequest) {
       // If Store table doesn't exist or DB connection fails, return empty list
       logger.warn("[marketplace/stores] DB query failed, returning empty list", { error: dbErr instanceof Error ? dbErr.message : String(dbErr) });
       stores = [];
+    }
+
+    // Estrellas REALES antes del puntaje de calidad y de la confianza: la
+    // columna Store.rating/reviewCount puede venir sembrada (09-10: mi-pollo
+    // daba 4,8 con «24 reseñas» y «Muy confiable» con 0 reseñas aprobadas).
+    if (stores.length > 0) {
+      stores = await StoreReviewsDB.conRatingReal(
+        stores as Array<Record<string, unknown> & { id: string; rating: number; reviewCount: number }>,
+      );
     }
 
     // ── Quality score ranking ── Stores with better ratings, more products, and
@@ -635,6 +657,7 @@ export async function GET(req: NextRequest) {
         verified: Boolean((s as { verified?: boolean }).verified),
         searchBoost: Boolean((s as { searchBoost?: boolean }).searchBoost),
         ownBanner: Boolean((s as { ownBanner?: boolean }).ownBanner),
+        acceptsFiado: Boolean((s as { acceptsFiado?: boolean }).acceptsFiado),
         category: s.category,
         zone: finalZone,
         rating: s.rating,
@@ -939,6 +962,15 @@ export async function PUT(req: NextRequest) {
         vacationMessage: parsed.data.vacationMessage ?? existing.vacationMessage,
       },
     });
+
+    // Ubicación: el marketplace ubica la tienda con Store.lat/lng («Cerca de
+    // ti», mapa), pero el dueño la marca en Ajustes › Negocio. Si la tienda
+    // todavía no tiene punto propio, se copia el de Ajustes al guardar.
+    await TiendaListaPublicarDB.copiarUbicacionDeAjustes(existing.tenantId, store.id).catch((err) =>
+      logger.warn("[PUT /api/marketplace/stores] copiar ubicación falló", {
+        error: String(err).slice(0, 200),
+      }),
+    );
 
     // Persist hoursJson via raw query (columna fuera del schema Prisma).
     let savedHours: unknown = null;

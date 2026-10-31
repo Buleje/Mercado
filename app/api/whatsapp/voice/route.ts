@@ -119,7 +119,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 1. Transcripción ─────────────────────────────────────────────────────────
   // F1 AI-COST: Whisper ~$0.006/min → cap por tenant antes de llamar
   const VOICE_COST_USD = 0.01;
-  if (!await aiCostGuard.canSpend(tenantId, VOICE_COST_USD, "free")) {
+  if (!await aiCostGuard.canSpend(tenantId, VOICE_COST_USD)) {
     return NextResponse.json(
       { error: "Cuota mensual de transcripción de audio agotada" },
       { status: 429 },
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── 2. Extracción de intent + items ──────────────────────────────────────────
   // F1 AI-COST: LLM extracción ~$0.005 → guard antes de llamar
   const LLM_COST_USD = 0.005;
-  if (!await aiCostGuard.canSpend(tenantId, LLM_COST_USD, "free")) {
+  if (!await aiCostGuard.canSpend(tenantId, LLM_COST_USD)) {
     return NextResponse.json(
       { error: "Cuota mensual de análisis de pedido agotada" },
       { status: 429 },

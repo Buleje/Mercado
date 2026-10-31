@@ -121,19 +121,23 @@ const BULEJE_DEFAULT: DesignTokens = {
     name: "Buleje Default",
     slug: "buleje-default",
     description:
-      "Identidad oficial — emerald accent, serif para títulos, sans body. La base actual del admin del negocio.",
+      "Identidad oficial — turquesa y tinta del logo (#00A29C / #12181E), serif para títulos, sans body. La base del admin del negocio.",
     author: "buleje",
   },
   colors: {
-    accent:        "oklch(0.69 0.13 175)",      // teal/emerald
-    accentDark:    "oklch(0.55 0.13 175)",
-    accentSoft:    "oklch(0.95 0.04 175)",
+    /* Los colores del LOGO, medidos en public/brand/buleje-logo.png
+       (Brandon 2026-09-24: «veo que está verde y mi color no es eso»). El
+       acento era oklch(0.69 0.13 175): 15° más verde que el turquesa del logo
+       (oklch 0.643 0.111 190) y más claro. */
+    accent:        "#00A29C",                   // turquesa del logo
+    accentDark:    "#007F7A",                   // mismo tono, AA con texto blanco (4.86:1)
+    accentSoft:    "#E6F6F5",
     surface:       "oklch(0.98 0.005 240)",     // bg-canvas casi blanco
     surfaceRaised: "oklch(1 0 0)",              // blanco puro
     surfaceSunken: "oklch(0.96 0.005 240)",
-    textPrimary:   "oklch(0.20 0.015 250)",
+    textPrimary:   "oklch(0.206 0.015 249)",    // tinta del logo (#12181E)
     textSecondary: "oklch(0.42 0.015 250)",
-    textTertiary:  "oklch(0.60 0.012 250)",
+    textTertiary:  "oklch(0.53 0.012 250)",      // AA: 4.7:1 sobre sunken (era 0.60 → 3.5:1)
     ruleBase:      "oklch(0.92 0.005 240)",
     ruleStrong:    "oklch(0.85 0.008 240)",
     success:       "oklch(0.65 0.18 150)",
@@ -157,7 +161,7 @@ const BULEJE_DEFAULT: DesignTokens = {
     sm:     "0 1px 2px rgba(0,0,0,0.04)",
     md:     "0 4px 12px rgba(0,0,0,0.08)",
     lg:     "0 10px 30px rgba(0,0,0,0.12)",
-    accent: "0 4px 14px rgba(0, 160, 160,0.35)",
+    accent: "0 4px 14px rgba(0, 162, 156, 0.35)",
   },
   motion: {
     durFast: "120ms",
@@ -192,7 +196,7 @@ const BODEGA_CALIDA: DesignTokens = {
     surfaceSunken: "oklch(0.96 0.012 70)",
     textPrimary:   "oklch(0.25 0.04 30)",       // marrón cálido
     textSecondary: "oklch(0.45 0.03 30)",
-    textTertiary:  "oklch(0.62 0.02 30)",
+    textTertiary:  "oklch(0.535 0.02 30)",       // AA sobre sunken (era 0.62 → 3.3:1)
     ruleBase:      "oklch(0.90 0.02 50)",
     ruleStrong:    "oklch(0.82 0.03 50)",
     success:       "oklch(0.65 0.18 150)",
@@ -251,7 +255,7 @@ const MERCADO_MODERNO: DesignTokens = {
     surfaceSunken: "oklch(0.97 0.005 250)",
     textPrimary:   "oklch(0.18 0.02 260)",      // slate-900
     textSecondary: "oklch(0.40 0.015 260)",
-    textTertiary:  "oklch(0.58 0.01 260)",
+    textTertiary:  "oklch(0.54 0.01 260)",       // AA sobre sunken (era 0.58 → 3.9:1)
     ruleBase:      "oklch(0.93 0.005 260)",
     ruleStrong:    "oklch(0.86 0.008 260)",
     success:       "oklch(0.65 0.18 150)",
@@ -310,7 +314,7 @@ const PASTEL_FRESH: DesignTokens = {
     surfaceSunken: "oklch(0.97 0.012 320)",
     textPrimary:   "oklch(0.28 0.04 320)",
     textSecondary: "oklch(0.48 0.03 320)",
-    textTertiary:  "oklch(0.65 0.02 320)",
+    textTertiary:  "oklch(0.54 0.02 320)",       // AA sobre sunken (era 0.65 → 3.0:1)
     ruleBase:      "oklch(0.93 0.012 320)",
     ruleStrong:    "oklch(0.86 0.018 320)",
     success:       "oklch(0.78 0.14 160)",       // verde menta
@@ -361,15 +365,15 @@ const DARK_PRO: DesignTokens = {
     author: "buleje",
   },
   colors: {
-    accent:        "oklch(0.78 0.18 175)",      // teal vibrante en dark
-    accentDark:    "oklch(0.65 0.18 175)",
-    accentSoft:    "oklch(0.30 0.08 175)",      // accent-soft adaptado dark
+    accent:        "#2EC4BA",                   // turquesa del logo aclarado para dark (7.4:1)
+    accentDark:    "#00A29C",
+    accentSoft:    "oklch(0.30 0.06 190)",      // accent-soft adaptado dark
     surface:       "oklch(0.16 0.01 250)",      // bg-canvas dark
     surfaceRaised: "oklch(0.21 0.012 250)",
     surfaceSunken: "oklch(0.13 0.008 250)",
     textPrimary:   "oklch(0.96 0.005 250)",
     textSecondary: "oklch(0.78 0.008 250)",
-    textTertiary:  "oklch(0.60 0.01 250)",
+    textTertiary:  "oklch(0.61 0.01 250)",       // AA sobre raised (era 0.60 → 4.50 justo)
     ruleBase:      "oklch(0.30 0.012 250)",
     ruleStrong:    "oklch(0.40 0.015 250)",
     success:       "oklch(0.72 0.18 150)",
@@ -436,6 +440,17 @@ export function getPresetBySlug(slug: string): DesignTokens | null {
  * Las CSS vars son compatibles con los componentes existentes (que ya leen
  * `var(--accent)`, `var(--surface-raised)`, etc).
  */
+/** ¿La superficie del preset es oscura? oklch por su L; hex por luminancia. */
+export function esSuperficieOscura(surface: string): boolean {
+  const l = /oklch\(\s*([\d.]+)/.exec(surface);
+  if (l) return Number(l[1]) < 0.5;
+  const h = /^#([0-9a-f]{6})$/i.exec(surface.trim());
+  if (!h) return false;
+  const n = parseInt(h[1], 16);
+  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+  return lum < 0.5;
+}
+
 export function tokensToCssVars(tokens: DesignTokens): Record<string, string> {
   const t = tokens;
   // Helpers para derivar shades vía CSS color-mix (soportado en todos los browsers modernos).
@@ -455,6 +470,12 @@ export function tokensToCssVars(tokens: DesignTokens): Record<string, string> {
     "--accent-dark":    t.colors.accentDark,
     "--accent-soft":    t.colors.accentSoft,
     "--accent-muted":   lighten(t.colors.accent, 50),
+    /* Escala derivada (2026-09-24): sin estas dos, `--accent-600` y
+       `--accent-ink` salían de `:root`, donde la marca de la plataforma
+       (#00B4A6) las pisaba — el panel quedaba con dos turquesas. En un preset
+       oscuro el texto de acento es el acento mismo (brillante). */
+    "--accent-600":     darken(t.colors.accent, 12),
+    "--accent-ink":     esSuperficieOscura(t.colors.surface) ? t.colors.accent : darken(t.colors.accent, 25),
 
     // ── Surfaces ───────────────────────────────────────────────────────────
     "--surface-canvas": t.colors.surface,

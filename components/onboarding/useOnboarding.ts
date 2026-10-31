@@ -78,7 +78,8 @@ export function useOnboarding() {
 
       // Create customer if provided
       if (stepData.client) {
-        await fetch('/api/customers', {
+        // `siExiste=usar`: un celular que ya es cliente queda como está.
+        await fetch('/api/customers?siExiste=usar', {
           method: 'POST',
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({

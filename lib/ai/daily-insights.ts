@@ -27,6 +27,8 @@ export interface DailyInsightsInput {
     top5Productos: Array<{ nombre: string; cantidad: number }>;
     productosStockBajo: Array<{ name: string; stock?: number; stockMin?: number | null }>;
     diferenciaCaja: number | null;
+    /** Cajas cerradas hoy con conteo (el resumen corre con el día a medias). Sin dato se asume 1 si hay diferencia. */
+    cajasCerradas?: number;
     tenantName: string;
     fechaTexto: string;
   };
@@ -60,6 +62,16 @@ function calcularTrend(ventasHoy: number, ventasAyer: number | undefined): "up" 
   return "stable";
 }
 
+/** Con el signo antes del S/ («-S/ 5.00»): «S/ -5.00» no se lee de un vistazo. Lo usa también el WhatsApp del cron. */
+export function soles(n: number): string {
+  return `${n < 0 ? "-" : n > 0 ? "+" : ""}S/ ${Math.abs(n).toFixed(2)}`;
+}
+
+/** «Cajas cerradas hoy (N): diferencia», la misma forma del WhatsApp del cron. */
+function textoCajasCerradas(hoy: DailyInsightsInput["hoy"]): string {
+  return `Cajas cerradas hoy (${Math.max(1, hoy.cajasCerradas ?? 1)}): diferencia`;
+}
+
 function buildFallbackText(input: DailyInsightsInput): DailyInsightsResult {
   const { hoy, ayer } = input;
   const trend = calcularTrend(hoy.totalVentas, ayer?.totalVentas);
@@ -87,8 +99,7 @@ function buildFallbackText(input: DailyInsightsInput): DailyInsightsResult {
     lines.push(`Ojo: ${hoy.productosStockBajo.length} producto(s) con stock bajo — ${hoy.productosStockBajo.slice(0, 2).map(p => p.name).join(", ")}.`);
   }
   if (hoy.diferenciaCaja !== null && Math.abs(hoy.diferenciaCaja) > 0.01) {
-    const signo = hoy.diferenciaCaja > 0 ? "+" : "";
-    lines.push(`Diferencia de caja: ${signo}S/ ${hoy.diferenciaCaja.toFixed(2)}.`);
+    lines.push(`${textoCajasCerradas(hoy)} ${soles(hoy.diferenciaCaja)}.`);
   }
 
   return {
@@ -128,8 +139,8 @@ export async function generateDailyInsights(
     : "sin alertas de stock.";
 
   const cajaInfo = hoy.diferenciaCaja !== null
-    ? `Diferencia de caja: ${hoy.diferenciaCaja >= 0 ? "+" : ""}S/ ${hoy.diferenciaCaja.toFixed(2)}.`
-    : "Caja no cerrada.";
+    ? `${textoCajasCerradas(hoy)} ${soles(hoy.diferenciaCaja)}. (El día va a medias: es sólo de las cajas ya cerradas.)`
+    : "Ninguna caja cerrada todavía: no hables de diferencia de caja.";
 
   const trendEmoji = trend === "up" ? "📈" : trend === "down" ? "📉" : "📊";
 

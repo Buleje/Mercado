@@ -117,9 +117,13 @@ export async function POST(req: NextRequest) {
     `Notificacion enviada al repartidor ${partner.name} — canales: ${channels.join(", ") || "ninguno"}`,
     partner.id,
     auth.username
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  ).catch((err) =>
+    logger.error("[delivery/notify] logActivity failed", {
+      error: String(err),
+      partnerId,
+      orderId,
+    }),
+  );
 
   return NextResponse.json({
     notified: channels.length > 0,

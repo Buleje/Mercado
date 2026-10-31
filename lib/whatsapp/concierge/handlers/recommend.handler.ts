@@ -17,6 +17,7 @@ import type {
   ActionResult,
   Classification,
 } from "../types";
+import { productQueryHandler } from "./product-query.handler";
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ const RECOMMEND_COST_USD = 0.005;
 
 const FALLBACK_BUDGET: ActionResult = {
   reply:
-    "Por ahora no puedo recomendarte productos personalizados. Escribí *catálogo* para ver lo disponible.",
+    "Por ahora no puedo recomendarte productos personalizados. Escribe *catálogo* para ver lo disponible.",
   newState: "browsing",
 };
 
@@ -46,8 +47,15 @@ export async function recommendHandler(
   ctx: ConversationContext,
   classification: Classification,
 ): Promise<ActionResult> {
+  // El número de un negocio recomienda lo de ese negocio: cruzar tiendas es
+  // opt-in (Settings › whatsappAsistente.cruzarTiendas). Sin cruce, la búsqueda
+  // en el catálogo propio (sin IA: no hay nada que comparar entre tiendas).
+  if (ctx.asistente?.cruzarTiendas !== true) {
+    return productQueryHandler(ctx, classification);
+  }
+
   // F2 AI-COST: smartModel recomendación → guard antes de llamar
-  if (!await aiCostGuard.canSpend(ctx.tenantId, RECOMMEND_COST_USD, "free")) {
+  if (!await aiCostGuard.canSpend(ctx.tenantId, RECOMMEND_COST_USD)) {
     logger.warn("[recommend-handler] presupuesto agotado", {
       tenantId: ctx.tenantId.slice(-6),
     });
@@ -84,7 +92,7 @@ export async function recommendHandler(
     return {
       reply:
         `No encontré productos para *"${seed}"* en el marketplace.\n\n` +
-        `Probá con otra palabra (ej: *"arroz"*, *"pollo"*, *"snacks"*) o escribí *catálogo* para ver lo destacado.`,
+        `Prueba con otra palabra (ej: *"arroz"*, *"pollo"*, *"snacks"*) o escribe *catálogo* para ver lo destacado.`,
       newState: "browsing",
     };
   }

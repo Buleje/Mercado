@@ -27,6 +27,7 @@ import {
 } from "react";
 import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 import type { SocioPlan } from "@/lib/validators/socio-buleje";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export type SocioBulejeState = {
   isSocio: boolean;
@@ -37,6 +38,10 @@ export type SocioBulejeState = {
   totalSaved: number;
   totalOrdersWithFreeShipping: number;
   daysAsSocio: number;
+  /** Ahorro mensual REAL (ledger) — últimos 6 meses. Vacío si no hay actividad. */
+  monthlySavings: Array<{ month: string; amount: number }>;
+  /** Cashback ganado en el mes en curso (real). */
+  thisMonthCashback: number;
 };
 
 type SocioBulejeCtx = SocioBulejeState & {
@@ -62,6 +67,8 @@ const EMPTY_STATE: SocioBulejeState = {
   totalSaved: 0,
   totalOrdersWithFreeShipping: 0,
   daysAsSocio: 0,
+  monthlySavings: [],
+  thisMonthCashback: 0,
 };
 
 const SocioBulejeContext = createContext<SocioBulejeCtx | null>(null);
@@ -73,6 +80,8 @@ const CASHBACK_RATE = 0.05;
 
 // Dev-demo user id — en prod saldrá de la session / customer auth.
 const DEMO_USER_ID = "user_demo_01";
+/** userId del socio actual (dev-demo). En prod vendrá de la sesión del cliente. */
+export const SOCIO_CURRENT_USER_ID = DEMO_USER_ID;
 
 function loadState(storageKey: string): SocioBulejeState {
   if (typeof window === "undefined") return EMPTY_STATE;
@@ -112,7 +121,13 @@ function daysBetween(a: string, b: string): number {
   return Math.max(0, Math.floor((d2 - d1) / (24 * 60 * 60 * 1000)));
 }
 
-function serverToState(m: ServerMembership | null): SocioBulejeState {
+type ServerSavings = {
+  monthly: Array<{ month: string; amount: number }>;
+  thisMonth: number;
+  hasData: boolean;
+} | null;
+
+function serverToState(m: ServerMembership | null, savings?: ServerSavings): SocioBulejeState {
   if (!m) return EMPTY_STATE;
   return {
     isSocio: m.status === "active" || m.status === "trial",
@@ -123,6 +138,8 @@ function serverToState(m: ServerMembership | null): SocioBulejeState {
     totalSaved: m.totalEarned,
     totalOrdersWithFreeShipping: 0, // no lo trackea ADR-078 v1
     daysAsSocio: daysBetween(m.startedAt, new Date().toISOString()),
+    monthlySavings: savings?.monthly ?? [],
+    thisMonthCashback: savings?.thisMonth ?? 0,
   };
 }
 
@@ -151,9 +168,10 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
       const data = (await res.json()) as {
         ok: boolean;
         membership: ServerMembership | null;
+        savings?: ServerSavings;
       };
       if (data.ok) {
-        persist(serverToState(data.membership));
+        persist(serverToState(data.membership, data.savings));
       }
     } catch {
       // offline / SSR — dejamos el optimistic state.
@@ -209,10 +227,15 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
       persist(optimistic);
 
       try {
+        // Referido: si el link trae ?ref=<code>, lo pasamos para acreditar al referrer.
+        const ref =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("ref")
+            : null;
         const res = await fetch("/api/socio-buleje/subscribe", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan, userId: DEMO_USER_ID }),
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ plan, userId: DEMO_USER_ID, ...(ref ? { ref } : {}) }),
         });
         if (res.ok) {
           const data = (await res.json()) as {
@@ -236,7 +259,7 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch("/api/socio-buleje/cancel", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ userId: DEMO_USER_ID }),
       });
       if (res.ok) {

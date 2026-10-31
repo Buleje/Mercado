@@ -17,6 +17,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Las variables del mock deben declararse dentro de la factory con vi.fn()
 // para evitar el error "Cannot access before initialization".
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(),
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),

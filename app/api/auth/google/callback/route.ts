@@ -7,6 +7,7 @@ import {
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { logger } from "@/lib/logger";
 import { CustomersDB } from "@/lib/db/customers.db";
+import { sinDato } from "@/lib/errores/sin-dato";
 import {
   createCustomerToken,
   CUSTOMER_SESSION,
@@ -93,14 +94,20 @@ export async function GET(req: NextRequest) {
       tenantId,
     });
 
-    // ── Upsert customer by email ──
-    // Google OAuth users may not have a phone, so we use a synthetic phone
-    // derived from the Google ID as the PK (Customer.phone is the @id).
-    // If a customer with that email already exists (e.g. from a previous OTP
-    // registration), we link to them instead.
-    const existing = await CustomersDB.getByEmail(googleUser.email, tenantId);
+    // ── Ficha propia `google_<id>` (nunca la de un teléfono) ──
+    // SECURITY 2026-10-08 (Ley 29733): antes se vinculaba la ficha que tuviera
+    // el mismo correo. Google prueba el correo, pero el `Customer.email` de una
+    // ficha de teléfono lo podía escribir cualquiera (un pedido de invitado con
+    // el teléfono de la víctima y el Gmail del atacante): entrando con Google,
+    // el atacante quedaba en la ficha de la víctima, gastaba sus puntos y veía
+    // su historial. Customer no guarda si su correo fue verificado, así que no
+    // se vincula por correo: siempre la ficha `google_<id>`, como Facebook.
+    // Unir Google con un teléfono pedirá probar el teléfono (código).
     const syntheticPhone = `google_${googleUser.id}`;
-    const phone = existing?.phone ?? syntheticPhone;
+    const existing = await CustomersDB.getByPhone(syntheticPhone, tenantId).catch(
+      sinDato("api/auth/google/callback cliente existente"),
+    );
+    const phone = syntheticPhone;
     const isNew = !existing;
 
     const customer = await CustomersDB.upsert(

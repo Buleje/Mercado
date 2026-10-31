@@ -7,6 +7,9 @@ import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logActivity } from "@/lib/activity-logger";
+import { revisarPisoDePrecios, type CambioDePrecio } from "@/lib/precios/piso-servidor";
+import { respuestaBajoPiso, textoBajoPisoConfirmado } from "@/lib/precios/piso";
 
 const PatchItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -16,7 +19,22 @@ const PatchItemSchema = z.object({
 
 const PatchSchema = z.object({
   updates: z.array(PatchItemSchema).min(1).max(500),
+  /** Piso de rebajas (Brandon 19-10): sin esto, bajar bajo costo + piso = 409. */
+  confirmarBajoPiso: z.boolean().optional(),
 });
+
+const PutSchema = z.object({
+  percentage: z.number().finite(),
+  category: z.string().max(100).optional().nullable(),
+  confirmarBajoPiso: z.boolean().optional(),
+});
+
+/** «Bajo piso confirmado por <usuario>: …» en el registro de actividad (fire-and-forget). */
+function registrarBajoPiso(tenantId: string, usuario: string, avisos: Awaited<ReturnType<typeof revisarPisoDePrecios>>["avisos"]): void {
+  if (avisos.length === 0) return;
+  logActivity("Precio bajo piso", "producto", textoBajoPisoConfirmado(avisos, usuario), avisos.length === 1 ? String(avisos[0].productId) : undefined, usuario, undefined, tenantId)
+    .catch((err) => logger.error("[bulk-price] logActivity bajo piso failed", { error: String(err) }));
+}
 
 // PATCH — Actualizar precios individuales masivamente (con historial)
 export async function PATCH(req: NextRequest) {
@@ -31,7 +49,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { updates } = parsed.data;
+    const { updates, confirmarBajoPiso } = parsed.data;
     const failed: { productId: number; error: string }[] = [];
 
     // PERF 2026-05-24: antes era N+1 (findFirst + update + priceHistory.create
@@ -40,9 +58,23 @@ export async function PATCH(req: NextRequest) {
     const ids = updates.map((u) => u.productId);
     const existing = await prisma.product.findMany({
       where: { id: { in: ids }, tenantId: auth.tenantId },
-      select: { id: true, price: true },
+      select: { id: true, name: true, price: true, costPrice: true },
     });
     const priceById = new Map(existing.map((p) => [p.id, toNumOrZero(p.price)]));
+
+    // Piso de rebajas: precio y costo leídos acá (el costo nuevo si la fila lo trae).
+    const porId = new Map(existing.map((p) => [p.id, p]));
+    const cambios: CambioDePrecio[] = [];
+    for (const u of updates) {
+      const p = porId.get(u.productId);
+      if (!p) continue;
+      const costo = u.newCostPrice ?? (p.costPrice == null ? null : toNumOrZero(p.costPrice));
+      cambios.push({ productId: p.id, nombre: p.name, precioActual: toNumOrZero(p.price), precioNuevo: u.newPrice, costo });
+    }
+    const { pisoSobreCosto, avisos } = await revisarPisoDePrecios(auth.tenantId, cambios);
+    if (avisos.length > 0 && confirmarBajoPiso !== true) {
+      return NextResponse.json(respuestaBajoPiso(avisos, pisoSobreCosto), { status: 409 });
+    }
 
     const ops: Prisma.PrismaPromise<unknown>[] = [];
     let updated = 0;
@@ -82,6 +114,7 @@ export async function PATCH(req: NextRequest) {
       await prisma.$transaction(ops);
       // Invalidar el cache de getAll (productos cambiaron de precio).
       revalidateTag(`tenant:${auth.tenantId}:products`, "max");
+      registrarBajoPiso(auth.tenantId, auth.username ?? "admin", avisos);
     }
 
     return NextResponse.json({ updated, failed });
@@ -98,10 +131,13 @@ export async function PUT(req: NextRequest) {
 
   try {
     const { tenantId } = auth;
-    const body = await req.json();
-    const { percentage, category } = body;
+    const parsed = PutSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Porcentaje inválido" }, { status: 400 });
+    }
+    const { percentage, category, confirmarBajoPiso } = parsed.data;
 
-    if (typeof percentage !== "number" || percentage === 0) {
+    if (percentage === 0) {
       return NextResponse.json({ error: "Porcentaje inválido" }, { status: 400 });
     }
     if (Math.abs(percentage) > 100) {
@@ -115,7 +151,7 @@ export async function PUT(req: NextRequest) {
 
     const products = await prisma.product.findMany({
       where,
-      select: { id: true, price: true, name: true },
+      select: { id: true, price: true, name: true, costPrice: true },
     });
 
     if (products.length === 0) {
@@ -127,15 +163,33 @@ export async function PUT(req: NextRequest) {
 
     const multiplier = 1 + percentage / 100;
     // TD-018: p.price es Decimal
-    const updates = products.map((p) =>
+    const nuevos = products.map((p) => ({ p, precio: Math.round(toNumOrZero(p.price) * multiplier * 100) / 100 }));
+
+    // Piso de rebajas: un % negativo puede dejar productos bajo costo + piso.
+    const { pisoSobreCosto, avisos } = await revisarPisoDePrecios(
+      tenantId,
+      nuevos.map(({ p, precio }) => ({
+        productId: p.id,
+        nombre: p.name,
+        precioActual: toNumOrZero(p.price),
+        precioNuevo: precio,
+        costo: p.costPrice == null ? null : toNumOrZero(p.costPrice),
+      })),
+    );
+    if (avisos.length > 0 && confirmarBajoPiso !== true) {
+      return NextResponse.json(respuestaBajoPiso(avisos, pisoSobreCosto), { status: 409 });
+    }
+
+    const updates = nuevos.map(({ p, precio }) =>
       prisma.product.update({
         where: { id: p.id },
-        data: { price: Math.round(toNumOrZero(p.price) * multiplier * 100) / 100 },
+        data: { price: precio },
       }),
     );
 
     await prisma.$transaction(updates);
     revalidateTag(`tenant:${tenantId}:products`, "max");
+    registrarBajoPiso(tenantId, auth.username ?? "admin", avisos);
 
     return NextResponse.json({
       updated: products.length,

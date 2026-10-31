@@ -11,19 +11,14 @@ import {
   orchestrator,
   ensureAgentsRegistered,
 } from "@/lib/agents";
-import type { AgentDomain, TaskPriority } from "@/lib/agents/types";
+import { AGENT_DOMAINS, type AgentDomain, type TaskPriority } from "@/lib/agents/types";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Validation schemas ──────────────────────────────────────────────────────
 
-const VALID_DOMAINS: [AgentDomain, ...AgentDomain[]] = [
-  "inventory",
-  "orders",
-  "customers",
-  "analytics",
-  "notifications",
-  "pricing",
-];
+// Single source: `AGENT_DOMAINS` en lib/agents/types (una copia local se queda
+// vieja en cuanto se agrega un dominio).
+const VALID_DOMAINS = AGENT_DOMAINS as unknown as [AgentDomain, ...AgentDomain[]];
 
 const VALID_PRIORITIES: [TaskPriority, ...TaskPriority[]] = [
   "critical",

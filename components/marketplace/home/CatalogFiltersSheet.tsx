@@ -30,12 +30,12 @@ export default function CatalogFiltersSheet() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Abrir filtros del catálogo"
-        className="inline-flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-12 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+        className="inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors duration-[var(--dur-fast)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)]"
       >
         <SlidersHorizontal className="h-4 w-4" strokeWidth={2} aria-hidden />
         Filtros
         {activeCount > 0 && (
-          <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[11px] font-black text-white tabular-nums leading-none">
+          <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--accent-dark)] px-1.5 text-xs font-black leading-none text-white tabular-nums">
             {activeCount}
           </span>
         )}

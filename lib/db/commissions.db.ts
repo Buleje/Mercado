@@ -121,11 +121,12 @@ export const CommissionsDB = {
 
   async cashierSummary(
     tenantId: string,
-    filters: { from?: Date; to?: Date },
+    /** `cashierIds` = sólo esas cajeras (el POS estima la comisión de UNA: sin esto traía las ventas de todas). */
+    filters: { from?: Date; to?: Date; cashierIds?: string[] },
   ): Promise<CashierStats[]> {
     const where: Record<string, unknown> = {
       tenantId,
-      cashierId: { not: null },
+      cashierId: filters.cashierIds ? { in: filters.cashierIds } : { not: null },
     };
     if (filters.from || filters.to) {
       where.createdAt = {

@@ -14,6 +14,7 @@ import {
   Pill,
   Wrench,
   Croissant,
+  Sparkles,
   Package,
   Check,
 } from "lucide-react";
@@ -56,6 +57,7 @@ type IndustryKey =
   | "farmacia"
   | "ferreteria"
   | "panaderia"
+  | "belleza"
   | "otro";
 
 interface StoreConfigForm {
@@ -166,6 +168,14 @@ const INDUSTRY_OPTIONS: IndustryOption[] = [
     Icon: Croissant,
   },
   {
+    key: "belleza",
+    label: "Belleza y cuidado personal",
+    description: "Cosméticos, cabello, rostro y piel",
+    featured: ["Fichas de producto", "Revendedoras", "Tienda online"],
+    comingSoon: false,
+    Icon: Sparkles,
+  },
+  {
     key: "otro",
     label: "Otro",
     description: "Cualquier tipo de negocio local",
@@ -188,6 +198,14 @@ const PRODUCT_CATEGORIES = [
   "Congelados",
   "Otros",
 ];
+
+/** Ejemplo del primer producto según el rubro elegido en el paso 0 (ADR-509). */
+const EJEMPLO_PRIMER_PRODUCTO: Partial<Record<IndustryKey, { nombre: string; categorias: string[] }>> = {
+  belleza: {
+    nombre: "Ej: Shampoo de keratina 1 L",
+    categorias: ["Cabello", "Rostro", "Piel", "Maquillaje", "Uñas", "Perfumes", "Accesorios", "Otros"],
+  },
+};
 
 const HORARIOS = [
   "05:00", "06:00", "07:00", "08:00", "09:00", "10:00",
@@ -768,6 +786,7 @@ export default function SetupPage() {
               {/* STEP 2: Primer producto */}
               {currentStep === 2 && (
                 <Step2FirstProduct
+                  industry={selectedIndustry}
                   form={firstProduct}
                   setForm={setFirstProduct}
                   errors={fieldErrors}
@@ -1095,18 +1114,21 @@ function Step1StoreConfig({
 // ── Step 2: Primer producto ───────────────────────────────────────────────────
 
 function Step2FirstProduct({
+  industry,
   form,
   setForm,
   errors,
   imageRef,
   onImageChange,
 }: {
+  industry: IndustryKey;
   form: FirstProductForm;
   setForm: React.Dispatch<React.SetStateAction<FirstProductForm>>;
   errors: Record<string, string>;
   imageRef: React.RefObject<HTMLInputElement | null>;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
+  const ejemplo = EJEMPLO_PRIMER_PRODUCTO[industry];
   return (
     <div className="space-y-4">
       {/* Foto del producto */}
@@ -1158,7 +1180,7 @@ function Step2FirstProduct({
       <FormFieldSimple label="Nombre del producto" error={errors.name} required>
         <input
           type="text"
-          placeholder="Ej: Arroz Costeño 1 kg"
+          placeholder={ejemplo?.nombre ?? "Ej: Arroz Costeño 1 kg"}
           value={form.name}
           onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
           className={inputCls(!!errors.name)}
@@ -1173,7 +1195,7 @@ function Step2FirstProduct({
           className={selectCls(!!errors.category)}
         >
           <option value="">Selecciona una categoría</option>
-          {PRODUCT_CATEGORIES.map((c) => (
+          {(ejemplo?.categorias ?? PRODUCT_CATEGORIES).map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>

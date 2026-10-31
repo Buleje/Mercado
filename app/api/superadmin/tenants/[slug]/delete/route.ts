@@ -7,6 +7,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
+import { esTenantProtegido } from "@/lib/tenancy/negocio-por-defecto";
+import { TenantsDB } from "@/lib/db/tenants.db";
+import { permitirBorrarFirmas } from "@/lib/db/adelanto-firmas.db";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -95,7 +98,7 @@ export async function DELETE(
     }
 
     // Proteger tenants del sistema
-    if (slug === "main") {
+    if (esTenantProtegido(slug)) {
       return NextResponse.json(
         { error: "No se puede eliminar la tienda principal del sistema" },
         { status: 403 },
@@ -149,6 +152,8 @@ export async function DELETE(
       "AdminUser", "Settings", "NotificationLog", "PushSubscription",
       "ActivityLog", "AdminMessage", "ThemeSettings", "Navigation",
       "TenantInvitation", "CronDeadLetter", "ApiKey",
+      // Plan de la empresa (ADR-497): DNI y aportes de los socios — Ley 29733.
+      "PlanEmpresaVersion", "PlanEmpresaSeccion",
       // Store (after its children were deleted in Phase 1)
       "Store",
     ];
@@ -157,7 +162,11 @@ export async function DELETE(
     }
 
     // ── Phase 3: Delete the tenant itself ──
-    await prisma.tenant.delete({ where: { slug } });
+    // ADR-491: el registro de firmas de adelantos es solo de agregar (trigger
+    // `AdelantoFirma_inmutable`); el cascade del tenant lo borra sólo con el
+    // permiso LOCAL de esta transacción (nunca un SET de sesión en el pooler).
+    await prisma.$transaction([permitirBorrarFirmas(), prisma.tenant.delete({ where: { slug } })]);
+    TenantsDB.olvidarPublico(); // la página pública del negocio (/t/<slug>, tenants/resolve) cachea 60 s
 
     logger.info("[SuperAdmin] Tenant deleted", {
       username: session.username,

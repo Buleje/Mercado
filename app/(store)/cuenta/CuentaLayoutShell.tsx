@@ -1,24 +1,18 @@
 "use client";
 
 /**
- * CuentaLayoutShell — wrapper client del area /cuenta/*.
+ * CuentaLayoutShell — marco de «Mi cuenta».
  *
- * Compone:
- *   - Header + AnnouncementBar (store chrome)
- *   - CuentaMobileTabs (tabs horizontal en mobile)
- *   - CuentaSidebar (nav sticky en desktop lg+)
- *   - <main> con children (contenido de la ruta actual)
- *   - CartSidebar + MobileBottomNav (floating store widgets)
+ * 2026-10-11: sin barra lateral ni pestañas de arriba. Repetían los mismos
+ * accesos que el panel (Direcciones, Pagos, Cupones… dos veces en la misma
+ * pantalla); ahora viven en «Mis datos» y el menú de cuenta de la cabecera.
+ * Una columna angosta: se lee de un vistazo en la compu y en el celular.
+ * El fondo es el del negocio (`--surface-canvas` de su tema).
  */
 
 import dynamic from "next/dynamic";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
-import CuentaSidebar from "@/components/customer/cuenta-layout/CuentaSidebar";
-import CuentaMobileTabs from "@/components/customer/cuenta-layout/CuentaMobileTabs";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 export interface CuentaLayoutShellProps {
   children: React.ReactNode;
@@ -26,29 +20,10 @@ export interface CuentaLayoutShellProps {
 
 export function CuentaLayoutShell({ children }: CuentaLayoutShellProps) {
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background:
-          "color-mix(in oklch, var(--color-primary, #00A0A0) 4%, var(--surface-canvas))",
-      }}
-    >
-
-      <div className="pt-28 sm:pt-32 pb-28">
-        <CuentaMobileTabs className="sticky top-16 z-30" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="flex gap-8">
-            <CuentaSidebar />
-            <main
-              id="main-content"
-              className="flex-1 min-w-0"
-            >
-              {children}
-            </main>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-[70vh] bg-[var(--surface-canvas)]">
+      <main id="main-content" className="mx-auto w-full max-w-3xl px-4 pb-24 pt-6 sm:px-6 sm:pt-10">
+        {children}
+      </main>
       <CartSidebar />
     </div>
   );

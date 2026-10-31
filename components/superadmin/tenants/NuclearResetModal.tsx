@@ -26,7 +26,7 @@ export function NuclearResetModal({ onConfirm, onCancel, loading, tenantCount, t
           </div>
           <div>
             <h3 className="text-lg font-bold text-[var(--data-error-500)]">Borrar TODOS los datos</h3>
-            <p className="text-sm text-gray-500">Reinicio total del sistema</p>
+            <p className="text-sm text-[var(--text-secondary)]">Reinicio total del sistema</p>
           </div>
         </div>
 
@@ -68,20 +68,20 @@ export function NuclearResetModal({ onConfirm, onCancel, loading, tenantCount, t
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             placeholder={CONFIRM_TEXT}
-            className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/40 font-mono"
+            className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-4 h-11 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/40 font-mono"
             autoFocus
           />
         </div>
 
         <div className="flex gap-3">
-          <button type="button" onClick={onCancel} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
+          <button type="button" onClick={onCancel} className="flex-1 min-h-11 rounded-xl text-sm font-semibold border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
             Cancelar
           </button>
           <button
             type="button"
             onClick={onConfirm}
             disabled={!confirmed || loading}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bomb className="w-4 h-4" />}
             Borrar todo

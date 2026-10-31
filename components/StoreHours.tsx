@@ -53,7 +53,7 @@ export default function StoreHours() {
 
         {/* Header */}
         <div className="text-center mb-10">
-          <span className="inline-flex items-center gap-1.5 bg-primary/8 dark:bg-primary/15 text-primary text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-primary/8 dark:bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
             <Clock className="w-3.5 h-3.5" />
             Horarios de atención
           </span>

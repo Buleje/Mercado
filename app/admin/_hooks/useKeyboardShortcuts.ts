@@ -18,11 +18,16 @@
  *  - Ctrl + Shift + P → toggle modo presentación
  *
  * Convenciones:
- *  - Ignora el evento si el target es INPUT o TEXTAREA (para no romper escritura).
+ *  - Ignora el evento si el foco está en un campo editable (input/textarea/
+ *    select/contenteditable) o hay un modal abierto — vía `shouldIgnoreShortcut`
+ *    helpers en lib/keyboard-guards (para no romper escritura ni sacar al
+ *    usuario de un diálogo). Ver reporte QA Compras 2026-07-08.
  *  - Usa latest-ref pattern para evitar re-attach del listener en cada render.
  */
 
 import { useEffect, useRef } from "react";
+import { EVENTO_ABRIR_CIERRE_DIARIO } from "@/lib/admin/abrir-cierre-diario";
+import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import type { Tab } from "../_lib/tabs.types";
 
 const SHORTCUT_MAP: Record<string, Tab> = {
@@ -63,8 +68,10 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig): void {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      // FIX 2026-07-08 (reporte QA): guard ampliado — antes solo INPUT/TEXTAREA;
+      // ahora también SELECT/contenteditable y CUALQUIER modal abierto, para que
+      // Alt+1..9 no saque al usuario de su sección mientras opera en un diálogo.
+      if (isEditableTarget(e.target) || isModalOpen()) return;
 
       const c = configRef.current;
 
@@ -95,11 +102,13 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig): void {
         return;
       }
 
-      // Alt + S → enfocar input de búsqueda
+      // Alt + S → enfocar el buscador de la PANTALLA. El de la cabecera
+      // (`data-buscador-panel`, 20-10) va primero en el DOM y se lo llevaría:
+      // ése tiene su Ctrl+K.
       if (e.key === "s" && e.altKey) {
         e.preventDefault();
         const searchInput = document.querySelector(
-          'input[type="text"][placeholder*="Buscar"], input[type="search"]'
+          'input[type="text"][placeholder*="Buscar"]:not([data-buscador-panel]), input[type="search"]:not([data-buscador-panel])'
         ) as HTMLInputElement | null;
         searchInput?.focus();
         return;
@@ -126,7 +135,14 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig): void {
       }
     };
 
+    // El botón de un estado vacío («Sin cierres de caja») abre el mismo modal que Ctrl+Shift+C.
+    const abrirCierre = () => configRef.current.setShowCierreDiario(() => true);
+
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener(EVENTO_ABRIR_CIERRE_DIARIO, abrirCierre);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      window.removeEventListener(EVENTO_ABRIR_CIERRE_DIARIO, abrirCierre);
+    };
   }, []);
 }

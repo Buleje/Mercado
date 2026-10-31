@@ -67,6 +67,7 @@ vi.mock("@/lib/plans", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),
@@ -100,6 +101,9 @@ const {
   mockCouponsRedeem,
   mockCouponsAdd,
   mockPromotionsGetAll,
+  mockCouponsFindByCode,
+  mockCouponsCountUsesByCustomer,
+  mockStoresGetByTenant,
 } = vi.hoisted(() => ({
   mockOrdersAdd: vi.fn() as ReturnType<typeof vi.fn>,
   mockOrdersGetByCustomerPhone: vi.fn() as ReturnType<typeof vi.fn>,
@@ -107,6 +111,13 @@ const {
   mockCouponsRedeem: vi.fn() as ReturnType<typeof vi.fn>,
   mockCouponsAdd: vi.fn() as ReturnType<typeof vi.fn>,
   mockPromotionsGetAll: vi.fn() as ReturnType<typeof vi.fn>,
+  // ADR-380 Fase 1.2: la ruta migró la LECTURA del cupón del CouponsDB legacy
+  // (jsondb) a lib/db/coupons.db.ts — ignoraba storeId por completo. `add`
+  // sigue siendo legacy (no migrado en esta fase), por eso el mock de arriba
+  // se queda.
+  mockCouponsFindByCode: vi.fn() as ReturnType<typeof vi.fn>,
+  mockCouponsCountUsesByCustomer: vi.fn().mockResolvedValue(0) as ReturnType<typeof vi.fn>,
+  mockStoresGetByTenant: vi.fn().mockResolvedValue(null) as ReturnType<typeof vi.fn>,
 }));
 
 vi.mock("@/lib/jsondb", () => ({
@@ -124,6 +135,19 @@ vi.mock("@/lib/jsondb", () => ({
   },
   PromotionsDB: {
     getAll: mockPromotionsGetAll,
+  },
+}));
+
+vi.mock("@/lib/db/coupons.db", () => ({
+  CouponsDB: {
+    findByCode: mockCouponsFindByCode,
+    countUsesByCustomer: mockCouponsCountUsesByCustomer,
+  },
+}));
+
+vi.mock("@/lib/db/marketplace/stores.db", () => ({
+  MarketplaceStoresDB: {
+    getByTenant: mockStoresGetByTenant,
   },
 }));
 
@@ -342,7 +366,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
     // Coupon validation passes (the lookup happens BEFORE the atomic txn) —
     // the race happens at redemption time, modeled by 0-rows on the second
     // executeRaw call (stock UPDATE wins, coupon UPDATE loses).
-    mockCouponsGetByCode.mockResolvedValue({
+    mockCouponsFindByCode.mockResolvedValue({
       id: "c1",
       code: "ONCE",
       description: "",
@@ -379,7 +403,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
     mockProductFindMany.mockResolvedValue([
       { id: 1, price: dec(20), costPrice: dec(12), stock: 100 },
     ]);
-    mockCouponsGetByCode.mockResolvedValue({
+    mockCouponsFindByCode.mockResolvedValue({
       id: "c1",
       code: "ONCE",
       description: "",
@@ -406,7 +430,9 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
     expect(res.status).toBe(201);
     expect(mockOrdersAdd).toHaveBeenCalledTimes(1);
     // The lookup MUST be tenant-scoped (RED-007 enforced at the call site).
-    expect(mockCouponsGetByCode).toHaveBeenCalledWith(TENANT_A, "ONCE");
+    // 3rd arg = la tienda marketplace del tenant, si tiene una (ADR-380 Fase
+    // 1.2) — el mock de stores.getByTenant devuelve null por default.
+    expect(mockCouponsFindByCode).toHaveBeenCalledWith(TENANT_A, "ONCE", undefined);
   });
 
   // ── (c) RED-007: cross-tenant coupon ────────────────────────────────────
@@ -415,27 +441,23 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
       { id: 1, price: dec(20), costPrice: dec(12), stock: 100 },
     ]);
     // Simulate the DB: TENANT-A-COUPON exists for tenant A, NOT for tenant B.
-    mockCouponsGetByCode.mockImplementation(
-      async (...args: unknown[]) => {
-        // New secure form: (tenantId, code)
-        if (args.length === 2) {
-          const [tid, code] = args as [string, string];
-          if (tid === TENANT_A && code === "TENANT-A-COUPON") {
-            return {
-              id: "ca1",
-              code: "TENANT-A-COUPON",
-              description: "",
-              discountType: "percent" as const,
-              discountValue: 10,
-              maxUses: 100,
-              usedCount: 0,
-              active: true,
-              createdAt: "2026-01-01T00:00:00Z",
-            };
-          }
-          return null;
+    // findByCode(tenantId, code, storeId?) — storeId no importa para este
+    // escenario (aislamiento por TENANT, no por tienda).
+    mockCouponsFindByCode.mockImplementation(
+      async (tid: string, code: string) => {
+        if (tid === TENANT_A && code === "TENANT-A-COUPON") {
+          return {
+            id: "ca1",
+            code: "TENANT-A-COUPON",
+            description: "",
+            discountType: "percent" as const,
+            discountValue: 10,
+            maxUses: 100,
+            usedCount: 0,
+            active: true,
+            createdAt: "2026-01-01T00:00:00Z",
+          };
         }
-        // Legacy form (should never be reached from the orders route now).
         return null;
       },
     );
@@ -464,7 +486,7 @@ describe("POST /api/orders — RED-005 + RED-006 + RED-007 race conditions", () 
     expect(body.total).toBe(20); // full price, no discount
 
     // The lookup ran with tenant B's tenantId, not tenant A's.
-    expect(mockCouponsGetByCode).toHaveBeenCalledWith(TENANT_B, "TENANT-A-COUPON");
+    expect(mockCouponsFindByCode).toHaveBeenCalledWith(TENANT_B, "TENANT-A-COUPON", undefined);
 
     // No coupon UPDATE ran inside the transaction (because verifiedCouponCode
     // was never set). Stock UPDATE was the only $executeRaw call.

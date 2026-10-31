@@ -11,6 +11,8 @@ import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 import { sendOrder, type SendResult } from "@/lib/order-utils";
+import { PedidoCarritoWhatsapp } from "@/components/checkout/parts/PedidoCarritoWhatsapp";
+import { usePedidosTienda } from "@/components/checkout/hooks/usePedidosTienda";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import CartUpsellSection from "@/components/CartUpsellSection";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -42,6 +44,8 @@ export default function CartSidebar() {
     useCart();
   const { customer } = useCustomer();
   const { mode } = useSettings();
+  // WhatsApp del negocio: con él, la vista previa usa el kit (imagen antes del clic).
+  const { numeroWhatsapp } = usePedidosTienda();
   const { getBestPromotion, promotions } = usePromotions();
   const { products: allProducts } = useStoreProducts();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -98,58 +102,6 @@ export default function CartSidebar() {
       }
     } catch { setCouponMsg("Error al validar"); setCouponDiscount(0); }
     setValidatingCoupon(false);
-  };
-
-  /* Mejora 18: Guardar carrito para después con link compartible */
-  const [savedCartCode, setSavedCartCode] = useState<string | null>(null);
-  const [showSavedModal, setShowSavedModal] = useState(false);
-  const [loadCartCode, setLoadCartCode] = useState("");
-  const [loadCartMsg, setLoadCartMsg] = useState("");
-
-  const saveCartForLater = () => {
-    if (items.length === 0) return;
-    const code = "Buleje-" + Date.now().toString(36).toUpperCase();
-    const cartData = {
-      items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit, image: i.image })),
-      savedAt: Date.now(),
-    };
-    try { localStorage.setItem(`saved-carts-${code}`, JSON.stringify(cartData)); } catch { /* ignore */ }
-    setSavedCartCode(code);
-    setShowSavedModal(true);
-  };
-
-  const loadSavedCart = () => {
-    const code = loadCartCode.trim().toUpperCase();
-    if (!code) { setLoadCartMsg("Ingresa un codigo"); return; }
-    try {
-      const raw = localStorage.getItem(`saved-carts-${code}`);
-      if (!raw) { setLoadCartMsg("Codigo no encontrado"); return; }
-      const data = JSON.parse(raw);
-      // Check expiration (7 days)
-      if (Date.now() - data.savedAt > 7 * 24 * 60 * 60 * 1000) {
-        setLoadCartMsg("Este codigo ha expirado");
-        localStorage.removeItem(`saved-carts-${code}`);
-        return;
-      }
-      // Add items to cart
-      for (const item of data.items) {
-        const product = allProducts.find(p => p.id === item.id);
-        if (product) {
-          for (let q = 0; q < item.quantity; q++) addItem(product);
-        }
-      }
-      setLoadCartMsg("Lista cargada con exito");
-      setLoadCartCode("");
-      setTimeout(() => setLoadCartMsg(""), 3000);
-    } catch { setLoadCartMsg("Error al cargar la lista"); }
-  };
-
-  const shareCartWhatsApp = () => {
-    if (!savedCartCode) return;
-    const itemList = items.map((i, idx) => `${idx + 1}. ${i.name} - S/${(i.price * i.quantity).toFixed(2)}`).join("\n");
-    const url = typeof window !== "undefined" ? window.location.origin : "";
-    const msg = `🛒 Mi lista de Buleje:\n${itemList}\nCodigo: ${savedCartCode}\nIngresa en ${url}/tienda y usa este codigo para cargar la lista`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   /* Z4: Print cart as shopping list */
@@ -273,7 +225,7 @@ export default function CartSidebar() {
       savedLocations: [],
     };
     setSending(true);
-    const result = await sendOrder(sender, items, total);
+    const result = await sendOrder(sender, items, total, numeroWhatsapp);
     setSending(false);
     setSendResult(result);
     markOrderPending();
@@ -404,7 +356,7 @@ export default function CartSidebar() {
                               window.location.href = `/tienda#cat-${cat.id}`;
                             }
                           }}
-                          className="px-4 py-2 rounded-full bg-primary/8 text-primary text-sm font-semibold hover:bg-primary/15 transition-colors"
+                          className="px-4 py-2 rounded-full bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/15 transition-colors"
                         >
                           {cat.label}
                         </button>
@@ -675,48 +627,6 @@ export default function CartSidebar() {
                   </div>
                 </details>
 
-                {/* Mejora 18: Guardar carrito + Cargar código */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={saveCartForLater}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-primary/30 text-xs font-bold text-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <Clipboard className="h-3.5 w-3.5" />
-                    Guardar mi lista
-                  </button>
-                  <div className="flex-1 flex gap-1">
-                    <input
-                      type="text"
-                      value={loadCartCode}
-                      onChange={e => { setLoadCartCode(e.target.value); setLoadCartMsg(""); }}
-                      placeholder="Codigo lista..."
-                      className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-[length:var(--ts-2xs)] text-gray-700 dark:text-[var(--text-primary)] outline-none focus:border-primary/40"
-                    />
-                    <button
-                      onClick={loadSavedCart}
-                      className="px-2 py-1.5 rounded-lg bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold hover:bg-primary/20 transition-colors shrink-0"
-                    >
-                      Cargar
-                    </button>
-                  </div>
-                </div>
-                {loadCartMsg && (
-                  <p className={`text-[length:var(--ts-2xs)] font-semibold text-center ${loadCartMsg.includes("exito") ? "text-[var(--data-success-600)]" : "text-[var(--data-error-500)]"}`}>{loadCartMsg}</p>
-                )}
-
-                {/* Mejora 14: Delivery time estimate */}
-                {(() => {
-                  const now = new Date().getHours();
-                  const isDeliveryHours = now >= 8 && now < 21;
-                  const estimado = isDeliveryHours ? "~30 minutos" : "manana 8-10am";
-                  return (
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-muted py-1">
-                      <Truck className="h-3.5 w-3.5 shrink-0" />
-                      <span>Entrega estimada: <span className="font-bold text-gray-700 dark:text-[var(--text-primary)]">{estimado}</span></span>
-                    </div>
-                  );
-                })()}
-
                 {/* Total */}
                 <div className="flex items-center justify-between">
                   <span className="text-base font-semibold text-muted">
@@ -745,7 +655,6 @@ export default function CartSidebar() {
                     {finalTotal < 15 ? "Buen inicio" :
                      finalTotal < 40 ? "Vas bien" :
                      finalTotal < 80 ? "Gran compra" :
-                     finalTotal < 150 ? "Compra VIP" :
                      "Sos nuestro mejor cliente hoy"}
                   </p>
                 )}
@@ -830,8 +739,20 @@ export default function CartSidebar() {
 
                 {/* Y4: WhatsApp message preview */}
                 <AnimatePresence>
-                  {showPreview && !sending && (
+                  {showPreview && !sending && numeroWhatsapp && (
                     <m.div
+                      key="vista-kit"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <PedidoCarritoWhatsapp items={items} total={finalTotal} onEditar={() => setShowPreview(false)} />
+                    </m.div>
+                  )}
+                  {showPreview && !sending && !numeroWhatsapp && (
+                    <m.div
+                      key="vista-texto"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
@@ -931,55 +852,6 @@ export default function CartSidebar() {
             )}
           </m.aside>
 
-          {/* Mejora 18: Modal de lista guardada */}
-          {showSavedModal && savedCartCode && (
-            <m.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-6002 bg-black/50 flex items-center justify-center p-4"
-              onClick={() => setShowSavedModal(false)}
-            >
-              <m.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-sm p-6 space-y-4"
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-[var(--data-success-600)]" />
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-gray-900 dark:text-[var(--text-primary)]">Lista guardada</p>
-                    <p className="text-xs text-gray-500 dark:text-muted">Valida por 7 dias</p>
-                  </div>
-                </div>
-                <div className="bg-gray-50 dark:bg-surface rounded-xl px-4 py-3 text-center">
-                  <p className="text-xs text-gray-500 dark:text-muted mb-1">Codigo:</p>
-                  <p className="text-2xl font-extrabold text-primary tracking-wider">{savedCartCode}</p>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-muted text-center">
-                  Comparte este codigo para que alguien mas compre lo mismo
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowSavedModal(false)}
-                    className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 transition-colors"
-                  >
-                    Cerrar
-                  </button>
-                  <button
-                    onClick={shareCartWhatsApp}
-                    className="flex-1 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#20BD5A] transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Share2 className="h-3.5 w-3.5" />
-                    Compartir
-                  </button>
-                </div>
-              </m.div>
-            </m.div>
-          )}
         </>
       )}
     </AnimatePresence>

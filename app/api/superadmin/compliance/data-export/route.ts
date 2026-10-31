@@ -5,6 +5,8 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { logActivityQueued } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 
@@ -130,7 +132,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         exportDate: new Date().toISOString(),
         legalBasis: "Ley 29733 Art. 18-20 — Derecho de acceso",
-        requestedBy: `superadmin:${auth.username}`,
+        requestedBy: actorVisibleParaNegocio(),
         tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name },
         customerDocument: dni,
       },
@@ -184,14 +186,16 @@ export async function POST(req: NextRequest) {
     logActivityQueued(
       "data_export",
       "compliance",
-      `SuperAdmin ${auth.username} exportó datos del cliente ${dni} (tenant ${tenant.slug}). IP ${ip}`,
+      `${actorVisibleParaNegocio()} exportó datos del cliente ${dni} (tenant ${tenant.slug}). IP ${ip}`,
       customer.phone,
-      auth.username,
+      actorVisibleParaNegocio(),
       undefined,
       tenant.id,
     ).catch((err) =>
       logger.error("[compliance/data-export] activity log failed", { error: String(err) }),
     );
+
+    logSuperadminAction("data_export", `${auth.username} exportó datos del cliente ${dni} (tenant ${tenant.slug}). IP ${ip}`, { tenantId: tenant.id }, auth.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
 
     return NextResponse.json(exportData);
   } catch (err) {

@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 /**
  * Genera el texto del reporte diario de ventas para un tenant.
@@ -67,15 +68,23 @@ export async function generateDailyReport(tenantId: string): Promise<string> {
         },
       }),
 
-      // 5. Productos activos con stock bajo (stock <= 5 o stockMin si definido)
-      prisma.product.count({
-        where: {
-          tenantId,
-          active: true,
-          deletedAt: null,
-          stock: { lte: 5 },
-        },
-      }),
+      // 5. Productos activos con stock bajo: en o bajo el mínimo propio o, sin
+      // él, `Settings.globalMinStock` (un solo stock mínimo, 09-10; antes un 5
+      // fijo para todos, decía el comentario «o stockMin» pero no lo miraba).
+      minimoGlobalDelNegocio(tenantId).then((minimoGlobal) =>
+        prisma.product.count({
+          where: {
+            tenantId,
+            active: true,
+            deletedAt: null,
+            stock: { not: null },
+            OR: [
+              { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+              { stockMin: null, stock: { lte: minimoGlobal } },
+            ],
+          },
+        }),
+      ),
     ]);
 
   // ── Cálculos ───────────────────────────────────────────────────────────────

@@ -70,7 +70,7 @@ const POPULAR_CATEGORIES = [
     label: "Abarrotes",
     desc: "Arroz, fideos, aceite",
     Illustration: BodegaAbriendo,
-    accent: "#d97706", // amber-600
+    accent: "#f0503f", // amber-600
     soft: "rgba(217,119,6,0.08)",
   },
 ] as const;

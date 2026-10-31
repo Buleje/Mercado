@@ -19,16 +19,45 @@ import {
  */
 export async function getPlatformConfigSSR(): Promise<PlatformConfig> {
   try {
-    const all = await PlatformSettingsDB.getAll();
-    const flat: Record<string, unknown> = {};
-    for (const k of Object.keys(PLATFORM_CONFIG_KEYS)) {
-      if (k in all) flat[k] = all[k];
-    }
-    return flatToNested(flat);
+    return aPlatformConfig(await PlatformSettingsDB.getAll());
   } catch {
     // Si la DB no responde, defaults — el sitio sigue funcionando con la
     // identidad por defecto de Buleje. Mejor degradar que romper.
     return PLATFORM_CONFIG_DEFAULTS;
+  }
+}
+
+function aPlatformConfig(all: Record<string, unknown>): PlatformConfig {
+  const flat: Record<string, unknown> = {};
+  for (const k of Object.keys(PLATFORM_CONFIG_KEYS)) {
+    if (k in all) flat[k] = all[k];
+  }
+  return flatToNested(flat);
+}
+
+/**
+ * La config para un `"use cache"` (la marca del root layout, 29-10): lee
+ * directo de la base —sin el `inFlight` compartido de `getAll`, ver
+ * `PlatformSettingsDB.getAllFresco`— y con tope. Si la base no contesta en
+ * `topeMs` o falla, devuelve `null`: quien llama decide no cachear los
+ * defaults por horas. El tope tiene que quedar MUY por debajo de los 50 s que
+ * Next da para llenar un caché en el `next build` (USE_CACHE_TIMEOUT).
+ */
+export async function leerPlatformConfigConTope(
+  topeMs: number,
+): Promise<{ cfg: PlatformConfig | null; ms: number }> {
+  const inicio = Date.now();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const tope = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), topeMs);
+  });
+  try {
+    const all = await Promise.race([PlatformSettingsDB.getAllFresco(), tope]);
+    return { cfg: all ? aPlatformConfig(all) : null, ms: Date.now() - inicio };
+  } catch {
+    return { cfg: null, ms: Date.now() - inicio };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -69,11 +98,41 @@ export function brandColorOverridesCss(cfg: PlatformConfig): string | null {
   if (primary && primary !== PLATFORM_CONFIG_DEFAULTS.brand.primaryColor) {
     overrides.push(`--brand-primary: ${primary};`);
     overrides.push(`--accent: ${primary};`);
+    /*
+     * La marca elegida tiene que arrastrar TODA su escala, no sólo el tono base.
+     *
+     * El acento del DS no es un color: son seis tokens —`--accent` y sus
+     * derivados— y media UI usa los derivados, no la base. El CTA del login,
+     * por ejemplo, es `bg-[var(--accent-600)]`. Pisando sólo `--accent`, un
+     * negocio que elige su color quedaba con la página partida: el tono nuevo
+     * en los textos y los KPIs, y el turquesa del DS en los botones, los hovers
+     * y los tintes. Dos identidades en la misma pantalla.
+     *
+     * Los porcentajes se calibraron contra la escala real de `globals.css`:
+     * partiendo del turquesa #00A0A0, 88 % reproduce #008787, 79 % da #007575
+     * y 75 % da #006B6B — Δ de 0 a 2 por canal. Misma técnica que
+     * `design-presets` usa para
+     * derivar los colores semánticos: `color-mix` en oklab, que mantiene la
+     * luminosidad percibida en cualquier hue — un derivado calculado en RGB se
+     * ensucia con los colores cálidos.
+     */
+    overrides.push(`--accent-600: color-mix(in oklab, ${primary} 88%, black);`);
+    overrides.push(`--accent-dark: color-mix(in oklab, ${primary} 79%, black);`);
+    overrides.push(`--accent-ink: color-mix(in oklab, ${primary} 75%, black);`);
+    overrides.push(`--accent-soft: color-mix(in oklab, ${primary} 6%, transparent);`);
+    overrides.push(`--accent-muted: color-mix(in oklab, ${primary} 13%, transparent);`);
   }
   const secondary = safeColor(cfg.brand.secondaryColor);
   if (secondary && secondary !== PLATFORM_CONFIG_DEFAULTS.brand.secondaryColor) {
     overrides.push(`--brand-secondary: ${secondary};`);
   }
   if (overrides.length === 0) return null;
-  return `:root{${overrides.join("")}}`;
+  /* En oscuro, globals.css pone `--accent-ink` CLARO (#2EC4BA): los enlaces van sobre
+   * fondo oscuro. El override de `:root` vive en el mismo <html> que `.dark` y, por ir
+   * después, lo pisaba con el teal hondo de claro → 3,2:1 en los enlaces de la home
+   * (2026-10-10). Se deriva el claro del mismo primario. */
+  const oscuro = primary && primary !== PLATFORM_CONFIG_DEFAULTS.brand.primaryColor
+    ? `.dark{--accent-ink: color-mix(in oklab, ${primary} 72%, white);}`
+    : "";
+  return `:root{${overrides.join("")}}${oscuro}`;
 }

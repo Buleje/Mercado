@@ -87,6 +87,9 @@ describe("Q-P0-4 · purchases.db invalida cache en writes", () => {
       status: "pendiente", notes: null, paymentMethod: null, deliveryDate: null,
       discount: 0, tenantId: TENANT, items: [], createdAt: new Date(), updatedAt: new Date(),
     });
+    // El proveedor es del mismo negocio (10-10: `add` rechaza proveedor o productos ajenos).
+    const { prisma } = await import("@/lib/prisma");
+    vi.mocked(prisma.supplier.findFirst).mockResolvedValue({ id: "s1" } as never);
     const { PurchasesDB } = await import("@/lib/db/purchases.db");
     await PurchasesDB.add({
       id: "po1", supplierId: "s1", supplierName: "Test", total: 100,

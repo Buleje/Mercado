@@ -121,8 +121,8 @@ export default function SuscripcionesClient() {
               Mis suscripciones
             </h1>
             <p className="mt-2 max-w-xl text-base text-[var(--text-secondary)]">
-              Tus productos recurrentes llegan solos. Ahorrás 5% en cada entrega y pausás o
-              cancelás cuando quieras.
+              Tus productos recurrentes llegan solos. Ahorras 5% en cada entrega y pausas o
+              cancelas cuando quieras.
             </p>
           </div>
           <Link
@@ -142,7 +142,7 @@ export default function SuscripcionesClient() {
                 <div>
                   <p className="text-sm font-bold text-white/85">Ahorro anual estimado</p>
                   <p className="mt-1 text-4xl font-extrabold tabular-nums">{fmtMoney(projectedYearlySavings)}</p>
-                  <p className="mt-1 text-sm text-white/80">Si mantenés tus activas</p>
+                  <p className="mt-1 text-sm text-white/80">Si mantienes tus activas</p>
                 </div>
                 <Wallet className="h-6 w-6 text-white/80" strokeWidth={2} />
               </div>
@@ -202,7 +202,7 @@ export default function SuscripcionesClient() {
                     <span
                       className={cn(
                         "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-extrabold tabular-nums",
-                        isActive ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--rule-soft)] text-[var(--text-tertiary)]",
+                        isActive ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--rule-soft)] text-[var(--text-tertiary)]",
                       )}
                     >
                       {counts[tab.id]}

@@ -4,6 +4,7 @@ import { RecommendationsPersonalizedDB } from "@/lib/db/recommendations-personal
 import { getOrSet } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 /** "1,2,3" → [1,2,3] (descarta no-numéricos, dedup, cap 50). */
 function csvToNumbers(csv?: string): number[] {
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
     // Antes el fallback "main" hacía que requests sin proxy (cron, test,
     // direct-IP) leyeran el tenant "main" silenciosamente.
     const tenantId = req.headers.get("x-tenant-id");
-    if (!tenantId || tenantId === "main") {
+    if (!tenantId || esMarketplace(tenantId)) {
       return NextResponse.json(
         { error: "tenant header requerido" },
         { status: 400 },

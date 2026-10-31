@@ -1,90 +1,50 @@
 ---
 name: bsm-design-system
-description: Design system de Buleje/Bodega San Martin. Paleta de colores, tipografia, animaciones, patrones responsive, dark mode, a11y. Usar ANTES de crear/editar componentes UI para mantener consistencia visual.
+description: "Diseño de Buleje: tokens, primitivos del DS y reglas duras de UI (sin hex, claro y oscuro, tamaños mínimos). Usar cuando vayas a crear o editar una pantalla o componente visible (tienda, marketplace, panel), o Brandon pida «que se vea mejor», «premium» o «modo creativo»."
 user-invocable: true
 model: sonnet
 allowed-tools: Read, Grep, Glob
-argument-hint: "[colores|animaciones|responsive|componente]"
 ---
 
-# Design System — Buleje (Bodega San Martin)
+# Diseño - Buleje
 
-UI custom (NO shadcn/ui). Componentes propios en `/components/ui/`. Tailwind CSS 4 con CSS custom properties.
+UI propia, **sin shadcn/ui**. Un solo origen de estilo: `app/globals.css`. Identidad «editorial de selva»: turquesa del logo + coral, mucho aire, serif de display solo en tienda y marketplace.
 
-## Paleta de colores
+## Tokens: por nombre, nunca hex
 
-### CSS Variables (definidas en `/app/globals.css`)
-
-| Variable | Light | Dark | Uso |
-|---|---|---|---|
-| `--brand-primary` | `#00B4A6` | `#2dd4bf` | Acciones principales, links, focus |
-| `--brand-primary-light` | `#33C4B8` | — | Highlights |
-| `--brand-secondary` | `#f97316` | `#fb923c` | Acciones secundarias |
-| `--brand-danger` | `#ef4444` | — | Errores, destructivos |
-| `--brand-info` | `#0ea5e9` | — | Informativo |
-| `--color-card` | `#ffffff` | `#152220` | Fondo de tarjetas |
-| `--color-muted` | `#6b7280` | `#9ca3af` | Texto secundario |
-
-**Semanticos:** Success `#10b981`, Warning `#f59e0b`, Purple `#8b5cf6`
-
-## Tipografia
-
-- **Font principal:** Geist Sans (`--font-geist-sans`), cargada via `next/font/google`
-- **Monospace:** Geist Mono (`--font-geist-mono`)
-- **Display:** `swap`, preload false, subset `latin`
-- **Sin type scale explicito** — usar clases Tailwind: `text-sm`, `text-base`, `text-lg`
-
-## Animaciones (3 capas)
-
-| Capa | Libreria | Cuando usar | Import |
-|---|---|---|---|
-| **Interacciones UI** | Framer Motion v12 | Modales, dropdowns, cards, transiciones | `import { motion, AnimatePresence } from "framer-motion"` |
-| **Entradas complejas** | GSAP v3.14 (lazy) | Scroll-triggered, staggered, 3D | `import("gsap").then(({ gsap }) => {...})` |
-| **Ambiente/performance** | CSS @keyframes | Particles, shimmer, blobs, progress | Clases en `globals.css` |
-
-**Keyframes disponibles (20+):** `shimmer`, `fadeIn`, `fadeUp`, `scaleIn`, `pop`, `bounceY`, `toastIn/Out`, `cartBounce`, `morphBlob`, `floatUp`, `glowPulse`, `ripple`, `gradientShift`
-
-**Easings:** CSS `ease-in-out`, GSAP `back.out(1.3)` y `power3.out`, JS `Math.pow` para ease-out quart
-
-## Responsive (mobile-first)
-
-| Breakpoint | Uso |
+| Grupo | Tokens |
 |---|---|
-| `sm` (640px) | Tablas → cards mobile |
-| `md` (768px) | Grids admin |
-| `lg` (1024px) | 2 columnas hero |
-| `xl` (1280px) | Hero expandido |
+| Superficie | `--surface-canvas` `-sunken` `-raised` |
+| Texto | `--text-primary` `-secondary` `-tertiary` (no bajar de ahí: AA) |
+| Borde | `--rule-soft` `-base` `-strong` |
+| Acento | `--accent`; hover `-600`; pressed y texto sobre claro `-dark`; texto sobre tinte `-ink`; `-soft` `-muted` `-glow`. Tailwind `bg-primary` (`--color-primary`): familia paralela casi igual |
+| Estado | `--data-{success,warning,error,info}-{50,100,500,600,700}` (coral = warning) |
+| Tipo | `--ts-2xs..3xl` (10 a 30 px; en el panel 2xs = 12 px) |
+| Forma | `--radius-xs..xl` = 4/6/8/12/16 px (nada >16 salvo overlays); `--shadow-sm..xl` |
 
-**Patron dual-render:**
-```tsx
-<div className="hidden sm:block"><DesktopTable /></div>
-<div className="sm:hidden"><MobileCards /></div>
-```
+Valores por tema: `rg -n -- '--accent' app/globals.css`, no de memoria. Claro por defecto; oscuro = clase `.dark`, guardada por pestaña en `sessionStorage`.
 
-**Spacing:** `px-4 sm:px-6 lg:px-8`, container `max-w-7xl`, gaps `gap-3/4/6/12`
-**Touch:** min 44px en mobile (`min-height: 44px !important` via CSS)
-**Safe areas:** `pb-safe`, `pt-safe` para notch iOS
+## Primitivos: reusar, no clonar
 
-## Dark mode
+- `@buleje/design-system` (`packages/design-system/src/index.ts`): `PageTitle/SectionTitle/CardTitle/Kicker`, `AdminPage/AdminSection/AdminGrid`, `InfoAlert/WarningAlert/ErrorAlert/SuccessAlert`, `EmptyState/LoadingState`, `StatCard/ChartWrapper/DataTable/BadgeStatus`, `ProductCard{Hero,Grid,Compact}`, `StoreCardCanonical`, `RecipeCardCanonical`, `cn/undoToast/useInView/useSwipe`. Íconos: `@buleje/design-system/icons`.
+- `components/ui-system/` (hay más: `ls` antes): `motion.ts`, `UnifiedHero/SegmentedControl/QuantityStepper/BottomSheet/SmartSearchBar/AnimatedPrice/CountUp/ConfettiBurst/Shimmer/SkeletonEditorial/EmptyStatePresets/BulejeLoader/LazyImage/VirtualList/StickyMobileCTA`.
+- `components/marketplace/`: `PaymentIcons` (arte propio, nunca logos oficiales), `ProductPhotoFallback` (único «sin foto»), `StoreAvatar`.
+- Antes de crear uno: `rg -n "function <X>|const <X> ="` (los clones ya causaron bugs).
 
-- Clase `.dark` en `<html>`, toggle via `localStorage.getItem("buleje-theme")`
-- Flash prevention con inline script en layout head
-- Fallback a `matchMedia("(prefers-color-scheme:dark)")`
+## Trampas
 
-## Accesibilidad
+1. `amber-*` pinta **coral** y `orange-*` pinta **turquesa** (remap en `@theme inline`; intencional, no lo «arregles»).
+2. `max-w-{xs..xl}` = escala de Tailwind (320-576 px); más ancho: `max-w-2xl..7xl` o rem.
 
-1. Skip-to-content link: `sr-only focus:not-sr-only`
-2. Focus visible: `outline: 2px solid var(--color-primary); outline-offset: 2px`
-3. Reduced motion: `@media (prefers-reduced-motion: reduce)` desactiva todas las animaciones
-4. Decorativos: `aria-hidden="true"` en CustomCursor, FloatingParticles, HeroIllustration
-5. Live regions: `aria-live="polite"` en LiveActivityTicker
+## Reglas duras
 
-## Reglas para el agente
+1. Sin hex: solo tokens (salvo el tinte profundo de un gradiente firma).
+2. Todo en claro Y oscuro, con contraste AA.
+3. Mínimos: body de tienda `text-base`; filtros y CTA `h-12`; táctil 44 px; nunca `text-[10px]`.
+4. `aria-hidden` en decorativos; con `prefers-reduced-motion`, un estado estático legible.
 
-1. **Nunca usar shadcn/ui** — componentes custom en `/components/ui/`
-2. **Colores via CSS vars** — `var(--brand-primary)` no hex hardcodeado
-3. **Framer Motion para UI**, GSAP solo para scroll-triggered complejos
-4. **Dual-render** para tablas (desktop table + mobile cards)
-5. **Dark mode** — toda UI nueva debe funcionar en ambos temas
-6. **44px touch targets** en mobile
-7. **`aria-hidden`** en elementos decorativos
+## Más detalle
+
+Leer según la tarea, en `.claude/skills/bsm-design-system/references/`: `recetas.md` (carnet y hero premium, gauge, filtros de tienda, espaciado y tablas, **modo creativo**) y `motion.md` (animación).
+
+Evidencia visual: `node scripts/qa-capturas.mjs` (claro y oscuro, 1 llamada); leer 1 imagen.

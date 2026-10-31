@@ -9,6 +9,12 @@ export interface ProductSpecsProps {
   category: string | null | undefined;
   unit: string | null | undefined;
   price: number;
+  /** Datos reales cargados por el vendedor en admin (Inventario). */
+  brand?: string | null;
+  weightKg?: number | null;
+  dimensions?: string | null;
+  /** Especificaciones libres cargadas por el vendedor (label/value). */
+  customSpecs?: Array<{ label: string; value: string }>;
 }
 
 interface SpecRow {
@@ -16,22 +22,28 @@ interface SpecRow {
   value: string;
 }
 
-function buildSpecs(
-  name: string,
-  category: string | null | undefined,
-  unit: string | null | undefined,
-  price: number
-): SpecRow[] {
-  // Solo specs reales del producto. Sin SUNAT/marca/temperatura inventados.
+function buildSpecs(p: ProductSpecsProps): SpecRow[] {
+  // Solo specs reales del producto (cargadas en admin). Nada inventado.
   const rows: SpecRow[] = [];
-  if (category) rows.push({ label: "Categoría", value: category });
-  if (unit) rows.push({ label: "Unidad de venta", value: unit });
-  rows.push({ label: "Precio", value: `S/ ${price.toFixed(2)}` });
+  if (p.brand) rows.push({ label: "Marca", value: p.brand });
+  if (p.category) rows.push({ label: "Categoría", value: p.category });
+  if (p.unit) rows.push({ label: "Unidad de venta", value: p.unit });
+  if (typeof p.weightKg === "number" && p.weightKg > 0) {
+    rows.push({ label: "Peso", value: `${p.weightKg} kg` });
+  }
+  if (p.dimensions) rows.push({ label: "Medidas", value: p.dimensions });
+  // Specs libres del vendedor (ingredientes, origen, garantía, etc.).
+  for (const s of p.customSpecs ?? []) {
+    if (s.label?.trim() && s.value?.trim()) {
+      rows.push({ label: s.label.trim(), value: s.value.trim() });
+    }
+  }
+  rows.push({ label: "Precio", value: `S/ ${p.price.toFixed(2)}` });
   return rows;
 }
 
-export function ProductSpecs({ name, category, unit, price }: ProductSpecsProps) {
-  const specs = buildSpecs(name, category, unit, price);
+export function ProductSpecs(props: ProductSpecsProps) {
+  const specs = buildSpecs(props);
 
   return (
     <section

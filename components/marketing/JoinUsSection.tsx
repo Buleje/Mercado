@@ -5,27 +5,20 @@ import {
   Store,
   Building2,
   Bike,
-  Sparkles,
-  Check,
-  ArrowUpRight,
+  ArrowRight,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
-// ── Trabajá con nosotros — reclutamiento (tiendas / comercios / repartidores) ──
-// Brandon 2026-05-31: extraído de app/(store)/page.tsx a componente compartido
-// para reusarlo en /tiendas sin copy-paste (single source of truth). Paleta de
-// marca: solo --accent + neutros. Layout editorial: header + 3 cards.
-//
-// Server component (sin estado/hooks): 0 JS al cliente, indexable.
+// ── Sumate a Buleje — reclutamiento (tiendas / comercios / repartidores) ──
+// Brandon 2026-07-06 (v3): MINIMALISTA — tarjetas de superficie, hairlines del
+// DS, acento sólo en el ícono/número/CTA. Sin gradientes fuertes. Server comp.
 
 interface JoinCard {
   href: string;
   eyebrow: string;
   title: string;
   desc: string;
-  /** Beneficio principal en chip — gancho de un vistazo. */
   highlight: string;
-  /** 3 beneficios concretos (lista con check) — dan cuerpo y vencen objeciones. */
   benefits: [string, string, string];
   cta: string;
   Icon: LucideIcon;
@@ -33,8 +26,6 @@ interface JoinCard {
 
 const JOIN_CARDS: JoinCard[] = [
   {
-    // Brandon 2026-06-03: las cards de reclutamiento van DIRECTO al selector de
-    // planes (/abrir-tienda#planes) en vez de la landing larga /negocios.
     href: "/abrir-tienda#planes",
     eyebrow: "Para tiendas",
     title: "Registra tu tienda",
@@ -78,112 +69,89 @@ const JOIN_CARDS: JoinCard[] = [
   },
 ];
 
-export function JoinUsSection() {
+export function JoinUsSection({
+  maxWidthClass = "max-w-[1280px]",
+}: { maxWidthClass?: string } = {}) {
   return (
     <section
       aria-label="Sumate a Buleje"
-      className="bg-[var(--surface-canvas)] border-t border-[var(--rule-base)] py-10 sm:py-16"
+      className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] py-10 sm:py-14"
     >
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header editorial — minimalista pero con vida (acento de marca) */}
-        <div className="max-w-2xl mb-6 sm:mb-10">
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            <span aria-hidden className="inline-block h-[2px] w-7 rounded-full bg-[var(--accent)]" />
+      <div className={cn("mx-auto px-4 sm:px-6 lg:px-8", maxWidthClass)}>
+        {/* Header editorial — calmo */}
+        <div className="max-w-2xl mb-6 sm:mb-8">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Sumate a Buleje
           </p>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
-            Trabaja con <span className="text-[var(--accent)]">nosotros</span>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] leading-tight">
+            Vendé, repartí o hacé crecer tu negocio
           </h2>
-          <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
-            Vende, reparte o crea tu negocio digital. Buleje está armando la
-            red local de {BRAND_GEO.city}.
+          <p className="mt-1.5 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-relaxed">
+            Buleje está armando la red local de {BRAND_GEO.city}. Elegí cómo te sumás.
           </p>
         </div>
 
-        {/* 3 opciones. Mobile (Brandon 2026-06-01): FILA COMPACTA — icono +
-            eyebrow/título/chip + flecha. Oculta desc, beneficios y CTA footer
-            para ocupar ~1/3 del alto. Desktop (sm+): card editorial completa. */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-5">
-          {JOIN_CARDS.map((c, i) => {
-            const Icon = c.Icon;
-            const isFeatured = i === 0;
-            return (
-              <Link
-                key={c.title}
-                href={c.href}
-                className={cn(
-                  "group relative flex border transition-all",
-                  // mobile: fila horizontal compacta · desktop: card vertical
-                  "flex-row items-center gap-3 rounded-2xl p-3.5",
-                  "sm:flex-col sm:items-stretch sm:gap-0 sm:p-7",
-                  "hover:-translate-y-0.5",
-                  isFeatured
-                    ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 hover:border-[var(--accent)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]",
-                )}
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    "inline-flex shrink-0 items-center justify-center h-11 w-11 rounded-xl sm:h-12 sm:w-12 sm:mb-5 transition-colors",
-                    isFeatured
-                      ? "bg-[var(--accent)] text-white shadow-sm"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white",
-                  )}
-                >
-                  <Icon className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
-                </span>
-
-                <div className="min-w-0 flex-1 sm:flex-none">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-0.5 sm:mb-1">
-                    {c.eyebrow}
-                  </p>
-                  <h3 className="text-base sm:text-xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
-                    {c.title}
-                  </h3>
-                  {/* desc — oculta en mobile (compacto) */}
-                  <p className="hidden sm:block mt-1.5 text-sm text-[var(--text-secondary)] leading-relaxed">
-                    {c.desc}
-                  </p>
-                  {/* Chip gancho — acento de marca */}
-                  <span className="mt-1.5 sm:mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-2.5 sm:px-3 py-0.5 sm:py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-                    <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-                    {c.highlight}
-                  </span>
-                  {/* Lista de beneficios — oculta en mobile, da cuerpo en desktop */}
-                  <ul className="hidden sm:block mt-4 space-y-2 flex-1">
-                    {c.benefits.map((b) => (
-                      <li
-                        key={b}
-                        className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-snug"
-                      >
-                        <Check
-                          className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]"
-                          strokeWidth={2.75}
-                          aria-hidden
-                        />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {/* CTA footer — acento de marca */}
-                  <span className="hidden sm:inline-flex mt-5 items-center gap-1.5 border-t border-[var(--rule-base)] pt-4 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
-                    {c.cta}
-                    <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                  </span>
-                </div>
-
-                {/* Flecha lateral — solo mobile (CTA visual de la fila) */}
-                <ArrowUpRight
-                  className="sm:hidden h-5 w-5 shrink-0 text-[var(--accent)] transition-transform group-active:translate-x-0.5"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          {JOIN_CARDS.map((c) => (
+            <JoinCardTile key={c.title} card={c} />
+          ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function JoinCardTile({ card: c }: { card: JoinCard }) {
+  const Icon = c.Icon;
+  return (
+    <Link
+      href={c.href}
+      className={cn(
+        "group flex flex-row sm:flex-col items-center sm:items-stretch gap-3 sm:gap-0",
+        "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-6",
+        "transition-[border-color,box-shadow,transform] duration-[var(--dur-base)]",
+        "hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] hover:shadow-[var(--shadow-sm)]",
+      )}
+    >
+      <span
+        aria-hidden
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_16%,transparent)] transition-transform duration-[var(--dur-base)] group-hover:scale-105 dark:text-[var(--accent)] sm:mb-4"
+      >
+        <Icon className="h-5 w-5" strokeWidth={1.75} />
+      </span>
+
+      <div className="min-w-0 flex-1 sm:flex-none">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          {c.eyebrow}
+        </p>
+        <h3 className="mt-0.5 text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)] leading-tight">
+          {c.title}
+        </h3>
+        <p className="hidden sm:block mt-2 text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-snug">
+          {c.desc}
+        </p>
+        <span className="mt-1.5 sm:mt-3 inline-flex w-fit items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-ink)] dark:text-[var(--accent)]">
+          {c.highlight}
+        </span>
+        <ul className="hidden sm:block mt-4 space-y-1.5">
+          {c.benefits.map((b) => (
+            <li key={b} className="flex items-start gap-2 text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-snug">
+              <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[var(--accent)]" />
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+        <span className="hidden sm:inline-flex mt-5 items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--accent-dark)] group-hover:gap-2.5 transition-all dark:text-[var(--accent)]">
+          {c.cta}
+          <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+        </span>
+      </div>
+
+      <ArrowRight
+        className="sm:hidden h-5 w-5 shrink-0 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors"
+        strokeWidth={2}
+        aria-hidden
+      />
+    </Link>
   );
 }

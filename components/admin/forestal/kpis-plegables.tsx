@@ -1,0 +1,299 @@
+"use client";
+
+/**
+ * Los indicadores plegables de una vista: el botón «Indicadores» y su panel.
+ *
+ * Brandon, 2026-09-02: «que los KPIs estén ocultos y que haya un botón para
+ * mostrarlos». Y 2026-09-24: «el botón de KPIs alineado con otros botones de
+ * otras funciones, para evitar que ocupe mucho espacio». Antes el botón vivía
+ * en su propia fila —[Indicadores ▾] + el titular— y la barra de búsqueda y
+ * acciones iba en otra: dos renglones donde entra uno.
+ *
+ * Dos formas de usarlo:
+ *  · `useKpisPlegables(...)` devuelve `{ boton, panel }`: la vista pone el
+ *    botón DENTRO de su barra (al lado de «Filtros», «Opciones», «Nuevo…») y
+ *    el panel debajo. El titular viaja adentro del botón mientras está
+ *    cerrado — plegar no es esconder el dato (ley de Brandon, regla 3).
+ *  · `<CtpKpisPlegables acciones={…} />`: la fila de siempre, con los botones
+ *    de la vista a la derecha en la MISMA fila.
+ *
+ * Dentro de un libro con riel de vistas (Brandon 17-10: «los botones… al
+ * lado de las pestañas en la esquina»), `boton` se va solo al riel
+ * (`AccionesDeLaVista`) y el panel queda en la vista: un renglón menos. Con el
+ * riel angosto se pliega a ícono + cuenta (la palabra y el titular quedan en el
+ * `title` y para el lector de pantalla). `enSuLugar` es el mismo botón sin
+ * mudarse, para una sub-sección (lo de la raíz es lo único que va al riel).
+ *
+ * Arranca CERRADO y recuerda por vista (`ctp-kpis-v2:<clave>`). Con trabajo
+ * abierto abajo (un lote elegido) se repliega solo y, al soltarlo, vuelve como
+ * estaba — decide en el momento del cambio, no en cada render.
+ */
+
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { BarChart3, ChevronDown } from "@buleje/design-system/icons";
+import { SkeletonKPICard } from "@/components/ui-system";
+import { AccionesDeLaVista, CLASE_TEXTO_ACCION, ORDEN_ACCION } from "@/components/admin/shared/libro-acciones-vista";
+
+export interface KpisPlegablesProps {
+  claveMemoria: string;
+  tarjetas: ReactNode[];
+  /** El titular en una línea (dos o tres cifras), de las MISMAS cuentas que las tarjetas. */
+  resumen?: string;
+  /**
+   * Todavía no hay una cifra real que mostrar —primera carga o el pedido
+   * falló sin traer nada— (Brandon 27-09: «Disponibles sin 0 al cargar»).
+   * Mientras es `true`, el panel pinta skeletons en vez de las tarjetas: un
+   * «0 · Nada disponible» de mentira se lee como el dato real.
+   */
+  sinDatosAun?: boolean;
+  /** Lo que acompaña al titular con el panel cerrado (el mini-gauge de rendimiento). */
+  resumenExtra?: ReactNode;
+  /** El bloque ancho ARRIBA de las tarjetas dentro del panel (el balance del período). */
+  encabezado?: ReactNode;
+  /** La fila que gobierna estas cifras (ADR-400), dentro del panel. */
+  filtros?: ReactNode;
+  /** Cuántos filtros recortan las cifras: se dice aunque el panel esté cerrado. */
+  filtrosActivos?: number;
+  /** Hay trabajo abierto abajo: el panel se repliega y le devuelve la pantalla. */
+  trabajoActivo?: boolean;
+  /**
+   * Alto del botón: `md` (h-12) para ir en una barra con buscador y botones de
+   * h-12; `sm` suelto (también 48 px desde 11-10, ADR-489: sólo cambia el ancho y el radio). Default `sm`.
+   */
+  alto?: "sm" | "md";
+  /**
+   * Cómo arranca la PRIMERA vez, antes de que se haya elegido nada (Brandon
+   * 05-10: «todos los KPIs para poder ocultar y mostrar»). Cerrado en las
+   * vistas de trabajo, donde la tabla manda; abierto en las vistas cuyo
+   * contenido SON las cifras (Tablero, Análisis): plegarlas de entrada dejaría
+   * la pantalla vacía. Lo que se elija después se recuerda igual.
+   */
+  abiertoPorDefecto?: boolean;
+  /**
+   * Con pocas tarjetas, que cada una conserve su ancho (`auto-fill`) en vez de
+   * estirarse a toda la fila (`auto-fit`): una sola cifra de 960 px de ancho
+   * se lee como un aviso, no como un indicador. Default `false` (como siempre).
+   */
+  anchoFijo?: boolean;
+  /**
+   * Debajo de `sm` el botón queda en ícono + cuenta (la palabra va al lector de
+   * pantalla y el titular se calla): así entra en la fila del título a 400 px.
+   */
+  compactoEnMovil?: boolean;
+  /**
+   * Siempre ícono + cuenta (la palabra va al lector de pantalla y el titular
+   * al `title`): para una banda de título que ya va llena a 1280 px.
+   */
+  soloIcono?: boolean;
+  /**
+   * El titular nunca se dibuja en el botón (queda en el `title`, al pasar el
+   * mouse): para una banda de título a 1280 px donde ícono + cuenta + titular
+   * empujan las pestañas a una segunda fila (Recetas, 19-10: 122 → 66 px).
+   */
+  sinTitular?: boolean;
+  /**
+   * Dentro de un libro, `boton` va al riel de vistas. `false` = se queda donde
+   * la vista lo pone (una sub-sección, un bloque de la ficha). Fuera de un libro
+   * no cambia nada. Default `true` en `useKpisPlegables`, `false` en
+   * `CtpKpisPlegables` (su fila compone el botón con `antes` y `acciones`).
+   */
+  alRiel?: boolean;
+}
+
+/** El titular se calla con el riel por debajo de 96rem: el botón cabe en la esquina. */
+const CLASE_TITULAR_EN_RIEL = "@max-[96rem]/riel:sr-only";
+
+export function useKpisPlegables({
+  claveMemoria,
+  tarjetas,
+  resumen,
+  resumenExtra,
+  encabezado,
+  filtros,
+  filtrosActivos = 0,
+  trabajoActivo = false,
+  alto = "sm",
+  sinDatosAun = false,
+  abiertoPorDefecto = false,
+  anchoFijo = false,
+  compactoEnMovil = false,
+  soloIcono = false,
+  sinTitular = false,
+  alRiel = true,
+}: KpisPlegablesProps): { boton: ReactNode; enSuLugar: ReactNode; panel: ReactNode; abierto: boolean; alternar: () => void } {
+  /* Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», otra pregunta. */
+  const [abierto, setAbierto] = useState(abiertoPorDefecto);
+  /* Sin nada guardado manda el default de la vista; «0» guardado gana siempre. */
+  const leerGuardado = () => {
+    try {
+      const v = localStorage.getItem(`ctp-kpis-v2:${claveMemoria}`);
+      return v == null ? abiertoPorDefecto : v === "1";
+    } catch {
+      return abiertoPorDefecto; /* modo privado */
+    }
+  };
+  useEffect(() => {
+    setAbierto(leerGuardado());
+  }, [claveMemoria]); // eslint-disable-line react-hooks/exhaustive-deps
+  const alternar = () => {
+    setAbierto((v) => {
+      const next = !v;
+      try { localStorage.setItem(`ctp-kpis-v2:${claveMemoria}`, next ? "1" : "0"); } catch { /* quota */ }
+      return next;
+    });
+  };
+
+  /* Al ARRANCAR el trabajo el panel se repliega; al soltarlo vuelve a lo
+     guardado. Depende sólo de `trabajoActivo`: si dependiera de `abierto`,
+     reabrirlo a mano lo volvería a cerrar en el render siguiente. */
+  const trabajoPrevio = useRef(trabajoActivo);
+  useEffect(() => {
+    if (trabajoActivo && !trabajoPrevio.current) setAbierto(false);
+    if (!trabajoActivo && trabajoPrevio.current) setAbierto(leerGuardado());
+    trabajoPrevio.current = trabajoActivo;
+  }, [trabajoActivo, claveMemoria]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (tarjetas.length === 0) return { boton: null, enSuLugar: null, panel: null, abierto: false, alternar };
+
+  /* Las clases `/riel` sólo pesan dentro del riel: en su lugar no hay
+     contenedor con ese nombre y el botón se ve como siempre.
+     `compacto` (17-10, Brandon: «achica indicadores… al mismo nivel de fila que las
+     pestañas»): en el riel va sólo ícono + cantidad; el titular queda en el `title`. */
+  const pintar = (compacto: boolean) => (
+    <button
+      type="button"
+      onClick={alternar}
+      aria-expanded={abierto}
+      aria-label={compacto ? `Indicadores (${tarjetas.length})` : undefined}
+      title={
+        abierto
+          ? "Ocultar los indicadores"
+          : resumen
+            ? `Ver los indicadores · ${resumen}`
+            : "Ver los indicadores"
+      }
+      className={`inline-flex min-w-0 shrink items-center gap-2 border-[1.5px] px-3 text-sm font-bold transition-colors print:hidden max-sm:gap-1.5 max-sm:px-2.5 ${
+        /* En una barra (h-12) el botón no pasa de 24rem: el titular se corta
+           con «…» y el buscador conserva su lugar (medido en Ingresos: con el
+           titular entero, el buscador quedaba en 70 px). */
+        compacto ? "h-12 shrink-0 rounded-xl" : alto === "md" ? "h-12 max-w-[min(100%,24rem)] rounded-2xl" : "h-12 max-w-full rounded-xl"
+      } ${
+        abierto
+          ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]"
+      }`}
+    >
+      <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
+      <span className={`shrink-0 ${compacto || soloIcono ? "sr-only" : compactoEnMovil ? "max-sm:sr-only" : ""} ${CLASE_TEXTO_ACCION}`}>
+        Indicadores
+      </span>
+      <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-sm tabular-nums text-[var(--text-tertiary)]">
+        {tarjetas.length}
+      </span>
+      {/* Con el panel cerrado, las cifras viajan en el botón: el titular sigue
+          a la vista sin gastar una fila propia. */}
+      {!compacto && !abierto && resumen && (
+        <span
+          className={`min-w-0 truncate text-sm font-normal tabular-nums text-[var(--text-secondary)] ${
+            sinTitular ? "sr-only" : soloIcono ? "max-xl:sr-only" : compactoEnMovil ? "max-sm:hidden" : ""
+          } ${CLASE_TITULAR_EN_RIEL}`}
+        >
+          {resumen}
+        </span>
+      )}
+      {/* El extra se queda aun compacto: lleva lo que decide (el rendimiento de Producción,
+          el chip rojo de «se consumió de más»), que nadie ve si se esconde tras un clic. */}
+      {!abierto && resumenExtra && <span className="shrink-0">{resumenExtra}</span>}
+      {/* Cerrado sobre cifras recortadas: sin esto, un número chico se lee como una caída. */}
+      {filtrosActivos > 0 && (
+        <span
+          title="Los indicadores están mostrando sólo una parte del período"
+          className={
+            compacto
+              ? "h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]"
+              : "shrink-0 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          }
+        >
+          {compacto ? <span className="sr-only">{`${filtrosActivos} filtro${filtrosActivos === 1 ? "" : "s"}`}</span> : `${filtrosActivos} filtro${filtrosActivos === 1 ? "" : "s"}`}
+        </span>
+      )}
+      {/* En el celular sin la flecha (29-10): 24 px menos y las acciones entran junto a las pestañas. */}
+      <ChevronDown className={`h-4 w-4 shrink-0 transition-transform max-sm:hidden ${abierto ? "rotate-180" : ""}`} aria-hidden />
+    </button>
+  );
+  const enSuLugar = pintar(false);
+
+  const panel = abierto ? (
+    <div className="space-y-2" aria-busy={sinDatosAun}>
+      {filtros}
+      {encabezado}
+      {/* `auto-fit`: plegado son dos y desplegado cinco; un número fijo de
+          columnas dejaba huecos del alto de una tarjeta. */}
+      <div
+        className={`grid gap-3 ${
+          anchoFijo ? "grid-cols-[repeat(auto-fill,minmax(230px,1fr))]" : "grid-cols-[repeat(auto-fit,minmax(230px,1fr))]"
+        }`}
+      >
+        {sinDatosAun
+          ? tarjetas.map((_, i) => <SkeletonKPICard key={i} />)
+          : tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
+      </div>
+    </div>
+  ) : null;
+
+  const boton = alRiel ? (
+    <AccionesDeLaVista orden={ORDEN_ACCION.indicadores} fueraDelLibro={enSuLugar}>
+      {pintar(true)}
+    </AccionesDeLaVista>
+  ) : (
+    enSuLugar
+  );
+
+  return { boton, enSuLugar, panel, abierto, alternar };
+}
+
+/**
+ * La fila de siempre: el botón y, a la derecha EN LA MISMA FILA, las
+ * `acciones` de la vista (buscador, «Filtros», «Opciones», «Nuevo…»). Sin
+ * `acciones` queda como antes: el botón solo.
+ */
+export function CtpKpisPlegables({
+  antes,
+  acciones,
+  alRiel = false,
+  ...props
+}: KpisPlegablesProps & {
+  /** A la izquierda del botón, en la misma fila (el título de la tarjeta). */
+  antes?: ReactNode;
+  /** A la derecha, en la misma fila: buscador y botones de la vista. */
+  acciones?: ReactNode;
+}) {
+  const { boton, panel } = useKpisPlegables({ ...props, alRiel, alto: props.alto ?? (acciones ? "md" : "sm") });
+  if (!boton) {
+    return antes || acciones ? (
+      <div className="flex flex-wrap items-center gap-2">
+        {antes}
+        {acciones && <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{acciones}</div>}
+      </div>
+    ) : null;
+  }
+  /* Con `alRiel` y nada más en la fila, la fila no existe (el botón está en el riel). */
+  if (alRiel && !antes && !acciones) {
+    return (
+      <>
+        {boton}
+        {panel}
+      </>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {antes}
+        {boton}
+        {acciones && <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">{acciones}</div>}
+      </div>
+      {panel}
+    </div>
+  );
+}

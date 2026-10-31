@@ -163,6 +163,17 @@ export default function CierrePaso1Caja({
                 S/ {efectivoEsperado.toFixed(2)}
               </span>
             </div>
+            {(preview.caja.cerradas?.cajas ?? 0) > 0 && (
+              /* Las cerradas ya se contaron al cerrarlas: se cuenta sólo la abierta y su diferencia se suma. */
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500 dark:text-muted">
+                  Cajas ya cerradas hoy ({preview.caja.cerradas?.cajas}):
+                </span>
+                <span className="font-semibold text-gray-700 dark:text-[var(--text-primary)]">
+                  {(preview.caja.cerradas?.diferencia ?? 0) >= 0 ? "+" : ""}S/ {(preview.caja.cerradas?.diferencia ?? 0).toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 dark:text-muted">Diferencia:</span>
               <span className={`font-bold text-lg ${

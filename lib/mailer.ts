@@ -1,6 +1,12 @@
 import "server-only";
 import nodemailer from "nodemailer";
 import { escapeHtml } from "@/lib/email/escape-html";
+import { logger } from "@/lib/logger";
+import { AvisosCorreoDB } from "@/lib/db/avisos-correo.db";
+import { avisoCorreoActivo, registrarEnvioCorreo } from "@/lib/avisos-correo";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
+import { lineaFueraDelCajon } from "@/lib/caja/saldo-esperado";
+import type { ResumenCierreDeCaja } from "@/lib/caja/resumen-cierre";
 
 /**
  * Sends a new-order notification email.
@@ -23,19 +29,33 @@ export async function sendOrderNotification(order: {
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) return; // silently skip if not configured
 
-  // Buscar email del dueño del tenant (si existe)
+  // Buscar email del dueño del tenant (si existe). `order.tenantId` llega como
+  // cuid o slug según el negocio: antes se buscaba sólo por slug y un negocio
+  // con cuid (Musa) mandaba sus pedidos a NOTIFY_EMAIL.
   let tenantEmail: string | null = null;
   let tenantName = "Mi Tienda";
+  let tenantCuid: string | null = null;
   if (order.tenantId) {
     try {
-      const { prisma } = await import("@/lib/prisma");
-      const tenant = await prisma.tenant.findUnique({
-        where: { slug: order.tenantId },
-        select: { ownerEmail: true, name: true },
-      });
-      tenantEmail = tenant?.ownerEmail ?? null;
+      const tenant = await AvisosCorreoDB.tienda(order.tenantId);
+      tenantEmail = tenant?.ownerEmail?.trim() || null;
       tenantName = tenant?.name ?? tenantName;
-    } catch { /* fallback a NOTIFY_EMAIL */ }
+      tenantCuid = tenant?.id ?? null;
+    } catch (err) {
+      logger.warn("[mailer] no se pudo leer el negocio del pedido: va a NOTIFY_EMAIL", { tenantId: order.tenantId, error: String(err).slice(0, 200) });
+    }
+  }
+  // Interruptor del superadmin (21-10): «Pedidos y clientes» apagado o la tienda pausada = no le
+  // sale al dueño. Sin correo de dueño la copia va a la plataforma y el interruptor no la toca.
+  if (tenantCuid && tenantEmail && !(await avisoCorreoActivo(tenantCuid, "pedidos"))) {
+    logger.info("[mailer] aviso de pedido omitido: avisos por correo apagados", { tenantId: tenantCuid, orderId: order.id });
+    return;
+  }
+
+  // Sin correo de dueño la copia va a la plataforma: ésa tiene su propio interruptor (23-10).
+  if (!tenantEmail && !(await avisoCorreoPlataformaActivo("pedidos"))) {
+    logger.info("[mailer] copia de pedido a la plataforma omitida: apagada en el superadmin", { orderId: order.id });
+    return;
   }
 
   const notifyEmail = tenantEmail || process.env.NOTIFY_EMAIL || smtpUser;
@@ -51,7 +71,7 @@ export async function sendOrderNotification(order: {
     .map(
       (i) =>
         `<tr>
-          <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.quantity}× ${i.name} (${i.unit})</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.quantity}× ${escapeHtml(i.name)} (${escapeHtml(i.unit)})</td>
           <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">S/${(i.price * i.quantity).toFixed(2)}</td>
         </tr>`
     )
@@ -108,49 +128,30 @@ export async function sendOrderNotification(order: {
       </div>
     `,
   });
+  if (tenantCuid && tenantEmail) {
+    await registrarEnvioCorreo(tenantCuid, "pedidos", tenantEmail, true, `Pedido ${order.id} — S/${order.total.toFixed(2)}`);
+  }
 }
 
-export async function sendCashSummaryEmail(summary: {
-  registerId: string;
-  openedAt: string;
-  closedAt: string;
-  openingAmount: number;
-  closingAmount: number;
-  expectedAmount: number;
-  difference: number;
-  salesEfectivo: number;
-  salesDigital: number;
-  salesCount: number;
-  totalIn: number;
-  totalOut: number;
-  notes?: string;
-}): Promise<void> {
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  if (!smtpUser || !smtpPass) return;
+const fmtSolesCorreo = (n: number) => `S/${n.toFixed(2)}`;
+const fmtFechaCorreo = (iso: string) => {
+  try { return new Date(iso).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
+  catch { return iso; }
+};
 
-  const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
-  const senderName = "Mi Tienda";
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: { user: smtpUser, pass: smtpPass },
-  });
-
+/**
+ * El HTML del correo de cierre de caja, puro (lo prueba
+ * `__tests__/caja-mismo-esperado-en-todos-lados.test.ts`). Los números llegan
+ * armados por `resumenCierreDeCaja` (`lib/caja/resumen-cierre.ts`): sólo
+ * efectivo en el arqueo y la línea aparte de lo que pasó por otro medio.
+ */
+export function htmlResumenCierreCaja(summary: ResumenCierreDeCaja): string {
   const diffColor = summary.difference >= 0 ? "#16a34a" : "#dc2626";
   const diffSign = summary.difference >= 0 ? "+" : "";
-  const fmt = (n: number) => `S/${n.toFixed(2)}`;
-  const fmtDate = (iso: string) => {
-    try { return new Date(iso).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
-    catch { return iso; }
-  };
-
-  await transporter.sendMail({
-    from: `"${senderName}" <${smtpUser}>`,
-    to: notifyEmail,
-    subject: `🏦 Cierre de caja — ${fmtDate(summary.closedAt)} — ${fmt(summary.closingAmount)}`,
-    html: `
+  const fmt = fmtSolesCorreo;
+  const fmtDate = fmtFechaCorreo;
+  const fuera = lineaFueraDelCajon(summary.otrosMedios, fmt);
+  return `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
         <div style="background:#0a0f0d;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">🏦 Resumen de Cierre de Caja</h2>
@@ -174,8 +175,9 @@ export async function sendCashSummaryEmail(summary: {
               <td style="padding:8px 4px;color:#475569;">Ventas digital (Yape/etc.)</td>
               <td style="padding:8px 4px;text-align:right;font-weight:600;color:#0ea5e9;">${fmt(summary.salesDigital)}</td>
             </tr>
-            ${summary.totalIn > 0 ? `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 4px;color:#475569;">Ingresos manuales</td><td style="padding:8px 4px;text-align:right;color:#2563eb;">${fmt(summary.totalIn)}</td></tr>` : ""}
-            ${summary.totalOut > 0 ? `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 4px;color:#475569;">Egresos</td><td style="padding:8px 4px;text-align:right;color:#dc2626;">−${fmt(summary.totalOut)}</td></tr>` : ""}
+            ${summary.totalIn > 0 ? `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 4px;color:#475569;">Ingresos en efectivo</td><td style="padding:8px 4px;text-align:right;color:#2563eb;">${fmt(summary.totalIn)}</td></tr>` : ""}
+            ${summary.totalOut > 0 ? `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 4px;color:#475569;">Egresos en efectivo</td><td style="padding:8px 4px;text-align:right;color:#dc2626;">−${fmt(summary.totalOut)}</td></tr>` : ""}
+            ${fuera ? `<tr style="border-bottom:1px solid #e2e8f0;"><td colspan="2" style="padding:8px 4px;color:#475569;font-size:13px;">${escapeHtml(fuera)}</td></tr>` : ""}
             <tr style="border-bottom:2px solid #cbd5e1;background:#f1f5f9;">
               <td style="padding:10px 4px;font-weight:700;color:#0a0f0d;">Efectivo esperado</td>
               <td style="padding:10px 4px;text-align:right;font-weight:700;color:#00A0A0;">${fmt(summary.expectedAmount)}</td>
@@ -189,12 +191,34 @@ export async function sendCashSummaryEmail(summary: {
               <td style="padding:10px 4px;text-align:right;font-weight:700;color:${diffColor};">${diffSign}${fmt(summary.difference)}</td>
             </tr>
           </table>
-          ${summary.notes ? `<div style="margin-top:12px;padding:10px;background:#fef9c3;border-radius:8px;font-size:13px;color:#854d0e;"><strong>Notas:</strong> ${summary.notes}</div>` : ""}
+          ${summary.notes ? `<div style="margin-top:12px;padding:10px;background:#fef9c3;border-radius:8px;font-size:13px;color:#854d0e;"><strong>Notas:</strong> ${escapeHtml(summary.notes)}</div>` : ""}
         </div>
         <div style="padding:12px 24px;border-top:1px solid #eee;text-align:center;">
           <p style="font-size:12px;color:#999;margin:0;">Buleje · Cierre de caja automático</p>
         </div>
       </div>
-    `,
+`;
+}
+
+export async function sendCashSummaryEmail(summary: ResumenCierreDeCaja): Promise<void> {
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  if (!smtpUser || !smtpPass) return;
+  if (!(await avisoCorreoPlataformaActivo("caja"))) return;
+
+  const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
+  const senderName = "Mi Tienda";
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: { user: smtpUser, pass: smtpPass },
+  });
+
+  await transporter.sendMail({
+    from: `"${senderName}" <${smtpUser}>`,
+    to: notifyEmail,
+    subject: `🏦 Cierre de caja — ${fmtFechaCorreo(summary.closedAt)} — ${fmtSolesCorreo(summary.closingAmount)}`,
+    html: htmlResumenCierreCaja(summary),
   });
 }

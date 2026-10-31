@@ -7,13 +7,39 @@
 
 // ── Domain & Status enums ─────────────────────────────────────────────────────
 
-export type AgentDomain =
-  | "inventory"
-  | "orders"
-  | "customers"
-  | "analytics"
-  | "notifications"
-  | "pricing";
+/**
+ * Los dominios, como VALOR y no sólo como tipo.
+ *
+ * `/api/agents/execute` tenía su propia copia de la lista y quedó vieja: los
+ * dominios nuevos existían, estaban registrados, y ese endpoint los rechazaba
+ * con "dominio inválido". Un tipo no valida en runtime; esta constante sí, y
+ * `AgentDomain` se deriva de ella para que no puedan divergir.
+ */
+export const AGENT_DOMAINS = [
+  "inventory",
+  "orders",
+  "customers",
+  "analytics",
+  "notifications",
+  "pricing",
+  "forestal",
+  "documentos",
+  "caja",
+  "cobranzas",
+  "ui",
+  // Escritura de plata dictada («anotame el combustible del camión N12»).
+  // Todas sus acciones de escritura pasan por confirmación humana (HITL).
+  "plata",
+  // Puente con n8n: disparar flujos ya armados por el usuario.
+  "n8n",
+  // Actividades, citas y recordatorios dictados («recordame el lunes…»).
+  // Escribe sobre el `Reminder` que ya se ve en el panel.
+  "agenda",
+  // El plan de la empresa (ADR-497): políticas, objetivos, licencias. Solo lectura.
+  "planificacion",
+] as const;
+
+export type AgentDomain = (typeof AGENT_DOMAINS)[number];
 
 export type TaskPriority = "critical" | "high" | "normal" | "low";
 
@@ -69,6 +95,25 @@ export interface AgentContext {
   tenantId: string;
   traceId: string;
   parentTaskId?: string;
+  /**
+   * Rol de quien pidió la tarea (sólo en `executeSync`, que lo exige). Los
+   * dominios que devuelven datos con permisos propios —el Drive— lo usan para
+   * no mostrarle al cajero lo que su panel no le muestra.
+   */
+  actorRole?: string;
+  /**
+   * Quién pidió la tarea (username del panel o «whatsapp:<nombre>»). Lo usan
+   * las acciones que dejan rastro a nombre de alguien —el envío de un papel
+   * queda en la auditoría del documento con su autor—.
+   */
+  actorId?: string;
+  /**
+   * El username del PANEL a cuyo nombre corre la tarea, cuando hay uno: la
+   * sesión del panel, o quien vinculó el WhatsApp del dueño. Telegram, n8n y
+   * los vínculos de WhatsApp anteriores al 22-10 no lo tienen. Lo usa el envío
+   * de un papel: el enlace sale a su nombre para que abra con su rol de hoy.
+   */
+  actorUsuario?: string;
 }
 
 // ── Contract that every domain agent must satisfy ─────────────────────────────

@@ -25,6 +25,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 // TTL de la URL re-firmada: 30 minutos
 const SIGNED_TTL_SEC = 30 * 60;
@@ -73,7 +74,7 @@ export async function GET(
 
   // Intentar auth como admin primero, luego como customer.
   // Dos paths separados para RBAC correcto.
-  const adminAuth = await requireAdmin(req, ["owner", "admin", "manager"]).catch(() => null);
+  const adminAuth = await requireAdmin(req, ["owner", "admin", "manager"]).catch(sinDato("api/marketplace/orders/proof-url sesión de admin"));
   const customerAuth = adminAuth instanceof NextResponse || adminAuth === null
     ? await requireCustomer(req)
     : null;

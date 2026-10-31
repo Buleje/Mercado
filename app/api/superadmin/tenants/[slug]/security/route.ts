@@ -9,7 +9,10 @@ import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { revokeSessionsBefore } from "@/lib/auth/session-revocation";
 import { notifyTenantOwnerSecurity } from "@/lib/auth/security-alerts";
+import { TrustedDevicesDB } from "@/lib/db/trusted-devices.db";
 import { logger } from "@/lib/logger";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { respuestaSiCandadoCerrado } from "@/lib/superadmin/candado";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       where: { tenantId: tenant.id, action: "login_success" },
       orderBy: { createdAt: "desc" },
       select: { createdAt: true, detail: true },
-    }).catch(() => null);
+    }).catch(sinDato("api/superadmin/tenants/security último login del tenant"));
     return NextResponse.json({
       username: admin?.username ?? null,
       twoFactorEnabled: !!admin?.totpEnabledAt,
@@ -62,6 +65,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Candado de credenciales: con candado configurado, resetear el 2FA, forzar el
+  // cambio de clave o cerrar sesiones de una tienda exige tenerlo abierto (423).
+  const candadoCerrado = await respuestaSiCandadoCerrado(req, session.username);
+  if (candadoCerrado) return candadoCerrado;
   const { slug } = await params;
   const body = await req.json().catch(() => ({}));
   const totpFail = await requireTotpStepUp(session.username, body);
@@ -85,6 +92,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       await prisma.$executeRawUnsafe(
         `UPDATE "AdminUser" SET "totpSecret" = NULL, "totpEnabledAt" = NULL, "totpLastUsedStep" = NULL, "updatedAt" = NOW() WHERE "tenantId" = $1 AND username = $2`,
         tenant.id, admin.username,
+      );
+      // ADR-304: resetear el 2FA revoca TODOS los dispositivos de confianza —
+      // si el reset responde a un compromiso, una cookie trusted vieja no debe
+      // saltar el 2FA re-enrolado. Best-effort (no bloquea el reset).
+      await TrustedDevicesDB.revokeAll(tenant.id, admin.username).catch((err) =>
+        logger.error("[sa/security] revokeAll trusted-devices failed", { error: String(err) }),
       );
     } else {
       // logout-all: cerrar TODAS las sesiones activas de TODOS los admins del
@@ -119,7 +132,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       `${parsed.data.action} en ${slug} (${tenant.name}), usuario ${admin.username}`,
       { tenantSlug: slug, username: admin.username },
       session.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[security] superadmin action audit failed", { error: String(err), action: auditAction, username: admin.username }));
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[security] action error", { err: e instanceof Error ? e.message : String(e) });

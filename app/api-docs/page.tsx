@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import ApiDocsClientWrapper from "@/components/ApiDocsClientWrapper";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 export const metadata: Metadata = {
   title: "API Docs — Buleje",
@@ -36,11 +37,7 @@ async function ApiDocsDynamicGate() {
 export default function Page() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center text-sm text-muted">
-          Cargando documentación de la API…
-        </div>
-      }
+      fallback={<CargaPagina etiqueta="Cargando la documentación de la API" />}
     >
       <ApiDocsDynamicGate />
     </Suspense>

@@ -1,0 +1,4 @@
+[
+  {"eval": "(async()=>{/* Borra lo de cubicador-margen-qa: las comerciales en BORRADOR con notas «ZZQA margen» (sólo los borradores se borran; no movieron plata) y después las guardadas «ZZQA…». */const c=decodeURIComponent(document.cookie.match(/csrf-token=([^;]+)/)?.[1]||'');const T='/api/admin/forestal/cubicaciones-trozas';const l=await (await fetch(T+'?material=todas',{credentials:'include'})).json();const mias=(l.cubicaciones||[]).filter((x)=>x.notas==='ZZQA margen'&&x.estado==='borrador');const st=[];for(const x of mias){const r=await fetch(T+'/'+encodeURIComponent(x.id),{method:'DELETE',headers:{'x-csrf-token':c},credentials:'include'});st.push(x.codigo+' '+r.status)}return {comerciales:mias.length,estados:st}})()"},
+  {"preset": "cubicador-guardadas-qa-borrar"}
+]

@@ -76,7 +76,7 @@ const DESIGN_TO_DB: Record<MockGiftCardDesign, string> = {
 
 /** Mapea enum status DB → status UI (compat con mock). */
 function mapStatus(db: string): MockGiftCardStatus {
-  if (db === "cancelled" || db === "cancelled") return "expirada";
+  if (db === "cancelled") return "expirada";
   if (db === "fully_redeemed") return "canjeada";
   if (db === "expired") return "expirada";
   // pending_delivery | active | partially_redeemed → "activa"
@@ -559,6 +559,55 @@ export const GiftCardsDB = {
       return { ok: true };
     } catch (e) {
       logger.error("[gift-cards/cancel] error", {
+        err: e instanceof Error ? e.message : String(e),
+      });
+      return { ok: false, error: "INTERNAL" };
+    }
+  },
+
+  /**
+   * Admin: extender la fecha de vencimiento de una gift card.
+   * La nueva fecha debe ser futura. No aplica a tarjetas canceladas/usadas.
+   */
+  async extendExpiry(
+    tenantId: string,
+    giftCardId: string,
+    adminUserId: string,
+    newExpiry: Date,
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = await (prisma.giftCard as any).findFirst({
+        where: { tenantId, id: giftCardId },
+      });
+      if (!existing) return { ok: false, error: "NOT_FOUND" };
+      if (existing.status === "cancelled") return { ok: false, error: "CANCELLED" };
+      if (existing.status === "redeemed") return { ok: false, error: "ALREADY_REDEEMED" };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (prisma.giftCard as any).update({
+        where: { id: giftCardId },
+        data: { expiresAt: newExpiry },
+      });
+
+      logActivity(
+        "gift_card_extend",
+        "GiftCard",
+        `Extension de vencimiento → ${newExpiry.toISOString().slice(0, 10)}`,
+        giftCardId,
+        adminUserId,
+        undefined,
+        tenantId,
+      ).catch((err) => {
+        logger.error("[gift-cards] activity log failed", {
+          err: err instanceof Error ? err.message : String(err),
+        });
+      });
+
+      invalidateByPrefix(`giftcards:${tenantId}:`);
+      return { ok: true };
+    } catch (e) {
+      logger.error("[gift-cards/extend] error", {
         err: e instanceof Error ? e.message : String(e),
       });
       return { ok: false, error: "INTERNAL" };

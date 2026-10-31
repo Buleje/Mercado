@@ -1,0 +1,30 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=forestal-herramientas&sub=lote&vista=cubicador",
+ "pasos": [
+  {
+   "esperar": 2500
+  },
+  {
+   "eval": "(()=>{const P=(id,c,e,a,l,esp)=>({id,cantidad:c,espesor:e,ancho:a,largo:l,uEspesor:'pulg',uAncho:'pulg',uLargo:'pies',especie:esp,pieTablar:e*a*l*c/12,m3:e*a*l*c/12/424});const k='buleje-cubicacion-main';localStorage.setItem(k,JSON.stringify([P('t1',40,2,8,10,'Tornillo'),P('t2',20,2,4,4,'Tornillo'),P('c1',30,2,6,10,'Cumala'),P('c2',10,1,6,4,'Cumala')]));localStorage.setItem(k+'-modo-precio','manual');localStorage.setItem(k+'-precio','2');localStorage.setItem(k+'-precios-especie',JSON.stringify({tornillo:'2.5'}));localStorage.setItem(k+'-precios-especie-tipo',JSON.stringify({'tornillo|Corta':'1.5'}));location.reload();return 'sembrado'})()"
+  },
+  {
+   "esperar": 6500
+  },
+  {
+   "eval": "(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Guardar');if(!b)return 'sin boton Guardar';b.click();return 'abierto'})()"
+  },
+  {
+   "esperar": "[data-tabla='precio-especie-tipo']"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "eval": "(()=>{const t=document.querySelector(\"[data-tabla='precio-especie-tipo']\");const ths=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim());const filas=[...t.querySelectorAll('tbody tr')].map(r=>[...r.querySelectorAll('th,td')].map(c=>{const i=c.querySelector('input');return i?(i.value||'ph:'+i.placeholder)+' '+(c.querySelector('span')?.textContent||''):c.textContent.trim()}));const cif=t.querySelector('tbody td span');const desc=document.querySelector('[role=dialog]')?.querySelector('p')?.textContent;return {ths,filas,anchoTabla:Math.round(t.getBoundingClientRect().width),scrollW:t.scrollWidth,clientW:t.clientWidth,fsCifras:cif&&getComputedStyle(cif).fontSize,colorCifras:cif&&getComputedStyle(cif).color,porCobrar:document.querySelector('[data-por-cobrar]')?.textContent,nuevos:document.querySelectorAll('[data-alta]').length,altoNuevo:document.querySelector('[data-alta]')?.getBoundingClientRect().height,cubicadoPor:!!document.querySelector('#cubg-cubicado-por'),desc}})()"
+  },
+  {
+   "captura": "guardar-precio"
+  }
+ ]
+}

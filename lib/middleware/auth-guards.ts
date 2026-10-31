@@ -97,29 +97,12 @@ export async function guardSuperadminApi(
  * Expired or invalid → redirect to `/superadmin/login` and clear the cookie.
  */
 /**
- * Brandon 2026-05-16 (audit Info preventivo): allowlist para `?next=` en
- * redirects del superadmin guard. Hoy NO usamos `?next=` (el flow va a
- * /superadmin/dashboard hardcoded), pero si en el futuro se implementa,
- * esta función previene open-redirect via WhatsApp phishing.
- *
- * Mismo patrón que safeRedirectPath() en app/admin/login/page.tsx.
+ * Re-export por compatibilidad: la implementación se mudó a
+ * `lib/superadmin/safe-next.ts` (módulo puro) para que también la pueda
+ * importar la página de login, que es un client component y no puede
+ * arrastrar los imports de server de este archivo.
  */
- 
-export function safeSuperadminNext(raw: string | null | undefined, fallback: string): string {
-  if (!raw) return fallback;
-  let dest: string;
-  try {
-    dest = decodeURIComponent(raw);
-  } catch {
-    return fallback;
-  }
-  if (!dest.startsWith("/superadmin")) return fallback;  // solo rutas superadmin
-  if (dest.startsWith("//")) return fallback;
-  if (dest.includes("://")) return fallback;
-  if (/^[a-z]+:/i.test(dest)) return fallback;
-  if (dest.includes("\\")) return fallback;
-  return dest;
-}
+export { safeSuperadminNext } from "@/lib/superadmin/safe-next";
 
 export async function guardSuperadminPages(
   req: NextRequest,
@@ -135,7 +118,11 @@ export async function guardSuperadminPages(
 
   const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!platformToken) {
-    return NextResponse.redirect(new URL("/superadmin/login", req.url));
+    // `from` para volver al destino original tras loguearse (lo valida
+    // safeSuperadminNext del lado del login — nunca se confía crudo).
+    const loginUrl = new URL("/superadmin/login", req.url);
+    loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   const ua = req.headers.get("user-agent");
@@ -147,6 +134,7 @@ export async function guardSuperadminPages(
     // mecanismo de detección al atacante.
     const loginUrl = new URL("/superadmin/login", req.url);
     loginUrl.searchParams.set("reason", "expired");
+    loginUrl.searchParams.set("from", pathname);
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete(PLATFORM_SESSION.COOKIE_NAME);
     return response;

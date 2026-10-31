@@ -78,10 +78,6 @@ export const BulejeRadialProgress = memo(function BulejeRadialProgress({
   const actualPath = describeArc(actualPct);
   const projectedPath = projectedPct != null ? describeArc(projectedPct) : null;
 
-  const formatted = format
-    ? format(actual).replace(/[^\d.,\s-]/g, "") // extract number part for NumberFlow
-    : actual.toLocaleString("es-PE");
-
   // Delta hasta meta
   const delta = target - actual;
   const deltaPct = ((delta / target) * 100).toFixed(0);

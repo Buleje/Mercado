@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Store, ShoppingCart, Users, Zap } from "@buleje/design-system/icons";
 
 const ACTIVITIES = [
-  { icon: <Store className="h-3 w-3" />, text: "Bodega Lima creo su tienda", color: "text-[var(--accent-dark)]" },
+  { icon: <Store className="h-3 w-3" />, text: "Bodega Lima creo su tienda", color: "text-[var(--accent-dark)] dark:text-[var(--accent)]" },
   { icon: <ShoppingCart className="h-3 w-3" />, text: "Minimarket Ica proceso 12 pedidos hoy", color: "text-[var(--data-success-600)]" },
   { icon: <Users className="h-3 w-3" />, text: "Abarrotes Trujillo registro 5 clientes nuevos", color: "text-[var(--accent)]" },
   { icon: <Zap className="h-3 w-3" />, text: "Bodega Cusco activo su plan Pro", color: "text-[var(--data-warning-600)]" },

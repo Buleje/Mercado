@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, CheckCircle, Loader2, RefreshCw } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -23,7 +25,7 @@ interface BudgetAlertWidgetProps {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getAlertLevel(pct: number): AlertLevel {
@@ -40,8 +42,8 @@ const LEVEL_CONFIG: Record<AlertLevel, {
   label: string;
 }> = {
   ok: {
-    bar: "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+    bar: "bg-primary/10 dark:bg-primary/10",
+    bg: "bg-primary/10 dark:bg-primary/15",
     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
     text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     label: "Presupuesto bajo control",
@@ -105,7 +107,7 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
       )}
     >
       {/* Titulo + refresh */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex min-h-12 items-center justify-between">
         <div className="flex items-center gap-2">
           {level === "ok" ? (
             <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
@@ -117,17 +119,17 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
                 : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
             )} />
           )}
-          <span className={cn("text-xs font-semibold", cfg.text)}>
-            Presupuesto Mensual
-          </span>
+          <CardTitle className="text-sm font-bold">Presupuesto del mes</CardTitle>
         </div>
         <button
+          type="button"
           onClick={fetchSummary}
           disabled={loading}
-          className={cn("transition-colors", cfg.text, "hover:opacity-70")}
+          className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           aria-label="Actualizar presupuesto"
+          title="Actualizar"
         >
-          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden />
         </button>
       </div>
 
@@ -154,7 +156,7 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
 
           {/* Barra de progreso */}
           <div>
-            <div className="h-2.5 w-full rounded-full bg-[var(--rule-soft)] dark:bg-gray-700 overflow-hidden">
+            <div className="h-2.5 w-full rounded-full bg-[var(--rule-soft)] overflow-hidden">
               <div
                 className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", cfg.bar)}
                 style={{ width: `${pct}%` }}

@@ -1,0 +1,13 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=ctp-libro-operaciones&vista=saldos&sub=capacidad",
+ "pasos": [
+  {"esperar": 2500},
+  {"esperar": "text=Llevar al cubicador"},
+  {"clicTexto": "Llevar al cubicador"},
+  {"esperar": 1200},
+  {"click": "role=button[name=/^Llevar \\d+ bloques? al cubicador/]"},
+  {"esperar": 3000},
+  {"eval": "JSON.stringify({ url: location.pathname + location.search, bloques: document.querySelectorAll('[data-bloque-id], [data-qa=\"bloque-rolliza\"]').length, elegir: [...document.querySelectorAll('button')].filter((b) => /Elegir las trozas|trozas justas|Elegidas/i.test(b.textContent || '')).length })"}
+ ]
+}

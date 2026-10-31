@@ -113,24 +113,29 @@ describe("B-P0-4 · SalesDB.getAllFilteredPaginated", () => {
     vi.clearAllMocks();
   });
 
-  it("today=true setea createdAt.gte a inicio del día", async () => {
+  it("today=true setea createdAt.gte a las 00:00 de LIMA, aun a las 20:00 de Lima (01:00 UTC del día siguiente)", async () => {
     // TD-116: sales usa tx interactiva — se stubean las fns subyacentes
     mockSaleFindMany.mockResolvedValue([]);
     mockSaleCount.mockResolvedValue(0);
-
-    const { SalesDB } = await import("@/lib/db/sales.db");
-    await SalesDB.getAllFilteredPaginated({
-      tenantId: "tenant-1",
-      page: 1,
-      limit: 100,
-      today: true,
-    });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T01:00:00.000Z"));
+    try {
+      const { SalesDB } = await import("@/lib/db/sales.db");
+      await SalesDB.getAllFilteredPaginated({
+        tenantId: "tenant-1",
+        page: 1,
+        limit: 100,
+        today: true,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
 
     const call = mockSaleFindMany.mock.calls[0][0];
     expect(call.where.createdAt.gte).toBeInstanceOf(Date);
-    const gte = call.where.createdAt.gte as Date;
-    expect(gte.getHours()).toBe(0);
-    expect(gte.getMinutes()).toBe(0);
+    // 2026-10-09 00:00 Lima = 05:00Z. Con setHours(0) en un servidor UTC daba
+    // 2026-10-10T00:00Z (19:00 de Lima) y «hoy» perdía el día entero.
+    expect((call.where.createdAt.gte as Date).toISOString()).toBe("2026-10-09T05:00:00.000Z");
   });
 
   it("cashierId filtra Prisma-side (no JS)", async () => {

@@ -1,5 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import {
@@ -107,5 +108,8 @@ export async function PATCH(req: NextRequest) {
   }
 
   await PlatformSettingsDB.setMany(normalized, platformUser);
+  // El root layout pinta colores y favicon desde un `"use cache"` con este
+  // tag. Sin revalidar, el superadmin cambia la marca y no la ve cambiar.
+  revalidateTag("platform-config", "max");
   return NextResponse.json({ ok: true, updated: Object.keys(normalized).length });
 }

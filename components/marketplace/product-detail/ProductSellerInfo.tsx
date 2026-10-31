@@ -8,10 +8,12 @@
 
 import Link from "next/link";
 import { Star, CheckCircle2, ChevronRight } from "@buleje/design-system/icons";
+import { StoreAvatar } from "@/components/marketplace/StoreAvatar";
 
 export interface ProductSellerInfoProps {
   storeName: string;
   storeSlug: string;
+  storeLogo?: string | null;
   storeDescription?: string | null;
   storeZone?: string | null;
   storeRating?: number;
@@ -21,12 +23,11 @@ export interface ProductSellerInfoProps {
 export function ProductSellerInfo({
   storeName,
   storeSlug,
+  storeLogo,
   storeZone,
   storeRating = 4.8,
   storeKm,
 }: ProductSellerInfoProps) {
-  const initial = storeName.trim().charAt(0).toUpperCase();
-
   return (
     <section
       aria-label={`Vendido por ${storeName}`}
@@ -35,9 +36,7 @@ export function ProductSellerInfo({
       <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mb-2">Vendido por</p>
 
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-sm bg-[var(--surface-sunken)] text-base font-semibold uppercase text-[var(--text-secondary)]">
-          {initial}
-        </span>
+        <StoreAvatar name={storeName} logo={storeLogo} size={40} rounded="rounded-lg" />
         <div className="min-w-0">
           <h3 className="inline-flex items-center gap-1 font-semibold text-[var(--text-primary)] truncate leading-tight">
             {storeName}

@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getCustomerPayload,
+  getSeguimientoPedidos,
   maybeRotateCustomerToken,
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
@@ -43,6 +44,11 @@ export async function GET(req: NextRequest) {
   const payload = await getCustomerPayload(token);
 
   if (!payload) {
+    // Token de SEGUIMIENTO de un pedido de invitado: no es sesión (security
+    // 2026-10-08), pero se conserva para que vea los pedidos que hizo.
+    if (await getSeguimientoPedidos(token)) {
+      return NextResponse.json({ authenticated: false });
+    }
     // Token invalido o expirado — limpiar la cookie del cliente
     const response = NextResponse.json({ authenticated: false });
     response.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, "", {

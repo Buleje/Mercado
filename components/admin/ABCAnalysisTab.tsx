@@ -1,20 +1,42 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState, DataTable } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { Loader2, BarChart2, Search } from "@buleje/design-system/icons";
+import { BarChart2, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import type { ABCProduct } from "@/app/api/analytics/abc/route";
+import { formatCurrency } from "@/lib/format";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
 
-const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string; variant: BadgeVariant }> = {
-  A: { badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", row: "bg-[var(--accent-soft)]/30 dark:bg-[var(--accent-muted)]", label: "A — Critico", border: "border-l-4 border-l-green-500", variant: "success" },
-  B: { badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",   row: "bg-[var(--data-warning-50)]/20 dark:bg-[var(--data-warning-500)]/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500", variant: "warning" },
-  C: { badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500", variant: "error" },
+const CLASS_STYLES: Record<"A" | "B" | "C", { label: string; variant: BadgeVariant }> = {
+  A: { label: "Crítico", variant: "success" },
+  B: { label: "Importante", variant: "warning" },
+  C: { label: "Bajo impacto", variant: "error" },
 };
 
-function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+/* Filtros y orden de la tabla (las tres tarjetas de clase de arriba siguen filtrando por clase). */
+const COLUMNAS: readonly ColumnaFiltro<ABCProduct>[] = [
+  { id: "categoria", label: "Categoría", tipo: "multi", valor: (p) => p.category, soloConVarios: true },
+  { id: "ingresos", label: "Ingresos", tipo: "rango", numero: (p) => p.revenue, unidad: "S/", paso: 0.01 },
+  { id: "unidades", label: "Unidades", tipo: "rango", numero: (p) => p.units, paso: 1 },
+  { id: "acum", label: "Acum. %", tipo: "rango", numero: (p) => p.cumulativePct, unidad: "%", paso: 1 },
+];
+const ORDEN: Record<string, AccesorOrden<ABCProduct>> = {
+  puesto: { valor: (p) => p.cumulativePct },
+  producto: { valor: (p) => p.name, texto: true },
+  categoria: { valor: (p) => p.category, texto: true },
+  ingresos: { valor: (p) => p.revenue },
+  unidades: { valor: (p) => p.units },
+  acum: { valor: (p) => p.cumulativePct },
+  clase: { valor: (p) => p.class, texto: true },
+};
+
+function fmt(n: number) { return `${formatCurrency(n)}`; }
 
 export default function ABCAnalysisTab() {
   const [data, setData]   = useState<ABCProduct[]>([]);
@@ -29,11 +51,14 @@ export default function ABCAnalysisTab() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = data.filter(p => {
+  const delaBarra = data.filter(p => {
     if (filter !== "all" && p.class !== filter) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+  const f = useFiltrosTabla(delaBarra, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filtered = ord.ordenar(f.filtradas);
 
   const counts = { A: data.filter(p => p.class === "A").length, B: data.filter(p => p.class === "B").length, C: data.filter(p => p.class === "C").length };
   const revenue = { A: data.filter(p => p.class === "A").reduce((s, p) => s + p.revenue, 0), B: data.filter(p => p.class === "B").reduce((s, p) => s + p.revenue, 0), C: data.filter(p => p.class === "C").reduce((s, p) => s + p.revenue, 0) };
@@ -41,90 +66,81 @@ export default function ABCAnalysisTab() {
 
   if (loading) return <LoadingState />;
 
-  return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <BarChart2 className="h-6 w-6 text-primary" /> Análisis ABC
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Clasificación de productos por impacto en ingresos (principio de Pareto)</p>
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm w-56" />
-        </div>
-      </div>
+  if (data.length === 0) {
+    return (
+      <VacioMetricas
+        icono={BarChart2}
+        titulo="Sin ventas para clasificar"
+        descripcion="Con tus ventas y pedidos, aquí ves qué pocos productos hacen la mayor parte de tus ingresos."
+      />
+    );
+  }
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+  // Sin título propio (el panel de Métricas dice «ABC (80/20)» y el ⓘ lo
+  // explica). Las tres clases son el filtro, en una fila; la tabla, con
+  // cabecera fija y alto tope, en vez de 17+ filas que empujaban la página.
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-stretch gap-2">
         {(["A", "B", "C"] as const).map(cls => (
           <button
             key={cls}
+            type="button"
+            aria-pressed={filter === cls}
             onClick={() => setFilter(f => f === cls ? "all" : cls)}
             className={cn(
-              "text-left p-4 rounded-xl border-2 transition-all hover:shadow-[var(--shadow-sm)]",
-              CLASS_STYLES[cls].border,
-              filter === cls ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]",
-              CLASS_STYLES[cls].row
+              "flex min-h-12 min-w-0 flex-1 basis-56 items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors",
+              filter === cls ? "border-[var(--accent)] ring-2 ring-[var(--accent-muted)]" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]",
             )}
           >
-            <div className="flex items-center justify-between mb-2">
-              <StatusBadge variant={CLASS_STYLES[cls].variant} label={`Clase ${cls}`} />
-              <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{counts[cls]} productos</span>
-            </div>
-            <p className="text-xl font-mono font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(revenue[cls])}</p>
-            <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">{totalRevenue > 0 ? ((revenue[cls] / totalRevenue) * 100).toFixed(1) : 0}% del ingreso total -- {CLASS_STYLES[cls].label}</p>
+            <span className="min-w-0">
+              <span className="flex items-center gap-2" title={`Clase ${cls}: ${CLASS_STYLES[cls].label}`}>
+                <span className="shrink-0 whitespace-nowrap"><StatusBadge variant={CLASS_STYLES[cls].variant} label={`Clase ${cls}`} /></span>
+                <span className="font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">{fmt(revenue[cls])}</span>
+              </span>
+              <span className="mt-0.5 block text-sm text-[var(--text-secondary)]">
+                {counts[cls]} productos · {totalRevenue > 0 ? ((revenue[cls] / totalRevenue) * 100).toFixed(1) : 0} % del ingreso
+              </span>
+            </span>
           </button>
         ))}
+        <label className="relative flex-1 basis-56">
+          <span className="sr-only">Buscar producto</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto…" className="h-full min-h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm" />
+        </label>
       </div>
 
-      {/* Table */}
-      {data.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
-          <BarChart2 className="h-10 w-10 mx-auto mb-3" />
-          <p className="font-semibold">Sin datos de ventas para analizar</p>
-          <p className="text-xs mt-1">Registra ventas o pedidos para ver el análisis ABC</p>
-        </div>
-      ) : (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead>
-                <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 w-8 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">#</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Categoría</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">Ingresos</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right hidden md:table-cell">Unidades</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right hidden md:table-cell">Acum. %</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-center">Clase</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.map((p) => (
-                  <tr key={p.productId} className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors", CLASS_STYLES[p.class].row)}>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-tertiary)] dark:text-muted text-xs">{data.indexOf(p) + 1}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-secondary)] dark:text-muted text-xs hidden sm:table-cell">{p.category}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(p.revenue)}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{p.units}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{p.cumulativePct}%</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-center">
-                      <StatusBadge variant={CLASS_STYLES[p.class].variant} label={p.class} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {filtered.length === 0 && (
-            <div className="h-20 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted text-sm">No se encontraron productos</div>
-          )}
-        </div>
-      )}
+      <BarraFiltrosTabla vistas="abc" excel="Análisis ABC" f={f} />
+      <DataTable stickyHeader wrapperClassName="max-h-[26rem] overflow-y-auto" className="min-w-[600px]">
+        <thead>
+          <tr>
+            <ThColumna label="#" className="w-8" f={f} orden={ord} ordenId="puesto" />
+            <ThColumna label="Producto" f={f} orden={ord} ordenId="producto" />
+            <ThColumna label="Categoría" ids={["categoria"]} f={f} className="hidden sm:table-cell" orden={ord} ordenId="categoria" />
+            <ThColumna label="Ingresos" ids={["ingresos"]} f={f} derecha orden={ord} ordenId="ingresos" />
+            <ThColumna label="Unidades" ids={["unidades"]} f={f} derecha className="hidden md:table-cell" orden={ord} ordenId="unidades" />
+            <ThColumna label="Acum. %" ids={["acum"]} f={f} derecha className="hidden md:table-cell" orden={ord} ordenId="acum" />
+            <ThColumna label="Clase" f={f} orden={ord} ordenId="clase" />
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map(p => (
+            <tr key={p.productId}>
+              <td className="text-[var(--text-secondary)]">{data.indexOf(p) + 1}</td>
+              <td className="font-semibold">{p.name}</td>
+              <td className="hidden text-[var(--text-secondary)] sm:table-cell">{p.category}</td>
+              <td className="text-right font-bold">{fmt(p.revenue)}</td>
+              <td className="hidden text-right text-[var(--text-secondary)] md:table-cell">{p.units}</td>
+              <td className="hidden text-right text-[var(--text-secondary)] md:table-cell">{p.cumulativePct}%</td>
+              <td className="text-center">
+                <StatusBadge variant={CLASS_STYLES[p.class].variant} label={p.class} />
+              </td>
+            </tr>
+          ))}
+          {filtered.length === 0 && <SinCoincidenciasFila colSpan={7} />}
+        </tbody>
+      </DataTable>
     </div>
   );
 }
-

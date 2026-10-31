@@ -35,9 +35,9 @@ import {
   generateSoftwareApplicationLD,
   generateFAQPageLD,
   generateDistrictLandingLD,
-  districtBreadcrumbs,
-} from "@/lib/seo/json-ld";
+  districtBreadcrumbs, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // Title B2C-first (2026-05-27): lidera con comprar/delivery local del distrito.
   const title = `Bodegas, restaurantes y delivery en ${district.name}, ${zone.name}`;
-  const description = `Pedí comida, abarrotes y productos en ${district.name} (${zone.name}): bodegas, restaurantes, mercados y tiendas con delivery local rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Llevalo al sistema Buleje.`;
+  const description = `Pide comida, abarrotes y productos en ${district.name} (${zone.name}): bodegas, restaurantes, mercados y tiendas con delivery local rápido y pago con Yape, Plin o efectivo. ¿Tienes un negocio? Llevalo al sistema Buleje.`;
   const url = `${BASE_URL}/zona/${zone.slug}/distrito/${district.slug}`;
 
   return {
@@ -193,19 +193,19 @@ async function DistrictContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateSoftwareApplicationLD(zone)),
+          __html: safeJsonLdStringify(generateSoftwareApplicationLD(zone)),
         }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateDistrictLandingLD(district, zone)),
+          __html: safeJsonLdStringify(generateDistrictLandingLD(district, zone)),
         }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateFAQPageLD(faqs)),
+          __html: safeJsonLdStringify(generateFAQPageLD(faqs)),
         }}
       />
 
@@ -332,11 +332,7 @@ export default function DistrictLandingPage({ params }: Props) {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="animate-pulse text-sm text-slate-400">
-            Cargando información del distrito...
-          </div>
-        </div>
+        <CargaPagina modo="bloque" etiqueta="Cargando información del distrito" />
       }
     >
       <DistrictContentWrapper params={params} />

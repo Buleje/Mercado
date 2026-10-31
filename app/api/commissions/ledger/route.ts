@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       `Comisión registrada: ${commission.type} — S/${commission.amount} (orden ${commission.orderId})`,
       commission.id,
       auth.username
-    ).catch(() => { /* fire-and-forget per CLAUDE.md rule #7 */ });
+    ).catch((err) => logger.error("[commissions/ledger] logActivity (crear) failed", { error: String(err), orderId: commission.orderId }));
 
     return NextResponse.json(commission, { status: 201 });
   } catch (err) {
@@ -134,7 +134,7 @@ export async function PATCH(req: NextRequest) {
       `${result.count} comisiones liquidadas (ids: ${parsed.data.ids.slice(0, 3).join(", ")}${parsed.data.ids.length > 3 ? "…" : ""})`,
       undefined,
       auth.username
-    ).catch(() => { /* fire-and-forget */ });
+    ).catch((err) => logger.error("[commissions/ledger] logActivity (liquidar) failed", { error: String(err) }));
 
     return NextResponse.json({ settled: result.count, settledAt: result.settledAt });
   } catch (err) {

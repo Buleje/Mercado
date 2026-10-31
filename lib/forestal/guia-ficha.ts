@@ -1,0 +1,335 @@
+/**
+ * guia-ficha.ts — la guía entera en secciones, para mirarla en pantalla (ADR-350).
+ *
+ * El papel imprimible ya existe (ADR-348) y sirve para el expediente. Lo que
+ * faltaba es la **ficha**: abrir la guía, ver todo lo que el libro sabe de ella
+ * —quién la emitió, a quién viene, quién la trajo, qué trae, pieza por pieza— y
+ * **recepcionarla ahí mismo**. Un documento que se revisa en un papel y se
+ * recibe en otra pantalla se recibe sin revisar.
+ *
+ * Las secciones salen acá y no del componente para que la ficha, el papel y el
+ * Excel digan lo mismo: si cada uno arma su lista de campos, el que revisa ve
+ * uno y el fiscalizador otro.
+ *
+ * PURO y client-safe.
+ */
+
+import { leerGtfDatos } from "./ctp-gtf-datos";
+import type { GuiaIngreso, LineaDeGuia } from "./ingresos-por-guia";
+
+/** Un dato de la ficha. `null` = el libro no lo tiene (se muestra, no se oculta). */
+export interface CampoFicha {
+  label: string;
+  valor: string | null;
+  /** Casillero del formato oficial, si le corresponde uno. */
+  casillero?: string;
+  /**
+   * Quién escribió este dato a mano, si lo escribió alguien (ADR-392).
+   *
+   * `undefined` NO significa «vino del documento»: significa que no se sabe.
+   * Los ingresos anteriores a que el libro registrara procedencia no declaran
+   * ninguna, y la ficha no se la inventa.
+   */
+  manual?: { por?: string; el?: string };
+}
+
+export interface SeccionFicha {
+  titulo: string;
+  /** Los casilleros que cubre, como los cita la autoridad. */
+  rango?: string;
+  campos: CampoFicha[];
+}
+
+/**
+ * ¿Este casillero lo escribió una persona? (ADR-392)
+ *
+ * Se lee de `camposManuales`, que sólo tiene los campos que alguien corrigió a
+ * mano. Ausente = no se sabe; nunca se interpreta como «vino del documento».
+ */
+function quien(linea: unknown, campo: string): { por?: string; el?: string } | undefined {
+  const cm = (linea as { camposManuales?: unknown } | null)?.camposManuales;
+  if (!cm || typeof cm !== "object" || Array.isArray(cm)) return undefined;
+  const dato = (cm as Record<string, unknown>)[campo];
+  if (!dato || typeof dato !== "object") return undefined;
+  const { por, el } = dato as { por?: unknown; el?: unknown };
+  return {
+    por: typeof por === "string" ? por : undefined,
+    el: typeof el === "string" ? el : undefined,
+  };
+}
+
+const t = (v: unknown): string | null => {
+  const s = v == null ? "" : String(v).trim();
+  return s === "" ? null : s;
+};
+
+const ubicacion = (dep?: string, prov?: string, dist?: string): string | null =>
+  t([dist, prov, dep].filter((x) => (x ?? "").trim()).join(" · "));
+
+/** Lo que el ingreso guarda del documento, además de sus asientos. */
+export interface LineaConGuia extends LineaDeGuia {
+  gtfDatos?: unknown;
+  libroNro?: number | null;
+  originType?: string | null;
+  originSourceNumber?: string | null;
+  originRegion?: string | null;
+  originDistrict?: string | null;
+  providerDocument?: string | null;
+  providerDocumentType?: string | null;
+  ctpProductCode?: string | null;
+  notes?: string | null;
+  serforNumeroRegistro?: string | null;
+}
+
+/**
+ * Las secciones de la ficha, en el orden del formato.
+ *
+ * Se muestran **todas**, incluso las vacías: un bloque que desaparece porque no
+ * tiene datos hace creer que la guía no lo necesita. Lo que falta se ve faltando
+ * — que es justo lo que hay que completar antes de presentar el libro.
+ */
+export function seccionesDeGuia(guia: GuiaIngreso<LineaConGuia>): SeccionFicha[] {
+  const p = guia.lineas[0];
+  const d = leerGtfDatos(p.gtfDatos);
+
+  return [
+    {
+      titulo: "Documento y origen",
+      rango: "casilleros (2) a (12)",
+      campos: [
+        /* (1) es el folio del libro: lo asigna el sistema al registrar y no se
+           corrige a mano (renumerar dejaría de casar con lo ya presentado). */
+        { label: "Folio del libro", valor: t(p.libroNro), casillero: "1" },
+        {
+          label: "N° de guía",
+          valor: t(guia.gtfNumber),
+          casillero: "4",
+          manual: quien(p, "gtfNumber"),
+        },
+        { label: "Serie", valor: t(guia.gtfSeries), manual: quien(p, "gtfSeries") },
+        {
+          label: "Tipo de documento",
+          valor: t(guia.docType) ?? "GTF",
+          casillero: "3",
+          manual: quien(p, "docType"),
+        },
+        {
+          label: "Fecha del documento",
+          valor: t(guia.gtfDate ? String(guia.gtfDate).slice(0, 10) : null),
+          manual: quien(p, "gtfDate"),
+        },
+        {
+          label: "N° de registro SNIFFS",
+          valor: t(p.serforNumeroRegistro),
+          manual: quien(p, "serforNumeroRegistro"),
+        },
+        {
+          label: "Título habilitante",
+          valor: t(p.originCode),
+          casillero: "6",
+          manual: quien(p, "originCode"),
+        },
+        {
+          label: "N° de resolución",
+          valor: t(p.originSourceNumber),
+          casillero: "8",
+          manual: quien(p, "originSourceNumber"),
+        },
+        {
+          label: "Tipo de origen",
+          valor: t(p.originType),
+          casillero: "5",
+          manual: quien(p, "originType"),
+        },
+        {
+          label: "Procedencia",
+          valor: ubicacion(p.originRegion ?? "", "", p.originDistrict ?? ""),
+          manual: quien(p, "originRegion") ?? quien(p, "originDistrict"),
+        },
+        {
+          label: "Código de CTP de procedencia",
+          valor: t(p.ctpProductCode),
+          casillero: "9",
+          manual: quien(p, "ctpProductCode"),
+        },
+      ],
+    },
+    {
+      titulo: "Proveedor / titular del recurso",
+      rango: "casilleros (7) y (13) a (21)",
+      campos: [
+        { label: "Nombre o razón social", valor: t(p.providerName), casillero: "7" },
+        {
+          label: "Documento",
+          valor: t(p.providerDocument)
+            ? `${t(p.providerDocumentType) ?? "DOC"} ${t(p.providerDocument)}`
+            : null,
+        },
+        {
+          label: "Propietario del producto",
+          valor: t(d.propietario?.nombre),
+          casillero: "13",
+          manual: quien(p, "gtfDatos.propietario.nombre"),
+        },
+        {
+          label: "Documento del propietario",
+          valor: t(d.propietario?.docNumero)
+            ? `${d.propietario.docTipo} ${d.propietario.docNumero}`
+            : null,
+          casillero: "14/15",
+          manual: quien(p, "gtfDatos.propietario.docNumero"),
+        },
+        {
+          label: "Dirección",
+          valor: t(d.propietario?.direccion),
+          casillero: "16",
+          manual: quien(p, "gtfDatos.propietario.direccion"),
+        },
+        {
+          label: "Ubicación",
+          valor: ubicacion(
+            d.propietario?.departamento,
+            d.propietario?.provincia,
+            d.propietario?.distrito,
+          ),
+          casillero: "17/18/19",
+          manual:
+            quien(p, "gtfDatos.propietario.distrito") ??
+            quien(p, "gtfDatos.propietario.provincia") ??
+            quien(p, "gtfDatos.propietario.departamento"),
+        },
+      ],
+    },
+    {
+      titulo: "Destinatario",
+      rango: "casilleros (22) a (28)",
+      campos: [
+        {
+          label: "Nombre o razón social",
+          valor: t(d.destinatario?.nombre),
+          casillero: "22",
+          manual: quien(p, "gtfDatos.destinatario.nombre"),
+        },
+        {
+          label: "Documento",
+          valor: t(d.destinatario?.docNumero)
+            ? `${d.destinatario.docTipo} ${d.destinatario.docNumero}`
+            : null,
+          casillero: "23/24",
+          manual: quien(p, "gtfDatos.destinatario.docNumero"),
+        },
+        {
+          label: "Dirección",
+          valor: t(d.destinatario?.direccion),
+          casillero: "25",
+          manual: quien(p, "gtfDatos.destinatario.direccion"),
+        },
+        {
+          label: "Ubicación",
+          valor: ubicacion(
+            d.destinatario?.departamento,
+            d.destinatario?.provincia,
+            d.destinatario?.distrito,
+          ),
+          casillero: "26/27/28",
+          manual:
+            quien(p, "gtfDatos.destinatario.distrito") ??
+            quien(p, "gtfDatos.destinatario.provincia") ??
+            quien(p, "gtfDatos.destinatario.departamento"),
+        },
+      ],
+    },
+    {
+      titulo: "Transportista y vehículo",
+      rango: "casilleros (29) a (34)",
+      campos: [
+        {
+          label: "Modo de transporte",
+          valor: t(d.vehiculo?.modo),
+          casillero: "30",
+          manual: quien(p, "gtfDatos.vehiculo.modo"),
+        },
+        {
+          label: "Empresa de transporte",
+          valor: t(d.transportista?.nombre),
+          manual: quien(p, "gtfDatos.transportista.nombre"),
+        },
+        {
+          label: "Tipo de vehículo",
+          valor: t(d.vehiculo?.tipo),
+          casillero: "31",
+          manual: quien(p, "gtfDatos.vehiculo.tipo"),
+        },
+        {
+          /* Placa o matrícula según el modo: en la selva central buena parte de
+             la madera sale por río y una guía fluvial no lleva placa. */
+          label: d.vehiculo?.modo === "fluvial" ? "Embarcación / matrícula" : "Placa",
+          valor: t(
+            d.vehiculo?.modo === "fluvial"
+              ? d.vehiculo?.embarcacion || d.vehiculo?.placa
+              : d.vehiculo?.placa,
+          ),
+          casillero: "31",
+          manual: quien(p, "gtfDatos.vehiculo.placa") ?? quien(p, "gtfDatos.vehiculo.embarcacion"),
+        },
+        {
+          label: "Conductor",
+          valor: t(d.vehiculo?.conductor),
+          casillero: "32",
+          manual: quien(p, "gtfDatos.vehiculo.conductor"),
+        },
+        {
+          label: "DNI del conductor",
+          valor: t(d.vehiculo?.conductorDni),
+          casillero: "33",
+          manual: quien(p, "gtfDatos.vehiculo.conductorDni"),
+        },
+        {
+          label: "Licencia de conducir",
+          valor: t(d.vehiculo?.licencia),
+          casillero: "34",
+          manual: quien(p, "gtfDatos.vehiculo.licencia"),
+        },
+      ],
+    },
+    {
+      titulo: "Documentos que acompañan y observaciones",
+      rango: "casilleros (35), (36) y (38)",
+      campos: [
+        /* (35) y (36) son los papeles que viajan CON la guía de ingreso: la lista de
+           trozas del titular y, si la madera ya venía de otro CTP, la GTF con la
+           que entró allá. Viven en `gtfDatos.guia`, igual que en la de salida. */
+        {
+          label: "N° de lista de trozas",
+          valor: t(d.guia?.listaTrozasNro),
+          casillero: "35",
+          manual: quien(p, "gtfDatos.guia.listaTrozasNro"),
+        },
+        {
+          label: "GTF de origen",
+          valor: t(d.guia?.gtfOrigenNro),
+          casillero: "36",
+          manual: quien(p, "gtfDatos.guia.gtfOrigenNro"),
+        },
+        { label: "Observaciones", valor: t(p.notes), casillero: "38", manual: quien(p, "notes") },
+      ],
+    },
+  ];
+}
+
+/** Cuántos casilleros de la ficha están llenos — el «qué falta» en un número. */
+export function completitudFicha(secciones: readonly SeccionFicha[]): {
+  llenos: number;
+  total: number;
+  pct: number;
+  faltan: string[];
+} {
+  const campos = secciones.flatMap((s) => s.campos);
+  const llenos = campos.filter((c) => c.valor != null).length;
+  return {
+    llenos,
+    total: campos.length,
+    pct: campos.length > 0 ? Math.round((llenos / campos.length) * 100) : 0,
+    faltan: campos.filter((c) => c.valor == null).map((c) => c.label),
+  };
+}

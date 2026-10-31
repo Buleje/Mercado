@@ -1,9 +1,10 @@
 import "server-only";
-import { NextRequest, NextResponse } from "next/server";
+import { avisoCorreoPlataformaActivo } from "@/lib/avisos-correo-plataforma";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import nodemailer from "nodemailer";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
 import { logger } from "@/lib/logger";
 
@@ -40,7 +41,7 @@ function isQuietHours(): boolean {
   return hour >= 22 || hour < 8;
 }
 
-export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
+export const POST = withApiHandler("abandoned-cart", async (req, _ctx) => {
   try {
     const body = await req.json();
     const parsed = BodySchema.safeParse(body);
@@ -104,7 +105,7 @@ export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
     }
 
     // ── 2. Email de notificación al ADMIN (mantener como backup) ──────────
-    if (smtpUser && smtpPass) {
+    if (smtpUser && smtpPass && (await avisoCorreoPlataformaActivo("carritos"))) {
       const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
 
       const transporter = nodemailer.createTransport({
@@ -130,7 +131,7 @@ export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
         subject: `🛒 Carrito abandonado — S/${total.toFixed(2)} en espera${whatsappSent ? " (WhatsApp enviado)" : ""}`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-            <div style="background:#f59e0b;padding:20px 24px;">
+            <div style="background:#ff6b5b;padding:20px 24px;">
               <h2 style="color:#fff;margin:0;font-size:18px;">🛒 Carrito abandonado</h2>
               <p style="color:#fff;margin:4px 0 0;font-size:13px;opacity:0.85;">Un cliente dejó su carrito sin completar${phone ? ` · Tel: ${phone.slice(-4).padStart(phone.length, "*")}` : ""}</p>
             </div>

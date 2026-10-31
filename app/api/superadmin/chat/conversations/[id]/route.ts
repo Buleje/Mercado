@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { PlatformChatDB } from "@/lib/db/platform-chat.db";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const patchSchema = z.object({
   status: z.enum(["open", "closed", "archived"]).optional(),
@@ -31,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   const { id } = await params;
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });

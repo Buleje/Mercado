@@ -27,6 +27,12 @@ const CreateGuiaSchema = z.object({
   vehiculoPlaca: z.string().max(20).optional(),
   conductorNombre: z.string().max(200).optional(),
   conductorDni: z.string().max(8).optional(),
+  conductorLicencia: z.string().max(30).optional(),
+  ubigeoPartida: z.string().regex(/^\d{6}$/).optional(),
+  ubigeoLlegada: z.string().regex(/^\d{6}$/).optional(),
+  modalidadTraslado: z.enum(["01", "02"]).optional(),
+  origenTipo: z.enum(["ctp_salida", "loth_gtf"]).optional(),
+  origenId: z.string().min(1).max(60).optional(),
   bultos: z.number().int().nonnegative().optional(),
   documentoRef: z.string().max(200).optional(),
   puntoPartida: z.string().min(1).max(500),
@@ -73,15 +79,26 @@ export async function POST(req: NextRequest) {
     );
   }
   const data = parsed.data;
+  if (!!data.origenTipo !== !!data.origenId) {
+    return NextResponse.json({ error: { origenId: ["origenTipo y origenId van juntos"] } }, { status: 400 });
+  }
 
   try {
+    // Una GTF, una guía: si ya hay una vigente de ese origen, no se duplica (anúlala para rehacerla).
+    if (data.origenTipo && data.origenId) {
+      const previa = await GuiasRemisionDB.getVigentePorOrigen(auth.tenantId, data.origenTipo, data.origenId);
+      if (previa) {
+        return NextResponse.json({ error: `Esta GTF ya tiene la guía ${previa.numero}`, guiaExistente: previa }, { status: 409 });
+      }
+    }
+
     // If orderId provided and no items, load items from the order
     let items = data.items ?? [];
-    if (data.orderId && items.length === 0) {
-      // SECURITY 2026-05-06 (pentest H8): validar que la orden pertenezca al
-      // tenant que crea la guía. El findMany scoped por order.tenantId nested
-      // garantiza cross-tenant isolation.
-      // Audit project-wide 2026-05-19: migrado a OrdersDB.getItemsForGuiaRemision.
+    // SECURITY 2026-05-06 (pentest H8): la orden tiene que ser del tenant que
+    // crea la guía. 17-10 (comprobantes p3): se valida SIEMPRE que llegue un
+    // orderId — antes sólo sin ítems, y con ítems un id de otro negocio quedaba
+    // enlazado y un texto («#a1b2c3») reventaba la FK con un 503.
+    if (data.orderId) {
       const order = await OrdersDB.getById(auth.tenantId, data.orderId);
       if (!order) {
         return NextResponse.json(
@@ -89,6 +106,9 @@ export async function POST(req: NextRequest) {
           { status: 404 }
         );
       }
+    }
+    if (data.orderId && items.length === 0) {
+      // Audit project-wide 2026-05-19: migrado a OrdersDB.getItemsForGuiaRemision.
       const orderItems = await OrdersDB.getItemsForGuiaRemision(auth.tenantId, data.orderId);
       items = orderItems.map((oi) => ({
         descripcion: oi.name,
@@ -125,6 +145,12 @@ export async function POST(req: NextRequest) {
       vehiculoPlaca: data.vehiculoPlaca,
       conductorNombre: data.conductorNombre,
       conductorDni: data.conductorDni,
+      conductorLicencia: data.conductorLicencia,
+      ubigeoPartida: data.ubigeoPartida,
+      ubigeoLlegada: data.ubigeoLlegada,
+      modalidadTraslado: data.modalidadTraslado,
+      origenTipo: data.origenTipo,
+      origenId: data.origenId,
       bultos: data.bultos,
       documentoRef: data.documentoRef,
       puntoPartida: data.puntoPartida,

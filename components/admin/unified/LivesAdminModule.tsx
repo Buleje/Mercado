@@ -1,345 +1,196 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 /**
- * LivesAdminModule — Gestión de transmisiones en vivo.
+ * LivesAdminModule — Transmisiones en vivo para mostrar productos y vender en directo.
  *
- * Bridge ENRICH-5 para la feature "En Vivo" del marketplace.
- * Admin puede empezar transmisión al instante, programar futuras y ver
- * performance de pasadas.
+ * Lee `GET /api/admin/lives` (en vivo + próximas + pasadas + cifras), programa con
+ * `POST /api/admin/lives` y empieza/termina con `/[id]/start` y `/[id]/end`.
+ * Antes la pantalla mostraba transmisiones y ventas de EJEMPLO (S/ 1 240 de un
+ * «Remate de Semana Santa» que nunca ocurrió) y «Programar» sólo guardaba en
+ * memoria. Hoy muestra lo que devuelve el servidor: mientras el servicio de
+ * transmisiones no esté activo (`lib/db/live-sessions.db.ts` es un stub), la
+ * lista sale vacía y programar/empezar avisan que no se pudo, sin inventar nada.
+ *
+ * Patrón del panel: una fila de cabecera (título · Próximas/Pasadas con su
+ * cuenta · Indicadores plegables · Programar · «⋯») y la tabla debajo.
  */
 
-import { useState } from "react";
-import {
-  Radio,
-  Play,
-  Calendar,
-  Eye,
-  ShoppingBag,
-  DollarSign,
-  Plus,
-  Edit2,
-  Trash2,
-  Clock,
-  AlertCircle,
-} from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import KPICard from "@/components/admin/shared/KPICard";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { LoadingState } from "@buleje/design-system";
+import { Calendar, Plus, RefreshCw } from "@buleje/design-system/icons";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { leerJson } from "@/lib/errores/sin-dato";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency, formatNumber } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { CabeceraVista, tarjetasDe, Vacio } from "@/components/admin/campanas/comun";
 import { ScheduleLiveModal, type ScheduledLiveData } from "./lives-admin/ScheduleLiveModal";
 import { StartLiveModal } from "./lives-admin/StartLiveModal";
-import { LivePerformanceCard, type PastLive } from "./lives-admin/LivePerformanceCard";
+import { TablaTransmisiones } from "./lives-admin/TablaTransmisiones";
+import type { RespuestaLives, TransmisionDto } from "./lives-admin/tipos";
 
-// ── Types ───────────────────────────────────────────────────────────────────
+const MODULE_ID = "lives";
+const ID_PANEL = "panel-en-vivo";
+const SECCIONES = ["proximas", "pasadas"] as const;
+type Seccion = (typeof SECCIONES)[number];
 
-interface ScheduledLive {
-  id: string;
-  title: string;
-  description: string;
-  scheduledAt: string;
-  featuredProductCount: number;
+const NO_ACTIVO = "Las transmisiones en vivo todavía no están activas en tu cuenta: no se guardó nada.";
+
+async function mensajeDeError(res: Response): Promise<string> {
+  const body = await leerJson<{ error?: string }>(res);
+  return res.status >= 500 ? NO_ACTIVO : (body?.error ?? "No se pudo completar la acción.");
 }
-
-// ── Mock data ───────────────────────────────────────────────────────────────
-
-const MOCK_SCHEDULED: ScheduledLive[] = [
-  {
-    id: "LIV-S-001",
-    title: "Remate semanal de productos próximos a vencer",
-    description: "Descuentos hasta 40% en productos seleccionados.",
-    scheduledAt: "2026-04-20T18:00:00",
-    featuredProductCount: 8,
-  },
-  {
-    id: "LIV-S-002",
-    title: "Ofertas del fin de semana largo",
-    description: "Canasta básica con precio especial para el feriado.",
-    scheduledAt: "2026-04-25T11:00:00",
-    featuredProductCount: 12,
-  },
-];
-
-const MOCK_PAST: PastLive[] = [
-  {
-    id: "LIV-001",
-    title: "Ofertas de Semana Santa",
-    date: "2026-04-12",
-    durationMin: 45,
-    peakViewers: 87,
-    totalViews: 320,
-    ordersGenerated: 28,
-    revenue: 1240,
-    engagement: 68,
-  },
-  {
-    id: "LIV-002",
-    title: "Productos frescos del día",
-    date: "2026-04-08",
-    durationMin: 30,
-    peakViewers: 45,
-    totalViews: 180,
-    ordersGenerated: 14,
-    revenue: 580,
-    engagement: 52,
-  },
-  {
-    id: "LIV-003",
-    title: "Remate de temporada",
-    date: "2026-04-01",
-    durationMin: 60,
-    peakViewers: 112,
-    totalViews: 480,
-    ordersGenerated: 42,
-    revenue: 1950,
-    engagement: 74,
-  },
-  {
-    id: "LIV-004",
-    title: "Despensa básica mensual",
-    date: "2026-03-22",
-    durationMin: 40,
-    peakViewers: 65,
-    totalViews: 240,
-    ordersGenerated: 19,
-    revenue: 870,
-    engagement: 58,
-  },
-];
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function fmtDateTime(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-// ── Main Component ──────────────────────────────────────────────────────────
 
 export default function LivesAdminModule() {
-  const [scheduled, setScheduled] = useState<ScheduledLive[]>(MOCK_SCHEDULED);
-  const [past] = useState<PastLive[]>(MOCK_PAST);
+  const { vista: seccion, irA } = useSubvistaModulo<Seccion>(MODULE_ID, SECCIONES, SECCIONES[0]);
+  const [datos, setDatos] = useState<RespuestaLives | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
-  const [showStart, setShowStart] = useState(false);
+  const [aEmpezar, setAEmpezar] = useState<TransmisionDto | null>(null);
 
-  // KPIs
-  const now = new Date();
-  const thisMonth = (iso: string) => {
-    const d = new Date(iso);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  const cargar = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/lives", { cache: "no-store", signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as { data: RespuestaLives };
+      setDatos(json.data);
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") setError("No se pudieron cargar las transmisiones.");
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    void cargar(ac.signal);
+    return () => ac.abort();
+  }, [cargar]);
+
+  const programar = async (d: ScheduledLiveData): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/admin/lives", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ title: d.title, description: d.description || undefined, scheduledFor: new Date(d.scheduledAt).toISOString() }),
+      });
+      if (!res.ok) {
+        toast.error(await mensajeDeError(res));
+        return false;
+      }
+      toast.success("Transmisión programada");
+      void cargar();
+      return true;
+    } catch {
+      toast.error("No se pudo programar. Revisa tu conexión.");
+      return false;
+    }
   };
 
-  const transmisionesEsteMes = past.filter((l) => thisMonth(l.date)).length;
-  const viewersPromedio = past.length > 0
-    ? Math.round(past.reduce((sum, l) => sum + l.totalViews, 0) / past.length)
-    : 0;
-  const pedidosTotales = past.reduce((sum, l) => sum + l.ordersGenerated, 0);
-  const engagementPromedio = past.length > 0
-    ? Math.round(past.reduce((sum, l) => sum + l.engagement, 0) / past.length)
-    : 0;
-
-  const handleSchedule = (data: ScheduledLiveData) => {
-    const newLive: ScheduledLive = {
-      id: `LIV-S-${Date.now()}`,
-      title: data.title,
-      description: data.description,
-      scheduledAt: data.scheduledAt,
-      featuredProductCount: data.featuredProductIds.length,
-    };
-    setScheduled((prev) =>
-      [...prev, newLive].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
-    );
+  const cambiarEstado = async (t: TransmisionDto, accion: "start" | "end") => {
+    try {
+      const res = await fetch(`/api/admin/lives/${t.id}/${accion}`, { method: "POST", headers: csrfHeaders() });
+      if (!res.ok) {
+        toast.error(await mensajeDeError(res));
+        return;
+      }
+      toast.success(accion === "start" ? "Estás en vivo" : "Transmisión terminada");
+      void cargar();
+    } catch {
+      toast.error("No se pudo completar la acción. Revisa tu conexión.");
+    }
   };
 
-  const handleCancelScheduled = (id: string) => {
-    setScheduled((prev) => prev.filter((s) => s.id !== id));
-  };
+  const proximas = [...(datos?.active ?? []), ...(datos?.upcoming ?? [])];
+  const pasadas = datos?.past ?? [];
+  const stats = datos?.stats;
+
+  const kpis = useKpisPlegables({
+    claveMemoria: "en-vivo",
+    alto: "md",
+    compactoEnMovil: true,
+    sinDatosAun: loading && !datos,
+    resumen: `${stats?.totalLives ?? 0} transmisiones`,
+    tarjetas: tarjetasDe([
+      { rotulo: "Transmisiones", valor: String(stats?.totalLives ?? 0), detalle: "Las que ya hiciste" },
+      { rotulo: "Espectadores por transmisión", valor: formatNumber(stats?.averageViewers ?? 0, { max: 0 }), detalle: "Promedio" },
+      { rotulo: "Conversión", valor: `${formatNumber((stats?.conversionRate ?? 0) * 100, { max: 1 })} %`, detalle: "Espectadores que terminaron comprando" },
+      { rotulo: "Ventas en vivo", valor: formatCurrency(stats?.totalGmvSoles ?? 0), detalle: "Pedidos generados desde las transmisiones" },
+    ]),
+  });
+
+  const menu: MenuAccion[] = [{ id: "recargar", label: "Actualizar", icon: RefreshCw, onSelect: () => void cargar() }];
+  const secciones = [
+    { clave: "proximas" as const, rotulo: "Próximas", cuenta: proximas.length },
+    { clave: "pasadas" as const, rotulo: "Pasadas", cuenta: pasadas.length },
+  ];
+  const filas = seccion === "proximas" ? proximas : pasadas;
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="En Vivo"
-        description="Transmisiones en vivo para mostrar productos y vender en directo"
-        icon={Radio}
-      />
-
-      {/* Hero CTA */}
-      <div className="bg-white dark:bg-[var(--color-card)] border-2 border-primary/20 rounded-2xl p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-[var(--data-error-500)] to-[var(--accent)] text-white flex items-center justify-center shrink-0">
-            <Radio className="h-7 w-7" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <CardTitle className="font-extrabold text-[var(--text-primary)] text-lg mb-1">¿Listo para transmitir?</CardTitle>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Empieza una transmisión ahora mismo o programa una para más tarde.
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-            <button
-              onClick={() => setShowSchedule(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
-            >
-              <Calendar className="h-4 w-4" />
-              Programar
-            </button>
-            <button
-              onClick={() => setShowStart(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors shadow-sm"
-            >
-              <Play className="h-4 w-4" />
-              Empezar ahora
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
-          label="Transmisiones este mes"
-          value={transmisionesEsteMes}
-          icon={Radio}
-          color="var(--accent)"
-          subtitle="En el periodo actual"
-        />
-        <KPICard
-          label="Viewers promedio"
-          value={viewersPromedio}
-          icon={Eye}
-          color="#3B82F6"
-          subtitle="Por transmisión"
-        />
-        <KPICard
-          label="Pedidos generados"
-          value={pedidosTotales}
-          icon={ShoppingBag}
-          color="#10B981"
-          subtitle="Total histórico"
-        />
-        <KPICard
-          label="Engagement"
-          value={`${engagementPromedio}%`}
-          icon={DollarSign}
-          color="#F59E0B"
-          subtitle="Promedio viewers activos"
-        />
-      </div>
-
-      {/* Programadas */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-wide">
-            Próximas transmisiones
-          </CardTitle>
-          <button
-            onClick={() => setShowSchedule(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nueva
+      <CabeceraVista
+        titulo="En Vivo"
+        ayuda={{
+          title: "Transmisiones en vivo",
+          what: "Muestras productos por video y tus clientes compran mientras miran. Programas una para más tarde y la empiezas a su hora.",
+          affects: "Las ventas de cada transmisión salen de los pedidos hechos mientras estaba en vivo.",
+          example: "Programa el viernes a las 7 pm, avisa a tus clientes y empieza a esa hora.",
+        }}
+        secciones={<BarraDeSecciones secciones={secciones} activa={seccion} onCambiar={irA} etiqueta="Secciones de En Vivo" idPanel={ID_PANEL} />}
+        indicadores={kpis.boton}
+        principal={
+          <button type="button" onClick={() => setShowSchedule(true)} aria-haspopup="dialog" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-sm:w-12 max-sm:px-0" })}>
+            <Plus className="h-4 w-4" aria-hidden />
+            <span className="max-sm:sr-only">Programar</span>
           </button>
-        </div>
+        }
+        menu={menu}
+        tituloMenu="Actualizar"
+      />
+      {kpis.panel}
 
-        {scheduled.length === 0 ? (
-          <div className="text-center py-8 text-[var(--text-tertiary)] bg-white dark:bg-[var(--color-card)] border border-gray-100 rounded-2xl">
-            <Calendar className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm font-semibold">Sin transmisiones programadas</p>
-            <p className="text-xs mt-1">Programa tu próxima transmisión.</p>
+      <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, seccion)}>
+        {loading && !datos ? (
+          <LoadingState />
+        ) : error ? (
+          <div role="alert" className="flex flex-col items-center gap-2 rounded-xl border border-[var(--rule-base)] py-10 text-center">
+            <p className="text-sm text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">{error}</p>
+            <button type="button" onClick={() => void cargar()} className="min-h-12 rounded-xl px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]">
+              Reintentar
+            </button>
           </div>
+        ) : filas.length === 0 ? (
+          <Vacio>
+            {seccion === "proximas" ? (
+              <>
+                <Calendar className="mr-1.5 inline h-4 w-4 align-text-bottom" aria-hidden />
+                No tienes transmisiones programadas: usa «Programar» para la siguiente.
+              </>
+            ) : (
+              "Aún no hiciste ninguna transmisión."
+            )}
+          </Vacio>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {scheduled.map((s) => (
-              <div
-                key={s.id}
-                className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl p-4 shadow-sm hover:border-primary/40 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Clock className="h-3 w-3 text-[var(--text-tertiary)]" />
-                      <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">
-                        {fmtDateTime(s.scheduledAt)}
-                      </p>
-                    </div>
-                    <h4 className="font-bold text-[var(--text-primary)] mb-1 line-clamp-2">{s.title}</h4>
-                    <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{s.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    <span className="font-bold text-[var(--text-primary)]">{s.featuredProductCount}</span> producto{s.featuredProductCount !== 1 ? "s" : ""} destacado{s.featuredProductCount !== 1 ? "s" : ""}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <button
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
-                      title="Editar"
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleCancelScheduled(s.id)}
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
-                      title="Cancelar"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <TablaTransmisiones filas={filas} tipo={seccion} onEmpezar={setAEmpezar} onTerminar={(t) => void cambiarEstado(t, "end")} />
         )}
       </div>
 
-      {/* Pasadas */}
-      <div className="space-y-3">
-        <CardTitle className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-wide">
-          Transmisiones pasadas
-        </CardTitle>
-
-        {past.length === 0 ? (
-          <div className="text-center py-8 text-[var(--text-tertiary)] bg-white dark:bg-[var(--color-card)] border border-gray-100 rounded-2xl">
-            <Radio className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm font-semibold">Sin transmisiones históricas</p>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-start gap-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl text-xs text-[var(--data-info-500)]">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <p>
-                Las métricas se actualizan en tiempo real durante cada transmisión y se consolidan
-                al finalizar.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {past.map((l) => (
-                <LivePerformanceCard key={l.id} live={l} />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {showSchedule && (
-        <ScheduleLiveModal
-          onClose={() => setShowSchedule(false)}
-          onSchedule={handleSchedule}
-        />
-      )}
-
-      {showStart && (
+      {showSchedule && <ScheduleLiveModal onClose={() => setShowSchedule(false)} onSchedule={programar} />}
+      {aEmpezar && (
         <StartLiveModal
-          onClose={() => setShowStart(false)}
+          titulo={aEmpezar.title}
+          onClose={() => setAEmpezar(null)}
           onStart={() => {
-            setShowStart(false);
-            // En producción: redirect a /admin/lives/streaming
+            const t = aEmpezar;
+            setAEmpezar(null);
+            void cambiarEstado(t, "start");
           }}
         />
       )}

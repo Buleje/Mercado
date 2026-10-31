@@ -22,28 +22,28 @@ interface StatusBadgeProps {
  *   - text: color puro del token
  *   - dot: color puro del token
  *
- * Ya no hay `bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]` hardcoded — un rebrand
+ * Ya no hay `bg-primary/10 dark:bg-primary/15` hardcoded — un rebrand
  * cambia `--data-success` y las 6 variantes siguen sin editar.
  */
 const variantStyles: Record<BadgeVariant, { badge: string; dot: string }> = {
   success: {
     badge:
-      "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)]",
+      "bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-ink)]",
     dot: "bg-[var(--data-success-500)]",
   },
   warning: {
     badge:
-      "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning-500)]",
+      "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)] text-[var(--data-warning-ink)]",
     dot: "bg-[var(--data-warning-500)]",
   },
   error: {
     badge:
-      "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error-500)]",
+      "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)] text-[var(--data-error-ink)]",
     dot: "bg-[var(--data-error-500)]",
   },
   info: {
     badge:
-      "bg-[color-mix(in_oklch,var(--data-info)_12%,transparent)] text-[var(--data-info-500)]",
+      "bg-[color-mix(in_oklch,var(--data-info)_12%,transparent)] text-[var(--data-info-ink)]",
     dot: "bg-[var(--data-info-500)]",
   },
   neutral: {

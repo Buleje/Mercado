@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { pedirClienteMe } from "@/lib/cliente-me";
 
 const CACHE_KEY = "buleje:auth:customer-status";
 const CACHE_TTL_MS = 60 * 1000;
@@ -72,16 +73,9 @@ async function checkAuthStatusDeduped(): Promise<boolean> {
 
   inFlightAuthCheck = (async () => {
     try {
-      const res = await fetch("/api/auth/customer/me", {
-        credentials: "include",
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        writeCache(false);
-        return false;
-      }
-      const data = (await res.json()) as { authenticated?: boolean };
-      const authed = Boolean(data.authenticated);
+      // Compartido con `CustomerProvider` (lib/cliente-me.ts): uno solo por carga.
+      const data = await pedirClienteMe();
+      const authed = Boolean(data?.authenticated);
       writeCache(authed);
       return authed;
     } catch {

@@ -34,3 +34,7 @@
 *.js text eol=lf
 *.jsx text eol=lf
 *.css text eol=lf
+
+# Los lanzadores de Windows necesitan CRLF (cmd.exe se confunde con LF en etiquetas y goto).
+*.cmd text eol=crlf
+*.bat text eol=crlf

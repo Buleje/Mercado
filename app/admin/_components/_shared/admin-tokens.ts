@@ -70,7 +70,7 @@ export const ADMIN_TOKENS = {
   sectionGap: "space-y-6",
   /** Chip accent (ej "Universal", "Beta"). */
   chipAccent:
-    "inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]",
+    "inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]",
   /** Chip muted (info secundaria). */
   chipMuted:
     "inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]",

@@ -17,7 +17,13 @@ function extractWaNumber(url?: string): string {
   return match?.[1] ?? DEFAULT_WA;
 }
 
-type LastOrder = { id: string; items: { name: string; qty: number; price: number }[]; total: number } | null;
+type LastOrder = {
+  id: string;
+  items: { name: string; qty: number; price: number }[];
+  total: number;
+  /** Descuento automático que cobró el servidor (sin tramo para el invitado). */
+  descuento?: { monto: number; etiqueta: string };
+} | null;
 
 export default function OrderConfirmModal() {
   const { confirmModalOpen, closeConfirmModal, clearPendingOrder, confirmFromCheckout } = useCart();
@@ -168,6 +174,19 @@ export default function OrderConfirmModal() {
                         </div>
                       ))}
                     </div>
+                    {lastOrder.descuento && lastOrder.descuento.monto > 0 && (
+                      <div
+                        className="flex items-center justify-between px-3 py-1.5 border-t border-[var(--rule-base)]"
+                        data-testid="confirmacion-descuento"
+                      >
+                        <p className="text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                          {lastOrder.descuento.etiqueta}
+                        </p>
+                        <p className="text-xs font-bold tabular-nums text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                          −S/{Number(lastOrder.descuento.monto).toFixed(2)}
+                        </p>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between px-3 py-2 bg-primary/5 border-t border-[var(--rule-base)]">
                       <p className="text-xs font-bold text-[var(--text-primary)]">Total</p>
                       <p className="text-sm font-extrabold text-primary">S/{Number(lastOrder.total).toFixed(2)}</p>

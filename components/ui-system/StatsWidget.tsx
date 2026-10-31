@@ -93,7 +93,7 @@ export default function StatsWidget({
           <span
             className={cn(
               "shrink-0 inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold tabular-nums",
-              isGood ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--data-error,_#e11d48)]/10 text-[var(--data-error,_#e11d48)]",
+              isGood ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--data-error,_#e11d48)]/10 text-[var(--data-error,_#e11d48)]",
             )}
           >
             <DeltaIcon className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />
@@ -108,7 +108,7 @@ export default function StatsWidget({
     <div
       className={cn(
         "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4",
-        variant === "featured" && "border-[var(--accent)] bg-[var(--accent-soft)]",
+        variant === "featured" && "border-[var(--accent)] bg-primary/10",
         className,
       )}
     >
@@ -150,7 +150,7 @@ export default function StatsWidget({
           <span
             className={cn(
               "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
-              isGood ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--data-error,_#e11d48)]/10 text-[var(--data-error,_#e11d48)]",
+              isGood ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--data-error,_#e11d48)]/10 text-[var(--data-error,_#e11d48)]",
             )}
           >
             <DeltaIcon className="h-3 w-3" strokeWidth={2.5} aria-hidden />

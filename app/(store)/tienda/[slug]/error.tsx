@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+// Sentry se baja en el primer error, no en la carga de cada página (16-10).
+import { capturarErrorCliente } from "@/lib/telemetry/capturar-error-cliente";
 import Link from "next/link";
 
 export default function ProductError({
@@ -12,7 +13,7 @@ export default function ProductError({
   reset: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    capturarErrorCliente(error);
   }, [error]);
 
   return (

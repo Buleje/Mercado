@@ -9,6 +9,8 @@ export type PublicThreadView = {
   status: "open" | "closed" | "archived" | "blocked";
   unreadForBuyer: number;
   createdAt: string;
+  /** Prueba de que este equipo abrió el hilo (lib/chat/thread-token-client.ts). */
+  threadToken?: string;
 };
 
 export type PublicMessageView = {

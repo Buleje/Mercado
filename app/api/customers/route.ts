@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { prismaForTenant } from "@/lib/tenant";
 import { invalidate } from "@/lib/cache";
 import { withDbRetry } from "@/lib/db-retry";
+import { cumpleParaGuardar } from "@/lib/clientes/cumpleanos";
 
 const LocationSchema = z.object({
   id: z.string().min(1),
@@ -49,7 +51,7 @@ const CustomerPostSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/customers"]);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "GENEROUS", "customers-get");
   if (rl) return rl;
@@ -61,7 +63,13 @@ export async function GET(req: NextRequest) {
     const cursorParam = sp.get("cursor");
     const search     = sp.get("q");
 
-    let customers = await withDbRetry(() => CustomersDB.getAll(auth.tenantId));
+    // creditBalance = lo que debe de fiados ACTIVO+VENCIDO (la columna no los sigue).
+    // `?compras=1` (CRM): + cuántas compras, cuánto gastó y la última, contadas en
+    // pedidos y ventas del POS (CustomersDB.comprasPorCliente). El POS y Cobrar no
+    // lo piden: dos consultas agregadas menos en cada carga.
+    let customers: Awaited<ReturnType<typeof CustomersDB.getAllConDeuda>> = await withDbRetry(() =>
+      sp.get("compras") === "1" ? CustomersDB.getAllConCompras(auth.tenantId) : CustomersDB.getAllConDeuda(auth.tenantId),
+    );
 
     if (search) {
       const q = search.toLowerCase();
@@ -132,7 +140,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/customers"]);
   if (auth instanceof NextResponse) return auth;
   const blocked = await requireActiveSubscription(auth.tenantId);
   if (blocked) return blocked;
@@ -140,7 +148,7 @@ export async function POST(req: NextRequest) {
   if (rl) return rl;
 
   try {
-    const raw = await req.json();
+    const raw: unknown = await req.json().catch(() => null);
     const parsed = CustomerPostSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
@@ -150,23 +158,44 @@ export async function POST(req: NextRequest) {
     }
     const body = parsed.data;
     const normalizedPhone = normalizePhone(body.phone);
-    const record = await CustomersDB.upsert({
+    // Seguridad 17-10 (punto 5): el alta ya no pisa. Con un celular que ya es
+    // de un cliente de este negocio responde 409 con ese cliente (la pantalla
+    // ofrece «Usar este» o actualizarlo por PATCH); `?siExiste=usar` lo
+    // devuelve tal cual, sin tocarlo (POS, onboarding, registro de la tienda).
+    const alta = await CustomersDB.altaSinPisar(auth.tenantId, {
       phone: normalizedPhone,
       name: body.name,
       location: body.location ?? "",
       reference: body.reference ?? "",
       locations: body.locations ?? [],
       activeLocationId: body.activeLocationId ?? null,
-      ...(body.birthday !== undefined && { birthday: body.birthday ?? undefined }),
-      loyaltyPoints: 0,
-      loyaltyTier: "Nuevo",
-      totalSpent: 0,
-      creditBalance: 0,
-      creditLimit: body.creditLimit ?? 0,
-      notifOrderUpdates: true,
-      notifPromotions: true,
-      notifRestock: true,
-    }, auth.tenantId);
+      ...(body.birthday && { birthday: body.birthday }),
+      ...(body.email && { email: body.email }),
+      ...(body.creditLimit !== undefined && { creditLimit: body.creditLimit }),
+    });
+    if (alta.estado === "otra_tienda") {
+      return NextResponse.json(
+        {
+          error: `El teléfono ${normalizedPhone} ya está registrado en otra tienda de la red. Verifica el número o usa otro para este cliente.`,
+          motivo: "otra_tienda",
+        },
+        { status: 409 },
+      );
+    }
+    if (alta.estado === "existe") {
+      if (req.nextUrl.searchParams.get("siExiste") === "usar") {
+        return NextResponse.json({ ...alta.cliente, yaExistia: true });
+      }
+      return NextResponse.json(
+        {
+          error: "Ya tienes un cliente con ese celular.",
+          motivo: "existe",
+          existente: { phone: alta.cliente.phone, name: alta.cliente.name, ...alta.identificacion },
+        },
+        { status: 409 },
+      );
+    }
+    const record = alta.cliente;
 
     // Update new ficha fields if provided
     const fichaUpdate: Record<string, unknown> = {};
@@ -187,14 +216,21 @@ export async function POST(req: NextRequest) {
     if (body.vendedorAsignado !== undefined) fichaUpdate.vendedorAsignado = body.vendedorAsignado;
     if (body.diasCredito !== undefined) fichaUpdate.diasCredito = body.diasCredito;
     if (body.alertasWhatsapp !== undefined) fichaUpdate.alertasWhatsapp = body.alertasWhatsapp;
-    if (body.fechaNacimiento !== undefined) fichaUpdate.fechaNacimiento = body.fechaNacimiento ? new Date(body.fechaNacimiento) : null;
+    // Un solo cumpleaños: la ficha escribe las DOS columnas (`birthday` es la
+    // que leen cupón, saludo y campañas; antes sólo iba a fechaNacimiento).
+    // En el alta sólo se escribe si trae fecha; borrarlo es cosa del PATCH.
+    const cumple = cumpleParaGuardar(body.fechaNacimiento);
+    if (cumple) {
+      fichaUpdate.fechaNacimiento = cumple;
+      fichaUpdate.birthday = cumple;
+    }
     if (body.genero !== undefined) fichaUpdate.genero = body.genero;
     if (body.comoLlego !== undefined) fichaUpdate.comoLlego = body.comoLlego;
     if (body.observaciones !== undefined) fichaUpdate.observaciones = body.observaciones;
 
     if (Object.keys(fichaUpdate).length > 0) {
       await prismaForTenant(auth.tenantId).customer.update({
-        where: { phone: normalizedPhone },
+        where: { phone: record.phone },
         data: fichaUpdate,
       }).catch((err) => logger.warn("[customers] ficha update failed", { phone: normalizedPhone, err: String(err) }));
     }

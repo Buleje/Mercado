@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { limaDateKey, STORE_TIMEZONE } from "@/lib/utils";
 
 // GET /api/sales/export — Export sales as CSV download
 export async function GET(req: NextRequest) {
@@ -43,8 +44,9 @@ export async function GET(req: NextRequest) {
 
       const row = [
         s.id,
-        date.toISOString().slice(0, 10),
-        date.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
+        // Fecha y hora de Lima: en el servidor UTC la venta de las 21:00 salía con la fecha de mañana.
+        limaDateKey(date),
+        date.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", timeZone: STORE_TIMEZONE }),
         s.items.length,
         total.toFixed(2),
         totalCogs.toFixed(2),
@@ -75,7 +77,7 @@ export async function GET(req: NextRequest) {
       csvRows.push(row.join(","));
     }
 
-    const filename = `ventas_${new Date().toISOString().slice(0, 10)}.csv`;
+    const filename = `ventas_${limaDateKey()}.csv`;
     return new NextResponse(csvRows.join("\n"), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",

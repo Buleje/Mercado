@@ -23,6 +23,7 @@ import {
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer } from "@/contexts/customer-context";
 import type { CheckoutState } from "../types";
+import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
 import { OrderItemsDetailModal } from "../parts/OrderItemsDetailModal";
 
 /**
@@ -41,6 +42,10 @@ export type StepConfirmarProps = {
   finalTotal: number;
   cartTotal: number;
   discount: number;
+  /** Descuento automático cotizado por el servidor (primera compra, etc.). */
+  descuentoAutomatico?: DescuentoAutomaticoVista | null;
+  /** Soles que pagan los puntos canjeados (ya restados de `finalTotal`). */
+  descuentoPuntos?: number;
   effectiveCustomer: Customer | null;
   onEditAddress?: () => void;
 };
@@ -98,12 +103,12 @@ function RowLabel({
           strokeWidth={2.25}
           style={{ color: "var(--color-primary, #00A0A0)" }}
         />
-        <p
+        <div
           className="text-xs font-extrabold uppercase tracking-wider"
           style={{ color: "var(--color-primary-dark, #009690)" }}
         >
           {children}
-        </p>
+        </div>
       </div>
       {action}
     </div>
@@ -116,6 +121,8 @@ export function StepConfirmar({
   finalTotal,
   cartTotal,
   discount,
+  descuentoAutomatico,
+  descuentoPuntos = 0,
   effectiveCustomer,
   onEditAddress,
 }: StepConfirmarProps) {
@@ -185,25 +192,25 @@ export function StepConfirmar({
             <Sparkles className="h-7 w-7 text-white" strokeWidth={2.25} />
           </m.div>
           <div className="flex-1 min-w-0">
-            <p className="text-base text-white/85 font-semibold leading-snug">
+            <p className="text-base text-white/85 dark:text-white font-semibold leading-snug">
               ¡Casi listo
               {firstName !== "Sin nombre" ? `, ${firstName}` : ""}!
             </p>
-            <p className="text-xs text-white/75 mt-0.5">
+            <p className="text-xs text-white/75 dark:text-white mt-0.5">
               Confirma los detalles abajo
             </p>
           </div>
         </div>
 
         <div className="relative mt-5 flex items-baseline justify-between gap-3">
-          <span className="text-sm font-bold uppercase tracking-wider text-white/80">
+          <span className="text-sm font-bold uppercase tracking-wider text-white/80 dark:text-white">
             Total
           </span>
           <span className="text-4xl sm:text-5xl font-extrabold tracking-tight tabular-nums text-white">
             {fmt(finalTotal)}
           </span>
         </div>
-        <div className="relative mt-2 inline-flex items-center gap-1.5 text-xs text-white/85">
+        <div className="relative mt-2 inline-flex items-center gap-1.5 text-xs text-white/85 dark:text-white">
           <Clock className="h-3.5 w-3.5" strokeWidth={2.25} />
           <span>
             {items.length} {items.length === 1 ? "producto" : "productos"} · entrega en ~25 min
@@ -254,7 +261,7 @@ export function StepConfirmar({
                     {displayLocation}
                   </p>
                   {displayReference && (
-                    <p className="text-sm text-muted mt-0.5 leading-snug">
+                    <p className="text-sm text-muted dark:text-[var(--text-tertiary)] mt-0.5 leading-snug">
                       Referencia: {displayReference}
                     </p>
                   )}
@@ -271,10 +278,10 @@ export function StepConfirmar({
               <p className="text-base font-bold text-[var(--text-primary)] truncate leading-tight">
                 {displayName}
               </p>
-              <div className="flex items-center gap-1.5 text-sm text-muted mt-0.5 tabular-nums">
+              <div className="flex items-center gap-1.5 text-sm text-muted dark:text-[var(--text-tertiary)] mt-0.5 tabular-nums">
                 {displayPhone && <span>{displayPhone}</span>}
                 {state.customer.dni && displayPhone && (
-                  <span className="text-muted/50">·</span>
+                  <span className="text-muted/50 dark:text-[var(--text-tertiary)]/50">·</span>
                 )}
                 {state.customer.dni && <span>DNI {state.customer.dni}</span>}
               </div>
@@ -374,7 +381,7 @@ export function StepConfirmar({
                     <p className="text-sm font-semibold text-[var(--text-primary)] truncate leading-tight">
                       {i.name}
                     </p>
-                    <p className="text-xs text-muted tabular-nums mt-0.5">
+                    <p className="text-xs text-muted dark:text-[var(--text-tertiary)] tabular-nums mt-0.5">
                       {fmt(i.price)} c/u
                     </p>
                   </div>
@@ -398,7 +405,7 @@ export function StepConfirmar({
         >
           <div className="space-y-1 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted">Subtotal</span>
+              <span className="text-muted dark:text-[var(--text-tertiary)]">Subtotal</span>
               <span
                 className="tabular-nums font-semibold"
                 style={{ color: "var(--color-primary-dark, #009690)" }}
@@ -422,14 +429,38 @@ export function StepConfirmar({
                 </span>
               </div>
             )}
+            {descuentoAutomatico && descuentoAutomatico.monto > 0 && (
+              <div
+                className="flex items-center justify-between text-[var(--data-success-700)] dark:text-emerald-400"
+                data-testid="confirmar-descuento-automatico"
+              >
+                <span>
+                  {descuentoAutomatico.etiqueta}
+                  {descuentoAutomatico.porcentaje > 0 &&
+                    ` −${descuentoAutomatico.porcentaje} %`}
+                </span>
+                <span className="tabular-nums font-bold">
+                  −{fmt(descuentoAutomatico.monto)}
+                </span>
+              </div>
+            )}
+            {descuentoPuntos > 0 && (
+              <div
+                className="flex items-center justify-between text-[var(--data-success-700)] dark:text-emerald-400"
+                data-testid="confirmar-puntos-canjeados"
+              >
+                <span>Puntos canjeados</span>
+                <span className="tabular-nums font-bold">−{fmt(descuentoPuntos)}</span>
+              </div>
+            )}
             {state.payment.tip > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-muted">Propina</span>
-                <span
-                  className="tabular-nums font-semibold"
-                  style={{ color: "var(--color-primary-dark, #009690)" }}
-                >
-                  +{fmt(state.payment.tip)}
+                {/* Fuera del total: se da en mano al repartidor. */}
+                <span className="text-muted dark:text-[var(--text-tertiary)]">
+                  Propina (en mano al repartidor, no suma al total)
+                </span>
+                <span className="tabular-nums font-semibold text-muted dark:text-[var(--text-tertiary)]">
+                  {fmt(state.payment.tip)}
                 </span>
               </div>
             )}
@@ -627,7 +658,7 @@ export function StepConfirmarFooter({
         </button>
       </div>
 
-      <div className="flex items-center justify-center gap-5 mt-4 text-xs font-bold uppercase tracking-wider text-muted">
+      <div className="flex items-center justify-center gap-5 mt-4 text-xs font-bold uppercase tracking-wider text-muted dark:text-[var(--text-tertiary)]">
         <span className="flex items-center gap-1.5">
           <Shield
             className="h-3.5 w-3.5"

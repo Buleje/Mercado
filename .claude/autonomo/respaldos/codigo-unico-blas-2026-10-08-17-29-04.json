@@ -1,0 +1,1091 @@
+{
+  "tenantId": "cmpxiv6p4000bohvzwl6bnfpv",
+  "fecha": "2026-10-08-17-29-04",
+  "adr": "ADR-477",
+  "huellaTotal": "71ccd7a81f6587d3150c5d0b95cfee53553eecc70dc6260206fb04f47ef1514c",
+  "totales": {
+    "guias": 1,
+    "trozado": 22,
+    "despacho": 22,
+    "items": 22,
+    "bloqueos": 0
+  },
+  "guias": [
+    {
+      "tenantId": "cmpxiv6p4000bohvzwl6bnfpv",
+      "fecha": "2026-10-08-17-29-04",
+      "gtf": {
+        "id": "cmuxm9vne001byvvzxzbrq0yd",
+        "gtfNumber": "019-001-0000001",
+        "items": [
+          {
+            "code": "1",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.1,
+            "species": "TORNILLO",
+            "treeCode": "1",
+            "volumeM3": 0.71,
+            "trozadoId": "cmuxm8tq60003yvvznq98n0go",
+            "diamMayorM": 0.56,
+            "diamMenorM": 0.52,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "10",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.12,
+            "species": "TORNILLO",
+            "treeCode": "10",
+            "volumeM3": 0.519,
+            "trozadoId": "cmuxm8u8k0004yvvzqyyugbsd",
+            "diamMayorM": 0.49,
+            "diamMenorM": 0.43,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "11",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.52,
+            "species": "TORNILLO",
+            "treeCode": "11",
+            "volumeM3": 1.029,
+            "trozadoId": "cmuxm8uuz0005yvvztj6ehvqs",
+            "diamMayorM": 0.62,
+            "diamMenorM": 0.6,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "12",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.52,
+            "species": "TORNILLO",
+            "treeCode": "12",
+            "volumeM3": 1.097,
+            "trozadoId": "cmuxm8vfr0006yvvzuve6ff3e",
+            "diamMayorM": 0.65,
+            "diamMenorM": 0.61,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "13",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.14,
+            "species": "TORNILLO",
+            "treeCode": "13",
+            "volumeM3": 2.566,
+            "trozadoId": "cmuxm8vrz0007yvvzw1orik7e",
+            "diamMayorM": 1.1,
+            "diamMenorM": 0.94,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "14",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.19,
+            "species": "TORNILLO",
+            "treeCode": "14",
+            "volumeM3": 1.059,
+            "trozadoId": "cmuxm8w490008yvvzz9aqsq3c",
+            "diamMayorM": 0.67,
+            "diamMenorM": 0.63,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "15",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.1,
+            "species": "TORNILLO",
+            "treeCode": "15",
+            "volumeM3": 1.029,
+            "trozadoId": "cmuxm8wgj0009yvvzzvhik97m",
+            "diamMayorM": 0.66,
+            "diamMenorM": 0.64,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "16",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.17,
+            "species": "TORNILLO",
+            "treeCode": "16",
+            "volumeM3": 0.419,
+            "trozadoId": "cmuxm8wsq000ayvvzwo97a4qd",
+            "diamMayorM": 0.46,
+            "diamMenorM": 0.36,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "17",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 2.71,
+            "species": "TORNILLO",
+            "treeCode": "17",
+            "volumeM3": 0.792,
+            "trozadoId": "cmuxm8x4y000byvvzuvxnecdj",
+            "diamMayorM": 0.62,
+            "diamMenorM": 0.6,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "18",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.27,
+            "species": "TORNILLO",
+            "treeCode": "18",
+            "volumeM3": 1.369,
+            "trozadoId": "cmuxm8xho000cyvvzua0px3si",
+            "diamMayorM": 0.83,
+            "diamMenorM": 0.63,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "19",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.15,
+            "species": "TORNILLO",
+            "treeCode": "19",
+            "volumeM3": 0.832,
+            "trozadoId": "cmuxm8xyj000dyvvz2g5or4wm",
+            "diamMayorM": 0.59,
+            "diamMenorM": 0.57,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "2",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 2.78,
+            "species": "TORNILLO",
+            "treeCode": "2",
+            "volumeM3": 0.637,
+            "trozadoId": "cmuxm8ybi000eyvvzac4nzkop",
+            "diamMayorM": 0.58,
+            "diamMenorM": 0.5,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "20",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 2.4,
+            "species": "TORNILLO",
+            "treeCode": "20",
+            "volumeM3": 1.544,
+            "trozadoId": "cmuxm8yok000fyvvz9nuipajl",
+            "diamMayorM": 0.96,
+            "diamMenorM": 0.85,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "21",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.12,
+            "species": "TORNILLO",
+            "treeCode": "21",
+            "volumeM3": 0.912,
+            "trozadoId": "cmuxm8z1c000gyvvzho95zv4m",
+            "diamMayorM": 0.65,
+            "diamMenorM": 0.57,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "22",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 2.61,
+            "species": "TORNILLO",
+            "treeCode": "22",
+            "volumeM3": 0.702,
+            "trozadoId": "cmuxm8zi8000hyvvz8vwob84j",
+            "diamMayorM": 0.6,
+            "diamMenorM": 0.57,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "3",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.27,
+            "species": "TORNILLO",
+            "treeCode": "3",
+            "volumeM3": 0.532,
+            "trozadoId": "cmuxm8zv0000iyvvzynzeyefe",
+            "diamMayorM": 0.46,
+            "diamMenorM": 0.45,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "4",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.22,
+            "species": "TORNILLO",
+            "treeCode": "4",
+            "volumeM3": 0.395,
+            "trozadoId": "cmuxm9089000jyvvzjd9c2zt0",
+            "diamMayorM": 0.42,
+            "diamMenorM": 0.37,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "5",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 2.61,
+            "species": "TORNILLO",
+            "treeCode": "5",
+            "volumeM3": 0.482,
+            "trozadoId": "cmuxm91xq000kyvvznozpcnb1",
+            "diamMayorM": 0.52,
+            "diamMenorM": 0.45,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "6",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 2.62,
+            "species": "TORNILLO",
+            "treeCode": "6",
+            "volumeM3": 1.522,
+            "trozadoId": "cmuxm92ar000lyvvz5hs76ok4",
+            "diamMayorM": 0.87,
+            "diamMenorM": 0.85,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "7",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 2.33,
+            "species": "TORNILLO",
+            "treeCode": "7",
+            "volumeM3": 1.201,
+            "trozadoId": "cmuxm92no000myvvzgmwyb1n2",
+            "diamMayorM": 0.81,
+            "diamMenorM": 0.81,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "8",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.18,
+            "species": "TORNILLO",
+            "treeCode": "8",
+            "volumeM3": 0.42,
+            "trozadoId": "cmuxm939i000nyvvzykp6nfqn",
+            "diamMayorM": 0.41,
+            "diamMenorM": 0.41,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          },
+          {
+            "code": "9",
+            "cites": false,
+            "pieces": 1,
+            "lengthM": 3.77,
+            "species": "TORNILLO",
+            "treeCode": "9",
+            "volumeM3": 0.535,
+            "trozadoId": "cmuxm93me000oyvvz8odtv9nt",
+            "diamMayorM": 0.45,
+            "diamMenorM": 0.4,
+            "scientific": "Cedrelinga cateniformis",
+            "productType": "Madera en rollo"
+          }
+        ]
+      },
+      "lineas": [
+        {
+          "id": "cmuxm8tq60003yvvznq98n0go",
+          "section": "trozado",
+          "lineNo": 27,
+          "trozaCode": "1",
+          "updatedAt": "2026-10-07T04:37:07.326Z"
+        },
+        {
+          "id": "cmuxm8u8k0004yvvzqyyugbsd",
+          "section": "trozado",
+          "lineNo": 28,
+          "trozaCode": "10",
+          "updatedAt": "2026-10-07T04:37:07.988Z"
+        },
+        {
+          "id": "cmuxm8uuz0005yvvztj6ehvqs",
+          "section": "trozado",
+          "lineNo": 29,
+          "trozaCode": "11",
+          "updatedAt": "2026-10-07T04:37:08.795Z"
+        },
+        {
+          "id": "cmuxm8vfr0006yvvzuve6ff3e",
+          "section": "trozado",
+          "lineNo": 30,
+          "trozaCode": "12",
+          "updatedAt": "2026-10-07T04:37:09.543Z"
+        },
+        {
+          "id": "cmuxm8vrz0007yvvzw1orik7e",
+          "section": "trozado",
+          "lineNo": 31,
+          "trozaCode": "13",
+          "updatedAt": "2026-10-07T04:37:09.983Z"
+        },
+        {
+          "id": "cmuxm8w490008yvvzz9aqsq3c",
+          "section": "trozado",
+          "lineNo": 32,
+          "trozaCode": "14",
+          "updatedAt": "2026-10-07T04:37:10.425Z"
+        },
+        {
+          "id": "cmuxm8wgj0009yvvzzvhik97m",
+          "section": "trozado",
+          "lineNo": 33,
+          "trozaCode": "15",
+          "updatedAt": "2026-10-07T04:37:10.867Z"
+        },
+        {
+          "id": "cmuxm8wsq000ayvvzwo97a4qd",
+          "section": "trozado",
+          "lineNo": 34,
+          "trozaCode": "16",
+          "updatedAt": "2026-10-07T04:37:11.306Z"
+        },
+        {
+          "id": "cmuxm8x4y000byvvzuvxnecdj",
+          "section": "trozado",
+          "lineNo": 35,
+          "trozaCode": "17",
+          "updatedAt": "2026-10-07T04:37:11.746Z"
+        },
+        {
+          "id": "cmuxm8xho000cyvvzua0px3si",
+          "section": "trozado",
+          "lineNo": 36,
+          "trozaCode": "18",
+          "updatedAt": "2026-10-07T04:37:12.204Z"
+        },
+        {
+          "id": "cmuxm8xyj000dyvvz2g5or4wm",
+          "section": "trozado",
+          "lineNo": 37,
+          "trozaCode": "19",
+          "updatedAt": "2026-10-07T04:37:12.811Z"
+        },
+        {
+          "id": "cmuxm8ybi000eyvvzac4nzkop",
+          "section": "trozado",
+          "lineNo": 38,
+          "trozaCode": "2",
+          "updatedAt": "2026-10-07T04:37:13.278Z"
+        },
+        {
+          "id": "cmuxm8yok000fyvvz9nuipajl",
+          "section": "trozado",
+          "lineNo": 39,
+          "trozaCode": "20",
+          "updatedAt": "2026-10-07T04:37:13.748Z"
+        },
+        {
+          "id": "cmuxm8z1c000gyvvzho95zv4m",
+          "section": "trozado",
+          "lineNo": 40,
+          "trozaCode": "21",
+          "updatedAt": "2026-10-07T04:37:14.208Z"
+        },
+        {
+          "id": "cmuxm8zi8000hyvvz8vwob84j",
+          "section": "trozado",
+          "lineNo": 41,
+          "trozaCode": "22",
+          "updatedAt": "2026-10-07T04:37:14.816Z"
+        },
+        {
+          "id": "cmuxm8zv0000iyvvzynzeyefe",
+          "section": "trozado",
+          "lineNo": 42,
+          "trozaCode": "3",
+          "updatedAt": "2026-10-07T04:37:15.276Z"
+        },
+        {
+          "id": "cmuxm9089000jyvvzjd9c2zt0",
+          "section": "trozado",
+          "lineNo": 43,
+          "trozaCode": "4",
+          "updatedAt": "2026-10-07T04:37:15.753Z"
+        },
+        {
+          "id": "cmuxm91xq000kyvvznozpcnb1",
+          "section": "trozado",
+          "lineNo": 44,
+          "trozaCode": "5",
+          "updatedAt": "2026-10-07T04:37:17.966Z"
+        },
+        {
+          "id": "cmuxm92ar000lyvvz5hs76ok4",
+          "section": "trozado",
+          "lineNo": 45,
+          "trozaCode": "6",
+          "updatedAt": "2026-10-07T04:37:18.435Z"
+        },
+        {
+          "id": "cmuxm92no000myvvzgmwyb1n2",
+          "section": "trozado",
+          "lineNo": 46,
+          "trozaCode": "7",
+          "updatedAt": "2026-10-07T04:37:18.900Z"
+        },
+        {
+          "id": "cmuxm939i000nyvvzykp6nfqn",
+          "section": "trozado",
+          "lineNo": 47,
+          "trozaCode": "8",
+          "updatedAt": "2026-10-07T04:37:19.686Z"
+        },
+        {
+          "id": "cmuxm93me000oyvvz8odtv9nt",
+          "section": "trozado",
+          "lineNo": 48,
+          "trozaCode": "9",
+          "updatedAt": "2026-10-07T04:37:20.150Z"
+        },
+        {
+          "id": "cmuxm94yn000pyvvzlki0st0x",
+          "section": "despacho_troza",
+          "lineNo": 26,
+          "trozaCode": "1",
+          "updatedAt": "2026-10-07T04:37:21.887Z"
+        },
+        {
+          "id": "cmuxm95zv000qyvvzh59wytsg",
+          "section": "despacho_troza",
+          "lineNo": 27,
+          "trozaCode": "10",
+          "updatedAt": "2026-10-07T04:37:23.227Z"
+        },
+        {
+          "id": "cmuxm9762000ryvvzqgzrybc9",
+          "section": "despacho_troza",
+          "lineNo": 28,
+          "trozaCode": "11",
+          "updatedAt": "2026-10-07T04:37:24.746Z"
+        },
+        {
+          "id": "cmuxm98p6000syvvz2d083gd3",
+          "section": "despacho_troza",
+          "lineNo": 29,
+          "trozaCode": "12",
+          "updatedAt": "2026-10-07T04:37:26.730Z"
+        },
+        {
+          "id": "cmuxm99uo000tyvvz9asymu3r",
+          "section": "despacho_troza",
+          "lineNo": 30,
+          "trozaCode": "13",
+          "updatedAt": "2026-10-07T04:37:28.224Z"
+        },
+        {
+          "id": "cmuxm9b9v000uyvvz0enecujb",
+          "section": "despacho_troza",
+          "lineNo": 31,
+          "trozaCode": "14",
+          "updatedAt": "2026-10-07T04:37:30.067Z"
+        },
+        {
+          "id": "cmuxm9cnc000vyvvzzpglegf7",
+          "section": "despacho_troza",
+          "lineNo": 32,
+          "trozaCode": "15",
+          "updatedAt": "2026-10-07T04:37:31.848Z"
+        },
+        {
+          "id": "cmuxm9dpu000wyvvzycxmcbqw",
+          "section": "despacho_troza",
+          "lineNo": 33,
+          "trozaCode": "16",
+          "updatedAt": "2026-10-07T04:37:33.234Z"
+        },
+        {
+          "id": "cmuxm9evv000xyvvzcbfp7q41",
+          "section": "despacho_troza",
+          "lineNo": 34,
+          "trozaCode": "17",
+          "updatedAt": "2026-10-07T04:37:34.747Z"
+        },
+        {
+          "id": "cmuxm9g5i000yyvvzf7mkgu52",
+          "section": "despacho_troza",
+          "lineNo": 35,
+          "trozaCode": "18",
+          "updatedAt": "2026-10-07T04:37:36.391Z"
+        },
+        {
+          "id": "cmuxm9hin000zyvvzfiwrf1w6",
+          "section": "despacho_troza",
+          "lineNo": 36,
+          "trozaCode": "19",
+          "updatedAt": "2026-10-07T04:37:38.159Z"
+        },
+        {
+          "id": "cmuxm9iq10010yvvz1wocv45r",
+          "section": "despacho_troza",
+          "lineNo": 37,
+          "trozaCode": "2",
+          "updatedAt": "2026-10-07T04:37:39.721Z"
+        },
+        {
+          "id": "cmuxm9jrl0011yvvz6j4fu7rm",
+          "section": "despacho_troza",
+          "lineNo": 38,
+          "trozaCode": "20",
+          "updatedAt": "2026-10-07T04:37:41.073Z"
+        },
+        {
+          "id": "cmuxm9le00012yvvzio4m1ka2",
+          "section": "despacho_troza",
+          "lineNo": 39,
+          "trozaCode": "21",
+          "updatedAt": "2026-10-07T04:37:43.176Z"
+        },
+        {
+          "id": "cmuxm9mgc0013yvvzssxfxsv8",
+          "section": "despacho_troza",
+          "lineNo": 40,
+          "trozaCode": "22",
+          "updatedAt": "2026-10-07T04:37:44.556Z"
+        },
+        {
+          "id": "cmuxm9nlm0014yvvzbp5s5c5j",
+          "section": "despacho_troza",
+          "lineNo": 41,
+          "trozaCode": "3",
+          "updatedAt": "2026-10-07T04:37:46.042Z"
+        },
+        {
+          "id": "cmuxm9oq90015yvvzs9vs8noe",
+          "section": "despacho_troza",
+          "lineNo": 42,
+          "trozaCode": "4",
+          "updatedAt": "2026-10-07T04:37:47.505Z"
+        },
+        {
+          "id": "cmuxm9pzo0016yvvz9b9foblv",
+          "section": "despacho_troza",
+          "lineNo": 43,
+          "trozaCode": "5",
+          "updatedAt": "2026-10-07T04:37:49.140Z"
+        },
+        {
+          "id": "cmuxm9s290017yvvz57gzhj33",
+          "section": "despacho_troza",
+          "lineNo": 44,
+          "trozaCode": "6",
+          "updatedAt": "2026-10-07T04:37:51.825Z"
+        },
+        {
+          "id": "cmuxm9t7s0018yvvzsbb8kd1c",
+          "section": "despacho_troza",
+          "lineNo": 45,
+          "trozaCode": "7",
+          "updatedAt": "2026-10-07T04:37:53.320Z"
+        },
+        {
+          "id": "cmuxm9udv0019yvvze25cybhm",
+          "section": "despacho_troza",
+          "lineNo": 46,
+          "trozaCode": "8",
+          "updatedAt": "2026-10-07T04:37:54.835Z"
+        },
+        {
+          "id": "cmuxm9vdl001ayvvzyljshzwp",
+          "section": "despacho_troza",
+          "lineNo": 47,
+          "trozaCode": "9",
+          "updatedAt": "2026-10-07T04:37:56.121Z"
+        }
+      ],
+      "talas": [],
+      "plan": {
+        "cambios": [
+          {
+            "lineaId": "cmuxm8tq60003yvvznq98n0go",
+            "section": "trozado",
+            "lineNo": 27,
+            "de": "1",
+            "a": "1-0001"
+          },
+          {
+            "lineaId": "cmuxm94yn000pyvvzlki0st0x",
+            "section": "despacho_troza",
+            "lineNo": 26,
+            "de": "1",
+            "a": "1-0001"
+          },
+          {
+            "lineaId": "cmuxm8u8k0004yvvzqyyugbsd",
+            "section": "trozado",
+            "lineNo": 28,
+            "de": "10",
+            "a": "10-0001"
+          },
+          {
+            "lineaId": "cmuxm95zv000qyvvzh59wytsg",
+            "section": "despacho_troza",
+            "lineNo": 27,
+            "de": "10",
+            "a": "10-0001"
+          },
+          {
+            "lineaId": "cmuxm8uuz0005yvvztj6ehvqs",
+            "section": "trozado",
+            "lineNo": 29,
+            "de": "11",
+            "a": "11-0001"
+          },
+          {
+            "lineaId": "cmuxm9762000ryvvzqgzrybc9",
+            "section": "despacho_troza",
+            "lineNo": 28,
+            "de": "11",
+            "a": "11-0001"
+          },
+          {
+            "lineaId": "cmuxm8vfr0006yvvzuve6ff3e",
+            "section": "trozado",
+            "lineNo": 30,
+            "de": "12",
+            "a": "12-0001"
+          },
+          {
+            "lineaId": "cmuxm98p6000syvvz2d083gd3",
+            "section": "despacho_troza",
+            "lineNo": 29,
+            "de": "12",
+            "a": "12-0001"
+          },
+          {
+            "lineaId": "cmuxm8vrz0007yvvzw1orik7e",
+            "section": "trozado",
+            "lineNo": 31,
+            "de": "13",
+            "a": "13-0001"
+          },
+          {
+            "lineaId": "cmuxm99uo000tyvvz9asymu3r",
+            "section": "despacho_troza",
+            "lineNo": 30,
+            "de": "13",
+            "a": "13-0001"
+          },
+          {
+            "lineaId": "cmuxm8w490008yvvzz9aqsq3c",
+            "section": "trozado",
+            "lineNo": 32,
+            "de": "14",
+            "a": "14-0001"
+          },
+          {
+            "lineaId": "cmuxm9b9v000uyvvz0enecujb",
+            "section": "despacho_troza",
+            "lineNo": 31,
+            "de": "14",
+            "a": "14-0001"
+          },
+          {
+            "lineaId": "cmuxm8wgj0009yvvzzvhik97m",
+            "section": "trozado",
+            "lineNo": 33,
+            "de": "15",
+            "a": "15-0001"
+          },
+          {
+            "lineaId": "cmuxm9cnc000vyvvzzpglegf7",
+            "section": "despacho_troza",
+            "lineNo": 32,
+            "de": "15",
+            "a": "15-0001"
+          },
+          {
+            "lineaId": "cmuxm8wsq000ayvvzwo97a4qd",
+            "section": "trozado",
+            "lineNo": 34,
+            "de": "16",
+            "a": "16-0001"
+          },
+          {
+            "lineaId": "cmuxm9dpu000wyvvzycxmcbqw",
+            "section": "despacho_troza",
+            "lineNo": 33,
+            "de": "16",
+            "a": "16-0001"
+          },
+          {
+            "lineaId": "cmuxm8x4y000byvvzuvxnecdj",
+            "section": "trozado",
+            "lineNo": 35,
+            "de": "17",
+            "a": "17-0001"
+          },
+          {
+            "lineaId": "cmuxm9evv000xyvvzcbfp7q41",
+            "section": "despacho_troza",
+            "lineNo": 34,
+            "de": "17",
+            "a": "17-0001"
+          },
+          {
+            "lineaId": "cmuxm8xho000cyvvzua0px3si",
+            "section": "trozado",
+            "lineNo": 36,
+            "de": "18",
+            "a": "18-0001"
+          },
+          {
+            "lineaId": "cmuxm9g5i000yyvvzf7mkgu52",
+            "section": "despacho_troza",
+            "lineNo": 35,
+            "de": "18",
+            "a": "18-0001"
+          },
+          {
+            "lineaId": "cmuxm8xyj000dyvvz2g5or4wm",
+            "section": "trozado",
+            "lineNo": 37,
+            "de": "19",
+            "a": "19-0001"
+          },
+          {
+            "lineaId": "cmuxm9hin000zyvvzfiwrf1w6",
+            "section": "despacho_troza",
+            "lineNo": 36,
+            "de": "19",
+            "a": "19-0001"
+          },
+          {
+            "lineaId": "cmuxm8ybi000eyvvzac4nzkop",
+            "section": "trozado",
+            "lineNo": 38,
+            "de": "2",
+            "a": "2-0001"
+          },
+          {
+            "lineaId": "cmuxm9iq10010yvvz1wocv45r",
+            "section": "despacho_troza",
+            "lineNo": 37,
+            "de": "2",
+            "a": "2-0001"
+          },
+          {
+            "lineaId": "cmuxm8yok000fyvvz9nuipajl",
+            "section": "trozado",
+            "lineNo": 39,
+            "de": "20",
+            "a": "20-0001"
+          },
+          {
+            "lineaId": "cmuxm9jrl0011yvvz6j4fu7rm",
+            "section": "despacho_troza",
+            "lineNo": 38,
+            "de": "20",
+            "a": "20-0001"
+          },
+          {
+            "lineaId": "cmuxm8z1c000gyvvzho95zv4m",
+            "section": "trozado",
+            "lineNo": 40,
+            "de": "21",
+            "a": "21-0001"
+          },
+          {
+            "lineaId": "cmuxm9le00012yvvzio4m1ka2",
+            "section": "despacho_troza",
+            "lineNo": 39,
+            "de": "21",
+            "a": "21-0001"
+          },
+          {
+            "lineaId": "cmuxm8zi8000hyvvz8vwob84j",
+            "section": "trozado",
+            "lineNo": 41,
+            "de": "22",
+            "a": "22-0001"
+          },
+          {
+            "lineaId": "cmuxm9mgc0013yvvzssxfxsv8",
+            "section": "despacho_troza",
+            "lineNo": 40,
+            "de": "22",
+            "a": "22-0001"
+          },
+          {
+            "lineaId": "cmuxm8zv0000iyvvzynzeyefe",
+            "section": "trozado",
+            "lineNo": 42,
+            "de": "3",
+            "a": "3-0001"
+          },
+          {
+            "lineaId": "cmuxm9nlm0014yvvzbp5s5c5j",
+            "section": "despacho_troza",
+            "lineNo": 41,
+            "de": "3",
+            "a": "3-0001"
+          },
+          {
+            "lineaId": "cmuxm9089000jyvvzjd9c2zt0",
+            "section": "trozado",
+            "lineNo": 43,
+            "de": "4",
+            "a": "4-0001"
+          },
+          {
+            "lineaId": "cmuxm9oq90015yvvzs9vs8noe",
+            "section": "despacho_troza",
+            "lineNo": 42,
+            "de": "4",
+            "a": "4-0001"
+          },
+          {
+            "lineaId": "cmuxm91xq000kyvvznozpcnb1",
+            "section": "trozado",
+            "lineNo": 44,
+            "de": "5",
+            "a": "5-0001"
+          },
+          {
+            "lineaId": "cmuxm9pzo0016yvvz9b9foblv",
+            "section": "despacho_troza",
+            "lineNo": 43,
+            "de": "5",
+            "a": "5-0001"
+          },
+          {
+            "lineaId": "cmuxm92ar000lyvvz5hs76ok4",
+            "section": "trozado",
+            "lineNo": 45,
+            "de": "6",
+            "a": "6-0001"
+          },
+          {
+            "lineaId": "cmuxm9s290017yvvz57gzhj33",
+            "section": "despacho_troza",
+            "lineNo": 44,
+            "de": "6",
+            "a": "6-0001"
+          },
+          {
+            "lineaId": "cmuxm92no000myvvzgmwyb1n2",
+            "section": "trozado",
+            "lineNo": 46,
+            "de": "7",
+            "a": "7-0001"
+          },
+          {
+            "lineaId": "cmuxm9t7s0018yvvzsbb8kd1c",
+            "section": "despacho_troza",
+            "lineNo": 45,
+            "de": "7",
+            "a": "7-0001"
+          },
+          {
+            "lineaId": "cmuxm939i000nyvvzykp6nfqn",
+            "section": "trozado",
+            "lineNo": 47,
+            "de": "8",
+            "a": "8-0001"
+          },
+          {
+            "lineaId": "cmuxm9udv0019yvvze25cybhm",
+            "section": "despacho_troza",
+            "lineNo": 46,
+            "de": "8",
+            "a": "8-0001"
+          },
+          {
+            "lineaId": "cmuxm93me000oyvvz8odtv9nt",
+            "section": "trozado",
+            "lineNo": 48,
+            "de": "9",
+            "a": "9-0001"
+          },
+          {
+            "lineaId": "cmuxm9vdl001ayvvzyljshzwp",
+            "section": "despacho_troza",
+            "lineNo": 47,
+            "de": "9",
+            "a": "9-0001"
+          }
+        ],
+        "items": [
+          {
+            "trozadoId": "cmuxm8tq60003yvvznq98n0go",
+            "de": "1",
+            "a": "1-0001",
+            "codigoGuia": "1"
+          },
+          {
+            "trozadoId": "cmuxm8u8k0004yvvzqyyugbsd",
+            "de": "10",
+            "a": "10-0001",
+            "codigoGuia": "10"
+          },
+          {
+            "trozadoId": "cmuxm8uuz0005yvvztj6ehvqs",
+            "de": "11",
+            "a": "11-0001",
+            "codigoGuia": "11"
+          },
+          {
+            "trozadoId": "cmuxm8vfr0006yvvzuve6ff3e",
+            "de": "12",
+            "a": "12-0001",
+            "codigoGuia": "12"
+          },
+          {
+            "trozadoId": "cmuxm8vrz0007yvvzw1orik7e",
+            "de": "13",
+            "a": "13-0001",
+            "codigoGuia": "13"
+          },
+          {
+            "trozadoId": "cmuxm8w490008yvvzz9aqsq3c",
+            "de": "14",
+            "a": "14-0001",
+            "codigoGuia": "14"
+          },
+          {
+            "trozadoId": "cmuxm8wgj0009yvvzzvhik97m",
+            "de": "15",
+            "a": "15-0001",
+            "codigoGuia": "15"
+          },
+          {
+            "trozadoId": "cmuxm8wsq000ayvvzwo97a4qd",
+            "de": "16",
+            "a": "16-0001",
+            "codigoGuia": "16"
+          },
+          {
+            "trozadoId": "cmuxm8x4y000byvvzuvxnecdj",
+            "de": "17",
+            "a": "17-0001",
+            "codigoGuia": "17"
+          },
+          {
+            "trozadoId": "cmuxm8xho000cyvvzua0px3si",
+            "de": "18",
+            "a": "18-0001",
+            "codigoGuia": "18"
+          },
+          {
+            "trozadoId": "cmuxm8xyj000dyvvz2g5or4wm",
+            "de": "19",
+            "a": "19-0001",
+            "codigoGuia": "19"
+          },
+          {
+            "trozadoId": "cmuxm8ybi000eyvvzac4nzkop",
+            "de": "2",
+            "a": "2-0001",
+            "codigoGuia": "2"
+          },
+          {
+            "trozadoId": "cmuxm8yok000fyvvz9nuipajl",
+            "de": "20",
+            "a": "20-0001",
+            "codigoGuia": "20"
+          },
+          {
+            "trozadoId": "cmuxm8z1c000gyvvzho95zv4m",
+            "de": "21",
+            "a": "21-0001",
+            "codigoGuia": "21"
+          },
+          {
+            "trozadoId": "cmuxm8zi8000hyvvz8vwob84j",
+            "de": "22",
+            "a": "22-0001",
+            "codigoGuia": "22"
+          },
+          {
+            "trozadoId": "cmuxm8zv0000iyvvzynzeyefe",
+            "de": "3",
+            "a": "3-0001",
+            "codigoGuia": "3"
+          },
+          {
+            "trozadoId": "cmuxm9089000jyvvzjd9c2zt0",
+            "de": "4",
+            "a": "4-0001",
+            "codigoGuia": "4"
+          },
+          {
+            "trozadoId": "cmuxm91xq000kyvvznozpcnb1",
+            "de": "5",
+            "a": "5-0001",
+            "codigoGuia": "5"
+          },
+          {
+            "trozadoId": "cmuxm92ar000lyvvz5hs76ok4",
+            "de": "6",
+            "a": "6-0001",
+            "codigoGuia": "6"
+          },
+          {
+            "trozadoId": "cmuxm92no000myvvzgmwyb1n2",
+            "de": "7",
+            "a": "7-0001",
+            "codigoGuia": "7"
+          },
+          {
+            "trozadoId": "cmuxm939i000nyvvzykp6nfqn",
+            "de": "8",
+            "a": "8-0001",
+            "codigoGuia": "8"
+          },
+          {
+            "trozadoId": "cmuxm93me000oyvvz8odtv9nt",
+            "de": "9",
+            "a": "9-0001",
+            "codigoGuia": "9"
+          }
+        ]
+      },
+      "huella": "2e9320dfca3d1c61c4856d9191ed9b7ed9f83f14e3d5f630273ab9769e241cb7"
+    }
+  ]
+}

@@ -24,6 +24,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
   invalidate: vi.fn(),
 }));
@@ -54,16 +55,20 @@ const { MockNotFoundError } = vi.hoisted(() => {
   return { MockNotFoundError };
 });
 
-vi.mock("@/lib/api-error", () => ({
-  toErrorPayload: vi.fn((err: unknown) => {
-    if ((err as { name?: string }).name === "NotFoundError") {
-      return { payload: { error: "Not found" }, status: 404 };
-    }
-    return { payload: { error: "Internal error" }, status: 500 };
-  }),
-  newTraceId:   vi.fn(() => "trace-security"),
-  NotFoundError: MockNotFoundError,
-}));
+vi.mock("@/lib/api-error", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api-error")>();
+  return {
+    ...actual,
+    toErrorPayload: vi.fn((err: unknown) => {
+      if ((err as { name?: string }).name === "NotFoundError") {
+        return { payload: { error: "Not found" }, status: 404 };
+      }
+      return { payload: { error: "Internal error" }, status: 500 };
+    }),
+    newTraceId:   vi.fn(() => "trace-security"),
+    NotFoundError: MockNotFoundError,
+  };
+});
 
 // ── Mock: prisma con registros de MÚLTIPLES tenants ───────────────────────────
 const { mockStoreFindMany, mockStoreFindUnique, mockStoreProductFindMany } = vi.hoisted(() => ({

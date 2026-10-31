@@ -13,19 +13,24 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-vi.mock("@/lib/api-error", () => ({
-  toErrorPayload: vi.fn((err: unknown) => ({
-    payload: { error: String(err) },
-    status: 500,
-  })),
-  newTraceId: vi.fn(() => "trace-test"),
-}));
+vi.mock("@/lib/api-error", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api-error")>();
+  return {
+    ...actual,
+    toErrorPayload: vi.fn((err: unknown) => ({
+      payload: { error: String(err) },
+      status: 500,
+    })),
+    newTraceId: vi.fn(() => "trace-test"),
+  };
+});
 
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   cacheStore: {
     get: vi.fn().mockResolvedValue(null),
     set: vi.fn().mockResolvedValue(undefined),

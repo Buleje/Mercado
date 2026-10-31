@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { logger } from "@/lib/logger";
 
 /**
@@ -50,15 +51,21 @@ export function syncBrandingToTenant(
   tenantId: string,
   payload: Pick<BrandingPayload, "logoUrl" | "businessName" | "primaryColor" | "secondaryColor">,
 ): Promise<unknown> {
-  return prisma.tenant.update({
-    where: { id: tenantId },
-    data: {
-      ...(payload.logoUrl !== undefined && { logoUrl: payload.logoUrl || null }),
-      ...(payload.businessName !== undefined && payload.businessName && { name: payload.businessName }),
-      ...(payload.primaryColor !== undefined && payload.primaryColor && { primaryColor: payload.primaryColor }),
-      ...(payload.secondaryColor !== undefined && payload.secondaryColor && { secondaryColor: payload.secondaryColor }),
-    },
-  });
+  return prisma.tenant
+    .update({
+      where: { id: tenantId },
+      data: {
+        ...(payload.logoUrl !== undefined && { logoUrl: payload.logoUrl || null }),
+        ...(payload.businessName !== undefined && payload.businessName && { name: payload.businessName }),
+        ...(payload.primaryColor !== undefined && payload.primaryColor && { primaryColor: payload.primaryColor }),
+        ...(payload.secondaryColor !== undefined && payload.secondaryColor && { secondaryColor: payload.secondaryColor }),
+      },
+    })
+    .then((t) => {
+      // Portada y /api/tenants/resolve leen nombre/logo/colores cacheados.
+      TenantsDB.olvidarPublico();
+      return t;
+    });
 }
 
 /**

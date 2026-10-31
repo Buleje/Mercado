@@ -24,9 +24,9 @@ import {
   generateItemListLD,
   generateFAQPageLD,
   generateSoftwareApplicationLD,
-  zoneBreadcrumbs,
-} from "@/lib/seo/json-ld";
+  zoneBreadcrumbs, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Title B2C-first (2026-05-27): "Abarrotes en Pucallpa con delivery" capta
   // long-tail de compra. Cola B2B (vender/gestionar) en la descripción.
   const title = `${cat.label} en ${zone.name} con delivery`;
-  const description = `Comprá ${cat.label.toLowerCase()} en bodegas y tiendas de ${zone.name} con delivery rápido y pago con Yape o efectivo. ¿Vendés ${cat.label.toLowerCase()}? Gestioná tu stock y precios con Buleje.`;
+  const description = `Compra ${cat.label.toLowerCase()} en bodegas y tiendas de ${zone.name} con delivery rápido y pago con Yape o efectivo. ¿Vendes ${cat.label.toLowerCase()}? Gestiona tu stock y precios con Buleje.`;
   const url = `${BASE_URL}/zona/${zone.slug}/${cat.id}`;
 
   // SEO 2026-05-24: thin content guard — si la categoría no tiene productos
@@ -185,7 +185,7 @@ async function CategoryZoneContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
+          __html: safeJsonLdStringify(
             generateSoftwareApplicationLD(zone),
           ),
         }}
@@ -194,7 +194,7 @@ async function CategoryZoneContent({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
+            __html: safeJsonLdStringify(
               generateItemListLD(
                 `${cat.label} en ${zone.name} — Buleje`,
                 productItems,
@@ -206,7 +206,7 @@ async function CategoryZoneContent({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateFAQPageLD(faqs)),
+          __html: safeJsonLdStringify(generateFAQPageLD(faqs)),
         }}
       />
 
@@ -246,7 +246,7 @@ async function CategoryZoneContent({
             href="/registro"
             className="mt-4 inline-block rounded-lg bg-[var(--data-success-600)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--data-success-700)]"
           >
-            Registrate gratis
+            Regístrate gratis
           </Link>
         </div>
       )}
@@ -373,11 +373,7 @@ export default function ZonaCategoriaPage({ params }: Props) {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="animate-pulse text-sm text-slate-400">
-            Cargando productos...
-          </div>
-        </div>
+        <CargaPagina modo="bloque" etiqueta="Cargando productos" />
       }
     >
       <CategoryZoneContentWrapper params={params} />

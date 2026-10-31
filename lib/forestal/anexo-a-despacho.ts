@@ -1,0 +1,1308 @@
+/**
+ * anexo-a-despacho — del ANEXO N° 04 guardado a las líneas de Despacho del
+ * libro (ADR-446). PURO y client-safe: lo usan la capa de datos, que registra,
+ * y la pantalla, que muestra la propuesta y deja cambiar el origen.
+ *
+ * Qué problema tapa: en Blas 99 m³ de 9 guías vivían sólo como Anexo 04
+ * guardado. El libro decía «0 salidas» y 9 corridas estaban marcadas «usado»
+ * como atajo de lo que ya se había ido. Registrarlas a mano eran 242 filas.
+ *
+ * ── Cómo se arma una guía ───────────────────────────────────────────────────
+ * 1. Las piezas del anexo se agrupan por especie × tipo (el mismo tipo que
+ *    imprime el anexo: `tipoDePieza`).
+ * 2. Cada grupo se cubre con la producción de ESA especie y ESE tipo, fechada
+ *    el día de la guía o antes, con `≤`: lo que no alcanza queda «sin
+ *    atribuir» en una línea propia, nunca se fuerza (I4).
+ * 3. De dónde sale un tipo dentro de una corrida (las «fuentes»):
+ *    · **montón** — un paquete de 0 piezas y sin medidas: la pila de un tipo.
+ *      La línea lo nombra y, si sale una parte, se PARTE (decisión 10): lo que
+ *      salió queda con el código y el resto pasa a un paquete nuevo.
+ *    · **corrida** — paquetes con piezas del mismo tipo que la corrida, o la
+ *      corrida sin paquetes. La línea va a nivel corrida, sin paquete.
+ *    · **paquete** — un bulto físico de un tipo distinto al de su corrida (en
+ *      Blas, paquetes «COMERCIAL» colgados de una corrida «TABLA»). El
+ *      servidor sólo acepta esa salida nombrando el paquete y hasta lo que
+ *      mide (ADR-444), así que sale entero y en su propia línea.
+ * 4. Una línea por especie × tipo × corrida (× paquete, cuando la regla del
+ *    paquete lo exige).
+ *
+ * «Mejor ajuste»: la guía que se registra primero es la más vieja; dentro de
+ * un grupo manda la fuente que lo cubre justo, después la más chica que lo
+ * cubre entero (menos líneas y menos restos), después la más grande. El total
+ * atribuido no depende de ese orden —cualquier corrida que sirve a una guía
+ * vieja sirve también a las siguientes—; sí el número de líneas.
+ *
+ * I3 (el stock del producto) se mide igual que el alta: por especie, sin
+ * distinguir tipo. Una especie sin producción suficiente BLOQUEA la guía —el
+ * alta la rechazaría—, y la propuesta lo dice antes (decisión 2: Azúcar huayo
+ * de la 064).
+ *
+ * El permiso (ADR-519, decisión 3): un anexo que dice de qué permiso salió
+ * sólo se cubre con corridas de ESE permiso (`permisoAjeno`, con el criterio
+ * de `vincularCorridaEnTx`: `mismoPermiso`). Lo que su permiso no alcanza
+ * queda sin atribuir, nunca se toma de otro título. Un anexo sin permiso (los
+ * de antes) se cubre como siempre.
+ */
+import type { PiezaCubicada } from "./cubicacion";
+import { ORDEN_TIPO, ordenTipo, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
+import { productoDelTipoComercial, tipoComercialDelProducto } from "./loctp-catalogos";
+import { claveEspecie } from "./loth-constants";
+import { TOLERANCIA_ATRIBUCION } from "./atribucion-despacho";
+import { mismoNumeroGtf } from "./gtf-talonario";
+import { fmtM3 } from "./cubicacion-formato";
+import { mismoPermiso, type PermisoRef } from "./vincular-trozas";
+
+/**
+ * Un resto de montón más chico que esto no se guarda como paquete: 5 litros no
+ * son una pila, son la diferencia entre el redondeo del anexo (4 decimales por
+ * fila) y el del inventario (3). El montón sale entero y ese resto queda como
+ * saldo de la corrida, sin bulto que ofrecer.
+ */
+export const TOL_RESTO_M3 = 0.005;
+
+const r4 = (n: number) => Math.round(n * 10000) / 10000;
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Redondea a 3 decimales sin que la suma cambie (mayor resto): Σ de lo
+ * redondeado = el total del papel redondeado. El Anexo 04 y la guía declaran
+ * el m³ con 3 decimales y la producción se anota igual; con 4 (lo que suman
+ * las filas) la 064 de Blas pedía 3,6882 de Copal contra 3,688 producidos y
+ * quedaba bloqueada por 0,2 litros que el papel no dice (ADR-446, 26-10).
+ */
+export function redondearA3(valores: readonly number[]): number[] {
+  if (valores.length === 0) return [];
+  const milesimas = valores.map((v) => (Number(v) || 0) * 1000);
+  const objetivo = Math.round(milesimas.reduce((a, b) => a + b, 0));
+  /* `+ 1e-6`: 3,688 × 1000 da 3687,9999…; sin el margen el piso perdía una milésima. */
+  const base = milesimas.map((m) => Math.floor(m + 1e-6));
+  let faltan = objetivo - base.reduce((a, b) => a + b, 0);
+  const orden = milesimas
+    .map((m, i) => ({ i, resto: m - base[i] }))
+    .sort((a, b) => b.resto - a.resto || a.i - b.i);
+  for (const { i } of orden) {
+    if (faltan <= 0) break;
+    base[i]++;
+    faltan--;
+  }
+  return base.map((m) => m / 1000);
+}
+/** «2026-09-25» → «25/09/2026» sin depender del ICU (el servidor y el navegador dicen lo mismo). */
+export const fechaCorta = (f: string): string => {
+  const [y, m, d] = f.slice(0, 10).split("-");
+  return y && m && d ? `${d}/${m}/${y}` : f;
+};
+
+/** El anexo tal como se lee del registro guardado (sin los datos del firmante). */
+export interface AnexoParaDespacho {
+  id: string;
+  numero: string;
+  gtf: string;
+  /** Fecha de emisión, date-only AAAA-MM-DD: es la fecha de la salida. */
+  fecha: string;
+  createdAt: string;
+  totalM3: number;
+  totalManualM3?: number | null;
+  especieGlobal?: string;
+  piezas: readonly PiezaCubicada[];
+  /** El despacho del que se emitió, si salió desde el libro. */
+  ctpEntryId?: string;
+  /** Las líneas de Despacho que ya lo registraron (ADR-446). */
+  despachoIds?: readonly string[];
+  /** Otro anexo de la misma guía que lo reemplazó: no se registra. */
+  reemplazadoPor?: string | null;
+  /** El permiso del que salió (ADR-519): con él, sólo corridas de ese permiso. Ausente = cualquiera. */
+  permiso?: string | null;
+}
+
+export interface PaqueteOrigen {
+  id: string;
+  codigo: string;
+  /** Producto del paquete; `null` = el de su corrida. */
+  producto: string | null;
+  presentacion: string | null;
+  cantidad: number;
+  volumenM3: number;
+  /** Tiene espesor, ancho y largo cargados. */
+  conMedidas: boolean;
+  /** Ya viaja en una guía vigente (ADR-444): no se ofrece. */
+  despachado: boolean;
+  /** Apartado a nombre de alguien (ADR-418): no se ofrece. */
+  apartado: boolean;
+}
+
+export interface CorridaOrigen {
+  id: string;
+  lineNo: number;
+  /** date-only AAAA-MM-DD. */
+  fecha: string;
+  especie: string | null;
+  producto: string | null;
+  presentacion: string | null;
+  unidad: string | null;
+  /** Saldo real de la corrida (`saldosDeCorridas`): producido − despachado − reprocesado. */
+  disponibleM3: number;
+  /** Marcada «ya usado» (sale de Disponibles, no toca saldos). */
+  usado: boolean;
+  /** Sin volumen de entrada ni consumos: no dice de qué madera salió. */
+  sinOrigen: boolean;
+  duenoMadera: string | null;
+  titularNombre: string | null;
+  paquetes: readonly PaqueteOrigen[];
+  /** Lo que ya salió de ESTA corrida en despachos que no nombran uno de sus paquetes, por producto del despacho. */
+  salidoSinPaquete: readonly { producto: string | null; m3: number }[];
+  /**
+   * DERIVADO al leer (ADR-519): los permisos de la madera de la corrida — el
+   * de cada guía de ingreso que consumió (ADR-402: hereda el de su madera) y
+   * el suyo propio (`contratoId` vivo u `originCode`, ADR-447). Vacío o
+   * ausente = no declara ninguno y no decide (`mismoPermiso`).
+   */
+  permisos?: readonly PermisoRef[];
+}
+
+export interface EstadoDelLibro {
+  corridas: readonly CorridaOrigen[];
+  /** I3: lo que queda sin despachar, por la clave de `claveStock` (producto + especie). */
+  stock: Readonly<Record<string, number>>;
+}
+
+/**
+ * La clave de I3 (`productKey` de `forest-ctp.db`): producto y especie por
+ * `claveEspecie`, que quita lo que va entre paréntesis — todos los «MADERA
+ * ASERRADA (…)» de una especie son UN stock. La capa de datos pasa la suya;
+ * ésta es la misma fórmula, para la pantalla y los tests.
+ */
+export const claveStockPorDefecto = (producto: string | null | undefined, especie: string | null | undefined): string =>
+  `${claveEspecie(producto) || "—"}|${claveEspecie(especie) || "—"}`;
+
+/** El tipo del cubicador que nombra un producto del libro, o `null`. */
+export function tipoDelProducto(producto: string | null | undefined): TipoComercial | null {
+  const t = tipoComercialDelProducto(producto);
+  return t && (ORDEN_TIPO as readonly string[]).includes(t) ? (t as TipoComercial) : null;
+}
+
+// ── Grupos del anexo ──────────────────────────────────────────────────────
+
+export interface GrupoDelAnexo {
+  /** `claveEspecie|tipo`: la identidad del grupo (lo que el cliente elige). */
+  clave: string;
+  especie: string;
+  claveEspecie: string;
+  tipo: TipoComercial;
+  /** «MADERA ASERRADA (COMERCIAL)»; `null` para «Otro» (el libro no tiene ese producto). */
+  producto: string | null;
+  m3: number;
+  piezas: number;
+  pt: number;
+}
+
+export const claveDeGrupo = (especie: string, tipo: string): string => `${claveEspecie(especie)}|${tipo}`;
+
+/**
+ * Lo que dice el anexo que salió, por especie × tipo, en el orden del papel.
+ * `claveStock` = la de I3 (la misma que usa la propuesta): el redondeo a 3
+ * decimales reparte las milésimas DENTRO de cada stock, nunca entre dos.
+ */
+export function gruposDelAnexo(
+  anexo: Pick<AnexoParaDespacho, "piezas" | "especieGlobal">,
+  claveStock: (producto: string | null, especie: string | null) => string = claveStockPorDefecto,
+): GrupoDelAnexo[] {
+  const ordenEspecie = new Map<string, number>();
+  const grupos = new Map<string, GrupoDelAnexo>();
+  for (const p of anexo.piezas) {
+    const especie = (p.especie ?? anexo.especieGlobal ?? "").trim();
+    const ce = claveEspecie(especie);
+    const tipo = tipoDePieza(p);
+    const clave = `${ce}|${tipo}`;
+    if (!ordenEspecie.has(ce)) ordenEspecie.set(ce, ordenEspecie.size);
+    const g = grupos.get(clave) ?? {
+      clave,
+      especie,
+      claveEspecie: ce,
+      tipo,
+      producto: productoDelTipoComercial(tipo),
+      m3: 0,
+      piezas: 0,
+      pt: 0,
+    };
+    g.m3 += Number(p.m3) || 0;
+    g.piezas += Number(p.cantidad) || 0;
+    g.pt += Number(p.pieTablar) || 0;
+    grupos.set(clave, g);
+  }
+  const lista = [...grupos.values()];
+  /* El mayor resto va POR CLAVE DE STOCK (la de I3), no sobre el papel entero:
+     repartido sobre todo el papel la 064 de Blas subía las dos filas de
+     Mashonaste (3,4986 + 0,0328 → 3,499 + 0,033 = 3,532) contra 3,531
+     producidos, y quedaba bloqueada por la milésima que había ganado Copal.
+     Hoy la clave de I3 junta todos los «MADERA ASERRADA (…)» de una especie
+     (`claveEspecie` quita el paréntesis); si un día los separa, el redondeo
+     la sigue sola. Lo que no tiene producto se redondea con su especie. */
+  const m3En3 = new Array<number>(lista.length).fill(0);
+  const porStock = new Map<string, number[]>();
+  lista.forEach((g, i) => {
+    const k = g.producto ? claveStock(g.producto, g.especie) : `sin producto|${g.claveEspecie}`;
+    porStock.set(k, [...(porStock.get(k) ?? []), i]);
+  });
+  for (const indices of porStock.values()) {
+    const redondeados = redondearA3(indices.map((i) => lista[i].m3));
+    indices.forEach((i, j) => { m3En3[i] = redondeados[j]; });
+  }
+  return lista
+    .map((g, i) => ({ ...g, m3: m3En3[i], pt: r2(g.pt) }))
+    .filter((g) => g.m3 > 0)
+    .sort(
+      (a, b) =>
+        (ordenEspecie.get(a.claveEspecie) ?? 0) - (ordenEspecie.get(b.claveEspecie) ?? 0) ||
+        ordenTipo(a.tipo) - ordenTipo(b.tipo),
+    );
+}
+
+// ── Fuentes de una corrida ────────────────────────────────────────────────
+
+export type ClaseFuente = "monton" | "corrida" | "paquete";
+
+interface Fuente {
+  clase: ClaseFuente;
+  corridaId: string;
+  tipo: TipoComercial;
+  /** Lo que queda en esta fuente. */
+  m3: number;
+  paqueteId: string | null;
+  codigo: string | null;
+  presentacion: string | null;
+}
+
+/** Un paquete de montón: sin piezas y sin medidas. Es la pila de un tipo, no un bulto. */
+export const esMonton = (p: Pick<PaqueteOrigen, "cantidad" | "conMedidas">): boolean =>
+  p.cantidad === 0 && !p.conMedidas;
+
+function fuentesDeCorrida(c: CorridaOrigen): Fuente[] {
+  if ((c.unidad ?? "m3").trim().toLowerCase() !== "m3") return [];
+  const tipoCorrida = tipoDelProducto(c.producto);
+  const base = { corridaId: c.id, paqueteId: null, codigo: null } as const;
+  if (c.paquetes.length === 0) {
+    return tipoCorrida && c.disponibleM3 > 0
+      ? [{ ...base, clase: "corrida", tipo: tipoCorrida, m3: r4(c.disponibleM3), presentacion: c.presentacion }]
+      : [];
+  }
+  const fuentes: Fuente[] = [];
+  const nivelCorrida = new Map<TipoComercial, number>();
+  for (const p of c.paquetes) {
+    if (p.despachado || p.apartado || !(p.volumenM3 > 0)) continue;
+    const tipo = tipoDelProducto(p.producto ?? c.producto);
+    if (!tipo) continue;
+    if (esMonton(p)) {
+      fuentes.push({
+        clase: "monton", corridaId: c.id, tipo, m3: r4(p.volumenM3),
+        paqueteId: p.id, codigo: p.codigo, presentacion: p.presentacion ?? c.presentacion,
+      });
+    } else if (tipo === tipoCorrida) {
+      nivelCorrida.set(tipo, (nivelCorrida.get(tipo) ?? 0) + p.volumenM3);
+    } else {
+      fuentes.push({
+        clase: "paquete", corridaId: c.id, tipo, m3: r4(p.volumenM3),
+        paqueteId: p.id, codigo: p.codigo, presentacion: p.presentacion ?? c.presentacion,
+      });
+    }
+  }
+  /* Lo que ya salió a nivel corrida se descuenta de los bultos de su tipo: no
+     se sabe cuáles fueron, pero sí cuánto. */
+  for (const s of c.salidoSinPaquete) {
+    const tipo = tipoDelProducto(s.producto);
+    if (tipo && nivelCorrida.has(tipo)) nivelCorrida.set(tipo, Math.max(0, nivelCorrida.get(tipo)! - s.m3));
+  }
+  for (const [tipo, m3] of nivelCorrida) {
+    if (r4(m3) > 0) fuentes.push({ ...base, clase: "corrida", tipo, m3: r4(m3), presentacion: c.presentacion });
+  }
+  return fuentes;
+}
+
+// ── Estado de trabajo (se copia por guía: una guía bloqueada no consume) ──
+
+interface CorridaEnTrabajo {
+  c: CorridaOrigen;
+  saldo: number;
+  fuentes: Fuente[];
+}
+
+interface Trabajo {
+  corridas: Map<string, CorridaEnTrabajo>;
+  stock: Map<string, number>;
+}
+
+function trabajoDe(estado: EstadoDelLibro): Trabajo {
+  return {
+    corridas: new Map(
+      estado.corridas.map((c) => [c.id, { c, saldo: r4(Math.max(0, c.disponibleM3)), fuentes: fuentesDeCorrida(c) }]),
+    ),
+    stock: new Map(Object.entries(estado.stock)),
+  };
+}
+
+function copiar(t: Trabajo): Trabajo {
+  return {
+    corridas: new Map([...t.corridas].map(([id, x]) => [id, { c: x.c, saldo: x.saldo, fuentes: x.fuentes.map((f) => ({ ...f })) }])),
+    stock: new Map(t.stock),
+  };
+}
+
+// ── El permiso de la guía (ADR-519) ───────────────────────────────────────
+
+/**
+ * El permiso de la corrida que NO es el de la guía, o `null` si la corrida
+ * puede ser origen de esa guía. Mismo criterio que `vincularCorridaEnTx`
+ * (`mismoPermiso`): sin dato en una punta no se afirma que difieren, así que
+ * un anexo sin permiso, o una corrida que no declara ninguno, siguen como
+ * antes. Una corrida que mezcla permisos (dato viejo) es ajena si UNO de ellos
+ * no es el de la guía: nunca se atribuye madera de otro título.
+ */
+export function permisoAjeno(
+  c: Pick<CorridaOrigen, "permisos">,
+  permisoGuia: string | null | undefined,
+): PermisoRef | null {
+  const codigo = permisoGuia?.trim();
+  if (!codigo) return null;
+  const guia: PermisoRef = { contratoId: null, codigo };
+  return (c.permisos ?? []).find((p) => !mismoPermiso(p, guia)) ?? null;
+}
+
+/**
+ * Las corridas de `ids` que son de otro permiso que la guía, leídas del
+ * estado dado (la capa de datos lo usa BAJO los locks, con el libro de ese
+ * momento). Vacío = todas sirven.
+ */
+export function corridasDeOtroPermiso(
+  estado: EstadoDelLibro,
+  permisoGuia: string | null | undefined,
+  ids: Iterable<string>,
+): { corridaId: string; lineNo: number; permiso: string | null }[] {
+  const buscadas = new Set(ids);
+  const out: { corridaId: string; lineNo: number; permiso: string | null }[] = [];
+  for (const c of estado.corridas) {
+    if (!buscadas.has(c.id)) continue;
+    const ajeno = permisoAjeno(c, permisoGuia);
+    if (ajeno) out.push({ corridaId: c.id, lineNo: c.lineNo, permiso: ajeno.codigo });
+  }
+  return out.sort((a, b) => a.lineNo - b.lineNo);
+}
+
+/**
+ * La vista de la guía: sólo las corridas de su permiso. Comparte los objetos
+ * de `t` (saldo y fuentes), así lo que esta guía saca se descuenta igual para
+ * la siguiente de la tanda. Sin permiso en el anexo, `t` tal cual.
+ */
+function delPermiso(t: Trabajo, permisoGuia: string | null | undefined): Trabajo {
+  if (!permisoGuia?.trim()) return t;
+  return { corridas: new Map([...t.corridas].filter(([, x]) => !permisoAjeno(x.c, permisoGuia))), stock: t.stock };
+}
+
+// ── La propuesta ──────────────────────────────────────────────────────────
+
+/** Lo que el operador puede cambiar: de qué corridas sale un grupo, en orden. `[]` = sin origen. */
+export interface EleccionDeOrigen {
+  especie: string;
+  tipo: TipoComercial;
+  corridas: readonly string[];
+}
+
+export interface OrigenDeLinea {
+  corridaId: string;
+  lineNo: number;
+  fecha: string;
+  usado: boolean;
+  sinOrigen: boolean;
+  clase: ClaseFuente;
+  paqueteId: string | null;
+  codigo: string | null;
+  presentacion: string | null;
+  /** Montón que se parte: lo que queda en un paquete nuevo. 0 = sale entero. */
+  restoM3: number;
+  duenoMadera: string | null;
+  titularNombre: string | null;
+}
+
+export interface LineaPropuesta {
+  grupo: string;
+  especie: string;
+  tipo: TipoComercial;
+  producto: string;
+  /** Lo que declara la línea (casillero de cantidad). */
+  m3: number;
+  /** Lo atribuido a su corrida: `≤ m3`. */
+  origenM3: number;
+  /** Piezas del grupo repartidas entre sus líneas en proporción al volumen. */
+  piezas: number;
+  origen: OrigenDeLinea | null;
+  /**
+   * Sólo en una línea sin origen de un anexo con permiso (ADR-519): había
+   * corridas con madera de ese tipo, pero de OTRO permiso. Es el código del
+   * permiso de la guía, para decir el motivo verdadero («no hay producción
+   * del permiso X») y no «el libro no tiene producción de ese tipo».
+   */
+  sinCorridaDelPermiso?: string;
+}
+
+export interface CandidataDeOrigen {
+  corridaId: string;
+  lineNo: number;
+  fecha: string;
+  /** Lo que tiene de ESE tipo antes de esta guía. */
+  disponibleM3: number;
+  usado: boolean;
+  sinOrigen: boolean;
+}
+
+export interface GrupoPropuesto extends GrupoDelAnexo {
+  atribuidoM3: number;
+  sinAtribuirM3: number;
+  /** Las corridas de las que sale, en orden. */
+  corridas: string[];
+  /** Todas las que podrían: para que la pantalla deje cambiar el origen. */
+  candidatas: CandidataDeOrigen[];
+}
+
+export type CodigoBloqueo =
+  | "SIN_STOCK_DE_LA_ESPECIE"
+  | "TIPO_SIN_PRODUCTO"
+  | "SIN_ESPECIE"
+  | "ORIGEN_INVALIDO"
+  /** La guía tiene dos papeles distintos, o su papel también está en otra guía: lo decide el dueño (`anexo-dudas`). */
+  | "ANEXO_EN_DUDA"
+  /** Hay m³ sin corrida de origen y el dueño no dijo «regístrala sin origen» (decisión 8). */
+  | "FALTA_CONFIRMAR_SIN_ORIGEN"
+  /** Toma madera de corridas marcadas «usado» y el dueño no dijo «salió de ese inventario» (decisión 5). */
+  | "FALTA_CONFIRMAR_USADO"
+  /** El operador eligió una corrida de otro permiso que el del anexo (ADR-519). */
+  | "PERMISO_DISTINTO";
+
+export interface BloqueoDeGuia {
+  codigo: CodigoBloqueo;
+  mensaje: string;
+  especie?: string;
+  tipo?: TipoComercial;
+  m3?: number;
+  piezas?: number;
+  stockM3?: number;
+  corridaId?: string;
+  /** SIN_STOCK: la producción que falta tiene que estar fechada este día o antes (AAAA-MM-DD). */
+  fechaTope?: string;
+}
+
+export interface PropuestaDeGuia {
+  anexoId: string;
+  numero: string;
+  gtf: string;
+  fecha: string;
+  totalM3: number;
+  totalManualM3: number | null;
+  atribuidoM3: number;
+  sinAtribuirM3: number;
+  grupos: GrupoPropuesto[];
+  lineas: LineaPropuesta[];
+  bloqueos: BloqueoDeGuia[];
+  /** Sin bloqueos: el alta la aceptaría. */
+  registrable: boolean;
+  /** Montones que se parten al registrar. */
+  partidos: number;
+  /** Corridas marcadas «usado» que esta guía toma como origen. */
+  usadasComoOrigen: { corridaId: string; lineNo: number; fecha: string; m3: number }[];
+  /**
+   * Lo que de verdad sale sin corrida: la suma de las líneas sin origen. No es
+   * `sinAtribuirM3` (total − atribuido), que también cuenta los restos de
+   * menos de un litro que cada grupo ya absorbió en su última línea.
+   */
+  sinOrigenM3: number;
+  /**
+   * Lleva m³ sin corrida de origen: no se registra hasta que el dueño lo
+   * confirme guía por guía (decisión 8). Nunca se decide solo.
+   */
+  sinOrigenPorConfirmar: boolean;
+}
+
+export interface OpcionesDePropuesta {
+  elecciones?: readonly EleccionDeOrigen[];
+  claveStock?: (producto: string | null, especie: string | null) => string;
+}
+
+interface Toma {
+  fuente: Fuente;
+  q: number;
+  restoM3: number;
+}
+
+/** Cuánto se puede sacar de una fuente sin pasar el saldo de su corrida. */
+const alcance = (t: Trabajo, f: Fuente): number => {
+  const saldo = t.corridas.get(f.corridaId)?.saldo ?? 0;
+  return r4(Math.max(0, Math.min(f.m3, saldo)));
+};
+
+function sacar(t: Trabajo, f: Fuente, falta: number): Toma | null {
+  const cabe = alcance(t, f);
+  if (cabe <= 0) return null;
+  const corrida = t.corridas.get(f.corridaId)!;
+  if (f.clase === "paquete") {
+    /* Un bulto físico sale entero o no sale: partirlo sería declarar una
+       salida que su etiqueta no dice. Si mide un poco más que lo que falta
+       (dentro del redondeo), sale entero declarando lo que dice el anexo. */
+    if (f.m3 > falta + TOL_RESTO_M3 || cabe < f.m3 - TOL_RESTO_M3) return null;
+    /* Tope en el saldo de la corrida (`cabe`): el bulto sale entero, pero la
+       corrida no puede atribuir más de lo que le queda (I5 del alta). */
+    const q = r4(Math.min(f.m3, falta, cabe));
+    f.m3 = 0;
+    corrida.saldo = r4(Math.max(0, corrida.saldo - q));
+    return { fuente: { ...f }, q, restoM3: 0 };
+  }
+  const q = r4(Math.min(cabe, falta));
+  if (q <= 0) return null;
+  let restoM3 = 0;
+  if (f.clase === "monton") {
+    const queda = r4(f.m3 - q);
+    /* Un resto de menos de 5 litros no es una pila: el montón sale entero. */
+    restoM3 = queda >= TOL_RESTO_M3 ? queda : 0;
+    const antes = { ...f };
+    f.m3 = restoM3;
+    corrida.saldo = r4(Math.max(0, corrida.saldo - q));
+    return { fuente: antes, q, restoM3 };
+  }
+  f.m3 = r4(f.m3 - q);
+  corrida.saldo = r4(Math.max(0, corrida.saldo - q));
+  return { fuente: { ...f }, q, restoM3: 0 };
+}
+
+/** Las fuentes que sirven a un grupo en esa fecha, sin elegir todavía. */
+function fuentesDelGrupo(t: Trabajo, grupo: GrupoDelAnexo, fecha: string, corridaId?: string): Fuente[] {
+  const out: Fuente[] = [];
+  for (const x of corridaId ? [t.corridas.get(corridaId)].filter(Boolean) as CorridaEnTrabajo[] : t.corridas.values()) {
+    if (claveEspecie(x.c.especie) !== grupo.claveEspecie || x.c.fecha > fecha || x.saldo <= 0) continue;
+    for (const f of x.fuentes) if (f.tipo === grupo.tipo && f.m3 > 0) out.push(f);
+  }
+  return out;
+}
+
+const ORDEN_CLASE: Record<ClaseFuente, number> = { monton: 0, corrida: 1, paquete: 2 };
+
+/**
+ * Qué bultos enteros suman lo más cerca posible de `objetivo` sin pasarse (más
+ * el redondeo): una mochila 0/1 en décimas de litro. Con 17 bultos de Cachimbo
+ * para cubrir 0,818 m³, «del más grande al más chico» dejaba 23 litros sin
+ * origen; la mochila encuentra la combinación que más se acerca. Si el caso es
+ * enorme, vuelve a la voraz (que nunca se pasa).
+ */
+function elegirBultos(bultos: readonly Fuente[], objetivo: number): Fuente[] {
+  const voraz = () => {
+    const out: Fuente[] = [];
+    let queda = objetivo + TOL_RESTO_M3;
+    for (const f of [...bultos].sort((a, b) => b.m3 - a.m3)) {
+      if (f.m3 <= queda + 1e-9) {
+        out.push(f);
+        queda -= f.m3;
+      }
+    }
+    return out;
+  };
+  const cap = Math.round((objetivo + TOL_RESTO_M3) * 10000);
+  const pesos = bultos.map((f) => Math.round(f.m3 * 10000));
+  const n = pesos.length;
+  if (n === 0 || cap <= 0) return [];
+  if ((n + 1) * (cap + 1) > 4_000_000) return voraz();
+  const ancho = cap + 1;
+  const llega = new Uint8Array((n + 1) * ancho);
+  llega[0] = 1;
+  for (let i = 1; i <= n; i++) {
+    const w = pesos[i - 1];
+    const fila = i * ancho;
+    const previa = (i - 1) * ancho;
+    for (let s = 0; s <= cap; s++) {
+      llega[fila + s] = llega[previa + s] || (s >= w && llega[previa + s - w]) ? 1 : 0;
+    }
+  }
+  let mejor = cap;
+  while (mejor > 0 && !llega[n * ancho + mejor]) mejor--;
+  const out: Fuente[] = [];
+  for (let i = n, s = mejor; i > 0 && s > 0; i--) {
+    if (!llega[(i - 1) * ancho + s]) {
+      out.push(bultos[i - 1]);
+      s -= pesos[i - 1];
+    }
+  }
+  return out.sort((a, b) => b.m3 - a.m3);
+}
+
+/**
+ * Mejor ajuste automático para un grupo.
+ *
+ * Una corrida marcada «usado» se prefiere cuando SOLA cubre el grupo: la marca
+ * es la forma en que el libro dijo «esto ya salió sin guía» (en Blas, el
+ * inventario del 1/08 marcado el 08/09), y la guía que ahora aparece es la
+ * explicación más probable. Si no lo cubre sola, no se la persigue: una guía
+ * de septiembre que salió de la cubicación de ese mes no se reparte entre los
+ * restos del inventario de agosto.
+ */
+function cubrirAuto(t: Trabajo, grupo: GrupoDelAnexo, fecha: string): Toma[] {
+  const tomas: Toma[] = [];
+  let falta = grupo.m3;
+  const corridaDe = (f: Fuente) => t.corridas.get(f.corridaId)!.c;
+  const desempate = (a: Fuente, b: Fuente) =>
+    Number(corridaDe(b).usado) - Number(corridaDe(a).usado) ||
+    ORDEN_CLASE[a.clase] - ORDEN_CLASE[b.clase] ||
+    corridaDe(a).fecha.localeCompare(corridaDe(b).fecha) ||
+    corridaDe(a).lineNo - corridaDe(b).lineNo;
+  const menorPrimero = (a: Fuente, b: Fuente) => alcance(t, a) - alcance(t, b) || desempate(a, b);
+  for (let vuelta = 0; vuelta < 500 && falta > TOLERANCIA_ATRIBUCION; vuelta++) {
+    const flex = fuentesDelGrupo(t, grupo, fecha).filter((f) => f.clase !== "paquete" && alcance(t, f) > 0);
+    if (flex.length === 0) break;
+    /* 1) la que lo cubre justo; 2) una «usado» que lo cubre sola; 3) la más
+       chica que lo cubre entera; 4) la más grande. */
+    const justa = flex.filter((f) => Math.abs(alcance(t, f) - falta) < TOL_RESTO_M3).sort(desempate)[0];
+    const cubren = flex.filter((f) => alcance(t, f) >= falta);
+    const cubreUsada = cubren.filter((f) => corridaDe(f).usado).sort(menorPrimero)[0];
+    const cubre = [...cubren].sort(menorPrimero)[0];
+    const grande = [...flex].sort((a, b) => alcance(t, b) - alcance(t, a) || desempate(a, b))[0];
+    const toma = sacar(t, justa ?? cubreUsada ?? cubre ?? grande, falta);
+    if (!toma) break;
+    tomas.push(toma);
+    falta = r4(falta - toma.q);
+  }
+  if (falta > TOLERANCIA_ATRIBUCION) {
+    /* Los bultos de otro tipo que su corrida: enteros, la combinación que más
+       se acerca a lo que falta sin pasarse. */
+    const bultos = fuentesDelGrupo(t, grupo, fecha).filter((f) => f.clase === "paquete" && alcance(t, f) >= f.m3 - TOL_RESTO_M3);
+    for (const f of elegirBultos(bultos, falta)) {
+      if (falta <= TOLERANCIA_ATRIBUCION) break;
+      const toma = sacar(t, f, falta);
+      if (toma) {
+        tomas.push(toma);
+        falta = r4(falta - toma.q);
+      }
+    }
+  }
+  return tomas;
+}
+
+/** El grupo sale de las corridas que eligió el operador, en su orden. */
+function cubrirElegido(
+  t: Trabajo,
+  grupo: GrupoDelAnexo,
+  fecha: string,
+  corridas: readonly string[],
+  bloqueos: BloqueoDeGuia[],
+  permisoGuia?: string | null,
+): Toma[] {
+  const tomas: Toma[] = [];
+  let falta = grupo.m3;
+  for (const id of corridas) {
+    const x = t.corridas.get(id);
+    /* El permiso antes que todo (ADR-519): una guía sale de la madera de su
+       permiso, aunque el operador elija otra corrida. */
+    const ajeno = x ? permisoAjeno(x.c, permisoGuia) : null;
+    if (x && ajeno) {
+      bloqueos.push({
+        codigo: "PERMISO_DISTINTO",
+        mensaje:
+          `${grupo.especie} ${grupo.tipo.toLowerCase()}: la corrida N° ${x.c.lineNo} es del permiso ${ajeno.codigo ?? "sin código"} ` +
+          `y esta guía es del permiso ${permisoGuia?.trim()}. Una guía sale de la madera de su permiso: elige una corrida de su permiso o déjalo sin atribuir.`,
+        especie: grupo.especie,
+        tipo: grupo.tipo,
+        corridaId: id,
+      });
+      continue;
+    }
+    const motivo = !x
+      ? "no existe, está anulada o es de otra tienda"
+      : claveEspecie(x.c.especie) !== grupo.claveEspecie
+        ? `es de ${x.c.especie ?? "otra especie"}`
+        : x.c.fecha > fecha
+          ? `se produjo el ${x.c.fecha}, después de la guía`
+          : fuentesDelGrupo(t, grupo, fecha, id).length === 0
+            ? `no le queda ${grupo.tipo.toLowerCase()}`
+            : null;
+    if (motivo) {
+      bloqueos.push({
+        codigo: "ORIGEN_INVALIDO",
+        mensaje: `${grupo.especie} ${grupo.tipo.toLowerCase()}: la corrida ${x ? `N° ${x.c.lineNo}` : "elegida"} ${motivo}.`,
+        especie: grupo.especie,
+        tipo: grupo.tipo,
+        corridaId: id,
+      });
+      continue;
+    }
+    const fuentes = fuentesDelGrupo(t, grupo, fecha, id).sort(
+      (a, b) => ORDEN_CLASE[a.clase] - ORDEN_CLASE[b.clase] || b.m3 - a.m3,
+    );
+    for (const f of fuentes) {
+      if (falta <= TOLERANCIA_ATRIBUCION) break;
+      const toma = sacar(t, f, falta);
+      if (toma) {
+        tomas.push(toma);
+        falta = r4(falta - toma.q);
+      }
+    }
+  }
+  return tomas;
+}
+
+/** Reparte `total` en enteros proporcionales a `pesos` sin perder ninguno (mayor resto). */
+export function repartirPiezas(total: number, pesos: readonly number[]): number[] {
+  const suma = pesos.reduce((a, p) => a + p, 0);
+  if (pesos.length === 0) return [];
+  if (!(suma > 0) || total <= 0) return pesos.map((_, i) => (i === 0 ? Math.max(0, total) : 0));
+  const crudo = pesos.map((p) => (total * p) / suma);
+  const base = crudo.map(Math.floor);
+  let faltan = total - base.reduce((a, b) => a + b, 0);
+  const orden = crudo.map((c, i) => ({ i, resto: c - Math.floor(c) })).sort((a, b) => b.resto - a.resto || a.i - b.i);
+  for (const { i } of orden) {
+    if (faltan <= 0) break;
+    base[i]++;
+    faltan--;
+  }
+  return base;
+}
+
+function candidatasDe(t: Trabajo, grupo: GrupoDelAnexo, fecha: string): CandidataDeOrigen[] {
+  const por = new Map<string, number>();
+  for (const f of fuentesDelGrupo(t, grupo, fecha)) por.set(f.corridaId, r4((por.get(f.corridaId) ?? 0) + alcance(t, f)));
+  return [...por]
+    .map(([id, m3]) => {
+      const c = t.corridas.get(id)!.c;
+      return { corridaId: id, lineNo: c.lineNo, fecha: c.fecha, disponibleM3: m3, usado: c.usado, sinOrigen: c.sinOrigen };
+    })
+    .filter((c) => c.disponibleM3 > 0)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.lineNo - b.lineNo);
+}
+
+function proponerEn(
+  t: Trabajo,
+  anexo: AnexoParaDespacho,
+  opts: OpcionesDePropuesta,
+): PropuestaDeGuia {
+  const claveStock = opts.claveStock ?? claveStockPorDefecto;
+  const fecha = anexo.fecha.slice(0, 10);
+  const grupos = gruposDelAnexo(anexo, claveStock);
+  const bloqueos: BloqueoDeGuia[] = [];
+  const elegidas = new Map((opts.elecciones ?? []).map((e) => [claveDeGrupo(e.especie, e.tipo), e.corridas]));
+  /* Lo que la guía puede tomar: sólo las corridas de su permiso (ADR-519). */
+  const tg = delPermiso(t, anexo.permiso);
+  const permisoGuia = anexo.permiso?.trim() || null;
+
+  /* I3 antes que nada: una especie sin producción suficiente hace rechazar el
+     alta, y es lo primero que hay que resolver (se anota la producción). */
+  const pedidoPorStock = new Map<string, { m3: number; piezas: number; especie: string }>();
+  for (const g of grupos) {
+    if (!g.claveEspecie) {
+      bloqueos.push({ codigo: "SIN_ESPECIE", mensaje: `Hay ${fmtM3(g.m3)} m³ sin especie en el anexo: complétala en el anexo antes de registrar.`, m3: g.m3, piezas: g.piezas });
+      continue;
+    }
+    if (!g.producto) {
+      bloqueos.push({
+        codigo: "TIPO_SIN_PRODUCTO",
+        mensaje: `${g.especie}: ${g.piezas} piezas de tipo «${g.tipo}» (${fmtM3(g.m3)} m³) no tienen producto en el libro. Corrige la medida o el tipo en el anexo.`,
+        especie: g.especie, tipo: g.tipo, m3: g.m3, piezas: g.piezas,
+      });
+      continue;
+    }
+    const k = claveStock(g.producto, g.especie);
+    const prev = pedidoPorStock.get(k) ?? { m3: 0, piezas: 0, especie: g.especie };
+    pedidoPorStock.set(k, { m3: r4(prev.m3 + g.m3), piezas: prev.piezas + g.piezas, especie: g.especie });
+  }
+  /* Con la MISMA comparación que el alta (`assertStockDisponible`:
+     `r4(pedido) > stock`, sin tolerancia): con una propuesta más blanda, 0,9199
+     pedidos contra 0,919 de stock salían «registrable» y el alta los rechazaba. */
+  const fechaTope = fechaCorta(fecha);
+  const conFecha = `Anótala con fecha del ${fechaTope} o antes: con una fecha posterior la guía entra, pero esa madera queda sin origen.`;
+  for (const [k, p] of pedidoPorStock) {
+    const stock = r4(t.stock.get(k) ?? 0);
+    if (r4(p.m3) > stock) {
+      bloqueos.push({
+        codigo: "SIN_STOCK_DE_LA_ESPECIE",
+        mensaje:
+          stock <= 0
+            ? `Falta la producción de ${p.especie}: la guía lleva ${fmtM3(p.m3)} m³ en ${p.piezas} piezas y el libro no tiene producción de esa especie sin despachar. Sin ella la guía no se registra. ${conFecha}`
+            : `De ${p.especie} quedan ${fmtM3(stock)} m³ sin despachar y la guía lleva ${fmtM3(p.m3)} m³. Anota la producción que falta antes de registrarla. ${conFecha}`,
+        especie: p.especie, m3: p.m3, piezas: p.piezas, stockM3: stock, fechaTope: fecha,
+      });
+    }
+  }
+
+  const gruposPropuestos: GrupoPropuesto[] = [];
+  const lineas: LineaPropuesta[] = [];
+  for (const g of grupos) {
+    const candidatas = g.claveEspecie && g.producto ? candidatasDe(tg, g, fecha) : [];
+    const elegido = elegidas.get(g.clave);
+    const tomas = !g.claveEspecie || !g.producto
+      ? []
+      : elegido
+        ? cubrirElegido(t, g, fecha, elegido, bloqueos, anexo.permiso)
+        : cubrirAuto(tg, g, fecha);
+    const atribuido = r4(tomas.reduce((a, x) => a + x.q, 0));
+    let sinAtribuir = r4(Math.max(0, g.m3 - atribuido));
+    const delGrupo: LineaPropuesta[] = tomas.map((x) => {
+      const c = t.corridas.get(x.fuente.corridaId)!.c;
+      return {
+        grupo: g.clave,
+        especie: g.especie,
+        tipo: g.tipo,
+        producto: g.producto!,
+        m3: x.q,
+        origenM3: x.q,
+        piezas: 0,
+        origen: {
+          corridaId: c.id,
+          lineNo: c.lineNo,
+          fecha: c.fecha,
+          usado: c.usado,
+          sinOrigen: c.sinOrigen,
+          clase: x.fuente.clase,
+          paqueteId: x.fuente.clase === "corrida" ? null : x.fuente.paqueteId,
+          codigo: x.fuente.clase === "corrida" ? null : x.fuente.codigo,
+          presentacion: x.fuente.presentacion,
+          restoM3: x.restoM3,
+          duenoMadera: c.duenoMadera,
+          titularNombre: c.titularNombre,
+        },
+      };
+    });
+    if (g.producto && sinAtribuir > 0) {
+      if (sinAtribuir < TOLERANCIA_ATRIBUCION && delGrupo.length > 0) {
+        /* Menos de un litro: es redondeo, no madera sin origen. La línea
+           declara lo del anexo y atribuye lo que su corrida tenía. */
+        const ultima = delGrupo[delGrupo.length - 1];
+        ultima.m3 = r4(ultima.m3 + sinAtribuir);
+      } else {
+        /* ¿Faltó madera, o la había pero de otro permiso? (ADR-519) */
+        const sinElPermiso = permisoGuia !== null && candidatasDe(t, g, fecha).length > candidatas.length;
+        delGrupo.push({
+          grupo: g.clave, especie: g.especie, tipo: g.tipo, producto: g.producto,
+          m3: sinAtribuir, origenM3: 0, piezas: 0, origen: null,
+          ...(sinElPermiso ? { sinCorridaDelPermiso: permisoGuia } : {}),
+        });
+      }
+    } else if (!g.producto) {
+      sinAtribuir = g.m3;
+    }
+    const piezas = repartirPiezas(g.piezas, delGrupo.map((l) => l.m3));
+    delGrupo.forEach((l, i) => (l.piezas = piezas[i]));
+    lineas.push(...delGrupo);
+    gruposPropuestos.push({
+      ...g,
+      atribuidoM3: atribuido,
+      sinAtribuirM3: sinAtribuir,
+      corridas: [...new Set(tomas.map((x) => x.fuente.corridaId))],
+      candidatas,
+    });
+  }
+
+  /* Lo que la guía saca del stock de I3, para la siguiente de la tanda. */
+  for (const [k, p] of pedidoPorStock) t.stock.set(k, r4((t.stock.get(k) ?? 0) - p.m3));
+
+  const totalM3 = r4(grupos.reduce((a, g) => a + g.m3, 0));
+  const atribuidoM3 = r4(lineas.reduce((a, l) => a + l.origenM3, 0));
+  /* Sólo las líneas que salen sin corrida: los restos de menos de un litro que
+     un grupo absorbió en su última línea ya tienen origen (no se confirman). */
+  const sinOrigenM3 = r4(lineas.reduce((a, l) => a + (l.origen ? 0 : l.m3), 0));
+  const usadas = new Map<string, { corridaId: string; lineNo: number; fecha: string; m3: number }>();
+  for (const l of lineas) {
+    if (!l.origen?.usado) continue;
+    const u = usadas.get(l.origen.corridaId) ?? { corridaId: l.origen.corridaId, lineNo: l.origen.lineNo, fecha: l.origen.fecha, m3: 0 };
+    u.m3 = r4(u.m3 + l.origenM3);
+    usadas.set(u.corridaId, u);
+  }
+  return {
+    anexoId: anexo.id,
+    numero: anexo.numero,
+    gtf: anexo.gtf,
+    fecha,
+    totalM3,
+    totalManualM3: anexo.totalManualM3 ?? null,
+    atribuidoM3,
+    sinAtribuirM3: r4(totalM3 - atribuidoM3),
+    grupos: gruposPropuestos,
+    lineas,
+    bloqueos,
+    registrable: bloqueos.length === 0,
+    partidos: lineas.filter((l) => (l.origen?.restoM3 ?? 0) > 0).length,
+    usadasComoOrigen: [...usadas.values()].sort((a, b) => a.lineNo - b.lineNo),
+    sinOrigenM3,
+    sinOrigenPorConfirmar: sinOrigenM3 > 0,
+  };
+}
+
+/** La propuesta de UNA guía contra el libro de hoy (lo que pasaría si se registra ahora). */
+export function proponerDespachoDeAnexo(
+  anexo: AnexoParaDespacho,
+  estado: EstadoDelLibro,
+  opts: OpcionesDePropuesta = {},
+): PropuestaDeGuia {
+  return proponerEn(trabajoDe(estado), anexo, opts);
+}
+
+// ── Lo que el dueño confirma guía por guía (decisiones 5 y 8) ─────────────
+
+/** `sin_origen` = «regístrala con lo que no tiene corrida» · `usado` = «salió de ese inventario». */
+export type Confirmacion = "sin_origen" | "usado";
+export const CONFIRMACIONES = ["sin_origen", "usado"] as const satisfies readonly Confirmacion[];
+
+/**
+ * Lo que el dueño VIO y confirmó de una guía (ADR-446 r3): una confirmación
+ * vale para ese contenido, no para la palabra. Si después la guía sale con más
+ * m³ sin origen (otra pestaña anuló una corrida, falló una guía de arriba) o
+ * toma una corrida «usado» que no estaba, el alta la bloquea otra vez.
+ */
+export interface ConfirmoDeGuia {
+  /** Los m³ sin corrida de origen que se veían al confirmar. */
+  sinOrigenM3?: number;
+  /** Las corridas «usado» (id) que se veían como origen al confirmar. */
+  usadas?: readonly string[];
+}
+
+/** Holgura del sin origen confirmado: una milésima (lo que se ve en pantalla). */
+export const HOLGURA_CONFIRMO_M3 = 0.001;
+
+type ParaConfirmar = Partial<Pick<PropuestaDeGuia, "sinOrigenPorConfirmar" | "sinOrigenM3" | "usadasComoOrigen">>;
+
+/** Lo que ESTA propuesta pide confirmar antes de registrarla. La tanda no lo cuenta como bloqueo: sólo el alta. */
+export function confirmacionesDe(p: ParaConfirmar): Confirmacion[] {
+  const out: Confirmacion[] = [];
+  if (p.sinOrigenPorConfirmar) out.push("sin_origen");
+  if ((p.usadasComoOrigen?.length ?? 0) > 0) out.push("usado");
+  return out;
+}
+
+/** La marca cubre lo que la propuesta lleva HOY (la misma regla en la pantalla y bajo el lock). */
+export function cubre(p: ParaConfirmar, conf: ConfirmoDeGuia | undefined, c: Confirmacion): boolean {
+  if (!conf) return false;
+  if (c === "sin_origen") {
+    return conf.sinOrigenM3 != null && Number.isFinite(conf.sinOrigenM3) && r4(p.sinOrigenM3 ?? Number.NaN) <= r4(conf.sinOrigenM3 + HOLGURA_CONFIRMO_M3);
+  }
+  const vistas = new Set(conf.usadas ?? []);
+  return (p.usadasComoOrigen ?? []).every((u) => vistas.has(u.corridaId));
+}
+
+/** Lo que la guía pide y la marca no cubre. */
+export function faltanConfirmar(p: ParaConfirmar, conf: ConfirmoDeGuia | undefined): Confirmacion[] {
+  return confirmacionesDe(p).filter((c) => !cubre(p, conf, c));
+}
+
+/** Tildar o destildar una casilla: guarda lo que se ve AHORA de esa guía. */
+export function marcarConfirmo(
+  p: Pick<PropuestaDeGuia, "sinOrigenM3" | "usadasComoOrigen">,
+  conf: ConfirmoDeGuia | undefined,
+  c: Confirmacion,
+): ConfirmoDeGuia | undefined {
+  const nuevo: ConfirmoDeGuia = { ...conf };
+  if (cubre(p, conf, c)) {
+    if (c === "sin_origen") delete nuevo.sinOrigenM3;
+    else delete nuevo.usadas;
+  } else if (c === "sin_origen") {
+    nuevo.sinOrigenM3 = p.sinOrigenM3;
+  } else {
+    nuevo.usadas = p.usadasComoOrigen.map((u) => u.corridaId);
+  }
+  return nuevo.sinOrigenM3 == null && nuevo.usadas == null ? undefined : nuevo;
+}
+
+/**
+ * La marca, sólo si la guía sigue diciendo lo mismo que cuando se tildó: al
+ * releer la lista, lo que cambió se suelta y vuelve a pedirse (aunque haya
+ * bajado: el dueño confirma lo que ve).
+ */
+export function confirmoVigente(
+  p: ParaConfirmar,
+  conf: ConfirmoDeGuia | undefined,
+): ConfirmoDeGuia | undefined {
+  if (!conf) return undefined;
+  const nuevo: ConfirmoDeGuia = {};
+  if (conf.sinOrigenM3 != null && p.sinOrigenPorConfirmar && r4(p.sinOrigenM3 ?? Number.NaN) === r4(conf.sinOrigenM3)) {
+    nuevo.sinOrigenM3 = conf.sinOrigenM3;
+  }
+  const hoy = (p.usadasComoOrigen ?? []).map((u) => u.corridaId).sort();
+  const vistas = [...(conf.usadas ?? [])].sort();
+  if (conf.usadas != null && hoy.length > 0 && hoy.join("|") === vistas.join("|")) nuevo.usadas = conf.usadas;
+  if (nuevo.sinOrigenM3 === conf.sinOrigenM3 && nuevo.usadas === conf.usadas) return conf; // nada se soltó: la misma referencia
+  return nuevo.sinOrigenM3 == null && nuevo.usadas == null ? undefined : nuevo;
+}
+
+/** «N° 3 y N° 5 del 01/08/2026». */
+export function corridasUsadasLegibles(usadas: PropuestaDeGuia["usadasComoOrigen"]): string {
+  const porFecha = new Map<string, number[]>();
+  for (const u of usadas) porFecha.set(u.fecha, [...(porFecha.get(u.fecha) ?? []), u.lineNo]);
+  return [...porFecha]
+    .map(([f, ns]) => `${ns.length > 1 ? "las corridas" : "la corrida"} ${ns.map((n) => `N° ${n}`).join(", ")} del ${fechaCorta(f)}`)
+    .join(" y ");
+}
+
+/**
+ * Lo que falta confirmar, como bloqueo del alta. El servidor lo vuelve a
+ * calcular con la propuesta de AHORA y lo compara con lo que el dueño vio:
+ * más sin origen que lo confirmado (+ una milésima) o una corrida «usado» que
+ * no estaba en su pantalla = bloqueada.
+ */
+export function faltaConfirmar(p: PropuestaDeGuia, confirmo?: ConfirmoDeGuia): BloqueoDeGuia[] {
+  const out: BloqueoDeGuia[] = [];
+  for (const c of faltanConfirmar(p, confirmo)) {
+    if (c === "sin_origen") {
+      const visto = confirmo?.sinOrigenM3;
+      /* Había corridas, pero de otro permiso (ADR-519): «anota la producción que
+         falta» mandaba a anotar madera que el libro ya tiene. */
+      const permisoSinCorrida = p.lineas.find((l) => !l.origen && l.sinCorridaDelPermiso)?.sinCorridaDelPermiso;
+      out.push({
+        codigo: "FALTA_CONFIRMAR_SIN_ORIGEN",
+        mensaje:
+          visto != null
+            ? `Confirmaste ${fmtM3(visto)} m³ sin corrida de origen y ahora son ${fmtM3(p.sinOrigenM3)} m³: el libro cambió. Revísala y vuelve a confirmar.`
+            : permisoSinCorrida
+              ? `${fmtM3(p.sinOrigenM3)} m³ de esta guía no tienen corrida de origen del permiso ${permisoSinCorrida} (las de otro permiso no valen): anota antes la producción de su permiso o confirma que se registra así.`
+              : `${fmtM3(p.sinOrigenM3)} m³ de esta guía no tienen corrida de origen: anota antes la producción que falta o confirma que se registra así.`,
+        m3: p.sinOrigenM3,
+      });
+    } else {
+      const vistas = new Set(confirmo?.usadas ?? []);
+      const nuevas = p.usadasComoOrigen.filter((u) => !vistas.has(u.corridaId));
+      const m = r4(nuevas.reduce((a, u) => a + u.m3, 0));
+      out.push({
+        codigo: "FALTA_CONFIRMAR_USADO",
+        mensaje: `Toma ${fmtM3(m)} m³ de ${corridasUsadasLegibles(nuevas)}, marcada${nuevas.length > 1 ? "s" : ""} «usado»${vistas.size > 0 ? " (no estaba cuando confirmaste)" : ""}: confirma que salió de ese inventario o elige otro origen.`,
+        m3: m,
+      });
+    }
+  }
+  return out;
+}
+
+// ── Pendientes y tanda ────────────────────────────────────────────────────
+
+/** El correlativo de la guía (último tramo numérico), para ordenar la tanda. */
+const correlativo = (gtf: string): number => Number(/(\d+)\D*$/.exec(gtf ?? "")?.[1] ?? Number.NaN);
+
+/** ¿Este anexo ya está en el libro? Por sus despachos vigentes, o por el despacho del que se emitió. */
+export function anexoRegistrado(a: AnexoParaDespacho, vigentes: ReadonlySet<string>): boolean {
+  return (a.despachoIds ?? []).some((id) => vigentes.has(id)) || (a.ctpEntryId != null && vigentes.has(a.ctpEntryId));
+}
+
+export interface AnexoReemplazado {
+  anexoId: string;
+  numero: string;
+  gtf: string;
+  /** El anexo que vale (de la misma guía o, si el dueño dijo «no es de esta guía», de la otra). */
+  por: string;
+  porNumero: string;
+  /** La guía del anexo que vale, cuando es OTRA (el mismo papel guardado en dos guías). */
+  porGtf?: string;
+  /** Ya está marcado en el registro (no es sólo la propuesta). */
+  marcado: boolean;
+}
+
+export interface ClasificacionDeAnexos {
+  /** Los que faltan registrar, en el orden de la tanda (el más viejo primero). */
+  pendientes: AnexoParaDespacho[];
+  reemplazados: AnexoReemplazado[];
+  registrados: AnexoParaDespacho[];
+  /** Sin N° de guía: no hay salida que registrar. */
+  sinGuia: AnexoParaDespacho[];
+}
+
+/**
+ * Qué anexos faltan registrar. Dos anexos de la MISMA guía (por tramos:
+ * `019-001-…` ≡ `19-001-…`) son el mismo papel emitido dos veces: vale el que
+ * ya está registrado o, si ninguno, el más reciente (decisión 1: la 064 viajó
+ * con el de 256 piezas). El otro queda «reemplazado» — no se borra.
+ */
+export function clasificarAnexos(
+  anexos: readonly AnexoParaDespacho[],
+  vigentes: ReadonlySet<string>,
+): ClasificacionDeAnexos {
+  const registrados: AnexoParaDespacho[] = [];
+  const sinGuia: AnexoParaDespacho[] = [];
+  const reemplazados: AnexoReemplazado[] = [];
+  const conGuia = anexos.filter((a) => {
+    if (!a.gtf?.trim()) {
+      sinGuia.push(a);
+      return false;
+    }
+    return true;
+  });
+  const porId = new Map(anexos.map((a) => [a.id, a]));
+  const pendientes: AnexoParaDespacho[] = [];
+  const vistos = new Set<string>();
+  for (const a of conGuia) {
+    if (vistos.has(a.id)) continue;
+    const misma = conGuia.filter((b) => !vistos.has(b.id) && mismoNumeroGtf(a.gtf, b.gtf));
+    misma.forEach((b) => vistos.add(b.id));
+    const registrado = misma.find((b) => anexoRegistrado(b, vigentes));
+    const vivos = misma.filter((b) => !b.reemplazadoPor || !porId.has(b.reemplazadoPor));
+    /* Todos marcados y alguno por un anexo de OTRA guía (el dueño dijo «este
+       papel no es de esta guía», `anexo-dudas`): la guía no tiene salida
+       propia que registrar. Si las marcas sólo se apuntan entre sí (un
+       ciclo), vale la regla de siempre. */
+    if (!registrado && vivos.length === 0 && misma.some((b) => !misma.some((m) => m.id === b.reemplazadoPor))) {
+      for (const b of misma) {
+        const por = porId.get(b.reemplazadoPor ?? "");
+        reemplazados.push({
+          anexoId: b.id, numero: b.numero, gtf: b.gtf, por: por?.id ?? "", porNumero: por?.numero ?? "",
+          ...(por && !mismoNumeroGtf(por.gtf, b.gtf) ? { porGtf: por.gtf } : {}),
+          marcado: true,
+        });
+      }
+      continue;
+    }
+    const vale =
+      registrado ??
+      [...(vivos.length ? vivos : misma)].sort((x, y) => (y.createdAt ?? "").localeCompare(x.createdAt ?? ""))[0];
+    for (const b of misma) {
+      if (b.id === vale.id) continue;
+      if (anexoRegistrado(b, vigentes)) {
+        registrados.push(b);
+        continue;
+      }
+      reemplazados.push({
+        anexoId: b.id, numero: b.numero, gtf: b.gtf, por: vale.id, porNumero: vale.numero,
+        marcado: b.reemplazadoPor === vale.id,
+      });
+    }
+    (registrado ? registrados : pendientes).push(vale);
+  }
+  pendientes.sort(
+    (a, b) =>
+      a.fecha.localeCompare(b.fecha) ||
+      (correlativo(a.gtf) || 0) - (correlativo(b.gtf) || 0) ||
+      (a.createdAt ?? "").localeCompare(b.createdAt ?? ""),
+  );
+  return { pendientes, reemplazados, registrados, sinGuia };
+}
+
+export interface PropuestaDeTanda {
+  guias: PropuestaDeGuia[];
+  resumen: {
+    guias: number;
+    registrables: number;
+    totalM3: number;
+    atribuidoM3: number;
+    sinAtribuirM3: number;
+    lineas: number;
+    partidos: number;
+  };
+  /**
+   * Corridas «usado» que la tanda toma como origen y a las que les queda
+   * saldo: al registrar, ese resto vuelve a Productos disponibles (decisión 6).
+   */
+  usadasConResto: { corridaId: string; lineNo: number; restoM3: number }[];
+  /**
+   * Para registrar TODAS (menos las que tienen una duda sin contestar): la
+   * producción que el libro no tiene, por especie. Responde «¿de dónde salió
+   * esto?» antes de ir guía por guía (decisión 5: si salió del inventario del
+   * 1 de agosto, se anota ese inventario; si no, la corrida que falta).
+   */
+  faltaProduccion: FaltaDeProduccion[];
+  /**
+   * Corridas «usado» con saldo que NINGUNA guía de la tanda explica. No se
+   * tocan solas (decisión 4): pueden ser un ajuste o una merma. La pantalla
+   * las muestra para que el dueño decida si también vuelven al patio.
+   */
+  usadasSinGuia: { corridaId: string; lineNo: number; restoM3: number }[];
+}
+
+/**
+ * La tanda: guía por guía, la más vieja primero, cada una sobre lo que dejó la
+ * anterior — igual que se van a registrar. Una guía bloqueada no consume nada.
+ */
+export function proponerTanda(
+  anexos: readonly AnexoParaDespacho[],
+  estado: EstadoDelLibro,
+  opts: {
+    elecciones?: Readonly<Record<string, readonly EleccionDeOrigen[]>>;
+    claveStock?: OpcionesDePropuesta["claveStock"];
+    /** anexoId → por qué está en duda (`anexo-dudas`): se muestra, no se registra ni consume. */
+    enDuda?: ReadonlyMap<string, string>;
+  } = {},
+): PropuestaDeTanda {
+  let t = trabajoDe(estado);
+  const stockInicial = new Map(t.stock);
+  const guias: PropuestaDeGuia[] = [];
+  const usadasTocadas = new Set<string>();
+  for (const a of anexos) {
+    const prueba = copiar(t);
+    const p = proponerEn(prueba, a, { elecciones: opts.elecciones?.[a.id], claveStock: opts.claveStock });
+    const duda = opts.enDuda?.get(a.id);
+    if (duda) {
+      p.bloqueos.unshift({ codigo: "ANEXO_EN_DUDA", mensaje: duda });
+      p.registrable = false;
+    }
+    guias.push(p);
+    if (p.registrable) {
+      t = prueba;
+      p.usadasComoOrigen.forEach((u) => usadasTocadas.add(u.corridaId));
+    }
+  }
+  const usadasConResto = [...usadasTocadas]
+    .map((id) => {
+      const x = t.corridas.get(id)!;
+      return { corridaId: id, lineNo: x.c.lineNo, restoM3: x.saldo };
+    })
+    .filter((u) => u.restoM3 > 0)
+    .sort((a, b) => a.lineNo - b.lineNo);
+  const usadasSinGuia = [...t.corridas.values()]
+    .filter((x) => x.c.usado && !usadasTocadas.has(x.c.id) && x.saldo > 0)
+    .map((x) => ({ corridaId: x.c.id, lineNo: x.c.lineNo, restoM3: x.saldo }))
+    .sort((a, b) => a.lineNo - b.lineNo);
+  const suma = (f: (g: PropuestaDeGuia) => number) => r4(guias.reduce((a, g) => a + f(g), 0));
+  const faltaProduccion = faltaDeProduccion(
+    guias.filter((g) => !opts.enDuda?.has(g.anexoId)),
+    stockInicial,
+    opts.claveStock ?? claveStockPorDefecto,
+  );
+  return {
+    guias,
+    resumen: {
+      guias: guias.length,
+      registrables: guias.filter((g) => g.registrable).length,
+      totalM3: suma((g) => g.totalM3),
+      atribuidoM3: suma((g) => g.atribuidoM3),
+      sinAtribuirM3: suma((g) => g.sinAtribuirM3),
+      lineas: guias.reduce((a, g) => a + g.lineas.length, 0),
+      partidos: guias.reduce((a, g) => a + g.partidos, 0),
+    },
+    usadasConResto,
+    usadasSinGuia,
+    faltaProduccion,
+  };
+}
+
+export interface FaltaDeProduccion {
+  especie: string;
+  /** Lo que las guías llevan de esa especie (todos sus tipos: I3 los cuenta juntos). */
+  pedidoM3: number;
+  /** Lo que el libro tiene sin despachar hoy. */
+  stockM3: number;
+  faltaM3: number;
+  /** Las guías que llevan esa especie, en el orden de la tanda. */
+  guias: string[];
+  /** La fecha de la guía más vieja que la lleva: la producción tiene que ser de ese día o antes. */
+  fechaTope: string;
+}
+
+/** Lo que pide la tanda entera contra lo que hay, por clave de I3. Sólo lo que falta. */
+function faltaDeProduccion(
+  guias: readonly PropuestaDeGuia[],
+  stock: ReadonlyMap<string, number>,
+  claveStock: NonNullable<OpcionesDePropuesta["claveStock"]>,
+): FaltaDeProduccion[] {
+  const por = new Map<string, { especie: string; m3: number; guias: string[]; fechaTope: string }>();
+  for (const g of guias) {
+    for (const gr of g.grupos) {
+      if (!gr.claveEspecie || !gr.producto) continue;
+      const k = claveStock(gr.producto, gr.especie);
+      const x = por.get(k) ?? { especie: gr.especie, m3: 0, guias: [], fechaTope: g.fecha };
+      x.m3 = r4(x.m3 + gr.m3);
+      if (!x.guias.includes(g.gtf)) x.guias.push(g.gtf);
+      if (g.fecha < x.fechaTope) x.fechaTope = g.fecha;
+      por.set(k, x);
+    }
+  }
+  return [...por]
+    .map(([k, x]) => {
+      const stockM3 = r4(Math.max(0, stock.get(k) ?? 0));
+      return { especie: x.especie, pedidoM3: x.m3, stockM3, faltaM3: r4(x.m3 - stockM3), guias: x.guias, fechaTope: x.fechaTope };
+    })
+    .filter((x) => x.faltaM3 > 0)
+    .sort((a, b) => b.faltaM3 - a.faltaM3 || a.especie.localeCompare(b.especie));
+}

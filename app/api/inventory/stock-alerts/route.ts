@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { InventoryStockAlertsDB } from "@/lib/db/inventory-stock-alerts.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { enStockBajo, stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 // GET — Consolida 4 tipos de alertas de stock
 export async function GET(req: NextRequest) {
@@ -20,10 +22,11 @@ export async function GET(req: NextRequest) {
     // Audit project-wide 2026-05-19: migrado a InventoryStockAlertsDB.
     // 1+2+4 run in parallel — they share no input dependency.
     // 3 (sinMovimiento) depends on allActiveProducts so stays sequential after.
-    const [sinStockProducts, allActiveProducts, porVencerBatches] = await Promise.all([
+    const [sinStockProducts, allActiveProducts, porVencerBatches, minimoGlobal] = await Promise.all([
       InventoryStockAlertsDB.listOutOfStockProducts(tenantId, 100),
       InventoryStockAlertsDB.listActiveProductsWithStock(tenantId),
       InventoryStockAlertsDB.listExpiringBatches(tenantId, today, sevenDaysAhead, 100),
+      minimoGlobalDelNegocio(tenantId),
     ]);
 
     // Get last sale date for each sin-stock product
@@ -44,14 +47,17 @@ export async function GET(req: NextRequest) {
       lastSaleDate: lastSaleMap.get(p.id)?.toISOString() ?? null,
     }));
 
+    // Un solo stock mínimo (09-10): el propio o el global del negocio (antes
+    // sólo los que tenían mínimo propio). Esta lista ya trae stock > 0: los
+    // agotados van en «sinStock».
     const stockCritico = allActiveProducts
-      .filter(p => p.stockMin != null && p.stockMin > 0 && (p.stock ?? 0) <= p.stockMin)
+      .filter(p => enStockBajo(p, minimoGlobal))
       .slice(0, 100)
       .map(p => ({
         id: p.id,
         name: p.name,
         stock: p.stock ?? 0,
-        stockMin: p.stockMin ?? 0,
+        stockMin: stockMinimoDe(p, minimoGlobal),
         category: p.category,
       }));
 

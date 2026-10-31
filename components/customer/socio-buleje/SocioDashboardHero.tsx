@@ -1,20 +1,14 @@
 "use client";
 
 /**
- * SocioDashboardHero — Hero del panel del socio.
+ * SocioDashboardHero — Hero del panel del socio (rediseño 2026-07-04, coherente
+ * con la landing premium: gradiente teal de marca + corona shipibo + estado).
  *
- * Saludo + badge de membresía + fecha de vencimiento + CTA "Renovar".
+ * Saludo + badge de estado + fecha de renovación + plan + CTA "Renovar/Reactivar".
  */
 
-import {
-  PageTitle,
-  BodyText,
-  Caption,
-  IconBadge,
-  PrimaryButton,
-  BadgeStatus,
-} from "@buleje/design-system";
-import { Sparkles, CalendarClock } from "@buleje/design-system/icons";
+import { PrimaryButton } from "@buleje/design-system";
+import { Sparkles, CalendarClock, CreditCard } from "@buleje/design-system/icons";
 import { useSocioBuleje } from "@/contexts/socio-buleje-context";
 import { SocioCorona } from "@/components/ui-system/illustrations";
 
@@ -37,95 +31,82 @@ export function SocioDashboardHero({ name = "Socio" }: { name?: string }) {
   const isTrial = status === "trial";
   const firstName = name.split(" ")[0] ?? "Socio";
 
+  const statusLabel = isCanceled
+    ? "Membresía en cancelación"
+    : isTrial
+      ? "Trial activo"
+      : "Socio activo";
+
   return (
-    <section className="relative overflow-hidden border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
-      <div
-        className="absolute inset-0 pointer-events-none opacity-30"
-        style={{
-          background:
-            "radial-gradient(50% 30% at 80% 20%, color-mix(in oklch, var(--accent) 18%, transparent) 0%, transparent 70%)",
-        }}
-        aria-hidden
-      />
-      <div className="relative mx-auto max-w-5xl px-4 py-10 lg:py-12">
-        <div className="flex items-start justify-between gap-6 flex-wrap">
-          <div className="flex-1 min-w-0 space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <IconBadge size="lg" intent="success" asDiv>
-                <Sparkles className="h-5 w-5" aria-hidden />
-              </IconBadge>
-              <BadgeStatus
-                variant={isCanceled ? "warning" : "success"}
-                label={
-                  isCanceled
-                    ? "Membresía en cancelación"
-                    : isTrial
-                      ? "Trial activo"
-                      : "Socio activo"
-                }
-                dot
-                pulse={!isCanceled}
-              />
-            </div>
+    <section
+      className="relative overflow-hidden bg-[var(--accent)]"
+      style={{
+        backgroundImage:
+          "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 55%, #0d3b3b 100%)",
+      }}
+    >
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 right-10 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+      </div>
 
-            <div>
-              <Caption className="font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Bienvenido
-              </Caption>
-              <PageTitle className="mt-1">
-                {firstName}, sos Socio Buleje
-              </PageTitle>
-            </div>
+      <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-8 px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
+        {/* Copy */}
+        <div className="min-w-0 flex-1 text-white">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[var(--ls-wider)] ring-1 ring-inset backdrop-blur ${
+              isCanceled
+                ? "bg-amber-400/20 text-amber-100 ring-amber-200/30"
+                : "bg-white/15 text-white ring-white/25"
+            }`}
+          >
+            <span className={`h-2 w-2 rounded-full ${isCanceled ? "bg-amber-300" : "animate-pulse bg-emerald-300"}`} />
+            {statusLabel}
+          </span>
 
-            <BodyText className="text-[var(--text-secondary)] max-w-lg">
-              Tus beneficios están activos. Delivery gratis, 5% de cashback y
-              precios exclusivos en cada pedido del marketplace.
-            </BodyText>
+          <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[var(--ls-wider)] text-white/70">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+            Bienvenido
+          </p>
+          <h1 className="mt-1 text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+            {firstName}, sos Socio Buleje
+          </h1>
+          <p className="mt-3 max-w-lg text-base leading-relaxed text-white/85">
+            Tus beneficios están activos. Delivery gratis, 5% de cashback y precios
+            exclusivos en cada pedido del marketplace.
+          </p>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="inline-flex items-center gap-2 py-1.5 px-3 rounded-lg border border-[var(--rule-muted)] bg-[var(--surface-sunken)]">
-                <CalendarClock
-                  className="h-3.5 w-3.5 text-[var(--text-tertiary)]"
-                  aria-hidden
-                />
-                <Caption className="text-[var(--text-secondary)]">
-                  {isCanceled ? "Vence el" : "Renovación el"}{" "}
-                  <span className="font-semibold text-[var(--text-primary)]">
-                    {fmtDate(membershipEnd)}
-                  </span>
-                </Caption>
-              </div>
-              {plan && (
-                <div className="inline-flex items-center gap-2 py-1.5 px-3 rounded-lg border border-[var(--rule-muted)] bg-[var(--surface-sunken)]">
-                  <Caption className="text-[var(--text-secondary)]">
-                    Plan{" "}
-                    <span className="font-semibold text-[var(--text-primary)]">
-                      {plan === "yearly" ? "Anual" : "Mensual"}
-                    </span>
-                  </Caption>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="shrink-0 flex flex-col items-center gap-3">
-            {/* Ilustración editorial — corona con identidad shipibo */}
-            <div
-              className="hidden sm:flex text-[var(--text-secondary)] opacity-90"
-              aria-hidden="true"
-            >
-              <SocioCorona size={120} />
-            </div>
-            {isCanceled ? (
-              <PrimaryButton onClick={() => resume()}>
-                Reactivar membresía
-              </PrimaryButton>
-            ) : (
-              <PrimaryButton variant="secondary">
-                Renovar anticipado
-              </PrimaryButton>
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm ring-1 ring-inset ring-white/20 backdrop-blur">
+              <CalendarClock className="h-3.5 w-3.5 text-white/70" aria-hidden />
+              <span className="text-white/80">{isCanceled ? "Vence el" : "Renovación el"}</span>
+              <span className="font-bold text-white">{fmtDate(membershipEnd)}</span>
+            </span>
+            {plan && (
+              <span className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm ring-1 ring-inset ring-white/20 backdrop-blur">
+                <CreditCard className="h-3.5 w-3.5 text-white/70" aria-hidden />
+                <span className="text-white/80">Plan</span>
+                <span className="font-bold text-white">{plan === "yearly" ? "Anual" : "Mensual"}</span>
+              </span>
             )}
           </div>
+        </div>
+
+        {/* Corona + CTA */}
+        <div className="flex shrink-0 flex-col items-center gap-4">
+          <div className="text-white/90 drop-shadow-[0_8px_20px_rgba(0,0,0,0.25)]" aria-hidden="true">
+            <SocioCorona size={130} />
+          </div>
+          {isCanceled ? (
+            <PrimaryButton onClick={() => resume()}>Reactivar membresía</PrimaryButton>
+          ) : (
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[var(--accent-dark)] dark:text-[var(--accent)] shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md"
+            >
+              Renovar anticipado
+            </button>
+          )}
         </div>
       </div>
     </section>

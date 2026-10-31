@@ -35,7 +35,8 @@ export interface NubefactComprobantePayload {
   tipo_de_comprobante: 1 | 2 | 3 | 4;
   serie: string;
   numero: number;
-  sunat_transaction: 1;
+  /** 1 = venta interna; 30 = venta sujeta a detracción (SPOT). */
+  sunat_transaction: 1 | 30;
   cliente_tipo_de_documento: number; // 1=DNI, 6=RUC
   cliente_numero_de_documento: string;
   cliente_denominacion: string;
@@ -60,6 +61,12 @@ export interface NubefactComprobantePayload {
   items: NubefactItem[];
   observaciones: string;
   formato_de_pdf: "A4" | "ticket";
+  // Campos opcionales de detracción (SPOT). Sólo cuando sunat_transaction = 30.
+  detraccion?: boolean;
+  detraccion_tipo?: number;        // 8 = Madera (Catálogo 54 -> 008)
+  detraccion_porcentaje?: number;  // 4
+  detraccion_total?: number;       // monto depositado en el Banco de la Nación
+  medio_de_pago_detraccion?: number; // 1 = Depósito en cuenta (Catálogo 59 -> 001)
   // Campos opcionales para nota de crédito
   motivo?: string;
   documento_que_se_modifica_tipo?: number;

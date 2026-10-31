@@ -131,6 +131,56 @@ export const CreditDB = {
   },
 
   /**
+   * Otorga/actualiza la línea de crédito de un cliente al APROBAR una solicitud
+   * (Frente 3). Fija `manualCreditLimit` (override que el scoring engine honra —
+   * ver `updateCreditProfile`) + `creditLimit`/`availableCredit` para desbloquear
+   * el fiado en checkout de inmediato. Upsert idempotente.
+   *
+   * `manualCreditLimit` vive fuera de schema.prisma → se escribe por raw SQL.
+   */
+  async grantLimit(
+    tenantId: string,
+    customerId: string,
+    limit: number,
+    customerName?: string | null,
+  ): Promise<void> {
+    const existing = await prisma.creditProfile.findUnique({
+      where: { tenantId_customerId: { tenantId, customerId } },
+      select: { usedCredit: true },
+    });
+    const used = toNumOrZero(existing?.usedCredit);
+    const available = Math.max(0, limit - used);
+
+    await prisma.creditProfile.upsert({
+      where: { tenantId_customerId: { tenantId, customerId } },
+      create: {
+        tenantId,
+        customerId,
+        creditScore: 0,
+        creditLimit: limit,
+        usedCredit: 0,
+        availableCredit: limit,
+        riskLevel: "low",
+        isActive: true,
+      },
+      update: {
+        creditLimit: limit,
+        availableCredit: available,
+        isActive: true,
+      },
+    });
+
+    // Override manual (columna out-of-schema) — que el recálculo del score no lo pise.
+    void customerName; // reservado para futura auditoría; el perfil no guarda el nombre
+    await prisma.$executeRawUnsafe(
+      `UPDATE "CreditProfile" SET "manualCreditLimit" = $1 WHERE "tenantId" = $2 AND "customerId" = $3`,
+      limit,
+      tenantId,
+      customerId,
+    );
+  },
+
+  /**
    * Lista los planes de cuotas de un perfil crediticio.
    */
   async getInstallments(

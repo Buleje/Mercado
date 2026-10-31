@@ -10,6 +10,7 @@ import {
   ZoomIn, FolderOpen,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 interface BankItem { id: string; name: string; imageUrl: string }
 interface BankCategory { id: string; name: string; description?: string; items: BankItem[] }
@@ -76,13 +77,13 @@ export default function ImageBankClient() {
           {loading ? "Cargando…" : (
             <>
               <strong>{categories.length}</strong> categorías ·{" "}
-              <strong>{totalItems}</strong> items · <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong> con foto
+              <strong>{totalItems}</strong> ítems · <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong> con foto
             </>
           )}
         </div>
         <button
           onClick={() => setShowNewCat(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nueva categoría
@@ -113,7 +114,7 @@ export default function ImageBankClient() {
         <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-10 text-center">
           <ImageIcon className="w-8 h-8 text-[var(--text-tertiary)] mx-auto mb-3" />
           <p className="text-sm text-[var(--text-secondary)] font-medium">
-            Aún no hay categorías. Creá la primera para empezar.
+            Aún no hay categorías. Crea la primera.
           </p>
         </div>
       )}
@@ -182,7 +183,7 @@ function NewCategoryModal({ open, onOpenChange, onSaved }: { open: boolean; onOp
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ej: Cevichería, Cafetería, Bar…"
                 autoFocus
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </label>
             <label className="block">
@@ -191,14 +192,14 @@ function NewCategoryModal({ open, onOpenChange, onSaved }: { open: boolean; onOp
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Opcional — qué tipo de productos incluye"
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </label>
             {err && <p className="text-xs text-[var(--data-error-500)] flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{err}</p>}
           </div>
           <div className="px-5 py-4 border-t border-[var(--rule-soft)] flex justify-end gap-2">
-            <button onClick={() => onOpenChange(false)} className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-            <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50">
+            <button onClick={() => onOpenChange(false)} className="px-4 min-h-10 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+            <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 disabled:opacity-50">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Crear
             </button>
@@ -282,28 +283,26 @@ function CategorySummaryCard({
 
         <div className="p-3 flex items-start gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{category.name}</h3>
+            <div className="flex items-center gap-1">
+              <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{category.name}</h3>
+              {category.description && <InfoTip title={category.name} what={category.description} side="bottom" />}
+            </div>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-              {category.items.length} item{category.items.length === 1 ? "" : "s"}
-              {" · "}
-              <strong className="text-[var(--data-success-500)]">{itemsWithImage} con foto</strong>
+              <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong>/{category.items.length} con foto
             </p>
-            {category.description && (
-              <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">{category.description}</p>
-            )}
           </div>
           <div className="flex flex-col gap-1 shrink-0">
             <button
               onClick={onOpen}
               title="Abrir"
-              className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+              className="p-1.5 rounded-xl text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
             >
               <FolderOpen className="h-4 w-4" />
             </button>
             <button
               onClick={() => setConfirmRemove(true)}
               title="Eliminar categoría"
-              className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5 transition-colors"
+              className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5 transition-colors"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -363,14 +362,14 @@ function CategoryDetailModal({
         >
           <div className="px-6 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between gap-3 shrink-0">
             <div className="min-w-0">
-              <Dialog.Title className="text-lg font-extrabold text-[var(--text-primary)] truncate">
-                {category.name}
-              </Dialog.Title>
+              <div className="flex items-center gap-1.5">
+                <Dialog.Title className="text-lg font-extrabold text-[var(--text-primary)] truncate">
+                  {category.name}
+                </Dialog.Title>
+                {category.description && <InfoTip title={category.name} what={category.description} side="bottom" />}
+              </div>
               <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                {category.items.length} item{category.items.length === 1 ? "" : "s"}
-                {" · "}
-                <strong className="text-[var(--data-success-500)]">{itemsWithImage} con foto</strong>
-                {category.description ? ` · ${category.description}` : ""}
+                <strong className="text-[var(--data-success-500)]">{itemsWithImage}</strong>/{category.items.length} con foto
               </p>
             </div>
             <Dialog.Close className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] shrink-0" aria-label="Cerrar">
@@ -390,7 +389,7 @@ function CategoryDetailModal({
                 <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center">
                   <Camera className="h-7 w-7 text-[var(--text-tertiary)] mx-auto mb-2" />
                   <p className="text-sm text-[var(--text-secondary)] font-medium">
-                    Esta categoría aún no tiene items.
+                    Esta categoría aún no tiene ítems.
                   </p>
                 </div>
               )
@@ -409,14 +408,14 @@ function CategoryDetailModal({
             {!showAdd && (
               <button
                 onClick={() => setShowAdd(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90"
+                className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />
                 Agregar item
               </button>
             )}
             <Dialog.Close asChild>
-              <button className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">
+              <button className="px-4 min-h-10 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]">
                 Cerrar
               </button>
             </Dialog.Close>
@@ -491,7 +490,7 @@ function ConfirmDialog({
             <AlertDialog.Cancel asChild>
               <button
                 disabled={loading}
-                className="px-4 py-2 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+                className="px-4 min-h-10 rounded-xl text-sm font-medium border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               >
                 {cancelLabel}
               </button>
@@ -621,7 +620,7 @@ function ItemCard({ categoryId, item, onChanged }: { categoryId: string; item: B
       <div className="p-2.5">
         <p className="text-xs font-bold text-[var(--text-primary)] truncate" title={item.name}>{item.name}</p>
         <div className="flex justify-between gap-1 mt-1.5">
-          <button onClick={() => setEditing(true)} className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-primary border border-primary/30 hover:bg-primary/5">
+          <button onClick={() => setEditing(true)} className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30 hover:bg-primary/5">
             <Pencil className="h-3 w-3" /> {safeUrl ? "Editar" : "Subir foto"}
           </button>
           <button
@@ -686,7 +685,7 @@ function ItemForm({
 
   const submit = async () => {
     if (!name.trim()) { setErr("Nombre obligatorio"); return; }
-    if (!imageUrl) { setErr("Subí una imagen"); return; }
+    if (!imageUrl) { setErr("Sube una imagen"); return; }
     setSaving(true);
     try {
       const url = isNew
@@ -724,7 +723,7 @@ function ItemForm({
         onChange={(e) => setName(e.target.value)}
         placeholder="Nombre del item (ej: Inca Kola 500ml)"
         autoFocus
-        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary"
+        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary"
       />
       <ImageDropzone value={imageUrl} onChange={setImageUrl} />
       {err && <p className="text-xs text-[var(--data-error-500)]">{err}</p>}
@@ -812,7 +811,7 @@ function ImageDropzone({ value, onChange }: { value: string; onChange: (url: str
             ) : (
               <>
                 <Upload className="h-6 w-6 text-[var(--text-tertiary)] mb-1" />
-                <p className="text-xs font-bold text-[var(--text-primary)]">Arrastrá una imagen o click</p>
+                <p className="text-xs font-bold text-[var(--text-primary)]">Arrastra una imagen o haz clic</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">JPG · PNG · WebP — optimizada a WebP automáticamente</p>
               </>
             )}

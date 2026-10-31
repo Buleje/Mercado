@@ -5,6 +5,11 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { leerJson } from "@/lib/errores/sin-dato";
+import {
+  CamposPersonalizadosDB,
+  type RegistrosDeUnaPersona,
+} from "@/lib/db/campos-personalizados.db";
 
 /**
  * POST /api/compliance/data-export
@@ -41,7 +46,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   if (!body) {
     return NextResponse.json(
       { error: "Cuerpo de solicitud inválido" },
@@ -87,7 +92,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch ALL related data in parallel
-    const [orders, sales, fiados, savedLocations, notifications, sunatInvoices, prestamos] =
+    const [orders, sales, fiados, savedLocations, notifications, sunatInvoices, prestamos,
+           partesDelDirectorio] =
       await Promise.all([
         prisma.order.findMany({
           where: { tenantId, customerPhone: customer.phone },
@@ -123,7 +129,55 @@ export async function POST(req: NextRequest) {
           where: { tenantId, customerId: customer.phone },
           orderBy: { createdAt: "desc" },
         }),
+        /* La misma persona puede estar además en el Directorio forestal con su
+           documento (ADR-412). Se cruza por documento EXACTO dentro del tenant
+           —el mismo criterio con el que esta ruta ya trae `SunatInvoice` por
+           `customerRuc`—, no por nombre: un documento igual es la misma persona,
+           un nombre parecido no. Sólo se usa para juntar sus campos
+           personalizados; la ficha del Directorio en sí no la exporta esta ruta.
+
+           Sin filtro de `deletedAt`: una ficha dada de baja sigue guardando lo
+           que se escribió sobre esa persona, y el derecho de acceso alcanza a
+           lo que existe, no a lo que está activo.
+
+           Deuda declarada: este `prisma.*` directo rompe la regla «sólo por
+           `lib/db/*.db.ts`». Queda igual que las otras ocho consultas de esta
+           ruta, que son todas directas; lo prolijo sería un
+           `ForestDirectorioDB.partesPorDocumento(tenantId, doc)`
+           (`buscarPorDocumento` no sirve: exige `docTipo`, devuelve una sola y
+           esconde las dadas de baja). */
+        prisma.forestParty.findMany({
+          where: { tenantId, docNumero: dni },
+          select: { id: true },
+        }),
       ]);
+
+    /**
+     * Los campos que el negocio inventó (ADR-427) también son datos personales:
+     * cualquiera puede agregar «DNI del contacto» a un formulario y escribir
+     * uno ahí. Su `registroId` es un id libre —no dice de qué tabla es—, así
+     * que se le pasan los ids que YA sabemos de esta persona agrupados por
+     * tabla y la DB class los cruza contra la tabla que declara cada
+     * formulario. Lo que no se puede atribuir no se inventa: vuelve en
+     * `fueraDeAlcance` con el motivo.
+     */
+    const registrosDeLaPersona: RegistrosDeUnaPersona = {
+      customer: [customer.phone],
+      order: orders.map((o) => o.id),
+      sale: sales.map((s) => s.id),
+      fiado: fiados.map((f) => f.id),
+      prestamo: prestamos.map((p) => p.id),
+      sunatInvoice: sunatInvoices.map((i) => i.id),
+      savedLocation: savedLocations.map((l) => l.id),
+      // Ojo: las notificaciones se traen con `take: 100` (arriba), así que un
+      // campo personalizado colgado de una más vieja queda fuera del cruce.
+      customerNotification: notifications.map((n) => n.id),
+      forestParty: partesDelDirectorio.map((p) => p.id),
+    };
+    const camposPersonalizados = await CamposPersonalizadosDB.valoresDeUnaPersona(
+      tenantId,
+      registrosDeLaPersona,
+    );
 
     const exportData = {
       metadata: {
@@ -243,6 +297,17 @@ export async function POST(req: NextRequest) {
         read: n.read,
         createdAt: n.createdAt,
       })),
+      camposPersonalizados: {
+        nota: "Preguntas que este negocio agregó a sus formularios (ADR-427) y lo que se escribió en ellas. «fueraDeAlcance» dice qué formularios no se pudieron atribuir a esta persona y por qué.",
+        valores: camposPersonalizados.valores,
+        fueraDeAlcance: camposPersonalizados.fueraDeAlcance,
+        registrosCruzados: camposPersonalizados.registrosConsultados,
+        ...(camposPersonalizados.registrosTruncados
+          ? {
+              aviso: `Esta persona tiene más registros de los que se cruzan de una vez; se usaron los primeros ${camposPersonalizados.registrosConsultados}.`,
+            }
+          : {}),
+      },
     };
 
     // Fire-and-forget audit log (CLAUDE.md rule #7)
@@ -271,6 +336,7 @@ export async function POST(req: NextRequest) {
               "SunatInvoice",
               "SavedLocation",
               "CustomerNotification",
+              "CampoPersonalizadoValor",
             ],
             recordCounts: {
               orders: orders.length,
@@ -280,6 +346,8 @@ export async function POST(req: NextRequest) {
               invoices: sunatInvoices.length,
               notifications: notifications.length,
               savedLocations: savedLocations.length,
+              camposPersonalizados: camposPersonalizados.valores.length,
+              partesDelDirectorioCruzadas: partesDelDirectorio.length,
             },
           }),
           user: auth.username,

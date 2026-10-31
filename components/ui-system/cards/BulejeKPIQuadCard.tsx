@@ -67,7 +67,7 @@ export const BulejeKPIQuadCard = memo(function BulejeKPIQuadCard({
   }
 
   // Ensure exactly 4 slots
-  const slots = [...kpis.slice(0, 4)];
+  const slots = kpis.slice(0, 4);
   while (slots.length < 4) {
     slots.push({ kicker: "—", value: 0 });
   }

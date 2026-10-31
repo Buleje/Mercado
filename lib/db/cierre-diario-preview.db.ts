@@ -58,7 +58,13 @@ export const CierreDiarioPreviewDB = {
     });
   },
 
-  async listLowStockProducts(tenantId: string, take = 20) {
+  /**
+   * Productos en o bajo su stock mínimo para el cierre del día. Un solo stock
+   * mínimo (09-10): el propio si lo tiene; si no, `Settings.globalMinStock`
+   * (`minimoGlobal`, ver lib/inventario/stock-minimo). Antes era `lte: 5` para
+   * todos: un producto con mínimo 20 y stock 10 no salía.
+   */
+  async listLowStockProducts(tenantId: string, minimoGlobal: number, take = 20) {
     return prisma.product.findMany({
       where: {
         tenantId,
@@ -66,8 +72,8 @@ export const CierreDiarioPreviewDB = {
         deletedAt: null,
         stock: { not: null },
         OR: [
-          { stockMin: { not: null }, stock: { lte: 5 } },
-          { stockMin: null, stock: { lte: 5 } },
+          { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+          { stockMin: null, stock: { lte: minimoGlobal } },
         ],
       },
       select: { name: true, stock: true, stockMin: true },

@@ -3,22 +3,24 @@
 /**
  * components/admin/AdminMobileBottomBar.tsx
  *
- * Barra de navegación rápida en el bottom (solo mobile / sm:hidden).
- * Muestra 4 tabs prioritarias por rol + un botón "Más" que abre el drawer.
+ * Barra de navegación del celular (sm:hidden): Inicio + las 3 pestañas que
+ * esta persona más abre (`lib/admin/barra-inferior.ts`, mismo contador que
+ * «Menú en tu orden») + «Menú», que abre el cajón con todo lo demás.
  *
- * Las tabs prioritarias dependen del rol:
- *  - admin     → pedidos, fiados, inventario, productos
- *  - cajero    → pedidos, fiados, clientes, inventario
- *  - almacenero → asistente-ia, inventario, compras, plata
+ * 29-10: era siempre Vender / Pedidos / Stock (en el aserradero quedaba Inicio
+ * solo) y el botón se llamaba «Más», igual que el «Más ▾» de las pestañas de
+ * cada módulo: dos «Más» en la misma pantalla que hacían cosas distintas. El
+ * menú ya no vive también arriba (la hamburguesa salió de la cabecera).
  *
- * Cada botón muestra el badge de alertas si lo tiene. El botón "Más"
- * agrega los alerts de las tabs no incluidas en la prioridad.
- *
- * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
+ * Cada botón muestra el badge de alertas de su pestaña; «Menú» suma las de
+ * las pestañas que no están en la barra.
  */
 
-import type { ComponentType } from "react";
-import { LayoutGrid } from "@buleje/design-system/icons";
+import { useEffect, useState, type ComponentType } from "react";
+import { Menu } from "@buleje/design-system/icons";
+import { leerContadorDeUso, useModoOrden } from "@/hooks/use-uso-de-pestanas";
+import { etiquetaCorta, pestanasDeLaBarra } from "@/lib/admin/barra-inferior";
+import type { ContadorDeUso } from "@/lib/admin/orden-por-uso";
 import { cn } from "@/lib/utils";
 import type { Tab } from "../../app/admin/_lib/tabs.types";
 
@@ -29,7 +31,8 @@ export interface FilteredTab {
 }
 
 export interface AdminMobileBottomBarProps {
-  userRole: string;
+  /** Ya no decide nada (29-10): la barra sale del uso de cada persona. */
+  userRole?: string;
   currentTab: Tab;
   filteredTabs: readonly FilteredTab[];
   alerts: Record<string, number>;
@@ -37,41 +40,48 @@ export interface AdminMobileBottomBarProps {
   onOpenMobileNav: () => void;
 }
 
-// Brandon 2026-05-28: 4 accesos DIARIOS del bodeguero + botón "Más" (abre el
-// drawer con el resto). Antes eran Inicio/Pedidos/POS/Adelantos/Compras —
-// Adelantos y Compras son de nicho; los reemplazan Vender (POS) y Stock, que
-// son el día a día. El resto (Adelantos, Compras, etc.) sigue en "Más".
-const FOUR_QUICK: Tab[] = ["vendor-dashboard", "ventas-caja", "pedidos", "inventario"];
-const MOBILE_PRIORITY: Record<string, Tab[]> = {
-  admin:      FOUR_QUICK,
-  cajero:     FOUR_QUICK,
-  almacenero: FOUR_QUICK,
-};
-// Labels cortos para que entren en la barra móvil.
-const SHORT_LABELS: Record<string, string> = {
-  "vendor-dashboard": "Inicio",
-  "ventas-caja": "Vender",
-  pedidos: "Pedidos",
-  inventario: "Stock",
-};
+/** Un casillero de la barra de pestañas de abajo (no es un botón del DS: es navegación). */
+const CASILLERO =
+  "relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-2.5 text-[length:var(--ts-2xs)] font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--accent)]";
+const APAGADO = "text-[var(--text-tertiary)] dark:text-muted";
+
+function Contador({ n }: { n: number }) {
+  return (
+    <span className="absolute -top-1 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--data-error-500)] px-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white">
+      {n > 99 ? "99+" : n}
+    </span>
+  );
+}
 
 export function AdminMobileBottomBar({
-  userRole,
   currentTab,
   filteredTabs,
   alerts,
   onNavigate,
   onOpenMobileNav,
 }: AdminMobileBottomBarProps) {
-  const priorityIds = MOBILE_PRIORITY[userRole] ?? MOBILE_PRIORITY.admin;
-  const quickTabs = priorityIds
+  const modo = useModoOrden();
+  /* El contador vive en el navegador: se lee después de montar (el HTML del
+     servidor sale con las de siempre) y otra vez al cambiar de pestaña. */
+  const [contador, setContador] = useState<ContadorDeUso | null>(null);
+  useEffect(() => {
+    setContador(leerContadorDeUso());
+  }, [currentTab]);
+
+  const ids = pestanasDeLaBarra(
+    filteredTabs.map((t) => t.id),
+    contador,
+    modo === "uso",
+  );
+  const enBarra = new Set<string>(ids);
+  const quickTabs = ids
     .map((id) => filteredTabs.find((t) => t.id === id))
     .filter((t): t is FilteredTab => t != null);
+  const alertasDelMenu = filteredTabs.reduce((s, t) => s + (enBarra.has(t.id) ? 0 : alerts[t.id] ?? 0), 0);
+  const desdeElMenu = !enBarra.has(currentTab);
 
   return (
     // Audit 2026-05-17 07-P2-2: touch targets ≥48px (WCAG 2.1 AA pide ≥44).
-    // Antes py-1.5 + h-5 w-5 = ~32-36px → fácil mis-tap en mobile. Ahora
-    // py-3 + min-h-[48px] cumple holgado.
     <nav
       className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-[var(--surface-raised)] border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] flex items-stretch"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 4px)" }}
@@ -80,36 +90,36 @@ export function AdminMobileBottomBar({
       {quickTabs.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
+          type="button"
           onClick={() => onNavigate(id)}
-          className={cn(
-            "flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[48px] text-[length:var(--ts-2xs)] font-semibold transition-colors relative",
-            currentTab === id ? "text-primary" : "text-[var(--text-tertiary)] dark:text-muted"
-          )}
+          className={cn(CASILLERO, currentTab === id ? "text-primary" : APAGADO)}
           aria-current={currentTab === id ? "page" : undefined}
+          title={label}
         >
-          {alerts[id] ? (
-            <span className="relative inline-flex">
-              <Icon className="h-5 w-5" />
-              <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-extrabold flex items-center justify-center px-0.5">
-                {alerts[id]}
-              </span>
-            </span>
-          ) : (
+          <span className="relative inline-flex">
             <Icon className="h-5 w-5" />
-          )}
-          <span className="leading-tight truncate max-w-16">{SHORT_LABELS[id] ?? label}</span>
+            {alerts[id] ? <Contador n={alerts[id]} /> : null}
+          </span>
+          <span className="max-w-full truncate leading-tight">{etiquetaCorta(id, label)}</span>
           {currentTab === id && <span className="absolute top-0 inset-x-0 h-0.5 bg-primary" />}
         </button>
       ))}
 
-      {/* "Más" — abre el drawer con el resto de módulos (Adelantos, Compras…) */}
+      {/* «Menú»: el cajón con todos los módulos. Se ve encendido cuando estás en
+          uno que no está en la barra (para saber de dónde vino). */}
       <button
+        type="button"
         onClick={onOpenMobileNav}
-        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 min-h-[48px] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted transition-colors"
-        aria-label="Más módulos"
+        className={cn(CASILLERO, desdeElMenu ? "text-primary" : APAGADO)}
+        aria-label={`Menú: todos los módulos${alertasDelMenu > 0 ? `, ${alertasDelMenu} avisos` : ""}`}
+        aria-haspopup="dialog"
       >
-        <LayoutGrid className="h-5 w-5" />
-        <span className="leading-tight">Más</span>
+        <span className="relative inline-flex">
+          <Menu className="h-5 w-5" />
+          {alertasDelMenu > 0 && <Contador n={alertasDelMenu} />}
+        </span>
+        <span className="leading-tight">Menú</span>
+        {desdeElMenu && <span className="absolute top-0 inset-x-0 h-0.5 bg-primary/40" />}
       </button>
     </nav>
   );

@@ -166,7 +166,7 @@ export default function ComboSugerido() {
             aria-hidden
           />
           <span className="text-[length:var(--ts-sm)] font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            Completá tu combo
+            Completa tu combo
           </span>
         </div>
         <button

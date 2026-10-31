@@ -125,7 +125,7 @@ export default function OneClickBuyModal({
         router.push(`/cuenta/pedidos/${data.order?.id ?? "demo"}/seguimiento`);
       }, 1500);
     } catch {
-      setError("No pudimos procesar tu compra. Intentá de nuevo.");
+      setError("No pudimos procesar tu compra. Intenta de nuevo.");
       setSubmitting(false);
     }
   }, [

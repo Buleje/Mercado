@@ -22,6 +22,8 @@ export function canonicalPlan(plan: SocioPlan): SocioPlanCanonical {
 export const SubscribeBodySchema = z.object({
   plan: SocioPlanSchema,
   userId: z.string().min(1, "userId requerido"),
+  /** Código de referido (base64url del userId del referrer). Opcional. */
+  ref: z.string().max(200).optional(),
 });
 export type SubscribeBody = z.infer<typeof SubscribeBodySchema>;
 

@@ -1,0 +1,183 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=forestal-herramientas&sub=lote&vista=cubicador",
+ "pasos": [
+  {
+   "esperar": 2500
+  },
+  {
+   "eval": "(()=>{Object.keys(localStorage).filter(k=>k.startsWith('buleje-cubicacion-main')).forEach(k=>localStorage.removeItem(k));const P=(id,c,e,a,l,esp)=>({id,cantidad:c,espesor:e,ancho:a,largo:l,uEspesor:'pulg',uAncho:'pulg',uLargo:'pies',especie:esp,pieTablar:e*a*l*c/12,m3:e*a*l*c/12/424});const k='buleje-cubicacion-main';localStorage.setItem(k,JSON.stringify([P('t1',40,2,8,10,'Tornillo'),P('t2',20,2,4,4,'Tornillo'),P('c1',30,2,6,10,'Cumala'),P('c2',10,1,6,4,'Cumala')]));localStorage.setItem(k+'-modo-precio','manual');localStorage.setItem(k+'-precio','2');localStorage.setItem(k+'-precios-especie',JSON.stringify({tornillo:'2.5'}));localStorage.setItem(k+'-precios-especie-tipo',JSON.stringify({'tornillo|Corta':'1.5'}));location.reload();return 'sembrado'})()"
+  },
+  {
+   "esperar": 6500
+  },
+  {
+   "eval": "(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Guardar');if(!b)return 'sin boton Guardar';b.click();return 'abierto'})()"
+  },
+  {
+   "esperar": "[data-vista='cubicador-madera-guardar']"
+  },
+  {
+   "esperar": 1500
+  },
+  {
+   "llenar": [
+    "#cubg-nombre",
+    "QA viaje 28-10"
+   ]
+  },
+  {
+   "llenar": [
+    "#cubg-comprador",
+    "Ronal tornillo QA"
+   ]
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "eval": "(()=>({alDirectorio:!!document.querySelector(\"[data-accion='comprador-al-directorio']\"),aSuCuenta:document.querySelector(\"[data-accion='subir-a-cuenta-comprador']\")?.innerText||null}))()"
+  },
+  {
+   "llenar": [
+    "#cubg-lugar",
+    "Patio QA"
+   ]
+  },
+  {
+   "llenar": [
+    "#cubg-cubicado-por",
+    "Juan QA"
+   ]
+  },
+  {
+   "llenar": [
+    "#cubg-placa",
+    "qaz123"
+   ]
+  },
+  {
+   "llenar": [
+    "#cubg-transportista",
+    "Trans QA"
+   ]
+  },
+  {
+   "llenar": [
+    "#cubg-chofer",
+    "Pedro QA"
+   ]
+  },
+  {
+   "click": "[data-accion='guardar-cubicacion']"
+  },
+  {
+   "esperar": 5000
+  },
+  {
+   "eval": "(()=>({modalAbierto:!!document.querySelector(\"[data-vista='cubicador-madera-guardar']\")}))()"
+  },
+  {
+   "eval": "(()=>{Object.keys(localStorage).filter(k=>k.startsWith('buleje-cubicacion-main')).forEach(k=>localStorage.removeItem(k));const P=(id,c,e,a,l,esp)=>({id,cantidad:c,espesor:e,ancho:a,largo:l,uEspesor:'pulg',uAncho:'pulg',uLargo:'pies',especie:esp,pieTablar:e*a*l*c/12,m3:e*a*l*c/12/424});const k='buleje-cubicacion-main';localStorage.setItem(k,JSON.stringify([P('t1',40,2,8,10,'Tornillo'),P('t2',20,2,4,4,'Tornillo'),P('c1',30,2,6,10,'Cumala'),P('c2',10,1,6,4,'Cumala')]));localStorage.setItem(k+'-modo-precio','manual');localStorage.setItem(k+'-precio','2');localStorage.setItem(k+'-precios-especie',JSON.stringify({tornillo:'2.5'}));localStorage.setItem(k+'-precios-especie-tipo',JSON.stringify({'tornillo|Corta':'1.5'}));location.reload();return 'sembrado'})()"
+  },
+  {
+   "esperar": 6500
+  },
+  {
+   "eval": "(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Guardar');if(!b)return 'sin boton Guardar';b.click();return 'abierto'})()"
+  },
+  {
+   "esperar": "[data-vista='cubicador-madera-guardar']"
+  },
+  {
+   "esperar": 2500
+  },
+  {
+   "eval": "(()=>{const v=id=>document.querySelector(id)?.value;return {lugar:v('#cubg-lugar'),cubicado:v('#cubg-cubicado-por'),placa:v('#cubg-placa'),transportista:v('#cubg-transportista'),chofer:v('#cubg-chofer'),aviso:document.querySelector('[data-aviso-viaje]')?.innerText,igual:document.querySelector(\"[data-accion='igual-que-la-anterior']\")?.title||null}})()"
+  },
+  {
+   "click": "[data-accion='igual-que-la-anterior']"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "eval": "(()=>{const v=id=>document.querySelector(id)?.value;return {lugar:v('#cubg-lugar'),cubicado:v('#cubg-cubicado-por'),placa:v('#cubg-placa'),transportista:v('#cubg-transportista'),chofer:v('#cubg-chofer'),aviso:document.querySelector('[data-aviso-viaje]')?.innerText,igual:document.querySelector(\"[data-accion='igual-que-la-anterior']\")?.title||null}})()"
+  },
+  {
+   "captura": "igual-anterior"
+  },
+  {
+   "clicTexto": "Deshacer"
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "llenar": [
+    "#cubg-placa",
+    "QAZ 123"
+   ]
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "eval": "(()=>{const v=id=>document.querySelector(id)?.value;return {lugar:v('#cubg-lugar'),cubicado:v('#cubg-cubicado-por'),placa:v('#cubg-placa'),transportista:v('#cubg-transportista'),chofer:v('#cubg-chofer'),aviso:document.querySelector('[data-aviso-viaje]')?.innerText,igual:document.querySelector(\"[data-accion='igual-que-la-anterior']\")?.title||null}})()"
+  },
+  {
+   "captura": "placa-trae-chofer"
+  },
+  {
+   "llenar": [
+    "#cubg-comprador",
+    "COMUNIDAD NATIVA SAN LUIS DE CHINCHIHUANI"
+   ]
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "click": "[data-accion='subir-a-cuenta-comprador']"
+  },
+  {
+   "esperar": "#cubg-persona:not([disabled])"
+  },
+  {
+   "esperar": 1500
+  },
+  {
+   "eval": "(()=>{const s=document.querySelector('#cubg-persona');return {elegida:s?.selectedOptions[0]?.text,sentido:document.querySelector('[aria-label=\"Quién entrega la madera\"] [aria-checked=true]')?.textContent,botonSigue:!!document.querySelector(\"[data-accion='subir-a-cuenta-comprador']\"),saldo:document.querySelector(\"[data-vista='saldo-persona']\")?.innerText.split('\\n')[0]}})()"
+  },
+  {
+   "captura": "subir-a-su-cuenta"
+  },
+  {
+   "llenar": [
+    "#cubg-comprador",
+    "Ronal tornillo QA"
+   ]
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "click": "[data-accion='comprador-al-directorio']"
+  },
+  {
+   "esperar": 1500
+  },
+  {
+   "eval": "(()=>{const d=[...document.querySelectorAll('[role=dialog]')].find(x=>x.innerText.includes('Agregar al directorio'));return d?{nombre:[...d.querySelectorAll('input')].map(i=>i.value).find(v=>v)||null,rolOn:[...d.querySelectorAll('button[aria-pressed=true]')].map(b=>b.textContent.trim())}:'sin alta'})()"
+  },
+  {
+   "tecla": "Escape"
+  },
+  {
+   "esperar": 600
+  },
+  {
+   "eval": "(async()=>{const r=await fetch('/api/admin/forestal/cubicaciones',{credentials:'include'});const j=await r.json();const qa=(j.cubicaciones||[]).filter(c=>c.nombre==='QA viaje 28-10');const tok=document.cookie.split('; ').find(c=>c.startsWith('csrf-token='))?.split('=')[1];const out=[];for(const c of qa){const d=await fetch('/api/admin/forestal/cubicaciones?id='+encodeURIComponent(c.id),{method:'DELETE',credentials:'include',headers:{'x-csrf-token':decodeURIComponent(tok||'')}});out.push(d.status)}return {borradas:out}})()"
+  }
+ ]
+}
