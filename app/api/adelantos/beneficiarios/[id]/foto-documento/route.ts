@@ -97,6 +97,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (auth instanceof NextResponse) return auth;
   const sinPermiso = permisoAdelantos(auth.role, "read");
   if (sinPermiso) return sinPermiso;
+  /* Brandon 30-10: la foto del DNI la ve solo quien edita adelantos. El analista (solo lectura) ve la
+     ficha y que hay foto, pero no la imagen: es dato personal sensible (Ley 29733). */
+  const sinEditar = permisoAdelantos(auth.role, "write");
+  if (sinEditar) return sinEditar;
   // Contador propio: con la clave de subir/borrar, 20 vistas en 5 min bloqueaban subir y borrar (revisión 30-10).
   const rl = await applyRateLimit(req, "DRIVE_READ", "adelantos-foto-documento-ver");
   if (rl) return rl;

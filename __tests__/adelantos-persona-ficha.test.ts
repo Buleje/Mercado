@@ -238,6 +238,14 @@ describe("foto del DNI", () => {
     expect(H.bajar).not.toHaveBeenCalled();
   });
 
+  it("el analista (solo lectura) no ve la imagen: 403 sin bajar el archivo (Brandon 30-10)", async () => {
+    H.filas[0].fotoDocumentoKey = RUTA_T1;
+    H.auth = { tenantId: "t1", username: "analista", role: "analista" };
+    H.bajar.mockClear();
+    expect((await verFoto(new NextRequest(`${URL_BASE}/b1/foto-documento`), conId("b1"))).status).toBe(403);
+    expect(H.bajar).not.toHaveBeenCalled();
+  });
+
   it("borrar la persona también borra su foto del bucket", async () => {
     H.filas[0].fotoDocumentoKey = RUTA_T1;
     const r = await borrarPersona(new NextRequest(`${URL_BASE}/b1`, { method: "DELETE" }), conId("b1"));

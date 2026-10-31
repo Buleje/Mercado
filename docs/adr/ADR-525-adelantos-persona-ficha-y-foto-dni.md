@@ -40,3 +40,5 @@ Esa foto andaba en el WhatsApp de quien atendió. Es un dato personal sensible (
 - **Tope de Vercel:** en producción el cuerpo de una función no pasa de 4,5 MB, así que una foto de 8 MB cae antes de llegar a la ruta. La pantalla debe achicar la foto en el navegador, como ya hace con la huella (≤1600 px). Con eso el archivo pesa unos cientos de KB.
 - El MCP `buleje` y el CSV de exportación no muestran los campos nuevos hasta que alguien los agregue (son listas blancas).
 - Ley 29733, supresión: borrar la persona (`DELETE …/beneficiarios/[id]`) también borra su foto del bucket. La baja lógica (`activo: false`) la conserva, igual que el resto de la ficha.
+
+**30-10 (decisión de Brandon):** ver la imagen pide además permiso de **editar** adelantos: el rol `analista` (solo lectura) ve la ficha y `tieneFotoDocumento`, pero el GET de la foto le da 403.
