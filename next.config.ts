@@ -174,6 +174,9 @@ const nextConfig: NextConfig = {
   reactCompiler: { compilationMode: "annotation" },
 
   experimental: {
+    // 31-10: el proxy corta el cuerpo en 10 MB (default de Next 16) y el drive acepta hasta 50 MB
+    // (MAX_UPLOAD_SIZE): un PDF de 13 MB llegaba truncado («Failed to parse body as FormData», 500).
+    proxyClientMaxBodySize: "50mb",
     // NOTE: instrumentation.ts is detected automatically since Next.js 15.
     // The `instrumentationHook` flag was removed in Next.js 16.
 
