@@ -11,6 +11,8 @@
  * @property {unknown} [cuerpo]
  * @property {{ ruta: string, campo: string, sha256: string, bytes: number }} [archivo]   multipart (solo doc_subir):
  *   ruta real (realpath) + sello del archivo que se mostró en la ventana; el cliente lo vuelve a revisar al mandarlo
+ * @property {{ base: string, carpeta?: string, tope?: number, opcional?: boolean }} [guardarEn]   solo GET (doc_mirar): el cuerpo binario se guarda en la
+ *   carpeta privada como `<base>.<ext por Content-Type>` (0600) y vuelve { guardado, ruta, bytes }; `opcional` = un 415 no es error
  * @property {boolean} [sinRecorte]   solo GET de una previa: la lista llega entera (buscar un nombre por id)
  */
 

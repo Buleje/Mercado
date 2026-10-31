@@ -2,6 +2,7 @@
 import { revisarArchivo } from "./archivos.mjs";
 import { BASE_POR_DEFECTO, credencialDe } from "./credenciales.mjs";
 import { puertoAbierto as puertoAbiertoReal, puertoDeBase } from "./panel-local.mjs";
+import { guardarBinario, TOPE_BYTES_MIRAR } from "./mirar.mjs";
 import { Sesion, archivoCulpable } from "./sesion.mjs";
 
 export const MAX_FILAS = 50;
@@ -171,6 +172,19 @@ export function crearCliente(op) {
         const ra = Number(res.headers.get("retry-after"));
         await res.text().catch(() => "");
         if (Number.isFinite(ra) && ra > 0 && ra <= 10) { await esperar(ra * 1000); res = await mandar(); }
+      }
+      // guardarEn (solo GET, doc_mirar): el cuerpo es binario; se baja a la carpeta privada sin pasar por texto/JSON.
+      if (pedido.guardarEn && pedido.metodo === "GET") {
+        if ((res.status === 415 || res.status === 422) && pedido.guardarEn.opcional) { await res.text().catch(() => ""); return { ok: true, status: res.status, datos: { guardado: false, motivo: "no_aplica" }, ms: ms() }; }
+        if (res.ok) {
+          const tamano = Number(res.headers.get("content-length"));
+          const tope = pedido.guardarEn.tope ?? TOPE_BYTES_MIRAR;
+          if (Number.isFinite(tamano) && tamano > tope) { try { await res.body?.cancel(); } catch { /* el cuerpo ya estaba cerrado */ } return { ok: true, status: res.status, datos: { guardado: false, motivo: "tamano", bytes: tamano }, ms: ms() }; }
+          const bytes = new Uint8Array(await res.arrayBuffer());
+          vistas.add(clave);
+          const g = await guardarBinario({ carpeta: pedido.guardarEn.carpeta, base: pedido.guardarEn.base, contentType: res.headers.get("content-type"), bytes, tope });
+          return { ok: true, status: res.status, datos: g, ms: ms() };
+        }
       }
       const { txt, datos } = await leerCuerpo(res);
       if (!res.ok) return mapear(res.status, txt, datos, ms());
