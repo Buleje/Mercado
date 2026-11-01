@@ -433,7 +433,7 @@ describe("el flujo del dueño por WhatsApp", () => {
   it("foto sin texto → guardada, y le dice dónde con el enlace a la carpeta", async () => {
     await manejarMensajeDeDueno({ ...base, texto: "", archivo: foto });
     const [msj] = textos();
-    expect(msj).toMatch(/^📁 Guardado en tu Archivo › Llegó por WhatsApp › 2026-10-\d\d como «Foto de Brandon \d\dh\d\d\.jpg»/);
+    expect(msj).toMatch(/^📁 Guardado en tu Archivo › Llegó por WhatsApp › \d{4}-\d\d-\d\d como «Foto de Brandon \d\dh\d\d\.jpg»/);
     expect(msj).toContain("https://panel.test/admin?tab=documentos&vista=drive&sub=folder&carpeta=");
     expect(H.conversar).not.toHaveBeenCalled();
     // Ya no dice que «todavía no puede leer boletas».
