@@ -29,8 +29,9 @@ function telegramFalso(alEnviar) {
 }
 /** Lo que hace el buzón con un toque: hash del id → .respuesta con el id adentro, solo si hay .pendiente. */
 function tocar(botones, cual, quien = "123 @brandon") {
-  const dato = botones[0][cual === "si" ? 0 : 1].dato;
-  const [, id, resp] = dato.split(":");
+  const fila = botones[0];
+  const dato = cual === "no" ? botones[1][0].dato : cual === "si" ? fila.find((b) => b.texto === "S/ 200,00").dato : fila.find((b) => b.texto !== "S/ 200,00").dato;
+  const [, id, resp] = dato.split(":"); // resp = b0|b1|b2|no (el buzón escribe el botón tocado)
   const h = hashId(id);
   if (!existsSync(join(dir, `${h}.pendiente`))) return false;
   writeFileSync(join(dir, `${h}.respuesta`), JSON.stringify({ id, respuesta: resp, quien, cuando: "2026-11-01T10:00:00Z" }), { flag: "wx" });
@@ -46,7 +47,22 @@ describe("OK por Telegram", () => {
     expect(r).toMatchObject({ respuesta: "si", por: "telegram", quien: "123 @brandon" });
     expect(readdirSync(dir)).toEqual([]);
     expect(tg.editados[0].texto).toMatch(/Aprobado por Telegram/);
-    expect(tg.enviados[0].botones[0][0].dato).toMatch(new RegExp(`^${PREFIJO}:[A-Z2-7]{24}:si$`));
+    expect(tg.enviados[0].botones[0][0].dato).toMatch(new RegExp(`^${PREFIJO}:[A-Z2-7]{24}:b[0-2]$`));
+  });
+  it("tocar un parecido (no el monto correcto) = No", async () => {
+    const tg = telegramFalso((b) => tocar(b, "mal"));
+    const r = await ok(tg).preguntar(p());
+    expect(r.respuesta).toBe("no");
+    expect(tg.editados[0].texto).toMatch(/no era/);
+  });
+  it("3 botones con el monto y 2 parecidos + ❌ No; el monto no va escrito suelto", async () => {
+    const tg = telegramFalso((b) => tocar(b, "no"));
+    await ok(tg).preguntar(p());
+    const { texto, botones } = tg.enviados[0];
+    expect(botones[0].map((b) => b.texto).sort()).toEqual(["S/ 2.000,00", "S/ 20,00", "S/ 200,00"].sort());
+    expect(botones[1][0].texto).toBe("❌ No");
+    expect(texto).not.toMatch(/• Monto:/);
+    expect(texto).toMatch(/toca el monto correcto/);
   });
   it("No del botón cancela", async () => {
     const r = await ok(telegramFalso((b) => tocar(b, "no"))).preguntar(p());
@@ -81,7 +97,7 @@ describe("OK por Telegram", () => {
   it("el texto no lleva claves, DNI ni la línea de los 3 botones de la ventana", () => {
     const t = textoPregunta({ ...p(), resumen: "Clave SOL: ABC123xyz · DNI 45678912\nPara hacerlo, aprieta el botón con el monto correcto.", minutos: 10 });
     expect(t).not.toMatch(/ABC123xyz|45678912|aprieta el botón/);
-    expect(t).toMatch(/Monto: S\/ 200,00/);
+    expect(t).toMatch(/A quién: Hermano Alex/);
     expect(sinClaves("password=hunter2")).toBe("password=••••");
   });
 });

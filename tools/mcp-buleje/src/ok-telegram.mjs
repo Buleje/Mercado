@@ -16,6 +16,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { armarBotones, sanearVentana } from "./clave-ok.mjs";
 import { base32, normalizarResumen } from "./confirmaciones.mjs";
 import { etiquetaNegocio } from "./dialogo-windows.mjs";
 import { taparTexto } from "./tapar.mjs";
@@ -24,7 +25,9 @@ export const ESPERA_TELEGRAM_MS = 10 * 60_000; // 10 min sin respuesta = No
 export const SONDEO_MS = 1_000;
 export const DIR_OK = join(homedir(), ".local", "state", "buleje-ok");
 export const RUTA_BOT = join(homedir(), ".bsm-notify.env");
-export const PREFIJO = "okb"; // callback_data = okb:<id>:si | okb:<id>:no  (≤64 bytes: 3+1+24+1+2 = 31)
+export const PREFIJO = "okb"; // callback_data = okb:<id>:b0|b1|b2|no  (≤64 bytes: 3+1+24+1+2 = 31)
+// 01-11 (Brandon eligió «3 botones como la ventana»): el dato correcto y 2 parecidos + ❌ No. Solo el correcto aprueba;
+// cuál es lo sabe solo este proceso (el buzón escribe el botón tocado, b0/b1/b2, y acá se traduce).
 export const RE_ID = /^[A-Z2-7]{24}$/;
 export const MIN_HUMANO_MS = 1_500;
 
@@ -102,16 +105,20 @@ export function sinClaves(s) {
 export function textoPregunta(p) {
   const lineas = normalizarResumen(p.resumen).split("\n").filter((l) => !/^Para hacerlo, aprieta el botón/.test(l.trim()));
   const v = p.ventana ?? {};
+  // El dato clave NO va escrito suelto (sería tocar sin leer): está en el resumen y Brandon lo elige entre 3 botones.
+  // Solo el código de 3 cifras (operaciones sin monto ni nombre) se muestra, igual que arriba en la ventana.
   const filas = [
-    ...(v.clave?.valor && v.clave.palabra !== "código" ? [`• ${v.clave.etiqueta}: ${v.clave.valor}`] : []),
+    ...(v.clave?.valor && v.clave.palabra === "código" ? [`• ${v.clave.etiqueta}: ${v.clave.valor}`] : []),
     ...(Array.isArray(v.filas) ? v.filas.map((f) => `• ${f.etiqueta}: ${f.valor}`) : []),
   ];
+  const palabra = v.clave?.palabra ?? "dato";
   return sinClaves([
     `🔐 Claude pide tu OK · ${etiquetaNegocio(p.negocio)}`,
     "",
     lineas.join("\n").trim(),
     ...(filas.length ? ["", ...filas] : []),
     "",
+    `👉 Para aprobar, toca el ${palabra} correcto. Un botón equivocado o ❌ No = no se hace.`,
     `⏳ Vale ${p.minutos} min (sin respuesta = No). También puedes contestar en la ventana de la PC.`,
   ].join("\n"));
 }
@@ -121,7 +128,7 @@ const RESULTADO = { si: "✅ Aprobado", no: "❌ Cancelado", vencio: "⌛ Caduc�
 /**
  * @param {{
  *   telegram: ReturnType<typeof crearTelegram>, dir?: string, ahora?: () => number, aleatorio?: (n: number) => Uint8Array,
- *   sondeoMs?: number, log?: (m: string) => void, esperar?: (ms: number) => Promise<void>,
+ *   sondeoMs?: number, log?: (m: string) => void, esperar?: (ms: number) => Promise<void>, azar?: (n: number) => number,
  * }} op
  */
 export function crearOkTelegram(op) {
@@ -143,12 +150,19 @@ export function crearOkTelegram(op) {
     const pendiente = join(dir, `${h}.pendiente`), respuesta = join(dir, `${h}.respuesta`);
     const limpiar = () => { for (const f of [pendiente, respuesta]) { try { rmSync(f, { force: true }); } catch { /* ya no está */ } } };
     let mensajeId = 0;
+    /** @type {string[]} */ let textos = [];
+    let correcto = -1;
     try {
       mkdirSync(dir, { recursive: true, mode: 0o700 });
       chmodSync(dir, 0o700);
       writeFileSync(pendiente, JSON.stringify({ vence: p.vence, herramienta: p.herramienta, negocio: p.negocio }), { mode: 0o600, flag: "wx" });
       const minutos = Math.max(1, Math.round((p.vence - ahora()) / 60_000));
-      mensajeId = await op.telegram.enviar(textoPregunta({ ...p, minutos }), [[{ texto: "✅ Sí", dato: `${PREFIJO}:${id}:si` }, { texto: "❌ No", dato: `${PREFIJO}:${id}:no` }]]);
+      const v = sanearVentana(p.ventana);
+      ({ textos, correcto } = armarBotones(v.clave, op.azar));
+      mensajeId = await op.telegram.enviar(textoPregunta({ ...p, ventana: v, minutos }), [
+        textos.map((t, i) => ({ texto: t, dato: `${PREFIJO}:${id}:b${i}` })),
+        [{ texto: "❌ No", dato: `${PREFIJO}:${id}:no` }],
+      ]);
     } catch (e) {
       limpiar();
       log(`OK por Telegram no salió: ${String(/** @type {any} */ (e)?.message ?? e).slice(0, 160)}`);
@@ -166,8 +180,13 @@ export function crearOkTelegram(op) {
           try { j = JSON.parse(readFileSync(respuesta, "utf8")); } catch { /* a medio escribir: el buzón escribe y cierra, se relee */ }
           if (j) {
             const leido = Buffer.from(String(j.id ?? ""), "utf8"), mio = Buffer.from(id, "utf8");
-            const valido = leido.length === mio.length && timingSafeEqual(leido, mio) && (j.respuesta === "si" || j.respuesta === "no");
-            if (valido) { final = { respuesta: j.respuesta, por: "telegram", quien: String(j.quien ?? "").slice(0, 80), cuando: String(j.cuando ?? "").slice(0, 40) }; break; }
+            const valido = leido.length === mio.length && timingSafeEqual(leido, mio) && /^(b[0-2]|no)$/.test(String(j.respuesta));
+            if (valido) {
+              // Solo el botón del dato correcto es «si»; un parecido o ❌ No = «no».
+              const si = correcto >= 0 && j.respuesta === `b${correcto}`;
+              final = { respuesta: si ? "si" : "no", por: "telegram", quien: String(j.quien ?? "").slice(0, 80), cuando: String(j.cuando ?? "").slice(0, 40), ...(j.respuesta !== "no" && !si ? { equivocado: true } : {}) };
+              break;
+            }
             // Un .respuesta sin el id correcto NO lo escribió el buzón con un toque de Brandon: se descarta y se avisa.
             log("OK por Telegram: llegó una respuesta con id equivocado; se descartó (no aprueba)");
             try { rmSync(respuesta, { force: true }); } catch { /* nada */ }
@@ -179,9 +198,10 @@ export function crearOkTelegram(op) {
       limpiar();
     }
     const cuando = new Date(ahora()).toLocaleString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
-    const pie = otro ? "🖥️ Ya se contestó en la ventana de la PC: este botón no vale." : `${RESULTADO[final.respuesta]} por Telegram · ${cuando}`;
-    if (mensajeId) await op.telegram.editar(mensajeId, `${textoPregunta({ ...p, minutos: Math.max(1, Math.round((p.vence - ahora()) / 60_000)) }).split("\n⏳")[0]}\n\n${pie}`);
-    return otro ? { respuesta: "vencio", por: "telegram" } : final;
+    const pie = otro ? "🖥️ Ya se contestó en la ventana de la PC: este botón no vale." : `${final.equivocado ? "❌ Tocaste un dato que no era: no se hizo nada" : RESULTADO[final.respuesta]} por Telegram · ${cuando}`;
+    if (mensajeId) await op.telegram.editar(mensajeId, `${textoPregunta({ ...p, minutos: 1 }).split("\n👉")[0]}\n\n${pie}`);
+    const { equivocado: _e, ...sal } = final;
+    return otro ? { respuesta: "vencio", por: "telegram" } : sal;
   }
 
   return { preguntar };
