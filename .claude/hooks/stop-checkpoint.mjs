@@ -26,6 +26,8 @@ function runGit(cmd) {
       encoding: "utf8",
       timeout: 3_000,
       stdio: ["ignore", "pipe", "ignore"],
+      // 01-11: corre en CADA fin de turno; `status` cortado por el tope dejaba .git/index.lock huérfano.
+      env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
     }).trim();
   } catch {
     return "";
