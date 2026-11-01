@@ -4,6 +4,19 @@
 // 29-10 (revisión de seguridad, hallazgo 5): las cookies viven SOLO en memoria. Antes la de refresh (7 días) quedaba
 // en un archivo de estado y cualquier proceso de la PC podía entrar al panel con ella.
 
+// 01-11 (pedido del hilo principal, 429 medido a las 08:31): con muchos procesos cortos (claude -p de las tareas, cifras
+// por Telegram, el buzón) cada uno hacía su login y el panel cortaba con 429. Con `archivo` (opcional; el servidor real y
+// guia-telegram lo pasan) la sesión se comparte entre procesos: archivo 0600 en ~/.local/state/buleje-mcp (carpeta 0700,
+// al lado de credenciales que ya guardan la CLAVE con el mismo permiso: no abre nada que no estuviera abierto), un
+// candado (mkdir) para que dos procesos no hagan login a la vez, y un 429 en el login espera y reintenta 1 vez (sin
+// bloquear 15 min: no es clave mala). Sin `archivo` (tests, crear-usuario) todo sigue solo en memoria.
+import { closeSync, constants as FS, mkdirSync, openSync, readFileSync, renameSync, rmdirSync, statSync, unlinkSync, writeSync } from "node:fs";
+import { dirname } from "node:path";
+
+export const CANDADO_VIEJO_MS = 400_000; // > un login lento (2 topes de 120 s + espera del 429)
+export const ESPERA_429_MS = 20_000;
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export const USER_AGENT = "BulejeMCP/1.0 (Claude)";
 const COOKIES_SESION = ["buleje-admin-sess", "buleje-admin-refresh"];
 const BLOQUEO_TRAS_LOGIN_FALLIDO_MS = 15 * 60_000; // = lockout del servidor
@@ -30,6 +43,71 @@ export class Sesion {
     /** @type {Map<string,string>} */ this.jar = new Map();
     this.bloqueadoHasta = 0; // login fallido: no se repite hasta que pase el lockout
     this.ultimoErrorLogin = "";
+    /** @type {string | undefined} */ this.archivo = op.archivo;
+    this.esperar = op.esperar ?? dormir;
+    this.firmaFallida = ""; // jar que el panel ya rechazó: no se vuelve a cargar del disco
+  }
+
+  firmaJar() { return JSON.stringify([...this.jar].filter(([k]) => COOKIES_SESION.includes(k)).sort()); }
+
+  /** Carga la sesión que dejó otro proceso (si es de este usuario y negocio). true si quedó con sesión. */
+  cargarDeDisco() {
+    if (!this.archivo) return false;
+    try {
+      const j = JSON.parse(readFileSync(this.archivo, "utf8"));
+      if (j?.usuario !== this.cred.usuario || j?.slug !== this.cred.slug || j?.base !== this.base || !Array.isArray(j.jar)) return false;
+      const jar = new Map(j.jar.filter((x) => Array.isArray(x) && typeof x[0] === "string" && typeof x[1] === "string" && /^[\w-]{1,80}$/.test(x[0]) && x[1].length < 8000 && !/[;\r\n]/.test(x[1])));
+      const antes = this.jar;
+      this.jar = jar;
+      if (!this.conSesion || this.firmaJar() === this.firmaFallida) { this.jar = antes; return false; }
+      return true;
+    } catch { return false; }
+  }
+
+  guardarEnDisco() {
+    if (!this.archivo || !this.conSesion) return;
+    try {
+      mkdirSync(dirname(this.archivo), { recursive: true, mode: 0o700 });
+      const tmp = `${this.archivo}.${process.pid}.tmp`;
+      // O_NOFOLLOW + O_EXCL: un .tmp plantado como enlace no hace escribir en otro archivo (revisión 01-11).
+      const abrir = () => openSync(tmp, FS.O_WRONLY | FS.O_CREAT | FS.O_EXCL | FS.O_NOFOLLOW, 0o600);
+      let fd;
+      try { fd = abrir(); } catch { unlinkSync(tmp); fd = abrir(); }
+      try { writeSync(fd, JSON.stringify({ usuario: this.cred.usuario, slug: this.cred.slug, base: this.base, jar: [...this.jar] })); } finally { closeSync(fd); }
+      renameSync(tmp, this.archivo);
+    } catch { /* sin disco: sigue en memoria */ }
+  }
+
+  /** Login con candado entre procesos: si otro está entrando, se espera y se usa su sesión. */
+  async entrarCompartido() {
+    if (!this.archivo) return this.entrar();
+    const candado = `${this.archivo}.candado`;
+    const t0 = this.ahora();
+    for (;;) {
+      try { mkdirSync(candado, { mode: 0o700 }); break; } catch (e) {
+        if (/** @type {any} */ (e)?.code !== "EEXIST") return this.entrar();
+        try { if (Date.now() - statSync(candado).mtimeMs > CANDADO_VIEJO_MS) { rmdirSync(candado); continue; } } catch { continue; }
+        if (this.ahora() - t0 > CANDADO_VIEJO_MS) return this.entrar();
+        await this.esperar(500);
+        if (this.cargarDeDisco()) return { ok: true, status: 200, mensaje: "ok (sesión de otro proceso)" };
+      }
+    }
+    try {
+      if (this.cargarDeDisco()) return { ok: true, status: 200, mensaje: "ok (sesión de otro proceso)" };
+      const r = await this.entrar();
+      if (r.ok) this.guardarEnDisco();
+      return r;
+    } finally {
+      try { rmdirSync(candado); } catch { /* ya no está */ }
+    }
+  }
+
+  /** La sesión que se tenía no sirvió: se marca para no recargarla del disco. */
+  /** @param {string} [firma] la del jar ANTES del refresh fallido (el panel borra las cookies al rechazarlo). */
+  descartar(firma) {
+    const f = firma ?? (this.conSesion ? this.firmaJar() : "");
+    if (f && f !== "[]") this.firmaFallida = f;
+    this.jar.clear();
   }
 
   get csrf() { return this.jar.get("csrf-token") ?? ""; }
@@ -73,7 +151,10 @@ export class Sesion {
     if (p.form) body = p.form;
     else if (p.cuerpo !== undefined) { h["content-type"] = "application/json"; body = JSON.stringify(p.cuerpo); }
     const res = await this.fetch(url.toString(), { method: p.metodo, headers: h, body, signal: AbortSignal.timeout(tope), redirect: "manual" });
+    const antes = this.archivo ? this.firmaJar() : "";
     this.guardarCookies(res);
+    // El panel rota la cookie (refresh): los demás procesos tienen que ver la nueva.
+    if (this.archivo && p.ruta !== "/api/auth/login" && this.conSesion && this.firmaJar() !== antes) this.guardarEnDisco();
     return res;
   }
 
@@ -93,7 +174,7 @@ export class Sesion {
   }
 
   /** Un único login. Si falla por credenciales, bloquea nuevos intentos 15 min. @returns {Promise<{ok:boolean, status:number, mensaje:string, compilando?:boolean}>} */
-  async entrar() {
+  async entrar(reintento = false) {
     if (this.ahora() < this.bloqueadoHasta) {
       return { ok: false, status: 0, mensaje: `El login de «${this.negocio}» falló hace poco (${this.ultimoErrorLogin}); no se reintenta para no bloquear al usuario. Revisá usuario/clave con configurar.mjs.` };
     }
@@ -106,6 +187,18 @@ export class Sesion {
     }
     const txt = await res.text().catch(() => "");
     if (res.status === 200) return { ok: true, status: 200, mensaje: "ok" };
+    // 429 = demasiados logins seguidos (no es clave mala): esperar y reintentar 1 vez, sin el bloqueo de 15 min.
+    if (res.status === 429) {
+      if (reintento) {
+        // Sin bucle y sin seguir golpeando: 60 s sin intentar (no 15 min: no es clave mala).
+        this.bloqueadoHasta = this.ahora() + 60_000;
+        this.ultimoErrorLogin = "429 demasiadas solicitudes";
+        return { ok: false, status: 429, mensaje: "el panel dice «demasiadas solicitudes» al entrar; prueba en unos minutos" };
+      }
+      const ra = Number(res.headers.get("retry-after"));
+      await this.esperar(Number.isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 60_000) : ESPERA_429_MS);
+      return this.entrar(true);
+    }
     if (res.status >= 500 && esHtml(txt)) {
       const f = archivoCulpable(txt);
       return { ok: false, status: res.status, compilando: true, mensaje: `el panel está compilando o tiene un error de compilación${f ? ` en ${f}` : ""}` };
@@ -122,7 +215,7 @@ export class Sesion {
     try {
       const res = await this.enviar({ metodo: "POST", ruta: "/api/auth/refresh", cuerpo: {} }, 30_000);
       await res.text().catch(() => "");
-      if (res.status === 200) return true;
+      if (res.status === 200) { this.guardarEnDisco(); return true; }
     } catch { /* cae al login */ }
     return false;
   }
@@ -130,6 +223,7 @@ export class Sesion {
   /** Deja una sesión usable antes del primer pedido. */
   async asegurar() {
     if (this.conSesion) return { ok: true, status: 200, mensaje: "ok" };
-    return this.entrar();
+    if (this.cargarDeDisco()) return { ok: true, status: 200, mensaje: "ok (sesión guardada)" };
+    return this.entrarCompartido();
   }
 }

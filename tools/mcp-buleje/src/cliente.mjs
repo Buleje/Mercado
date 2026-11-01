@@ -3,6 +3,7 @@ import { revisarArchivo } from "./archivos.mjs";
 import { BASE_POR_DEFECTO, credencialDe } from "./credenciales.mjs";
 import { puertoAbierto as puertoAbiertoReal, puertoDeBase } from "./panel-local.mjs";
 import { guardarBinario, TOPE_BYTES_MIRAR } from "./mirar.mjs";
+import { join } from "node:path";
 import { Sesion, archivoCulpable } from "./sesion.mjs";
 
 export const MAX_FILAS = 50;
@@ -56,7 +57,12 @@ export function crearCliente(op) {
 
   const sesionDe = (nombre, cred) => {
     let s = sesiones.get(nombre);
-    if (!s) { s = new Sesion({ negocio: nombre, cred, base, fetch: op.fetch, ahora }); sesiones.set(nombre, s); }
+    if (!s) {
+      // carpetaSesiones (01-11): la sesión se comparte entre procesos (ver sesion.mjs). Sin ella, solo memoria.
+      const archivo = op.carpetaSesiones ? join(op.carpetaSesiones, `sesion-${String(nombre).replace(/[^\w-]/g, "_")}.json`) : undefined;
+      s = new Sesion({ negocio: nombre, cred, base, fetch: op.fetch, ahora, archivo });
+      sesiones.set(nombre, s);
+    }
     return s;
   };
 
@@ -157,8 +163,9 @@ export function crearCliente(op) {
       if (res.status === 401 || (await meSinSesion(pedido, res))) {
         await res.text().catch(() => "");
         // 1 refresh; si no, 1 login; si no, sin_sesion. Jamás bucle.
+        const firma = sesion.firmaJar(); // antes del refresh: si falla, el panel borra las cookies
         let ok = await sesion.refrescar();
-        if (!ok) { sesion.olvidar(); const l = await sesion.entrar(); ok = l.ok; }
+        if (!ok) { sesion.descartar(firma); const l = await sesion.entrarCompartido(); ok = l.ok; }
         if (!ok) return fallo("sin_sesion", `La sesión de «${nombre}» venció y no se pudo renovar. Revisá el usuario «claude» (¿desactivado?).`, 401, ms());
         res = await mandar();
       }

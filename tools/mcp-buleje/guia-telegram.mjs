@@ -23,10 +23,10 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { revisarArchivo } from "./src/archivos.mjs";
 import { crearCliente } from "./src/cliente.mjs";
-import { credencialDe, leerCredenciales } from "./src/credenciales.mjs";
+import { leerCredenciales } from "./src/credenciales.mjs";
 import { anotar as anotarReal } from "./src/registro.mjs";
 import { herramientas as HERR_CTP } from "./src/herramientas/ctp.mjs";
-import { CARPETA_SESIONES, TMP_BUZON, cargarSesion, guardarSesion, negocioDeConfig } from "./archivar-telegram.mjs";
+import { CARPETA_SESIONES, TMP_BUZON, negocioDeConfig } from "./archivar-telegram.mjs";
 
 export const RUTA_OCR = "/api/admin/forestal/gtf-ocr";
 export const RUTA_INGRESOS = "/api/admin/forestal/wood-entries";
@@ -168,13 +168,10 @@ function mimeDe(buf) {
   return null;
 }
 
-async function clienteDe(config, negocio, deps) {
-  const cliente = crearCliente({ config, fetch: deps.fetch, puertoAbierto: deps.puertoAbierto });
-  const { nombre, cred } = credencialDe(config, negocio);
-  const sesion = cliente.sesionDe(nombre, cred);
-  const archivoSesion = join(deps.carpetaSesiones ?? CARPETA_SESIONES, `telegram-${nombre.replace(/[^\w-]/g, "_")}.json`);
-  await cargarSesion(sesion, archivoSesion);
-  return { cliente, guardar: () => guardarSesion(sesion, archivoSesion) };
+async function clienteDe(config, _negocio, deps) {
+  // La misma sesión que la conexión y las tareas (sesion-<negocio>.json, 01-11): un solo login para todos.
+  const cliente = crearCliente({ config, fetch: deps.fetch, puertoAbierto: deps.puertoAbierto, carpetaSesiones: deps.carpetaSesiones ?? CARPETA_SESIONES });
+  return { cliente, guardar: async () => undefined };
 }
 
 /**

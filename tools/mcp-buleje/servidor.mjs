@@ -404,7 +404,7 @@ async function main() {
     log(sinConfig);
     config = { base: "http://localhost:3000", porDefecto: "", seco: true, negocios: {} };
   }
-  const cliente = crearCliente({ config });
+  const cliente = crearCliente({ config, carpetaSesiones: registro.DIR_ESTADO }); // sesión compartida entre procesos (01-11)
   const { defs, avisos } = await cargarHerramientas();
   for (const a of avisos) log(a);
   const seco = secoInicial(config);
