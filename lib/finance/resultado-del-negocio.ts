@@ -69,6 +69,39 @@ export function fechaDeCobroDelPedido<T extends Date | string>(p: { deliveredAt?
 }
 
 /**
+ * ¿El gasto puede llevar descuentos de adelantos? El pago de la semana de RRHH
+ * (y un sueldo) descuenta adelantos: su clave es `prefijoDescuentosDelPago`.
+ */
+export function gastoConDescuentosDeAdelantos(g: { documentNumber?: string | null; category?: string | null }): boolean {
+  return esGastoDePagoRrhh(g.documentNumber) || esGastoDePersonal(g.category);
+}
+
+/**
+ * Lo que salió de verdad en un gasto: el pago de la semana guarda el BRUTO, pero
+ * lo descontado de un adelanto no sale ahora (salió al darlo y ya cuenta como
+ * adelanto). Adelanto 100 + sueldo 300 con 100 descontados = salió 300, no 400.
+ * La caja del mes y «Cuentas» (ADR-527) usan esta misma cuenta.
+ */
+export function netoDelGasto(amount: number, descontado: number | null | undefined): { neto: number; descontado: number } {
+  const d = Math.max(0, Math.min(descontado ?? 0, amount));
+  return { neto: Math.round((amount - d) * 100) / 100, descontado: Math.round(d * 100) / 100 };
+}
+
+/** Un gasto de guía se anota antes de pagarse: sin `paidAt` todavía no salió plata. */
+export function gastoYaSalio(g: { gtfNumber?: string | null; paidAt?: Date | string | null }): boolean {
+  return !(g.gtfNumber?.trim() && g.paidAt == null);
+}
+
+/**
+ * ¿Es la devolución de un adelanto ANULADO? No se suma: el adelanto, su salida y
+ * su anulación ya quedaron fuera, y sumar solo la devolución inventaba plata
+ * (main, ADL-2026-0038: salieron 400, volvieron 100 + 300 al anular → 0, no +100).
+ */
+export function esDevolucionDeAdelantoAnulado(codigo: string | null | undefined, anulados: ReadonlySet<string>): boolean {
+  return Boolean(codigo) && anulados.has(codigo as string);
+}
+
+/**
  * El nombre del gasto, sin el bloque `\n---META---\n{json}` que los gastos
  * viejos llevan pegado (ADR-374, `lib/expense-meta.ts`): en main 2 gastos
  * pagados mostraban el JSON de la plantilla en el resultado y en la caja.
@@ -550,6 +583,8 @@ export interface GastoEntrada {
   gtfNumber?: string | null;
   /** El comprobante: el del pago de la semana de RRHH es su marca (`RRHH-<lunes>-<id>`). */
   documentNumber?: string | null;
+  /** Lo descontado de adelantos en este gasto (pago de la semana): la caja cuenta el neto. */
+  descontado?: number;
 }
 
 /** Lo ganado de referencia de RRHH en un mes (`GanadoDB.periodo`). */
@@ -1182,6 +1217,8 @@ export interface EntradaCaja {
   adelantos: AdelantoEntrada[];
   /** Códigos de TODOS los adelantos (también cancelados): para reconocer su egreso de caja. */
   codigosAdelanto: string[];
+  /** Códigos de los adelantos CANCELADOS: sus devoluciones no se suman (`esDevolucionDeAdelantoAnulado`). */
+  codigosAnulados?: string[];
   /**
    * TODAS las liquidaciones (también anuladas), sólo para reconocer su movimiento
    * de caja o su reversión en la lista de lo que no se suma.
@@ -1326,9 +1363,13 @@ function calcularCaja(mes: string, e: EntradaCaja): CalculoCaja {
   // producto nunca lo fue. Las de una liquidación ya se contaron en su cabecera.
   const palabraCodigo = (c: string) => new RegExp(`(^|[^A-Za-z0-9-])${escaparRe(c)}($|[^A-Za-z0-9-])`);
   const movDeEntrega = new Map<string, string>();
+  const anulados = new Set(e.codigosAnulados ?? []);
   for (const en of e.entregas) {
     const dia = diaDeFecha(en.fecha);
     if (!del(dia) || en.liquidacionId) continue;
+    // El adelanto anulado quedó fuera entero: su devolución tampoco suma (su
+    // movimiento de caja queda en «sin sumar», marcado como del adelanto).
+    if (esDevolucionDeAdelantoAnulado(en.adelantoCodigo, anulados)) continue;
     const dado = en.direccion === "DADO";
     const tipo = dado ? "ingreso" : "egreso";
     const prefijo = dado ? PREFIJO_DEVOLUCION_DADO : PREFIJO_DEVOLUCION_RECIBIDO;
@@ -1359,13 +1400,15 @@ function calcularCaja(mes: string, e: EntradaCaja): CalculoCaja {
 
   // ── Gastos y fletes pagados ───────────────────────────────────────────
   for (const g of e.gastos) {
-    // Un gasto de guía se anota antes de pagarse: sin `paidAt` no salió plata.
-    if (g.gtfNumber?.trim() && g.paidAt == null) continue;
+    if (!gastoYaSalio(g)) continue;
     const dia = diaDeFecha(g.paidAt ?? g.date);
     if (!del(dia)) continue;
+    // El pago de la semana sale por el neto: lo descontado salió al dar el adelanto.
+    const { neto, descontado } = netoDelGasto(num(g.amount), g.descontado);
     filas.gastos_pagados.push({
-      id: g.id, fecha: dia, quien: g.supplierName?.trim() || null, que: queDelGasto(g),
-      monto: r2(num(g.amount)), pt: null, m3: null, certeza: "medido", enlace: { tab: "plata", params: { vista: "gastos" } },
+      id: g.id, fecha: dia, quien: g.supplierName?.trim() || null,
+      que: descontado > 0 ? `${queDelGasto(g)} · ${descontado} descontado de adelantos` : queDelGasto(g),
+      monto: neto, pt: null, m3: null, certeza: "medido", enlace: { tab: "plata", params: { vista: "gastos" } },
     });
   }
   for (const f of e.fletes) {

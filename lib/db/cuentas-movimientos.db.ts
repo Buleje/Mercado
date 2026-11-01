@@ -4,8 +4,6 @@ import type { Prisma } from "@/lib/generated/prisma/client";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
-import { esGastoDePersonal } from "@/lib/finance/resultado-del-negocio";
-import { esGastoDePagoRrhh, prefijoDescuentosDelPago } from "@/lib/rrhh/pago-semana";
 import { TOPE_MOVIMIENTOS, type CuentasDelPeriodo } from "@/lib/finance/cuentas-tipos";
 import {
   armarCuentas,
@@ -161,9 +159,6 @@ export const CuentasMovimientosDB = {
     const idsDeGasto = [...new Set(caja.map((m) => gastoDelRetiro(m.id)).filter((g): g is string => g !== null))];
     const hayDevoluciones = caja.some((m) => codigoDeDevolucion(m.description) !== null);
     // Lo descontado de adelantos en los pagos de la semana (sale el neto, no el bruto).
-    const prefijosRrhh = gastos
-      .filter((g) => esGastoDePagoRrhh(g.documentNumber) || esGastoDePersonal(g.category))
-      .map((g) => prefijoDescuentosDelPago(g.id));
     const [vivos, anulados, descontado] = await Promise.all([
       idsDeGasto.length === 0
         ? []
@@ -171,7 +166,7 @@ export const CuentasMovimientosDB = {
       hayDevoluciones
         ? prisma.adelanto.findMany({ where: { tenantId, direccion: { in: AMBOS_LADOS }, status: "CANCELADO", codigoOperacion: { not: null } }, select: { codigoOperacion: true } })
         : [],
-      prefijosRrhh.length === 0 ? new Map<string, number>() : AdelantosDB.descontadoPorPrefijo(tenantId, prefijosRrhh),
+      AdelantosDB.descontadoDeLosGastos(tenantId, gastos),
     ]);
     const contextoCaja = {
       gastosVivos: new Set(vivos.map((g) => g.id)),
@@ -205,7 +200,7 @@ export const CuentasMovimientosDB = {
       const fila = filaDeGasto({
         id: g.id, amount: toNumOrZero(g.amount), date: g.date, paidAt: g.paidAt, gtfNumber: g.gtfNumber, persona: g.supplierName ?? "",
         detalle: textoDe(decodeExpenseDescription(g.description ?? "").description || g.category, g.paymentMethod),
-        descontado: descontado.get(prefijoDescuentosDelPago(g.id)) ?? 0,
+        descontado: descontado.get(g.id) ?? 0,
       });
       if (fila) filas.push(fila);
     }

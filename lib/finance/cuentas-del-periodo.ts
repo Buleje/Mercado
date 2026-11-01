@@ -39,7 +39,9 @@ import type {
   PeriodoCuentas,
 } from "@/lib/finance/cuentas-tipos";
 import { TOPE_MOVIMIENTOS } from "@/lib/finance/cuentas-tipos";
-import { esPedidoCobrado, fechaDeCobroDelPedido } from "@/lib/finance/resultado-del-negocio";
+import {
+  esDevolucionDeAdelantoAnulado, esPedidoCobrado, fechaDeCobroDelPedido, gastoYaSalio, netoDelGasto,
+} from "@/lib/finance/resultado-del-negocio";
 import { mesLima, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 import { limaDateKey, limaDayRange } from "@/lib/utils";
 
@@ -245,8 +247,7 @@ export function filaDeCaja(m: MovCajaCrudo, { gastosVivos, adelantosAnulados }: 
   // la de una anulada no suma y su reversión de caja tampoco.
   if (ES_LIQUIDACION.test(texto) && !ES_DEVOLUCION_DE_ADELANTO.test(texto)) return null;
 
-  const codigo = codigoDeDevolucion(texto);
-  if (codigo && adelantosAnulados.has(codigo)) return null;
+  if (esDevolucionDeAdelantoAnulado(codigoDeDevolucion(texto), adelantosAnulados)) return null;
 
   const entra = type === "ingreso";
   const grupo: GrupoCuenta = entra ? "ingresos" : "gastos";
@@ -268,7 +269,6 @@ export function filaDeCaja(m: MovCajaCrudo, { gastosVivos, adelantosAnulados }: 
 
 const unir = (...partes: Array<string | null | undefined>) =>
   partes.map((p) => (p ?? "").trim()).filter(Boolean).join(" · ");
-const r2 = (v: number) => Math.round(v * 100) / 100;
 
 export interface PedidoCrudo {
   id: string;
@@ -322,13 +322,12 @@ export interface GastoCrudo {
  * «adelantos»). Adelanto 100 + sueldo 300 con 100 descontados = salió 300, no 400.
  */
 export function filaDeGasto(g: GastoCrudo): FilaCruda | null {
-  // Un gasto de guía se anota antes de pagarse: sin `paidAt` no salió plata (misma regla de la caja del mes).
-  if (g.gtfNumber?.trim() && g.paidAt == null) return null;
-  const descontado = Math.max(0, Math.min(g.descontado, g.amount));
-  const neto = r2(g.amount - descontado);
+  // Las dos reglas son las de la caja del mes (una sola fuente).
+  if (!gastoYaSalio(g)) return null;
+  const { neto, descontado } = netoDelGasto(g.amount, g.descontado);
   return {
     id: g.id, fuente: "gasto", grupo: "gastos", tipo: "Gasto", fecha: g.paidAt ?? g.date, clase: "fecha", persona: g.persona,
-    detalle: descontado > 0 ? unir(g.detalle, `${r2(descontado)} descontado de adelantos`) : g.detalle,
+    detalle: descontado > 0 ? unir(g.detalle, `${descontado} descontado de adelantos`) : g.detalle,
     monto: neto, moneda: "PEN",
   };
 }

@@ -60,10 +60,12 @@ La plata del negocio está repartida en varias tablas: adelantos, ventas del POS
   - septiembre: entró 1.200 y salió 6.248;
   - octubre: entró 900.
 - **main, octubre:** Cuentas queda 290,58 y la caja del mes 300,58. La diferencia de −10 es una salida manual de caja que ADR-451 muestra sin sumar. Un gasto borrado aporta +25 y −25 y se anula.
-- **main, septiembre:** la diferencia contra la caja del mes se explica completa:
-  - +2.700 de máquinas;
-  - +120 de caja manual, que cuenta en los dos lados (entró y salió);
-  - −1.000 de pagos forestales, que quedan fuera;
-  - 440 de devoluciones de adelantos anulados (ADL-0026/0028/0038 y ADL-0025 recibido). La caja del mes las suma porque sus entregas no filtran el estado del adelanto. Cuentas no las suma: el adelanto entero quedó fuera.
-- **Pendiente de la caja del mes (ADR-451):** cuenta el pago de la semana por el bruto, y también suma las devoluciones de adelantos anulados. Se reporta, no se tocó.
-- **Revertir:** borrar la ruta y los dos módulos. Queda el par `esPedidoCobrado`/`fechaDeCobroDelPedido`, que no cambia el comportamiento de la caja del mes.
+- **main, septiembre:** la diferencia contra la caja del mes se explica completa. Cuentas da 120 de entrada y 6.814,9 de salida; la caja del mes, 0 y 4.994,9:
+  - +120 de caja manual (una entrada y una salida). La caja del mes la muestra sin sumar.
+  - +2.700 de máquinas, que la caja del mes no lee.
+  - −1.000 de pagos forestales, que Cuentas deja fuera.
+- **Arreglo de la caja del mes (01-11, misma regla en las dos pantallas):**
+  - La devolución de un adelanto anulado ya no suma (`esDevolucionDeAdelantoAnulado`). En septiembre de main eran +340 de entrada (ADL-0026/0028/0038) y −100 de salida (ADL-0025).
+  - El pago de la semana sale por el neto (`netoDelGasto`, con `AdelantosDB.descontadoDeLosGastos`).
+  - `gastoYaSalio` y `esPedidoCobrado` también son una sola regla para las dos pantallas.
+- **Revertir:** borrar la ruta y los dos módulos. Las reglas compartidas viven en `resultado-del-negocio.ts` y la caja del mes las sigue usando.

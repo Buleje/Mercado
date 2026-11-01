@@ -525,6 +525,42 @@ describe("revisión ADR-451: los refutadores, al revés", () => {
     expect(detalleDeCaja("2026-09", "gastos_pagados", e).filas.map((f) => f.id).sort()).toEqual(["g2", "g3"]);
   });
 
+  it("I. la devolución de un adelanto ANULADO no suma (main set: ADL-0038 +100, ADL-0025 −100); la de uno vivo sí", () => {
+    const e = cajaVacia();
+    e.entregas = [
+      entrega({ id: "e1", valor: 100, adelantoCodigo: "ADL-2026-0038" }),
+      entrega({ id: "e2", valor: 100, adelantoCodigo: "ADL-2026-0025", direccion: "RECIBIDO" }),
+      entrega({ id: "e3", valor: 50, adelantoCodigo: "ADL-2026-0040" }),
+    ];
+    e.codigosAdelanto = ["ADL-2026-0038", "ADL-2026-0025", "ADL-2026-0040"];
+    e.codigosAnulados = ["ADL-2026-0038", "ADL-2026-0025"];
+    const t = new Date("2026-09-20T15:00:00Z");
+    e.movimientosCaja = [
+      { id: "m1", type: "ingreso", amount: 100, description: "Liquidación de adelanto ADL-2026-0038 · X", createdAt: t },
+      { id: "m2", type: "egreso", amount: 100, description: "Devolución de adelanto recibido ADL-2026-0025 · Wasaco", createdAt: t },
+      { id: "m3", type: "ingreso", amount: 50, description: "Liquidación de adelanto ADL-2026-0040 · Y", createdAt: t },
+    ];
+    const c = armarCaja("2026-09", e);
+    expect(c.totalEntro).toBe(50);
+    expect(c.totalSalio).toBe(0);
+    // Tampoco se cuentan como «nunca fue caja»; su movimiento se muestra sin sumar, marcado como del adelanto.
+    expect(c.nuncaCaja).toMatchObject({ cuantos: 0, monto: 0 });
+    expect(detalleDeCaja("2026-09", "caja_sin_sumar", e).filas.find((f) => f.id === "m1")?.que).toContain("del adelanto ADL-2026-0038");
+  });
+
+  it("J. el pago de la semana sale por el NETO: bruto 300 con 100 descontados = 200 (el adelanto ya salió)", () => {
+    const e = cajaVacia();
+    e.gastos = [
+      { id: "g1", date: new Date("2026-09-14T12:00:00Z"), paidAt: new Date("2026-09-14T20:00:00Z"), amount: 300, category: "personal", description: "Pago semana", supplierName: "Victor", documentNumber: "RRHH-2026-09-14-x", descontado: 100 },
+      { id: "g2", date: new Date("2026-09-15T12:00:00Z"), paidAt: null, amount: 40, category: "campo", description: "Poda", supplierName: null },
+    ];
+    const c = armarCaja("2026-09", e);
+    expect(c.totalSalio).toBe(240);
+    const g1 = detalleDeCaja("2026-09", "gastos_pagados", e).filas.find((f) => f.id === "g1");
+    expect(g1?.monto).toBe(200);
+    expect(g1?.que).toContain("100 descontado de adelantos");
+  });
+
   it("F. con la guía ENTERA, la compra que empezó en agosto no se cuenta en setiembre: renglón y detalle dicen 0", () => {
     const c = (id: string, d: string, costo: number) => ({ id, gtfNumber: "19-001/7 000065", entryDate: utc(d), costoTotal: costo, moneda: "PEN", proveedor: "X", m3: 1 });
     const e = { ...vacia(), compras: [c("w1", "2026-08-10", 100), c("w2", "2026-09-05", 200)] };

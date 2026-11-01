@@ -39,9 +39,9 @@ import { limpiarMotivo, motivoLegible } from "@/lib/forestal/motivo";
 import { formatCurrency } from "@/lib/currency";
 import { huellaDeAlta, huellaDeEntrega } from "@/lib/adelantos/idempotencia";
 import { CONCEPTO_PLANILLA } from "@/lib/adelantos/planilla-lote";
-import { PREFIJO_CLAVE_PAGO_RRHH } from "@/lib/rrhh/pago-semana";
+import { PREFIJO_CLAVE_PAGO_RRHH, prefijoDescuentosDelPago } from "@/lib/rrhh/pago-semana";
 import { invalidateByPrefix } from "@/lib/cache";
-import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
+import { claveCacheResultado, gastoConDescuentosDeAdelantos } from "@/lib/finance/resultado-del-negocio";
 import { enmascararDocumento, type PersonaEntregar } from "@/lib/adelantos/entregar-tipos";
 import type { CodigoMarcacion } from "@/lib/rrhh/kiosko";
 
@@ -1982,6 +1982,27 @@ export const AdelantosDB = {
       const p = validos.find((x) => f.idempotencyKey?.startsWith(x));
       if (!p) continue;
       out.set(p, Math.round(((out.get(p) ?? 0) + toNum(f.valor)) * 100) / 100);
+    }
+    return out;
+  },
+
+  /**
+   * Lo descontado de adelantos en cada gasto (id → monto), solo de los que
+   * pueden llevarlo (`gastoConDescuentosDeAdelantos`). La caja del mes y
+   * «Cuentas» (ADR-527) cuentan con esto el NETO del pago de la semana.
+   */
+  async descontadoDeLosGastos(
+    tenantId: string,
+    gastos: readonly { id: string; documentNumber?: string | null; category?: string | null }[],
+  ): Promise<Map<string, number>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = gastos.filter(gastoConDescuentosDeAdelantos).map((g) => g.id);
+    const out = new Map<string, number>();
+    if (ids.length === 0) return out;
+    const porPrefijo = await AdelantosDB.descontadoPorPrefijo(tenantId, ids.map(prefijoDescuentosDelPago));
+    for (const id of ids) {
+      const v = porPrefijo.get(prefijoDescuentosDelPago(id));
+      if (v) out.set(id, v);
     }
     return out;
   },

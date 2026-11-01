@@ -31,6 +31,7 @@ import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { limaDateKey } from "@/lib/utils";
 import { SOLO_DADOS } from "@/lib/adelantos/direccion";
+import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
 import { ESTADOS_PEDIDO_QUE_ENTRAN, mesLima, mesesHasta, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 import {
@@ -332,7 +333,7 @@ export const ResultadoNegocioDB = {
       // Todos los códigos (también cancelados): un retiro de caja sigue siendo el pago de su adelanto.
       prisma.adelanto.findMany({
         where: { tenantId, direccion: { in: ["DADO", "RECIBIDO"] }, codigoOperacion: { not: null } },
-        select: { codigoOperacion: true },
+        select: { codigoOperacion: true, status: true },
       }),
       prisma.expense.findMany({
         where: { tenantId, recurring: false, OR: [{ paidAt: enRango }, { paidAt: null, date: enRango }] },
@@ -361,7 +362,8 @@ export const ResultadoNegocioDB = {
 
     // Las vivas del mes suman su pago; TODAS (también anuladas) sirven para
     // reconocer su movimiento de caja y su reversión en «sin sumar».
-    const [liquidaciones, cajaDeLiquidaciones] = await Promise.all([
+    // Y lo descontado de adelantos en los pagos de la semana: la caja cuenta el neto.
+    const [liquidaciones, cajaDeLiquidaciones, descontado] = await Promise.all([
       prisma.liquidacionCuenta.findMany({
         where: { tenantId, anuladaAt: null, fecha: enRango },
         select: { id: true, codigo: true, fecha: true, pagoDireccion: true, pagoMonto: true, montoCompensado: true, personaNombre: true, cajaMovimientoId: true, beneficiarioId: true, parteId: true },
@@ -372,6 +374,7 @@ export const ResultadoNegocioDB = {
             select: { codigo: true, cajaMovimientoId: true, cajaReversionId: true },
           })
         : Promise.resolve([]),
+      AdelantosDB.descontadoDeLosGastos(tenantId, gastos),
     ]);
 
     return {
@@ -390,8 +393,9 @@ export const ResultadoNegocioDB = {
         direccion: a.direccion, beneficiario: a.beneficiario?.nombre ?? null,
       })),
       codigosAdelanto: codigos.map((c) => c.codigoOperacion).filter((c): c is string => Boolean(c)),
+      codigosAnulados: codigos.flatMap((c) => (c.status === "CANCELADO" && c.codigoOperacion ? [c.codigoOperacion] : [])),
       cajaDeLiquidaciones,
-      gastos: gastos.map((g) => ({ ...g, amount: n(g.amount) })),
+      gastos: gastos.map((g) => ({ ...g, amount: n(g.amount), descontado: descontado.get(g.id) ?? 0 })),
       fletes: fletes.map((f) => ({
         id: f.id, fecha: f.fecha, tipoTransporte: f.tipoTransporte, pagaQuien: f.pagaQuien, monto: nOrNull(f.monto), moneda: f.moneda,
         estadoPago: f.estadoPago, fechaPago: f.fechaPago, gtfNumber: f.gtfNumber,
