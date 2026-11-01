@@ -37,6 +37,22 @@ function checkSuspiciousStashes() {
   } catch { return null; }
 }
 const BASE = "http://localhost:3000";
+
+// 01-11: con WSL «mirrored» un puerto CERRADO no contesta «rechazado»: el fetch se cuelga hasta su tope (3 s medidos
+// en cada sesión nueva, con el panel apagado a propósito). Antes de preguntar por HTTP se mira en /proc/net si algo
+// escucha en el puerto (≈1 ms). Si /proc no se puede leer, se sigue al fetch como antes.
+function nadieEscucha(puerto) {
+  const hex = puerto.toString(16).toUpperCase().padStart(4, "0");
+  try {
+    for (const f of ["/proc/net/tcp", "/proc/net/tcp6"]) {
+      if (!existsSync(f)) continue;
+      const filas = readFileSync(f, "utf8").split("\n").slice(1);
+      // columnas: sl local_address rem_address st … — st 0A = LISTEN
+      if (filas.some((l) => { const c = l.trim().split(/\s+/); return c[1]?.endsWith(`:${hex}`) && c[3] === "0A"; })) return false;
+    }
+    return true;
+  } catch { return false; }
+}
 const TENANT = "main";
 const HOME = process.env.HOME ?? "";
 // Resuelve dinámicamente el chromium más nuevo instalado por Playwright
@@ -63,6 +79,7 @@ const log = (s) => lines.push(s);
 
 // ── 1. Dev server status ────────────────────────────────────────────────
 async function checkDevServer() {
+  if (nadieEscucha(Number(new URL(BASE).port) || 80)) return "down";
   try {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 3000);

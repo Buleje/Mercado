@@ -28,6 +28,8 @@ function runGit(cmd, timeout = 2_000) {
       encoding: "utf8",
       timeout,
       stdio: ["ignore", "pipe", "ignore"],
+      // 01-11: `status` cortado por el tope dejaba .git/index.lock huérfano (tumbaba commits ajenos); así no lo toma.
+      env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
     }).trim();
   } catch {
     return "";
@@ -64,7 +66,14 @@ lines.push(`**Branch:** \`${branch}\` → \`${upstream}\` · **Dirty:** ${filesD
    (28 commits remotos vs 117 locales, 18 conflictos del Libro TH). Un fetch
    corto al arrancar lo avisa el primer día, no al hacer push. */
 if (upstream !== "(sin upstream)") {
-  runGit(`fetch -q --no-tags origin ${branch}`, 4_000);
+  // 01-11: el fetch cuesta 1,5 s medidos en CADA arranque (sesiones, `claude -p` de los timers, `--bg`), que suelen
+  // abrirse en tandas: si otro arranque ya trajo GitHub hace <10 min, se reusa ese dato.
+  let fetchReciente = false;
+  try {
+    const fh = join(runGit("rev-parse --absolute-git-dir") || join(projectRoot, ".git"), "FETCH_HEAD");
+    fetchReciente = existsSync(fh) && Date.now() - statSync(fh).mtimeMs < 10 * 60_000;
+  } catch {}
+  if (!fetchReciente) runGit(`fetch -q --no-tags origin ${branch}`, 4_000);
   const [adelante, atras] = (runGit(`rev-list --left-right --count HEAD...${upstream}`) || "0 0").split(/\s+/).map(Number);
   if (atras > 0) {
     lines.push(`⚠️ **GitHub tiene ${atras} commit(s) que no están acá** (otra sesión u otra PC) · local adelante: ${adelante}. Juntar ANTES de trabajar: \`git pull --no-rebase\` (o avisar a Brandon si hay WIP).`);

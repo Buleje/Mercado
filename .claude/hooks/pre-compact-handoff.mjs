@@ -24,6 +24,8 @@ function tryExec(cmd) {
       encoding: "utf-8",
       timeout: 2000,
       stdio: ["ignore", "pipe", "pipe"],
+      // 01-11: `git status` cortado por el tope dejaba .git/index.lock huérfano; así no lo toma.
+      env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
     }).trim();
   } catch {
     return "";
