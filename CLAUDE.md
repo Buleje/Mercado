@@ -29,7 +29,7 @@ Panel: 62 tabs (`app/admin/_components/TabRouter.tsx`, todos `next/dynamic`); la
 
 ## 2. Stack
 
-Next.js **16.2** (App Router, Turbopack) · React **19.2** · TypeScript 5.9 strict (**gate = tsc 7 nativo**, ADR-428) · Tailwind **4.3** (`@theme`) · Prisma **7.8** + `@prisma/adapter-pg` · Supabase Postgres · bcryptjs + JWT (`jose`) · Zod **4** (`safeParse`) · Context API (no Zustand, ADR-056) · XState 5 · design-system en `packages/*`.
+Next.js **16.4** (App Router, Turbopack; `agentRules: false`, sin caché de build en local) · React **19.2** · TypeScript 5.9 strict (**gate = tsc 7 nativo**, ADR-428) · Tailwind **4.3** (`@theme`) · Prisma **7.8** + `@prisma/adapter-pg` · Supabase Postgres · bcryptjs + JWT (`jose`) · Zod **4** (`safeParse`) · Context API (no Zustand, ADR-056) · XState 5 · design-system en `packages/*`.
 Infra: Sentry, Vercel Analytics, OTel, PostHog · Upstash Redis + ratelimit · `"use cache"` + `cacheLife/Tag` · BullMQ · Vercel + Capacitor.
 Integraciones: Stripe, Mercado Pago, Twilio, Resend, Web Push, Leaflet, `@ai-sdk/anthropic` + `openai` (router `lib/claude-router.ts`).
 Testing: Vitest 4 · Playwright 1.59 · axe · k6 · Storybook 8 · ESLint 9 + Prettier 3 · Husky + lint-staged + commitlint.

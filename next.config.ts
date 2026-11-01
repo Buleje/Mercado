@@ -50,6 +50,14 @@ const nextConfig: NextConfig = {
   // + LCP -200-500ms por servir el shell HTML desde CDN.
   // Activado 2026-04-08 como parte del Plan Maestro Sprint 1 (quick win Q5).
   cacheComponents: true,
+  // Next 16.4 avisa en cada build si falta. `false` = lo de siempre (el prefetch trae también los
+  // datos dinámicos); `true` cambia cómo precarga cada <Link>: se decide y se mide aparte (01-11).
+  partialPrefetching: false,
+
+  // Next 16.3+: `next dev` escribe (y re-agrega si lo borrás) un bloque propio en AGENTS.md cada
+  // vez que lo lanza un agente (Claude Code). Apagado: AGENTS.md es nuestro y la regla
+  // `.claude/rules/code-quality.md` §0 ya manda a leer `node_modules/next/dist/docs/` (01-11).
+  agentRules: false,
 
   // Allow cross-origin dev requests from Cloudflare Tunnel / ngrok
   allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io", "buleje-panel.*.ts.net"],
@@ -188,6 +196,12 @@ const nextConfig: NextConfig = {
     // queda con su valor por defecto.
     ...(process.env.VERCEL ? {} : { cpus: 4 }),
 
+    // Caché de disco del `next build` (Next 16.3+, prendido por defecto) apagado SÓLO en local
+    // (01-11) = como compilaba 16.2: `.next/cache` sumaba 1,6 GB y el pico de RAM del build medido
+    // fue el mismo con y sin él (12-13 GB). Falta medir cuánto acorta un build repetido antes de
+    // prenderlo. Vercel lo conserva (restaura `.next/cache` entre deploys).
+    ...(process.env.VERCEL ? {} : { turbopackFileSystemCacheForBuild: false }),
+
     // ── Router cache TTL (fix back-nav blanco en Next 16) ────────────────
     // Next 15+ default: dynamic=0 → cada navegación back refetcha desde server.
     // Si el RSC payload streaming queda incompleto al volver, la página queda
@@ -215,10 +229,9 @@ const nextConfig: NextConfig = {
     // Fuente: nextjs.org/blog/next-16-2
     turbopackFileSystemCacheForDev: true,
 
-    // Límite de memoria propio de Turbopack en dev (10-10): sin él llegaba a 11,7 GB (6 en RAM +
-    // 5,5 en swap) y el techo de systemd lo hacía swapear; con límite, Turbopack suelta lo frío y
-    // lo vuelve a leer de la caché de disco de arriba, mucho más rápido que del swap.
-    turbopackMemoryLimit: 5 * 1024 ** 3,
+    // Memoria de Turbopack en dev (01-11, Next 16.4): `turbopackMemoryLimit` (5 GiB desde el 10-10)
+    // ya no existe; lo reemplaza `turbopackMemoryEviction` (16.3, 'auto' por defecto): tras guardar
+    // en la caché de disco de arriba, Turbopack suelta de la RAM lo que ya bajó y lo relee al pedirlo.
 
     // Recarga en caliente del SERVIDOR apagada (12-10). Next la prendió por defecto en 16.2.2 y
     // tiene un bug: con el panel abierto y sin tocar un archivo, Turbopack ocupaba 10 núcleos sin
