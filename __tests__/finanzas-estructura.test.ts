@@ -26,6 +26,8 @@ const VISTAS_MUDADAS = ["scoring", "cierres"] as const;
 
 /** Las que se sumaron DESPUÉS del rediseño, cada una con su motivo. */
 const VISTAS_NUEVAS = [
+  /* Cuentas (2026-11-01): todo lo que entró y salió, primera sección de Movimientos. */
+  "cuentas",
   /* F10 (2026-09-29): «Lo que debo», el otro lado de Por cobrar. */
   "por-pagar",
   /* Ola 3 (2026-10-10): Impuestos llegó de Comprobantes, y Reportes dejó de

@@ -54,6 +54,21 @@ export function esGastoDePersonal(category: string | null | undefined): boolean 
 }
 
 /**
+ * ¿El pedido ya es plata cobrada? Solo el entregado y no a cuenta (`deuda`): el
+ * confirmado o en camino todavía no se cobró y el «a cuenta» es por cobrar
+ * (memoria `order-deuda-es-por-cobrar-no-fiado`). La caja del mes y «Cuentas»
+ * (ADR-527) usan esta misma regla y esta misma fecha.
+ */
+export function esPedidoCobrado(p: { status: string; deuda?: boolean | null }): boolean {
+  return p.status === "entregado" && p.deuda !== true;
+}
+
+/** El día del cobro de un pedido: cuando se entregó (o se creó, si no lo anotaron). */
+export function fechaDeCobroDelPedido<T extends Date | string>(p: { deliveredAt?: T | null; createdAt: T }): T {
+  return p.deliveredAt ?? p.createdAt;
+}
+
+/**
  * El nombre del gasto, sin el bloque `\n---META---\n{json}` que los gastos
  * viejos llevan pegado (ADR-374, `lib/expense-meta.ts`): en main 2 gastos
  * pagados mostraban el JSON de la plantilla en el resultado y en la caja.
@@ -1236,8 +1251,8 @@ function calcularCaja(mes: string, e: EntradaCaja): CalculoCaja {
 
   // ── Pedidos entregados y no a cuenta ──────────────────────────────────
   for (const p of e.pedidos) {
-    if (p.status !== "entregado" || p.deuda === true) continue;
-    const dia = diaLima(p.deliveredAt ?? p.createdAt);
+    if (!esPedidoCobrado(p)) continue;
+    const dia = diaLima(fechaDeCobroDelPedido(p));
     if (!del(dia)) continue;
     filas.pedidos_cobrados.push({
       id: p.id, fecha: dia, quien: p.cliente?.trim() || null, que: `Pedido ${p.id.slice(-6).toUpperCase()} entregado`,

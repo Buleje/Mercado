@@ -27,6 +27,7 @@ const ReporteMensualTab = dynamic(() => import("@/components/admin/ReporteMensua
 // Comparador de períodos: estaba huérfano (0 imports); real (/api/admin/dashboard),
 // read-only, distinto del dashboard. Montado tras verificar. Brandon 2026-06-20.
 const PeriodComparatorTab = dynamic(() => import("@/components/admin/PeriodComparatorTab"), { loading: S });
+const CuentasDelPeriodo = dynamic(() => import("./movimientos/CuentasDelPeriodo"), { loading: S });
 const TreasuryDashboard = dynamic(() => import("@/components/admin/TreasuryDashboard"), { loading: S });
 
 // ── Crédito y capital: pestañas propias desde la ola 3 (su 2.º nivel es el suyo) ──
@@ -86,6 +87,9 @@ export default function VistaDePlata({ vista, seccion, datos, irA }: Props) {
       );
 
     /* ── Movimientos: en qué se va la plata ── */
+    case "cuentas":
+      /* Todo lo que entró y salió + lo que te deben hoy (periodo en `?sub=`). */
+      return <CuentasDelPeriodo onIr={irA} />;
     case "flujo-caja":
       /* La proyección a 13 semanas reemplazó a la de 30 días: eran la misma
          pregunta con menos horizonte. */

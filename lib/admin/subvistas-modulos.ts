@@ -120,6 +120,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "pl", label: "Ganancias y pérdidas", hint: "Estado de resultados", origen: ["plata", "activos"] },
     { key: "rentabilidad", label: "Rentabilidad", hint: "Margen por producto y categoría", origen: ["plata", "activos"] },
     { key: "comparador", label: "Comparar períodos", hint: "Este mes contra el anterior, y los reportes comparativos de Análisis", origen: ["plata", "analytics-pro", "activos"] },
+    { key: "cuentas", label: "Todo lo que entró y salió", hint: "Adelantos, gastos e ingresos de la semana, el mes o todo, con quién y a qué hora, y lo que te deben hoy", origen: ["plata", "activos"] },
     { key: "gastos", label: "Gastos y presupuesto", hint: "En qué se va la plata, cuánto planeaste gastar, los gastos fijos y el historial de compras", origen: ["plata", "compras", "activos"] },
     { key: "flujo-caja", label: "Proyección de caja", hint: "Flujo de caja de las próximas semanas", origen: ["plata", "activos"] },
     { key: "tesoreria", label: "Tesorería", hint: "Cuentas bancarias y saldos", origen: ["plata", "activos"] },

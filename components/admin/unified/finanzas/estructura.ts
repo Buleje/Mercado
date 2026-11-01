@@ -79,7 +79,7 @@ export const CON_PESTANAS_PROPIAS: readonly TabId[] = ["prestamos", "adelantos",
  * Préstamos, Adelantos y Activos. No son pestañas: su segundo nivel sigue
  * siendo el de Mi Plata, por eso no van en `CON_PESTANAS_PROPIAS`.
  */
-export const CON_SUB_PROPIO: readonly string[] = ["resumen", "rentabilidad", "gastos", "presupuesto", "flujo-caja", "impuestos", "por-pagar"];
+export const CON_SUB_PROPIO: readonly string[] = ["resumen", "rentabilidad", "gastos", "presupuesto", "flujo-caja", "impuestos", "por-pagar", "cuentas"];
 
 export type TabId = (typeof TABS)[number]["id"];
 
@@ -118,6 +118,9 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
     { id: "comparador",   label: "Comparar períodos",    corto: "Comparar",  icon: GitCompareArrows },
   ],
   movimientos: [
+    /* Cuentas (01-11): todo lo que entró y salió, con quién y a qué hora, y lo que
+       te deben hoy. Es la primera: contesta «¿cómo va la plata?» antes del detalle. */
+    { id: "cuentas",    label: "Todo lo que entró y salió", corto: "Todo", icon: ArrowUpDown },
     /* El presupuesto va adentro: es el techo de estos mismos gastos. */
     { id: "gastos",     label: "Gastos y presupuesto", corto: "Gastos", icon: TrendingDown, adentro: ["presupuesto"] },
     { id: "flujo-caja", label: "Proyección de caja",   corto: "Caja",   icon: Waves },
@@ -184,7 +187,7 @@ const ALIAS: Record<string, string> = {
   resultado: "pl",
   /* Pestañas que ya no existen: Gastos y Caja se fundieron en Movimientos. */
   caja: "flujo-caja",
-  movimientos: "gastos",
+  movimientos: "cuentas",
   /* Fiados vive en Ventas y caja › Me deben; un nombre viejo que todavía llegue
      acá cae donde está su cifra y su enlace. */
   fiados: "por-cobrar",
