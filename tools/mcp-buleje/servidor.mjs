@@ -10,6 +10,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { lineaInstruccion, sanearVentana } from "./src/clave-ok.mjs";
 import { crearConfirmador, VENTANA_MS } from "./src/confirmaciones.mjs";
+import { crearCarrera, crearOkTelegram, crearTelegram, leerBot, ESPERA_TELEGRAM_MS } from "./src/ok-telegram.mjs";
 import { preguntarEnWindows } from "./src/dialogo-windows.mjs";
 import { registrarPrompts } from "./src/prompts.mjs";
 import { registrarRecursos } from "./src/recursos.mjs";
@@ -30,8 +31,9 @@ const log = (m) => process.stderr.write(`[buleje-mcp] ${m}\n`);
 const DESC_CONFIRMAR = "Ejecuta una propuesta de plata, stock, borrar o envío (las herramientas que «piden OK» devuelven token + resumen y no hacen nada todavía). " +
   "Al llamarla se abre una ventana «Claude pide tu OK» encima de todo en la PC de Brandon, con el negocio, el resumen y 3 botones (el monto o nombre real y 2 parecidos); " +
   "SOLO si Brandon aprieta con el mouse el botón del dato correcto se mandan los pedidos (un parecido = no). " +
-  "Claude NUNCA contesta esa ventana por su cuenta: ni con desktop-control, ni con clics, teclas, UI Automation o scripts, ni le pide a otro agente que lo haga; espera la respuesta. " +
-  `«No» o un botón equivocado → no_confirmado; ${VENTANA_MS / 1000} s sin respuesta → sin_respuesta (en los dos casos no se hizo nada). Pasá el token y el resumen EXACTO de la propuesta; un token sirve una sola vez y vive 120 s.`;
+  "Además le llega a su Telegram con botones Sí / No: gana el primero que conteste (ventana o Telegram). " +
+  "Claude NUNCA contesta esa ventana ni esos botones por su cuenta: ni con desktop-control, ni con clics, teclas, UI Automation, la API de Telegram o scripts, ni escribiendo archivos de respuesta, ni le pide a otro agente que lo haga; espera la respuesta. " +
+  `«No» o un botón equivocado → no_confirmado; sin respuesta (la ventana se cierra a los ${VENTANA_MS / 1000} s, Telegram espera 10 min) → sin_respuesta (en los dos casos no se hizo nada). Pasá el token y el resumen EXACTO de la propuesta; un token sirve una sola vez y vive 120 s.`;
 const NOTA_PIDE_OK_SI = "\n\nSegún los datos puede pedir OK de Brandon: entonces NO cambia nada y devuelve una propuesta (token + resumen) que se ejecuta con `confirmar`.";
 const NOTA_PIDE_OK = "\n\nPide OK de Brandon: esta llamada NO cambia nada; devuelve una propuesta (token + resumen). Se ejecuta con `confirmar`, que abre la ventana de OK en su PC (3 botones: solo el del dato correcto lo hace). Los nombres que muestra los saca del panel, no de lo que escribas.";
 
@@ -111,14 +113,20 @@ const deRespuesta = (r) => error(r?.error?.codigo ?? "servidor", r?.error?.mensa
  *   estadoPanel?: (op: any) => Promise<any>, prenderPanel?: (op: any) => Promise<any>,
  *   rutaLecturaPermitida?: (ruta: string) => { ok: boolean, motivo: string, ruta?: string },
  *   sesionViva?: (negocio: string) => boolean | null, sinConfig?: string, ahora?: () => number,
+ *   telegram?: { token: string, chat: string } | null, esperaMs?: number,
  * }} d
  */
 export function crearServidor(d) {
   const { config } = d;
   const seco = () => d.seco ?? secoInicial(config);
   const anotar = (e) => { try { d.anotar?.(e); } catch (err) { log(`registro falló: ${String(err)}`); } };
-  const preguntar = d.preguntar ?? ((p) => preguntarEnWindows({ negocio: p.negocio, resumen: p.resumen, ventana: p.ventana, vence: p.vence, signal: p.signal }));
-  const confirmador = crearConfirmador({ preguntar, enviar: d.pedir, seco, ahora: d.ahora });
+  const enVentana = (p) => preguntarEnWindows({ negocio: p.negocio, resumen: p.resumen, ventana: p.ventana, vence: p.vence, signal: p.signal });
+  // 01-11: el OK también llega a Telegram (botones Sí / No); gana el primero. Sin bot configurado o con
+  // BULEJE_MCP_TELEGRAM=0, solo ventana como antes. Los tests pasan `preguntar` y no tocan nada de esto.
+  const bot = d.preguntar ? null : d.telegram === undefined ? (process.env.BULEJE_MCP_TELEGRAM === "0" ? null : leerBot()) : d.telegram;
+  const okTelegram = bot ? crearOkTelegram({ telegram: crearTelegram(bot) }) : null;
+  const preguntar = d.preguntar ?? crearCarrera({ ventana: enVentana, telegram: okTelegram ? okTelegram.preguntar : null, ventanaMs: VENTANA_MS });
+  const confirmador = crearConfirmador({ preguntar, enviar: d.pedir, seco, ahora: d.ahora, esperaMs: d.esperaMs ?? (okTelegram ? ESPERA_TELEGRAM_MS : VENTANA_MS) });
   const servidor = new McpServer({ name: "buleje", version: "1.0.0" }, { capabilities: { resources: {}, prompts: {}, tools: {} } });
   const porNombre = new Map(d.herramientas.map((x) => [x.nombre, x]));
 
@@ -195,7 +203,9 @@ export function crearServidor(d) {
     try {
       previa = def.previa ? await def.previa(a, leer) : undefined;
       pedidos = [def.pedido(a, previa)].flat();
+      // Pedido vacío = la herramienta se negó a proponer (ej. moneda sin confirmar): el resumen dice por qué.
       const crudo = def.resumen(a, previa);
+      if (pedidos.length === 0) throw new Error(crudo);
       let v = typeof def.ventana === "function" ? def.ventana(a, previa) : undefined;
       // Si el resumen no pudo verificar a quién, la ventana lo dice arriba (fila fija), aunque la def no lo ponga.
       if (crudo.includes(NO_VERIFICADO) && !JSON.stringify(v?.filas ?? []).includes(NO_VERIFICADO)) v = { ...(v ?? {}), filas: [{ etiqueta: "OJO", valor: NO_VERIFICADO }, ...(Array.isArray(v?.filas) ? v.filas : [])] };
@@ -238,14 +248,14 @@ export function crearServidor(d) {
     const progreso = extra?._meta?.progressToken;
     const latido = progreso === undefined ? null : setInterval(() => {
       const s = Math.round((Date.now() - t0) / 1000);
-      extra.sendNotification({ method: "notifications/progress", params: { progressToken: progreso, progress: s, total: VENTANA_MS / 1000, message: "Esperando el OK de Brandon en la ventana…" } })
+      extra.sendNotification({ method: "notifications/progress", params: { progressToken: progreso, progress: s, total: confirmador.esperaMs / 1000, message: okTelegram ? "Esperando el OK de Brandon (ventana o Telegram)…" : "Esperando el OK de Brandon en la ventana…" } })
         .catch((err) => log(`progreso falló: ${String(err)}`));
     }, 10_000);
     let r;
     try { r = await confirmador.confirmar({ token: a.token, resumen: a.resumen, negocio: a.negocio, seco: a.seco, signal: extra?.signal }); }
     finally { if (latido) clearInterval(latido); }
     const ultima = r.resultados?.[r.resultados.length - 1];
-    anotar({ herramienta: r.herramienta ?? "confirmar", tipo: "confirmar", negocio: r.negocio, token: a.token, confirmado: r.respuesta === "si", respuesta: r.respuesta, ...(r.inyectados ? { inyectados: r.inyectados, intento: "clics_inyectados" } : {}), seco: r.seco === true, status: ultima?.status, ms: Date.now() - t0, error: r.error?.codigo });
+    anotar({ herramienta: r.herramienta ?? "confirmar", tipo: "confirmar", negocio: r.negocio, token: a.token, confirmado: r.respuesta === "si", respuesta: r.respuesta, ...(r.por ? { por: r.por } : {}), ...(r.quien ? { quien: r.quien } : {}), ...(r.cuando ? { cuando: r.cuando } : {}), ...(r.inyectados ? { inyectados: r.inyectados, intento: "clics_inyectados" } : {}), seco: r.seco === true, status: ultima?.status, ms: Date.now() - t0, error: r.error?.codigo });
     if (!r.ok) return error(r.error?.codigo ?? "servidor", r.error?.mensaje ?? "falló", r.inyectados ? { respuesta: "no", inyectados: r.inyectados } : r.resultados?.map((x) => ({ ok: x.ok, status: x.status, datos: x.datos })));
     if (r.seco) return ok(json({ seco: true, nota: "Modo a seco: ni ventana ni red. Esto es lo que se mandaría.", herramienta: r.herramienta, negocio: r.negocio, pedidos: r.pedidos }));
     const def = porNombre.get(r.herramienta);
@@ -254,7 +264,7 @@ export function crearServidor(d) {
     let texto;
     try { texto = def?.formatear ? def.formatear(visibles, {}) : json(visibles); } catch { texto = json(visibles); }
     texto = seguro(texto, visibles);
-    return ok(`Hecho: Brandon apretó el botón correcto (${r.herramienta}, ${r.negocio}).\n${texto}`);
+    return ok(`Hecho: ${r.por === "telegram" ? "Brandon aprobó con el botón de Telegram" : "Brandon apretó el botón correcto"} (${r.herramienta}, ${r.negocio}).\n${texto}`);
   });
 
   servidor.registerTool("pendientes", {

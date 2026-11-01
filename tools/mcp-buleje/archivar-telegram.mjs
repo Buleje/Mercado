@@ -44,14 +44,14 @@ export function negocioDeConfig(config, negocio) {
   return null;
 }
 
-async function cargarSesion(sesion, archivo) {
+export async function cargarSesion(sesion, archivo) {
   try {
     const pares = JSON.parse(await readFile(archivo, "utf8"));
     if (Array.isArray(pares)) for (const [k, v] of pares) if (typeof k === "string" && typeof v === "string") sesion.jar.set(k, v);
   } catch { /* primera vez o archivo roto: se entra con usuario y clave */ }
 }
 
-async function guardarSesion(sesion, archivo) {
+export async function guardarSesion(sesion, archivo) {
   try {
     await mkdir(dirname(archivo), { recursive: true, mode: 0o700 });
     const tmp = `${archivo}.${process.pid}.tmp`;

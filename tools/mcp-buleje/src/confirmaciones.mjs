@@ -105,6 +105,9 @@ function pedidoInvalido(p) {
  * @property {import("./tipos.mjs").Respuesta[]} [resultados]  respuestas de los pedidos que se mandaron
  * @property {"si"|"no"|"vencio"} [respuesta]   lo que contestó la ventana
  * @property {number} [inyectados]              clics inyectados (no del mouse de Brandon) que la ventana descartó
+ * @property {string} [por]                     dónde contestó: "ventana" | "telegram" (01-11)
+ * @property {string} [quien]                   quién tocó el botón en Telegram (id y usuario)
+ * @property {string} [cuando]                  cuándo lo tocó (ISO)
  * @property {{ codigo: import("./tipos.mjs").ErrorMcp, mensaje: string }} [error]
  */
 
@@ -115,12 +118,14 @@ function pedidoInvalido(p) {
  *   ahora?: () => number,
  *   aleatorio?: (n: number) => Uint8Array,
  *   seco?: boolean | (() => boolean),
+ *   esperaMs?: number,  cuánto se espera la respuesta desde que se pregunta (default VENTANA_MS; con Telegram, 10 min)
  * }} op
  */
 export function crearConfirmador(op) {
   if (typeof op?.preguntar !== "function" || typeof op?.enviar !== "function") throw new TypeError("crearConfirmador necesita preguntar() y enviar()");
   const ahora = op.ahora ?? Date.now;
   const aleatorio = op.aleatorio ?? ((n) => randomBytes(n));
+  const esperaMs = Number.isFinite(op.esperaMs) && op.esperaMs > 0 ? op.esperaMs : VENTANA_MS;
   const secoGlobal = () => (typeof op.seco === "function" ? op.seco() : op.seco === true);
   /** @type {Map<string, import("./tipos.mjs").Propuesta & { firma: string, seco: boolean, cancelada?: boolean }>} */
   const propuestas = new Map();
@@ -213,7 +218,7 @@ export function crearConfirmador(op) {
     const { p, error } = revisar(a?.token, a?.resumen, a?.negocio);
     if (error) return error;
     p.usada = true; // un solo uso: dos confirmar en paralelo → el segundo ve token_usado
-    const base = { negocio: p.negocio, herramienta: p.herramienta };
+    /** @type {Record<string, unknown>} */ const base = { negocio: p.negocio, herramienta: p.herramienta };
 
     if (p.seco || a.seco === true || secoGlobal()) {
       return { ok: true, ...base, seco: true, pedidos: structuredClone(p.pedidos) };
@@ -229,15 +234,15 @@ export function crearConfirmador(op) {
       const ctl = new AbortController();
       const alAbortar = () => ctl.abort();
       a.signal?.addEventListener("abort", alAbortar, { once: true });
-      const vence = ahora() + VENTANA_MS;
+      const vence = ahora() + esperaMs;
       const pregunta = (async () => op.preguntar({ negocio: p.negocio, herramienta: p.herramienta, resumen: p.resumen, ventana: structuredClone(p.ventana), vence, signal: ctl.signal }))();
       const cerrada = pregunta.then(() => undefined, () => undefined).finally(() => a.signal?.removeEventListener("abort", alAbortar));
       let reloj;
       try {
-        const r = await Promise.race([pregunta, new Promise((res) => { reloj = setTimeout(() => res("vencio"), VENTANA_MS + HOLGURA_VENTANA_MS); })]);
+        const r = await Promise.race([pregunta, new Promise((res) => { reloj = setTimeout(() => res("vencio"), esperaMs + HOLGURA_VENTANA_MS); })]);
         const o = r && typeof r === "object" ? r : { respuesta: r };
         const inyectados = Number.isSafeInteger(o.inyectados) && o.inyectados > 0 ? o.inyectados : 0;
-        return { respuesta: inyectados > 0 ? "no" : String(o.respuesta), inyectados, cerrada };
+        return { respuesta: inyectados > 0 ? "no" : String(o.respuesta), inyectados, cerrada, ...quienContesto(o) };
       } catch {
         return { respuesta: "no", inyectados: 0, cerrada }; // ventana rota = no hay OK
       } finally {
@@ -247,6 +252,7 @@ export function crearConfirmador(op) {
     };
     /** @type {string} */ let respuesta;
     let inyectados = 0;
+    /** @type {{ por?: string, quien?: string, cuando?: string }} */ let meta = {};
     let quitar = () => undefined;
     const abortada = new Promise((r) => {
       if (!a.signal) return;
@@ -258,16 +264,18 @@ export function crearConfirmador(op) {
       const r = await Promise.race([enFila(turno), abortada]);
       respuesta = typeof r === "string" ? r : r.respuesta;
       inyectados = typeof r === "object" && r.inyectados > 0 ? r.inyectados : 0;
+      if (typeof r === "object") meta = quienContesto(r);
     } catch {
       respuesta = "no";
     } finally {
       quitar();
     }
+    Object.assign(base, meta);
     if (inyectados > 0) {
       return fallo("no_confirmado", `Llegaron ${inyectados} clic(s) inyectados por programa (no del mouse de Brandon) a la ventana de OK: se descartaron y la respuesta es «no». No se hizo nada.`, { ...base, respuesta: "no", inyectados });
     }
     if (respuesta === "abortada") return fallo("no_confirmado", "Se canceló la llamada mientras esperaba su turno o el OK; no se hizo nada.", base);
-    if (respuesta === "vencio") return fallo("sin_respuesta", `Brandon no contestó la ventana en ${VENTANA_MS / 1000} s; no se hizo nada.`, { ...base, respuesta: "vencio" });
+    if (respuesta === "vencio") return fallo("sin_respuesta", `Brandon no contestó en ${Math.round(esperaMs / 1000)} s; no se hizo nada.`, { ...base, respuesta: "vencio" });
     if (respuesta !== "si") return fallo("no_confirmado", "Brandon dijo que no (o la ventana no se pudo abrir); no se hizo nada.", { ...base, respuesta: "no" });
     if (a.signal?.aborted) return fallo("no_confirmado", "Se canceló la llamada mientras esperaba el OK; no se hizo nada.", { ...base, respuesta: "si" });
 
@@ -291,6 +299,15 @@ export function crearConfirmador(op) {
   }
 
   /** Propuestas vivas (recurso buleje://pendientes). */
+  /** Por dónde contestó (ventana / telegram), quién y cuándo: va al registro. @param {any} o */
+  function quienContesto(o) {
+    const m = {};
+    if (o && typeof o.por === "string") m.por = o.por.slice(0, 20);
+    if (o && typeof o.quien === "string" && o.quien) m.quien = o.quien.slice(0, 80);
+    if (o && typeof o.cuando === "string" && o.cuando) m.cuando = o.cuando.slice(0, 40);
+    return m;
+  }
+
   function pendientes() {
     podar();
     const t = ahora();
@@ -310,5 +327,5 @@ export function crearConfirmador(op) {
     return { ok: true, negocio: p.negocio, herramienta: p.herramienta };
   }
 
-  return { proponer, confirmar, pendientes, cancelar };
+  return { proponer, confirmar, pendientes, cancelar, esperaMs };
 }
