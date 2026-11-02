@@ -178,3 +178,20 @@ Mostrando top 3. Para crear skill: usá `/luis` o decí "crea skill para X".
 - **Sugerencia:** Files [components/superadmin/banners/BannerImageAdjuster.tsx, components/superadmin/banners/BannerPreviewStudio.tsx] are always edited together. Consider creating a skill that pre-loads all 2 files.
 - **Last seen:** 2026-04-27T01:43:48.118Z
 
+
+## Weekly health 2026-11-02
+
+- **tsc:** green (0 errors).
+- **tests:** 52 failed / 3952 passed before fix, across 18 files. The 5 failures in `__tests__/whatsapp/` are fixed here (258 pass in whatsapp+delivery). 47 failures remain: stale mocks after round28 db hardening (`prisma.transfer/warehouse/savedCart.findFirst`, `getClientIp`/`tryAdmin` missing from mocks), plus checkout tests (danger zone, human).
+- **lint:** run aborted on a `react-hooks` plugin config error; no counts available.
+- **deps:** 97 outdated. `npm audit --omit=dev` has HIGH/CRITICAL (next, @sentry/nextjs, prisma, nodemailer, sharp, zod, axios and others). Not touched: major bumps, left for a human.
+- **action:** fixed the 5 whatsapp test failures (test-only change, Tier 1).
+
+### [pending] 2026-11-02 — 47 stale test failures outside whatsapp
+Files: api-message-templates, api-warehouse-transfers, api-product-seo, api-product-variants, api-purchases-create, cart-route-auth, api-auth-login, feature-flags, marketplace-admin-csrf, orchestrator-circuit-breaker, tenant-hardcoded-main-guard, checkout/* (danger zone, human).
+
+### [pending] 2026-11-02 — npm audit HIGH/CRITICAL (prod deps)
+next and @sentry/nextjs critical; prisma, nodemailer, sharp, zod high. Needs a human-reviewed upgrade plan.
+
+### [pending] 2026-11-02 — eslint config error
+`react-hooks` plugin not defined where `react-hooks/set-state-in-effect` is applied.
