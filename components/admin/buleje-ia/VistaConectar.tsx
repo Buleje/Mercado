@@ -28,7 +28,7 @@ export function VistaConectar() {
   const { confirm, ConfirmDialog } = useConfirm();
 
   const crear = async () => {
-    if (!nombre.trim()) return setError("Ponle un nombre, por ejemplo «ChatGPT de Brandon».");
+    if (!nombre.trim()) return setError("Ponle un nombre, por ejemplo «Mi ChatGPT».");
     setError(null);
     setCreando(true);
     const r = await cx.crear(nombre.trim(), escribir);
@@ -82,7 +82,7 @@ export function VistaConectar() {
               Nombre
             </label>
             <div className="flex flex-wrap gap-2">
-              <input id="cx-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={60} placeholder="ChatGPT de Brandon" className={`${CAMPO_IA} min-w-0 flex-1`} />
+              <input id="cx-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={60} placeholder="Mi ChatGPT" className={`${CAMPO_IA} min-w-0 flex-1`} />
               <Button variant="accent" onClick={() => void crear()} disabled={creando}>
                 {creando ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Plus className="h-5 w-5" aria-hidden />} Crear
               </Button>

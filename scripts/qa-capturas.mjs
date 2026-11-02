@@ -18,6 +18,9 @@
  *       un preset puede ser {"tenant","ruta","pasos"} (sus --tenant/--ruta por defecto) y un paso {"preset":"otro"} lo incluye entero \
  *     [--media-falso]   (micrófono/cámara falsos de Chromium con permiso: grabadora, getUserMedia)
  *     [--alto 650]      (alto de la ventana; 900 por defecto)
+ *     [--video <dir>]   (graba cada recorrido en <dir>/<nombre>-<tema>.webm; el login no se graba. Para una demo:
+ *       --anchos 400 --temas claro y pasar a mp4 con ffmpeg; la lista sale en `videos` del reporte)
+ *     [--escala 2]      (pantalla de celular nítida: capturas y video al doble de píxeles)
  *     [--evals-todos]   (cada {"eval"} corre en todos los anchos y temas; el reporte trae {tema, ancho, valor})
  *     [--resumen]   (stdout sólo con lo esencial —los evals recortados a 400 caracteres—; el JSON completo igual queda en <salida>/reporte.json) \
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
@@ -187,7 +190,7 @@ async function baseQueResponde() {
        no hay un dev arrancando, qa-capturas lo prende y espera hasta 3 min (arranque en frío). */
     let vueltas = 30;
     let arrancando = true;
-    try { execSync("pgrep -f 'next dev|next-server|dev-with-canary'", { stdio: "ignore" }); } catch { arrancando = false; }
+    try { execSync("pgrep -f '^(node [^ ]*/next dev|next-server|node [^ ]*dev-with-canary)'", { stdio: "ignore" }); } catch { arrancando = false; }
     if (!ok && !arrancando) {
       console.error("[qa-capturas] el panel está apagado: lo prendo (1-2 min)… log: /tmp/dev-server.log");
       const raiz = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
@@ -334,6 +337,12 @@ if (superadmin) {
 /* `--media-falso` (23-10, grabadora del cubicador): micrófono y cámara de mentira (un pitido
    y un patrón) y el permiso dado, para probar getUserMedia/MediaRecorder sin hardware. */
 const mediaFalso = process.argv.includes("--media-falso");
+/* `--video <dir>` (01-11, demo de Buleje IA): Playwright graba cada página del contexto; la del login
+   se borra al cerrarla y la de cada tema se guarda con nombre propio al terminar el recorrido. */
+const dirVideo = arg("video", null);
+if (dirVideo) mkdirSync(dirVideo, { recursive: true });
+const videos = [];
+const escala = Math.min(3, Math.max(1, Number(arg("escala", "1")) || 1));
 /* QA_IP=10.9.0.7 (31-10): el panel compilado (`next start`) frena el login a 20 por hora y por IP, y las
    sesiones de fondo lo gastan («login 429» trabó 2 corridas). El freno toma la IP de x-forwarded-for:
    con QA_IP la corrida entra como otra máquina de la red. Sólo para el servidor local. */
@@ -346,6 +355,8 @@ const browser = await chromium.launch({
 const ctx = await browser.newContext({
   viewport: { width: anchos[0] ?? 1280, height: altoVentana },
   ...(mediaFalso ? { permissions: ["microphone", "camera"] } : {}),
+  ...(escala > 1 ? { deviceScaleFactor: escala } : {}),
+  ...(dirVideo ? { recordVideo: { dir: dirVideo, size: { width: (anchos[0] ?? 1280) * escala, height: altoVentana * escala } } } : {}),
   ...(sesionSa ? { userAgent: sesionSa.userAgent } : { extraHTTPHeaders: { "x-tenant-id": tenant, ...ipDePrueba } }),
 });
 if (sesionSa) await ctx.addCookies(sesionSa.cookies);
@@ -884,6 +895,12 @@ async function recorrido(t, primero) {
     if (!huboCaptura) await matriz(page, nombreBase, t);
   } finally {
     await page.close().catch(() => {});
+    const v = dirVideo ? page.video() : null;
+    if (v) {
+      const destino = path.join(dirVideo, `${nombreBase}-${t}.webm`);
+      await v.saveAs(destino).then(() => v.delete()).then(() => videos.push(destino))
+        .catch((e) => console.error(`[qa-capturas] no pude guardar el video: ${e.message}`));
+    }
   }
 }
 
@@ -956,6 +973,7 @@ try {
     }
   }
   await page.close();
+  if (dirVideo) await page.video()?.delete().catch(() => {});
   // Los temas van en serie a propósito: en paralelo (probado 2026-09-25)
   // bajaba sólo 42 → 37 s — el cuello es el dev server, no el navegador — y
   // con pasos que guardan escribirían dos veces a la vez.
@@ -974,7 +992,7 @@ try {
 }
 
 const ok = !falla && pageerrors.length === 0;
-const reporte = { ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, espiados, ms: Date.now() - t0 };
+const reporte = { ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, espiados, ...(dirVideo ? { videos } : {}), ms: Date.now() - t0 };
 const archivoReporte = path.join(salida, "reporte.json");
 try { writeFileSync(archivoReporte, JSON.stringify({ ...reporte, generado: new Date().toISOString() }, null, 1)); }
 catch (e) { console.error(`no pude escribir ${archivoReporte}: ${e.message}`); }
@@ -983,7 +1001,7 @@ if (bandera("resumen")) {
      y un carril lo pidió como «Para acelerar»). El valor entero sigue en reporte.json. */
   const corto = (v) => { const j = JSON.stringify(v) ?? "undefined"; return j.length > 400 ? `${j.slice(0, 400)}…` : v; };
   const evalsCortos = evals.map(({ valor, ...resto }) => ({ ...resto, valor: corto(valor) }));
-  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.slice(0, 5), consola: reporte.consola, pageerrors, evals: evalsCortos, ...(espiados.length ? { espiados: espiados.map((e) => ({ ...e, cuerpo: e.cuerpo.slice(0, 300) })) } : {}), ms: reporte.ms, reporte: archivoReporte }, null, 1));
+  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.slice(0, 5), consola: reporte.consola, pageerrors, evals: evalsCortos, ...(espiados.length ? { espiados: espiados.map((e) => ({ ...e, cuerpo: e.cuerpo.slice(0, 300) })) } : {}), ...(dirVideo ? { videos } : {}), ms: reporte.ms, reporte: archivoReporte }, null, 1));
 } else {
   console.log(JSON.stringify({ ...reporte, reporte: archivoReporte }, null, 1));
 }
