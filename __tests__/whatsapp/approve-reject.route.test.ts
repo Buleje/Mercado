@@ -14,6 +14,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
+// Rate limiter: always allow (in-memory limiter otherwise trips across tests)
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn(async () => null),
+  getClientIp: vi.fn(() => "127.0.0.1"),
+}));
+
 vi.mock("@/lib/logger", () => ({
   logger: {
     info: vi.fn(),
