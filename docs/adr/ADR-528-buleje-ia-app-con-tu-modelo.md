@@ -1,6 +1,6 @@
 # ADR-528 — Buleje IA: operar el negocio hablando, con el modelo de IA que cada negocio elija
 
-- **Estado:** en construcción (2026-11-01). Schema EXPAND aplicado: `TenantIaProveedor`, `AsistenteMemoria`, `AsistenteConexion`, `AIMessage.extra` (migración `20261101a_buleje_ia_adr528`).
+- **Estado:** aceptado (2026-11-01, `ec0ea935f`); probado en main/QA con Groq como clave propia. Sin probar: foto real y proveedores pagos. Schema EXPAND aplicado: `TenantIaProveedor`, `AsistenteMemoria`, `AsistenteConexion`, `AIMessage.extra` (migración `20261101a_buleje_ia_adr528`).
 - **Pedido por:** Brandon (01-11): «una app tipo IA donde se pondrá el API del modelo que sea (ChatGPT, Claude, Gemini, DeepSeek y modelos chinos) … "anótame tanqueé 12 gal de petróleo para mi camión blanco N12, total 200 soles, recibo E242, te envío foto" y con eso registra en el sistema y lo guarda en memoria; devuelve liquidaciones, boletas, facturas, cotizaciones, reuniones … lo que antes se registraba a mano en cualquier ERP, ahora a través de una IA configurada con el modelo que más agrade».
 - **Relacionados:** ADR-387 (el chat anota plata), ADR-388 (Telegram + Whisper), ADR-390 (conversa con memoria corta), ADR-391 (WhatsApp; fotos bloqueadas por falta de visión), ADR-523 (MCP «buleje» local de Claude Code), ADR-010 (router de modelos).
 
