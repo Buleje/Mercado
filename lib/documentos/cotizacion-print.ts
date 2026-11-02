@@ -60,6 +60,20 @@ const rotuloDoc = (doc: string) => (doc.replace(/\D/g, "").length === 8 ? "DNI" 
  * dirección fiscal) mandan sobre los del membrete: la cotización los muestra siempre.
  */
 export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor | null, membrete?: Membrete | null): void {
+  const html = htmlDeCotizacion(cot, empresa, membrete);
+  const w = window.open("", "_blank", "width=880,height=1000");
+  if (w) {
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
+/**
+ * La hoja entera en HTML, sin tocar `window`: la usa la ventana de arriba y la
+ * sirve el panel tal cual para el asistente (`/api/admin/ia/papeles/cotizacion/[id]`,
+ * ADR-528), así el papel del chat es el MISMO que el del módulo Cotizaciones.
+ */
+export function htmlDeCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor | null, membrete?: Membrete | null): string {
   // `numero` del backend ya viene formateado (string); un número legacy se
   // formatea como COT-NNNN. Sin dato → "COTIZACIÓN".
   const raw = cot.numero ?? cot.número;
@@ -122,10 +136,5 @@ export function printCotizacion(cot: CotizacionPrintData, empresa: EmpresaEmisor
   <div class="foot">Documento de cotización — no es comprobante de pago. Precios en soles (S/), IGV incluido. Válida hasta la fecha indicada.</div>
   ${mbr.pie}
   </body></html>`;
-
-  const w = window.open("", "_blank", "width=880,height=1000");
-  if (w) {
-    w.document.write(html);
-    w.document.close();
-  }
+  return html;
 }

@@ -157,6 +157,28 @@ export const AGENT_ACTION_PERMISSIONS: Record<
   planificacion: {
     "consultar":            { resource: "analytics", action: "read" },
   },
+  /**
+   * La memoria del asistente (ADR-528) es parte de la conversación con él:
+   * `chat`. Olvidar es `delete` —solo admin/owner lo tienen— y además pide
+   * confirmación; recordar no (se corrige diciéndolo de nuevo).
+   */
+  memoria: {
+    "buscar":               { resource: "chat", action: "read"   },
+    "recordar":             { resource: "chat", action: "write"  },
+    "olvidar":              { resource: "chat", action: "delete" },
+  },
+  /**
+   * Papeles (ADR-528). Cotizar es vender (`sales:write`, con confirmación); la
+   * liquidación es el estado de cuenta de Adelantos y ARCHIVA un PDF en
+   * Documentos: `adelantos:write` (no `read`: una conexión MCP de solo consulta
+   * no puede crear documentos; security 01-11), y el agente exige admin/owner
+   * porque el PDF queda en carpeta sensible; el comprobante solo consulta.
+   */
+  papeles: {
+    "cotizacion":           { resource: "sales",     action: "write" },
+    "liquidacion":          { resource: "adelantos", action: "write" },
+    "comprobante":          { resource: "sales",     action: "read"  },
+  },
   notifications: {
     "send-order-update":    { resource: "notifications", action: "write" },
     "send-stock-alert":     { resource: "notifications", action: "write" },

@@ -107,8 +107,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Tomarlo Y borrarlo antes del primer `await`: dos «aprobar» simultáneos
+  // ejecutaban la herramienta dos veces (ADR-528).
+  if (!removePendingApproval(parsed.data.id)) {
+    return NextResponse.json(
+      { error: "Approval not found or expired (TTL 10 min)" },
+      { status: 404 },
+    );
+  }
+
   if (parsed.data.action === "reject") {
-    removePendingApproval(parsed.data.id);
     logger.info("[approvals] rejected", {
       id: approval.id,
       toolName: approval.toolName,
@@ -136,7 +144,6 @@ export async function POST(req: NextRequest) {
       actorUsuario: auth.username,
     });
 
-    removePendingApproval(parsed.data.id);
     logger.info("[approvals] approved and executed", {
       id: approval.id,
       toolName: approval.toolName,

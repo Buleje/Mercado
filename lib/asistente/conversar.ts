@@ -25,7 +25,8 @@ import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { resolveToolCall, isToolApprovalRequired, siempreConfirma } from "@/lib/agents/tool-definitions";
 import { toolsParaMensaje } from "@/lib/agents/tool-routing";
 import { payloadsDelEnsayo, stashPendingApproval } from "@/lib/agents/pending-approvals";
-import { callLLM } from "@/lib/llm-router";
+import { callLLMDelNegocio, esErrorSinVision, FRASE_PLATAFORMA_SIN_VISION } from "@/lib/ia-proveedores/router-negocio";
+import type { ImagenTurno, ModeloUsado, PapelDevuelto } from "@/lib/ia-proveedores/tipos";
 import { logger } from "@/lib/logger";
 import type { Role } from "@/lib/auth/role-permissions";
 import { recordar, anotarTurno, type MensajeTurno } from "./memoria";
@@ -114,7 +115,16 @@ REGLAS QUE NO SE NEGOCIAN
 - Si una herramienta devuelve un error, cuéntalo tal cual: están escritos para que
   los entienda el dueño («supera el límite de crédito de Juan»).
 - Si ya anotaste algo hace un momento y te lo repiten igual, avisa antes de
-  duplicarlo.`;
+  duplicarlo.
+
+FOTOS Y MEMORIA
+- Si llega una foto de un recibo, boleta o factura, léela: galones o cantidad,
+  total, número del comprobante («E242»), fecha y grifo o proveedor. Pasa el
+  número como comprobante y el documentoId de la foto a la herramienta que anota.
+- Si lo dictado y lo de la foto no cuadran (otro monto, otros galones), pregunta
+  cuál vale antes de anotar.
+- Si la persona te enseña algo del negocio («el camión blanco es el N12», «a
+  Victor le dicen el Chato»), guárdalo con memoria_recordar.`;
 
 export interface Pendiente {
   id: string;
@@ -129,6 +139,29 @@ export interface RespuestaAsistente {
   pendientes: Pendiente[];
   /** Operaciones ya escritas (sólo con `confirmarAutomatico`). */
   registradas: Array<{ resumen: string; pantalla?: string }>;
+  /** Papeles que devolvieron las herramientas (`data.papel` / `data.papeles`): PDF de cotización, liquidación… */
+  papeles?: PapelDevuelto[];
+  /** Qué modelo contestó (el del negocio o el de la plataforma). */
+  modelo?: ModeloUsado;
+}
+
+/** Junta `data.papel` (uno) y `data.papeles` (varios) de lo que devolvió una herramienta. */
+export function papelesDe(data: unknown): PapelDevuelto[] {
+  if (!data || typeof data !== "object") return [];
+  const d = data as { papel?: unknown; papeles?: unknown };
+  const lista = [d.papel, ...(Array.isArray(d.papeles) ? d.papeles : [])];
+  return lista.filter(
+    (p): p is PapelDevuelto =>
+      !!p && typeof p === "object" && typeof (p as PapelDevuelto).url === "string" && typeof (p as PapelDevuelto).titulo === "string",
+  );
+}
+
+/** Lo que el modelo lee por cada foto, para que pase el `documentoId` a la herramienta. */
+export function textoConFotos(texto: string, imagenes: ImagenTurno[]): string {
+  if (imagenes.length === 0) return texto;
+  const marcas = imagenes.map((i) => `[foto adjunta: ${i.nombre} · documentoId ${i.documentoId}]`).join("\n");
+  const base = texto.trim() || "Anota lo que dice la foto.";
+  return `${base}\n${marcas}`;
 }
 
 export interface Turno {
@@ -152,12 +185,15 @@ export interface Turno {
    * `false`: la operación queda pendiente y el canal muestra el resumen.
    */
   confirmarAutomatico?: boolean;
+  /** Fotos del turno (ya guardadas en Documentos). Solo las ve el modelo propio del negocio que lee fotos. */
+  imagenes?: ImagenTurno[];
 }
 
 export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
   const { tenantId, sesionId, texto, actorRole, solicitante, usuarioPanel, canal, confirmarAutomatico = false } = turno;
+  const imagenes = turno.imagenes ?? [];
 
-  if (!texto.trim()) return { texto: "No me llegó nada. ¿Qué anoto?", pendientes: [], registradas: [] };
+  if (!texto.trim() && imagenes.length === 0) return { texto: "No me llegó nada. ¿Qué anoto?", pendientes: [], registradas: [] };
   if (texto.length > 2000) {
     return { texto: "Ese mensaje es larguísimo. Cuéntamelo en partes, una operación por vez.", pendientes: [], registradas: [] };
   }
@@ -167,7 +203,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
   const hoy = new Date().toLocaleDateString("es-PE", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
-  const contexto = await contextoDelNegocio(tenantId);
+  const contexto = await contextoDelNegocio(tenantId, texto);
 
   /**
    * El `system` se rearma cada turno con la fecha y el contexto frescos; el
@@ -178,7 +214,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
   const mensajes: MensajeTurno[] = [
     { role: "system", content: SISTEMA(hoy, contexto) },
     ...historial,
-    { role: "user", content: texto },
+    { role: "user", content: textoConFotos(texto, imagenes) },
   ];
 
   /**
@@ -191,11 +227,23 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
    * hacen falta.
    */
   const ultimoDelUsuario = [...historial].reverse().find((m) => m.role === "user")?.content ?? "";
-  const herramientas = toolsParaMensaje(`${ultimoDelUsuario} ${texto}`);
+  // Una foto sola casi siempre es un recibo: que estén las herramientas de plata.
+  const herramientas = toolsParaMensaje(`${ultimoDelUsuario} ${texto}${imagenes.length > 0 ? " gasto recibo" : ""}`);
 
   const pendientes: Pendiente[] = [];
   const registradas: Array<{ resumen: string; pantalla?: string }> = [];
+  const papeles: PapelDevuelto[] = [];
+  /**
+   * Lo que una herramienta SIN confirmación ya dejó hecho («Lo recordaré: …»).
+   * Si el modelo se cae después, la respuesta lo dice: «no pude» con algo ya
+   * guardado hace creer que no quedó nada (01-11, memoria del camión N12).
+   */
+  const hechos: string[] = [];
   let ultimoTexto: string | null = null;
+  let modelo: ModeloUsado | undefined;
+  /** Fotos que todavía viajan al modelo; se sueltan si el modelo no las lee. */
+  let fotos = imagenes;
+  let avisoFotos: string | null = null;
   /**
    * «Manda la resolución a Alex» se entiende sin el modelo: la primera vuelta
    * usa la llamada armada a mano y sigue por el mismo ensayo + confirmación.
@@ -204,30 +252,66 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
    */
   const pedidoDePapel = leerPedidoDeEnvio(texto);
 
+  /** El modelo propio falló en una ronda anterior de ESTE turno (ver `saltarPropio`). */
+  let propioCaido = false;
   for (let ronda = 0; ronda < MAX_RONDAS; ronda++) {
     const esAtajo = ronda === 0 && pedidoDePapel !== null;
     let cortarAtajo = false;
     const res = esAtajo
       ? respuestaDeAtajo(pedidoDePapel, randomUUID().slice(0, 8))
-      : await callLLM("balanced", {
-          messages: mensajes,
-          temperature: 0.2,
-          maxTokens: 900,
-          stream: false,
-          tools: herramientas,
-          toolChoice: "auto",
-          label: "asistente-conversar",
-        });
+      : await callLLMDelNegocio(
+          tenantId,
+          "balanced",
+          {
+            messages: mensajes,
+            temperature: 0.2,
+            maxTokens: 900,
+            stream: false,
+            tools: herramientas,
+            toolChoice: "auto",
+            label: "asistente-conversar",
+          },
+          { imagenes: fotos, saltarPropio: propioCaido },
+        );
+    const usado = (res as { modeloUsado?: ModeloUsado }).modeloUsado;
+    if (usado) modelo = usado;
+    const estadoPropio = (res as { estadoPropio?: string }).estadoPropio;
+    if (estadoPropio && estadoPropio !== "ok" && usado?.deLaPlataforma) propioCaido = true;
+
+    /*
+     * El modelo no lee fotos: se sigue con lo dictado (que suele traer el monto
+     * y el n.º de recibo) y se le avisa a la persona. La foto ya quedó guardada
+     * y su documentoId sigue en el texto, así que el gasto la referencia igual.
+     */
+    if (!res.ok && fotos.length > 0 && esErrorSinVision(res.error)) {
+      avisoFotos = String(res.error).split(" · ").slice(1).join(" · ") || FRASE_PLATAFORMA_SIN_VISION;
+      fotos = [];
+      const idxUsuario = mensajes.length - 1 - [...mensajes].reverse().findIndex((m) => m.role === "user");
+      mensajes[idxUsuario] = {
+        ...mensajes[idxUsuario],
+        content: `${mensajes[idxUsuario].content}\n(No puedes ver la foto: usa solo lo dictado; si falta el monto, pregúntalo.)`,
+      };
+      ronda--;
+      continue;
+    }
 
     if (!res.ok) {
       logger.error("[asistente] el modelo no respondió", { tenantId, canal, error: String(res.error) });
       const porMinuto = /tokens per minute|TPM/i.test(String(res.error));
+      const motivo = porMinuto
+        ? "Me quedé sin cupo por un minuto. Mándamelo de nuevo en un ratito y lo anoto."
+        : esErrorSinVision(res.error)
+          ? String(res.error).split(" · ").slice(1).join(" · ") || FRASE_PLATAFORMA_SIN_VISION
+          : "No pude procesarlo ahora. Prueba de nuevo en un momento.";
       return {
-        texto: porMinuto
-          ? "Me quedé sin cupo por un minuto. Mándamelo de nuevo en un ratito y lo anoto."
-          : "No pude procesarlo ahora. Prueba de nuevo en un momento.",
+        texto:
+          hechos.length > 0
+            ? `${hechos.join(" ")} No alcancé a contestarte lo demás${porMinuto ? " (me quedé sin cupo por un minuto)" : ""}: si falta algo, pídemelo de nuevo.`
+            : motivo,
         pendientes,
         registradas,
+        papeles,
+        modelo,
       };
     }
 
@@ -235,11 +319,17 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
 
     if (!res.toolCalls || res.toolCalls.length === 0) break;
 
-    mensajes.push({ role: "assistant", content: res.content ?? "", tool_calls: res.toolCalls });
+    /**
+     * Se guardan SOLO las llamadas que se van a contestar: una llamada sin su
+     * resultado = 400 del proveedor, y como queda en la memoria de 30 min, el
+     * bot quedaba mudo en esa conversación (revisor 01-11, 6 herramientas).
+     */
+    const llamadasDeLaRonda = res.toolCalls.slice(0, MAX_POR_RONDA);
+    mensajes.push({ role: "assistant", content: res.content ?? "", tool_calls: llamadasDeLaRonda });
 
     let huboLectura = false;
 
-    for (const llamada of res.toolCalls.slice(0, MAX_POR_RONDA)) {
+    for (const llamada of llamadasDeLaRonda) {
       const nombre = llamada.function?.name ?? "";
       const mapping = resolveToolCall(nombre);
       if (!mapping) {
@@ -302,6 +392,7 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
           actorUsuario: usuarioPanel,
         });
         const datos = (escritura.data ?? {}) as Record<string, unknown>;
+        if (escritura.success) papeles.push(...papelesDe(datos));
         if (escritura.success) {
           registradas.push({
             resumen: String(datos.confirmacion ?? resumen),
@@ -321,6 +412,11 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
       const lectura = await orchestrator.executeSync({
         domain: mapping.domain, action: mapping.action, payload: args, tenantId, actorRole,
       });
+      if (lectura.success) {
+        papeles.push(...papelesDe(lectura.data));
+        const confirmacion = (lectura.data as { confirmacion?: unknown } | undefined)?.confirmacion;
+        if (typeof confirmacion === "string" && confirmacion.trim()) hechos.push(confirmacion.trim());
+      }
       mensajes.push({
         role: "tool",
         tool_call_id: llamada.id,
@@ -352,5 +448,6 @@ export async function conversar(turno: Turno): Promise<RespuestaAsistente> {
     tenantId, canal, pendientes: pendientes.length, registradas: registradas.length,
   });
 
-  return { texto: ultimoTexto, pendientes, registradas };
+  const textoFinal = avisoFotos ? [ultimoTexto, `(${avisoFotos})`].filter(Boolean).join("\n\n") : ultimoTexto;
+  return { texto: textoFinal, pendientes, registradas, papeles, modelo };
 }

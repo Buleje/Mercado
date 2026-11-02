@@ -14,4 +14,6 @@ export type {
   LLMUsage,
   ChatMessage,
   ToolCallResult,
+  ParteContenido,
 } from "./types";
+export { contenidoComoTexto, hayImagenes, ERROR_SIN_VISION } from "./types";

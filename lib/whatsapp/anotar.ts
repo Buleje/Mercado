@@ -417,13 +417,17 @@ async function manejarBoton(msg: MensajeDueno, rol: Role, usuarioPanel: string |
 
   const esPapel = pendiente.toolName === TOOL_MANDAR_PAPEL;
 
+  if (accion !== BOTON_NO && accion !== BOTON_OK) return;
+  /**
+   * Tomarlo Y borrarlo antes del primer `await`: dos toques seguidos al «Sí»
+   * (o el reintento del webhook de Meta) anotaban la operación dos veces.
+   */
+  if (!removePendingApproval(aprobacionId)) return;
+
   if (accion === BOTON_NO) {
-    removePendingApproval(aprobacionId);
     await mandarTexto(cred, telefono, esPapel ? "✖ Listo, no mandé nada." : "✖ Listo, no anoté nada.");
     return;
   }
-
-  if (accion !== BOTON_OK) return;
 
   await ensureAgentsRegistered();
   const res = await orchestrator.executeSync({
@@ -435,7 +439,6 @@ async function manejarBoton(msg: MensajeDueno, rol: Role, usuarioPanel: string |
     actorId: pendiente.requestedBy,
     actorUsuario: usuarioPanel,
   });
-  removePendingApproval(aprobacionId);
 
   if (!res.success) {
     await mandarTexto(cred, telefono, `⚠️ ${esPapel ? "No salió" : "No se pudo anotar"}: ${errorParaLaPersona(res.error)}`);

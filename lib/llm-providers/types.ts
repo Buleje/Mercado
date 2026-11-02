@@ -7,9 +7,19 @@
  * Ver ADR-010 para la estrategia de router y tiers.
  */
 
+/**
+ * Una parte de un mensaje multimodal (Buleje IA, ADR-528). Las fotos viajan en
+ * base64 y cada adaptador las traduce a su formato: OpenAI-compatible →
+ * `image_url` con `data:`; Anthropic → bloque `image` base64. Groq no lee fotos
+ * y lo dice claro en vez de mandarlas como texto.
+ */
+export type ParteContenido =
+  | { type: "text"; text: string }
+  | { type: "image"; mime: string; base64: string };
+
 export interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
-  content: string;
+  content: string | ParteContenido[];
   tool_call_id?: string;
   tool_calls?: unknown[];
 }
@@ -73,3 +83,20 @@ export interface LLMProvider {
   /** Llamada síncrona — devuelve la respuesta completa. */
   chat(opts: LLMCallOptions, model: string): Promise<LLMResponse>;
 }
+
+/** El texto de un contenido (las fotos se omiten). */
+export function contenidoComoTexto(content: string | ParteContenido[]): string {
+  if (typeof content === "string") return content;
+  return content
+    .filter((p): p is Extract<ParteContenido, { type: "text" }> => p.type === "text")
+    .map((p) => p.text)
+    .join("\n");
+}
+
+/** ¿Algún mensaje trae una foto? */
+export function hayImagenes(messages: ChatMessage[]): boolean {
+  return messages.some((m) => Array.isArray(m.content) && m.content.some((p) => p.type === "image"));
+}
+
+/** Mensaje de error estándar para un proveedor que no lee fotos. */
+export const ERROR_SIN_VISION = "sin_vision: este modelo no lee fotos";

@@ -65,4 +65,34 @@ export const ExpensesDB = {
     );
     return igual ? gastoConMismoComprobante(igual) : null;
   },
+
+  /**
+   * El gasto de ESTE negocio con ese n.º de recibo dictado («Recibo E242» en
+   * las notas que deja el asistente, o el `documentNumber` del formulario), o
+   * `null`. Sin caché: el que se anotó hace un minuto tiene que aparecer.
+   */
+  async conRecibo(tenantId: string, numero: string): Promise<{ id: string; date: string; amount: number } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const n = numero.trim();
+    if (!n) return null;
+    const filas = await prisma.expense.findMany({
+      where: {
+        tenantId,
+        recurring: false,
+        OR: [{ notes: { contains: `Recibo ${n}`, mode: "insensitive" } }, { documentNumber: { equals: n, mode: "insensitive" } }],
+      },
+      select: { id: true, date: true, amount: true, notes: true, documentNumber: true },
+      orderBy: { date: "desc" },
+      take: 20,
+    });
+    const f = filas.find((x) => x.documentNumber?.trim().toLowerCase() === n.toLowerCase() || mismoRecibo(x.notes, n));
+    return f ? { id: f.id, date: f.date.toISOString(), amount: toNumOrZero(f.amount) } : null;
+  },
 };
+
+/** «Recibo E242» exacto en las notas: «Recibo E2421» es OTRO recibo. */
+export function mismoRecibo(notas: string | null | undefined, numero: string): boolean {
+  if (!notas) return false;
+  const esc = numero.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^\\p{L}\\p{N}])Recibo ${esc}(?![\\p{L}\\p{N}-])`, "iu").test(notas);
+}

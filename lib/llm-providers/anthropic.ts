@@ -20,7 +20,8 @@
  * pueda swapear providers sin que el caller se entere.
  */
 
-import type { LLMCallOptions, LLMProvider, LLMResponse, ChatMessage, ToolCallResult } from "./types";
+import type { LLMCallOptions, LLMProvider, LLMResponse, ToolCallResult } from "./types";
+import { aMensajesAnthropic } from "@/lib/ia-proveedores/traduccion";
 import { MODEL_IDS, rejectsSamplingParams } from "@/lib/claude-router";
 
 const API_URL = "https://api.anthropic.com/v1/messages";
@@ -60,7 +61,10 @@ export const anthropicProvider: LLMProvider = {
     // Traducir el array de messages al formato Anthropic.
     // - System messages se consolidan en el campo `system` top-level.
     // - Tool messages se traducen a content blocks tool_result dentro de user.
-    const { system, messages } = splitSystemAndMessages(opts.messages);
+    // (ADR-528) La traducción es la misma del adaptador con clave del negocio:
+    // `tool_result` con `tool_use_id`, `tool_calls` → `tool_use` y fotos como
+    // bloques `image` base64. La de antes mandaba `id`/`text` y Claude daba 400.
+    const { system, messages } = aMensajesAnthropic(opts.messages);
 
     const body: Record<string, unknown> = {
       model,
@@ -158,14 +162,6 @@ export const anthropicProvider: LLMProvider = {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-interface AnthropicContentBlock {
-  type: "text" | "tool_use" | "tool_result";
-  text?: string;
-  id?: string;
-  name?: string;
-  input?: Record<string, unknown>;
-}
-
 interface AnthropicMessageResponse {
   id: string;
   type: "message";
@@ -182,41 +178,6 @@ interface AnthropicMessageResponse {
   usage?: {
     input_tokens: number;
     output_tokens: number;
-  };
-}
-
-/**
- * Separa los mensajes system del resto y los consolida en un solo string.
- * Anthropic acepta solo un system prompt top-level, no inline en messages[].
- */
-function splitSystemAndMessages(
-  messages: ChatMessage[],
-): { system: string | null; messages: Array<{ role: "user" | "assistant"; content: unknown }> } {
-  const systemParts: string[] = [];
-  const out: Array<{ role: "user" | "assistant"; content: unknown }> = [];
-
-  for (const msg of messages) {
-    if (msg.role === "system") {
-      systemParts.push(msg.content);
-    } else if (msg.role === "tool") {
-      // Tool results se traducen a un user message con content block tool_result
-      const content: AnthropicContentBlock[] = [
-        {
-          type: "tool_result",
-          id: msg.tool_call_id,
-          text: msg.content,
-        } as AnthropicContentBlock,
-      ];
-      out.push({ role: "user", content });
-    } else {
-      // user/assistant pasan directo
-      out.push({ role: msg.role, content: msg.content });
-    }
-  }
-
-  return {
-    system: systemParts.length > 0 ? systemParts.join("\n\n") : null,
-    messages: out,
   };
 }
 

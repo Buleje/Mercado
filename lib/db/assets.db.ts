@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { mismoRecibo } from "@/lib/db/expenses.db";
 
 /**
  * lib/db/assets.db.ts — Activos & Maquinaria (Brandon 2026-06-06).
@@ -395,6 +396,24 @@ export const AssetsDB = {
       });
     }
     return mapIncome(row);
+  },
+
+  /**
+   * El gasto de máquina de ESTE negocio con «Recibo <numero>» en las notas (lo
+   * deja el asistente), con el nombre de la máquina, o `null`. Sin caché.
+   */
+  async gastoConRecibo(tenantId: string, numero: string): Promise<{ id: string; date: string; amount: number; maquina: string } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const n = numero.trim();
+    if (!n) return null;
+    const filas = await prisma.assetExpense.findMany({
+      where: { tenantId, notes: { contains: `Recibo ${n}`, mode: "insensitive" } },
+      select: { id: true, date: true, amount: true, notes: true, asset: { select: { name: true } } },
+      orderBy: { date: "desc" },
+      take: 20,
+    });
+    const f = filas.find((x) => mismoRecibo(x.notes, n));
+    return f ? { id: f.id, date: f.date.toISOString(), amount: num(f.amount), maquina: f.asset.name } : null;
   },
 
   async addExpense(tenantId: string, data: {

@@ -950,12 +950,12 @@ const plataTools = defineTools("plata", [
     function: {
       name: "plata_registrar_gasto",
       description:
-        "Anota un gasto (plata que salió). Con maquinaId va al libro de esa máquina; sin él, al libro de gastos del negocio. Para combustible pasa cantidad (galones) y precioUnitario, no el total.",
+        "Anota un gasto (plata que salió). Con maquinaId va al libro de esa máquina; sin él, al de gastos del negocio. Pasa solo los números que la persona dijo (total → monto, precio por galón → precioUnitario); nunca calcules uno.",
       parameters: {
         type: "object",
         properties: {
           descripcion: { type: "string", description: "Qué se compró o pagó" },
-          monto: { type: "number", description: "Total en soles. Omitir si diste cantidad y precioUnitario." },
+          monto: { type: "number", description: "Total en soles, si lo dijo" },
           cantidad: { type: "number", description: "Galones o unidades" },
           precioUnitario: { type: "number", description: "Precio por galón o unidad" },
           categoria: {
@@ -969,6 +969,8 @@ const plataTools = defineTools("plata", [
           centroCosto: { type: "string", description: "Etiqueta para agrupar (ej. el código de un lote)" },
           fecha: { type: "string", description: "AAAA-MM-DD. Omitir si es hoy." },
           notas: { type: "string" },
+          comprobante: { type: "string", description: "N.º del recibo (ej. E242)" },
+          documentoId: { type: "string", description: "id de la foto del recibo" },
         },
         required: ["descripcion"],
       },
@@ -1208,6 +1210,97 @@ const agendaTools = defineTools("agenda", [
   },
 ]);
 
+const memoriaTools = defineTools("memoria", [
+  {
+    function: {
+      name: "memoria_recordar",
+      description: "Guarda lo que el negocio te enseña (apodo, alias, preferencia). Mismo título = lo actualiza.",
+      parameters: {
+        type: "object",
+        properties: {
+          titulo: { type: "string", description: "ej. «Camión blanco»" },
+          texto: { type: "string", description: "ej. «es la máquina N12»" },
+          tipo: { type: "string", description: "alias|dato|preferencia|persona|vehiculo|proveedor" },
+        },
+        required: ["titulo", "texto"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "memoria_buscar",
+      description: "Lo que recuerdas sobre algo, con su id.",
+      parameters: {
+        type: "object",
+        properties: { q: { type: "string", description: "Vacío = lo más usado" } },
+      },
+    },
+  },
+  {
+    function: {
+      name: "memoria_olvidar",
+      description: "Borra un dato guardado (id de memoria_buscar).",
+      parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
+    },
+    requiresApproval: true,
+  },
+]);
+
+const papelesTools = defineTools("papeles", [
+  {
+    function: {
+      name: "papeles_cotizacion",
+      description: "Crea una cotización y devuelve su hoja. Sin precio dictado usa el del catálogo.",
+      parameters: {
+        type: "object",
+        properties: {
+          clienteNombre: { type: "string" },
+          clienteRuc: { type: "string" },
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                descripcion: { type: "string" },
+                cantidad: { type: "number" },
+                precioUnit: { type: "number", description: "Con IGV" },
+                productoId: { type: "string" },
+                descuento: { type: "number", description: "%" },
+              },
+              required: ["descripcion", "cantidad"],
+            },
+          },
+          validoDias: { type: "number", description: "Default 7" },
+          notas: { type: "string" },
+        },
+        required: ["clienteNombre", "items"],
+      },
+    },
+    requiresApproval: true,
+  },
+  {
+    function: {
+      name: "papeles_liquidacion",
+      description: "Estado de cuenta en PDF de una persona de Adelantos. El id sale de plata_buscar_persona.",
+      parameters: {
+        type: "object",
+        properties: { personaId: { type: "string" } },
+        required: ["personaId"],
+      },
+    },
+  },
+  {
+    function: {
+      name: "papeles_comprobante",
+      description: "Si el negocio emite boleta/factura SUNAT y si un pedido ya la tiene. No emite.",
+      parameters: {
+        type: "object",
+        properties: { pedidoId: { type: "string" } },
+      },
+    },
+  },
+]);
+
 export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...inventoryTools,
   ...ordersTools,
@@ -1225,6 +1318,8 @@ export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...n8nTools,
   ...agendaTools,
   ...planificacionTools,
+  ...memoriaTools,
+  ...papelesTools,
 ];
 
 // Inicializa el registry usado por `isToolApprovalRequired` (declarado arriba).

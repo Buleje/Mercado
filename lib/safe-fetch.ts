@@ -1,9 +1,10 @@
 import { lookup } from "node:dns/promises";
 
+/* 100.64.0.0/10 = CGNAT (Tailscale, redes del proveedor): un `100.64.0.1.nip.io` llegó a conectar. */
 const PRIVATE_IPV4 =
-  /^(?:127\.|10\.|172\.(?:1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.|255\.|22[4-9]\.|23\d\.)/;
+  /^(?:127\.|10\.|172\.(?:1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|0\.|255\.|22[4-9]\.|23\d\.)/;
 const PRIVATE_IPV6 =
-  /^(?:::1$|fc00:|fd[0-9a-f]{2}:|fe80:|::$|::ffff:127\.|::ffff:10\.|::ffff:192\.168\.|::ffff:169\.254\.)/i;
+  /^(?:::1$|fc00:|fd[0-9a-f]{2}:|fe80:|::$|::ffff:127\.|::ffff:10\.|::ffff:192\.168\.|::ffff:169\.254\.|::ffff:100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)/i;
 const LOOPBACK_HOSTS = new Set(["localhost", "ip6-localhost", "ip6-loopback"]);
 const IP_LITERAL = /^(?:\d{1,3}\.){3}\d{1,3}$|^[0-9a-f:]+$/i;
 

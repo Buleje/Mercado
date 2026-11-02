@@ -104,6 +104,12 @@ describe("cada dominio con tools es alcanzable desde una frase", () => {
       ["planificacion", "¿qué licencia vence?"],
       ["caja", "¿cómo viene la caja hoy?"],
       ["orders", "¿qué pedidos tengo?"],
+      ["memoria", "recuerda que el camión blanco es el N12"],
+      ["memoria", "acuérdate que al grifo le decimos Santa Rosa"],
+      ["memoria", "olvida lo del Flaco"],
+      ["papeles", "hazle una cotización a Maderas del Oriente"],
+      ["papeles", "sácame la liquidación de Don Lucho"],
+      ["papeles", "¿le puedo dar boleta?"],
     ];
     const fallan = frasesReales.filter(
       ([dominio, frase]) => !dominiosMencionados(frase).includes(dominio as never),
@@ -137,6 +143,42 @@ describe("las escrituras piden confirmación humana", () => {
     expect(isToolApprovalRequired("agenda_agendar")).toBe(true);
     expect(isToolApprovalRequired("agenda_completar")).toBe(true);
     expect(isToolApprovalRequired("agenda_ver")).toBe(false);
+  });
+
+  it("memoria: recordar va sin confirmación (no es plata); olvidar pide el «Sí»", () => {
+    expect(isToolApprovalRequired("memoria_recordar")).toBe(false);
+    expect(isToolApprovalRequired("memoria_buscar")).toBe(false);
+    expect(isToolApprovalRequired("memoria_olvidar")).toBe(true);
+  });
+
+  it("papeles: la cotización crea un documento y pide el «Sí»; consultar no", () => {
+    expect(isToolApprovalRequired("papeles_cotizacion")).toBe(true);
+    expect(isToolApprovalRequired("papeles_liquidacion")).toBe(false);
+    expect(isToolApprovalRequired("papeles_comprobante")).toBe(false);
+  });
+});
+
+describe("rutas que se arrastran solas (ADR-528)", () => {
+  const dominios = (frase: string) => new Set(toolsParaMensaje(frase).map((t) => t.function.name.split("_")[0]));
+
+  it("al anotar plata viaja memoria: el alias se guarda en la misma vuelta", () => {
+    const d = dominios("tanqueé 12 gal de petróleo para mi camión blanco N12, total 200 soles, recibo E242");
+    expect(d.has("plata")).toBe(true);
+    expect(d.has("memoria")).toBe(true);
+  });
+
+  it("la liquidación trae plata para buscar el id de la persona", () => {
+    expect(dominios("sácame la liquidación de Don Lucho").has("plata")).toBe(true);
+  });
+
+  it("«recordame» sigue siendo agenda, no memoria", () => {
+    expect(dominiosMencionados("recordame el lunes llamar al ingeniero")).not.toContain("memoria");
+  });
+
+  it("el gasto acepta el n.º de recibo y la foto", () => {
+    const gasto = ALL_AGENT_TOOLS.find((t) => t.function.name === "plata_registrar_gasto");
+    const props = Object.keys((gasto?.function.parameters as { properties: Record<string, unknown> }).properties);
+    expect(props).toEqual(expect.arrayContaining(["comprobante", "documentoId"]));
   });
 });
 

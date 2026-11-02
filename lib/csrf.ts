@@ -17,6 +17,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { constantTimeStringEqual } from "@/lib/constant-time";
+import { esRutaMcp } from "@/lib/mcp-servidor/rutas";
 
 const CSRF_COOKIE_NAME = "csrf-token";
 const CSRF_HEADER_NAME = "x-csrf-token";
@@ -178,6 +179,15 @@ export function validateCsrfToken(request: NextRequest): boolean {
     "/api/integrations/",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
+    return true;
+  }
+
+  // Servidor MCP del negocio (ADR-528): ChatGPT, Claude, Gemini o Cursor
+  // llaman máquina a máquina con la clave `bul_mcp_…` de la conexión (cabecera
+  // Bearer o segmento de la URL), nunca con la cookie de sesión. Coincidencia
+  // EXACTA (`/api/mcp` o `/api/mcp/t/<token base64url>`), no un prefijo: un
+  // `/api/mcpx`, `/api/mcp/t/a/b` o `/API/MCP` sigue pidiendo CSRF.
+  if (esRutaMcp(pathname)) {
     return true;
   }
 

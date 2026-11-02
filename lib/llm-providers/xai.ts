@@ -18,6 +18,8 @@
  */
 
 import type { LLMCallOptions, LLMProvider, LLMResponse, ToolCallResult } from "./types";
+import { contenidoComoTexto, ERROR_SIN_VISION, hayImagenes } from "./types";
+import { aMensajesOpenAI } from "@/lib/ia-proveedores/traduccion";
 
 const XAI_BASE_URL = "https://api.x.ai/v1";
 
@@ -40,9 +42,14 @@ export const xaiProvider: LLMProvider = {
       return errorResponse("XAI_API_KEY not configured", model);
     }
 
+    // Los grok-3 de la plataforma no leen fotos (Buleje IA, ADR-528).
+    if (hayImagenes(opts.messages)) return errorResponse(ERROR_SIN_VISION, model);
+
     const payload: Record<string, unknown> = {
       model,
-      messages: opts.messages,
+      // `aMensajesOpenAI` pone `type: "function"` en cada tool_call: las que vienen
+      // del adaptador del negocio (ADR-528) no lo traen y Groq/xAI dan 400.
+      messages: aMensajesOpenAI(opts.messages.map((m) => ({ ...m, content: contenidoComoTexto(m.content) }))),
       temperature: opts.temperature,
       max_tokens: opts.maxTokens ?? 1500,
       stream: opts.stream ?? false,

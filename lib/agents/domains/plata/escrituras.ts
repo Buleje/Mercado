@@ -12,12 +12,15 @@ import type { AgentTask, AgentResult, AgentContext } from "@/lib/agents/types";
 import { scopedLogger } from "@/lib/agents/context";
 import { AssetsDB } from "@/lib/db/assets.db";
 import { ExpensesDB } from "@/lib/db/finance.db";
+import { ExpensesDB as GastosLecturaDB } from "@/lib/db/expenses.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { esRecibido } from "@/lib/adelantos/direccion";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { CashRegistersDB } from "@/lib/db/sales.db";
 import { SuppliersDB, PurchasesDB } from "@/lib/db/purchases.db";
 import { ProductsDB } from "@/lib/db/products.db";
+import { DocumentsDB } from "@/lib/db/documents.db";
+import { fechaDia } from "@/lib/contabilidad/libros/comun";
 import { TreasuryDB } from "@/lib/db/treasury.db";
 import { ForestFleteDB } from "@/lib/db/forest-flete.db";
 import {
@@ -40,7 +43,7 @@ export function resolverMonto(
   montoDicho: number | null,
   cantidad: number | null,
   precioUnitario: number | null,
-): { ok: true; monto: number; derivado: string | null } | { ok: false; error: string } {
+): { ok: true; monto: number; derivado: string | null; cuadre?: string } | { ok: false; error: string } {
   const calculado =
     cantidad != null && precioUnitario != null && cantidad > 0 && precioUnitario > 0
       ? soles(cantidad * precioUnitario)
@@ -61,16 +64,92 @@ export function resolverMonto(
   }
   // Los dos: tienen que cerrar. Tolerancia del negocio (un céntimo de redondeo
   // al multiplicar), no epsilon de float — regla 4 de `verificacion-de-verdad`.
-  const diff = Math.abs(soles(montoDicho!) - calculado!);
-  if (diff > 0.05) {
+  // En céntimos enteros: 200 − 199,95 en float da 0,0500000001 y frenaba justo
+  // en el borde que se quería aceptar (01-11).
+  const diffCentimos = Math.abs(Math.round(soles(montoDicho!) * 100) - Math.round(calculado! * 100));
+  if (diffCentimos > 5) {
     return {
       ok: false,
       error:
         `No cuadra: dijiste ${fmt(montoDicho!)} de total, pero ${cantidad} × ${fmt(precioUnitario!)} = ` +
-        `${fmt(calculado!)} (diferencia ${fmt(diff)}). Pregúntale cuál de los dos números va.`,
+        `${fmt(calculado!)} (diferencia ${fmt(diffCentimos / 100)}). Pregúntale cuál de los dos números va.`,
     };
   }
-  return { ok: true, monto: calculado!, derivado: `${cantidad} × ${fmt(precioUnitario!)} = ${fmt(calculado!)}` };
+  /**
+   * Cuadran: va el total DICHO, que es lo que salió del bolsillo (ADR-387). Antes
+   * se guardaba el calculado: «25 a 7,999, total 200» quedaba en 199,98. La
+   * multiplicación queda como dato (`cuadre`), no reemplaza la cifra.
+   */
+  return { ok: true, monto: soles(montoDicho!), derivado: null, cuadre: `${cantidad} × ${fmt(precioUnitario!)} = ${fmt(calculado!)}` };
+}
+
+/**
+ * Aviso — NO freno — si ese n.º de recibo ya está anotado en este negocio, en el
+ * libro de las máquinas o en Gastos: dos tarjetas del mismo recibo suelen ser el
+ * mismo gasto dictado dos veces, pero puede ser un recibo con dos partes.
+ */
+async function avisoReciboRepetido(
+  tenantId: string,
+  comprobante: string | null,
+  log: ReturnType<typeof scopedLogger>,
+): Promise<string | null> {
+  if (!comprobante) return null;
+  try {
+    const [gasto, maquina] = await Promise.all([
+      GastosLecturaDB.conRecibo(tenantId, comprobante),
+      AssetsDB.gastoConRecibo(tenantId, comprobante),
+    ]);
+    const previo = [gasto, maquina].filter((x) => x != null).sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!previo) return null;
+    // Día de Lima con la misma regla que la lista de gastos: el slice del ISO
+    // daba el día UTC (anotado el 01-11 a las 20:02 salía «02/11»).
+    const dia = fechaDia(new Date(previo.date)) ?? previo.date.slice(0, 10);
+    return `⚠️ El recibo ${comprobante} ya está anotado el ${dia} (${fmt(previo.amount)})`;
+  } catch (err) {
+    log.warn("No se pudo buscar el recibo repetido", { error: String(err) });
+    return null;
+  }
+}
+
+/**
+ * El precio por unidad cuando dictaron cantidad y TOTAL pero no el precio
+ * («12 gal, total 200»). El total manda (es lo que salió del bolsillo, ADR-387);
+ * el precio es un derivado y se dice que lo es.
+ */
+export function precioDerivado(
+  montoDicho: number | null,
+  cantidad: number | null,
+  precioUnitario: number | null,
+  unidad: string,
+): { valor: number; texto: string } | null {
+  if (precioUnitario != null || montoDicho == null || cantidad == null || cantidad <= 0 || montoDicho <= 0) return null;
+  const valor = soles(montoDicho / cantidad);
+  return { valor, texto: `${fmt(montoDicho)} ÷ ${cantidad} ${unidad} = ${fmt(valor)} por ${unidad} (calculado)` };
+}
+
+/**
+ * El respaldo del gasto: el número del recibo dictado y/o la foto ya subida a
+ * Documentos. La foto tiene que ser de ESTE negocio (y visible para quien
+ * dicta): ownership por tenantId en el WHERE de `DocumentsDB.getById`.
+ */
+async function respaldoDelGasto(
+  task: AgentTask,
+  ctx: AgentContext,
+): Promise<{ ok: true; comprobante: string | null; documentoId: string | null; texto: string | null } | { ok: false; error: string }> {
+  const comprobante = texto(task.payload.comprobante).slice(0, 40) || null;
+  const documentoId = texto(task.payload.documentoId).slice(0, 100) || null;
+  if (documentoId) {
+    const doc = await DocumentsDB.getById(task.tenantId, documentoId, ctx.actorRole);
+    if (!doc) {
+      return {
+        ok: false,
+        error: `No existe un documento con id "${documentoId}" en este negocio. Usa el id que devolvió la subida — no lo inventes.`,
+      };
+    }
+  }
+  const partes = [comprobante ? `Recibo ${comprobante}` : null, documentoId ? `foto: Documentos ${documentoId}` : null];
+  const txt = partes.filter(Boolean).join(" · ") || null;
+  return { ok: true, comprobante, documentoId, texto: txt };
 }
 
 /**
@@ -102,6 +181,10 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
   const f = fechaValida(p.fecha);
   if (!f.ok) return { success: false, error: f.error };
 
+  const respaldo = await respaldoDelGasto(task, ctx);
+  if (!respaldo.ok) return { success: false, error: respaldo.error };
+  const conRespaldo = respaldo.texto ? ` · ${respaldo.texto}` : "";
+
   const maquinaId = texto(p.maquinaId);
   const notas = texto(p.notas) || null;
 
@@ -124,21 +207,28 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
           : null)) ?? "otro";
 
     const conPlaca = maquina.plate ? ` (placa ${maquina.plate})` : "";
+    const unidad = categoria === "combustible" ? "gal" : "u";
+    const precioCalc = precioDerivado(num(p.monto), cantidad, precioUnitario, unidad);
     const detalle = [
-      monto.derivado ? `${cantidad} ${categoria === "combustible" ? "gal" : "u"} · ${monto.derivado}` : null,
+      monto.derivado ? `${cantidad} ${unidad} · ${monto.derivado}` : null,
+      monto.cuadre ? `${cantidad} ${unidad} · ${monto.cuadre} (cuadra con el total dicho)` : null,
+      precioCalc ? `${cantidad} ${unidad} · ${precioCalc.texto}` : null,
       descripcion,
     ]
       .filter(Boolean)
       .join(" · ");
 
     if (esEnsayo(task)) {
+      const repetido = await avisoReciboRepetido(task.tenantId, respaldo.comprobante, log);
       return {
         success: true,
         data: {
           resumen:
+            `${repetido ? `${repetido}. ` : ""}` +
             `Gasto de ${fmt(monto.monto)} · ${categoria} · ${maquina.name}${conPlaca}` +
-            `${monto.derivado ? ` · ${monto.derivado}` : ""}. ` +
+            `${monto.derivado ? ` · ${monto.derivado}` : ""}${precioCalc ? ` · ${precioCalc.texto}` : ""}${conRespaldo}. ` +
             `Se anota en el libro de la máquina (Mi Plata › Reportes › Activos), no en Gastos.`,
+          reciboRepetido: repetido,
           destino: "activos",
           maquina: maquina.name,
           placa: maquina.plate,
@@ -146,7 +236,10 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
           monto: monto.monto,
           cantidad,
           precioUnitario,
-          calculo: monto.derivado,
+          precioUnitarioCalculado: precioCalc?.valor ?? null,
+          calculo: monto.derivado ?? precioCalc?.texto ?? null,
+          comprobante: respaldo.comprobante,
+          documentoId: respaldo.documentoId,
         },
       };
     }
@@ -156,9 +249,10 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
       assetId: maquina.id,
       category: categoria,
       gallons: categoria === "combustible" ? cantidad : null,
-      unitPrice: precioUnitario,
+      // Total = lo dicho; el precio por galón, el dictado o el derivado de él.
+      unitPrice: precioUnitario ?? precioCalc?.valor ?? null,
       amount: monto.monto,
-      notes: [`Asistente IA: ${detalle}`, notas].filter(Boolean).join(" · "),
+      notes: [`Asistente IA: ${detalle}`, respaldo.texto, notas].filter(Boolean).join(" · "),
     });
 
     return {
@@ -172,10 +266,12 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
         categoria,
         monto: monto.monto,
         cantidad,
-        precioUnitario,
+        precioUnitario: precioUnitario ?? precioCalc?.valor ?? null,
+        comprobante: respaldo.comprobante,
+        documentoId: respaldo.documentoId,
         confirmacion:
           `Anotado: ${fmt(monto.monto)} de ${categoria} para ${maquina.name}${conPlaca}` +
-          `${monto.derivado ? ` (${monto.derivado})` : ""}.`,
+          `${monto.derivado ? ` (${monto.derivado})` : ""}${precioCalc ? ` (${precioCalc.texto})` : ""}${conRespaldo}.`,
         dondeVerlo: { pantalla: "Mi Plata › Reportes › Activos", tab: "plata", vista: "activos" },
       },
     };
@@ -187,16 +283,21 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
   const metodo = metodoPago(p.metodoPago);
   const proveedor = texto(p.proveedor) || null;
   const centroCosto = texto(p.centroCosto) || null;
+  const precioCalcB = precioDerivado(num(p.monto), cantidad, precioUnitario, "u");
 
   if (esEnsayo(task)) {
+    const repetido = await avisoReciboRepetido(task.tenantId, respaldo.comprobante, log);
     return {
       success: true,
       data: {
         resumen:
+          `${repetido ? `${repetido}. ` : ""}` +
           `Gasto de ${fmt(monto.monto)} · ${categoria} · "${descripcion}"` +
           `${proveedor ? ` · ${proveedor}` : ""}${metodo ? ` · ${metodo}` : ""} · ` +
-          `${f.fecha.toISOString().slice(0, 10)}. Se anota en Mi Plata › Gastos.` +
-          `${monto.derivado ? ` Total calculado: ${monto.derivado}.` : ""}`,
+          `${f.fecha.toISOString().slice(0, 10)}${conRespaldo}. Se anota en Mi Plata › Gastos.` +
+          `${monto.derivado ? ` Total calculado: ${monto.derivado}.` : ""}` +
+          `${precioCalcB ? ` Precio: ${precioCalcB.texto}.` : ""}`,
+        reciboRepetido: repetido,
         destino: "gastos",
         categoria,
         monto: monto.monto,
@@ -204,7 +305,9 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
         metodoPago: metodo,
         proveedor,
         fecha: f.fecha.toISOString().slice(0, 10),
-        calculo: monto.derivado,
+        calculo: monto.derivado ?? precioCalcB?.texto ?? null,
+        comprobante: respaldo.comprobante,
+        documentoId: respaldo.documentoId,
       },
     };
   }
@@ -222,7 +325,13 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
     supplierName: proveedor,
     costCenter: centroCosto,
     createdBy: "asistente-ia",
-    notes: [notas, monto.derivado ? `Calculado: ${monto.derivado}` : null]
+    notes: [
+      notas,
+      monto.derivado ? `Calculado: ${monto.derivado}` : null,
+      monto.cuadre ? `Precio: ${monto.cuadre} (cuadra con el total dicho)` : null,
+      precioCalcB ? `Precio: ${precioCalcB.texto}` : null,
+      respaldo.texto,
+    ]
       .filter(Boolean)
       .join(" · ") || null,
     paidAt: f.fecha.toISOString(),
@@ -238,7 +347,9 @@ export async function registrarGasto(task: AgentTask, ctx: AgentContext): Promis
       monto: monto.monto,
       descripcion,
       fecha: f.fecha.toISOString().slice(0, 10),
-      confirmacion: `Anotado: ${fmt(monto.monto)} en ${categoria} — "${descripcion}".`,
+      comprobante: respaldo.comprobante,
+      documentoId: respaldo.documentoId,
+      confirmacion: `Anotado: ${fmt(monto.monto)} en ${categoria} — "${descripcion}"${conRespaldo}.`,
       dondeVerlo: { pantalla: "Mi Plata › Gastos", tab: "plata", vista: "gastos" },
     },
   };

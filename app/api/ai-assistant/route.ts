@@ -12,6 +12,7 @@ import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { payloadsDelEnsayo, stashPendingApproval } from "@/lib/agents/pending-approvals";
 import { leerPedidoDeEnvio, respuestaDeAtajo, TOOL_MANDAR_PAPEL } from "@/lib/asistente/mandar-papel";
 import { callLLM } from "@/lib/llm-router";
+import { callLLMDelNegocio } from "@/lib/ia-proveedores/router-negocio";
 import type { LLMUsage } from "@/lib/llm-providers";
 import { checkTokenBudget, recordTokenUsage } from "@/lib/ai-usage-tracker";
 import { recordAIFailure, recordAISuccess } from "@/lib/ai-failure-monitor";
@@ -502,7 +503,7 @@ export async function POST(req: NextRequest) {
     // fallback a llama-4-scout si cae.
     const res = pedidoDePapel
       ? respuestaDeAtajo(pedidoDePapel, randomUUID().slice(0, 8))
-      : await callLLM("balanced", {
+      : await callLLMDelNegocio(auth.tenantId, "balanced", {
           messages,
           temperature: AI_TEMPERATURES.router,
           maxTokens: 1500,
@@ -753,7 +754,7 @@ export async function POST(req: NextRequest) {
               toolsEjecutados.some((t) => TOOLS_QUE_PRECEDEN_ESCRITURA.has(t.nombre))
             ) {
               send(`data: ${JSON.stringify({ toolProgress: "Preparando la operación...", tool: "_ronda2" })}\n\n`);
-              const ronda2 = await callLLM("balanced", {
+              const ronda2 = await callLLMDelNegocio(auth.tenantId, "balanced", {
                 messages: capturedMessages as Parameters<typeof callLLM>[1]["messages"],
                 temperature: AI_TEMPERATURES.router,
                 maxTokens: 1500,
@@ -786,7 +787,7 @@ export async function POST(req: NextRequest) {
             send(`data: ${JSON.stringify({ toolProgress: "Generando respuesta...", tool: "_final" })}\n\n`);
 
             // Second LLM call — stream the response via router (ADR-010)
-            const followUpRes = await callLLM("balanced", {
+            const followUpRes = await callLLMDelNegocio(auth.tenantId, "balanced", {
               messages: capturedMessages as Parameters<typeof callLLM>[1]["messages"],
               temperature: AI_TEMPERATURES.toolFollowup,
               maxTokens: 1500,
@@ -994,7 +995,7 @@ export async function POST(req: NextRequest) {
       }
 
       // ── Second LLM call with tool results (ADR-010 balanced) ──────────
-      const followUpRes = await callLLM("balanced", {
+      const followUpRes = await callLLMDelNegocio(auth.tenantId, "balanced", {
         messages: messages as Parameters<typeof callLLM>[1]["messages"],
         temperature: AI_TEMPERATURES.toolFollowup,
         maxTokens: 1500,
@@ -1065,7 +1066,7 @@ export async function POST(req: NextRequest) {
     // If streaming was requested but we got a non-streaming first pass,
     // re-call with streaming since no tools were needed (ADR-010 balanced).
     if (wantStream) {
-      const streamRes = await callLLM("balanced", {
+      const streamRes = await callLLMDelNegocio(auth.tenantId, "balanced", {
         messages: messages as Parameters<typeof callLLM>[1]["messages"],
         temperature: AI_TEMPERATURES.gerente,
         maxTokens: 1500,

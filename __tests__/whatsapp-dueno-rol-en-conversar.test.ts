@@ -23,6 +23,8 @@ const H = vi.hoisted(() => ({
 
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock("@/lib/llm-router", () => ({ callLLM: H.callLLM }));
+// Sin modelo propio del negocio (ADR-528): conversar cae a `callLLM` de la plataforma.
+vi.mock("@/lib/db/ia-proveedores.db", () => ({ IaProveedoresDB: { conClave: async () => null, anotarEstado: async () => undefined } }));
 vi.mock("@/lib/agents", () => ({
   orchestrator: { executeSync: H.executeSync },
   ensureAgentsRegistered: vi.fn().mockResolvedValue(undefined),
@@ -30,7 +32,8 @@ vi.mock("@/lib/agents", () => ({
 vi.mock("@/lib/agents/pending-approvals", async (real) => ({
   payloadsDelEnsayo: (await real<typeof import("@/lib/agents/pending-approvals")>()).payloadsDelEnsayo,
   getPendingApproval: vi.fn(),
-  removePendingApproval: vi.fn(),
+  // Lo que devuelve el store real al borrar: sin esto el «Sí» se toma por vencido.
+  removePendingApproval: vi.fn().mockReturnValue({ id: "pend" }),
   stashPendingApproval: vi.fn().mockReturnValue("pend-1"),
 }));
 vi.mock("@/lib/asistente/contexto", () => ({ contextoDelNegocio: vi.fn().mockResolvedValue("") }));

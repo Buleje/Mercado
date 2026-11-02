@@ -122,6 +122,18 @@ const PALABRAS: Record<AgentDomain, readonly string[]> = {
     "oportunidades", "amenazas", "estrategia", "estrategias", "organigrama", "cargo", "cargos", "funciones",
     "preguntas", "frecuentes", "protocolo", "horario",
   ],
+  // «recordame/acordame» son de agenda (un aviso con fecha); «recuerda que…» /
+  // «acuérdate que…» es un dato que se guarda. Por eso acá van otras formas.
+  memoria: [
+    "recuerda", "recuerdalo", "recuérdalo", "recuerdas", "acuerdate", "acuérdate", "acuerdas",
+    "olvida", "olvidalo", "olvídalo", "olvidate", "olvídate", "olvidar", "sabes", "apodo", "apodos",
+    "alias", "decimos", "llamamos", "memoria", "aprende", "aprendelo", "apréndelo",
+  ],
+  papeles: [
+    "cotizacion", "cotización", "cotizaciones", "cotizar", "cotizale", "cotízale", "presupuesto",
+    "proforma", "liquidacion", "liquidación", "liquidar", "liquidale", "liquídale", "boleta", "boletas",
+    "factura", "facturas", "facturar", "comprobante", "comprobantes", "sunat",
+  ],
   ui: [],
 };
 
@@ -179,6 +191,13 @@ export function toolsParaMensaje(texto: string): ToolDefinition[] {
    * esto el modelo no tendría con qué buscar el id.
    */
   if (elegidos.has("cobranzas")) elegidos.add("plata");
+  /** La liquidación de «Don Lucho» necesita su id: se busca con plata_buscar_persona. */
+  if (elegidos.has("papeles")) elegidos.add("plata");
+  /**
+   * Al anotar plata el usuario enseña alias («el camión blanco es el N12»): con
+   * memoria a mano se guarda en la misma vuelta, sin otro mensaje.
+   */
+  if (elegidos.has("plata")) elegidos.add("memoria");
 
   return ALL_AGENT_TOOLS.filter((t) => elegidos.has(t.function.name.split("_")[0] as AgentDomain));
 }

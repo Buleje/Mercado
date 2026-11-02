@@ -344,15 +344,23 @@ async function manejarBoton(cb: TgCallback): Promise<void> {
     return;
   }
 
-  if (accion === "no") {
-    removePendingApproval(aprobacionId);
-    await contestarBoton(cb.id, "Cancelado");
-    await editarMensaje(chatId, messageId, "✖ Listo, no anoté nada.");
+  if (accion !== "no" && accion !== "ok") {
+    await contestarBoton(cb.id);
     return;
   }
 
-  if (accion !== "ok") {
-    await contestarBoton(cb.id);
+  /**
+   * Tomarlo Y borrarlo antes del primer `await`: dos toques seguidos al
+   * «Confirmar» (Telegram reintenta el callback) anotaban la operación dos veces.
+   */
+  if (!removePendingApproval(aprobacionId)) {
+    await contestarBoton(cb.id, "Esa operación ya no está pendiente");
+    return;
+  }
+
+  if (accion === "no") {
+    await contestarBoton(cb.id, "Cancelado");
+    await editarMensaje(chatId, messageId, "✖ Listo, no anoté nada.");
     return;
   }
 
@@ -366,7 +374,6 @@ async function manejarBoton(cb: TgCallback): Promise<void> {
     actorRole: ROL,
     actorId: pendiente.requestedBy,
   });
-  removePendingApproval(aprobacionId);
 
   if (!res.success) {
     await editarMensaje(chatId, messageId, `⚠️ No se pudo anotar: ${esc(res.error ?? "error desconocido")}`);

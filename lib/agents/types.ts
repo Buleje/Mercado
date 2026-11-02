@@ -37,6 +37,10 @@ export const AGENT_DOMAINS = [
   "agenda",
   // El plan de la empresa (ADR-497): políticas, objetivos, licencias. Solo lectura.
   "planificacion",
+  // Lo que el negocio le enseña al asistente: apodos, alias, preferencias (ADR-528).
+  "memoria",
+  // Papeles que el asistente devuelve: cotización, liquidación, estado SUNAT (ADR-528).
+  "papeles",
 ] as const;
 
 export type AgentDomain = (typeof AGENT_DOMAINS)[number];

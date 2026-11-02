@@ -4,14 +4,9 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
-import { AdelantosDB } from "@/lib/db/adelantos.db";
-import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
 import { CarpetaAjenaError } from "@/lib/db/documents.db";
-import { EnlacesEntidadDB, SubidaFallidaError } from "@/lib/db/enlaces-entidad.db";
-import { ROLES_ENTIDAD_SENSIBLE } from "@/lib/documentos/enlaces-entidad";
-import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
-import { estadoCuentaUnificado } from "@/lib/adelantos/estado-cuenta-unificado";
-import { pdfEstadoDeCuenta } from "@/lib/adelantos/estado-cuenta-pdf";
+import { SubidaFallidaError } from "@/lib/db/enlaces-entidad.db";
+import { archivarEstadoDeCuenta } from "@/lib/adelantos/estado-cuenta-archivar.server";
 
 const Body = z.object({ terceroId: z.string().trim().min(1).max(100), nombre: z.string().trim().min(1).max(120) });
 
@@ -33,41 +28,14 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     const { terceroId, nombre } = parsed.data;
 
-    // Ownership por tenantId en el WHERE: un tercero de otro negocio no existe.
-    const tercero = await AdelantosDB.getBeneficiario(auth.tenantId, terceroId);
-    if (!tercero) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-    // Mismo cálculo que /api/adelantos/cuentas/estado: Adelantos + cuenta forestal
-    // de la parte vinculada a la ficha (sin vínculo = sin forestal, igual que antes).
-    const parteId = tercero.forestPartyId ?? null;
-    const [adelantos, forestales] = await Promise.all([
-      AdelantosDB.list(auth.tenantId, { beneficiarioId: terceroId, direccion: "todas" }),
-      parteId ? ForestCuentaDB.listar(auth.tenantId, { parteId }) : Promise.resolve([]),
-    ]);
-    const movimientos = estadoCuentaUnificado(
-      adelantos.map((a) => ({
-        status: a.status,
-        codigoOperacion: a.codigoOperacion ?? null,
-        fechaAdelanto: a.fechaAdelanto,
-        montoAdelantado: a.montoAdelantado,
-        moneda: a.moneda,
-        direccion: a.direccion,
-        entregas: a.entregas.map((e) => ({ fecha: e.fecha, descripcion: e.descripcion ?? null, valor: e.valor })),
-      })),
-      forestales,
-    );
-    const { membrete, logo } = await membreteParaPdf(auth.tenantId);
-    const pdf = await pdfEstadoDeCuenta(membrete, tercero.nombre || nombre, movimientos, logo);
-
-    const documentId = await EnlacesEntidadDB.archivar(
-      auth.tenantId,
-      "tercero",
-      { id: terceroId, nombre: tercero.nombre || nombre },
-      { pdf, nombreArchivo: `Estado de cuenta — ${tercero.nombre || nombre}.pdf`, allowedRoles: ROLES_ENTIDAD_SENSIBLE },
-      auth.role,
-      auth.username,
-    );
-    return NextResponse.json({ ok: true, documentId });
+    // Ownership por tenantId en el WHERE: un tercero de otro negocio no existe (null).
+    const hecho = await archivarEstadoDeCuenta(auth.tenantId, terceroId, {
+      nombreRespaldo: nombre,
+      rol: auth.role,
+      usuario: auth.username,
+    });
+    if (!hecho) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, documentId: hecho.documentId });
   } catch (e) {
     if (e instanceof CarpetaAjenaError) return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
     if (e instanceof SubidaFallidaError) return NextResponse.json({ error: "storage_upload_fail" }, { status: 502 });

@@ -12,6 +12,8 @@ const H = vi.hoisted(() => ({ callLLM: vi.fn(), executeSync: vi.fn() }));
 
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/llm-router", () => ({ callLLM: H.callLLM }));
+// Sin modelo propio del negocio (ADR-528): conversar cae a `callLLM` de la plataforma.
+vi.mock("@/lib/db/ia-proveedores.db", () => ({ IaProveedoresDB: { conClave: async () => null, anotarEstado: async () => undefined } }));
 vi.mock("@/lib/agents", () => ({
   orchestrator: { executeSync: H.executeSync },
   ensureAgentsRegistered: vi.fn().mockResolvedValue(undefined),

@@ -4451,6 +4451,10 @@ model AIMessage {
   mode           String? // Execution mode (for debugging/analytics)
   tokensUsed     Int? // For LLM cost tracking
   latencyMs      Int? // Response latency in milliseconds
+  /// ADR-528: lo que acompaña al mensaje en la app «Buleje IA» — fotos adjuntas
+  /// ({documentoId,nombre}), operaciones por confirmar, papeles devueltos y el
+  /// modelo que contestó. Nullable: los mensajes viejos no lo tienen.
+  extra          Json?
   createdAt      DateTime @default(now())
 
   conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -4458,6 +4462,80 @@ model AIMessage {
   @@index([conversationId])
   @@index([role])
   @@index([createdAt])
+}
+
+// ─── Buleje IA (ADR-528) ─────────────────────────────────────────────────────
+// Cada negocio pega la clave de SU proveedor de IA (ChatGPT, Claude, Gemini,
+// DeepSeek, Qwen, Kimi, GLM, MiniMax, Groq, OpenRouter o uno propio). La clave
+// entra cifrada con `lib/cripto-secretos.ts` (v1:iv:tag:datos) y nunca vuelve a
+// la pantalla: solo sus últimos 4. Proveedor = id del catálogo en TS, no enum.
+model TenantIaProveedor {
+  id           String    @id @default(cuid())
+  tenantId     String
+  proveedor    String // openai|anthropic|gemini|deepseek|qwen|kimi|glm|minimax|groq|xai|openrouter|personalizado
+  nombre       String    @default("")
+  modelo       String // modelo principal (texto + herramientas)
+  modeloVision String? // modelo para leer fotos si el principal no las ve
+  baseUrl      String? // solo «personalizado» o una región distinta del catálogo
+  claveCifrada String
+  claveFinal   String    @default("") // últimos 4, para reconocerla
+  principal    Boolean   @default(false)
+  activo       Boolean   @default(true)
+  ultimaPrueba DateTime?
+  ultimoEstado String? // ok|clave_invalida|sin_credito|modelo_no_disponible|sin_conexion|limite_ia
+  creadoPor    String    @default("")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, principal])
+}
+
+// Lo que el asistente recuerda del negocio entre conversaciones: «el camión
+// blanco es el N12», «a Victor le decimos el Chato», «los recibos del grifo
+// Pecsa vienen con serie E». No es el registro de operaciones (eso ya está en
+// los libros); es lo que hace falta para entender el próximo pedido.
+model AsistenteMemoria {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tipo        String    @default("dato") // alias|dato|preferencia|persona|vehiculo|proveedor
+  titulo      String
+  texto       String    @db.Text
+  palabras    String    @default("") // normalizadas (sin tildes, minúsculas) para buscar sin IA
+  entidadTipo String? // asset|customer|supplier|worker|party|...
+  entidadId   String?
+  fuente      String    @default("app") // app|telegram|whatsapp|panel|mcp
+  creadoPor   String    @default("")
+  usos        Int       @default(0)
+  ultimoUso   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, tipo])
+}
+
+// Conexión de una app de IA de afuera (ChatGPT, Claude, Gemini, Cursor…) al
+// servidor MCP del negocio (`/api/mcp`). El token se muestra UNA vez; acá queda
+// solo su hash SHA-256. Actúa con el usuario y el rol de quien la creó; escribir
+// está apagado hasta que el dueño lo prenda.
+model AsistenteConexion {
+  id              String    @id @default(cuid())
+  tenantId        String
+  nombre          String
+  tokenPrefijo    String // primeros 12 caracteres, para reconocerlo
+  tokenHash       String    @unique
+  usuario         String // username del panel con el que actúa
+  rol             String // rol de ese usuario al crearla (se re-lee en cada llamada)
+  permiteEscribir Boolean   @default(false)
+  activo          Boolean   @default(true)
+  ultimoUso       DateTime?
+  usos            Int       @default(0)
+  creadoPor       String
+  createdAt       DateTime  @default(now())
+  revocadoAt      DateTime?
+
+  @@index([tenantId])
 }
 
 // ─── Product Analytics ───────────────────────────────────

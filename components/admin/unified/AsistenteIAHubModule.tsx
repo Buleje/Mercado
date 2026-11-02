@@ -2,9 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
-import { BotMessageSquare, Wand2, Webhook } from "@buleje/design-system/icons";
+import Link from "next/link";
+import { BotMessageSquare, Sparkles, Wand2, Webhook } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { button } from "@/components/ui-system/button-variants";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // ── Hub del Asistente IA ─────────────────────────────────────────────────────
@@ -72,7 +74,15 @@ export default function AsistenteIAHubModule({ initialTab }: { initialTab?: stri
           title: "Asistente IA",
           description: "Pregunta y anota hablando, la IA hace tareas por ti y conecta WhatsApp, Telegram y n8n.",
           icon: BotMessageSquare,
-          actions: <ConsumoIA compacto />,
+          actions: (
+            <>
+              {/* Buleje IA (ADR-528): la app a pantalla completa con el modelo del negocio. */}
+              <Link href="/admin/ia" className={button({ variant: "accent" })}>
+                <Sparkles className="h-5 w-5" aria-hidden /> Abrir Buleje IA
+              </Link>
+              <ConsumoIA compacto />
+            </>
+          ),
         }}
         tabs={TABS}
         activeTab={sub}
