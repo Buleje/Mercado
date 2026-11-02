@@ -13,6 +13,7 @@ import "server-only";
  */
 import { prisma } from "@/lib/prisma";
 import { invalidateByPrefix } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 import { AdminPreferencesDB } from "@/lib/db/admin-preferences.db";
 import { SQL_PISAR_SUBCLAVES_FLAGS, SQL_SUBCLAVE_FLAGS } from "@/lib/db/settings.db";
 import {
@@ -43,10 +44,45 @@ export interface EstadoResumenTelegram {
   enviados: Record<Momento, FechaKey | null>;
 }
 
+/**
+ * Sólo las subclaves del resumen (config + fecha de cada momento), no el `featureFlagsJson` entero.
+ * 01-11 (tráfico de Supabase pasado de 5 GB en el plan free): el cron de cada 5 min pedía los flags
+ * completos de cada negocio (9-14 KB en main, Blas y musa) para usar ~100 bytes. Si el texto guardado
+ * no es JSON la sentencia falla y se cae a la lectura completa, que lo tolera (devuelve `{}`).
+ */
+/* $1 admin_prefs · $2 config · $3.. una por momento · el último, tenantId (sólo placeholders: ningún valor va en el texto). */
+const SQL_PREFS_RESUMEN = `SELECT ${SQL_SUBCLAVE_FLAGS} -> $2::text AS config, ${MOMENTOS.map(
+  (_, i) => `${SQL_SUBCLAVE_FLAGS} ->> $${i + 3}::text AS e${i}`,
+).join(", ")} FROM "Settings" WHERE "tenantId" = $${MOMENTOS.length + 3} LIMIT 1`;
+
+async function prefsDelResumen(tenantId: string): Promise<Record<string, unknown>> {
+  try {
+    const filas = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+      SQL_PREFS_RESUMEN,
+      PREFS,
+      CLAVE_CONFIG_TELEGRAM,
+      ...MOMENTOS.map(claveEnviado),
+      tenantId,
+    );
+    const f = filas[0];
+    if (!f) return {};
+    const prefs: Record<string, unknown> = {};
+    if (f.config != null) prefs[CLAVE_CONFIG_TELEGRAM] = f.config;
+    MOMENTOS.forEach((m, i) => {
+      const v = f[`e${i}`];
+      if (typeof v === "string") prefs[claveEnviado(m)] = v;
+    });
+    return prefs;
+  } catch (err) {
+    logger.warn("[agenda-telegram] lectura corta de prefs falló; uso la completa", { tenantId, error: String(err) });
+    return AdminPreferencesDB.read(tenantId);
+  }
+}
+
 export const AgendaTelegramDB = {
   async leer(tenantId: string): Promise<EstadoResumenTelegram> {
     exigirTenant(tenantId);
-    const prefs = await AdminPreferencesDB.read(tenantId);
+    const prefs = await prefsDelResumen(tenantId);
     const fecha = (m: Momento): FechaKey | null => {
       const v = prefs[claveEnviado(m)];
       return typeof v === "string" ? v : null;

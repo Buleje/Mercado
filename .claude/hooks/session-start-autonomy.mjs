@@ -83,7 +83,9 @@ async function checkDevServer() {
   try {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 3000);
-    const res = await fetch(`${BASE}/`, { signal: ctrl.signal, redirect: "manual" });
+    /* `/login` y no `/` (01-11): la portada bajaba ~72 KB de la base en cada sesión nueva cuando su
+       caché había vencido; el login no consulta la base (0 B medido) y el autosanador ya lo pide. */
+    const res = await fetch(`${BASE}/login`, { signal: ctrl.signal, redirect: "manual" });
     clearTimeout(tid);
     if (res.status === 200 || res.status === 307) return "running";
     return "unknown_status_" + res.status;
@@ -131,8 +133,10 @@ async function loginAdmin() {
 }
 
 // ── 3. Health rápido ─────────────────────────────────────────────────────
-async function quickHealth() {
-  const routes = ["/", "/marketplace", "/admin"];
+/* Con el panel compilado, `/login` en vez de `/`: la portada baja ~72 KB de la base cada vez que
+   vence su caché y el login 0 B (medido 01-11); igual prueba que el servidor contesta. */
+async function quickHealth(modoTrabajo = false) {
+  const routes = [modoTrabajo ? "/login" : "/", "/marketplace", "/admin"];
   const results = await Promise.all(routes.map(async (path) => {
     try {
       const ctrl = new AbortController();
@@ -198,7 +202,8 @@ async function main() {
   const devStatus = await checkDevServer();
   log(`Dev server (${BASE}): ${devStatus === "running" ? "✅ running" : `⚠️ ${devStatus}`}`);
   // Modo trabajo (`~/.local/bin/panel-trabajo`, 27-09): el :3000 es el panel COMPILADO → un cambio de código no se ve.
-  if (devStatus === "running" && spawnSync("pgrep", ["-f", "next start -p 3000"]).status === 0) {
+  const modoTrabajo = devStatus === "running" && spawnSync("pgrep", ["-f", "next start -p 3000"]).status === 0;
+  if (modoTrabajo) {
     log("   🟢 MODO TRABAJO (panel compilado): los cambios de código NO se ven hasta correr `panel-desarrollo`");
   }
 
@@ -251,7 +256,7 @@ async function main() {
 
   // Solo si dev está vivo intentamos auth + health
   if (devStatus === "running") {
-    const [auth, health] = await Promise.all([loginAdmin(), quickHealth()]);
+    const [auth, health] = await Promise.all([loginAdmin(), quickHealth(modoTrabajo)]);
     log(`Auth qaadmin: ${auth.ok ? `✅ csrf=${auth.csrfPrefix}... persisted /tmp/bsm-auth.env` : `⚠️ ${auth.error ?? auth.status}`}`);
     if (health.failing === 0) {
       log(`Health: ✅ ${health.results.length}/${health.results.length} rutas`);
@@ -259,8 +264,15 @@ async function main() {
       log(`Health: ⚠️ ${health.failing} ruta(s) fallando`);
       for (const [p, s] of health.results) log(`   · ${p} → ${s}`);
     }
-    const warmedCount = warmupHeavyRoutesAsync();
-    log(`Warmup: 🔥 ${warmedCount} rutas pesadas disparadas en BG (Turbopack compila mientras trabajás)`);
+    /* Tráfico de Supabase (01-11, plan free pasado de 5 GB): el calentamiento sólo sirve para que
+       Turbopack compile en `next dev`. Con el panel compilado no compila nada y cada sesión bajaba
+       ~120 KB de la base (medido: /tiendas 40 KB, /marketplace/buscar 29, mi-pollo 26, producto 27). */
+    if (modoTrabajo) {
+      log("Warmup: ⏭️ omitido (panel compilado: no hay nada que compilar y ahorra ~120 KB de la base por sesión)");
+    } else {
+      const warmedCount = warmupHeavyRoutesAsync();
+      log(`Warmup: 🔥 ${warmedCount} rutas pesadas disparadas en BG (Turbopack compila mientras trabajás)`);
+    }
   }
 
   log(`Chromium: ${chromiumStatus()}`);
