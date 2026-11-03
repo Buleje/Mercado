@@ -19,6 +19,7 @@ import {
 } from "@/lib/forestal/anular-dia-produccion";
 import { CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { ForestCtpRespaldoFotoDB, RespaldoError } from "./forest-ctp-respaldo-foto.db";
 import { ForestCtpDB } from "./forest-ctp.db";
 import { ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 
@@ -205,6 +206,15 @@ export const ForestCtpAnularDiaDB = {
         `El período ${cerrado.label} está cerrado: no se anulan líneas de un mes cerrado. Reábrelo en Cierre para corregir.`,
         { periodKey: cerrado.periodKey },
       );
+    }
+
+    /* ADR-530: una foto del libro antes de anular. Si no se pudo guardar,
+       no se anula nada. */
+    try {
+      await ForestCtpRespaldoFotoDB.crearPrevio(tenantId, "antes_anular_dia", usuario);
+    } catch (e) {
+      if (e instanceof RespaldoError) throw new AnularDiaError("RESPALDO_PREVIO", e.message);
+      throw e;
     }
 
     /* Los números del resumen, antes de anular: después el día ya no los tiene. */

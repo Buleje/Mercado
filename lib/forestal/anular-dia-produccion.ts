@@ -167,13 +167,15 @@ export type CodigoAnularDia =
   | "PERIODO_CERRADO" // 422 — el mes del día está cerrado
   | "CON_MOVIMIENTOS" // 409 — alguna corrida tiene algo colgando (detail.corridas)
   | "DIA_CAMBIO" // 409 — lo que hay hoy en el día no es lo que se confirmó
-  | "SIN_CORRIDAS"; // 404 — el día ya no tiene nada que anular
+  | "SIN_CORRIDAS" // 404 — el día ya no tiene nada que anular
+  | "RESPALDO_PREVIO"; // 503 — no se pudo guardar la foto del libro antes (ADR-530)
 
 export const ESTADO_HTTP_ANULAR_DIA: Record<CodigoAnularDia, number> = {
   PERIODO_CERRADO: 422,
   CON_MOVIMIENTOS: 409,
   DIA_CAMBIO: 409,
   SIN_CORRIDAS: 404,
+  RESPALDO_PREVIO: 503,
 };
 
 export class AnularDiaError extends Error {

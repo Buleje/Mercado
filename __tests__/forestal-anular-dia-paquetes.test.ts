@@ -78,7 +78,12 @@ const tx = {
     updateMany: vi.fn(async ({ where }: { where: { id: { in: string[] } } }) => {
       H.escrituras.push("baja-paquetes");
       let count = 0;
-      for (const p of H.paquetes) if (where.id.in.includes(p.id) && p.deletedAt == null) (p.deletedAt = new Date(), count++);
+      for (const p of H.paquetes) {
+        if (where.id.in.includes(p.id) && p.deletedAt == null) {
+          p.deletedAt = new Date();
+          count++;
+        }
+      }
       return { count };
     }),
   },
@@ -86,6 +91,11 @@ const tx = {
 };
 
 vi.mock("server-only", () => ({}));
+// ADR-530: el respaldo previo se prueba en ctp-respaldo-*.test.ts; acá no lee el libro.
+vi.mock("@/lib/db/forest-ctp-respaldo-foto.db", () => ({
+  ForestCtpRespaldoFotoDB: { crearPrevio: vi.fn(async () => null) },
+  RespaldoError: class RespaldoError extends Error {},
+}));
 Object.assign(H.prisma, {
   ...tx,
   forestCtpEntry: { ...tx.forestCtpEntry, findFirst: vi.fn(async () => ({ entryDate: new Date("2026-10-27T00:00:00.000Z") })) },

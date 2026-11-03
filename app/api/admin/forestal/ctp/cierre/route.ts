@@ -7,6 +7,7 @@ import { isSpecializationEnabled } from "@/lib/specializations";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ForestCtpConsumoDB } from "@/lib/db/forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "@/lib/db/forest-ctp-cierre.db";
+import { ForestCtpRespaldoFotoDB, RespaldoError } from "@/lib/db/forest-ctp-respaldo-foto.db";
 import { ClaveOcupadaError } from "@/lib/db/platform-settings.db";
 import { LibroCambioAlCerrarError, monthRange, type CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { logger } from "@/lib/logger";
@@ -111,6 +112,17 @@ export const POST = withApiHandler("forestal-ctp-cierre", async (req: NextReques
   // 0) Huella del libro hasta fin de mes ANTES de leer nada del acta: se vuelve
   //    a medir bajo el candado al grabar (ver el encabezado).
   const huella = await ForestCtpCierreDB.huellaDelLibroHasta(auth.tenantId, to);
+
+  // ADR-530: una foto del libro entero antes de cerrar (congelar costos no se
+  // deshace). Si no se pudo guardar, no se cierra nada. Va DESPUÉS de la
+  // huella: lo que se escriba entre la foto y el candado cambia la huella y
+  // el cierre se frena, así la foto nunca queda vieja respecto de lo cerrado.
+  try {
+    await ForestCtpRespaldoFotoDB.crearPrevio(auth.tenantId, "antes_cierre", user);
+  } catch (e) {
+    if (e instanceof RespaldoError) return NextResponse.json({ error: "respaldo_previo", message: e.message }, { status: 503 });
+    throw e;
+  }
 
   // 1) Existencia de cierre = acumulada hasta `to` (será la apertura del mes siguiente).
   const saldoAll = await ForestCtpDB.saldos(auth.tenantId, { toDate: to });

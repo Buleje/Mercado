@@ -6,6 +6,7 @@ import { esChoqueDeLocks } from "@/lib/forestal/choque-de-locks";
 import { ForestCtpCierreDB } from "@/lib/db/forest-ctp-cierre.db";
 import type { CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
+import { ForestCtpRespaldoFotoDB, RespaldoError } from "@/lib/db/forest-ctp-respaldo-foto.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import {
@@ -447,7 +448,8 @@ async function auditarParcial(
   );
 }
 
-function invalidarTodo(tenantId: string) {
+/** Todo el caché del libro de un negocio (también lo usa recuperar un respaldo, ADR-530). */
+export function invalidarTodo(tenantId: string) {
   for (const p of ["forest-ctp", "wood-entries", "forest-lote", "forestal:lote-aserrio", "forestal:lote-mixto"]) {
     try {
       invalidateByPrefix(`${p}:${tenantId}`);
@@ -498,7 +500,7 @@ async function contarTodo(db: Db, tenantId: string): Promise<ResumenVaciado> {
 
 export type ResultadoVaciado =
   | { ok: true; resumen: ResumenVaciado }
-  | { ok: false; codigo: "periodo_cerrado" | "libro_cambio"; motivo: string; periodos: string[] };
+  | { ok: false; codigo: "periodo_cerrado" | "libro_cambio" | "respaldo_previo"; motivo: string; periodos: string[] };
 
 type FalloVaciado = Extract<ResultadoVaciado, { ok: false }>;
 
@@ -610,6 +612,15 @@ export class ForestCtpPurgaDB {
     if (!tenantId) throw new Error("tenantId is required");
     if (!usuario.trim()) throw new Error("usuario vacío: el asiento tiene que decir quién vació el libro");
     if (alcances.length === 0) throw new Error("alcances vacío: el que llama valida antes");
+
+    /* ADR-530: antes de borrar, una foto del libro entero. Si no se pudo
+       guardar, no se borra nada. */
+    try {
+      await ForestCtpRespaldoFotoDB.crearPrevio(tenantId, "antes_vaciar", usuario);
+    } catch (e) {
+      if (!(e instanceof RespaldoError)) throw e;
+      return { ok: false, codigo: "respaldo_previo", motivo: e.message, periodos: [] };
+    }
 
     /* Fuera de la transacción y antes de su foto: que la fila de cierres
        exista para que su `FOR SHARE` tenga qué bloquear (primer cierre). */

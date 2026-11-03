@@ -7445,6 +7445,42 @@ model ForestCtpComplianceSnapshot {
   @@unique([tenantId, periodo, fecha])
 }
 
+/// ForestCtpRespaldo — foto comprimida del Libro CTP entero (ADR-530).
+///
+/// POR QUÉ EXISTE: vaciar, anular un día o borrar una corrida suelta trozas y
+/// reescribe consumos sin rastro; sin una foto previa no hay de dónde recuperar.
+/// Cada fila guarda TODAS las tablas del libro (vivas y dadas de baja) en gzip,
+/// leídas en una sola transacción RepeatableRead, para comparar con hoy y
+/// recuperar lo borrado SIN pisar nada (nunca «volver todo atrás»).
+///
+/// Sin soft-delete ni updatedAt: un respaldo no se edita; la poda del cron borra
+/// diarios viejos (30) y «antes de» (90 días); los manuales nunca se podan solos.
+/// Sin relación Prisma con Tenant (mismo patrón que ForestCtpComplianceSnapshot).
+model ForestCtpRespaldo {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// manual | diario | antes_vaciar | antes_anular_dia | antes_cierre
+  tipo String
+  nota String?
+
+  /// Filas por tabla (vivas y de baja): la lista se dibuja sin descomprimir `datos`.
+  conteos Json
+  /// sha256 del contenido: el diario se salta si es igual al último respaldo.
+  huella  String
+  /// Versión del formato de `datos` (columnas por tabla incluidas).
+  version Int    @default(1)
+  /// Tamaño de `datos` comprimido.
+  bytes   Int
+  /// gzip de `{ version, columnas, tablas }`.
+  datos   Bytes
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt(sort: Desc)])
+}
+
 /// ForestCtpConsumo — puente N:M entre una línea del libro CTP y los ingresos de
 /// materia prima que consumió (ADR-134 D5). Una corrida real mezcla varias guías,
 /// y un ingreso puede alimentar varias corridas.

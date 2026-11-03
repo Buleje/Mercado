@@ -28,6 +28,8 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 export type CtpAuditEntity =
   /** El libro entero, cuando la acción no es sobre una fila sino sobre todo. */
   | "ForestCtpLibro"
+  /** Una foto del libro entero (ADR-530): guardar, recuperar, descargar, borrar. */
+  | "ForestCtpRespaldo"
   /** Una troza de la lista de la GTF, o un pedazo suyo tras retrozar (ADR-313). */
   | "WoodEntryTroza"
   | "WoodEntry"
@@ -500,7 +502,13 @@ export type CtpAuditAction =
   // prompt con que la IA lee la foto de una planilla. Cambia lo que entra a
   // los importadores: quién y cuándo deja rastro.
   | "ctp_planilla_prompt_guardar"
-  | "ctp_planilla_prompt_borrar";
+  | "ctp_planilla_prompt_borrar"
+  // Respaldos del libro (ADR-530): guardar la foto, traer de vuelta lo borrado,
+  // bajar el archivo (Ley 29733: quién se llevó los datos) y borrar uno manual.
+  | "ctp_respaldo_crear"
+  | "ctp_respaldo_recuperar"
+  | "ctp_respaldo_descargar"
+  | "ctp_respaldo_borrar";
 
 /** Lo que describe un evento del libro. */
 export interface CtpAuditParams {

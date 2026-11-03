@@ -57,7 +57,7 @@ export const SUBS_DISPONIBLES = ["volumen", "por-troza"] as const;
 export type SubDisponibles = (typeof SUBS_DISPONIBLES)[number];
 
 /** Cumplimiento. `cerrar` = el Cierre del mes (`cierre`). */
-export const SUBS_CUMPLIMIENTO = ["chequeo", "cerrar"] as const;
+export const SUBS_CUMPLIMIENTO = ["chequeo", "cerrar", "respaldos"] as const;
 export type SubCumplimiento = (typeof SUBS_CUMPLIMIENTO)[number];
 
 /**

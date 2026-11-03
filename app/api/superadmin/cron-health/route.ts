@@ -9,7 +9,7 @@ const KNOWN_CRONS = [
   "reminders", "trial-expiry", "superadmin-alerts", "agent-tasks",
   "batch-expiry-alerts", "auto-close-register", "daily-summary",
   "stock-alerts-notify", "auto-reorder-check", "expiry-discounts",
-  "auto-backup", "fiados-reminder", "first-purchase-coupon",
+  "auto-backup", "ctp-respaldos", "fiados-reminder", "first-purchase-coupon",
   "abandoned-cart", "prestamos-mora", "prestamos-recordatorios",
   "settle-commissions", "monthly-report", "cleanup-demos",
   "reorder-reminders", "loyalty-points-reminder", "daily-deal-bundle",

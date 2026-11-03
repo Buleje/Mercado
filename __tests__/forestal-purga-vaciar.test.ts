@@ -16,6 +16,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+// ADR-530: el respaldo previo se prueba en ctp-respaldo-*.test.ts; acá no lee el libro.
+vi.mock("@/lib/db/forest-ctp-respaldo-foto.db", () => ({
+  ForestCtpRespaldoFotoDB: { crearPrevio: vi.fn(async () => null) },
+  RespaldoError: class RespaldoError extends Error {
+    constructor(_code: string, message: string) {
+      super(message);
+    }
+  },
+}));
 
 type Fila = Record<string, unknown>;
 type Tablas = Record<string, Fila[]>;
@@ -683,5 +692,17 @@ describe("lo que se vio es lo que se borra (security 2026-10-02)", () => {
     const previa = await ForestCtpPurgaDB.contar(T, ["lotes"]);
     await expect(ForestCtpPurgaDB.vaciar(T, "  ", ["lotes"], previa.conteo)).rejects.toThrow(/usuario/);
     expect(ids("forestLoteAserrio")).toEqual(["la1", "la2", "la3", "la9"]);
+  });
+});
+
+describe("respaldo previo (ADR-530)", () => {
+  it("si la foto del libro no se pudo guardar, no se borra NADA y se dice por qué", async () => {
+    const foto = await import("@/lib/db/forest-ctp-respaldo-foto.db");
+    const previa = await ForestCtpPurgaDB.contar(T, ["lotes"]);
+    vi.mocked(foto.ForestCtpRespaldoFotoDB.crearPrevio).mockRejectedValueOnce(new foto.RespaldoError("RESPALDO_PREVIO", "No se pudo guardar el respaldo"));
+    const r = await ForestCtpPurgaDB.vaciar(T, "qa", ["lotes"], previa.conteo);
+    expect(r).toEqual({ ok: false, codigo: "respaldo_previo", motivo: "No se pudo guardar el respaldo", periodos: [] });
+    expect(ids("forestLoteAserrio")).toEqual(["la1", "la2", "la3", "la9"]);
+    expect(foto.ForestCtpRespaldoFotoDB.crearPrevio).toHaveBeenLastCalledWith(T, "antes_vaciar", "qa");
   });
 });

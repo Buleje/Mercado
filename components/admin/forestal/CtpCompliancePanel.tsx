@@ -3,20 +3,22 @@
 /**
  * CtpCompliancePanel — la vista «Cumplimiento» del Libro CTP (ADR-124/127).
  *
- * Dos pestañas (compactación del libro, 17-10: «unificar pestañas que tienen
+ * Tres pestañas (compactación del libro, 17-10: «unificar pestañas que tienen
  * casi la misma función»):
  *  · «Chequeo del período» — ¿puedo cerrar? (`CtpCumplimientoChequeo`);
  *  · «Cerrar el mes» — lo que era la vista Cierre: el asistente y el historial
- *    (`CtpCumplimientoCerrar`). El veredicto del chequeo lleva acá.
+ *    (`CtpCumplimientoCerrar`). El veredicto del chequeo lleva acá;
+ *  · «Respaldos» — fotos del libro y recuperar lo borrado (`CtpRespaldosView`, ADR-530).
  *
  * `?vista=cierre` (una URL o un aviso viejos) abre «Cerrar el mes».
  */
 
 import { useState } from "react";
-import { ClipboardCheck, Lock } from "@buleje/design-system/icons";
+import { Archive, ClipboardCheck, Lock } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpCumplimientoCerrar from "./CtpCumplimientoCerrar";
 import CtpCumplimientoChequeo from "./CtpCumplimientoChequeo";
+import CtpRespaldosView from "./CtpRespaldosView";
 import PestanasDeVista, { type PestanaDeVista } from "./PestanasDeVista";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 import { SUBS_CUMPLIMIENTO, subPedidoPorVistaVieja, type SubCumplimiento } from "./ctp-vistas-fusionadas";
@@ -34,6 +36,12 @@ const PESTANAS: readonly PestanaDeVista<SubCumplimiento>[] = [
     label: "Cerrar el mes",
     icon: Lock,
     hint: "Revisa el mes, ciérralo (congela costos y bloquea el acta) y el historial para reabrir",
+  },
+  {
+    id: "respaldos",
+    label: "Respaldos",
+    icon: Archive,
+    hint: "Fotos del libro y recuperar lo borrado",
   },
 ];
 
@@ -62,8 +70,10 @@ export default function CtpCompliancePanel({
     <PestanasDeVista prefijo="ctp-cumplimiento" etiqueta="Pestañas de Cumplimiento" items={PESTANAS} activa={sub} onCambiar={irA}>
       {sub === "chequeo" ? (
         <CtpCumplimientoChequeo period={period} onNavigate={onNavigate} onCerrar={() => irA("cerrar")} />
-      ) : (
+      ) : sub === "cerrar" ? (
         <CtpCumplimientoCerrar onIr={onNavigate} />
+      ) : (
+        <CtpRespaldosView />
       )}
     </PestanasDeVista>
   );

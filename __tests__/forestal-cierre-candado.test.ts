@@ -55,6 +55,11 @@ const H = vi.hoisted(() => {
 });
 
 vi.mock("server-only", () => ({}));
+// ADR-530: el respaldo previo se prueba en ctp-respaldo-*.test.ts; acá no lee el libro.
+vi.mock("@/lib/db/forest-ctp-respaldo-foto.db", () => ({
+  ForestCtpRespaldoFotoDB: { crearPrevio: vi.fn(async () => null) },
+  RespaldoError: class RespaldoError extends Error {},
+}));
 vi.mock("@/lib/prisma", () => ({ prisma: H.prisma }));
 vi.mock("@/lib/db/platform-settings.db", () => ({
   PlatformSettingsDB: { actualizar: H.actualizar, get: async () => H.estado.valor },

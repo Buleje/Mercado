@@ -550,6 +550,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "disponibles", key: "por-troza", label: "Trozas", hint: "Volumen › Por troza: buscar una pieza por su codificación, su ficha, D1/D2 y los días en el patio" },
     { vista: "saldos", key: "libro", label: "Cuadros SERFOR", hint: "Lo que firma el libro: los 3 cuadros resumen del formato oficial" },
     { vista: "cumplimiento", key: "cerrar", label: "Cierre del mes", hint: "Cerrar mes · bloquear el acta" },
+    { vista: "cumplimiento", key: "respaldos", label: "Respaldos", hint: "Fotos del libro y recuperar lo borrado" },
     { vista: "directorio", key: "tu-ctp", label: "Ficha CTP", hint: "Identidad legal SERFOR: razón social, RUC, títulos y ubicación" },
   ],
   // Asistente IA › Comandos IA (10-10): con la fusión de «Sugerencias IA»,

@@ -39,6 +39,13 @@ export const RUTAS_PANEL = {
   /* Anular lo declarado un día de producción (2026-09-23): los mismos roles que
      anular una fila del Libro. La tira sólo muestra la papelera a quien pasa. */
   "/api/admin/forestal/ctp/anular-dia": ["admin", "owner"],
+  /* Respaldos del Libro CTP (ADR-530, 2026-11-03). VER la lista: también el
+     almacenero (sabe que hay foto del libro). Guardar, comparar, descargar y
+     recuperar: sólo admin y dueño — la descarga trae el libro entero y
+     recuperar escribe en masa. La pestaña esconde los botones con estos arrays. */
+  "/api/admin/forestal/ctp/respaldos": ["admin", "almacenero", "owner"],
+  "POST /api/admin/forestal/ctp/respaldos": ["admin", "owner"],
+  "/api/admin/forestal/ctp/respaldos/[id]": ["admin", "owner"],
   /* Las escrituras por PATCH del Libro CTP —entre ellas apartar, cambiar y
      liberar una reserva— (2026-09-23). El GET de la misma ruta deja pasar al
      almacenero; el PATCH no: la campana y el modal esconden Liberar/Extender
