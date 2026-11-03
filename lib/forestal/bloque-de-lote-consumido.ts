@@ -18,6 +18,7 @@
  *
  * PURO y client-safe: sin DB, sin React y sin `window`.
  */
+import { formatNumber } from "@/lib/format";
 import { MAX_OBSERVACION_BLOQUE, MAX_TROZAS_POR_BLOQUE, type BloqueRolliza } from "./cubicacion-reparto";
 import { medidaDeTroza } from "./medida-cabe-en-troza";
 import { permisoDeLasTrozas } from "./panel-lotes-reparto";
@@ -120,12 +121,33 @@ export function observacionDeGuias(
   return `${unicas.length} guías`;
 }
 
-/** Las corridas vivas y SIN producción que se comieron piezas de este lote, por N°. */
+/**
+ * Las corridas vivas y SIN producción que se comieron piezas de este lote, por N°.
+ *
+ * Un lote de INVENTARIO (sin trozas: su consumo se declaró por volumen, como los
+ * que llegan del SNIFFS o con «Declarar solo consumo de trozas») no tiene piezas
+ * que atar a la corrida: su corrida es la suya (Brandon 03-11: «quiero que estén
+ * en corrida viva para usarlas en distribución por bloque»). Antes devolvía
+ * nada y la pantalla decía, falso, que la corrida «se anuló».
+ */
 export function abiertasDelLote(lote: Pick<LoteConsumido, "trozas" | "corridas">): CorridaDeLoteConsumido[] {
   const consumio = new Set(lote.trozas.map((t) => t.consumidaEnId).filter((c): c is string => Boolean(c)));
+  const deInventario = lote.trozas.length === 0;
   return (lote.corridas ?? [])
-    .filter((c) => c.viva && c.quantity == null && consumio.has(c.id))
+    .filter((c) => c.viva && c.quantity == null && (deInventario || consumio.has(c.id)))
     .sort((a, b) => a.lineNo - b.lineNo);
+}
+
+/**
+ * ¿El bloque es de un lote de INVENTARIO? Vino de un lote (`origen: "lote"`),
+ * no trae trozas y adoptó UNA corrida: su materia prima es el volumen de esa
+ * corrida, no piezas. Se deduce de lo que el bloque ya guarda (sin campo nuevo
+ * en la distribución).
+ */
+export function esBloqueDeInventario(
+  b: Pick<BloqueRolliza, "trozaIds" | "trozasElegidas"> & Partial<Pick<BloqueRolliza, "origen" | "corridaIds">>,
+): boolean {
+  return b.origen === "lote" && trozasDelBloque(b).length === 0 && (b.corridaIds ?? []).length === 1;
 }
 
 /**
@@ -135,12 +157,16 @@ export function abiertasDelLote(lote: Pick<LoteConsumido, "trozas" | "corridas">
  * (el servidor las cuenta al declarar).
  */
 export function corridaEsDelBloqueEntero(
-  b: Pick<BloqueRolliza, "trozaIds" | "trozasElegidas">,
+  b: Pick<BloqueRolliza, "trozaIds" | "trozasElegidas"> & Partial<Pick<BloqueRolliza, "origen" | "corridaIds">>,
   trozasDelLote: readonly Pick<TrozaDeLoteConsumido, "id" | "consumidaEnId">[],
   corridaId: string,
 ): boolean {
   const ids = new Set(trozasDelBloque(b));
-  if (ids.size === 0) return false;
+  /* Lote de inventario: la corrida es la que el bloque adoptó y el lote no
+     tiene una sola troza (si tuviera, la corrida tendría que haberlas comido). */
+  if (ids.size === 0) {
+    return esBloqueDeInventario(b) && trozasDelLote.length === 0 && (b.corridaIds ?? [])[0] === corridaId;
+  }
   const suyas = trozasDelLote.filter((t) => t.consumidaEnId === corridaId);
   return suyas.length === ids.size && suyas.every((t) => ids.has(t.id));
 }
@@ -171,7 +197,9 @@ export function bloqueDeLoteConsumido(lote: LoteConsumido, piezasDeLaCorrida: re
       message:
         declaradas.length > 0
           ? `${nombre} ya declaró su producción (corrida N° ${declaradas.map((c) => c.lineNo).join(", ")}): no queda corrida por declarar. Mírala en Consumos del Libro.`
-          : `Las trozas del lote ${lote.code} ya no están en una corrida viva (se anuló): vuelve a consumirlo antes de llevarlo a la Distribución.`,
+          : lote.trozas.length === 0
+            ? `${nombre} es de inventario y no tiene una corrida viva en el Libro (se anuló su consumo): vuelve a declarar su consumo desde el detalle del lote antes de llevarlo a la Distribución.`
+            : `Las trozas del lote ${lote.code} ya no están en una corrida viva (se anuló): vuelve a consumirlo antes de llevarlo a la Distribución.`,
     };
   }
   if (abiertas.length > 1) {
@@ -201,15 +229,27 @@ export function bloqueDeLoteConsumido(lote: LoteConsumido, piezasDeLaCorrida: re
     };
   }
 
-  const rollizaM3 = r4(suyas.reduce((a, t) => a + (Number(t.volumenM3) || 0), 0));
+  /* Lote de inventario: sin piezas, su rolliza ES lo que entró a la corrida. */
+  const deInventario = lote.trozas.length === 0;
+  const entradaCorrida = Number(c.volumeInputM3) > 0 ? r4(Number(c.volumeInputM3)) : 0;
+  const rollizaM3 = deInventario ? entradaCorrida : r4(suyas.reduce((a, t) => a + (Number(t.volumenM3) || 0), 0));
+  if (deInventario && !(rollizaM3 > 0)) {
+    return {
+      ok: false,
+      code: "SIN_CORRIDA_ABIERTA",
+      message: `${nombre} es de inventario y su corrida N° ${c.lineNo} no dice cuánto entró a la sierra: ponle el volumen consumido desde el detalle del lote.`,
+    };
+  }
   /* El tope lo mide el servidor contra la materia prima de la CORRIDA: se
      muestra el mismo número que va a usar. */
-  const entradaM3 = Number(c.volumeInputM3) > 0 ? r4(Number(c.volumeInputM3)) : rollizaM3;
+  const entradaM3 = entradaCorrida > 0 ? entradaCorrida : rollizaM3;
   const fecha = diaDeCorrida(c.entryDate) ?? "";
   const permiso = lote.permiso?.trim() || permisoDeLasTrozas(suyas);
   const medidas = suyas.map((t) => medidaDeTroza(t)).filter((m): m is NonNullable<typeof m> => m !== null);
 
-  const observacion = observacionDeGuias(suyas.map((t) => t.gtfNumber));
+  const observacion = deInventario
+    ? `Lote de inventario · ${formatNumber(rollizaM3, 3)} m³ consumidos`
+    : observacionDeGuias(suyas.map((t) => t.gtfNumber));
   const bloque: BloqueSembrable = {
     etiqueta: `Lote ${lote.code}`,
     /* La etiqueta sigue siendo el lote; la guía (o guías) de sus trozas va en

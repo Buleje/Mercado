@@ -37,7 +37,7 @@ import { fmtM3 } from "./cubicacion-formato";
 import type { LoteAserrio, TrozaDelLote } from "./lotes-aserrio";
 import { TEXTO_ESTADO_LOCAL } from "./lotes-por-bloque";
 import { corridasAMedioDeclarar, RENDIMIENTO_TOPE_PCT, topeDeclarableM3, type CorridaAMedioDeclarar } from "./produccion-paquetes";
-import { corridaEsDelBloqueEntero } from "./bloque-de-lote-consumido";
+import { corridaEsDelBloqueEntero, esBloqueDeInventario } from "./bloque-de-lote-consumido";
 import { repartirEnDias, rollizaNecesariaM3, trozasDelBloque } from "./trozas-para-bloque";
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
@@ -118,9 +118,14 @@ export function clavesCompletadas(
 
 /** El bloque no escribe en el Libro: por qué (o `null` si puede). */
 export function motivoDelBloque(
-  b: Pick<BloqueRolliza, "trozaIds" | "trozasElegidas" | "loteId" | "origen">,
+  b: Pick<BloqueRolliza, "trozaIds" | "trozasElegidas" | "loteId" | "origen" | "corridaIds">,
   lote: LoteParaLibro | null | undefined,
 ): string | null {
+  /* Lote de inventario (03-11): sin trozas, se declara su corrida desde acá
+     (si al lote le cargaron trozas después, ya no lo es: sigue el aviso de abajo). */
+  if (esBloqueDeInventario(b) && !(lote && lote.trozas.length > 0)) {
+    return lote ? null : "No encuentro su lote en el Libro: recarga la página o vuelve a llevarlo a la Distribución.";
+  }
   if (trozasDelBloque(b).length === 0) {
     return b.origen === "lote"
       ? "Salió de un lote ya creado, sin sus trozas: su producción se registra desde Consumos del Libro."
@@ -242,27 +247,31 @@ export function planLibroDeBloque(
     const corridaId = j.corridaId;
     if (j.estado !== "abierta" || !corridaId || !corridaEsDelBloqueEntero(b, lote.trozas, corridaId)) continue;
     const suyas = delBloque.filter((t) => t.consumidaEnId === corridaId);
+    const entradaCorrida = Number(vivas?.get(corridaId)?.volumeInputM3);
+    /* Lote de inventario (03-11): sin piezas, su rolliza es lo que entró a la corrida. */
+    const deInventario = lote.trozas.length === 0;
     j.corridaDelBloque = true;
     j.trozaIds = suyas.map((t) => t.id);
     j.etiquetas = suyas.map(rotulo);
-    j.rollizaM3 = r4(suyas.reduce((a, t) => a + vol(t), 0));
+    j.rollizaM3 = deInventario ? r4(entradaCorrida > 0 ? entradaCorrida : 0) : r4(suyas.reduce((a, t) => a + vol(t), 0));
     j.rendimientoPct = j.rollizaM3 > 0 && j.m3 > 0 ? Math.round((j.m3 / j.rollizaM3) * 1000) / 10 : null;
-    const entradaCorrida = Number(vivas?.get(corridaId)?.volumeInputM3);
     const tope = topeDeclarableM3(entradaCorrida > 0 ? entradaCorrida : j.rollizaM3);
     const cual = `La corrida N° ${j.lineNo}`;
-    const trozas = `${j.trozaIds.length} troza${j.trozaIds.length === 1 ? "" : "s"}`;
+    const trozas = deInventario
+      ? `${fmtM3(j.rollizaM3)} m³ del lote`
+      : `${j.trozaIds.length} troza${j.trozaIds.length === 1 ? "" : "s"} del bloque`;
     const otrosDias = jornadas.some((x) => x !== j && x.corridaId == null && x.piezas > 0 && x.grupos.length > 0);
     if (otrosDias) {
       j.motivo = `${cual} es un día: junta los días del bloque en uno (una troza no se parte entre dos corridas) y declárala desde acá.`;
     } else if (j.piezas <= 0 || j.grupos.length === 0) {
-      j.motivo = `${cual} ya consumió las ${trozas} del bloque: carga lo aserrado en el cubicador para declararla desde acá.`;
+      j.motivo = `${cual} ya consumió ${deInventario ? "los" : "las"} ${trozas}: carga lo aserrado en el cubicador para declararla desde acá.`;
     } else if (j.m3 > tope + TOL_TOPE_M3) {
       j.motivo =
         `${cual} consumió ${fmtM3(j.rollizaM3)} m³ y el tope del ${RENDIMIENTO_TOPE_PCT} % deja declarar ${fmtM3(tope)} m³; ` +
         `este día lleva ${fmtM3(j.m3)}: revisa lo aserrado en el cubicador.`;
     } else {
       j.declarable = true;
-      j.motivo = `${cual} ya consumió las ${trozas} del bloque. Declárala desde acá: «Declarar la corrida N° ${j.lineNo}» en el Recorrido del permiso le pone lo aserrado del día (${fmtM3(j.m3)} m³).`;
+      j.motivo = `${cual} ya consumió ${deInventario ? "los" : "las"} ${trozas}. Declárala desde acá: «Declarar la corrida N° ${j.lineNo}» en el Recorrido del permiso le pone lo aserrado del día (${fmtM3(j.m3)} m³).`;
     }
   }
 

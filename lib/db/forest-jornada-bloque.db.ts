@@ -80,6 +80,12 @@ export interface JornadaAbiertaParaDeclarar {
   corridaId: string;
   /** Las piezas del bloque: la corrida tiene que haber consumido EXACTAMENTE éstas. */
   trozaIds: string[];
+  /**
+   * El lote del bloque, leído por el servidor. Con `trozaIds` vacío (lote de
+   * INVENTARIO, 03-11) es lo que prueba que la corrida es la suya: su
+   * `produccionEntryId` y ni una troza en el lote.
+   */
+  loteId?: string | null;
   produccion: CamposDeclaracion;
   user: string;
 }
@@ -308,7 +314,8 @@ export class ForestJornadaBloqueDB {
     if (!tenantId) throw new Error("tenantId is required");
     const { corridaId, produccion, user } = input;
     const trozaIds = [...new Set(input.trozaIds.map((t) => t.trim()).filter(Boolean))];
-    if (!corridaId || trozaIds.length === 0) {
+    const deInventario = trozaIds.length === 0;
+    if (!corridaId || (deInventario && !input.loteId)) {
       throw new CtpInvariantError("La jornada no trae la corrida ni sus trozas.", "VALIDACION");
     }
     const c = await ForestJornadaBloqueDB.corridaConSusPiezas(tenantId, corridaId);
@@ -318,13 +325,30 @@ export class ForestJornadaBloqueDB {
       new CtpInvariantError(
         lineNo == null
           ? "La corrida del bloque ya no está en el Libro: vuelve a llevar el lote a la Distribución."
-          : `La corrida N° ${lineNo} ya no tiene justo las trozas del bloque (se anuló o cambió su consumo): vuelve a llevar el lote a la Distribución o declárala desde el Libro.`,
+          : deInventario
+            ? `La corrida N° ${lineNo} ya no es la del lote de inventario (se anuló, cambió su consumo o el lote ahora tiene trozas): vuelve a llevar el lote a la Distribución o declárala desde el Libro.`
+            : `La corrida N° ${lineNo} ya no tiene justo las trozas del bloque (se anuló o cambió su consumo): vuelve a llevar el lote a la Distribución o declárala desde el Libro.`,
         "LINEA_NO_EDITABLE",
         { motivo: "CORRIDA_NO_ES_DEL_BLOQUE", corridaId, lineNo },
       );
     if (!c || c.deletedAt || c.section !== "produccion" || c.status !== "registrado" || !mismas) {
       throw noEsDelBloque(c?.lineNo ?? null);
     }
+    /* Lote de inventario: sin piezas que comparar, la corrida tiene que ser la
+       del lote (`produccionEntryId`) y el lote, vivo, no tener una sola troza
+       (I1: nunca declarar sobre materia prima que no es la del bloque). Se mira
+       antes, para no validar en vano, y otra vez bajo la tx. */
+    const corridaLeida = { id: c.id, lineNo: c.lineNo };
+    const esElLoteDeInventario = async (db: Pick<Prisma.TransactionClient, "forestLoteAserrio">): Promise<void> => {
+      const lote = await db.forestLoteAserrio.findFirst({
+        where: { tenantId, id: input.loteId ?? "", deletedAt: null },
+        select: { produccionEntryId: true, status: true, _count: { select: { trozas: true } } },
+      });
+      if (!lote || lote.status === "anulado" || lote.produccionEntryId !== corridaLeida.id || lote._count.trozas > 0) {
+        throw noEsDelBloque(corridaLeida.lineNo);
+      }
+    };
+    if (deInventario) await esElLoteDeInventario(prisma);
     const corrida = { id: c.id, lineNo: c.lineNo };
     const volumenM3 = redondear4(Number(c.volumeInputM3 ?? 0));
 
@@ -355,6 +379,7 @@ export class ForestJornadaBloqueDB {
            con `quantity` null en el WHERE: dos declaraciones a la vez, una sola. */
         const n = await tx.woodEntryTroza.count({ where: { tenantId, consumidaEnId: c.id } });
         if (n !== trozaIds.length) throw noEsDelBloque(c.lineNo);
+        if (deInventario) await esElLoteDeInventario(tx);
         const h = await ForestCtpDB.declararProduccionEnTx(
           tx,
           tenantId,

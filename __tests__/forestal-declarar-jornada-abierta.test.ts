@@ -19,6 +19,7 @@ const H = vi.hoisted(() => ({
   corridaFind: vi.fn(),
   piezasFind: vi.fn(),
   txCount: vi.fn(),
+  loteFind: vi.fn(),
   recotizar: vi.fn(),
 }));
 
@@ -27,6 +28,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     forestCtpEntry: { findFirst: H.corridaFind },
     woodEntryTroza: { findMany: H.piezasFind },
+    forestLoteAserrio: { findFirst: H.loteFind },
   },
 }));
 /* `actualizar` corre `cambio` en SU transacción: lo escrito se confirma sólo si termina. */
@@ -40,7 +42,7 @@ vi.mock("@/lib/db/platform-settings.db", () => ({
       opts: unknown,
     ) => {
       H.txOpts.push(opts);
-      const tx = { log: [] as string[], woodEntryTroza: { count: H.txCount } };
+      const tx = { log: [] as string[], woodEntryTroza: { count: H.txCount }, forestLoteAserrio: { findFirst: H.loteFind } };
       const r = await cambio(H.kv, tx);
       H.confirmado.push(...tx.log);
       if (r.valor !== undefined) H.kv = r.valor;
@@ -233,6 +235,73 @@ describe("declararJornadaAbierta: reintentos y carreras", () => {
     await expect(ForestJornadaBloqueDB.declararJornadaAbierta(TENANT, input(), anotarEn)).rejects.toThrow("ya declarada");
     expect(espias.despues).not.toHaveBeenCalled();
     expect(H.recotizar).not.toHaveBeenCalled();
+    expect(bloqueGuardado()?.jornadasLibro?.[0]).toMatchObject({ estado: "abierta" });
+  });
+});
+
+/* Lote de INVENTARIO (03-11): sin trozas, el consumo entró por volumen. La
+   corrida tiene que ser la del lote (`produccionEntryId`), sin piezas, y el
+   lote vivo y sin una sola troza: antes y otra vez bajo la tx (I1). */
+describe("declararJornadaAbierta: lote de inventario", () => {
+  const loteVivo = (x: Record<string, unknown> = {}) => ({ produccionEntryId: "c7", status: "consumido", _count: { trozas: 0 }, ...x });
+  const deInventario = (x: Record<string, unknown> = {}) => input({ trozaIds: [], loteId: "lote-28", ...x });
+  beforeEach(() => {
+    H.piezasFind.mockResolvedValue([]);
+    H.txCount.mockResolvedValue(0);
+    H.loteFind.mockResolvedValue(loteVivo());
+  });
+  const rechaza = async () => {
+    const err = await ForestJornadaBloqueDB.declararJornadaAbierta(TENANT, deInventario(), anotarEn).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CtpInvariantError);
+    expect((err as CtpInvariantError).detail?.motivo).toBe("CORRIDA_NO_ES_DEL_BLOQUE");
+    expect((err as CtpInvariantError).message).toMatch(/lote de inventario/);
+    expect(H.txOpts).toEqual([]);
+    expect(espias.declararEnTx).not.toHaveBeenCalled();
+  };
+
+  it("declara la corrida del lote, con su materia prima, y mira el lote dos veces (antes y bajo la tx)", async () => {
+    const r = await ForestJornadaBloqueDB.declararJornadaAbierta(TENANT, deInventario(), anotarEn);
+    expect(r).toMatchObject({ corrida: { id: "c7", lineNo: 7 }, piezas: 0, volumenM3: 7.5, yaEstaba: false });
+    expect(H.confirmado).toEqual(["declarar"]);
+    expect(espias.declararEnTx.mock.calls[0]![2]).toEqual({ id: "c7", volumeInputM3: 7.5 });
+    expect(H.loteFind).toHaveBeenCalledTimes(2);
+    for (const [q] of H.loteFind.mock.calls) expect(q.where).toEqual({ tenantId: TENANT, id: "lote-28", deletedAt: null });
+  });
+
+  it("sin el lote en el pedido: VALIDACION, sin leer nada", async () => {
+    const err = await ForestJornadaBloqueDB.declararJornadaAbierta(TENANT, input({ trozaIds: [] }), anotarEn).catch((e: unknown) => e);
+    expect((err as CtpInvariantError).code).toBe("VALIDACION");
+    expect(H.corridaFind).not.toHaveBeenCalled();
+  });
+
+  it("la corrida es de OTRO lote", async () => {
+    H.loteFind.mockResolvedValue(loteVivo({ produccionEntryId: "c9" }));
+    await rechaza();
+  });
+
+  it("al lote le cargaron trozas", async () => {
+    H.loteFind.mockResolvedValue(loteVivo({ _count: { trozas: 2 } }));
+    await rechaza();
+  });
+
+  it("lote anulado o borrado", async () => {
+    H.loteFind.mockResolvedValue(loteVivo({ status: "anulado" }));
+    await rechaza();
+    H.loteFind.mockResolvedValue(null);
+    await rechaza();
+  });
+
+  it("la corrida sí comió piezas: no es de inventario", async () => {
+    H.piezasFind.mockResolvedValue([{ id: "t1" }]);
+    await rechaza();
+    expect(H.loteFind).not.toHaveBeenCalled();
+  });
+
+  it("si el lote cambió bajo la tx, tira y no confirma nada", async () => {
+    H.loteFind.mockResolvedValueOnce(loteVivo()).mockResolvedValueOnce(loteVivo({ _count: { trozas: 1 } }));
+    await expect(ForestJornadaBloqueDB.declararJornadaAbierta(TENANT, deInventario(), anotarEn)).rejects.toBeInstanceOf(CtpInvariantError);
+    expect(H.confirmado).toEqual([]);
+    expect(espias.declararEnTx).not.toHaveBeenCalled();
     expect(bloqueGuardado()?.jornadasLibro?.[0]).toMatchObject({ estado: "abierta" });
   });
 });

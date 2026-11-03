@@ -27,7 +27,7 @@ import { claveEspecie } from "./loth-constants";
 import { PT_POR_M3 } from "./cubicacion";
 import { RENDIMIENTO_TOPE_PCT } from "./produccion-paquetes";
 import { sumarDias } from "./consumo-en-jornadas";
-import { corridaEsDelBloqueEntero } from "./bloque-de-lote-consumido";
+import { corridaEsDelBloqueEntero, esBloqueDeInventario } from "./bloque-de-lote-consumido";
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
@@ -140,7 +140,15 @@ export function derivarRecorrido(d: DatosDelRecorrido): EstadoRecorrido {
   const amparadoM3 = r4(d.usadoM3 != null && d.usadoM3 >= 0 ? d.usadoM3 : capacidadDe(b));
   const delBloque = new Set(trozasDelBloque(b));
   const trozas = d.trozas.filter((t) => delBloque.has(t.id));
-  const rollizaM3 = r4(trozas.reduce((a, t) => a + (Number(t.volumenM3) || 0), 0));
+  /* Lote de inventario (03-11): si el lote ahora tiene trozas, ya no lo es. Su
+     rolliza es lo que entró a la corrida (sin ella, la cabecera decía «0 m³»). */
+  const deInventario = esBloqueDeInventario(b) && !(d.lote && d.lote.trozas.length > 0);
+  const entradaInventario = deInventario
+    ? Number(d.lote?.corridas?.find((c) => c.id === (b.corridaIds ?? [])[0])?.volumeInputM3)
+    : 0;
+  const rollizaM3 = deInventario
+    ? r4(entradaInventario > 0 ? entradaInventario : Number(b.m3) || 0)
+    : r4(trozas.reduce((a, t) => a + (Number(t.volumenM3) || 0), 0));
 
   /* El permiso del recorrido: el del bloque o, si no lo dice, el único de sus trozas. */
   const permisosDeTrozas = [...new Set(trozas.map((t) => (t.permiso ?? "").trim()).filter(Boolean))];
@@ -164,7 +172,14 @@ export function derivarRecorrido(d: DatosDelRecorrido): EstadoRecorrido {
   {
     const sinConsumir = trozas.filter((t) => !t.consumidaEnId);
     const porRecibir = sinConsumir.filter((t) => t.porRecepcionar);
-    if (delBloque.size === 0) {
+    if (deInventario) {
+      /* Lote de inventario (03-11): entró por volumen; lo que se pide es su permiso. */
+      pasos.push(
+        permiso
+          ? { paso: "datos", estado: "hecho", ids: [], detalle: `Lote de inventario · ${rollizaM3} m³ consumidos · permiso ${permiso}` }
+          : { paso: "datos", estado: "con_problema", ids: [], code: "SIN_PERMISO", motivo: "El lote de inventario no dice su permiso: complétalo en el detalle del lote." },
+      );
+    } else if (delBloque.size === 0) {
       pasos.push({ paso: "datos", estado: "con_problema", ids: [], code: "SIN_TROZAS", motivo: "El bloque no tiene trozas del grupo: vuelve a armar el grupo en la distribución." });
     } else if (d.noEncontradas.length > 0) {
       pasos.push({
@@ -203,7 +218,9 @@ export function derivarRecorrido(d: DatosDelRecorrido): EstadoRecorrido {
   {
     const elegidas = (b.trozasElegidas ?? []).length > 0;
     const perdidas = trozas.filter((t) => t.motivo && !(t.consumidaEnId && idsDelBloque.has(t.consumidaEnId)) && !t.porRecepcionar);
-    if (!elegidas) {
+    if (deInventario) {
+      pasos.push({ paso: "trozas", estado: "no_aplica", ids: [], detalle: "Lote de inventario: entró por volumen, sin trozas una por una." });
+    } else if (!elegidas) {
       pasos.push({ paso: "trozas", estado: "pendiente", ids: [], motivo: "Elige las trozas que ampara el bloque." });
     } else if (perdidas.length > 0) {
       pasos.push({

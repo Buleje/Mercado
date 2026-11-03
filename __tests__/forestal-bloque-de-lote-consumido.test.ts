@@ -4,10 +4,14 @@ import {
   bloqueDeLoteConsumido,
   corridaEsDelBloqueEntero,
   diaDeCorrida,
+  esBloqueDeInventario,
   observacionDeGuias,
   type LoteConsumido,
 } from "@/lib/forestal/bloque-de-lote-consumido";
-import { MAX_OBSERVACION_BLOQUE, MAX_TROZAS_POR_BLOQUE } from "@/lib/forestal/cubicacion-reparto";
+import { MAX_OBSERVACION_BLOQUE, MAX_TROZAS_POR_BLOQUE, type BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
+import { motivoDelBloque, planLibroDeBloque, type LoteParaLibro } from "@/lib/forestal/jornadas-de-bloque";
+import { topeDeclarableM3 } from "@/lib/forestal/produccion-paquetes";
+import { derivarRecorrido } from "@/lib/forestal/recorrido-estado";
 
 /* El lote 28-2026 de Blas (ADR-520), en chico: 3 trozas consumidas por la corrida N° 7. */
 function lote(over: Partial<LoteConsumido> = {}): LoteConsumido {
@@ -170,5 +174,153 @@ describe("la guía del lote en la observación del bloque — 28-10", () => {
     expect(txt!.length).toBeLessThanOrEqual(MAX_OBSERVACION_BLOQUE);
     expect(txt).toMatch(/^Guías 019-001-0000001, .* y \d+ más$/);
     expect(observacionDeGuias([])).toBeNull();
+  });
+});
+
+/*
+ * Lote de INVENTARIO (Brandon 03-11: «quiero que estén en corrida viva para
+ * usarlas en distribución por bloque»). Los lotes 28/32/33-2026 de Blas tienen
+ * su corrida viva sin producción pero 0 trozas (el consumo entró por volumen):
+ * antes «Repartir en la distribución» decía, falso, que la corrida «se anuló».
+ */
+describe("lote de inventario — sin trozas, con su corrida viva (03-11)", () => {
+  const inventario = (over: Partial<LoteConsumido> = {}) =>
+    lote({
+      trozas: [],
+      corridas: [{ id: "c28", lineNo: 28, entryDate: "2026-10-30", quantity: null, volumeInputM3: 6.409, viva: true }],
+      ...over,
+    });
+
+  it("arma el bloque con la corrida adoptada y el m³ que entró a la sierra", () => {
+    const r = bloqueDeLoteConsumido(inventario(), []);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.bloque).toMatchObject({
+      etiqueta: "Lote 28-2026",
+      m3: 6.409,
+      origen: "lote",
+      loteId: "lote-28",
+      trozaIds: [],
+      trozasElegidas: [],
+      corridaIds: ["c28"],
+      jornadasLibro: [{ dia: 1, corridaId: "c28", lineNo: 28, estado: "abierta", fecha: "2026-10-30" }],
+    });
+    expect(r.bloque.observacion).toMatch(/^Lote de inventario · .* m³ consumidos$/);
+    expect(r.corrida).toEqual({ id: "c28", lineNo: 28, fecha: "2026-10-30", volumenM3: 6.409, topeDeclarableM3: topeDeclarableM3(6.409) });
+    expect(esBloqueDeInventario(r.bloque)).toBe(true);
+  });
+
+  it("nunca dice «se anuló» de una corrida viva: el mensaje falso del 03-11", () => {
+    const r = bloqueDeLoteConsumido(inventario(), []);
+    expect(r.ok ? "" : r.message).not.toMatch(/se anuló/);
+    /* Sin corrida viva sí se avisa (esa vez es verdad). */
+    const muerta = bloqueDeLoteConsumido(inventario({ corridas: [{ id: "c28", lineNo: 28, entryDate: "2026-10-30", quantity: null, viva: false }] }), []);
+    expect(muerta).toMatchObject({ ok: false, code: "SIN_CORRIDA_ABIERTA" });
+    /* Y sin hablar de «trozas» que el lote no tiene. */
+    expect(muerta.ok ? "" : muerta.message).toMatch(/es de inventario y no tiene una corrida viva/);
+  });
+
+  it("sin m³ consumido en la corrida no se arma (no hay tope contra qué medir)", () => {
+    const r = bloqueDeLoteConsumido(inventario({ corridas: [{ id: "c28", lineNo: 28, entryDate: "2026-10-30", quantity: null, viva: true }] }), []);
+    expect(r).toMatchObject({ ok: false, code: "SIN_CORRIDA_ABIERTA" });
+    expect(r.ok ? "" : r.message).toMatch(/es de inventario/);
+  });
+
+  it("una corrida que comió trozas de otro lote frena igual (I1)", () => {
+    expect(bloqueDeLoteConsumido(inventario(), ["t-ajena"])).toMatchObject({ ok: false, code: "CORRIDA_CON_OTRAS_PIEZAS" });
+  });
+
+  it("ya declarada o con dos corridas abiertas: los mismos frenos de siempre", () => {
+    const declarada = inventario({ corridas: [{ id: "c28", lineNo: 28, entryDate: "2026-10-30", quantity: 3, volumeInputM3: 6.409, viva: true }] });
+    expect(bloqueDeLoteConsumido(declarada, [])).toMatchObject({ ok: false, code: "SIN_CORRIDA_ABIERTA" });
+    const dos = inventario({
+      corridas: [
+        { id: "c28", lineNo: 28, entryDate: "2026-10-30", quantity: null, volumeInputM3: 6.409, viva: true },
+        { id: "c29", lineNo: 29, entryDate: "2026-10-31", quantity: null, volumeInputM3: 1, viva: true },
+      ],
+    });
+    expect(bloqueDeLoteConsumido(dos, [])).toMatchObject({ ok: false, code: "VARIAS_CORRIDAS_ABIERTAS" });
+  });
+
+  it("esBloqueDeInventario: de un lote, sin trozas y con UNA corrida", () => {
+    expect(esBloqueDeInventario({ origen: "lote", trozaIds: [], corridaIds: ["c28"] })).toBe(true);
+    expect(esBloqueDeInventario({ origen: "trozas", trozaIds: [], corridaIds: ["c28"] })).toBe(false);
+    expect(esBloqueDeInventario({ origen: "lote", trozaIds: ["t1"], corridaIds: ["c28"] })).toBe(false);
+    expect(esBloqueDeInventario({ origen: "lote", trozaIds: [], corridaIds: [] })).toBe(false);
+    expect(esBloqueDeInventario({ origen: "lote", trozaIds: [], corridaIds: ["c28", "c29"] })).toBe(false);
+  });
+
+  it("corridaEsDelBloqueEntero: la adoptada, y sólo si el lote sigue sin trozas", () => {
+    const b = { origen: "lote" as const, trozaIds: [], corridaIds: ["c28"] };
+    expect(corridaEsDelBloqueEntero(b, [], "c28")).toBe(true);
+    expect(corridaEsDelBloqueEntero(b, [], "c99")).toBe(false);
+    /* Si al lote le cargaron trozas después, ya no es de inventario para esta corrida. */
+    expect(corridaEsDelBloqueEntero(b, [{ id: "t1", consumidaEnId: null }], "c28")).toBe(false);
+  });
+
+  it("el plan del día: declarable con el m³ de la corrida y el tope del 56 % sobre él", () => {
+    const r = bloqueDeLoteConsumido(inventario(), []);
+    if (!r.ok) throw new Error(r.message);
+    const loteLibro: LoteParaLibro = {
+      id: "lote-28",
+      code: "28-2026",
+      trozas: [],
+      corridas: [{ id: "c28", lineNo: 28, entryDate: "2026-10-30T12:00:00.000Z", productType: null, quantity: null, volumeInputM3: 6.409, unit: "m3", status: "registrado", viva: true }],
+      volumenM3: 0,
+    };
+    const bloque = { ...r.bloque, id: "b28" } as BloqueRolliza;
+    expect(motivoDelBloque(bloque, loteLibro)).toBeNull();
+    expect(motivoDelBloque(bloque, null)).toMatch(/No encuentro su lote/);
+    const g = { clave: "tipo|comercial", label: "Comercial", piezas: 40, m3: 3, pieTablar: 1272, medidas: [] };
+    const p = planLibroDeBloque({ bloque, porDia: [{ dia: 1, grupos: [g], piezas: 40, m3: 3, pieTablar: 1272 }] }, loteLibro, "2026-11-03");
+    expect(p.jornadas[0]).toMatchObject({ estado: "abierta", corridaId: "c28", corridaDelBloque: true, declarable: true, trozaIds: [] });
+    expect(p.jornadas[0]!.rollizaM3).toBeCloseTo(6.409, 4);
+    expect(p.jornadas[0]!.motivo).toMatch(/consumió los 6.409 m³ del lote/);
+    /* 4 m³ pasan el 56 % de 6,409 (3,589): no declarable y lo dice. */
+    const pasa = planLibroDeBloque({ bloque, porDia: [{ dia: 1, grupos: [{ ...g, m3: 4 }], piezas: 40, m3: 4, pieTablar: 1696 }] }, loteLibro, "2026-11-03");
+    expect(pasa.jornadas[0]!.declarable).toBeUndefined();
+    expect(pasa.jornadas[0]!.motivo).toMatch(/tope del 56 %/);
+  });
+
+  it("el Recorrido: datos y trozas no traban; jornadas pide «Declarar la corrida N° 28»", () => {
+    const r = bloqueDeLoteConsumido(inventario(), []);
+    if (!r.ok) throw new Error(r.message);
+    const e = derivarRecorrido({
+      distribucionId: "d1",
+      bloque: { ...r.bloque, id: "b28" } as BloqueRolliza,
+      trozas: [],
+      noEncontradas: [],
+      lote: { id: "lote-28", code: "28-2026", status: "consumido", trozas: [], corridas: [{ id: "c28", lineNo: 28, viva: true, quantity: null, volumeInputM3: 6.409, unit: "m3" }] },
+      anexos: [],
+      despachos: [],
+      hoy: "2026-11-03",
+    });
+    const paso = (p: string) => e.pasos.find((x) => x.paso === p)!;
+    expect(paso("datos")).toMatchObject({ estado: "hecho" });
+    expect(paso("datos").detalle).toMatch(/Lote de inventario · 6.409 m³ consumidos · permiso 19-SEC/);
+    expect(paso("trozas").estado).toBe("no_aplica");
+    expect(paso("lote").estado).toBe("hecho");
+    expect(paso("jornadas")).toMatchObject({ estado: "pendiente", code: "CORRIDA_POR_DECLARAR", motivo: "Declarar la corrida N° 28" });
+    /* La cabecera: la rolliza es lo que entró a la corrida (antes decía 0 m³). */
+    expect(e.rollizaM3).toBeCloseTo(6.409, 4);
+  });
+
+  it("si al lote le cargaron trozas después, ya no es de inventario (ni en el plan ni en el Recorrido)", () => {
+    const r = bloqueDeLoteConsumido(inventario(), []);
+    if (!r.ok) throw new Error(r.message);
+    const bloque = { ...r.bloque, id: "b28" } as BloqueRolliza;
+    const conTrozas: LoteParaLibro = { id: "lote-28", code: "28-2026", trozas: [{ id: "t9", codificacion: null, codigoPlanta: "P9", volumenM3: 1, consumidaEnId: null }], corridas: [], volumenM3: 1 };
+    expect(motivoDelBloque(bloque, conTrozas)).toMatch(/Salió de un lote ya creado/);
+    const e = derivarRecorrido({
+      distribucionId: "d1",
+      bloque,
+      trozas: [],
+      noEncontradas: [],
+      lote: { id: "lote-28", code: "28-2026", status: "consumido", trozas: [{ id: "t9", consumidaEnId: null }], corridas: [] },
+      anexos: [],
+      despachos: [],
+      hoy: "2026-11-03",
+    });
+    expect(e.pasos.find((x) => x.paso === "datos")).toMatchObject({ estado: "con_problema", code: "SIN_TROZAS" });
   });
 });

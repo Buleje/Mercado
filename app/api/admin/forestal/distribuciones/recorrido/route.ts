@@ -415,7 +415,7 @@ export const POST = withApiHandler("forestal-recorrido-permiso-ejecutar", async 
               j.estado === "abierta" && j.corridaId
                 ? await ForestJornadaBloqueDB.declararJornadaAbierta(
                     tenantId,
-                    { corridaId: j.corridaId, trozaIds: j.trozaIds, produccion, user },
+                    { corridaId: j.corridaId, trozaIds: j.trozaIds, loteId: lote?.id ?? null, produccion, user },
                     anotarEn,
                   )
                 : await ForestJornadaBloqueDB.registrarJornada(
