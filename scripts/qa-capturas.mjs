@@ -652,6 +652,15 @@ async function recorrido(t, primero) {
   try {
     await page.goto(`${BASE}${ruta}`, { waitUntil: "domcontentloaded", timeout: 90_000 });
     await esperarQuietud();
+    /* «Pendientes y avisos» se abre sola al entrar si hay atrasadas y tapa los clics (03-11: 1 vuelta
+       perdida en el Libro CTP). Se recuerda también en el servidor, así que se cierra acá con Escape. */
+    const avisos = page.getByRole("dialog", { name: /Pendientes y avisos/ });
+    if (await avisos.isVisible().catch(() => false)) {
+      await page.keyboard.press("Escape");
+      await avisos.waitFor({ state: "hidden", timeout: 3_000 }).catch(() => {
+        console.error("[qa-capturas] «Pendientes y avisos» no se cerró con Escape");
+      });
+    }
     let huboCaptura = false;
     for (const [i, p] of pasos.entries()) {
       const [tipo, valor] = Object.entries(p)[0] ?? [];
