@@ -18,10 +18,12 @@
  *   consumo van a la Distribución de una vez, un bloque por lote con su guía
  *   (`useRepartirLotesElegidos`). Sólo aparece si hay alguno en consumo.
  * - **Más**: cerrar los abiertos y el Excel de lo elegido.
+ * - **Resumen por especie** (03-11): abre el resumen de los elegidos con su
+ *   detalle lote por lote (`CtpLotesResumenModal`). Sólo mira, no escribe.
  */
 
 import { useState } from "react";
-import { FileSpreadsheet, Lock, MoreHorizontal, PackageX, Truck, Undo2 } from "@buleje/design-system/icons";
+import { FileSpreadsheet, Lock, MoreHorizontal, PackageX, Sigma, Truck, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { formatNumber } from "@/lib/format";
 import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
@@ -43,8 +45,9 @@ import { useRepartirLotesElegidos } from "./hooks/use-repartir-lotes-elegidos";
 import type { AvisoLotes } from "./CtpLotesModales";
 import CtpMarcarUsadoLotesModal from "./CtpMarcarUsadoLotesModal";
 import CtpCerrarLotesModal from "./CtpCerrarLotesModal";
+import CtpLotesResumenModal from "./CtpLotesResumenModal";
 
-type Modal = { tipo: "usado"; usado: boolean } | { tipo: "cerrar" } | null;
+type Modal = { tipo: "usado"; usado: boolean } | { tipo: "cerrar" } | { tipo: "resumen" } | null;
 
 export default function CtpLotesSeleccionBarra({
   sel,
@@ -136,6 +139,8 @@ export default function CtpLotesSeleccionBarra({
   ];
 
   const secundarias: AccionSeleccion[] = [
+    /* Sólo lee lo que ya está en pantalla: no se apaga mientras otra acción espera al servidor. */
+    { label: "Resumen por especie", icon: Sigma, onClick: () => setModal({ tipo: "resumen" }), title: "Por especie y lote por lote: consumido, producido, rinde, en patio y lo que sobra" },
     { label: "Salió sin guía", icon: PackageX, onClick: () => setModal({ tipo: "usado", usado: true }), disabled: frenado },
     ...(r.conMarcada
       ? [{ label: "Volver a disponibles", icon: Undo2, onClick: () => setModal({ tipo: "usado", usado: false }), disabled: frenado }]
@@ -206,6 +211,8 @@ export default function CtpLotesSeleccionBarra({
           }}
         />
       )}
+
+      {modal?.tipo === "resumen" && <CtpLotesResumenModal lotes={sel.lista} onClose={() => setModal(null)} />}
 
       {modal?.tipo === "cerrar" && (
         <CtpCerrarLotesModal
