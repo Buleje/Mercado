@@ -13,7 +13,7 @@
  */
 
 import type { CorridaDelLote, EstadoMaderaLote, LoteAserrio, MaderaDelLote } from "@/lib/forestal/lotes-aserrio";
-import { pieTablarDe, sobranteDeLote } from "@/lib/forestal/lotes-aserrio";
+import { loteEnConsumo, pieTablarDe, sobranteDeLote } from "@/lib/forestal/lotes-aserrio";
 
 export type { EstadoMaderaLote, MaderaDelLote };
 
@@ -81,7 +81,7 @@ export interface ResumenSeleccion {
   /** Cuántos de los elegidos aportan un sobrante ESTIMADO (solo con consumo). */
   sobranteEstimados: number;
   despachables: LoteAserrio[];
-  bloqueados: { code: string; motivo: BloqueoDespacho }[];
+  bloqueados: { code: string; motivo: MotivoDelAviso }[];
   abiertos: LoteAserrio[];
   conMarcada: boolean;
 }
@@ -110,7 +110,9 @@ export function resumenSeleccion(lotes: readonly LoteAserrio[]): ResumenSeleccio
       if (sobrante.estimado) sobranteEstimados += 1;
     }
     const b = bloqueoParaDespachar(l);
-    if (b) bloqueados.push({ code: l.code, motivo: b });
+    /* En consumo y sin producción: su camino es la Distribución (Brandon 03-11:
+       «No van a la guía» se leía como que no podían ir a distribución). */
+    if (b) bloqueados.push({ code: l.code, motivo: b === "sin_produccion" && loteEnConsumo(l) ? "por_repartir" : b });
     else despachables.push(l);
   }
   return {
@@ -127,28 +129,36 @@ export function resumenSeleccion(lotes: readonly LoteAserrio[]): ResumenSeleccio
   };
 }
 
+/**
+ * Por qué no se despacha, dicho en el aviso. `por_repartir`: ya entró a la
+ * sierra y falta declarar lo que salió, que se hace repartiéndolo en la
+ * Distribución.
+ */
+export type MotivoDelAviso = BloqueoDespacho | "por_repartir";
+
 /** El motivo dicho para varios lotes a la vez: «sin producción declarada». */
-const MOTIVO_EN_GRUPO: Record<BloqueoDespacho, (n: number) => string> = {
+const MOTIVO_EN_GRUPO: Record<MotivoDelAviso, (n: number) => string> = {
   sin_produccion: () => "sin producción declarada",
+  por_repartir: (n) => `primero ${n === 1 ? "repártelo" : "repártelos"} en la distribución y declara lo que salió`,
   sin_saldo: () => "sin madera en patio",
   usada: (n) => (n === 1 ? "marcado como usado: desmárcalo primero" : "marcados como usados: desmárcalos primero"),
 };
 
 /**
- * «No van a la guía: 27-2026, 28-2026, 32-2026 y 1 más (sin producción declarada).»
+ * «Todavía no se despachan con guía: 27-2026, 28-2026, 32-2026 y 1 más (sin producción declarada).»
  * Agrupado por motivo (03-11): con cuatro lotes sin producción, el mismo motivo
  * repetido cuatro veces partía la barra en dos renglones. Con tope por motivo
  * para que no crezca sin fin.
  */
 export function avisoDeBloqueados(bloqueados: ResumenSeleccion["bloqueados"], tope = 3): string | null {
   if (bloqueados.length === 0) return null;
-  const porMotivo = new Map<BloqueoDespacho, string[]>();
+  const porMotivo = new Map<MotivoDelAviso, string[]>();
   for (const b of bloqueados) porMotivo.set(b.motivo, [...(porMotivo.get(b.motivo) ?? []), b.code]);
   const partes = [...porMotivo].map(([motivo, codes]) => {
     const resto = codes.length - tope;
     return `${codes.slice(0, tope).join(", ")}${resto > 0 ? ` y ${resto} más` : ""} (${MOTIVO_EN_GRUPO[motivo](codes.length)})`;
   });
-  return `No van a la guía: ${partes.join(" · ")}.`;
+  return `Todavía no se despachan con guía: ${partes.join(" · ")}.`;
 }
 
 /** El servidor acepta hasta 200 lotes por pedido (`marcar_usado_lotes`). */
