@@ -93,12 +93,15 @@ describe("ActionMenu — portal según el ancestro", () => {
 
     const item = screen.getByRole("menuitem", { name: /Acción A/i });
     const panel = item.closest('[role="menu"]')!.parentElement as HTMLElement;
-    const top = parseFloat(panel.style.top);
     const maxHeight = parseFloat(panel.style.maxHeight);
-    // Ambos relativos a la caja del diálogo (618 de alto): el panel entero
-    // tiene que caber ahí adentro, nunca más abajo de su borde. Con el bug
-    // (marco=viewport) esto daba top+maxHeight≈888−141=747 > 618.
-    expect(top + maxHeight).toBeLessThanOrEqual(618);
+    // Abre hacia arriba (abajo quedan 160 px): anclado por `bottom` desde 03-11.
+    // Ambos bordes relativos a la caja del diálogo (618 de alto): el panel
+    // entero tiene que caber ahí adentro, nunca más abajo de su borde. Con el
+    // bug (marco=viewport) el borde de abajo daba ≈888−141=747 > 618.
+    const bordeAbajo = 618 - parseFloat(panel.style.bottom);
+    expect(bordeAbajo).toBeLessThanOrEqual(618);
+    expect(bordeAbajo).toBe(549 - 141 - 8);
+    expect(bordeAbajo - maxHeight).toBeGreaterThanOrEqual(0);
   });
 
   it("hacia arriba con mucho alto encima, el panel termina ANTES del botón y no se sale por abajo (menú del despacho, 2026-10-27)", () => {
@@ -116,10 +119,16 @@ describe("ActionMenu — portal según el ancestro", () => {
     fireEvent.click(boton);
     const item = screen.getAllByRole("menuitem")[0]!;
     const panel = item.closest('[role="menu"]')!.parentElement as HTMLElement;
-    const top = parseFloat(panel.style.top);
+    const bottom = parseFloat(panel.style.bottom);
     const maxHeight = parseFloat(panel.style.maxHeight);
-    expect(top).toBeLessThan(880);
-    expect(top + maxHeight).toBeLessThanOrEqual(880 - 8);
+    // Anclado por ABAJO (03-11, «Más» de Lotes): el borde de abajo del panel
+    // queda 8 px antes del botón, mida lo que mida el menú. Anclado por `top`,
+    // un menú de dos opciones flotaba a 386 px del botón.
+    expect(panel.style.top).toBe("");
+    expect(1000 - bottom).toBe(880 - 8);
+    // Y crece hacia arriba sin pasar el margen de arriba ni el techo de 520.
+    expect(1000 - bottom - maxHeight).toBeGreaterThanOrEqual(12);
+    expect(maxHeight).toBeLessThanOrEqual(520);
   });
 
   it("a 400 px, con el botón cerca del borde IZQUIERDO, el panel no se sale por la izquierda (Ingresos, 2026-09-25)", () => {

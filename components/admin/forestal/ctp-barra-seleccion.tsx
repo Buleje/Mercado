@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { X, type LucideIcon } from "@buleje/design-system/icons";
+import { TriangleAlert, X, type LucideIcon } from "@buleje/design-system/icons";
 
 export interface CifraSeleccion {
   /** Qué se cuenta: «trozas», «m³», «pie tablar». */
@@ -24,6 +24,48 @@ export interface CifraSeleccion {
   valor: string;
   /** La cifra que manda: se dibuja más grande. */
   fuerte?: boolean;
+  /** La misma cifra en otra unidad, al lado y más chica («12,474 pt»). */
+  extra?: string;
+  /** `peligro` = caja roja llena: lo que no se puede pasar por alto (el sobrante de Lotes). */
+  tono?: "peligro";
+  /** Qué es y de dónde sale, al pasar el mouse. */
+  title?: string;
+}
+
+/**
+ * Una cifra de la barra en su cajita: el nombre arriba y el número abajo, del
+ * alto de los botones (03-11, Brandon: «mejora el diseño y acomódalo mejor»).
+ * Antes eran textos sueltos en una línea («Lotes 10 m³ en patio 53.76 pt
+ * 22,795») que se perdían al lado de seis botones.
+ */
+function CifraDeBarra({ c }: { c: CifraSeleccion }) {
+  const roja = c.tono === "peligro";
+  return (
+    <span
+      title={c.title}
+      className={`flex min-h-12 flex-col justify-center rounded-xl border-2 px-3 py-1 leading-tight ${
+        roja
+          ? "border-[var(--data-error-700)] bg-[var(--data-error-700)] text-white"
+          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)]"
+      }`}
+    >
+      <span
+        className={`text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] ${
+          roja ? "text-white" : "text-[var(--text-tertiary)]"
+        }`}
+      >
+        {c.label}
+      </span>
+      <span className="whitespace-nowrap font-mono tabular-nums">
+        <b className={c.fuerte ? "text-lg font-extrabold" : "text-base font-bold"}>{c.valor}</b>
+        {c.extra && (
+          <span className={`ml-1.5 text-sm font-semibold ${roja ? "text-white" : "text-[var(--text-secondary)]"}`}>
+            · {c.extra}
+          </span>
+        )}
+      </span>
+    </span>
+  );
 }
 
 /**
@@ -152,30 +194,26 @@ export default function CtpBarraSeleccion({
         data-barra-seleccion
         className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] z-40 border-t-2 border-[var(--accent)] bg-[var(--surface-raised)] px-4 py-2 shadow-[var(--shadow-lg)] sm:bottom-0 sm:pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
       >
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2">
-          {cifras.map((c) => (
-            <span key={c.label} className="whitespace-nowrap text-sm text-[var(--text-secondary)]">
-              {c.label}{" "}
-              <span
-                className={`font-mono tabular-nums text-[var(--text-primary)] ${
-                  c.fuerte ? "text-base font-extrabold" : "font-bold"
-                }`}
-              >
-                {c.valor}
-              </span>
-            </span>
-          ))}
+        <div className="mx-auto flex max-w-[100rem] flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex flex-wrap items-stretch gap-2">
+            {cifras.map((c) => (
+              <CifraDeBarra key={c.label} c={c} />
+            ))}
+          </div>
 
+          {/* El aviso en su propio renglón, abajo y a lo ancho: entre las cifras
+              y los botones partía la barra en dos y empujaba los botones. */}
           {aviso && (
-            <span
-              className={`text-sm font-bold ${
+            <p
+              className={`order-last flex min-w-0 basis-full items-start gap-1.5 text-sm font-semibold ${
                 avisoTono === "aviso"
                   ? "text-[var(--data-warning-ink)]"
                   : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
               }`}
             >
-              {aviso}
-            </span>
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span className="min-w-0">{aviso}</span>
+            </p>
           )}
 
           {detalle && <div className="order-last min-w-0 basis-full">{detalle}</div>}

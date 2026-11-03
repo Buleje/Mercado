@@ -201,7 +201,8 @@ export default function ActionMenu({
 }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const anclaRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<{ top: number; right: number; maxHeight: number; width: number } | null>(null);
+  /* `top` hacia abajo, `bottom` hacia arriba: nunca los dos (ver `ubicar`). */
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; right: number; maxHeight: number; width: number } | null>(null);
   const listaRef = useRef<HTMLDivElement>(null);
   /** Se abrió con Enter/Espacio: el foco entra a la primera opción (patrón de menú de ARIA). */
   const porTecladoRef = useRef(false);
@@ -284,20 +285,24 @@ export default function ActionMenu({
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const ancho = Math.max(0, Math.min(ANCHO_PANEL_REM * rem, base.width - 2 * MARGEN));
     const derechaAlBoton = Math.max(MARGEN, base.width - bRight);
-    const top = haciaArriba ? Math.max(MARGEN, bTop - Math.min(disponible, 520) - 8) : bBottom + 8;
+    /*
+     * Hacia arriba se ancla por ABAJO, a 8 px del botón: anclado por `top` a
+     * 520 px del botón, un menú de dos opciones (141 px) quedaba flotando a
+     * 386 px por encima de él (03-11, «Más» de la barra de Lotes: botón en
+     * y=804, menú en 277-418). Pegado al botón crece hacia arriba lo que
+     * mida, con el mismo techo de 520 px.
+     */
     setPos({
-      top,
+      ...(haciaArriba ? { bottom: base.height - bTop + 8 } : { top: bBottom + 8 }),
       right: Math.min(derechaAlBoton, Math.max(MARGEN, base.width - ancho - MARGEN)),
       width: ancho,
       /* SIN piso de 200: eso fue justo lo que empujó el panel fuera del
          diálogo cuando `disponible` daba menos (el menú de la fila igual
          scrollea adentro con `overflow-y-auto` en `listaRef`, así que un
-         `maxHeight` chico no esconde nada — recorta con aviso). */
-      /* Hacia arriba termina 8 px antes del botón: con todo el alto de arriba
-         (`disponible`) y el `top` subido sólo 520, el panel bajaba hasta tapar
-         el botón y salía por debajo de la pantalla (27-10, menú del despacho:
-         «Anular la línea» quedaba fuera de alcance). */
-      maxHeight: Math.max(0, haciaArriba ? bTop - 8 - top : disponible - 8),
+         `maxHeight` chico no esconde nada — recorta con aviso). Hacia arriba
+         termina 8 px antes del botón y nunca pasa el margen de arriba (27-10,
+         menú del despacho: «Anular la línea» quedaba fuera de alcance). */
+      maxHeight: Math.max(0, (haciaArriba ? Math.min(disponible, 520) : disponible) - 8),
     });
   }, []);
 
@@ -402,7 +407,7 @@ export default function ActionMenu({
           ds-no-z-arbitrary-admin. */}
       <div className="fixed inset-0 z-modal-2" onClick={() => setOpen(false)} aria-hidden="true" />
       <div
-        style={{ top: pos.top, right: pos.right, maxHeight: pos.maxHeight, width: pos.width }}
+        style={{ top: pos.top, bottom: pos.bottom, right: pos.right, maxHeight: pos.maxHeight, width: pos.width }}
         className="fixed z-modal-2 flex flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
         {/* Los degradés van FUERA del área que scrollea, si no se irían con el

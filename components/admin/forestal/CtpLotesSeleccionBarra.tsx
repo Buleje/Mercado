@@ -134,8 +134,27 @@ export default function CtpLotesSeleccionBarra({
 
   const cifras: CifraSeleccion[] = [
     { label: "Lotes", valor: formatNumber(r.lotes, 0), fuerte: true },
-    ...(r.m3 != null ? [{ label: "m³ en patio", valor: formatNumber(r.m3, 2) }] : []),
-    ...(r.pt != null ? [{ label: "pt", valor: formatNumber(r.pt, 0) }] : []),
+    ...(r.m3 != null
+      ? [{
+          label: "En patio",
+          valor: `${formatNumber(r.m3, 2)} m³`,
+          extra: r.pt != null ? `${formatNumber(r.pt, 0)} pt` : undefined,
+          title: "Madera aserrada de los lotes elegidos que sigue en el patio",
+        }]
+      : []),
+    /* El sobrante de lo elegido (03-11): la misma cuenta que la etiqueta roja de
+       cada tarjeta y que la tarjeta «Volumen sobrante» de arriba. */
+    {
+      label: "Volumen sobrante",
+      valor: `${r.sobranteEstimados > 0 ? "≈ " : ""}${formatNumber(r.sobranteM3, 2)} m³`,
+      extra: `${formatNumber(r.sobrantePt, 0)} pt`,
+      tono: r.sobranteM3 > 0 ? "peligro" : undefined,
+      title:
+        "Lo que todavía se puede declarar al 56 %: de los lotes que ya produjeron, lo que falta hasta el tope; " +
+        "de los que solo tienen consumo, el 56 % de lo que entró a la sierra" +
+        (r.sobranteEstimados > 0 ? ` (estimado en ${r.sobranteEstimados} lote${r.sobranteEstimados === 1 ? "" : "s"})` : "") +
+        ". Pie tablar de aserrada: m³ × 424.",
+    },
   ];
 
   const secundarias: AccionSeleccion[] = [

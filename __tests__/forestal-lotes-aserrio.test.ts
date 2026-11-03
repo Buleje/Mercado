@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  sobranteDeLote,
   alertasDeLote,
   cuadreSniffs,
   diasDeEspera,
@@ -250,6 +251,28 @@ describe("resumen del tablero", () => {
     expect(r.margenTotalM3).toBeCloseTo(0.36 + 5.6, 4);
     expect(r.lotesSoloConsumo).toBe(1);
     expect(r.conRendimiento).toBe(1);
+  });
+
+  it("la etiqueta de cada lote y la barra dicen lo mismo que la tarjeta «Volumen sobrante» (03-11)", () => {
+    const soloConsumo = lote({
+      id: "l9",
+      code: "32-2026",
+      status: "consumido",
+      trozas: [],
+      volumenM3: 10,
+      produccion: corrida({ quantity: null, volumeInputM3: 10 }),
+    });
+    // Ya produjo: lo que falta hasta el tope; pt de aserrada = m³ × 424.
+    expect(sobranteDeLote(aserradoBajo)).toEqual({ m3: expect.closeTo(0.36, 4), pt: 153, estimado: false });
+    // Solo consumo: el 56 % de lo que entró, marcado como estimado.
+    expect(sobranteDeLote(soloConsumo)).toEqual({ m3: 5.6, pt: 2374, estimado: true });
+    // Abierto o pasado del tope: sin etiqueta.
+    expect(sobranteDeLote(abierto)).toBeNull();
+    expect(sobranteDeLote(aserradoAlto)).toBeNull();
+    const total = [aserradoBajo, soloConsumo, abierto, aserradoAlto]
+      .map((l) => sobranteDeLote(l)?.m3 ?? 0)
+      .reduce((a, b) => a + b, 0);
+    expect(total).toBeCloseTo(resumenLotes([aserradoBajo, soloConsumo, abierto, aserradoAlto]).margenTotalM3, 4);
   });
 });
 

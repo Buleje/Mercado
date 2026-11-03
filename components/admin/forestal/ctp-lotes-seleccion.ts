@@ -13,6 +13,7 @@
  */
 
 import type { CorridaDelLote, EstadoMaderaLote, LoteAserrio, MaderaDelLote } from "@/lib/forestal/lotes-aserrio";
+import { pieTablarDe, sobranteDeLote } from "@/lib/forestal/lotes-aserrio";
 
 export type { EstadoMaderaLote, MaderaDelLote };
 
@@ -42,12 +43,6 @@ export function claseMadera(lote: LoteAserrio): ClaseMadera | null {
 
 /** Por qué un lote elegido NO va a la guía. */
 export type BloqueoDespacho = "sin_produccion" | "sin_saldo" | "usada";
-
-export const TEXTO_BLOQUEO: Record<BloqueoDespacho, string> = {
-  sin_produccion: "todavía no tiene producción declarada",
-  sin_saldo: "no le queda madera en patio",
-  usada: "está marcado como usado: desmárcalo primero",
-};
 
 /**
  * ¿Este lote puede ir a una guía? `null` = sí.
@@ -80,6 +75,11 @@ export interface ResumenSeleccion {
   /** m³ y pt de madera aserrada en patio. `null` si ningún lote trae el dato. */
   m3: number | null;
   pt: number | null;
+  /** Lo que sobra de los elegidos al 56 % (`sobranteDeLote`): m³ y su pie tablar de aserrada. */
+  sobranteM3: number;
+  sobrantePt: number;
+  /** Cuántos de los elegidos aportan un sobrante ESTIMADO (solo con consumo). */
+  sobranteEstimados: number;
   despachables: LoteAserrio[];
   bloqueados: { code: string; motivo: BloqueoDespacho }[];
   abiertos: LoteAserrio[];
@@ -93,6 +93,8 @@ export function resumenSeleccion(lotes: readonly LoteAserrio[]): ResumenSeleccio
   let m3 = 0;
   let pt = 0;
   let conDato = 0;
+  let sobranteM3 = 0;
+  let sobranteEstimados = 0;
   const despachables: LoteAserrio[] = [];
   const bloqueados: ResumenSeleccion["bloqueados"] = [];
   for (const l of lotes) {
@@ -102,6 +104,11 @@ export function resumenSeleccion(lotes: readonly LoteAserrio[]): ResumenSeleccio
       m3 += Number(m.m3Disponible) || 0;
       pt += Number(m.ptDisponible) || 0;
     }
+    const sobrante = sobranteDeLote(l);
+    if (sobrante) {
+      sobranteM3 += sobrante.m3;
+      if (sobrante.estimado) sobranteEstimados += 1;
+    }
     const b = bloqueoParaDespachar(l);
     if (b) bloqueados.push({ code: l.code, motivo: b });
     else despachables.push(l);
@@ -110,6 +117,9 @@ export function resumenSeleccion(lotes: readonly LoteAserrio[]): ResumenSeleccio
     lotes: lotes.length,
     m3: conDato > 0 ? r3(m3) : null,
     pt: conDato > 0 ? Math.round(pt) : null,
+    sobranteM3: r3(sobranteM3),
+    sobrantePt: pieTablarDe(sobranteM3),
+    sobranteEstimados,
     despachables,
     bloqueados,
     abiertos: lotes.filter((l) => l.status === "abierto"),
@@ -117,12 +127,28 @@ export function resumenSeleccion(lotes: readonly LoteAserrio[]): ResumenSeleccio
   };
 }
 
-/** «13-2026 (todavía no tiene producción declarada) · 15-2026 (…)», con tope para que la barra no crezca sin fin. */
+/** El motivo dicho para varios lotes a la vez: «sin producción declarada». */
+const MOTIVO_EN_GRUPO: Record<BloqueoDespacho, (n: number) => string> = {
+  sin_produccion: () => "sin producción declarada",
+  sin_saldo: () => "sin madera en patio",
+  usada: (n) => (n === 1 ? "marcado como usado: desmárcalo primero" : "marcados como usados: desmárcalos primero"),
+};
+
+/**
+ * «No van a la guía: 27-2026, 28-2026, 32-2026 y 1 más (sin producción declarada).»
+ * Agrupado por motivo (03-11): con cuatro lotes sin producción, el mismo motivo
+ * repetido cuatro veces partía la barra en dos renglones. Con tope por motivo
+ * para que no crezca sin fin.
+ */
 export function avisoDeBloqueados(bloqueados: ResumenSeleccion["bloqueados"], tope = 3): string | null {
   if (bloqueados.length === 0) return null;
-  const partes = bloqueados.slice(0, tope).map((b) => `${b.code} (${TEXTO_BLOQUEO[b.motivo]})`);
-  const resto = bloqueados.length - tope;
-  return `No van a la guía: ${partes.join(" · ")}${resto > 0 ? ` y ${resto} más` : ""}.`;
+  const porMotivo = new Map<BloqueoDespacho, string[]>();
+  for (const b of bloqueados) porMotivo.set(b.motivo, [...(porMotivo.get(b.motivo) ?? []), b.code]);
+  const partes = [...porMotivo].map(([motivo, codes]) => {
+    const resto = codes.length - tope;
+    return `${codes.slice(0, tope).join(", ")}${resto > 0 ? ` y ${resto} más` : ""} (${MOTIVO_EN_GRUPO[motivo](codes.length)})`;
+  });
+  return `No van a la guía: ${partes.join(" · ")}.`;
 }
 
 /** El servidor acepta hasta 200 lotes por pedido (`marcar_usado_lotes`). */

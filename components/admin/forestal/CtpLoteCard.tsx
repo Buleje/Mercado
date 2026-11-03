@@ -39,6 +39,7 @@ import EspecieFoto from "./EspecieFoto";
 import { formatNumber } from "@/lib/format";
 import { tipoCorto } from "./permiso-volumen-ui";
 import { LoteCifras, LoteLineaPrincipal, unidadLegible } from "./ctp-lote-card-partes";
+import LoteSobranteEtiqueta from "./ctp-lote-sobrante";
 import { LoteCuando } from "./ctp-lote-cuando";
 import { LoteCuadreSniffs } from "./ctp-lote-cuadre-sniffs";
 import { LoteMaderaChip } from "./ctp-lote-madera-chip";
@@ -166,7 +167,8 @@ export default function CtpLoteCard({
             </span>
           )}
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="flex flex-wrap items-center justify-end gap-1.5">
+          <LoteSobranteEtiqueta lote={lote} />
           {vencido && (
             <span
               title="El fin del proceso ya pasó y el lote sigue abierto"

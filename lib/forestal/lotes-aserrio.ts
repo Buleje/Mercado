@@ -710,6 +710,36 @@ export interface ResumenLotes {
   conRendimiento: number;
 }
 
+/** Lo que le sobra a un lote, ya al rendimiento del 56 % (Brandon, 03-11). */
+export interface SobranteDeLote {
+  /** m³ de madera aserrada que todavía caben bajo el tope del 56 %. */
+  m3: number;
+  /** Los mismos m³ en pie tablar de aserrada (× 424): el 56 % ya está en los m³. */
+  pt: number;
+  /** `true` = lote solo con consumo: es el 56 % de lo que entró, no un saldo declarado. */
+  estimado: boolean;
+}
+
+/**
+ * Cuánto le sobra a un lote: lo de la etiqueta roja de su tarjeta, la barra de
+ * los elegidos y la tarjeta «Volumen sobrante» (que es la suma de todos).
+ *
+ * · Ya produjo → lo que falta declarar hasta el tope del 56 % (`margenLote`).
+ * · Solo con consumo → el 56 % de lo que entró a la sierra («volumen de troza»).
+ * · Abierto, o ya en el tope → `null`: no le sobra nada que declarar.
+ *
+ * `margenLote` sigue sin ver los de solo consumo a propósito: su botón en
+ * Producción es otro («Declarar producción», no «agregar»).
+ */
+export function sobranteDeLote(lote: LoteAserrio): SobranteDeLote | null {
+  if (lote.status === "abierto") return null;
+  const margen = margenLote(lote);
+  const estimado = !margen && loteEnConsumo(lote);
+  const m3 = margen ? margen.margenM3 : estimado ? topeDeclarableM3(lote.volumenM3) : 0;
+  if (!(m3 > 0)) return null;
+  return { m3, pt: pieTablarDe(m3), estimado };
+}
+
 /**
  * Las cifras del tablero.
  *
@@ -741,16 +771,15 @@ export function resumenLotes(lotes: readonly LoteAserrio[]): ResumenLotes {
     }
     consumidos += 1;
     volumenAserrado += l.volumenM3;
-    /* El sobrante cuenta TODO el lote (Brandon, 03-11): lo que falta declarar de los que ya
-       produjeron y, de los que sólo tienen consumo, su 56 % estimado. `margenLote` sigue sin
-       verlos a propósito —su botón en Producción es otro—; la suma va sólo en esta cifra. */
-    const margen = margenLote(l);
-    if (margen) margenTotalM3 += margen.margenM3;
-    else if (loteEnConsumo(l)) {
-      const estimado = topeDeclarableM3(l.volumenM3);
-      margenTotalM3 += estimado;
-      sobranteEstimadoM3 += estimado;
-      if (estimado > 0) lotesSoloConsumo += 1;
+    /* El sobrante cuenta TODO el lote (Brandon, 03-11): la MISMA cuenta que la etiqueta
+       de cada tarjeta y la barra de los elegidos (`sobranteDeLote`). */
+    const sobrante = sobranteDeLote(l);
+    if (sobrante) {
+      margenTotalM3 += sobrante.m3;
+      if (sobrante.estimado) {
+        sobranteEstimadoM3 += sobrante.m3;
+        lotesSoloConsumo += 1;
+      }
     }
     const pct = rendimientoLote(l);
     if (pct == null) {
