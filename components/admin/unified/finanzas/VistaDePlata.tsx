@@ -16,6 +16,7 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 import type { MapaDeDatos } from "@/hooks/use-secciones-con-datos";
 import BloqueMudado from "./BloqueMudado";
 import GastosConPresupuesto from "./GastosConPresupuesto";
+import VistaDeContabilidad from "./contabilidad/VistaDeContabilidad";
 
 const FinanzasDashboard = dynamic(() => import("./FinanzasDashboard"), { loading: S });
 const PLTab = dynamic(() => import("@/components/admin/PLTab"), { loading: S });
@@ -128,6 +129,15 @@ export default function VistaDePlata({ vista, seccion, datos, irA }: Props) {
       return <ReportsTab />;
     case "importar":
       return <ImportExportTab />;
+
+    /* ── Contabilidad (ADR-529): cada sección es una hoja ── */
+    case "diario":
+    case "mayor":
+    case "comprobacion":
+    case "estados":
+    case "meses":
+    case "plan-cuentas":
+      return <VistaDeContabilidad vista={vista} />;
 
     default:
       /* Gastos y su presupuesto comparten hoja: `presupuesto` vive adentro. */

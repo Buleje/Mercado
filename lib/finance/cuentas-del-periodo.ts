@@ -194,9 +194,9 @@ const ES_DEVOLUCION_DE_ADELANTO = /^liquidaci[oó]n de adelanto\b/i;
 const ES_DEVOLUCION_DE_RECIBIDO = /^devoluci[oó]n de adelanto recibido\b/i;
 const ES_LIQUIDACION = /^(anulaci[oó]n de )?liquidaci[oó]n\b/i;
 /** `etiquetaPagoAProveedor` (`lib/caja/egreso-de-caja.ts`): la otra cara de un `Payment`. */
-const ES_PAGO_A_PROVEEDOR = /^pago a proveedor\b/i;
+export const ES_PAGO_A_PROVEEDOR = /^pago a proveedor\b/i;
 /** `etiquetaCobroFiado` (`lib/fiados/cobro-metodo.ts`): la otra cara de una `FiadoCuota`. */
-const ES_COBRO_DE_FIADO = /^cobro de fiado\b/i;
+export const ES_COBRO_DE_FIADO = /^cobro de fiado\b/i;
 
 /**
  * «Etiqueta · persona · …» → «persona». Las anotaciones a mano de la caja usan

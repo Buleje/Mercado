@@ -9266,3 +9266,106 @@ model ForestInspeccionPlanta {
 
   @@index([tenantId, fecha])
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADR-529 — Contabilidad completa (doble partida, PCGE 2019)
+// Los asientos del mes ABIERTO se arman en vivo desde las mismas fuentes que
+// «Resultado» y «Caja del mes» (lib/contabilidad). En la base solo viven: los
+// asientos manuales (apertura, ajustes, depreciación), la foto de los asientos
+// automáticos al CERRAR el mes, las cuentas propias del negocio y sus ajustes.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Un asiento del libro diario. `tipo`: manual | apertura | auto (solo en meses cerrados) | cierre.
+model AsientoContable {
+  id        String   @id @default(cuid())
+  tenantId  String
+  /// `YYYY-MM` del calendario de Lima.
+  periodo   String
+  fecha     DateTime @db.Date
+  glosa     String
+  tipo      String   @default("manual")
+  /// Clave del hecho de origen (`<fuente>:<id>`) en los automáticos congelados; null en los manuales.
+  origen    String?
+  /// `{ tab, params }` para abrir el original desde el libro.
+  enlace    Json?
+  moneda    String   @default("PEN")
+  /// Σ debe = Σ haber (se valida antes de guardar).
+  total     Decimal  @db.Decimal(14, 2)
+  anulado   Boolean  @default(false)
+  creadoPor String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lineas AsientoContableLinea[]
+
+  @@unique([tenantId, origen])
+  @@index([tenantId, periodo])
+  @@index([tenantId, fecha])
+}
+
+/// Una línea (cargo o abono) de un asiento. Exactamente uno de `debe`/`haber` es > 0.
+model AsientoContableLinea {
+  id        String  @id @default(cuid())
+  asientoId String
+  tenantId  String
+  orden     Int
+  /// Código PCGE (`1011`, `70111`) o una cuenta propia del negocio.
+  cuenta    String
+  debe      Decimal @default(0) @db.Decimal(14, 2)
+  haber     Decimal @default(0) @db.Decimal(14, 2)
+  glosa     String?
+  /// Cliente, proveedor o persona (para el mayor auxiliar). null si no aplica.
+  tercero   String?
+
+  asiento AsientoContable @relation(fields: [asientoId], references: [id], onDelete: Cascade)
+
+  @@index([asientoId])
+  @@index([tenantId, cuenta])
+}
+
+/// Estado de un mes contable. Sin fila = abierto.
+model PeriodoContable {
+  id         String    @id @default(cuid())
+  tenantId   String
+  periodo    String
+  /// abierto | cerrado
+  estado     String    @default("abierto")
+  cerradoAt  DateTime?
+  cerradoPor String?
+  /// Totales al cerrar (Σ debe, Σ haber, resultado, n asientos) para avisar si el origen se movió después.
+  resumen    Json?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([tenantId, periodo])
+}
+
+/// Cuenta propia del negocio (subcuenta de una del PCGE: «10411 BCP 191-…»). El PCGE base vive en código.
+model CuentaContablePropia {
+  id         String   @id @default(cuid())
+  tenantId   String
+  codigo     String
+  nombre     String
+  /// activo | pasivo | patrimonio | ingreso | gasto
+  naturaleza String
+  activa     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tenantId, codigo])
+}
+
+/// Ajustes contables del negocio (una fila por negocio; sin fila = valores por defecto).
+model ContabilidadAjustes {
+  id           String   @id @default(cuid())
+  tenantId     String   @unique
+  /// null = según el régimen (NRUS → sin IGV; RER/RMT/General → 18 % incluido en el precio).
+  ventasConIgv Boolean?
+  /// Cambia la cuenta de una regla: `{ "<regla>": "<código>" }`.
+  mapeo        Json?
+  /// Primer mes que se lleva (`YYYY-MM`); antes de eso no se arman asientos.
+  inicio       String?
+  updatedPor   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

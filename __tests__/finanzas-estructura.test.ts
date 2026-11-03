@@ -26,6 +26,8 @@ const VISTAS_MUDADAS = ["scoring", "cierres"] as const;
 
 /** Las que se sumaron DESPUÉS del rediseño, cada una con su motivo. */
 const VISTAS_NUEVAS = [
+  /* Contabilidad (2026-11-02, ADR-529): pestaña propia, una hoja por libro. */
+  "diario", "mayor", "comprobacion", "estados", "meses", "plan-cuentas",
   /* Cuentas (2026-11-01): todo lo que entró y salió, primera sección de Movimientos. */
   "cuentas",
   /* F10 (2026-09-29): «Lo que debo», el otro lado de Por cobrar. */
@@ -42,10 +44,10 @@ const ATAJOS_DEL_MENU = ["plata", "fiados", "por-cobrar", "prestamos", "adelanto
 const PESTANAS_VIEJAS = ["dashboard", "resultado", "caja"] as const;
 
 describe("estructura de Mi Plata", () => {
-  it("tiene ocho pestañas, en el orden del plan", () => {
+  it("tiene nueve pestañas, en el orden del plan (Contabilidad al final, 02-11)", () => {
     expect(TABS.map((t) => t.label)).toEqual([
       "Resumen", "Resultado", "Movimientos", "Por cobrar y pagar",
-      "Préstamos", "Adelantos", "Activos", "Impuestos y reportes",
+      "Préstamos", "Adelantos", "Activos", "Impuestos y reportes", "Contabilidad",
     ]);
   });
 

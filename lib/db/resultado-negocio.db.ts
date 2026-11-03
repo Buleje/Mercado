@@ -35,10 +35,17 @@ import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
 import { ESTADOS_PEDIDO_QUE_ENTRAN, mesLima, mesesHasta, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 import {
+  esCruceDeCubicacion,
   armarCaja,
   armarResultado,
   armarSerie,
   claveCacheResultado,
+  diaDeFecha,
+  esDevolucionDeAdelantoAnulado,
+  FUENTES_COSTO,
+  FUENTES_ENTRO,
+  FUENTES_INGRESO,
+  FUENTES_SALIO,
   detalleDeCaja,
   detalleDeResultado,
   esFuenteDeCaja,
@@ -58,6 +65,7 @@ import { ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { GanadoDB } from "./rrhh-ganado.db";
 import { saldosPorParte } from "./por-cobrar.db";
+import type { FilasDelMes } from "@/lib/contabilidad/armar-asientos";
 
 const TTL_S = 60;
 
@@ -486,6 +494,66 @@ export const ResultadoNegocioDB = {
       if (esFuenteDeCaja(fuente)) return detalleDeCaja(mes, fuente, await ResultadoNegocioDB.entradaCaja(tenantId, mes));
       return detalleDeResultado(mes, fuente, await ResultadoNegocioDB.entradaDelPeriodo(tenantId, mes, mes, hoy, opciones));
     });
+  },
+
+  /**
+   * Contabilidad (ADR-529): las filas de TODAS las fuentes del mes con UNA lectura
+   * del resultado y UNA de la caja (las mismas que suma cada renglón), más las
+   * entregas de adelanto que nunca fueron caja y lo compensado (los dos tramos de `nuncaCaja`).
+   */
+  async filasDelMes(tenantId: string, mes: string, hoy: string, opciones: OpcionesLectura = SIN_PLANILLA): Promise<FilasDelMes> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [er, ec] = await Promise.all([
+      ResultadoNegocioDB.entradaDelPeriodo(tenantId, mes, mes, hoy, opciones),
+      ResultadoNegocioDB.entradaCaja(tenantId, mes),
+    ]);
+    const res = armarResultado(mes, er);
+    const caja = armarCaja(mes, ec);
+    const resultado: FilasDelMes["resultado"] = {};
+    for (const f of [...FUENTES_INGRESO, ...FUENTES_COSTO]) resultado[f] = detalleDeResultado(mes, f, er).filas;
+    const filasCaja: FilasDelMes["caja"] = {};
+    for (const f of [...FUENTES_ENTRO, ...FUENTES_SALIO, "caja_sin_sumar"] as const) filasCaja[f] = detalleDeCaja(mes, f, ec).filas;
+    // Mismo criterio que `calcularCaja`: la entrega sin su movimiento de caja (y sin liquidación) nunca fue caja.
+    const devueltas = new Set([...(filasCaja.adelanto_devuelto ?? []), ...(filasCaja.recibido_devuelto ?? [])].map((x) => x.id));
+    const anulados = new Set(ec.codigosAnulados ?? []);
+    const cruces = ec.entregas
+      .filter((en) => {
+        const dia = diaDeFecha(en.fecha);
+        return dia.slice(0, 7) === mes && !en.liquidacionId && !esDevolucionDeAdelantoAnulado(en.adelantoCodigo, anulados) && !devueltas.has(en.id) && n(en.valor) > 0;
+      })
+      .map((en) => ({ id: en.id, fecha: diaDeFecha(en.fecha), quien: en.beneficiario?.trim() || null, codigo: en.adelantoCodigo, monto: n(en.valor), direccion: en.direccion }));
+    const liquidacionBeneficiario: Record<string, string | null> = {};
+    for (const l of ec.liquidaciones) liquidacionBeneficiario[l.id] = l.beneficiarioId ?? null;
+    // Mismo criterio que `calcularCaja` para `nunca`: el `montoCompensado` de la liquidación (sus
+    // entregas con `liquidacionId` quedan fuera de los cruces) y la compensación suelta de la cuenta.
+    const compensaciones: NonNullable<FilasDelMes["compensaciones"]> = [];
+    for (const l of ec.liquidaciones) {
+      const dia = diaDeFecha(l.fecha);
+      if (dia.slice(0, 7) !== mes || !(n(l.montoCompensado) > 0)) continue;
+      compensaciones.push({
+        id: l.id, fecha: dia, quien: l.personaNombre?.trim() || null, codigo: l.codigo, monto: n(l.montoCompensado), moneda: null,
+        liquidacionId: l.id, con: l.beneficiarioId ? "persona" : l.parteId ? "parte" : null,
+      });
+    }
+    // Una compensación anotada con sus dos patas (cargo y abono del mismo monto, día y parte) es UN cruce.
+    const patas = new Map<string, number>();
+    for (const m of ec.cuenta) {
+      const dia = diaDeFecha(m.fecha);
+      if (dia.slice(0, 7) !== mes || m.liquidacionId || m.concepto !== "compensacion" || esCruceDeCubicacion(m) || !(n(m.monto) > 0)) continue;
+      const base = `${m.parteId}|${dia}|${n(m.monto).toFixed(2)}`;
+      const otra = `${base}|${m.tipo === "cargo" ? "abono" : "cargo"}`;
+      if ((patas.get(otra) ?? 0) > 0) {
+        patas.set(otra, (patas.get(otra) ?? 0) - 1);
+        continue;
+      }
+      patas.set(`${base}|${m.tipo}`, (patas.get(`${base}|${m.tipo}`) ?? 0) + 1);
+      compensaciones.push({
+        id: m.id, fecha: dia, quien: m.parteNombre?.trim() || null, codigo: m.referencia?.trim() || null, monto: n(m.monto), moneda: m.moneda,
+        liquidacionId: null, con: "parte",
+      });
+    }
+    const otrasMonedas = [...res.otrasMonedas, ...caja.otrasMonedas].reduce((a, m) => a + m.cuantos, 0);
+    return { mes, resultado, caja: filasCaja, resultadoDelPanel: res.resultado, cajaNeto: caja.neto, cruces, compensaciones, otrasMonedas, liquidacionBeneficiario };
   },
 
   /** `GET /api/finanzas/caja-del-negocio`: lo que entró y salió en el mes, y lo que viene. */

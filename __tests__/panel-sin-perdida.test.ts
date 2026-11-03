@@ -488,14 +488,15 @@ describe("use-vistas-permitidas en un hub (sin red)", () => {
       }),
     );
 
-  it("Mi Plata en Básico muestra lo que mostraba antes (todo menos Impuestos, que llegó de Comprobantes)", async () => {
+  it("Mi Plata en Básico muestra lo que mostraba antes (todo menos Impuestos, que llegó de Comprobantes, y la Contabilidad de ADR-529, que es de planes pagados)", async () => {
     localStorage.setItem("buleje:vendor-plan-tier", "basico");
     conSesion("admin");
     const items = vistasDelModulo("plata").map((v) => ({ id: v.key, label: v.label }));
     const { result } = renderHook(() => ({ ctx: useContextoPermiso(), tabs: useVistasPermitidas("plata", items) }));
     await waitFor(() => expect(result.current.ctx).not.toBeNull());
     // Básico entraba por «Activos», que abría el hub entero (ver el registro de `plata`).
-    expect(result.current.tabs.map((i) => i.id)).toEqual(items.map((i) => i.id).filter((id) => id !== "impuestos"));
+    const fueraDeBasico = new Set(["impuestos", "diario", "mayor", "comprobacion", "estados", "meses", "plan-cuentas"]);
+    expect(result.current.tabs.map((i) => i.id)).toEqual(items.map((i) => i.id).filter((id) => !fueraDeBasico.has(id)));
   });
 
   it("<PermisoDe> deja pasar un bloque de Activos en Básico y no uno de Mi Plata", async () => {

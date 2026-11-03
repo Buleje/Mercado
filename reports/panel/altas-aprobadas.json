@@ -589,6 +589,36 @@
    "par": "camaras:espejo",
    "porque": "Vista nueva de Cámaras (24-10): «vincular mi celular con admin para ver duplicada mi pantalla en una página». El celular se duplica con scrcpy en la PC y la vista captura esa ventana con getDisplayMedia; sin servidor ni datos nuevos. La ven los mismos que ya ven Cámaras.",
    "aprobo": "Brandon 2026-10-24"
+  },
+  {
+   "par": "plata:diario",
+   "porque": "Pestaña nueva «Contabilidad» de Mi Plata (ADR-529): libro diario, libro mayor, balance de comprobación, estados financieros, meses y cierre, plan de cuentas y ajustes. Se suma a un módulo que ya existe, no se le quita nada a nadie; la ve quien ya ve Mi Plata (las rutas piden admin/dueño/encargado y escribir solo admin/dueño).",
+   "aprobo": "Brandon, pedido del 2026-11-02: «arma la contabilidad completa»"
+  },
+  {
+   "par": "plata:mayor",
+   "porque": "Pestaña nueva «Contabilidad» de Mi Plata (ADR-529): libro diario, libro mayor, balance de comprobación, estados financieros, meses y cierre, plan de cuentas y ajustes. Se suma a un módulo que ya existe, no se le quita nada a nadie; la ve quien ya ve Mi Plata (las rutas piden admin/dueño/encargado y escribir solo admin/dueño).",
+   "aprobo": "Brandon, pedido del 2026-11-02: «arma la contabilidad completa»"
+  },
+  {
+   "par": "plata:comprobacion",
+   "porque": "Pestaña nueva «Contabilidad» de Mi Plata (ADR-529): libro diario, libro mayor, balance de comprobación, estados financieros, meses y cierre, plan de cuentas y ajustes. Se suma a un módulo que ya existe, no se le quita nada a nadie; la ve quien ya ve Mi Plata (las rutas piden admin/dueño/encargado y escribir solo admin/dueño).",
+   "aprobo": "Brandon, pedido del 2026-11-02: «arma la contabilidad completa»"
+  },
+  {
+   "par": "plata:estados",
+   "porque": "Pestaña nueva «Contabilidad» de Mi Plata (ADR-529): libro diario, libro mayor, balance de comprobación, estados financieros, meses y cierre, plan de cuentas y ajustes. Se suma a un módulo que ya existe, no se le quita nada a nadie; la ve quien ya ve Mi Plata (las rutas piden admin/dueño/encargado y escribir solo admin/dueño).",
+   "aprobo": "Brandon, pedido del 2026-11-02: «arma la contabilidad completa»"
+  },
+  {
+   "par": "plata:meses",
+   "porque": "Pestaña nueva «Contabilidad» de Mi Plata (ADR-529): libro diario, libro mayor, balance de comprobación, estados financieros, meses y cierre, plan de cuentas y ajustes. Se suma a un módulo que ya existe, no se le quita nada a nadie; la ve quien ya ve Mi Plata (las rutas piden admin/dueño/encargado y escribir solo admin/dueño).",
+   "aprobo": "Brandon, pedido del 2026-11-02: «arma la contabilidad completa»"
+  },
+  {
+   "par": "plata:plan-cuentas",
+   "porque": "Pestaña nueva «Contabilidad» de Mi Plata (ADR-529): libro diario, libro mayor, balance de comprobación, estados financieros, meses y cierre, plan de cuentas y ajustes. Se suma a un módulo que ya existe, no se le quita nada a nadie; la ve quien ya ve Mi Plata (las rutas piden admin/dueño/encargado y escribir solo admin/dueño).",
+   "aprobo": "Brandon, pedido del 2026-11-02: «arma la contabilidad completa»"
   }
  ]
 }

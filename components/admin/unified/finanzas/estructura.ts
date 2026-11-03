@@ -42,6 +42,7 @@ import {
   BarChart3, CreditCard,
   Landmark, Banknote, Coins, Construction, ReceiptText,
   Calculator, Briefcase, ArrowUpDown,
+  BookOpen, BookOpenText, Scale, ListChecks, CalendarDays, Layers,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -65,6 +66,8 @@ export const TABS = [
   { id: "adelantos" as const,          label: "Adelantos",            icon: Coins },
   { id: "activos" as const,            label: "Activos",              icon: Construction },
   { id: "impuestos-reportes" as const, label: "Impuestos y reportes", shortLabel: "Impuestos", icon: FileBarChart },
+  /* ADR-529 (02-11): la contabilidad completa, de doble partida. */
+  { id: "contabilidad" as const,       label: "Contabilidad",         icon: BookOpen },
 ];
 
 /** Las pestañas cuyo segundo nivel es el del módulo que montan (su `?sub=`). */
@@ -151,6 +154,16 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
     { id: "importar",  label: "Importar y exportar", corto: "Importar",  icon: ArrowUpDown },
     /* «Cierres del día» se fue a Ventas y caja › Caja › Historial (18-10): los
        cierres quedan sólo en Caja. `?vista=cierres` llega allá (VISTA_MIGRATION). */
+  ],
+  /* Contabilidad (ADR-529): lo que el contador pide, en el orden en que se mira.
+     `meses` y `plan-cuentas` no chocan con otras hojas de Mi Plata. */
+  contabilidad: [
+    { id: "diario",       label: "Libro diario",                 corto: "Diario",     icon: BookOpenText },
+    { id: "mayor",        label: "Libro mayor",                  corto: "Mayor",      icon: Layers },
+    { id: "comprobacion", label: "Balance de comprobación",      corto: "Balance",    icon: ListChecks },
+    { id: "estados",      label: "Estados financieros",          corto: "Estados",    icon: Scale },
+    { id: "meses",        label: "Meses y cierre",               corto: "Cierre",     icon: CalendarDays },
+    { id: "plan-cuentas", label: "Plan de cuentas y ajustes",    corto: "Plan",       icon: Calculator },
   ],
 };
 

@@ -133,6 +133,13 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "adelantos", label: "Adelantos", hint: "Adelantos dados y recibidos, por persona, y su cobranza", origen: ["plata", "adelantos", "activos"] },
     { key: "activos", label: "Activos", hint: "Tu maquinaria: alquileres, gastos, alquileres por cobrar, calendario y ranking", origen: ["plata", "activos"] },
     { key: "impuestos", label: "Impuestos del mes", hint: "IGV y renta del mes, y las obligaciones y declaraciones", origen: ["facturacion", "documentos"] },
+    // Contabilidad (ADR-529, 02-11): la pestaña nueva de Mi Plata, una hoja por libro.
+    { key: "diario", label: "Libro diario", hint: "Cada movimiento de plata escrito en Debe y Haber, con asientos manuales y de apertura", origen: ["plata"] },
+    { key: "mayor", label: "Libro mayor", hint: "Los movimientos de cada cuenta con su saldo", origen: ["plata"] },
+    { key: "comprobacion", label: "Balance de comprobación", hint: "El cuadro de 8 columnas: sumas, saldos, inventario y resultados", origen: ["plata"] },
+    { key: "estados", label: "Estados financieros", hint: "Situación financiera, resultados y cruce con Resultado", origen: ["plata"] },
+    { key: "meses", label: "Meses y cierre", hint: "Cerrar o reabrir cada mes de la contabilidad", origen: ["plata"] },
+    { key: "plan-cuentas", label: "Plan de cuentas y ajustes", hint: "Las cuentas del PCGE, cuentas propias, IGV y reglas de los asientos", origen: ["plata"] },
     { key: "reportes", label: "Reporte mensual", hint: "El resumen del mes para imprimir o mandar en PDF", origen: ["plata", "activos"] },
     { key: "contador", label: "Para el contador", hint: "Cada reporte (ventas, compras, inventario, clientes…) en una fila para bajarlo en CSV o PDF", origen: ["plata", "activos"] },
     { key: "importar", label: "Importar y exportar", hint: "Subir o descargar tus datos en Excel o CSV", origen: ["plata", "activos"] },

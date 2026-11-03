@@ -183,6 +183,12 @@ export {
   Calendar,
   CalendarDays,
   CalendarClock,
+  // Contabilidad (ADR-529): libro, cierre del mes, plan de cuentas, asiento nuevo, reabrir.
+  BookText,
+  CalendarCheck,
+  ListTree,
+  FilePlus2,
+  LockOpen,
 
   // ── Organization / domain ────────────────────────────────────
   Building2,
