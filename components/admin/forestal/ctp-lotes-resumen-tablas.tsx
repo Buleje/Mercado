@@ -12,7 +12,10 @@
 
 import { DataTable } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { pieTablarAserrableDe } from "@/lib/forestal/cubicacion";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
+import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { FilaDetalleLote, FilaResumenEspecie, ResumenPorEspecie } from "@/lib/forestal/lotes-resumen-especie";
 
 const NUM = "text-right font-mono tabular-nums";
@@ -24,14 +27,57 @@ export interface ColumnasOpcionales {
   salio: boolean;
   sinAserrar: boolean;
 }
-const m3 = (v: number) => (v > 1e-4 ? fmtM3(v) : "—");
+const META_PCT = Math.round(RENDIMIENTO_META * 100);
+const SUBLINEA = "block text-xs text-[var(--text-tertiary)]";
+
+/**
+ * Madera YA aserrada (Brandon, 03-11: «debajo su volumen en pies tablares»):
+ * m³ y, abajo, su pie tablar directo (× 424). En patio llega con los pies del
+ * lote (`pt`), que pueden venir de las medidas de los paquetes.
+ */
+function Aserrada({ v, pt }: { v: number | null; pt?: number }) {
+  if (v == null || !(v > 1e-4)) return <>—</>;
+  return (
+    <>
+      {fmtM3(v)}
+      <span className={SUBLINEA}>{fmtPt(pt ?? pieTablarDe(v))} pt</span>
+    </>
+  );
+}
+
+/**
+ * TRONCOS (rolliza): el pie tablar directo mentiría —no todo el tronco sale
+ * tabla—. Va lo que saldría aserrado al rendimiento meta, dicho con su %:
+ * «56 % · 154 pt» (Brandon, 03-11). Es aproximado y lo dice el ⓘ.
+ */
+function Rolliza({ v }: { v: number }) {
+  if (!(v > 1e-4)) return <>—</>;
+  return (
+    <>
+      {fmtM3(v)}
+      <span className={SUBLINEA} title={`Aprox.: lo que saldría aserrado al ${META_PCT} % de rendimiento`}>
+        {META_PCT} % · {fmtPt(pieTablarAserrableDe(v, RENDIMIENTO_META))} pt
+      </span>
+    </>
+  );
+}
 const pct = (v: number | null) => (v == null ? "—" : `${v.toLocaleString("es-PE", { maximumFractionDigits: 1 })} %`);
 
 /** Los encabezados de cifras, con su ⓘ: qué es cada número sin un párrafo encima de la tabla. */
 function EncabezadosCifras({ col }: { col: ColumnasOpcionales }) {
   return (
     <>
-      <th scope="col" className="text-right">Consumido</th>
+      <th scope="col" className="text-right">
+        <span className="inline-flex items-center gap-1">
+          Consumido
+          <InfoTip
+            title="Troncos que entraron a la sierra"
+            what={`Debajo, los pies que saldrían aserrados al ${META_PCT} % de rendimiento (aprox.). En las demás columnas, que ya son madera aserrada, el pie tablar es directo (m³ × 424).`}
+            example="0.649 m³ de troncos → 56 % · 154 pt."
+            side="left"
+          />
+        </span>
+      </th>
       <th scope="col" className="text-right">Producido</th>
       <th scope="col" className="text-right">Rinde</th>
       {col.salio && <th scope="col" className="text-right">Salió</th>}
@@ -62,18 +108,13 @@ function EncabezadosCifras({ col }: { col: ColumnasOpcionales }) {
 function CeldasCifras({ f, col }: { f: FilaDetalleLote | FilaResumenEspecie; col: ColumnasOpcionales }) {
   return (
     <>
-      <td className={NUM}>{m3(f.consumidoM3)}</td>
-      <td className={NUM}>{f.producidoM3 == null ? "—" : m3(f.producidoM3)}</td>
+      <td className={NUM}><Rolliza v={f.consumidoM3} /></td>
+      <td className={NUM}><Aserrada v={f.producidoM3} /></td>
       <td className={NUM}>{pct(f.rendimientoPct)}</td>
-      {col.salio && <td className={NUM}>{m3(f.salidoM3)}</td>}
-      <td className={NUM}>
-        {m3(f.enPatioM3)}
-        {f.enPatioPt > 0 && (
-          <span className="block text-xs text-[var(--text-tertiary)]">{fmtPt(f.enPatioPt)} pt</span>
-        )}
-      </td>
-      <td className={NUM}>{m3(f.porDeclararM3)}</td>
-      {col.sinAserrar && <td className={NUM}>{m3(f.sinAserrarM3)}</td>}
+      {col.salio && <td className={NUM}><Aserrada v={f.salidoM3} /></td>}
+      <td className={NUM}><Aserrada v={f.enPatioM3} pt={f.enPatioPt > 0 ? f.enPatioPt : undefined} /></td>
+      <td className={NUM}><Aserrada v={f.porDeclararM3} /></td>
+      {col.sinAserrar && <td className={NUM}><Rolliza v={f.sinAserrarM3} /></td>}
     </>
   );
 }

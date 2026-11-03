@@ -6,7 +6,8 @@
  * detalle poder seleccionar (check) para que me bote otro resumen tipo especie,
  * igual como el otro pero aparte, según lo escogido».
  *
- * A la izquierda, por especie: arriba todos los elegidos en la vista y abajo
+ * A la izquierda, por especie (desde 1600 px; más angosto va debajo para que
+ * ninguna columna se corte): arriba todos los elegidos en la vista y abajo
  * sólo los marcados en el detalle. A la derecha, el detalle lote por lote. Sólo
  * mira: no escribe nada en el libro.
  */
@@ -80,7 +81,7 @@ export default function CtpLotesResumenModal({
         </ModalFooter>
       }
     >
-      <div className="grid gap-5 px-5 py-5 sm:px-6 xl:grid-cols-[minmax(0,9fr)_minmax(0,11fr)]">
+      <div className="grid gap-5 px-5 py-5 sm:px-6 min-[1600px]:grid-cols-[minmax(0,9fr)_minmax(0,11fr)]">
         <div className="min-w-0 space-y-5">
           <section className="space-y-2">
             <CardTitle as="h4" className={TITULO}>
