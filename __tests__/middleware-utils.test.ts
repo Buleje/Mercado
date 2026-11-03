@@ -255,6 +255,23 @@ describe("checkRateLimit (distributed — Upstash fallback path)", () => {
     expect(Number(retryAfter)).toBeGreaterThan(0);
   });
 
+  // security 03-11: el x-tenant-id lo manda el cliente; cambiarlo en cada pedido
+  // no puede dar un cupo nuevo. El negocio lo pasa el proxy ya resuelto.
+  it("cambiar el header x-tenant-id en cada pedido no renueva el cupo", async () => {
+    for (let i = 0; i < 60; i++) {
+      await checkRateLimit(makeReq("http://localhost/", { "x-forwarded-for": "10.6.0.1", "x-tenant-id": `falso-${i}` }), "main");
+    }
+    const otra = makeReq("http://localhost/", { "x-forwarded-for": "10.6.0.1", "x-tenant-id": "falso-61" });
+    expect((await checkRateLimit(otra, "main"))?.status).toBe(429);
+  });
+
+  it("negocios resueltos distintos no comparten contador", async () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "10.6.0.2" });
+    for (let i = 0; i < 60; i++) await checkRateLimit(req, "negocio-a");
+    expect(await checkRateLimit(req, "negocio-a")).not.toBeNull();
+    expect(await checkRateLimit(req, "negocio-b")).toBeNull();
+  });
+
   it("IPs diferentes no comparten contador", async () => {
     const reqA = makeReq("http://localhost/", { "x-forwarded-for": "10.2.0.1" });
     const reqB = makeReq("http://localhost/", { "x-forwarded-for": "10.2.0.2" });

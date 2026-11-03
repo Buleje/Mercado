@@ -242,10 +242,13 @@ export function checkEdgeRateLimit(
  * limiter returns `true` (allowed) and logs the incident. This protects
  * against a Redis outage taking the whole site down at the cost of a
  * brief protection gap during the outage.
+ *
+ * `tenantId` = el negocio YA resuelto por el proxy (host/cookie). Nunca el
+ * header `x-tenant-id` de la request: lo manda el cliente, y cambiarlo en cada
+ * pedido daba un cupo nuevo cada vez (security 03-11-2026).
  */
-export async function checkRateLimit(req: NextRequest): Promise<NextResponse | null> {
+export async function checkRateLimit(req: NextRequest, tenantId = "global"): Promise<NextResponse | null> {
   const ip = getIP(req);
-  const tenantId = req.headers.get("x-tenant-id") ?? "global";
   const identifier = `${tenantId}:${ip}`;
 
   const limiter = esLecturaDeDrive(req)

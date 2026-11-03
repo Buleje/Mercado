@@ -68,7 +68,7 @@ export async function proxy(request: NextRequest) {
   // Distributed via Upstash Redis REST (ADR-022, 2026-04-09). Edge-compatible.
   // Must run BEFORE Bearer pass-through so external API keys are still rate-limited.
   if (pathname.startsWith("/api/") && process.env.NODE_ENV !== "development") {
-    const rlResponse = await checkRateLimit(request);
+    const rlResponse = await checkRateLimit(request, tenantId);
     if (rlResponse) return rlResponse;
   }
 

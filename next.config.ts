@@ -140,6 +140,9 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "images.openfoodfacts.org" },
       { protocol: "http", hostname: "images.openfoodfacts.org" },
+      // 03-11-2026: 51 productos de main traen la foto de Plaza Vea; sin esto el
+      // optimizador respondía 400 («"url" parameter is not allowed») y salían rotas.
+      { protocol: "https", hostname: "plazavea.vteximg.com.br" },
       { protocol: "https", hostname: "static.openfoodfacts.org" },
       { protocol: "http", hostname: "static.openfoodfacts.org" },
       { protocol: "https", hostname: "*.supabase.co" },
