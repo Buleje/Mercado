@@ -43,6 +43,7 @@ import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion }
 import { IconAction } from "@/components/admin/shared/module-primitives";
 import CtpLoteADistribucionBtn from "./CtpLoteADistribucionBtn";
 import CtpLotePermisoCampo from "./CtpLotePermisoCampo";
+import { formatNumber } from "@/lib/format";
 import CtpLoteSoloConsumo from "./CtpLoteSoloConsumo";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
@@ -246,7 +247,7 @@ export default function CtpLoteDetalleModal({
           nota={
             <span className="font-mono tabular-nums">
               {lote.piezas} pza · {fmtM3(lote.volumenM3)} m³ ·{" "}
-              {pieTablarRolloDe(lote.volumenM3).toLocaleString("es-PE")} pt
+              {formatNumber(pieTablarRolloDe(lote.volumenM3))} pt
               {abierto && libres.length !== lote.piezas && ` · ${libres.length} libres`}
               {margen && ` · quedan ${fmtM3(margen.margenM3)} m³ por declarar`}
             </span>
@@ -680,7 +681,7 @@ export default function CtpLoteDetalleModal({
                       {fmtM3(abierto ? volumenLibre(lote) : lote.volumenM3)} m³
                     </td>
                     <td colSpan={abierto ? 2 : 1} className="font-mono tabular-nums text-[var(--text-tertiary)]">
-                      {pieTablarRolloDe(abierto ? volumenLibre(lote) : lote.volumenM3).toLocaleString("es-PE")} pt
+                      {formatNumber(pieTablarRolloDe(abierto ? volumenLibre(lote) : lote.volumenM3))} pt
                     </td>
                   </tr>
                 </tfoot>

@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Loader2, Save } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { limaDateKey } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 import { Btn, Field, I, Seccion } from "./ctp-shared";
 import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
@@ -48,7 +49,7 @@ export default function CtpLoteSoloConsumo({
 
   return (
     <Seccion title="Declarar solo consumo de trozas" hint="Queda como saldo para producir después">
-      <Field span={6} label="Volumen consumido en trozas (m³)" required hint={valido ? `${fmtM3(m3)} m³ · ${pieTablarRolloDe(m3).toLocaleString("es-PE")} pt` : "Lo que entró a la sierra, de una vez"}>
+      <Field span={6} label="Volumen consumido en trozas (m³)" required hint={valido ? `${fmtM3(m3)} m³ · ${formatNumber(pieTablarRolloDe(m3))} pt` : "Lo que entró a la sierra, de una vez"}>
         <input
           type="number"
           min={0}
