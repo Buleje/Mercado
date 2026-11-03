@@ -13,7 +13,7 @@
  */
 import type { PiezaCubicada } from "./cubicacion";
 import { toInches, toFeet } from "./cubicacion";
-import { m3DeLinea, m3OficialDeFila, ptExactoDeLinea, redondearGTF, totalizarGTF } from "./gtf-redondeo";
+import { filasAlTotal, m3DeLinea, m3OficialDeFila, ptExactoDeLinea, redondearGTF, sumaExacta, totalizarGTF } from "./gtf-redondeo";
 import { tipoDePieza, ordenTipo, type TipoComercial } from "./cubicacion-tipo";
 
 // ─── Datos que llena el emisor (cabecera y pie del anexo) ───────────────────
@@ -225,24 +225,19 @@ export function reconciliarTotales(valores: readonly number[], objetivo: number)
  * canónico de tipos (comercial primero).
  */
 /**
- * El total GTF de un juego de piezas, con las MISMAS filas que el anexo
- * (especie × tipo): cada fila con su m³ exacto redondeado UNA vez (HALF_UP, 3
- * decimales) y el total = suma de esas filas. Lo usan el anexo y su cuadre: dos
- * caminos al mismo total no pueden decir números distintos.
+ * El total GTF de un juego de piezas: la Σ exacta de TODAS sus piezas redondeada
+ * UNA vez (HALF_UP, 3 decimales) — en aserrada, los pies tablares ÷ 424 (Brandon
+ * 03-11: «pies ÷ 424 manda en todo»). Las filas especie × tipo se cuadran a este
+ * total por milésimos (`filasAlTotal`), así que sigue siendo la suma de las
+ * filas. Lo usan el anexo y su cuadre: dos caminos al mismo total no pueden
+ * decir números distintos.
  */
 /** La fila del anexo (y de la GTF) a la que pertenece una pieza: especie × tipo. */
 export const claveFilaDelAnexo = (r: PiezaCubicada, especieGlobal?: string): string =>
   `${especieDe(r, especieGlobal)}||${tipoDe(r)}`;
 
-export function totalGtfDelAnexo(rows: readonly PiezaCubicada[], especieGlobal?: string): number {
-  const grupos = new Map<string, PiezaCubicada[]>();
-  for (const r of rows) {
-    const k = claveFilaDelAnexo(r, especieGlobal);
-    const g = grupos.get(k);
-    if (g) g.push(r);
-    else grupos.set(k, [r]);
-  }
-  return totalizarGTF([...grupos.values()].map((g) => ({ m3: m3OficialDeFila(g.map(m3DeLinea)) }))).m3;
+export function totalGtfDelAnexo(rows: readonly PiezaCubicada[]): number {
+  return m3OficialDeFila(rows.map(m3DeLinea));
 }
 
 export function construirAnexo04(
@@ -272,8 +267,13 @@ export function construirAnexo04(
     (a, b) => a.orden - b.orden || ordenTipo(a.tipo) - ordenTipo(b.tipo),
   );
 
+  /* Cada fila especie × tipo con su parte del TOTAL (pies ÷ 424), por mayor
+     resto: el anexo suma lo mismo que el encabezado del cubicador (03-11). */
+  const oficialesV = filasAlTotal(ordenados.map((g) => sumaExacta(g.piezas.map(vDe))));
+  const oficialesM3 = filasAlTotal(ordenados.map((g) => sumaExacta(g.piezas.map(m3DeLinea))));
+
   const bloques: BloqueAnexo04[] = [];
-  for (const g of ordenados) {
+  for (const [n, g] of ordenados.entries()) {
     const desde = bloques.length;
     trocear(g.piezas, FILAS_OFICIAL).forEach((chunk, i) => {
       const filas = chunk.map((r, j) => ({
@@ -296,16 +296,12 @@ export function construirAnexo04(
         continuacion: i > 0,
       });
     });
-    /* Una fila de más de 35 renglones sale en varios bloques y cada uno redondea
-       su subtotal: se concilian para que juntos den EXACTO el m³ oficial de la
-       fila (Σ exacta redondeada una vez), que es lo que dice la GTF. */
+    /* Los bloques de la fila (más de 35 renglones salen en varios, y cada uno
+       redondea su subtotal) se concilian para que juntos den EXACTO la parte
+       de la fila en el total: con un solo bloque, es esa parte tal cual. */
     const partes = bloques.slice(desde);
-    if (partes.length > 1) {
-      const oficialV = m3OficialDeFila(g.piezas.map(vDe));
-      const oficialM3 = m3OficialDeFila(g.piezas.map(m3DeLinea));
-      reconciliarTotales(partes.map((b) => b.subtotal), oficialV).forEach((v, j) => { partes[j].subtotal = v; });
-      reconciliarTotales(partes.map((b) => b.m3), oficialM3).forEach((v, j) => { partes[j].m3 = v; });
-    }
+    reconciliarTotales(partes.map((b) => b.subtotal), oficialesV[n]).forEach((v, j) => { partes[j].subtotal = v; });
+    reconciliarTotales(partes.map((b) => b.m3), oficialesM3[n]).forEach((v, j) => { partes[j].m3 = v; });
   }
 
   const hojas: HojaAnexo04[] = trocear(bloques, BLOQUES_POR_HOJA).map((bs) => ({
@@ -324,7 +320,7 @@ export function construirAnexo04(
   /* El total del anexo = Σ de sus FILAS GTF (especie × tipo), cada una con su m³
      exacto redondeado UNA vez a 3 decimales HALF_UP. Antes era r3(Σ crudo): con
      la guía real del 2026-10-03 eso daba 31,185 donde SERFOR dice 31,188. */
-  const totalCalculadoM3 = totalGtfDelAnexo(rows, opts.especieGlobal);
+  const totalCalculadoM3 = totalGtfDelAnexo(rows);
   const manual = opts.totalManualM3;
   const declararManual = rows.length > 0 && manual != null && Number.isFinite(manual) && manual >= 0;
   const totalM3 = declararManual ? redondearGTF(manual) : totalCalculadoM3;

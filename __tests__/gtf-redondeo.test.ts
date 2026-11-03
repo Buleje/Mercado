@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  filasAlTotal,
   filasGTF,
   m3DeLinea,
   m3OficialDeFila,
@@ -178,3 +179,17 @@ describe("repartir las filas oficiales entre otras tablas (mayor resto)", () => 
     expect(sumaPartes).toBe(r.total);
   });
 });
+
+describe("filas cuadradas al total: «pies ÷ 424 manda en todo» (Brandon 03-11)", () => {
+  it("el total es la Σ exacta redondeada una vez y cada fila se acomoda a lo sumo 0,001", () => {
+    // Larga angosta 0,01651 · Tabla 0,00354 · Comercial 0,05660: crudo 0,07665 → 0,077.
+    const filas = filasAlTotal([0.01651, 0.00354, 0.0566]);
+    expect(filas).toEqual([0.017, 0.003, 0.057]);
+    expect(Math.round(filas.reduce((a, v) => a + v, 0) * 1000) / 1000).toBe(0.077);
+  });
+
+  it("con valores que ya vienen a 3 decimales (el papel de otro) no mueve nada", () => {
+    expect(filasAlTotal([1.234, 2.5, 0.001, 31.188])).toEqual([1.234, 2.5, 0.001, 31.188]);
+  });
+});
+

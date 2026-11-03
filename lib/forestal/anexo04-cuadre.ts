@@ -28,7 +28,7 @@
  * PURO: sin DOM, sin React. Lo consume `Anexo04Cuadre`.
  */
 import { cubicarPieza, toFeet, toInches, type PiezaCubicada, type Unidad } from "./cubicacion";
-import { claveFilaDelAnexo, totalGtfDelAnexo } from "./anexo04-serfor";
+import { totalGtfDelAnexo } from "./anexo04-serfor";
 import { m3DeLinea, redondearGTF, sumaExacta } from "./gtf-redondeo";
 
 /** Las tres dimensiones que el anexo imprime (la cantidad no se toca acá). */
@@ -171,26 +171,17 @@ export function ajustesParaCuadrar(
   const delta = r3(objetivoM3 - total);
   if (!Number.isFinite(delta) || Math.abs(delta) < TOL_CUADRE_M3) return [];
 
-  /* El total se calcula como lo hará la hoja (regla GTF, 2026-10-03): cada
-     fila especie × tipo es su suma EXACTA redondeada una vez, y el total la
-     suma de las filas. Las sumas por fila se arman una vez: cada candidata
-     sólo rehace la fila de SU pieza. Sin esto, un lote de 300 filas recalcula
-     300 sumas por tecla. */
-  const exactaDeFila = new Map<string, ReturnType<typeof sumaExacta>>();
-  for (const r of filas) {
-    const k = claveFilaDelAnexo(r);
-    exactaDeFila.set(k, (exactaDeFila.get(k) ?? sumaExacta([])).plus(m3DeLinea(r)));
-  }
-  const oficialDeFila = new Map([...exactaDeFila].map(([k, v]) => [k, redondearGTF(v)]));
-  const totalOficial = sumaExacta(oficialDeFila.values());
+  /* El total se calcula como lo hará la hoja (Brandon 03-11, «pies ÷ 424
+     manda»): la Σ EXACTA de todas las piezas redondeada una vez; las filas se
+     cuadran a él. La suma se arma una vez: cada candidata sólo cambia SU pieza.
+     Sin esto, un lote de 300 filas recalcula 300 sumas por tecla. */
+  const totalExacto = sumaExacta(filas.map(m3DeLinea));
   const out: AjusteCuadre[] = [];
 
   for (const p of filas) {
     if (opts.soloId && p.id !== opts.soloId) continue;
     if (!((p.cantidad ?? 0) > 0) || !(p.m3 > 0)) continue;
-    const fila = claveFilaDelAnexo(p);
-    const sinLaPieza = (exactaDeFila.get(fila) ?? sumaExacta([])).minus(m3DeLinea(p));
-    const otrasFilas = totalOficial.minus(oficialDeFila.get(fila) ?? 0);
+    const sinLaPieza = totalExacto.minus(m3DeLinea(p));
     const medida = etiquetaMedida(valorImpreso(p, "espesor"), valorImpreso(p, "ancho"), valorImpreso(p, "largo"));
 
     for (const campo of ["espesor", "ancho", "largo"] as DimensionAnexo[]) {
@@ -211,8 +202,7 @@ export function ajustesParaCuadrar(
         if (!(sugerido > 0) || sugerido === actual) continue;
         const cambioPct = Math.abs((sugerido - actual) / actual) * 100;
         if (cambioPct > CAMBIO_MAX_PCT) continue;
-        const nuevaFila = redondearGTF(sinLaPieza.plus(m3DeLinea(conMedida(p, campo, sugerido))));
-        const nuevaTotal = redondearGTF(otrasFilas.plus(nuevaFila));
+        const nuevaTotal = redondearGTF(sinLaPieza.plus(m3DeLinea(conMedida(p, campo, sugerido))));
         const restaM3 = r3(nuevaTotal - objetivoM3);
         /* Sólo sirve si acerca: un «ajuste» que deja más diferencia que la que
            había es ruido en una lista que se lee para decidir. */

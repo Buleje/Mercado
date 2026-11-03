@@ -62,7 +62,11 @@ describe("un solo volumen en todas las tablas", () => {
     expect(r3(of.distribuido + of.falta)).toBe(of.total);
   });
 
-  it("cada permiso suma lo suyo: su fila = Σ de SUS piezas redondeada una vez (como su GTF en SERFOR)", () => {
+  it("el volumen del lote es pies ÷ 424: la Σ exacta de TODAS sus piezas redondeada una vez (Brandon 03-11)", () => {
+    expect(of.total).toBe(m3OficialDeFila(LOTE.map(m3DeLinea)));
+  });
+
+  it("cada fila de cada permiso queda a lo sumo 0,001 de la Σ de SUS piezas redondeada (se acomoda al total)", () => {
     for (const a of anexosPorPermiso(dist)) {
       const propias = new Map<string, PiezaCubicada[]>();
       for (const p of a.piezas) {
@@ -71,7 +75,8 @@ describe("un solo volumen en todas las tablas", () => {
       }
       for (const f of resumenPorEspecieTipo(a)) {
         const ps = propias.get(`${f.especie.toLowerCase()}|${f.tipo}`) ?? [];
-        expect(f.m3, `${a.label} ${f.especie} ${f.tipo}`).toBe(m3OficialDeFila(ps.map(m3DeLinea)));
+        const propia = m3OficialDeFila(ps.map(m3DeLinea));
+        expect(Math.abs(f.m3 - propia), `${a.label} ${f.especie} ${f.tipo}`).toBeLessThanOrEqual(0.001 + 1e-9);
       }
     }
   });

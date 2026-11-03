@@ -247,6 +247,20 @@ export function repartirAlTotal(exactos: readonly Valor[], total: Valor, decimal
   return pisos.map((p) => p.times(unidad).toNumber());
 }
 
+/**
+ * Las filas de un documento cuadradas a su TOTAL (Brandon 03-11: «pies ÷ 424
+ * manda en todo»). El total es la Σ exacta de TODO redondeada una sola vez —en
+ * aserrada, los pies tablares ÷ 424— y cada fila recibe su parte por mayor resto.
+ * Cada fila queda a lo sumo 0,001 de su propio redondeo y Σ filas = total
+ * siempre: el encabezado, las tarjetas y las tablas dicen el mismo número.
+ * Medido: «802 pzas · 24-jul.» de Mario, filas sueltas 18,225 → 18,224 (sus pies
+ * ÷ 424). Con valores que ya vienen a 3 decimales (papeles de otros) no cambia
+ * nada: la suma ya es exacta.
+ */
+export function filasAlTotal(exactosPorFila: readonly Valor[], decimales: number = DECIMALES_GTF): number[] {
+  return repartirAlTotal(exactosPorFila, m3OficialDeFila(exactosPorFila, decimales), decimales);
+}
+
 export interface ParteGTF {
   /** La fila GTF a la que pertenece (`filaGtf`). */
   fila: string;
@@ -270,8 +284,9 @@ export interface RepartoGTF {
 export const SEP_FILA_PARTE = "␟";
 
 /**
- * Cada fila oficial (Σ exacta redondeada UNA vez) repartida entre sus partes por
- * mayor resto. Cualquier tabla armada con `porParte` suma exactamente `total`.
+ * El total del lote (Σ exacta de todo, redondeada UNA vez: pies ÷ 424) repartido
+ * entre las filas (`filasAlTotal`) y cada fila entre sus partes, por mayor resto.
+ * Cualquier tabla armada con `porParte` o `porFila` suma exactamente `total`.
  */
 export function repartirFilasGTF(
   partes: readonly ParteGTF[],
@@ -288,10 +303,15 @@ export function repartirFilasGTF(
   const porFila = new Map<string, number>();
   const porParte = new Map<string, Decimal>();
   const porFilaParte = new Map<string, number>();
-  for (const [fila, ps] of filas) {
+  /* Sin totales dichos en otro lado, las filas se cuadran al total del lote. */
+  const lista = [...filas];
+  const alTotal = totalesDeFila
+    ? null
+    : filasAlTotal(lista.map(([, ps]) => sumaExacta(ps.values())), decimales);
+  for (const [n, [fila, ps]] of lista.entries()) {
     const claves = [...ps.keys()];
     const exactos = claves.map((k) => ps.get(k) as Decimal);
-    const oficial = totalesDeFila?.get(fila) ?? m3OficialDeFila(exactos, decimales);
+    const oficial = alTotal ? alTotal[n] : (totalesDeFila?.get(fila) ?? m3OficialDeFila(exactos, decimales));
     porFila.set(fila, oficial);
     repartirAlTotal(exactos, oficial, decimales).forEach((v, i) => {
       porParte.set(claves[i], (porParte.get(claves[i]) ?? new Decimal(0)).plus(v));

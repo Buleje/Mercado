@@ -35,3 +35,9 @@ El cubicador muestra cada pieza con PT a 2 decimales y m³ = ese PT ÷ 424 a 4 d
 - El valor en soles del resumen sigue saliendo del PT de cada pieza a 2 decimales, mientras la columna de PT ya muestra el exacto: valor ÷ PT no da justo el precio hasta que se decida la plata.
 - Lo que ya se copió al SNIFFS con la regla vieja puede diferir 0,001-0,005 por fila de lo que muestra hoy el sistema. Para declarar algo nuevo vale lo que muestra hoy el sistema.
 - Prueba fija: `__tests__/gtf-redondeo.test.ts` («la carga de Rivers ya no se pasa»: 28 piezas de 2×8×8 → 0,704 y no 0,706).
+
+## Enmienda 2026-11-03 (noche): manda pies ÷ 424
+
+- **Pedido:** Brandon eligió «Pies ÷ 424» entre dos formas de total que diferían 0,001 en 2 de 4 lotes reales (Mario 18,224 vs 18,225; 1005 pz 23,520 vs 23,519).
+- **Decisión:** en lo que sale de las medidas de Blas (Resúmenes, Tablas, Distribución, Anexo 04, su cuadre y la comparación) el total es la Σ exacta de TODAS las piezas redondeada una vez (= pies ÷ 424) y las filas especie × tipo se cuadran a él por mayor resto (`filasAlTotal`): cada fila se mueve a lo sumo 0,001 y Σ filas = total. Con varios permisos, el total del lote se reparte entre permiso × fila, así que la guía de un permiso puede quedar 0,001 de sus propios pies ÷ 424.
+- **No cambia:** la guía GTF que se arma o reimprime con las líneas ya guardadas (`ctp-gtf-formato`, `forest-gtf.db`), madera en rollo, saldos y papeles de otros: con líneas a 3 decimales el resultado es el mismo, y una guía ya registrada en el SNIFFS no puede moverse al reimprimirla.

@@ -18,7 +18,7 @@
  * es «Redondeo», no «Difiere»: siete rojos falsos enseñan a ignorar la lista.
  */
 import type { PiezaCubicada } from "./cubicacion";
-import { m3DeLinea, m3OficialDeFila, ptDeLinea } from "./gtf-redondeo";
+import { filasAlTotal, m3DeLinea, ptDeLinea, sumaExacta } from "./gtf-redondeo";
 import { construirAnexo04, type UnidadVolumen } from "./anexo04-serfor";
 import { ORDEN_TIPO, ordenTipo, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
 
@@ -133,13 +133,16 @@ function agruparReferencia(rows: readonly PiezaCubicada[], especieGlobal?: strin
     out.set(k, g);
   }
   /* Cada especie × tipo es una fila de la GTF, como en la tabla «Por especie y
-     tipo» de Resúmenes (`resumenPorEspecie`): suma EXACTA de sus piezas desde
-     las medidas, redondeada UNA vez (regla de la GTF, 2026-10-03). */
-  for (const [k, g] of out) {
-    const piezas = exactos.get(k) ?? [];
-    g.lado.pt = m3OficialDeFila(piezas.map(ptDeLinea));
-    g.lado.m3 = m3OficialDeFila(piezas.map(m3DeLinea));
-  }
+     tipo» de Resúmenes (`resumenPorEspecie`): su parte del TOTAL (Σ exacta de
+     todo redondeada una vez, pies ÷ 424) por mayor resto (Brandon 03-11). */
+  const grupos = [...out];
+  const porGrupo = grupos.map(([k]) => exactos.get(k) ?? []);
+  const pts = filasAlTotal(porGrupo.map((ps) => sumaExacta(ps.map(ptDeLinea))));
+  const m3s = filasAlTotal(porGrupo.map((ps) => sumaExacta(ps.map(m3DeLinea))));
+  grupos.forEach(([, g], i) => {
+    g.lado.pt = pts[i];
+    g.lado.m3 = m3s[i];
+  });
   return out;
 }
 
