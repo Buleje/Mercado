@@ -13,9 +13,10 @@
  * PURO y client-safe.
  */
 
-import { PT_POR_M3, pieTablarAserrableDe } from "./cubicacion";
+import { pieTablarAserrableDe } from "./cubicacion";
 import { fmtM3 } from "./cubicacion-formato";
 import { RENDIMIENTO_META } from "./loctp-catalogos";
+import { pieTablarRolloDe } from "./loctp-catalogos";
 
 /** Una troza candidata a consumirse. */
 export interface TrozaConsumible {
@@ -362,7 +363,7 @@ export function totalesSeleccion(trozas: readonly TrozaConsumible[]): TotalesSel
   return {
     piezas: trozas.length,
     volumenM3,
-    pieTablar: Math.round(volumenM3 * PT_POR_M3),
+    pieTablar: pieTablarRolloDe(volumenM3),
     guias: new Set(trozas.map((t) => t.woodEntryId)).size,
     especies: new Set(trozas.map((t) => norm(t.especieComun)).filter(Boolean)).size,
   };
@@ -408,7 +409,7 @@ export function agruparPorGuia(trozas: readonly TrozaConsumible[]): ConsumoPorGu
     fila.volumenM3 = r4(fila.volumenM3 + Number(t.volumenM3 ?? 0));
     fila.trozaIds.push(t.id);
   }
-  for (const f of porGuia.values()) f.pieTablar = Math.round(f.volumenM3 * PT_POR_M3);
+  for (const f of porGuia.values()) f.pieTablar = pieTablarRolloDe(f.volumenM3);
   return [...porGuia.values()].sort((a, b) => b.volumenM3 - a.volumenM3);
 }
 

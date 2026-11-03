@@ -22,13 +22,13 @@
 import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { CheckCircle2, PackageOpen, Search } from "@buleje/design-system/icons";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 import { FiltroColumnaMulti, FiltroColumnaRango, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { enRango, type RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDateNumeric, formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 /** `AAAA-MM-DD` o ISO → `DD/MM/AAAA` en UTC (las fechas del libro son date-only). */
 const fmtDia = (v: string | null | undefined) => {
@@ -248,7 +248,7 @@ export default function CtpTrozasDelLote({
               {elegidas.length === 1 ? "" : "s"}
             </>
           )}{" "}
-          · {fmtM3(volumen)} m³ · {formatNumber(pieTablarDe(volumen))} pt
+          · {fmtM3(volumen)} m³ · {formatNumber(pieTablarRolloDe(volumen))} pt
         </p>
         {accion}
       </header>

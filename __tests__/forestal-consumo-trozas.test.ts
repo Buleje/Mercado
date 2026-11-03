@@ -99,8 +99,8 @@ describe("totales de la selección", () => {
     const t = totalesSeleccion([troza({ id: "a", volumenM3: 3 }), troza({ id: "b", volumenM3: 2 })]);
     expect(t.piezas).toBe(2);
     expect(t.volumenM3).toBe(5);
-    // 1 m³ = 424 pt, el mismo factor del cubicador (PT_POR_M3).
-    expect(t.pieTablar).toBe(Math.round(5 * 424));
+    // Madera en rollo: m³ × 56 % × 424 (Brandon, 03-11); la aserrada va directa × 424.
+    expect(t.pieTablar).toBe(Math.round(5 * 0.56 * 424));
     expect(t.guias).toBe(1);
     expect(t.especies).toBe(1);
   });

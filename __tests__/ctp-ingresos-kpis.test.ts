@@ -61,7 +61,7 @@ describe("trozaPromedio", () => {
     const t = trozaPromedio({ trozasConVolumen: 150, trozasVolumeM3: 180, totalPieces: 160, totalVolumeM3: TOTAL });
     expect(t?.fuente).toBe("trozas");
     expect(t?.m3PorTroza).toBe(1.2);
-    expect(t?.ptPorTroza).toBe(509); // 1.2 × 424
+    expect(t?.ptPorTroza).toBe(285); // madera en rollo: 1.2 × 56 % × 424 (Brandon, 03-11)
   });
 
   it("sin trozas medidas cae a lo declarado y lo dice", () => {

@@ -28,7 +28,6 @@ import {
   juzgarRendimientoLote,
   loteVencido,
   margenLote,
-  pieTablarDe,
   piezasLibres,
   rendimientoLote,
   salidaDelLote,
@@ -50,6 +49,7 @@ import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados
 import { CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 /** Id estable de este formulario para los campos personalizados (ADR-427). */
 const FORMULARIO = "forestal.lote";
@@ -246,7 +246,7 @@ export default function CtpLoteDetalleModal({
           nota={
             <span className="font-mono tabular-nums">
               {lote.piezas} pza · {fmtM3(lote.volumenM3)} m³ ·{" "}
-              {pieTablarDe(lote.volumenM3).toLocaleString("es-PE")} pt
+              {pieTablarRolloDe(lote.volumenM3).toLocaleString("es-PE")} pt
               {abierto && libres.length !== lote.piezas && ` · ${libres.length} libres`}
               {margen && ` · quedan ${fmtM3(margen.margenM3)} m³ por declarar`}
             </span>
@@ -680,7 +680,7 @@ export default function CtpLoteDetalleModal({
                       {fmtM3(abierto ? volumenLibre(lote) : lote.volumenM3)} m³
                     </td>
                     <td colSpan={abierto ? 2 : 1} className="font-mono tabular-nums text-[var(--text-tertiary)]">
-                      {pieTablarDe(abierto ? volumenLibre(lote) : lote.volumenM3).toLocaleString("es-PE")} pt
+                      {pieTablarRolloDe(abierto ? volumenLibre(lote) : lote.volumenM3).toLocaleString("es-PE")} pt
                     </td>
                   </tr>
                 </tfoot>

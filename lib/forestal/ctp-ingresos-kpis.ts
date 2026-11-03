@@ -10,7 +10,7 @@
  * conjunto filtrado — nunca la página cargada de la tabla.
  */
 
-import { pieTablarDe } from "./lotes-aserrio";
+import { pieTablarRolloDe } from "./loctp-catalogos";
 
 /** Una faceta del período: lo mismo que llena los desplegables. */
 export interface FacetaVolumen {
@@ -102,13 +102,13 @@ export function trozaPromedio(s: {
   const volTrozas = Number(s.trozasVolumeM3 ?? 0);
   if (conVol > 0 && volTrozas > 0) {
     const m3 = volTrozas / conVol;
-    return { m3PorTroza: Math.round(m3 * 1000) / 1000, ptPorTroza: pieTablarDe(m3), piezas: conVol, fuente: "trozas" };
+    return { m3PorTroza: Math.round(m3 * 1000) / 1000, ptPorTroza: pieTablarRolloDe(m3), piezas: conVol, fuente: "trozas" };
   }
   const piezas = Number(s.totalPieces ?? 0);
   const vol = Number(s.totalVolumeM3 ?? 0);
   if (piezas > 0 && vol > 0) {
     const m3 = vol / piezas;
-    return { m3PorTroza: Math.round(m3 * 1000) / 1000, ptPorTroza: pieTablarDe(m3), piezas, fuente: "declaradas" };
+    return { m3PorTroza: Math.round(m3 * 1000) / 1000, ptPorTroza: pieTablarRolloDe(m3), piezas, fuente: "declaradas" };
   }
   return null;
 }

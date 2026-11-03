@@ -37,7 +37,6 @@
 import { AlertCircle, Boxes, Clock, PackageOpen, Route, Store, Tag, TreePine, TrendingUp } from "@buleje/design-system/icons";
 import CtpKpi, { DesgloseSimple } from "./CtpKpi";
 import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { limaDateKey } from "@/lib/utils";
 import { PLAZO_REGISTRO_DIAS } from "@/lib/forestal/ctp-compliance";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -55,6 +54,7 @@ import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros"
 import type { CtpFacetasActivas } from "./CtpIngresosFiltros";
 import { productLabel } from "./ctp-shared";
 import { formatCurrency, formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 export interface CtpIngresosKpisProps {
   stats: WoodEntryStats | null;
@@ -301,7 +301,7 @@ export default function CtpIngresosKpis({
          es lo mismo que en 20. */
       subValue={
         stats
-          ? `${nf(pieTablarDe(vol))} pt` +
+          ? `${nf(pieTablarRolloDe(vol))} pt` +
             (ritmo ? ` · ${ritmo.diasConIngreso} de ${ritmo.diasDelPeriodo} días con ingreso` : "") +
             " · ver por especie"
           : undefined

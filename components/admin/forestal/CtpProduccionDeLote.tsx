@@ -30,7 +30,7 @@ import CtpAcomodarTrozasModal from "./CtpAcomodarTrozasModal";
 import CtpAvisosDeCupo from "./ctp-avisos-de-cupo";
 import CtpProduccionPendiente from "./CtpProduccionPendiente";
 import CtpBarraSeleccion, { CifraSeleccion } from "./ctp-barra-seleccion";
-import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import CtpRegistrarProduccionModal, {
   type MaterialAConsumir,
   type ProduccionRegistrada,
@@ -41,6 +41,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import { formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 /**
  * El turno a medio cargar, guardado por lote.
@@ -482,7 +483,7 @@ export default function CtpProduccionDeLote({
             <CifraSeleccion label="Volumen" valor={fmtM3(material.volumenM3)} sufijo="m³" fuerte />
             <CifraSeleccion
               label="Pie tablar"
-              valor={formatNumber(pieTablarDe(material.volumenM3))}
+              valor={formatNumber(pieTablarRolloDe(material.volumenM3))}
               sufijo="pt"
             />
           </div>
@@ -660,7 +661,7 @@ export default function CtpProduccionDeLote({
           cifras={[
             { label: "Trozas", valor: `${alConsumo.length}` },
             { label: "Volumen", valor: `${fmtM3(material.volumenM3)} m³`, fuerte: true },
-            { label: "Pie tablar", valor: `${formatNumber(pieTablarDe(material.volumenM3))} pt` },
+            { label: "Pie tablar", valor: `${formatNumber(pieTablarRolloDe(material.volumenM3))} pt` },
           ]}
           onLimpiar={() => elegir(new Set())}
           accionLabel="Declarar producción"

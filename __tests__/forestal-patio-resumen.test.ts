@@ -117,7 +117,7 @@ describe("resumenPatio", () => {
 
   it("el pie tablar sale del volumen total y el promedio de todas las piezas", () => {
     const r = resumenPatio([troza({ volumenM3: 1 }), troza({ volumenM3: 2 })], AHORA);
-    expect(r.pieTablar).toBe(Math.round(3 * 424)); // PT_POR_M3
+    expect(r.pieTablar).toBe(Math.round(3 * 0.56 * 424)); // trozas = madera en rollo (Brandon, 03-11)
     expect(r.promedioM3).toBe(1.5);
     expect(r.mayorM3).toBe(2);
   });

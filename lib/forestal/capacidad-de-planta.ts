@@ -32,9 +32,9 @@
  */
 
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { estaLibreEnPatio } from "@/lib/forestal/patio-resumen";
+import { pieTablarRolloDe } from "./loctp-catalogos";
 
 export type ClaveFuente = "porRecepcionar" | "patio" | "apartado" | "lotes" | "productos";
 
@@ -450,7 +450,7 @@ export function filaDeTroza(t: TrozaConsumible): FilaTroza {
     especie: txt(t.especieComun) || "—",
     dimensiones: dimensionesDe(t),
     m3,
-    pt: pieTablarDe(m3),
+    pt: pieTablarRolloDe(m3),
     permiso: txt(t.permiso) || "—",
     guia: txt(t.gtfNumber) || "—",
     proveedor: txt(t.proveedor) || "—",

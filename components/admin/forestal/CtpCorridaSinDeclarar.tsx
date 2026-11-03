@@ -27,7 +27,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Boxes, Loader2, MinusCircle, X } from "@buleje/design-system/icons";
 import { guardarProduccionDeCorrida, mensajeCobroAserrio } from "./hooks/guardar-produccion-corrida";
 import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
-import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import { type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpRegistrarProduccionModal, {
   type MaterialAConsumir,
@@ -39,6 +39,7 @@ import { Btn, formatDate } from "./ctp-shared";
 import type { CtpEntry } from "./ctp-section-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 /** Lo que le queda al lote de esta corrida sin aserrar. */
 export interface RestoDelLote {
@@ -320,7 +321,7 @@ export default function CtpCorridaSinDeclarar({
           <p className="font-mono text-sm tabular-nums text-[var(--text-tertiary)]">
             {formatDate(corrida.entryDate)} · {corrida.speciesCommon ?? "Sin especie"} · entraron{" "}
             <b className="text-[var(--text-secondary)]">{fmtM3(entrada)} m³</b> ·{" "}
-            {formatNumber(pieTablarDe(entrada))} pt
+            {formatNumber(pieTablarRolloDe(entrada))} pt
           </p>
         </div>
         <div className="flex items-center gap-2">

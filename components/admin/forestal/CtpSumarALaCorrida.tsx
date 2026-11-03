@@ -18,12 +18,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Boxes, Layers, Loader2, PlusCircle } from "@buleje/design-system/icons";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 export default function CtpSumarALaCorrida({
   lineNo,
@@ -91,7 +91,7 @@ export default function CtpSumarALaCorrida({
         {elegidas.length > 0 && (
           <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
             {elegidas.length} pza · {fmtM3(volumen)} m³ ·{" "}
-            {formatNumber(pieTablarDe(volumen))} pt
+            {formatNumber(pieTablarRolloDe(volumen))} pt
           </span>
         )}
         {/**

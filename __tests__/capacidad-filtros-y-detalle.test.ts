@@ -246,7 +246,7 @@ describe("las filas del detalle", () => {
   it("la fila arma dimensiones y pie tablar", () => {
     const f = filaDeTroza(troza({ id: "Z", d1Cm: 40, d2Cm: 38, largoM: 6, volumenM3: 2 }));
     expect(f.dimensiones).toBe("Ø 40/38 cm · 6 m");
-    expect(f.pt).toBe(Math.round(2 * 424));
+    expect(f.pt).toBe(Math.round(2 * 0.56 * 424)); // troza = madera en rollo (Brandon, 03-11)
   });
 
   it("sin diámetros cae al texto de dimensiones que traiga la pieza", () => {

@@ -31,7 +31,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Boxes, FileSpreadsheet, Loader2, Plus, Save } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { PRODUCTOS_CONSUMIBLES_LOTE, disponiblePorEspecie, disponiblePorPermiso } from "@/lib/forestal/lote-programacion";
 import { TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar } from "./ctp-shared";
@@ -44,6 +43,7 @@ import { useLoteDesdeExcel } from "./hooks/use-lote-desde-excel";
 import { CtpEspecieInput, CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
 import { formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 export interface LoteProgramado {
   speciesCommon: string;
@@ -335,7 +335,7 @@ export default function CtpLoteArmarModal({
               : modo === "inventario"
               ? "Solo el consumo guarda el lote ya; la producción se declara después"
               : elegida
-                ? `Disponible de ${elegida.nombre}: ${elegida.piezas} pza · ${fmtM3(elegida.volumen)} m³ · ${formatNumber(pieTablarDe(elegida.volumen))} pt`
+                ? `Disponible de ${elegida.nombre}: ${elegida.piezas} pza · ${fmtM3(elegida.volumen)} m³ · ${formatNumber(pieTablarRolloDe(elegida.volumen))} pt`
                 : especie.trim()
                   /* Especie del catálogo sin madera en el patio: se puede
                      programar igual —la guía llega mañana— pero se dice, o el

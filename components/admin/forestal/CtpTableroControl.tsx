@@ -42,12 +42,12 @@ import {
   type MovimientoDelLibro,
   type TotalesMovimiento,
 } from "@/lib/forestal/movimiento-libro";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { VistaHeader, useKpisPlegables } from "./ctp-shared";
 import { BotonRecargar } from "./ctp-riel-control";
 import CtpPuestaEnMarcha from "./CtpPuestaEnMarcha";
 import { formatNumber } from "@/lib/format";
 import { cantidadDelPeriodo } from "@/lib/forestal/inicio-forestal";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 const m3 = (n: number) => `${n.toFixed(2)} m³`;
 const NOMBRE_PASO: Record<MovimientoDelLibro["paso"], string> = {
@@ -229,7 +229,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
                 icon={PackageOpen}
                 label="Entró al patio"
                 valor={m3(t.ingresoM3)}
-                pie={`${formatNumber(pieTablarDe(t.ingresoM3))} pt`}
+                pie={`${formatNumber(pieTablarRolloDe(t.ingresoM3))} pt`}
                 delta={previo ? variacionPct(t.ingresoM3, previo.ingresoM3) : null}
                 hayPrevio={previo != null}
               />,

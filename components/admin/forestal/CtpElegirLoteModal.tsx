@@ -20,9 +20,9 @@ import { Boxes, ClipboardList, Layers, PackageOpen, RotateCcw, Search } from "@b
 import AdminModal from "@/components/admin/shared/AdminModal";
 import type { LoteConMadera } from "./ctp-entries-acciones";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 type Orden = "antiguedad" | "volumen";
 
@@ -100,7 +100,7 @@ function FilaLote({
       <span className="shrink-0 text-right">
         <span className="block font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(volumen)} m³</span>
         <span className="block text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">
-          {formatNumber(pieTablarDe(volumen))} pt
+          {formatNumber(pieTablarRolloDe(volumen))} pt
         </span>
       </span>
     </button>

@@ -17,7 +17,6 @@
  * PURO y client-safe.
  */
 
-import { PT_POR_M3 } from "./cubicacion";
 import { motivoBloqueo, type TrozaConsumible } from "./consumo-trozas";
 import { TRAMOS_DIAS_PATIO, diasEnPatio } from "./patio-dias";
 import { enPatio } from "./patio-por-permiso";
@@ -60,6 +59,7 @@ export {
   type FechaConDias,
   type PorRecepcionarPatio,
 } from "./patio-por-permiso";
+import { pieTablarRolloDe } from "./loctp-catalogos";
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
 
@@ -266,7 +266,7 @@ export function resumenPatio(trozas: readonly TrozaConsumible[], ahora: Date): R
     apartadas,
     bloqueadas,
     volumenM3,
-    pieTablar: Math.round(volumenM3 * PT_POR_M3),
+    pieTablar: pieTablarRolloDe(volumenM3),
     volumenLibreM3: r4(volumenLibre),
     promedioM3: trozas.length > 0 ? r4(volumen / trozas.length) : null,
     mayorM3: mayor == null ? null : r4(mayor),

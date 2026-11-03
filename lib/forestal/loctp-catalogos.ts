@@ -205,6 +205,17 @@ export function esLineaProduccion(v: unknown): v is LineaProduccion {
 export const RENDIMIENTO_META = 0.56;
 
 /**
+ * Pie tablar de MADERA EN ROLLO (trozas, consumo, ingreso, patio): m³ × 56 % × 424
+ * — lo que saldría aserrado al rendimiento meta (Brandon, 03-11: «cuando es madera
+ * consumida en el pt se hace el volumen m³ por 56 % y ese resultado se multiplica
+ * por 424, eso es madera en rollo; ya en madera aserrada es directo con 424»).
+ * La aserrada sigue con `pieTablarDe` (m³ × 424).
+ */
+export function pieTablarRolloDe(m3: number): number {
+  return Math.round((Number(m3) || 0) * RENDIMIENTO_META * PT_M3);
+}
+
+/**
  * Franja en la que un rendimiento de aserrío es CREÍBLE, en porcentaje.
  *
  * Distinto de la meta: la meta pregunta «¿llegué a lo que esperaba?» y esto

@@ -23,6 +23,7 @@ import {
   type FuenteDeCapacidad,
   type TrozaDeLote,
 } from "./capacidad-de-planta";
+import { pieTablarRolloDe } from "./loctp-catalogos";
 
 export type Celda = string | number;
 
@@ -51,7 +52,7 @@ const filasDeTrozasDeLote = (trozas: readonly TrozaDeLote[]) => ({
     Código: t.codigo,
     Especie: t.especie,
     "m³": t.m3,
-    pt: pieTablarDe(t.m3),
+    pt: pieTablarRolloDe(t.m3),
     Permiso: t.permiso || "—",
     Guía: t.guia || "—",
     Estado: t.consumida ? "aserrada" : "sin aserrar",
@@ -115,7 +116,7 @@ export function tablaDeFuente(
             Especie: l.especie ?? "—",
             Estado: l.status,
             "Apartado (m³)": l.apartadoM3,
-            "Apartado (pt)": pieTablarDe(l.apartadoM3),
+            "Apartado (pt)": pieTablarRolloDe(l.apartadoM3),
             "Piezas sin aserrar": l.trozas.filter((t) => !t.consumida).length,
           },
           hijas: l.trozas.some((t) => !t.consumida)

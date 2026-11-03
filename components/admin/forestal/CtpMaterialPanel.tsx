@@ -21,12 +21,12 @@
 import { useMemo, useState } from "react";
 import { Boxes, FileText, Layers } from "@buleje/design-system/icons";
 import { agruparPorGuia, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { OrigenMateriaPrima } from "@/lib/forestal/produccion-paquetes";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 /** Un paquete que la corrida ya declaró en una tanda anterior (ADR-361). */
 export interface PaquetePrevio {
@@ -204,7 +204,7 @@ export default function CtpMaterialPanel({
           <p className="mt-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
             Ya declarados: <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(totalPrevio)} m³</b>{" "}
             en {paquetesPrevios?.length ?? 0} paquete{(paquetesPrevios?.length ?? 0) === 1 ? "" : "s"} ·{" "}
-            {formatNumber(pieTablarDe(totalPrevio))} pt. Lo que cargues abajo se suma a esto.
+            {formatNumber(pieTablarRolloDe(totalPrevio))} pt. Lo que cargues abajo se suma a esto.
           </p>
         </div>
       )}

@@ -19,6 +19,7 @@ import { juzgarRendimientoConsumo } from "./loctp-consumos-analisis";
 import { corridasAMedioDeclarar, type CorridaAMedioDeclarar } from "./produccion-paquetes";
 import type { SniffsRefLote } from "./sniffs-produccion-parse";
 import type { MaderaDelLote } from "./madera-del-lote";
+import { pieTablarRolloDe } from "./loctp-catalogos";
 
 export type { EstadoMaderaLote, MaderaDelLote } from "./madera-del-lote";
 export { AYUDA_MADERA, ETIQUETA_MADERA } from "./madera-del-lote";
@@ -747,7 +748,7 @@ export function resumenLotes(lotes: readonly LoteAserrio[]): ResumenLotes {
     vacios,
     piezasApartadas,
     volumenApartado: r4(volumenApartado),
-    pieTablarApartado: pieTablarDe(volumenApartado),
+    pieTablarApartado: pieTablarRolloDe(volumenApartado),
     consumidos,
     volumenAserrado: r4(volumenAserrado),
     rendimientoPct: entradaConRend > 0 ? Math.round((salidaConRend / entradaConRend) * 1000) / 10 : null,

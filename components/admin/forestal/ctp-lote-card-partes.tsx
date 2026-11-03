@@ -37,6 +37,7 @@ import {
 } from "@/lib/forestal/lotes-aserrio";
 import { TOPE_RENDIMIENTO_PCT } from "@/lib/forestal/vincular-produccion";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 /** m³ para leer de un vistazo: dos decimales, separador del panel («3.75»). */
 export const m3Card = (v: number): string => formatNumber(v, 2);
@@ -268,7 +269,7 @@ export function LoteCifras({ lote }: { lote: LoteAserrio }) {
   const num = "font-bold tabular-nums text-[var(--text-primary)]";
   return (
     <p className="text-sm text-[var(--text-secondary)]">
-      <b className={num}>{formatNumber(pieTablarDe(volumen), 0)}</b> pt · <b className={num}>{m3Card(volumen)}</b>{" "}
+      <b className={num}>{formatNumber(pieTablarRolloDe(volumen), 0)}</b> pt · <b className={num}>{m3Card(volumen)}</b>{" "}
       m³ ·{" "}
       {porVolumen ? (
         "por volumen"

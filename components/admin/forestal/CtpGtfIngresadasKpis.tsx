@@ -30,7 +30,6 @@ import CtpKpi, { DesgloseSimple, type FilaDesglose } from "./CtpKpi";
 
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import {
   useKpisPlegables,
   estaFueraDePlazo,
@@ -38,6 +37,7 @@ import {
   type WoodEntry,
 } from "./ctp-shared";
 import { formatNumber } from "@/lib/format";
+import { pieTablarRolloDe } from "@/lib/forestal/loctp-catalogos";
 
 const nf = (n: number) => formatNumber(n);
 
@@ -160,7 +160,7 @@ export default function CtpGtfIngresadasKpis({
           key="volumen"
           label="Volumen recibido"
           value={`${volumen.toFixed(2)} m³`}
-          subValue={`${nf(pieTablarDe(volumen))} pt`}
+          subValue={`${nf(pieTablarRolloDe(volumen))} pt`}
           icon={Boxes}
           desglose={porEspecie.length > 0 ? <DesgloseSimple filas={porEspecie} /> : undefined}
           desgloseLabel="Por especie"
