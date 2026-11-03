@@ -166,11 +166,10 @@ export function cubicarPieza(p: {
   const largoPies = toFeet(p.largo, p.uLargo);
   const ptUnit = (espPulg * anchoPulg * largoPies) / 12;
   const cant = p.cantidad > 0 ? p.cantidad : 1;
-  /* El PT se redondea PRIMERO y el m³ se deriva de ese PT ya redondeado: así el
-     número que se ve en la columna de al lado es exactamente el que hay que
-     dividir por 424 para llegar al m³ que se ve. Y es el m³ que ya está en el
-     LO-CTP de SERFOR: sacarlo del PT exacto movió 7 de 39 filas de la GTF real
-     en 0,001 (Brandon 2026-10-03, 31,183 contra 31,188). */
+  /* Valores para MOSTRAR la pieza: el PT se redondea primero y el m³ sale de
+     ese PT, así el número de la columna de al lado ÷ 424 da el m³ que se ve.
+     Para SUMAR (filas de la GTF, Anexo 04, resúmenes) se usa el exacto:
+     `ptDeLinea`/`m3DeLinea` de gtf-redondeo (ADR-531, Brandon 2026-11-03). */
   const pieTablar = r2(ptUnit * cant);
   return { pieTablar, m3: r4(pieTablar / PT_POR_M3) };
 }
@@ -235,15 +234,32 @@ export function recubicarPiezas<T extends PiezaCubicada>(piezas: T[]): T[] {
  * en la clave para no mezclar la madera de dos encargos aunque coincida la
  * medida — cada uno sigue en su propia fila.
  */
+/** ¿La pieza trae el PT/m³ que `cubicarPieza` les pone a sus medidas (y no un prorrateo del reparto)? (ADR-531) */
+export const esDeSusMedidas = (p: PiezaCubicada): boolean => {
+  if (!(p.espesor > 0 && p.ancho > 0 && p.largo > 0)) return false;
+  const c = cubicarPieza(p);
+  return Math.abs(c.pieTablar - p.pieTablar) < 1e-9 && Math.abs(c.m3 - p.m3) < 1e-9;
+};
+
 export function unificarPorMedida(piezas: PiezaCubicada[]): PiezaCubicada[] {
   const mapa = new Map<string, PiezaCubicada>();
   for (const p of piezas) {
     const clave = [p.especie ?? "", p.tipo ?? "", p.dueno ?? "", p.duenoParteId ?? "", p.lote ?? "", p.espesor, p.uEspesor, p.ancho, p.uAncho, p.largo, p.uLargo].join("|");
     const acc = mapa.get(clave);
     if (acc) {
+      /* ADR-531: si las dos traen el PT/m³ de sus medidas (no un prorrateo del
+         reparto), la fila unida se cubica de nuevo con la cantidad total; sumar
+         lo ya redondeado de cada una arrastraba el redondeo a la fila oficial. */
+      const deSusMedidas = esDeSusMedidas(acc) && esDeSusMedidas(p);
       acc.cantidad += p.cantidad;
-      acc.pieTablar = r2(acc.pieTablar + p.pieTablar);
-      acc.m3 = r4(acc.m3 + p.m3);
+      if (deSusMedidas) {
+        const c = cubicarPieza(acc);
+        acc.pieTablar = c.pieTablar;
+        acc.m3 = c.m3;
+      } else {
+        acc.pieTablar = r2(acc.pieTablar + p.pieTablar);
+        acc.m3 = r4(acc.m3 + p.m3);
+      }
       if (p.variadoPiezas) acc.variadoPiezas = (acc.variadoPiezas ?? 0) + p.variadoPiezas;
       /* La fila unida lleva la hora de la medida MÁS antigua: es cuándo empezó a cargarse. */
       if (p.registradoAt && (!acc.registradoAt || p.registradoAt < acc.registradoAt)) acc.registradoAt = p.registradoAt;

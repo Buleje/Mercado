@@ -22,7 +22,7 @@
  */
 
 import Decimal from "decimal.js";
-import { toFeet, toInches, PT_POR_M3, type PiezaCubicada } from "./cubicacion";
+import { cubicarPieza, toFeet, toInches, PT_POR_M3, type PiezaCubicada } from "./cubicacion";
 
 /** Decimales de un volumen en la GTF. */
 export const DECIMALES_GTF = 3;
@@ -134,23 +134,55 @@ export function ptExactoDeLinea(p: LineaAserrada & Pick<PiezaCubicada, "pieTabla
   return new Decimal(e).times(a).times(l).times(cant).dividedBy(12);
 }
 
-/** El PT de UNA línea como lo muestra el sistema: a 2 decimales. Si la línea ya trae su PT, ese. */
+/*
+ * ADR-531 (Brandon 2026-11-03: «sumar todo normal y al último hacer el
+ * redondeo»): lo que SE SUMA de una línea es su valor EXACTO; el PT a 2
+ * decimales y el m³ a 4 de `cubicarPieza` quedan solo para MOSTRAR la pieza.
+ * Redondear cada pieza antes de sumar empujaba la fila hacia arriba (Rivers,
+ * 649 piezas: 23,487 m³ = 9.958,49 pt para 9.956,75 pt reales; exacto 23,483).
+ * Antes (2026-10-03) se sumaba lo redondeado para cuadrar una GTF que llegó de
+ * otro aserradero (31,188 contra 31,183): las guías de otros se copian con el
+ * m³ de SU papel (`volumeM3`) y no pasan por acá.
+ *
+ * Un PT/m³ guardado en la línea que NO es el de `cubicarPieza` es un
+ * prorrateo a propósito (el reparto parte la línea entre bloques y días) o un
+ * dato sin medidas: ese se respeta tal cual.
+ */
+
+const tieneMedidas = (p: LineaAserrada): boolean =>
+  Number(p.espesor) > 0 && Number(p.ancho) > 0 && Number(p.largo) > 0;
+
+/** ¿El PT/m³ guardado es el que `cubicarPieza` le pone a esas medidas (y no un prorrateo)? */
+function esElDeCubicar(p: LineaAserrada, campo: "pieTablar" | "m3", guardado: number): boolean {
+  if (!tieneMedidas(p)) return false;
+  const c = cubicarPieza({
+    cantidad: Number(p.cantidad) > 0 ? Number(p.cantidad) : 1,
+    espesor: Number(p.espesor),
+    ancho: Number(p.ancho),
+    largo: Number(p.largo),
+    uEspesor: p.uEspesor,
+    uAncho: p.uAncho,
+    uLargo: p.uLargo,
+  });
+  return Math.abs(c[campo] - guardado) < 1e-9;
+}
+
+/** El PT de UNA línea para SUMAR: el exacto. Un PT guardado que no sale de sus medidas (prorrateo, sin medidas), ese. */
 export function ptDeLinea(p: LineaAserrada & Pick<PiezaCubicada, "pieTablar">): Decimal {
-  if (Number(p.pieTablar) > 0) return aDecimal(p.pieTablar);
-  return ptExactoDeLinea(p).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+  const guardado = Number(p.pieTablar);
+  if (guardado > 0 && !esElDeCubicar(p, "pieTablar", guardado)) return aDecimal(p.pieTablar);
+  return ptExactoDeLinea({ ...p, pieTablar: 0 });
 }
 
 /**
- * El m³ de UNA línea tal como el sistema la muestra y como se copió siempre al
- * LO-CTP: m³ = PT de la línea (2 decimales) ÷ 424, a 4 decimales
- * (`cubicarPieza`). Si la línea ya trae su m³ —el reparto lo prorratea al
- * partirla entre bloques y días— se usa ESE. Brandon 2026-10-03: con el m³
- * sacado del PT exacto, 7 de las 39 filas de la GTF real se movían 0,001 y el
- * permiso daba 31,183 contra los 31,188 de SERFOR.
+ * El m³ de UNA línea para SUMAR: PT exacto ÷ 424, sin redondear (la fila se
+ * redondea UNA vez, `m3OficialDeFila`). Si la línea trae un m³ que no es el de
+ * sus medidas —el reparto lo prorratea al partirla entre bloques y días—, ese.
  */
 export function m3DeLinea(p: LineaAserrada & Pick<PiezaCubicada, "m3" | "pieTablar">): Decimal {
-  if (Number(p.m3) > 0) return aDecimal(p.m3);
-  return ptDeLinea({ ...p, pieTablar: 0 }).dividedBy(PT_POR_M3).toDecimalPlaces(4, Decimal.ROUND_HALF_UP);
+  const guardado = Number(p.m3);
+  if (guardado > 0 && !esElDeCubicar(p, "m3", guardado)) return aDecimal(p.m3);
+  return ptExactoDeLinea({ ...p, pieTablar: 0 }).dividedBy(PT_POR_M3);
 }
 
 /** El m³ oficial escrito con sus decimales, para el papel: «0.096» (sin pasar por `toFixed` del float). */

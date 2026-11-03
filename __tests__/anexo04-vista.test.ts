@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import { tipoDePieza } from "@/lib/forestal/cubicacion-tipo";
+import { m3DeLinea, ptDeLinea, sumaExacta } from "@/lib/forestal/gtf-redondeo";
 import {
   FILTRO_ANEXO_VACIO,
   filtrarFilasAnexo,
@@ -101,9 +102,9 @@ describe("formatoCantidad", () => {
     }
   });
 
-  it("los tres conservan también el m³ guardado por fila sumado (lo que compara «Comparar con el resumen»)", () => {
-    const m3 = (rows: PiezaCubicada[]) => Math.round(rows.reduce((a, r) => a + r.m3, 0) * 10_000);
-    const pt = (rows: PiezaCubicada[]) => Math.round(rows.reduce((a, r) => a + r.pieTablar, 0) * 100);
+  it("los tres conservan el m³ y el PT que se SUMAN (exactos, ADR-531: lo que compara «Comparar con el resumen»)", () => {
+    const m3 = (rows: PiezaCubicada[]) => sumaExacta(rows.map(m3DeLinea)).toDecimalPlaces(9).toNumber();
+    const pt = (rows: PiezaCubicada[]) => sumaExacta(rows.map(ptDeLinea)).toDecimalPlaces(9).toNumber();
     for (const fmt of FORMATOS) {
       expect(m3(formatoCantidad(LOTE, fmt))).toBe(m3(LOTE));
       expect(pt(formatoCantidad(LOTE, fmt))).toBe(pt(LOTE));

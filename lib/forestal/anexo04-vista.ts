@@ -10,15 +10,16 @@
  *     línea: 1 × 3×3×12, tres veces).
  *
  * Los tres formatos conservan Σ piezas, Σ PT y Σ m³ EXACTOS: el formato cambia
- * los renglones, nunca lo que se declara. Por eso «Sumada» no reusa
- * `agruparPiezasIguales` tal cual: esa recalcula el PT/m³ del grupo con la
- * fórmula del cubicador (redondea el PT de la fila a 2 decimales y deriva el
- * m³ de ahí), y tres filas de 1 × 3×3×12 (0,0212 m³ c/u = 0,0636) sumadas así
- * darían 0,0637: el (3) VOLUMEN TOTAL se movería al cambiar de formato.
+ * los renglones, nunca lo que se declara. Desde ADR-531 (Brandon 2026-11-03)
+ * lo que se suma es el PT exacto de las medidas, así que una línea con el PT/m³
+ * de sus medidas se puede juntar o partir RE-CUBICANDO con la cantidad nueva
+ * sin mover el total. Una línea con un PT/m³ prorrateado (el reparto la partió
+ * entre bloques) no tiene medidas que lo expliquen: esa se suma o se reparte
+ * tal cual, para que el (3) VOLUMEN TOTAL no se mueva al cambiar de formato.
  *
  * PURO: sin React. Lo consume `hooks/use-anexo04-vista.ts`.
  */
-import type { PiezaCubicada } from "./cubicacion";
+import { cubicarPieza, esDeSusMedidas, type PiezaCubicada } from "./cubicacion";
 import { especieDelAnexo } from "./anexo04-serfor";
 import { ordenTipo, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
 
@@ -137,11 +138,11 @@ function repartir(total: number, n: number, escala: number): number[] {
  *  · `cargada`: las mismas filas, mismos ids (es lo único editable en la hoja).
  *  · `sumada`: junta las que imprimen igual en el MISMO bloque —especie del
  *    anexo, tipo, medida con su unidad— y del mismo dueño (cada dueño se lleva
- *    su papel). Suma cantidad, PT y m³ de las que junta (no los recalcula, ver
- *    arriba). Orden de primera aparición; id `s-<id de la primera>`.
- *  · `unidad`: cada pieza su línea con cantidad 1. El PT (centésimas) y el m³
- *    (diezmilésimas) de la fila se reparten entre sus unidades de modo que
- *    sumen EXACTO lo de la fila. Ids `<id>~1…~n`, estables y únicas. Una
+ *    su papel). Suma la cantidad y re-cubica la línea con sus medidas (si
+ *    alguna venía prorrateada, suma su PT y m³ tal cual; ver arriba). Orden de primera aparición; id `s-<id de la primera>`.
+ *  · `unidad`: cada pieza su línea con cantidad 1, cubicada con sus medidas
+ *    (una línea prorrateada reparte su PT en centésimas y su m³ en
+ *    diezmilésimas de modo que sumen EXACTO lo de la fila). Ids `<id>~1…~n`, estables y únicas. Una
  *    cantidad no entera (no debería existir) queda como estaba.
  */
 export function formatoCantidad(rows: readonly PiezaCubicada[], formato: FormatoCantidad, especieGlobal?: string): PiezaCubicada[] {
@@ -153,8 +154,9 @@ export function formatoCantidad(rows: readonly PiezaCubicada[], formato: Formato
     for (const r of rows) {
       const n = r.cantidad;
       if (!Number.isInteger(n) || n <= 1) { out.push(r); continue; }
-      const pts = repartir(r.pieTablar, n, 100);
-      const m3s = repartir(r.m3, n, 10_000);
+      const una = esDeSusMedidas(r) ? cubicarPieza({ ...r, cantidad: 1 }) : null;
+      const pts = una ? Array<number>(n).fill(una.pieTablar) : repartir(r.pieTablar, n, 100);
+      const m3s = una ? Array<number>(n).fill(una.m3) : repartir(r.m3, n, 10_000);
       for (let k = 0; k < n; k++) {
         const u: PiezaCubicada = { ...r, id: idLibre(`${r.id}~${k + 1}`, usados), cantidad: 1, pieTablar: pts[k], m3: m3s[k] };
         /* La marca de Variado se reparte: las primeras unidades son las del Variado. */
@@ -181,12 +183,14 @@ export function formatoCantidad(rows: readonly PiezaCubicada[], formato: Formato
   return [...grupos.values()].map((g) => {
     if (g.length === 1) return g[0];
     const [primera] = g;
+    const cantidad = g.reduce((a, r) => a + r.cantidad, 0);
+    const recubicada = g.every(esDeSusMedidas) ? cubicarPieza({ ...primera, cantidad }) : null;
     const fila: PiezaCubicada = {
       ...primera,
       id: idLibre(`s-${primera.id}`, usados),
-      cantidad: g.reduce((a, r) => a + r.cantidad, 0),
-      pieTablar: Math.round(g.reduce((a, r) => a + r.pieTablar, 0) * 100) / 100,
-      m3: Math.round(g.reduce((a, r) => a + r.m3, 0) * 10_000) / 10_000,
+      cantidad,
+      pieTablar: recubicada ? recubicada.pieTablar : Math.round(g.reduce((a, r) => a + r.pieTablar, 0) * 100) / 100,
+      m3: recubicada ? recubicada.m3 : Math.round(g.reduce((a, r) => a + r.m3, 0) * 10_000) / 10_000,
     };
     /* La nota y el código internos sólo si eran de todas: si no, la línea
        sumada diría de las tres lo que era de una. */

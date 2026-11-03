@@ -91,19 +91,31 @@ describe("filas y piezas", () => {
     ]);
   });
 
-  it("m³ de la línea = el del sistema (PT a 2 decimales ÷ 424, a 4 decimales), como está en SERFOR", () => {
-    // 3 piezas de 1″ × 4″ × 7′: PT = 7 → m³ = 7/424 = 0,0165 (no 0,016509).
+  it("ADR-531: lo que se SUMA de una línea es su valor exacto, no el redondeado que se muestra", () => {
+    // 3 piezas de 1″ × 4″ × 7′: PT = 7 → m³ = 7/424 = 0,016509… (se muestra 0,0165).
     const p = { cantidad: 3, espesor: 1, ancho: 4, largo: 7, uEspesor: "pulg" as const, uAncho: "pulg" as const, uLargo: "pies" as const, m3: 0, pieTablar: 0 };
     expect(ptDeLinea(p).toNumber()).toBe(7);
-    expect(m3DeLinea(p).toNumber()).toBe(0.0165);
-    // Un PT que no cierra: 1 × 1 × 1 / 12 = 0,08333… → 0,08 PT en la línea; el
-    // Anexo 04 en pie tablar sigue imprimiendo el exacto.
+    expect(m3DeLinea(p).toDecimalPlaces(6).toNumber()).toBe(0.016509);
+    // Con el PT/m³ que el cubicador le guardó (7 y 0,0165) sigue sumando el exacto.
+    expect(m3DeLinea({ ...p, pieTablar: 7, m3: 0.0165 }).toDecimalPlaces(6).toNumber()).toBe(0.016509);
+    // Un PT que no cierra: 1 × 1 × 1 / 12 = 0,08333… (se muestra 0,08; se suma el exacto).
     const q = { ...p, cantidad: 1, ancho: 1, largo: 1 };
-    expect(ptDeLinea(q).toNumber()).toBe(0.08);
+    expect(ptDeLinea(q).toDecimalPlaces(6).toNumber()).toBe(0.083333);
+    expect(ptDeLinea({ ...q, pieTablar: 0.08 }).toDecimalPlaces(6).toNumber()).toBe(0.083333);
     expect(ptExactoDeLinea(q).toDecimalPlaces(6).toNumber()).toBe(0.083333);
-    // La línea que ya trae su m³/PT (el reparto la prorratea al partirla) usa ESOS.
+    // La línea que trae un m³/PT que NO sale de sus medidas (el reparto la prorratea al partirla) usa ESOS.
     expect(m3DeLinea({ ...p, m3: 0.0123 }).toNumber()).toBe(0.0123);
     expect(ptDeLinea({ ...p, pieTablar: 5.21 }).toNumber()).toBe(5.21);
+  });
+
+  it("ADR-531: la carga de Rivers ya no se pasa — Σ exacta por fila, redondeo UNA vez", () => {
+    // 28 piezas de 2″×8″×8′ (la medida que más se pasaba en Rivers): cada una
+    // se muestra 10,67 PT y 0,0252 m³; sumando eso la fila daba 0,706 m³ y
+    // 298,76 PT. Exacto: 298,667 PT ÷ 424 = 0,7044 → 0,704.
+    const linea = { cantidad: 1, espesor: 2, ancho: 8, largo: 8, uEspesor: "pulg" as const, uAncho: "pulg" as const, uLargo: "pies" as const, pieTablar: 10.67, m3: 0.0252 };
+    const lineas = Array.from({ length: 28 }, () => linea);
+    expect(m3OficialDeFila(lineas.map(m3DeLinea))).toBe(0.704);
+    expect(m3OficialDeFila(lineas.map(ptDeLinea))).toBe(298.667);
   });
 
   it("la fila oficial sale de las líneas del sistema: 7 filas de la GTF real ya no se mueven", () => {

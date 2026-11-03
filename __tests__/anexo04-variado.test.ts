@@ -9,6 +9,7 @@ import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import { VARIADO_DEFAULT, agruparPiezasIguales, desglosarVariado } from "@/lib/forestal/variado-desglose";
 import { construirAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import { formatoCantidad } from "@/lib/forestal/anexo04-vista";
+import { m3DeLinea, sumaExacta } from "@/lib/forestal/gtf-redondeo";
 import { origenVariadoPorFila, resumenVariadoAnexo, textoOrigenVariado } from "@/lib/forestal/anexo04-variado";
 
 const pieza = (id: string, cantidad: number, espesor: number, ancho: number, especie?: string, largo = 10): PiezaCubicada => {
@@ -44,7 +45,9 @@ describe("la marca del Variado en las piezas", () => {
     expect(marcadas(g)).toBe(marcadas(des.piezas));
     const u = unificarPorMedida(des.piezas.map((p) => ({ ...p })));
     expect(marcadas(u)).toBe(marcadas(des.piezas));
-    expect(sumar(u, "m3")).toBeCloseTo(sumar(des.piezas, "m3"), 3);
+    // ADR-531: lo que no se mueve es el m³ que se SUMA (exacto); la fila unida se re-cubica.
+    const exacto = (rs: PiezaCubicada[]) => sumaExacta(rs.map(m3DeLinea)).toNumber();
+    expect(exacto(u)).toBeCloseTo(exacto(des.piezas), 9);
   });
 
   it("el formato Sumada conserva la marca y Una por pieza la reparte", () => {

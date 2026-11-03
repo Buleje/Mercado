@@ -50,15 +50,16 @@ describe("compararAnexoConResumen", () => {
     expect(c.exactas).toBe(2);
   });
 
-  it("el PT redondeado por fila del cubicador vs el exacto de la hoja es «redondeo», no «difiere»", () => {
-    // 2"×5"×7' = 5,8333 PT: el cubicador guarda 5,83 por fila (lo que muestra
-    // Resúmenes y lo que ya está en SERFOR); la hoja en PT imprime 58,333.
+  it("ADR-531: el cubicador suma el PT exacto, igual que la hoja → «exacto» aunque cada fila muestre 5,83", () => {
+    // 2"×5"×7' = 5,8333 PT: la fila del cubicador MUESTRA 5,83, pero la suma
+    // usa el exacto (Brandon 2026-11-03); la hoja en PT imprime 58,333.
+    // Antes daba 58,30 contra 58,333 («redondeo»).
     const filas = Array.from({ length: 10 }, () => pieza(1, 2, 5, 7, "Tornillo"));
     const c = comparar(filas, filas);
     expect(c.filas).toHaveLength(1);
-    expect(c.filas[0].dif.pt).toBeCloseTo(0.033, 3);
+    expect(c.filas[0].dif.pt).toBeCloseTo(0, 6);
     expect(c.filas[0].dif.m3).toBeCloseTo(0, 6);
-    expect(c.filas[0].estado).toBe("redondeo");
+    expect(c.filas[0].estado).toBe("exacto");
     expect(c.difieren).toBe(0);
   });
 

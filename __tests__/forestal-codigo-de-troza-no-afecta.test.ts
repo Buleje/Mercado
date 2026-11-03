@@ -34,7 +34,9 @@ describe("el código de la troza no cambia lo que se declara", () => {
     const r = unificarPorMedida([pieza("a", "25"), pieza("b", "17")]);
     expect(r).toHaveLength(1);
     expect(r[0].cantidad).toBe(20);
-    expect(r[0].pieTablar).toBeCloseTo(266.66, 2);
+    // ADR-531: la fila unida se cubica con las 20 piezas (266,666… → 266,67),
+    // no la suma de dos 133,33 ya redondeados.
+    expect(r[0].pieTablar).toBeCloseTo(266.67, 2);
   });
 
   it("la fila unificada no se queda con el código de la primera pieza", () => {

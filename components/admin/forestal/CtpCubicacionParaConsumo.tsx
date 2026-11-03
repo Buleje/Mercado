@@ -39,6 +39,7 @@ import type { ResumenJornadas } from "@/lib/forestal/registrar-jornadas";
 import { Btn, I } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDateNumeric, formatNumber } from "@/lib/format";
+import { m3DeLinea, ptDeLinea, sumaExacta } from "@/lib/forestal/gtf-redondeo";
 
 /** Una troza elegida para la sierra, con lo que el reparto necesita de ella. */
 export interface TrozaParaReparto {
@@ -115,8 +116,9 @@ export default function CtpCubicacionParaConsumo({
   const totales = useMemo(
     () => ({
       piezas: piezas.reduce((a, p) => a + (Number(p.cantidad) || 0), 0),
-      pieTablar: Math.round(piezas.reduce((a, p) => a + (Number(p.pieTablar) || 0), 0) * 100) / 100,
-      m3: Math.round(piezas.reduce((a, p) => a + (Number(p.m3) || 0), 0) * 10_000) / 10_000,
+      /* ADR-531: se suma el exacto de cada pieza y se redondea al final. */
+      pieTablar: sumaExacta(piezas.map(ptDeLinea)).toDecimalPlaces(2).toNumber(),
+      m3: sumaExacta(piezas.map(m3DeLinea)).toDecimalPlaces(4).toNumber(),
       rollizaM3: Math.round(trozas.reduce((a, t) => a + t.m3, 0) * 10_000) / 10_000,
     }),
     [piezas, trozas],
