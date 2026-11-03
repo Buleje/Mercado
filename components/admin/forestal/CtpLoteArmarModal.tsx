@@ -28,7 +28,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Boxes, FileSpreadsheet, Loader2, Plus } from "@buleje/design-system/icons";
+import { Boxes, FileSpreadsheet, Loader2, Plus, Save } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
@@ -84,6 +84,7 @@ export default function CtpLoteArmarModal({
   trozas,
   crear,
   onIniciarInventario,
+  onSoloConsumo,
   onListo,
   onImportado,
   onClose,
@@ -96,6 +97,12 @@ export default function CtpLoteArmarModal({
    * paquetes (`CtpRegistrarProduccionModal`) — este modal no crea nada todavía.
    */
   onIniciarInventario: (input: MaterialDeInventario) => void;
+  /**
+   * Modo inventario sin producción (Brandon, 03-11): guarda el lote con sólo el
+   * m³ de trozas consumido —la producción queda pendiente, «En consumo»— sin
+   * pasar por el modal de paquetes.
+   */
+  onSoloConsumo: (input: MaterialDeInventario) => Promise<{ code: string }>;
   onListo: (mensaje: string, tono: "ok" | "aviso") => void;
   /** Se importó al menos un lote desde el Excel: hay que releer los lotes. */
   onImportado: () => void;
@@ -121,6 +128,8 @@ export default function CtpLoteArmarModal({
   /** Vacío = correlativo automático `LA-2026-00N` (Brandon, 2026-08-31). */
   const [codigo, setCodigo] = useState("");
   const [guardando, setGuardando] = useState(false);
+  /** Cuál de los dos botones del inventario está guardando: el ícono de espera va sólo en ése. */
+  const [soloConsumo, setSoloConsumo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /**
    * La pantalla del SNIFFS pegada acá (ADR-398). Llena los campos de abajo —que
@@ -220,6 +229,42 @@ export default function CtpLoteArmarModal({
     /* No se cierra: cada lote importado ofrece «Repartir en la distribución» (ADR-521). */
   }
 
+  /** El material tal como lo declara el formulario de inventario: lo usan los dos botones. */
+  function materialDeclarado(): MaterialDeInventario {
+    return {
+      speciesCommon: especie.trim(),
+      speciesScientific: elegida?.cientifico ?? catalogoEspecies.cientificoDe(especie),
+      volumenConsumidoM3: Number(volumenConsumido),
+      fecha: inicio,
+      finProceso: fin || null,
+      productType: productoAserrado || null,
+      code: codigo.trim() || null,
+      notes: descripcion.trim() || null,
+      sniffs,
+    };
+  }
+
+  async function guardarSoloConsumo() {
+    if (!puedeGuardar || modo !== "inventario") return;
+    setSoloConsumo(true);
+    setGuardando(true);
+    setError(null);
+    try {
+      const r = await onSoloConsumo(materialDeclarado());
+      onListo(
+        `Lote ${r.code} guardado con ${fmtM3(Number(volumenConsumido))} m³ de trozas consumidas. ` +
+          "Su producción se declara después, desde el lote.",
+        "ok",
+      );
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGuardando(false);
+      setSoloConsumo(false);
+    }
+  }
+
   async function guardar() {
     if (!puedeGuardar) return;
     if (modo === "excel") {
@@ -230,17 +275,7 @@ export default function CtpLoteArmarModal({
       /* No crea nada acá: el lote y la corrida nacen juntos recién cuando se
          declaran los paquetes, para no dejar un lote de inventario a medio
          armar si el operador cierra el modal siguiente sin guardar. */
-      onIniciarInventario({
-        speciesCommon: especie.trim(),
-        speciesScientific: elegida?.cientifico ?? catalogoEspecies.cientificoDe(especie),
-        volumenConsumidoM3: Number(volumenConsumido),
-        fecha: inicio,
-        finProceso: fin || null,
-        productType: productoAserrado || null,
-        code: codigo.trim() || null,
-        notes: descripcion.trim() || null,
-        sniffs,
-      });
+      onIniciarInventario(materialDeclarado());
       onClose();
       return;
     }
@@ -298,7 +333,7 @@ export default function CtpLoteArmarModal({
                 ? "Pega la lista de trozas del SNIFFS: cada lote entra en consumo, con su producción por declarar"
                 : `${excel.listos.length} de ${pendientesExcel} lote${pendientesExcel === 1 ? "" : "s"} listo${excel.listos.length === 1 ? "" : "s"} para importar`
               : modo === "inventario"
-              ? "El siguiente paso pide los paquetes que produjo esta madera"
+              ? "Solo el consumo guarda el lote ya; la producción se declara después"
               : elegida
                 ? `Disponible de ${elegida.nombre}: ${elegida.piezas} pza · ${fmtM3(elegida.volumen)} m³ · ${formatNumber(pieTablarDe(elegida.volumen))} pt`
                 : especie.trim()
@@ -312,8 +347,19 @@ export default function CtpLoteArmarModal({
           <Btn variant="secondary" onClick={onClose} disabled={ocupado}>
             Cerrar
           </Btn>
+          {modo === "inventario" && (
+            <Btn
+              variant="secondary"
+              onClick={() => void guardarSoloConsumo()}
+              disabled={!puedeGuardar}
+              title="Guarda el lote con el m³ de trozas consumido; la producción queda pendiente"
+            >
+              {soloConsumo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Declarar solo consumo de trozas
+            </Btn>
+          )}
           <Btn variant="primary" onClick={() => void guardar()} disabled={!puedeGuardar}>
-            {ocupado ? <Loader2 className="h-4 w-4 animate-spin" /> : modo === "excel" ? <FileSpreadsheet className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {ocupado && !soloConsumo ? <Loader2 className="h-4 w-4 animate-spin" /> : modo === "excel" ? <FileSpreadsheet className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {modo === "inventario"
               ? "Seguir a declarar producción"
               : modo === "excel"

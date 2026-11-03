@@ -24,6 +24,7 @@ import CtpImportarProgramacionesModal from "./CtpImportarProgramacionesModal";
 import CtpCuadreSniffsModal from "./CtpCuadreSniffsModal";
 import CtpDeclararDesdeSniffs from "./CtpDeclararDesdeSniffs";
 import CtpLotesInventarioPaso2 from "./CtpLotesInventarioPaso2";
+import { sniffsRefDesdeDetalle } from "@/lib/forestal/sniffs-produccion-parse";
 
 export type AvisoLotes = { tono: "ok" | "aviso"; texto: string };
 
@@ -55,6 +56,7 @@ export default function CtpLotesModales({
     editarLote,
     deshacer,
     deshacerForzado,
+    declararSoloConsumo,
   } = estado;
   /* Los `uid`s que van a la guía viven en `m`: también la abre la barra de lotes elegidos. */
   const { uidsParaGuia, setUidsParaGuia } = m;
@@ -173,6 +175,21 @@ export default function CtpLotesModales({
             setMaterialInventario(material);
             m.setArmar(false);
           }}
+          onSoloConsumo={async (material) => {
+            /* Sin paquetes = programación (ADR-398): consumo al libro, producción pendiente. */
+            const r = await crearInventario({
+              speciesCommon: material.speciesCommon,
+              speciesScientific: material.speciesScientific,
+              volumenConsumidoM3: material.volumenConsumidoM3,
+              fecha: material.fecha,
+              finProceso: material.finProceso,
+              code: material.code,
+              notes: material.notes,
+              paquetes: [],
+              sniffs: material.sniffs ? sniffsRefDesdeDetalle(material.sniffs, "captura") : null,
+            });
+            return { code: r.lote.code };
+          }}
           onListo={(texto, tono) => setAviso({ texto, tono })}
           onImportado={() => void recargar()}
           onClose={() => m.setArmar(false)}
@@ -218,6 +235,13 @@ export default function CtpLotesModales({
           onProducir={() => {
             m.setDetalleId(null);
             onProducir({ id: detalle.id, code: detalle.code });
+          }}
+          onSoloConsumo={async (volumen, fecha) => {
+            const r = await declararSoloConsumo(detalle.id, volumen, fecha);
+            setAviso({
+              tono: "ok",
+              texto: `Lote ${r.code}: ${volumen} m³ de trozas consumidas guardados. Su producción se declara desde el lote.`,
+            });
           }}
           onRecargar={recargar}
           onClose={() => m.setDetalleId(null)}

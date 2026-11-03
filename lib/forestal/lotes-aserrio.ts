@@ -523,7 +523,7 @@ export function alertasDeLote(lote: LoteAserrio, ahora: Date): AlertaLote[] {
   const alertas: AlertaLote[] = [];
   if (lote.status === "abierto") {
     if (lote.piezas === 0) {
-      alertas.push({ tono: "info", texto: "Lote vacío: agrégale piezas o deshazlo." });
+      alertas.push({ tono: "info", texto: "Lote vacío: agrégale piezas, declara solo su consumo o deshazlo." });
     }
     const consumidasPorFuera = lote.trozas.filter((t) => t.consumidaEnId).length;
     if (consumidasPorFuera > 0) {

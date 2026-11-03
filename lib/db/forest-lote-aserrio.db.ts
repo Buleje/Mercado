@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { precioManualDelDetalle } from "@/lib/forestal/aserrio-cobro";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 import { auditCtp, auditCtpEsperando } from "@/lib/forestal/ctp-audit";
 import {
   CTP_TX_OPTS,
@@ -1088,6 +1089,135 @@ export class ForestLoteAserrioDB {
       );
       throw e;
     }
+  }
+
+  /**
+   * Declara SOLO el consumo de un lote ya programado y vacío (Brandon, 03-11:
+   * «solo almacenar el volumen m³ de las trozas y poder guardar ese lote y
+   * usarlo para producir igual que los demás»).
+   *
+   * Es `crearInventario` sin paquetes, pero sobre un lote que YA existe —el que
+   * se programó desde el SNIFFS antes de que este diera su consumo—: abre la
+   * corrida con su materia prima y la producción pendiente, y el lote queda
+   * «En consumo», el mismo estado que deja la programación del SNIFFS (ADR-398)
+   * y desde el que ya se reparte la producción. Sin trozas reales: no se
+   * fabrican piezas para que cuadre (mismo criterio que `crearInventario`).
+   *
+   * Sólo un lote abierto, sin piezas y sin corrida: el `updateMany` repite esas
+   * tres condiciones, así que dos pantallas que guardan a la vez no abren dos
+   * corridas sobre el mismo lote (la que pierde retira la suya). `agregarTrozas`
+   * no bloquea la fila del lote: si una pieza entra justo entre medio, el
+   * recuento final lo ve y se deshace todo (el consumo saldría de dos lados).
+   */
+  static async declararSoloConsumo(
+    tenantId: string,
+    loteId: string,
+    input: { volumenConsumidoM3: number; fecha?: Date; createdBy: string },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!(input.volumenConsumidoM3 > 0)) {
+      throw new CtpInvariantError("El volumen consumido tiene que ser mayor a 0.", "LOTE_INVENTARIO_INVALIDO");
+    }
+    const lote = await prisma.forestLoteAserrio.findFirst({ where: { id: loteId, tenantId, deletedAt: null } });
+    if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
+    const piezas = await prisma.woodEntryTroza.count({ where: { tenantId, loteAserrioId: loteId } });
+    if (lote.status !== "abierto" || lote.produccionEntryId || piezas > 0) {
+      throw new CtpInvariantError(
+        piezas > 0
+          ? `El lote ${lote.code} ya tiene ${piezas} pieza${piezas === 1 ? "" : "s"}: su consumo sale de ellas, no se escribe a mano.`
+          : `El lote ${lote.code} ya tiene su consumo declarado.`,
+        "LOTE_NO_EDITABLE",
+      );
+    }
+    /* Sin fecha: el día de Lima a mediodía UTC (date-only, como `consumir`). */
+    const fecha = input.fecha ?? lote.inicioProceso ?? new Date(`${limaDateKey()}T12:00:00.000Z`);
+    const previa = lote.notes?.trim() ?? "";
+    const notas = [ORIGEN_LOTE_INVENTARIO, "Producción pendiente de declarar"]
+      .filter((marca) => !previa.includes(marca))
+      .concat(previa ? [previa] : [])
+      .join(" · ")
+      .slice(0, 500);
+    const corrida = await ForestCtpDB.create(tenantId, {
+      section: "produccion",
+      entryDate: fecha,
+      speciesCommon: lote.speciesCommon,
+      speciesScientific: lote.speciesScientific,
+      volumeInputM3: input.volumenConsumidoM3,
+      materiaPrimaRef: lote.code,
+      observations: notas,
+      createdBy: input.createdBy,
+    });
+    const retirarCorrida = () =>
+      ForestCtpDB.softDelete(tenantId, corrida.id, input.createdBy).catch((err) =>
+        logger.error("[forestal.declararSoloConsumo] no se pudo retirar la corrida sobrante", {
+          corridaId: corrida.id,
+          error: String(err),
+        }),
+      );
+    let tomado = 0;
+    try {
+      const r = await prisma.forestLoteAserrio.updateMany({
+        where: {
+          id: loteId,
+          tenantId,
+          deletedAt: null,
+          status: "abierto",
+          produccionEntryId: null,
+          trozas: { none: {} },
+        },
+        data: {
+          status: "consumido",
+          produccionEntryId: corrida.id,
+          fechaConsumo: fecha,
+          inicioProceso: lote.inicioProceso ?? fecha,
+          notes: notas,
+        },
+      });
+      tomado = r.count;
+    } catch (e) {
+      await retirarCorrida();
+      throw e;
+    }
+    if (tomado === 0) {
+      await retirarCorrida();
+      throw new CtpInvariantError(
+        `El lote ${lote.code} cambió mientras guardabas (otra pantalla le declaró consumo o le cargó piezas).`,
+        "LOTE_NO_EDITABLE",
+      );
+    }
+    /* Una pieza que entró entre el chequeo de `agregarTrozas` y este guardado. */
+    const coladas = await prisma.woodEntryTroza.count({ where: { tenantId, loteAserrioId: loteId } });
+    if (coladas > 0) {
+      await prisma.forestLoteAserrio.updateMany({
+        where: { id: loteId, tenantId, produccionEntryId: corrida.id },
+        data: {
+          status: "abierto",
+          produccionEntryId: null,
+          fechaConsumo: null,
+          inicioProceso: lote.inicioProceso,
+          notes: lote.notes,
+        },
+      });
+      await retirarCorrida();
+      throw new CtpInvariantError(
+        `Al lote ${lote.code} le cargaron piezas mientras guardabas: su consumo sale de ellas.`,
+        "LOTE_NO_EDITABLE",
+      );
+    }
+    auditCtp({
+      tenantId,
+      action: "ctp_lote_aserrio_solo_consumo",
+      entity: "ForestLoteAserrio",
+      entityId: loteId,
+      detail: `Declaró solo el consumo del lote ${lote.code}: ${input.volumenConsumidoM3} m³ en trozas, producción pendiente`,
+      user: input.createdBy,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
+    return { code: lote.code, corrida };
   }
 
   /**

@@ -292,9 +292,21 @@ export function useLotesAserrio(opts: { contratoId?: string | null } = {}): Esta
     [recargar],
   );
 
+  const declararSoloConsumo = useCallback<EstadoLotesAserrio["declararSoloConsumo"]>(
+    async (loteId, volumenConsumidoM3, fecha) => {
+      const r = await mutar<{ code: string }>(
+        { accion: "solo-consumo", loteId, volumenConsumidoM3, ...(fecha ? { fecha } : {}) },
+        "PATCH",
+      );
+      await recargar();
+      return r;
+    },
+    [recargar],
+  );
+
   return {
     lotes, trozas, patioTruncado, cargando, error, recargar,
     crearConTrozas, crearInventario, agregarTrozas, consumirEnPatio, sumarACorrida, quitarDeCorrida,
-    cerrarLote, reabrirLote, quitarTroza, editarLote, deshacer, deshacerForzado,
+    cerrarLote, reabrirLote, quitarTroza, editarLote, deshacer, deshacerForzado, declararSoloConsumo,
   };
 }

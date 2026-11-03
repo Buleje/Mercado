@@ -163,6 +163,7 @@ export type CtpAuditAction =
   /** Anular/rechazar/borrar un ingreso soltó las trozas que tenía apartadas en un mixto. */
   | "ctp_lote_mixto_soltado"
   | "ctp_lote_aserrio_consumir"
+  | "ctp_lote_aserrio_solo_consumo"
   // Piezas sumadas a una corrida que todavía no declaró (ADR-364). Va aparte de
   // `consumir` porque no abre un asiento: le CAMBIA la materia prima a uno que
   // ya existe, y eso mueve su rendimiento — es justo lo que un fiscalizador

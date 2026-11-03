@@ -174,4 +174,6 @@ export interface EstadoLotesAserrio {
    * anula igual y ese despacho/reproceso queda sin corrida de origen.
    */
   deshacerForzado: (loteId: string, motivo: string, forzar?: boolean) => Promise<{ code: string; corridaAnulada: boolean }>;
+  /** SOLO el consumo de un lote programado y vacío: m³ de trozas, producción pendiente (Brandon, 03-11). */
+  declararSoloConsumo: (loteId: string, volumenConsumidoM3: number, fecha?: string) => Promise<{ code: string }>;
 }

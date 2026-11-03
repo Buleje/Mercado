@@ -44,6 +44,7 @@ import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion }
 import { IconAction } from "@/components/admin/shared/module-primitives";
 import CtpLoteADistribucionBtn from "./CtpLoteADistribucionBtn";
 import CtpLotePermisoCampo from "./CtpLotePermisoCampo";
+import CtpLoteSoloConsumo from "./CtpLoteSoloConsumo";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 import { CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
@@ -94,6 +95,7 @@ export default function CtpLoteDetalleModal({
   onDeshacer,
   onDeshacerForzado,
   onProducir,
+  onSoloConsumo,
   onRecargar,
   onClose,
 }: {
@@ -110,6 +112,8 @@ export default function CtpLoteDetalleModal({
    */
   onDeshacerForzado: (motivo: string, forzar?: boolean) => Promise<void>;
   onProducir: () => void;
+  /** Lote programado y vacío: le escribe sólo el m³ de trozas consumido (Brandon, 03-11). */
+  onSoloConsumo: (volumenConsumidoM3: number, fecha: string) => Promise<void>;
   /** Refresca el lote tras marcar/desmarcar una corrida como usada. */
   onRecargar: () => Promise<void>;
   onClose: () => void;
@@ -303,6 +307,10 @@ export default function CtpLoteDetalleModal({
             {a.texto}
           </p>
         ))}
+        {/* Vacío y sin corrida: se le puede escribir su consumo sin trozas (Brandon, 03-11). */}
+        {abierto && lote.piezas === 0 && !lote.produccion && (
+          <CtpLoteSoloConsumo inicioProceso={paraInputFecha(lote.inicioProceso)} onGuardar={onSoloConsumo} />
+        )}
 
         {/* Eliminar sin excepción (Brandon, 2026-09-01): pide motivo antes de
             anular la corrida — misma confirmación inline que "Cerrar el

@@ -206,6 +206,17 @@ const patchSchema = z.discriminatedUnion("accion", [
    * a la sierra en la fecha indicada, y se abre la corrida que va a declarar la
    * producción después. Sin `trozaIds` consume lo que el lote ya tenía.
    */
+  /**
+   * SOLO el consumo de un lote programado y vacío (Brandon, 03-11): el m³ de
+   * trozas que entró a la sierra, con la producción pendiente de declarar.
+   */
+  z.object({
+    accion: z.literal("solo-consumo"),
+    loteId: z.string().trim().min(1).max(60),
+    volumenConsumidoM3: z.coerce.number().positive("El volumen tiene que ser mayor a 0").max(999999),
+    /** Día del consumo, `AAAA-MM-DD`. Sin fecha, el inicio del proceso del lote. */
+    fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa el formato AAAA-MM-DD").optional(),
+  }),
   z.object({
     accion: z.literal("consumir"),
     loteId: z.string().trim().min(1).max(60),
@@ -455,6 +466,15 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(r);
     }
 
+    if (d.accion === "solo-consumo") {
+      /* Día suelto → mediodía UTC, como `consumir`. */
+      const r = await ForestLoteAserrioDB.declararSoloConsumo(g.auth.tenantId, d.loteId, {
+        volumenConsumidoM3: d.volumenConsumidoM3,
+        fecha: d.fecha ? new Date(`${d.fecha}T12:00:00.000Z`) : undefined,
+        createdBy: user,
+      });
+      return NextResponse.json({ code: r.code, corrida: { id: r.corrida.id, lineNo: r.corrida.lineNo } });
+    }
     if (d.accion === "agregar") {
       const r = await ForestLoteAserrioDB.agregarTrozas(g.auth.tenantId, d.loteId, d.trozaIds, user);
       return NextResponse.json(r);
