@@ -87,7 +87,7 @@ export function useLotesIndicadores({
         value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
         subValue={
           resumen.rendimientoPct != null
-            ? `${resumen.consumidos} lote(s) aserrados · ${veredicto.texto}`
+            ? `${resumen.conRendimiento} lote(s) con producción · ${veredicto.texto}`
             : resumen.sinRendimiento > 0
               ? `${resumen.sinRendimiento} corrida(s) en otra unidad`
               : "Sin lotes aserrados todavía"
@@ -105,7 +105,12 @@ export function useLotesIndicadores({
         key="sobrante"
         label="Volumen sobrante"
         value={`${m3(resumen.margenTotalM3)} m³`}
-        subValue={`${formatNumber(pieTablarDe(resumen.margenTotalM3))} pt · declarable desde Producción`}
+        subValue={
+          `${formatNumber(pieTablarDe(resumen.margenTotalM3))} pt` +
+          (resumen.lotesSoloConsumo > 0
+            ? ` · incluye ${m3(resumen.sobranteEstimadoM3)} m³ estimado al 56 % de ${resumen.lotesSoloConsumo} lote${resumen.lotesSoloConsumo === 1 ? "" : "s"} solo con consumo`
+            : " · declarable desde Producción")
+        }
         icon={Boxes}
         emphasis={resumen.margenTotalM3 > 0 ? "success" : "neutral"}
       />,

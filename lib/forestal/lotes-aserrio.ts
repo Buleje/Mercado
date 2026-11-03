@@ -16,7 +16,7 @@
 
 import { PT_POR_M3 } from "./cubicacion";
 import { juzgarRendimientoConsumo } from "./loctp-consumos-analisis";
-import { corridasAMedioDeclarar, type CorridaAMedioDeclarar } from "./produccion-paquetes";
+import { corridasAMedioDeclarar, topeDeclarableM3, type CorridaAMedioDeclarar } from "./produccion-paquetes";
 import type { SniffsRefLote } from "./sniffs-produccion-parse";
 import type { MaderaDelLote } from "./madera-del-lote";
 import { pieTablarRolloDe } from "./loctp-catalogos";
@@ -702,6 +702,12 @@ export interface ResumenLotes {
    * una tanda más, sin tener que abrir cada tarjeta para sumarlo a mano.
    */
   margenTotalM3: number;
+  /** Parte del sobrante que es ESTIMADA: lotes con solo consumo, a su 56 % (Brandon, 03-11). */
+  sobranteEstimadoM3: number;
+  /** Lotes en consumo sin nada declarado todavía: su sobrante es el 56 % de lo consumido. */
+  lotesSoloConsumo: number;
+  /** Lotes que sí entraron al rendimiento (tienen producción en m³). */
+  conRendimiento: number;
 }
 
 /**
@@ -721,6 +727,8 @@ export function resumenLotes(lotes: readonly LoteAserrio[]): ResumenLotes {
   let salidaConRend = 0;
   let sinRendimiento = 0;
   let margenTotalM3 = 0;
+  let sobranteEstimadoM3 = 0;
+  let lotesSoloConsumo = 0;
 
   for (const l of lotes) {
     if (l.status === "abierto") {
@@ -733,7 +741,17 @@ export function resumenLotes(lotes: readonly LoteAserrio[]): ResumenLotes {
     }
     consumidos += 1;
     volumenAserrado += l.volumenM3;
-    margenTotalM3 += margenLote(l)?.margenM3 ?? 0;
+    /* El sobrante cuenta TODO el lote (Brandon, 03-11): lo que falta declarar de los que ya
+       produjeron y, de los que sólo tienen consumo, su 56 % estimado. `margenLote` sigue sin
+       verlos a propósito —su botón en Producción es otro—; la suma va sólo en esta cifra. */
+    const margen = margenLote(l);
+    if (margen) margenTotalM3 += margen.margenM3;
+    else if (loteEnConsumo(l)) {
+      const estimado = topeDeclarableM3(l.volumenM3);
+      margenTotalM3 += estimado;
+      sobranteEstimadoM3 += estimado;
+      if (estimado > 0) lotesSoloConsumo += 1;
+    }
     const pct = rendimientoLote(l);
     if (pct == null) {
       sinRendimiento += 1;
@@ -755,6 +773,9 @@ export function resumenLotes(lotes: readonly LoteAserrio[]): ResumenLotes {
     sinRendimiento,
     especies: new Set(lotes.map((l) => norm(l.speciesCommon)).filter(Boolean)).size,
     margenTotalM3: r4(margenTotalM3),
+    sobranteEstimadoM3: r4(sobranteEstimadoM3),
+    lotesSoloConsumo,
+    conRendimiento: consumidos - sinRendimiento,
   };
 }
 

@@ -235,6 +235,22 @@ describe("resumen del tablero", () => {
     const r = resumenLotes([aserradoAlto, aserradoBajo]);
     expect(r.margenTotalM3).toBeCloseTo(0.36, 4);
   });
+
+  it("suma al sobrante el 56 % estimado de los lotes con solo consumo (Brandon, 03-11)", () => {
+    const soloConsumo = lote({
+      id: "l9",
+      code: "32-2026",
+      status: "consumido",
+      trozas: [],
+      volumenM3: 10,
+      produccion: corrida({ quantity: null, volumeInputM3: 10 }),
+    });
+    const r = resumenLotes([aserradoBajo, soloConsumo]);
+    expect(r.sobranteEstimadoM3).toBeCloseTo(5.6, 4);
+    expect(r.margenTotalM3).toBeCloseTo(0.36 + 5.6, 4);
+    expect(r.lotesSoloConsumo).toBe(1);
+    expect(r.conRendimiento).toBe(1);
+  });
 });
 
 describe("lote vencido (ADR-342)", () => {
