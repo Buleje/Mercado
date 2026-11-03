@@ -37,7 +37,7 @@ import { hoyISO, nombreSugeridoDistribucion, type DistribucionRegistro } from "@
 // Pie tablar entero y m³ con 3 decimales: la misma regla que el resto de Resúmenes.
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { ptDesdeM3, toFeet, unificarPorMedida } from "@/lib/forestal/cubicacion";
-import { margenLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { useLibroDelReparto } from "./hooks/use-libro-del-reparto";
 import { useSeccionRolliza, PestanasRolliza } from "./reparto-pestanas";
@@ -89,7 +89,7 @@ import { useContextoRevision } from "./hooks/use-contexto-revision";
 import { ColumnasMenu, useColumnasVisibles } from "./ctp-shared";
 import { colorDeBloque, indicesDeBloques } from "./reparto-colores";
 import DistribucionesGuardadas from "./DistribucionesGuardadas";
-import { trozaIdsLibresDelLote } from "@/lib/forestal/panel-lotes-reparto";
+import { aporteDeLote, bloqueDeAporte, type AporteDeLote } from "@/lib/forestal/lotes-a-distribucion";
 import { marcarLotesEnLaGuardada } from "./reparto-lotes-sugeridos-api";
 import { logger } from "@/lib/logger";
 import type { LoteCreadoDeBloque } from "@/lib/forestal/lotes-por-bloque";
@@ -279,21 +279,6 @@ function TopeDeBloque({ children, titulo, alerta }: { children: ReactNode; titul
   );
 }
 
-/**
- * El N° de permiso de un lote — según el de sus trozas (Brandon, 2026-09-01:
- * "se tiene que rellenar según el número de permiso de las trozas"), no algo
- * que se tipee de nuevo. Si el lote mezcla trozas de MÁS de un permiso, se
- * deja en blanco a propósito: inventar uno solo escondería justo lo que la
- * columna existe para mostrar — que hay más de un título habilitante ahí
- * adentro (mismo espíritu que el aviso «combina bloques de N permisos» de
- * más abajo). Un lote de inventario nunca tuvo trozas reales, así que no
- * tiene de dónde sacar uno — vuelve `null`, no una adivinanza.
- */
-function permisoDelLote(lote: LoteAserrio): string | null {
-  const permisos = new Set(lote.trozas.map((t) => (t.permiso ?? "").trim()).filter((p) => p !== ""));
-  return permisos.size === 1 ? [...permisos][0] : null;
-}
-
 export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada[]; precioDe: PrecioPt }) {
   /* La especie de cada bloque sale del catálogo de la planta (ADR-410), el
      mismo que el cubicador: si acá ofreciera otra lista, el reparto propondría
@@ -321,19 +306,13 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   const { lotes: lotesAserrio, recargar: recargarLotesAserrio, cargando: cargandoLotes } = estadoLotes;
   const lotesConRolliza = useMemo(() => {
     const yaAgregados = new Set(bloques.filter((b) => b.loteId).map((b) => b.loteId));
+    /* La misma regla que «Repartir en la distribución» de los lotes (`aporteDeLote`). */
     return lotesAserrio
       .map((lote) => {
-        const permiso = permisoDelLote(lote);
-        const vLibre = volumenLibre(lote);
-        if (vLibre > 1e-4) return { lote, m3: vLibre, aprovechablePct: null as number | null, esMargen: false, permiso };
-        const margen = margenLote(lote);
-        if (margen && margen.margenM3 > 1e-4) return { lote, m3: margen.margenM3, aprovechablePct: 100, esMargen: true, permiso };
-        return null;
+        const a = aporteDeLote(lote);
+        return a ? { lote, ...a } : null;
       })
-      .filter(
-        (x): x is { lote: LoteAserrio; m3: number; aprovechablePct: number | null; esMargen: boolean; permiso: string | null } =>
-          x !== null && !yaAgregados.has(x.lote.id),
-      );
+      .filter((x): x is { lote: LoteAserrio } & AporteDeLote => x !== null && !yaAgregados.has(x.lote.id));
   }, [lotesAserrio, bloques]);
   /**
    * Líneas ya registradas en el Libro de Operaciones. Se guardan porque el
@@ -527,7 +506,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    *
    * El N° de permiso queda vacío A PROPÓSITO: el payload de disponibles trae
    * la GTF y el titular, no el título habilitante (misma regla que
-   * `permisoDelLote`, que prefiere la celda en blanco antes que adivinar).
+   * `permisoDeLasTrozas`, que prefiere la celda en blanco antes que adivinar).
    */
   const agregarBloquesDePaquetes = (elegidos: PaqueteElegible[]) => {
     if (elegidos.length === 0) return;
@@ -579,21 +558,13 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * distingue de dónde salió cada bloque, sólo el origen queda marcado para
    * no ofrecer el mismo lote dos veces.
    */
-  const agregarBloqueDeLote = (lote: LoteAserrio, m3: number, aprovechablePct: number | null, permiso: string | null, esMargen: boolean) => {
-    guardar([...bloques, {
-      id: nuevoId(), etiqueta: `Lote ${lote.code}`, especie: lote.speciesCommon || "", m3, permiso,
-      origen: "lote", loteId: lote.id, costoM3: null,
-      /* Panel «Lotes» (03-10): el bloque recuerda las trozas libres del lote
-         para registrar sus jornadas en el Libro; el margen ya aserrado no tiene. */
-      trozaIds: esMargen ? null : trozaIdsLibresDelLote(lote),
-      /* El margen del 56 % ya viene en unidades de ASERRADA (`topeM3 −
-         declaradoM3`), no en rolliza por aserrar: es exactamente un bloque de
-         aserrada directa. Cargarlo como rolliza al 100 % daba el mismo
-         número, pero lo contaba como troza en `rollizaM3` y le ensuciaba el
-         rendimiento a la sierra con volumen que la sierra nunca cortó. */
-      tipo: esMargen ? "aserrada" : "rolliza",
-      aprovechablePct: esMargen ? null : aprovechablePct,
-    }]);
+  const agregarBloqueDeLote = (lote: LoteAserrio, aporte: AporteDeLote) => {
+    /* `bloqueDeAporte`: el margen del 56 % ya viene en unidades de ASERRADA
+       (`topeM3 − declaradoM3`), no en rolliza por aserrar: es exactamente un
+       bloque de aserrada directa. Cargarlo como rolliza al 100 % daba el mismo
+       número, pero lo contaba como troza en `rollizaM3` y le ensuciaba el
+       rendimiento a la sierra con volumen que la sierra nunca cortó. */
+    guardar([...bloques, { id: nuevoId(), ...bloqueDeAporte(lote, aporte) }]);
     requestAnimationFrame(() => {
       const inputs = document.querySelectorAll<HTMLInputElement>('[aria-label="Etiqueta del bloque de rolliza"]');
       inputs[inputs.length - 1]?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1681,7 +1652,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                         icon: Boxes,
                         description: `${x.lote.speciesCommon || "Sin especie"}${x.permiso ? ` · ${x.permiso}` : ""} · ${fmtM3(x.m3)} m³ ${x.esMargen ? "restante para declarar (56%)" : "rolliza sin aserrar"}`,
                         dividerBefore: i === 0,
-                        onClick: () => agregarBloqueDeLote(x.lote, x.m3, x.aprovechablePct, x.permiso, x.esMargen),
+                        onClick: () => agregarBloqueDeLote(x.lote, x),
                       }),
                     )
                   : [{ label: "Sin lotes con volumen restante", icon: Boxes, disabled: true, dividerBefore: true } satisfies ModuleActionItem]),

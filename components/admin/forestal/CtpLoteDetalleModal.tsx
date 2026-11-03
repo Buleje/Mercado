@@ -281,7 +281,7 @@ export default function CtpLoteDetalleModal({
               <Trash2 className="h-4 w-4" /> Eliminar lote
             </Btn>
           )}
-          {enConsumo && <CtpLoteADistribucionBtn loteId={lote.id} />}
+          <CtpLoteADistribucionBtn lote={lote} variant={enConsumo ? "primary" : "secondary"} />
           {abierto && (
             <Btn variant="primary" disabled={libres.length === 0} onClick={onProducir}>
               <Play className="h-4 w-4" /> Producir de este lote

@@ -274,7 +274,8 @@ export default function CtpLoteCard({
             </Btn>
           </>
         )}
-        {loteEnConsumo(lote) && <CtpLoteADistribucionBtn loteId={lote.id} size="sm" />}
+        {/* En consumo con su corrida; abierto o declarado con lo que aporta (03-11). */}
+        <CtpLoteADistribucionBtn lote={lote} size="sm" variant={loteEnConsumo(lote) ? "primary" : "secondary"} />
         <Btn size="sm" variant="ghost" onClick={onVer} title="Ver las piezas del lote y editarlo">
           <Boxes className="h-4 w-4" /> Piezas
         </Btn>

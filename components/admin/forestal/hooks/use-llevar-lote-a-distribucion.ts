@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { abrirResumenesDelCubicador, sembrarBloques } from "@/lib/forestal/sembrar-reparto";
+import { abrirResumenesDelCubicador, sembrarBloques, type BloqueSembrable } from "@/lib/forestal/sembrar-reparto";
 import { recordarVistaModulo } from "@/hooks/use-vista-modulo";
 import type { BloqueParaDistribucion } from "@/lib/forestal/bloque-de-lote-consumido";
 import {
@@ -46,6 +46,7 @@ export function useLlevarLoteADistribucion(): {
   llevarVarios: (
     lotes: readonly { id: string; code: string }[],
     saltados?: ResumenDeReparto["saltados"],
+    directos?: readonly { code: string; bloque: BloqueSembrable }[],
   ) => Promise<ResumenDeReparto | null>;
   llevando: boolean;
   error: string | null;
@@ -92,22 +93,32 @@ export function useLlevarLoteADistribucion(): {
   }, []);
 
   const llevarVarios = useCallback(
-    async (lotes: readonly { id: string; code: string }[], saltados: ResumenDeReparto["saltados"] = []) => {
-      if (lotes.length === 0) return null;
+    async (
+      lotes: readonly { id: string; code: string }[],
+      saltados: ResumenDeReparto["saltados"] = [],
+      directos: readonly { code: string; bloque: BloqueSembrable }[] = [],
+    ) => {
+      if (lotes.length === 0 && directos.length === 0) return null;
       setLlevando(true);
       setError(null);
       try {
-        const r = await fetch(
-          `/api/admin/forestal/lotes-aserrio/bloque-para-distribucion?loteIds=${lotes.map((l) => encodeURIComponent(l.id)).join(",")}`,
-          { credentials: "include" },
-        );
-        const json = (await r.json().catch((err: unknown) => ({ message: String(err) }))) as {
-          resultados?: ResultadoLoteADistribucion[];
-          message?: string;
-        };
-        if (!r.ok || !Array.isArray(json.resultados)) {
-          setError(json.message ?? `No se pudieron llevar los lotes a la Distribución (HTTP ${r.status}).`);
-          return null;
+        /* Los en consumo los arma el servidor (adoptan su corrida); los
+           directos (abiertos y declarados, 03-11) ya vienen armados. */
+        let resultados: ResultadoLoteADistribucion[] = [];
+        if (lotes.length > 0) {
+          const r = await fetch(
+            `/api/admin/forestal/lotes-aserrio/bloque-para-distribucion?loteIds=${lotes.map((l) => encodeURIComponent(l.id)).join(",")}`,
+            { credentials: "include" },
+          );
+          const json = (await r.json().catch((err: unknown) => ({ message: String(err) }))) as {
+            resultados?: ResultadoLoteADistribucion[];
+            message?: string;
+          };
+          if (!r.ok || !Array.isArray(json.resultados)) {
+            setError(json.message ?? `No se pudieron llevar los lotes a la Distribución (HTTP ${r.status}).`);
+            return null;
+          }
+          resultados = json.resultados;
         }
         const codigo = new Map(lotes.map((l) => [l.id, l.code]));
         const resumen: ResumenDeReparto = { entraron: [], repetidos: [], fallaron: [], saltados };
@@ -117,13 +128,16 @@ export function useLlevarLoteADistribucion(): {
            lleva la vuelta: el id es `prefijo-milisegundo-n` y dos siembras en
            el mismo milisegundo daban el MISMO id a dos lotes (medido 28-10:
            React avisó la key repetida; editar o quitar uno tocaba los dos). */
-        for (const [vuelta, x] of json.resultados.entries()) {
-          const nombre = x.lote ?? codigo.get(x.loteId) ?? "Un lote";
+        const aSembrar = [
+          ...resultados.map((x, vuelta) => ({ x, nombre: x.lote ?? codigo.get(x.loteId) ?? "Un lote", prefijo: `lote-consumido-${vuelta}` })),
+          ...directos.map((d, vuelta) => ({ x: { ok: true as const, bloque: d.bloque }, nombre: d.code, prefijo: `lote-${vuelta}` })),
+        ];
+        for (const { x, nombre, prefijo } of aSembrar) {
           if (!x.ok) {
             resumen.fallaron.push({ lote: nombre, message: x.message });
             continue;
           }
-          const siembra = sembrarBloques([x.bloque], `lote-consumido-${vuelta}`);
+          const siembra = sembrarBloques([x.bloque], prefijo);
           if (siembra.sinTenant) {
             setError("No se detecta la operación activa: recarga el panel y vuelve a intentar. No se llevó nada.");
             return null;
