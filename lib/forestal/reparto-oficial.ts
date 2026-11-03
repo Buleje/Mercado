@@ -41,10 +41,19 @@ function tipoDe(label: string, m: AsignacionMedida): string {
   }) as TipoComercial;
 }
 
+/*
+ * ADR-531 (Brandon 2026-11-03, «en resúmenes sale 23.810 … que todo cuadre»):
+ * el motor reparte PIEZAS ENTERAS y lleva su m³ como «piezas × m³ de una
+ * pieza ya redondeado» (`ponerPiezas`), que no es el de las medidas: tomado
+ * tal cual, Distribución y Resúmenes volvían al redondeo pieza por pieza
+ * (Rivers 23,810 contra 23,807 del cubicador). Lo oficial de una asignación
+ * con medidas es su PT exacto ÷ 424; el m³ guardado queda solo sin medidas.
+ */
 const exactoDe = (m: AsignacionMedida) =>
   m3DeLinea({
     cantidad: m.piezas, espesor: m.espesor, ancho: m.ancho, largo: m.largo,
-    uEspesor: m.uEspesor as Unidad, uAncho: m.uAncho as Unidad, uLargo: m.uLargo as Unidad, m3: m.m3, pieTablar: m.pieTablar,
+    uEspesor: m.uEspesor as Unidad, uAncho: m.uAncho as Unidad, uLargo: m.uLargo as Unidad,
+    ...(m.espesor > 0 && m.ancho > 0 && m.largo > 0 ? { m3: 0, pieTablar: 0 } : { m3: m.m3, pieTablar: m.pieTablar }),
   });
 
 /** La medida como la une el Anexo por permiso (`unificarPorMedida`): dimensiones con su unidad. */
