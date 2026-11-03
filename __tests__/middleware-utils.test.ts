@@ -27,6 +27,7 @@ import {
   type RateLimitEntry,
 } from "@/lib/middleware-utils";
 import { __resetDistributedRateLimitFallback } from "@/lib/rate-limit";
+import { createSessionToken } from "@/lib/session";
 
 // Helper: crea un NextRequest mínimo con headers opcionales
 function makeReq(url = "http://localhost:3000/", headers: Record<string, string> = {}): NextRequest {
@@ -304,6 +305,29 @@ describe("checkRateLimit (distributed — Upstash fallback path)", () => {
     for (let i = 0; i < 60; i++) await checkRateLimit(otra);
     expect(await checkRateLimit(otra)).not.toBeNull(); // el general sí se agotó
     expect(await checkRateLimit(drive)).toBeNull();    // el del drive sigue libre
+  });
+
+  // Panel con sesión (03-11-2026): abrir el Libro CTP hace 58 pedidos en 12 s;
+  // con 60/min la segunda pantalla rebotaba con 429 (agenda, auth/refresh…).
+  it("con sesión de admin válida, la request 61 sigue permitida (cupo del panel)", async () => {
+    const token = await createSessionToken("admin", "qaadmin", "t-panel");
+    const req = makeReq("http://localhost/api/admin/agenda/hoy", { "x-forwarded-for": "10.6.0.1", cookie: `buleje-admin-sess=${token}` });
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    expect(await checkRateLimit(req)).toBeNull();
+  });
+
+  it("con sesión válida se corta igual al pasar los 300", async () => {
+    const token = await createSessionToken("admin", "qaadmin", "t-panel");
+    const req = makeReq("http://localhost/api/settings", { "x-forwarded-for": "10.6.0.2", cookie: `buleje-admin-sess=${token}` });
+    for (let i = 0; i < 300; i++) await checkRateLimit(req);
+    const r = await checkRateLimit(req);
+    expect(r?.status).toBe(429);
+  });
+
+  it("una cookie de sesión inventada NO da más cupo: sigue en 60", async () => {
+    const req = makeReq("http://localhost/api/settings", { "x-forwarded-for": "10.6.0.3", cookie: "buleje-admin-sess=inventada.firma" });
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    expect((await checkRateLimit(req))?.status).toBe(429);
   });
 });
 

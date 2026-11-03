@@ -462,7 +462,9 @@ export default function RootLayout({
         <ToasterConTema />
         {/* Solo en producción: en dev local pegan a /_vercel/insights/* que no
             existe → 403 rojo en consola. En Vercel funcionan normal. */}
-        {process.env.NODE_ENV === "production" && <MedicionVercel />}
+        {/* Solo en Vercel: fuera de ahí (panel compilado de la PC) sus dos scripts
+            `/_vercel/*` dan 404 y llenan la consola de rojo (Brandon 03-11). */}
+        {process.env.NODE_ENV === "production" && process.env.VERCEL === "1" && <MedicionVercel />}
         </ErrorBoundary>
         </CurrencyProvider>
         </LocaleProvider>

@@ -11,6 +11,7 @@ import {
   createDistributedRateLimiter,
   type DistributedRateLimiter,
 } from "@/lib/rate-limit";
+import { verifySessionToken, SESSION } from "@/lib/session";
 
 // ── Request ID generation ──────────────────────────────────────────────────────
 
@@ -96,6 +97,18 @@ const CAMARA_VIVO_MAX_REQUESTS = 300;
    pide cada 2 s por cámara: un mosaico de 4 son 120/min. El arranque
    `.../vivo` (que levanta un ffmpeg) NO entra: sigue en el techo general;
    cada ruta conserva además su propio cupo. */
+/**
+ * Presupuesto aparte para el PANEL con sesión (03-11-2026, Brandon: «sale
+ * errores», consola llena de 429 en el panel compilado de la PC). Medido: abrir
+ * el Libro CTP hace 58 pedidos a /api en 12 s; con el techo general de 60/min
+ * la segunda pantalla ya rebotaba (agenda, preferencias, auth/refresh — este
+ * último puede sacar al usuario). Solo con una sesión de admin VERIFICADA (firma
+ * del token, no la mera cookie: una cookie inventada no da más cupo). El anónimo,
+ * los bots y las llaves de API siguen en 60/min; las rutas caras conservan su
+ * propio cupo (login, comparar/recuperar respaldos, etc.).
+ */
+const PANEL_MAX_REQUESTS = 300;
+
 const CAMARA_CUADRO_RE =
   /^\/api\/(?:admin|tv)\/camaras\/[^/]+\/(?:cuadro|snapshot|vivo\/(?:vivo\.m3u8|s\d{3,}\.ts))$/;
 
@@ -128,6 +141,25 @@ function getEdgeLimiter(): DistributedRateLimiter {
     windowMs: WINDOW_MS,
   });
   return _edgeLimiter;
+}
+
+/** Limitador del panel con sesión verificada — namespace y cupo aparte. */
+let _panelLimiter: DistributedRateLimiter | null = null;
+function getPanelLimiter(): DistributedRateLimiter {
+  if (_panelLimiter) return _panelLimiter;
+  _panelLimiter = createDistributedRateLimiter({
+    key: "mw:api-panel",
+    maxRequests: PANEL_MAX_REQUESTS,
+    windowMs: WINDOW_MS,
+  });
+  return _panelLimiter;
+}
+
+/** ¿Trae una sesión de admin válida (firma HMAC + vencimiento + negocio)? Sin red: solo la firma. */
+export async function tieneSesionDePanel(req: NextRequest): Promise<boolean> {
+  const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
+  if (!token) return false;
+  return verifySessionToken(token);
 }
 
 /** Limitador propio de la lectura del drive — namespace y cupo aparte. */
@@ -220,7 +252,9 @@ export async function checkRateLimit(req: NextRequest): Promise<NextResponse | n
     ? getDriveReadLimiter()
     : esCamaraEnVivo(req)
       ? getCamaraVivoLimiter()
-      : getEdgeLimiter();
+      : (await tieneSesionDePanel(req))
+        ? getPanelLimiter()
+        : getEdgeLimiter();
   const allowed = await limiter.check(identifier);
   if (allowed) return null;
 
@@ -241,6 +275,7 @@ export function __resetEdgeLimiterForTests(): void {
   _edgeLimiter = null;
   _driveReadLimiter = null;
   _camaraVivoLimiter = null;
+  _panelLimiter = null;
   rlStore.clear();
 }
 
