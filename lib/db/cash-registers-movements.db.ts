@@ -11,6 +11,7 @@
  *   - Listado de movimientos de una caja (findMany)
  */
 import "server-only";
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { ConflictError } from "@/lib/api-error";
@@ -60,6 +61,34 @@ export interface CambioDeMedio {
   esperadoAntes: number;
   /** Efectivo esperado de la caja con el cambio, sumado en la base bajo el lock. */
   esperadoDespues: number;
+}
+
+export type ResultadoYapeEntrante =
+  | { estado: "anotado" | "ya_estaba"; movimientoId: string; cajaId: string }
+  | { estado: "caja_cerrada" };
+
+/** ±10 min: una venta por Yape del mismo monto en esa ventana puede ser el mismo pago. */
+const VENTANA_YAPE_PARECIDO_MS = 10 * 60 * 1000;
+
+/**
+ * Id del movimiento de un Yape entrante. Determinístico a propósito (como
+ * `gasto-caja-…` en `lib/caja/egreso-de-caja.ts`): el mismo aviso, reintentado
+ * o repetido, da el mismo id y la base no deja una 2.ª fila. El negocio va en
+ * el hash: la misma llave en dos negocios son dos movimientos distintos.
+ */
+export function idDeYapeEntrante(tenantId: string, llave: string): string {
+  if (!tenantId) throw new Error("tenantId is required");
+  return `yape-${createHash("sha256").update(`${tenantId}|${llave}`).digest("hex").slice(0, 24)}`;
+}
+
+/** 1050 → "10.50", exacto (sin pasar por un float). Prisma lo toma como Decimal. */
+export function montoDesdeCentimos(centimos: number): string {
+  if (!Number.isSafeInteger(centimos) || centimos <= 0) throw new Error("[montoDesdeCentimos] céntimos inválidos");
+  return `${Math.floor(centimos / 100)}.${String(centimos % 100).padStart(2, "0")}`;
+}
+
+function esP2002(err: unknown): boolean {
+  return typeof err === "object" && err !== null && (err as { code?: unknown }).code === "P2002";
 }
 
 export type DbCashMovementRecord = {
@@ -369,6 +398,127 @@ export const CashRegistersMovementsDB = {
       invalidarVentasOverview(tenantId);
     }
     return resultado;
+  },
+
+  /* ── Yape entrante (aviso del celular → caja, 04-11) ───────────────────────
+   *
+   * El programa de la PC lee la notificación de Yape y la manda al panel. Acá
+   * se anota UNA vez: el id del movimiento sale de la llave del aviso
+   * (`idDeYapeEntrante`), así un reintento o un aviso repetido cae en la misma
+   * fila. Va como `ingreso` con medio `yape`: no toca el efectivo esperado del
+   * arqueo (sólo suma efectivo) y sale en el desglose Yape y en «Cuentas».
+   */
+
+  /** La caja abierta con su hora de apertura (para «el Yape llegó antes del turno»). */
+  async cajaAbiertaParaYape(tenantId: string): Promise<{ id: string; openedAt: Date } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.cashRegister.findFirst({
+      where: { tenantId, status: "abierta" },
+      orderBy: [{ openedAt: "desc" }, { id: "desc" }],
+      select: { id: true, openedAt: true },
+    });
+  },
+
+  /** ¿Este Yape ya está anotado en alguna caja de ESTE negocio? */
+  async buscarYapeEntrante(tenantId: string, movimientoId: string): Promise<{ id: string; cashRegisterId: string } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.cashMovement.findFirst({
+      where: { id: movimientoId, cashRegister: { tenantId } },
+      select: { id: true, cashRegisterId: true },
+    });
+  },
+
+  /**
+   * Una venta cobrada por Yape del MISMO monto ±10 min del aviso: puede ser el
+   * mismo pago que el cajero ya cobró en el POS. Mira la venta (`Sale.payment`)
+   * y también el movimiento de caja de la venta, que cubre las mixtas (la parte
+   * Yape de una venta mixta sólo existe como línea de caja).
+   */
+  async ventaYapeParecida(
+    tenantId: string,
+    datos: { montoCentimos: number; recibidoEn: Date },
+  ): Promise<{ cuando: Date } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const monto = montoDesdeCentimos(datos.montoCentimos);
+    const createdAt = {
+      gte: new Date(datos.recibidoEn.getTime() - VENTANA_YAPE_PARECIDO_MS),
+      lte: new Date(datos.recibidoEn.getTime() + VENTANA_YAPE_PARECIDO_MS),
+    };
+    const [venta, lineaDeCaja] = await Promise.all([
+      prisma.sale.findFirst({
+        where: { tenantId, payment: { equals: "yape", mode: "insensitive" }, total: monto, createdAt },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      }),
+      prisma.cashMovement.findFirst({
+        where: {
+          cashRegister: { tenantId },
+          type: "venta",
+          method: { equals: "yape", mode: "insensitive" },
+          amount: monto,
+          createdAt,
+        },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      }),
+    ]);
+    const fila = venta ?? lineaDeCaja;
+    return fila ? { cuando: fila.createdAt } : null;
+  },
+
+  /**
+   * Anota el Yape en la caja `cajaId`, con la caja en `FOR SHARE` (mismo lock
+   * que todo el que anota; la caja es el último lock de la tx). Idempotente:
+   * si el id ya está en este negocio → «ya_estaba»; si otro pedido lo insertó
+   * entre la lectura y el INSERT (P2002) → «ya_estaba» también. Si la caja se
+   * cerró mientras llegaba → «caja_cerrada» (no se anota en una caja cerrada).
+   * El monto sale de los céntimos acá, sin pasar por un float.
+   */
+  async anotarYapeEntrante(
+    tenantId: string,
+    datos: { cajaId: string; movimientoId: string; montoCentimos: number; descripcion: string; recibidoEn: Date },
+  ): Promise<ResultadoYapeEntrante> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!datos.movimientoId.startsWith("yape-")) throw new Error("[anotarYapeEntrante] id fuera del formato yape-…");
+    const amount = montoDesdeCentimos(datos.montoCentimos);
+    /* La hora del aviso, salvo que venga del futuro (reloj del celular adelantado). */
+    const ahora = new Date();
+    const createdAt = datos.recibidoEn.getTime() > ahora.getTime() ? ahora : datos.recibidoEn;
+    try {
+      const resultado = await prisma.$transaction(async (tx): Promise<ResultadoYapeEntrante> => {
+        const ya = await tx.cashMovement.findFirst({
+          where: { id: datos.movimientoId, cashRegister: { tenantId } },
+          select: { id: true, cashRegisterId: true },
+        });
+        if (ya) return { estado: "ya_estaba", movimientoId: ya.id, cajaId: ya.cashRegisterId };
+        const caja = await CashRegistersMovementsDB.bloquearCajaParaAnotarEnTx(tx, tenantId, datos.cajaId);
+        if (caja?.status !== "abierta") return { estado: "caja_cerrada" };
+        const fila = await tx.cashMovement.create({
+          data: {
+            id: datos.movimientoId,
+            cashRegisterId: datos.cajaId,
+            type: "ingreso",
+            method: "yape",
+            amount,
+            description: datos.descripcion,
+            createdAt,
+          },
+          select: { id: true, cashRegisterId: true },
+        });
+        return { estado: "anotado", movimientoId: fila.id, cajaId: fila.cashRegisterId };
+      });
+      if (resultado.estado === "anotado") {
+        invalidate(`admin:alerts-summary:${tenantId}`);
+        invalidarVentasOverview(tenantId);
+      }
+      return resultado;
+    } catch (err) {
+      if (!esP2002(err)) throw err;
+      /* Sólo «ya_estaba» si la fila es de ESTE negocio; si no, que suba. */
+      const ya = await CashRegistersMovementsDB.buscarYapeEntrante(tenantId, datos.movimientoId);
+      if (!ya) throw err;
+      return { estado: "ya_estaba", movimientoId: ya.id, cajaId: ya.cashRegisterId };
+    }
   },
 
   /**
