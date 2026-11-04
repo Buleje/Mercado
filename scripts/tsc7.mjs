@@ -58,6 +58,13 @@ const native = path.join(root, "node_modules", pkg, "lib", "tsc");
 const CANDADO = "/tmp/bsm-tsc.lock";
 const enFila = !process.env.TSC7_SIN_FILA && spawnSync("flock", ["--version"], { stdio: "ignore" }).status === 0;
 
+// Sello (03-11): un `--noEmit` verde sobre el árbol completo deja la clave del
+// código en .git/buleje-sellos/tsc; el commit no repite el gate si nada cambió.
+const sellable = args.length === 1 && args[0] === "--noEmit";
+const claveAntes = sellable
+  ? (spawnSync("sh", ["scripts/dev-helpers/sello.sh", "clave"], { cwd: root, encoding: "utf8" }).stdout ?? "").trim()
+  : "";
+
 if (existsSync(native)) {
   const t0 = Date.now();
   if (enFila && spawnSync("flock", ["-n", CANDADO, "true"], { stdio: "ignore" }).status !== 0) {
@@ -68,6 +75,7 @@ if (existsSync(native)) {
     : spawnSync(native, args, { stdio: "inherit", cwd: root });
   if (r.status === 0) {
     console.log(`✅ tsc nativo (${pkg}) — ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+    if (claveAntes) spawnSync("sh", ["scripts/dev-helpers/sello.sh", "poner", "tsc", claveAntes], { cwd: root });
   }
   process.exit(r.status ?? 1);
 }

@@ -95,44 +95,59 @@ tokens() {
 MODO="en paralelo"; [ "$EN_PARALELO" = "1" ] || MODO="en fila (${DISPONIBLE_MB:-?} MB libres)"
 echo "🔎 Gates $MODO — $(printf '%s\n' "$STAGED_TS" | wc -l | tr -d ' ') archivo(s) TS staged"
 T0=$(date +%s)
+# Sello (03-11, «guardar sin repetir»): si el código es el mismo que ya pasó un
+# typecheck o vitest verde (`npm run typecheck`, `scripts/dev-helpers/probar.sh`
+# o un commit anterior que falló por otra cosa), ese gate no se repite.
+CLAVE=$(sh scripts/dev-helpers/sello.sh clave 2>/dev/null || true)
+TSC_LANZADO=0; VITEST_LANZADO=0
 # SKIP_TSC_GATE=1: sólo cuando el que commitea ya verificó que los errores son de
 # archivos ajenos sin commitear (carriles en paralelo; `scripts/dev-helpers/tsc-ajenos.mjs` desde `commit-carril.sh`).
 if [ "${SKIP_TSC_GATE:-0}" = "1" ]; then
   echo "⏭️  tipos verificados aparte (SKIP_TSC_GATE)" >"$TMP/tsc.log"; echo 0 >"$TMP/tsc.rc"
+elif sh scripts/dev-helpers/sello.sh ok tsc "$CLAVE"; then
+  echo "⏭️  tipos ya verificados con este mismo código (sello)" >"$TMP/tsc.log"; echo 0 >"$TMP/tsc.rc"
 else
-  lanzar tsc node scripts/tsc7.mjs --noEmit
+  lanzar tsc node scripts/tsc7.mjs --noEmit; TSC_LANZADO=1
 fi
 
 if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
   if [ -n "$VITEST_TODO" ]; then
     lanzar vitest npx vitest run --changed HEAD --project unit --passWithNoTests
   else
-    # Tests que leen el FUENTE con readFileSync (no lo importan): `related` no
-    # los ve. 04-10: `loth-cupo-t9-reglas` quedó rojo con un commit verde. Se
-    # suman los que nombran la ruta de algún archivo staged.
-    LEEN_FUENTE=$(grep -l "readFileSync" __tests__/*.ts __tests__/*.tsx 2>/dev/null || true)
-    EXTRA_TESTS=""
-    if [ -n "$LEEN_FUENTE" ]; then
-      EXTRA_TESTS=$(printf '%s\n' "$STAGED_CODE" | while IFS= read -r f; do
-        [ -n "$f" ] && printf '%s\n' "$LEEN_FUENTE" | xargs grep -lF -- "$f" 2>/dev/null
-      done | sort -u | tr '\n' ' ')
-    fi
-    # Guardianes de TODO el repo (recorren carpetas: ⓘ anidados, tenant «main»
-    # hardcodeado, XSS en JSON-LD…): no dependen de un archivo, así que `related`
-    # nunca los elige. 04-10: `infotip-no-anidado` estuvo rojo 4 días sin que
-    # nadie lo viera. Son 13 y suman ~5 s; se buscan acá para que uno nuevo entre solo.
-    GUARDIAS=$(grep -lE "readdirSync|globSync|fast-glob|from \"glob\"|git ls-files|walk\(|recorrer\(" __tests__/*.ts __tests__/*.tsx 2>/dev/null | tr '\n' ' ' || true)
+    # Extra = tests que leen el FUENTE con readFileSync (`related` no los ve;
+    # 04-10 `loth-cupo-t9-reglas` quedó rojo con un commit verde) + guardianes de
+    # TODO el repo (recorren carpetas; 04-10 `infotip-no-anidado` estuvo rojo 4
+    # días). La lista sale de `vitest-extra.sh`, la misma que usa `probar.sh`.
     # set -f: 342 rutas del repo llevan corchetes ([tenantSlug]) y sin esto el
     # shell las toma como comodines al expandir la lista.
     set -f
     # shellcheck disable=SC2086
-    lanzar vitest npx vitest related $STAGED_CODE $EXTRA_TESTS $GUARDIAS --project unit --run --passWithNoTests
+    VITEST_EXTRA=$(sh scripts/dev-helpers/vitest-extra.sh $STAGED_CODE)
+    # shellcheck disable=SC2086
+    if sh scripts/dev-helpers/sello.sh ok vitest "$CLAVE" $STAGED_CODE; then
+      echo "⏭️  tests ya pasados con este mismo código (sello)" >"$TMP/vitest.log"; echo 0 >"$TMP/vitest.rc"
+    else
+      # shellcheck disable=SC2086
+      lanzar vitest npx vitest related $STAGED_CODE $VITEST_EXTRA --project unit --run --passWithNoTests
+      VITEST_LANZADO=1
+    fi
     set +f
   fi
 fi
 [ -n "$STAGED_UI" ] && lanzar tokens tokens
 [ -n "$STAGED_TSX" ] && lanzar nesting node scripts/check-html-nesting.mjs
 wait
+# Sellar lo que pasó verde: si el commit falla por otra cosa (lint, mensaje) y
+# se reintenta con el mismo código, no se repite.
+if [ "$TSC_LANZADO" = "1" ] && [ "$(cat "$TMP/tsc.rc" 2>/dev/null)" = "0" ]; then
+  sh scripts/dev-helpers/sello.sh poner tsc "$CLAVE" || true
+fi
+if [ "$VITEST_LANZADO" = "1" ] && [ "$(cat "$TMP/vitest.rc" 2>/dev/null)" = "0" ]; then
+  set -f
+  # shellcheck disable=SC2086
+  sh scripts/dev-helpers/sello.sh poner vitest "$CLAVE" $STAGED_CODE || true
+  set +f
+fi
 
 # ── Reporte en orden fijo ───────────────────────────────────────────────────
 FALLO=0
@@ -157,7 +172,7 @@ fi
 
 if [ -f "$TMP/vitest.rc" ]; then
   if [ "$(rc vitest)" = "0" ]; then
-    echo "✅ related tests pass — $(grep -E 'Test Files' "$TMP/vitest.log" | tail -1 | sed 's/^ *//')"
+    echo "✅ related tests pass — $(grep -E 'Test Files|sello' "$TMP/vitest.log" | tail -1 | sed 's/^ *//')"
   else
     cat "$TMP/vitest.log"
     no_termino vitest
