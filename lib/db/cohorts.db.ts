@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
 import { logger } from "@/lib/logger";
+import { PREFIJOS_MAQUINA, USUARIOS_MAQUINA } from "@/lib/db/salud-negocio.db";
 
 /**
  * lib/db/cohorts.db.ts — Cohortes & retención (Brandon 2026-06-19). Agrupa los
@@ -32,8 +33,14 @@ export async function getCohortRetention(): Promise<CohortResult> {
   try {
     const [tenants, activity] = await Promise.all([
       prisma.tenant.findMany({ select: { id: true, createdAt: true } }),
+      // Solo lo que hicieron PERSONAS: el respaldo diario (`entity='System'`) y los usuarios
+      // máquina (cron, claude, scripts) marcaban «activo» cada mes a negocios que nadie usaba.
       prisma.$queryRawUnsafe<Array<{ tenantId: string; ym: string }>>(
-        `SELECT DISTINCT "tenantId", to_char("createdAt", 'YYYY-MM') AS ym FROM "ActivityLog"`,
+        `SELECT DISTINCT "tenantId", to_char("createdAt", 'YYYY-MM') AS ym FROM "ActivityLog"
+         WHERE entity <> 'System' AND entity NOT LIKE '[L29733]%'
+           AND NOT ("user" = ANY($1::text[]) OR "user" LIKE ANY($2::text[]))`,
+        [...USUARIOS_MAQUINA],
+        [...PREFIJOS_MAQUINA],
       ),
     ]);
 
