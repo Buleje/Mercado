@@ -32,11 +32,19 @@ export function usePOSCatalogo() {
   /** La lista vieja se avisa una vez por lista, no en cada reintento. */
   const avisoViejoDe = useRef<string | null>(null);
 
+  /* Turno de cada pedido de la lista: tras vender se pide de nuevo, y si una
+     lectura de ANTES (la carga inicial, el reintento de cada minuto) llega
+     después, pintaría el stock anterior a la venta. Sólo aplica la última. */
+  const turnoLista = useRef(0);
+
   const fetchProducts = useCallback(async () => {
+    const turno = ++turnoLista.current;
+    const vigente = () => turno === turnoLista.current;
     try {
       const res = await fetch("/api/products");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: unknown = await res.json();
+      if (!vigente()) return;
       if (!Array.isArray(data)) throw new Error("la respuesta no trae la lista");
       const activos = (data as Product[]).filter((p) => p.active);
       setProducts(activos);
@@ -49,6 +57,7 @@ export function usePOSCatalogo() {
       catalogoFalloRef.current = false;
       setCatalogoFallo(false);
     } catch (err) {
+      if (!vigente()) return; // falló una lectura vieja: la nueva decide
       catalogoFalloRef.current = true;
       setCatalogoFallo(true);
       const guardado = leerCatalogo<Product>(claveCatalogo);
