@@ -6,9 +6,15 @@
 //                               POST /api/cash-registers/yape) o queda PENDIENTE en Telegram con botones yp:<id>:si|otro|pers|no.
 //   boton <yp:…> --quien=<…>    lo llama buzon-telegram cuando Brandon toca; imprime {texto, botones, toque} en una línea JSON.
 //   prueba-telegram             manda UN mensaje «PRUEBA Yape (no es plata real)» con botones (tocarlo no anota nada).
+//   revisar-aprender            (timer yape-aprender, 08:10) apaga el modo aprender tras 7 días, ≥5 Yape y 0 errores.
 // El negocio sale de ~/.config/yape/ajustes.json ({"negocio":"main","aprender":true,"tope":500,"equipos":{"poco-c71":"main"}}),
 // NUNCA del celular: con «equipos», el negocio es el del equipo que mandó el aviso y un equipo que no está ahí queda pendiente.
+// Equipo con LISTA ({"poco-c71":["main","blas"]}, 04-11): cobra para varios negocios → un toque «✅ Bodega» · «✅ Blas»
+// (yp:<id>:n<i> = índice en la lista FIRMADA del estado, nunca el slug). Lo elegido se recuerda por pagador en
+// ~/.config/yape/negocio-por-persona.json: la próxima vez su botón sale primero «(como la vez pasada)» y, sin aprender, entra
+// solo tras la espera; un pagador nuevo siempre pregunta.
 // Modo aprender (aprender:true): TODO va a pendiente con el texto crudo; nada entra a la caja sin el toque de Brandon.
+// Registro para apagarlo (~/.local/state/yape/aprender.jsonl, sin nombres): {t,tipo:"yape"|"error",motivo?,h}.
 // Lo que va solo a la caja espera 10 min desde el pago (.hecho «esperando» con `hasta`): si en ese rato se cobró como venta
 // por Yape en la caja, el panel la ve (venta_yape_parecida) y no se cuenta dos veces. Lo retoma el respaldo del buzón.
 // Botones como los pnl: del 01-11: el estado vive en botones/<sha256(id)>.json firmado con HMAC(id); el id solo está en Telegram.
@@ -29,6 +35,13 @@ const LLAVES = join(DIR, SECO ? "llaves-seco" : "llaves");
 const BOTONES = join(DIR, SECO ? "botones-seco" : "botones"); // un botón de prueba nunca se mezcla con los de verdad
 const AJUSTES = join(CASA, ".config/yape/ajustes.json");
 const PERSONALES = join(CASA, ".config/yape/personales.txt");
+const PERSONALES_SECO = join(DIR, "personales-seco.txt"); // a seco se lee la lista real + esta, y se escribe solo esta
+const MEMORIA = join(CASA, ".config/yape/negocio-por-persona.json");
+const MEMORIA_SECO = join(DIR, "negocio-por-persona-seco.json");
+const REGISTRO = join(DIR, "aprender.jsonl"); // a seco no se anota nada (no cuenta para apagar el modo aprender)
+const ESTADO_APRENDER = join(DIR, "aprender-estado.json");
+const DIA_MS = 86_400_000, SEMANA_DIAS = 7, MIN_YAPES = 5, REGISTRO_DIAS = 60;
+const RE_DIA = /^\d{4}-\d{2}-\d{2}$/;
 const RUTA_PANEL = "/api/cash-registers/yape";
 const MAX_CONTRATO_CENTIMOS = 500_000; // el panel no acepta más (YapeEntranteSchema)
 const BLOQUE_MS = 600_000; // 10 min
@@ -38,10 +51,13 @@ const ESPERA_MS = 600_000; // lo automático espera 10 min desde el pago: así e
 const CANDADO_ESPERA_MS = 5_000, CANDADO_MUERTO_MS = 30_000;
 const RE_NEGOCIO = /^[a-z0-9-]{1,60}$/, RE_EQUIPO = /^[a-z0-9._-]{1,40}$/;
 const VIEJO_MS = 24 * 3600_000; // aviso que llega (o se procesa) con más de 24 h de atraso → pendiente
-const RE_BOTON = /^yp:([A-Z2-7]{24}):(si|otro|pers|no)$/;
+const RE_BOTON = /^yp:([A-Z2-7]{24}):(si|otro|pers|no|[no][0-3])$/; // n<i> = a ese negocio · o<i> = es otro pago, a ese negocio
+const MAX_OPCIONES = 4;
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const ETIQUETAS = { main: "Bodega", blas: "Blas", "qa-forestal": "QA forestal" };
 const PANEL = new Set(["sin_turno", "fuera_de_turno", "venta_yape_parecida"]);
+// No es error del modo aprender: caja cerrada, venta del POS ya vista (el control contra doble cuenta funcionó) o panel apagado/arrancando (Brandon 04-11: «1 semana sin errores» = el programa no se equivocó).
+const PANEL_NO_ES_ERROR = new Set(["sin_turno", "fuera_de_turno", "venta_yape_parecida", "panel_panel_apagado", "panel_compilando"]); // + anotado/ya_estaba (listo); lo demás cuenta como error
 const MOTIVOS = {
   formato: "No reconocí el aviso (formato nuevo, monto dudoso o no es un pago recibido).",
   personal: "Quien pagó está en tu lista de personales.",
@@ -50,6 +66,8 @@ const MOTIVOS = {
   duplicado: "Parece repetido: llegó otro igual (mismo pagador, monto y código) en estos 10 minutos.",
   ajustes: "Los ajustes de Yape están rotos (~/.config/yape/ajustes.json): no sé a qué negocio va.",
   aprender: "Modo aprender: todo pasa por ti antes de entrar a la caja.",
+  elegir: (st) => `Este celular cobra para ${listaNegocios(st.opciones)} y ${st.aviso?.pagador ?? "quien pagó"} paga por primera vez: dime de cuál es.`,
+  dos: (st) => `Este celular cobra para ${listaNegocios(st.opciones)}: confirma de cuál es (sale primero ${etiqueta(st.recordado)}, como la vez pasada).`,
   equipo: (st) => `Llegó de un equipo que no conozco: ${st.equipo ?? "sin nombre"}.`,
   sin_turno: "No hay caja abierta: ábrela y toca «Anotar igual».",
   fuera_de_turno: "Llegó antes de abrir la caja de ahora: «Anotar igual» lo pone en la caja de ahora.",
@@ -64,6 +82,7 @@ export const plano = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g,
 const limpio = (v, n) => String(v ?? "").replace(/\p{Cc}+/gu, " ").replace(/\s+/g, " ").trim().slice(0, n);
 export const soles = (c) => `S/ ${String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}.${String(c % 100).padStart(2, "0")}`;
 const etiqueta = (neg) => (neg && ETIQUETAS[neg]) || neg || "¿negocio?";
+const listaNegocios = (ops) => (Array.isArray(ops) ? ops.map(etiqueta).join(" y ") : "");
 const horaLima = (iso) => new Date(iso).toLocaleString("es-PE", { timeZone: "America/Lima", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 // ── lectura del aviso ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -207,29 +226,72 @@ export function leerAjustes() {
     return { negocio: null, equipos: null, aprender: true, tope: def.tope, roto: true };
   }
   const negocioOk = typeof a?.negocio === "string" && RE_NEGOCIO.test(a.negocio);
-  // «equipos»: {"poco-c71":"main"}. Si está pero mal escrito = ajustes rotos (nunca se cae al negocio suelto).
+  // «equipos»: {"poco-c71":"main"} o {"poco-c71":["main","blas"]} (lista = preguntar de cuál). Siempre se devuelve como
+  // lista. Si está pero mal escrito (lista vacía, repetida, de más de 4) = ajustes rotos (nunca se cae al negocio suelto).
   let equipos = null, equiposOk = true;
+  const listaOk = (v) => Array.isArray(v) && v.length >= 1 && v.length <= MAX_OPCIONES && new Set(v).size === v.length && v.every((n) => typeof n === "string" && RE_NEGOCIO.test(n));
   if (a?.equipos !== undefined) {
     const filas = a.equipos && typeof a.equipos === "object" && !Array.isArray(a.equipos) ? Object.entries(a.equipos) : [];
-    equiposOk = filas.length > 0 && filas.every(([k, v]) => RE_EQUIPO.test(k) && typeof v === "string" && RE_NEGOCIO.test(v));
-    if (equiposOk) equipos = Object.fromEntries(filas);
+    const comoLista = filas.map(([k, v]) => [k, typeof v === "string" ? [v] : v]);
+    equiposOk = comoLista.length > 0 && comoLista.every(([k, v]) => RE_EQUIPO.test(k) && listaOk(v));
+    if (equiposOk) equipos = Object.fromEntries(comoLista);
   }
   return {
     negocio: negocioOk ? a.negocio : null,
     equipos,
+    aprenderDesde: typeof a?.aprenderDesde === "string" && RE_DIA.test(a.aprenderDesde) ? a.aprenderDesde : null,
     aprender: a?.aprender !== false, // cualquier cosa que no sea false = aprender (lo seguro)
     tope: Number.isFinite(a?.tope) && a.tope > 0 && a.tope <= 5000 ? a.tope : def.tope,
     roto: !equiposOk || (!equipos && !negocioOk),
   };
 }
 
-const lineasPersonales = () => { try { return readFileSync(PERSONALES, "utf8").split("\n").filter((l) => !l.trim().startsWith("#")); } catch { return []; } };
+const lineasDe = (ruta) => { try { return readFileSync(ruta, "utf8").split("\n").filter((l) => !l.trim().startsWith("#")); } catch { return []; } };
+const lineasPersonales = () => [...lineasDe(PERSONALES), ...(SECO ? lineasDe(PERSONALES_SECO) : [])];
 const esPersonal = (nombre) => new Set(lineasPersonales().map(plano).filter(Boolean)).has(plano(nombre));
 function agregarPersonal(nombre) {
   if (esPersonal(nombre)) return;
-  mkdirSync(dirname(PERSONALES), { recursive: true, mode: 0o700 });
-  appendFileSync(PERSONALES, `${limpio(nombre, 80)}\n`, { mode: 0o600 });
+  const ruta = SECO ? PERSONALES_SECO : PERSONALES;
+  mkdirSync(dirname(ruta), { recursive: true, mode: 0o700 });
+  appendFileSync(ruta, `${limpio(nombre, 80)}\n`, { mode: 0o600 });
 }
+
+// ── negocio por persona (equipos con lista) ─────────────────────────────────────────────────────────────────────────
+/** {"juan perez":"blas"}: clave = nombre normalizado. Lo que no sea un negocio válido se ignora. A seco manda la copia seco. */
+function leerMemoria() {
+  const de = (ruta) => {
+    try {
+      const j = JSON.parse(readFileSync(ruta, "utf8"));
+      return j && typeof j === "object" && !Array.isArray(j) ? Object.fromEntries(Object.entries(j).filter(([k, v]) => k && typeof v === "string" && RE_NEGOCIO.test(v))) : {};
+    } catch { return {}; }
+  };
+  return { ...de(MEMORIA), ...(SECO ? de(MEMORIA_SECO) : {}) };
+}
+/** El negocio recordado para ese pagador, solo si está entre las opciones de este equipo. */
+export function recordadoDe(pagador, opciones) {
+  const neg = leerMemoria()[plano(pagador)];
+  return neg && opciones.includes(neg) ? neg : null;
+}
+function recordar(pagador, negocio) {
+  const k = plano(pagador);
+  if (!k) return;
+  const ruta = SECO ? MEMORIA_SECO : MEMORIA;
+  let j = {};
+  try { const x = JSON.parse(readFileSync(ruta, "utf8")); if (x && typeof x === "object" && !Array.isArray(x)) j = x; } catch { /* primera vez */ }
+  if (j[k] === negocio) return;
+  j[k] = negocio;
+  escribirPrivado(ruta, `${JSON.stringify(j, null, 1)}\n`);
+}
+
+// ── registro para apagar el modo aprender ───────────────────────────────────────────────────────────────────────────
+function anotarEvento(ev) {
+  if (SECO) return;
+  try {
+    mkdirSync(DIR, { recursive: true, mode: 0o700 });
+    appendFileSync(REGISTRO, `${JSON.stringify({ t: Date.now(), ...ev })}\n`, { mode: 0o600 });
+  } catch (err) { console.error("[yape-caja] anotar en aprender.jsonl falló", String(/** @type {any} */ (err)?.message ?? err)); }
+}
+const errorDePanel = (fin, h) => { if (!fin.listo && !PANEL_NO_ES_ERROR.has(fin.motivo)) anotarEvento({ tipo: "error", motivo: String(fin.motivo).slice(0, 40), h: h.slice(0, 8) }); };
 
 // ── botones firmados (patrón pnl:) ──────────────────────────────────────────────────────────────────────────────────
 const idNuevo = () => Array.from(randomBytes(24), (b) => B32[b & 31]).join("");
@@ -259,17 +321,38 @@ function textoPendiente(st) {
     return `• ${typeof t === "function" ? t(st) : t ?? `El panel no lo anotó (${m}${st.detalle ? `: ${st.detalle}` : ""}).`}`;
   }).join("\n");
   const crudo = `Aviso: «${[st.titulo, st.texto].filter(Boolean).join(" — ").slice(0, 300)}»`;
+  const ops = conOpciones(st);
+  const antes = ops && st.recordado ? `\nLa vez pasada ${a?.pagador} fue de ${etiqueta(st.recordado)}.` : "";
   const pregunta = !a ? "No lo anoto solo: si es un pago, anótalo a mano en la caja."
+    : dup && ops ? `¿Es OTRO pago o el mismo que ya llegó? Si es otro, toca el negocio al que va.${antes}`
     : dup ? `¿Es OTRO pago o el mismo que ya llegó? (caja de ${etiqueta(st.negocio)})`
+    : ops && !(st.negocio && enPanel(st)) ? `¿De qué negocio es: ${ops.map(etiqueta).join(" o ")}? Lo anoto en la caja de ahora de ese negocio.${antes}\nToca solo si este Yape NO lo cobraste ya en la caja como venta.`
     : `¿Lo anoto en la caja de ahora (${etiqueta(st.negocio)})?\nToca «Sí» solo si este Yape NO lo cobraste ya en la caja como venta.`;
   return [cab + linea + desde, motivos, crudo, pregunta].filter(Boolean).join("\n\n");
 }
 
+/** Lista firmada de negocios del equipo (≥2) o null. */
+const conOpciones = (st) => (Array.isArray(st.opciones) && st.opciones.length > 1 ? st.opciones : null);
+/** El panel ya contestó algo (sin caja, venta parecida, error): queda «Sí»/«Anotar igual» sobre el negocio elegido. */
+const enPanel = (st) => st.motivos.some((m) => PANEL.has(m) || String(m).startsWith("panel_"));
+
 function botonesDe(id, st) {
   if (!st.aviso) return [[["❌ Listo, no va a la caja", `yp:${id}:no`]]];
+  const dup = st.motivos.includes("duplicado");
+  const lista = conOpciones(st);
+  // Índice en la lista firmada (no el slug); el recordado va primero.
+  const ops = lista ? lista.map((neg, i) => ({ neg, i })).sort((x, y) => Number(y.neg === st.recordado) - Number(x.neg === st.recordado)) : null;
+  const comoAntes = (neg) => (neg === st.recordado ? " (como la vez pasada)" : "");
+  const pers = ["🙋 Es personal", `yp:${id}:pers`];
   // Repetido: sin «Sí» (un «Sí» distraído anotaba el mismo pago dos veces); se elige entre otro pago o el mismo.
-  if (st.motivos.includes("duplicado")) return [[["➕ Es otro pago, anotar", `yp:${id}:otro`], ["✅ Es el mismo, no anotar", `yp:${id}:no`]], [["🙋 Es personal", `yp:${id}:pers`]]];
-  return [[["✅ Sí, a la caja", `yp:${id}:si`], ["➕ Anotar igual", `yp:${id}:otro`]], [["🙋 Es personal", `yp:${id}:pers`], ["❌ No", `yp:${id}:no`]]];
+  if (dup && ops) return [ops.map(({ neg, i }) => [`➕ Otro pago → ${etiqueta(neg)}${comoAntes(neg)}`, `yp:${id}:o${i}`]), [["✅ Es el mismo, no anotar", `yp:${id}:no`], pers]];
+  if (dup) return [[["➕ Es otro pago, anotar", `yp:${id}:otro`], ["✅ Es el mismo, no anotar", `yp:${id}:no`]], [pers]];
+  if (ops && !(st.negocio && enPanel(st))) return [ops.map(({ neg, i }) => [`✅ ${etiqueta(neg)}${comoAntes(neg)}`, `yp:${id}:n${i}`]), [pers, ["❌ No es pago", `yp:${id}:no`]]];
+  const filas = [[["✅ Sí, a la caja", `yp:${id}:si`], ["➕ Anotar igual", `yp:${id}:otro`]], [pers, ["❌ No", `yp:${id}:no`]]];
+  // «Mejor a…» solo si el panel dijo con certeza que NO anotó (sin caja, fuera de turno, venta parecida). Tras un corte o un
+  // error del servidor el Yape pudo quedar grabado en el primero, y el control contra doble cuenta es por negocio.
+  if (ops && st.motivos.some((m) => PANEL.has(m))) filas.splice(1, 0, ops.filter(({ neg }) => neg !== st.negocio).map(({ neg, i }) => [`↔️ Mejor a ${etiqueta(neg)}`, `yp:${id}:n${i}`]));
+  return filas;
 }
 
 // ── salidas: panel y Telegram ────────────────────────────────────────────────────────────────────────────────────────
@@ -336,6 +419,7 @@ export async function procesar(archivo) {
   let e;
   try { e = JSON.parse(readFileSync(ruta, "utf8")); } catch {
     escribirPrivado(hecho, JSON.stringify({ estado: "invalido", t: Date.now() }));
+    anotarEvento({ tipo: "error", motivo: "ilegible", h: h.slice(0, 8) });
     if (!SECO) {
       await telegram("⚠️ Llegó un aviso de Yape que no pude leer (archivo dañado): revisa tu Yape.")
         .catch((err) => console.error("[yape-caja] aviso de entrada ilegible a Telegram falló", String(err?.message ?? err)));
@@ -360,8 +444,12 @@ async function decidir(h, e) {
   const aviso = leerAviso(titulo, texto);
   const motivos = [];
   let llave = null;
-  if (!aviso) motivos.push("formato");
-  else {
+  if (!aviso) {
+    motivos.push("formato");
+    // Un «Yapeaste» (salida) se reconoce bien: no es error. Lo demás que no se pudo leer, sí.
+    if (!RE_SALIDA.test(`${titulo} ${texto}`)) anotarEvento({ tipo: "error", motivo: "no_leido", h: h.slice(0, 8) });
+  } else {
+    anotarEvento({ tipo: "yape", h: h.slice(0, 8) });
     const ll = llavesDe(aviso, ms);
     llave = ll.actual;
     if (marcarLlave(ll, h) === "repetida") motivos.push("duplicado");
@@ -369,20 +457,36 @@ async function decidir(h, e) {
     if (aviso.montoCentimos > Math.round(aj.tope * 100) || aviso.montoCentimos > MAX_CONTRATO_CENTIMOS) motivos.push("tope");
   }
   // Con «equipos», el negocio es el del equipo; uno que no está ahí queda pendiente (el toque usa el negocio suelto, si hay).
-  const delEquipo = aj.equipos ? (equipo && Object.hasOwn(aj.equipos, equipo) ? aj.equipos[equipo] : null) : aj.negocio;
-  if (aj.equipos && !delEquipo) motivos.push("equipo");
-  const negocio = delEquipo ?? aj.negocio;
+  // Equipo con lista: el negocio recordado de ese pagador; pagador nuevo → «elegir» (siempre pregunta).
+  // Ajustes rotos = no sé a qué negocio va (ni el «negocio» suelto: con un equipo mal escrito podría ser el otro negocio).
+  const lista = aj.roto ? null : aj.equipos ? (equipo && Object.hasOwn(aj.equipos, equipo) ? aj.equipos[equipo] : null) : aj.negocio ? [aj.negocio] : null;
+  if (aj.equipos && !lista) motivos.push("equipo");
+  // Equipo desconocido: se ofrecen TODOS los negocios de los equipos conocidos (nunca se supone la Bodega; revisión 04-11).
+  const posibles = lista ?? (aj.roto || !aj.equipos ? null : [...new Set(Object.values(aj.equipos).flat())]);
+  const opciones = posibles && posibles.length > 1 ? posibles : null;
+  const recordado = opciones && aviso ? recordadoDe(aviso.pagador, opciones) : null;
+  // Con 2+ negocios NUNCA se anota solo (reviewer + security 04-11): el control contra doble cuenta del panel es POR negocio,
+  // así que un cliente recordado como Blas que paga una venta Yape del POS de la Bodega entraría también a Blas. Lo recordado
+  // solo pone su botón primero.
+  if (opciones && aviso) motivos.push(recordado ? "dos" : "elegir");
+  const negocio = aj.roto ? null : opciones ? recordado : (posibles?.[0] ?? null);
   if (atrasado(e)) motivos.push("viejo");
   if (aj.roto) motivos.push("ajustes");
   const fresco = Date.now() - ms < ESPERA_MS;
   const sinAprender = motivos.length ? "pendiente" : fresco ? "esperaria" : "anotaria";
   if (aj.aprender) motivos.push("aprender");
   const base = { h: h.slice(0, 8), monto: aviso ? soles(aviso.montoCentimos) : null, motivos };
-  if (SECO) return { ...base, estado: motivos.length ? "pendiente" : sinAprender, sinAprender, seco: true, pagador: aviso?.pagador ?? null, negocio, equipo };
-  const st = { v: 1, negocio, equipo, h, aviso, llave, titulo, texto, recibidoEn: new Date(ms).toISOString(), motivos, estado: "pendiente", creado: Date.now() };
+  const st = { v: 1, negocio, equipo, h, aviso, llave, titulo, texto, recibidoEn: new Date(ms).toISOString(), motivos, estado: "pendiente", creado: Date.now(), ...(opciones ? { opciones, recordado } : {}) };
+  if (SECO) {
+    // A seco el pendiente deja su botón en botones-seco/ (para `buzon-telegram --simular-toque`) y muestra los botones.
+    const extra = {};
+    if (motivos.length) { const id = idNuevo(); guardarBoton(id, st); extra.botones = botonesDe(id, st); }
+    return { ...base, estado: motivos.length ? "pendiente" : sinAprender, sinAprender, seco: true, pagador: aviso?.pagador ?? null, negocio, equipo, ...(opciones ? { opciones, recordado } : {}), ...extra };
+  }
   if (!motivos.length && aviso && fresco) return { ...base, estado: "esperando", hasta: ms + ESPERA_MS };
   if (!motivos.length && aviso) {
     const fin = resultadoPanel(await llamarPanel(negocio, cuerpoPanel(st, false), "automatico (yape-caja)"));
+    errorDePanel(fin, h);
     if (fin.listo) {
       await telegram(`✅ Yape ${soles(aviso.montoCentimos)} de ${aviso.pagador} → caja de ahora (${etiqueta(negocio)})${fin.estado === "ya_estaba" ? " · ya estaba, no se repitió" : ""}`);
       return { ...base, estado: fin.estado };
@@ -400,7 +504,7 @@ async function decidir(h, e) {
 export async function boton(data, quien = "?") {
   const m = RE_BOTON.exec(String(data ?? ""));
   if (!m) return { toque: "Botón inválido" };
-  const [, id, acc] = m;
+  const [, id, accion] = m;
   const st = leerBoton(id);
   if (!st) return { toque: "Ese botón venció o no es válido" };
   if (st.estado !== "pendiente") return { toque: "Ya estaba resuelto", texto: st.final, botones: null };
@@ -411,19 +515,34 @@ export async function boton(data, quien = "?") {
     return { texto: final, botones: null, toque };
   };
   const dup = st.motivos.includes("duplicado");
+  // n<i>/o<i>: el negocio sale de la lista FIRMADA del estado; un índice que no está ahí no anota nada.
+  const ix = /^[no]([0-3])$/.exec(accion);
+  const elegido = ix ? conOpciones(st)?.[Number(ix[1])] ?? null : null;
+  if (ix && !elegido) return { toque: "Botón inválido" };
+  const acc = ix ? (accion[0] === "n" ? "si" : "otro") : accion;
   if (acc === "no") return dup ? cerrar(`${base}\n\n✅ No se anotó: era el mismo pago.`, "Era el mismo: no se anota") : cerrar(`${base}\n\n❌ No se anotó.`, "No se anota");
   if (!st.aviso) return { toque: "No leí el monto: anótalo a mano o toca «No»" };
   // La prueba va ANTES que «personal»: tocar «Es personal» en la prueba no mete a «PERSONA DE PRUEBA» en personales.txt.
   if (st.prueba) return cerrar(`${base}\n\n🧪 Era una prueba: no se anotó nada.`, "Prueba: nada se anotó");
-  if (acc === "si" && dup) return { toque: "Es repetido: elige «Es otro pago» o «Es el mismo»" };
+  if (acc === "si" && dup) return { toque: conOpciones(st) ? "Es repetido: elige «Otro pago» o «Es el mismo»" : "Es repetido: elige «Es otro pago» o «Es el mismo»" };
   if (acc === "pers") {
     agregarPersonal(st.aviso.pagador);
     return cerrar(`${base}\n\n🙋 Personal: no va a la caja. Los próximos de ${st.aviso.pagador} también quedan pendientes como personales.`, "Anotado como personal");
   }
-  if (!st.negocio) return { toque: "No sé a qué negocio va: revisa los ajustes de Yape" };
+  if (!st.negocio && !elegido) return { toque: conOpciones(st) ? "Toca el negocio al que va" : "No sé a qué negocio va: revisa los ajustes de Yape" };
   const toma = join(BOTONES, `${sha(id)}.tomado`);
   if (!tomar(toma)) return { toque: "Ya lo estoy anotando…" };
   try {
+    let recuerdo = "";
+    if (elegido) {
+      // Se recuerda al elegir (antes del panel): la próxima vez ese botón sale primero. Elegir distinto de lo recordado = error
+      // para el modo aprender (una vez por mensaje).
+      if (st.recordado && elegido !== st.recordado && !st.cambioAnotado) { anotarEvento({ tipo: "error", motivo: "cambio_negocio", h: String(st.h).slice(0, 8) }); st.cambioAnotado = true; }
+      recordar(st.aviso.pagador, elegido);
+      st.negocio = elegido;
+      st.motivos = st.motivos.filter((x) => x !== "elegir");
+      recuerdo = `\nLa próxima vez que pague ${st.aviso.pagador} pongo primero ${etiqueta(elegido)}.`;
+    }
     let forzar = false;
     if (acc === "otro") {
       // Repetido de contenido → es OTRO pago: llave propia de esta entrada. Venta parecida del panel → el mismo, «anotar igual».
@@ -432,8 +551,9 @@ export async function boton(data, quien = "?") {
     }
     const r = SECO ? { ok: true, status: 0, datos: { estado: "anotado" } } : await llamarPanel(st.negocio, cuerpoPanel(st, forzar), quien);
     const fin = resultadoPanel(r);
+    if (!SECO) errorDePanel(fin, String(st.h));
     if (fin.listo) {
-      return cerrar(`${base}\n\n${fin.estado === "ya_estaba" ? "ℹ️ Ya estaba en la caja: no se anotó dos veces." : `✅ Anotado en la caja de ahora (${etiqueta(st.negocio)}).`}`, "Listo");
+      return cerrar(`${base}\n\n${fin.estado === "ya_estaba" ? "ℹ️ Ya estaba en la caja: no se anotó dos veces." : `✅ Anotado en la caja de ahora (${etiqueta(st.negocio)}).`}${recuerdo}`, "Listo");
     }
     st.motivos = [...st.motivos.filter((x) => x !== "aprender" && !x.startsWith("panel_") && !PANEL.has(x)), fin.motivo];
     st.detalle = fin.detalle;
@@ -445,10 +565,12 @@ export async function boton(data, quien = "?") {
 /** UN mensaje marcado «PRUEBA Yape (no es plata real)»: sus botones nunca llaman al panel. */
 async function prueba() {
   const ms = Date.now();
+  const aj = leerAjustes();
+  const opciones = Object.values(aj.equipos ?? {}).find((l) => l.length > 1) ?? null;
   const st = {
-    v: 1, negocio: leerAjustes().negocio, h: sha(`prueba|${ms}`), aviso: { montoCentimos: 100, pagador: "PERSONA DE PRUEBA" }, llave: sha(`prueba|${ms}`),
+    v: 1, negocio: opciones ? null : aj.negocio, ...(opciones ? { opciones, recordado: null } : {}), h: sha(`prueba|${ms}`), aviso: { montoCentimos: 100, pagador: "PERSONA DE PRUEBA" }, llave: sha(`prueba|${ms}`),
     titulo: "PRUEBA Yape (no es plata real)", texto: "PERSONA DE PRUEBA te envió un pago por S/ 1.00", recibidoEn: new Date(ms).toISOString(),
-    motivos: ["aprender"], estado: "pendiente", creado: ms, prueba: true,
+    motivos: opciones ? ["elegir", "aprender"] : ["aprender"], estado: "pendiente", creado: ms, prueba: true,
   };
   const id = idNuevo();
   guardarBoton(id, st);
@@ -456,8 +578,73 @@ async function prueba() {
   return { ok: true, id, mensaje: msj?.message_id ?? null, seco: SECO };
 }
 
+// ── apagar el modo aprender solo (timer yape-aprender, diario 08:10) ────────────────────────────────────────────────
+const diaLima = (ms) => new Date(ms + LIMA_MS).toISOString().slice(0, 10);
+const inicioDiaLima = (dia) => Date.parse(`${dia}T00:00:00Z`) - LIMA_MS;
+const leerJson = (ruta) => { try { const j = JSON.parse(readFileSync(ruta, "utf8")); return j && typeof j === "object" && !Array.isArray(j) ? j : null; } catch { return null; } };
+const NOMBRE_ERROR = { no_leido: "aviso que no pude leer", ilegible: "aviso dañado", cambio_negocio: "elegiste otro negocio que el recordado" };
+
+/**
+ * ≥7 días desde aprenderDesde, ≥5 Yape y 0 errores en ese tramo → aprender:false + Telegram. Error en el tramo, o 7 días con
+ * menos de 5 Yape → aprenderDesde = hoy (vuelve a contar desde ahora) y 1 línea a Telegram (máx. 1 por semana). Antes de los 7
+ * días sin errores: nada. A seco: solo dice qué haría. El aviso va ANTES de apagar: si Telegram falla, sigue aprendiendo.
+ */
+export async function revisarAprender(ahora = Date.now()) {
+  const crudo = leerJson(AJUSTES);
+  if (!crudo) return { ok: false, error: "ajustes de Yape rotos o ausentes" };
+  if (crudo.aprender === false) return { ok: true, accion: "ya_apagado" };
+  const hoy = diaLima(ahora);
+  const escribirAjustes = (cambios) => escribirPrivado(AJUSTES, `${JSON.stringify({ ...leerJson(AJUSTES), ...cambios })}\n`);
+  const desde = typeof crudo.aprenderDesde === "string" && RE_DIA.test(crudo.aprenderDesde) ? crudo.aprenderDesde : null;
+  // Prendido de nuevo a mano tras un apagado: la cuenta arranca HOY (con la fecha vieja se volvía a apagar al día siguiente).
+  const apagado = typeof crudo.aprenderApagado === "string" && RE_DIA.test(crudo.aprenderApagado) ? crudo.aprenderApagado : null;
+  if (!desde || (apagado && desde <= apagado)) {
+    if (!SECO) escribirAjustes({ aprenderDesde: hoy, aprenderApagado: undefined });
+    return { ok: true, accion: "empieza", desde: hoy, seco: SECO };
+  }
+  const est = leerJson(ESTADO_APRENDER) ?? {};
+  // «corte» = hora exacta del último reinicio: un error de esta mañana no vuelve a contar mañana.
+  const inicio = Math.max(inicioDiaLima(desde), est.desde === desde ? Number(est.corte) || 0 : 0);
+  const dias = Math.floor((inicioDiaLima(hoy) - inicioDiaLima(desde)) / DIA_MS);
+  const lineas = lineasDe(REGISTRO);
+  const evs = lineas.flatMap((l) => { try { const e = JSON.parse(l); return Number.isFinite(e?.t) ? [e] : []; } catch { return []; } });
+  const tramo = evs.filter((e) => e.t >= inicio && e.t <= ahora);
+  const yapes = new Set(tramo.filter((e) => e.tipo === "yape").map((e) => String(e.h))).size;
+  const errores = tramo.filter((e) => e.tipo === "error");
+  const res = { ok: true, desde, dias, yapes, errores: errores.length, seco: SECO };
+  if (!SECO) {
+    // Ley 29733, lo mínimo: el registro guarda solo 60 días.
+    const viejas = evs.filter((e) => ahora - e.t > REGISTRO_DIAS * DIA_MS).length;
+    if (viejas) escribirPrivado(REGISTRO, evs.filter((e) => ahora - e.t <= REGISTRO_DIAS * DIA_MS).map((e) => JSON.stringify(e)).join("\n") + "\n");
+  }
+  if (!errores.length && dias < SEMANA_DIAS) return { ...res, accion: "esperando" };
+  if (!errores.length && yapes >= MIN_YAPES) {
+    // Con 2+ negocios en un equipo, ese equipo SIEMPRE pregunta (ver decidir): el aviso lo dice para no prometer lo que no hace.
+    const aj = leerAjustes();
+    const dos = aj.equipos ? Object.values(aj.equipos).find((l) => l.length > 1) : null;
+    const mensaje = `✅ Apagué el modo aprender: ${dias} días, ${yapes} Yape, 0 errores.`
+      + (dos ? ` Los Yape del celular que cobra para ${listaNegocios(dos)} te siguen preguntando de cuál es (1 toque), para no contar dos veces una venta.` : " Desde ahora los Yape entran solos 10 min después.");
+    if (SECO) return { ...res, accion: "apagaria", mensaje };
+    await telegram(mensaje);
+    escribirAjustes({ aprender: false, aprenderApagado: hoy, aprenderDesde: undefined });
+    return { ...res, accion: "apagado" };
+  }
+  const tipos = [...new Set(errores.map((e) => NOMBRE_ERROR[e.motivo] ?? `respuesta del panel «${String(e.motivo).replace(/^panel_/, "")}»`))];
+  const motivo = errores.length ? `${errores.length === 1 ? "hubo 1 error" : `hubo ${errores.length} errores`} (${tipos.slice(0, 3).join(", ")})` : `en ${dias} días llegaron ${yapes} Yape y necesito ${MIN_YAPES}`;
+  const mensaje = `⏳ Sigo en modo aprender: ${motivo}. Vuelvo a contar 7 días desde hoy.`;
+  const avisar = ahora - (Number(est.ultimoAviso) || 0) >= SEMANA_DIAS * DIA_MS;
+  if (SECO) return { ...res, accion: "reiniciaria", motivo, avisaria: avisar, mensaje };
+  escribirAjustes({ aprenderDesde: hoy });
+  let avisado = false;
+  if (avisar) {
+    avisado = await telegram(mensaje).then(() => true, (err) => { console.error("[yape-caja] aviso de modo aprender a Telegram falló", String(err?.message ?? err)); return false; });
+  }
+  escribirPrivado(ESTADO_APRENDER, JSON.stringify({ desde: hoy, corte: ahora, ultimoAviso: avisado ? ahora : Number(est.ultimoAviso) || 0 }));
+  return { ...res, accion: "reiniciado", motivo, avisado };
+}
+
 /** Solo para los tests (__tests__/yape-caja-botones.test.ts). */
-export const _paraPruebas = { BOTONES, LLAVES, guardarBoton, leerBoton, botonesDe, textoPendiente, idNuevo };
+export const _paraPruebas = { BOTONES, LLAVES, REGISTRO, MEMORIA, MEMORIA_SECO, guardarBoton, leerBoton, botonesDe, textoPendiente, idNuevo };
 
 async function cli(argv) {
   const [orden, ...resto] = argv;
@@ -467,7 +654,8 @@ async function cli(argv) {
     return boton(resto[0], String(values.quien ?? "?"));
   }
   if (orden === "prueba-telegram") return prueba();
-  return { ok: false, error: "Uso: yape-caja.mjs procesar <archivo> | boton <yp:…> --quien=<…> | prueba-telegram" };
+  if (orden === "revisar-aprender") return revisarAprender();
+  return { ok: false, error: "Uso: yape-caja.mjs procesar <archivo> | boton <yp:…> --quien=<…> | prueba-telegram | revisar-aprender" };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
