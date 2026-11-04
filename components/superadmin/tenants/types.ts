@@ -9,6 +9,8 @@ export interface GrowthMonth {
   month: string;
   revenue: number;
   orders: number;
+  /** Pedidos + ventas POS + libro CTP + trozas del mes. */
+  operaciones: number;
 }
 
 export interface GrowthEntry {
@@ -20,4 +22,8 @@ export interface GrowthEntry {
   totalRevenue: number;
   totalOrders: number;
   growthPct: number;
+  /** Un aserradero no tiene pedidos: se mide por operaciones. */
+  perfil: "tienda" | "aserradero";
+  totalOperaciones: number;
+  operacionesPct: number;
 }

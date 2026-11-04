@@ -16,6 +16,7 @@ import Link from "next/link";
 import {
   Rocket, ArrowLeft, RefreshCw, Check, MessageSquare, Image, Package,
   ShoppingBag, Banknote, Search, X, Download, ExternalLink, Clock,
+  TreePine, BookOpen, Layers, FileText,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
@@ -24,10 +25,11 @@ import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
 
-type Step = "logo" | "productos" | "pedido" | "venta";
+type Step = string; // tienda: logo·productos·pedido·venta · aserradero: logo·ingreso·libro·lote·guia
 type Row = {
   slug: string; name: string; plan: string; createdAt: string;
   trialEndsAt: string | null; trialDaysLeft: number | null; ageDays: number;
+  perfil: "tienda" | "aserradero"; pasos: Step[];
   steps: Record<Step, boolean>; done: number; total: number; pct: number;
   stuckAt: Step | null; complete: boolean;
   contactStatus: "none" | "contacted" | "snoozed"; snoozedUntil: string | null;
@@ -41,26 +43,36 @@ const STEP_META: Record<Step, { label: string; icon: typeof Image }> = {
   productos: { label: "Productos", icon: Package },
   pedido: { label: "1er pedido", icon: ShoppingBag },
   venta: { label: "1ra venta POS", icon: Banknote },
+  ingreso: { label: "1er ingreso de madera", icon: TreePine },
+  libro: { label: "Libro CTP", icon: BookOpen },
+  lote: { label: "1er lote", icon: Layers },
+  guia: { label: "1ra guía de salida", icon: FileText },
 };
 const STEPS: Step[] = ["logo", "productos", "pedido", "venta"];
+const STEPS_ASERRADERO: Step[] = ["logo", "ingreso", "libro", "lote", "guia"];
+const STEPS_TODOS: Step[] = [...STEPS, "ingreso", "libro", "lote", "guia"];
 const OLD_DAYS = 14; // estancada "vieja" → prioridad
 
 function reactivateMsg(name: string, step: Step | null): string {
-  const m: Record<Step, string> = {
+  const m: Record<string, string> = {
     logo: `¡Hola! Vi que ${name} todavía no subió su logo. Te ayudo a ponerlo en Configuración → Tienda para que se vea profesional. ¿Lo hacemos?`,
     productos: `${name} aún no cargó productos. Subamos los primeros juntos para que puedas empezar a vender — ¿te doy una mano?`,
     pedido: `${name} ya tiene productos pero aún no recibió su primer pedido. ¿Activamos el delivery/marketplace para que lleguen las ventas?`,
+    ingreso: `${name} aún no registró su primer ingreso de madera. Cargamos juntos la primera guía de trozas para arrancar el libro — ¿te ayudo?`,
+    libro: `${name} ya recibió madera pero el libro CTP sigue vacío. Anotemos la primera línea juntos — ¿lo hacemos ahora?`,
+    lote: `${name} aún no armó su primer lote de aserrío. Te muestro cómo crearlo desde Producción — ¿vemos?`,
+    guia: `${name} ya produjo pero todavía no emitió una guía de salida. ¿Probamos la primera juntos?`,
     venta: `¡Casi listos! A ${name} le falta su primera venta en el POS. ¿Hacemos una prueba juntos ahora?`,
   };
-  return step ? m[step] : `¡Felicitaciones! ${name} ya completó toda su activación.`;
+  return step ? m[step] ?? `${name} se quedó en el paso «${step}».` : `¡Felicitaciones! ${name} ya completó toda su activación.`;
 }
 
 function exportCSV(rows: Row[]) {
-  const head = ["Tienda", "Slug", "Plan", "Progreso", "Estancada en", "Días desde alta", "Trial días", "Logo", "Productos", "1er pedido", "1ra venta"];
+  const head = ["Tienda", "Slug", "Plan", "Progreso", "Estancada en", "Días desde alta", "Trial días", "Perfil", "Pasos hechos"];
   const lines = rows.map((r) => [
     r.name, r.slug, r.plan, `${r.done}/${r.total}`, r.stuckAt ? STEP_META[r.stuckAt].label : "—",
-    r.ageDays, r.trialDaysLeft ?? "", r.steps.logo ? "sí" : "no", r.steps.productos ? "sí" : "no",
-    r.steps.pedido ? "sí" : "no", r.steps.venta ? "sí" : "no",
+    r.ageDays, r.trialDaysLeft ?? "", r.perfil === "aserradero" ? "Aserradero" : "Tienda",
+    r.pasos.filter((p) => r.steps[p]).map((p) => STEP_META[p].label).join(" · "),
   ]);
   const csv = [head, ...lines].map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
@@ -104,13 +116,20 @@ export default function TenantsOnboardingPage() {
   // Auto-refresh cada 60s; el hook pausa solo cuando la pestaña no está visible.
   useVisiblePolling(() => void load(), 60_000);
 
-  // Embudo de activación: cuántas tiendas completaron cada hito.
-  const funnel = useMemo(() => STEPS.map((s) => ({ step: s, count: rows.filter((r) => r.steps[s]).length })), [rows]);
+  // Embudo de activación: cuántos negocios completaron cada hito. Las tiendas y
+  // los aserraderos tienen pasos distintos, así que cada perfil lleva su embudo.
+  const funnels = useMemo(() => {
+    const grupo = (titulo: string, perfil: Row["perfil"], pasos: Step[]) => {
+      const filas = rows.filter((r) => r.perfil === perfil);
+      return { titulo, hay: filas.length > 0, items: pasos.map((s) => ({ step: s, count: filas.filter((r) => r.steps[s]).length })) };
+    };
+    return [grupo("Tiendas", "tienda", STEPS), grupo("Aserraderos", "aserradero", STEPS_ASERRADERO)].filter((g) => g.hay);
+  }, [rows]);
 
   // KPIs extra.
   const kpis = useMemo(() => {
     const stuck = rows.filter((r) => !r.complete);
-    const stuckByStep = STEPS.map((s) => ({ s, n: rows.filter((r) => r.stuckAt === s).length }));
+    const stuckByStep = STEPS_TODOS.map((s) => ({ s, n: rows.filter((r) => r.stuckAt === s).length }));
     const worst = stuckByStep.sort((a, b) => b.n - a.n)[0];
     const avgAge = stuck.length ? Math.round(stuck.reduce((acc, r) => acc + r.ageDays, 0) / stuck.length) : 0;
     return {
@@ -167,7 +186,7 @@ export default function TenantsOnboardingPage() {
   }, [load]);
 
   const hasFilters = search !== "" || statusFilter !== "all";
-  const maxFunnel = Math.max(1, ...funnel.map((f) => f.count));
+  const maxFunnel = Math.max(1, ...funnels.flatMap((g) => g.items.map((f) => f.count)));
 
   return (
     <>
@@ -212,9 +231,12 @@ export default function TenantsOnboardingPage() {
         {rows.length > 0 && (
           <div className="mb-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
             <h3 className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Embudo de activación</h3>
-            <div className="space-y-2.5">
-              {funnel.map((f, i) => {
-                const prev = i === 0 ? f.count : funnel[i - 1].count;
+            <div className="space-y-4">
+              {funnels.map((g) => (
+              <div key={g.titulo} className="space-y-2.5">
+              {funnels.length > 1 && <p className="text-xs font-bold text-[var(--text-secondary)]">{g.titulo}</p>}
+              {g.items.map((f, i) => {
+                const prev = i === 0 ? f.count : g.items[i - 1].count;
                 const drop = i === 0 || prev === 0 ? 0 : Math.round(((prev - f.count) / prev) * 100);
                 const Icon = STEP_META[f.step].icon;
                 return (
@@ -225,10 +247,12 @@ export default function TenantsOnboardingPage() {
                       <div className="h-full bg-[var(--accent)] transition-all" style={{ width: `${Math.round((f.count / maxFunnel) * 100)}%` }} />
                     </div>
                     <span className="w-12 shrink-0 text-right text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{f.count}</span>
-                    <span className="w-14 shrink-0 text-right text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{i > 0 ? `−${drop}%` : "base"}</span>
+                    <span className="w-14 shrink-0 text-right text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{i === 0 ? "base" : drop < 0 ? `+${-drop}%` : `−${drop}%`}</span>
                   </button>
                 );
               })}
+              </div>
+              ))}
             </div>
           </div>
         )}
@@ -244,7 +268,7 @@ export default function TenantsOnboardingPage() {
             <option value="all">Todas</option>
             <option value="stuck">Estancadas</option>
             <option value="complete">Activadas</option>
-            {STEPS.map((s) => <option key={s} value={`stuck:${s}`}>Trabada en {STEP_META[s].label}</option>)}
+            {STEPS_TODOS.map((s) => <option key={s} value={`stuck:${s}`}>Trabada en {STEP_META[s].label}</option>)}
           </select>
           <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Ordenar" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
             <option value="progress">Orden: progreso</option>
@@ -282,10 +306,10 @@ export default function TenantsOnboardingPage() {
                         {r.contactStatus === "contacted" && <span className="rounded-full bg-[var(--data-success-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-600,#059669)]">contactada</span>}
                         {r.contactStatus === "snoozed" && <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)]">pospuesta</span>}
                       </p>
-                      <p className="text-xs text-[var(--text-tertiary)]">{r.complete ? "Activada ✓" : `Estancada en: ${r.stuckAt ? STEP_META[r.stuckAt].label : "—"}`}</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">{r.perfil === "aserradero" && <span className="font-semibold text-[var(--text-secondary)]">Aserradero · </span>}{r.complete ? "Activada ✓" : `Estancada en: ${r.stuckAt ? STEP_META[r.stuckAt].label : "—"}`}</p>
                     </button>
                     <div className="flex items-center gap-1.5">
-                      {STEPS.map((s) => {
+                      {r.pasos.map((s) => {
                         const done = r.steps[s]; const Icon = STEP_META[s].icon;
                         return (
                           <span key={s} title={`${STEP_META[s].label}: ${done ? "hecho" : "pendiente"}`} className={`inline-flex h-8 w-8 items-center justify-center border ${done ? "bg-[var(--data-success-500)]/15 border-[var(--data-success-500)]/40 text-[var(--data-success-600,#059669)]" : "bg-[var(--surface-sunken)] border-[var(--rule-soft)] text-[var(--text-tertiary)]"}`}>
@@ -348,7 +372,7 @@ export default function TenantsOnboardingPage() {
               <div>
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Hitos de activación</p>
                 <ul className="space-y-1.5">
-                  {STEPS.map((s) => {
+                  {detail.pasos.map((s) => {
                     const done = detail.steps[s]; const Icon = STEP_META[s].icon;
                     return (
                       <li key={s} className="flex items-center gap-2.5 text-sm">

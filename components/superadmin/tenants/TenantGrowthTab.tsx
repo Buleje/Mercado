@@ -38,7 +38,7 @@ function fmtMonthLabel(monthStr: string): string {
 }
 
 interface GrowthTooltipPayload {
-  payload?: { month: string; revenue: number; orders: number };
+  payload?: { month: string; revenue: number; operaciones: number };
   value?: number;
   name?: string;
   dataKey?: string;
@@ -50,10 +50,15 @@ interface GrowthTooltipProps {
   label?: unknown;
 }
 
+/** Una tienda se mide por ingresos; un aserradero (sin ingresos de pedidos) por operaciones. */
+function pctMostrado(g: GrowthEntry): number {
+  return g.totalRevenue > 0 ? g.growthPct : g.operacionesPct;
+}
+
 function GrowthTooltip({ active, payload, label }: GrowthTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
   const revenue = payload.find((x) => x?.dataKey === "revenue")?.value ?? 0;
-  const orders = payload.find((x) => x?.dataKey === "orders")?.value ?? 0;
+  const operaciones = payload.find((x) => x?.dataKey === "operaciones")?.value ?? 0;
   const monthLabel = fmtMonthLabel(String(label ?? ""));
   return (
     <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-lg min-w-[180px]">
@@ -63,8 +68,8 @@ function GrowthTooltip({ active, payload, label }: GrowthTooltipProps) {
         <strong className="tabular-nums text-[var(--text-primary)]">{fmtSoles(revenue)}</strong>
       </p>
       <p className="text-sm text-[var(--text-secondary)] flex items-center justify-between gap-3">
-        <span>Pedidos</span>
-        <strong className="tabular-nums text-[var(--text-primary)]">{orders}</strong>
+        <span>Operaciones</span>
+        <strong className="tabular-nums text-[var(--text-primary)]">{operaciones}</strong>
       </p>
     </div>
   );
@@ -93,11 +98,11 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
     0,
   );
   const totalOrders = growthData.reduce(
-    (s, g) => s + (g.months[g.months.length - 1]?.orders ?? 0),
+    (s, g) => s + (g.months[g.months.length - 1]?.operaciones ?? 0),
     0,
   );
   const avgGrowth =
-    growthData.reduce((s, g) => s + g.growthPct, 0) / (growthData.length || 1);
+    growthData.reduce((s, g) => s + pctMostrado(g), 0) / (growthData.length || 1);
 
   return (
     <div className="space-y-6">
@@ -106,7 +111,7 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
         {[
           { label: "Tiendas activas", value: growthData.length },
           { label: "Ingresos totales/mes", value: `S/${totalRevenue.toFixed(0)}` },
-          { label: "Pedidos totales/mes", value: totalOrders },
+          { label: "Operaciones totales/mes", value: totalOrders },
           { label: "Crecimiento promedio", value: `${avgGrowth.toFixed(0)}%` },
         ].map(({ label, value }) => (
           <div
@@ -126,6 +131,7 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
         {growthData.map((store) => {
           const lastMonth = store.months[store.months.length - 1];
           const prevMonth = store.months[store.months.length - 2];
+          const pct = pctMostrado(store);
           // Mes con mayor revenue → resalta como peak
           const peakIdx = store.months.reduce(
             (max, m, i, arr) => (m.revenue > (arr[max]?.revenue ?? 0) ? i : max),
@@ -156,27 +162,27 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
                   <div
                     className={
                       "flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold " +
-                      (store.growthPct > 0
+                      (pct > 0
                         ? "bg-[var(--data-success-100)] text-[var(--data-success-500)]"
-                        : store.growthPct < 0
+                        : pct < 0
                           ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")
                     }
                   >
-                    {store.growthPct > 0 ? (
+                    {pct > 0 ? (
                       <ArrowUpRight className="w-4 h-4" />
-                    ) : store.growthPct < 0 ? (
+                    ) : pct < 0 ? (
                       <ArrowDownRight className="w-4 h-4" />
                     ) : null}
-                    {store.growthPct > 0 ? "+" : ""}
-                    {store.growthPct}%
+                    {pct > 0 ? "+" : ""}
+                    {pct}%
                   </div>
                   <div className="text-right">
                     <div className="text-base font-extrabold text-[var(--text-primary)] tabular-nums">
                       S/{(lastMonth?.revenue ?? 0).toFixed(0)}
                     </div>
                     <div className="text-sm text-[var(--text-tertiary)] tabular-nums">
-                      {lastMonth?.orders ?? 0} pedidos
+                      {lastMonth?.operaciones ?? 0} operaciones
                     </div>
                   </div>
                 </div>
@@ -245,7 +251,7 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
                     <Line
                       yAxisId="ord"
                       type="monotone"
-                      dataKey="orders"
+                      dataKey="operaciones"
                       stroke="var(--accent)"
                       strokeWidth={2.5}
                       dot={{ r: 4, fill: "var(--accent)", strokeWidth: 0 }}
@@ -270,9 +276,9 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
                 </div>
                 <div className="text-center">
                   <div className="text-base font-extrabold text-[var(--text-primary)] tabular-nums">
-                    {store.totalOrders}
+                    {store.totalOperaciones}
                   </div>
-                  <div className="text-sm text-[var(--text-tertiary)]">Pedidos 6 meses</div>
+                  <div className="text-sm text-[var(--text-tertiary)]">Operaciones 6 meses</div>
                 </div>
                 <div className="text-center">
                   <div className="text-base font-extrabold text-[var(--text-primary)] tabular-nums">
@@ -300,9 +306,9 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
                     </strong>{" "}
                     (
                     <strong className="text-[var(--text-primary)] tabular-nums">
-                      {Math.max(0, lastMonth.orders + (lastMonth.orders - prevMonth.orders))}
+                      {Math.max(0, lastMonth.operaciones + (lastMonth.operaciones - prevMonth.operaciones))}
                     </strong>{" "}
-                    pedidos)
+                    operaciones)
                   </span>
                 </div>
               )}
