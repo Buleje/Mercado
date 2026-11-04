@@ -306,6 +306,16 @@ async function deleteHandler(
       });
     }
 
+    if (campos.registrosTruncados) {
+      // Una persona con más registros de los que se cruzan de una vez: la
+      // supresión de sus campos personalizados quedó parcial. Se dice, no se calla.
+      retainedData.push({
+        table: "CampoPersonalizadoValor",
+        reason:
+          "Esta persona tiene más registros de los que se cruzan en una pasada: pudo quedar sin suprimir parte de sus campos personalizados; revisarlos a mano",
+      });
+    }
+
     // Fire-and-forget audit log (CLAUDE.md rule #7)
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

@@ -405,6 +405,34 @@ describe("POST /api/compliance/data-delete — derecho de supresión", () => {
     expect(H.tabla("campoPersonalizadoValor")).toHaveLength(6);
   });
 
+  it("avisa cuando la persona tiene más registros de los que se cruzan de una vez (supresión parcial)", async () => {
+    const pedidos = H.tabla("order");
+    for (let i = 0; i < 5_001; i++) {
+      pedidos.push({ id: `ord-masivo-${i}`, tenantId: TENANT, customerPhone: TEL_A, items: [], total: 1 });
+    }
+    const res = await deleteRoute.POST(
+      pedido("/api/compliance/data-delete", { dni: DNI_A, tenantId: TENANT, reason: "pedido del titular" }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    const avisos = body.retainedData.filter(
+      (r: { table: string; reason: string }) =>
+        r.table === "CampoPersonalizadoValor" && r.reason.includes("más registros de los que se cruzan"),
+    );
+    expect(avisos).toHaveLength(1);
+  });
+
+  it("no avisa de truncado cuando la persona cabe en una pasada", async () => {
+    const res = await deleteRoute.POST(
+      pedido("/api/compliance/data-delete", { dni: DNI_A, tenantId: TENANT, reason: "pedido del titular" }),
+    );
+    const body = await res.json();
+    const avisos = body.retainedData.filter((r: { reason: string }) =>
+      r.reason.includes("más registros de los que se cruzan"),
+    );
+    expect(avisos).toHaveLength(0);
+  });
+
   it("nunca borra valores de otro negocio", async () => {
     await deleteRoute.POST(
       pedido("/api/compliance/data-delete", { dni: DNI_A, tenantId: TENANT, reason: "pedido del titular" }),
