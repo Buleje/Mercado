@@ -82,6 +82,15 @@ const casos = [
   ["grep que nombra migrate dev", `grep -rn "prisma migrate dev" docs/`, "pasa"],
   ["commit que nombra migrate reset", `git commit -m "bloquea prisma migrate reset"`, "pasa"],
   ["DROP SCHEMA entre comillas (siempre)", `psql -c "${"DR" + "OP"} SCHEMA public CASCADE"`, "bloquea"],
+  // 04-11: pkill -f se mata solo (la terminal contiene el patrón); `matar` y el corchete pasan.
+  ["pkill -f sin corchete", `pkill -f qr-web.py`, "bloquea"],
+  ["pkill -f con corchete", `pkill -f '[q]r-web.py'`, "pasa"],
+  ["kill de un pgrep -f", `kill $(pgrep -f prueba-resumen)`, "bloquea"],
+  ["pgrep -af solo lista", `pgrep -af prueba-resumen | head`, "pasa"],
+  ["pkill sin -f", `pkill -x chrome`, "pasa"],
+  ["matar con patrón", `matar 'qr-web.py'`, "pasa"],
+  ["grep que nombra pkill -f", `grep -n "pkill -f x" notas.md`, "pasa"],
+  ["tirar a la papelera", `tirar "/mnt/c/Users/Public/claude-envio/Prueba escáner"`, "pasa"],
 ];
 let mal = 0;
 for (const [nombre, cmd, espera, envExtra] of casos) {

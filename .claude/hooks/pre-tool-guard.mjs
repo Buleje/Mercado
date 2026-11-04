@@ -224,7 +224,9 @@ const SUDO_DENYLIST = [
 ];
 
 const BLOCK_PATTERNS = [
-  { pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/, label: "rm -rf (recursivo)", severity: "critical", reason: "Borrado recursivo fuera de las carpetas temporales (/tmp, /var/tmp, ~/.cache, %TEMP% de Windows). Usá `git rm` o `rimraf` si es node_modules.", sobre: "ejecutable" },
+  { pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/, label: "rm -rf (recursivo)", severity: "critical", reason: "Borrado recursivo fuera de las carpetas temporales (/tmp, /var/tmp, ~/.cache, %TEMP% de Windows). Usá `tirar <ruta>` (a la papelera, se deshace con `tirar --volver`; rutas de Windows → Papelera de reciclaje) o `git rm` si está en git.", sobre: "ejecutable" },
+  // 04-11: `pkill -f X` mata también a la terminal de Claude (su línea contiene X) → «Exit code 143/144», 12 veces en 3 días.
+  { pattern: /\bpkill\b[^;&|\n]*\s-[a-zA-Z]*f\b(?![^;&|\n]*\[)|\bkill\b[^;&|\n]*\$\(\s*pgrep\b[^)]*\s-[a-zA-Z]*f\b(?![^)]*\[)/, label: "pkill -f (se mata solo)", severity: "high", reason: "`pkill -f` / `kill $(pgrep -f …)` cierra también ESTA terminal porque su línea contiene el patrón. Usá `matar '<patrón>'` (`matar -n` solo lista) o el truco del corchete: `pkill -f '[q]r-web.py'`.", sobre: "ejecutable" },
   // [^;&|\n]* = sólo los argumentos de ESE rm (28-10: `df -h / ; ollama rm x` se bloqueaba por el `/` del df).
   { pattern: /\brm\b[^;&|\n]*(--no-preserve-root|\s\/\*?(?:\s|$)|\s(?:~|\$HOME)\/?\*?(?:\s|$))/, label: "rm sobre / o ~", severity: "critical", reason: "rm apuntando a raíz o home. Bloqueado siempre.", sobre: "ejecutable" },
   { pattern: /\bDROP\s+(TABLE|DATABASE|SCHEMA|INDEX)\b/i, label: "DROP SQL", severity: "critical", reason: "La base de .env.local es PRODUCCIÓN. Escribí el .sql con Write en prisma/migrations/<carpeta>/ y aplicalo con `node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <archivo.sql> --ensayo dotenv_config_path=.env.local` (DIRECT_URL no resuelve desde esta red)." },
@@ -385,6 +387,8 @@ function bashGuard(toolInput) {
     const texto = p.sobre === "ejecutable" ? ejecutable : command;
     if (!p.pattern.test(texto)) continue;
     if (p.sobre === "ejecutable" && p.severity === "critical" && /recursivo/.test(p.label) && rmRecursivoSeguro(ejecutable)) continue;
+    // El patrón entre comillas desaparece de lo ejecutable: el truco del corchete se mira en el texto entero.
+    if (p.label === "pkill -f (se mata solo)" && /\b(?:pkill|pgrep)\b[^;&|\n]*\s-[a-zA-Z]*f\s+['"]?[^'"\s;&|]*\[/.test(command)) continue;
     return p;
   }
   return null;
