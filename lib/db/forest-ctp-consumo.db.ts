@@ -357,6 +357,151 @@ async function especiesEnOtraFila(
   return especies.size > 0 ? { fila: fila.speciesCommonName, especies: [...especies].sort((a, b) => a.localeCompare(b, "es")) } : null;
 }
 
+/** Lo que `costoDesde` lee de la línea. */
+const LINEA_DE_COSTO_SELECT = {
+  volumeInputM3: true,
+  quantity: true,
+  unit: true,
+  costoProceso: true,
+  moneda: true,
+} satisfies Prisma.ForestCtpEntrySelect;
+
+/** Con qué viaja cada consumo de `listByEntry`: la guía y especie de cada ingreso. */
+const CONSUMO_DE_LINEA_INCLUDE = {
+  woodEntry: {
+    select: {
+      id: true,
+      gtfNumber: true,
+      speciesCommonName: true,
+      volumeM3: true,
+      costoTotal: true,
+      moneda: true,
+      entryDate: true,
+      /* ADR-437 §1: la de servicio no tiene factura que esperar. */
+      maderaDeTercero: true,
+    },
+  },
+} satisfies Prisma.ForestCtpConsumoInclude;
+
+/** Un consumo como lo devuelve `listByEntry`. */
+export type ConsumoDeLinea = Prisma.ForestCtpConsumoGetPayload<{ include: typeof CONSUMO_DE_LINEA_INCLUDE }>;
+
+/**
+ * El cálculo puro de `costoDeLinea` (ADR-134 D6), sin leer nada: la línea y
+ * sus consumos ya leídos. Una sola regla para la lectura de una línea y la de
+ * muchas (`costosDeLineas`).
+ */
+function costoDesde(
+  linea: Prisma.ForestCtpEntryGetPayload<{ select: typeof LINEA_DE_COSTO_SELECT }>,
+  consumos: readonly ConsumoDeLinea[],
+): CostoDeLinea {
+  const atribuidoM3 = r4(consumos.reduce((a, c) => a + Number(c.volumeM3), 0));
+  const declarado = linea.volumeInputM3 ? Number(linea.volumeInputM3) : 0;
+  const sinAtribuirM3 = r4(Math.max(0, declarado - atribuidoM3));
+  const congelado = consumos.some((c) => c.congeladoAt != null);
+  const costoProceso = linea.costoProceso != null ? Number(linea.costoProceso) : null;
+
+  const base = {
+    costoProceso,
+    congelado,
+    atribuidoM3,
+    sinAtribuirM3,
+    moneda: linea.moneda ?? "PEN",
+  };
+
+  if (consumos.length === 0) {
+    return {
+      ...base,
+      costoMateriaPrima: null,
+      costoTotal: null,
+      costoUnitario: null,
+      motivo: "sin_consumos",
+    };
+  }
+
+  /* Madera de servicio (ADR-437 §1): no es nuestra, no lleva costo. No es
+     «falta factura» (esa espera un papel que nunca va a llegar). Sólo se
+     declara «de servicio» si TODA la madera consumida lo es: si hay madera
+     propia, sus facturas se revisan primero — antes la marca de servicio
+     ganaba y una factura propia faltante no aparecía (revisión 26-09). */
+  const esServicio = (c: (typeof consumos)[number]) => c.costoUnitarioSnap == null && c.woodEntry.maderaDeTercero;
+  const propios = consumos.filter((c) => !esServicio(c));
+  if (propios.length === 0) {
+    return {
+      ...base,
+      costoMateriaPrima: null,
+      costoTotal: null,
+      costoUnitario: null,
+      motivo: "madera_de_servicio",
+    };
+  }
+
+  // Monedas: las del ingreso mandan; mezclarlas invalida la suma. La de
+  // servicio no tiene precio de compra: su moneda no entra a la pregunta.
+  const monedas = new Set(propios.map((c) => c.woodEntry.moneda ?? "PEN"));
+  if (monedas.size > 1) {
+    return {
+      ...base,
+      costoMateriaPrima: null,
+      costoTotal: null,
+      costoUnitario: null,
+      motivo: "monedas_mezcladas",
+    };
+  }
+
+  let costoMateriaPrima = 0;
+  /* Todas las que faltan, no la primera: el aviso dice CUÁLES (ADR-485). */
+  const sinCosto = new Set<string>();
+  for (const c of propios) {
+    // Congelado gana: es el costo con el que se reportó el período.
+    const unitario =
+      c.costoUnitarioSnap != null
+        ? Number(c.costoUnitarioSnap)
+        : c.woodEntry.costoTotal != null && Number(c.woodEntry.volumeM3) > 0
+          ? Number(c.woodEntry.costoTotal) / Number(c.woodEntry.volumeM3)
+          : null;
+    if (unitario == null) sinCosto.add(c.woodEntry.gtfNumber);
+    else costoMateriaPrima += unitario * Number(c.volumeM3);
+  }
+  // Sin factura ⇒ no se sabe. NULL honesto, no 0 (D6).
+  if (sinCosto.size > 0) {
+    return {
+      ...base,
+      costoMateriaPrima: null,
+      costoTotal: null,
+      costoUnitario: null,
+      motivo: "falta_factura",
+      guiasSinCosto: [...sinCosto].sort(),
+    };
+  }
+
+  /* Propia completa + algo de servicio: no hay faltante, pero tampoco un
+     costo por unidad — el producto no se separa por dueño, y promediar sólo
+     lo comprado sobre todo lo producido lo diluiría. `null` honesto, con su
+     motivo: el despacho que salga de acá queda «mixto» (incompleto). */
+  if (propios.length < consumos.length) {
+    return {
+      ...base,
+      costoMateriaPrima: null,
+      costoTotal: null,
+      costoUnitario: null,
+      motivo: "mixto_servicio",
+    };
+  }
+
+  const costoTotal = r2(costoMateriaPrima + (costoProceso ?? 0));
+  const producido = linea.quantity != null ? Number(linea.quantity) : 0;
+
+  return {
+    ...base,
+    moneda: [...monedas][0],
+    costoMateriaPrima: r2(costoMateriaPrima),
+    costoTotal,
+    costoUnitario: producido > 0 ? r2(costoTotal / producido) : null,
+    motivo: producido > 0 ? "ok" : "sin_produccion",
+  };
+}
+
 export class ForestCtpConsumoDB {
   /**
    * Reemplaza el set de consumos de una línea, validando I1 + I2 + tenant
@@ -690,27 +835,33 @@ export class ForestCtpConsumoDB {
   }
 
   /** Consumos de una línea, con la guía y especie de cada ingreso. */
-  static async listByEntry(tenantId: string, ctpEntryId: string) {
+  static async listByEntry(tenantId: string, ctpEntryId: string): Promise<ConsumoDeLinea[]> {
     if (!tenantId) throw new Error("tenantId is required");
     return prisma.forestCtpConsumo.findMany({
       where: { tenantId, ctpEntryId },
       orderBy: { createdAt: "asc" },
-      include: {
-        woodEntry: {
-          select: {
-            id: true,
-            gtfNumber: true,
-            speciesCommonName: true,
-            volumeM3: true,
-            costoTotal: true,
-            moneda: true,
-            entryDate: true,
-            /* ADR-437 §1: la de servicio no tiene factura que esperar. */
-            maderaDeTercero: true,
-          },
-        },
-      },
+      include: CONSUMO_DE_LINEA_INCLUDE,
     });
+  }
+
+  /**
+   * Lo mismo que `listByEntry`, para MUCHAS líneas en una sola ida y agrupado
+   * por línea (cada lista en el mismo orden). Lo usa el rendimiento del
+   * aserradero: una ida por corrida eran ~240 consultas y 7 s.
+   */
+  static async listByEntries(tenantId: string, ctpEntryIds: readonly string[]): Promise<Map<string, ConsumoDeLinea[]>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(ctpEntryIds)].filter(Boolean);
+    const porLinea = new Map<string, ConsumoDeLinea[]>(ids.map((id) => [id, []]));
+    if (ids.length === 0) return porLinea;
+    const filas = await prisma.forestCtpConsumo.findMany({
+      where: { tenantId, ctpEntryId: { in: ids } },
+      /* `id` desempata: dos consumos del mismo instante salen siempre igual (revisión 04-11). */
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      include: CONSUMO_DE_LINEA_INCLUDE,
+    });
+    for (const f of filas) porLinea.get(f.ctpEntryId)?.push(f);
+    return porLinea;
   }
 
   /**
@@ -764,123 +915,43 @@ export class ForestCtpConsumoDB {
     const [linea, consumos] = await Promise.all([
       prisma.forestCtpEntry.findFirst({
         where: { id: ctpEntryId, tenantId, deletedAt: null },
-        select: {
-          volumeInputM3: true,
-          quantity: true,
-          unit: true,
-          costoProceso: true,
-          moneda: true,
-        },
+        select: LINEA_DE_COSTO_SELECT,
       }),
       ForestCtpConsumoDB.listByEntry(tenantId, ctpEntryId),
     ]);
     if (!linea) throw new Error("Línea CTP no encontrada");
+    return costoDesde(linea, consumos);
+  }
 
-    const atribuidoM3 = r4(consumos.reduce((a, c) => a + Number(c.volumeM3), 0));
-    const declarado = linea.volumeInputM3 ? Number(linea.volumeInputM3) : 0;
-    const sinAtribuirM3 = r4(Math.max(0, declarado - atribuidoM3));
-    const congelado = consumos.some((c) => c.congeladoAt != null);
-    const costoProceso = linea.costoProceso != null ? Number(linea.costoProceso) : null;
-
-    const base = {
-      costoProceso,
-      congelado,
-      atribuidoM3,
-      sinAtribuirM3,
-      moneda: linea.moneda ?? "PEN",
-    };
-
-    if (consumos.length === 0) {
-      return {
-        ...base,
-        costoMateriaPrima: null,
-        costoTotal: null,
-        costoUnitario: null,
-        motivo: "sin_consumos",
-      };
+  /**
+   * `costoDeLinea` de MUCHAS líneas con 2 consultas en total, y los consumos
+   * que leyó (los mismos de `listByEntry`), para no leerlos dos veces. El
+   * cálculo es el mismo (`costoDesde`). Una línea que no existe tira el mismo
+   * error que `costoDeLinea`.
+   */
+  static async costosDeLineas(
+    tenantId: string,
+    ctpEntryIds: readonly string[],
+  ): Promise<Map<string, { costo: CostoDeLinea; consumos: ConsumoDeLinea[] }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(ctpEntryIds)].filter(Boolean);
+    const out = new Map<string, { costo: CostoDeLinea; consumos: ConsumoDeLinea[] }>();
+    if (ids.length === 0) return out;
+    const [lineas, consumos] = await Promise.all([
+      prisma.forestCtpEntry.findMany({
+        where: { id: { in: ids }, tenantId, deletedAt: null },
+        select: { id: true, ...LINEA_DE_COSTO_SELECT },
+      }),
+      ForestCtpConsumoDB.listByEntries(tenantId, ids),
+    ]);
+    const porId = new Map(lineas.map((l) => [l.id, l]));
+    for (const id of ids) {
+      const linea = porId.get(id);
+      if (!linea) throw new Error("Línea CTP no encontrada");
+      const deLinea = consumos.get(id) ?? [];
+      out.set(id, { costo: costoDesde(linea, deLinea), consumos: deLinea });
     }
-
-    /* Madera de servicio (ADR-437 §1): no es nuestra, no lleva costo. No es
-       «falta factura» (esa espera un papel que nunca va a llegar). Sólo se
-       declara «de servicio» si TODA la madera consumida lo es: si hay madera
-       propia, sus facturas se revisan primero — antes la marca de servicio
-       ganaba y una factura propia faltante no aparecía (revisión 26-09). */
-    const esServicio = (c: (typeof consumos)[number]) => c.costoUnitarioSnap == null && c.woodEntry.maderaDeTercero;
-    const propios = consumos.filter((c) => !esServicio(c));
-    if (propios.length === 0) {
-      return {
-        ...base,
-        costoMateriaPrima: null,
-        costoTotal: null,
-        costoUnitario: null,
-        motivo: "madera_de_servicio",
-      };
-    }
-
-    // Monedas: las del ingreso mandan; mezclarlas invalida la suma. La de
-    // servicio no tiene precio de compra: su moneda no entra a la pregunta.
-    const monedas = new Set(propios.map((c) => c.woodEntry.moneda ?? "PEN"));
-    if (monedas.size > 1) {
-      return {
-        ...base,
-        costoMateriaPrima: null,
-        costoTotal: null,
-        costoUnitario: null,
-        motivo: "monedas_mezcladas",
-      };
-    }
-
-    let costoMateriaPrima = 0;
-    /* Todas las que faltan, no la primera: el aviso dice CUÁLES (ADR-485). */
-    const sinCosto = new Set<string>();
-    for (const c of propios) {
-      // Congelado gana: es el costo con el que se reportó el período.
-      const unitario =
-        c.costoUnitarioSnap != null
-          ? Number(c.costoUnitarioSnap)
-          : c.woodEntry.costoTotal != null && Number(c.woodEntry.volumeM3) > 0
-            ? Number(c.woodEntry.costoTotal) / Number(c.woodEntry.volumeM3)
-            : null;
-      if (unitario == null) sinCosto.add(c.woodEntry.gtfNumber);
-      else costoMateriaPrima += unitario * Number(c.volumeM3);
-    }
-    // Sin factura ⇒ no se sabe. NULL honesto, no 0 (D6).
-    if (sinCosto.size > 0) {
-      return {
-        ...base,
-        costoMateriaPrima: null,
-        costoTotal: null,
-        costoUnitario: null,
-        motivo: "falta_factura",
-        guiasSinCosto: [...sinCosto].sort(),
-      };
-    }
-
-    /* Propia completa + algo de servicio: no hay faltante, pero tampoco un
-       costo por unidad — el producto no se separa por dueño, y promediar sólo
-       lo comprado sobre todo lo producido lo diluiría. `null` honesto, con su
-       motivo: el despacho que salga de acá queda «mixto» (incompleto). */
-    if (propios.length < consumos.length) {
-      return {
-        ...base,
-        costoMateriaPrima: null,
-        costoTotal: null,
-        costoUnitario: null,
-        motivo: "mixto_servicio",
-      };
-    }
-
-    const costoTotal = r2(costoMateriaPrima + (costoProceso ?? 0));
-    const producido = linea.quantity != null ? Number(linea.quantity) : 0;
-
-    return {
-      ...base,
-      moneda: [...monedas][0],
-      costoMateriaPrima: r2(costoMateriaPrima),
-      costoTotal,
-      costoUnitario: producido > 0 ? r2(costoTotal / producido) : null,
-      motivo: producido > 0 ? "ok" : "sin_produccion",
-    };
+    return out;
   }
 
   /**

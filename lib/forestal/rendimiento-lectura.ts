@@ -47,13 +47,17 @@ async function plataDeCorridas(
   tenantId: string,
   corridas: readonly CorridaRendimiento[],
 ): Promise<{ porCorrida: Map<string, RendimientoPlata>; guiasSinLeer: number }> {
-  const leidas = await enTandas(corridas, async (c) => {
-    const [entry, costo, consumos] = await Promise.all([
-      ForestCtpDB.getById(tenantId, c.id),
-      ForestCtpConsumoDB.costoDeLinea(tenantId, c.id),
-      ForestCtpConsumoDB.listByEntry(tenantId, c.id),
-    ]);
-    return { c, entry, costo, consumos };
+  /* 3 consultas para todas las corridas (antes ~4 por corrida, 7 s con 60): el costo
+     es el mismo cálculo de `costoDeLinea` y los consumos son los que ese costo leyó. */
+  const ids = corridas.map((c) => c.id);
+  const [costos, paquetes] = await Promise.all([
+    ForestCtpConsumoDB.costosDeLineas(tenantId, ids),
+    ForestCtpDB.paquetesDeLineas(tenantId, ids),
+  ]);
+  const leidas = corridas.map((c) => {
+    const leida = costos.get(c.id);
+    if (!leida) throw new Error("Línea CTP no encontrada");
+    return { c, paquetes: paquetes.get(c.id) ?? [], costo: leida.costo, consumos: leida.consumos };
   });
 
   const todas = [...new Set(leidas.flatMap((l) => l.consumos.map((x) => x.woodEntry.gtfNumber).filter((g): g is string => !!g)))];
@@ -84,7 +88,7 @@ async function plataDeCorridas(
   });
 
   const out = new Map<string, RendimientoPlata>();
-  for (const { c, entry, costo, consumos } of leidas) {
+  for (const { c, paquetes: deCorrida, costo, consumos } of leidas) {
     const entrada = entradaDePlata({
       m3: c.m3Entrada,
       consumos: consumos.map((x) => ({ woodEntryId: x.woodEntry.id, gtfNumber: x.woodEntry.gtfNumber, volumeM3: Number(x.volumeM3) || 0 })),
@@ -100,7 +104,7 @@ async function plataDeCorridas(
     });
     const salida = salidaDePlata({
       m3: c.m3Salida,
-      paquetes: (entry?.paquetes ?? []).map((p) => ({ volumenM3: Number(p.volumenM3) || 0, pieTablar: p.pieTablar, precioVentaPt: p.precioVentaPt })),
+      paquetes: deCorrida.map((p) => ({ volumenM3: Number(p.volumenM3) || 0, pieTablar: p.pieTablar, precioVentaPt: p.precioVentaPt })),
       costoProceso: costo.costoProceso,
     });
     out.set(c.id, rendimientoEnPlata(entrada, salida, { parcial: c.parcial }));

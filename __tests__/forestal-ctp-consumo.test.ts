@@ -358,6 +358,36 @@ describe.skipIf(!HAS_DB)("Costeo ponderado (ADR-134 D6)", () => {
     expect(c.costoMateriaPrima).toBeNull(); // no se suma lo que no se sabe
     expect(c.motivo).toBe("falta_factura");
   }, 30_000);
+
+  it("en lote da lo MISMO que de a una (rendimiento del aserradero, 04-11)", async () => {
+    const conFactura = await crearIngreso(3, 1260);
+    const sinFactura = await crearIngreso(2);
+    const ok = await crearLinea(3, 2.5, 100);
+    const falta = await crearLinea(2, 1.5);
+    const vacia = await crearLinea(4, 3);
+    await ForestCtpConsumoDB.setConsumos(TENANT, ok.id, [{ woodEntryId: conFactura.id, volumeM3: 3 }], P);
+    await ForestCtpConsumoDB.setConsumos(TENANT, falta.id, [{ woodEntryId: sinFactura.id, volumeM3: 2 }], P);
+
+    // El id repetido no duplica nada: el mapa trae una entrada por línea.
+    const lote = await ForestCtpConsumoDB.costosDeLineas(TENANT, [ok.id, falta.id, vacia.id, ok.id]);
+    expect(lote.size).toBe(3);
+    for (const l of [ok, falta, vacia]) {
+      expect(lote.get(l.id)?.costo).toEqual(await ForestCtpConsumoDB.costoDeLinea(TENANT, l.id));
+      expect(lote.get(l.id)?.consumos.map((c) => c.id)).toEqual(
+        (await ForestCtpConsumoDB.listByEntry(TENANT, l.id)).map((c) => c.id),
+      );
+    }
+    expect(lote.get(ok.id)?.costo.motivo).toBe("ok");
+    expect(lote.get(falta.id)?.costo.motivo).toBe("falta_factura");
+    expect(lote.get(vacia.id)?.costo.motivo).toBe("sin_consumos");
+  }, 30_000);
+
+  it("en lote, una línea que no existe falla igual que de a una", async () => {
+    const linea = await crearLinea(1, 1);
+    await expect(ForestCtpConsumoDB.costosDeLineas(TENANT, [linea.id, "no-existe-04-11"])).rejects.toThrow(
+      "Línea CTP no encontrada",
+    );
+  }, 30_000);
 });
 
 describe.skipIf(!HAS_DB)("Corrida real: mezcla de N guías", () => {

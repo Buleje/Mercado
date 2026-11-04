@@ -1541,6 +1541,39 @@ export class ForestCtpDB {
   }
 
   /**
+   * Los paquetes de MUCHAS corridas en una sola ida, agrupados por corrida y en
+   * el mismo orden que `getById` (sólo lo que pesa la plata: m³, PT y precio).
+   * Una corrida borrada no trae paquetes, igual que `getById` devuelve null, y
+   * un paquete borrado tampoco cuenta.
+   * Lo usa el rendimiento del aserradero: una ida por corrida eran 60 lecturas.
+   */
+  static async paquetesDeLineas(
+    tenantId: string,
+    ids: readonly string[],
+  ): Promise<Map<string, { volumenM3: number | null; pieTablar: number | null; precioVentaPt: number | null }[]>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const unicos = [...new Set(ids)].filter(Boolean);
+    const porCorrida = new Map<string, { volumenM3: number | null; pieTablar: number | null; precioVentaPt: number | null }[]>(
+      unicos.map((id) => [id, []]),
+    );
+    if (unicos.length === 0) return porCorrida;
+    const filas = await prisma.forestCtpPaquete.findMany({
+      /* Sin los paquetes borrados: no son producción (anular-día y reportes ya los
+         dejan fuera; `getById` no, porque su código sigue tomado). */
+      where: { tenantId, ctpEntryId: { in: unicos }, deletedAt: null, entry: { tenantId, deletedAt: null } },
+      select: { ctpEntryId: true, volumenM3: true, pieTablar: true, precioVentaPt: true },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+    for (const p of filas)
+      porCorrida.get(p.ctpEntryId)?.push({
+        volumenM3: p.volumenM3 != null ? Number(p.volumenM3) : null,
+        pieTablar: p.pieTablar != null ? Number(p.pieTablar) : null,
+        precioVentaPt: p.precioVentaPt != null ? Number(p.precioVentaPt) : null,
+      });
+    return porCorrida;
+  }
+
+  /**
    * DECLARAR LA PRODUCCIÓN de una corrida abierta en el patio (ADR-340).
    *
    * La corrida nació al consumir —con su materia prima y sin `quantity`— y esto
