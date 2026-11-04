@@ -714,6 +714,42 @@ export class ForestCtpConsumoDB {
   }
 
   /**
+   * El consumo por guía de MUCHAS corridas en una sola ida, con lo que la guía
+   * dice de su origen (proveedor, RUC, permiso, GTF). Sólo lectura: lo usa el
+   * rendimiento por origen (`lib/forestal/precio-troza-lectura.ts`). Una ida
+   * por corrida vencía la tx en otras lecturas (memoria `idas-por-fila`).
+   */
+  static async consumosConOrigen(tenantId: string, ctpEntryIds: readonly string[]) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(ctpEntryIds)].filter(Boolean);
+    if (ids.length === 0) return [];
+    const tandas: string[][] = [];
+    for (let i = 0; i < ids.length; i += 500) tandas.push(ids.slice(i, i + 500));
+    const leidas = await Promise.all(
+      tandas.map((tanda) =>
+        prisma.forestCtpConsumo.findMany({
+          where: { tenantId, ctpEntryId: { in: tanda }, woodEntry: { tenantId } },
+          select: {
+            ctpEntryId: true,
+            volumeM3: true,
+            woodEntry: {
+              select: {
+                id: true,
+                gtfNumber: true,
+                providerName: true,
+                providerDocument: true,
+                supplierId: true,
+                originSourceNumber: true,
+              },
+            },
+          },
+        }),
+      ),
+    );
+    return leidas.flat();
+  }
+
+  /**
    * Costo de una línea de producción (ADR-134 D6).
    *
    * costoUnitario_i = COALESCE(snap_i, wood.costoTotal / wood.volumeM3)
