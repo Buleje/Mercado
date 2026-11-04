@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
-import { Plus, Check, Truck, AlertTriangle, Copy } from "@buleje/design-system/icons";
+import { Plus, Check, Truck, AlertTriangle, Copy, FileUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -21,6 +21,9 @@ import dynamic from "next/dynamic";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const OCRecepcionModal = dynamic(() => import("@/components/admin/compras/OCRecepcionModal"), {
+  ssr: false,
+});
+const SubirFacturaXmlModal = dynamic(() => import("@/components/admin/compras/factura-xml/SubirFacturaXmlModal"), {
   ssr: false,
 });
 
@@ -53,6 +56,7 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
   } = oc;
   const indicadores = useIndicadoresOc(oc);
   const menu = useMenuOrdenes(oc);
+  const [xmlAbierto, setXmlAbierto] = useState(false);
   const sinFlete = orders.filter(
     (o) => o.status === "recibido" && (o.flete ?? 0) + (o.otrosCostos ?? 0) === 0,
   ).length;
@@ -65,14 +69,24 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
         ayuda={AYUDA}
         indicadores={indicadores.boton}
         principal={
-          <button
-            type="button"
-            onClick={() => setShowCreate((v) => !v)}
-            title="Nueva orden"
-            className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4 max-2xl:w-12 max-2xl:px-0" })}
-          >
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden /> <span className="max-2xl:sr-only">Nueva orden</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setXmlAbierto(true)}
+              title="Compra desde la factura XML"
+              className={button({ variant: "secondary", className: "shrink-0 rounded-xl px-4 max-2xl:w-12 max-2xl:px-0" })}
+            >
+              <FileUp className="h-4 w-4" strokeWidth={2} aria-hidden /> <span className="max-2xl:sr-only">Desde factura XML</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreate((v) => !v)}
+              title="Nueva orden"
+              className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4 max-2xl:w-12 max-2xl:px-0" })}
+            >
+              <Plus className="h-4 w-4" strokeWidth={2} aria-hidden /> <span className="max-2xl:sr-only">Nueva orden</span>
+            </button>
+          </div>
         }
         acciones={menu.acciones}
         tituloMenu="Historial por proveedor, comparar cotizaciones y Excel"
@@ -186,6 +200,19 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
             <p className="text-sm font-semibold text-[var(--text-primary)] pt-1.5">{toast.msg}</p>
           </div>
         </div>
+      )}
+
+      {xmlAbierto && (
+        <SubirFacturaXmlModal
+          open
+          onClose={() => setXmlAbierto(false)}
+          onCreada={(po) => {
+            setXmlAbierto(false);
+            const total = Number(po.total).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            oc.avisar(`Compra creada por S/ ${total}: queda pendiente hasta que llegue la mercadería`);
+            void oc.load();
+          }}
+        />
       )}
 
       {/* Barcode scanner modal */}
