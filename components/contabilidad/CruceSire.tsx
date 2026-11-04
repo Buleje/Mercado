@@ -25,11 +25,13 @@ const CIFRAS: Array<{ clase: ClaseDiferencia; titulo: string; ayuda: string }> =
   { clase: "soloSunat", titulo: "SUNAT tiene y tu libro no", ayuda: "Comprobantes que SUNAT recibió y que tu libro de ventas no anota." },
   { clase: "soloLibro", titulo: "Tu libro tiene y SUNAT no", ayuda: "Ventas anotadas en tu libro que no salen en la propuesta de SUNAT." },
   { clase: "importes", titulo: "Importes distintos", ayuda: "Están en los dos, pero la base, el IGV o el total no coinciden." },
+  { clase: "repetida", titulo: "Repetidos en SUNAT", ayuda: "SUNAT trae el mismo comprobante dos veces y con importes distintos." },
 ];
 const QUE_PASA: Record<ClaseDiferencia, string> = {
   soloSunat: "Solo en SUNAT",
   soloLibro: "Solo en tu libro",
   importes: "No cuadra",
+  repetida: "Repetida en la propuesta",
 };
 const CAMPO: Record<keyof ImportesCruce, string> = { base: "base", igv: "IGV", total: "total" };
 const TIPO: Record<string, string> = { "01": "Factura", "03": "Boleta", "07": "Nota de crédito", "08": "Nota de débito" };
@@ -128,12 +130,23 @@ function TablaDiferencias({ diferencias }: { diferencias: DiferenciaCruce[] }) {
               <td className="whitespace-nowrap">
                 <span className="block">{QUE_PASA[d.clase]}</span>
                 {d.campos.length > 0 && <span className="block text-xs text-[var(--text-secondary)]">en {d.campos.map((c) => CAMPO[c]).join(", ")}</span>}
+                {d.rango && (
+                  <span className="block text-xs text-[var(--text-secondary)]">
+                    rango de {d.rango.boletas} boletas · {d.rango.enLibro} en tu libro
+                  </span>
+                )}
               </td>
               <td className="text-right tabular-nums">
                 <Importes importes={d.libro} campos={d.campos} />
               </td>
               <td className="text-right tabular-nums">
                 <Importes importes={d.sunat} campos={d.campos} />
+                {d.sunatOtro && (
+                  <>
+                    <span className="block text-xs text-[var(--text-secondary)]">y otra vez:</span>
+                    <Importes importes={d.sunatOtro} campos={d.campos} />
+                  </>
+                )}
               </td>
               <td className="whitespace-nowrap text-right font-medium tabular-nums">{formatCurrency(d.diferencia)}</td>
             </tr>
@@ -146,14 +159,14 @@ function TablaDiferencias({ diferencias }: { diferencias: DiferenciaCruce[] }) {
 
 function Resultado({ cruce, nombre }: { cruce: ResultadoDeCruce; nombre: string }) {
   const { resumen, totales } = cruce;
-  const todoCuadra = resumen.soloSunat + resumen.soloLibro + resumen.importes === 0;
+  const todoCuadra = resumen.soloSunat + resumen.soloLibro + resumen.importes + resumen.repetida + resumen.sinExpandir === 0;
   return (
     <div className="space-y-3">
       <p className="text-sm text-[var(--text-secondary)]">
         {nombre}: {resumen.enSunat} en SUNAT ({formatCurrency(totales.sunat.total)}) · {resumen.enLibro} en tu libro ({formatCurrency(totales.libro.total)}) · {resumen.iguales}{" "}
         iguales
       </p>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {CIFRAS.map((c) => (
           <StatCard key={c.clase} label={c.titulo} value={resumen[c.clase]} subValue={c.ayuda} density="compact" emphasis={resumen[c.clase] > 0 ? "warning" : "success"} />
         ))}

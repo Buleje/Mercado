@@ -8,7 +8,16 @@ import { describe, expect, it } from "vitest";
 import { strToU8, zipSync } from "fflate";
 import { armarRegistroVentas, ESTADO_VENTA, ORIGEN_VENTA, type ComprobanteEmitido } from "@/lib/contabilidad/libros/registro-ventas";
 import { armarSireRvie } from "@/lib/contabilidad/libros/sire-rvie";
-import { centimosSire, claveComprobante, cruzarConPropuesta, leerArchivoPropuesta, parsearPropuestaRvie, type ResultadoCruce } from "@/lib/contabilidad/libros/sire-cruce";
+import {
+  centimosSire,
+  claveComprobante,
+  cruzarConPropuesta,
+  leerArchivoPropuesta,
+  parsearPropuestaRvie,
+  tipoDePropuesta,
+  TOPE_BOLETAS_POR_RANGO,
+  type ResultadoCruce,
+} from "@/lib/contabilidad/libros/sire-cruce";
 import type { FilaLibro } from "@/lib/contabilidad/libros/comun";
 
 const RUC = "20100066603";
@@ -38,7 +47,7 @@ const filaLibro = (p: Partial<FilaLibro>): FilaLibro => ({
 });
 
 /** Una línea de propuesta con los campos en la posición del Anexo 2 (40 campos). */
-function lineaSunat(p: { tipo?: string; serie?: string; numero?: string; cliente?: string; base?: string; igv?: string; total?: string; periodo?: string; ruc?: string }): string {
+function lineaSunat(p: { tipo?: string; serie?: string; numero?: string; final?: string; cliente?: string; base?: string; igv?: string; total?: string; periodo?: string; ruc?: string }): string {
   const c = Array.from({ length: 40 }, () => "");
   c[0] = p.ruc ?? RUC;
   c[1] = "BODEGA SAN MARTIN S.A.C.";
@@ -47,6 +56,7 @@ function lineaSunat(p: { tipo?: string; serie?: string; numero?: string; cliente
   c[6] = p.tipo ?? "03";
   c[7] = p.serie ?? "B001";
   c[8] = p.numero ?? "1";
+  c[9] = p.final ?? "";
   c[12] = p.cliente ?? "";
   c[14] = p.base ?? "100.00";
   c[16] = p.igv ?? "18.00";
@@ -54,6 +64,28 @@ function lineaSunat(p: { tipo?: string; serie?: string; numero?: string; cliente
   c[26] = "PEN";
   return c.join("|");
 }
+
+/** Una línea de la propuesta de COMPRAS (RCE): el total en la posición 24 y la moneda («PEN») en la 25. */
+function lineaCompras(p: { tipo?: string; serie?: string; numero?: string } = {}): string {
+  const c = Array.from({ length: 40 }, () => "");
+  c[0] = RUC;
+  c[1] = "BODEGA SAN MARTIN S.A.C.";
+  c[2] = "202610";
+  c[4] = "10/10/2026";
+  c[6] = p.tipo ?? "01";
+  c[7] = p.serie ?? "F001";
+  c[8] = "2026";
+  c[9] = p.numero ?? "55";
+  c[14] = "20131312955";
+  c[15] = "FERRETERIA EL SOL SAC";
+  c[24] = "118.00";
+  c[25] = "PEN";
+  return c.join("|");
+}
+
+/** Boletas B001 del libro, de la `desde` a la `hasta`, de S/ 20,00 + IGV 3,60 = 23,60 cada una. */
+const boletas = (desde: number, hasta: number): FilaLibro[] =>
+  Array.from({ length: hasta - desde + 1 }, (_, i) => filaLibro({ numero: desde + i, baseGravada: 20, igv: 3.6, total: 23.6 }));
 
 function cruzar(txt: string, filas: FilaLibro[], negocio: { ruc: string | null; periodo: string } = MES): Extract<ResultadoCruce, { ok: true }> {
   const p = parsearPropuestaRvie(txt);
@@ -78,7 +110,7 @@ describe("cruce con un archivo de NUESTRO exportador", () => {
     expect(exportado.ok).toBe(true);
     expect(exportado.lineas).toBe(4);
     const r = cruzar(exportado.contenidoTxt, filas);
-    expect(r.resumen).toEqual({ soloSunat: 0, soloLibro: 0, importes: 0, iguales: 4, enSunat: 4, enLibro: 4, sinComprobante: 0 });
+    expect(r.resumen).toEqual({ soloSunat: 0, soloLibro: 0, importes: 0, repetida: 0, iguales: 4, enSunat: 4, enLibro: 4, sinComprobante: 0, sinExpandir: 0 });
     expect(r.diferencias).toEqual([]);
     expect(r.totales.sunat).toEqual(r.totales.libro);
     expect(r.totales.libro).toEqual({ base: 650, igv: 117, total: 767 });
@@ -169,7 +201,7 @@ describe("lectura tolerante de la propuesta", () => {
   it("frena el Excel, la propuesta de compras, el CSV y el archivo vacío", () => {
     const xlsx = zipSync({ "[Content_Types].xml": strToU8("<x/>"), "xl/workbook.xml": strToU8("<x/>") });
     expect(leerArchivoPropuesta(xlsx, "p.xlsx")).toMatchObject({ ok: false, error: expect.stringMatching(/Excel/) });
-    expect(leerArchivoPropuesta(strToU8(lineaSunat({})), `LE${RUC}20261000080400021112.txt`)).toMatchObject({ ok: false, error: expect.stringMatching(/COMPRAS/) });
+    expect(leerArchivoPropuesta(strToU8(lineaCompras()), "propuesta.txt")).toMatchObject({ ok: false, error: expect.stringMatching(/COMPRAS/) });
     expect(parsearPropuestaRvie("ruc;periodo;total\n20100066603;202610;118")).toMatchObject({ ok: false, error: expect.stringMatching(/«\|»/) });
     expect(leerArchivoPropuesta(new Uint8Array(0))).toMatchObject({ ok: false });
   });
@@ -229,6 +261,134 @@ describe("topes del archivo (revisión 04-11)", () => {
 
   it("propuesta en blanco → error claro (no «todo cuadra con 0»)", () => {
     expect(parsearPropuestaRvie("\n")).toMatchObject({ ok: false, error: expect.stringMatching(/en blanco/) });
+  });
+});
+
+describe("rangos de boletas (campo 10, revisión 04-11)", () => {
+  const rango = (extra: Parameters<typeof lineaSunat>[0] = {}) => lineaSunat({ numero: "10", final: "14", base: "100.00", igv: "18.00", total: "118.00", ...extra });
+
+  it("B001-10 al 14 contra 5 boletas del libro: iguales, y ninguna sobra como «solo en tu libro»", () => {
+    const r = cruzar(rango(), boletas(10, 14));
+    expect(r.resumen).toMatchObject({ soloSunat: 0, soloLibro: 0, importes: 0, iguales: 5, enSunat: 5, enLibro: 5, sinExpandir: 0 });
+    expect(r.diferencias).toEqual([]);
+    expect(r.totales.sunat).toEqual({ base: 100, igv: 18, total: 118 });
+    expect(r.avisos.some((a) => a.includes("1 línea de la propuesta es un rango"))).toBe(true);
+  });
+
+  it("al libro le falta una boleta del rango: «No cuadra» con 5 boletas y 4 en el libro", () => {
+    const r = cruzar(rango(), boletas(10, 13));
+    expect(r.diferencias).toEqual([
+      expect.objectContaining({ clase: "importes", comprobante: "B001-10 al B001-14", campos: ["base", "igv", "total"], rango: { boletas: 5, enLibro: 4 }, diferencia: 23.6 }),
+    ]);
+    expect(r.resumen).toMatchObject({ importes: 1, soloLibro: 0, iguales: 0 });
+  });
+
+  it("rango sin ninguna boleta en el libro → «solo SUNAT»; una boleta fuera del rango → «solo tu libro»", () => {
+    const r = cruzar(rango(), boletas(20, 20));
+    expect(r.diferencias.map((d) => [d.clase, d.comprobante])).toEqual([
+      ["soloSunat", "B001-10 al B001-14"],
+      ["soloLibro", "B001-20"],
+    ]);
+    expect(r.diferencias[0].rango).toEqual({ boletas: 5, enLibro: 0 });
+  });
+
+  it("tolerancia del rango: 1 céntimo por boleta del libro (5 céntimos aquí)", () => {
+    expect(cruzar(rango({ total: "118.05" }), boletas(10, 14)).resumen.iguales).toBe(5);
+    expect(cruzar(rango({ total: "118.06" }), boletas(10, 14)).diferencias).toEqual([expect.objectContaining({ clase: "importes", campos: ["total"] })]);
+  });
+
+  it("el rango no se come a las boletas sueltas de otra serie ni a una factura con el mismo número", () => {
+    const filas = [...boletas(10, 14), filaLibro({ serie: "B002", numero: 12 }), filaLibro({ tipo: "01", serie: "B001", numero: 11 })];
+    const r = cruzar(rango(), filas);
+    expect(r.diferencias.map((d) => [d.clase, d.comprobante])).toEqual([
+      ["soloLibro", "B001-11"],
+      ["soloLibro", "B002-12"],
+    ]);
+  });
+
+  it("rango de exactamente 10.000 boletas se cruza; uno de 10.001 queda «sin expandir» y no se inventa nada", () => {
+    expect(TOPE_BOLETAS_POR_RANGO).toBe(10_000);
+    const justo = cruzar(lineaSunat({ numero: "1", final: "10000" }), []);
+    expect(justo.resumen).toMatchObject({ soloSunat: 1, enSunat: 10_000, sinExpandir: 0 });
+    expect(justo.diferencias[0].rango).toEqual({ boletas: 10_000, enLibro: 0 });
+
+    const largo = cruzar(lineaSunat({ numero: "1", final: "10001" }), boletas(1, 3));
+    expect(largo.resumen).toMatchObject({ soloSunat: 0, soloLibro: 0, enSunat: 0, sinExpandir: 1, enLibro: 3 });
+    expect(largo.diferencias).toEqual([]);
+    expect(largo.avisos.some((a) => a.includes("sin expandir: B001-1 al B001-10001"))).toBe(true);
+  });
+
+  it("N.º final inválido (letras o menor que el inicial) → línea ilegible; igual al inicial o en cero → boleta suelta", () => {
+    const p = parsearPropuestaRvie([lineaSunat({ numero: "5", final: "ABC" }), lineaSunat({ numero: "10", final: "4" }), lineaSunat({ numero: "7", final: "7" }), lineaSunat({ numero: "8", final: "0" })].join("\n"));
+    expect(p).toMatchObject({ ok: true, rangos: 0, ilegibles: [{ linea: 1 }, { linea: 2 }] });
+    if (p.ok) expect(p.comprobantes.map((c) => c.comprobante)).toEqual(["B001-7", "B001-8"]);
+  });
+});
+
+describe("clave repetida en la propuesta (revisión 04-11)", () => {
+  it("misma boleta con importes distintos: sale «repetida» con los DOS importes (no se pierde)", () => {
+    const r = cruzar([lineaSunat({}), lineaSunat({ total: "120.00", igv: "20.00" })].join("\n"), [filaLibro({})]);
+    expect(r.resumen).toMatchObject({ repetida: 1, iguales: 0, importes: 0, soloSunat: 0, soloLibro: 0, enSunat: 1 });
+    expect(r.diferencias).toEqual([
+      expect.objectContaining({ clase: "repetida", comprobante: "B001-1", campos: ["igv", "total"], libro: { base: 100, igv: 18, total: 118 }, sunat: { base: 100, igv: 18, total: 118 }, sunatOtro: { base: 100, igv: 20, total: 120 }, diferencia: 2 }),
+    ]);
+  });
+
+  it("repetida también cuando el libro no la tiene (se ve igual, con libro vacío)", () => {
+    const r = cruzar([lineaSunat({ numero: "9" }), lineaSunat({ numero: "9", total: "50.00" })].join("\n"), []);
+    expect(r.diferencias).toEqual([expect.objectContaining({ clase: "repetida", comprobante: "B001-9", libro: null, sunatOtro: expect.objectContaining({ total: 50 }), diferencia: -68 })]);
+  });
+
+  it("repetida con los MISMOS importes: se cuenta una vez, con aviso, y cuadra", () => {
+    const p = parsearPropuestaRvie([lineaSunat({}), lineaSunat({})].join("\n"));
+    expect(p).toMatchObject({ ok: true, repetidos: 1 });
+    const r = cruzar([lineaSunat({}), lineaSunat({})].join("\n"), [filaLibro({})]);
+    expect(r.resumen).toMatchObject({ iguales: 1, repetida: 0, enSunat: 1 });
+    expect(r.avisos.some((a) => a.includes("1 comprobante viene repetido"))).toBe(true);
+  });
+
+  it("rango repetido con otros importes también sale «repetida»", () => {
+    const l = (total: string) => lineaSunat({ numero: "10", final: "14", total });
+    const r = cruzar([l("118.00"), l("130.00")].join("\n"), boletas(10, 14));
+    expect(r.diferencias).toEqual([expect.objectContaining({ clase: "repetida", comprobante: "B001-10 al B001-14", rango: { boletas: 5, enLibro: 5 }, diferencia: 12 })]);
+  });
+});
+
+describe("ventas o compras por el CONTENIDO, no por el nombre (revisión 04-11)", () => {
+  const titulosCompras =
+    "Nro|Ruc|Razon Social|Periodo|CAR SUNAT|Fecha de emisión|Fecha Vcto/Pago|Tipo CP/Doc.|Serie del CDP|Año|Nro CP o Doc. Nro Inicial (Rango)|Nro Final (Rango)|BI Gravado DG|IGV / IPM DG|Valor Adq. NG|Clasif de Bss y Sss";
+  const titulosVentas = "Nro|Ruc|Razon Social|Periodo|CAR SUNAT|Fecha de emisión|Fecha Vcto/Pago|Tipo CP/Doc.|Serie del CDP|Nro CP o Doc. Nro Inicial (Rango)|Nro Final (Rango)|BI Gravada|Dscto BI|Total CP";
+
+  it("tipoDePropuesta: por títulos, por la posición de la moneda y «no sé» si no alcanza", () => {
+    expect(tipoDePropuesta(`${titulosCompras}\r\n`)).toBe("compras");
+    expect(tipoDePropuesta(`${titulosVentas}\r\n`)).toBe("ventas");
+    expect(tipoDePropuesta(lineaCompras())).toBe("compras");
+    expect(tipoDePropuesta(`${lineaSunat({})}\n${lineaSunat({ numero: "2" })}`)).toBe("ventas");
+    expect(tipoDePropuesta("no es una propuesta")).toBeNull();
+    expect(tipoDePropuesta("a|b|c")).toBeNull();
+  });
+
+  it("una propuesta de COMPRAS subida en ventas da el error claro, con o sin títulos, suelta o en .zip", () => {
+    const esperado = { ok: false, error: expect.stringMatching(/propuesta de COMPRAS/) };
+    expect(leerArchivoPropuesta(strToU8(lineaCompras()), "propuesta.txt")).toMatchObject(esperado);
+    expect(leerArchivoPropuesta(strToU8(`${titulosCompras}\r\n1|${lineaCompras()}`), "propuesta.txt")).toMatchObject(esperado);
+    expect(leerArchivoPropuesta(zipSync({ "propuesta.txt": strToU8(lineaCompras()) }), "p.zip")).toMatchObject(esperado);
+    expect(parsearPropuestaRvie(lineaCompras())).toMatchObject({ ok: false, error: expect.stringMatching(/COMPRAS/) });
+  });
+
+  it("manda el contenido: una de compras con nombre de ventas se frena; una de ventas con nombre de compras pasa", () => {
+    const deVentas = `LE${RUC}20261000140400021112.txt`;
+    const deCompras = `LE${RUC}20261000080400021112.txt`;
+    expect(leerArchivoPropuesta(zipSync({ [deVentas]: strToU8(lineaCompras()) }), "p.zip")).toMatchObject({ ok: false, error: expect.stringMatching(/COMPRAS/) });
+    expect(leerArchivoPropuesta(strToU8(lineaCompras()), deVentas)).toMatchObject({ ok: false, error: expect.stringMatching(/COMPRAS/) });
+    expect(leerArchivoPropuesta(zipSync({ [deCompras]: strToU8(lineaSunat({})) }), "p.zip")).toMatchObject({ ok: true, nombre: deCompras });
+    expect(leerArchivoPropuesta(strToU8(lineaSunat({})), deCompras)).toMatchObject({ ok: true });
+  });
+
+  it("si el contenido no alcanza, el nombre desempata (respaldo)", () => {
+    const deCompras = `LE${RUC}20261000080400021112.txt`;
+    expect(leerArchivoPropuesta(strToU8("a|b"), deCompras)).toMatchObject({ ok: false, error: expect.stringMatching(/COMPRAS/) });
+    expect(leerArchivoPropuesta(strToU8("a|b"), "otra.txt")).toMatchObject({ ok: true });
   });
 });
 

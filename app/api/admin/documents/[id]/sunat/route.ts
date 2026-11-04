@@ -8,19 +8,9 @@ import { downloadFromStorage } from "@/lib/documents/storage";
 import {
   esArchivoSunat, leerCdr, leerComprobante, revisarComprobante,
 } from "@/lib/documents/sunat-comprobante";
+import { TOPE_ARCHIVO_SUNAT_BYTES, xmlDeArchivoSunat } from "@/lib/documents/sunat-zip";
 
 type Ctx = { params: Promise<{ id: string }> };
-
-/** Un CDR llega como ZIP con el XML adentro; el XML suelto se lee directo. */
-async function xmlDelArchivo(buf: Buffer, nombre: string): Promise<string | null> {
-  if (nombre.toLowerCase().endsWith(".zip")) {
-    const JSZip = (await import("jszip")).default;
-    const zip = await JSZip.loadAsync(buf);
-    const entrada = Object.keys(zip.files).find((f) => f.toLowerCase().endsWith(".xml"));
-    return entrada ? await zip.files[entrada].async("string") : null;
-  }
-  return buf.toString("utf8");
-}
 
 /**
  * POST /api/admin/documents/[id]/sunat — lee y revisa un comprobante o un CDR.
@@ -45,10 +35,19 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: "no_es_comprobante" }, { status: 415 });
     }
 
+    // Antes de bajarlo del storage: un comprobante o un CDR pesa KB; más de 4 MB no se abre.
+    if (doc.size > TOPE_ARCHIVO_SUNAT_BYTES) return NextResponse.json({ error: "archivo_demasiado_grande" }, { status: 413 });
+
     const buf = await downloadFromStorage(doc.storagePath);
     if (!buf) return NextResponse.json({ error: "storage_unavailable" }, { status: 502 });
 
-    const xml = await xmlDelArchivo(buf, doc.name);
+    // Con topes (zip inflado): tamaño del archivo, de lo descomprimido y de entradas.
+    const leido = xmlDeArchivoSunat(buf, doc.name);
+    if (!leido.ok) {
+      if (leido.motivo === "demasiado_grande") return NextResponse.json({ error: "archivo_demasiado_grande" }, { status: 413 });
+      return NextResponse.json({ error: "read_failed" }, { status: 422 });
+    }
+    const xml = leido.xml;
     if (!xml) return NextResponse.json({ error: "sin_xml" }, { status: 422 });
 
     const cdr = leerCdr(xml);
