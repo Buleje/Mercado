@@ -13,6 +13,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { chequearPiso } from "@/lib/precios/piso";
+import type { ProductoParaCruce } from "@/lib/compras/factura-xml-cruce";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -267,6 +268,30 @@ export const ProductsDB = {
       select: { id: true, name: true, barcode: true },
     });
     return rows.flatMap((r) => (r.barcode ? [{ id: r.id, name: r.name, barcode: r.barcode }] : []));
+  },
+  /**
+   * Cruce de la factura XML del proveedor (compras › desde XML, solo lectura):
+   * los productos vivos con alguno de esos códigos en SKU o código de barras,
+   * y el catálogo liviano (id, nombre, códigos, unidad) para sugerir por nombre.
+   * `recortado` = el catálogo pasó el tope y algún nombre pudo quedar afuera.
+   */
+  async paraCruceDeFactura(
+    tenantId: string,
+    codigos: string[],
+    tope = 5000,
+  ): Promise<{ porCodigo: ProductoParaCruce[]; catalogo: ProductoParaCruce[]; recortado: boolean }> {
+    const select = { id: true, name: true, sku: true, barcode: true, unit: true } as const;
+    const [porCodigo, catalogo] = await Promise.all([
+      codigos.length === 0
+        ? []
+        : prisma.product.findMany({
+            where: { tenantId, deletedAt: null, OR: [{ sku: { in: codigos } }, { barcode: { in: codigos } }] },
+            select,
+            take: 200,
+          }),
+      prisma.product.findMany({ where: { tenantId, deletedAt: null }, select, orderBy: { id: "desc" }, take: tope + 1 }),
+    ]);
+    return { porCodigo, catalogo: catalogo.slice(0, tope), recortado: catalogo.length > tope };
   },
   /**
    * Cuenta cuantos de los productIds dados pertenecen al tenant
