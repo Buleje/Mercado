@@ -14,7 +14,7 @@ import { BarraDeSecciones, idPestanaDeSeccion, type SeccionDeBarra } from "@/com
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { ValeCuaderno } from "@/lib/combustible/cuaderno";
-import { CAMPO, PRIMARIO, SECUNDARIO, mesActualLima } from "./compartido";
+import { CAMPO, PRIMARIO, SECUNDARIO, gal, mesActualLima } from "./compartido";
 import ModalAjustes from "./ModalAjustes";
 import ModalConteo from "./ModalConteo";
 import ModalIngreso from "./ModalIngreso";
@@ -83,7 +83,7 @@ export default function CombustibleView() {
           <InfoTip
             title="Cuaderno de combustible"
             what="Lo que entra (cilindros comprados con factura) y lo que sale (vale por máquina con horómetro y firma), con el saldo de cada día."
-            affects={`Es lo que se muestra a SUNAT: máx. ${c.datos.config.maxCilindros} cilindros guardados${c.datos.config.cupoAnualGal ? ` y ${c.datos.config.cupoAnualGal.toLocaleString("es-PE")} gal al año` : ""}. Lo contado en el conteo semanal manda.`}
+            affects={`Es lo que se muestra a SUNAT: máx. ${c.datos.config.maxCilindros} cilindros guardados${c.datos.config.cupoAnualGal ? ` y ${gal(c.datos.config.cupoAnualGal)} al año` : ""}. Lo contado en el conteo semanal manda.`}
             example="Compras 4 cilindros (220 gal) → C-01 a C-04. El cargador saca 30 gal → sale de C-01 y quedan 190 gal."
           />
         </div>
