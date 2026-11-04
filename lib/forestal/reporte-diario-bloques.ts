@@ -93,6 +93,20 @@ export interface DatosReporteForestal {
     /** Uno por moneda: sumar dólares a soles sin tipo de cambio inventaría la cifra. */
     adelantos: { moneda: string; saldo: number; abiertos: number }[];
   };
+  /**
+   * «Quién te debe» (03-11): la MISMA cuenta por persona del panel (`cuentasDelNegocio`), sólo
+   * quienes tienen neto > 0. Adelantos y madera van separados; el total es el neto (soles).
+   */
+  cobrar?: {
+    total: number;
+    personas: { nombre: string; adelantos: number; madera: number; total: number }[];
+    /** Cuántos más deben y no entraron en la tabla. */
+    mas: number;
+    /** Adelantos en otra moneda: fuera del total (sumar dólares a soles inventaría la cifra). */
+    otrasMonedas: { moneda: string; monto: number }[];
+    /** La cuenta de madera llegó al tope de movimientos: el saldo puede quedar corto. */
+    truncado: boolean;
+  };
   pendientes?: { titulo: string; detalle: string; cantidad: number; urgencia: "bloquea" | "atrasado" | "pendiente" }[];
   plazos?: {
     guias: { gtf: string; titular: string | null; frase: string; urgente: boolean }[];
@@ -305,6 +319,37 @@ function bloquePlata(p: NonNullable<DatosReporteForestal["plata"]>): Bloque {
   };
 }
 
+function bloqueCobrar(c: NonNullable<DatosReporteForestal["cobrar"]>): Bloque {
+  const base = { seccion: "cobrar" as const, titulo: SECCION_META.cobrar.nombre };
+  const notas = [
+    ...c.otrasMonedas.map((o) => `Además, en adelantos: ${enMoneda(o.moneda, o.monto)} (va aparte del total)`),
+    ...(c.mas > 0 ? [`Y ${plural(c.mas, "persona más", "personas más")}: mírala${c.mas === 1 ? "" : "s"} en Adelantos › Cuenta por persona`] : []),
+    ...(c.truncado ? ["Puede faltar algo: la cuenta de madera tiene más movimientos de los que se leen de una vez"] : []),
+  ];
+  if (c.personas.length === 0) return { ...base, resumen: "Nadie te debe.", detalle: notas, notas };
+  const cuantos = c.personas.length + c.mas;
+  const fila = (x: (typeof c.personas)[number]) => {
+    const partes = [x.adelantos > 0 ? `adelantos ${formatCurrency(x.adelantos)}` : "", x.madera > 0 ? `madera ${formatCurrency(x.madera)}` : ""].filter(Boolean);
+    return `${x.nombre}: ${formatCurrency(x.total)}${partes.length > 1 ? ` (${partes.join(" + ")})` : partes.length ? ` (${partes[0].split(" ")[0]})` : ""}`;
+  };
+  return {
+    ...base,
+    resumen: `Te deben ${formatCurrency(c.total)} entre ${plural(cuantos, "persona", "personas")}`,
+    tabla: {
+      cabecera: ["Persona", "Adelantos", "Madera", "Total"],
+      numericas: [1, 2, 3],
+      filas: c.personas.map((x) => [
+        x.nombre,
+        x.adelantos !== 0 ? formatCurrency(x.adelantos) : "—",
+        x.madera !== 0 ? formatCurrency(x.madera) : "—",
+        formatCurrency(x.total),
+      ]),
+    },
+    detalle: [...notas, ...c.personas.map(fila)],
+    notas,
+  };
+}
+
 function bloquePendientes(lista: NonNullable<DatosReporteForestal["pendientes"]>): Bloque {
   const base = { seccion: "pendientes" as const, titulo: SECCION_META.pendientes.nombre };
   if (lista.length === 0) return { ...base, resumen: "El libro está al día.", detalle: [] };
@@ -362,6 +407,7 @@ export function armarBloques(datos: DatosReporteForestal, secciones: readonly Se
       : s === "anexos" && datos.anexos ? bloqueAnexos(datos.anexos)
       : s === "patio" && datos.patio ? bloquePatio(datos.patio)
       : s === "plata" && datos.plata ? bloquePlata(datos.plata)
+      : s === "cobrar" && datos.cobrar ? bloqueCobrar(datos.cobrar)
       : s === "pendientes" && datos.pendientes ? bloquePendientes(datos.pendientes)
       : s === "plazos" && datos.plazos ? bloquePlazos(datos.plazos)
       : null;

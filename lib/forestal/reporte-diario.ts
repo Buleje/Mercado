@@ -22,6 +22,7 @@ export const SECCIONES_REPORTE = [
   "anexos",
   "patio",
   "plata",
+  "cobrar",
   "pendientes",
   "plazos",
 ] as const;
@@ -36,6 +37,7 @@ export const SECCION_META: Record<SeccionReporte, { nombre: string; trae: string
   anexos: { nombre: "Anexos 04", trae: "Los Anexos 04 emitidos: guías, pies tablares y m³ (el m³ sale del PT ÷ 424)" },
   patio: { nombre: "Patio", trae: "Saldo de madera rolliza, trozas varadas y productos en stock" },
   plata: { nombre: "Plata", trae: "Lo que debes a proveedores, pagos del día y adelantos abiertos" },
+  cobrar: { nombre: "Quién te debe", trae: "Cada persona que te debe, con adelantos y madera por separado, de mayor a menor" },
   pendientes: { nombre: "Pendientes del libro", trae: "Lo que traba el cierre o se está atrasando" },
   plazos: { nombre: "Plazos SERFOR", trae: "Guías por registrar, lotes y documentos por vencer" },
 };

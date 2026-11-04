@@ -10,6 +10,7 @@ import { ForestContratoDB } from "@/lib/db/forest-contrato.db";
 import { GuiaPlataDB } from "@/lib/db/guia-plata.db";
 import { ForestCuentaDB } from "@/lib/db/forest-cuenta.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
+import { cuentasDelNegocio } from "@/lib/adelantos/cuentas-del-negocio";
 import { MembreteDB } from "@/lib/db/membrete.db";
 import { logger } from "@/lib/logger";
 import { formatNumber } from "@/lib/format";
@@ -40,6 +41,8 @@ import type { DatosReporteForestal, FilaNombreM3 } from "@/lib/forestal/reporte-
 
 /** Cuántos renglones de detalle por sección: el reporte es un vistazo, el resto está en el panel. */
 const TOP = 5;
+/** «Quién te debe» lista más que el resto: es la lista para cobrar del lunes. */
+const TOP_COBRAR = 10;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const desdeDia = (d: string) => new Date(`${d}T00:00:00.000Z`);
 const hastaDia = (d: string) => new Date(`${d}T23:59:59.999Z`);
@@ -236,6 +239,26 @@ export async function juntarDatosReporte(tenantId: string, o: OpcionesDatos): Pr
           })),
           pagos: { pagados: suma("pago_hecho"), cobrados: suma("pago") },
           adelantos: adel.porMoneda.map((a) => ({ moneda: a.moneda, saldo: a.saldoPendiente, abiertos: a.adelantosAbiertos })),
+        },
+      };
+    },
+
+    async cobrar() {
+      /* La misma lista que «Cuenta por persona» de Adelantos: si el correo dijera otra cifra que la pantalla, nadie le cree a ninguna. */
+      const { personas, truncado } = await cuentasDelNegocio(tenantId);
+      const deben = personas
+        .filter((p) => p.neto > 0.004)
+        .sort((a, b) => b.neto - a.neto)
+        .map((p) => ({ nombre: p.nombre, adelantos: r2(p.adelantos?.neto ?? 0), madera: r2(p.madera?.saldo ?? 0), total: r2(p.neto) }));
+      const otras = new Map<string, number>();
+      for (const p of personas) for (const [mon, v] of Object.entries(p.otrasMonedas)) if (v > 0) otras.set(mon, (otras.get(mon) ?? 0) + v);
+      return {
+        cobrar: {
+          total: r2(deben.reduce((s, p) => s + p.total, 0)),
+          personas: deben.slice(0, TOP_COBRAR),
+          mas: Math.max(0, deben.length - TOP_COBRAR),
+          otrasMonedas: [...otras].map(([moneda, monto]) => ({ moneda, monto: r2(monto) })),
+          truncado,
         },
       };
     },
