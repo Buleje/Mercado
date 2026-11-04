@@ -118,6 +118,7 @@ type ModalDelCubicador = "importar" | "especies" | "duenos" | "liquidacion" | "a
 import { formatNumber } from "@/lib/format";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import AvisoPermisoCubicador from "./recorrido/aviso-permiso-cubicador";
+import { ESPACIO_PRODUCCION, sellarLibretaProduccion } from "./hooks/libreta-produccion";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -226,6 +227,8 @@ const storageKey = (espacio = "") => {
   return slugKey(espacio);
 };
 const saveLocal = (next: PiezaCubicada[], espacio = "") => {
+  /* «Producir sin lote»: anotar de cuándo es lo cubicado, antes de pisar las filas. */
+  if (espacio === ESPACIO_PRODUCCION) sellarLibretaProduccion(next.length);
   try { localStorage.setItem(storageKey(espacio), JSON.stringify(next)); } catch { /* quota */ }
 };
 /** Lee un derivado del lote (`-precio`, `-precios-especie`) sin explotar en SSR. */

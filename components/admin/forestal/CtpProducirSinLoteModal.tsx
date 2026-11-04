@@ -41,7 +41,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { motivoNoDeclarable, paquetesDeLoCubicado } from "@/lib/forestal/declarar-produccion";
 import { gruposPorDueno } from "@/lib/forestal/declarar-por-dueno";
-import CubicadorMadera from "./CubicadorMadera";
+import CtpCubicadorProduccion from "./CtpCubicadorProduccion";
 import CtpDeclararProduccionModal from "./CtpDeclararProduccionModal";
 import CtpVincularMixtoModal from "./CtpVincularMixtoModal";
 import CtpVincularCubicacionModal from "./CtpVincularCubicacionModal";
@@ -49,7 +49,7 @@ import { diaPideCubicacion } from "./marcas-del-dia";
 import CtpSemanaDeProduccion from "./CtpSemanaDeProduccion";
 import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
 import { useTrozasParaCodigo } from "./hooks/use-trozas-para-codigo";
-import { ESPACIO_PRODUCCION } from "./hooks/libreta-produccion";
+import { ESPACIO_PRODUCCION, fijarJornadaLibretaProduccion } from "./hooks/libreta-produccion";
 import { esIsoValido, hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
@@ -158,6 +158,7 @@ export default function CtpProducirSinLoteModal({
   /* Dos dueños o más se declaran por separado: se dice antes de abrir. */
   const duenos = useMemo(() => gruposPorDueno(piezas).length, [piezas]);
   const elegirFecha = (iso: string) => {
+    fijarJornadaLibretaProduccion(iso);
     setFecha(iso);
     /* Tipear una fecha de otra semana mueve la tira de arriba: si no, el campo
        dice «02/05» y los siete casilleros siguen mostrando otra semana. */
@@ -227,7 +228,6 @@ export default function CtpProducirSinLoteModal({
         </ModalFooter>
       }
     >
-
         {/* El día al que va este registro (Brandon, 2026-09-11). Va acá arriba,
             fuera del cuerpo que scrollea, porque es una decisión del ASIENTO y
             no de lo cubicado: se ve y se cambia igual mientras se miden las
@@ -237,10 +237,7 @@ export default function CtpProducirSinLoteModal({
               detalle del día anulan lo declarado; se relee la tira y el libro. */}
           <CtpSemanaDeProduccion
             valor={fecha}
-            onElegir={(iso) => {
-              setFecha(iso);
-              setSemana(iso);
-            }}
+            onElegir={elegirFecha}
             semana={semana}
             onSemana={setSemana}
             porDia={jornadas.porDia}
@@ -254,19 +251,19 @@ export default function CtpProducirSinLoteModal({
         </div>
 
         {/* Cuerpo: el cubicador ENTERO, en su propia libreta */}
-        <div className="px-2 py-3 sm:px-5 sm:py-4">
-          <CubicadorMadera
-            key={libreta}
-            espacio={ESPACIO_PRODUCCION}
-            onLote={alLote}
-            piezasAImportar={aImportar}
-            onImportado={alImportar}
-            /* El código de la troza es interno (Brandon, 2026-09-14): no
-               entra a `paquetesDeLoCubicado` ni a lo que se registra. */
-            codigoDeTroza={trozasParaCodigo}
-          />
-        </div>
-
+        <CtpCubicadorProduccion
+          libreta={libreta}
+          fecha={fecha}
+          piezas={piezas}
+          onLote={alLote}
+          piezasAImportar={aImportar}
+          onImportado={alImportar}
+          /* El código de la troza es interno (Brandon, 2026-09-14): no entra a
+             `paquetesDeLoCubicado` ni a lo que se registra. */
+          codigoDeTroza={trozasParaCodigo}
+          onUsarFecha={elegirFecha}
+          onVaciada={() => setLibreta((n) => n + 1)}
+        />
 
       {/* El modal APARTE (ADR-429): se monta encima y guarda su borrador aunque
           se cierre para volver a cubicar. */}

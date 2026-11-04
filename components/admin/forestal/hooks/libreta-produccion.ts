@@ -10,6 +10,14 @@
  * Con piezas de varios dueños se declara uno a la vez y sólo salen las suyas
  * (`quitarDeLaLibretaProduccion`, 2026-09-23).
  *
+ * ## De cuándo es lo cubicado (radar 2026-09-15)
+ *
+ * Cerrar el modal sin declarar deja las piezas ahí, y nada decía de qué día
+ * eran. Al lado de las filas (`{clave}-cuando`) se guarda cuándo entró la
+ * primera, cuándo la última y la jornada que se eligió; la decisión de avisar
+ * es de `lib/forestal/cubicado-de-otro-dia.ts`. Lo guardado antes no trae nada
+ * y se lee como «sin fecha».
+ *
  * La clave se arma igual que en `CubicadorMadera` (`buleje-cubicacion-{slug}{espacio}`,
  * el slug al medio): si divergen, el vaciado borra una clave que nadie lee y
  * el doble cobro vuelve callado. El test de la pantalla lo cubre.
@@ -25,12 +33,100 @@ import { quitarAsignaciones, type ApartadosAsignados } from "@/lib/forestal/cubi
 import { filasSinLasDeclaradas } from "@/lib/forestal/declarar-por-dueno";
 import { logger } from "@/lib/logger";
 import { SIN_TENANT, slugKey, tenantSlugActivo } from "@/lib/forestal/sembrar-reparto";
+import type { CuandoCubicado } from "@/lib/forestal/cubicado-de-otro-dia";
 
 /** El espacio propio del cubicador de «Producir sin lote» — otra libreta, la misma pantalla. */
 export const ESPACIO_PRODUCCION = "-ctp-produccion";
 
 /** La misma clave que `CubicadorMadera` usa para las filas de este espacio (`slugKey`: sin operación, nunca la de «main»). */
 export const claveLibretaProduccion = (): string => slugKey(ESPACIO_PRODUCCION);
+
+const claveCuando = (): string => `${claveLibretaProduccion()}-cuando`;
+
+/** Lo guardado sobre cuándo se cubicó; `null` si no hay nada (o no se puede leer). */
+export function leerCuandoLibretaProduccion(): CuandoCubicado | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem(claveCuando()) ?? "null");
+    if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+    const o = v as Record<string, unknown>;
+    const texto = (x: unknown) => (typeof x === "string" && x ? x : undefined);
+    return {
+      desde: texto(o.desde),
+      ultima: texto(o.ultima),
+      jornada: texto(o.jornada),
+      sinFechaOk: o.sinFechaOk === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function escribirCuando(v: CuandoCubicado): void {
+  try {
+    localStorage.setItem(claveCuando(), JSON.stringify(v));
+  } catch (err) {
+    logger.warn("[declarar-produccion] no se pudo guardar de cuándo es lo cubicado", {
+      error: String(err),
+    });
+  }
+}
+
+/**
+ * La jornada que la pantalla tiene elegida AHORA (la registra el aviso mientras
+ * está montado). Cuando entra la primera pieza de una tanda nueva se guarda esa
+ * jornada junto a ella: quien elige el sábado y recién después cubica no debe ver
+ * un aviso por haber cubicado «el lunes».
+ */
+let jornadaVigente: string | null = null;
+export function recordarJornadaVigente(iso: string | null): void {
+  jornadaVigente = iso;
+}
+
+/**
+ * Anota que la libreta cambió AHORA. Se llama justo ANTES de escribir las filas
+ * nuevas (`filasNuevas` = cuántas van a quedar), porque necesita ver cuántas
+ * había: con la libreta vacía entra «la primera pieza» (`desde`) y empieza una
+ * marca nueva; con filas de antes y sin marca, lo cubicado sigue «sin fecha» —no
+ * se inventa un día—. Sin piezas no queda de qué día hablar y la marca se borra.
+ * Idempotente: el cubicador la puede llamar dos veces por el mismo cambio.
+ */
+export function sellarLibretaProduccion(filasNuevas: number): void {
+  if (typeof window === "undefined") return;
+  if (filasNuevas === 0) {
+    try {
+      localStorage.removeItem(claveCuando());
+    } catch {
+      /* Sin almacenamiento tampoco había marca que borrar. */
+    }
+    return;
+  }
+  let habia = 0;
+  try {
+    const filas: unknown = JSON.parse(localStorage.getItem(claveLibretaProduccion()) ?? "null");
+    habia = Array.isArray(filas) ? filas.length : 0;
+  } catch {
+    habia = 0;
+  }
+  const ahora = new Date().toISOString();
+  escribirCuando(
+    habia === 0
+      ? { desde: ahora, ultima: ahora, jornada: jornadaVigente ?? undefined }
+      : { ...(leerCuandoLibretaProduccion() ?? {}), ultima: ahora },
+  );
+}
+
+/** La persona eligió esta jornada: se recuerda junto a lo cubicado. */
+export function fijarJornadaLibretaProduccion(iso: string): void {
+  if (typeof window === "undefined") return;
+  escribirCuando({ ...(leerCuandoLibretaProduccion() ?? {}), jornada: iso });
+}
+
+/** «Es de esta fecha»: lo cubicado sin día queda atado a la jornada elegida. */
+export function confirmarSinFechaLibretaProduccion(iso: string): void {
+  if (typeof window === "undefined") return;
+  escribirCuando({ ...(leerCuandoLibretaProduccion() ?? {}), jornada: iso, sinFechaOk: true });
+}
 
 /**
  * Borra las filas cubicadas y sus apartados (que apuntan a ids de esas filas).
@@ -43,6 +139,7 @@ export function vaciarLibretaProduccion(): void {
   try {
     localStorage.removeItem(clave);
     localStorage.removeItem(`${clave}-apartados`);
+    localStorage.removeItem(claveCuando());
   } catch (err) {
     /* Si esto falla la producción YA quedó registrada; lo que queda en riesgo
        es declararla dos veces al reabrir, así que se deja rastro. */
