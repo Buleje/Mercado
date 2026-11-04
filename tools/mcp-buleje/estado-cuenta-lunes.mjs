@@ -28,6 +28,16 @@ const BIN = join(homedir(), ".local", "bin");
 const COTIZAR = join(homedir(), ".local", "share", "cotizar");
 export const PLANTILLA = join(COTIZAR, "plantillas", "estado-de-cuenta-cliente.typ");
 const SEMANA = "/mnt/c/Users/Usuario/OneDrive/Documentos/Escritorio/Semana actual/Despachos y clientes";
+
+/**
+ * Brandon 04-11: el papel de una persona va también a SU carpeta (BLAS SAC › …).
+ * `persona guardar` copia solo si está SEGURO de quién es (código 0); si duda o no
+ * está en la lista, no copia nada y lo decimos en el resumen para que Brandon diga quién es.
+ */
+function archivarEnPersona(nombre, pdf) {
+  const r = spawnSync(join(BIN, "persona"), ["guardar", nombre, pdf], { encoding: "utf8", timeout: 30_000 });
+  return { ok: r.status === 0, salida: `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() };
+}
 const MESES = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split(" ");
 const MAX_FILAS_PDF = 24; // 1 sola hoja: lo anterior se resume en una fila de «saldo anterior»
 const ESPERA_PANEL_MS = 240_000;
@@ -224,6 +234,18 @@ export async function estadoCuentaLunes(argv, deps = {}) {
 
   if (hechos.length === 0) return noLeyo(`no se pudo armar ningún estado (${fallidos.join("; ")})`);
 
+  // En seco o con carpeta de prueba no se toca ninguna carpeta de persona.
+  const archivar = deps.archivar ?? (a.seco || a.carpeta || deps.carpetaBase ? null : archivarEnPersona);
+  const archivados = [];
+  const sinCarpeta = [];
+  if (archivar) {
+    for (const h of hechos) {
+      const r = archivar(h.persona.nombre, h.pdf);
+      (r.ok ? archivados : sinCarpeta).push(h.persona.nombre);
+      if (!r.ok) log(`sin carpeta para ${h.persona.nombre}: ${r.salida.split("\n")[0]}`);
+    }
+  }
+
   const total = r2(hechos.reduce((s, h) => s + h.persona.neto, 0));
   const lineaDe = (h, i) => {
     const pagos = h.dias === null ? "todavía no ha pagado nada" : h.dias === 0 ? "pagó hoy" : `último pago hace ${h.dias} ${h.dias === 1 ? "día" : "días"}`;
@@ -234,6 +256,8 @@ export async function estadoCuentaLunes(argv, deps = {}) {
   const notas = [
     ...(truncada ? ["Ojo: la cuenta de madera es muy larga y puede faltar alguna deuda."] : []),
     ...fallidos.map((f) => `No pude armar: ${f}.`),
+    ...(archivados.length ? [`Copiados a su carpeta: ${archivados.join(", ")}.`] : []),
+    ...(sinCarpeta.length ? [`Sin carpeta (no sé con seguridad quién es; dime y lo archivo): ${sinCarpeta.join(", ")}.`] : []),
   ];
   const textos = trozos([cab, ...hechos.map(lineaDe), ...notas, "No le mandé nada a ningún cliente. Los PDF te llegan enseguida y también están en Semana actual › Despachos y clientes."]);
 
@@ -248,7 +272,7 @@ export async function estadoCuentaLunes(argv, deps = {}) {
       log(r.ok ? `Enviado: ${h.pdf}` : `Telegram no recibió ${h.pdf}: ${r.salida}`);
     }
   }
-  return { ok: true, clientes: hechos.length, total, carpeta, hechos, fallidos };
+  return { ok: true, clientes: hechos.length, total, carpeta, hechos, fallidos, archivados, sinCarpeta };
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
