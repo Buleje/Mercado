@@ -33,7 +33,12 @@ import { Btn, VistaHeader } from "./ctp-shared";
 import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import CtpComplianceScore, { TONE_LABEL } from "./CtpComplianceScore";
 import { useKpisPlegables } from "./kpis-plegables";
-import { ctpComplianceTone, ctpComplianceBreakdown } from "@/lib/forestal/ctp-compliance";
+import {
+  CTP_SIN_MOVIMIENTO_LABEL,
+  ctpComplianceTone,
+  ctpComplianceBreakdown,
+  ctpDeduccionCasosTexto,
+} from "@/lib/forestal/ctp-compliance";
 import { printCumplimiento } from "@/lib/forestal/ctp-cumplimiento-print";
 import { ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
@@ -41,6 +46,13 @@ import { formatNumber } from "@/lib/format";
 import { armarChequeos, clasificarChequeos, type ComplianceNavTarget } from "./ctp-cumplimiento-checks";
 import { EnOrden, ProblemCard, ReadinessBanner, TriageChips } from "./CtpCumplimientoPiezas";
 import { BotonDescargar, BotonRecargar } from "./ctp-riel-control";
+
+/** «92/100 · Cumplimiento en orden», o «Sin movimiento en el período» (ADR-532). */
+function etiquetaDelPuntaje(score: number | null, conNumero: boolean): string {
+  if (score == null) return CTP_SIN_MOVIMIENTO_LABEL;
+  const tono = TONE_LABEL[ctpComplianceTone(score)];
+  return conNumero ? `${score}/100 · ${tono}` : tono;
+}
 
 export default function CtpCumplimientoChequeo({
   period,
@@ -79,7 +91,7 @@ export default function CtpCumplimientoChequeo({
      sin datos aún no hay tarjeta y el botón no se dibuja. */
   const kpis = useKpisPlegables({
     claveMemoria: "ctp-cumplimiento",
-    resumen: data ? `${data.score}/100 · ${TONE_LABEL[ctpComplianceTone(data.score)]}` : undefined,
+    resumen: data ? etiquetaDelPuntaje(data.score, true) : undefined,
     tarjetas: data ? [<CtpComplianceScore key="puntaje" data={data} />] : [],
   });
 
@@ -100,7 +112,7 @@ export default function CtpCumplimientoChequeo({
   }
   if (!data) return null;
 
-  const tone = ctpComplianceTone(data.score);
+  const toneLabel = etiquetaDelPuntaje(data.score, false);
   const breakdown = ctpComplianceBreakdown(data.counts);
   const checks = armarChequeos(data, especies.duplicadas, () => setVerEspecies(true));
   const { problemas, enOrden, bloqueos, advertencias, readiness } = clasificarChequeos(checks);
@@ -124,13 +136,13 @@ export default function CtpCumplimientoChequeo({
            un puntaje recortado bajo el rótulo del período completo (ADR-400). */
         periodLabel: especie ? `${period.label} · sólo especie ${especie}` : period.label,
         score: reportData.score,
-        toneLabel: TONE_LABEL[tone],
+        toneLabel,
         totalIngresos: reportData.totalIngresos,
         readiness,
         bloqueos,
         advertencias,
         enOrdenCount: enOrden.length,
-        breakdown: breakdown.map((b) => ({ label: b.label, puntos: b.puntos, casos: b.casos, topeAlcanzado: b.topeAlcanzado })),
+        breakdown: breakdown.map((b) => ({ label: b.label, puntos: b.puntos, casosTexto: ctpDeduccionCasosTexto(b) })),
         problemas: problemas.map((c) => ({ severity: c.severity, title: c.title, description: c.description, action: c.action })),
         enOrden: enOrden.map((c) => c.okTitle),
         ficha,

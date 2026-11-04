@@ -9,7 +9,13 @@
 import { Gauge } from "@buleje/design-system/icons";
 import { BulejeGaugeChart } from "@/components/ui-system/charts";
 import type { CtpComplianceData } from "@/hooks/use-ctp-compliance";
-import { ctpComplianceBreakdown, ctpComplianceTone, type CtpComplianceTone } from "@/lib/forestal/ctp-compliance";
+import {
+  CTP_SIN_MOVIMIENTO_LABEL,
+  ctpComplianceBreakdown,
+  ctpComplianceTone,
+  ctpDeduccionCasosTexto,
+  type CtpComplianceTone,
+} from "@/lib/forestal/ctp-compliance";
 
 export const TONE_LABEL: Record<CtpComplianceTone, string> = {
   success: "Cumplimiento en orden",
@@ -27,6 +33,21 @@ export const GAUGE_COLOR: Record<CtpComplianceTone, string> = {
 export const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export default function CtpComplianceScore({ data }: { data: CtpComplianceData }) {
+  /* Sin movimiento (ADR-532): ni medidor ni desglose. Un 100 de un libro vacío
+     le ganaba a un CTP que despacha bien con un caso abierto. */
+  if (data.score == null) {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <Gauge className="h-6 w-6 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+        <div>
+          <p className="text-sm font-bold text-[var(--text-primary)]">{CTP_SIN_MOVIMIENTO_LABEL}</p>
+          <p className="text-xs text-[var(--text-secondary)]">
+            No hubo ingresos, despachos ni producción: no hay nada que calificar. El puntaje vuelve con el primer movimiento.
+          </p>
+        </div>
+      </div>
+    );
+  }
   const tone = ctpComplianceTone(data.score);
   const breakdown = ctpComplianceBreakdown(data.counts);
   const totalRestado = breakdown.reduce((a, d) => a + d.puntos, 0);
@@ -52,7 +73,7 @@ export default function CtpComplianceScore({ data }: { data: CtpComplianceData }
                 </span>
                 {d.puntos > 0 ? (
                   <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--data-error-700)]">
-                    −{d.puntos} pts <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">({d.casos}{d.topeAlcanzado ? "+" : ""} {plural(d.casos, "caso", "casos")})</span>
+                    −{d.puntos} pts <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">({ctpDeduccionCasosTexto(d)})</span>
                   </span>
                 ) : (
                   <span className="shrink-0 text-xs font-bold text-[var(--data-success-700)]">sin restar</span>

@@ -13,7 +13,7 @@
 
 import { Gauge } from "@buleje/design-system/icons";
 import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
-import { ctpComplianceTone } from "@/lib/forestal/ctp-compliance";
+import { CTP_SIN_MOVIMIENTO_LABEL, ctpComplianceTone } from "@/lib/forestal/ctp-compliance";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
 // Los tints `-50` son claros en AMBOS temas: sin variante dark el chip queda
@@ -26,6 +26,9 @@ const TONE_CLS: Record<ReturnType<typeof ctpComplianceTone>, string> = {
   error:
     "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]",
 };
+
+/** Sin movimiento (ADR-532): ni verde ni rojo, no hay nada que calificar. */
+const NEUTRO_CLS = "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
 
 export default function CtpHealthChip({
   period,
@@ -41,19 +44,24 @@ export default function CtpHealthChip({
   }
   if (!data) return null;
 
-  const tone = ctpComplianceTone(data.score);
+  const sinMovimiento = data.score == null;
+  const cls = data.score == null ? NEUTRO_CLS : TONE_CLS[ctpComplianceTone(data.score)];
   return (
     <button
       type="button"
       onClick={onNavigate}
-      title="Score de cumplimiento del período — clic para ver el detalle"
-      className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full border-2 px-3.5 text-sm font-bold transition hover:brightness-105 @max-[36rem]/acciones:px-2.5 ${TONE_CLS[tone]}`}
+      title={`${sinMovimiento ? CTP_SIN_MOVIMIENTO_LABEL : "Score de cumplimiento del período"} — clic para ver el detalle`}
+      className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full border-2 px-3.5 text-sm font-bold transition hover:brightness-105 @max-[36rem]/acciones:px-2.5 ${cls}`}
     >
       <Gauge className="h-4 w-4 @max-[30rem]/acciones:hidden" aria-hidden="true" />
-      <span className="font-mono tabular-nums">{data.score}</span>
+      <span className="font-mono tabular-nums">{data.score ?? "—"}</span>
       {/* «/100» cede cuando la banda aprieta (libro-chrome, `/acciones`); el
           title y el lector siguen diciendo sobre cuánto es. */}
-      <span className="text-xs font-normal opacity-70 @max-[36rem]/acciones:sr-only">/100</span>
+      {sinMovimiento ? (
+        <span className="sr-only">{CTP_SIN_MOVIMIENTO_LABEL}</span>
+      ) : (
+        <span className="text-xs font-normal opacity-70 @max-[36rem]/acciones:sr-only">/100</span>
+      )}
     </button>
   );
 }

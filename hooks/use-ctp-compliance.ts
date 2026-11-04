@@ -39,9 +39,16 @@ interface SaldosSummary {
  */
 const norm = claveEspecie;
 
+/** Corridas de producción del período (`total` de la lista); sin dato, `undefined` (ADR-532). */
+function totalDeProduccion(body: unknown): number | undefined {
+  const total = (body as { total?: unknown } | null)?.total;
+  return typeof total === "number" && Number.isFinite(total) ? total : undefined;
+}
+
 export interface CtpComplianceData {
   counts: CtpComplianceCounts;
-  score: number;
+  /** null = «Sin movimiento en el período» (ADR-532): no hay nada que calificar. */
+  score: number | null;
   totalIngresos: number;
   /** Productos puntuales con stock negativo — para el detalle de la alerta. */
   productosNegativos: string[];
@@ -221,6 +228,16 @@ export function useCtpCompliance(period: CtpPeriod, especie?: string): UseCtpCom
         rendimientoAlto: rendimientoAltoLineas.length,
         documentosVencidos: documentosVencidosLabels.length,
         documentosPorVencer: documentosPorVencerLabels.length,
+        /* Las bases (ADR-532): de cuánto son parte los casos y si hubo
+           movimiento. Producción sólo sin recorte por especie: su lectura no
+           filtra por especie, y usar las corridas de todas para decir «esta
+           especie se movió» sería inventar. Sin un total → `undefined` → la
+           fórmula cae a 5 por caso y nunca afirma «sin movimiento». */
+        bases: {
+          ingresos: wood.stats.totalCount,
+          despachos: trazaBody.traza.total,
+          producciones: especie ? undefined : totalDeProduccion(prodJson),
+        },
       };
 
       const score = ctpComplianceScore(counts);
@@ -230,7 +247,8 @@ export function useCtpCompliance(period: CtpPeriod, especie?: string): UseCtpCom
          ⛔ Con una especie puesta NO se guarda: la serie es el puntaje DEL
          PERÍODO, y meterle el de una especie dejaría un escalón en el gráfico
          que sólo dice que alguien usó un filtro. */
-      if (!especie) registrarSnapshot(period.key, counts, score, wood.stats.totalCount);
+      /* Sin movimiento (score null) tampoco: no hay punto que dibujar ese día. */
+      if (!especie && score != null) registrarSnapshot(period.key, counts, score, wood.stats.totalCount);
 
       setData({
         counts,

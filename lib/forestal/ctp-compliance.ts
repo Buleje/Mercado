@@ -104,6 +104,20 @@ export function parseCitesPermiso(notes: string | null): string | null {
   return m ? m[1].trim() || null : null;
 }
 
+/**
+ * Los totales del período (ADR-532): de cuánto son parte los casos y si hubo
+ * movimiento. Opcionales a propósito — un total que no vino es `undefined` y
+ * la fórmula cae a 5 por caso: nunca se inventa una base ni un «sin movimiento».
+ */
+export interface CtpComplianceBases {
+  /** Ingresos del período (`WoodEntriesDB.stats().totalCount`): base de fueraPlazo y pendientes. */
+  ingresos?: number;
+  /** Despachos del período (`trazabilidadDelPeriodo().total`): base de despachosSinTraza. */
+  despachos?: number;
+  /** Corridas de producción del período: sólo cuenta para saber si hubo movimiento. */
+  producciones?: number;
+}
+
 /** Las 6 alertas de cumplimiento del período — las mismas que exporta el Excel. */
 export interface CtpComplianceCounts {
   /** Ingresos registrados con más de PLAZO_REGISTRO_DIAS días entre entryDate y createdAt. */
@@ -147,6 +161,8 @@ export interface CtpComplianceCounts {
    * enterarse el día que venció es enterarse tarde.
    */
   documentosPorVencer?: number;
+  /** Totales del período (ADR-532). Sin ellos, el cálculo de antes (5 por caso, tope 25). */
+  bases?: CtpComplianceBases;
 }
 
 /**
@@ -179,22 +195,82 @@ const CATEGORIAS_QUE_RESTAN = [
 
 /** Tope de puntos que puede restar una sola categoría (5 categorías × 25 = 125, con piso en 0). */
 const TOPE_PUNTOS_POR_ALERTA = 25;
-/** Puntos que resta cada caso dentro de una categoría (tope a partir del 5º caso). */
+/**
+ * Puntos por caso de las categorías SIN base (especies y productos en
+ * negativo) y PISO de las proporcionales: un caso siempre se ve (ADR-532).
+ */
 const PUNTOS_POR_CASO = 5;
+
+type CategoriaQueResta = (typeof CATEGORIAS_QUE_RESTAN)[number];
+
+/**
+ * De qué total es parte cada categoría (ADR-532). Con base, la categoría resta
+ * en PROPORCIÓN: 5 de 21 guías sin recepcionar no es lo mismo que 21 de 21, y
+ * el tope fijo de 5 casos las igualaba (recepcionar 16 no movía el puntaje).
+ * Especies y productos en negativo no tienen una base natural —el universo
+ * «con saldo» cambia con la apertura heredada y con el filtro— y siguen a 5
+ * por caso con tope 25.
+ */
+const BASE_DE: Partial<Record<CategoriaQueResta, keyof CtpComplianceBases>> = {
+  fueraPlazo: "ingresos",
+  pendientes: "ingresos",
+  despachosSinTraza: "despachos",
+};
+
+function casosDe(key: CategoriaQueResta, counts: CtpComplianceCounts): number {
+  const n = counts[key];
+  return Number.isFinite(n) ? Math.max(n, 0) : 0;
+}
+
+/** La base de una categoría si vino y sirve (> 0); null = resta 5 por caso. */
+function baseDe(key: CategoriaQueResta, counts: CtpComplianceCounts): number | null {
+  const campo = BASE_DE[key];
+  const base = campo ? counts.bases?.[campo] : undefined;
+  return base != null && Number.isFinite(base) && base > 0 ? base : null;
+}
+
+/**
+ * LA fórmula de una categoría (score y desglose la comparten):
+ *  - sin casos → 0;
+ *  - con base → 25 × casos ÷ base, redondeado, con piso 5 y techo 25;
+ *  - sin base → 5 por caso, tope 25 (el cálculo de antes del ADR-532).
+ */
+function puntosDeCategoria(casos: number, base: number | null): number {
+  if (casos <= 0) return 0;
+  if (base == null) return Math.min(casos * PUNTOS_POR_CASO, TOPE_PUNTOS_POR_ALERTA);
+  const proporcional = Math.round((TOPE_PUNTOS_POR_ALERTA * casos) / base);
+  return Math.min(TOPE_PUNTOS_POR_ALERTA, Math.max(PUNTOS_POR_CASO, proporcional));
+}
+
+/**
+ * ¿El período no tuvo NINGÚN movimiento? (ADR-532). Sólo se afirma con los
+ * tres totales a la vista y en 0, y sin un caso que reste: si falta un total
+ * no se sabe; si hay un caso (una especie que arrastra saldo negativo de
+ * antes) hay algo que calificar.
+ */
+export function ctpComplianceSinMovimiento(counts: CtpComplianceCounts): boolean {
+  const b = counts.bases;
+  if (!b || b.ingresos !== 0 || b.despachos !== 0 || b.producciones !== 0) return false;
+  return CATEGORIAS_QUE_RESTAN.every((key) => casosDe(key, counts) === 0);
+}
+
+/** Lo que muestran el medidor, el chip y el PDF cuando el puntaje es `null`. */
+export const CTP_SIN_MOVIMIENTO_LABEL = "Sin movimiento en el período";
 
 /**
  * Score 0-100 de cumplimiento del período: arranca en 100 y cada categoría
- * corregible resta hasta 25 puntos (5 por caso, tope en 5 casos — a partir de
- * ahí da lo mismo si son 5 o 50, la categoría ya está roja).
+ * corregible resta hasta 25 puntos (ver `puntosDeCategoria`).
+ *
+ * `null` = «Sin movimiento en el período» (ADR-532): un libro que no registró
+ * nada no está «en orden», no hay nada que calificar. Antes daba 100 y le
+ * ganaba a un CTP que despacha bien con un caso abierto.
  *
  * Suma explícita por categoría (no `Object.values`): así agregar un contador
  * informativo nuevo a `CtpComplianceCounts` no cambia el score en silencio.
  */
-export function ctpComplianceScore(counts: CtpComplianceCounts): number {
-  const deduccion = CATEGORIAS_QUE_RESTAN.reduce(
-    (total, key) => total + Math.min(Math.max(counts[key], 0) * PUNTOS_POR_CASO, TOPE_PUNTOS_POR_ALERTA),
-    0,
-  );
+export function ctpComplianceScore(counts: CtpComplianceCounts): number | null {
+  if (ctpComplianceSinMovimiento(counts)) return null;
+  const deduccion = ctpComplianceBreakdown(counts).reduce((total, d) => total + d.puntos, 0);
   return Math.max(0, 100 - deduccion);
 }
 
@@ -208,7 +284,7 @@ export function ctpComplianceTone(score: number): CtpComplianceTone {
 }
 
 /** Etiqueta legible de cada categoría que resta puntos (para el desglose del score). */
-const CATEGORIA_LABEL: Record<(typeof CATEGORIAS_QUE_RESTAN)[number], string> = {
+const CATEGORIA_LABEL: Record<CategoriaQueResta, string> = {
   fueraPlazo: "Ingresos fuera de plazo",
   pendientes: "Guías sin recepcionar",
   especiesEnNegativo: "Especies en saldo negativo",
@@ -221,7 +297,7 @@ const CATEGORIA_LABEL: Record<(typeof CATEGORIAS_QUE_RESTAN)[number], string> = 
  * recepcionar») dice qué está mal; esto dice qué hacer, que es lo que el panel
  * necesitaba para no quedarse en un diagnóstico.
  */
-const CATEGORIA_ACCION: Record<(typeof CATEGORIAS_QUE_RESTAN)[number], string> = {
+const CATEGORIA_ACCION: Record<CategoriaQueResta, string> = {
   fueraPlazo: "Ya pasó: sale solo cuando el período avance. Registra los próximos ingresos dentro de los 2 días hábiles.",
   pendientes: "Ve a Ingresos, mira la madera y cierra la recepción de cada guía (se puede en bloque).",
   especiesEnNegativo: "Esa especie consumió más de lo que entró validado: carga el ingreso que falta o corrige el consumo.",
@@ -230,33 +306,43 @@ const CATEGORIA_ACCION: Record<(typeof CATEGORIAS_QUE_RESTAN)[number], string> =
 };
 
 export interface CtpComplianceDeduccion {
-  key: (typeof CATEGORIAS_QUE_RESTAN)[number];
+  key: CategoriaQueResta;
   label: string;
   /** Qué hacer para recuperar esos puntos. */
   accion: string;
   casos: number;
+  /** Total del que los casos son parte (ingresos o despachos); null = resta 5 por caso. */
+  base: number | null;
   /** Puntos que esta categoría le resta al score (0..TOPE_PUNTOS_POR_ALERTA). */
   puntos: number;
-  /** true si la categoría llegó al tope (da igual 5 o 50 casos). */
+  /** true si una categoría SIN base llegó al tope (da igual 5 o 50). Con base, 25 = todos. */
   topeAlcanzado: boolean;
 }
 
 /**
  * Desglose del score: cuántos puntos resta cada categoría corregible. Single
- * source con `ctpComplianceScore` (mismas categorías, mismos pesos) — el panel
- * lo muestra sin re-derivar la fórmula, así nunca divergen del score real.
+ * source con `ctpComplianceScore` (el score SUMA este desglose) — el panel lo
+ * muestra sin re-derivar la fórmula, así nunca divergen del score real.
  */
 export function ctpComplianceBreakdown(counts: CtpComplianceCounts): CtpComplianceDeduccion[] {
   return CATEGORIAS_QUE_RESTAN.map((key) => {
-    const casos = Math.max(counts[key], 0);
-    const puntos = Math.min(casos * PUNTOS_POR_CASO, TOPE_PUNTOS_POR_ALERTA);
+    const casos = casosDe(key, counts);
+    const base = baseDe(key, counts);
+    const puntos = puntosDeCategoria(casos, base);
     return {
       key,
       label: CATEGORIA_LABEL[key],
       accion: CATEGORIA_ACCION[key],
       casos,
+      base,
       puntos,
-      topeAlcanzado: puntos >= TOPE_PUNTOS_POR_ALERTA && casos > 0,
+      topeAlcanzado: base == null && casos > 0 && puntos >= TOPE_PUNTOS_POR_ALERTA,
     };
   });
+}
+
+/** «5 de 21 ingresos» · «1 caso» · «5+ casos»: el mismo texto en el panel y en el PDF. */
+export function ctpDeduccionCasosTexto(d: Pick<CtpComplianceDeduccion, "key" | "casos" | "base" | "topeAlcanzado">): string {
+  if (d.base != null) return `${d.casos} de ${d.base} ${BASE_DE[d.key] === "despachos" ? "despachos" : "ingresos"}`;
+  return `${d.casos}${d.topeAlcanzado ? "+" : ""} ${d.casos === 1 ? "caso" : "casos"}`;
 }

@@ -27,14 +27,16 @@ export interface CumplimientoCheckLine {
 
 export interface CumplimientoReportData {
   periodLabel: string;
-  score: number;
+  /** null = sin movimiento en el período (ADR-532). */
+  score: number | null;
   toneLabel: string;
   totalIngresos: number;
   readiness: ReportReadiness;
   bloqueos: number;
   advertencias: number;
   enOrdenCount: number;
-  breakdown: { label: string; puntos: number; casos: number; topeAlcanzado: boolean }[];
+  /** `casosTexto` = «5 de 21 ingresos» · «5+ casos» (`ctpDeduccionCasosTexto`, el mismo del panel). */
+  breakdown: { label: string; puntos: number; casosTexto: string }[];
   problemas: CumplimientoCheckLine[];
   enOrden: string[];
   ficha?: CtpReportFicha | null;
@@ -75,7 +77,7 @@ export function printCumplimiento(d: CumplimientoReportData): void {
       (b) => `<tr>
       <td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${b.puntos > 0 ? "#dc2626" : "#16a34a"};margin-right:7px"></span>${esc(b.label)}</td>
       <td class="num">${b.puntos > 0 ? `<b style="color:#b91c1c">−${b.puntos} pts</b>` : '<span style="color:#16a34a">sin restar</span>'}</td>
-      <td class="num" style="color:#666">${b.puntos > 0 ? `${b.casos}${b.topeAlcanzado ? "+" : ""} ${b.casos === 1 ? "caso" : "casos"}` : "—"}</td>
+      <td class="num" style="color:#666">${b.puntos > 0 ? esc(b.casosTexto) : "—"}</td>
     </tr>`,
     )
     .join("");
@@ -101,7 +103,7 @@ export function printCumplimiento(d: CumplimientoReportData): void {
       <div class="t" style="color:${r.fg}">${esc(r.title)}</div>
       <div class="d">${esc(detalleVeredicto)}</div>
     </div>
-    <div class="score" style="color:${r.fg}">${d.score}<small>DE 100 · ${esc(d.toneLabel).toUpperCase()}</small></div>
+    <div class="score" style="color:${r.fg}">${d.score ?? "—"}<small>${d.score == null ? "" : "DE 100 · "}${esc(d.toneLabel).toUpperCase()}</small></div>
   </div>
 
   <div class="chips">
