@@ -35,7 +35,7 @@ const SEMANA = "/mnt/c/Users/Usuario/OneDrive/Documentos/Escritorio/Semana actua
  * está en la lista, no copia nada y lo decimos en el resumen para que Brandon diga quién es.
  */
 function archivarEnPersona(nombre, pdf) {
-  const r = spawnSync(join(BIN, "persona"), ["guardar", nombre, pdf], { encoding: "utf8", timeout: 30_000 });
+  const r = spawnSync(join(BIN, "persona"), ["guardar", nombre, pdf, "--estado", "oficial"]  /* 04-11: el oficial nuevo archiva el estado de cuenta anterior */, { encoding: "utf8", timeout: 30_000 });
   return { ok: r.status === 0, salida: `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() };
 }
 const MESES = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split(" ");
