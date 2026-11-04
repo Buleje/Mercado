@@ -118,8 +118,10 @@ export const CuentasMovimientosDB = {
         where: { tenantId, origen: "MANUAL", tipo: { in: ["INGRESO", "EGRESO"] }, createdAt: enRango },
         select: { id: true, tipo: true, monto: true, descripcion: true, createdAt: true, cuenta: { select: { nombre: true, moneda: true } } },
       }),
+      // El vale del cuaderno de combustible (ADR-533) no es plata que salió: salió al comprar
+      // los cilindros. `OR` con null a propósito: `{ not: "cilindros" }` solo también deja afuera los NULL.
       prisma.assetExpense.findMany({
-        where: { tenantId, date: ancha },
+        where: { tenantId, date: ancha, annulledAt: null, OR: [{ fuelSource: null }, { fuelSource: { not: "cilindros" } }] },
         select: { id: true, category: true, amount: true, date: true, notes: true, asset: { select: { name: true } } },
       }),
       // Solo lo cobrado: lo pendiente es una cuenta por cobrar, no plata que entró.

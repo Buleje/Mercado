@@ -210,9 +210,10 @@ export const AssetsDB = {
         _sum: { amount: true, quantity: true },
         _count: { id: true },
       }),
+      // Los vales anulados del cuaderno de combustible (ADR-533) no son gasto.
       prisma.assetExpense.groupBy({
         by: ["assetId"],
-        where: { tenantId, assetId: { in: ids } },
+        where: { tenantId, assetId: { in: ids }, annulledAt: null },
         _sum: { amount: true },
         _count: { id: true },
       }),
@@ -228,7 +229,7 @@ export const AssetsDB = {
       }),
       prisma.assetExpense.groupBy({
         by: ["assetId"],
-        where: { tenantId, assetId: { in: ids }, category: "combustible" },
+        where: { tenantId, assetId: { in: ids }, category: "combustible", annulledAt: null },
         _sum: { gallons: true },
       }),
       prisma.assetMaintenance.findMany({
@@ -352,7 +353,7 @@ export const AssetsDB = {
   async listMovements(tenantId: string, assetId: string, limit = 100): Promise<{ incomes: DbAssetIncome[]; expenses: DbAssetExpense[] }> {
     const [incomes, expenses] = await Promise.all([
       prisma.assetIncome.findMany({ where: { tenantId, assetId }, orderBy: { date: "desc" }, take: limit }),
-      prisma.assetExpense.findMany({ where: { tenantId, assetId }, orderBy: { date: "desc" }, take: limit }),
+      prisma.assetExpense.findMany({ where: { tenantId, assetId, annulledAt: null }, orderBy: { date: "desc" }, take: limit }),
     ]);
     return {
       incomes: incomes.map(mapIncome),
@@ -407,7 +408,7 @@ export const AssetsDB = {
     const n = numero.trim();
     if (!n) return null;
     const filas = await prisma.assetExpense.findMany({
-      where: { tenantId, notes: { contains: `Recibo ${n}`, mode: "insensitive" } },
+      where: { tenantId, annulledAt: null, notes: { contains: `Recibo ${n}`, mode: "insensitive" } },
       select: { id: true, date: true, amount: true, notes: true, asset: { select: { name: true } } },
       orderBy: { date: "desc" },
       take: 20,

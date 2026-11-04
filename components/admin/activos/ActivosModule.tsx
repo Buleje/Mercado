@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
@@ -64,8 +65,13 @@ const CHECKLIST_DEFAULT = ["Niveles de aceite", "Combustible", "Llantas / orugas
 const FIELD = "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--surface-raised)]";
 const LABEL = "block text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
 
-type View = "flota" | "cobrar" | "calendario" | "ranking";
-const VISTAS: readonly View[] = ["flota", "cobrar", "calendario", "ranking"];
+type View = "flota" | "cobrar" | "calendario" | "ranking" | "combustible";
+const VISTAS: readonly View[] = ["flota", "cobrar", "calendario", "ranking", "combustible"];
+
+/* Cuaderno de combustible en cilindros (ADR-533): carga aparte, solo al abrir la pestaña. */
+const CombustibleView = dynamic(() => import("./combustible/CombustibleView"), {
+  loading: () => <div className="flex items-center justify-center gap-2 py-16 text-sm font-bold text-[var(--text-tertiary)]"><Loader2 className="h-5 w-5 animate-spin" /> Cargando el cuaderno…</div>,
+});
 
 // Sub-tabs top-level: coherencia con el resto del admin (AdminTabBar da
 // reorden por drag + registro en sidebar). Los badges son dinámicos (alertas
@@ -109,6 +115,7 @@ export default function ActivosModule() {
     { id: "cobrar", label: "Alquileres por cobrar", icon: CreditCard, badge: totals.pending > 0 ? "!" : undefined },
     { id: "calendario", label: "Calendario", icon: Calendar },
     { id: "ranking", label: "Ranking", icon: BarChart3 },
+    { id: "combustible", label: "Combustible", icon: Fuel },
   ];
 
   const exportReport = () => {
@@ -199,7 +206,9 @@ export default function ActivosModule() {
       )}
 
       {/* Vistas */}
-      {loading ? (
+      {view === "combustible" ? (
+        <CombustibleView />
+      ) : loading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm font-bold text-[var(--text-tertiary)]"><Loader2 className="h-5 w-5 animate-spin" /> Cargando flota…</div>
       ) : view === "flota" ? (
         assets.length === 0 ? <EmptyFleet onAdd={() => { setEditing(null); setShowForm(true); }} /> : (
