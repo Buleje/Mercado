@@ -39,7 +39,7 @@ clave() {
 
 # Diagnóstico (04-11): qué archivos forman la clave, con la huella de cada uno.
 # `poner` lo deja al lado del sello; el pre-commit guarda el suyo cuando el sello
-# no coincide → `diff .git/buleje-sellos/tsc.manifiesto .git/buleje-sellos/tsc.fallo`
+# no coincide → `diff .git/buleje-sellos/tsc.manifiesto.antes .git/buleje-sellos/tsc.fallo`
 # dice qué cambió (04-11: el commit repetía tsc sin cambios y no se halló la causa).
 manifiesto() {
   git rev-parse HEAD

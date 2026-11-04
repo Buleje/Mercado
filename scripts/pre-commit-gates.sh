@@ -111,6 +111,9 @@ else
   # Sello que no coincide: guardar qué vio este commit para compararlo (04-11).
   SELLOS="$(git rev-parse --git-dir)/buleje-sellos"
   if [ -f "$SELLOS/tsc" ]; then
+    # Copia de la lista del sello viejo: si el commit pasa, `poner` la pisa y el
+    # diff fallo↔manifiesto sale vacío (04-11 12:00, ef9f1827d). Comparar con .antes.
+    cp -f "$SELLOS/tsc.manifiesto" "$SELLOS/tsc.manifiesto.antes" 2>/dev/null || true
     { echo "clave=$CLAVE sello=$(head -1 "$SELLOS/tsc")"; env | grep '^GIT_' | sort; sh scripts/dev-helpers/sello.sh manifiesto; } >"$SELLOS/tsc.fallo" 2>&1 || true
   fi
   lanzar tsc node scripts/tsc7.mjs --noEmit; TSC_LANZADO=1
