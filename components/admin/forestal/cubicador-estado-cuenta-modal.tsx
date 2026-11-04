@@ -34,7 +34,11 @@ import { usePapelEstadoCuenta } from "./hooks/use-papel-estado-cuenta";
 const ENTRADA =
   "h-11 w-full min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]";
 const MONTO = `${ENTRADA} text-right font-bold tabular-nums`;
-const CELDA = "px-2 py-1.5 text-right tabular-nums";
+const CELDA = "whitespace-nowrap px-1.5 py-1.5 text-right tabular-nums sm:px-2";
+/** Títulos de columna: pueden bajar de renglón («Importe / S/») para que la tabla entre en 400 px. */
+const TITULO = "px-1.5 py-1.5 text-right sm:px-2";
+/** En la tabla el «S/» va en el título de la columna: en el celular «S/ 3.80» se partía en 2 renglones. */
+const cifra = (n: number) => soles(n).replace(/^S\/ /, "");
 
 interface Guardado extends DatosCuenta {
   cliente: string;
@@ -179,19 +183,19 @@ export function EstadoCuentaCargaModal({ c, aboveModals, onClose }: { c: Cubicac
           <table className="w-full text-sm">
             <caption className="sr-only">Madera de esta carga</caption>
             <thead className="bg-[var(--surface-sunken)] text-xs text-[var(--text-secondary)]">
-              <tr><th className="px-2 py-1.5 text-left">Tipo</th><th className={CELDA}>Piezas</th><th className={CELDA}>Pies</th><th className={CELDA}>Precio</th><th className={CELDA}>Importe</th></tr>
+              <tr><th className="px-2 py-1.5 text-left">Tipo</th><th className={TITULO}>Piezas</th><th className={TITULO}>Pies</th><th className={TITULO}>Precio S/</th><th className={TITULO}>Importe S/</th></tr>
             </thead>
             <tbody>
               {e.filas.map((f) => (
                 <tr key={f.clave} className="border-t border-[var(--rule-base)]">
                   <td className="px-2 py-1.5">{f.tipo}</td><td className={CELDA}>{f.piezas}</td><td className={CELDA}>{pies3(f.pies)}</td>
-                  <td className={`${CELDA} ${f.precio === 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : ""}`}>{f.precio > 0 ? soles(f.precio) : "sin precio"}</td>
-                  <td className={CELDA}>{soles(f.importe)}</td>
+                  <td className={`${CELDA} ${f.precio === 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : ""}`}>{f.precio > 0 ? cifra(f.precio) : "sin precio"}</td>
+                  <td className={CELDA}>{cifra(f.importe)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot className="border-t border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
-              <tr><td className="px-2 py-1.5">Total de la carga</td><td className={CELDA}>{e.piezas}</td><td className={CELDA}>{pies3(e.pies)}</td><td /><td className={CELDA}>{soles(e.importeCarga)}</td></tr>
+              <tr><td className="px-2 py-1.5">Total de la carga</td><td className={CELDA}>{e.piezas}</td><td className={CELDA}>{pies3(e.pies)}</td><td /><td className={CELDA}>{cifra(e.importeCarga)}</td></tr>
             </tfoot>
           </table>
         </div>
