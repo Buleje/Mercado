@@ -69,6 +69,7 @@ import CtpPrecioDeLaMadera, {
 import CtpProveedorEnDirectorio from "./CtpProveedorEnDirectorio";
 import { TEXTO_MOTIVO, type MotivoSalto } from "@/lib/forestal/precio-en-tanda";
 import { documentoDelTitular } from "@/lib/forestal/serfor-titular";
+import { AvisoProveedorSancion } from "./AvisoProveedorSancion";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AvisoClaveIa from "@/components/admin/shared/AvisoClaveIa";
 import { CardTitle } from "@buleje/design-system";
@@ -2982,6 +2983,15 @@ export default function WoodEntryForm({
                       className={I}
                     />
                   </Field>
+                  {/* Sale solo: el titular, su RUC/DNI y el permiso contra SERFOR y
+                  OSINFOR. Avisa, nunca frena el guardado. */}
+                  <AvisoProveedorSancion
+                    className="sm:col-span-12"
+                    nombre={data.providerName}
+                    documento={data.providerDocument}
+                    codigo={data.originCode}
+                    contratoId={data.contratoId}
+                  />
                 </Seccion>
 
                 {/* ─── 5 · Origen ──────────────────────────────────────── */}

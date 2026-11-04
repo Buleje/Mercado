@@ -33,6 +33,7 @@ import { ptDeLinea } from "@/lib/forestal/plata-de-guia";
 import { resumenOxapampa } from "@/lib/forestal/cubicacion-oxapampa";
 import { Btn, ModalBody, ModalFooter, type WoodEntry } from "./ctp-shared";
 import FichaCabecera from "./ficha-guia/FichaCabecera";
+import { AvisoProveedorSancion } from "./AvisoProveedorSancion";
 import FichaAvisos from "./ficha-guia/FichaAvisos";
 import BloqueMadera from "./ficha-guia/BloqueMadera";
 import BloqueRecepcion from "./ficha-guia/BloqueRecepcion";
@@ -225,6 +226,16 @@ export default function CtpGuiaFichaModal({
           alerta={vencida}
           atajos={{ onVerDocumento, onPlata, onDocumentos, onEtiquetas, onFotos }}
           ocupado={ocupado}
+        />
+
+        {/* Antes de recibir la madera: ¿el titular o el permiso están sancionados? Solo avisa.
+        Sin `providerDocument`: en las guías guardadas es el RUC de la ATFFS, no del titular
+        (schema, `proveedorParteId`), y un RUC ajeno taparía el cruce por nombre. El RUC
+        confiable llega por el permiso vinculado (`contratoId` → su titular). */}
+        <AvisoProveedorSancion
+          nombre={guia.providerName}
+          codigo={guia.originCode}
+          contratoId={guia.lineas[0]?.contratoId}
         />
 
         <FichaAvisos

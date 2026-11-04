@@ -73,7 +73,7 @@ export async function consultarOsinfor(crudo: string): Promise<ResumenOsinfor | 
     const filas = (json.features ?? [])
       .map((f) => f.attributes)
       .filter((a): a is FilaSisfor => Boolean(a));
-    const resumen = resumirSupervisiones(codigo, filas);
+    const resumen: ResumenOsinfor = { ...resumirSupervisiones(codigo, filas), consultadoEn: new Date().toISOString() };
     cacheStore.set(clave, resumen, CACHE_SEG);
     return resumen;
   } catch (err) {

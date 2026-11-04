@@ -58,6 +58,8 @@ export interface ResumenOsinfor {
   pauEnTramite: number;
   /** El código es un registro de plantación: OSINFOR no los publica. */
   esPlantacion: boolean;
+  /** ISO de cuando se le preguntó a OSINFOR (la respuesta se guarda 12 h): la fecha del dato que se muestra. */
+  consultadoEn?: string;
 }
 
 /** Quita tildes, espacios raros y pasa a minúsculas para comparar. */
