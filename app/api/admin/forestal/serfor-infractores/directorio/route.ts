@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { filasConAlerta } from "@/lib/forestal/revision-proveedores";
+import { filasConAlerta, filasSinAlerta } from "@/lib/forestal/revision-proveedores";
 import { revisarProveedoresDelNegocio } from "@/lib/forestal/revision-proveedores.server";
 
 // ── GET /api/admin/forestal/serfor-infractores/directorio ──
@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
       data: {
         resumen: r.resumen,
         filas: filasConAlerta(r.filas),
+        // Las limpias y sin datos van aparte: la pantalla solo pinta las alertas; el papel de resultado lleva a todos.
+        sinAlerta: filasSinAlerta(r.filas),
         corteSerfor: r.corteSerfor,
         revisadoEn: new Date().toISOString(),
       },

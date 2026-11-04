@@ -56,6 +56,8 @@ export interface GrupoRevision {
   nombre: string;
   documento: string | null;
   permisos: PermisoRevisable[];
+  /** Los papeles de la ficha (proveedor, cliente…); vacío si el titular no tiene ficha. */
+  roles?: readonly string[];
 }
 
 export type CertezaSerfor = ResumenInfractores["certeza"];
@@ -69,6 +71,8 @@ export interface PermisoRevisado {
     enRoja: number;
     pauEnTramite: number;
     esPlantacion: boolean;
+    /** ISO de cuando se le preguntó a OSINFOR (la respuesta se guarda 12 h): la fecha del dato. */
+    consultadoEn?: string;
   } | null;
   /** true = ni se le preguntó a OSINFOR (pasó el tope, se acabó el tiempo o el código no es consultable). */
   sinConsultar: boolean;
@@ -92,6 +96,8 @@ export interface FilaRevision {
   /** Sanciones de SERFOR sin repetir, las más nuevas primero. */
   sanciones: CoincidenciaInfractor[];
   permisos: PermisoRevisado[];
+  /** Los papeles de la ficha (proveedor, cliente…); vacío si el titular no tiene ficha. */
+  roles?: readonly string[];
 }
 
 export interface ResumenRevision {
@@ -167,6 +173,7 @@ export function agruparPorTitular(
       nombre: p.nombre,
       documento: doc,
       permisos: [],
+      roles: p.roles.filter((r) => (ROLES_REVISADOS as readonly string[]).includes(r)),
     };
     grupos.set(g.clave, g);
     porId.set(p.id, g);
@@ -260,6 +267,7 @@ export function revisarGrupo(
             enRoja: o.enRoja,
             pauEnTramite: o.pauEnTramite,
             esPlantacion: o.esPlantacion,
+            ...(o.consultadoEn ? { consultadoEn: o.consultadoEn } : {}),
           }
         : null,
       sinConsultar: !osinfor.has(clave),
@@ -274,6 +282,7 @@ export function revisarGrupo(
     certeza,
     sanciones,
     permisos,
+    ...(grupo.roles?.length ? { roles: grupo.roles } : {}),
   };
 }
 
@@ -305,6 +314,11 @@ export function resumirRevision(filas: FilaRevision[]): ResumenRevision {
     ),
     osinforSinConsultar: filas.reduce((s, f) => s + f.permisos.filter((p) => p.sinConsultar).length, 0),
   };
+}
+
+/** Las filas sin nada que mirar (limpias y sin datos), en el orden del papel de resultado. */
+export function filasSinAlerta(filas: FilaRevision[]): FilaRevision[] {
+  return ordenarFilas(filas.filter((f) => f.nivel === "limpio" || f.nivel === "sin_datos"));
 }
 
 /** Las filas que hay que mirar (rojo, ámbar, solo nombre). */

@@ -7,11 +7,20 @@
  * con toda la libreta de una vez: cada ficha (proveedor, comprador,
  * transportista) con sus permisos contra el Registro de Infractores de SERFOR
  * y la lista roja / PAU de OSINFOR. Solo al tocar (llama a OSINFOR por cada
- * permiso) y solo lectura: no cambia nada del libro.
+ * permiso) y solo lectura: no cambia nada del libro. «Papel de resultado» baja
+ * la hoja PDF con TODAS las fichas revisadas (también las limpias): la que se
+ * entrega en la revisión suelta (Brandon 04-11).
  */
 
+import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, CheckCircle2, Loader2, ShieldAlert } from "@buleje/design-system/icons";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  FileDown,
+  Loader2,
+  ShieldAlert,
+} from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ENLACE_REGISTRO_INFRACTORES } from "@/lib/forestal/serfor-infractores";
 import { Btn } from "./ctp-shared";
@@ -41,6 +50,22 @@ function lineaResumen(d: RevisionProveedores): string {
 export default function CtpProveedoresSancionesPanel() {
   const { datos, cargando, error, revisar } = useRevisionProveedores();
   const alertas = datos?.filas.length ?? null;
+  const [armando, setArmando] = useState(false);
+  const [errorPapel, setErrorPapel] = useState<string | null>(null);
+
+  const bajarPapel = async () => {
+    if (!datos) return;
+    setArmando(true);
+    setErrorPapel(null);
+    try {
+      const { descargarPapelRevision } = await import("@/lib/forestal/revision-proveedores-pdf");
+      await descargarPapelRevision(datos);
+    } catch (err) {
+      setErrorPapel(`No se pudo armar el papel: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setArmando(false);
+    }
+  };
 
   return (
     <section className="space-y-3">
@@ -58,19 +83,37 @@ export default function CtpProveedoresSancionesPanel() {
             example="Ejemplo: una comunidad con 2 resoluciones de 2026 de la ATFFS Selva Central sale arriba, en rojo."
           />
         </div>
-        <Btn variant="secondary" onClick={() => void revisar()} disabled={cargando}>
-          {cargando ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <ShieldAlert className="h-4 w-4" aria-hidden />
+        <div className="flex flex-wrap items-center gap-2">
+          {datos && (
+            <Btn
+              variant="secondary"
+              onClick={() => void bajarPapel()}
+              disabled={armando || cargando}
+              title="Una hoja PDF con cada ficha revisada, su resultado y la fecha de cada lista"
+              data-papel-revision
+            >
+              {armando ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <FileDown className="h-4 w-4" aria-hidden />
+              )}
+              Papel de resultado
+            </Btn>
           )}
-          {datos ? "Revisar de nuevo" : "Revisar a todos"}
-        </Btn>
+          <Btn variant="secondary" onClick={() => void revisar()} disabled={cargando}>
+            {cargando ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <ShieldAlert className="h-4 w-4" aria-hidden />
+            )}
+            {datos ? "Revisar de nuevo" : "Revisar a todos"}
+          </Btn>
+        </div>
       </div>
 
-      {error && (
+      {(error ?? errorPapel) && (
         <p className="rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-          {error}
+          {error ?? errorPapel}
         </p>
       )}
 

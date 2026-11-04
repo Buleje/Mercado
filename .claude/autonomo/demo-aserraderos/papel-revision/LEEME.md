@@ -1,0 +1,8 @@
+# Papel de resultado de «Revisar a todos» — prueba en QA y ejemplo para la demo (04-11-2026)
+
+Botón «Papel de resultado» en Libro CTP › Cumplimiento › Chequeo › «Proveedores en OSINFOR y SERFOR» (aparece tras «Revisar a todos»).
+
+- **Prueba en QA forestal** (`prueba-qa-pasos.json`): alta temporal de la C.N. San Luis (RUC 20393286238) por la libreta → «Revisar a todos» → `bajar` del papel → captura → baja de la ficha. Panel en desarrollo en **:3001** para no cortar el compilado de :3000:
+  `QA_BASE=http://localhost:3001 node scripts/qa-capturas.mjs --tenant inversiones-agroforestales-blas-sociedad-op-qa-ui --ruta "/admin?tab=ctp-libro-operaciones&vista=cumplimiento" --pasos-archivo .claude/autonomo/demo-aserraderos/papel-revision/prueba-qa-pasos.json --anchos 1280 --temas claro --salida <dir> --resumen`
+- **Gotchas:** con la PC cargada la revisión tarda >30 s → poner `{"esperar":30000}` ×2 antes de `{"esperar":"[data-papel-revision]"}` (si falla un paso, la ficha QUEDA: borrarla con DELETE `/api/admin/forestal/directorio?id=<id>`). El negocio QA se llama «Inversiones Agroforestales BLAS sac · QA UI» → para el ejemplo de la demo, `modificar` `/api/admin/membrete` (nombre, RUC, dirección, logo null, color) y filtrar las fichas «QA …» en la respuesta de `/api/admin/forestal/serfor-infractores/directorio` (filas + sinAlerta). Los permisos se dan de baja «suave» (`darDeBaja`): no crear permisos de prueba en QA (quedan inactivos para siempre).
+- **Resultado 04-11 16:17:** 1 hoja, 35 KB, 14 fichas (San Luis «Sancionado» 00046-2023-OSINFOR/08.2 · 27/02/2023; 13 «Sin alertas»), lista SERFOR al 13/10/2026, OSINFOR consultado 04/11/2026 16:14, código REV-20261104-FF08.

@@ -5,7 +5,10 @@ import type { FilaRevision, ResumenRevision } from "@/lib/forestal/revision-prov
 
 export interface RevisionProveedores {
   resumen: ResumenRevision;
+  /** Las que hay que mirar (rojo, ámbar, solo nombre). */
   filas: FilaRevision[];
+  /** Limpias y sin datos: solo para el papel de resultado (una respuesta vieja no las trae). */
+  sinAlerta?: FilaRevision[];
   corteSerfor: string | null;
   revisadoEn: string;
 }

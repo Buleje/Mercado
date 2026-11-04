@@ -1,0 +1,14 @@
+[
+ {"eval": "(async()=>{const c=(document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)||[])[1]||'';const r=await fetch('/api/admin/forestal/directorio',{method:'POST',credentials:'include',headers:{'content-type':'application/json','x-csrf-token':decodeURIComponent(c)},body:JSON.stringify({roles:['proveedor'],nombre:'COMUNIDAD NATIVA SAN LUIS',docTipo:'RUC',docNumero:'20393286238'})});const j=await r.json().catch(()=>({}));window.__sanluis=j.parte&&j.parte.id;return {alta:r.status,id:window.__sanluis||null,err:j.error||null}})()"},
+ {"esperar": "text=Proveedores en OSINFOR y SERFOR"},
+ {"preset": "cerrar-aviso-pendientes"},
+ {"tecla": "Escape"},
+ {"eval": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>/Revisar a todos/.test(x.innerText));b&&b.scrollIntoView({block:'center'});return !!b})()"},
+ {"click": "role=button[name=/Revisar a todos/]"},
+ {"esperar": "[data-papel-revision]"},
+ {"esperar": 800},
+ {"eval": "(()=>{const b=document.querySelector('[data-papel-revision]');const s=b.closest('section');s.scrollIntoView({block:'start'});window.scrollBy(0,-90);const r=s.getBoundingClientRect();return {resumen:s.innerText.replace(/\\s+/g,' ').slice(0,420),sec:{x:r.x,y:r.y,w:r.width,h:r.height}}})()"},
+ {"bajar": "[data-papel-revision]"},
+ {"captura": "revision"},
+ {"eval": "(async()=>{if(!window.__sanluis)return 'sin alta';const c=(document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)||[])[1]||'';const r=await fetch('/api/admin/forestal/directorio?id='+encodeURIComponent(window.__sanluis),{method:'DELETE',credentials:'include',headers:{'x-csrf-token':decodeURIComponent(c)}});return {baja:r.status}})()"}
+]
