@@ -24,6 +24,7 @@ import type { FilaPlanDelTitular } from "@/lib/forestal/directorio-planes";
 import { ESTADO_CLASE, ESTADO_LABEL, fmtFechaCorta } from "./contratos-ui";
 import { URL_PLAN_DEL_LIBRO, dejarElegidoElPlan, pedirAltaDePlan } from "./hooks/loth-plan-alta-pedida";
 import { usePlanesDelTitular } from "./hooks/use-planes-del-titular";
+import { OsinforBoton, OsinforResultado, useOsinforPermiso } from "./OsinforEstadoPermiso";
 import type { ParteFormEstado } from "./hooks/use-parte-form";
 import { formatNumber } from "@/lib/format";
 
@@ -185,6 +186,8 @@ export default function CtpPartePlanes({ form }: { form: ParteFormEstado }) {
 
 /** Una fila: el código manda; documento, área, vigencia y estado lo acompañan. */
 function FilaDelPlan({ fila: f, accion, incompleta }: { fila: FilaPlanDelTitular; accion: React.ReactNode; incompleta: boolean }) {
+  // Antes de comprarle madera: ¿OSINFOR tiene este papel en lista roja o con PAU? (solo al tocar)
+  const osinfor = useOsinforPermiso(f.codigo);
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2">
       <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{f.codigo}</span>
@@ -209,7 +212,11 @@ function FilaDelPlan({ fila: f, accion, incompleta }: { fila: FilaPlanDelTitular
           />
         </span>
       )}
-      {accion && <span className="ml-auto">{accion}</span>}
+      <span className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+        <OsinforBoton osinfor={osinfor} className="" />
+        {accion}
+      </span>
+      <OsinforResultado osinfor={osinfor} className="mt-1 basis-full" />
     </li>
   );
 }

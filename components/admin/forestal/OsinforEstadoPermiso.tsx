@@ -74,7 +74,8 @@ function fechaCorta(iso: string | null): string {
   return `${d}/${m}/${a}`;
 }
 
-export function OsinforEstadoPermiso({ codigo }: { codigo: string }) {
+/** Estado de la consulta: lo comparten el botón y la respuesta (que pueden ir en lugares distintos de la fila). */
+export function useOsinforPermiso(codigo: string) {
   const [estado, setEstado] = useState<Estado>({ fase: "quieto" });
 
   const consultar = () => {
@@ -86,28 +87,50 @@ export function OsinforEstadoPermiso({ codigo }: { codigo: string }) {
       );
   };
 
-  if (estado.fase === "quieto" || estado.fase === "cargando") {
-    return (
-      <Btn
-        variant="ghost"
-        onClick={consultar}
-        disabled={estado.fase === "cargando"}
-        title="Mira en el mapa público de OSINFOR si este permiso está en lista roja o tiene un proceso sancionador"
-        className="mt-2"
-      >
-        {estado.fase === "cargando" ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        ) : (
-          <ShieldCheck className="h-4 w-4" aria-hidden />
-        )}
-        {estado.fase === "cargando" ? "Consultando OSINFOR…" : "Revisar en OSINFOR"}
-      </Btn>
-    );
-  }
+  return { estado, consultar };
+}
+
+export type OsinforPermiso = ReturnType<typeof useOsinforPermiso>;
+
+/** El botón: se ve hasta que OSINFOR responde; después lo reemplaza la respuesta. */
+export function OsinforBoton({
+  osinfor,
+  size = "md",
+  className = "mt-2",
+}: {
+  osinfor: OsinforPermiso;
+  size?: "md" | "sm";
+  className?: string;
+}) {
+  const { estado, consultar } = osinfor;
+  if (estado.fase !== "quieto" && estado.fase !== "cargando") return null;
+  return (
+    <Btn
+      variant="ghost"
+      size={size}
+      onClick={consultar}
+      disabled={estado.fase === "cargando"}
+      title="Mira en el mapa público de OSINFOR si este permiso está en lista roja o tiene un proceso sancionador"
+      className={className}
+    >
+      {estado.fase === "cargando" ? (
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+      ) : (
+        <ShieldCheck className="h-4 w-4" aria-hidden />
+      )}
+      {estado.fase === "cargando" ? "Consultando OSINFOR…" : "Revisar en OSINFOR"}
+    </Btn>
+  );
+}
+
+/** Lo que respondió OSINFOR (o por qué no se pudo). Nada mientras no se tocó el botón. */
+export function OsinforResultado({ osinfor, className = "mt-2" }: { osinfor: OsinforPermiso; className?: string }) {
+  const { estado, consultar } = osinfor;
+  if (estado.fase === "quieto" || estado.fase === "cargando") return null;
 
   if (estado.fase === "error") {
     return (
-      <p className="mt-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" role="status">
+      <p className={`${className} text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`} role="status">
         {estado.mensaje}{" "}
         <button type="button" onClick={consultar} className="font-bold underline">
           Reintentar
@@ -120,7 +143,7 @@ export function OsinforEstadoPermiso({ codigo }: { codigo: string }) {
   const vistas = resumen.supervisiones.slice(0, MAX_FILAS_VISTAS);
   const ocultas = resumen.supervisiones.length - vistas.length;
   return (
-    <div className={`mt-2 rounded-xl border px-3 py-2 ${CLASE_NIVEL[resumen.nivel]}`} role="status" data-osinfor={resumen.nivel}>
+    <div className={`${className} rounded-xl border px-3 py-2 ${CLASE_NIVEL[resumen.nivel]}`} role="status" data-osinfor={resumen.nivel}>
       <p className="flex items-center gap-1.5 text-sm font-bold">
         OSINFOR: {resumen.titulo}
         <InfoTip
@@ -155,5 +178,16 @@ export function OsinforEstadoPermiso({ codigo }: { codigo: string }) {
         </a>
       </p>
     </div>
+  );
+}
+
+/** Botón y respuesta juntos, uno debajo del otro (ficha del permiso). */
+export function OsinforEstadoPermiso({ codigo }: { codigo: string }) {
+  const osinfor = useOsinforPermiso(codigo);
+  return (
+    <>
+      <OsinforBoton osinfor={osinfor} />
+      <OsinforResultado osinfor={osinfor} />
+    </>
   );
 }
