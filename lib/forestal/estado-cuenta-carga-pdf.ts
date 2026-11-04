@@ -11,7 +11,7 @@
  * El signo de resta va como «-»: la Helvetica de jsPDF no trae el «−» y lo
  * pintaba como comillas.
  */
-import { fechaDelDocumento, PALETA, type Rgb } from "@/lib/documentos/membrete-pdf";
+import { dibujarPies, fechaDelDocumento, PALETA, type Rgb } from "@/lib/documentos/membrete-pdf";
 import { pies3, soles, type EstadoCuentaCarga, type LineaCuenta } from "./estado-cuenta-carga";
 
 export interface CabeceraEstadoCuenta {
@@ -41,11 +41,21 @@ function filasDeCuenta(e: EstadoCuentaCarga, cliente: string): { filas: Fila[]; 
     fuertes.add(filas.length);
     filas.push(["=", "Saldo de esta carga", soles(e.saldoCarga)]);
   }
-  for (const l of e.cargos) poner("+", l);
+  /* Un saldo a favor del cliente llega como cargo negativo: se resta, en rojo. */
+  for (const l of e.cargos) poner(l.monto < 0 ? "-" : "+", l, l.monto < 0);
   return { filas, notas, rojas, fuertes };
 }
 
-export async function descargarEstadoCuentaCarga(e: EstadoCuentaCarga, cab: CabeceraEstadoCuenta): Promise<void> {
+/** El nombre del archivo: «estado-de-cuenta-Don-Rivers-2026-11-03.pdf». */
+export function nombreDelArchivo(cab: CabeceraEstadoCuenta): string {
+  const nombre = cab.cliente.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
+  return `estado-de-cuenta-${nombre || "cliente"}-${cab.fecha}.pdf`;
+}
+
+/** Lo baja (por defecto) o lo devuelve como archivo para compartirlo por WhatsApp. */
+export async function descargarEstadoCuentaCarga(e: EstadoCuentaCarga, cab: CabeceraEstadoCuenta): Promise<void>;
+export async function descargarEstadoCuentaCarga(e: EstadoCuentaCarga, cab: CabeceraEstadoCuenta, o: { comoArchivo: true }): Promise<Blob>;
+export async function descargarEstadoCuentaCarga(e: EstadoCuentaCarga, cab: CabeceraEstadoCuenta, o?: { comoArchivo: true }): Promise<Blob | void> {
   const { abrirPapel } = await import("@/lib/documentos/membrete-papel");
   const papel = await abrirPapel({ tipo: "Estado de cuenta", fecha: fechaDelDocumento(cab.fecha) });
   const { doc, margen, ancho } = papel;
@@ -131,6 +141,9 @@ export async function descargarEstadoCuentaCarga(e: EstadoCuentaCarga, cab: Cabe
   doc.text(`Son: ${e.enLetras}`, margen + 5, yT + 17.5);
   papel.y = yT + 28;
 
-  const nombre = cab.cliente.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
-  papel.cerrar(`estado-de-cuenta-${nombre || "cliente"}-${cab.fecha}.pdf`);
+  if (o?.comoArchivo) {
+    dibujarPies(doc, papel.mb);
+    return doc.output("blob");
+  }
+  papel.cerrar(nombreDelArchivo(cab));
 }

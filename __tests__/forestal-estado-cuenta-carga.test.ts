@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
-import { estadoDeCuentaDeLaCarga, filasDeLaCarga, soles } from "@/lib/forestal/estado-cuenta-carga";
+import { cuentaDesdeMovimientos, destinoPorDefecto, estadoDeCuentaDeLaCarga, filasDeLaCarga, soles, type MovimientoDelCliente } from "@/lib/forestal/estado-cuenta-carga";
 
 type P = PiezaCubicada & { tipo?: TipoComercial; precio?: number };
 let n = 0;
@@ -59,5 +59,27 @@ describe("estado de cuenta de una carga", () => {
     expect(e.sinPrecio).toBe(1);
     expect(e.total).toBe(-500);
     expect(e.enLetras).toBe("QUINIENTOS CON 00/100 SOLES");
+  });
+
+  it("la cuenta del panel: lo pasado va al saldo anterior, el adelanto de la carga aparte y la misma guía no se cobra dos veces", () => {
+    const mov = (fecha: string, concepto: string, monto: number, extra: Partial<MovimientoDelCliente> = {}): MovimientoDelCliente =>
+      ({ fecha, concepto, referencia: null, monto, moneda: "PEN", ...extra });
+    const movs = [
+      mov("2026-10-01", "Carga anterior", 26234),
+      mov("2026-10-05", "Depósito", -10000),
+      mov("2026-10-10", "Depósito", -8000),
+      mov("2026-10-28", "Adelanto recibido", -23000),
+      mov("2026-10-29", "Venta de madera", 58271.82, { conceptoForestal: "venta", gtfNumber: "019-001-0000073" }),
+      mov("2026-10-30", "Flete", 50, { moneda: "USD" }),
+    ];
+    const destinos = movs.map((m) => destinoPorDefecto(m, "019-001-0000073"));
+    expect(destinos).toEqual(["anterior", "anterior", "anterior", "anterior", "fuera", "anterior"]);
+    destinos[3] = "carga";
+    const c = cuentaDesdeMovimientos(movs, destinos);
+    expect(c.otraMoneda).toBe(1);
+    expect(c.adelantos).toEqual([{ concepto: "Adelanto recibido (28/10/2026)", monto: 23000 }]);
+    expect(c.cargos[0]).toEqual({ concepto: "Saldo de la cuenta anterior", monto: 8234, nota: "Ya descontados sus pagos por S/ 18,000.00" });
+    const e = estadoDeCuentaDeLaCarga(filasDeLaCarga(rivers, precioDe), { adelantos: c.adelantos, cargos: [...c.cargos, { concepto: "Realización de guía", monto: 300 }] });
+    expect(e.total).toBe(43805.82);
   });
 });

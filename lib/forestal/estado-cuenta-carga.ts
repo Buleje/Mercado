@@ -157,3 +157,78 @@ export const soles = (n: number): string =>
 /** «9,050.333» */
 export const pies3 = (n: number): string =>
   n.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+
+// ── La cuenta del cliente en el panel (Brandon 03-11: «saldo y adelantos solos») ──
+
+/** Un movimiento de la cuenta de la persona, como lo da `/api/adelantos/cuentas/estado`. */
+export interface MovimientoDelCliente {
+  fecha: string;
+  concepto: string;
+  referencia: string | null;
+  /** `+` sube lo que debe; `−` dio o pagó. */
+  monto: number;
+  moneda: string;
+  conceptoForestal?: string;
+  gtfNumber?: string | null;
+}
+
+/**
+ * Adónde va cada movimiento en el papel:
+ *  - `anterior`: se suma al «Saldo anterior» (lo de cargas pasadas, ya con sus pagos).
+ *  - `carga`: es de ESTA carga (el adelanto que dio para ella) y sale en su renglón.
+ *  - `fuera`: no va (p. ej. esta misma madera ya subida a la cuenta: sería cobrarla dos veces).
+ */
+export type DestinoMovimiento = "anterior" | "carga" | "fuera";
+
+/**
+ * Por defecto todo es saldo anterior, salvo la venta de madera con la MISMA
+ * guía que esta carga: ya es el importe que el papel calcula de las piezas.
+ */
+export function destinoPorDefecto(m: MovimientoDelCliente, gtfDeLaCarga: string | null | undefined): DestinoMovimiento {
+  const gtf = gtfDeLaCarga?.trim();
+  const esMadera = m.conceptoForestal === "venta" || m.conceptoForestal === "madera";
+  if (gtf && esMadera && m.monto > 0 && (m.gtfNumber?.trim() === gtf || m.referencia?.trim() === gtf)) return "fuera";
+  return "anterior";
+}
+
+const fechaCorta = (iso: string) => {
+  const [y, mm, d] = iso.slice(0, 10).split("-");
+  return d && mm && y ? `${d}/${mm}/${y}` : iso;
+};
+
+/**
+ * Los renglones que la cuenta del panel pone en el papel. Sólo soles: otra
+ * moneda no se suma a un total en soles (se avisa aparte en la ventana).
+ */
+export function cuentaDesdeMovimientos(
+  movs: readonly MovimientoDelCliente[],
+  destinos: readonly DestinoMovimiento[],
+): DatosCuenta & { otraMoneda: number } {
+  const adelantos: LineaCuenta[] = [];
+  const cargos: LineaCuenta[] = [];
+  let anterior = 0, nAnterior = 0, otraMoneda = 0;
+  let pagado = 0;
+  movs.forEach((m, i) => {
+    const d = destinos[i] ?? "anterior";
+    if (d === "fuera") return;
+    if ((m.moneda || "PEN") !== "PEN") { otraMoneda += 1; return; }
+    if (d === "anterior") {
+      anterior += m.monto;
+      nAnterior += 1;
+      if (m.monto < 0) pagado += -m.monto;
+      return;
+    }
+    const concepto = `${m.concepto} (${fechaCorta(m.fecha)})`;
+    if (m.monto < 0) adelantos.push({ concepto, monto: c2(-m.monto) });
+    else cargos.push({ concepto, monto: c2(m.monto) });
+  });
+  anterior = c2(anterior);
+  if (nAnterior > 0 && anterior !== 0) {
+    cargos.unshift({
+      concepto: anterior > 0 ? "Saldo de la cuenta anterior" : "Saldo a su favor de la cuenta anterior",
+      monto: anterior,
+      nota: pagado > 0 ? `Ya descontados sus pagos por ${soles(c2(pagado))}` : undefined,
+    });
+  }
+  return { adelantos, cargos, otraMoneda };
+}
