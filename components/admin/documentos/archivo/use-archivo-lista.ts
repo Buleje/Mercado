@@ -136,6 +136,11 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
     // Con el filtro por etiqueta activo lo que se ve es EXACTO lo que trajo el
     // servidor por ese tag: no se le superponen los chips cliente.
     if (!etiquetaFiltro) {
+      // Lo archivado es la versión vieja: como en la carpeta de Windows, queda
+      // atrás. Se ve con el chip «Archivado» o al buscar (ahí sí se lo quiere hallar).
+      if (statusFilter !== "archived" && terminosBusqueda.length === 0 && filterMode !== "trash") {
+        list = list.filter((d) => d.status !== "archived");
+      }
       if (statusFilter) list = list.filter((d) => d.status === statusFilter);
       if (soloSinDescribir) list = list.filter((d) => !tieneDescripcion(d));
       if (cuantosFiltrosActivos(filtros) > 0) list = list.filter((d) => cumpleFiltros(d, filtros));

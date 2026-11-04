@@ -6,6 +6,7 @@ import {
   isMimeAllowed,
 } from "@/lib/documents/storage";
 import { resolverMime } from "@/lib/documents/tipos-archivo";
+import { estadoDeRutaDePc } from "@/lib/documents/estados-doc";
 import { AUTOR_AGENTE } from "@/lib/sync/auth-agente";
 import { logger } from "@/lib/logger";
 
@@ -238,7 +239,11 @@ export async function guardarEnRuta(
     return { ok: false, error: "storage_fail", detalle: up.error };
   }
 
-  const guardado = await DocumentsDB.update(tenantId, draft.id, { storagePath });
+  // El estado viene de cómo lo dejó la carpeta de Windows: «Archivado» o
+  // «[EN REVISIÓN] …» (programa `persona`). Solo al alta: si después lo cambian
+  // en el panel, una versión nueva del mismo archivo no se lo pisa.
+  const estado = estadoDeRutaDePc(opts.ruta);
+  const guardado = await DocumentsDB.update(tenantId, draft.id, { storagePath, ...(estado ? { status: estado } : {}) });
 
   DocumentsDB.log(tenantId, {
     documentId: draft.id,

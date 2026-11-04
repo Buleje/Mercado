@@ -48,9 +48,10 @@ interface Props {
 }
 
 const ESTADOS_RAPIDOS = [
-  { valor: "approved", texto: "Está bien", punto: "bg-[var(--data-success-500)]" },
+  { valor: "approved", texto: "Oficial (la que vale)", punto: "bg-[var(--data-success-500)]" },
   { valor: "observado", texto: "Hay que corregir", punto: "bg-[var(--data-error-500)]" },
   { valor: "review", texto: "En revisión", punto: "bg-[var(--data-warning-500)]" },
+  { valor: "archived", texto: "Archivar (versión vieja)", punto: "bg-[var(--data-info-500)]" },
 ];
 
 function Boton({ icono: Icono, texto, onClick, destacado, peligro }: {

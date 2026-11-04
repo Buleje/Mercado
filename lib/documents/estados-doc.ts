@@ -27,8 +27,8 @@ export const META_ESTADO: Record<EstadoDoc, { label: string; tono: TonoEstado; a
   draft: { label: "Borrador", tono: "neutro", ayuda: "Está empezado, todavía no se revisó." },
   review: { label: "En revisión", tono: "aviso", ayuda: "Alguien lo está mirando." },
   observado: { label: "Hay que corregir", tono: "alerta", ayuda: "Tiene algo mal: no usarlo así." },
-  approved: { label: "Aprobado", tono: "ok", ayuda: "Está bien, se puede usar." },
-  archived: { label: "Archivado", tono: "info", ayuda: "Ya no se usa, queda guardado." },
+  approved: { label: "Oficial", tono: "ok", ayuda: "Es la versión que vale: la que se usa y se manda." },
+  archived: { label: "Archivado", tono: "info", ayuda: "Versión vieja: queda guardada, pero no sale en la lista." },
 };
 
 /** ¿Es un estado conocido? (lo que llega de la base puede ser cualquier cosa) */
@@ -39,4 +39,20 @@ export function esEstadoValido(v: string | null | undefined): v is EstadoDoc {
 /** El estado de un documento, normalizado: lo desconocido cuenta como sin estado. */
 export function estadoDe(v: string | null | undefined): EstadoDoc {
   return esEstadoValido(v) ? v : "none";
+}
+
+/**
+ * El estado que trae un papel desde la carpeta de Windows (programa `persona`,
+ * 04-11): lo que está dentro de una carpeta «Archivado» (o la vieja «Versiones
+ * anteriores») es una versión vieja, y el nombre que empieza con
+ * «[EN REVISIÓN] » es uno que todavía se está corrigiendo. Un nombre limpio no
+ * dice nada (puede ser oficial o un papel sin marcar): devuelve null y el
+ * estado no se toca.
+ */
+export function estadoDeRutaDePc(ruta: string): EstadoDoc | null {
+  const partes = ruta.replace(/\\/g, "/").split("/").map((x) => x.trim().normalize("NFC")).filter(Boolean);
+  const nombre = partes.pop() ?? "";
+  if (partes.some((x) => /^(archivado|versiones anteriores)$/i.test(x))) return "archived";
+  if (/^\[en revisi[oó]n\]\s/i.test(nombre)) return "review";
+  return null;
 }

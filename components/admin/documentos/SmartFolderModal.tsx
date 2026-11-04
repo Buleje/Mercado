@@ -17,7 +17,7 @@ const STATUSES = ["", "draft", "review", "approved", "archived"];
 const STATUS_LABEL: Record<string, string> = {
   draft: "Borrador",
   review: "En revisión",
-  approved: "Aprobado",
+  approved: "Oficial",
   archived: "Archivado",
 };
 

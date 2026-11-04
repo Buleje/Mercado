@@ -9,7 +9,7 @@ import { relativeTime } from "./formato";
 
 export type ApprovalTrail = { status?: string; requestedBy?: string; requestedAt?: string; decidedBy?: string; decidedAt?: string; note?: string };
 export const APPROVAL_LABEL: Record<string, { label: string; cls: string }> = {
-  approved: { label: "Aprobado", cls: "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
+  approved: { label: "Oficial", cls: "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
   review: { label: "En revisión", cls: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" },
   draft: { label: "Borrador", cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
 };
@@ -50,7 +50,7 @@ export function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged
       {(trail.requestedAt || trail.decidedAt) && (
         <div className="mb-3 space-y-0.5 text-xs text-[var(--text-tertiary)]">
           {trail.requestedAt && <p>Enviado a revisión por {trail.requestedBy} · {relativeTime(trail.requestedAt)}</p>}
-          {trail.decidedAt && <p>{status === "approved" ? "Aprobado" : "Decidido"} por {trail.decidedBy} · {relativeTime(trail.decidedAt)}{trail.note ? ` — "${trail.note}"` : ""}</p>}
+          {trail.decidedAt && <p>{status === "approved" ? "Marcado oficial" : "Decidido"} por {trail.decidedBy} · {relativeTime(trail.decidedAt)}{trail.note ? ` — "${trail.note}"` : ""}</p>}
         </div>
       )}
 
@@ -58,7 +58,7 @@ export function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged
         <>
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" className="mb-2 h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
           <div className="flex gap-2">
-            <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 min-h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--accent)]"><Check className="h-4 w-4" /> Aprobar</button>
+            <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 min-h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--accent)]"><Check className="h-4 w-4" /> Marcar oficial</button>
             <button onClick={() => act("reject")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)]/40 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"><X className="h-4 w-4" /> Rechazar</button>
           </div>
         </>
