@@ -99,6 +99,7 @@ T0=$(date +%s)
 # typecheck o vitest verde (`npm run typecheck`, `scripts/dev-helpers/probar.sh`
 # o un commit anterior que falló por otra cosa), ese gate no se repite.
 CLAVE=$(sh scripts/dev-helpers/sello.sh clave 2>/dev/null || true)
+CLAVE_VT=$(sh scripts/dev-helpers/sello.sh clave vitest 2>/dev/null || true)
 TSC_LANZADO=0; VITEST_LANZADO=0
 # SKIP_TSC_GATE=1: sólo cuando el que commitea ya verificó que los errores son de
 # archivos ajenos sin commitear (carriles en paralelo; `scripts/dev-helpers/tsc-ajenos.mjs` desde `commit-carril.sh`).
@@ -124,7 +125,7 @@ if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
     # shellcheck disable=SC2086
     VITEST_EXTRA=$(sh scripts/dev-helpers/vitest-extra.sh $STAGED_CODE)
     # shellcheck disable=SC2086
-    if sh scripts/dev-helpers/sello.sh ok vitest "$CLAVE" $STAGED_CODE; then
+    if sh scripts/dev-helpers/sello.sh ok vitest "$CLAVE_VT" $STAGED_CODE; then
       echo "⏭️  tests ya pasados con este mismo código (sello)" >"$TMP/vitest.log"; echo 0 >"$TMP/vitest.rc"
     else
       # shellcheck disable=SC2086
@@ -145,7 +146,7 @@ fi
 if [ "$VITEST_LANZADO" = "1" ] && [ "$(cat "$TMP/vitest.rc" 2>/dev/null)" = "0" ]; then
   set -f
   # shellcheck disable=SC2086
-  sh scripts/dev-helpers/sello.sh poner vitest "$CLAVE" $STAGED_CODE || true
+  sh scripts/dev-helpers/sello.sh poner vitest "$CLAVE_VT" $STAGED_CODE || true
   set +f
 fi
 
