@@ -27,14 +27,32 @@ type UsageRow = {
   nearLimit: boolean; products: number; adminUsers: number;
   trialDaysLeft: number | null; ageDays: number;
   recommendation: UpgradeRec | null;
+  // 04-11 (aditivos): lo que de verdad hace el negocio, no sólo pedidos. null = no se pudo medir.
+  operations30d: number | null;
+  operationsBreakdown: { pedidos: number; ventas: number; libroCtp: number; trozas: number } | null;
+  logins30d: number | null;
+  actions30d: number | null;
+  lastLoginAt: string | null;
+  lastOperationAt: string | null;
 };
+/** «12 pedidos · 3 libro CTP»: sólo lo que no es cero; sirve de tooltip y de detalle. */
+function desgloseDeOperaciones(b: UsageRow["operationsBreakdown"]): string {
+  if (!b) return "Sin medir";
+  const partes = [
+    b.pedidos > 0 && `${b.pedidos} pedidos`,
+    b.ventas > 0 && `${b.ventas} ventas POS`,
+    b.libroCtp > 0 && `${b.libroCtp} líneas del libro CTP`,
+    b.trozas > 0 && `${b.trozas} ingresos de trozas`,
+  ].filter(Boolean);
+  return partes.length ? partes.join(" · ") : "Sin operaciones en 30 días";
+}
 const isDoubleRisk = (r: UsageRow) => r.nearLimit && r.trialDaysLeft != null && r.trialDaysLeft >= 0 && r.trialDaysLeft <= 7;
 function upgradeMsg(r: UsageRow): string {
   const to = r.recommendation ? ` a ${r.recommendation.recommendedLabel}` : "";
   return `Hola, vi que ${r.name} ya está al ${r.orderPct}% de su límite de pedidos del plan ${etiquetaDePlan(r.plan)}. Te conviene subir${to} para no frenar tus ventas. ¿Lo activamos?`;
 }
 type UpsellSummary = { count: number; monthlyUpsidePEN: number };
-type SortKey = "name" | "usage" | "orders" | "products" | "users";
+type SortKey = "name" | "usage" | "orders" | "operations" | "products" | "users";
 
 const fmtPEN = (n: number) => `S/${n.toLocaleString("es-PE")}`;
 
@@ -45,10 +63,10 @@ function barColor(pct: number, near: boolean): string {
 }
 
 function exportCSV(rows: UsageRow[]) {
-  const head = ["Tienda", "Slug", "Plan", "Pedidos mes", "Límite", "Uso %", "Cerca límite", "Productos", "Usuarios", "Recomendación", "Upside PEN/mes"];
+  const head = ["Tienda", "Slug", "Plan", "Pedidos mes", "Límite", "Uso %", "Cerca límite", "Operaciones 30d", "Productos", "Usuarios", "Recomendación", "Upside PEN/mes"];
   const lines = rows.map((r) => [
     r.name, r.slug, r.plan, r.ordersThisMonth, r.orderLimit ?? "∞", r.orderPct,
-    r.nearLimit ? "sí" : "no", r.products, r.adminUsers,
+    r.nearLimit ? "sí" : "no", r.operations30d ?? "", r.products, r.adminUsers,
     r.recommendation?.recommendedLabel ?? "", r.recommendation?.upsidePEN ?? 0,
   ]);
   const csv = [head, ...lines].map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -99,9 +117,10 @@ export default function TenantsUsagePage() {
     return [...filtered].sort((a, b) => {
       if (sort.key === "name") return a.name.localeCompare(b.name) * dir;
       if (sort.key === "orders") return (a.ordersThisMonth - b.ordersThisMonth) * dir;
+      if (sort.key === "operations") return ((a.operations30d ?? 0) - (b.operations30d ?? 0)) * dir;
       if (sort.key === "products") return (a.products - b.products) * dir;
       if (sort.key === "users") return (a.adminUsers - b.adminUsers) * dir;
-      return (a.orderPct - b.orderPct) * dir; // usage
+      return (a.orderPct - b.orderPct) * dir || ((a.operations30d ?? 0) - (b.operations30d ?? 0)) * dir; // usage
     });
   }, [filtered, sort]);
 
@@ -233,6 +252,7 @@ export default function TenantsUsagePage() {
                     <th className="px-3 py-2.5"><button type="button" onClick={() => toggleSort("name")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Tienda <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("name")}</span></button></th>
                     <th className="px-3 py-2.5">Plan</th>
                     <th className="px-3 py-2.5 w-[34%]"><button type="button" onClick={() => toggleSort("usage")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Pedidos (mes) vs límite <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("usage")}</span></button></th>
+                    <th className="px-3 py-2.5 text-right"><button type="button" onClick={() => toggleSort("operations")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]" title="Pedidos + ventas POS + libro CTP + trozas, últimos 30 días">Operaciones (30 d) <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("operations")}</span></button></th>
                     <th className="px-3 py-2.5 text-right"><button type="button" onClick={() => toggleSort("products")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Productos <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("products")}</span></button></th>
                     <th className="px-3 py-2.5 text-right"><button type="button" onClick={() => toggleSort("users")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Usuarios <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("users")}</span></button></th>
                     <th className="px-3 py-2.5 text-right">Acción</th>
@@ -260,6 +280,7 @@ export default function TenantsUsagePage() {
                           </span>
                         </div>
                       </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-secondary)]" title={desgloseDeOperaciones(r.operationsBreakdown)}>{r.operations30d ?? "—"}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{r.products}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{r.adminUsers}</td>
                       <td className="px-3 py-2.5 text-right">
@@ -310,6 +331,17 @@ export default function TenantsUsagePage() {
                 <div className="h-3 rounded bg-[var(--surface-sunken)] overflow-hidden">
                   <div className="h-full" style={{ width: `${Math.min(100, detail.orderPct)}%`, background: barColor(detail.orderPct, detail.nearLimit) }} />
                 </div>
+              </div>
+              {/* Operaciones reales: un aserradero casi no tiene pedidos, pero sí libro CTP y trozas */}
+              <div className="border border-[var(--rule-soft)] p-3">
+                <div className="flex items-baseline justify-between mb-1">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Operaciones · 30 días</p>
+                  <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{detail.operations30d ?? "—"}</p>
+                </div>
+                <p className="text-xs text-[var(--text-secondary)]">{desgloseDeOperaciones(detail.operationsBreakdown)}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1 tabular-nums">
+                  {detail.logins30d ?? "—"} ingresos · {detail.actions30d ?? "—"} acciones · última operación {detail.lastOperationAt ? new Date(detail.lastOperationAt).toLocaleDateString("es-PE") : "nunca"}
+                </p>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="border border-[var(--rule-soft)] p-2.5"><p className="text-[length:var(--ts-2xs)] font-extrabold uppercase text-[var(--text-tertiary)]">Productos</p><p className="font-display text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{detail.products}</p></div>
