@@ -30,7 +30,7 @@ const log = (s) => console.log(s);
 // ── 1. Matar dev server (tolerante: pkill sin match no rompe nada) ──────────
 log("① Matando dev server (libera RAM para el build)…");
 sh("pkill -f 'next-server' || true");
-sh("pkill -f 'next dev' || true");
+sh("pkill -f '^node [^ ]*/next dev' || true");
 sh("pkill -f 'npm run dev' || true");
 await new Promise((r) => setTimeout(r, 2500));
 sh("pkill -9 -f 'next-server' || true");

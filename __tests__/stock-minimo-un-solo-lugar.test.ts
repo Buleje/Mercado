@@ -94,7 +94,9 @@ describe("un solo stock mínimo: nadie lo escribe a mano", () => {
       if (n > permitido) nuevos.push(`${rel}: ${n} (permitido ${permitido})`);
     }
     expect(nuevos, "usá stockMinimoDe/enStockBajo de lib/inventario/stock-minimo").toEqual([]);
-  });
+    /* Lee todo el repo: con la PC cargada (4 carriles, 30-10) pasaba los 5 s por
+       defecto y tumbaba commits ajenos sin un solo mínimo a mano. */
+  }, 60_000);
 
   it("el detector ve las formas que había y no los comentarios", () => {
     expect(contarMinimosAMano("const m = p.stockMin ?? 5;")).toBe(1);
