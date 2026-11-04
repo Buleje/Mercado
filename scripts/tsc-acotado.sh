@@ -23,6 +23,10 @@ for a in "$@"; do
 done
 # Declaraciones globales del repo (next-env, tipos propios): sin ellas salen falsos rojos.
 while IFS= read -r d; do archivos+=("$raiz/$d"); done < <(git ls-files 'next-env.d.ts' 'types/*.d.ts' '*.d.ts' ':!:node_modules' ':!:lib/generated/**' | sort -u)
+# Con el tsconfig en /tmp, el `/// <reference types="next" />` de next-env.d.ts no
+# llega a node_modules/next/types/global.d.ts, que declara 'server-only' y
+# 'client-only': sin esto salían 7 falsos TS2882 por archivo de servidor (04-11).
+[ -f "$raiz/node_modules/next/types/global.d.ts" ] && archivos+=("$raiz/node_modules/next/types/global.d.ts")
 
 python3 - "$dir/tsconfig.json" "$raiz/tsconfig.json" "${archivos[@]}" <<'PY'
 import json, sys
