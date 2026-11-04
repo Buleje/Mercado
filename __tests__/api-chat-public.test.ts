@@ -87,7 +87,7 @@ vi.mock("@/lib/db/chat.db", () => ({
 
 // Import AFTER mocks
 import { POST, GET } from "@/app/api/chat/public/route";
-import { firmarTokenHilo } from "@/lib/chat/thread-token";
+import { estadoTokenHilo, firmarTokenHilo } from "@/lib/chat/thread-token";
 
 /** Token del hilo de prueba (privacidad 17-10: leer/escribir lo exige sin sesión). */
 const TOKEN_OK = firmarTokenHilo("tenant-main", "thread-1", "+51987654321");
@@ -231,7 +231,9 @@ describe("POST action=open", () => {
     const json = await res.json();
     expect(json.data.threadId).toBe("thread-1");
     expect(json.data.storeName).toBe("Bodega Demo");
-    expect(json.data.threadToken).toBe(TOKEN_OK);
+    // Válido para ESTE hilo y celular, no idéntico a TOKEN_OK: el token lleva su vencimiento en
+    // segundos y, con la PC cargada, la ruta lo firma un segundo después (04-11 tumbó un guardado).
+    expect(estadoTokenHilo("tenant-main", "thread-1", "+51987654321", json.data.threadToken)).toBe("ok");
     // NO debe exponer tenantId, customerName ni unreadForSeller
     expect(json.data.tenantId).toBeUndefined();
     expect(json.data.customerName).toBeUndefined();
