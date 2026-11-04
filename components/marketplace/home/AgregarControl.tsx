@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
  * el contador `[− N +]` (Instacart/Getir). 40 px visibles y 48 de área táctil.
  * Agotado → campana «Avísame» por WhatsApp. Lógica: hooks/use-agregar-producto.
  *
- * El «+» va en `--accent` con el ícono en tinta del dosel (blanco medía
- * 2,6:1 sobre el turquesa de la tienda); el contador lleva texto y va en
- * blanco sobre `--accent-dark` (4,86:1).
+ * 31-10: vive en la fila del precio (ya no flota sobre la foto). El «+» y el
+ * contador van en blanco sobre `--accent-dark` (4,86:1); el «+» negro sobre
+ * el turquesa claro se veía pesado. 36 px visibles y 44 de área táctil.
  */
 
 interface Props {
@@ -74,7 +74,7 @@ export default function AgregarControl({
         className={cn(
           AREA,
           FOCO,
-          "z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-raised)] text-[var(--accent-ink)] shadow-[var(--shadow-md)] ring-1 ring-[var(--rule-base)] transition-colors duration-[var(--dur-fast)] hover:bg-[var(--accent-soft)]",
+          "z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-raised)] text-[var(--accent-ink)] ring-1 ring-[var(--rule-base)] transition-colors duration-[var(--dur-fast)] hover:bg-[var(--accent-soft)]",
           className,
         )}
       >
@@ -86,11 +86,10 @@ export default function AgregarControl({
   return (
     <m.div
       initial={false}
-      animate={{ width: abierto ? 112 : 40 }}
+      animate={{ width: abierto ? 104 : 36 }}
       transition={{ duration: reducir ? 0 : DURATION.base, ease: EASE.editorial }}
       className={cn(
-        "z-10 flex h-10 items-center justify-between rounded-full text-white shadow-[var(--shadow-md)] transition-colors duration-[var(--dur-base)]",
-        abierto ? "bg-[var(--accent-dark)]" : "bg-[var(--accent)]",
+        "z-10 flex h-9 items-center justify-between rounded-full bg-[var(--accent-dark)] text-white shadow-[var(--shadow-sm)] transition-[filter] duration-[var(--dur-fast)] hover:brightness-110",
         className,
       )}
     >
@@ -100,7 +99,7 @@ export default function AgregarControl({
             type="button"
             onClick={alClic(onQuitar)}
             aria-label={cantidad === 1 ? `Quitar ${nombre} del carrito` : `Quitar uno de ${nombre}`}
-            className={cn(AREA, FOCO, "grid h-10 w-10 shrink-0 place-items-center rounded-full hover:bg-white/15")}
+            className={cn(AREA, FOCO, "grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-white/15")}
           >
             <Minus className="h-4 w-4" strokeWidth={2.75} aria-hidden />
           </button>
@@ -117,7 +116,7 @@ export default function AgregarControl({
             className={cn(
               AREA,
               FOCO,
-              "grid h-10 w-10 shrink-0 place-items-center rounded-full hover:bg-white/15",
+              "grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-white/15",
               enTope && "cursor-not-allowed opacity-50",
             )}
           >
@@ -136,12 +135,11 @@ export default function AgregarControl({
           className={cn(
             AREA,
             FOCO,
-            "grid h-10 w-10 place-items-center rounded-full transition-transform duration-[var(--dur-fast)] active:scale-90 motion-reduce:active:scale-100",
+            "grid h-9 w-9 place-items-center rounded-full transition-transform duration-[var(--dur-fast)] active:scale-90 motion-reduce:active:scale-100",
             pendiente && "animate-pulse",
           )}
         >
-          {/* Tinta del dosel sobre el turquesa: el blanco daba 2,6:1 medido. */}
-          <Plus className="h-5 w-5 text-[var(--dosel-950)]" strokeWidth={2.75} aria-hidden />
+          <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </button>
       )}
       {/* Siempre montada: así también anuncia cuando quitas el último (cantidad 0). */}

@@ -98,7 +98,7 @@ export default function HomeProductCard({
       ref={carrito.imgWrapRef}
       className={cn(
         "relative overflow-hidden bg-[var(--plato)]",
-        fila ? "aspect-square w-[72px] rounded-lg" : "aspect-square rounded-xl",
+        fila ? "aspect-square w-[72px] rounded-lg" : "aspect-square rounded-lg",
       )}
     >
       {product.image ? (
@@ -164,17 +164,19 @@ export default function HomeProductCard({
       onAgregar={() => void carrito.agregarRapido(carrito.inCartQty > 0 ? { festejar: false } : undefined)}
       onQuitar={carrito.quitarUno}
       onPreparar={carrito.prepararGrupos}
-      className={fila ? "relative" : "absolute bottom-1.5 right-1.5"}
+      className="relative"
     />
   );
 
+  // Fila (urgencia): precio arriba del nombre. Tarjeta: nombre arriba y la fila
+  // precio + «+» abajo, como las apps de delivery (el «+» ya no tapa la foto).
   const textos = (
     <>
-      <PrecioPartes precio={product.price} anterior={product.originalPrice} tamano={fila ? "lg" : "auto"} />
+      {fila && <PrecioPartes precio={product.price} anterior={product.originalPrice} tamano="lg" />}
       <h3
         className={cn(
-          "mt-1 line-clamp-2 text-sm font-medium leading-5 text-[var(--text-primary)]",
-          !fila && "min-h-[2.5rem]",
+          "line-clamp-2 text-sm font-medium leading-5 text-[var(--text-primary)]",
+          fila ? "mt-1" : "min-h-[2.5rem]",
         )}
       >
         {product.name}
@@ -192,10 +194,10 @@ export default function HomeProductCard({
   return (
     <article
       className={cn(
-        "group relative @container rounded-xl transition-colors duration-[var(--dur-fast)]",
+        "group relative @container rounded-xl",
         fila
-          ? "grid grid-cols-[72px_1fr_auto] items-center gap-3 bg-[var(--surface-raised)] p-2 hover:bg-[var(--surface-sunken)]"
-          : "flex flex-col p-1.5 hover:bg-[var(--surface-sunken)]",
+          ? "grid grid-cols-[72px_1fr_auto] items-center gap-3 bg-[var(--surface-raised)] p-2 transition-colors duration-[var(--dur-fast)] hover:bg-[var(--surface-sunken)]"
+          : "flex h-full flex-col border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2 transition-[border-color,box-shadow] duration-[var(--dur-base)] hover:border-[var(--rule-base)] hover:shadow-[var(--shadow-md)]",
       )}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -214,11 +216,14 @@ export default function HomeProductCard({
         </>
       ) : (
         <>
-          <div className="relative">
-            {pozo}
-            <div className="absolute inset-0 z-10 pointer-events-none [&>*]:pointer-events-auto">{control}</div>
+          {pozo}
+          <div className="flex flex-1 flex-col px-1 pt-2.5">
+            {textos}
+            <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-2.5">
+              <PrecioPartes precio={product.price} anterior={product.originalPrice} />
+              <div className="relative z-10 ml-auto">{control}</div>
+            </div>
           </div>
-          <div className="px-1 pb-1 pt-2">{textos}</div>
         </>
       )}
       {modalMontado && <ProductModifierModal {...carrito.modalProps} />}
