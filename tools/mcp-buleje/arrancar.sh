@@ -19,4 +19,11 @@ if [ "$mayor" -lt 20 ]; then echo "[buleje-mcp] Node $mayor es muy viejo (hace f
 # Solo se deja ipv4first: en WSL mirrored «localhost» por ::1 puede colgarse.
 export NODE_OPTIONS="--dns-result-order=ipv4first"
 if [ "${1:-}" = "--vigilar" ]; then shift; exec "$nodo" "$aqui/vigilar.mjs" "$@"; fi
+# 31-10 (Brandon: «capacidad máxima»): con BULEJE_MCP_PEREZOSO=1 en el registro, cada sesión abre solo el
+# intermediario de ~10 MB y el servidor real (~106 MB) se prende con la 1.ª llamada. PEREZOSO_DENTRO lo pone
+# el intermediario al prender el real. Volver: `perezoso.py --volver` (quita la variable del registro).
+perezoso="$HOME/.local/share/mcp-perezoso/perezoso.py"
+if [ "${BULEJE_MCP_PEREZOSO:-}" = "1" ] && [ -z "${PEREZOSO_DENTRO:-}" ] && [ -f "$perezoso" ]; then
+  exec /usr/bin/python3 -I "$perezoso" buleje
+fi
 exec "$nodo" "$aqui/servidor.mjs" "$@"

@@ -2,7 +2,12 @@
 import { z, negocio, idRuta, dia, limpiar, lista, ficha, soles, numero, pick, claveMonto, claveNombre, filasCompletas, filasDe, leerSeguro, otrosNombres, filaIdentidad, verificado, linea60, conMarca, colaDe4, antesDelPanel, NO_VERIFICADO } from "../util-herramientas.mjs";
 
 const RUTA = "/api/admin/forestal";
-const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor", "cliente", "establecimiento", "cubicador"];
+const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor", "cliente", "establecimiento", "cubicador", "socio", "arrendador"];
+const CAMPOS_FICHA = ["dniEmitidoEl", "dniVenceEl", "ruc", "rucEstado", "rucEstadoDesde", "rucCondicion", "nacimientoEl", "nacimientoLugar", "estadoCivil", "parentesco"];
+const ESTADOS_RUC = ["activo", "baja_oficio", "baja_definitiva", "baja_provisional", "suspension_temporal", "otro"];
+const ESTADOS_CIVILES = ["soltero", "casado", "conviviente", "divorciado", "viudo", "separado"];
+const diaNull = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "La fecha va como AAAA-MM-DD").nullable().optional();
+const txt = (max) => z.string().max(max).nullable().optional();
 const TIPOS_CONTRATO = ["PER-FMP", "PER-FMC", "REG-PLT", "CONCESION", "CONTRATO", "DEMA", "PMFI", "PO", "otro"];
 const ESTADOS_CONTRATO = ["vigente", "vencido", "cerrado", "suspendido"];
 
@@ -42,47 +47,67 @@ export const herramientas = [
     grupo: "directorio",
     soloEn: ["forestal"],
     tipo: "escritura",
-    descripcion: "Crea o corrige una parte de la libreta (POST /api/admin/forestal/directorio): nombre, roles y datos de contacto. OJO: se guarda por documento, así que un docNumero que ya existe CORRIGE a esa parte. Con id se edita esa ficha. Cambiar documento, teléfono, correo, nombre de una ya existente o datos de banco pide OK de Brandon. Ej.: nombre=\"Transportes Pérez SAC\", roles=[\"transportista\"], docTipo=\"RUC\", docNumero=\"20123456789\".",
+    descripcion: "Crea o corrige una parte de la libreta. Sin id: POST /api/admin/forestal/directorio (nombre y roles obligatorios; un docNumero que ya existe CORRIGE a esa parte). Con id: PATCH /directorio/{id} y SOLO se mandan los campos que pasaste: lo que no mandes no se toca; null = borrar ese dato. Roles: proveedor, destinatario, transportista, conductor, cliente, establecimiento, cubicador, socio, arrendador. Ficha de persona: dniEmitidoEl, dniVenceEl, ruc (11 dígitos), rucEstado, rucEstadoDesde, rucCondicion, nacimientoEl, nacimientoLugar, estadoCivil, parentesco. Documentos de la ficha: adjuntosAgregar [{documentId, rotulo}] / adjuntosQuitar [documentId]. NUNCA claves ni contraseñas en ningún campo. Cambiar documento, teléfono, correo, nombre o datos de banco, o cualquier edición con id, pide OK de Brandon. Ej.: id=\"abc\", ruc=\"20123456789\", rucEstado=\"activo\".",
     entrada: {
       negocio,
-      id: idRuta.optional().describe("Con id edita esa ficha; sin id crea (o corrige la del mismo documento)"),
-      nombre: z.string().min(2).max(200),
-      roles: z.array(z.enum(/** @type {[string, ...string[]]} */ (ROLES_PARTE))).min(1).describe("Uno o más roles"),
-      categoria: z.enum(["empresa", "ccnn", "aserradero"]).optional(),
-      docTipo: z.enum(["RUC", "DNI", "CE", "PASAPORTE"]).optional(),
-      docNumero: z.string().max(20).optional().describe("RUC/DNI, sin guiones"),
-      codigoCtp: z.string().max(60).optional(),
-      direccion: z.string().max(250).optional(),
-      region: z.string().max(80).optional(),
-      provincia: z.string().max(80).optional(),
-      distrito: z.string().max(80).optional(),
-      zona: z.string().max(80).optional().describe("Sector o caserío"),
-      telefono: z.string().max(40).optional(),
-      whatsapp: z.string().max(30).optional(),
-      email: z.string().max(160).optional(),
-      representante: z.string().max(160).optional(),
-      representanteDni: z.string().max(15).optional(),
-      contactoNombre: z.string().max(160).optional(),
-      contactoTelefono: z.string().max(30).optional(),
-      licencia: z.string().max(30).optional(),
-      registroMtc: z.string().max(40).optional(),
-      tituloHabilitante: z.string().max(80).optional(),
-      resolucion: z.string().max(120).optional(),
-      planManejo: z.string().max(120).optional(),
-      arffs: z.string().max(120).optional(),
-      banco: z.string().max(80).optional(),
-      cuentaNumero: z.string().max(40).optional(),
-      cuentaCci: z.string().max(30).optional(),
-      cuentaTitular: z.string().max(160).optional(),
-      condicionPago: z.enum(["contado", "credito"]).optional(),
-      diasCredito: z.number().int().min(0).max(365).optional().describe("Días de crédito"),
+      id: idRuta.optional().describe("Con id edita esa ficha (PATCH parcial); sin id crea (o corrige la del mismo documento)"),
+      nombre: z.string().min(2).max(200).optional().describe("Obligatorio al crear (sin id)"),
+      roles: z.array(z.enum(/** @type {[string, ...string[]]} */ (ROLES_PARTE))).min(1).optional().describe("Uno o más roles; obligatorio al crear. Con id reemplaza la lista"),
+      categoria: z.enum(["empresa", "ccnn", "aserradero"]).nullable().optional(),
+      docTipo: z.enum(["RUC", "DNI", "CE", "PASAPORTE"]).nullable().optional(),
+      docNumero: txt(20).describe("RUC/DNI, sin guiones"),
+      codigoCtp: txt(60),
+      direccion: txt(250),
+      region: txt(80),
+      provincia: txt(80),
+      distrito: txt(80),
+      zona: txt(80).describe("Sector o caserío"),
+      telefono: txt(40),
+      whatsapp: txt(30),
+      email: txt(160),
+      representante: txt(160),
+      representanteDni: txt(15),
+      contactoNombre: txt(160),
+      contactoTelefono: txt(30),
+      licencia: txt(30),
+      registroMtc: txt(40),
+      tituloHabilitante: txt(80),
+      resolucion: txt(120),
+      planManejo: txt(120),
+      arffs: txt(120),
+      banco: txt(80),
+      cuentaNumero: txt(40),
+      cuentaCci: txt(30),
+      cuentaTitular: txt(160),
+      condicionPago: z.enum(["contado", "credito"]).nullable().optional(),
+      diasCredito: z.number().int().min(0).max(365).nullable().optional().describe("Días de crédito"),
+      dniEmitidoEl: diaNull,
+      dniVenceEl: diaNull,
+      ruc: txt(11).describe("RUC de 11 dígitos (el panel valida el dígito verificador)"),
+      rucEstado: z.enum(/** @type {[string, ...string[]]} */ (ESTADOS_RUC)).nullable().optional(),
+      rucEstadoDesde: diaNull,
+      rucCondicion: txt(80).describe("Condición SUNAT: habido, no habido…"),
+      nacimientoEl: diaNull,
+      nacimientoLugar: txt(120),
+      estadoCivil: z.enum(/** @type {[string, ...string[]]} */ (ESTADOS_CIVILES)).nullable().optional(),
+      parentesco: txt(80).describe("Ej.: hermano, madre, socio"),
+      adjuntosAgregar: z.array(z.object({ documentId: idRuta, rotulo: z.string().min(1).max(80) })).max(20).optional().describe("Solo con id: documentos del drive que se agregan a la ficha"),
+      adjuntosQuitar: z.array(idRuta).max(20).optional().describe("Solo con id: documentId de los adjuntos que se quitan"),
     },
+    // Con id → PATCH parcial: solo viajan las claves que vinieron (null SÍ viaja: es «borrar»; por eso no se usa limpiar).
+    // Sin id → POST como siempre (limpiar quita lo vacío; los adjuntos y la ficha extra solo existen en el PATCH del panel).
     pedido: (a) => {
-      const { negocio: _n, seco: _s, ...resto } = a;
-      return { metodo: "POST", ruta: `${RUTA}/directorio`, cuerpo: limpiar(resto) };
+      const { negocio: _n, seco: _s, id, ...resto } = a;
+      if (id) {
+        /** @type {Record<string, unknown>} */ const cuerpo = {};
+        for (const [k, v] of Object.entries(resto)) if (v !== undefined) cuerpo[k] = v;
+        return { metodo: "PATCH", ruta: `${RUTA}/directorio/${id}`, cuerpo };
+      }
+      const { adjuntosAgregar: _a1, adjuntosQuitar: _a2, ...alta } = resto;
+      return { metodo: "POST", ruta: `${RUTA}/directorio`, cuerpo: limpiar(alta) };
     },
     // Cambiar QUIÉN es (nombre/documento), cómo ubicarlo o a dónde se le paga pide OK; una alta sin esos datos, no.
-    confirmarSi: (a) => Boolean(a.id) || ["docNumero", "docTipo", "telefono", "whatsapp", "email", "contactoTelefono", "representanteDni", "banco", "cuentaNumero", "cuentaCci", "cuentaTitular"].some((k) => a[k] !== undefined),
+    confirmarSi: (a) => Boolean(a.id) || ["docNumero", "docTipo", "telefono", "whatsapp", "email", "contactoTelefono", "representanteDni", "banco", "cuentaNumero", "cuentaCci", "cuentaTitular", "ruc"].some((k) => a[k] !== undefined),
     previa: async (a, leer) => {
       if (a.id) return (await filaPorId(leer, `${RUTA}/directorio`, { vehiculos: "0", inactivos: "1" }, a.id)).f ?? null;
       if (a.docNumero) {
@@ -101,13 +126,17 @@ export const herramientas = [
       if (pago.length) cambios.push(`datos de pago (${pago.join(", ")})`);
       const otros = ["whatsapp", "email", "contactoTelefono", "representanteDni"].filter((k) => a[k] !== undefined);
       if (otros.length) cambios.push(`contacto (${otros.join(", ")})`);
+      const fichaCampos = CAMPOS_FICHA.filter((k) => a[k] !== undefined);
+      if (fichaCampos.length) cambios.push(`ficha (${fichaCampos.join(", ")}; ${fichaCampos.some((k) => a[k] === null) ? "algunos se BORRAN" : "con el dato nuevo"})`);
+      if (a.adjuntosAgregar?.length) cambios.push(`${a.adjuntosAgregar.length} documento(s) adjuntado(s)`);
+      if (a.adjuntosQuitar?.length) cambios.push(`${a.adjuntosQuitar.length} documento(s) quitado(s) de la ficha`);
       const quien = p ? `la parte «${verificado(p.nombre)}»${a.id ? "" : " (mismo documento: se CORRIGE, no se crea otra)"}` : a.id ? `la parte ${NO_VERIFICADO}` : `una parte nueva «${conMarca(a.nombre)}»`;
       return `${a.id || p ? "Corregir" : "Crear"} ${quien}: ${cambios.length ? cambios.join("; ") : "sin cambios de identidad ni de pago"}.`;
     },
     ventana: (a, previa) => {
       const p = /** @type {any} */ (previa);
       return {
-        clave: a.nombre ? claveNombre(a.nombre, p?.nombre ? [p.nombre] : [], { etiqueta: "Nombre que queda" }) : null,
+        clave: a.nombre ? claveNombre(a.nombre, p?.nombre ? [p.nombre] : [], { etiqueta: "Nombre que queda" }) : p?.nombre ? claveNombre(String(p.nombre), [], { etiqueta: "Parte que se corrige" }) : null,
         filas: [{ etiqueta: "Parte (hoy)", valor: p ? verificado(p.nombre) : "(nueva)" }, filaIdentidad(p), ...(a.docNumero !== undefined ? [{ etiqueta: "Documento nuevo", valor: colaDe4(a.docNumero) }] : [])],
       };
     },

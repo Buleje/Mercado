@@ -103,7 +103,7 @@ export async function papelAlPanel(argv, deps = {}) {
   const nota = `${meta.numero} · ${NOMBRE_ESTADO[meta.estado] ?? meta.estado} · código ${meta.codigo}`;
   if (a.seco || config.seco) {
     return { ok: true, seco: true, negocio, porque: a.seco ? "--seco" : "candado de la conexión (seco: true)", pedidos: [
-      meta.panel_doc ? { metodo: "POST", ruta: `${RUTA_DOCUMENTOS}/${meta.panel_doc}/versions`, nota } : { metodo: "POST", ruta: RUTA_DOCUMENTOS, carpeta, tags: `papel,${meta.numero}` },
+      meta.panel_doc ? { metodo: "POST", ruta: `${RUTA_DOCUMENTOS}/${meta.panel_doc}/versions`, nota } : { metodo: "POST", ruta: RUTA_DOCUMENTOS, carpeta, tags: JSON.stringify(["papel", meta.numero]) },
       { metodo: "POST", ruta: RUTA_PAPELES, cuerpo: { ...previo.cuerpo, clave: "············" } },
     ] };
   }
@@ -125,7 +125,7 @@ export async function papelAlPanel(argv, deps = {}) {
       else return fallo(v.error?.codigo ?? "servidor", `PDF (versión): ${v.error?.mensaje ?? `el panel respondió ${v.status}`}`);
     }
     if (!documentId) {
-      const d = await cliente.pedir(negocio, { metodo: "POST", ruta: RUTA_DOCUMENTOS, cuerpo: { carpetaRuta: carpeta, tags: `papel,${meta.numero}` }, archivo });
+      const d = await cliente.pedir(negocio, { metodo: "POST", ruta: RUTA_DOCUMENTOS, cuerpo: { carpetaRuta: carpeta, tags: JSON.stringify(["papel", meta.numero]) }, archivo });
       if (!d.ok) return fallo(d.error?.codigo ?? "servidor", `PDF: ${d.error?.mensaje ?? `el panel respondió ${d.status}`}`);
       documentId = /** @type {any} */ (d.datos)?.document?.id ?? null;
       if (!documentId) return fallo("servidor", "El panel guardó el PDF pero no devolvió su id");
