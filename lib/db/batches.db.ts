@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { Batch as PBatch } from "@/lib/generated/prisma/client";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
+import { logger } from "@/lib/logger";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type DbBatch = {
@@ -308,9 +309,7 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(row.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    propagateExpiresAt(row.productId).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
     return mapBatch(row);
   },
@@ -342,13 +341,9 @@ export const BatchesDB = {
     });
 
     // Propagar al producto anterior y al nuevo si cambió el productId
-    propagateExpiresAt(existing.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    propagateExpiresAt(existing.productId).catch((err) => logger.warn("fire-and-forget failed", { err }));
     if (input.productId && input.productId !== existing.productId) {
-      propagateExpiresAt(input.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      propagateExpiresAt(input.productId).catch((err) => logger.warn("fire-and-forget failed", { err }));
     }
 
     if (!row) return null;
@@ -372,9 +367,7 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(existing.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    propagateExpiresAt(existing.productId).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
     if (!row) return null;
     return mapBatch(row);
@@ -390,9 +383,7 @@ export const BatchesDB = {
 
     await prisma.batch.deleteMany({ where: { id, tenantId } });
 
-    propagateExpiresAt(existing.productId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    propagateExpiresAt(existing.productId).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
     return true;
   },

@@ -135,16 +135,12 @@ export async function GET(req: NextRequest) {
             message: `Reminder 15d: ${customerName} — ${products}`,
             status: "sent",
           },
-        }).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+        }).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
         reminded++;
       }
 
-      logActivity("cron", "inactive-customers", `Enviados ${reminded} recordatorios de ${candidates.length} candidatos`).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      logActivity("cron", "inactive-customers", `Enviados ${reminded} recordatorios de ${candidates.length} candidatos`).catch((err) => logger.warn("fire-and-forget failed", { err }));
       logger.info(`[cron/inactive-customers] ${reminded}/${candidates.length} recordatorios enviados`);
 
       return { ok: true, reminded, candidates: candidates.length };

@@ -105,9 +105,7 @@ export async function PATCH(
       "Actualizar", "receta",
       `Receta "${updated.nombre}" actualizada`,
       id, auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
     return NextResponse.json(result);
   } catch (e) {
@@ -141,9 +139,7 @@ export async function DELETE(
       "Desactivar", "receta",
       `Receta "${existing.nombre}" desactivada`,
       id, auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
     return NextResponse.json({ ok: true, message: "Receta desactivada" });
   } catch (e) {
