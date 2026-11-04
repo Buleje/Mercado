@@ -9,7 +9,11 @@
 
 import { ExternalLink, Loader2, ShieldAlert, ShieldCheck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { ENLACE_REGISTRO_INFRACTORES, type MotivoCoincidencia } from "@/lib/forestal/serfor-infractores";
+import {
+  ENLACE_REGISTRO_INFRACTORES,
+  nombreComparable,
+  type MotivoCoincidencia,
+} from "@/lib/forestal/serfor-infractores";
 import { enlaceObservatorio } from "@/lib/forestal/osinfor-supervisiones";
 import {
   fechaDelDato,
@@ -43,6 +47,37 @@ function horaLima(iso: string | null): string {
   const d = new Date(t - 5 * 60 * 60 * 1000);
   const dos = (n: number) => String(n).padStart(2, "0");
   return `${dos(d.getUTCDate())}/${dos(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${dos(d.getUTCHours())}:${dos(d.getUTCMinutes())}`;
+}
+
+const escaparRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** El código del permiso entero en un renglón: el navegador lo partía en el guion o la barra
+ *  («25-PUC/P-» arriba, «MAD-A-018-07» abajo) y se leía como dos datos (04-11, a 1280 y 400 px). */
+function ConCodigosEnteros({ texto, codigos }: { texto: string; codigos: string[] }) {
+  const lista = [...new Set(codigos.filter(Boolean))];
+  if (lista.length === 0) return <>{texto}</>;
+  const partes = texto.split(new RegExp(`(${lista.map(escaparRegex).join("|")})`));
+  return (
+    <>
+      {partes.map((t, i) =>
+        lista.includes(t) ? (
+          <span key={i} className="whitespace-nowrap">
+            {t}
+          </span>
+        ) : (
+          t
+        ),
+      )}
+    </>
+  );
+}
+
+/** El nombre del infractor entre paréntesis solo si dice algo nuevo: en «por el permiso» de la
+ *  misma comunidad repetía el titular que ya está arriba. «A otra persona» lo lleva siempre. */
+function infractorAparte(motivo: MotivoCoincidencia, infractor: string, titular: string): boolean {
+  if (motivo === "documento" || motivo === "nombre") return false;
+  if (motivo === "permiso_otro") return true;
+  return nombreComparable(infractor) !== nombreComparable(titular);
 }
 
 function textoFuente(f: FuenteDelAviso): string {
@@ -146,7 +181,8 @@ export function AvisoProveedorSancion({
       </p>
       <p className="mt-1 text-sm text-[var(--text-primary)]">
         {a.nombre}
-        {a.documento ? ` · ${a.documento}` : ""} — {a.detalle}
+        {a.documento ? ` · ${a.documento}` : ""} —{" "}
+        <ConCodigosEnteros texto={a.detalle} codigos={a.permisos.map((p) => p.codigo)} />
       </p>
       {a.sanciones.length > 0 && (
         <ul className="mt-1.5 space-y-1 text-sm text-[var(--text-primary)]">
@@ -157,7 +193,7 @@ export function AvisoProveedorSancion({
               {s.organo && <span>{s.organo}</span>}
               <span className="text-[var(--text-secondary)]">
                 {MOTIVO[s.motivo]}
-                {s.motivo !== "documento" && s.motivo !== "nombre" ? ` (${s.infractor})` : ""}
+                {infractorAparte(s.motivo, s.infractor, a.nombre) ? ` (${s.infractor})` : ""}
               </span>
             </li>
           ))}

@@ -1,0 +1,54 @@
+[
+ {
+  "espiar": [
+   "/api/admin/forestal/wood-entries",
+   "POST",
+   true
+  ]
+ },
+ {
+  "espiar": "/api/admin/forestal/serfor-infractores/proveedor"
+ },
+ {
+  "clicTexto": "Nuevo ingreso"
+ },
+ {
+  "esperar": "input[placeholder=\"Concesión Forestal X\"]"
+ },
+ {
+  "llenar": [
+   "input[placeholder=\"Concesión Forestal X\"]",
+   "COMUNIDAD NATIVA SAN LUIS"
+  ]
+ },
+ {
+  "llenar": [
+   "input[placeholder=\"20XXXXXXXXX\"]",
+   "20393286238"
+  ]
+ },
+ {
+  "llenar": [
+   "input[placeholder=\"N° concesión o predio\"]",
+   "25-PUC/P-MAD-A-018-07"
+  ]
+ },
+ {
+  "eval": "window.__t0=performance.now(); 'ok'"
+ },
+ {
+  "esperar": "[data-aviso-proveedor]"
+ },
+ {
+  "esperar": 400
+ },
+ {
+  "eval": "(()=>{const a=document.querySelector('[data-aviso-proveedor]');a.scrollIntoView({block:'center'});return {tono:a.getAttribute('data-aviso-proveedor'),ms:Math.round(performance.now()-window.__t0),texto:a.innerText.replace(/\\s+/g,' ').slice(0,700)}})()"
+ },
+ {
+  "eval": "(()=>{const a=document.querySelector('[data-aviso-proveedor]');let s=a.parentElement;while(s&&!/Titular habilitante/.test(s.innerText))s=s.parentElement;s.scrollIntoView({block:'start'});const sc=(()=>{let e=s.parentElement;while(e&&!(e.scrollHeight>e.clientHeight+5&&/(auto|scroll)/.test(getComputedStyle(e).overflowY)))e=e.parentElement;return e})();if(sc)sc.scrollTop-=12;const r=s.getBoundingClientRect(),ra=a.getBoundingClientRect();return {tag:s.tagName,sec:[r.x,r.y,r.width,r.height].map(Math.round),aviso:[ra.x,ra.y,ra.width,ra.height].map(Math.round),dpr:devicePixelRatio,vh:innerHeight,textoSeccion:s.innerText.replace(/\\s+/g,' ').slice(0,900)}})()"
+ },
+ {
+  "captura": "alta-aviso"
+ }
+]
