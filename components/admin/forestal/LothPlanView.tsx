@@ -166,6 +166,7 @@ export default function LothPlanView({
                 okCount: d.okCount,
                 controlCount: d.controlRows.length,
                 fueraDelPlan: d.noAutorizadas.length,
+                fueraDelPlanNombres: d.noAutorizadas.map((r) => r.species),
               }
             : null
         }

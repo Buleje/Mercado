@@ -48,6 +48,8 @@ export interface KpisPlan {
   okCount: number;
   controlCount: number;
   fueraDelPlan: number;
+  /** Nombres de las especies censadas que el plan no autoriza (radar 21-09: la tarjeta decía «2 fuera» sin decir cuáles). */
+  fueraDelPlanNombres?: string[];
 }
 
 /**
@@ -122,7 +124,12 @@ function censoContra(k: KpisPlan): string {
 
 function especiesContra(k: KpisPlan): string {
   if (k.controlCount === 0) return "todavía no hay especies que cruzar";
-  if (k.fueraDelPlan > 0) return `${ent(k.fueraDelPlan)} fuera del plan aprobado`;
+  if (k.fueraDelPlan > 0) {
+    const nombres = k.fueraDelPlanNombres ?? [];
+    if (nombres.length === 0) return `${ent(k.fueraDelPlan)} fuera del plan aprobado`;
+    const resto = nombres.length - 3;
+    return `fuera del plan: ${nombres.slice(0, 3).join(", ")}${resto > 0 ? ` y ${ent(resto)} más` : ""}`;
+  }
   const conAviso = k.controlCount - k.okCount;
   if (conAviso > 0) return `${ent(conAviso)} con aviso por revisar`;
   return "sin excesos ni especies fuera";
