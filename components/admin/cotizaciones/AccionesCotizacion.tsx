@@ -6,7 +6,8 @@
  * (WhatsApp, duplicar, PDF, guardarla como plantilla).
  */
 import { useState } from "react";
-import { AlertTriangle, Bookmark, Check, Copy, MessageCircle, MoreHorizontal, Printer, Send, ShoppingCart, XCircle } from "@buleje/design-system/icons";
+import { AlertTriangle, Bookmark, Check, Copy, Link2, MessageCircle, MoreHorizontal, Printer, Send, ShoppingCart, XCircle } from "@buleje/design-system/icons";
+import { Button } from "@/components/ui-system/Button";
 import { button } from "@/components/ui-system/button-variants";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
@@ -15,6 +16,7 @@ import type { DetalleCotizacion } from "./use-detalle-cotizacion";
 import { useMembrete } from "@/hooks/use-membrete";
 import { GuardarPlantilla } from "./GuardarPlantilla";
 import { abrirWhatsApp, textoWhatsApp, type Cotizacion } from "./tipos";
+import { useEnlaceCliente } from "./use-enlace-cliente";
 import type { DondePlantilla, ResultadoGuardar } from "./use-plantillas";
 
 interface Props {
@@ -32,6 +34,7 @@ export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuard
   const [guardando, setGuardando] = useState(false);
   const [guardada, setGuardada] = useState<string | null>(null);
   const membrete = useMembrete();
+  const enlace = useEnlaceCliente(c.id);
   const { actionLoading, cambiarEstado, convertir, faltantes, descartarFaltantes, pedidoCreado, convertirError, estadoError } = detalle;
 
   const masAcciones: MenuAccion[] = [
@@ -63,11 +66,20 @@ export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuard
             <ShoppingCart className="h-4 w-4" aria-hidden /> Convertir en pedido
           </button>
         )}
-        <button type="button" onClick={() => abrirWhatsApp(textoWhatsApp(c, membrete), c.customerId ?? "")} className={SECUNDARIO}>
+        {/* El mensaje lleva el enlace de solo ver; si el servidor no lo da, sale igual sin él. */}
+        <button type="button" onClick={() => void enlace.pedir().then((url) => abrirWhatsApp(textoWhatsApp(c, membrete, url), c.customerId ?? ""))} disabled={enlace.estado === "cargando"} className={SECUNDARIO}>
           <MessageCircle className="h-4 w-4 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" aria-hidden /> WhatsApp
         </button>
+        <Button variant="secondary" onClick={() => void enlace.copiar()} disabled={enlace.estado === "cargando"} className="gap-1.5 rounded-xl px-4" title="Un enlace que el cliente abre sin clave para ver la cotización">
+          {enlace.estado === "copiado" ? <Check className="h-4 w-4" aria-hidden /> : <Link2 className="h-4 w-4" aria-hidden />}
+          {enlace.estado === "copiado" ? "Enlace copiado" : "Copiar enlace para el cliente"}
+        </Button>
         <ActionMenu label="Más" icon={MoreHorizontal} actions={masAcciones} size="md" title="Duplicar, imprimir y guardar como plantilla" />
       </div>
+
+      {enlace.mensaje && (
+        <p role="alert" className="break-all text-sm text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">{enlace.mensaje}</p>
+      )}
 
       {/* Recién convertida: el enlace al pedido que se creó (antes había que buscarlo en Pedidos). */}
       {pedidoCreado?.cotizacionId === c.id && (

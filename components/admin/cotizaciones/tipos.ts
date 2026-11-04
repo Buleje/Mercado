@@ -179,7 +179,8 @@ export function saveTemplates(templates: Plantilla[]): void {
 // ── WhatsApp ────────────────────────────────────────────────────────────────
 
 /** El presupuesto entero como mensaje (Mejora M10), firmado por el negocio de la sesión. */
-export function textoWhatsApp(c: Cotizacion, firma?: FirmaNegocio | null): string {
+/** `enlace` = el de solo ver (/cotizacion/<token>); sin él, el mensaje sale como antes. */
+export function textoWhatsApp(c: Cotizacion, firma?: FirmaNegocio | null, enlace?: string | null): string {
   const itemsText = (c.items ?? [])
     .map((it, i) => `${i + 1}. ${it.descripcion} x ${it.cantidad} — ${formatCurrency(Number(it.subtotal))}`)
     .join("\n");
@@ -195,6 +196,7 @@ export function textoWhatsApp(c: Cotizacion, firma?: FirmaNegocio | null): strin
     `IGV (18%): ${formatCurrency(Number(c.igv))}`,
     `*Total: ${formatCurrency(Number(c.total))}*`,
     `─────────`,
+    ...(enlace ? [`Mírala aquí: ${enlace}`] : []),
     `¿Te interesa? Responde a este mensaje.`,
     ...cierreDelNegocio(firma, ""),
   ].join("\n");

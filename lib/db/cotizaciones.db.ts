@@ -261,6 +261,31 @@ export const CotizacionesDB = {
     return mapCotizacion(row);
   },
 
+  /**
+   * El CLIENTE la acepta desde el enlace público (noche 04-11, tramo 2). Un solo
+   * UPDATE con toda la condición en el WHERE (negocio, estado que permite aceptar
+   * y día de vigencia sin terminar): dos clics a la vez, o el negocio que la
+   * rechaza o convierte mientras tanto → `false` y la ruta responde 409.
+   * `cond` sale de `ESTADOS_ACEPTABLES` + `condicionVigente()` (`lib/cotizaciones/aceptacion.ts`).
+   */
+  async aceptarSiSigueAbierta(
+    tenantId: string,
+    id: string,
+    cond: { estados: readonly string[]; vigenteDesde: Date; vigenteLegado: Date },
+  ): Promise<boolean> {
+    if (!tenantId || !id || cond.estados.length === 0) return false;
+    const res = await prisma.cotizacion.updateMany({
+      where: {
+        id,
+        tenantId,
+        status: { in: [...cond.estados] as PCotizacion["status"][] },
+        OR: [{ validoHasta: { gte: cond.vigenteDesde } }, { validoHasta: cond.vigenteLegado }],
+      },
+      data: { status: "ACEPTADA" },
+    });
+    return res.count === 1;
+  },
+
   async delete(id: string, tenantId: string): Promise<boolean> {
     const existing = await prisma.cotizacion.findFirst({
       where: { id, tenantId, status: "BORRADOR" },
