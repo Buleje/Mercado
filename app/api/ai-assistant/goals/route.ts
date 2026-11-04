@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
+import { logger } from "@/lib/logger";
 // ── Zod schemas ─────────────────────────────────────────────────────────────
 
 const GoalSchema = z.object({
@@ -119,9 +120,7 @@ export async function POST(req: NextRequest) {
     `${goal.tipo} ${goal.categoria}: meta S/${goal.meta}`,
     goal.id,
     auth.username
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  ).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
   return NextResponse.json({ goal, goals });
 }
@@ -146,9 +145,7 @@ export async function DELETE(req: NextRequest) {
 
   await writeGoals(auth.tenantId, filtered);
 
-  logActivity("delete", "ai-goal", `Eliminada meta ${id}`, id, auth.username).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+  logActivity("delete", "ai-goal", `Eliminada meta ${id}`, id, auth.username).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
   return NextResponse.json({ success: true, goals: filtered });
 }

@@ -110,9 +110,7 @@ export async function GET(req: NextRequest) {
         `${sugerencias.length} sugerencia(s) de compra generadas por cron (${sinProveedor.length} sin proveedor)`,
         undefined,
         "cron"
-      ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      ).catch((err) => logger.warn("fire-and-forget failed", { err }));
 
       // ── #20: Create draft OCs grouped by preferred supplier ───────────
       const draftOCs: { poId: string; supplierId: string; supplierName: string; itemCount: number; total: number }[] = [];
@@ -175,9 +173,7 @@ export async function GET(req: NextRequest) {
               `OC draft creada para ${supplierName}: ${items.length} producto(s)`,
               poId,
               "cron",
-            ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+            ).catch((err) => logger.warn("fire-and-forget failed", { err }));
           } catch (ocErr) {
             logger.warn("[cron/auto-reorder-check] Error creating draft OC", {
               supplierId,
