@@ -171,6 +171,19 @@ export type ResultadoAlta =
     }
   | { estado: "otra_tienda" };
 const SIN_COMPRAS: ComprasDeCliente ={ compras: 0, gastado: 0, cerradas: 0, ultimaCompra: null, compras30d: 0 };
+/**
+ * Una fila de la consulta de `comprasPorCliente`: un teléfono tal como está
+ * escrito, en pedidos o en ventas. `vivas` = pedidos no cancelados (las ventas
+ * cuentan todas); `cerradas` y `centimos` = pedidos ENTREGADOS + ventas.
+ */
+interface FilaComprasTelefono {
+  tel: string;
+  vivas: number;
+  ultima: Date | null;
+  cerradas: number;
+  centimos: number;
+  vivas30: number;
+}
 /** El mismo celular escrito de tres formas: sus últimos 9 dígitos. */
 const claveDeTelefono = (t: string) => t.replace(/\D/g, "").slice(-9);
 
@@ -256,17 +269,31 @@ export const CustomersDB = {
    * venta y «916409675» del cliente son el mismo. Céntimos al sumar.
    */
   async comprasPorCliente(tenantId: string, ahora: Date = new Date()): Promise<Map<string, ComprasDeCliente>> {
-    const hace30 = new Date(ahora.getTime() - 30 * 86_400_000);
-    const vivo = { tenantId, customerPhone: { not: null }, status: { not: "cancelado" as const } };
-    const conTelefono = { tenantId, customerPhone: { not: null } };
-    const [pedidos, entregados, pedidos30, ventas, ventas30] = await withRlsTx(tenantId, (tx) =>
-      Promise.all([
-        tx.order.groupBy({ by: ["customerPhone"], where: vivo, _count: { _all: true }, _max: { createdAt: true } }),
-        tx.order.groupBy({ by: ["customerPhone"], where: { ...conTelefono, status: "entregado" as const }, _count: { _all: true }, _sum: { total: true } }),
-        tx.order.groupBy({ by: ["customerPhone"], where: { ...vivo, createdAt: { gte: hace30 } }, _count: { _all: true } }),
-        tx.sale.groupBy({ by: ["customerPhone"], where: conTelefono, _count: { _all: true }, _sum: { total: true }, _max: { createdAt: true } }),
-        tx.sale.groupBy({ by: ["customerPhone"], where: { ...conTelefono, createdAt: { gte: hace30 } }, _count: { _all: true } }),
-      ]),
+    // `createdAt` es timestamp sin zona guardado en UTC: el ISO con «Z» casteado a
+    // `timestamp` deja la misma hora UTC (Postgres ignora la zona en ese cast).
+    const hace30 = new Date(ahora.getTime() - 30 * 86_400_000).toISOString();
+    // UNA consulta para pedidos y ventas (04-11): eran 5 groupBy en fila dentro de
+    // la transacción = 8 idas y vueltas a la base, ~0,89 s fijos por negocio aunque
+    // no tuviera compras (medido en 8 negocios). Céntimos redondeados por fila como
+    // antes (`Math.round(total × 100)`), pero en numeric: exacto.
+    const filas = await withRlsTx(tenantId, (tx) =>
+      tx.$queryRaw<FilaComprasTelefono[]>`
+        SELECT "customerPhone" AS tel,
+               (count(*) FILTER (WHERE status <> 'cancelado'))::int AS vivas,
+               max("createdAt") FILTER (WHERE status <> 'cancelado') AS ultima,
+               (count(*) FILTER (WHERE status = 'entregado'))::int AS cerradas,
+               round(coalesce(sum(total) FILTER (WHERE status = 'entregado'), 0) * 100)::float8 AS centimos,
+               (count(*) FILTER (WHERE status <> 'cancelado' AND "createdAt" >= ${hace30}::timestamp))::int AS vivas30
+          FROM "Order"
+         WHERE "tenantId" = ${tenantId} AND "customerPhone" IS NOT NULL
+         GROUP BY "customerPhone"
+        UNION ALL
+        SELECT "customerPhone", count(*)::int, max("createdAt"), count(*)::int,
+               round(coalesce(sum(total), 0) * 100)::float8,
+               (count(*) FILTER (WHERE "createdAt" >= ${hace30}::timestamp))::int
+          FROM "Sale"
+         WHERE "tenantId" = ${tenantId} AND "customerPhone" IS NOT NULL
+         GROUP BY "customerPhone"`,
     );
     const acum = new Map<string, { compras: number; centimos: number; cerradas: number; ultima: Date | null; compras30d: number }>();
     const de = (tel: string | null) => {
@@ -277,21 +304,18 @@ export const CustomersDB = {
       return a;
     };
     const masReciente = (a: Date | null, b: Date | null | undefined) => (!b ? a : !a || b > a ? b : a);
-    const centimos = (v: Parameters<typeof toNumOrZero>[0]) => Math.round(toNumOrZero(v) * 100);
-    for (const r of pedidos) {
-      const a = de(r.customerPhone);
-      if (a) { a.compras += r._count._all; a.ultima = masReciente(a.ultima, r._max.createdAt); }
+    for (const r of filas) {
+      // Sólo pedidos cancelados: no es compra (como antes, ni siquiera aparece).
+      // Un entregado siempre es vivo y una venta siempre cuenta, así que basta `vivas`.
+      if (r.vivas === 0) continue;
+      const a = de(r.tel);
+      if (!a) continue;
+      a.compras += r.vivas;
+      a.cerradas += r.cerradas;
+      a.centimos += r.centimos;
+      a.compras30d += r.vivas30;
+      a.ultima = masReciente(a.ultima, r.ultima);
     }
-    for (const r of entregados) {
-      const a = de(r.customerPhone);
-      if (a) { a.centimos += centimos(r._sum.total); a.cerradas += r._count._all; }
-    }
-    for (const r of pedidos30) { const a = de(r.customerPhone); if (a) a.compras30d += r._count._all; }
-    for (const r of ventas) {
-      const a = de(r.customerPhone);
-      if (a) { a.compras += r._count._all; a.cerradas += r._count._all; a.centimos += centimos(r._sum.total); a.ultima = masReciente(a.ultima, r._max.createdAt); }
-    }
-    for (const r of ventas30) { const a = de(r.customerPhone); if (a) a.compras30d += r._count._all; }
     const out = new Map<string, ComprasDeCliente>();
     for (const [k, a] of acum) {
       out.set(k, { compras: a.compras, gastado: a.centimos / 100, cerradas: a.cerradas, ultimaCompra: a.ultima ? a.ultima.toISOString() : null, compras30d: a.compras30d });

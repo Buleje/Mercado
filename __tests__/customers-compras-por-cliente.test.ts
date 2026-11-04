@@ -15,31 +15,40 @@ type Fila = { tenantId: string; customerPhone: string | null; status?: string; t
 
 const { tx, datos } = vi.hoisted(() => {
   const datos: { pedidos: Fila[]; ventas: Fila[] } = { pedidos: [], ventas: [] };
-  /** Lo justo del `where` que usa comprasPorCliente: tenant, teléfono no nulo, estado y fecha. */
-  const cumple = (f: Fila, w: Record<string, unknown>) => {
-    if (f.tenantId !== w.tenantId) return false;
-    if (w.customerPhone && f.customerPhone == null) return false;
-    const st = w.status as string | { not: string } | undefined;
-    if (typeof st === "string" && f.status !== st) return false;
-    if (st && typeof st === "object" && f.status === st.not) return false;
-    const c = w.createdAt as { gte: Date } | undefined;
-    if (c && f.createdAt < c.gte) return false;
-    return true;
-  };
-  const agrupar = (filas: Fila[]) =>
-    vi.fn(async ({ where }: { where: Record<string, unknown> }) => {
-      const por = new Map<string | null, Fila[]>();
-      for (const f of filas.filter((x) => cumple(x, where))) por.set(f.customerPhone, [...(por.get(f.customerPhone) ?? []), f]);
-      return [...por].map(([customerPhone, fs]) => ({
-        customerPhone,
-        _count: { _all: fs.length },
-        _sum: { total: fs.reduce((s, f) => s + f.total, 0) },
-        _max: { createdAt: fs.reduce<Date | null>((m, f) => (!m || f.createdAt > m ? f.createdAt : m), null) },
-      }));
+  /**
+   * Lo que devuelve la consulta de comprasPorCliente (04-11: una sola, pedidos
+   * UNION ALL ventas), armado en JS desde `datos`: una fila por teléfono crudo y
+   * fuente, filtrando por el tenant y la fecha que viajan como parámetros ($n).
+   * Que la consulta real dé lo mismo que los 5 groupBy de antes se comparó con
+   * la base en 8 negocios (salida idéntica).
+   */
+  const esFecha = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v);
+  const filasDe = (filas: Fila[], tenantId: string, desde: Date, pedidos: boolean) => {
+    const por = new Map<string, Fila[]>();
+    for (const f of filas) {
+      if (f.tenantId !== tenantId || f.customerPhone == null) continue;
+      por.set(f.customerPhone, [...(por.get(f.customerPhone) ?? []), f]);
+    }
+    return [...por].map(([tel, fs]) => {
+      const vivas = pedidos ? fs.filter((f) => f.status !== "cancelado") : fs;
+      const cerradas = pedidos ? fs.filter((f) => f.status === "entregado") : fs;
+      return {
+        tel,
+        vivas: vivas.length,
+        ultima: vivas.reduce<Date | null>((m, f) => (!m || f.createdAt > m ? f.createdAt : m), null),
+        cerradas: cerradas.length,
+        centimos: cerradas.reduce((s, f) => s + Math.round(f.total * 100), 0),
+        vivas30: vivas.filter((f) => f.createdAt >= desde).length,
+      };
     });
+  };
   const tx = {
-    order: { groupBy: vi.fn((a: { where: Record<string, unknown> }) => agrupar(datos.pedidos)(a)) },
-    sale: { groupBy: vi.fn((a: { where: Record<string, unknown> }) => agrupar(datos.ventas)(a)) },
+    $queryRaw: vi.fn(async (_sql: TemplateStringsArray, ...valores: unknown[]) => {
+      const tenants = valores.filter((v) => !esFecha(v));
+      const desde = new Date(String(valores.find(esFecha)));
+      const tenantId = String(tenants[0]);
+      return [...filasDe(datos.pedidos, tenantId, desde, true), ...filasDe(datos.ventas, tenantId, desde, false)];
+    }),
   };
   return { tx, datos };
 });
@@ -68,6 +77,8 @@ beforeEach(() => {
     pedido("916409675", "entregado", 7.2, 157),
     // Cancelado: ni compra ni gasto.
     pedido("922222222", "cancelado", 50, 2),
+    // Sólo cancelados y sin ventas: ni aparece en el mapa.
+    pedido("944444444", "cancelado", 80, 1),
     // Otro tenant con el mismo teléfono: no entra.
     pedido("916409675", "entregado", 999, 1, "t2"),
     // Sin teléfono: no es de nadie.
@@ -94,8 +105,9 @@ describe("CustomersDB.comprasPorCliente", () => {
   it("no mezcla tenants ni cuenta lo que no tiene teléfono", async () => {
     const m = await CustomersDB.comprasPorCliente("t1", AHORA);
     expect([...m.keys()].sort()).toEqual(["916409675", "922222222"]);
-    for (const c of tx.order.groupBy.mock.calls) expect(c[0].where.tenantId).toBe("t1");
-    for (const c of tx.sale.groupBy.mock.calls) expect(c[0].where.tenantId).toBe("t1");
+    // Una sola consulta y todo parámetro que no es la fecha es el tenant pedido.
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+    for (const v of tx.$queryRaw.mock.calls[0].slice(1)) if (!/^\d{4}-/.test(String(v))) expect(v).toBe("t1");
   });
 
   it("suma en céntimos: 0,1 + 0,2 no deja 0,30000000000000004", async () => {
