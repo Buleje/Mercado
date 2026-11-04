@@ -32,17 +32,30 @@ export interface ClientErrorStats {
 
 /** Registra (o dedupea) un error de panel admin. Best-effort: nunca rompe el beacon. */
 export async function recordClientError(input: {
-  tenantId: string; message: string; digest?: string | null; source?: string | null; userAgent?: string | null;
+  tenantId: string;
+  message: string;
+  digest?: string | null;
+  source?: string | null;
+  userAgent?: string | null;
 }): Promise<void> {
   try {
     const existing = await prisma.clientErrorLog.findFirst({
-      where: { tenantId: input.tenantId, digest: input.digest ?? null, source: input.source ?? "", resolvedAt: null },
+      where: {
+        tenantId: input.tenantId,
+        digest: input.digest ?? null,
+        source: input.source ?? "",
+        resolvedAt: null,
+      },
       select: { id: true },
     });
     if (existing) {
       await prisma.clientErrorLog.update({
         where: { id: existing.id },
-        data: { count: { increment: 1 }, lastSeenAt: new Date(), message: input.message.slice(0, 2000) },
+        data: {
+          count: { increment: 1 },
+          lastSeenAt: new Date(),
+          message: input.message.slice(0, 2000),
+        },
       });
     } else {
       await prisma.clientErrorLog.create({
@@ -63,10 +76,17 @@ export async function recordClientError(input: {
 /** Errores sin resolver, con el nombre/slug del negocio, más recientes primero. */
 export async function getClientErrors(limit = 100): Promise<ClientErrorRow[]> {
   try {
-    const rows = await prisma.clientErrorLog.findMany({ where: { resolvedAt: null }, orderBy: { lastSeenAt: "desc" }, take: limit });
+    const rows = await prisma.clientErrorLog.findMany({
+      where: { resolvedAt: null },
+      orderBy: { lastSeenAt: "desc" },
+      take: limit,
+    });
     const ids = [...new Set(rows.map((r) => r.tenantId))];
     const tenants = ids.length
-      ? await prisma.tenant.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, slug: true } })
+      ? await prisma.tenant.findMany({
+          where: { id: { in: ids } },
+          select: { id: true, name: true, slug: true },
+        })
       : [];
     const tmap = new Map(tenants.map((t) => [t.id, t]));
     return rows.map((r) => ({
@@ -90,13 +110,25 @@ export async function getClientErrors(limit = 100): Promise<ClientErrorRow[]> {
 export async function getClientErrorStats(): Promise<ClientErrorStats> {
   try {
     const hourAgo = new Date(Date.now() - 3_600_000);
-    const [groups, sum, tenants, lastHour] = await Promise.all([
-      prisma.clientErrorLog.count({ where: { resolvedAt: null } }),
-      prisma.clientErrorLog.aggregate({ where: { resolvedAt: null }, _sum: { count: true } }),
-      prisma.clientErrorLog.findMany({ where: { resolvedAt: null }, distinct: ["tenantId"], select: { tenantId: true } }),
-      prisma.clientErrorLog.count({ where: { resolvedAt: null, lastSeenAt: { gte: hourAgo } } }),
-    ]);
-    return { groups, totalOccurrences: sum._sum.count ?? 0, affectedTenants: tenants.length, lastHour };
+    // UNA consulta en vez de cuatro (04-11): el pool es de 5 conexiones y la campana del
+    // superadmin lanza ~20 a la vez; cuatro idas a la base por cuatro cifras la hacían esperar turno.
+    const [fila] = await prisma.$queryRawUnsafe<
+      Array<{ groups: number; total: number; tenants: number; last_hour: number }>
+    >(
+      `SELECT count(*)::int AS groups,
+              coalesce(sum("count"), 0)::int AS total,
+              count(DISTINCT "tenantId")::int AS tenants,
+              (count(*) FILTER (WHERE "lastSeenAt" >= $1))::int AS last_hour
+         FROM "ClientErrorLog"
+        WHERE "resolvedAt" IS NULL`,
+      hourAgo,
+    );
+    return {
+      groups: fila?.groups ?? 0,
+      totalOccurrences: fila?.total ?? 0,
+      affectedTenants: fila?.tenants ?? 0,
+      lastHour: fila?.last_hour ?? 0,
+    };
   } catch (err) {
     logger.warn("[client-errors.db] getClientErrorStats failed", { error: String(err) });
     return { groups: 0, totalOccurrences: 0, affectedTenants: 0, lastHour: 0 };
@@ -105,7 +137,10 @@ export async function getClientErrorStats(): Promise<ClientErrorStats> {
 
 export async function resolveClientError(id: string, by: string): Promise<boolean> {
   try {
-    await prisma.clientErrorLog.update({ where: { id }, data: { resolvedAt: new Date(), resolvedBy: by } });
+    await prisma.clientErrorLog.update({
+      where: { id },
+      data: { resolvedAt: new Date(), resolvedBy: by },
+    });
     return true;
   } catch (err) {
     logger.warn("[client-errors.db] resolveClientError failed", { id, error: String(err) });

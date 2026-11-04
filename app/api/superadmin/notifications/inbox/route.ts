@@ -2,7 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@/lib/generated/prisma/client";
+import type { ApplicationStatus, Prisma } from "@/lib/generated/prisma/client";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
 import { getRescueQueue } from "@/lib/db/rescue.db";
@@ -37,6 +37,9 @@ const TOPE_POR_GRUPO = 40;
  */
 const TOPE_PEDIDOS = 400;
 const DETALLE_POR_TIENDA = 5;
+/** Solicitudes de tienda que siguen abiertas; con menos que el tope, la lista ya es el conteo. */
+const SOLICITUD_ABIERTA: ApplicationStatus[] = ["pending", "under_review", "info_requested"];
+const TOPE_SOLICITUDES = 200;
 
 const ESTADO_YAPE: Record<string, string> = {
   pending: "pendiente",
@@ -48,7 +51,13 @@ function aIso(d: Date | string): string {
 }
 
 /** Un grupo: ordena por nivel ANTES de recortar, así lo urgente nunca queda afuera. */
-function grupo(count: number, href: string, todos: AvisoBandeja[], niveles?: ConteoNiveles, tope = TOPE_POR_GRUPO): GrupoBandeja {
+function grupo(
+  count: number,
+  href: string,
+  todos: AvisoBandeja[],
+  niveles?: ConteoNiveles,
+  tope = TOPE_POR_GRUPO,
+): GrupoBandeja {
   return {
     count,
     href,
@@ -58,7 +67,10 @@ function grupo(count: number, href: string, todos: AvisoBandeja[], niveles?: Con
 }
 
 /** Pedido de cualquier tienda que nadie terminó de atender. */
-const PEDIDO_SIN_ATENDER = { status: { in: ["pendiente", "confirmado"] }, deletedAt: null } satisfies Prisma.OrderWhereInput;
+const PEDIDO_SIN_ATENDER = {
+  status: { in: ["pendiente", "confirmado"] },
+  deletedAt: null,
+} satisfies Prisma.OrderWhereInput;
 
 /**
  * GET /api/superadmin/notifications/inbox
@@ -85,26 +97,19 @@ export async function GET(req: NextRequest) {
     const ahora = new Date();
     const cortes = cortesPedido(ahora);
     const [
-      vendorAppsCount,
       vendorAppsTop,
       paymentApprovals,
       paymentProofs,
-      pendingOrdersCount,
-      ordersEnCurso,
-      ordersOlvidados,
       pendingOrdersLista,
       rescue,
       panelErrors,
       errorStats,
       correcciones,
     ] = await Promise.all([
-      prisma.vendorApplication.count({
-        where: { status: { in: ["pending", "under_review", "info_requested"] } },
-      }),
       prisma.vendorApplication.findMany({
-        where: { status: { in: ["pending", "under_review", "info_requested"] } },
+        where: { status: { in: SOLICITUD_ABIERTA } },
         orderBy: { submittedAt: "desc" },
-        take: 200,
+        take: TOPE_SOLICITUDES,
         select: {
           id: true,
           businessName: true,
@@ -116,9 +121,6 @@ export async function GET(req: NextRequest) {
       }),
       PaymentApprovalDb.listPending({ limit: 200 }).catch(() => []),
       PaymentProofsDB.listPending().catch(() => []),
-      prisma.order.count({ where: PEDIDO_SIN_ATENDER }),
-      prisma.order.count({ where: { ...PEDIDO_SIN_ATENDER, createdAt: { gte: cortes.enCursoDesde } } }),
-      prisma.order.count({ where: { ...PEDIDO_SIN_ATENDER, createdAt: { lt: cortes.olvidadoAntesDe } } }),
       prisma.order.findMany({
         where: PEDIDO_SIN_ATENDER,
         orderBy: { createdAt: "desc" },
@@ -139,14 +141,21 @@ export async function GET(req: NextRequest) {
       getClientErrors(200).catch(() => []),
       getClientErrorStats().catch(() => ({ groups: 0 })),
       SupportTicketsDB.correccionesAbiertasPlataforma(200).catch((err) => {
-        logger.warn("[superadmin/notifications/inbox] correcciones no leídas", { error: String(err) });
+        logger.warn("[superadmin/notifications/inbox] correcciones no leídas", {
+          error: String(err),
+        });
         return { count: 0, filas: [] };
       }),
     ]);
 
     // Nombre del negocio de cada pedido y de cada Yape detectado
     const orderTenantIds = [
-      ...new Set([...pendingOrdersLista.map((o) => o.tenantId), ...paymentApprovals.map((p) => p.tenantId)].filter(Boolean)),
+      ...new Set(
+        [
+          ...pendingOrdersLista.map((o) => o.tenantId),
+          ...paymentApprovals.map((p) => p.tenantId),
+        ].filter(Boolean),
+      ),
     ];
     // Artículos (con imagen) sólo de los más recientes de cada tienda: el modal
     // los despliega al abrir el pedido (Brandon 2026-06-05). Los demás son una fila lisa.
@@ -157,43 +166,74 @@ export async function GET(req: NextRequest) {
       if (n < DETALLE_POR_TIENDA) idsConDetalle.push(o.id);
       porTienda.set(o.tenantId, n + 1);
     }
-    const detalleRows = idsConDetalle.length
-      ? await prisma.order.findMany({
-          where: { id: { in: idsConDetalle } },
-          select: {
-            id: true,
-            items: {
-              select: {
-                id: true,
-                name: true,
-                quantity: true,
-                unit: true,
-                price: true,
-                image: true,
-                // Fallback: pedidos viejos guardaron image="" — usamos la foto
-                // actual del producto para que el modal siempre muestre algo.
-                product: { select: { image: true } },
+    // Detalle de artículos, nombres de negocio y (sólo si la lista llenó el tope) el conteo
+    // real de solicitudes: en UNA tanda, no en fila (04-11: la campana tardaba 1,2 s en caliente).
+    const [
+      detalleRows,
+      tenants,
+      vendorAppsCount,
+      [pendingOrdersCount, ordersEnCurso, ordersOlvidados],
+    ] = await Promise.all([
+      idsConDetalle.length
+        ? prisma.order.findMany({
+            where: { id: { in: idsConDetalle } },
+            select: {
+              id: true,
+              items: {
+                select: {
+                  id: true,
+                  name: true,
+                  quantity: true,
+                  unit: true,
+                  price: true,
+                  image: true,
+                  // Fallback: pedidos viejos guardaron image="" — usamos la foto
+                  // actual del producto para que el modal siempre muestre algo.
+                  product: { select: { image: true } },
+                },
               },
             },
-          },
-        })
-      : [];
+          })
+        : Promise.resolve([]),
+      orderTenantIds.length > 0
+        ? prisma.tenant.findMany({
+            where: {
+              OR: [{ id: { in: orderTenantIds } }, { slug: { in: orderTenantIds } }],
+            },
+            select: { id: true, slug: true, name: true },
+          })
+        : Promise.resolve([]),
+      vendorAppsTop.length < TOPE_SOLICITUDES
+        ? Promise.resolve(vendorAppsTop.length)
+        : prisma.vendorApplication.count({ where: { status: { in: SOLICITUD_ABIERTA } } }),
+      // Con menos pedidos que el tope, la lista ya trae todos: se cuentan en memoria
+      // (3 idas a la base menos). Sólo si llenó el tope se cuenta en la base.
+      pendingOrdersLista.length < TOPE_PEDIDOS
+        ? Promise.resolve([
+            pendingOrdersLista.length,
+            pendingOrdersLista.filter((o) => o.createdAt >= cortes.enCursoDesde).length,
+            pendingOrdersLista.filter((o) => o.createdAt < cortes.olvidadoAntesDe).length,
+          ] as const)
+        : Promise.all([
+            prisma.order.count({ where: PEDIDO_SIN_ATENDER }),
+            prisma.order.count({
+              where: { ...PEDIDO_SIN_ATENDER, createdAt: { gte: cortes.enCursoDesde } },
+            }),
+            prisma.order.count({
+              where: { ...PEDIDO_SIN_ATENDER, createdAt: { lt: cortes.olvidadoAntesDe } },
+            }),
+          ]),
+    ]);
     const itemsPorPedido = new Map(detalleRows.map((r) => [r.id, r.items]));
     const tenantMap = new Map<string, { name: string; slug: string }>();
-    if (orderTenantIds.length > 0) {
-      const tenants = await prisma.tenant.findMany({
-        where: {
-          OR: [{ id: { in: orderTenantIds } }, { slug: { in: orderTenantIds } }],
-        },
-        select: { id: true, slug: true, name: true },
-      });
-      for (const t of tenants) {
-        tenantMap.set(t.id, { name: t.name, slug: t.slug });
-        tenantMap.set(t.slug, { name: t.name, slug: t.slug });
-      }
+    for (const t of tenants) {
+      tenantMap.set(t.id, { name: t.name, slug: t.slug });
+      tenantMap.set(t.slug, { name: t.name, slug: t.slug });
     }
 
-    const atRiskRows = rescue.queue.filter((r) => r.riskLevel === "critical" || r.riskLevel === "high");
+    const atRiskRows = rescue.queue.filter(
+      (r) => r.riskLevel === "critical" || r.riskLevel === "high",
+    );
     const atRiskCount = rescue.kpis.critical + rescue.kpis.high;
 
     const buckets: BandejaAvisos["buckets"] = {
