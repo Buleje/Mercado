@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // Estado de cuenta de cada cliente, cada lunes 07:30 (Brandon 03-11-2026). Lo llama ~/.config/systemd/user/estado-cuenta-lunes.timer.
 //
-// Qué hace (SOLO LEE el panel de Blas; nunca escribe en él ni le manda nada a un cliente):
+// Qué hace (LEE el panel de Blas y nunca le manda nada a un cliente; lo único que escribe es la copia de cada papel para
+// su QR, como todo papel de Blas — ADR-534):
 //   1. Lee /api/adelantos/cuentas (la misma lista de «Cuenta por persona» de Adelantos) y toma a quienes le deben a Blas
 //      (`neto` > 0: «positivo = te debe», lib/adelantos/cuenta-unificada.ts).
-//   2. De cada uno lee /api/adelantos/cuentas/estado (movimientos línea por línea) y arma 1 PDF de 1 hoja con el membrete
-//      de Blas (plantilla ~/.local/share/cotizar/plantillas/estado-de-cuenta-cliente.typ).
+//   2. De cada uno lee /api/adelantos/cuentas/estado (movimientos línea por línea) y arma 1 PDF de 1 hoja con el formato
+//      único de los papeles de Blas (molde EC de ~/.local/share/blas-papeles: número EC-, código y QR en el pie; el
+//      molde recalcula el saldo y si no cuadra con el del panel NO sale). En --seco sale de PRUEBA: no gasta número.
 //   3. Le manda a BRANDON por Telegram (su propio bot): un resumen y cada PDF. Si la persona tiene celular, el resumen trae
 //      un enlace wa.me con el texto ya escrito: Brandon lo toca, adjunta el PDF y envía él. Esto NUNCA escribe a un cliente.
 //
@@ -14,9 +16,9 @@
 //   --solo   (para pruebas) únicamente las personas cuyo nombre contiene ese texto.
 // Si el panel está apagado lo prende (como la herramienta panel_prender); si no se puede leer, avisa a Brandon y NO genera PDF.
 import { execFile, spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { crearCliente } from "./src/cliente.mjs";
@@ -25,8 +27,8 @@ import { estadoPanel, prenderPanel } from "./src/panel-local.mjs";
 import { CARPETA_SESIONES, negocioDeConfig } from "./archivar-telegram.mjs";
 
 const BIN = join(homedir(), ".local", "bin");
-const COTIZAR = join(homedir(), ".local", "share", "cotizar");
-export const PLANTILLA = join(COTIZAR, "plantillas", "estado-de-cuenta-cliente.typ");
+const PAPELES = join(homedir(), ".local", "share", "blas-papeles");
+export const MOLDE = join(PAPELES, "moldes", "estado-cuenta.typ");
 const SEMANA = "/mnt/c/Users/Usuario/OneDrive/Documentos/Escritorio/Semana actual/Despachos y clientes";
 
 /**
@@ -38,7 +40,6 @@ function archivarEnPersona(nombre, pdf) {
   const r = spawnSync(join(BIN, "persona"), ["guardar", nombre, pdf, "--estado", "oficial"]  /* 04-11: el oficial nuevo archiva el estado de cuenta anterior */, { encoding: "utf8", timeout: 30_000 });
   return { ok: r.status === 0, salida: `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() };
 }
-const MESES = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split(" ");
 const MAX_FILAS_PDF = 24; // 1 sola hoja: lo anterior se resume en una fila de «saldo anterior»
 const ESPERA_PANEL_MS = 240_000;
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -80,28 +81,32 @@ export function enlaceWa(cel, nombre, saldo) {
 }
 
 /**
- * Pasa las líneas del panel (solo soles, que es lo que suma en «neto») a filas del PDF. Si son más de MAX_FILAS_PDF, las
- * anteriores se resumen en una fila con su saldo, para que entre en 1 hoja.
- * @returns {{ filas: any[], previo: {texto:string,saldo:string}|null, ultimoAbono: string|null }}
+ * Pasa las líneas del panel (solo soles, que es lo que suma en «neto») a los datos del molde EC: fechas AAAA-MM-DD y
+ * cargo/abono como texto; el saldo lo calcula el molde. Si son más de MAX_FILAS_PDF, lo anterior va como «saldo
+ * anterior», para que entre en 1 hoja.
+ * @returns {{ datos: object, ultimoAbono: string|null }}
  */
-export function armarFilas(lineas) {
+export function datosEstadoCuenta(persona, lineas, otras = []) {
   const pen = lineas.filter((l) => (l.moneda || "PEN") === "PEN");
   const abonos = pen.filter((l) => l.monto < 0);
   const ultimoAbono = abonos.length ? abonos[abonos.length - 1].fecha : null;
   const resto = pen.length > MAX_FILAS_PDF ? pen.slice(pen.length - MAX_FILAS_PDF) : pen;
   const antes = pen.length - resto.length;
-  const previo = antes > 0
-    ? { texto: `Saldo que traía antes de ${fechaCorta(resto[0].fecha)} (${antes} movimientos anteriores)`, saldo: monto(pen[antes - 1].acumulado) }
-    : null;
-  const filas = resto.map((l) => ({
-    fecha: fechaCorta(l.fecha),
-    detalle: String(l.concepto ?? ""),
-    ref: String(l.referencia ?? ""),
-    cargo: l.monto > 0 ? monto(l.monto) : "",
-    abono: l.monto < 0 ? monto(-l.monto) : "",
-    saldo: monto(l.acumulado),
-  }));
-  return { filas, previo, ultimoAbono };
+  const iso = (f) => { const { y, m, d } = diaDe(f); return `${y}-${dos(m)}-${dos(d)}`; };
+  const fijo = (n) => r2(n).toFixed(2);
+  const datos = {
+    para: { nombre: persona.nombre, ...(persona.documento ? { doc: String(persona.documento) } : {}) },
+    ...(antes > 0 ? { saldo_anterior: fijo(pen[antes - 1].acumulado), saldo_anterior_fecha: iso(pen[antes - 1].fecha) } : {}),
+    movimientos: resto.map((l) => ({
+      fecha: iso(l.fecha),
+      concepto: String(l.concepto ?? "") || "Movimiento",
+      ref: String(l.referencia ?? ""),
+      ...(l.monto > 0 ? { cargo: fijo(l.monto) } : {}),
+      ...(l.monto < 0 ? { abono: fijo(-l.monto) } : {}),
+    })),
+    otras,
+  };
+  return { datos, ultimoAbono };
 }
 
 // ── Panel ────────────────────────────────────────────────────────────────────
@@ -147,25 +152,26 @@ export function trozos(bloques, tope = 3800) {
 
 // ── PDF ──────────────────────────────────────────────────────────────────────
 
-function hacerPdf({ persona, filas, previo, total, otras, carpeta, hoy }) {
-  const empresa = JSON.parse(readFileSync(join(COTIZAR, "empresa.json"), "utf8"));
-  const datos = {
-    cliente: persona.nombre,
-    documento: persona.documento ? String(persona.documento) : "",
-    fecha_larga: `${hoy.d} de ${MESES[hoy.m - 1]} de ${hoy.y}`,
-    logo: join(COTIZAR, "logo-blas.png"),
-    filas, previo, total: soles(total), otras,
-    cuentas: (empresa.cuentas ?? []).map((c) => ({ banco: c.banco, cta: c.cta, cci: c.cci })),
-  };
+// El papel lo arma `blas_papeles.emitir` (el mismo del programa `papel`): número EC-, código, QR, archivo y copia al
+// panel (con cola si el panel no responde). `esperado_total` = el saldo del panel: si el molde suma otra cosa, no sale.
+const EMITIR_PY = `import json, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import blas_papeles as bp
+m = bp.emitir("estado-cuenta", bp.MOLDES / "estado-cuenta.typ", Path(sys.argv[2]), nombre=sys.argv[3], estado="oficial",
+              prueba=sys.argv[4] == "1", entregar_a=False, esperado_total=sys.argv[5])
+print(json.dumps({k: m.get(k) for k in ("numero", "codigo", "pdf", "hojas", "total", "lineas")}, ensure_ascii=False))`;
+
+function hacerPdf({ persona, datos, total, carpeta, prueba }) {
   const tmp = join(carpeta, `.datos-${process.pid}.json`);
   writeFileSync(tmp, JSON.stringify(datos));
-  const seguro = persona.nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, " ");
-  const salida = join(carpeta, `Estado de cuenta - ${seguro} - ${dos(hoy.d)}-${dos(hoy.m)}.pdf`);
-  const r = spawnSync("typst", ["compile", "--root", "/", "--font-path", join(COTIZAR, "fuentes"), "--input", `datos=${tmp}`, PLANTILLA, salida], { encoding: "utf8" });
-  try { spawnSync("rm", ["-f", tmp]); } catch { /* nada */ }
-  if (r.status !== 0) throw new Error(`typst falló: ${String(r.stderr).slice(-400)}`);
-  const paginas = Number((spawnSync("mutool", ["info", salida], { encoding: "utf8" }).stdout.match(/Pages:\s*(\d+)/) ?? [])[1] ?? 1);
-  return { salida, paginas };
+  const r = spawnSync("python3", ["-c", EMITIR_PY, PAPELES, tmp, persona.nombre, prueba ? "1" : "0", monto(Math.abs(total))], { encoding: "utf8", timeout: 120_000 });
+  rmSync(tmp, { force: true });
+  if (r.status !== 0) throw new Error(`el papel no salió: ${String(r.stderr || r.error || "").trim().split("\n").pop().slice(-200)}`);
+  const papel = JSON.parse(String(r.stdout).trim().split("\n").pop());
+  const salida = join(carpeta, basename(papel.pdf));
+  copyFileSync(papel.pdf, salida);
+  return { salida, paginas: Number(papel.hojas) || 1, numero: papel.numero, panel: (papel.lineas ?? []).join(" · ") };
 }
 
 // ── Principal ────────────────────────────────────────────────────────────────
@@ -219,13 +225,14 @@ export async function estadoCuentaLunes(argv, deps = {}) {
     if (p.parteId) query.parte = p.parteId;
     const det = await cliente.pedir(negocio, { metodo: "GET", ruta: "/api/adelantos/cuentas/estado", query, sinRecorte: true });
     if (!det.ok || !Array.isArray(det.datos?.lineas)) { fallidos.push(`${p.nombre} (no se leyó su cuenta)`); continue; }
-    const { filas, previo, ultimoAbono } = armarFilas(det.datos.lineas);
+    const { datos, ultimoAbono } = datosEstadoCuenta(p, det.datos.lineas, []);
     const netoDetalle = det.datos.totales?.neto;
     // El PDF y la lista tienen que decir lo mismo: si no cuadran, no se manda un número dudoso.
     if (typeof netoDetalle === "number" && Math.abs(netoDetalle - p.neto) > 0.01) { fallidos.push(`${p.nombre} (su detalle dice ${soles(netoDetalle)} y la lista ${soles(p.neto)})`); continue; }
     const otras = Object.entries(p.otrasMonedas ?? {}).filter(([, v]) => Math.abs(v) > 0.005).map(([m, v]) => `${m} ${monto(v)}`);
     try {
-      const { salida, paginas } = hacerPdf({ persona: p, filas, previo, total: p.neto, otras, carpeta, hoy });
+      const { salida, paginas, numero, panel } = hacerPdf({ persona: p, datos: { ...datos, otras }, total: p.neto, carpeta, prueba: a.seco });
+      log(`${numero} · ${p.nombre} · ${soles(p.neto)}${panel ? ` · ${panel}` : ""}`);
       if (paginas > 1) log(`ojo: el PDF de ${p.nombre} salió de ${paginas} hojas`);
       const dias = ultimoAbono ? Math.max(0, hoy.n - diaNumero(ultimoAbono)) : null;
       hechos.push({ persona: p, pdf: salida, paginas, dias, ultimoAbono, cel: celularWa(p.telefono) });
