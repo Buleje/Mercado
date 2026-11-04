@@ -30,6 +30,8 @@
  *      {"eval": "…dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))"}; carpetas del explorador = [data-clave^='c:'],
  *      papeles = [data-clave^='d:'], tarjeta = main [draggable=true]) \
  *     [--voz-falsa]   (la voz anota cada frase en window.__qaVoz en vez de hablar: verificar «Leer») \
+ *     [--click "<texto|selector>"] [--scroll-a "<texto>"]   (04-11: atajos repetibles sin JSON: pestaña interna o
+ *                    menú solo-ícono con `role=button[name="Opciones"]`; bajar a una sección bajo el pliegue) \
  *     [--candado]   (toma /tmp/bsm-pesado.lock por su cuenta y avisa por stderr cuánto lleva esperándolo;
  *                    si ya lo corres con `flock /tmp/bsm-pesado.lock node …`, lo detecta y no lo pide otra vez)
  *
@@ -297,6 +299,17 @@ try {
   if (!propios) throw new Error("los pasos van en un array (o en {\"pasos\": [...]})");
   // Un {"preset": "x"} dentro de --pasos/--pasos-archivo también se abre (15-10: sólo lo hacía --preset).
   pasos = [...dePresets, ...propios.flatMap((p) => (p && typeof p === "object" && typeof p.preset === "string" ? leerPreset(p.preset).pasos : [p]))];
+  /* 04-11 (2 ayudantes del chat 6 perdieron la vista por no poder cambiar de pestaña interna ni bajar
+     a una sección): atajos sin JSON, en el orden en que vienen y DESPUÉS de --preset/--pasos.
+     `--click "Tiendas"` = clicTexto (botón/pestaña cuyo texto empieza así) o `click` si parece
+     selector (`role=button[name="Opciones"]`, `text=…`, `#id`, `.clase`, `[attr]`), y espera 1 s a
+     que cargue lo de adentro; `--scroll-a "Madera que se mueve"` = verTexto. Se pueden repetir. */
+  const pareceSelector = (s) => /^(role=|text=|css=|xpath=|#|\.|\[)/.test(s);
+  for (let i = 2; i < process.argv.length - 1; i++) {
+    const [a, v] = [process.argv[i], process.argv[i + 1]];
+    if (a === "--click") pasos.push(pareceSelector(v) ? { click: v } : { clicTexto: v }, { esperar: 1000 });
+    else if (a === "--scroll-a") pasos.push({ verTexto: v });
+  }
   /* {"medir": "<selector raíz>" | true} (10-10): la medición de una vista del panel que 3
      carriles (Hoy, Calendario, Logros) escribieron a mano: pantallas, títulos por nivel,
      textos visibles de menos de 14 px, botones de menos de 48 px de alto y desborde. Se

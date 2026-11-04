@@ -1,0 +1,24 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=ctp-libro-operaciones&vista=produccion",
+ "pasos": [
+  {
+   "eval": "(()=>{const slug=(document.cookie.match(/(?:^|;\\s*)active-tenant-slug=([^;]+)/)||[])[1]||localStorage.getItem('active-tenant-slug')||'sin-tenant';const k='buleje-cubicacion-'+decodeURIComponent(slug)+'-ctp-produccion';const P=(id,c,e,a,l,esp)=>({id,cantidad:c,espesor:e,ancho:a,largo:l,uEspesor:'pulg',uAncho:'pulg',uLargo:'pies',especie:esp,pieTablar:e*a*l*c/12,m3:e*a*l*c/12/424});localStorage.setItem(k,JSON.stringify([P('qa1',8,2,6,10,'Tornillo'),P('qa2',4,2,4,8,'Tornillo')]));const d=new Date(Date.now()-3*86400000).toISOString();localStorage.setItem(k+'-cuando',JSON.stringify({desde:d,ultima:d}));location.reload();return k})()"
+  },
+  {
+   "esperar": "role=button[name=\"Opciones\"]"
+  },
+  {
+   "click": "role=button[name=\"Opciones\"]"
+  },
+  {
+   "click": "text=/Producir sin lote/"
+  },
+  {
+   "esperar": "[data-aviso-cubicado]"
+  },
+  {
+   "eval": "(()=>{const a=document.querySelector('[data-aviso-cubicado]');const r=a.getBoundingClientRect();return {tipo:a.dataset.avisoCubicado,texto:a.textContent,ancho:Math.round(r.width),alto:Math.round(r.height),botones:[...a.querySelectorAll('button')].map(b=>b.textContent+' '+Math.round(b.getBoundingClientRect().height)+'px'),textoColor:getComputedStyle(a.querySelector('p')).color,fondo:getComputedStyle(a).backgroundColor}})()"
+  }
+ ]
+}
