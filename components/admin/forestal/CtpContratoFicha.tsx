@@ -45,6 +45,7 @@ import CtpContratoBalance from "./CtpContratoBalance";
 import CtpPermisoTraza from "./CtpPermisoTraza";
 import CtpPermisoVolumen from "./CtpPermisoVolumen";
 import { ESTADO_CLASE, ESTADO_LABEL, TIPO_LABEL, vigenciaTexto } from "./contratos-ui";
+import { OsinforEstadoPermiso } from "./OsinforEstadoPermiso";
 import {
   escribirSeccionEnUrl,
   SECCION_FICHA_DEFAULT,
@@ -271,6 +272,7 @@ export default function CtpContratoFicha({
               {contrato.tipo ? TIPO_LABEL[contrato.tipo] : "Tipo sin definir"} ·{" "}
               {vigenciaTexto(contrato.vigenciaDesde, contrato.vigenciaHasta)}
             </p>
+            <OsinforEstadoPermiso codigo={contrato.codigo} />
           </div>
           <div className="flex flex-col items-end gap-2 max-sm:w-full max-sm:items-start">
             <div className="flex flex-wrap items-center gap-2">
