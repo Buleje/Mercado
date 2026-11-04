@@ -29,6 +29,7 @@ import CtpKpiFiltros from "./CtpKpiFiltros";
 import CtpCuadreSniffs from "./CtpCuadreSniffs";
 import CtpDescuadresPanel from "./CtpDescuadresPanel";
 import CtpSobreTopePanel from "./CtpSobreTopePanel";
+import CtpProveedoresSancionesPanel from "./CtpProveedoresSancionesPanel";
 import { Btn, VistaHeader } from "./ctp-shared";
 import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import CtpComplianceScore, { TONE_LABEL } from "./CtpComplianceScore";
@@ -214,6 +215,10 @@ export default function CtpCumplimientoChequeo({
       {/* El espejo del anterior, del otro lado del libro (ADR-358): corridas que
           declaran más de lo que sale de su materia prima. */}
       <CtpSobreTopePanel onNavigate={() => onNavigate("produccion")} />
+
+      {/* De quién se compra (04-11): toda la libreta contra el Registro de
+          Infractores de SERFOR y la lista roja / PAU de OSINFOR. Solo al tocar. */}
+      <CtpProveedoresSancionesPanel />
 
       {problemas.length > 0 && (
         <section className="space-y-3">
