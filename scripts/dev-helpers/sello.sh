@@ -8,6 +8,13 @@
 #   sello.sh ok <nombre> <clave> [arch…] → 0 si hay sello válido (y cubre esos archivos)
 #   sello.sh poner <nombre> <clave> [arch…]
 set -f
+# La clave se calcula siempre contra el índice REAL (04-11): `git commit -- <archivos>`
+# corre el pre-commit con un índice temporal (HEAD + esos archivos) en
+# GIT_INDEX_FILE; ahí los archivos nuevos ya agregados (`A`) salen como sueltos,
+# la clave no coincidía con la del typecheck/probar.sh y el commit repetía tsc +
+# vitest (~66 s) aunque nada hubiera cambiado. `git diff HEAD` compara el árbol
+# de trabajo con HEAD: el índice solo decide qué archivos nuevos se ven.
+unset GIT_INDEX_FILE
 RAIZ=$(git rev-parse --show-toplevel) || exit 1
 cd "$RAIZ" || exit 1
 DIR="$(git rev-parse --git-dir)/buleje-sellos"
