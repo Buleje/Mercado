@@ -8,6 +8,8 @@ allowed-tools: mcp__desktop-control, Bash, Read
 
 # Desktop Control
 
+> **Primero la 2.ª PC (Brandon 04-11):** clics y teclas en apps de Windows van por `pc2` (skill `pc2`, Chrome aparte en `127.0.0.1:9333`), no en su pantalla: en 3 días este MCP paró 16 veces porque Brandon usaba su mouse. Su pantalla solo si la app no abre en la 2.ª PC (apps de la Tienda, Office ya abierto allá), si `pc2 estado` falla o si él pide verlo.
+
 MCP `desktop-control` (permisos en `.claude/settings.json` y modo bypass del usuario). Cargar con `ToolSearch select:mcp__desktop-control__<nombre>`.
 
 ## Orden de preferencia
