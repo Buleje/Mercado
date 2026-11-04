@@ -79,13 +79,12 @@ const SECTIONS: Section[] = [
   {
     href: "/superadmin/marketplace/commissions",
     title: "Comisiones",
-    desc: "Configura porcentajes de comisión por categoría, por plan o por vendor individual.",
+    desc: "Lo que la plataforma cobró por negocio y por movimiento: por liquidar, liquidado y devuelto.",
     hint: "Modelo de revenue",
     icon: Percent,
-    status: "soon",
-    ariaLabel: "Comisiones — próximamente",
-    eta: "Q3 2026",
-    cta: "Próximamente",
+    status: "live",
+    ariaLabel: "Ver comisiones del marketplace",
+    cta: "Ver comisiones",
   },
   {
     href: "/superadmin/marketplace/vendors",

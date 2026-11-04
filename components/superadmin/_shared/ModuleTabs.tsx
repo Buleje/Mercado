@@ -25,6 +25,7 @@ import {
   Cable,
   MapPin,
   Boxes,
+  Percent,
   BarChart3,
   Activity,
   Layers,
@@ -243,6 +244,7 @@ export const VENDORS_TABS: ModuleTab[] = [
 export const MARKETPLACE_TABS: ModuleTab[] = [
   { label: "Resumen", href: "/superadmin/marketplace", icon: Store },
   { label: "Tiendas", href: "/superadmin/stores", icon: Boxes },
+  { label: "Comisiones", href: "/superadmin/marketplace/commissions", icon: Percent },
 ];
 
 export const MARCA_TABS: ModuleTab[] = [
