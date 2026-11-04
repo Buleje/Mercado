@@ -121,6 +121,10 @@
  * `--superadmin` (17-10): entra al superadmin con `dev-helpers/superadmin-auth.mjs --json` (mismo
  * User-Agent que el login, la sesión lo exige) en vez del login del panel; `--ruta /superadmin/...`.
  * Tres agentes de «Plantas forestales» armaron eso a mano con Playwright el mismo día.
+ *
+ * `--sin-login`: páginas PÚBLICAS sin sesión (enlace de cotización `/cotizacion/<token>`, estado de
+ * cuenta `/estado-cuenta/<token>`, tienda): no entra al panel. 04-11 un ayudante la armó a mano con
+ * Playwright suelto porque esta opción no estaba escrita acá.
  */
 import { chromium } from "playwright";
 import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync, readdirSync, readlinkSync, statSync } from "node:fs";

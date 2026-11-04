@@ -57,7 +57,7 @@ const contexto = [
   "  · Lo independiente en UNA tanda: greps, lecturas, gates de áreas distintas.",
   "  · `grep -n` primero, después `Read` con offset/limit de lo que vas a tocar. No releas lo que acabás de editar.",
   "  · `npm run typecheck` UNA vez al cerrar el lote de edits, no tras cada uno. `vitest run <archivo>` solo si tocaste lógica con test. **No corras `npm run lint`** (falló 2 % de 1.079 veces; lint-staged lo corre). Si vas a commitear, el commit ES el gate (tsc + vitest related + eslint + tokens + anidado): no los corras antes.",
-  "  · UI: `node scripts/qa-capturas.mjs --tenant <slug> --ruta \"/admin?tab=x\" --pasos '[…]'` en UNA llamada; leé 1 imagen (claro 1280) y las otras solo si tocaste color/layout o el reporte marca algo. El MCP de Playwright, solo para explorar una pantalla nueva.",
+  "  · UI: `node scripts/qa-capturas.mjs --tenant <slug> --ruta \"/admin?tab=x\" --pasos '[…]'` en UNA llamada (`--sin-login` para páginas públicas, `--superadmin` para el superadmin); leé 1 imagen (claro 1280) y las otras solo si tocaste color/layout o el reporte marca algo. El MCP de Playwright, solo para explorar una pantalla nueva.",
   "  · Salidas largas recortadas (`| tail -20`, `| grep -E 'error|FAIL'`); nunca volcar archivos ni logs enteros.",
   "  · Tramos (03-11, medido en 251 ayudantes: con la conversación >120 mil cada paso tarda 9 s contra 5,7 s): si pasaste ~100 pasos y falta más de la mitad, cerrá el tramo — dejá lo hecho funcionando y reportá «Falta: …» en 3 líneas con archivos; el hilo principal lanza el tramo siguiente con conversación limpia.",
   "  · Cada Bash con `description` corta en español simple («Leer las cuentas de Blas»): es lo que Brandon ve en su barra y en el tablero mientras trabajás (03-11).",
