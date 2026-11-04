@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decidirAvisoLista, esperadosEseDia, minutosDeLima, textoAvisoLista } from "@/lib/rrhh/aviso-pasar-lista";
+import { decidirAvisoLista, diasEntre, esperadosEseDia, minutosDeLima, textoAvisoLista, ultimoDiaMarcado } from "@/lib/rrhh/aviso-pasar-lista";
 import type { ColaboradorMinDTO } from "@/lib/rrhh/tipos";
 
 const base = { minutosLima: 9 * 60, esperados: 11, marcasHoy: 0 };
@@ -49,8 +49,29 @@ describe("textoAvisoLista / minutosDeLima", () => {
     expect(textoAvisoLista("Blas", 11, "https://x/y")).toBe("Hoy nadie marcó asistencia en Blas (11 trabajadores). Pasar lista: https://x/y");
     expect(textoAvisoLista("Blas", 1, "u")).toContain("(1 trabajador)");
   });
+  it("suma «último día marcado» cuando se conoce", () => {
+    expect(textoAvisoLista("Blas", 11, "https://x/y", { fecha: "2026-10-27", hoy: "2026-11-04" })).toBe(
+      "Hoy nadie marcó asistencia en Blas (11 trabajadores; último día marcado: 27-10, hace 8 días). Pasar lista: https://x/y",
+    );
+    expect(textoAvisoLista("Blas", 1, "u", { fecha: "2026-11-03", hoy: "2026-11-04" })).toContain("hace 1 día)");
+    expect(textoAvisoLista("Blas", 1, "u", null)).toBe("Hoy nadie marcó asistencia en Blas (1 trabajador). Pasar lista: u");
+  });
   it("Lima es UTC-5", () => {
     expect(minutosDeLima(new Date("2026-10-26T14:00:00Z"))).toBe(9 * 60);
     expect(minutosDeLima(new Date("2026-10-26T03:00:00Z"))).toBe(22 * 60);
+  });
+});
+
+describe("ultimoDiaMarcado / diasEntre", () => {
+  it("toma el día más reciente ANTERIOR a hoy, con cualquier marca", () => {
+    expect(ultimoDiaMarcado(["2026-10-20", "2026-10-27", "2026-10-27", "2026-10-22"], "2026-11-04")).toBe("2026-10-27");
+  });
+  it("ignora hoy y el futuro; sin marcas da null", () => {
+    expect(ultimoDiaMarcado(["2026-11-04", "2026-11-09"], "2026-11-04")).toBeNull();
+    expect(ultimoDiaMarcado([], "2026-11-04")).toBeNull();
+  });
+  it("cuenta días de calendario (cruza mes y año)", () => {
+    expect(diasEntre("2026-10-27", "2026-11-04")).toBe(8);
+    expect(diasEntre("2026-12-30", "2027-01-02")).toBe(3);
   });
 });

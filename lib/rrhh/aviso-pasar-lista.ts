@@ -7,6 +7,9 @@
 import { feriadoDe } from "@/lib/feriados-peru";
 import type { ColaboradorMinDTO, FechaKey } from "./tipos";
 
+/** Cuántos días hacia atrás se mira para decir «último día marcado» (si no hay marca en la ventana, no se dice). */
+export const VENTANA_ULTIMO_MARCADO_DIAS = 60;
+
 /** Hora desde la que toca avisar (9:00 de Lima). */
 export const HORA_AVISO_LISTA_MIN = 9 * 60;
 
@@ -39,9 +42,27 @@ export function decidirAvisoLista(p: {
   return { avisar: true, motivo: "avisar" };
 }
 
-export function textoAvisoLista(nombre: string, esperados: number, enlace: string): string {
+/** Último día ANTERIOR a `antesDe` con alguna marca (la que sea: presente, falta, permiso…), o null si no hay ninguna. */
+export function ultimoDiaMarcado(fechasConMarca: readonly FechaKey[], antesDe: FechaKey): FechaKey | null {
+  let ultimo: FechaKey | null = null;
+  for (const f of fechasConMarca) if (f < antesDe && (ultimo === null || f > ultimo)) ultimo = f;
+  return ultimo;
+}
+
+/** Días de calendario entre dos fechas de Lima (hasta − desde). */
+export function diasEntre(desde: FechaKey, hasta: FechaKey): number {
+  return Math.round((Date.parse(`${hasta}T12:00:00Z`) - Date.parse(`${desde}T12:00:00Z`)) / 86_400_000);
+}
+
+export function textoAvisoLista(nombre: string, esperados: number, enlace: string, ultimoMarcado?: { fecha: FechaKey; hoy: FechaKey } | null): string {
   const gente = esperados === 1 ? "1 trabajador" : `${esperados} trabajadores`;
-  return `Hoy nadie marcó asistencia en ${nombre} (${gente}). Pasar lista: ${enlace}`;
+  let detalle = gente;
+  if (ultimoMarcado) {
+    const n = diasEntre(ultimoMarcado.fecha, ultimoMarcado.hoy);
+    const [, mes, dia] = ultimoMarcado.fecha.split("-");
+    detalle += `; último día marcado: ${dia}-${mes}, hace ${n} ${n === 1 ? "día" : "días"}`;
+  }
+  return `Hoy nadie marcó asistencia en ${nombre} (${detalle}). Pasar lista: ${enlace}`;
 }
 
 /** Minutos desde las 0:00 en Lima (UTC-5 todo el año, sin horario de verano). */
