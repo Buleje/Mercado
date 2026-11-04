@@ -183,6 +183,21 @@ export function clavesDeSancion(s: SancionSerfor): string[] {
   return [`${numero}|n:${nombre}`, ...(s.documento ? [`${numero}|d:${personaDelDocumento(s.documento)}`] : [])];
 }
 
+/**
+ * El nombre comparable de cada sanción, calculado una vez por fila (04-11): «Revisar a todos»
+ * busca cada ficha contra las 6.303 filas y antes lo recalculaba en cada búsqueda (600 búsquedas
+ * = 2,1 s con el hilo trabado, medido por el revisor). La lista vive en caché, así que se reusa.
+ */
+const nombrePorSancion = new WeakMap<SancionSerfor, string | null>();
+function nombreDeSancion(s: SancionSerfor): string | null {
+  let n = nombrePorSancion.get(s);
+  if (n === undefined) {
+    n = nombreComparable(s.infractor);
+    nombrePorSancion.set(s, n);
+  }
+  return n;
+}
+
 /** Busca al titular en la lista. `corte` es la fecha de la lista (se muestra tal cual). */
 export function buscarInfractor(
   sanciones: SancionSerfor[],
@@ -212,7 +227,7 @@ export function buscarInfractor(
     const otraPersona = persona != null && suPersona != null && suPersona.length === persona.length && suPersona !== persona;
     if (persona && suPersona === persona) motivo = "documento";
     else if (codigo && s.tituloHab === codigo) motivo = otraPersona ? "permiso_otro" : "permiso";
-    else if (nombre && !otraPersona && nombreComparable(s.infractor) === nombre) motivo = "nombre";
+    else if (nombre && !otraPersona && nombreDeSancion(s) === nombre) motivo = "nombre";
     if (motivo) candidatas.push({ ...s, motivo });
   }
   candidatas.sort(
