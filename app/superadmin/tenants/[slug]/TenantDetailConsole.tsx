@@ -159,7 +159,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 flex-1 min-w-[260px]">
               <SAKpiCard label="Logins 7d" value={h.loginsLast7d} sub={`30d: ${h.loginsLast30d}`} tone={h.loginsLast7d > 0 ? "good" : "warn"} />
-              <SAKpiCard label="Pedidos 7d" value={h.ordersLast7d} sub={`30d: ${h.ordersLast30d}`} tone={h.ordersLast7d > 0 ? "good" : "warn"} />
+              <SAKpiCard label="Operaciones 7d" value={h.ordersLast7d} sub={`30d: ${h.ordersLast30d}`} tone={h.ordersLast7d > 0 ? "good" : "warn"} />
               <SAKpiCard label="Funciones" value={`${h.featuresUsed}/47`} sub="recursos usados" />
               <SAKpiCard label="Sin pedido" value={`${h.daysSinceLastOrder}d`} tone={h.daysSinceLastOrder >= 7 ? "bad" : "default"} />
               <SAKpiCard label="Sin login" value={`${h.daysSinceLastLogin}d`} tone={h.daysSinceLastLogin >= 7 ? "bad" : "default"} />

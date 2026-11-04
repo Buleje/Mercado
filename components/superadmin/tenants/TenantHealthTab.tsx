@@ -154,9 +154,9 @@ export function TenantHealthTab({ slug }: { slug: string }) {
 
   const drivers: { icon: typeof LogIn; label: string; value: string; warn: boolean }[] = [
     { icon: LogIn, label: "Logins 7d / 30d", value: `${score.loginsLast7d} / ${score.loginsLast30d}`, warn: score.loginsLast7d === 0 },
-    { icon: ShoppingBag, label: "Pedidos 7d / 30d", value: `${score.ordersLast7d} / ${score.ordersLast30d}`, warn: score.ordersLast7d === 0 },
+    { icon: ShoppingBag, label: "Operaciones 7d / 30d", value: `${score.ordersLast7d} / ${score.ordersLast30d}`, warn: score.ordersLast7d === 0 },
     { icon: Clock, label: "Días sin login", value: `${score.daysSinceLastLogin}`, warn: score.daysSinceLastLogin >= 7 },
-    { icon: TrendingDown, label: "Días sin vender", value: `${score.daysSinceLastOrder}`, warn: score.daysSinceLastOrder >= 7 },
+    { icon: TrendingDown, label: "Días sin operar", value: `${score.daysSinceLastOrder}`, warn: score.daysSinceLastOrder >= 7 },
     { icon: Layers, label: "Funciones usadas", value: `${score.featuresUsed} / 47`, warn: score.featuresUsed <= 3 },
     { icon: Clock, label: "Trial restante", value: score.trialDaysLeft !== null ? `${score.trialDaysLeft} días` : "—", warn: score.trialDaysLeft !== null && score.trialDaysLeft <= 3 },
   ];

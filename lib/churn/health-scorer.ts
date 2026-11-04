@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { sinDato } from "@/lib/errores/sin-dato";
+import { SaludNegocioDB, type SenalesDeUso } from "@/lib/db/salud-negocio.db";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -33,12 +33,14 @@ const TOTAL_RBAC_RESOURCES = 47;
 // ─── Lógica de scoring ───────────────────────────────────────────────────────
 
 /**
- * Pesos por categoría (suman 100):
- * - Logins (7d + 30d): 25
- * - Pedidos (7d + 30d): 30
- * - Features usadas: 20
- * - Días sin pedido: 15
+ * Pesos por categoría (suman 100). Desde 04-11 miden USO REAL (`SaludNegocioDB.senalesDeUso`):
+ * - Ingresos de personas (7d + 30d): 25         (`login_success`, sin usuarios máquina)
+ * - Operaciones (7d + 30d): 30                   (pedidos + ventas POS + libro CTP + trozas)
+ * - Módulos usados en 30d: 20                    (entidades distintas tocadas por personas)
+ * - Días sin operar: 15
  * - Trial days left: 10
+ * Los campos `orders*` / `daysSinceLastOrder` conservan su nombre (columnas de TenantHealthScore)
+ * pero hoy significan «operaciones»; las filas anteriores al 04-11 cuentan sólo pedidos.
  */
 
 function scoreLogins(loginsLast7d: number, loginsLast30d: number): number {
@@ -85,6 +87,51 @@ export function classifyRisk(score: number): RiskLevel {
   return "critical";
 }
 
+const MS_DIA = 24 * 60 * 60 * 1000;
+
+/** Días enteros desde `fecha` hasta `ahora`; null (nunca pasó) = 999, como siempre en este módulo. */
+function diasDesde(fecha: Date | null, ahora: Date): number {
+  if (!fecha) return 999;
+  return Math.max(0, Math.floor((ahora.getTime() - fecha.getTime()) / MS_DIA));
+}
+
+/**
+ * Señales de uso → puntaje 0-100 (función pura: sin base, sin reloj; `ahora` entra por parámetro).
+ * Misma escala y mismos umbrales de riesgo de siempre; sólo cambia QUÉ se cuenta.
+ */
+export function puntajeDesdeSenales(
+  tenantId: string,
+  senales: SenalesDeUso,
+  trialDaysLeft: number | null,
+  ahora: Date,
+): HealthScoreResult {
+  const daysSinceLastOrder = diasDesde(senales.ultimaOperacion, ahora);
+  const daysSinceLastLogin = diasDesde(senales.ultimoIngreso, ahora);
+
+  const score = Math.min(
+    100,
+    scoreLogins(senales.ingresos7d, senales.ingresos30d) +
+    scoreOrders(senales.operaciones7d, senales.operaciones30d) +
+    scoreFeatures(senales.modulos30d) +
+    scoreDaysSinceLastOrder(daysSinceLastOrder) +
+    scoreTrialDaysLeft(trialDaysLeft),
+  );
+
+  return {
+    tenantId,
+    score,
+    loginsLast7d: senales.ingresos7d,
+    loginsLast30d: senales.ingresos30d,
+    ordersLast7d: senales.operaciones7d,
+    ordersLast30d: senales.operaciones30d,
+    featuresUsed: senales.modulos30d,
+    daysSinceLastOrder: daysSinceLastOrder === 999 ? 0 : daysSinceLastOrder,
+    daysSinceLastLogin: daysSinceLastLogin === 999 ? 0 : daysSinceLastLogin,
+    trialDaysLeft,
+    riskLevel: classifyRisk(score),
+  };
+}
+
 // ─── Calculo principal ───────────────────────────────────────────────────────
 
 export async function calculateHealthScore(tenantSlug: string): Promise<HealthScoreResult> {
@@ -101,79 +148,10 @@ export async function calculateHealthScore(tenantSlug: string): Promise<HealthSc
     throw new Error(`Tenant no encontrado: ${tenantSlug}`);
   }
 
-  // Conteo de logins via ActivityLog (action = "login")
-  const [loginsLast7d, loginsLast30d] = await Promise.all([
-    prisma.activityLog.count({
-      where: {
-        entity: "auth",
-        action: "login",
-        // ActivityLog no tiene tenantId directo — filtramos por entityId que es el tenantId
-        entityId: tenant.id,
-        createdAt: { gte: sevenDaysAgo },
-      },
-    }).catch(() => 0),
-    prisma.activityLog.count({
-      where: {
-        entity: "auth",
-        action: "login",
-        entityId: tenant.id,
-        createdAt: { gte: thirtyDaysAgo },
-      },
-    }).catch(() => 0),
-  ]);
-
-  // Conteo de pedidos
-  const [ordersLast7d, ordersLast30d, lastOrder] = await Promise.all([
-    prisma.order.count({
-      where: { tenantId: tenant.id, createdAt: { gte: sevenDaysAgo } },
-    }).catch(() => 0),
-    prisma.order.count({
-      where: { tenantId: tenant.id, createdAt: { gte: thirtyDaysAgo } },
-    }).catch(() => 0),
-    prisma.order.findFirst({
-      where: { tenantId: tenant.id },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
-    }).catch(sinDato("churn/health-scorer último pedido del tenant")),
-  ]);
-
-  // Features usadas: contar recursos distintos en ActivityLog últimos 30 días
-  let featuresUsed = 0;
-  try {
-    const activityEntities = await prisma.activityLog.findMany({
-      where: {
-        entityId: tenant.id,
-        createdAt: { gte: thirtyDaysAgo },
-      },
-      select: { entity: true },
-      distinct: ["entity"],
-    });
-    featuresUsed = activityEntities.length;
-  } catch {
-    featuresUsed = 0;
-  }
-
-  // Días desde último pedido
-  const daysSinceLastOrder = lastOrder
-    ? Math.floor((now.getTime() - lastOrder.createdAt.getTime()) / (1000 * 60 * 60 * 24))
-    : 999;
-
-  // Días desde último login (via ActivityLog)
-  let daysSinceLastLogin = 999;
-  try {
-    const lastLogin = await prisma.activityLog.findFirst({
-      where: { entity: "auth", action: "login", entityId: tenant.id },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
-    });
-    if (lastLogin) {
-      daysSinceLastLogin = Math.floor(
-        (now.getTime() - lastLogin.createdAt.getTime()) / (1000 * 60 * 60 * 24)
-      );
-    }
-  } catch {
-    daysSinceLastLogin = 999;
-  }
+  // Señales reales de uso (ingresos de personas, operaciones, módulos). Un fallo de la
+  // base NO debe pintar «crítico» a un negocio sano: se deja pasar el error y el cron
+  // lo cuenta como tenant fallido (Promise.allSettled) en vez de guardar ceros.
+  const senales = await SaludNegocioDB.senalesDeUso(tenant.id, sevenDaysAgo, thirtyDaysAgo);
 
   // Días de trial restantes
   let trialDaysLeft: number | null = null;
@@ -182,40 +160,19 @@ export async function calculateHealthScore(tenantSlug: string): Promise<HealthSc
     trialDaysLeft = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
   }
 
-  // Score final
-  const score = Math.min(
-    100,
-    scoreLogins(loginsLast7d, loginsLast30d) +
-    scoreOrders(ordersLast7d, ordersLast30d) +
-    scoreFeatures(featuresUsed) +
-    scoreDaysSinceLastOrder(daysSinceLastOrder) +
-    scoreTrialDaysLeft(trialDaysLeft)
-  );
-
-  const riskLevel = classifyRisk(score);
+  const result = puntajeDesdeSenales(tenant.id, senales, trialDaysLeft, now);
 
   logger.info("[health-scorer] Score calculado", {
     tenantSlug,
-    score,
-    riskLevel,
-    loginsLast7d,
-    ordersLast7d,
-    featuresUsed,
+    score: result.score,
+    riskLevel: result.riskLevel,
+    ingresos7d: senales.ingresos7d,
+    operaciones7d: senales.operaciones7d,
+    modulos30d: senales.modulos30d,
+    desglose30d: senales.desglose30d,
   });
 
-  return {
-    tenantId: tenant.id,
-    score,
-    loginsLast7d,
-    loginsLast30d,
-    ordersLast7d,
-    ordersLast30d,
-    featuresUsed,
-    daysSinceLastOrder: daysSinceLastOrder === 999 ? 0 : daysSinceLastOrder,
-    daysSinceLastLogin: daysSinceLastLogin === 999 ? 0 : daysSinceLastLogin,
-    trialDaysLeft,
-    riskLevel,
-  };
+  return result;
 }
 
 // ─── Detección de señales ────────────────────────────────────────────────────
@@ -257,14 +214,14 @@ export async function detectSignals(
     });
   }
 
-  // Señal: caída de pedidos (>50% vs mes anterior)
+  // Señal: caída de operaciones (>50% vs mes anterior)
   if (previous && previous.ordersLast30d > 3) {
     const orderDrop = (previous.ordersLast30d - current.ordersLast30d) / previous.ordersLast30d;
     if (orderDrop >= 0.5) {
       signals.push({
         signalType: "order_drop",
         severity: orderDrop >= 0.8 ? "critical" : "high",
-        detail: `Pedidos cayeron ${Math.round(orderDrop * 100)}% (de ${previous.ordersLast30d} a ${current.ordersLast30d} en 30 días). Tenant: ${tenantSlug}`,
+        detail: `Operaciones (pedidos, ventas y libro CTP) cayeron ${Math.round(orderDrop * 100)}% (de ${previous.ordersLast30d} a ${current.ordersLast30d} en 30 días). Tenant: ${tenantSlug}`,
       });
     }
   }
