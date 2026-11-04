@@ -310,8 +310,8 @@
       "Bash(wc *)",
       "Bash(which *)",
       "Edit(${CLAUDE_PROJECT_DIR}/**)",
-      "Glob(*)",
-      "Grep(*)",
+      "Glob",
+      "Grep",
       "Read(${CLAUDE_PROJECT_DIR}/**)",
       "Skill(*)",
       "WebFetch(domain:anthropic.com)",
@@ -442,17 +442,8 @@
       "Bash(vercel remove*)",
       "Bash(vercel rollback --yes*)",
       "Bash(supabase db reset*)",
-      "Read(${CLAUDE_PROJECT_DIR}/.env)",
-      "Read(${CLAUDE_PROJECT_DIR}/.env.local)",
-      "Read(${CLAUDE_PROJECT_DIR}/.env.production)",
-      "Read(${CLAUDE_PROJECT_DIR}/.env.preview)",
-      "Edit(${CLAUDE_PROJECT_DIR}/.env)",
-      "Edit(${CLAUDE_PROJECT_DIR}/.env.local)",
-      "Edit(${CLAUDE_PROJECT_DIR}/.env.production)",
-      "Edit(${CLAUDE_PROJECT_DIR}/.env.preview)",
       "Bash(chmod -R 777*)",
-      "Bash(chmod 777 /*)",
-      "Bash(env)"
+      "Bash(chmod 777 /*)"
     ]
   },
   "worktree": {

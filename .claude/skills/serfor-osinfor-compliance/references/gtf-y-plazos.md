@@ -32,5 +32,5 @@ Caoba (*Swietenia macrophylla*), cedro (*Cedrela* spp.) y shihuahuaco (*Dipteryx
 - Guía práctica del LO-CTP (PDF): https://cdn.www.gob.pe/uploads/document/file/6264954/5511967-guia-practica-para-la-implementacion-y-uso-del-libro-de-operaciones-de-centros-de-transformacion-primaria-de-productos-y-subproductos-forestales-maderables.pdf
 - GTF, preguntas frecuentes: https://www.serfor.gob.pe/portal/faq/guia-de-transporte-forestal-3
 - OSINFOR SIGO-SFC (trazabilidad del TH, DataBOSQUE): https://sigosfc.osinfor.gob.pe/
-- gob.pe da 403 al fetch directo: usar `firecrawl_scrape` con `parsers:["pdf"]` y `proxy:"stealth"`. Docs de librerías (Next, Prisma, Tailwind): Context7.
+- gob.pe da 403 al fetch directo: bajar el PDF con el navegador invisible (Playwright) o `curl -A "Mozilla/5.0"` y leerlo con `leer-pdf` (Firecrawl apagado desde 03-11-2026). Docs de librerías (Next, Prisma, Tailwind): Context7.
 - Memorias: `ctp-libro-invariantes-2026-07-15`, `forestal-lotes-produccion-2026-07-17`, `crear-especializacion-checklist`.

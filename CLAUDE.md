@@ -2,7 +2,7 @@
 
 > **Última verificación:** 2026-10-02 (adelgazado para velocidad: el histórico vive en `git log -p CLAUDE.md`, `docs/HISTORY.md` y las memorias) · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
 
-**Idioma:** español. **Estilo de respuesta (Brandon 17-10):** corto y ordenado — 1 línea de qué pasó + tabla de ≤5 filas + 1 línea de lo que sigue; sin jerga ni listas largas. No narrar deliberación.
+**Idioma:** español. **Estilo de respuesta (Brandon 17-10):** corto y ordenado — 1 línea de qué pasó + tabla de ≤5 filas + 1 línea de lo que sigue; sin jerga ni listas largas (04-11: 1.ª línea con ✅/⚠️/❌ y lo que falló primero; tabla solo con 3+ datos; pregunta simple = 2 líneas; cifras redondeadas salvo plata, m³ y papeles; menú solo si decide él). No narrar deliberación.
 
 **Quién pide y cómo (Brandon, 2026-09-11):** dueño-operador que prueba todo en el navegador; un mensaje trae 3-6 pedidos → hacer **todos**; «aplicarlo en general» → buscar las pantallas hermanas; elige **todas** las opciones y agrega texto libre (prioridad 1). Perfil: memoria `perfil-brandon-como-trabaja`.
 
@@ -68,7 +68,7 @@ Código: strict, alias `@/*` y `@buleje/design-system`; sin hex en UI (tokens DS
 | **HOTFIX** | 1 archivo, <20 líneas | inline (o `healer` sonnet si es gate rojo) | `typecheck` si es TS; el commit hace el resto |
 | **FEATURE** | 2-5 archivos, 1 área | 1-3 archivos: inline (Brandon ve cada paso) · 4-5: un subagente por parte independiente, en una tanda (sonnet por defecto; `opus` según tabla de `agentic-style`) | typecheck + test del área si hay lógica + 1 captura si cambia lo que se dibuja; `reviewer` solo si la tabla «Economía» lo pide |
 | **DANGER** | zona de peligro (§6) | subagente de dominio + `security` antes del merge | full pipeline |
-| **INITIATIVE** | 5+ archivos, ≥2 áreas | Workflow por fases (construir → verificar con refutador) | todos |
+| **INITIATIVE** | 5+ archivos, ≥2 áreas | ayudantes por fases (construir → verificar con refutador); la función Workflow está apagada desde 02-11 (ver §8.10) | todos |
 
 Detalle de agentes y frontmatter: `AGENTS.md`. 8 defs en `.claude/agents/` (`architect` · `backend` · `frontend` · `database` · `healer` · `reviewer` · `security` · `tester`); el router es el hilo principal; todo subagente recibe contexto y reglas de economía por el hook `SubagentStart`. Agent teams OFF.
 
@@ -98,7 +98,7 @@ Env mínimas: `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_BASE_URL` (schema comp
 7. **Prisma drift** (`ColumnNotFound`/P2022): `prisma migrate deploy` con DIRECT_URL accesible; ver hub `hub-next-dev-cache`.
 8. **Commits**: `HUSKY_SKIP_POSTCOMMIT=1` es default; el pre-commit corre lint-staged + tsc 7 + vitest related + tokens + anidado en paralelo.
 9. **CLI**: subagentes en background, anidados hasta 3; `/verify` y `/code-review` no se auto-invocan; no existe `/gates`. Novedades: memoria `claude-code-novedades-2026-07`.
-10. **Auditorías** → workflow `audit-verificado` (cada hallazgo pasa por un refutador).
+10. **Auditorías** → ayudantes por dimensión + un refutador por hallazgo (receta de `audit-verificado`). Desde 02-11 `Workflow`, `Artifact`, `ReportFindings` y `SendFeedback` están en `permissions.deny` de `~/.claude/settings.json` (−17 mil por chat, Brandon): prender = quitar de esa lista y abrir chat nuevo.
 
 ## 9. Documentación
 

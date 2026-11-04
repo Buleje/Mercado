@@ -292,3 +292,18 @@ auto.crt
 auto.key
 *.key
 .claude/.watchdog.log.old
+
+# Notas de trabajo de los ayudantes (04-11): bitácoras, listas de archivos y respaldos
+# con datos reales de Blas. El repo es público: se quedan solo en la PC.
+/.claude/autonomo/respaldos/
+/.claude/autonomo/dia/
+/.claude/autonomo/**/carriles/
+/.claude/autonomo/**/tmp/
+/.claude/autonomo/_archivo-2026-10/
+/.claude/autonomo/**/*.log
+/.claude/autonomo/**/*.out
+/.claude/autonomo/**/*.tgz
+*.bak-20*
+/scripts/.tmp-*
+/.claude/.watchdog.log.old
+/.claude/autonomo/blas-fichas/

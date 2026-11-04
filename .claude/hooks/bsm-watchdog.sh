@@ -153,7 +153,9 @@ while true; do
   # 3c. `next dev` vivo sin next-server (lo cerró earlyoom o murió por señal):
   #     el puerto 3000 queda muerto con el padre colgado. Dos ciclos seguidos
   #     (el arranque normal tarda segundos) y RAM para volver a compilar.
-  if [[ -z "$NEXT_PID" ]] && pgrep -f '[n]ext dev' >/dev/null; then
+    # 01-11: sólo el proceso REAL (`node …/next dev`): '[n]ext dev' a secas matcheaba la línea de comando de
+  #     una sesión de Claude cuyo pedido decía «next dev» → relanzaba el dev y dev-restart mataba los `next build`.
+  if [[ -z "$NEXT_PID" ]] && pgrep -f '^node [^ ]*/[n]ext dev' >/dev/null; then
     DEV_SIN_HIJO=$((${DEV_SIN_HIJO:-0} + 1))
     if [[ "$DEV_SIN_HIJO" -ge 2 && "$AVAIL" -ge 3000 ]]; then
       reiniciar_dev

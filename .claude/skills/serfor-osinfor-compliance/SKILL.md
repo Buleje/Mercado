@@ -43,6 +43,7 @@ Un dato que el fiscalizador no puede cruzar con su documento de origen no sirve:
 | CITES, observaciones | `speciesCites`; `notes` |
 
 Guía consultada en SNIFFS: `serforNumeroRegistro` + `serforGtf` (ADR-312).
+Leer o navegar el SNIFFS (tablas, detalle de lotes, menús) sin tocar nada: skill `sniffs`.
 
 **Transformación → `ForestCtpEntry` con `section="produccion"`**
 

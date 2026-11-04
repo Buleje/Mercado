@@ -17,6 +17,8 @@ const SEGURIDAD = new Set(args.seguridad || [])
 const OPUS = new Set(args.opus || [])
 const SIN_DISENO = new Set(args.sinDiseno || [])
 const SOLO_LECTURA = new Set(args.soloLectura || [])
+const EXTRA = args.extra || ''
+const SESION = args.sesion || 'https://claude.ai/code/session_01JsjnVjJbxADYZSRBW8WXFx'
 const PLAN_JSON = '/home/usuario/proyectos/Mercado/.claude/autonomo/panel/plan.json'
 // Scratchpad de la sesión que corre la ola: pasalo en args.sp (el de la sesión del 09-10 ya no existe).
 const SP = args.sp || '/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad'
@@ -36,7 +38,7 @@ DECISIONES QUE MANDAN SOBRE EL PLAN si algo choca: grupo «Gestión» (Mi Plata,
 OPERACIÓN: checkout principal, nunca worktree; NO uses git para escribir (ni stash, ni checkout, ni reset, ni commit: commitea el hilo principal al cerrar la ola). \`git show HEAD:<archivo>\` para ver lo anterior. \`ls\` antes de crear. NUNCA \`pkill -f\`/\`pgrep -f\`. Scratchpad: ${SP}/panel/<TU_CLAVE>/. Servidor http://localhost:3000. Si /login no contesta, NO lo reinicies ni mates procesos: un vigía lo levanta solo en ≤8 min; reintentá cada 2 min hasta 12 min y, si sigue caído, seguí sin captura y decilo en «pendientes». qa-capturas ya da por visto el tour de bienvenida (sin eso, /admin sin ?tab saltaba al Asistente IA). \`npm run typecheck\` UNA vez al final (hace fila solo). Capturas con \`node scripts/qa-capturas.mjs --candado …\`.
 ENTREGA: con StructuredOutput (donde tu instrucción pida «reporte en TEXTO», va dentro de «resumen»; ni el integrador commitea: deja archivos y mensajeCommit, los commits los hace el hilo principal al cerrar la ola). «archivos» = rutas relativas al repo de TODO lo que tocaste o creaste o borraste (nada de .claude/ ni del scratchpad). mensajeCommit: Conventional, subject en minúscula ≤90 caracteres, cuerpo en español con líneas ≤100 caracteres, y al final estas dos líneas exactas:
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01JsjnVjJbxADYZSRBW8WXFx`
+Claude-Session: ${SESION}${EXTRA ? '\n\nPEDIDO NUEVO DE BRANDON (manda junto con el plan): ' + EXTRA + '' : ''}`
 
 const prompt = (c) => `${COMUN}\n\nTU CLAVE: ${c.k} — ${c.titulo} (ola ${OLA}).${SOLO_LECTURA.has(c.k) ? '\nESTE CARRIL ES SOLO LECTURA EN ESTA CORRIDA: auditá y proponé (archivos=[] , hecho=true), NO edites nada; lo que haga falta cambiar va en «pendientes» con archivo:línea para que Brandon lo apruebe.' : ''}\nOTROS CARRILES DE ESTA OLA (no toques sus archivos): ${CARRILES.filter((x) => x.k !== c.k).map((x) => x.k + ' ' + x.titulo).join(' · ')}`
 
