@@ -119,7 +119,7 @@ describe("unirSenalesPorTipo", () => {
 });
 
 describe("registrarSenales", () => {
-  it("guarda una por tipo con el tenantId primero y no cierra nada si sigue en riesgo crítico", async () => {
+  it("guarda una por tipo con el tenantId primero y, en riesgo crítico, sólo cierra la prueba que ya no vence", async () => {
     m.registrarAbierta.mockResolvedValue({ id: "s1", intervention: null, creada: true });
     const r = await registrarSenales(
       "t-qa",
@@ -131,8 +131,14 @@ describe("registrarSenales", () => {
     );
     expect(m.registrarAbierta).toHaveBeenCalledTimes(1);
     expect(m.registrarAbierta).toHaveBeenCalledWith("t-qa", { signalType: "login_drop", severity: "critical", detail: "a · b" });
-    expect(m.cerrarAusentes).not.toHaveBeenCalled();
+    expect(m.cerrarAusentes).toHaveBeenCalledWith("t-qa", ["login_drop"], ["trial_expiring"]);
     expect(r.alertas[0]).toMatchObject({ id: "s1", creada: true });
+  });
+
+  it("en riesgo crítico con la prueba por vencer hoy, no cierra nada", async () => {
+    m.registrarAbierta.mockResolvedValue({ id: "s2", intervention: null, creada: false });
+    await registrarSenales("t-qa", [{ signalType: "trial_expiring", severity: "critical", detail: "0 días" }], "critical");
+    expect(m.cerrarAusentes).not.toHaveBeenCalled();
   });
 
   it("negocio recuperado (medium) cierra las abiertas que hoy no aparecieron", async () => {

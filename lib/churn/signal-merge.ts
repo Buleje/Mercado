@@ -35,3 +35,16 @@ export function unirSenalesPorTipo(signals: ChurnSignalDetected[]): ChurnSignalD
 export function debeCerrarAusentes(riskLevel: RiskLevel): boolean {
   return riskLevel === "low" || riskLevel === "medium";
 }
+
+/**
+ * Alertas que son un ESTADO, no una caída: «la prueba vence en N días» es cierta
+ * o no lo es cada día, así que se cierra apenas deja de aparecer aunque el negocio
+ * siga en riesgo. Medido 04-11: luis, tienda-3 y buleje seguían con «Trial expira
+ * en 0 días» abierta desde abril, con la prueba extendida hasta 2027-2099.
+ */
+export const TIPOS_DE_ESTADO = ["trial_expiring"] as const;
+
+/** Los tipos de estado que hoy no aparecieron (se cierran aunque siga el riesgo alto). */
+export function estadosQueYaNoAplican(tiposDeHoy: readonly string[]): string[] {
+  return TIPOS_DE_ESTADO.filter((t) => !tiposDeHoy.includes(t));
+}

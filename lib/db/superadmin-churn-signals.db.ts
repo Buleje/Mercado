@@ -90,10 +90,16 @@ export const SuperadminChurnSignalsDB = {
     return { id: fila.id, intervention, creada: fila.id === nuevaId };
   },
 
-  /** Cierra («auto») las alertas abiertas del negocio cuyo tipo hoy no apareció. */
-  async cerrarAusentes(tenantId: string, tiposVigentes: string[]): Promise<number> {
+  /**
+   * Cierra («auto») las alertas abiertas del negocio cuyo tipo hoy no apareció.
+   * Con `soloTipos`, sólo entre esos (las de estado, aunque el negocio siga en riesgo).
+   */
+  async cerrarAusentes(tenantId: string, tiposVigentes: string[], soloTipos?: readonly string[]): Promise<number> {
+    const signalType = soloTipos
+      ? { in: soloTipos.filter((t) => !tiposVigentes.includes(t)) }
+      : { notIn: tiposVigentes };
     const r = await prisma.churnSignal.updateMany({
-      where: { tenantId, resolved: false, signalType: { notIn: tiposVigentes } },
+      where: { tenantId, resolved: false, signalType },
       data: { resolved: true, resolvedAt: new Date(), resolvedBy: "auto" },
     });
     return r.count;
