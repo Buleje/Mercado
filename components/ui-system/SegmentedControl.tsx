@@ -21,8 +21,31 @@
  *   />
  */
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+
+/**
+ * Con muchas opciones en celular la fila va dentro de una caja con scroll
+ * horizontal: si la elegida (p. ej. la recordada «Cuánto pagar», la 4.ª de
+ * Rendimiento a 400 px) quedaba fuera, no se veía cuál estaba activa (04-11).
+ * Mueve sólo el scroll horizontal de esa caja — nunca la página, por eso no
+ * `scrollIntoView` — y sólo si la opción está tapada.
+ */
+function mostrarElegida(grupo: HTMLElement | null, valor: string) {
+  const boton = grupo?.querySelector<HTMLElement>(`[data-value="${CSS.escape(valor)}"]`);
+  let caja: HTMLElement | null = grupo;
+  for (let nivel = 0; caja && nivel < 3; nivel++, caja = caja.parentElement) {
+    if (caja.scrollWidth <= caja.clientWidth + 1) continue;
+    const { overflowX } = getComputedStyle(caja);
+    if (overflowX !== "auto" && overflowX !== "scroll") continue;
+    if (!boton) return;
+    const b = boton.getBoundingClientRect();
+    const c = caja.getBoundingClientRect();
+    if (b.left < c.left) caja.scrollLeft -= c.left - b.left + 8;
+    else if (b.right > c.right) caja.scrollLeft += b.right - c.right + 8;
+    return;
+  }
+}
 
 interface Option<T extends string> {
   value: T;
@@ -74,6 +97,10 @@ export default function SegmentedControl<T extends string>({
   className,
 }: Props<T>) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    mostrarElegida(containerRef.current, value);
+  }, [value]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "Home" && e.key !== "End") return;

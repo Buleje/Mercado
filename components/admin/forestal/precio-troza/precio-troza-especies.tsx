@@ -7,20 +7,32 @@
  *
  * Todo lo calcula el servidor: acá sólo se lee (`PrecioMaximoEspecie`).
  */
+import { useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle } from "@buleje/design-system/icons";
+import { AlertTriangle, ChevronDown } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { CostoNoIngresado, PrecioTrozaDTO } from "@/lib/forestal/precio-troza-tipos";
+import type { CostoNoIngresado, PrecioMaximoEspecie, PrecioTrozaDTO } from "@/lib/forestal/precio-troza-tipos";
 import { fmtDifSoles, fmtSoles, textoCostosNoIngresados, tonoDe } from "./precio-troza-formato";
 import { ID_CASILLA_PRECIO } from "./precio-troza-casillas";
 import { Insignia, PILA, PILA_DERECHA, TEXTO_TONO } from "./precio-troza-ui";
 
 const enfocarPrecio = () => document.getElementById(ID_CASILLA_PRECIO)?.focus();
 
+/**
+ * Especie que todavía no dice nada propio: sin corridas medidas, sin precio de
+ * venta y sin compras. Todas muestran la misma fila (regla 56 %, «Falta el
+ * precio»): a 400 px eran 8 tarjetas iguales y 4,5 pantallas (04-11). Se
+ * juntan en una línea plegable; nada se esconde para siempre.
+ */
+const sinDatosPropios = (e: PrecioMaximoEspecie) =>
+  e.fuenteRendimiento !== "medido" && e.precioVentaPt === null && e.pagadoHoyM3 === null;
+const MIN_PARA_JUNTAR = 3;
+
 export default function PrecioTrozaEspecies({ datos }: { datos: PrecioTrozaDTO }) {
   const { porEspecie, regla } = datos;
+  const [verVacias, setVerVacias] = useState(false);
   if (porEspecie.length === 0) {
     return <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no hay corridas ni ventas de madera para calcularlo.</p>;
   }
@@ -28,6 +40,9 @@ export default function PrecioTrozaEspecies({ datos }: { datos: PrecioTrozaDTO }
   const faltan = [...new Set(porEspecie.flatMap((e) => e.costosNoIngresados))] as CostoNoIngresado[];
   const avisoCostos = textoCostosNoIngresados(faltan);
   const conPagado = porEspecie.some((e) => e.pagadoHoyM3 !== null);
+  const vacias = porEspecie.filter(sinDatosPropios);
+  const juntar = vacias.length >= MIN_PARA_JUNTAR && vacias.length < porEspecie.length;
+  const filas = juntar && !verVacias ? porEspecie.filter((e) => !sinDatosPropios(e)) : porEspecie;
 
   return (
     <div className="space-y-2">
@@ -69,7 +84,7 @@ export default function PrecioTrozaEspecies({ datos }: { datos: PrecioTrozaDTO }
           </tr>
         </thead>
         <tbody>
-          {porEspecie.map((e) => {
+          {filas.map((e) => {
             const negativo = e.precioMaximoM3 !== null && e.precioMaximoM3 < 0;
             return (
               <tr key={e.especie}>
@@ -137,6 +152,20 @@ export default function PrecioTrozaEspecies({ datos }: { datos: PrecioTrozaDTO }
           })}
         </tbody>
       </DataTable>
+      {juntar && (
+        <button
+          type="button"
+          onClick={() => setVerVacias((v) => !v)}
+          aria-expanded={verVacias}
+          className="flex w-full items-center gap-2 rounded-lg border border-dashed border-[var(--rule-strong)] px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+        >
+          <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", verVacias && "rotate-180")} aria-hidden />
+          <span>
+            {verVacias ? "Ocultar" : "Ver"} {vacias.length} especies sin corridas ni precio de venta
+            {!verVacias && <span className="text-[var(--text-tertiary)]">: {vacias.map((e) => e.especie).join(", ")}</span>}
+          </span>
+        </button>
+      )}
     </div>
   );
 }
