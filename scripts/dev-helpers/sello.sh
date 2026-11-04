@@ -37,9 +37,21 @@ clave() {
   } | sha256sum | cut -c1-64
 }
 
+# Diagnóstico (04-11): qué archivos forman la clave, con la huella de cada uno.
+# `poner` lo deja al lado del sello; el pre-commit guarda el suyo cuando el sello
+# no coincide → `diff .git/buleje-sellos/tsc.manifiesto .git/buleje-sellos/tsc.fallo`
+# dice qué cambió (04-11: el commit repetía tsc sin cambios y no se halló la causa).
+manifiesto() {
+  git rev-parse HEAD
+  # shellcheck disable=SC2086
+  { git diff HEAD --name-only -- $CODIGO; git ls-files --others --exclude-standard -- $CODIGO; } \
+    | sort -u | while IFS= read -r f; do printf '%s %s\n' "$(sha1sum -- "$f" 2>/dev/null | cut -c1-12)" "$f"; done
+}
+
 accion=$1; shift
 case "$accion" in
   clave) clave "$1" ;;
+  manifiesto) manifiesto ;;
   ok)
     nombre=$1; k=$2; shift 2
     f="$DIR/$nombre"
@@ -52,6 +64,7 @@ case "$accion" in
   poner)
     nombre=$1; k=$2; shift 2
     [ -n "$k" ] || exit 1
-    mkdir -p "$DIR" && { printf '%s\n' "$k"; for a in "$@"; do printf '%s\n' "$a"; done; } >"$DIR/$nombre" ;;
+    mkdir -p "$DIR" && { printf '%s\n' "$k"; for a in "$@"; do printf '%s\n' "$a"; done; } >"$DIR/$nombre"
+    manifiesto >"$DIR/$nombre.manifiesto" 2>/dev/null || true ;;
   *) echo "uso: sello.sh clave | ok <nombre> <clave> [arch…] | poner <nombre> <clave> [arch…]" >&2; exit 2 ;;
 esac

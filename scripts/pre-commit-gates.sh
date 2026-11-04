@@ -108,6 +108,11 @@ if [ "${SKIP_TSC_GATE:-0}" = "1" ]; then
 elif sh scripts/dev-helpers/sello.sh ok tsc "$CLAVE"; then
   echo "⏭️  tipos ya verificados con este mismo código (sello)" >"$TMP/tsc.log"; echo 0 >"$TMP/tsc.rc"
 else
+  # Sello que no coincide: guardar qué vio este commit para compararlo (04-11).
+  SELLOS="$(git rev-parse --git-dir)/buleje-sellos"
+  if [ -f "$SELLOS/tsc" ]; then
+    { echo "clave=$CLAVE sello=$(head -1 "$SELLOS/tsc")"; env | grep '^GIT_' | sort; sh scripts/dev-helpers/sello.sh manifiesto; } >"$SELLOS/tsc.fallo" 2>&1 || true
+  fi
   lanzar tsc node scripts/tsc7.mjs --noEmit; TSC_LANZADO=1
 fi
 
