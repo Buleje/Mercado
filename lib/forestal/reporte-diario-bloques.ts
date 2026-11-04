@@ -336,13 +336,14 @@ function bloqueCobrar(c: NonNullable<DatosReporteForestal["cobrar"]>): Bloque {
     ...base,
     resumen: `Te deben ${formatCurrency(c.total)} entre ${plural(cuantos, "persona", "personas")}`,
     tabla: {
-      cabecera: ["Persona", "Adelantos", "Madera", "Total"],
+      /* «S/» en el título y no en cada celda: con 3 columnas de plata, en un celular de 400 px el total se salía del cuadro. */
+      cabecera: ["Persona", "Adelantos S/", "Madera S/", "Total S/"],
       numericas: [1, 2, 3],
       filas: c.personas.map((x) => [
         x.nombre,
-        x.adelantos !== 0 ? formatCurrency(x.adelantos) : "—",
-        x.madera !== 0 ? formatCurrency(x.madera) : "—",
-        formatCurrency(x.total),
+        x.adelantos !== 0 ? formatNumber(x.adelantos, 2) : "—",
+        x.madera !== 0 ? formatNumber(x.madera, 2) : "—",
+        formatNumber(x.total, 2),
       ]),
     },
     detalle: [...notas, ...c.personas.map(fila)],

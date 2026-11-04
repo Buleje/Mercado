@@ -41,6 +41,8 @@ function tablaHtml(b: Bloque): string {
   const t = b.tabla;
   if (!t || t.filas.length === 0) return "";
   const alin = (i: number) => (t.numericas.includes(i) ? "right" : "left");
+  /* En el celular (400 px) «S/ 1,845.20» se partía en dos renglones: la cifra no se corta, el nombre sí. */
+  const corte = (i: number) => (t.numericas.includes(i) ? "white-space:nowrap;" : "");
   const th = t.cabecera
     .map(
       (c, i) =>
@@ -55,7 +57,7 @@ function tablaHtml(b: Bloque): string {
       return `<tr>${f
         .map(
           (c, i) =>
-            `<td style="text-align:${alin(i)};padding:5px 8px;border-bottom:1px solid ${C.regla};font-size:13px;font-weight:${peso};color:${C.tinta};font-variant-numeric:tabular-nums">${escapeHtml(c)}</td>`,
+            `<td style="text-align:${alin(i)};${corte(i)}padding:5px 8px;border-bottom:1px solid ${C.regla};font-size:13px;font-weight:${peso};color:${C.tinta};font-variant-numeric:tabular-nums">${escapeHtml(c)}</td>`,
         )
         .join("")}</tr>`;
     })

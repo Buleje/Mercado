@@ -23,7 +23,7 @@ describe("sección «Quién te debe» del parte forestal", () => {
     expect(b.titulo).toBe("Quién te debe");
     expect(b.resumen).toContain("25,690.00");
     expect(b.resumen).toContain("3 personas");
-    expect(b.tabla?.cabecera).toEqual(["Persona", "Adelantos", "Madera", "Total"]);
+    expect(b.tabla?.cabecera).toEqual(["Persona", "Adelantos S/", "Madera S/", "Total S/"]);
     expect(b.tabla?.filas[0]).toEqual(["Quispe", expect.stringContaining("17,000.00"), "—", expect.stringContaining("17,000.00")]);
     expect(b.detalle.find((d) => d.startsWith("Wasaco"))).toMatch(/adelantos .*\+ madera/);
   });
