@@ -13,7 +13,7 @@
  */
 import { useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { FileText, FolderOpen, GitCompareArrows } from "@buleje/design-system/icons";
+import { FileText, FolderOpen, GitCompareArrows, Receipt } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -32,6 +32,7 @@ import { AccionesWhatsAppDeGuardada } from "./cubicador-detalle-whatsapp";
 import { RendimientoContraLaGuia } from "./cubicador-detalle-rendimiento";
 import { MargenDelCamionBloque } from "./cubicador-detalle-margen";
 import { useRendimientoDeGuia } from "./hooks/use-rendimiento-de-guia";
+import { EstadoCuentaCargaModal } from "./cubicador-estado-cuenta-modal";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { piezasDeLaMismaGuia } from "@/lib/forestal/cubicacion-rendimiento-guia";
 import { veElMargen } from "@/lib/forestal/cubicacion-margen";
@@ -66,6 +67,7 @@ export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveMo
   onCompraAMano?: (c: CubicacionRegistro) => void;
 }) {
   const [lectura, setLectura] = useState<Lectura>("especie-tipo");
+  const [estadoCuenta, setEstadoCuenta] = useState(false);
   const precioDe = useMemo(() => precioDeCubicacion(c), [c]);
   const bloques = useMemo(() => (lectura === "especie-tipo" ? resumenPorEspecie(c.piezas, precioDe) : []), [c.piezas, lectura, precioDe]);
   const agrupado = useMemo(() => (lectura === "especie-tipo" ? null : agruparOficial(c.piezas, lectura, precioDe)), [c.piezas, lectura, precioDe]);
@@ -101,6 +103,10 @@ export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveMo
       footer={
         <ModalFooter>
           <AccionesWhatsAppDeGuardada c={c} />
+          <button type="button" onClick={() => setEstadoCuenta(true)} disabled={c.piezas.length === 0} className={button({ variant: "secondary" })} data-accion="estado-cuenta-carga"
+            title="Una hoja en PDF para el cliente: su carga por tipo, menos adelantos, más otros cargos y el total en letras">
+            <Receipt className="h-4 w-4" aria-hidden /> Estado de cuenta
+          </button>
           <button type="button" onClick={onComparar} disabled={!puedeComparar} className={button({ variant: "secondary" })} title={puedeComparar ? undefined : "Guarda otra cubicación para poder comparar"}>
             <GitCompareArrows className="h-4 w-4" aria-hidden /> Comparar con otra…
           </button>
@@ -160,6 +166,7 @@ export function DetalleCubicacionModal({ c, deLaMismaGuia = [], enLibro, aboveMo
           )}
         </section>
       </div>
+      {estadoCuenta && <EstadoCuentaCargaModal c={c} aboveModals onClose={() => setEstadoCuenta(false)} />}
     </AdminModal>
   );
 }
