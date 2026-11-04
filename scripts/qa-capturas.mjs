@@ -437,7 +437,20 @@ async function fondoCentro(page) {
   });
 }
 
+/** Cierra «Pendientes y avisos» si está abierta (Escape). */
+async function cerrarAvisos(page) {
+  const avisos = page.getByRole("dialog", { name: /Pendientes y avisos/ });
+  if (!(await avisos.isVisible().catch(() => false))) return;
+  await page.keyboard.press("Escape");
+  await avisos.waitFor({ state: "hidden", timeout: 3_000 }).catch(() => {
+    console.error("[qa-capturas] «Pendientes y avisos» no se cerró con Escape");
+  });
+}
+
 async function matriz(page, nombre, t) {
+  /* 04-11: a veces se abre DESPUÉS del chequeo de entrada (tapó la 1.ª captura del cuaderno de
+     combustible y costó una vuelta): se vuelve a cerrar justo antes de capturar. */
+  await cerrarAvisos(page);
   for (const ancho of anchos) {
     await page.setViewportSize({ width: ancho, height: altoVentana });
     await page.waitForTimeout(200);
@@ -671,13 +684,7 @@ async function recorrido(t, primero) {
     await esperarQuietud();
     /* «Pendientes y avisos» se abre sola al entrar si hay atrasadas y tapa los clics (03-11: 1 vuelta
        perdida en el Libro CTP). Se recuerda también en el servidor, así que se cierra acá con Escape. */
-    const avisos = page.getByRole("dialog", { name: /Pendientes y avisos/ });
-    if (await avisos.isVisible().catch(() => false)) {
-      await page.keyboard.press("Escape");
-      await avisos.waitFor({ state: "hidden", timeout: 3_000 }).catch(() => {
-        console.error("[qa-capturas] «Pendientes y avisos» no se cerró con Escape");
-      });
-    }
+    await cerrarAvisos(page);
     let huboCaptura = false;
     for (const [i, p] of pasos.entries()) {
       const [tipo, valor] = Object.entries(p)[0] ?? [];
