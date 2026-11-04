@@ -42,7 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     const feed = await AgendaConexionesDB.feedPorToken(hashTokenFeed(token));
     if (!feed) return texto("No encontrado", 404);
 
-    const datos = await AgendaConexionesDB.datosParaIcs(feed.tenantId, feed.incluye);
+    const datos = await AgendaConexionesDB.datosParaIcs(feed.tenantId, feed.incluye, feed.creadoPor);
     const origen = await origenDeLaPeticion();
     const ics = armarIcs(datos, { nombreCalendario: feed.nombre, urlPanel: `${origen}${RUTA_PANEL_AGENDA}` });
     return new NextResponse(ics, {

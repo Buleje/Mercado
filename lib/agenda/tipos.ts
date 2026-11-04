@@ -119,8 +119,23 @@ export interface TareaDelDia {
 
 export interface VencimientoDelDia {
   id: string;
-  /** `seguimiento_clienta` (ADR-508): «escribir a N clientes», uno por día, sólo lectura. */
-  origen: "adelanto" | "entrega_pactada" | "promesa_adelanto" | "recordatorio" | "seguimiento_clienta";
+  /**
+   * `seguimiento_clienta` (ADR-508): «escribir a N clientes», uno por día, sólo lectura.
+   * ADR-524: trámites (`tramite_vence`, `tramite_paso`), alquileres (`alquiler_fin`,
+   * `alquiler_aviso`, `alquiler_pago`) y el DNI de una ficha (`dni_vence`).
+   */
+  origen:
+    | "adelanto"
+    | "entrega_pactada"
+    | "promesa_adelanto"
+    | "recordatorio"
+    | "seguimiento_clienta"
+    | "tramite_vence"
+    | "tramite_paso"
+    | "alquiler_fin"
+    | "alquiler_aviso"
+    | "alquiler_pago"
+    | "dni_vence";
   titulo: string;
   fecha: FechaKey;
   href: string;
@@ -172,4 +187,50 @@ export interface ConexionGoogleDTO {
   ultimaSync: string | null;
   ultimoError: string | null;
   tareas: boolean;
+}
+
+// ── ADR-524 (S1/S2): vencimientos de trámites, alquileres y DNI ──────────────
+
+/** Orígenes de Administración: datos del dueño (plata del alquiler, trámites, DNI de una ficha). */
+export const ORIGENES_ADMINISTRACION = [
+  "tramite_vence",
+  "tramite_paso",
+  "alquiler_fin",
+  "alquiler_aviso",
+  "alquiler_pago",
+  "dni_vence",
+] as const satisfies readonly VencimientoDelDia["origen"][];
+
+/** Quién los ve en el calendario: los roles de las rutas de trámites/alquileres, no `veAdelantos`. */
+export const ROLES_VEN_ADMINISTRACION = ["admin", "owner", "manager"] as const satisfies readonly AdminRole[];
+
+/** Quién tiene que haber creado el feed ICS para que salgan (el ICS no pide sesión: va a Google/Apple). */
+export const ROLES_ICS_ADMINISTRACION = ["admin", "owner"] as const satisfies readonly AdminRole[];
+
+const DE_ADMINISTRACION: ReadonlySet<string> = new Set(ORIGENES_ADMINISTRACION);
+
+export function esOrigenAdministracion(origen: VencimientoDelDia["origen"]): boolean {
+  return DE_ADMINISTRACION.has(origen);
+}
+
+/**
+ * ¿Este rol ve este vencimiento en el calendario? Recordatorios: todos. Los de
+ * Administración: admin/owner/manager. El resto (adelantos, entregas…): el permiso
+ * de adelantos, como antes.
+ */
+export function veVencimiento(origen: VencimientoDelDia["origen"], rol: string, veAdelantos: boolean): boolean {
+  if (origen === "recordatorio") return true;
+  if (esOrigenAdministracion(origen)) return (ROLES_VEN_ADMINISTRACION as readonly string[]).includes(rol);
+  return veAdelantos;
+}
+
+/**
+ * ¿Entra al feed ICS? El vencimiento del DNI nunca (dato personal, Ley 29733: el
+ * ICS lo guarda Google). Los otros 5 de Administración solo si el feed lo creó un
+ * admin/owner que sigue activo (`rolCreador` null = no existe o está desactivado).
+ */
+export function vencimientoEntraAlIcs(origen: VencimientoDelDia["origen"], rolCreador: string | null): boolean {
+  if (origen === "dni_vence") return false;
+  if (!esOrigenAdministracion(origen)) return true;
+  return rolCreador !== null && (ROLES_ICS_ADMINISTRACION as readonly string[]).includes(rolCreador);
 }

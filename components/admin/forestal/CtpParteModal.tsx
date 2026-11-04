@@ -21,7 +21,7 @@
 import { Loader2, Save, Users } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { AnteriorSiguiente, BarraDePasos } from "@/components/admin/shared/barra-de-pasos";
-import { ROL_LABEL, type Parte, type RolParte, type Vehiculo } from "@/lib/forestal/directorio";
+import { ROL_LABEL, type Parte, type PartePatch, type RolParte, type Vehiculo } from "@/lib/forestal/directorio";
 import { Btn, FormularioClaro, ModalBody, ModalFooter } from "./ctp-shared";
 import { useParteForm, type BorradorDeParte } from "./hooks/use-parte-form";
 import type { PasoFicha } from "@/lib/forestal/directorio-pasos";
@@ -74,7 +74,7 @@ export default function CtpParteModal({
    * (ADR-425). El padre ya no cierra el modal — lo cierra él mismo cuando
    * terminó de guardar todo.
    */
-  onGuardar: (input: BorradorDeParte) => Promise<Parte | void>;
+  onGuardar: (input: BorradorDeParte, cambios?: PartePatch) => Promise<Parte | void>;
   onClose: () => void;
   /**
    * Se abre ENCIMA de otro modal: «Crear cuenta nueva» desde «Declarar

@@ -282,8 +282,8 @@ export default function DirectorioPicker({
           rolInicial={rol}
           existentes={partes}
           vehiculos={vehiculos}
-          onGuardar={async (datos) => {
-            const guardada = await guardarParte(datos);
+          onGuardar={async (datos, cambios) => {
+            const guardada = await guardarParte(datos, cambios);
             /* El modal cierra solo (`onClose`) DESPUÉS de crear los permisos que
                hayan quedado pendientes del alta: cerrarlo acá lo desmontaba en
                medio de ese guardado y sus errores no se veían. */

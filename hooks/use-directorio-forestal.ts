@@ -21,11 +21,51 @@ import {
   type DocTipo,
   type Parte,
   type ParteInput,
+  type PartePatch,
   type RolParte,
   type Vehiculo,
   type VehiculoInput,
 } from "@/lib/forestal/directorio";
 import { candidatoAInputParte, type CandidatoParte, type ConflictoDirectorio } from "@/lib/forestal/directorio-desde-guias";
+import { mensajeAdministracion } from "@/components/admin/administracion/comun/pedir-administracion";
+import { CAMPOS_FICHA_PERSONA, camposDePersonaConValor } from "@/components/admin/forestal/hooks/parte-cambios";
+
+/**
+ * El alta se guardó pero sus datos de persona (DNI, RUC aparte, nacimiento…)
+ * no: viajan en un segundo paso (`PATCH`, ADR-524) porque el POST no los
+ * conoce. Trae la ficha creada para que el formulario siga sobre ella.
+ */
+export class ParteGuardadaAMedias extends Error {
+  constructor(
+    readonly parte: Parte,
+    mensaje: string,
+  ) {
+    super(mensaje);
+    this.name = "ParteGuardadaAMedias";
+  }
+}
+
+type ErrorDeFicha = { parte?: Parte; error?: string; campo?: string; message?: string; issues?: { path: string; message: string }[] };
+
+function textoDelError(j: ErrorDeFicha, porDefecto: string): string {
+  if (j.error === "ruc_invalido") return `El RUC no es válido${j.message ? `: ${j.message}` : "."}`;
+  if (j.error === "parece_clave") return mensajeAdministracion("parece_clave", j.campo) ?? j.message ?? porDefecto;
+  if (j.message) return j.message;
+  if (j.issues?.[0]) return `${j.issues[0].path ? `${j.issues[0].path}: ` : ""}${j.issues[0].message}`;
+  return (j.error && mensajeAdministracion(j.error)) || porDefecto;
+}
+
+async function parcharParte(id: string, cambios: PartePatch): Promise<Parte> {
+  const r = await fetch(`/api/admin/forestal/directorio/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: jsonConCsrf(),
+    body: JSON.stringify(cambios),
+  });
+  const j = (await r.json().catch(() => ({}))) as ErrorDeFicha;
+  if (!r.ok || !j.parte) throw new Error(textoDelError(j, "No se pudo guardar la ficha."));
+  return j.parte;
+}
 
 /** Lo que devuelve una consulta a SUNAT/RENIEC, ya traducido a campos de la parte. */
 export interface DatosDeDocumento {
@@ -79,21 +119,45 @@ export function useDirectorioForestal(opts: { activo?: boolean } = {}) {
     if (habilitado) void cargar();
   }, [habilitado, cargar]);
 
-  /** Guarda (alta o edición) y refresca la lista con la fila que devolvió el server. */
-  const guardarParte = useCallback(async (input: ParteInput & { id?: string }): Promise<Parte> => {
+  /**
+   * Guarda y refresca la lista con la fila que devolvió el server.
+   * - Con `id` y `cambios`: `PATCH` sólo con lo que cambió (ADR-524).
+   * - Sin `cambios`: el POST de siempre (alta, o edición de fila completa).
+   *   Los datos de persona no los conoce el POST: van después en un `PATCH`;
+   *   si ese falla, `ParteGuardadaAMedias` trae la ficha ya creada.
+   */
+  const guardarParte = useCallback(async (input: ParteInput & { id?: string }, cambios?: PartePatch): Promise<Parte> => {
+    const poner = (parte: Parte) =>
+      setPartes((prev) => {
+        const sinEsa = prev.filter((p) => p.id !== parte.id);
+        return [parte, ...sinEsa];
+      });
+    if (input.id && cambios) {
+      const parte = await parcharParte(input.id, cambios);
+      poner(parte);
+      return parte;
+    }
+    const cuerpo: Record<string, unknown> = { ...input };
+    for (const k of CAMPOS_FICHA_PERSONA) delete cuerpo[k];
     const r = await fetch("/api/admin/forestal/directorio", {
       method: "POST",
       credentials: "include",
       headers: jsonConCsrf(),
-      body: JSON.stringify(input),
+      body: JSON.stringify(cuerpo),
     });
-    const j = (await r.json().catch(() => ({}))) as { parte?: Parte; message?: string };
-    if (!r.ok || !j.parte) throw new Error(j.message ?? "No se pudo guardar la parte.");
-    const parte = j.parte;
-    setPartes((prev) => {
-      const sinEsa = prev.filter((p) => p.id !== parte.id);
-      return [parte, ...sinEsa];
-    });
+    const j = (await r.json().catch(() => ({}))) as ErrorDeFicha;
+    if (!r.ok || !j.parte) throw new Error(textoDelError(j, "No se pudo guardar la parte."));
+    let parte = j.parte;
+    poner(parte);
+    const personales = camposDePersonaConValor(input);
+    if (Object.keys(personales).length > 0) {
+      try {
+        parte = await parcharParte(parte.id, personales);
+        poner(parte);
+      } catch (e) {
+        throw new ParteGuardadaAMedias(parte, `La ficha se guardó, pero su DNI y RUC no: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
     return parte;
   }, []);
 

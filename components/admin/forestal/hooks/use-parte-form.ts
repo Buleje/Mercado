@@ -35,9 +35,12 @@ import {
   type DocTipo,
   type Parte,
   type ParteInput,
+  type PartePatch,
   type RolParte,
   type Vehiculo,
 } from "@/lib/forestal/directorio";
+import type { FichaPersonaCampos } from "@/lib/admin/fichas-tramites-alquileres";
+import { CAMPOS_FICHA_PERSONA, cambiosDeLaParte } from "./parte-cambios";
 import {
   estadoDePasoFicha,
   pasoDelPendiente,
@@ -48,7 +51,7 @@ import {
   type PasoFicha,
 } from "@/lib/forestal/directorio-pasos";
 import { opcionesEscritas } from "@/lib/forestal/permisos-de-parte";
-import { consultarDocumento } from "@/hooks/use-directorio-forestal";
+import { consultarDocumento, ParteGuardadaAMedias } from "@/hooks/use-directorio-forestal";
 import { useAtajoGuardar, useCierreSeguro, useHayCambios } from "../ctp-shared";
 import {
   guardarValoresPendientes as guardarCamposPendientes,
@@ -66,7 +69,15 @@ import { useHistorialProveedor } from "./use-historial-proveedor";
 /** Id estable de este formulario para los campos personalizados (ADR-427). */
 export const FORMULARIO_FICHA = "directorio.parte";
 
-export type BorradorDeParte = ParteInput & { id?: string };
+/** Con los 10 campos de persona (ADR-524): DNI emitido/vence, RUC aparte, nacimiento… */
+export type BorradorDeParte = ParteInput & Partial<FichaPersonaCampos> & { id?: string };
+
+/** Los campos de persona de una ficha guardada (no están en `parteAInput`). */
+function fichaDe(p: Parte): Partial<FichaPersonaCampos> {
+  const out: Record<string, unknown> = {};
+  for (const k of CAMPOS_FICHA_PERSONA) out[k] = p[k] ?? null;
+  return out as Partial<FichaPersonaCampos>;
+}
 
 /**
  * De ficha guardada a borrador del formulario.
@@ -81,6 +92,7 @@ function aBorrador(p: Parte | null, rolInicial: RolParte, nombreInicial = ""): B
   if (!p) return { roles: [rolInicial], nombre: nombreInicial.trim(), categoria: "ccnn", docTipo: "RUC" };
   return {
     ...parteAInput(p),
+    ...fichaDe(p),
     roles: p.roles.length ? p.roles : [rolInicial],
     categoria: categoriaEfectiva(p.categoria),
     docTipo: p.docTipo ?? "RUC",
@@ -96,7 +108,11 @@ export interface OpcionesFichaParte {
   nombreInicial?: string;
   existentes: Parte[];
   vehiculos: readonly Vehiculo[];
-  onGuardar: (input: BorradorDeParte) => Promise<Parte | void>;
+  /**
+   * Alta: `cambios` no viene (POST). Ficha ya guardada: `cambios` trae SÓLO lo
+   * que cambió y el padre lo manda como `PATCH` (`guardarParte(input, cambios)`).
+   */
+  onGuardar: (input: BorradorDeParte, cambios?: PartePatch) => Promise<Parte | void>;
   onClose: () => void;
   /**
    * Abierta encima de otro formulario (una guía, el alta del plan, otro modal):
@@ -109,6 +125,8 @@ export interface OpcionesFichaParte {
 
 export function useParteForm({ parte, rolInicial, nombreInicial, existentes, vehiculos, onGuardar, onClose, anidada = false, pasoInicial }: OpcionesFichaParte) {
   const [b, setB] = useState<BorradorDeParte>(() => aBorrador(parte, rolInicial, nombreInicial));
+  /** La ficha tal como quedó guardada: contra ella se cuenta qué cambió (PATCH). Tras un alta, la creada. */
+  const guardadaRef = useRef<Parte | null>(parte);
   const [copiado, setCopiado] = useState<string | null>(null);
   const [estado, setEstado] = useState<"idle" | "consultando" | "guardando">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -351,7 +369,23 @@ export function useParteForm({ parte, rolInicial, nombreInicial, existentes, veh
       setEstado("idle");
     };
     try {
-      const guardada = await onGuardar(b);
+      const base = guardadaRef.current;
+      let guardada: Parte | void;
+      if (base) {
+        const cambios = cambiosDeLaParte(aBorrador(base, rolInicial), b);
+        guardada = Object.keys(cambios).length === 0 ? base : await onGuardar({ ...b, id: base.id }, cambios);
+      } else {
+        try {
+          guardada = await onGuardar(b);
+        } catch (e) {
+          if (!(e instanceof ParteGuardadaAMedias)) throw e;
+          /* La ficha ya existe: el próximo «Guardar» va por PATCH, no crea otra. */
+          guardadaRef.current = e.parte;
+          fallar(e.message, "quien");
+          return setEstado("idle");
+        }
+      }
+      if (guardada) guardadaRef.current = guardada;
       /* Los permisos del alta se crean recién acá: antes no había id al que
          colgarlos. Si alguno falla, la ficha YA está guardada — se avisa y el
          modal queda abierto con la lista, en vez de perderlos en silencio. */

@@ -13,6 +13,7 @@ import CtpParteLogo from "./CtpParteLogo";
 import CtpParteAdjuntos from "./CtpParteAdjuntos";
 import CtpParteCarpeta from "./CtpParteCarpeta";
 import CtpParteBitacora from "./CtpParteBitacora";
+import CtpParteTramitesAlquileres from "./ctp-parte-tramites-alquileres";
 import { FORMULARIO_FICHA, type ParteFormEstado } from "./hooks/use-parte-form";
 
 export default function CtpPartePasoPapeles({ form }: { form: ParteFormEstado }) {
@@ -75,6 +76,14 @@ export default function CtpPartePasoPapeles({ form }: { form: ParteFormEstado })
           </CampoGrid>
         </Seccion>
       </div>
+
+      {/* Lo que esta persona tiene en Administración (ADR-524): sus trámites y
+          los locales que alquila. Sólo al EDITAR: una ficha nueva no tiene. */}
+      {parte?.id && (
+        <Seccion title="Trámites y alquileres">
+          <CtpParteTramitesAlquileres form={form} />
+        </Seccion>
+      )}
 
       {/* Dar de baja sin ir al Directorio. `activo` existía en el modelo y el
           modal lo leía sin exponerlo: una parte que ya no opera sólo se podía

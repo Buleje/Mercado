@@ -33,6 +33,7 @@ import {
   type FrecuenciaAgenda,
   type IncluyeFeedIcs,
   type ReglaAgenda,
+  vencimientoEntraAlIcs,
 } from "@/lib/agenda/tipos";
 
 // ── Constantes ──────────────────────────────────────────────────────────────
@@ -88,6 +89,13 @@ function esRegla(v: string): v is ReglaAgenda {
 function esFrecuencia(v: string): v is FrecuenciaAgenda {
   return (FRECUENCIAS_AGENDA as readonly string[]).includes(v);
 }
+/** Rol del que creó el feed si sigue activo; null = no existe, está desactivado o no vino. */
+async function rolActivoDe(tenantId: string, usuario: string | undefined): Promise<string | null> {
+  if (!usuario) return null;
+  const u = await AdminUsersDB.getByUsername(tenantId, usuario);
+  return u?.active ? u.role : null;
+}
+
 function esIncluye(v: string): v is IncluyeFeedIcs {
   return (INCLUYE_FEED_ICS as readonly string[]).includes(v);
 }
@@ -303,10 +311,12 @@ export const AgendaConexionesDB = {
    * el negocio de la fila. Revocado = null (la ruta responde 404 igual que si no
    * existiera). Anota `ultimoUso` como mucho una vez por hora.
    */
-  async feedPorToken(tokenHash: string): Promise<{ id: string; tenantId: string; nombre: string; incluye: IncluyeFeedIcs[] } | null> {
+  async feedPorToken(
+    tokenHash: string,
+  ): Promise<{ id: string; tenantId: string; nombre: string; incluye: IncluyeFeedIcs[]; creadoPor: string } | null> {
     const fila = await prisma.agendaFeedIcs.findUnique({
       where: { tokenHash },
-      select: { id: true, tenantId: true, nombre: true, incluye: true, revocadoEn: true, ultimoUso: true },
+      select: { id: true, tenantId: true, nombre: true, incluye: true, revocadoEn: true, ultimoUso: true, creadoPor: true },
     });
     if (!fila || fila.revocadoEn) return null;
     const ahora = new Date();
@@ -322,7 +332,13 @@ export const AgendaConexionesDB = {
       });
       if (count > 0) invalidate(claveFeeds(fila.tenantId));
     }
-    return { id: fila.id, tenantId: fila.tenantId, nombre: fila.nombre, incluye: fila.incluye.filter(esIncluye) };
+    return {
+      id: fila.id,
+      tenantId: fila.tenantId,
+      nombre: fila.nombre,
+      incluye: fila.incluye.filter(esIncluye),
+      creadoPor: fila.creadoPor,
+    };
   },
 
   /**
@@ -330,8 +346,10 @@ export const AgendaConexionesDB = {
    * canales: el feed es «la agenda»), notas con fecha, tareas con vencimiento y
    * vencimientos del sistema (adelantos, entregas pactadas…: sólo el título) en la
    * ventana −90/+365 días. Las notas de sistema (`__…`) nunca.
+   * ADR-524 (S2): el vencimiento del DNI nunca; trámites y alquileres solo si el
+   * feed lo creó (`creadoPor`) un admin/owner que sigue activo.
    */
-  async datosParaIcs(tenantId: string, incluye: readonly IncluyeFeedIcs[]): Promise<DatosIcs> {
+  async datosParaIcs(tenantId: string, incluye: readonly IncluyeFeedIcs[], creadoPor?: string): Promise<DatosIcs> {
     const hoy = hoyLima();
     const desdeKey = masDias(hoy, -VENTANA_DIAS_ATRAS);
     const hastaKey = masDias(hoy, VENTANA_DIAS_ADELANTE);
@@ -349,8 +367,14 @@ export const AgendaConexionesDB = {
       incluye.includes("notas") ? notasDeLaVentana(tenantId, desde, hasta) : Promise.resolve([]),
       incluye.includes("tareas") ? tareasDeLaVentana(tenantId, desde, hasta) : Promise.resolve([]),
       incluye.includes("vencimientos")
-        ? AgendaFuentesDB.vencimientosDelRango(tenantId, desdeKey, hastaKey).then((vs) =>
-            vs.slice(0, TOPE_FILAS).map((v): VencimientoIcs => ({ id: v.id, titulo: v.titulo, fecha: v.fecha })),
+        ? Promise.all([
+            AgendaFuentesDB.vencimientosDelRango(tenantId, desdeKey, hastaKey),
+            rolActivoDe(tenantId, creadoPor),
+          ]).then(([vs, rolCreador]) =>
+            vs
+              .filter((v) => vencimientoEntraAlIcs(v.origen, rolCreador))
+              .slice(0, TOPE_FILAS)
+              .map((v): VencimientoIcs => ({ id: v.id, titulo: v.titulo, fecha: v.fecha })),
           )
         : Promise.resolve([]),
     ]);

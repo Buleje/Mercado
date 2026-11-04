@@ -409,6 +409,10 @@ function reglasDe(rol: RolParte): Reglas {
     case "cubicador":
       /* Quien mide la madera (28-10): no va en la guía, todo es de la ficha. */
       return { nombre: INTERNO, documento: INTERNO, direccion: INTERNO, ubigeo: INTERNO };
+    case "socio":
+    case "arrendador":
+      /* Fichas de persona (ADR-524): no van en la guía; sus datos viven en la ficha. */
+      return { nombre: INTERNO, documento: INTERNO, direccion: INTERNO, ubigeo: INTERNO };
   }
 }
 

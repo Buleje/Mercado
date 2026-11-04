@@ -58,6 +58,9 @@ export const EXTRAS: Record<RolParte, readonly Extra[]> = {
     TELEFONO,
   ],
   cubicador: [TELEFONO],
+  // ADR-524: fichas de persona; sus datos (DNI, RUC, nacimiento) van en el modal completo.
+  socio: [TELEFONO],
+  arrendador: [TELEFONO],
 };
 
 export const CLAVES_EXTRA: readonly ClaveExtra[] = ["codigoCtp", "tipoEstablecimiento", "registroMtc", "licencia", "telefono", "contactoNombre", "acopioReferencia"];

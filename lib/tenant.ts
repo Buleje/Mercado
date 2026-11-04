@@ -285,6 +285,11 @@ const TENANT_MODELS = new Set([
   // Plan de la empresa (ADR-497): socios con DNI y plata de la inversión.
   "planEmpresaSeccion",
   "planEmpresaVersion",
+  // Fichas, trámites y alquileres (ADR-524): requisitos y pagos llevan su propio tenantId.
+  "tramite",
+  "tramiteRequisito",
+  "alquiler",
+  "alquilerPago",
   // Papeles emitidos con QR público (ADR-534): número, código y clave por negocio.
   "papelEmitido",
 ]);

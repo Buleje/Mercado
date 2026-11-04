@@ -73,6 +73,8 @@ export const SUBS_DIRECTORIO = [
   "cliente",
   "establecimiento",
   "cubicador",
+  "socio",
+  "arrendador",
   "vehiculos",
   "tu-ctp",
 ] as const;

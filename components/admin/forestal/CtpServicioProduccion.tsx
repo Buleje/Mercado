@@ -245,8 +245,8 @@ export default function CtpServicioProduccion({
           rolInicial="cliente"
           existentes={directorio.partes}
           vehiculos={directorio.vehiculos}
-          onGuardar={async (datos) => {
-            const guardada = await directorio.guardarParte(datos);
+          onGuardar={async (datos, cambios) => {
+            const guardada = await directorio.guardarParte(datos, cambios);
             /* La cuenta recién creada queda elegida: el paso siguiente siempre es usarla. */
             usarCreada(guardada.id);
             return guardada;

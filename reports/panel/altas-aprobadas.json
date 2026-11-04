@@ -591,6 +591,38 @@
    "aprobo": "Brandon 2026-10-24"
   },
   {
+   "par": "administracion:tramites",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Subvistas nuevas de Administración (ADR-524): Trámites (requisitos hay/falta/no aplica con su papel) y Alquileres (contrato y pagos mes a mes, registro sin caja). Pantallas nuevas en una pestaña que ya existe, no se le quita nada a nadie. Sólo para los roles que ya ganan Administración (admin y tienda_owner): si otro rol las gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-30: guardar en el panel los datos y papeles de trámites (Agrobanco/local de Drucila, SUNAT, DNI nuevo) — contrato ADR-524 decidido"
+  },
+  {
+   "par": "administracion:alquileres",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Subvistas nuevas de Administración (ADR-524): Trámites (requisitos hay/falta/no aplica con su papel) y Alquileres (contrato y pagos mes a mes, registro sin caja). Pantallas nuevas en una pestaña que ya existe, no se le quita nada a nadie. Sólo para los roles que ya ganan Administración (admin y tienda_owner): si otro rol las gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-30: guardar en el panel los datos y papeles de trámites (Agrobanco/local de Drucila, SUNAT, DNI nuevo) — contrato ADR-524 decidido"
+  },
+  {
+   "par": "administracion:tramites",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Subvistas nuevas de Administración (ADR-524): Trámites (requisitos hay/falta/no aplica con su papel) y Alquileres (contrato y pagos mes a mes, registro sin caja). Pantallas nuevas en una pestaña que ya existe, no se le quita nada a nadie. Sólo para los roles que ya ganan Administración (admin y tienda_owner): si otro rol las gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-30: guardar en el panel los datos y papeles de trámites (Agrobanco/local de Drucila, SUNAT, DNI nuevo) — contrato ADR-524 decidido"
+  },
+  {
+   "par": "administracion:alquileres",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Subvistas nuevas de Administración (ADR-524): Trámites (requisitos hay/falta/no aplica con su papel) y Alquileres (contrato y pagos mes a mes, registro sin caja). Pantallas nuevas en una pestaña que ya existe, no se le quita nada a nadie. Sólo para los roles que ya ganan Administración (admin y tienda_owner): si otro rol las gana, la prueba avisa.",
+   "aprobo": "Brandon, pedido del 2026-10-30: guardar en el panel los datos y papeles de trámites (Agrobanco/local de Drucila, SUNAT, DNI nuevo) — contrato ADR-524 decidido"
+  },
+  {
    "par": "plata:diario",
    "porque": "Pestaña nueva «Contabilidad» de Mi Plata (ADR-529): libro diario, libro mayor, balance de comprobación, estados financieros, meses y cierre, plan de cuentas y ajustes. Se suma a un módulo que ya existe, no se le quita nada a nadie; la ve quien ya ve Mi Plata (las rutas piden admin/dueño/encargado y escribir solo admin/dueño).",
    "aprobo": "Brandon, pedido del 2026-11-02: «arma la contabilidad completa»"

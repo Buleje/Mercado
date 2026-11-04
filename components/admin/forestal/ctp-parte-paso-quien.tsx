@@ -14,6 +14,8 @@ import { Btn, Field, I, Seccion } from "./ctp-shared";
 import CtpParteSaldo from "./CtpParteSaldo";
 import CtpTratoSinCobrar from "./CtpTratoSinCobrar";
 import CtpParteNombreEsDocumento from "./ctp-parte-nombre-documento";
+import CtpParteDocumentoRuc from "./ctp-parte-documento-ruc";
+import CtpParteDatosPersonales from "./ctp-parte-datos-personales";
 import { PendientesDelPaso } from "./ctp-parte-salud";
 import type { ParteFormEstado } from "./hooks/use-parte-form";
 import type { HistorialDeCompras } from "./hooks/use-historial-proveedor";
@@ -185,6 +187,8 @@ export default function CtpPartePasoQuien({
           </div>
         )}
       </Seccion>
+      <CtpParteDocumentoRuc form={form} />
+      <CtpParteDatosPersonales form={form} />
     </>
   );
 }

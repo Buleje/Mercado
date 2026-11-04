@@ -36,6 +36,7 @@ import {
   type MarcaManual,
 } from "@/lib/agenda/motor";
 import { sumarDias } from "@/lib/agenda/recurrencia";
+import { veVencimiento } from "@/lib/agenda/tipos";
 import { OBJETIVO_POR_REGLA, validarActividadCompleta } from "@/lib/agenda/schemas";
 import type { ActividadCrearInput, ActividadEditarInput, MarcarOcurrenciaInput } from "@/lib/agenda/schemas";
 import type {
@@ -506,7 +507,8 @@ export const AgendaDB = {
       dias.get(tarea.fecha)?.tareas.push(tarea);
     }
     for (const v of vencimientos) {
-      if (v.origen !== "recordatorio" && !veAdelantos) continue;
+      // ADR-524 (S1): trámites, alquileres y DNI piden admin/owner/manager, no `veAdelantos`.
+      if (!veVencimiento(v.origen, rol, veAdelantos)) continue;
       dias.get(v.fecha)?.vencimientos.push(v);
     }
     // ADR-508: uno por día («Escribir a 3 clientes»), no uno por cliente: la lista está en «Hoy».

@@ -14,7 +14,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { CalendarDays, ClipboardCheck, Link2, ListChecks, Repeat, StickyNote, Sun } from "@buleje/design-system/icons";
+import { Building2, CalendarDays, ClipboardCheck, FileCheck, Link2, ListChecks, Repeat, StickyNote, Sun } from "@buleje/design-system/icons";
 import { LoadingState } from "@buleje/design-system";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -25,13 +25,15 @@ import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-perm
 const HoyVista = dynamic(() => import("@/components/admin/administracion/hoy/HoyVista"), { loading: S });
 const CalendarioVista = dynamic(() => import("@/components/admin/administracion/calendario/CalendarioVista"), { loading: S });
 const ActividadesVista = dynamic(() => import("@/components/admin/administracion/actividades/ActividadesVista"), { loading: S });
+const TramitesVista = dynamic(() => import("@/components/admin/administracion/tramites/TramitesVista"), { loading: S });
+const AlquileresVista = dynamic(() => import("@/components/admin/administracion/alquileres/AlquileresVista"), { loading: S });
 const ConectarVista = dynamic(() => import("@/components/admin/administracion/conectar/ConectarVista"), { loading: S });
 const TasksTab = dynamic(() => import("@/components/admin/TasksTab"), { loading: S });
 const QuickNotesTab = dynamic(() => import("@/components/admin/QuickNotesTab"), { loading: S });
 
 const MODULE_ID = "administracion";
 
-type Vista = "hoy" | "calendario" | "actividades" | "tareas" | "notas" | "conectar";
+type Vista = "hoy" | "calendario" | "actividades" | "tareas" | "notas" | "tramites" | "alquileres" | "conectar";
 
 const TABS = [
   { id: "hoy", label: "Hoy", icon: Sun },
@@ -39,11 +41,13 @@ const TABS = [
   { id: "actividades", label: "Actividades", icon: Repeat },
   { id: "tareas", label: "Tareas", icon: ListChecks },
   { id: "notas", label: "Notas", icon: StickyNote },
+  { id: "tramites", label: "Trámites", icon: FileCheck },
+  { id: "alquileres", label: "Alquileres", icon: Building2 },
   { id: "conectar", label: "Conectar", icon: Link2 },
 ];
 
-/** El calendario recuerda mes/semana en `?sub=`: se borra al salir de él. */
-const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { calendario: ["sub"] };
+/** El calendario recuerda mes/semana en `?sub=`; trámites y alquileres abren su ficha con `?id=` (enlaces de la agenda). Se borran al salir. */
+const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { calendario: ["sub"], tramites: ["id"], alquileres: ["id"] };
 
 const AYUDA = "Lo que tienes que hacer en tu negocio y cuándo: la asistencia, las facturas, el aserrío del día, registrar gastos e ingresos, revisar adelantos y cuentas de terceros. Cada vista explica lo suyo en su ⓘ.";
 
@@ -101,6 +105,8 @@ function Administracion({ initialTab }: { initialTab?: string }) {
         {vista === "actividades" && <ActividadesVista />}
         {vista === "tareas" && <TasksTab />}
         {vista === "notas" && <QuickNotesTab />}
+        {vista === "tramites" && <TramitesVista />}
+        {vista === "alquileres" && <AlquileresVista />}
         {vista === "conectar" && <ConectarVista />}
       </AdminTabBar>
     </div>

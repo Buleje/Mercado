@@ -6,6 +6,8 @@ import { CarpetaAjenaError, CicloDeCarpetasError, DocumentsDB } from "@/lib/db/d
 import { assertCsrf } from "@/lib/auth/csrf";
 import { isPrivilegedRole, veTodoElDrive } from "@/lib/documents/doc-access";
 import { logger } from "@/lib/logger";
+import { rutaSensible } from "@/lib/documentos/enlaces-entidad";
+import { ROLES_VINCULO } from "@/app/api/admin/documents/vinculo-subida";
 import { ubicacionFisicaSchema } from "@/lib/documentos/ubicacion-fisica";
 
 
@@ -75,6 +77,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     // otro tenant pasaba, porque no estaba en el árbol de éste.
     if (parsed.data.parentId === id) {
       return NextResponse.json({ error: "folder_cannot_parent_itself" }, { status: 400 });
+    }
+    // ADR-524: renombrar a una carpeta de papeles personales también es de admin/owner.
+    if (parsed.data.name !== undefined && rutaSensible(parsed.data.name) && !ROLES_VINCULO.includes(auth.role)) {
+      return NextResponse.json({ error: "forbidden", message: "Esa carpeta guarda papeles personales: la nombra el administrador o el dueño." }, { status: 403 });
     }
     const corte = await guardaDeRol(auth.tenantId, id, auth.role, {
       permisos: parsed.data.allowedRoles !== undefined,

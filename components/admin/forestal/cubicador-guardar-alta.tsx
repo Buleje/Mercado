@@ -83,8 +83,8 @@ export function AltaEnElDirectorio({ campo, libreta, placaEscrita = "", nombreEs
       nombreInicial={nombreEscrito}
       existentes={libreta.partes}
       vehiculos={libreta.vehiculos}
-      onGuardar={async (borrador) => {
-        const guardada = await libreta.guardarParte(borrador);
+      onGuardar={async (borrador, cambios) => {
+        const guardada = await libreta.guardarParte(borrador, cambios);
         /* El editor se cierra solo DESPUÉS de colgar los permisos del alta. */
         if (guardada) onElegida(campo, guardada);
         return guardada;

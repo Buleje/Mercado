@@ -1714,7 +1714,8 @@ export class DocumentsDB {
    */
   static async createFolderTree(
     tenantId: string,
-    input: { parentId?: string | null; rutas: string[] },
+    /** `rolesRaizNueva`: roles de una carpeta RAÍZ que se crea acá (ADR-524: «Trámites» nace con candado). */
+    input: { parentId?: string | null; rutas: string[]; rolesRaizNueva?: string[] },
     viewerRole?: string,
   ): Promise<{ idPorRuta: Record<string, string>; creadas: number }> {
     const raiz = input.parentId ?? null;
@@ -1754,11 +1755,18 @@ export class DocumentsDB {
 
         const existente = indice.get(clave(padreId, nombre));
         if (existente) {
+          // ADR-524: una carpeta sensible que ya existía SIN candado (creada a mano) lo recibe ahora,
+          // y sus hijas lo heredan: si no, lo que se suba después por `folderId` lo vería cualquiera.
+          if (input.rolesRaizNueva?.length && (rolesPorId.get(existente) ?? []).length === 0) {
+            await prisma.documentFolder.updateMany({ where: { tenantId, id: existente }, data: { allowedRoles: input.rolesRaizNueva } });
+            rolesPorId.set(existente, input.rolesRaizNueva);
+          }
           idPorRuta[acumulada] = existente;
           padreId = existente;
           continue;
         }
-        const heredados = padreId ? rolesPorId.get(padreId) ?? [] : [];
+        const delPadre = padreId ? rolesPorId.get(padreId) ?? [] : [];
+        const heredados = delPadre.length ? delPadre : (input.rolesRaizNueva ?? []);
         const creada = await prisma.documentFolder.create({
           data: { tenantId, name: nombre.slice(0, 80), parentId: padreId, allowedRoles: heredados },
           select: { id: true },

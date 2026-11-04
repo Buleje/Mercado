@@ -18,6 +18,17 @@ import { resolverMime } from "@/lib/documents/tipos-archivo";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { interpretarBusqueda, quitarVacias, type BusquedaInterpretada } from "@/lib/documentos/busqueda-natural";
 import { leerCodigoDocumento } from "@/lib/documentos/codigo-documento";
+import { rutaSensible } from "@/lib/documentos/enlaces-entidad";
+import { downloadFromStorage } from "@/lib/documents/storage";
+import { createHash } from "node:crypto";
+import {
+  leerMetadatos,
+  resolverVinculo,
+  ROLES_PAPEL_SENSIBLE,
+  ROLES_VINCULO,
+  unirTags,
+  type DestinoVinculo,
+} from "./vinculo-subida";
 
 
 const ListQuery = z.object({
@@ -184,14 +195,87 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "mime_not_allowed", mime }, { status: 415 });
     }
 
+    // ADR-524 §3.1: carpeta por ruta, categoría, etiquetas, vencimiento,
+    // vínculo y `siExiste`. Todo opcional: sin ellos, la subida de siempre.
+    const meta = leerMetadatos(form);
+    if (!meta.ok) return NextResponse.json(meta.body, { status: meta.status });
+    const m = meta.data;
+
+    // El vínculo se verifica ANTES de subir: una entidad de otro negocio es un
+    // 404 y no deja un archivo huérfano en el Drive.
+    let destino: DestinoVinculo | null = null;
+    if (m.vinculo) {
+      if (!ROLES_VINCULO.includes(auth.role)) {
+        return NextResponse.json(
+          { error: "forbidden", message: "Solo el dueño o el administrador cuelgan papeles de fichas, trámites y alquileres." },
+          { status: 403 },
+        );
+      }
+      destino = await resolverVinculo(auth.tenantId, m.vinculo);
+      if (!destino) {
+        return NextResponse.json(
+          { error: "not_found", message: "Ya no existe a qué colgar el papel en este negocio." },
+          { status: 404 },
+        );
+      }
+    }
+
+    // ADR-524 S4: «Trámites/…», «Alquileres/…» y «Socios y familia/…» nacen con
+    // candado aunque no venga vínculo, y solo los suben dueño y administrador.
+    const porRuta = rutaSensible(m.ruta);
+    if (porRuta && !ROLES_VINCULO.includes(auth.role)) {
+      return NextResponse.json(
+        { error: "forbidden", message: "Solo el dueño o el administrador suben papeles a Trámites, Alquileres o Socios y familia." },
+        { status: 403 },
+      );
+    }
+    const candado = !!destino?.sensible || porRuta;
+
     const folderIdRaw = form.get("folderId");
-    const folderId =
+    let folderId =
       folderIdRaw && folderIdRaw !== "null" && folderIdRaw !== ""
         ? String(folderIdRaw)
         : null;
+    // `carpetaRuta` gana sobre `folderId`: se crea lo que falte desde la raíz
+    // (idempotente, hereda los roles de la carpeta madre).
+    if (m.ruta) {
+      const { idPorRuta } = await DocumentsDB.createFolderTree(
+        auth.tenantId,
+        { parentId: null, rutas: [m.ruta], ...(porRuta ? { rolesRaizNueva: [...ROLES_PAPEL_SENSIBLE] } : {}) },
+        auth.role,
+      );
+      folderId = idPorRuta[m.ruta] ?? null;
+    }
+
+    const originalName = file.name || "archivo";
+    const tagsDelPedido = unirTags(m.tags, destino?.tag);
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const originalName = file.name || "archivo";
+
+    // `siExiste: "saltar"`: mismo nombre, mismos bytes Y mismo contenido (sha256)
+    // en esa carpeta = ya está (reintento de un lote). Se le aplican igual los
+    // datos y el vínculo. Dos escaneos distintos con el mismo nombre y peso se
+    // suben los dos (R7): el hash solo se calcula cuando nombre+peso coinciden.
+    if (m.saltarSiExiste) {
+      const enCarpeta = await DocumentsDB.listNamesInFolders(auth.tenantId, [folderId], auth.role);
+      const candidato = (enCarpeta[folderId ?? ""] ?? []).find((d) => d.name === originalName && d.size === file.size);
+      const actual = candidato ? await DocumentsDB.getById(auth.tenantId, candidato.id, auth.role) : null;
+      const guardado = actual?.storagePath ? await downloadFromStorage(actual.storagePath) : null;
+      if (actual && guardado && sha256(guardado) === sha256(buffer)) {
+        // El candado se pone solo si el papel no tenía roles: nunca se abren ni se pisan los que ya tiene.
+        const sinRoles = (actual.allowedRoles ?? []).length === 0;
+        if (m.category || tagsDelPedido.length || m.expiresAt || (candado && sinRoles)) {
+          await DocumentsDB.update(auth.tenantId, actual.id, {
+            ...(m.category ? { category: m.category } : {}),
+            ...(tagsDelPedido.length ? { tags: unirTags(actual.tags, tagsDelPedido) } : {}),
+            ...(m.expiresAt ? { expiresAt: m.expiresAt } : {}),
+            ...(candado && sinRoles ? { allowedRoles: [...ROLES_PAPEL_SENSIBLE] } : {}),
+          });
+        }
+        const vinculado = destino ? await aplicarVinculo(destino, actual.id, originalName, auth.username, auth.tenantId) : false;
+        return NextResponse.json({ duplicado: true, id: actual.id, vinculado });
+      }
+    }
 
     // 1) Crear row con storagePath temporal (lo necesitamos para el path estable)
     // `viewerRole`: una carpeta con roles que este rol no ve se responde 404
@@ -205,6 +289,8 @@ export async function POST(req: NextRequest) {
       storagePath: "pending",
       uploadedById: auth.username,
       viewerRole: auth.role,
+      // Papel de ficha/trámite/alquiler o de una carpeta sensible: nace con candado de dueños.
+      ...(candado ? { allowedRoles: [...ROLES_PAPEL_SENSIBLE] } : {}),
     });
 
     const storagePath = buildStoragePath({
@@ -230,13 +316,17 @@ export async function POST(req: NextRequest) {
 
     // Una sola escritura: la categoría y la ruta del archivo se guardan juntas.
     // Eran dos viajes a la base por archivo, y en un import de 400 eso se nota.
+    const category = m.category ?? heur.category;
+    const tags = unirTags(heur.tags, tagsDelPedido);
     const updated = await DocumentsDB.update(auth.tenantId, draft.id, {
       storagePath,
-      category: heur.category,
-      tags: heur.tags,
+      category,
+      tags,
+      ...(m.expiresAt ? { expiresAt: m.expiresAt } : {}),
       aiCategory: heur.source === "ai" ? heur.category : undefined,
       aiTags: heur.source === "ai" ? heur.tags : undefined,
     });
+    const vinculado = destino ? await aplicarVinculo(destino, draft.id, originalName, auth.username, auth.tenantId) : false;
 
     DocumentsDB.log(auth.tenantId, {
       documentId: draft.id,
@@ -271,10 +361,11 @@ export async function POST(req: NextRequest) {
       document: {
         ...(updated ?? draft),
         storagePath,
-        category: heur.category,
-        tags: heur.tags,
+        category,
+        tags,
       },
       ai: { source: heur.source, suggestedCategory: heur.category, suggestedTags: heur.tags },
+      vinculado,
     });
   } catch (err) {
     // `folderId` de otro negocio (o inexistente): 404, nunca un documento
@@ -285,4 +376,28 @@ export async function POST(req: NextRequest) {
     logger.error("documents.upload.exception", { err: String(err) });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
+}
+
+/**
+ * Efecto del vínculo (ADR-524): ficha → adjunto, requisito → «hay», alquiler
+ * sin contrato → contrato, pago → comprobante. Si falla, el archivo queda
+ * subido y atado por el tag: se responde `vinculado: false` y se loguea.
+ */
+async function aplicarVinculo(
+  destino: DestinoVinculo,
+  documentId: string,
+  rotulo: string,
+  user: string,
+  tenantId: string,
+): Promise<boolean> {
+  try {
+    return await destino.aplicar(documentId, rotulo, user);
+  } catch (err) {
+    logger.error("[documents.upload] vínculo falló", { error: String(err), tenantId, tipo: destino.tipo, documentId });
+    return false;
+  }
+}
+
+function sha256(b: Buffer): string {
+  return createHash("sha256").update(b).digest("hex");
 }

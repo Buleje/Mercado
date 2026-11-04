@@ -26,6 +26,13 @@ const ORIGEN_VENCIMIENTO: Record<string, string> = {
   promesa_adelanto: "Promesa de pago",
   recordatorio: "Recordatorio",
   seguimiento_clienta: "Seguimiento a clientes",
+  // ADR-524
+  tramite_vence: "Trámite vence",
+  tramite_paso: "Próximo paso del trámite",
+  alquiler_fin: "Fin del contrato de alquiler",
+  alquiler_aviso: "Avisar si no se renueva",
+  alquiler_pago: "Pago de alquiler",
+  dni_vence: "DNI vence",
 };
 
 function irSinRecargar(e: MouseEvent<HTMLAnchorElement>, href: string) {

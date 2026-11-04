@@ -12,8 +12,14 @@
  */
 
 import { tagColaborador } from "@/lib/rrhh/asistencia-fotos";
+import { ROL_CANDADO_DUENO } from "@/lib/documents/doc-access";
 
-export type TipoEntidad = "tercero" | "permiso" | "colaborador" | "tramite";
+/**
+ * `tramite` = trámites del CTP (cartas a la autoridad, KV `ctp-tramites:`).
+ * `tramite_adm` / `alquiler` (ADR-524) = trámites de Administración (banco,
+ * SUNAT, municipalidad…) y alquileres de locales: otro modelo, otro prefijo.
+ */
+export type TipoEntidad = "tercero" | "permiso" | "colaborador" | "tramite" | "tramite_adm" | "alquiler";
 
 /** Prefijo del tag de máquina por tipo. */
 export const PREFIJO_ENTIDAD: Record<TipoEntidad, string> = {
@@ -21,6 +27,8 @@ export const PREFIJO_ENTIDAD: Record<TipoEntidad, string> = {
   permiso: "permiso:",
   colaborador: "colaborador:",
   tramite: "tramite:",
+  tramite_adm: "tramiteadm:",
+  alquiler: "alquiler:",
 };
 
 /**
@@ -49,6 +57,9 @@ export const CARPETA_ENTIDAD: Record<TipoEntidad, readonly string[]> = {
   permiso: ["Guías forestales (GTF)", "Por permiso"],
   colaborador: ["Equipo", "Pagos"],
   tramite: ["Trámites"],
+  // ADR-524: la misma raíz que los del CTP (en el Drive son «trámites» para Brandon).
+  tramite_adm: ["Trámites"],
+  alquiler: ["Alquileres"],
 };
 
 /** Limpia un nombre para usarlo como segmento de carpeta (sin `/`, recortado). */
@@ -77,12 +88,39 @@ export function rutaCarpetaEntidad(tipo: TipoEntidad, nombre: string, periodo?: 
  */
 export const ROLES_ENTIDAD_SENSIBLE = ["admin", "owner"] as const;
 
+/**
+ * Candado de los papeles de fichas de persona, trámites y alquileres (ADR-524):
+ * dueño y administrador, más el candado que deja afuera al manager (al que
+ * `requireAdmin` deja pasar siempre). Lo pone el servidor al subir con vínculo,
+ * al subir a una carpeta sensible y al ENLAZAR un documento que no tenía roles.
+ */
+export const ROLES_PAPEL_SENSIBLE: readonly string[] = [...ROLES_ENTIDAD_SENSIBLE, ROL_CANDADO_DUENO];
+
+/** Carpetas raíz cuyo contenido nace con candado aunque no venga vínculo (sin tildes, en minúscula). */
+export const RAICES_SENSIBLES = ["tramites", "alquileres", "socios y familia"] as const;
+
+const normalizarRaiz = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+/**
+ * ¿La ruta («Trámites/Agrobanco 2026-10») cuelga de una carpeta sensible? La raíz
+ * tiene que ser EXACTAMENTE una de ellas (sin mirar tildes ni mayúsculas): main
+ * tiene «Trámites y Oficios (CTP)», papeles de la madera que abre el almacenero.
+ */
+export function rutaSensible(ruta: string | null | undefined): boolean {
+  const raiz = (ruta ?? "").split(/[\\/]+/).map((x) => x.trim()).find(Boolean);
+  if (!raiz) return false;
+  const r = normalizarRaiz(raiz);
+  return RAICES_SENSIBLES.some((s) => r === s);
+}
+
 /** Etiqueta humana por tipo, para encontrar el documento buscando por texto. */
 export const ETIQUETA_HUMANA: Record<TipoEntidad, string> = {
   tercero: "tercero",
   permiso: "permiso",
   colaborador: "pago",
   tramite: "trámite",
+  tramite_adm: "trámite",
+  alquiler: "alquiler",
 };
 
 /**

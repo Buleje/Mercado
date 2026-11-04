@@ -5,6 +5,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { auditCtp, auditCtpEsperando } from "@/lib/forestal/ctp-audit";
 import { CONSUMO_VIGENTE } from "@/lib/db/forest-ctp-consumo.db";
+import { CandadoDocumentosDB } from "@/lib/db/candado-documentos.db";
 import type {
   FilaConsumoProveedor,
   FilaCorridaProveedor,
@@ -13,6 +14,7 @@ import type {
 } from "@/lib/forestal/proveedor-trazabilidad";
 import {
   agregarNota,
+  esFichaPersonal,
   esTipoEstablecimiento,
   leerBitacora,
   motivoPlacaVehiculo,
@@ -29,7 +31,9 @@ import {
   type VehiculoInput,
   type AdjuntoParte,
   type CondicionPago,
+  type PartePatch,
 } from "@/lib/forestal/directorio";
+import type { EstadoCivil, EstadoRuc } from "@/lib/admin/fichas-tramites-alquileres";
 
 /**
  * ForestDirectorioDB — la libreta del aserradero (ADR-317).
@@ -103,6 +107,25 @@ export interface LogoDeParte {
   logo: string;
 }
 
+/**
+ * ADR-524 S4: enlazar un papel a una ficha de PERSONA (socio/arrendador) le pone el
+ * tag `parte:<id>` y, si no tenía roles, el candado de dueños. Los de una empresa
+ * de la madera quedan como estaban (el almacenero los abre para la guía).
+ */
+async function atarPapelesDePersona(
+  tenantId: string,
+  parteId: string,
+  roles: readonly string[],
+  adjuntos: readonly { documentId: string }[],
+): Promise<void> {
+  if (!esFichaPersonal(roles)) return;
+  await CandadoDocumentosDB.atar(
+    tenantId,
+    adjuntos.map((a) => a.documentId),
+    `parte:${parteId}`,
+  );
+}
+
 function aParte(r: ParteRow): Parte {
   return {
     id: r.id,
@@ -156,8 +179,190 @@ function aParte(r: ParteRow): Parte {
     logo: r.logo,
     // `Json?` llega como `unknown`: si alguna vez se guardó otra cosa, la lista
     // sale vacía en vez de romper la pantalla del directorio.
-    adjuntos: Array.isArray(r.adjuntos) ? (r.adjuntos as unknown as AdjuntoParte[]) : [],
+    adjuntos: leerAdjuntos(r.adjuntos),
+    // Ficha de persona (ADR-524). Columnas DATE → «AAAA-MM-DD» leído en UTC
+    // (Prisma las trae como medianoche UTC: en hora de Lima serían el día antes).
+    dniEmitidoEl: diaDe(r.dniEmitidoEl),
+    dniVenceEl: diaDe(r.dniVenceEl),
+    ruc: r.ruc,
+    rucEstado: (r.rucEstado as EstadoRuc | null) ?? null,
+    rucEstadoDesde: diaDe(r.rucEstadoDesde),
+    rucCondicion: r.rucCondicion,
+    nacimientoEl: diaDe(r.nacimientoEl),
+    nacimientoLugar: r.nacimientoLugar,
+    estadoCivil: (r.estadoCivil as EstadoCivil | null) ?? null,
+    parentesco: r.parentesco,
   };
+}
+
+const diaDe = (d: Date | null): string | null => (d ? d.toISOString().slice(0, 10) : null);
+const aFechaDia = (v: string | null): Date | null => (v ? new Date(`${v}T00:00:00Z`) : null);
+
+/** `Json?` llega como `unknown`: si alguna vez se guardó otra cosa, la lista sale vacía en vez de romper la ficha. */
+function leerAdjuntos(v: unknown): AdjuntoParte[] {
+  return Array.isArray(v) ? (v as AdjuntoParte[]) : [];
+}
+
+/** Texto libre que el PATCH parcial puede escribir o borrar (`""`/`null` = vacío). */
+const TEXTOS_PATCH = [
+  "codigoCtp",
+  "direccion",
+  "region",
+  "provincia",
+  "distrito",
+  "zona",
+  "ubigeo",
+  "telefono",
+  "email",
+  "registroMtc",
+  "licencia",
+  "tituloHabilitante",
+  "resolucion",
+  "planManejo",
+  "arffs",
+  "representante",
+  "representanteDni",
+  "banco",
+  "cuentaNumero",
+  "cuentaCci",
+  "cuentaTitular",
+  "whatsapp",
+  "contactoNombre",
+  "contactoTelefono",
+  "contacto2Nombre",
+  "contacto2Telefono",
+  "emailCobranza",
+  "acopioReferencia",
+  "notas",
+  "rucCondicion",
+  "nacimientoLugar",
+  "parentesco",
+] as const satisfies readonly (keyof PartePatch)[];
+
+const DIAS_PATCH = ["dniEmitidoEl", "dniVenceEl", "rucEstadoDesde", "nacimientoEl"] as const satisfies readonly (keyof PartePatch)[];
+
+const etiquetaEstadoRuc = (v: string | null) => (v ? v.replace(/_/g, " ") : "sin dato");
+
+/**
+ * Traduce un PATCH parcial (ADR-524) a la escritura de Prisma: SOLO lo que
+ * vino (`!== undefined`); `null`/`""` borra. Devuelve además las notas que la
+ * bitácora suma sola (cambio de RUC o de su estado) y la lista de campos
+ * tocados para la auditoría. Puro respecto de la base: lo testea
+ * `__tests__/directorio-patch-parcial.test.ts`.
+ */
+export function datosDelPatch(
+  antes: ParteRow,
+  patch: PartePatch,
+  ahora: Date = new Date(),
+): { data: Prisma.ForestPartyUpdateInput; notasAuto: string[]; tocados: string[] } {
+  const data: Prisma.ForestPartyUpdateInput = {};
+  const tocados: string[] = [];
+  const notasAuto: string[] = [];
+
+  for (const k of TEXTOS_PATCH) {
+    const v = patch[k];
+    if (v === undefined) continue;
+    data[k] = vacioANull(v);
+    tocados.push(k);
+  }
+  for (const k of DIAS_PATCH) {
+    const v = patch[k];
+    if (v === undefined) continue;
+    data[k] = aFechaDia(v);
+    tocados.push(k);
+  }
+  if (patch.roles !== undefined) {
+    data.roles = { set: patch.roles };
+    tocados.push("roles");
+  }
+  if (patch.nombre !== undefined) {
+    data.nombre = normalizarNombre(patch.nombre);
+    tocados.push("nombre");
+  }
+  if (patch.categoria !== undefined) {
+    data.categoria = patch.categoria;
+    tocados.push("categoria");
+  }
+  if (patch.tipoEstablecimiento !== undefined) {
+    data.tipoEstablecimiento = patch.tipoEstablecimiento || null;
+    tocados.push("tipoEstablecimiento");
+  }
+  // Tipo y número de documento van juntos (igual que `guardarParte`): un número
+  // sin tipo no identifica a nadie y rompería el único por documento.
+  if (patch.docTipo !== undefined || patch.docNumero !== undefined) {
+    const docTipo = patch.docTipo !== undefined ? patch.docTipo : (antes.docTipo as DocTipo | null);
+    const docNumero =
+      patch.docNumero !== undefined
+        ? docTipo
+          ? vacioANull(normalizarDocumento(patch.docNumero ?? ""))
+          : null
+        : antes.docNumero;
+    data.docTipo = docNumero ? docTipo : null;
+    data.docNumero = docTipo ? docNumero : null;
+    tocados.push("documento");
+  }
+  if (patch.condicionPago !== undefined || patch.diasCredito !== undefined) {
+    const condicion = patch.condicionPago !== undefined ? patch.condicionPago : antes.condicionPago;
+    if (patch.condicionPago !== undefined) data.condicionPago = patch.condicionPago;
+    // El plazo sólo existe a crédito (misma regla que `guardarParte`).
+    data.diasCredito =
+      condicion === "credito" ? (patch.diasCredito !== undefined ? patch.diasCredito : antes.diasCredito) : null;
+    tocados.push("condicionPago");
+  }
+  if (patch.acopioLat !== undefined) data.acopioLat = patch.acopioLat;
+  if (patch.acopioLng !== undefined) data.acopioLng = patch.acopioLng;
+  if (patch.acopioLat !== undefined || patch.acopioLng !== undefined) tocados.push("acopio");
+  if (patch.tituloVigenciaHasta !== undefined) {
+    const v = vacioANull(patch.tituloVigenciaHasta);
+    data.tituloVigenciaHasta = v ? new Date(v) : null;
+    tocados.push("tituloVigenciaHasta");
+  }
+  if (patch.logo !== undefined) {
+    data.logo = patch.logo || null;
+    tocados.push("logo");
+  }
+  if (patch.activo !== undefined) {
+    data.activo = patch.activo;
+    tocados.push("activo");
+  }
+
+  if (patch.ruc !== undefined) {
+    const ruc = vacioANull((patch.ruc ?? "").replace(/\s+/g, ""));
+    data.ruc = ruc;
+    tocados.push("ruc");
+    if (ruc !== antes.ruc) notasAuto.push(`Cambió el RUC: ${antes.ruc ?? "sin dato"} → ${ruc ?? "vacío"}`);
+  }
+  if (patch.rucEstado !== undefined) {
+    data.rucEstado = patch.rucEstado;
+    tocados.push("rucEstado");
+    if (patch.rucEstado !== antes.rucEstado) {
+      const desde = patch.rucEstadoDesde ?? (patch.rucEstadoDesde === undefined ? diaDe(antes.rucEstadoDesde) : null);
+      notasAuto.push(
+        `Cambió el estado del RUC: ${etiquetaEstadoRuc(antes.rucEstado)} → ${etiquetaEstadoRuc(patch.rucEstado)}${desde ? ` (desde ${desde})` : ""}`,
+      );
+    }
+  }
+  if (patch.estadoCivil !== undefined) {
+    data.estadoCivil = patch.estadoCivil;
+    tocados.push("estadoCivil");
+  }
+
+  // Adjuntos: se quitan y se agregan, nunca se reemplaza la lista entera (dos
+  // pantallas que suben a la vez no se borran el papel una a la otra).
+  if (patch.adjuntosQuitar?.length || patch.adjuntosAgregar?.length) {
+    const quitar = new Set(patch.adjuntosQuitar ?? []);
+    const lista = leerAdjuntos(antes.adjuntos).filter((a) => !quitar.has(a.documentId));
+    let agregados = 0;
+    for (const a of patch.adjuntosAgregar ?? []) {
+      if (lista.some((x) => x.documentId === a.documentId)) continue;
+      lista.push({ documentId: a.documentId, rotulo: a.rotulo, vinculadoEl: ahora.toISOString() });
+      agregados++;
+    }
+    data.adjuntos = lista as unknown as Prisma.InputJsonValue;
+    tocados.push(`adjuntos (+${agregados} −${(patch.adjuntosQuitar ?? []).length})`);
+  }
+
+  return { data, notasAuto, tocados };
 }
 
 function aVehiculo(r: VehiculoRow): Vehiculo {
@@ -402,7 +607,59 @@ export const ForestDirectorioDB = {
       user: usuario,
     });
     this.invalidar(tenantId);
+    if (input.adjuntos?.length) await atarPapelesDePersona(tenantId, row.id, row.roles as string[], input.adjuntos);
     return aParte(row);
+  },
+
+  /**
+   * Edición PARCIAL de una ficha (ADR-524, `PATCH /directorio/[id]`): solo se
+   * escriben las claves que vinieron; `null` borra. A diferencia de
+   * `guardarParte` con `id` —que trata el cuerpo como la fila entera—, mandar
+   * solo `{ ruc }` no le borra la dirección a nadie (el MCP lo necesita).
+   *
+   * Bajo candado de la fila (`FOR UPDATE`): la lista de adjuntos se lee y se
+   * reescribe, y dos subidas que la tocan a la vez se perderían una a la otra.
+   * Un cambio de RUC o de su estado se anota solo en la bitácora, firmado con
+   * el usuario de la sesión. `null` si la ficha no es de este negocio.
+   */
+  async actualizarParteParcial(tenantId: string, id: string, patch: PartePatch, usuario: string): Promise<Parte | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const res = await prisma.$transaction(async (tx) => {
+      const candado = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "ForestParty"
+        WHERE "id" = ${id} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        FOR UPDATE
+      `;
+      if (candado.length === 0) return null;
+      const antes = await tx.forestParty.findFirst({ where: { id, tenantId, deletedAt: null } });
+      if (!antes) return null;
+      const { data, notasAuto, tocados } = datosDelPatch(antes, patch);
+      const notas = [...notasAuto, ...(patch.nuevaNota?.trim() ? [patch.nuevaNota] : [])];
+      if (notas.length > 0) {
+        const bitacora = notas.reduce((b, nota) => agregarNota(b, nota, usuario), leerBitacora(antes.bitacora));
+        data.bitacora = bitacora as unknown as Prisma.InputJsonValue;
+        tocados.push("bitacora");
+      }
+      if (tocados.length === 0) return { row: antes, tocados };
+      const row = await tx.forestParty.update({ where: { id: antes.id }, data });
+      return { row, tocados };
+    });
+    if (!res) return null;
+    if (res.tocados.length > 0) {
+      auditCtp({
+        tenantId,
+        action: "ctp_parte_upsert",
+        entity: "ForestParty",
+        entityId: res.row.id,
+        detail: `Editó la ficha de ${res.row.nombre}: ${res.tocados.join(", ")}`.slice(0, 500),
+        user: usuario,
+      });
+      this.invalidar(tenantId);
+    }
+    if (patch.adjuntosAgregar?.length) {
+      await atarPapelesDePersona(tenantId, res.row.id, res.row.roles as string[], patch.adjuntosAgregar);
+    }
+    return aParte(res.row);
   },
 
   /**

@@ -265,7 +265,7 @@ export default function CtpDirectorioView({
           vehiculos={dir.vehiculos}
           // Devuelve la ficha guardada: el modal la necesita para colgarle los
           // permisos que se cargaron durante el alta (ADR-425).
-          onGuardar={(input) => dir.guardarParte(input)}
+          onGuardar={(input, cambios) => dir.guardarParte(input, cambios)}
           onClose={() => {
             setPasoAlCompletar(undefined);
             if (fichaParte.parte) fichaParte.cerrar();

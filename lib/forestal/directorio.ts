@@ -18,6 +18,8 @@
  */
 
 import { z } from "zod";
+import { ESTADOS_CIVILES, ESTADOS_RUC, type FichaPersonaCampos } from "@/lib/admin/fichas-tramites-alquileres";
+import { textoSinClave } from "@/lib/admin/sin-claves";
 import { TIPOS_ESTABLECIMIENTO } from "./ctp-gtf-datos";
 import { leerPlaca } from "./placa-peru";
 
@@ -41,8 +43,41 @@ import { leerPlaca } from "./placa-peru";
  * «cubicador» (28-10-2026): quien mide la madera en el patio, el puerto o el
  * camión —el «Cubicado por» de la cubicación—. No sale en la guía; va al final.
  */
-export const ROLES_PARTE = ["proveedor", "destinatario", "transportista", "conductor", "cliente", "establecimiento", "cubicador"] as const;
+export const ROLES_PARTE = [
+  "proveedor",
+  "destinatario",
+  "transportista",
+  "conductor",
+  "cliente",
+  "establecimiento",
+  "cubicador",
+  "socio",
+  "arrendador",
+] as const;
 export type RolParte = (typeof ROLES_PARTE)[number];
+
+/**
+ * «socio» y «arrendador» (30-10-2026, ADR-524): fichas de PERSONA, no de la
+ * madera — la familia y los socios (con DNI, RUC aparte, nacimiento, estado
+ * civil) y el dueño de un local alquilado. No salen en la guía ni en los
+ * selectores de destinatario/transportista: una ficha que SOLO tiene estos
+ * roles no se ofrece como «también en tu libreta» (`partesSinRol`).
+ */
+export const ROLES_PERSONALES = ["socio", "arrendador"] as const satisfies readonly RolParte[];
+
+/**
+ * `true` si la ficha es de PERSONA (tiene socio o arrendador): sus papeles (DNI,
+ * partida, carta poder) se enlazan con candado de dueños (ADR-524 S4). Los de una
+ * empresa de la madera NO: el almacenero los abre para la guía.
+ */
+export function esFichaPersonal(roles: readonly string[]): boolean {
+  return roles.some((r) => (ROLES_PERSONALES as readonly string[]).includes(r));
+}
+
+/** `true` si la ficha no tiene ningún papel de la madera (solo socio/arrendador). */
+export function esSoloPersonal(roles: readonly RolParte[]): boolean {
+  return roles.length > 0 && roles.every((r) => (ROLES_PERSONALES as readonly string[]).includes(r));
+}
 
 export const ROL_LABEL: Record<RolParte, string> = {
   proveedor: "Proveedor",
@@ -52,6 +87,8 @@ export const ROL_LABEL: Record<RolParte, string> = {
   cliente: "Cliente",
   establecimiento: "Establecimiento",
   cubicador: "Cubicador",
+  socio: "Socio o familia",
+  arrendador: "Dueño de local",
 };
 
 /** Plural explícito: "destinatarioes" no existe y el `+ "es"` lo fabricaba. */
@@ -63,6 +100,8 @@ export const ROL_PLURAL: Record<RolParte, string> = {
   cliente: "Clientes",
   establecimiento: "Establecimientos",
   cubicador: "Cubicadores",
+  socio: "Socios y familia",
+  arrendador: "Dueños de locales",
 };
 
 /** Qué hace cada rol, en el idioma del patio. Para la ayuda de la UI. */
@@ -74,6 +113,8 @@ export const ROL_DESCRIPCION: Record<RolParte, string> = {
   cliente: "A quien le cobras el aserrío o le vendes la madera: su precio del pie va en su ficha",
   establecimiento: "Depósito, lugar de acopio o centro de comercialización de donde sale la carga: punto de partida de la guía",
   cubicador: "Quien mide la madera (cubica) en el patio, el puerto o el camión: el «Cubicado por» de la cubicación",
+  socio: "Socio o familiar: su DNI, RUC, nacimiento y estado civil para los trámites (banco, SUNAT, municipalidad)",
+  arrendador: "Dueño de un local o inmueble alquilado: su ficha va en el contrato y en los pagos del alquiler",
 };
 
 export function esRolValido(v: string): v is RolParte {
@@ -655,13 +696,14 @@ export const parteInputSchema = z.object({
   acopioLng: z.number().min(-180).max(180).optional().nullable(),
   acopioReferencia: texto(250).optional(),
   tituloVigenciaHasta: texto(30).optional(),
-  notas: texto(500).optional(),
+  // Texto libre: una clave o usuario SOL no se guarda (ADR-524 S6).
+  notas: textoSinClave(500).optional(),
   /**
    * Una nota para la bitácora. Sólo el TEXTO viaja: la fecha y el autor los
    * pone el servidor, porque una nota firmada por quien elige su propio nombre
    * no prueba nada.
    */
-  nuevaNota: texto(500).optional(),
+  nuevaNota: textoSinClave(500).optional(),
   activo: z.boolean().optional(),
   /** Data URL; se valida el formato y el peso, no el contenido de la imagen. */
   logo: z
@@ -676,6 +718,75 @@ export const parteInputSchema = z.object({
   adjuntos: z.array(adjuntoSchema).max(30).optional(),
 });
 export type ParteInput = z.infer<typeof parteInputSchema>;
+
+// ── Ficha de persona y edición parcial (ADR-524) ───────────────────────────
+
+/** «AAAA-MM-DD» que existe en el calendario (un 30 de febrero no pasa). */
+export const diaSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha con formato AAAA-MM-DD")
+  .refine((v) => {
+    const d = new Date(`${v}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+  }, "Esa fecha no existe");
+
+/**
+ * Los 10 campos nuevos. Ausente = no se toca; `null` = se borra. El RUC se
+ * valida en la ruta (`lib/admin/ruc.ts` → 422 `ruc_invalido`), no acá: el
+ * motivo concreto («el último dígito no corresponde») vale más que un 400.
+ */
+export const fichaPersonaSchema = z.object({
+  dniEmitidoEl: diaSchema.nullable().optional(),
+  dniVenceEl: diaSchema.nullable().optional(),
+  ruc: texto(15).nullable().optional(),
+  rucEstado: z.enum(ESTADOS_RUC).nullable().optional(),
+  rucEstadoDesde: diaSchema.nullable().optional(),
+  rucCondicion: texto(30).nullable().optional(),
+  nacimientoEl: diaSchema.nullable().optional(),
+  nacimientoLugar: texto(120).nullable().optional(),
+  estadoCivil: z.enum(ESTADOS_CIVILES).nullable().optional(),
+  parentesco: texto(80).nullable().optional(),
+});
+
+/** Los campos de `parteInputSchema` que el PATCH acepta con `null` (= borrar). */
+const camposBorrables = parteInputSchema.omit({
+  roles: true,
+  nombre: true,
+  adjuntos: true,
+  activo: true,
+  notas: true,
+  nuevaNota: true,
+}).shape;
+type CamposBorrables = typeof camposBorrables;
+const borrables = Object.fromEntries(
+  Object.entries(camposBorrables).map(([k, s]) => [k, s.nullable().optional()]),
+) as { [K in keyof CamposBorrables]: z.ZodOptional<z.ZodNullable<CamposBorrables[K]>> };
+
+/**
+ * `PATCH /api/admin/forestal/directorio/[id]` (ADR-524): SOLO las claves que
+ * vinieron se escriben. Es lo que necesita `parte_guardar` del MCP: el POST con
+ * `id` trata el cuerpo como la fila entera y borraba lo que no viajaba.
+ * `.strict()`: una clave mal escrita es un 400, no un cambio que no ocurrió.
+ * Los adjuntos no se reemplazan: se agregan (sin repetir documento) o se quitan.
+ */
+export const partePatchSchema = z
+  .object({
+    ...borrables,
+    ...fichaPersonaSchema.shape,
+    roles: parteInputSchema.shape.roles.optional(),
+    nombre: parteInputSchema.shape.nombre.optional(),
+    activo: z.boolean().optional(),
+    notas: textoSinClave(500).nullable().optional(),
+    nuevaNota: textoSinClave(500).optional(),
+    adjuntosAgregar: z
+      .array(z.object({ documentId: z.string().trim().min(1).max(60), rotulo: z.string().trim().min(1).max(120) }))
+      .max(30)
+      .optional(),
+    adjuntosQuitar: z.array(z.string().trim().min(1).max(60)).max(30).optional(),
+  })
+  .strict();
+export type PartePatch = z.infer<typeof partePatchSchema>;
 
 export const vehiculoInputSchema = z.object({
   /* El formato lo mira `motivoPlacaVehiculo` en `guardarVehiculo`: un `min(5)`
@@ -697,7 +808,12 @@ export type VehiculoInput = z.infer<typeof vehiculoInputSchema>;
 
 // ── Formas que viajan al cliente ────────────────────────────────────────────
 
-export interface Parte {
+/**
+ * Los 10 campos de la ficha de persona (ADR-524) son opcionales acá por la
+ * misma razón que los de cobro: las partes SINTÉTICAS de `guia-partes` no los
+ * tienen. Las que salen de la base los traen siempre (null = vacío).
+ */
+export interface Parte extends Partial<FichaPersonaCampos> {
   id: string;
   roles: RolParte[];
   nombre: string;
@@ -839,8 +955,64 @@ export function faltantesParaGuia(p: Parte, rol: RolParte): string[] {
  * guía aparecía apagado teniendo la libreta llena. Esto es lo que se ofrece
  * abajo, como "también en tu libreta, con otro papel".
  */
+/**
+ * Datos personales de la ficha (Ley 29733, ADR-524 §4.1): fechas del DNI,
+ * nacimiento, estado civil y parentesco. Solo admin/owner los leen; al resto
+ * (almacenero) la ficha le llega con esos campos en `null`. El RUC no entra:
+ * es público en SUNAT y lo usa la guía.
+ */
+export const CAMPOS_PERSONALES = [
+  "dniEmitidoEl",
+  "dniVenceEl",
+  "nacimientoEl",
+  "nacimientoLugar",
+  "estadoCivil",
+  "parentesco",
+] as const satisfies readonly (keyof FichaPersonaCampos)[];
+
+export function ocultarDatosPersonales(p: Parte): Parte {
+  const out: Parte = { ...p };
+  for (const k of CAMPOS_PERSONALES) out[k] = null;
+  return out;
+}
+
+/**
+ * Quién lee y escribe los datos personales (ADR-524 §4.1: «al almacenero le
+ * llegan vacíos»). Lista blanca: manager entra porque `requireAdmin` lo deja
+ * pasar siempre y es el mismo nivel que ve trámites y alquileres.
+ */
+export const ROLES_DATOS_PERSONALES = ["admin", "owner", "manager"] as const;
+
+export function veDatosPersonales(rol: string | null | undefined): boolean {
+  return (ROLES_DATOS_PERSONALES as readonly string[]).includes(rol ?? "");
+}
+
+/** La ficha tal como la puede ver ese rol. TODAS las respuestas del directorio pasan por acá (GET, POST, PATCH). */
+export function parteParaRol(p: Parte, rol: string | null | undefined): Parte {
+  return veDatosPersonales(rol) ? p : ocultarDatosPersonales(p);
+}
+
+/**
+ * El patch que ese rol puede escribir: al almacenero se le descartan los datos
+ * personales (no es un 403: corregir el teléfono tiene que poder). `descartados`
+ * dice qué se dejó afuera, para avisarle.
+ */
+export function patchParaRol(patch: PartePatch, rol: string | null | undefined): { patch: PartePatch; descartados: string[] } {
+  if (veDatosPersonales(rol)) return { patch, descartados: [] };
+  const limpio: PartePatch = { ...patch };
+  const descartados: string[] = [];
+  for (const k of CAMPOS_PERSONALES) {
+    if (k in limpio) {
+      delete limpio[k];
+      descartados.push(k);
+    }
+  }
+  return { patch: limpio, descartados };
+}
+
 export function partesSinRol(partes: Parte[], rol: RolParte): Parte[] {
-  return ordenarPorUso(partes.filter((p) => p.activo && !p.roles.includes(rol)));
+  // Una ficha que solo es socio/arrendador (ADR-524) no es destinatario ni chofer de nadie.
+  return ordenarPorUso(partes.filter((p) => p.activo && !p.roles.includes(rol) && !esSoloPersonal(p.roles)));
 }
 
 /**

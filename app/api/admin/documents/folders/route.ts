@@ -5,6 +5,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
+import { rutaSensible } from "@/lib/documentos/enlaces-entidad";
+import { ROLES_VINCULO } from "@/app/api/admin/documents/vinculo-subida";
 
 
 const CreateBody = z.object({
@@ -50,6 +52,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
+    // ADR-524: «Trámites», «Alquileres», «Socios y familia» nacen con candado; solo admin/owner las crean.
+    if (!parsed.data.parentId && rutaSensible(parsed.data.name) && !ROLES_VINCULO.includes(auth.role)) {
+      return NextResponse.json({ error: "forbidden", message: "Esa carpeta guarda papeles personales: la crea el administrador o el dueño." }, { status: 403 });
+    }
     const { tags, ...datos } = parsed.data;
     let folder = await DocumentsDB.createFolder(auth.tenantId, datos, auth.role);
     if (tags?.length) folder = (await DocumentsDB.updateFolder(auth.tenantId, folder.id, { tags })) ?? folder;

@@ -7,7 +7,8 @@ import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { ForestDirectorioDB } from "@/lib/db/forest-directorio.db";
 import { celularPeru } from "@/lib/forestal/cubicacion-whatsapp";
-import { esRolValido, parteInputSchema, type RolParte } from "@/lib/forestal/directorio";
+import { esRolValido, parteInputSchema, parteParaRol, type RolParte } from "@/lib/forestal/directorio";
+import { respuestaInvalida } from "@/lib/admin/sin-claves";
 
 /**
  * /api/admin/forestal/directorio — la libreta de partes del CTP (ADR-317).
@@ -71,7 +72,8 @@ export const GET = withApiHandler("forestal-directorio-get", async (req: NextReq
     const vehiculos = sp.get("vehiculos") === "0"
       ? []
       : await ForestDirectorioDB.listarVehiculos(auth.tenantId, { incluirInactivos });
-    return NextResponse.json({ partes, vehiculos });
+    // Ley 29733 (ADR-524 §4.1): el almacenero ve la ficha sin los datos personales.
+    return NextResponse.json({ partes: partes.map((p) => parteParaRol(p, auth.role)), vehiculos });
   } catch (err) {
     logger.error("[directorio.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -96,6 +98,9 @@ export const POST = withApiHandler("forestal-directorio-post", async (req: NextR
   }
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
+    // Una clave en las notas: el 422 `parece_clave` de ADR-524 (con el campo).
+    const r = respuestaInvalida(parsed.error);
+    if (r.status === 422) return NextResponse.json(r.body, { status: r.status });
     return NextResponse.json(
       {
         error: "validation_error",
@@ -107,7 +112,7 @@ export const POST = withApiHandler("forestal-directorio-post", async (req: NextR
 
   try {
     const parte = await ForestDirectorioDB.guardarParte(auth.tenantId, parsed.data, auth.username ?? "unknown");
-    return NextResponse.json({ parte });
+    return NextResponse.json({ parte: parteParaRol(parte, auth.role) });
   } catch (err) {
     logger.error("[directorio.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -165,7 +170,7 @@ export const PATCH = withApiHandler("forestal-directorio-uso", async (req: NextR
     }
     try {
       const parte = await ForestDirectorioDB.ponerTelefono(auth.tenantId, t.data.id, celular.slice(2), auth.username ?? "unknown");
-      return parte ? NextResponse.json({ parte }) : NextResponse.json({ error: "not_found" }, { status: 404 });
+      return parte ? NextResponse.json({ parte: parteParaRol(parte, auth.role) }) : NextResponse.json({ error: "not_found" }, { status: 404 });
     } catch (err) {
       logger.error("[directorio.PATCH.telefono] failed", { error: String(err), tenantId: auth.tenantId });
       return NextResponse.json({ error: "internal_error" }, { status: 500 });

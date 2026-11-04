@@ -38,6 +38,87 @@ function enMargen(col: string): string {
   return `${col} >= (($2::text)::date - 1) AND ${col} < (($3::text)::date + 2)`;
 }
 
+/**
+ * ADR-524 — vencimientos de Administración. Las columnas son `@db.Date` (día
+ * de calendario, sin hora): `to_char` directo, sin el corrimiento de Lima, y
+ * el rango va contra `$2/$3` como fecha. Solo trámites abiertos, alquileres
+ * vigentes (o en negociación para el fin) y fichas activas.
+ *  - `alquiler_pago`: un mes del rango por alquiler vigente, dentro del plazo
+ *    (el periodo k empieza en inicio + k meses, antes del fin) y SIN pago
+ *    completo (un pago menor a la renta deja el aviso: R2);
+ *    vence el `diaPago` (31 en febrero = último día; sin día, el del inicio),
+ *    nunca antes del inicio. Misma regla que `lib/admin/alquileres-calculo.ts`.
+ */
+const SQL_ADMINISTRACION = `
+           UNION ALL
+           SELECT 'tramite_vence:' || t.id, 'tramite_vence', 'Vence el trámite: ' || t.asunto, to_char(t."venceEl", 'YYYY-MM-DD')
+             FROM "Tramite" t
+            WHERE t."tenantId" = $1 AND t."deletedAt" IS NULL AND t.estado IN ('preparando', 'enviado', 'observado')
+              AND t."venceEl" BETWEEN ($2::text)::date AND ($3::text)::date
+           UNION ALL
+           SELECT 'tramite_paso:' || t.id, 'tramite_paso', t.asunto || ': ' || COALESCE(t."proximoPaso", 'próximo paso'),
+                  to_char(t."proximoPasoEl", 'YYYY-MM-DD')
+             FROM "Tramite" t
+            WHERE t."tenantId" = $1 AND t."deletedAt" IS NULL AND t.estado IN ('preparando', 'enviado', 'observado')
+              AND t."proximoPasoEl" BETWEEN ($2::text)::date AND ($3::text)::date
+           UNION ALL
+           SELECT 'alquiler_fin:' || a.id, 'alquiler_fin', 'Termina el contrato de alquiler: ' || a.nombre, to_char(a."finEl", 'YYYY-MM-DD')
+             FROM "Alquiler" a
+            WHERE a."tenantId" = $1 AND a."deletedAt" IS NULL AND a.estado IN ('vigente', 'negociacion')
+              AND a."finEl" BETWEEN ($2::text)::date AND ($3::text)::date
+           UNION ALL
+           SELECT 'alquiler_aviso:' || a.id, 'alquiler_aviso', 'Último día para avisar si no se renueva: ' || a.nombre,
+                  to_char(a."finEl" - a."avisoNoRenovarDias", 'YYYY-MM-DD')
+             FROM "Alquiler" a
+            WHERE a."tenantId" = $1 AND a."deletedAt" IS NULL AND a.estado = 'vigente'
+              AND a."finEl" IS NOT NULL AND a."avisoNoRenovarDias" IS NOT NULL
+              AND (a."finEl" - a."avisoNoRenovarDias") BETWEEN ($2::text)::date AND ($3::text)::date
+           UNION ALL
+           SELECT 'alquiler_pago:' || a.id || ':' || to_char(m.mes, 'YYYY-MM'), 'alquiler_pago',
+                  'Pago del alquiler: ' || a.nombre || ' (' || to_char(m.mes, 'YYYY-MM') || ')',
+                  to_char(GREATEST(
+                    make_date(
+                      EXTRACT(YEAR FROM m.mes)::int,
+                      EXTRACT(MONTH FROM m.mes)::int,
+                      LEAST(
+                        COALESCE(a."diaPago", EXTRACT(DAY FROM a."inicioEl")::int),
+                        EXTRACT(DAY FROM (m.mes + interval '1 month' - interval '1 day'))::int
+                      )
+                    ),
+                    a."inicioEl"
+                  ), 'YYYY-MM-DD')
+             FROM "Alquiler" a
+             CROSS JOIN LATERAL generate_series(
+                    date_trunc('month', ($2::text)::date)::date,
+                    date_trunc('month', ($3::text)::date)::date,
+                    interval '1 month'
+                  ) AS m(mes)
+            WHERE a."tenantId" = $1 AND a."deletedAt" IS NULL AND a.estado = 'vigente'
+              AND m.mes >= date_trunc('month', a."inicioEl")
+              AND (a."finEl" IS NULL OR (a."inicioEl" + ((
+                    (EXTRACT(YEAR FROM m.mes) - EXTRACT(YEAR FROM a."inicioEl")) * 12
+                    + EXTRACT(MONTH FROM m.mes) - EXTRACT(MONTH FROM a."inicioEl")
+                  )::int * interval '1 month'))::date < a."finEl"
+                  OR date_trunc('month', a."inicioEl") = m.mes)
+              AND NOT EXISTS (
+                    SELECT 1 FROM "AlquilerPago" p
+                     WHERE p."alquilerId" = a.id AND p."tenantId" = a."tenantId" AND p.periodo = to_char(m.mes, 'YYYY-MM')
+                       AND p.monto >= a."rentaMensual")
+           UNION ALL
+           SELECT 'dni_vence:' || f.id, 'dni_vence', 'Vence el DNI de ' || f.nombre, to_char(f."dniVenceEl", 'YYYY-MM-DD')
+             FROM "ForestParty" f
+            WHERE f."tenantId" = $1 AND f."deletedAt" IS NULL AND f.activo = true
+              AND f."dniVenceEl" BETWEEN ($2::text)::date AND ($3::text)::date`;
+
+/** ADR-524: el enlace lleva a la ficha exacta; los orígenes de antes, a su pantalla. */
+function hrefDeFila(origen: VencimientoDelDia["origen"], id: string, base: string): string {
+  const ref = id.split(":")[1];
+  if (!ref) return base;
+  if (origen === "dni_vence") return `${base}&parte=${encodeURIComponent(ref)}`;
+  if (origen.startsWith("tramite_") || origen.startsWith("alquiler_")) return `${base}&id=${encodeURIComponent(ref)}`;
+  return base;
+}
+
 const fechaADate = (f: FechaKey) => new Date(`${f}T00:00:00Z`);
 const dateAFecha = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -321,6 +402,7 @@ export const AgendaFuentesDB = {
            SELECT 'recordatorio:' || r.id, 'recordatorio', r.title, ${diaLima(`r."dueDate"`)}
              FROM "Reminder" r
             WHERE r."tenantId" = $1 AND r.status = 'pendiente' AND ${enMargen(`r."dueDate"`)}
+           ${SQL_ADMINISTRACION}
          ) x
          WHERE dia BETWEEN $2::text AND $3::text
          ORDER BY dia, titulo`,
@@ -335,8 +417,15 @@ export const AgendaFuentesDB = {
         recordatorio: "/admin?tab=administracion&vista=hoy",
         // ADR-508: no sale de esta consulta (lo arma AgendaDB.calendario); está para que el mapa siga completo.
         seguimiento_clienta: "/admin?tab=administracion&vista=hoy",
+        // ADR-524: la ficha exacta (el id va en el `id` de la fila: «<origen>:<id>[:<mes>]»).
+        tramite_vence: "/admin?tab=administracion&vista=tramites",
+        tramite_paso: "/admin?tab=administracion&vista=tramites",
+        alquiler_fin: "/admin?tab=administracion&vista=alquileres",
+        alquiler_aviso: "/admin?tab=administracion&vista=alquileres",
+        alquiler_pago: "/admin?tab=administracion&vista=alquileres",
+        dni_vence: "/admin?tab=ctp-libro-operaciones&vista=directorio",
       };
-      return filas.map((f) => ({ id: f.id, origen: f.origen, titulo: f.titulo, fecha: f.dia, href: HREF[f.origen] }));
+      return filas.map((f) => ({ id: f.id, origen: f.origen, titulo: f.titulo, fecha: f.dia, href: hrefDeFila(f.origen, f.id, HREF[f.origen]) }));
     });
   },
 

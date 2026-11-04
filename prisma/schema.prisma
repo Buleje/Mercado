@@ -7938,6 +7938,23 @@ model ForestParty {
   /// riesgo, no un dato de contacto.
   tituloVigenciaHasta DateTime?
 
+  // ── Ficha de persona (ADR-524) ──
+  dniEmitidoEl    DateTime? @db.Date
+  dniVenceEl      DateTime? @db.Date
+  /// RUC aparte del DNI: la persona natural tiene DNI 80186494 y RUC 10801864941.
+  ruc             String?
+  /// Lista cerrada ESTADOS_RUC (TS). null = no se sabe.
+  rucEstado       String?
+  rucEstadoDesde  DateTime? @db.Date
+  /// HABIDO | NO HABIDO | NO HALLADO (lo trae el lookup SUNAT).
+  rucCondicion    String?
+  nacimientoEl    DateTime? @db.Date
+  nacimientoLugar String?
+  /// Lista cerrada ESTADOS_CIVILES (TS).
+  estadoCivil     String?
+  /// Texto corto: «madre de Brandon».
+  parentesco      String?
+
   /// Logo del titular como data URL (PNG/JPG chico, ver `LOGO_MAX_BYTES`).
   ///
   /// Data URL y no una URL del storage a propósito: el PDF de la guía se arma
@@ -9379,6 +9396,141 @@ model ForestInspeccionPlanta {
   updatedAt DateTime @updatedAt
 
   @@index([tenantId, fecha])
+}
+
+// ── Administración: trámites generales y alquileres (ADR-524) ─────────────
+// Bancos, SUNAT, SUNARP, municipalidad, notaría, RENIEC: qué pidieron, qué
+// falta y cuándo vence. Sirve a cualquier negocio (no es del CTP: las cartas
+// a la autoridad forestal siguen en el KV `ctp-tramites:`). Estados y entidades
+// = String + lista cerrada en TS (`lib/admin/fichas-tramites-alquileres.ts`),
+// nunca enum de Postgres: un valor nuevo rompería al Prisma viejo de producción.
+model Tramite {
+  id            String    @id @default(cuid())
+  tenantId      String
+  /// ENTIDADES_TRAMITE: banco | sunat | sunarp | municipalidad | notaria | reniec | otra
+  entidad       String
+  entidadNombre String? // «Agrobanco — agencia Constitución»
+  asunto        String
+  /// A quién pertenece: ficha del directorio (sin FK, como Document.tenantId) o texto.
+  parteId       String?
+  personaNombre String?
+  alquilerId    String?
+  /// ESTADOS_TRAMITE: preparando | enviado | observado | aprobado | rechazado | cerrado | desistido
+  estado        String    @default("preparando")
+  iniciadoEl    DateTime? @db.Date
+  enviadoEl     DateTime? @db.Date
+  venceEl       DateTime? @db.Date
+  proximoPaso   String?
+  proximoPasoEl DateTime? @db.Date
+  /// CANALES_TRAMITE: presencial | correo | web | whatsapp | otro
+  canal         String?
+  contacto      String? // a quién se le mandó (nombre/correo)
+  notas         String?
+  creadoPor     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  requisitos TramiteRequisito[]
+
+  @@index([tenantId, estado])
+  @@index([tenantId, venceEl])
+  @@index([tenantId, parteId])
+  @@index([tenantId, alquilerId])
+}
+
+model TramiteRequisito {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tramiteId  String
+  orden      Int      @default(0)
+  nombre     String
+  /// ESTADOS_REQUISITO: hay | falta | no_aplica
+  estado     String   @default("falta")
+  /// Puntero al Drive (sin FK: Document se borra suave).
+  documentId String?
+  nota       String?
+  updatedAt  DateTime @updatedAt
+
+  tramite Tramite @relation(fields: [tramiteId], references: [id], onDelete: Cascade)
+
+  @@index([tramiteId])
+  @@index([tenantId, documentId])
+}
+
+/// Local o inmueble alquilado (ADR-524). Es un REGISTRO: los pagos no mueven
+/// caja ni tesorería (el local de Constitución es de Drucila, no de Blas).
+model Alquiler {
+  id                   String    @id @default(cuid())
+  tenantId             String
+  nombre               String // «Local Constitución — Agrobanco»
+  direccion            String?
+  partidaSunarp        String? // «P43000519»
+  manzana              String?
+  lote                 String?
+  areaM2               Decimal?  @db.Decimal(10, 2)
+  ubigeo               String?
+  duenoParteId         String? // ficha con rol arrendador
+  duenoTexto           String?
+  inquilinoParteId     String?
+  inquilinoTexto       String?
+  /// NUESTRO_PAPEL: arrendador | inquilino | gestor (la familia: ni cobra ni paga el negocio)
+  nuestroPapel         String?
+  rentaMensual         Decimal   @db.Decimal(12, 2)
+  moneda               String    @default("PEN") // PEN | USD
+  incluyeImpuestos     Boolean?
+  diaPago              Int? // 1-31; 31 en febrero = último día
+  garantiaMonto        Decimal?  @db.Decimal(12, 2)
+  garantiaPagada       Boolean?
+  garantiaPagadaEl     DateTime? @db.Date
+  garantiaDevueltaEl   DateTime? @db.Date
+  inicioEl             DateTime  @db.Date
+  finEl                DateTime? @db.Date
+  renovacionAutomatica Boolean   @default(false)
+  avisoNoRenovarDias   Int? // días antes de finEl
+  reajuste             String?
+  contratoDocumentId   String?
+  cuentaBanco          String?
+  cuentaCci            String? // 20 dígitos
+  cuentaTitular        String?
+  /// ESTADOS_ALQUILER: negociacion | vigente | terminado
+  estado               String    @default("negociacion")
+  notas                String?
+  creadoPor            String
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+
+  pagos AlquilerPago[]
+
+  @@index([tenantId, estado])
+  @@index([tenantId, finEl])
+  @@index([tenantId, duenoParteId])
+}
+
+/// Un pago por periodo «AAAA-MM» (único con el alquiler): reintentar el mismo
+/// pago es un replay idempotente, otro monto para el mismo mes es un 409.
+/// `onDelete: Restrict`: un alquiler con pagos no se borra en duro (solo `deletedAt`).
+model AlquilerPago {
+  id                    String   @id @default(cuid())
+  tenantId              String
+  alquilerId            String
+  periodo               String // «2026-10»
+  monto                 Decimal  @db.Decimal(12, 2)
+  pagadoEl              DateTime @db.Date
+  /// MEDIOS_PAGO_ALQUILER: transferencia | deposito | efectivo | yape | plin | cheque | otro
+  medio                 String
+  numeroOperacion       String?
+  comprobanteDocumentId String?
+  notas                 String?
+  registradoPor         String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  alquiler Alquiler @relation(fields: [alquilerId], references: [id], onDelete: Restrict)
+
+  @@unique([alquilerId, periodo])
+  @@index([tenantId, pagadoEl])
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

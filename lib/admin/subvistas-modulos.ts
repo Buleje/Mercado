@@ -318,6 +318,9 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "actividades", label: "Actividades", hint: "Lo que se repite: asistencia, aserrío, gastos e ingresos, adelantos, cuentas de terceros y facturas" },
     { key: "tareas", label: "Tareas", hint: "Lo que tiene que hacer el equipo y quién lo hace", origen: ["tareas"] },
     { key: "notas", label: "Notas", hint: "Apuntes rápidos del negocio y notas de un día", origen: ["tareas", "notas"] },
+    // ADR-524: trámites con bancos y entidades, y locales alquilados.
+    { key: "tramites", label: "Trámites", hint: "Bancos, SUNAT, municipalidad, notaría: qué pidieron, qué falta y cuándo vence" },
+    { key: "alquileres", label: "Alquileres", hint: "Locales alquilados: contrato, renta, garantía y pagos mes a mes" },
     { key: "conectar", label: "Conectar", hint: "Ver la agenda en Google Calendar, Outlook o el celular" },
   ],
   // Pedidos y reparto (ola 2): gana `?vista=` y absorbe Delivery como Reparto.

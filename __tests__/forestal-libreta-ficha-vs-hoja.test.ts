@@ -87,6 +87,8 @@ const MAPA: Record<RolParte, Partial<Record<Clave, Fila>>> = {
   conductor: filasDe("conductor", { nombre: ["32"], documento: ["33"], licencia: ["34"] }),
   transportista: {},
   cubicador: {},
+  socio: {},
+  arrendador: {},
 };
 
 const LLENA: Parte = {
