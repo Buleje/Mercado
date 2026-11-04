@@ -8,7 +8,7 @@
  * ruta y reporta la mediana sin la 1.ª llamada (la que compila).
  *
  * Uso: node --env-file=.env.local scripts/dev-helpers/medir-endpoints.mjs [--veces 4] [--tenant main] [filtro…]
- *   Rutas: la lista de abajo (más pedidas del log del dev 04-11) o `--ruta "/api/…"` repetible.
+ *   Rutas: la lista de abajo (más pedidas del log del dev 04-11) o SOLO las de `--ruta "/api/…"` (repetible).
  */
 const args = process.argv.slice(2);
 const arg = (k, d) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
@@ -82,11 +82,14 @@ async function medir(ruta, cookie) {
   return { ruta, estado, primera: Math.round(tiempos[0]), mediana: Math.round(mediana), kb: Math.round(bytes / 1024) };
 }
 
+// Con --ruta se miden SOLO esas (la lista de abajo queda para la corrida sin argumentos).
 const pasa = (r) => !filtros.length || filtros.some((f) => r.includes(f));
+const esSa = (r) => r.includes("/superadmin/");
+const lista = (extra.length ? extra : [...RUTAS_ADMIN, ...RUTAS_SA]).filter(pasa);
 const filas = [];
-const admin = await entrarAdmin();
-for (const r of [...RUTAS_ADMIN, ...extra.filter((x) => !x.includes("/superadmin/"))].filter(pasa)) filas.push(await medir(r, admin));
-const sa = RUTAS_SA.some(pasa) || extra.some((x) => x.includes("/superadmin/")) ? await entrarSuperadmin() : "";
-if (sa) for (const r of [...RUTAS_SA, ...extra.filter((x) => x.includes("/superadmin/"))].filter(pasa)) filas.push(await medir(r, sa));
+const admin = lista.some((r) => !esSa(r)) ? await entrarAdmin() : "";
+for (const r of lista.filter((x) => !esSa(x))) filas.push(await medir(r, admin));
+const sa = lista.some(esSa) ? await entrarSuperadmin() : "";
+for (const r of lista.filter(esSa)) filas.push(await medir(r, sa));
 filas.sort((a, b) => b.mediana - a.mediana);
 console.table(filas);
