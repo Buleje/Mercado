@@ -59,7 +59,7 @@ Desde 30-10 `frontend`/`backend`/`database`/`tester`/`reviewer` corren en `sonne
 | `security` / `architect` | **nunca** | — | siempre |
 | `Explore` / búsqueda (Brandon 02-11) | listar, contar, «dónde está X», grep amplio, bajar y resumir páginas | investigar con criterio (comparar fuentes, refutar) | — |
 
-**Esfuerzo de los subagentes** (Brandon 31-10, «ayudantes más rápidos»): `CLAUDE_CODE_SUBAGENT_EFFORT=medium` en `~/.claude/settings.json` (antes heredaban el `high` de la sesión). `security` y `architect` llevan `effort: high` en su def. Con la 3.ª columna de la tabla (dinero, RBAC, state machine, zona de peligro, `diagnose` de un bug de Brandon) pasá **también** `effort: "high"` en el `Agent`. Revisar al 3.er cierre con subagentes (turnos/subagente del arranque y retrabajos): si subió el retrabajo, borrar la variable.
+**Esfuerzo (Brandon 04-11: «pon el esfuerzo xhigh por defecto y trabaja con eso en general»):** TODO en `xhigh` — sesión (`effortLevel`, `CLAUDE_CODE_EFFORT_LEVEL`, `modelSettings` de opus/sonnet/fable), ayudantes (`CLAUDE_CODE_SUBAGENT_EFFORT=xhigh`) y los defs con `effort:` (`architect`, `security`, `healer`). Al invocar un `Agent`, si pasás `effort`, que sea `"xhigh"`. No bajarlo por velocidad sin que Brandon lo pida (31-10 se había bajado a `medium` para ayudantes más rápidos; 04-11 lo revirtió).
 | `healer` | tokens del DS, lint puro | default del def | — |
 
 ## Forks, worktrees y carriles en paralelo
