@@ -81,7 +81,7 @@ export function StatusControl({ status, onChange }: { status: string; onChange: 
         title={meta ? `Estado: ${meta.label}` : "Poner un estado"}
         aria-label={meta ? `Estado: ${meta.label}` : "Poner un estado"}
         className={cn(
-          "inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-sm font-bold transition-colors",
+          "inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-1.5 py-0.5 text-sm font-bold transition-colors",
           meta ? cn(meta.bg, meta.text) : "border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-primary hover:text-primary"
         )}
       >

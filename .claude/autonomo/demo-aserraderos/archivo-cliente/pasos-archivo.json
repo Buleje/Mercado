@@ -1,0 +1,65 @@
+[
+ {
+  "esperar": "main table >> text=Adelantos"
+ },
+ {
+  "esperar": "main table >> text=Clientes"
+ },
+ {
+  "esperar": 600
+ },
+ {
+  "click": "main table >> text=Clientes"
+ },
+ {
+  "esperar": 1200
+ },
+ {
+  "esperar": "main table >> text=Maderera El Bosque"
+ },
+ {
+  "esperar": 600
+ },
+ {
+  "click": "main table >> text=Maderera El Bosque"
+ },
+ {
+  "esperar": 1200
+ },
+ {
+  "esperar": "text=Cubicación - Carga 14.pdf"
+ },
+ {
+  "esperar": 1800
+ },
+ {
+  "eval": "(()=>{const t=document.body.innerText;return {oficial:(t.match(/Oficial/g)||[]).length,viejaVisible:/versión del 31-10/.test(t),chips:[...document.querySelectorAll('button[aria-pressed]')].map(b=>b.textContent.trim()).filter(x=>/Oficial|Archivado|revisión|Todos/.test(x))}})()"
+ },
+ {
+  "eval": "(()=>{const t=document.querySelector('main table');t.scrollIntoView({block:'start',behavior:'instant'});window.scrollBy(0,-150);let e=t.parentElement;while(e&&e.scrollHeight<=e.clientHeight)e=e.parentElement;if(e)e.scrollTop=Math.max(0,e.scrollTop-150);return 1})()"
+ },
+ {
+  "esperar": 500
+ },
+ {
+  "captura": "1-oficial"
+ },
+ {
+  "eval": "(()=>{const b=[...document.querySelectorAll('button[aria-pressed]')].find(b=>/^\\s*Archivado/.test(b.textContent||''));b?.click();return !!b})()"
+ },
+ {
+  "esperar": 1500
+ },
+ {
+  "eval": "(()=>{const t=document.body.innerText;return {viejaVisible:/versión del 31-10/.test(t),oficialVisible:/Cubicación - Carga 14/.test(t)}})()"
+ },
+ {
+  "eval": "(()=>{const t=document.querySelector('main table');t.scrollIntoView({block:'start',behavior:'instant'});window.scrollBy(0,-150);let e=t.parentElement;while(e&&e.scrollHeight<=e.clientHeight)e=e.parentElement;if(e)e.scrollTop=Math.max(0,e.scrollTop-150);return 1})()"
+ },
+ {
+  "esperar": 500
+ },
+ {
+  "captura": "2-archivado"
+ }
+]
