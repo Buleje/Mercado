@@ -25,6 +25,8 @@ import {
 // el negocio; a OSINFOR solo viaja el código del permiso.
 
 const DE_A = 4;
+/** Pasado esto no se piden más permisos a OSINFOR: la función de Vercel corta a los 30 s. */
+const PRESUPUESTO_OSINFOR_MS = 20_000;
 
 /** Las búsquedas en SERFOR de una persona: ella misma y cada uno de sus permisos. */
 async function serforDelGrupo(g: GrupoRevision): Promise<ResumenInfractores[] | null> {
@@ -45,9 +47,14 @@ async function serforDelGrupo(g: GrupoRevision): Promise<ResumenInfractores[] | 
   return out;
 }
 
-async function osinforDeCodigos(codigos: string[]): Promise<Map<string, ResumenOsinfor | null>> {
+/** Los códigos que no entran en el mapa no se consultaron (se acabó el tiempo): la fila lo dice. */
+async function osinforDeCodigos(
+  codigos: string[],
+  inicio: number,
+): Promise<Map<string, ResumenOsinfor | null>> {
   const res = new Map<string, ResumenOsinfor | null>();
   for (let i = 0; i < codigos.length; i += DE_A) {
+    if (Date.now() - inicio > PRESUPUESTO_OSINFOR_MS) break;
     const tanda = codigos.slice(i, i + DE_A);
     const respuestas = await Promise.all(tanda.map((c) => consultarOsinfor(c)));
     tanda.forEach((c, j) => res.set(c, respuestas[j] ?? null));
@@ -89,7 +96,7 @@ export async function GET(req: NextRequest) {
     ];
     const [serfor, osinfor] = await Promise.all([
       Promise.all(grupos.map(serforDelGrupo)),
-      osinforDeCodigos(codigos.slice(0, MAX_PERMISOS_OSINFOR)),
+      osinforDeCodigos(codigos.slice(0, MAX_PERMISOS_OSINFOR), inicio),
     ]);
     if (serfor.some((s) => s == null)) {
       return NextResponse.json(
@@ -99,16 +106,18 @@ export async function GET(req: NextRequest) {
     }
 
     const filas = grupos.map((g, i) => revisarGrupo(g, serfor[i] ?? [], osinfor));
+    const resumen = resumirRevision(filas);
     const corte = serfor.flat().find((r) => r?.corte)?.corte ?? null;
     logger.info("[revision-proveedores] revisados", {
       tenantId: auth.tenantId,
       grupos: grupos.length,
       permisos: codigos.length,
+      sinConsultar: resumen.osinforSinConsultar,
       ms: Date.now() - inicio,
     });
     return NextResponse.json({
       data: {
-        resumen: resumirRevision(filas),
+        resumen,
         filas: filasConAlerta(filas),
         corteSerfor: corte,
         revisadoEn: new Date().toISOString(),

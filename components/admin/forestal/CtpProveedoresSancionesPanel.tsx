@@ -11,7 +11,7 @@
  */
 
 import { CardTitle } from "@buleje/design-system";
-import { CheckCircle2, Loader2, ShieldAlert } from "@buleje/design-system/icons";
+import { AlertTriangle, CheckCircle2, Loader2, ShieldAlert } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ENLACE_REGISTRO_INFRACTORES } from "@/lib/forestal/serfor-infractores";
 import { Btn } from "./ctp-shared";
@@ -20,13 +20,20 @@ import { fmtFechaCorta } from "./contratos-ui";
 import CtpProveedoresSancionesFila from "./CtpProveedoresSancionesFila";
 import { useRevisionProveedores, type RevisionProveedores } from "./hooks/use-revision-proveedores";
 
+/** Permisos que OSINFOR no contestó o que ni se consultaron: «sin alertas» no se puede decir de ellos. */
+function permisosSinRevisar(d: RevisionProveedores): number {
+  return d.resumen.osinforSinRespuesta + d.resumen.osinforSinConsultar;
+}
+
 function lineaResumen(d: RevisionProveedores): string {
   const r = d.resumen;
   const partes = [
     `Revisé ${r.revisados === 1 ? "1 ficha" : `${r.revisados} fichas`} y ${r.permisos === 1 ? "1 permiso" : `${r.permisos} permisos`}`,
     d.corteSerfor ? `lista de SERFOR al ${fmtFechaCorta(d.corteSerfor)}` : null,
     r.sinDocumento > 0 ? `${r.sinDocumento} sin RUC/DNI (solo por nombre)` : null,
-    r.osinforSinRespuesta > 0 ? `${r.osinforSinRespuesta} permisos sin respuesta de OSINFOR` : null,
+    r.sinDatos > 0 ? `${r.sinDatos} sin RUC/DNI ni nombre para buscar` : null,
+    r.osinforSinRespuesta > 0 ? `${r.osinforSinRespuesta} ${r.osinforSinRespuesta === 1 ? "permiso" : "permisos"} sin respuesta de OSINFOR` : null,
+    r.osinforSinConsultar > 0 ? `${r.osinforSinConsultar} ${r.osinforSinConsultar === 1 ? "permiso" : "permisos"} sin consultar en OSINFOR` : null,
   ];
   return partes.filter(Boolean).join(" · ");
 }
@@ -82,7 +89,14 @@ export default function CtpProveedoresSancionesPanel() {
       ) : (
         <>
           <p className="text-xs text-[var(--text-tertiary)]">{lineaResumen(datos)}</p>
-          {datos.filas.length === 0 ? (
+          {datos.filas.length === 0 && permisosSinRevisar(datos) > 0 ? (
+            <p className="flex items-center gap-2 rounded-xl bg-[var(--data-warning-500)]/12 p-3 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              No se pudo revisar {permisosSinRevisar(datos)}{" "}
+              {permisosSinRevisar(datos) === 1 ? "permiso" : "permisos"} en OSINFOR: esto no quiere
+              decir «sin alertas». Vuelve a tocar «Revisar de nuevo».
+            </p>
+          ) : datos.filas.length === 0 ? (
             <p className="flex items-center gap-2 rounded-xl bg-[var(--data-success-500)]/10 p-3 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
               <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
               Ninguna ficha ni permiso aparece en el Registro de Infractores de SERFOR ni en la

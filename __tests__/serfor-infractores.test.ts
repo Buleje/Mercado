@@ -128,7 +128,28 @@ describe("buscarInfractor", () => {
     expect(r.total).toBe(1);
   });
 
-  it("sin nada válido con qué buscar NO dice «No figura»", () => {
+  it("la certeza no depende del orden de la lista: la misma sanción con y sin documento", () => {
+    const conDoc = {
+      infractor: "JUAN PEREZ RAMOS",
+      documento: "40112233",
+      tituloHab: null,
+      resolucion: "RA 0001-2024-X",
+      fecha: "2024-03-05",
+      organo: "ARFFS",
+      ambito: "GORE UCAYALI",
+    };
+    const sinDoc = { ...conDoc, documento: null };
+    const busqueda = { documento: "40112233", nombre: "Juan Perez Ramos" };
+    const ab = buscarInfractor([conDoc, sinDoc], busqueda);
+    const ba = buscarInfractor([sinDoc, conDoc], busqueda);
+    expect(ab.certeza).toBe("segura");
+    expect(ba.certeza).toBe(ab.certeza);
+    expect(ba.coincidencias).toEqual(ab.coincidencias);
+    expect(ba.coincidencias).toHaveLength(1);
+    expect(ba.coincidencias[0]?.motivo).toBe("documento");
+  });
+
+  it("sin nada válido con qué buscar NO dice «No figura", () => {
     const r = buscarInfractor(filas, { documento: "123", nombre: "x", codigo: "ab" });
     expect(r.certeza).toBe("sin_datos");
     expect(r.buscadoPor).toEqual([]);

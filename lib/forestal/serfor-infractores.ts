@@ -174,7 +174,7 @@ export function parsearInfractores(texto: string): SancionSerfor[] {
  * y «00692-2021-OSINFOR/08.2», medido 04-11) y el nombre en otro orden: se junta por
  * número-año de la resolución + la persona.
  */
-function clavesDeSancion(s: SancionSerfor): string[] {
+export function clavesDeSancion(s: SancionSerfor): string[] {
   const numeroAnio = /\d{3,6}-\d{4}/.exec(s.resolucion)?.[0];
   // Sin número-año («035», «11»): el número solo no alcanza; va con la fecha y el permiso.
   const numero = numeroAnio ?? `${sinTildes(s.resolucion).replace(/[^A-Z0-9]/g, "")}|${s.fecha ?? ""}|${s.tituloHab ?? ""}`;
@@ -199,8 +199,11 @@ export function buscarInfractor(
     ...(nombre ? (["nombre"] as const) : []),
   ];
 
-  const vistas = new Set<string>();
-  const coincidencias: CoincidenciaInfractor[] = [];
+  // Primero todas las candidatas con su motivo, ordenadas por fuerza; RECIÉN después se quita la repetida:
+  // si no, la misma sanción llegada antes por el nombre tapa a la que llega por el documento y la certeza
+  // depende del orden de la lista.
+  const peso: Record<MotivoCoincidencia, number> = { documento: 0, permiso: 1, permiso_otro: 2, nombre: 3 };
+  const candidatas: CoincidenciaInfractor[] = [];
   for (const s of sanciones) {
     let motivo: MotivoCoincidencia | null = null;
     const suPersona = s.documento ? personaDelDocumento(s.documento) : null;
@@ -210,17 +213,24 @@ export function buscarInfractor(
     if (persona && suPersona === persona) motivo = "documento";
     else if (codigo && s.tituloHab === codigo) motivo = otraPersona ? "permiso_otro" : "permiso";
     else if (nombre && !otraPersona && nombreComparable(s.infractor) === nombre) motivo = "nombre";
-    if (!motivo) continue;
-    const claves = clavesDeSancion(s);
-    if (claves.some((c) => vistas.has(c))) continue;
-    for (const c of claves) vistas.add(c);
-    coincidencias.push({ ...s, motivo });
+    if (motivo) candidatas.push({ ...s, motivo });
   }
-
-  const peso: Record<MotivoCoincidencia, number> = { documento: 0, permiso: 1, permiso_otro: 2, nombre: 3 };
-  coincidencias.sort(
-    (a, b) => peso[a.motivo] - peso[b.motivo] || (b.fecha ?? "").localeCompare(a.fecha ?? "") || a.resolucion.localeCompare(b.resolucion),
+  candidatas.sort(
+    (a, b) =>
+      peso[a.motivo] - peso[b.motivo] ||
+      (b.fecha ?? "").localeCompare(a.fecha ?? "") ||
+      a.resolucion.localeCompare(b.resolucion) ||
+      a.infractor.localeCompare(b.infractor),
   );
+
+  const vistas = new Set<string>();
+  const coincidencias: CoincidenciaInfractor[] = [];
+  for (const c of candidatas) {
+    const claves = clavesDeSancion(c);
+    if (claves.some((k) => vistas.has(k))) continue;
+    for (const k of claves) vistas.add(k);
+    coincidencias.push(c);
+  }
 
   const cuenta = (m: MotivoCoincidencia[]) => coincidencias.filter((c) => m.includes(c.motivo)).length;
   const seguras = cuenta(["documento", "permiso"]);

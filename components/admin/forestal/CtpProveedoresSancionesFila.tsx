@@ -17,19 +17,18 @@ import type {
 import { fmtFechaCorta } from "./contratos-ui";
 import { Btn } from "./ctp-shared";
 
+const CLASE_ROJO =
+  "bg-[var(--data-error-500)]/12 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
+
 const CHIP: Record<NivelRevision, { texto: string; clase: string }> = {
-  rojo: {
-    texto: "Sancionado",
-    clase:
-      "bg-[var(--data-error-500)]/12 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
-  },
+  rojo: { texto: "Sancionado", clase: CLASE_ROJO },
   ambar: {
     texto: "Revisar",
     clase:
       "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
   },
   nombre: {
-    texto: "Mismo nombre",
+    texto: "Posible: mismo nombre",
     clase:
       "bg-[var(--surface-sunken)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
   },
@@ -46,6 +45,7 @@ const CHIP: Record<NivelRevision, { texto: string; clase: string }> = {
 
 function textoOsinfor(p: PermisoRevisado): { texto: string; alerta: boolean } {
   const o = p.osinfor;
+  if (p.sinConsultar) return { texto: "No se consultó", alerta: false };
   if (!o) return { texto: "OSINFOR no respondió", alerta: false };
   if (o.nivel === "rojo") return { texto: `Lista roja (${o.enRoja})`, alerta: true };
   if (o.nivel === "ambar") return { texto: `PAU en trámite (${o.pauEnTramite})`, alerta: true };
@@ -57,7 +57,11 @@ function textoOsinfor(p: PermisoRevisado): { texto: string; alerta: boolean } {
 }
 
 export default function CtpProveedoresSancionesFila({ fila }: { fila: FilaRevision }) {
-  const chip = CHIP[fila.nivel];
+  // «Sancionado» solo si SERFOR lo dice; el rojo que viene únicamente de la lista roja de OSINFOR se rotula así.
+  const chip =
+    fila.nivel === "rojo" && fila.certeza !== "segura"
+      ? { texto: "Lista roja OSINFOR", clase: CLASE_ROJO }
+      : CHIP[fila.nivel];
   const href = fila.parteId
     ? hrefDe("parte", fila.parteId)
     : fila.permisos[0]

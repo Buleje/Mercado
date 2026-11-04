@@ -12,6 +12,7 @@
  */
 
 import {
+  clavesDeSancion,
   documentoDe,
   nombreComparable,
   personaDelDocumento,
@@ -62,17 +63,20 @@ export type CertezaSerfor = ResumenInfractores["certeza"];
 export interface PermisoRevisado {
   id: string;
   codigo: string;
-  /** null = OSINFOR no respondió o no se llegó a consultar (pasó el tope). */
+  /** null = OSINFOR no respondió o no se llegó a consultar (ver `sinConsultar`). */
   osinfor: {
     nivel: NivelOsinfor;
     enRoja: number;
     pauEnTramite: number;
     esPlantacion: boolean;
   } | null;
+  /** true = ni se le preguntó a OSINFOR (pasó el tope, se acabó el tiempo o el código no es consultable). */
+  sinConsultar: boolean;
 }
 
 /**
- * «rojo» = sanción por su documento/permiso o permiso en lista roja · «ambar» = PAU en trámite o
+ * «rojo» = sanción por su documento/permiso o permiso en lista roja (la pantalla dice «Sancionado» solo
+ * si `certeza` es «segura»; si no, «Lista roja OSINFOR») · «ambar» = PAU en trámite o
  * sanción del permiso a otra persona · «nombre» = solo coincide el nombre · «limpio» = se buscó y
  * no hay nada · «sin_datos» = sin documento, nombre útil ni permiso.
  */
@@ -99,8 +103,12 @@ export interface ResumenRevision {
   nombre: number;
   /** Filas sin RUC/DNI: el cruce por nombre es más flojo. */
   sinDocumento: number;
-  /** Permisos que OSINFOR no contestó o que pasaron el tope. */
+  /** Fichas sin documento ni nombre útil y sin permisos: no hubo con qué buscar. */
+  sinDatos: number;
+  /** Permisos a los que se les preguntó a OSINFOR y no contestó. */
   osinforSinRespuesta: number;
+  /** Permisos a los que ni se les preguntó (pasaron el tope, se acabó el tiempo o el código no es consultable). */
+  osinforSinConsultar: number;
 }
 
 const ORDEN_NIVEL: Record<NivelRevision, number> = {
@@ -128,9 +136,18 @@ function seRevisa(p: ParteRevisable): boolean {
   return p.roles.some((r) => (ROLES_REVISADOS as readonly string[]).includes(r));
 }
 
+/** Los dos tienen documento de la misma clase (DNI con DNI, RUC con RUC) y no es la misma persona = homónimos. */
+function sonPersonasDistintas(a: string | null, b: string | null): boolean {
+  if (!a || !b) return false;
+  const pa = personaDelDocumento(a);
+  const pb = personaDelDocumento(b);
+  return pa.length === pb.length && pa !== pb;
+}
+
 /**
  * Cada permiso va con la ficha de su titular: por `titularId`, si no por el mismo RUC/DNI y,
- * si tampoco, por el mismo nombre. El que no encaja queda como fila propia.
+ * si tampoco, por el mismo nombre (salvo que los dos tengan documento y sea otra persona: un homónimo).
+ * El que no encaja queda como fila propia.
  */
 export function agruparPorTitular(
   partes: ParteRevisable[],
@@ -161,10 +178,11 @@ export function agruparPorTitular(
   for (const k of permisos) {
     const doc = documentoDe(k.titularDoc);
     const nombre = nombreComparable(k.titularNombre);
+    const dePorNombre = nombre ? porNombre.get(nombre) : undefined;
     const titular =
       (k.titularId ? porId.get(k.titularId) : undefined) ??
       (doc ? porDoc.get(personaDelDocumento(doc)) : undefined) ??
-      (nombre ? porNombre.get(nombre) : undefined);
+      (dePorNombre && !sonPersonasDistintas(dePorNombre.documento, doc) ? dePorNombre : undefined);
     if (titular) {
       titular.permisos.push(k);
       if (!titular.documento && doc) titular.documento = doc;
@@ -182,38 +200,38 @@ export function agruparPorTitular(
   return [...grupos.values()];
 }
 
-/** La misma resolución publicada con distinto formato o encontrada por dos caminos cuenta una vez. */
-function claveSancion(s: CoincidenciaInfractor): string {
-  const numero = s.resolucion
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
-  return `${numero}|${s.fecha ?? ""}`;
-}
-
-/** Junta varios resúmenes de SERFOR de la misma persona: certeza la mejor, sanciones sin repetir. */
+/**
+ * Junta varios resúmenes de SERFOR de la misma persona: certeza la mejor, sanciones sin repetir
+ * (la misma clave que usa `buscarInfractor`: número-año de la resolución + la persona). Primero se
+ * ordena por fuerza del motivo y después se quita la repetida, así el orden de los resúmenes no cambia nada.
+ */
 export function juntarSerfor(resumenes: ResumenInfractores[]): {
   certeza: CertezaSerfor;
   sanciones: CoincidenciaInfractor[];
 } {
   let certeza: CertezaSerfor = "sin_datos";
-  const vistas = new Map<string, CoincidenciaInfractor>();
+  const candidatas: CoincidenciaInfractor[] = [];
   for (const r of resumenes) {
     if (ORDEN_CERTEZA[r.certeza] < ORDEN_CERTEZA[certeza]) certeza = r.certeza;
-    for (const c of r.coincidencias) {
-      const k = claveSancion(c);
-      const ya = vistas.get(k);
-      if (!ya || PESO_MOTIVO[c.motivo] < PESO_MOTIVO[ya.motivo]) vistas.set(k, c);
-    }
+    candidatas.push(...r.coincidencias);
   }
-  const sanciones = [...vistas.values()].sort(
+  candidatas.sort((a, b) => PESO_MOTIVO[a.motivo] - PESO_MOTIVO[b.motivo]);
+  const vistas = new Set<string>();
+  const sanciones: CoincidenciaInfractor[] = [];
+  for (const c of candidatas) {
+    const claves = clavesDeSancion(c);
+    if (claves.some((k) => vistas.has(k))) continue;
+    for (const k of claves) vistas.add(k);
+    sanciones.push(c);
+  }
+  sanciones.sort(
     (a, b) =>
       PESO_MOTIVO[a.motivo] - PESO_MOTIVO[b.motivo] || (b.fecha ?? "").localeCompare(a.fecha ?? ""),
   );
   return { certeza, sanciones };
 }
 
+/** «rojo» no siempre es sanción de SERFOR: sin certeza «segura» viene solo de la lista roja de OSINFOR. */
 export function nivelDeFila(certeza: CertezaSerfor, permisos: PermisoRevisado[]): NivelRevision {
   const osinfor = permisos.map((p) => p.osinfor?.nivel).filter((n): n is NivelOsinfor => n != null);
   if (certeza === "segura" || osinfor.includes("rojo")) return "rojo";
@@ -231,7 +249,8 @@ export function revisarGrupo(
 ): FilaRevision {
   const { certeza, sanciones } = juntarSerfor(serfor);
   const permisos: PermisoRevisado[] = grupo.permisos.map((k) => {
-    const o = osinfor.get(codigoConsultable(k.codigo) ?? k.codigo) ?? null;
+    const clave = codigoConsultable(k.codigo) ?? k.codigo;
+    const o = osinfor.get(clave) ?? null;
     return {
       id: k.id,
       codigo: k.codigo,
@@ -243,6 +262,7 @@ export function revisarGrupo(
             esPlantacion: o.esPlantacion,
           }
         : null,
+      sinConsultar: !osinfor.has(clave),
     };
   });
   return {
@@ -278,7 +298,12 @@ export function resumirRevision(filas: FilaRevision[]): ResumenRevision {
     ambar: cuenta("ambar"),
     nombre: cuenta("nombre"),
     sinDocumento: filas.filter((f) => !f.documento).length,
-    osinforSinRespuesta: filas.reduce((s, f) => s + f.permisos.filter((p) => !p.osinfor).length, 0),
+    sinDatos: cuenta("sin_datos"),
+    osinforSinRespuesta: filas.reduce(
+      (s, f) => s + f.permisos.filter((p) => !p.osinfor && !p.sinConsultar).length,
+      0,
+    ),
+    osinforSinConsultar: filas.reduce((s, f) => s + f.permisos.filter((p) => p.sinConsultar).length, 0),
   };
 }
 

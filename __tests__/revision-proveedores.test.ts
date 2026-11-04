@@ -149,6 +149,7 @@ describe("nivelDeFila", () => {
     id: "k",
     codigo: "X",
     osinfor: nivel ? { nivel, enRoja: 0, pauEnTramite: 0, esPlantacion: false } : null,
+    sinConsultar: false,
   });
   it("lista roja de OSINFOR pesa igual que una sanción segura", () => {
     expect(nivelDeFila("ninguna", [p("rojo")])).toBe("rojo");
@@ -216,7 +217,73 @@ describe("revisión completa (forma de Blas, 04-11-2026)", () => {
       ambar: 0,
       nombre: 1,
       sinDocumento: 1,
+      sinDatos: 0,
       osinforSinRespuesta: 1,
+      osinforSinConsultar: 0,
     });
+  });
+
+  it("un permiso que no se consultó (tope o tiempo) se cuenta aparte de «OSINFOR no respondió»", () => {
+    const grupos = agruparPorTitular(
+      [parte("a", "Proveedor Uno SAC", "20111111111"), parte("b", "Proveedor Dos SAC", "20222222222")],
+      [
+        permiso("k1", "19-SEC/PER-FMC-2024-008", "Proveedor Uno SAC", { titularId: "a" }),
+        permiso("k2", "25-UCA/C-J-001-01", "Proveedor Dos SAC", { titularId: "b" }),
+      ],
+    );
+    // k1 se le preguntó a OSINFOR y no contestó (null en el mapa); k2 ni entró al mapa.
+    const os = new Map<string, ResumenOsinfor | null>([["19-SEC/PER-FMC-2024-008", null]]);
+    const filas = grupos.map((g) => revisarGrupo(g, [buscarInfractor([], { documento: g.documento })], os));
+    expect(filas.map((f) => f.permisos[0]?.sinConsultar)).toEqual([false, true]);
+    expect(resumirRevision(filas)).toMatchObject({ osinforSinRespuesta: 1, osinforSinConsultar: 1 });
+  });
+});
+
+describe("homónimos (mismo nombre, otro documento)", () => {
+  it("el permiso del homónimo no se pega a la ficha y la ficha no sale en rojo por la sanción de él", () => {
+    const sanciones: SancionSerfor[] = [
+      {
+        infractor: "Juan Perez Ramos",
+        documento: "87654321",
+        tituloHab: null,
+        resolucion: "RA 0007-2025-X",
+        fecha: "2025-05-05",
+        organo: "ARFFS",
+        ambito: "GORE UCAYALI",
+      },
+    ];
+    const grupos = agruparPorTitular(
+      [parte("p1", "Juan Perez Ramos", "12345678")],
+      [permiso("k1", "25-UCA/PER-FMP-2020-002", "JUAN PEREZ RAMOS", { titularDoc: "87654321" })],
+    );
+    expect(grupos.map((g) => [g.clave, g.permisos.length])).toEqual([
+      ["parte:p1", 0],
+      ["permiso:k1", 1],
+    ]);
+
+    const filas = grupos.map((g) => {
+      const busquedas = [
+        ...(g.parteId ? [{ documento: g.documento, nombre: g.nombre }] : []),
+        ...g.permisos.map((k) => ({
+          codigo: k.codigo,
+          documento: k.titularDoc ?? g.documento,
+          nombre: k.titularNombre,
+        })),
+      ];
+      return revisarGrupo(g, busquedas.map((b) => buscarInfractor(sanciones, b)), new Map());
+    });
+    const ficha = filas.find((f) => f.parteId === "p1");
+    const suelto = filas.find((f) => f.parteId === null);
+    expect(ficha?.nivel).not.toBe("rojo");
+    expect(ficha?.sanciones).toEqual([]);
+    expect(suelto?.nivel).toBe("rojo");
+  });
+
+  it("sin documento en alguno de los dos, el nombre sigue pegando el permiso a la ficha", () => {
+    const [g] = agruparPorTitular(
+      [parte("p1", "Juan Perez Ramos", "12345678")],
+      [permiso("k1", "X-1", "JUAN PEREZ RAMOS")],
+    );
+    expect(g?.permisos.map((k) => k.id)).toEqual(["k1"]);
   });
 });
