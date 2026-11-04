@@ -18,6 +18,7 @@ import { useLibrosContador } from "./use-libros-contador";
 import { LIBROS, mesAnterior } from "./libros-contador-config";
 import { NotasLibro, TablaLibro, TotalesLibro } from "./VistaPreviaLibro";
 import { AvisoSire } from "./AvisoSire";
+import CruceSire from "./CruceSire";
 
 const BOTON = button({ variant: "primary", className: "shrink-0 rounded-xl px-4 disabled:opacity-60" });
 
@@ -115,6 +116,7 @@ export default function LibrosContador({ titulo = "Libros para el contador", mas
         </p>
       )}
       {libro === "ventas" && resumenSire && <AvisoSire resumen={resumenSire} />}
+      {libro === "ventas" && <CruceSire key={periodo} periodo={periodo} />}
 
       {estado.fase === "cargando" && (
         <p className="inline-flex items-center gap-2 py-6 text-sm text-[var(--text-secondary)]" aria-live="polite">
