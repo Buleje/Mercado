@@ -5,6 +5,8 @@
  * (`POST /api/purchases/desde-xml`, no escribe) → elegir productos → crear la
  * compra por `POST /api/purchases` (el total lo suma el servidor).
  * Proveedor nuevo: se da de alta por `POST /api/suppliers` justo antes.
+ * Factura en dólares: los costos van en soles con el tipo de cambio SUNAT del
+ * día de emisión (`use-tipo-cambio.ts`); sin tipo de cambio no se guarda.
  */
 import { useCallback, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -12,6 +14,7 @@ import { logger } from "@/lib/logger";
 import type { RespuestaDesdeXml, VistaPreviaFacturaXml } from "@/lib/compras/factura-xml-cruce";
 import type { ProductoSugerido } from "@/lib/admin/comandos-ia/papel";
 import { leerArchivoElegido } from "./leer-archivo-xml";
+import { useTipoCambio } from "./use-tipo-cambio";
 import {
   cuerpoDeLaCompra,
   formaDePagoSugerida,
@@ -52,6 +55,8 @@ export function useFacturaXml() {
   const [elegidos, setElegidos] = useState<Elegidos>({});
   const [proveedor, setProveedor] = useState<string>(PROVEEDOR_NUEVO);
   const [formaDePago, setFormaDePago] = useState<FormaDePago>("contado");
+  const [quitadas, setQuitadas] = useState<number[]>([]);
+  const tipoCambio = useTipoCambio(vista?.factura.fecha ?? null, vista?.factura.moneda ?? null);
   // Elegir otro archivo mientras el primero se lee: gana el último.
   const pedido = useRef(0);
 
@@ -63,12 +68,14 @@ export function useFacturaXml() {
     setArchivo(null);
     setVista(null);
     setElegidos({});
+    setQuitadas([]);
   }, []);
 
   const elegirArchivo = useCallback(async (f: File) => {
     const mio = ++pedido.current;
     setError(null);
     setVista(null);
+    setQuitadas([]);
     setArchivo(f.name);
     setLeyendo(true);
     try {
@@ -106,9 +113,24 @@ export function useFacturaXml() {
     setElegidos((prev) => ({ ...prev, [numero]: p }));
   }, []);
 
+  /** Quitar una línea antes de guardar (o volver a ponerla). */
+  const alternarLinea = useCallback((numero: number) => {
+    setQuitadas((prev) => (prev.includes(numero) ? prev.filter((n) => n !== numero) : [...prev, numero]));
+  }, []);
+
+  const cambio = tipoCambio.cambio;
   const crear = useCallback(async (): Promise<{ id: string; total: number } | null> => {
     if (!vista || guardando) return null;
-    const faltan = lineasSinProducto(vista.factura.lineas, elegidos);
+    if (quitadas.length >= vista.factura.lineas.length) {
+      setError("Quitaste todas las líneas: deja al menos un producto para crear la compra.");
+      return null;
+    }
+    // Antes del alta del proveedor: sin tipo de cambio no se escribe nada.
+    if (vista.factura.moneda !== "PEN" && !cambio) {
+      setError("Falta el tipo de cambio: sin él la compra no se pasa a soles.");
+      return null;
+    }
+    const faltan = lineasSinProducto(vista.factura.lineas, elegidos, quitadas);
     if (faltan.length > 0) {
       setError(`Elige el producto de ${faltan.length === 1 ? "la línea" : "las líneas"} ${faltan.join(", ")} antes de crear la compra.`);
       return null;
@@ -139,7 +161,7 @@ export function useFacturaXml() {
       }
       return await enviar<{ id: string; total: number }>(
         "/api/purchases",
-        cuerpoDeLaCompra({ factura: vista.factura, supplierId, supplierName, formaDePago, elegidos }),
+        cuerpoDeLaCompra({ factura: vista.factura, supplierId, supplierName, formaDePago, elegidos, cambio, quitadas }),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear la compra. Intenta de nuevo.");
@@ -147,10 +169,10 @@ export function useFacturaXml() {
     } finally {
       setGuardando(false);
     }
-  }, [vista, guardando, elegidos, proveedor, formaDePago]);
+  }, [vista, guardando, elegidos, proveedor, formaDePago, cambio, quitadas]);
 
   return {
-    leyendo, guardando, error, archivo, vista, elegidos, proveedor, formaDePago,
-    setProveedor, setFormaDePago, elegirArchivo, cambiarProducto, crear, reiniciar,
+    leyendo, guardando, error, archivo, vista, elegidos, proveedor, formaDePago, quitadas, tipoCambio,
+    setProveedor, setFormaDePago, elegirArchivo, cambiarProducto, alternarLinea, crear, reiniciar,
   };
 }

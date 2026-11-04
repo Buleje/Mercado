@@ -4,7 +4,8 @@
  * «Compra desde la factura XML»: el .xml del proveedor (o el .zip de SUNAT) →
  * vista previa → elegir el producto de cada línea → crear la compra. Queda
  * pendiente como cualquier orden: el stock entra al recibirla. El total lo
- * suma el servidor.
+ * suma el servidor. Factura en dólares: se guarda en soles con el tipo de
+ * cambio SUNAT del día de emisión (tarjeta `FacturaXmlDolar`).
  */
 import { useState, type DragEvent } from "react";
 import { CardTitle, ErrorAlert, InfoAlert, WarningAlert } from "@buleje/design-system";
@@ -14,6 +15,7 @@ import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { button } from "@/components/ui-system/button-variants";
 import { CAMPO } from "@/components/admin/comandos-ia/papel/formato";
 import type { VistaPreviaFacturaXml } from "@/lib/compras/factura-xml-cruce";
+import FacturaXmlDolar from "./FacturaXmlDolar";
 import FacturaXmlLineas from "./FacturaXmlLineas";
 import { PROVEEDOR_NUEVO, useFacturaXml } from "./use-factura-xml";
 import { FORMAS_DE_PAGO, fechaConDia, lineasSinProducto, monto, type FormaDePago } from "./compra-desde-factura";
@@ -29,11 +31,12 @@ function avisosDe(v: VistaPreviaFacturaXml): string[] {
   if (!f.cuadre.cuadra) {
     lista.push(`Las líneas suman ${monto(f.cuadre.calculado, f.moneda)} y la factura dice ${monto(f.cuadre.declarado, f.moneda)}: revísala`);
   }
-  if (f.moneda !== "PEN") lista.push(`La factura está en ${f.moneda}: la compra se guarda con esos montos, sin pasarlos a soles`);
   if (f.totales.descuentos > 0) {
     lista.push(`Trae un descuento de ${monto(f.totales.descuentos, f.moneda)} que no se reparte en los productos`);
   }
-  return [...lista, ...f.avisos];
+  // «Los montos se muestran en esa moneda, no en soles» (del lector): ya no es así,
+  // la tarjeta del tipo de cambio dice a cuánto equivale y se guarda en soles.
+  return [...lista, ...f.avisos.filter((a) => !a.startsWith("La factura está en "))];
 }
 
 export default function SubirFacturaXmlModal({
@@ -49,8 +52,10 @@ export default function SubirFacturaXmlModal({
   const [arrastrando, setArrastrando] = useState(false);
   const v = x.vista;
   const f = v?.factura;
-  const faltan = v ? lineasSinProducto(v.factura.lineas, x.elegidos).length : 0;
-  const bloqueada = !v || faltan > 0 || Boolean(v.yaCargada) || x.guardando;
+  const faltan = v ? lineasSinProducto(v.factura.lineas, x.elegidos, x.quitadas).length : 0;
+  const todasQuitadas = Boolean(v && x.quitadas.length >= v.factura.lineas.length);
+  const sinCambio = x.tipoCambio.necesita && !x.tipoCambio.cambio;
+  const bloqueada = !v || faltan > 0 || todasQuitadas || sinCambio || Boolean(v.yaCargada) || x.guardando;
   const avisos = v ? avisosDe(v) : [];
 
   const soltar = (e: DragEvent<HTMLLabelElement>) => {
@@ -67,9 +72,15 @@ export default function SubirFacturaXmlModal({
     ? undefined
     : v.yaCargada
       ? "Esta factura ya está cargada"
-      : faltan > 0
-        ? `Falta elegir ${faltan} ${faltan === 1 ? "producto" : "productos"}`
-        : "El total lo suma el sistema al guardar";
+      : todasQuitadas
+        ? "Quitaste todas las líneas"
+        : faltan > 0
+          ? `Falta elegir ${faltan} ${faltan === 1 ? "producto" : "productos"}`
+          : sinCambio
+            ? x.tipoCambio.cargando
+              ? "Buscando el tipo de cambio…"
+              : "Falta el tipo de cambio para pasarla a soles"
+            : "El total lo suma el sistema al guardar";
 
   return (
     <AdminModal
@@ -77,7 +88,7 @@ export default function SubirFacturaXmlModal({
       onClose={onClose}
       title="Compra desde la factura XML"
       icon={FileUp}
-      size="lg"
+      size="xl"
       claveVentana="compra-factura-xml"
       footer={
         <ModalFooter error={v ? x.error : null} nota={nota}>
@@ -198,12 +209,16 @@ export default function SubirFacturaXmlModal({
                 </label>
               </div>
             </div>
+            {x.tipoCambio.necesita && <FacturaXmlDolar estado={x.tipoCambio} fecha={f.fecha} totalPapel={f.totales.total} lineas={f.lineas} quitadas={x.quitadas} />}
             <FacturaXmlLineas
               lineas={f.lineas}
               sugerencias={v.lineas}
               elegidos={x.elegidos}
               moneda={f.moneda}
+              tipoCambio={x.tipoCambio.cambio?.venta ?? null}
+              quitadas={x.quitadas}
               onCambiar={x.cambiarProducto}
+              onQuitar={x.alternarLinea}
             />
           </>
         )}
