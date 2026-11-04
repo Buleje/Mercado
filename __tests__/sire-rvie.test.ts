@@ -171,3 +171,131 @@ describe("SIRE RVIE — filas", () => {
     expect(r.bloqueos.map((b) => b.motivo)).toEqual([MOTIVO_SIRE.repetido]);
   });
 });
+
+// ── Pendientes de la revisión del commit 3c0bae319 ─────────────────────────
+
+const nota = (extra: Partial<ComprobanteEmitido> = {}) =>
+  comprobante({ id: "nc1", tipo: "nota_credito", serie: "BC01", numero: 2, emitidoEn: dia(20), subtotal: 50, igv: 9, total: 59, pedidoId: "p1", ...extra });
+const boletaOriginal = (extra: Partial<ComprobanteEmitido> = {}) =>
+  comprobante({ id: "b12", tipo: "boleta", serie: "B001", numero: 12, emitidoEn: dia(5), pedidoId: "p1", ...extra });
+
+describe("SIRE RVIE — nota de crédito electrónica con su comprobante (M1)", () => {
+  it("la boleta del mismo pedido llena los campos 29-32 (fecha, tipo, serie, número)", () => {
+    const r = generar(libro([boletaOriginal(), nota()]));
+    expect(r.bloqueos).toEqual([]);
+    const c = r.campos.find((f) => f[6] === "07");
+    expect(c?.slice(28, 32)).toEqual(["05/10/2026", "03", "B001", "12"]);
+    expect([c?.[14], c?.[16], c?.[25]]).toEqual(["-50.00", "-9.00", "-59.00"]);
+  });
+
+  it("el original de otro mes (comprobantesOriginales) también sirve", () => {
+    const septiembre = boletaOriginal({ emitidoEn: new Date(Date.UTC(2026, 8, 20, 15, 0, 0)) });
+    const r = generar(libro([nota()], { comprobantesOriginales: [septiembre] }));
+    expect(r.bloqueos).toEqual([]);
+    expect(r.campos[0].slice(28, 32)).toEqual(["20/09/2026", "03", "B001", "12"]);
+  });
+
+  it("de varios del pedido gana el aceptado sobre el anulado, aunque el anulado sea más viejo; el rechazado no cuenta", () => {
+    const anulada = boletaOriginal({ id: "b10", numero: 10, emitidoEn: dia(2), estado: "voided" });
+    const rechazada = boletaOriginal({ id: "b11", numero: 11, emitidoEn: dia(3), estado: "rejected" });
+    const aceptada = boletaOriginal({ id: "b13", numero: 13, emitidoEn: dia(6) });
+    const c = generar(libro([anulada, rechazada, aceptada, nota()])).campos.find((f) => f[6] === "07");
+    expect(c?.slice(28, 32)).toEqual(["06/10/2026", "03", "B001", "13"]);
+  });
+
+  it("sin boleta o factura del pedido: no entra, y el libro y el aviso lo dicen", () => {
+    const entrada: EntradaRegistroVentas = {
+      periodo: "2026-10",
+      comprobantes: [nota(), boletaOriginal({ id: "otro", pedidoId: "p9" })],
+      ventasPos: [],
+      pedidos: [],
+      notasCredito: [],
+      pedidosSinEntregar: 0,
+      pedidosConComprobante: [],
+      devoluciones: [],
+    };
+    const libroVentas = armarRegistroVentas(entrada);
+    expect(libroVentas.notas.some((n) => n.startsWith("1 nota de crédito electrónica sale sin el comprobante que corrige"))).toBe(true);
+    const r = generar(libroVentas.filas);
+    expect(r.bloqueos).toEqual([{ fila: 2, comprobante: "BC01-2", motivo: MOTIVO_SIRE.sinReferencia }]);
+    expect(r.avisos.some((a) => a.startsWith("1 nota de crédito no entró: no se encontró la boleta o factura que corrige"))).toBe(true);
+  });
+});
+
+describe("SIRE RVIE — comprobante pendiente en SUNAT va en cero (M2)", () => {
+  it("pendiente: todos los importes en 0.00 en el archivo, no suma como venta válida y se avisa", () => {
+    const filas = libro([
+      comprobante({ id: "ok", tipo: "boleta", serie: "B001", numero: 1 }),
+      comprobante({ id: "pe", tipo: "boleta", serie: "B001", numero: 2, estado: "pending", emitidoEn: dia(11) }),
+    ]);
+    const r = generar(filas);
+    expect(r.bloqueos).toEqual([]);
+    expect(r.campos).toHaveLength(2);
+    expect(r.campos[0][25]).toBe("118.00");
+    expect(r.campos[1].slice(13, 26).every((m) => m === "0.00")).toBe(true);
+    expect(r.campos.reduce((suma, c) => suma + Number(c[25]), 0)).toBe(118);
+    expect(r.avisos.some((a) => a.startsWith("1 comprobante sigue pendiente en SUNAT: va en cero"))).toBe(true);
+    // El libro de trabajo 14.1 sí conserva el monto real del pendiente: solo el archivo SIRE lo pone en cero.
+    expect(filas.find((f) => f.numero === "2")?.total).toBe(118);
+  });
+
+  it("pendiente de S/ 700 o más sin DNI entra en cero (no se pide el documento de lo que va sin importe)", () => {
+    const r = generar(libro([comprobante({ id: "pe", tipo: "boleta", serie: "B001", numero: 3, estado: "pending", subtotal: 600, igv: 108, total: 708 })]));
+    expect(r.bloqueos).toEqual([]);
+    expect(r.campos[0][25]).toBe("0.00");
+  });
+
+  it("varios pendientes: aviso en plural", () => {
+    const f = { tipo: "boleta", serie: "B001", estado: "pending" } as const;
+    const r = generar(libro([comprobante({ id: "p1", numero: 1, ...f }), comprobante({ id: "p2", numero: 2, ...f })]));
+    expect(r.avisos.some((a) => a.startsWith("2 comprobantes siguen pendientes en SUNAT: van en cero"))).toBe(true);
+  });
+});
+
+describe("SIRE RVIE — empate POS contra comprobante electrónico", () => {
+  const ventaPos = (fecha: Date) => ({
+    id: "vpos",
+    fecha,
+    total: 50,
+    comprobanteTipo: "boleta",
+    comprobanteNumero: "B001-5",
+    comprobanteDoc: null,
+    clienteNombre: null,
+    clienteDoc: null,
+    clienteTipoDoc: null,
+    lineas: [{ nombre: "Arroz", cantidad: 1, precio: 50, taxType: "gravado" }],
+  });
+
+  it.each([
+    ["el POS es más antiguo", dia(3)],
+    ["el POS es más nuevo", dia(20)],
+  ])("mismo B001-5 anotado en el POS y emitido: gana el electrónico (%s)", (_caso, fechaPos) => {
+    const filas = libro([comprobante({ id: "e5", tipo: "boleta", serie: "B001", numero: 5 })], { ventasPos: [ventaPos(fechaPos)] });
+    const r = generar(filas);
+    expect(r.campos).toHaveLength(1);
+    expect(r.campos[0][25]).toBe("118.00"); // el importe que SUNAT recibió, no el del POS (50.00)
+    expect(r.bloqueos).toEqual([{ fila: expect.any(Number), comprobante: "B001-5", motivo: MOTIVO_SIRE.repetido }]);
+  });
+});
+
+describe("SIRE RVIE — DNI 00000000 («clientes varios»), no confirmado en la ficha", () => {
+  it("boleta < S/ 700 con 00000000: entra con los campos 11-12 vacíos", () => {
+    const r = generar(libro([comprobante({ id: "b1", tipo: "boleta", serie: "B001", numero: 6, clienteDoc: "00000000", clienteNombre: "CLIENTES VARIOS" })]));
+    expect(r.bloqueos).toEqual([]);
+    expect(r.campos[0].slice(10, 13)).toEqual(["", "", "CLIENTES VARIOS"]);
+  });
+
+  it("boleta ≥ S/ 700 con 00000000: se bloquea pidiendo el DNI real, no «mal escrito»", () => {
+    const r = generar(libro([comprobante({ id: "b2", tipo: "boleta", serie: "B001", numero: 7, clienteDoc: "00000000", subtotal: 600, igv: 108, total: 708 })]));
+    expect(r.bloqueos.map((b) => b.motivo)).toEqual([MOTIVO_SIRE.boletaSinDoc]);
+  });
+});
+
+describe("SIRE RVIE — singular y plural de los avisos", () => {
+  it("una venta bloqueada: «1 venta no entró … Está en la lista»", () => {
+    const r = generar(libro([comprobante({ id: "n1", tipo: "nota_credito", serie: "BC01", numero: 9 })]));
+    const aviso = r.avisos.find((a) => a.includes("no entr"));
+    expect(aviso?.startsWith("1 venta no entró al archivo")).toBe(true);
+    expect(aviso).toContain("Está en la lista.");
+  });
+});

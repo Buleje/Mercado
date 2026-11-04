@@ -35,6 +35,10 @@ import {
   type LibroContador,
 } from "./comun";
 
+/** Estados y orígenes que escribe el libro en cada fila (el SIRE los lee para decidir qué va en cero). */
+export const ESTADO_VENTA = { anulado: "anulado", aceptado: "aceptado por SUNAT", pendiente: "pendiente en SUNAT" } as const;
+export const ORIGEN_VENTA = { electronico: "Comprobante electrónico", notaInterna: "Nota de crédito interna" } as const;
+
 export interface LineaVendida {
   nombre: string;
   cantidad: number;
@@ -115,6 +119,12 @@ export interface EntradaRegistroVentas {
    */
   pedidosConComprobante: string[];
   devoluciones: DevolucionDelMes[];
+  /**
+   * Boletas/facturas de los pedidos que corrigen las notas de crédito electrónicas del mes, de
+   * CUALQUIER mes (la original puede ser de un mes anterior). Opcional: sin esto la original se
+   * busca solo entre los comprobantes del propio mes.
+   */
+  comprobantesOriginales?: ComprobanteEmitido[];
 }
 
 const MONTOS = ["exportacion", "baseGravada", "exonerada", "inafecta", "isc", "igv", "otros", "total", "sinDesglose"] as const;
@@ -182,6 +192,19 @@ export function montosDeComprobante(c: Pick<ComprobanteEmitido, "subtotal" | "ig
     : { igv: c.igv, total: c.total, sinDesglose: c.subtotal };
 }
 
+/**
+ * Boleta o factura que corrige una nota de crédito electrónica: la del MISMO pedido (misma idea que
+ * `referencia()` de `LibrosContadorDB.ventas` para las notas internas). Prefiere la aceptada por
+ * SUNAT, luego la pendiente, luego la anulada; la rechazada no es comprobante. A igual estado, la más antigua.
+ */
+function comprobanteOriginal(nota: ComprobanteEmitido, candidatos: readonly ComprobanteEmitido[]): ComprobanteEmitido | null {
+  if (!nota.pedidoId) return null;
+  const rango = (estado: string) => (estado === "accepted" ? 0 : estado === "pending" ? 1 : 2);
+  const posibles = candidatos.filter((c) => c.pedidoId === nota.pedidoId && (c.tipo === "boleta" || c.tipo === "factura") && c.estado !== "rejected");
+  posibles.sort((a, b) => rango(a.estado) - rango(b.estado) || a.emitidoEn.getTime() - b.emitidoEn.getTime());
+  return posibles[0] ?? null;
+}
+
 const negar = (m: Montos): Montos =>
   Object.fromEntries(Object.entries(m).map(([k, v]) => [k, typeof v === "number" ? -v : v])) as Montos;
 
@@ -198,6 +221,8 @@ export function armarRegistroVentas(e: EntradaRegistroVentas): LibroContador {
   const comprobanteEnOtroMes = new Set(e.pedidosConComprobante);
   let rechazados = 0;
   let anulados = 0;
+  let notasSinOriginal = 0;
+  const candidatosOriginal = [...e.comprobantes, ...(e.comprobantesOriginales ?? [])];
 
   for (const c of e.comprobantes) {
     if (c.tipo === "baja") continue; // comunicación de baja: no es un comprobante
@@ -208,6 +233,8 @@ export function armarRegistroVentas(e: EntradaRegistroVentas): LibroContador {
     if (c.pedidoId) pedidosConComprobante.add(c.pedidoId);
     const anulado = c.estado === "voided";
     if (anulado) anulados++;
+    const original = c.tipo === "nota_credito" ? comprobanteOriginal(c, candidatosOriginal) : null;
+    if (c.tipo === "nota_credito" && !original) notasSinOriginal++;
     filas.push({
       orden: c.emitidoEn.getTime(),
       fila: fila(
@@ -219,8 +246,12 @@ export function armarRegistroVentas(e: EntradaRegistroVentas): LibroContador {
           clienteTipoDoc: tipoDocIdentidad(c.clienteDoc),
           clienteDoc: textoSeguro(c.clienteDoc),
           clienteNombre: textoSeguro(c.clienteNombre),
-          origen: "Comprobante electrónico",
-          estado: anulado ? "anulado" : c.estado === "accepted" ? "aceptado por SUNAT" : "pendiente en SUNAT",
+          // Nota de crédito: el comprobante que corrige (campos 19-22 del libro, 29-32 del SIRE).
+          ...(original
+            ? { refFecha: fechaLima(original.emitidoEn), refTipo: tipoComprobanteTabla10(original.tipo), refSerie: original.serie, refNumero: String(original.numero) }
+            : {}),
+          origen: ORIGEN_VENTA.electronico,
+          estado: anulado ? ESTADO_VENTA.anulado : c.estado === "accepted" ? ESTADO_VENTA.aceptado : ESTADO_VENTA.pendiente,
           idSistema: c.id,
         },
         // La nota de crédito resta: se guarda en positivo, en el registro va en negativo.
@@ -297,7 +328,7 @@ export function armarRegistroVentas(e: EntradaRegistroVentas): LibroContador {
           refTipo: n.referencia?.tipo ?? null,
           refSerie: n.referencia?.serie ?? null,
           refNumero: n.referencia?.numero ?? null,
-          origen: "Nota de crédito interna",
+          origen: ORIGEN_VENTA.notaInterna,
           estado: textoSeguro(n.motivo) ?? "emitida",
           idSistema: n.id,
         },
@@ -333,6 +364,10 @@ export function armarRegistroVentas(e: EntradaRegistroVentas): LibroContador {
   notas.push(
     "Base imponible, exonerado, inafecto e IGV de las ventas sin comprobante: calculados por el sistema con la misma regla que arma la boleta electrónica (afectación de cada producto, IGV 18 %, descuento prorrateado). Es un cálculo, no un dato del papel.",
   );
+  if (notasSinOriginal > 0)
+    notas.push(
+      `${notasSinOriginal} ${notasSinOriginal === 1 ? "nota de crédito electrónica sale" : "notas de crédito electrónicas salen"} sin el comprobante que ${notasSinOriginal === 1 ? "corrige" : "corrigen"}: no se encontró una boleta o factura válida del mismo pedido. Anótalo a mano en las columnas de referencia (19 a 22): el SIRE lo exige.`,
+    );
   if (anulados > 0) notas.push(`${anulados} comprobantes anulados van con importes en cero y estado «anulado».`);
   if (rechazados > 0) notas.push(`${rechazados} comprobantes rechazados por SUNAT no entran: no son comprobantes válidos.`);
   if (ordenadas.some((f) => typeof f.sinDesglose === "number"))
