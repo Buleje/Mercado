@@ -6,7 +6,7 @@
  * Todo sale de `GET /api/admin/contabilidad/libros`; esta vista no calcula nada.
  */
 import { useState } from "react";
-import { AlertTriangle, FileSpreadsheet, FileText, Loader2, MoreHorizontal } from "@buleje/design-system/icons";
+import { AlertTriangle, FileArchive, FileSpreadsheet, FileText, Loader2, MoreHorizontal } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -17,6 +17,7 @@ import type { LibroId } from "@/lib/contabilidad/libros/comun";
 import { useLibrosContador } from "./use-libros-contador";
 import { LIBROS, mesAnterior } from "./libros-contador-config";
 import { NotasLibro, TablaLibro, TotalesLibro } from "./VistaPreviaLibro";
+import { AvisoSire } from "./AvisoSire";
 
 const BOTON = button({ variant: "primary", className: "shrink-0 rounded-xl px-4 disabled:opacity-60" });
 
@@ -28,7 +29,7 @@ export default function LibrosContador({ titulo = "Libros para el contador", mas
   const hoy = limaDateKey().slice(0, 7);
   const [periodo, setPeriodo] = useState(() => mesAnterior(limaDateKey()));
   const [libro, setLibro] = useState<LibroId>("ventas");
-  const { estado, bajando, errorDescarga, descargar } = useLibrosContador(libro, periodo);
+  const { estado, bajando, errorDescarga, resumenSire, descargar } = useLibrosContador(libro, periodo);
   const actual = LIBROS.find((l) => l.value === libro);
 
   return (
@@ -39,7 +40,7 @@ export default function LibrosContador({ titulo = "Libros para el contador", mas
           <InfoTip
             title={titulo}
             what="El registro de ventas (formato 14.1), el de compras (8.1) y el kardex valorizado (13.1) del mes, con las columnas que pide SUNAT."
-            affects="Solo lee. Es un documento de trabajo: tu contador lo cruza con la propuesta del SIRE o lo pasa a su sistema; no es el TXT oficial del PLE ni del SIRE."
+            affects="Solo lee. El Excel y el TXT son de trabajo para tu contador. Para el SIRE de ventas, en «⋯» está «Formato SIRE (ventas)»: el archivo con los 33 campos que pide SUNAT (solo entran boletas y facturas)."
             example="Eliges setiembre, miras el total de ventas y tocas «Excel» para mandárselo a tu contador."
           />
         </div>
@@ -77,7 +78,7 @@ export default function LibrosContador({ titulo = "Libros para el contador", mas
             soloIcono
             size="md"
             className="w-12 shrink-0"
-            title="TXT de trabajo y otros reportes"
+            title="TXT de trabajo, formato SIRE y otros reportes"
             actions={[
               {
                 id: "txt",
@@ -88,6 +89,19 @@ export default function LibrosContador({ titulo = "Libros para el contador", mas
                 disabled: bajando !== null || estado.fase !== "lista",
                 onSelect: () => void descargar("txt"),
               },
+              ...(libro === "ventas"
+                ? [
+                    {
+                      id: "sire",
+                      label: "Formato SIRE (ventas)",
+                      hint: "El .zip oficial del RVIE para reemplazar la propuesta de SUNAT",
+                      icon: FileArchive,
+                      busy: bajando === "sire",
+                      disabled: bajando !== null || estado.fase !== "lista",
+                      onSelect: () => void descargar("sire"),
+                    },
+                  ]
+                : []),
               ...masAcciones,
             ]}
           />
@@ -100,6 +114,7 @@ export default function LibrosContador({ titulo = "Libros para el contador", mas
           {errorDescarga}
         </p>
       )}
+      {libro === "ventas" && resumenSire && <AvisoSire resumen={resumenSire} />}
 
       {estado.fase === "cargando" && (
         <p className="inline-flex items-center gap-2 py-6 text-sm text-[var(--text-secondary)]" aria-live="polite">
