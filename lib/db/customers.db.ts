@@ -199,35 +199,33 @@ export const CustomersDB = {
    * VENCIDO (la misma regla que `FiadosDB.resumenByCustomer`). La columna
    * `Customer.creditBalance` no sigue a los fiados —medido 2026-10-09: 0 en
    * todos los clientes de todos los tenants aunque haya fiados abiertos—, así
-   * que el panel lee esto. Dos consultas agregadas en la misma tx; no escribe
-   * nada. `vencido` = estado VENCIDO o ACTIVO con la fecha ya pasada.
-   * Montos en céntimos al sumar para no arrastrar decimales del float.
+   * que el panel lee esto. No escribe nada. `vencido` = estado VENCIDO o
+   * ACTIVO con la fecha ya pasada. Montos en céntimos para no arrastrar
+   * decimales del float.
    */
   async deudaDeFiados(tenantId: string, ahora: Date = new Date()): Promise<Map<string, { deuda: number; vencido: number }>> {
-    const [abiertos, vencidos] = await withRlsTx(tenantId, (tx) =>
-      Promise.all([
-        tx.fiado.groupBy({
-          by: ["customerId"],
-          where: { tenantId, status: { in: ["ACTIVO", "VENCIDO"] } },
-          _sum: { saldo: true },
-        }),
-        tx.fiado.groupBy({
-          by: ["customerId"],
-          where: {
-            tenantId,
-            OR: [{ status: "VENCIDO" }, { status: "ACTIVO", fechaVence: { lt: ahora } }],
-          },
-          _sum: { saldo: true },
-        }),
-      ]),
+    // `fechaVence` es timestamp sin zona guardado en UTC: el ISO con «Z» casteado a
+    // `timestamp` deja la misma hora UTC (igual que `comprasPorCliente`).
+    const corte = ahora.toISOString();
+    // UNA consulta (04-11): eran 2 groupBy en fila dentro de la transacción. Lo
+    // vencido es un FILTER sobre las mismas filas abiertas. Céntimos en numeric
+    // (exacto) y redondeados como antes (`Math.round(suma × 100)`).
+    const filas = await withRlsTx(tenantId, (tx) =>
+      tx.$queryRaw<{ customerId: string; deuda: number; vencido: number }[]>`
+        SELECT "customerId",
+               round(coalesce(sum(saldo), 0) * 100)::float8 AS deuda,
+               round(coalesce(sum(saldo) FILTER (
+                 WHERE status = 'VENCIDO' OR (status = 'ACTIVO' AND "fechaVence" < ${corte}::timestamp)
+               ), 0) * 100)::float8 AS vencido
+          FROM "Fiado"
+         WHERE "tenantId" = ${tenantId} AND status IN ('ACTIVO', 'VENCIDO')
+         GROUP BY "customerId"`,
     );
-    const enCentimos = (v: Parameters<typeof toNumOrZero>[0]) => Math.round(toNumOrZero(v) * 100);
-    const vencidoPor = new Map(vencidos.map((r) => [r.customerId, enCentimos(r._sum.saldo)]));
     const out = new Map<string, { deuda: number; vencido: number }>();
-    for (const r of abiertos) {
-      const deuda = enCentimos(r._sum.saldo);
+    for (const r of filas) {
+      const deuda = Number(r.deuda);
       if (deuda <= 0) continue;
-      out.set(r.customerId, { deuda: deuda / 100, vencido: (vencidoPor.get(r.customerId) ?? 0) / 100 });
+      out.set(r.customerId, { deuda: deuda / 100, vencido: Number(r.vencido) / 100 });
     }
     return out;
   },

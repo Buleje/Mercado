@@ -8,15 +8,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { tx, fiadosPorTenant } = vi.hoisted(() => {
   const fiadosPorTenant: Record<string, { customerId: string; saldo: number; status: string; fechaVence: Date | null }[]> = {};
-  const cumple = (f: { status: string; fechaVence: Date | null }, w: Record<string, unknown>): boolean => {
-    if (w.OR) return (w.OR as Record<string, unknown>[]).some((o) => cumple(f, o));
-    const st = w.status as string | { in: string[] } | undefined;
-    if (typeof st === "string" && f.status !== st) return false;
-    if (st && typeof st === "object" && !st.in.includes(f.status)) return false;
-    const fv = w.fechaVence as { lt: Date } | undefined;
-    if (fv && !(f.fechaVence && f.fechaVence < fv.lt)) return false;
-    return true;
-  };
+  /**
+   * Lo que devuelve la consulta de deudaDeFiados (04-11: una sola, con FILTER
+   * para lo vencido), armado en JS desde `fiadosPorTenant`: una fila por cliente
+   * con fiados ACTIVO/VENCIDO, en céntimos, filtrando por el tenant y el corte
+   * que viajan como parámetros. Que la consulta real dé lo mismo que los 2
+   * groupBy de antes se comparó con la base en 6 negocios (salida idéntica).
+   */
+  const esFecha = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v);
   const tx = {
     customer: {
       findMany: vi.fn(async ({ where }: { where: { tenantId: string } }) =>
@@ -31,14 +30,19 @@ const { tx, fiadosPorTenant } = vi.hoisted(() => {
           : [],
       ),
     },
-    fiado: {
-      groupBy: vi.fn(async ({ where }: { where: Record<string, unknown> }) => {
-        const filas = (fiadosPorTenant[where.tenantId as string] ?? []).filter((f) => cumple(f, where));
-        const por = new Map<string, number>();
-        for (const f of filas) por.set(f.customerId, (por.get(f.customerId) ?? 0) + f.saldo);
-        return [...por].map(([customerId, saldo]) => ({ customerId, _sum: { saldo } }));
-      }),
-    },
+    $queryRaw: vi.fn(async (_sql: TemplateStringsArray, ...valores: unknown[]) => {
+      const corte = new Date(String(valores.find(esFecha)));
+      const tenantId = String(valores.find((v) => !esFecha(v)));
+      const por = new Map<string, { deuda: number; vencido: number }>();
+      for (const f of fiadosPorTenant[tenantId] ?? []) {
+        if (f.status !== "ACTIVO" && f.status !== "VENCIDO") continue;
+        const c = Math.round(f.saldo * 100); // numeric: exacto
+        const vencida = f.status === "VENCIDO" || (f.fechaVence != null && f.fechaVence < corte);
+        const prev = por.get(f.customerId) ?? { deuda: 0, vencido: 0 };
+        por.set(f.customerId, { deuda: prev.deuda + c, vencido: prev.vencido + (vencida ? c : 0) });
+      }
+      return [...por].map(([customerId, v]) => ({ customerId, ...v }));
+    }),
   };
   return { tx, fiadosPorTenant };
 });
@@ -84,8 +88,16 @@ describe("CustomersDB.deudaDeFiados / getAllConDeuda", () => {
   it("filtra por tenantId en el WHERE: la deuda del mismo teléfono en otro negocio no aparece", async () => {
     const m = await CustomersDB.deudaDeFiados("t1", AHORA);
     expect(m.get("922334455")?.deuda).toBe(150); // no 650
-    for (const [args] of tx.fiado.groupBy.mock.calls) expect(args.where.tenantId).toBe("t1");
+    for (const [, ...valores] of tx.$queryRaw.mock.calls) expect(valores).toContain("t1");
     expect(await CustomersDB.getAllConDeuda("t2")).toEqual([]); // t2 no ve los clientes de t1
+  });
+
+  it("el ACTIVO que vence justo después del corte todavía no cuenta como vencido", async () => {
+    fiadosPorTenant.t1 = [
+      { customerId: "900000001", saldo: 20, status: "ACTIVO", fechaVence: new Date(AHORA.getTime() + 1) },
+      { customerId: "900000001", saldo: 5, status: "ACTIVO", fechaVence: new Date(AHORA.getTime() - 1) },
+    ];
+    expect((await CustomersDB.deudaDeFiados("t1", AHORA)).get("900000001")).toEqual({ deuda: 25, vencido: 5 });
   });
 
   it("cliente sin fiados abiertos = 0", async () => {
