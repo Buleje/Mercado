@@ -17,6 +17,7 @@
  * Exit 0 = allow · Exit 2 = block (stderr al modelo).
  * Overrides: BSM_SKIP_MEM_GUARD=1 · BSM_ALLOW_INSTALL=1 · BSM_DZ_BLOCK=1 · BSM_HOOKS_DEBUG=1
  */
+import { posix } from "node:path";
 import { readFileSync, writeFileSync, existsSync, unlinkSync, mkdirSync, readdirSync } from "node:fs";
 import { execSync, spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -157,7 +158,10 @@ function memGuard(tool, toolInput) {
   const lanzaTipado = !acotado && /\b(tsc|typecheck|vitest|git commit|next build|tsc7)\b/.test(cmdBash);
   if (tsc >= MAX_TSC && (lanzaTipado || !mem || mem.avail < RAM_HOLGADA_MB)) problemas.push(`${tsc} procs tsc apilados (max ${MAX_TSC})`);
   if (orphanChromium >= MAX_ORPHAN_CHROMIUM) problemas.push(`${orphanChromium} chromium huérfanos (max ${MAX_ORPHAN_CHROMIUM})`);
-  if (load.l1 > MAX_LOAD_1MIN) problemas.push(`load 1min ${load.l1.toFixed(1)} > ${MAX_LOAD_1MIN}`);
+  /* 03-11: 722 bloqueos por carga (536 Bash, 121 Edit, 65 Write) con la RAM sana: un Edit o un `node -e`
+     no suben la carga y el ayudante gastaba un turno por bloqueo. La carga sola frena solo lo PESADO. */
+  const lanzaPesado = lanzaTipado || /\b(playwright|qa-capturas|chromium|next\s+(?:build|dev)|npm\s+run\s+(?:build|test)|docling|ocrmypdf)\b/.test(cmdBash);
+  if (load.l1 > MAX_LOAD_1MIN && (lanzaPesado || (mem && mem.avail < RAM_HOLGADA_MB))) problemas.push(`load 1min ${load.l1.toFixed(1)} > ${MAX_LOAD_1MIN}`);
 
   if (problemas.length === 0) {
     escribirCache();
@@ -176,7 +180,7 @@ function memGuard(tool, toolInput) {
       (mem2 && mem2.avail < MIN_FREE_MB) ||
       censo2.tsc >= MAX_TSC ||
       censo2.orphanChromium >= MAX_ORPHAN_CHROMIUM ||
-      loadAvg().l1 > MAX_LOAD_1MIN;
+      (problemas.some((p) => p.startsWith("load")) && loadAvg().l1 > MAX_LOAD_1MIN);
     if (!sigueMal) {
       escribirCache();
       if (DEBUG) process.stderr.write(`[guard] auto-sanado tras ${matados} — RAM ${mem2?.avail}MB libre, sigo\n`);
@@ -232,8 +236,8 @@ const BLOCK_PATTERNS = [
   { pattern: /\bgit\s+clean\s+-[a-z]*f[a-z]*[dx]/, label: "git clean -fdx", severity: "high", reason: "Respaldá antes.", sobre: "ejecutable" },
   { pattern: /\bgit\s+checkout\s+\.\s*$/, label: "git checkout .", severity: "medium", reason: "Descarta TODO el working copy. Usá paths específicos.", sobre: "ejecutable" },
   { pattern: /\bgit\s+restore\s+\.\s*$/, label: "git restore .", severity: "medium", reason: "Descarta TODO el working copy. Usá paths específicos.", sobre: "ejecutable" },
-  { pattern: /\bcurl\s+.*\|\s*(?:sh|bash|zsh|fish|python|node)\b/, label: "curl | sh pipe", severity: "critical", reason: "Descargá, leé, después ejecutá.", sobre: "ejecutable" },
-  { pattern: /\bwget\s+.*\|\s*(?:sh|bash|zsh|fish|python|node)\b/, label: "wget | sh pipe", severity: "critical", reason: "Descargá, leé, después ejecutá.", sobre: "ejecutable" },
+  { pattern: /\bcurl\s+[^;&\n]*\|\s*(?:sudo\s+)?(?:sh|bash|zsh|fish|python3?|node)\b(?!\s+-[ce]\b)/, label: "curl | sh pipe", severity: "critical", reason: "Descargá, leé, después ejecutá.", sobre: "ejecutable" },
+  { pattern: /\bwget\s+[^;&\n]*\|\s*(?:sudo\s+)?(?:sh|bash|zsh|fish|python3?|node)\b(?!\s+-[ce]\b)/, label: "wget | sh pipe", severity: "critical", reason: "Descargá, leé, después ejecutá.", sobre: "ejecutable" },
   { pattern: /\bdocker\s+(?:system|volume|image|container)\s+prune\s+(?:-[a-z]*f|--force)/, label: "docker prune --force", severity: "medium", reason: "Borrado masivo de recursos Docker." },
   { pattern: /\bkubectl\s+delete\s+(?:all|pods?|deployments?)\s+--all\b/, label: "kubectl delete --all", severity: "critical", reason: "Usá namespaces o label selectors." },
   { pattern: /\b(?:npm|pnpm|yarn)\s+(?:uninstall|remove)\s+(?:next|react|prisma|typescript)(?:\s|$)/, label: "desinstalar dep core", severity: "high", reason: "Rompe el build. Confirmá." },
@@ -253,7 +257,8 @@ function textoEjecutable(cmd) {
   );
   return sinHeredoc.replace(
     /(\s-c\s+|\beval\s+)?(['"])((?:\\.|(?!\2)[\s\S])*)\2/g,
-    (_m, ejecuta, q, cuerpo) => (ejecuta ? `${ejecuta}${cuerpo}` : `${q}${q}`),
+    // Una ruta sola entre comillas ("$S/qa") se deja ver: el borrado recursivo la necesita para saber adónde apunta (03-11).
+    (_m, ejecuta, q, cuerpo) => (ejecuta ? `${ejecuta}${cuerpo}` : /^[\w${}\/.~-]+$/.test(cuerpo) ? cuerpo : `${q}${q}`),
   );
 }
 
@@ -270,16 +275,39 @@ const RAICES_SEGURAS = [
 
 /** true si TODOS los borrados recursivos del comando apuntan solo a temporales o cachés. */
 function rmRecursivoSeguro(ejecutable) {
+  /* 03-11: 36 bloqueos de `S=<scratchpad> && rm -rf $S/qa`. Una variable asignada UNA sola vez en el mismo
+     comando a una ruta literal se reemplaza; si no se sabe a qué apunta (sin asignar, $(…), dos valores), sigue bloqueado. */
+  const vars = new Map();
+  for (const [, k, v] of ejecutable.matchAll(/(?:^|[\s;&|(])([A-Za-z_]\w*)=([^\s;&|()$`]+)(?=[\s;&|)]|$)/g)) {
+    vars.set(k, vars.has(k) && vars.get(k) !== v ? null : v);
+  }
+  const expandir = (b) => b.replace(/\$\{?([A-Za-z_]\w*)\}?/g, (m, k) => vars.get(k) ?? "\u0000");
+  // `cd <carpeta>` del mismo comando: lo relativo que se borra después se resuelve contra ella (03-11).
+  let cwd = null;
   for (const seg of ejecutable.split(/;|&&|\|\||\||\n/)) {
+    const cd = seg.match(/^\s*cd\s+(\S+)\s*$/);
+    if (cd) {
+      const d = expandir(cd[1]);
+      cwd = d.includes("\u0000") ? null : /^[/~]/.test(d) ? posix.normalize(d) : cwd ? posix.join(cwd, d) : null;
+      continue;
+    }
     const m = seg.match(/\brm\s+(.*)$/);
     if (!m) continue;
     const args = m[1].trim().split(/\s+/).filter(Boolean);
     const recursivo = args.some((a) => /^-[a-zA-Z]*[rR]/.test(a) || a === "--recursive");
     if (!recursivo) continue;
-    const blancos = args.filter((a) => !a.startsWith("-"));
+    // `find … -name __pycache__ -exec rm -r {} +`: el blanco es lo que eligió find.
+    const pyFind = /\bfind\b[^\n]*-name\s+["']?(?:__pycache__|\.pytest_cache|\*\.pyc)["']?/.test(seg);
+    const blancos = args.filter((a) => !a.startsWith("-") && !/^\d?>/.test(a) && a !== "+" && a !== "\\;");
     if (!blancos.length) return false;
-    for (const b of blancos) {
-      if (b.includes("..") || !RAICES_SEGURAS.some((r) => r.test(b))) return false;
+    for (const b0 of blancos) {
+      if (b0 === "{}" && pyFind) continue;
+      const e = expandir(b0);
+      if (e.includes("\u0000")) return false;
+      // Caché de Python: se rehace sola al correr el programa, esté donde esté.
+      if (/(?:^|\/)(?:__pycache__|\.pytest_cache)\/?$/.test(e) && !e.includes("*")) continue;
+      const abs = /^[/~]/.test(e) ? posix.normalize(e) : cwd ? posix.join(cwd, e) : null;
+      if (!abs || abs.includes("..") || !RAICES_SEGURAS.some((r) => r.test(abs))) return false;
     }
   }
   return true;
