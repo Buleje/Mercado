@@ -1,0 +1,53 @@
+[
+ {
+  "modificar": [
+   "/api/admin/membrete",
+   "(j) => Object.assign(j, {nombre:'Aserradero Ejemplo S.A.C.', razonSocial:'Aserradero Ejemplo S.A.C.', nombreComercial:'Aserradero Ejemplo', ruc:'20600000005', direccion:'Carretera Federico Basadre Km 9, Yarinacocha, Ucayali', telefono:'961 000 000', correo:'ventas@aserraderoejemplo.pe', whatsapp:null, logoUrl:null, logoPngUrl:null, fuenteLogo:null, pie:null})"
+  ]
+ },
+ {
+  "modificar": [
+   "/api/admin/forestal/serfor-infractores/directorio",
+   "(j) => { const K=[\"20393286238\", \"20600000056\", \"20600000021\", \"20600000030\", \"20600000048\"]; const d=j.data; if(!d) return j; const ok=f=>K.some(k=>(f.documento||'').includes(k)); d.filas=d.filas.filter(ok); d.sinAlerta=(d.sinAlerta||[]).filter(ok); const t=[...d.filas,...d.sinAlerta]; const r=d.resumen; r.revisados=t.length; r.permisos=t.reduce((s,f)=>s+f.permisos.length,0); for(const n of ['rojo','ambar','nombre']) r[n]=t.filter(f=>f.nivel===n).length; r.sinDocumento=t.filter(f=>!f.documento).length; r.sinDatos=t.filter(f=>f.nivel==='sin_datos').length; r.osinforSinRespuesta=t.reduce((s,f)=>s+f.permisos.filter(p=>!p.osinfor&&!p.sinConsultar).length,0); r.osinforSinConsultar=t.reduce((s,f)=>s+f.permisos.filter(p=>p.sinConsultar).length,0); return j; }"
+  ]
+ },
+ {
+  "eval": "(async()=>{const c=(document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)||[])[1]||'';const L=[{\"nombre\": \"COMUNIDAD NATIVA SAN LUIS\", \"doc\": \"20393286238\"}, {\"nombre\": \"MADERAS DEL UCAYALI EJEMPLO S.A.C.\", \"doc\": \"20600000056\"}, {\"nombre\": \"FORESTAL AGUAYTIA EJEMPLO E.I.R.L.\", \"doc\": \"20600000021\"}, {\"nombre\": \"INVERSIONES MADERERAS EJEMPLO S.R.L.\", \"doc\": \"20600000030\"}, {\"nombre\": \"TRANSPORTES Y MADERAS EJEMPLO S.A.C.\", \"doc\": \"20600000048\"}];window.__ej=[];const v=await fetch('/api/admin/forestal/directorio?vehiculos=0',{credentials:'include'}).then(r=>r.json()).catch(()=>null);if(!v||!Array.isArray(v.partes))return {abortado:'no pude leer la libreta'};const ya=v.partes.filter(p=>L.some(x=>x.doc===p.docNumero)).map(p=>p.nombre+' '+p.docNumero);if(ya.length)return {abortado:'ya existen (cambiar RUC en el recorrido)',ya};const out=[];for(const p of L){const r=await fetch('/api/admin/forestal/directorio',{method:'POST',credentials:'include',headers:{'content-type':'application/json','x-csrf-token':decodeURIComponent(c)},body:JSON.stringify({roles:['proveedor'],nombre:p.nombre,docTipo:'RUC',docNumero:p.doc})});const j=await r.json().catch(()=>({}));const id=j.parte&&j.parte.id;if(id)window.__ej.push(id);out.push([r.status,id||j.error||null,j.parte&&j.parte.roles]);}return out})()"
+ },
+ {
+  "esperar": "text=Proveedores en OSINFOR y SERFOR"
+ },
+ {
+  "preset": "cerrar-aviso-pendientes"
+ },
+ {
+  "tecla": "Escape"
+ },
+ {
+  "eval": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>/Revisar a todos/.test(x.innerText));b&&b.scrollIntoView({block:'center'});return !!b})()"
+ },
+ {
+  "click": "role=button[name=/Revisar a todos/]"
+ },
+ {
+  "esperar": 30000
+ },
+ {
+  "esperar": "[data-papel-revision]"
+ },
+ {
+  "esperar": 800
+ },
+ {
+  "eval": "(()=>{const b=document.querySelector('[data-papel-revision]');const s=b.closest('section');s.scrollIntoView({block:'start'});window.scrollBy(0,-90);const r=s.getBoundingClientRect();return {resumen:s.innerText.replace(/\\s+/g,' ').slice(0,500),sec:{x:r.x,y:r.y,w:r.width,h:r.height},vh:innerHeight,dpr:devicePixelRatio}})()"
+ },
+ {
+  "captura": "boton"
+ },
+ {
+  "bajar": "[data-papel-revision]"
+ },
+ {
+  "eval": "(async()=>{const c=(document.cookie.match(/(?:^|; )csrf-token=([^;]+)/)||[])[1]||'';const out=[];for(const id of (window.__ej||[])){const r=await fetch('/api/admin/forestal/directorio?id='+encodeURIComponent(id),{method:'DELETE',credentials:'include',headers:{'x-csrf-token':decodeURIComponent(c)}});out.push(r.status)}return out})()"
+ }
+]
