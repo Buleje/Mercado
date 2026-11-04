@@ -3,6 +3,7 @@
  * Puro. El total NO se calcula acá (regla 6): se manda cada línea con su
  * costo por unidad con impuestos y el servidor suma.
  */
+import { formatNumber, formatWeekday } from "@/lib/format";
 import type { FacturaXml, LineaFacturaXml } from "@/lib/compras/factura-xml";
 import type { MotivoCruce, ProductoSugerido as SugeridoXml, SugerenciaDeLinea } from "@/lib/compras/factura-xml-cruce";
 import type { ProductoSugerido } from "@/lib/admin/comandos-ia/papel";
@@ -112,13 +113,58 @@ export function costoUnitarioEnSoles(l: LineaFacturaXml, tc: number): number {
   return Math.round((totalLineaEnSoles(l, tc) / l.cantidad) * 1e6) / 1e6;
 }
 
-/** «Factura en US$ 1,234.56, tipo de cambio SUNAT venta 3.752 del 04/11/2026». */
+/** Σ de lo que cuesta cada línea que queda (con IGV, en la moneda de la factura). Regalos = 0. */
+export function totalDeLasLineas(lineas: readonly LineaFacturaXml[], quitadas: readonly number[] = []): number {
+  return aCentimos(lineas.filter((l) => !quitadas.includes(l.numero) && !l.gratuita && l.cantidad > 0).reduce((s, l) => s + l.total, 0));
+}
+
+/** Lo que de verdad suma la compra en soles: cada línea que queda pasada a soles y redondeada. */
+export function compraEnSoles(lineas: readonly LineaFacturaXml[], quitadas: readonly number[], tc: number): number {
+  return aCentimos(lineas.filter((l) => !quitadas.includes(l.numero)).reduce((s, l) => s + totalLineaEnSoles(l, tc), 0));
+}
+
+/**
+ * Lo que se guarda (`compra`) frente a «total del papel × tipo de cambio»
+ * (`esperado`) y, si no son iguales, el motivo en una frase simple: líneas
+ * quitadas, descuento que no se reparte en los productos, redondeo de cada línea
+ * al céntimo o líneas que no suman el total. El redondeo explica a lo más
+ * S/ 0.005 por línea; más que eso es descuento o descuadre.
+ */
+export function diferenciaDeLaCompra(input: {
+  lineas: readonly LineaFacturaXml[];
+  quitadas: readonly number[];
+  totalPapel: number;
+  descuentos: number;
+  tc: number;
+}): { compra: number; esperado: number; motivo: string | null } {
+  const { lineas, quitadas, totalPapel, descuentos, tc } = input;
+  const compra = compraEnSoles(lineas, quitadas, tc);
+  const esperado = aCentimos(totalPapel * tc);
+  if (Math.abs(compra - esperado) < 0.005) return { compra, esperado, motivo: null };
+  const motivos: string[] = [];
+  if (quitadas.length > 0) motivos.push(quitadas.length === 1 ? "quitaste una línea" : `quitaste ${quitadas.length} líneas`);
+  const resto = Math.abs(compraEnSoles(lineas, [], tc) - esperado);
+  if (resto >= 0.005) {
+    const cobradas = lineas.filter((l) => !l.gratuita).length;
+    if (resto <= 0.005 * (cobradas + 1) + 1e-6) motivos.push("cada línea se redondea al céntimo");
+    else if (descuentos > 0) motivos.push("la factura trae un descuento que no se reparte en los productos");
+    else motivos.push("las líneas no suman el total de la factura");
+  }
+  return { compra, esperado, motivo: motivos.length > 0 ? motivos.join(" y ") : null };
+}
+
+/**
+ * «Factura en US$ 1,234.56, tipo de cambio SUNAT venta 3.752 del 04/11/2026».
+ * Si el dato no es de SUNAT sino del cierre SBS (BCRP), la nota lo dice: así quien
+ * revise la compra sabe de dónde salió el cambio.
+ */
 export function notaDelCambio(factura: FacturaXml, cambio: CambioUsado): string {
   const tc = tipoCambioTexto(cambio.venta);
   const base = `Factura en ${monto(factura.totales.total, factura.moneda)}, tipo de cambio`;
-  if (cambio.fuente === "manual") return `${base} venta ${tc} del ${fechaNumerica(cambio.fecha)}, escrito a mano`;
-  const detalle = cambio.fuente === "bcrp-sbs" && cambio.detalle ? ` (${cambio.detalle})` : "";
-  return `${base} SUNAT venta ${tc} del ${fechaNumerica(cambio.fecha)}${detalle}`;
+  const fecha = fechaNumerica(cambio.fecha);
+  if (cambio.fuente === "manual") return `${base} venta ${tc} del ${fecha}, escrito a mano`;
+  if (cambio.fuente === "bcrp-sbs") return `${base} venta ${tc} del ${fecha}, tomado de ${cambio.detalle ? `la ${cambio.detalle}` : "la SBS (BCRP)"} y no de SUNAT`;
+  return `${base} SUNAT venta ${tc} del ${fecha}`;
 }
 
 /**
@@ -169,10 +215,10 @@ export function cuerpoDeLaCompra(input: {
 
 /** «jueves 10/09». */
 export function fechaConDia(iso: string): string {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
+  const d = new Date(`${iso.slice(0, 10)}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
-  const dia = d.toLocaleDateString("es-PE", { weekday: "long" });
-  return `${dia} ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const dia = formatWeekday(d, { largo: true, soloFecha: true });
+  return `${dia} ${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 /** «04/11/2026». */
@@ -183,11 +229,11 @@ export function fechaNumerica(iso: string): string {
 
 /** «3.752» (SUNAT publica 3 decimales). */
 export function tipoCambioTexto(tc: number): string {
-  return tc.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 4 });
+  return formatNumber(tc, { min: 3, max: 4 });
 }
 
 export function monto(n: number, moneda: string): string {
-  const cifra = n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const cifra = formatNumber(n, 2);
   if (moneda === "PEN") return `S/ ${cifra}`;
   return moneda === "USD" ? `US$ ${cifra}` : `${moneda} ${cifra}`;
 }

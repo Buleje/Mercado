@@ -8,10 +8,10 @@
  */
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
-import { leerTipoCambio, type CambioUsado } from "./compra-desde-factura";
+import { leerTipoCambio, tipoCambioValido, type CambioUsado } from "./compra-desde-factura";
 
 /** Lo que devuelve el endpoint en `data` (forma de `TipoCambio`, lib/integrations/tipo-cambio.ts). */
-interface TipoCambioApi {
+export interface TipoCambioApi {
   fecha: string;
   compra: number;
   venta: number;
@@ -24,6 +24,22 @@ interface Respuesta {
   clave: string;
   dato: TipoCambioApi | null;
   error: string | null;
+}
+
+/**
+ * Qué hacer con la respuesta del endpoint. Un `venta` fuera del rango creíble
+ * (el 37.52 por 3.752) no se usa aunque venga con 200: se pide a mano, igual que
+ * si SUNAT no hubiera respondido.
+ */
+export function interpretarRespuesta(
+  ok: boolean,
+  status: number,
+  json: { data?: TipoCambioApi; error?: string } | null,
+): { dato: TipoCambioApi | null; error: string | null } {
+  if (ok && json?.data && tipoCambioValido(json.data.venta)) return { dato: json.data, error: null };
+  if (typeof json?.error === "string") return { dato: null, error: json.error };
+  if (ok && json?.data) return { dato: null, error: "El tipo de cambio que llegó no es creíble; escríbelo a mano" };
+  return { dato: null, error: `SUNAT no respondió (${status}); escribe el tipo de cambio a mano` };
 }
 
 export interface EstadoTipoCambio {
@@ -57,15 +73,7 @@ export function useTipoCambio(fecha: string | null, moneda: string | null): Esta
       .then(async (res) => {
         const json = (await res.json().catch(() => null)) as { data?: TipoCambioApi; error?: string } | null;
         if (ctrl.signal.aborted) return;
-        if (res.ok && json?.data && Number.isFinite(json.data.venta)) {
-          setRespuesta({ clave, dato: json.data, error: null });
-          return;
-        }
-        setRespuesta({
-          clave,
-          dato: null,
-          error: typeof json?.error === "string" ? json.error : `SUNAT no respondió (${res.status}); escribe el tipo de cambio a mano`,
-        });
+        setRespuesta({ clave, ...interpretarRespuesta(res.ok, res.status, json) });
       })
       .catch((err: unknown) => {
         if (ctrl.signal.aborted) return;

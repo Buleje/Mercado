@@ -11,6 +11,7 @@ import { button } from "@/components/ui-system/button-variants";
 import type { LineaFacturaXml } from "@/lib/compras/factura-xml";
 import type { SugerenciaDeLinea } from "@/lib/compras/factura-xml-cruce";
 import type { ProductoSugerido } from "@/lib/admin/comandos-ia/papel";
+import { formatNumber } from "@/lib/format";
 import { SelectorProducto } from "@/components/admin/comandos-ia/papel/SelectorProducto";
 import {
   alternativasDe,
@@ -27,7 +28,7 @@ const ETIQUETA_MOVIL = "text-[var(--text-secondary)] sm:hidden";
 const EN_SOLES = "block text-xs font-normal text-[var(--text-secondary)]";
 
 function cantidad(n: number): string {
-  return n.toLocaleString("es-PE", { maximumFractionDigits: 3 });
+  return formatNumber(n, { max: 3 });
 }
 
 export default function FacturaXmlLineas({

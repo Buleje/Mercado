@@ -2,15 +2,16 @@
 
 /**
  * Factura en dólares (u otra moneda): el tipo de cambio SUNAT del día de emisión
- * y a cuánto equivale en soles. La compra se guarda EN SOLES; si SUNAT no
- * responde, el tipo de cambio se escribe a mano y es obligatorio.
+ * y lo que la compra suma EN SOLES (la cifra que de verdad se guarda; si difiere
+ * del total del papel al cambio, dice por qué). Si SUNAT no responde, el tipo de
+ * cambio se escribe a mano y es obligatorio.
  */
 import { CardTitle } from "@buleje/design-system";
 import { Loader2 } from "@buleje/design-system/icons";
 import { CAMPO } from "@/components/admin/comandos-ia/papel/formato";
 import type { LineaFacturaXml } from "@/lib/compras/factura-xml";
 import type { EstadoTipoCambio } from "./use-tipo-cambio";
-import { aCentimos, fechaNumerica, monto, tipoCambioTexto, totalLineaEnSoles } from "./compra-desde-factura";
+import { diferenciaDeLaCompra, fechaNumerica, monto, tipoCambioTexto } from "./compra-desde-factura";
 
 const TARJETA = "space-y-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3";
 const ETIQUETA = "text-xs text-[var(--text-secondary)]";
@@ -19,24 +20,22 @@ export default function FacturaXmlDolar({
   estado,
   fecha,
   totalPapel,
+  descuentos,
   lineas,
   quitadas,
 }: {
   estado: EstadoTipoCambio;
   fecha: string;
   totalPapel: number;
+  /** Descuento global del papel (no se reparte en las líneas). */
+  descuentos: number;
   lineas: readonly LineaFacturaXml[];
   quitadas: readonly number[];
 }) {
   const { moneda, cargando, dato, error, cambio } = estado;
   const nombre = moneda === "USD" ? "dólar" : moneda;
-  const enSoles = cambio ? aCentimos(totalPapel * cambio.venta) : null;
-  /* Lo que sumará la compra: cada línea pasada a soles y redondeada al céntimo
-     (puede diferir en céntimos del total × tipo de cambio) y sin las quitadas. */
-  const compra = cambio
-    ? aCentimos(lineas.filter((l) => !quitadas.includes(l.numero)).reduce((s, l) => s + totalLineaEnSoles(l, cambio.venta), 0))
-    : null;
-  const difiere = enSoles !== null && compra !== null && Math.abs(compra - enSoles) >= 0.005;
+  const resumen = cambio ? diferenciaDeLaCompra({ lineas, quitadas, totalPapel, descuentos, tc: cambio.venta }) : null;
+  const deSunat = dato?.fuente === "sunat";
 
   return (
     <section className={TARJETA} data-factura-xml-cambio aria-live="polite">
@@ -49,12 +48,12 @@ export default function FacturaXmlDolar({
       {dato && (
         <>
           <p className="text-sm text-[var(--text-primary)]" data-factura-xml-tc={dato.venta}>
-            Tipo de cambio SUNAT del {fechaNumerica(fecha)}:{" "}
+            Tipo de cambio {deSunat ? "SUNAT " : ""}del {fechaNumerica(fecha)}:{" "}
             <span className="font-semibold tabular-nums">S/ {tipoCambioTexto(dato.venta)}</span> por {nombre}
           </p>
           <p className={ETIQUETA}>
             Venta, el que SUNAT pide para compras
-            {dato.fuente === "bcrp-sbs" ? ` · ${dato.detalle}` : ""}
+            {deSunat ? "" : ` · de la ${dato.detalle}, no de SUNAT`}
           </p>
         </>
       )}
@@ -83,18 +82,17 @@ export default function FacturaXmlDolar({
           )}
         </div>
       )}
-      {enSoles !== null && (
-        <p className="text-sm text-[var(--text-primary)]" data-factura-xml-total-soles>
-          {monto(totalPapel, moneda)} ={" "}
-          <span className="font-semibold tabular-nums">{monto(enSoles, "PEN")}</span>
-          <span className={ETIQUETA}> · cada costo se pasa a soles al guardar</span>
-        </p>
-      )}
-      {difiere && compra !== null && (
-        <p className={ETIQUETA} data-factura-xml-total-compra>
-          La compra suma <span className="font-semibold tabular-nums text-[var(--text-primary)]">{monto(compra, "PEN")}</span>
-          {quitadas.length > 0 ? ": sin las líneas quitadas y con" : ": con"} cada línea redondeada al céntimo
-        </p>
+      {resumen && (
+        <>
+          <p className="text-sm text-[var(--text-primary)]" data-factura-xml-total-soles>
+            La compra suma <span className="text-base font-semibold tabular-nums">{monto(resumen.compra, "PEN")}</span>
+          </p>
+          <p className={ETIQUETA} data-factura-xml-total-diferencia={resumen.motivo ? "" : undefined}>
+            {resumen.motivo
+              ? `No es ${monto(resumen.esperado, "PEN")} (${monto(totalPapel, moneda)} al tipo de cambio) porque ${resumen.motivo}`
+              : `${monto(totalPapel, moneda)} al tipo de cambio · cada costo se pasa a soles al guardar`}
+          </p>
+        </>
       )}
     </section>
   );

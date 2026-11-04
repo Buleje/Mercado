@@ -17,8 +17,9 @@ import { CAMPO } from "@/components/admin/comandos-ia/papel/formato";
 import type { VistaPreviaFacturaXml } from "@/lib/compras/factura-xml-cruce";
 import FacturaXmlDolar from "./FacturaXmlDolar";
 import FacturaXmlLineas from "./FacturaXmlLineas";
+import FacturaXmlRucProveedor from "./FacturaXmlRucProveedor";
 import { PROVEEDOR_NUEVO, useFacturaXml } from "./use-factura-xml";
-import { FORMAS_DE_PAGO, fechaConDia, lineasSinProducto, monto, type FormaDePago } from "./compra-desde-factura";
+import { FORMAS_DE_PAGO, compraEnSoles, fechaConDia, lineasSinProducto, monto, totalDeLasLineas, type FormaDePago } from "./compra-desde-factura";
 
 const ACEPTA = ".xml,.zip,text/xml,application/xml,application/zip,application/x-zip-compressed";
 const TARJETA = "space-y-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3";
@@ -167,6 +168,7 @@ export default function SubirFacturaXmlModal({
                   RUC {f.emisor.ruc}
                   {f.emisor.nombreComercial ? ` · ${f.emisor.nombreComercial}` : ""}
                 </p>
+                <FacturaXmlRucProveedor ruc={f.emisor.ruc} fechaFactura={fechaConDia(f.fecha)} />
                 {v.proveedor.existente ? (
                   <p className="text-xs font-semibold text-[var(--data-success-ink)]">Ya está en tus proveedores</p>
                 ) : v.proveedor.parecidos.length > 0 ? (
@@ -197,6 +199,15 @@ export default function SubirFacturaXmlModal({
                   Total del papel <span className="font-semibold tabular-nums">{monto(f.totales.total, f.moneda)}</span>{" "}
                   <span className={ETIQUETA}>(IGV {monto(f.totales.igv, f.moneda)})</span>
                 </p>
+                {x.quitadas.length > 0 && (
+                  <p className={DATO} data-factura-xml-total-nuevo>
+                    Con las líneas que quedan{" "}
+                    <span className="font-semibold tabular-nums">{monto(totalDeLasLineas(f.lineas, x.quitadas), f.moneda)}</span>
+                    {x.tipoCambio.cambio && f.moneda !== "PEN" && (
+                      <span className={ETIQUETA}> = {monto(compraEnSoles(f.lineas, x.quitadas, x.tipoCambio.cambio.venta), "PEN")}</span>
+                    )}
+                  </p>
+                )}
                 <label className="block space-y-1">
                   <span className={ETIQUETA}>Forma de pago</span>
                   <select className={CAMPO} value={x.formaDePago} onChange={(e) => x.setFormaDePago(e.target.value as FormaDePago)}>
@@ -209,7 +220,7 @@ export default function SubirFacturaXmlModal({
                 </label>
               </div>
             </div>
-            {x.tipoCambio.necesita && <FacturaXmlDolar estado={x.tipoCambio} fecha={f.fecha} totalPapel={f.totales.total} lineas={f.lineas} quitadas={x.quitadas} />}
+            {x.tipoCambio.necesita && <FacturaXmlDolar estado={x.tipoCambio} fecha={f.fecha} totalPapel={f.totales.total} descuentos={f.totales.descuentos} lineas={f.lineas} quitadas={x.quitadas} />}
             <FacturaXmlLineas
               lineas={f.lineas}
               sugerencias={v.lineas}
