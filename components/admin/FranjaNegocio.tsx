@@ -17,8 +17,9 @@
  *   - `LineaNegocio`: la línea de 3 px en el borde de la cabecera sticky, para que
  *     el color siga a la vista al bajar (la franja se va con el scroll).
  *
- * No pide nada nuevo: el slug y el nombre ya los resuelve `TenantSlugProvider` y las
- * especializaciones ya las pide el panel (`cachedJson` comparte la misma consulta).
+ * No pide nada nuevo: slug, nombre y tipo de negocio ya los resuelve `TenantSlugProvider`.
+ * Forestal = tipo `madereria` (04-11). NO por tener el libro CTP prendido: la Bodega
+ * (`main`) lo tiene prendido para las pruebas del panel y salía verde como Blas.
  * Copia de prueba se decide con el slug, que se conoce desde el primer pintado:
  * nunca se ve «real» por un instante en una copia.
  */
@@ -26,7 +27,6 @@
 import type { CSSProperties } from "react";
 import { FlaskConical, ShieldCheck } from "@buleje/design-system/icons";
 import { useTenant } from "@/contexts/tenant-context";
-import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import { cn } from "@/lib/utils";
 import { esCopiaDePrueba, tonoDelNegocio, type TonoNegocio } from "@/lib/admin/copia-de-prueba";
 
@@ -62,12 +62,10 @@ const RAYADO: CSSProperties = {
 
 function useIdentidad(): { tono: TonoNegocio; nombre: string; listo: boolean } {
   const { tenantSlug, branding, industry, isLoading: cargandoNegocio } = useTenant();
-  const { enabledKeys, isLoading: cargandoSpecs } = useEnabledSpecs();
   const prueba = esCopiaDePrueba({ slug: tenantSlug, name: branding.name });
-  const forestal = industry === "madereria" || enabledKeys.has("spec:forestal:ctp-libro");
-  /* Un negocio real espera a saber si es forestal (si no, pasaría de turquesa a verde);
-     con datos en caché de la visita anterior (`enabledKeys` ya lleno) no espera. */
-  const listo = prueba || (!cargandoNegocio && (!cargandoSpecs || enabledKeys.size > 0));
+  const forestal = industry === "madereria";
+  /* Un negocio real espera a saber su tipo (si no, pasaría de turquesa a verde). */
+  const listo = prueba || !cargandoNegocio;
   return {
     tono: tonoDelNegocio({ slug: tenantSlug, name: branding.name, forestal }),
     nombre: branding.name ?? tenantSlug,
