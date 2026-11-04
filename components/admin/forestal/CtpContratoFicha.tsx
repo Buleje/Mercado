@@ -272,7 +272,10 @@ export default function CtpContratoFicha({
               {contrato.tipo ? TIPO_LABEL[contrato.tipo] : "Tipo sin definir"} ·{" "}
               {vigenciaTexto(contrato.vigenciaDesde, contrato.vigenciaHasta)}
             </p>
-            <OsinforEstadoPermiso codigo={contrato.codigo} />
+            <OsinforEstadoPermiso
+              codigo={contrato.codigo}
+              titular={{ documento: contrato.titularDoc, nombre: contrato.titularNombre }}
+            />
           </div>
           <div className="flex flex-col items-end gap-2 max-sm:w-full max-sm:items-start">
             <div className="flex flex-wrap items-center gap-2">
