@@ -4,6 +4,7 @@
 import { chromium } from "playwright";
 import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
 
 const BASE = "http://localhost:3000";
 const SLUG = "main";
@@ -47,7 +48,8 @@ async function dismissModal(page) {
 async function main() {
   if (!existsSync(OUT)) await mkdir(OUT, { recursive: true });
 
-  const browser = await chromium.launch({ headless: true });
+  /* Mismo Chrome que qa-capturas (04-11: el chromium de Playwright no estaba bajado y el barrido moría al arrancar). */
+  const browser = await chromium.launch({ headless: true, executablePath: resolverChromium() });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     extraHTTPHeaders: { "x-tenant-id": SLUG },
