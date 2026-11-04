@@ -26,9 +26,9 @@ export default async function FeatureAdoptionPage() {
         kicker="Plataforma · Crecimiento"
         info={{
           title: "Adopción de funciones",
-          what: "Muestra qué módulos usa cada negocio (derivado de su actividad) y cuáles no. Marca las funciones de crecimiento (Fiado, Marketplace, Cupones…) sub-usadas.",
+          what: "Muestra qué módulos usó cada negocio en los últimos 30 días (derivado de su actividad), de qué rubro es (Aserradero o Bodega) y cuáles le faltan. Los consejos son solo de su rubro: al aserradero Libro CTP, guías o personal; a la bodega Fiado, Cupones o Marketplace.",
           affects: "Solo lectura + acciones de coaching (ofrecer ayuda por chat, ver ficha 360). Es para retención/upsell, no cambia datos.",
-          example: "Si solo 1 de 9 tiendas usa Adelantos, o una bodega no usa ninguna función de crecimiento, le ofreces ayuda para que la use y venda más.",
+          example: "Si un aserradero usa el Libro CTP pero nunca abrió las guías, le ofreces ayuda con las guías; si una bodega no usa Fiado ni Cupones, le ofreces ayuda para que venda más.",
         }}
         pestanas={<SuperAdminModuleTabs enLinea tabs={ANALYTICS_TABS} />}
       />
