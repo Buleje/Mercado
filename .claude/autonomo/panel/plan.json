@@ -1,0 +1,1746 @@
+{
+ "paraBrandon": "Hoy tu barra tiene 18 grupos y 34 pestañas (26 en una bodega), con cosas repetidas hasta en 5 lugares y pantallas con 3 o 4 filas de pestañas.\nLa propuesta deja 13 renglones (10 en una bodega) y 23 pestañas (17 en una bodega), con máximo 2 filas de pestañas por pantalla. No se borra nada: lo repetido se queda donde más sirve y el otro lugar te lleva con un enlace. Tus links y avisos viejos siguen abriendo.\nAsí queda el mapa nuevo:\n- Inicio: Inicio · Asistente IA · Metas y logros\n- Ventas: Ventas y caja · Pedidos y reparto · Comprobantes\n- Abastecimiento: Productos e inventario · Compras · Recetas (restaurante). Cámaras, con un clic\n- Clientes: Clientes · Mensajes\n- Gestión: Mi Plata · Equipo · Documentos · A medida\n- Canales: Tienda online · Marketplace\n- Forestal: Libro CTP · Libro TH · Herramientas y trámites. Agricultura: Cacao\n- Configuración, con plan, velocidad, auditoría y colas adentro\nTres ejemplos:\n1. «Análisis» deja de ser un grupo. Sus gráficos pasan a Inicio, cada uno en su tema (Ventas, Productos, Clientes) y plegados. Hoy el ticket promedio sale en 4 lugares y con 3 cifras distintas.\n2. «Crecimiento» entra a Clientes. Filtras a tus clientes y les mandas la campaña sin cambiar de pestaña.\n3. Los fiados quedan en Ventas y caja › Me deben, que es donde se cobran. Mi Plata te muestra el total y te lleva ahí. Hoy es la misma pantalla puesta dos veces y con dos nombres.\nEn diseño habrá un solo tipo de botón, filtro, tabla, modal, casilla y tarjeta de cifra. La ayuda va en la ⓘ, y todo se mide antes y después.\nEl trabajo va en 6 tandas. La primera no mueve pantallas: deja todo listo para que ningún plan, rol ni rubro pierda lo que ve hoy.",
+ "antesDespues": "MEDICIÓN: reports/orden-admin/orden-1280.json, tomada el 2026-10-09 a las 17:38 de Lima (es la nueva, posterior a las 17:30). Solo mide la vista de entrada de cada ?tab= (63 filas).\n\nHOY:\n- Barra: 18 grupos (17 renglones + el menú de Configuración) y 34 pestañas. En una bodega sin especializaciones son 15 renglones y 26 pestañas.\n- Router: 62 ids, de los que 28 son alias sin vista. Hay unos 133 lugares y hasta 3-4 niveles de pestañas (Mi Plata › Por cobrar › Adelantos › 7; Documentos › Facturación › 5; Mi Tienda › Identidad › 6; Sistema › Rendimiento › 4).\n- Filtros de fecha: 2.\n- Suma de las 63 entradas: 81,7 pantallas, 853 botones y 1.083 palabras de ayuda.\n- Puntaje > 0 en 3 pestañas: Inicio (3,01 pantallas y 60 de ayuda), A medida (mide lo mismo que Inicio porque, sin piezas, cae ahí) y Documentos (25 botones y 70 de ayuda).\n- 44 de 63 pestañas no tienen título de vista. 3 tienen más de uno: Canales 4, Libro TH 2, En vivo 2.\n- 12 pestañas tienen 22 botones o más.\n- Contenido repetido: ticket/margen ×4 con 3 fuentes, hora pico ×5, RFM ×3, «qué reponer» ×5 con 4 motores, «quién te debe» ×5, presupuesto en 3 almacenes, plantillas ×3, cupones/fidelidad/reseñas ×2. FiadosModule y PayablesTab están montados 2 veces cada uno.\n- Sistema de diseño: 5.236 botones a mano y 0 usos del Button del DS, 170 constantes BTN, 103 modales a mano, 250 checkbox en 5 tamaños, 114 hex en gráficos, 99 paletas, 478 transition-all.\n\nPROPUESTA:\n- Barra: 13 renglones (10 en esa bodega) y 23 pestañas (17 en esa bodega).\n- Desaparecen los grupos de una sola pestaña (Análisis, Crecimiento, Equipo, Sistema y Mi Tienda).\n- Máximo 2 niveles de pestañas, con test que lo controla. Un solo filtro de fecha.\n- Cada contenido vive en una sola casa; los demás lugares llevan enlace.\n- Los 62 ids siguen funcionando y llevan a tab + vista.\n\nMETAS QUE SE MIDEN:\n- Puntaje 0 en todas las vistas, medidas una por una con ?vista= (se mide desde la ola 1), no solo en la vista de entrada.\n- Inicio › Resumen: de 3,01 a ≤ 2,5 pantallas y ayuda ≤ 40.\n- Comprobantes/Documentos: ≤ 20 botones y ≤ 60 de ayuda.\n- 0 vistas sin título y 0 con más de uno.\n- ≤ 20 botones por vista.\n- Ayuda total −30 % (estimado; se confirma con la medición por vista).\n- Trinquete de diseño (las cifras solo bajan): 0 modales a mano, 0 hex en gráficos, 1 tamaño de casilla, 2 alturas de filtro, constantes BTN → 0, transition-all < 100 (estimado).\n- Prueba de no-pérdida en verde en cada ola: cada plan, rol, rubro y plantilla ve lo mismo o más.",
+ "grupos": [
+  {
+   "grupo": "Inicio (sin encabezado)",
+   "pestanas": [
+    {
+     "id": "vendor-dashboard",
+     "nombre": "Inicio",
+     "subvistas": [
+      {
+       "nombre": "Resumen",
+       "vieneDe": "vendor-dashboard:general + analytics-pro:analytics/resumen (Fiado pendiente, Rotación, avisos unificados) + asistente-ia:sugerencias/hoy («Ideas para hoy») + metas-logros:metas (bloque «Tu meta») · alias analytics-pro, sugerencias-ia"
+      },
+      {
+       "nombre": "Ventas",
+       "vieneDe": "vendor-dashboard:ventas + analytics-pro:analytics/ventas (un motor de hora pico) + analytics-pro:analytics/predicciones + forecasting:forecast (proyección 7 días) · alias forecasting, demand-prediction"
+      },
+      {
+       "nombre": "Caja",
+       "vieneDe": "vendor-dashboard:caja"
+      },
+      {
+       "nombre": "Productos (clave inventario)",
+       "vieneDe": "vendor-dashboard:inventario + analytics-pro:analytics/productos (ABC, BCG, márgenes, cesta) + asistente-ia:sugerencias/combos + asistente-ia:sugerencias/ventas"
+      },
+      {
+       "nombre": "Compras",
+       "vieneDe": "vendor-dashboard:compras"
+      },
+      {
+       "nombre": "Clientes",
+       "vieneDe": "vendor-dashboard:clientes + analytics-pro:analytics/clientes (un RFM, Top 10, resumen de fiados con enlace)"
+      },
+      {
+       "nombre": "Forestal",
+       "vieneDe": "vendor-dashboard:forestal"
+      },
+      {
+       "nombre": "Marketplace",
+       "vieneDe": "vendor-dashboard:marketplace (arreglar prefetch VendorDashboardModule.tsx:90)"
+      }
+     ],
+     "nota": "Un solo filtro de fecha. Lo que viene de Análisis entra plegado, con el permiso de su plan (Enterprise/Max) y oculto en Modo Fácil. Resumen mide hoy 3,01 pantallas y 60 palabras de ayuda (17:38): primero se baja a ≤ 2,5."
+    },
+    {
+     "id": "asistente-ia",
+     "nombre": "Asistente IA",
+     "subvistas": [
+      {
+       "nombre": "Chat",
+       "vieneDe": "asistente-ia:chat"
+      },
+      {
+       "nombre": "Comandos",
+       "vieneDe": "asistente-ia:comandos (papel, precios, mensajes, historial) + forecasting:forecast (sugerencias de precio, como bloque de Precios en bloque) · alias ai-command"
+      },
+      {
+       "nombre": "Automatizaciones",
+       "vieneDe": "asistente-ia:automatizaciones"
+      }
+     ],
+     "nota": "Sugerencias IA se reparte entre Inicio, Compras y Clientes, y queda una tarjeta «Ideas» con enlaces. Pasa de 14 lugares a 7."
+    },
+    {
+     "id": "metas-logros",
+     "nombre": "Metas y logros",
+     "subvistas": [
+      {
+       "nombre": "Metas",
+       "vieneDe": "metas-logros:metas"
+      },
+      {
+       "nombre": "Hoy",
+       "vieneDe": "metas-logros:hoy (la única curva por hora con meta)"
+      },
+      {
+       "nombre": "Calendario",
+       "vieneDe": "metas-logros:calendario"
+      },
+      {
+       "nombre": "Logros",
+       "vieneDe": "metas-logros:logros"
+      },
+      {
+       "nombre": "Indicadores propios",
+       "vieneDe": "analytics-pro:inteligencia (KPIs personalizados; /api/custom-kpis no cambia)"
+      }
+     ],
+     "nota": "Las metas de cobranza de Fiados y Adelantos se suman solo si Brandon lo aprueba (es un cambio de datos)."
+    }
+   ]
+  },
+  {
+   "grupo": "Ventas (sección Operaciones)",
+   "pestanas": [
+    {
+     "id": "ventas-caja",
+     "nombre": "Ventas y caja",
+     "subvistas": [
+      {
+       "nombre": "Vender",
+       "vieneDe": "ventas-caja:pos"
+      },
+      {
+       "nombre": "Turnos",
+       "vieneDe": "ventas-caja:turnos · alias turnos"
+      },
+      {
+       "nombre": "Caja (con la sección Cuadrar)",
+       "vieneDe": "ventas-caja:caja-registradora + ventas-caja:arqueo"
+      },
+      {
+       "nombre": "Me deben",
+       "vieneDe": "ventas-caja:cuentas-cobrar + plata:fiados · alias fiados"
+      },
+      {
+       "nombre": "Comisiones de vendedores",
+       "vieneDe": "ventas-caja:comisiones"
+      }
+     ],
+     "nota": "FiadosModule queda montado una sola vez. Opción para Brandon: juntar Turno y caja en una sola vista."
+    },
+    {
+     "id": "pedidos",
+     "nombre": "Pedidos y reparto",
+     "subvistas": [
+      {
+       "nombre": "Tablero",
+       "vieneDe": "pedidos:(kanban, hoy es modo interno)"
+      },
+      {
+       "nombre": "Lista",
+       "vieneDe": "pedidos:(lista, hoy es modo interno)"
+      },
+      {
+       "nombre": "Reparto",
+       "vieneDe": "pedidos:(despacho) + delivery-partners:live, pedidos-vivo, repartidores, solicitudes, asignaciones, permisos, retiros, ranking · alias delivery-partners, delivery-live"
+      },
+      {
+       "nombre": "Archivados",
+       "vieneDe": "pedidos:(modal de archivados)"
+      }
+     ],
+     "nota": "Reparto tiene 5 secciones: En vivo · Repartidores (con postulantes) · Asignaciones y permisos · Pagos a repartidores · Ranking. Imprimir sigue en el menú."
+    },
+    {
+     "id": "facturacion",
+     "nombre": "Comprobantes",
+     "subvistas": [
+      {
+       "nombre": "Facturas y boletas",
+       "vieneDe": "documentos:facturacion/e-factura · alias facturacion"
+      },
+      {
+       "nombre": "Notas de crédito",
+       "vieneDe": "documentos:notas · alias notas-credito"
+      },
+      {
+       "nombre": "Guías de remisión",
+       "vieneDe": "documentos:guias · alias guias-remision"
+      },
+      {
+       "nombre": "Cotizaciones",
+       "vieneDe": "documentos:cotizaciones · alias cotizaciones"
+      }
+     ],
+     "nota": "Una sola fila de pestañas. El estado de SUNAT va en una línea con enlace a Configuración. Cuentas x Pagar e Impuestos salen de aquí y dejan enlace."
+    }
+   ]
+  },
+  {
+   "grupo": "Abastecimiento (sección Operaciones)",
+   "pestanas": [
+    {
+     "id": "inventario",
+     "nombre": "Productos e inventario",
+     "subvistas": [
+      {
+       "nombre": "Productos y stock",
+       "vieneDe": "inventario:stock"
+      },
+      {
+       "nombre": "Entradas y salidas",
+       "vieneDe": "inventario:kardex"
+      },
+      {
+       "nombre": "Vencimientos",
+       "vieneDe": "inventario:lotes"
+      },
+      {
+       "nombre": "Pérdidas",
+       "vieneDe": "inventario:mermas"
+      },
+      {
+       "nombre": "Conteo físico",
+       "vieneDe": "inventario:(modal de conteo: asistente, manual, escáner) + (modal de declaración jurada)"
+      },
+      {
+       "nombre": "Categorías",
+       "vieneDe": "productos:categorias · alias productos"
+      },
+      {
+       "nombre": "Precios",
+       "vieneDe": "productos:historial-precios (+ enlace a marketplace:precios)"
+      },
+      {
+       "nombre": "Ofertas y cupones",
+       "vieneDe": "productos:promociones + productos:cupones + marketplace:cupones (selector tienda / marketplace)"
+      }
+     ],
+     "nota": "El plan Básico sigue viendo Categorías, Precios y Ofertas (origen productos), aunque Inventario sea Pro."
+    },
+    {
+     "id": "compras",
+     "nombre": "Compras",
+     "subvistas": [
+      {
+       "nombre": "Comprar",
+       "vieneDe": "compras:punto-compra"
+      },
+      {
+       "nombre": "Órdenes y recepción",
+       "vieneDe": "compras:ordenes-compra + compras:recepcion"
+      },
+      {
+       "nombre": "Sugerencias",
+       "vieneDe": "compras:sugerencias + forecasting:forecast (reordenar, auto-reorden) + asistente-ia:sugerencias/compras"
+      },
+      {
+       "nombre": "Proveedores",
+       "vieneDe": "compras:proveedores + compras:comparador + analytics-pro:inteligencia (precios del mercado)"
+      },
+      {
+       "nombre": "Por pagar",
+       "vieneDe": "compras:cuentas-por-pagar + documentos:facturacion/cxp"
+      },
+      {
+       "nombre": "Devoluciones",
+       "vieneDe": "compras:devoluciones · alias devoluciones-proveedor"
+      },
+      {
+       "nombre": "Dropship",
+       "vieneDe": "dropship · alias dropship (solo si está activo)"
+      }
+     ],
+     "nota": "Historial de Gastos y gastos fijos pasan a Mi Plata y dejan un enlace de vuelta."
+    },
+    {
+     "id": "recetas",
+     "nombre": "Recetas (solo restaurante)",
+     "subvistas": [
+      {
+       "nombre": "Resumen",
+       "vieneDe": "recetas:dashboard"
+      },
+      {
+       "nombre": "Recetas",
+       "vieneDe": "recetas:recetas"
+      },
+      {
+       "nombre": "Producción",
+       "vieneDe": "recetas:produccion"
+      },
+      {
+       "nombre": "Recetario",
+       "vieneDe": "recetas:recetario (se une a Recetas solo si Brandon lo aprueba)"
+      }
+     ],
+     "nota": "En una bodega no agrega pestañas."
+    },
+    {
+     "id": "camaras",
+     "nombre": "Cámaras (enlace directo)",
+     "subvistas": [
+      {
+       "nombre": "Fotos",
+       "vieneDe": "camaras:fotos"
+      },
+      {
+       "nombre": "Patio",
+       "vieneDe": "camaras:patio"
+      },
+      {
+       "nombre": "Personas",
+       "vieneDe": "camaras:personas"
+      },
+      {
+       "nombre": "Cámaras",
+       "vieneDe": "camaras:camaras"
+      }
+     ],
+     "nota": "Hoy aparece bajo «Canales»; pasa a Operaciones. La cabecera usa AdminTabBar y ?vista=."
+    }
+   ]
+  },
+  {
+   "grupo": "Clientes",
+   "pestanas": [
+    {
+     "id": "clientes",
+     "nombre": "Clientes",
+     "subvistas": [
+      {
+       "nombre": "Mis clientes",
+       "vieneDe": "clientes:crm (+ ficha «Qué ofrecerle» ← asistente-ia:sugerencias/clientes)"
+      },
+      {
+       "nombre": "Segmentos",
+       "vieneDe": "clientes:segmentos + campanas:segmentos + campanas:rfm (+ tarjetas huérfanas de inactivos y cumpleaños)"
+      },
+      {
+       "nombre": "Campañas",
+       "vieneDe": "campanas:campanas + clientes:mensajes (modo uno por uno) + asistente-ia:sugerencias/estrategias · alias campanas"
+      },
+      {
+       "nombre": "Premios",
+       "vieneDe": "campanas:puntos + campanas:gift-cards + marketplace:fidelidad · alias puntos, gift-cards-admin, fidelizacion, programa-puntos"
+      },
+      {
+       "nombre": "Programas",
+       "vieneDe": "campanas:socio + campanas:subscriptions + campanas:lives · alias socio-members, subscriptions, lives-admin"
+      },
+      {
+       "nombre": "Opiniones",
+       "vieneDe": "clientes:resenas + marketplace:resenas · alias resenas"
+      },
+      {
+       "nombre": "Mapa",
+       "vieneDe": "clientes:mapa"
+      },
+      {
+       "nombre": "Leads",
+       "vieneDe": "clientes:leads · alias leads-funnel"
+      }
+     ],
+     "nota": "Clientes (6) + Crecimiento (8) quedan en 8. Se filtra y se manda la campaña en la misma pestaña."
+    },
+    {
+     "id": "whatsapp-inbox",
+     "nombre": "Mensajes",
+     "subvistas": [
+      {
+       "nombre": "Bandeja",
+       "vieneDe": "whatsapp-inbox:whatsapp + whatsapp-inbox:chat + whatsapp-inbox:soporte (chip de canal) · alias marketplace-chat, support-inbox, chat, soporte"
+      },
+      {
+       "nombre": "Avisos por pedido",
+       "vieneDe": "whatsapp-inbox:avisos"
+      },
+      {
+       "nombre": "Plantillas",
+       "vieneDe": "whatsapp-inbox:plantillas (+ las del chat y las de Meta, en 3 secciones)"
+      },
+      {
+       "nombre": "Bot",
+       "vieneDe": "whatsapp-inbox:bot"
+      }
+     ],
+     "nota": "La barra decía «WhatsApp» y abría «Mensajes»; ahora se llama Mensajes. Pasa de 6 vistas a 4."
+    }
+   ]
+  },
+  {
+   "grupo": "Gestión",
+   "pestanas": [
+    {
+     "id": "plata",
+     "nombre": "Mi Plata",
+     "subvistas": [
+      {
+       "nombre": "Resumen",
+       "vieneDe": "plata:resumen"
+      },
+      {
+       "nombre": "Resultado (Ganancias y pérdidas · Rentabilidad · Comparar períodos)",
+       "vieneDe": "plata:pl + plata:rentabilidad + plata:comparador + analytics-pro:inteligencia (comparativo)"
+      },
+      {
+       "nombre": "Movimientos (Gastos y presupuesto · Proyección de caja · Tesorería)",
+       "vieneDe": "plata:gastos + plata:flujo-caja + plata:tesoreria + compras:historial-gastos + compras:punto-compra (gastos fijos) + presupuesto de compras"
+      },
+      {
+       "nombre": "Por cobrar y pagar (Todo lo que me deben · Lo que debo · A quién fiarle)",
+       "vieneDe": "plata:por-cobrar + plata:por-pagar + plata:scoring + analytics-pro:analytics/clientes («Quién te debe») · alias por-cobrar, scoring"
+      },
+      {
+       "nombre": "Préstamos",
+       "vieneDe": "plata:prestamos · alias prestamos"
+      },
+      {
+       "nombre": "Adelantos",
+       "vieneDe": "plata:adelantos · alias adelantos"
+      },
+      {
+       "nombre": "Activos (Flota · Alquileres por cobrar · Calendario · Ranking)",
+       "vieneDe": "plata:activos · alias activos"
+      },
+      {
+       "nombre": "Impuestos y reportes",
+       "vieneDe": "plata:reportes + documentos:facturacion/impuestos + documentos:facturacion/obligaciones"
+      }
+     ],
+     "nota": "plata:fiados pasa a ser una tarjeta-enlace a Ventas y caja › Me deben. Máximo 2 niveles: las barras propias de Préstamos, Adelantos y Activos se vuelven el 2.º nivel."
+    },
+    {
+     "id": "rrhh",
+     "nombre": "Equipo",
+     "subvistas": [
+      {
+       "nombre": "Asistencia",
+       "vieneDe": "rrhh:asistencia"
+      },
+      {
+       "nombre": "Personal",
+       "vieneDe": "rrhh:personal"
+      },
+      {
+       "nombre": "Lo ganado (+ Descontar adelantos)",
+       "vieneDe": "rrhh:ganado + acción de plata:adelantos (descuento de planilla)"
+      },
+      {
+       "nombre": "Contratos",
+       "vieneDe": "rrhh:contratos"
+      },
+      {
+       "nombre": "Puestos",
+       "vieneDe": "rrhh:puestos"
+      },
+      {
+       "nombre": "Tareas",
+       "vieneDe": "tareas:tareas · alias tareas"
+      },
+      {
+       "nombre": "Notas",
+       "vieneDe": "tareas:notas · alias notas, notas-rapidas"
+      }
+     ],
+     "nota": "En Configuración, «Equipo y acceso» pasa a llamarse «Usuarios y acceso» para no chocar de nombre."
+    },
+    {
+     "id": "documentos",
+     "nombre": "Documentos",
+     "subvistas": [
+      {
+       "nombre": "Archivo",
+       "vieneDe": "documentos:drive"
+      },
+      {
+       "nombre": "Contratos",
+       "vieneDe": "documentos:contratos · alias contratos"
+      }
+     ],
+     "nota": "Forestal y Cámaras también usan el drive. Sus permisos no se tocan."
+    },
+    {
+     "id": "a-medida",
+     "nombre": "A medida (solo si hay piezas)",
+     "subvistas": [
+      {
+       "nombre": "Una vista por pieza",
+       "vieneDe": "a-medida:?pieza="
+      }
+     ],
+     "nota": "Pasa de Canales a Gestión y usa AdminTabBar."
+    }
+   ]
+  },
+  {
+   "grupo": "Canales",
+   "pestanas": [
+    {
+     "id": "pagina-inicio",
+     "nombre": "Tienda online",
+     "subvistas": [
+      {
+       "nombre": "Apariencia",
+       "vieneDe": "pagina-inicio:identidad (identidad, colores, estilos, portada, contacto, avanzado) · alias store-customizer"
+      },
+      {
+       "nombre": "Contenido",
+       "vieneDe": "pagina-inicio:pagina (secciones, banners, promociones del home)"
+      },
+      {
+       "nombre": "Páginas",
+       "vieneDe": "pagina-inicio:paginas"
+      },
+      {
+       "nombre": "Redes y medición",
+       "vieneDe": "canales (Meta, TikTok, GA4 una sola vez + métricas) · alias canales"
+      }
+     ],
+     "nota": "Pasa de 3 niveles y 13 pestañas a 1 barra. Branding marketplace se va a Marketplace en la ola 4."
+    },
+    {
+     "id": "marketplace",
+     "nombre": "Marketplace",
+     "subvistas": [
+      {
+       "nombre": "Resumen",
+       "vieneDe": "marketplace:resumen"
+      },
+      {
+       "nombre": "Mi tienda en el marketplace",
+       "vieneDe": "marketplace:tienda + pagina-inicio:pagina/branding"
+      },
+      {
+       "nombre": "Productos publicados",
+       "vieneDe": "marketplace:productos"
+      },
+      {
+       "nombre": "Órdenes",
+       "vieneDe": "marketplace:ordenes"
+      },
+      {
+       "nombre": "Comisiones de la plataforma",
+       "vieneDe": "marketplace:comisiones"
+      },
+      {
+       "nombre": "Precios",
+       "vieneDe": "marketplace:precios"
+      }
+     ],
+     "nota": "Cupones, Reseñas y Fidelidad pasan a Productos e inventario y a Clientes, con redirección. Órdenes se queda hasta medir si son las mismas filas que Pedidos."
+    }
+   ]
+  },
+  {
+   "grupo": "Forestal (Especializaciones)",
+   "pestanas": [
+    {
+     "id": "ctp-libro-operaciones",
+     "nombre": "Libro CTP",
+     "subvistas": [
+      {
+       "nombre": "Ingresos (filtro por recepcionar / recepcionadas)",
+       "vieneDe": "ctp-libro-operaciones:ingresos + ctp-libro-operaciones:gtf-ingresadas"
+      },
+      {
+       "nombre": "Tablero (movimiento · producción · tendencias · margen · rendimiento)",
+       "vieneDe": "ctp-libro-operaciones:tablero + reportes + analisis + rentabilidad + forestal-herramientas:rendimiento"
+      },
+      {
+       "nombre": "Despacho (+ Lotes comerciales y QR con OK)",
+       "vieneDe": "ctp-libro-operaciones:despacho + forestal-lotes"
+      },
+      {
+       "nombre": "Las otras 19 vistas sin cambio",
+       "vieneDe": "ctp-libro-operaciones:<misma clave>"
+      }
+     ],
+     "nota": "El riel pasa de 26 a 22 entradas. Los atajos g+tecla y las claves viejas siguen funcionando."
+    },
+    {
+     "id": "loth-libro-operaciones",
+     "nombre": "Libro TH",
+     "subvistas": [
+      {
+       "nombre": "Control del permiso (+ Extracción)",
+       "vieneDe": "loth-libro-operaciones:tablero + loth-libro-operaciones:extraccion"
+      },
+      {
+       "nombre": "Las otras 8 vistas sin cambio",
+       "vieneDe": "loth-libro-operaciones:<misma clave>"
+      }
+     ],
+     "nota": "Pasa de 10 vistas a 9. El problema real del Libro TH es el celular (15,3 pantallas a 400 px) y no entra en este plan."
+    },
+    {
+     "id": "forestal-herramientas",
+     "nombre": "Herramientas y trámites",
+     "subvistas": [
+      {
+       "nombre": "Cubicador de madera",
+       "vieneDe": "forestal-herramientas:cubicador"
+      },
+      {
+       "nombre": "Cubicador de trozas",
+       "vieneDe": "forestal-herramientas:trozas"
+      },
+      {
+       "nombre": "Resúmenes",
+       "vieneDe": "forestal-herramientas:resumenes"
+      },
+      {
+       "nombre": "Fotos de especies",
+       "vieneDe": "forestal-herramientas:especies"
+      },
+      {
+       "nombre": "Formatos",
+       "vieneDe": "forestal-tramites:catalogo · alias forestal-tramites"
+      },
+      {
+       "nombre": "Expediente",
+       "vieneDe": "forestal-tramites:expediente"
+      },
+      {
+       "nombre": "Plantaciones",
+       "vieneDe": "forestal-tramites:plantaciones"
+      }
+     ],
+     "nota": "Tiene 2 fases (Herramientas | Trámites), cada una activada por su propio spec."
+    }
+   ]
+  },
+  {
+   "grupo": "Agricultura (Especializaciones)",
+   "pestanas": [
+    {
+     "id": "cacao-acopio",
+     "nombre": "Cacao",
+     "subvistas": [
+      {
+       "nombre": "Mercado",
+       "vieneDe": "cacao-acopio:mercado + cacao-acopio:noticias"
+      },
+      {
+       "nombre": "Resumen (sube a la cabeza de Gestión)",
+       "vieneDe": "cacao-acopio:resumen"
+      },
+      {
+       "nombre": "Las otras 11 vistas sin cambio",
+       "vieneDe": "cacao-acopio:<misma clave>"
+      }
+     ],
+     "nota": "Pasa de 14 vistas a 13. No se une con Forestal: Brandon los separó el 2026-05-29."
+    }
+   ]
+  },
+  {
+   "grupo": "Configuración",
+   "pestanas": [
+    {
+     "id": "config",
+     "nombre": "Configuración",
+     "subvistas": [
+      {
+       "nombre": "Datos del negocio",
+       "vieneDe": "config:negocio"
+      },
+      {
+       "nombre": "Cobros y comprobantes",
+       "vieneDe": "config:cobros + documentos:facturacion/conexion (tarjeta Modo oficial una sola vez)"
+      },
+      {
+       "nombre": "Delivery",
+       "vieneDe": "config:delivery"
+      },
+      {
+       "nombre": "Tienda web",
+       "vieneDe": "config:tienda"
+      },
+      {
+       "nombre": "Plan",
+       "vieneDe": "config:plan + plan (PlanTab completo) · alias plan"
+      },
+      {
+       "nombre": "Usuarios y acceso",
+       "vieneDe": "config:equipo"
+      },
+      {
+       "nombre": "Mi panel",
+       "vieneDe": "config:panel"
+      },
+      {
+       "nombre": "Sistema (preferencias · velocidad · historial · salud · soporte · actividad · colas)",
+       "vieneDe": "config:sistema + rendimiento + auditoria + colas (+ páginas cron-dead-letters y webhook-queue) · alias rendimiento, auditoria, colas"
+      }
+     ],
+     "nota": "Un solo renglón reemplaza al grupo Sistema y al menú de 3 opciones."
+    },
+    {
+     "id": "mi-perfil",
+     "nombre": "Mi perfil (fuera de la barra)",
+     "subvistas": [
+      {
+       "nombre": "Datos de la cuenta",
+       "vieneDe": "mi-perfil:perfil"
+      },
+      {
+       "nombre": "Seguridad",
+       "vieneDe": "mi-perfil:seguridad"
+      }
+     ],
+     "nota": "Tiene entrada fija en el menú del avatar y un enlace en Usuarios y acceso. Cualquier rol cambia aquí su contraseña."
+    }
+   ]
+  }
+ ],
+ "fusiones": [
+  {
+   "de": "Análisis › Analytics Pro (5 secciones) + Predicción Demanda",
+   "a": "Inicio › Resumen / Ventas / Productos / Clientes",
+   "porque": "Ticket y margen están en 4 lugares con 3 fuentes, la hora pico en 5 con 4 fuentes y RFM en 3. Inicio calcula en el servidor; Analytics calcula en el navegador sobre 500-1.000 ventas y se traga los errores.",
+   "riesgo": "Plan: analytics-pro es Enterprise, forecasting es Max e Inicio es Básico, así que los bloques llevan PermisoDe. Modo Fácil: van plegados y ocultos. Inicio › Resumen ya pasa el tope (3,01 pantallas). Hay 30 avisos rotos de demand-prediction, que pasan a ser alias."
+  },
+  {
+   "de": "Análisis › Inteligencia › Comparativo",
+   "a": "Mi Plata › Resultado › Comparar períodos",
+   "porque": "ComparativeReportsTab y PeriodComparatorTab leen el mismo /api/admin/dashboard.",
+   "riesgo": "Plan (Enterprise → Pro): se resuelve con el origen."
+  },
+  {
+   "de": "Análisis › Inteligencia › KPIs personalizados",
+   "a": "Metas y logros › Indicadores propios",
+   "porque": "Un objetivo por cifra vive hoy en 3 almacenes.",
+   "riesgo": "/api/custom-kpis sigue igual. Pasarlo a AdminGoal lo decide Brandon."
+  },
+  {
+   "de": "Análisis › Inteligencia › Precios del mercado",
+   "a": "Compras › Proveedores › Comparar",
+   "porque": "El precio de la competencia tiene que estar junto al precio de compra.",
+   "riesgo": "Hoy se guarda en localStorage: cada PC ve precios distintos. Llevarlo a la base lo decide Brandon."
+  },
+  {
+   "de": "Predicción (reordenar y auto-reorden) + Sugerencias IA › Qué comprar + tarjeta «Comprar urgente» + alerta OC de Inventario + reponer de Inicio",
+   "a": "Compras › Sugerencias, con un solo motor; los demás lugares muestran su cifra y un enlace",
+   "porque": "Hay 5 entradas y 4 motores para la misma pregunta.",
+   "riesgo": "El auto-reorden crea OC (dinero y stock): pasa por reviewer. Cada motor da cifras distintas, así que se montan como bloques plegados hasta que Brandon decida."
+  },
+  {
+   "de": "Predicción › Sugerencias de precio",
+   "a": "Asistente IA › Comandos › Precios en bloque",
+   "porque": "Aplicar y deshacer precios ya vive ahí.",
+   "riesgo": "Escribe en /api/products/:id: pasa por reviewer. Es plan Max: se resuelve con el origen."
+  },
+  {
+   "de": "Sugerencias IA (6 vistas)",
+   "a": "Inicio (Hoy, Combos, Qué vender) · Compras (Qué comprar) · Clientes (Para clientes, Estrategias)",
+   "porque": "No usa IA: hace cuentas en el navegador sobre 200 filas, y esas cuentas ya las hacen motores de servidor. Además TabHoy convierte un error en vacío.",
+   "riesgo": "Plan Max: se resuelve con el origen. Estrategias no se leyó; leerla antes de moverla."
+  },
+  {
+   "de": "Ventas y caja › Cuadrar Caja",
+   "a": "Ventas y caja › Caja (sección Cuadrar)",
+   "porque": "Hay 3 contadores de efectivo y 3 historiales sin ningún componente compartido.",
+   "riesgo": "Es dinero. La fase A solo cambia la navegación; el contador único va en la ola 6 con reviewer y security."
+  },
+  {
+   "de": "Mi Plata › Fiados",
+   "a": "Ventas y caja › Me deben (casa única), con enlace desde Mi Plata",
+   "porque": "Es el mismo FiadosModule montado 2 veces con 2 nombres, y el fiado se cobra a la caja abierta.",
+   "riesgo": "Plan: fiados es Pro y ventas-caja Básico, se resuelve con el origen. La etiqueta de plantilla «Cuentas pendientes» se mantiene. Los 19 enlaces a ?tab=fiados pasan a ser alias."
+  },
+  {
+   "de": "Mi Plata › Scoring + Análisis › Clientes «Quién te debe»",
+   "a": "Mi Plata › Por cobrar y pagar › A quién fiarle",
+   "porque": "Hay 3 lecturas del riesgo sobre el mismo /api/fiados.",
+   "riesgo": "FiadosRiesgoIA es un archivo nuevo todavía sin commit: hay que coordinarlo."
+  },
+  {
+   "de": "Delivery (8 vistas)",
+   "a": "Pedidos y reparto › Reparto (5 secciones)",
+   "porque": "Hay 2 caminos para asignar repartidor y 2 mapas en vivo, y Asignaciones y Permisos usan el mismo endpoint.",
+   "riesgo": "Plan (Enterprise/Max) y rubro (oculto en 1 o 2 rubros): se resuelve con el origen. Pedidos no toca orders.db."
+  },
+  {
+   "de": "Documentos › Facturación / Notas / Guías / Cotizaciones",
+   "a": "Comprobantes (una sola fila; id facturacion)",
+   "porque": "El hub mezcla 3 dominios con 3 niveles, y el ítem abría el drive.",
+   "riesgo": "La plantilla global oculta documentos y facturacion en 11 negocios. Pro los veía a través del hub Documentos: el origen incluye documentos."
+  },
+  {
+   "de": "Facturación › Impuestos + Obligaciones",
+   "a": "Mi Plata › Impuestos y reportes",
+   "porque": "Es contabilidad, no un comprobante.",
+   "riesgo": "Plan: se resuelve con el origen."
+  },
+  {
+   "de": "Facturación › Cuentas x Pagar",
+   "a": "Compras › Por pagar (casa única), con enlace",
+   "porque": "Es la misma PayablesTab montada dos veces.",
+   "riesgo": "Pro la veía por Documentos y Compras es Enterprise: el origen incluye documentos."
+  },
+  {
+   "de": "Facturación › Conexión SUNAT",
+   "a": "Configuración › Cobros y comprobantes",
+   "porque": "La configuración de SUNAT está partida en dos y la tarjeta Modo oficial se monta 2 veces.",
+   "riesgo": "Un rol que emite comprobantes y no ve Configuración: Comprobantes le muestra el estado y un enlace."
+  },
+  {
+   "de": "Documentos › Drive + Contratos",
+   "a": "Documentos (Gestión)",
+   "porque": "No es venta, y forestal y cámaras usan el mismo almacén.",
+   "riesgo": "Los permisos por carpeta del drive no se tocan."
+  },
+  {
+   "de": "Productos (Categorías, Ofertas, Cupones, Historial de precios)",
+   "a": "Productos e inventario",
+   "porque": "La pestaña «Productos» no lista productos; la tabla vive en Inventario.",
+   "riesgo": "Productos es Básico e Inventario Pro: se resuelve con el origen. combos y kits apuntan a una pestaña sin combos: Brandon decide el destino."
+  },
+  {
+   "de": "Inventario › modales de Conteo físico (3 modos) + Declaración",
+   "a": "Productos e inventario › Conteo físico",
+   "porque": "Hoy están escondidos en «Más acciones», sin ?vista= ni buscador.",
+   "riesgo": "Ajustan stock por 3 endpoints: pasa por reviewer."
+  },
+  {
+   "de": "Compras › Historial de Gastos + Gastos fijos + panel de Presupuesto",
+   "a": "Mi Plata › Movimientos › Gastos y presupuesto",
+   "porque": "El presupuesto vive en 3 almacenes. En main hay 1 fila en ExpenseBudget y 0 notas, así que Mi Plata no lo ve.",
+   "riesgo": "Unificar almacenes es decisión de Brandon y pasa por migration-planner. Plan Enterprise → Pro: se resuelve con el origen."
+  },
+  {
+   "de": "Dropshipping",
+   "a": "Compras › Dropship",
+   "porque": "Es la misma orden al proveedor y hoy tiene 0 acciones.",
+   "riesgo": "Depende de la vertical «otro» y de dropshipEnabled. Hoy un error se muestra como vacío."
+  },
+  {
+   "de": "Activos (entrada propia)",
+   "a": "Mi Plata › Activos (1.er nivel)",
+   "porque": "Dos entradas abren el mismo FinanzasModule.",
+   "riesgo": "La entrada existía por el plan Free. El origen hace que Básico siga viendo Activos y Adelantos."
+  },
+  {
+   "de": "Crecimiento (8 vistas)",
+   "a": "Clientes › Segmentos / Campañas / Premios / Programas",
+   "porque": "Es un grupo de 1 pestaña que queda vacío en Modo Fácil, y el filtro de Clientes no llega a Campañas.",
+   "riesgo": "Plan (Enterprise/Max): se resuelve con el origen. La plantilla oculta clientes pero no campanas. Hay 6 criterios de segmento: Brandon decide."
+  },
+  {
+   "de": "Clientes › Mensajes masivos (+ envío de Ofertas)",
+   "a": "Clientes › Campañas (modo uno por uno por WhatsApp)",
+   "porque": "Hay 5 caminos de envío y 2 no dejan rastro.",
+   "riesgo": "Registrar el envío uno a uno es trabajo de backend (ola 6)."
+  },
+  {
+   "de": "Marketplace › Reseñas / Fidelidad / Cupones",
+   "a": "Clientes › Opiniones / Premios · Productos e inventario › Ofertas y cupones",
+   "porque": "La misma pregunta se responde en 2 pestañas.",
+   "riesgo": "Los endpoints distintos se conservan detrás de un selector de canal. No se toca marketplace.db."
+  },
+  {
+   "de": "Mensajes: 3 bandejas (WhatsApp, Chat, Soporte)",
+   "a": "Mensajes › Bandeja con chip de canal",
+   "porque": "Hoy hay que revisar 3 listas para saber si alguien escribió.",
+   "riesgo": "Plan por chip (Soporte Pro, Chat Enterprise). Las plantillas viven en 3 almacenes: Brandon decide."
+  },
+  {
+   "de": "Canales de venta",
+   "a": "Tienda online › Redes y medición",
+   "porque": "GA4 es el mismo campo (storeTheme.analyticsId) y las métricas salen del mismo endpoint.",
+   "riesgo": "Canales es Pro y Mi Tienda Básico: se resuelve con el origen."
+  },
+  {
+   "de": "Mi Tienda (3 niveles, 13 pestañas) + Branding marketplace",
+   "a": "Tienda online (1 barra, 4 vistas) · Marketplace › Mi tienda en el marketplace",
+   "porque": "Hoy hay dos títulos y dos barras por pantalla, y el perfil del marketplace se edita en 2 lugares.",
+   "riesgo": "StoreCustomizer tiene 3.672 líneas: solo se toca su barra."
+  },
+  {
+   "de": "Equipo (Tareas, Notas)",
+   "a": "Equipo (RRHH)",
+   "porque": "Es un grupo entero para 1 entrada, con 0 tareas en main y en Blas.",
+   "riesgo": "Respetar los niveles de RRHH y el test verticals-rrhh-visible. Hay una fuga latente: las notas de sistema aparecerían en Notas."
+  },
+  {
+   "de": "Plan + Auditoría + Rendimiento + Colas (+ cron-dead-letters, webhook-queue)",
+   "a": "Configuración › Plan y Sistema",
+   "porque": "Hay 6 destinos en 2 menús, 2 lugares que se llaman «Sistema» y 2 pantallas de plan.",
+   "riesgo": "Rendimiento, colas y auditoría son Max: se resuelve con el origen. Los 2 catálogos de planes los decide Brandon, con security."
+  },
+  {
+   "de": "Trámites",
+   "a": "Herramientas y trámites (2.ª fase)",
+   "porque": "Son 2 cabinas de una sola fase con el mismo chip de contrato.",
+   "riesgo": "Cada fase depende de su spec. Los enlaces desde el Libro TH tienen que seguir funcionando."
+  },
+  {
+   "de": "Herramientas › Rendimiento + CTP Tablero / Reportes / Análisis / Rentabilidad + CTP Ingresos / GTF ingresadas",
+   "a": "CTP › Tablero (pestañas internas) · CTP › Ingresos (con filtro)",
+   "porque": "Comparten el endpoint /ctp/rendimiento, y Ingresos y GTF ingresadas son la misma pantalla con otro filtro.",
+   "riesgo": "Los atajos g+tecla y las claves viejas redirigen. Los datos de Blas solo se leen."
+  },
+  {
+   "de": "Libro TH › Extracción",
+   "a": "Libro TH › Control del permiso",
+   "porque": "Usan el mismo F/loth/extraccion y responden la misma pregunta.",
+   "riesgo": "No hay riesgo de datos."
+  },
+  {
+   "de": "Cacao › Mercado + Noticias",
+   "a": "Cacao › Mercado (2 bloques)",
+   "porque": "Las dos vistas leen el mismo /market.",
+   "riesgo": "Ninguno."
+  },
+  {
+   "de": "forestal-lotes (fuera del menú)",
+   "a": "CTP › Despacho › Lotes comerciales y QR",
+   "porque": "Sigue vivo por URL y por el QR.",
+   "riesgo": "Lo sacó Brandon el 09-09: solo con su OK. ?lote= se conserva."
+  },
+  {
+   "de": "Leads (alias), Turnos (alias), Préstamos/Adelantos/Scoring/Por cobrar (alias) y los demás ids sueltos",
+   "a": "La misma pestaña con su ?vista=",
+   "porque": "Hay 26 alias que abren un hub con initialTab y no dejan la vista en la URL.",
+   "riesgo": "Ninguno si TAB_MIGRATION lleva {tab, vista} y preserva params. Hay 211 avisos en la base que siguen abriendo."
+  }
+ ],
+ "contratoDiseno": [
+  {
+   "familia": "Estructura de la pestaña (cabecera y niveles)",
+   "canonico": "AdminTabBar con heading (el título va adentro) + descripción en ⓘ; LibroChrome solo en los libros. Máximo 2 niveles de pestañas.",
+   "reemplaza": "AdminModuleHeader con antetítulo dentro de los hubs (45 usos en 43 archivos), VistaHeader (10), SegmentedControl usado como pestañas (Cámaras), botones propios (A medida) y las barras de 3.er nivel (Fiados, Préstamos, Adelantos, Activos, Facturación, Socio, Suscripciones, StoreCustomizer, store-page, Rendimiento).",
+   "usos": "AdminTabBar: 37 usos (23 con heading).",
+   "como": "A mano, en cada carril de grupo (olas 2-4). Gate: admin-module-standards ampliado a los 34 módulos de TabRouter (con allowlist que solo baja) + test nuevo admin-tabs-dos-niveles."
+  },
+  {
+   "familia": "Navegación por URL y permiso de vista",
+   "canonico": "useVistaModulo (?vista=) declarado en VISTAS_POR_MODULO con origen + <PermisoDe origen> para bloques movidos",
+   "reemplaza": "useState de Marketplace, hubs sin registrar (Pedidos, Mensajes, Crecimiento, Delivery, Cámaras), ?pieza= suelto y la regla «una pestaña = un permiso».",
+   "usos": "useVistaModulo: 16 archivos. 9 módulos registrados de unos 25 hubs.",
+   "como": "Plomería en la ola 1; los integradores de cada ola agregan las vistas. Gate: admin-subvistas-sincronizadas + panel-sin-perdida (después ⊇ antes por plan × rol × rubro × plantilla)."
+  },
+  {
+   "familia": "Títulos y antetítulos",
+   "canonico": "SectionTitle (1 por vista) · CardTitle (bloque) · BlockTitle (sub-bloque) · Kicker (antetítulo)",
+   "reemplaza": "1.114 «uppercase tracking-*» a mano, 25 h4 con 14 estilos y 23 componentes de título locales. Hoy 44 de 63 pestañas no tienen título de vista y 3 tienen más de uno.",
+   "usos": "SectionTitle 150 · CardTitle 564 · BlockTitle 68 · Kicker 84",
+   "como": "Codemod a Kicker solo en elementos hoja (nunca <th>); los h4 pasan a BlockTitle a mano. Gate: medir-orden por vista (1 título de vista, ≤ 5 sin jerarquía) + trinquete del censo."
+  },
+  {
+   "familia": "Ayuda y subtítulos",
+   "canonico": "InfoTip (what / affects / example)",
+   "reemplaza": "Párrafos de ayuda y 442 props subtitle/description. Hoy Documentos tiene 70 palabras de ayuda e Inicio 60.",
+   "usos": "InfoTip: 742 usos",
+   "como": "A mano en las olas 2-4. Gate: medir-orden por vista, ayuda ≤ 60."
+  },
+  {
+   "familia": "Botones",
+   "canonico": "Button del DS + función button() (tailwind-variants) · IconAction / BotonIconoTip para íconos · ActionMenu para lo secundario",
+   "reemplaza": "5.236 <button> a mano (10 alturas, 944 combinaciones), 170 constantes BTN/BOTON en 137 archivos y 18 componentes de botón locales.",
+   "usos": "Button 0 · IconAction 34 · BotonIconoTip 14",
+   "como": "Primero un codemod sobre las 170 constantes → button({variant,size}); después los tags carpeta por carpeta (ola 5). Gate: trinquete (los botones a mano y las constantes solo bajan). La altura por defecto (40 o 48 px) la decide Brandon."
+  },
+  {
+   "familia": "Filtros",
+   "canonico": "Barra única: buscador + SegmentedControl + un solo filtro de fecha (DashboardDateRange) + filtros-columna pegado a la tabla",
+   "reemplaza": "56 filtros locales, 7 alturas de input (h-12 solo en el 3,4 %), los chips 1d…1y de Análisis y AdminDateFilter, FilterChip y CompactFilterBar, que no se usan.",
+   "usos": "filtros-columna: 91 imports en 69 archivos · SegmentedControl 37",
+   "como": "Codemod de clases en los input/select de las barras de filtro; los filtros locales, a mano. Gate: tests de filtros-columna + trinquete de alturas."
+  },
+  {
+   "familia": "Tablas",
+   "canonico": "DataTable + columnas-ordenables + filtros-columna + TableSkeleton",
+   "reemplaza": "65 <table> en JSX (sin contar impresión), 29 estilos de <th> y AdminTable sin uso.",
+   "usos": "DataTable: 212 usos en 194 archivos",
+   "como": "Codemod <table className> → <DataTable> dejando thead/tbody intactos (las plantillas de impresión quedan fuera). Gate: trinquete."
+  },
+  {
+   "familia": "Checks y switches",
+   "canonico": "NUEVO Interruptor (role=switch, aria-checked; sale del Toggle de settings/campos.tsx:77) y Casilla (h-4, accent con token)",
+   "reemplaza": "250 checkbox nativos (5 tamaños, 6 acentos), 20 role=switch y 31 componentes locales (Toggle, ToggleRow, Interruptor, Casilla…).",
+   "usos": "0: hoy no hay canónico",
+   "como": "Primitivos en la ola 1; codemod de clases en los checkbox; switches a mano (ola 5). Gate: trinquete + test de accesibilidad role=switch."
+  },
+  {
+   "familia": "Modales",
+   "canonico": "AdminModal + ModalFooter + aboveModals + useModalAccesible",
+   "reemplaza": "103 archivos con modal a mano, ModalShell de Activos, <Modal> (2) y el ModalFooter duplicado de components/Modal.tsx. Además hay 91 AdminModal sin footer.",
+   "usos": "AdminModal 251 · ModalFooter 103 · useModalAccesible 141",
+   "como": "A mano por zona (ola 6, carriles M1 y M2); los pies son semimecánicos. Gate: scripts/barrido-modales-anidados.mjs + tests de modales + trinquete."
+  },
+  {
+   "familia": "KPIs",
+   "canonico": "StatCard del DS, en tipo oración, en una franja plegable y recordada",
+   "reemplaza": "Unas 34 tarjetas locales (Cifra 14, Kpi 11, MiniStat 5, StatTile, KStat, HeroStat, DeltaStat), 2 KpiTile con el mismo nombre, SparklineKPICard, MultiMetricCard, AdminKPI/HoldedKPI sin uso y los KPIs en MAYÚSCULAS.",
+   "usos": "StatCard: 258 usos en 62 archivos",
+   "como": "Adaptar scripts/migrate-unified-kpi-to-statcard.mjs a Cifra, Kpi y MiniStat (ola 5). Gate: trinquete. Brandon decide si KpiTile se queda como variante."
+  },
+  {
+   "familia": "Gráficos",
+   "canonico": "Un solo tema: COLOR_CONCEPTO + SERIES + PAGO_COLOR + EJE + tamaño de eje único (TICK) + ChartTooltip único",
+   "reemplaza": "99 paletas locales, 114 hex en 20 archivos, 33 tooltips propios, 6 tamaños de eje y 2 ChartTooltip.",
+   "usos": "COLOR_CONCEPTO: 126 usos en 22 archivos · chart-palette: 12 imports",
+   "como": "Codemod hex → var(--data-*) y paletas → import (ola 5). Gate: regla nueva de lint para hex en fill/stroke de recharts (primero warning, error al llegar a 0) + trinquete."
+  },
+  {
+   "familia": "Movimiento",
+   "canonico": "Tokens del ADR-071 (80/160/240/400/600 ms) y components/ui-system/motion.ts alineado (0,16/0,24/0,40 s); m bajo LazyMotion",
+   "reemplaza": "20 duration-* sin token, duraciones literales de framer (0,2 ×12; 0,15 ×7; 0,25 ×7), easings literales ('easeOut' ×10), springs sueltos y 478 transition-all.",
+   "usos": "duration-[var(--dur-*)] 115 · <m.*> 147 · motion.ts importado en 4 archivos",
+   "como": "Codemod de duration/ease a DURATION/EASE; transition-all → transition-colors/transform a mano. Gate: lint no-arbitrary-duration-ms + test admin-motion-provider + trinquete de transition-all."
+  },
+  {
+   "familia": "Plegables",
+   "canonico": "Plegable recordado (hooks/use-local-storage, patrón LothSeccionKpis): plegado sigue mostrando la cifra en una línea",
+   "reemplaza": "<details> nativos que no recuerdan su estado (FinanzasModule:182, GastosConPresupuesto) y bloques apilados (Reportes de Mi Plata, Inteligencia).",
+   "usos": "Patrón usado en LothSeccionKpis",
+   "como": "Primitivo en la ola 1; se usa a mano en las olas 2-4. Gate: trinquete de <details> en admin."
+  },
+  {
+   "familia": "Estados (carga, vacío, error)",
+   "canonico": "LoadingSpinner (aro del DS) · TabLoadingSkeleton · EmptyState de una frase · estado de error del DS",
+   "reemplaza": "78 animate-spin a mano, cargadores de texto (Delivery), estados vacíos con h2 y .catch(() => []) que convierten un error en «sin datos» (6 en AnalyticsBI, TabHoy y Dropship).",
+   "usos": "LoadingSpinner: 0 en el grupo Compras/Productos",
+   "como": "A mano en las olas 2-5. Gate: el pre-commit ya bloquea .catch(() => {}) nuevos + trinquete de animate-spin."
+  }
+ ],
+ "olas": [
+  {
+   "n": 1,
+   "titulo": "Base: redirecciones con vista, permisos por vista, contrato de diseño y medición (no mueve pantallas)",
+   "carriles": [
+    {
+     "k": "O1-K1a",
+     "titulo": "Redirecciones con vista",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1, §5, §6 y §7.0. Tú SÍ tocas los registros de tu lista; nadie más los toca en esta ola. Toca SOLO tus archivos y haz ls antes de crear uno. Nada se borra: los ids viejos quedan como alias. Sin git stash/reset/checkout/commit (el cierre de la ola commitea). El reporte final va en TEXTO: archivos exactos, cifras, pendientes y «Para acelerar:». MODELO: Opus. TAREA (ola 1, no mueve pantallas): 1) lib/admin/destino-tab.ts ya tiene la firma de la fase 0. Implementa resolverDestino(id, vista?), que devuelve {tab, vista?, sub?} | null. 2) En app/admin/_lib/tab-migration.ts, TAB_MIGRATION pasa a Record<string, Tab | DestinoTab>. Agrega VISTA_MIGRATION para pares (tab, vista) viejos; queda vacía y la llenan los integradores. 3) En app/admin/_hooks/useAdminTabs.ts, la URL, el hash, admin_active_tab y navigateTab usan resolverDestino con el MISMO orden (hoy :61-68 migra antes que VALID_TABS y :120 lo hace al revés). Un alias reescribe la URL a ?tab=B&vista=a con replaceState y conserva ?lote=, ?cliente= y los demás parámetros. Un id desconocido hace logger.warn y cae en Inicio. 4) demand-prediction → forecasting: hay 30 avisos rotos, los escribe app/api/cron/demand-forecast/route.ts:148. 5) app/admin/_hooks/useSidebarShortcuts.ts lee los atajos guardados a través de resolverDestino. 6) En __tests__/enlaces-panel-sin-recargar-guard.test.ts, el 2.º it recorre también app/api y lib (el 1.º no). 7) Corrige los comentarios de lib/admin-template.ts:40 y :64 para que apunten al VALID_TABS real (app/admin/_lib/tabs.types.ts). Pon en app/admin/admin-types.ts una cabecera «archivo muerto: no editar»; no lo borres, eso lo decide Brandon. 8) Crea el test __tests__/destino-tab.test.ts: alias, pares, id desconocido y params conservados. 9) Crea un ADR nuevo con la skill adr-manager: «Redirecciones con vista». CIERRE: npm run typecheck, ese test y el guard de enlaces. Captura de ?tab=fiados, ?tab=demand-prediction y ?tab=zzz con node scripts/qa-capturas.mjs.",
+     "archivos": [
+      "lib/admin/destino-tab.ts",
+      "app/admin/_lib/tab-migration.ts",
+      "app/admin/_hooks/useAdminTabs.ts",
+      "app/admin/_hooks/useSidebarShortcuts.ts",
+      "__tests__/enlaces-panel-sin-recargar-guard.test.ts",
+      "__tests__/destino-tab.test.ts",
+      "lib/admin-template.ts",
+      "app/admin/admin-types.ts",
+      "docs/adr/ (ADR nuevo)"
+     ],
+     "tipo": "frontend",
+     "toca": "URL, migración de ids y navegación. Ninguna pantalla."
+    },
+    {
+     "k": "O1-K1b",
+     "titulo": "Permisos por vista y prueba de no-pérdida",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1, §5, §6 y §7.0. Tú SÍ tocas los registros de tu lista; nadie más los toca en esta ola. Toca SOLO tus archivos y haz ls antes de crear uno. Nada se borra: los ids viejos quedan como alias. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras, pendientes y «Para acelerar:». MODELO: Opus. Al terminar, el agente security revisa tu diff con un tope de 40 llamadas y entrega su reporte en texto. TAREA (ola 1; nadie debe ver nada distinto): 1) En lib/admin/subvistas-modulos.ts, cada vista gana origen?: Tab[]. Origen = las pestañas donde ese contenido se veía ANTES, no el destino; por defecto es el propio módulo. Registra los hubs que faltan con sus claves reales: whatsapp-inbox, campanas, marketplace, delivery-partners, camaras, asistente-ia, metas-logros, analytics-pro, rrhh y tareas. El test admin-subvistas-sincronizadas exige que coincidan con el archivo del módulo. 2) Crea lib/admin/permiso-vista.ts con vistaPermitida(ctx, origen): pasa si algún origen pasa estas cinco reglas: plan (isTabUnlocked de lib/billing/plan-tiers.ts), plantilla (overlay de app/admin/_hooks/useAdminTemplateOverlay.ts), rubro (hidden de lib/verticals/registry.ts), rol (tabsDelRol de lib/module-permissions.ts, firma de la fase 0) y Modo Fácil (EASY_MODE_TABS). Las especializaciones (SPEC_GATED, hooks/use-enabled-specs.ts:261) se saltan plan y plantilla, como hoy. 3) hooks/use-vistas-permitidas.ts filtra los ítems del AdminTabBar de un hub. components/admin/shared/PermisoDe.tsx envuelve los bloques movidos. 4) En app/admin/_hooks/useAdminTabsDerived.ts y components/admin/layout/AdminSidebar.tsx, una pestaña se ve si alguna de sus vistas está permitida. Favoritos, recientes, ocultos y orden guardados pasan por resolverDestino (useAdminTabsDerived:151-171, AdminSidebar:379). Si la plantilla le da un label a un id que pasa a vista, la vista usa ese label (fiados → «Cuentas pendientes»). 5) scripts/matriz-pestanas.mjs (base: SP/plomeria/matriz.cjs) escribe reports/panel/visibilidad-antes.json con los pares (tab, vista) alcanzables HOY para cada combinación de plan (basico, pro, enterprise, max) × rol (admin, cajero, almacenero, tienda_owner) × rubro × plantilla (la global y las 3 con override, leídas READ ONLY con scripts/sql-lectura.mjs). 6) __tests__/panel-sin-perdida.test.ts exige que después ⊇ antes; algo nuevo solo pasa si está en reports/panel/altas-aprobadas.json (que nace vacío). En esta ola el resultado debe ser idéntico. 7) Saca 1 captura para ver si la plantilla global oculta Mi Plata, Compras y Clientes en main (el código dice que sí) y anótalo en el reporte. CIERRE: npm run typecheck; tests admin-subvistas-sincronizadas, panel-sin-perdida y verticals-rrhh-visible; rol-probe --todos.",
+     "archivos": [
+      "lib/admin/subvistas-modulos.ts",
+      "lib/admin/permiso-vista.ts",
+      "hooks/use-vistas-permitidas.ts",
+      "components/admin/shared/PermisoDe.tsx",
+      "app/admin/_hooks/useAdminTabsDerived.ts",
+      "components/admin/layout/AdminSidebar.tsx",
+      "scripts/matriz-pestanas.mjs",
+      "reports/panel/visibilidad-antes.json",
+      "reports/panel/altas-aprobadas.json",
+      "__tests__/panel-sin-perdida.test.ts",
+      "__tests__/admin-subvistas-sincronizadas.test.ts"
+     ],
+     "tipo": "frontend",
+     "toca": "Visibilidad de la barra y registro de vistas: es RBAC de interfaz, no de API (lo revisa security). Ninguna pantalla."
+    },
+    {
+     "k": "O1-K2",
+     "titulo": "Rol con ids reales detrás de una bandera",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1, §5 y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide altas en SP/panel/registro/O1-K2.json. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras, pendientes y «Para acelerar:». MODELO: Opus. El agente security revisa el diff (es obligatorio). NO toques lib/auth/role-permissions.ts. TAREA (ola 1): hoy useAdminTabsDerived:84-101 compara MODULE_PERMISSIONS (lib/module-permissions.ts) con ids viejos (pos-caja, catalogo-tienda…). Por eso el cajero ve 2 de 11 módulos (pedidos y clientes) y el almacenero 2 de 12. 1) Mide con rol-probe --todos qué ve hoy cada rol (hay usuarios QA por rol en main). 2) Antes de tocar nada, haz grep de canAccessModule y MODULE_PERMISSIONS en app/api, lib y proxy.ts: si la API usa esos ids, no se cambian. 3) Implementa tabsDelRol(rol), que ya tiene la firma de la fase 0. Traduce cada id viejo con resolverDestino y queda detrás de ROL_CON_IDS_REALES = false: con la bandera apagada devuelve exactamente lo de hoy. 4) En el reporte, arma una tabla rol → pestañas con la bandera apagada y encendida. Para cada pestaña nueva que vería el cajero, lista los endpoints que llama y si role-permissions los permite (solo lectura). Si prevés un 403, pide el carril O1-R. 5) Crea el test __tests__/module-permissions-ids.test.ts: todo id tiene que resolver a un Tab real. 6) La bandera se enciende solo con el OK de Brandon (decisión 15). CIERRE: npm run typecheck y el test nuevo.",
+     "archivos": [
+      "lib/module-permissions.ts",
+      "__tests__/module-permissions-ids.test.ts"
+     ],
+     "tipo": "backend",
+     "toca": "Permisos de rol en la barra, detrás de una bandera (lo revisa security). No toca lib/auth/role-permissions.ts."
+    },
+    {
+     "k": "O1-R",
+     "titulo": "API por vista (condicional, zona de peligro)",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 y §7.0. Toca SOLO tus archivos. Sin git stash/reset/checkout. El reporte final va en TEXTO. MODELO: Opus. CONDICIONAL: este carril corre SOLO si O1-K2 o un integrador reporta un 403 causado por la reorganización Y Brandon lo aprueba por escrito. Si no hubo 403, no corras. ZONA DE PELIGRO: lib/auth/role-permissions.ts. 1) Carga la skill audit-first: ADRs de RBAC, tests y últimos commits del archivo. 2) En el requireAdmin(req, roles) de la route.ts que da 403 y su espejo en lib/auth/roles-rutas-panel.ts (API_RESOURCE_MAP no tiene lectores) agrega solo el recurso y la acción mínimos que esa vista ya usaba, en su lugar viejo, para ese rol. Nunca más que eso. 3) Corre los tests de role-permissions y rol-probe --todos, antes y después. 4) El agente security revisa el diff antes del commit. Si cambia el contrato, escribe un ADR.",
+     "archivos": [
+      "lib/auth/role-permissions.ts",
+      "__tests__/ (tests de role-permissions)"
+     ],
+     "tipo": "backend",
+     "toca": "ZONA DE PELIGRO: RBAC de API. Pasa por security y necesita el OK de Brandon."
+    },
+    {
+     "k": "O1-K3",
+     "titulo": "Contrato de diseño: primitivos, codemods en seco y trinquete",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1, §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras, pendientes y «Para acelerar:». MODELO: Opus. TAREA (ola 1, sin migrar pantallas): 1) components/ui-system/Button.tsx exporta la función button() de tailwind-variants además del componente. Los tamaños quedan como están y la altura por defecto vive en una sola constante; la decide Brandon (40 o 48 px). 2) Crea components/ui-system/Interruptor.tsx (role=switch, aria-checked). Su base es el Toggle de components/admin/settings/campos.tsx:77, que pasa a reexportarlo sin romper sus 3 importadores. Crea también components/ui-system/Casilla.tsx (h-4, accent con token) y exporta los dos en components/ui-system/index.ts. 3) En components/ui-system/motion.ts, DURATION se alinea con el ADR-071: 0,16 · 0,24 · 0,40 s. 4) Crea components/admin/shared/Plegable.tsx: un bloque plegable que recuerda su estado (hooks/use-local-storage, patrón de components/admin/forestal/LothSeccionKpis.tsx) y que, plegado, sigue mostrando la cifra en una línea. 5) Tema único de gráficos: components/admin/shared/chart-palette.ts reexporta COLOR_CONCEPTO de lib/admin/inicio/formato-tablero.ts sin romper sus 40 importadores, y suma TICK (tamaño de eje único) y components/admin/shared/ChartTooltip.tsx. 6) En scripts/lint-design-tokens.ts, agrega una regla para hex en fill, stroke y arrays de los archivos que importan recharts (por ahora como warning). 7) Crea scripts/censo-ds-admin.mjs a partir de SP/censo-ds.mjs (mide las 10 familias en una llamada), reports/panel/censo-ds-antes.json y __tests__/censo-ds-trinquete.test.ts. En el trinquete, lo hecho a mano solo puede bajar y Button, Kicker, DataTable y AdminModal solo pueden subir. 8) Crea scripts/codemods/{btn-constantes,kicker,datatable,casilla,hex-graficos,motion}.mjs con las opciones --seco y --carpeta. En seco imprimen cuántos cambios harían por carpeta; se aplican en la ola 5. 9) __tests__/admin-module-standards.test.ts toma la lista de módulos de los imports de app/admin/_components/TabRouter.tsx (34), con allowlist de los que hoy fallan. Crea __tests__/admin-tabs-dos-niveles.test.ts: como máximo 2 AdminTabBar anidados, con allowlist de lo actual. 10) Crea un ADR con la skill adr-manager: «Contrato de diseño del panel» (la tabla de PLAN §5). CIERRE: npm run typecheck, los tests nuevos y 1 captura de Interruptor y Casilla en Ajustes.",
+     "archivos": [
+      "components/ui-system/Button.tsx",
+      "components/ui-system/Interruptor.tsx",
+      "components/ui-system/Casilla.tsx",
+      "components/ui-system/index.ts",
+      "components/ui-system/motion.ts",
+      "components/admin/settings/campos.tsx",
+      "components/admin/shared/Plegable.tsx",
+      "components/admin/shared/chart-palette.ts",
+      "components/admin/shared/ChartTooltip.tsx",
+      "scripts/lint-design-tokens.ts",
+      "scripts/censo-ds-admin.mjs",
+      "scripts/codemods/",
+      "reports/panel/censo-ds-antes.json",
+      "__tests__/censo-ds-trinquete.test.ts",
+      "__tests__/admin-module-standards.test.ts",
+      "__tests__/admin-tabs-dos-niveles.test.ts",
+      "docs/adr/ (ADR nuevo)"
+     ],
+     "tipo": "frontend",
+     "toca": "Primitivos del DS, lint y gates. Ninguna pantalla."
+    },
+    {
+     "k": "O1-K4",
+     "titulo": "Medición por vista y mapa de pestañas",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 y §7.0. Toca SOLO tus archivos y haz ls antes de crear. No toques los registros de pestañas. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras y «Para acelerar:». MODELO: sonnet. TAREA (ola 1, no toca UI): 1) scripts/medir-orden-admin.mjs recorre cada ?tab= y, además, cada ?vista= de VISTAS_POR_MODULO y ANIDADAS_POR_MODULO. Léelos de lib/admin/subvistas-modulos.ts en vez de copiarlos. Reemplaza el waitForTimeout fijo de :118 por una espera al contenido (el AdminTabBar o el riel del libro, y que no quede ningún cargador): a las 15:57 el CTP salió en blanco. Limpia las claves admin_* de localStorage antes de cada medida: Mi Plata reabre la última vista y hoy «plata» terminó midiendo Fiados. Calcula el puntaje y los gemelos (vistas con la misma huella de títulos y botones). La salida va a reports/orden-admin/orden-1280-vistas.json. 2) Crea scripts/mapa-pestana.mjs <tab>, que en una sola llamada recorre componente montado → importadores → endpoints (/api/ en el árbol de imports) y da, por archivo, LOC, cantidad de <p> y cantidad de InfoTip. 3) Al final de la ola, cuando K1b ya haya registrado las vistas (espera su reporte), corre la línea base y déjala en reports/orden-admin/antes-vistas.json. CIERRE: corre los dos scripts una vez cada uno.",
+     "archivos": [
+      "scripts/medir-orden-admin.mjs",
+      "scripts/mapa-pestana.mjs",
+      "reports/orden-admin/orden-1280-vistas.json",
+      "reports/orden-admin/antes-vistas.json"
+     ],
+     "tipo": "backend",
+     "toca": "Scripts de medición. Ninguna pantalla."
+    }
+   ]
+  },
+  {
+   "n": 2,
+   "titulo": "Fusiones simples que estrenan la plomería: Configuración, Equipo, Tienda online, Pedidos y reparto, Forestal y cacao",
+   "carriles": [
+    {
+     "k": "O2-K1",
+     "titulo": "Configuración absorbe Plan y Sistema",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O2-K1.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: sonnet. TAREA: Configuración (?tab=config) queda como único destino del grupo Sistema, con estas vistas: negocio · cobros · delivery · tienda · plan · equipo (rótulo «Usuarios y acceso») · panel · sistema. 1) Plan muestra PlanTab completo: uso del mes, funcionalidades, dominio, portal y comparar con Stripe y Mercado Pago. PlanTierSelector va en un Plegable cerrado «Qué incluye cada nivel». Hay 2 catálogos de planes: no borres ninguno. 2) Sistema tiene un 2.º nivel con ?sub=: preferencias (lenguaje, tutorial, respaldo) · velocidad · historial · salud · soporte (RendimientoModule) · actividad (AuditTrailModule) · colas (ColasTab + bloques con el contenido de app/admin/cron-dead-letters y app/admin/webhook-queue, extraído a componentes; las páginas siguen abriendo). 3) Un título por pantalla: saca el AdminModuleHeader de SettingsModule, PlanTab, AuditTrail y MiPerfil, y la 2.ª barra de Rendimiento. 4) Cobros y comprobantes monta SunatConexionTab, con la tarjeta Modo oficial una sola vez. Facturación la sigue mostrando hasta la ola 3. 5) Mi perfil sale de la barra: tiene entrada fija en el menú del avatar (ubícalo con grep; nadie más lo toca) y el enlace de Usuarios y acceso. 6) La ayuda de Plan (41 palabras) y de Colas (26) pasa a ⓘ. REGISTRO: alias plan → config&vista=plan; auditoria → config&vista=sistema&sub=actividad; rendimiento → config&vista=sistema&sub=velocidad; colas → config&vista=sistema&sub=colas. Vistas con su origen: plan ← plan; velocidad, historial, salud y soporte ← rendimiento; actividad ← auditoria; colas ← colas. RIESGO: rendimiento, colas y auditoría son plan Max; el origen lo cuida.",
+     "archivos": [
+      "components/admin/tabs/SettingsTab.tsx",
+      "components/admin/settings/",
+      "components/admin/PlanTab.tsx",
+      "components/admin/PlanTierSelector.tsx",
+      "components/admin/unified/SistemaHubModule.tsx",
+      "components/admin/unified/RendimientoModule.tsx",
+      "components/admin/rendimiento/",
+      "AuditTrailModule.tsx (ubicar)",
+      "ColasTab.tsx (ubicar)",
+      "components/admin/MiPerfilTab.tsx",
+      "components/admin/sunat/SunatConexionTab.tsx",
+      "app/admin/cron-dead-letters/page.tsx",
+      "app/admin/webhook-queue/page.tsx",
+      "menú del avatar (ubicar con grep)"
+     ],
+     "tipo": "frontend",
+     "toca": "Configuración, Plan, Sistema y Mi perfil, sin cambios de cobro."
+    },
+    {
+     "k": "O2-K2",
+     "titulo": "Equipo: RRHH + Tareas + Notas",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O2-K2.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: sonnet. TAREA: RRHH (?tab=rrhh) se rotula «Equipo» y suma Tareas y Notas como vistas de nivel «marcar». Vistas: asistencia · personal · ganado · contratos · puestos · tareas · notas. 1) Monta TasksTab y QuickNotesTab. EquipoHubModule queda sin montar: repórtalo. 2) La descripción que nombra pestañas (RecursosHumanosHubModule.tsx:88) pasa a ⓘ, y cada vista lleva un SectionTitle (hoy no hay ninguno). 3) Lo ganado suma la acción «Descontar adelantos», que abre el mismo DescuentoPlanillaModal de Adelantos (impórtalo, no lo edites), y un enlace a Ventas y caja › Comisiones. Asistencia suma un enlace al turno de caja y Personal, uno a Mi Plata › Adelantos › Personas. 4) En lib/db/notes.db.ts, list() excluye las notas de sistema (título que empieza con «__»): hoy hay 0 filas, pero el presupuesto guardado como nota se colaría. Agrega su test. REGISTRO: alias tareas → rrhh&vista=tareas, notas → rrhh&vista=notas, notas-rapidas → rrhh&vista=notas, proyectos-tareas → rrhh&vista=tareas (hoy caen en config); vistas con origen tareas y notas. RIESGO: niveles de /api/rrhh/resumen y el test verticals-rrhh-visible.",
+     "archivos": [
+      "components/admin/unified/RecursosHumanosHubModule.tsx",
+      "components/admin/unified/EquipoHubModule.tsx",
+      "components/admin/rrhh/",
+      "TasksTab.tsx (ubicar)",
+      "QuickNotesTab.tsx (ubicar)",
+      "lib/db/notes.db.ts",
+      "__tests__/notes-sin-sistema.test.ts"
+     ],
+     "tipo": "frontend",
+     "toca": "Equipo, más un filtro en lib/db/notes.db.ts."
+    },
+    {
+     "k": "O2-K3",
+     "titulo": "Tienda online: una barra y Redes y medición",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O2-K3.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: sonnet. TAREA: Mi Tienda (?tab=pagina-inicio) se rotula «Tienda online» y pasa de 3 niveles (13 pestañas) a una sola barra: apariencia · contenido · paginas · redes. 1) Apariencia es StoreCustomizer. Tiene 3.672 líneas: NO lo refactorices. Solo su barra interna de 6 pasa a 2.º nivel con ?sub= (identidad, colores, estilos, portada, contacto, avanzado); la vista previa queda intacta. 2) Contenido es store-page: secciones, banners y promociones del home. Branding marketplace se queda aquí hasta la ola 4. 3) Páginas es PaginasPorBloquesTab. 4) Redes y medición es SalesChannelsTab más las métricas: AnalyticsTab y SalesChannelsAnalyticsPanel leen los dos /api/store-page/analytics, así que quedan en una sola vista. GA4 (storeTheme.analyticsId) se edita solo aquí; Avanzado muestra el valor y un enlace. 5) Un título por pantalla: saca el antetítulo de StoreCustomizer.tsx:1797 y la cabecera de store-page/page.tsx:99. Los 4 h2 de Canales pasan a CardTitle. El enlace «Página de inicio →» apunta a Contenido. 6) Copy: Hero pasa a Portada, Branding a Marca y storefront a tienda. REGISTRO: alias canales → pagina-inicio&vista=redes, store-customizer → pagina-inicio&vista=apariencia; VISTA_MIGRATION identidad → apariencia y pagina → contenido; ANIDADAS de apariencia y contenido; vistas con origen (redes ← canales). RIESGO: canales es Pro y Mi Tienda Básico; el origen lo cuida.",
+     "archivos": [
+      "components/admin/unified/MiTiendaHubModule.tsx",
+      "StoreCustomizer.tsx (ubicar)",
+      "app/admin/store-page/page.tsx",
+      "app/admin/store-page/_components/",
+      "components/admin/cms/PaginasPorBloquesTab.tsx",
+      "components/admin/tabs/SalesChannelsTab.tsx",
+      "SalesChannelsAnalyticsPanel.tsx (ubicar)"
+     ],
+     "tipo": "frontend",
+     "toca": "Tienda online y Canales de venta, sin cambios de datos."
+    },
+    {
+     "k": "O2-K4",
+     "titulo": "Pedidos y reparto",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O2-K4.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: sonnet. NO toques lib/db/orders.db.ts. TAREA: Pedidos (?tab=pedidos) gana ?vista= y absorbe Delivery. Vistas: tablero · lista · reparto · archivados. 1) Tablero y lista dejan de ser un modo interno. Archivados pasa de modal a vista. Imprimir sigue en el menú. 2) La cabecera pasa a AdminTabBar con el título «Pedidos y reparto»; sale el antetítulo «Operaciones · Hoy» de OrdersTab/index.tsx:172. 3) Los filtros, que hoy están en 4 sitios, se juntan y quedan pegados a la tabla. Los chips de pago pasan al menú, para quedar en 20 botones o menos (hoy 24). 4) Reparto es DeliveryPartnersModule montado como vista, con un 2.º nivel: en-vivo (mapa de repartidores + rutas y paradas) · repartidores (con filtro «postulantes», que es Solicitudes) · asignaciones (Asignaciones + Permisos, que usan el mismo /api/store-permissions) · pagos (Retiros) · ranking. 5) DespachoSection y DeliveryPartnersLiveMap hacen hoy 2 fetch iguales: usa un solo hook de repartidores en vivo para los dos. 6) Los KPIs de /api/delivery/kpis que hoy se piden y se descartan (DeliveryPartnersModule.tsx:59) se muestran en una franja plegable de Reparto. 7) El detalle del pedido suma los enlaces «Hacer guía» y «Nota de crédito»; pídelos en el registro. REGISTRO: vistas y ANIDADAS de reparto con origen delivery-partners/delivery-live; alias delivery-partners → pedidos&vista=reparto, delivery-live → pedidos&vista=reparto&sub=en-vivo; entregas, rutas-delivery y delivery-horarios → pedidos&vista=reparto (hoy caen en clientes). RIESGO: plan Enterprise/Max y rubro (oculto en 1-2 rubros); el origen lo cuida.",
+     "archivos": [
+      "components/admin/OrdersTab/",
+      "components/admin/unified/DeliveryPartnersModule.tsx",
+      "components/admin/delivery/",
+      "components/admin/DeliveryTab/",
+      "repartidores/ (ubicar)"
+     ],
+     "tipo": "frontend",
+     "toca": "Pedidos y Delivery, solo UI (no toca orders.db)."
+    },
+    {
+     "k": "O2-K5",
+     "titulo": "Forestal y cacao: menos entradas, mismas funciones",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O2-K5.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: Opus. Carga la skill serfor-osinfor-compliance. Los datos de Blas son solo de lectura; haz el QA en inversiones-agroforestales-blas-sociedad-op-qa-ui o en main. NO toques forestal/CamarasView.tsx ni forestal/camaras/. TAREA: 1) Herramientas y trámites: ForestalHerramientas suma una 2.ª fase «Trámites» (Formatos, Expediente, Plantaciones) con el contenido de ForestalTramites. Cada fase se muestra solo si su spec está encendido. Los 6 avisos de Trámites pasan a un único bloque «Pendientes» con ⓘ. Rendimiento sale de Herramientas (deja un enlace) y entra al Tablero del CTP. 2) Libro CTP, de 26 a 22 entradas. Ingresos y GTF ingresadas son hoy el mismo CtpIngresosView (:662 y :672): quedan en una sola vista con filtro «por recepcionar / recepcionadas». El Tablero lleva pestañas internas con ?sub=: movimiento · produccion (Reportes) · tendencias (Análisis) · margen (Rentabilidad) · rendimiento (RendimientoAserradero). Los atajos g+tecla siguen funcionando. forestal-lotes entra como pestaña «Lotes comerciales y QR» de Despacho SOLO si Brandon lo aprueba (decisión 13), y el QR ?lote= sigue abriendo. 3) Libro TH, de 10 a 9 vistas: Extracción pasa a pestaña interna de Control del permiso, que sube a la 1.ª posición de su fase. 4) Cacao, de 14 a 13 vistas: Mercado y Noticias quedan en una vista «Mercado» con 2 bloques; Resumen sube a la cabeza de Gestión; corrige el comentario «8 sub-vistas». REGISTRO: VISTA_MIGRATION de ctp gtf-ingresadas → ingresos&filtro=recepcionadas; reportes, analisis y rentabilidad → tablero&sub=…; forestal-herramientas&vista=rendimiento → ctp-libro-operaciones&vista=tablero&sub=rendimiento; loth extraccion → tablero&sub=extraccion; cacao noticias → mercado. Alias forestal-tramites → forestal-herramientas&vista=catalogo. Actualiza CTP_VISTAS y LOTH_VISTAS.",
+     "archivos": [
+      "components/admin/forestal/CTPLibroOperaciones.tsx",
+      "components/admin/forestal/CtpIngresosView.tsx",
+      "components/admin/forestal/CtpTableroControl.tsx",
+      "components/admin/forestal/LothLibroOperaciones.tsx",
+      "components/admin/forestal/LothTableroTrozas.tsx",
+      "components/admin/forestal/ForestalHerramientas.tsx",
+      "components/admin/forestal/ForestalTramites.tsx",
+      "components/admin/forestal/tramites-grupos.ts",
+      "components/admin/forestal/ForestLotesModule.tsx",
+      "components/admin/forestal/ (archivos de grupos del CTP y TH; NO CamarasView.tsx ni camaras/)",
+      "components/admin/cacao/CacaoAcopio.tsx",
+      "lib/cacao/cacao-views.ts"
+     ],
+     "tipo": "frontend",
+     "toca": "Libros forestales, herramientas, trámites y cacao, sin tocar datos."
+    },
+    {
+     "k": "O2-K6",
+     "titulo": "Integrador de la ola 2",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1, §5, §6 y §7.0. Tú SÍ tocas los registros de tu lista; nadie más los toca en esta ola. Toca SOLO tus archivos y haz ls antes de crear. Nada se borra: los ids viejos quedan como alias. Sin git stash/reset/checkout. Haz los commits en serie con git commit -F <msg> -- <archivos> (Conventional, en minúscula, ≤ 100 caracteres, trailer Co-Authored-By). El reporte final va en TEXTO: archivos exactos, cifras, pendientes y «Para acelerar:». MODELO: Opus. Corres DESPUÉS de O2-K1 a O2-K5: espera sus reportes. TAREA: 1) Aplica SP/panel/registro/O2-*.json a tab-migration (alias y VISTA_MIGRATION), subvistas-modulos (vistas con origen, ANIDADAS, CTP_VISTAS, LOTH_VISTAS), tab-categories, tab-data (rótulos), tab-preload, TabRouter (las ramas alias van al hub nuevo con initialTab) y enlaces-panel. 2) Barra: sale SISTEMA_MODULE; CONFIG_MODULE queda en [config]. Sale el grupo equipo y rrhh se rotula «Equipo». canales y delivery-partners salen de Marketplace. TIENDA_MODULE + marketplace forman el grupo «Canales». pedidos se rotula «Pedidos y reparto». forestal queda en [ctp-libro-operaciones, loth-libro-operaciones, forestal-herramientas], con «Herramientas y trámites» como rótulo de forestal-herramientas. Cámaras pasa a Operaciones, después de Productos e inventario, y A medida pasa a Gestión. Actualiza SECTION_BEFORE, MODULE_INFO, TAB_LOADERS y PREFETCH_MAP. En Modo Fácil, si un origen estaba, el destino también está. 3) Gates: npm run typecheck; vitest de enlaces-panel-sin-recargar-guard, admin-subvistas-sincronizadas, admin-module-standards, rotulo-del-menu, verticals-rrhh-visible, destino-tab, panel-sin-perdida (después ⊇ antes), censo-ds-trinquete y admin-tabs-dos-niveles; npm run test:guardianes. 4) Camino del usuario: con node scripts/qa-capturas.mjs, comprueba que ?tab=plan, auditoria, rendimiento, colas, tareas, notas, canales, store-customizer, delivery-partners, delivery-live y forestal-tramites caen cada uno en su lugar nuevo (1 imagen clara a 1280 px). Corre rol-probe --todos y verifica que un tenant de plan Básico ve Configuración › Plan y Equipo › Tareas. 5) Corre medir-orden por vista y guarda el antes/después en reports/orden-admin/ola2.json. 6) Commits en serie, uno por carril, con los archivos de su reporte; el tuyo va al final.",
+     "archivos": [
+      "app/admin/_lib/tab-migration.ts",
+      "lib/admin/subvistas-modulos.ts",
+      "app/admin/_lib/tab-categories.ts",
+      "app/admin/_lib/tab-data.ts",
+      "app/admin/_lib/tab-preload.ts",
+      "app/admin/_components/TabRouter.tsx",
+      "lib/admin/enlaces-panel.ts",
+      "lib/verticals/registry.ts (solo si hace falta)",
+      "reports/orden-admin/ola2.json"
+     ],
+     "tipo": "frontend",
+     "toca": "Los 12 registros de pestañas (es su único dueño en la ola), gates, capturas y commits."
+    }
+   ]
+  },
+  {
+   "n": 3,
+   "titulo": "Dinero y abastecimiento: Mi Plata, Ventas y caja, Compras, Productos e inventario, Comprobantes y Documentos",
+   "carriles": [
+    {
+     "k": "O3-K1",
+     "titulo": "Mi Plata en 2 niveles y lo que le llega",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O3-K1.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: Opus. Al final, un reviewer Opus revisa tu diff (es dinero). TAREA: Mi Plata (?tab=plata) queda en 2 niveles. Nivel 1: Resumen · Resultado · Movimientos · Por cobrar y pagar · Préstamos · Adelantos · Activos · Impuestos y reportes. Nivel 2: Resultado (Ganancias y pérdidas, Rentabilidad, Comparar períodos) · Movimientos (Gastos y presupuesto, Proyección de caja, Tesorería) · Por cobrar y pagar (Todo lo que me deben, Lo que debo, A quién fiarle) · Préstamos, Adelantos y Activos usan sus pestañas propias como 2.º nivel, sin su AdminTabBar ni su título · Impuestos y reportes (Impuestos del mes, Reporte mensual, Para el contador, Importar y exportar, Cierres). Conserva las claves ?vista= que ya existen y agrega impuestos. 1) Monta: TaxTab + ObligacionesTab en Impuestos del mes; ComparativeReportsTab junto a PeriodComparatorTab; ScoringCrediticioTab + fiados/FiadosRiesgoIA en A quién fiarle; de Compras, el historial de gastos, GastosFijosPanel y PresupuestoPanel, en Gastos y presupuesto, como Plegables que indican su origen. Hay 3 almacenes de presupuesto: NO los unifiques, es la decisión 7. 2) Fiados sale de Mi Plata y queda una tarjeta-enlace: «Los fiados se cobran en Ventas y caja › Me deben». 3) Reportes deja de apilar 4 componentes y pasa a secciones. 4) Los <details> nativos pasan a Plegable. 5) En Activos, «Por cobrar» pasa a «Alquileres por cobrar», y su pista deja de decir «depreciación» (no existe). No partas PrestamosModule ni ActivosModule: eso es la ola 6. REGISTRO: vistas con origen (impuestos ← facturacion + documentos; comparador ← plata + analytics-pro; scoring ← plata + scoring + analytics-pro; gastos ← plata + compras; activos ← plata + activos; adelantos ← plata + adelantos); alias activos → plata&vista=activos; VISTA_MIGRATION plata&vista=fiados → ventas-caja&vista=cuentas-cobrar. RIESGO: la plantilla global oculta plata y fiados en 11 negocios. El plan Básico ve Activos y Adelantos gracias al origen.",
+     "archivos": [
+      "components/admin/unified/FinanzasModule.tsx",
+      "components/admin/unified/finanzas/",
+      "PrestamosModule.tsx + components/admin/prestamos/",
+      "AdelantosModule.tsx + components/admin/adelantos/",
+      "ActivosModule.tsx (+ activos/)",
+      "components/admin/por-cobrar/",
+      "components/admin/gastos/",
+      "ExpensesTab.tsx",
+      "BudgetVsRealTab.tsx",
+      "PresupuestoMensualTab.tsx",
+      "ReportsTab.tsx",
+      "ReporteMensualTab.tsx",
+      "ImportExportTab.tsx",
+      "HistorialCierresTab.tsx",
+      "ScoringCrediticioTab.tsx",
+      "components/admin/fiados/FiadosRiesgoIA.tsx",
+      "components/admin/compras/historial/",
+      "components/admin/analytics/ComparativeReportsTab.tsx",
+      "TaxTab.tsx y ObligacionesTab.tsx (ubicar)"
+     ],
+     "tipo": "frontend",
+     "toca": "Mi Plata (es dinero: pasa por reviewer)."
+    },
+    {
+     "k": "O3-K2",
+     "titulo": "Ventas y caja: Caja con cuadre y Me deben única",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O3-K2.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: Opus. Al final, un reviewer Opus revisa tu diff (es dinero). Hay invariantes que NO se tocan (memoria ventas-caja-potenciada-2026-10-08): un cierre sin conteo es close(null) + esCierreAutomatico en toda pantalla; el cobro de un fiado a caja lleva lock; la comisión no se paga dos veces. NO toques pos/. TAREA: Ventas y caja pasa de 6 a 5 vistas: pos · turnos · caja-registradora («Caja») · cuentas-cobrar («Me deben») · comisiones («Comisiones de vendedores»). 1) Caja suma Cuadrar como sección de 2.º nivel, montando el módulo de arqueo tal cual. Unificar los 3 contadores es trabajo de la ola 6. 2) Me deben es la casa única de FiadosModule, embebido sin su título (con una prop). Su barra interna (Resumen, Deudores, Cobranza, Análisis) es el 2.º nivel. Agrega un enlace «A quién fiarle» a Mi Plata. 3) La pista de Turnos pasa a «Abre y cierra el turno de caja de cada cajero» (hoy dice «Control de personal»). 4) El modal «Caja sin abrir» ofrece un solo camino. REGISTRO: alias fiados → ventas-caja&vista=cuentas-cobrar (se conserva el label de plantilla «Cuentas pendientes»); turnos → ventas-caja&vista=turnos; VISTA_MIGRATION ventas-caja&vista=arqueo → caja-registradora&sub=cuadrar; el origen de Me deben es ventas-caja + plata + fiados.",
+     "archivos": [
+      "components/admin/unified/POSCajaModule.tsx",
+      "components/admin/caja/",
+      "components/admin/arqueo/",
+      "components/admin/turnos/",
+      "components/admin/fiados/ (salvo FiadosRiesgoIA.tsx)",
+      "components/admin/comisiones/",
+      "CommissionCalculator.tsx (ubicar)"
+     ],
+     "tipo": "frontend",
+     "toca": "Ventas y caja (es dinero: pasa por reviewer y respeta las invariantes de cierre)."
+    },
+    {
+     "k": "O3-K3",
+     "titulo": "Compras: 7 vistas y un solo «qué reponer»",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O3-K3.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: Opus. Al final, un reviewer Opus revisa tu diff (se crean órdenes de compra). TAREA: Compras pasa de 9 a 7 vistas. Quedan así: punto-compra («Comprar») · ordenes-compra («Órdenes y recepción», con Recepción como sección «Recibir», con o sin OC; ReceivingTab y OCRecepcionModal ya escriben al mismo POST /api/compras/recepciones) · sugerencias · proveedores (con una sección «Comparar» que junta SupplierComparator, SupplierPriceComparison, scorecard y CompetitorPriceTracker; este último sigue en localStorage) · cuentas-por-pagar («Por pagar», casa única de PayablesTab) · devoluciones · dropship (solo si dropship está activo; muestra el nombre del proveedor en vez del id, enlaza al pedido y muestra el error real en vez de «no hay envíos»). 1) Punto de compra pierde el bloque «Gastos fijos del negocio» y deja un enlace a Mi Plata › Gastos (Mi Plata lo monta en esta ola). Historial de Gastos sale de Compras de la misma forma. 2) Parte ForecastingDashboard (985 líneas) SIN cambiar comportamiento en ForecastProyeccion, ForecastReorden y ForecastPrecios, más una cáscara que los compone (Análisis › Predicción sigue igual hasta la ola 4). 3) En Sugerencias, el motor /api/compras/sugerencias va arriba; ForecastReorden (con auto-reorden) y sugerencias/TabCompras van abajo, como Plegables que indican su origen. 4) Tildes: Órdenes, Recepción. 5) El TabError hecho a mano pasa al estado de error del DS. REGISTRO: vistas con origen (cuentas-por-pagar ← compras + documentos; dropship ← dropship; sugerencias ← compras + forecasting + sugerencias-ia); alias dropship → compras&vista=dropship, devoluciones-proveedor → compras&vista=devoluciones; VISTA_MIGRATION recepcion → ordenes-compra&sub=recibir, comparador → proveedores&sub=comparar, historial-gastos → plata&vista=gastos.",
+     "archivos": [
+      "components/admin/unified/ComprasModule.tsx",
+      "components/admin/compras/ (salvo historial/)",
+      "SuppliersTab.tsx",
+      "ReceivingTab.tsx",
+      "SugerenciasCompraTab.tsx",
+      "SupplierComparator.tsx",
+      "DevolucionesProveedorModule.tsx (ubicar)",
+      "components/admin/cuentas-por-pagar/",
+      "components/admin/unified/DropshipModule.tsx",
+      "components/admin/analytics/CompetitorPriceTracker.tsx",
+      "components/admin/forecasting/ForecastingDashboard.tsx + Forecast*.tsx nuevos",
+      "components/admin/sugerencias/TabCompras.tsx"
+     ],
+     "tipo": "frontend",
+     "toca": "Compras (crea OC: pasa por reviewer)."
+    },
+    {
+     "k": "O3-K4",
+     "titulo": "Productos e inventario",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O3-K4.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: Opus. Al final, un reviewer revisa tu diff (se ajusta stock). TAREA: Inventario se rotula «Productos e inventario» y absorbe la pestaña Productos (catálogo). Vistas: stock («Productos y stock») · kardex · lotes · mermas · conteo («Conteo físico»; pasa de modal a vista, con Asistente | Manual | Escáner como 2.º nivel y la Declaración jurada como salida; los 3 endpoints no cambian) · categorias · precios (historial + enlace a Marketplace › Precios) · ofertas («Ofertas y cupones»: PromotionsTab + cupones de la tienda + marketplace/tabs/CuponesTab, con un selector «vale en: tienda / marketplace»; los endpoints no cambian). 1) Etiquetas pasa al menú de acciones de Productos y stock. 2) Bug: el contador de «Alertas de Orden de Compra» tiene el mismo color de fondo y de texto (InventarioAlertaOC.tsx:30). Cámbialo por un token legible y suma a la alerta un enlace a Compras › Sugerencias. 3) El escáner de la cabecera no hace nada (onScan solo cierra): conéctalo a la búsqueda. 4) Pon un ícono distinto en cada vista. REGISTRO: vistas con origen (categorias, precios y ofertas ← productos; ofertas también ← marketplace; conteo ← inventario); alias productos → inventario&vista=categorias; VISTA_MIGRATION de productos: promociones y cupones → ofertas, historial-precios → precios; benchmark → marketplace&vista=precios. El destino de combos y kits lo decide Brandon. RIESGO: Productos es plan Básico e Inventario Pro; el origen cuida que Básico siga viendo Categorías, Precios y Ofertas.",
+     "archivos": [
+      "components/admin/tabs/InventoryTab.tsx",
+      "components/admin/unified/InventarioAlmacenesModule.tsx",
+      "components/admin/inventario/",
+      "components/admin/unified/CatalogoTiendaModule.tsx",
+      "CategoriesEditorTab.tsx",
+      "PromotionsTab.tsx",
+      "components/admin/promociones/",
+      "components/admin/cupones/",
+      "PhysicalCountTab.tsx",
+      "ConteoFisicoWizard.tsx",
+      "QuickStockCounter.tsx",
+      "DeclaracionInventarioModule.tsx (ubicar)",
+      "components/admin/marketplace/tabs/CuponesTab.tsx"
+     ],
+     "tipo": "frontend",
+     "toca": "Productos e inventario (stock: pasa por reviewer)."
+    },
+    {
+     "k": "O3-K5",
+     "titulo": "Comprobantes y Documentos",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O3-K5.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: sonnet. TAREA: el hub Documentos se parte en dos. (A) Comprobantes: el id facturacion pasa a ser este hub, con un componente nuevo, ComprobantesHubModule, y una sola fila de pestañas: facturas · notas · guias · cotizaciones. Facturas es EInvoiceTab sin la tarjeta Modo oficial (ya está en Configuración); en su lugar va una línea de estado SUNAT con enlace. Guías suma el aviso «desde el pedido». En Cotizaciones, al convertir aparece un enlace a la venta creada. (B) Documentos (id documentos) = drive (la vista por defecto, «Archivo») · contratos. NO toques la lógica de permisos del drive (memoria drive-permisos-por-rol). (C) FacturacionModule se queda sin pantallas propias: Cuentas x Pagar pasa a una tarjeta-enlace a Compras › Por pagar; Impuestos y Obligaciones, a un enlace a Mi Plata; Conexión, a un enlace a Configuración › Cobros y comprobantes. (D) Un título por pantalla: saca los antetítulos de Cotizaciones :607, Guías :802, Notas de crédito y el drive :1322. Documentos mide hoy 25 botones y 70 palabras de ayuda: déjalo en 20 botones o menos y 60 palabras o menos (menú de acciones y ⓘ). REGISTRO: módulo facturacion con sus vistas y origen (cada una: su alias + documentos); documentos = [drive, contratos]; alias cotizaciones, guias-remision y notas-credito → facturacion&vista=…; contratos → documentos&vista=contratos; VISTA_MIGRATION documentos&vista=facturacion|cotizaciones|guias|notas → facturacion&vista=…; en TabRouter, facturacion → ComprobantesHubModule. RIESGO: la plantilla global oculta documentos y facturacion en 11 negocios. Usa reports/panel/visibilidad-antes.json para que el plan Pro siga viendo lo mismo.",
+     "archivos": [
+      "components/admin/unified/DocumentosHubModule.tsx",
+      "components/admin/unified/ComprobantesHubModule.tsx (nuevo)",
+      "components/admin/unified/FacturacionModule.tsx",
+      "EInvoiceTab.tsx (ubicar)",
+      "CotizacionesModule.tsx",
+      "GuiasRemisionModule.tsx",
+      "NotasCreditoModule.tsx + notas-credito/",
+      "ContratosModule.tsx + contratos/",
+      "components/admin/unified/DocumentosModule.tsx y components/admin/documentos/ (solo cabecera)"
+     ],
+     "tipo": "frontend",
+     "toca": "Comprobantes y Documentos, solo UI. No toca los permisos del drive."
+    },
+    {
+     "k": "O3-K6",
+     "titulo": "Integrador de la ola 3",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1, §5, §6 y §7.0. Tú SÍ tocas los registros de tu lista; nadie más los toca en esta ola. Toca SOLO tus archivos y haz ls antes de crear. Nada se borra: los ids viejos quedan como alias. Sin git stash/reset/checkout. Haz los commits en serie con git commit -F <msg> -- <archivos> (Conventional, en minúscula, ≤ 100 caracteres, trailer Co-Authored-By). El reporte final va en TEXTO: archivos exactos, cifras, pendientes y «Para acelerar:». MODELO: Opus. Corres DESPUÉS de O3-K1 a O3-K5: espera sus reportes. TAREA: 1) Aplica SP/panel/registro/O3-*.json a los mismos registros que en la ola 2. 2) Barra: Compras + Productos e inventario forman el grupo «Abastecimiento» [inventario («Productos e inventario»), compras, recetas]. dropship y productos salen de la barra. finanzas queda en [plata]. Ventas queda en [ventas-caja, pedidos, facturacion («Comprobantes»)]. documentos pasa a Gestión como «Documentos». En TabRouter, facturacion → ComprobantesHubModule. Actualiza MODULE_INFO, TAB_LOADERS y PREFETCH_MAP. 3) Gates: los mismos de O2-K6 (typecheck + 9 tests + test:guardianes). Adjunta los reportes de reviewer de K1 a K4. 4) Camino del usuario: con node scripts/qa-capturas.mjs, comprueba ?tab=fiados, activos, productos, dropship, devoluciones-proveedor, cotizaciones, guias-remision, notas-credito, contratos, facturacion, documentos y plata&vista=fiados. Verifica que el plan Básico ve Mi Plata solo con Activos y Adelantos, que el plan Pro ve en Comprobantes lo que veía en Documentos, y corre rol-probe --todos. 5) Guarda medir-orden por vista en reports/orden-admin/ola3.json. 6) Commits en serie, uno por carril; el tuyo va al final.",
+     "archivos": [
+      "app/admin/_lib/tab-migration.ts",
+      "lib/admin/subvistas-modulos.ts",
+      "app/admin/_lib/tab-categories.ts",
+      "app/admin/_lib/tab-data.ts",
+      "app/admin/_lib/tab-preload.ts",
+      "app/admin/_components/TabRouter.tsx",
+      "lib/admin/enlaces-panel.ts",
+      "lib/verticals/registry.ts (solo si hace falta)",
+      "reports/orden-admin/ola3.json"
+     ],
+     "tipo": "frontend",
+     "toca": "Los registros de pestañas (único dueño en la ola), gates, capturas y commits."
+    }
+   ]
+  },
+  {
+   "n": 4,
+   "titulo": "Inicio, IA, clientes, mensajes y marketplace",
+   "carriles": [
+    {
+     "k": "O4-K1",
+     "titulo": "Inicio absorbe Análisis",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O4-K1.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: Opus. Inicio se rehízo hoy (commits 1580b7140…44ff3555f): respétalo. TAREA: 0) Antes de agregar nada, baja Resumen de 3,01 pantallas y 60 palabras de ayuda (medición de las 17:38) a ≤ 2,5 pantallas y ≤ 40 palabras, sin quitar datos (usa Plegables recordados y ⓘ). 1) Mueve el contenido vista por vista, siempre en Plegables cerrados y dentro de <PermisoDe origen=…>. Resumen recibe Fiado pendiente y Rotación; una sola lista «Avisos» que junta DashboardAlertsList, MorningBriefing, AnomalyDetector y las anomalías de BusinessIntelligenceTab (mismos endpoints, sin duplicados); «Tu meta» (/api/goals/avance, con enlace a Metas); e «Ideas para hoy» (TabHoy, cuyo .catch pasa a estado de error). Ventas recibe un solo motor de hora pico (el de Inicio), VentasHeatmap, PredictiveAnalyticsTab y ForecastProyeccion. Productos (clave inventario) recibe ABC, BCG, MarginWaterfallChart y BasketAnalysisTab, más TabCombos y TabVentas con la etiqueta «calculado sobre las últimas 200 ventas». Clientes recibe un solo RFM (el de Inicio; el de analytics se enlaza a Clientes › Segmentos), el Top 10, FiadoAnalyticsPanel plegado y un enlace a Ventas y caja › Me deben. 2) Un solo filtro de fecha (DashboardDateRange): salen los chips 1d…1y de AnalyticsBIModule y cada bloque recibe el rango. 3) KPIs en tipo oración y con tildes (por ejemplo «7 días» y «1 año»). 4) Arregla el prefetch de VendorDashboardModule.tsx:90 y el comentario de :326, y deja VendorDashboardModule en 300 líneas o menos (hoy 372). 5) AnalisisHubModule, AnalyticsBIModule e InteligenciaTab quedan sin montar: repórtalos. REGISTRO: alias analytics-pro → vendor-dashboard&vista=general; forecasting y demand-prediction → vendor-dashboard&vista=ventas; sugerencias-ia → vendor-dashboard&vista=general; VISTA_MIGRATION analytics-pro&vista=analytics|forecast|inteligencia; vistas con origen. RIESGO: Analytics es plan Enterprise, Predicción y Sugerencias son Max e Inicio es Básico. Modo Fácil no incluía Analytics.",
+     "archivos": [
+      "components/admin/unified/VendorDashboardModule.tsx",
+      "components/admin/inicio/",
+      "components/admin/hoy/",
+      "components/admin/unified/AnalisisHubModule.tsx",
+      "components/admin/unified/AnalyticsBIModule.tsx",
+      "components/admin/analytics/ (salvo CustomKPITab, CompetitorPriceTracker y ComparativeReportsTab)",
+      "components/admin/forecasting/ForecastProyeccion.tsx",
+      "components/admin/sugerencias/TabHoy.tsx",
+      "components/admin/sugerencias/TabCombos.tsx",
+      "components/admin/sugerencias/TabVentas.tsx",
+      "components/admin/smart-dashboard/ (salvo InactiveCustomersCard y BirthdayCard)"
+     ],
+     "tipo": "frontend",
+     "toca": "Inicio y Análisis (UI). Inicio se rehízo hoy."
+    },
+    {
+     "k": "O4-K2",
+     "titulo": "Asistente IA y Metas",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O4-K2.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: sonnet. Comandos IA y Metas se rehicieron hoy: solo se agrega, no se rediseña. TAREA: A) Asistente IA queda con 3 vistas: chat · comandos · automatizaciones. 1) Un título por pantalla: salen el AdminModuleHeader de ChatIAModule.tsx:308 y de AutomatizacionesModule.tsx:40, y el h2 «Asistente de tu negocio» de ChatIAClean.tsx:817 pasa a SectionTitle de la vista. La ayuda baja de 56 a 30 palabras o menos (ⓘ). 2) Sugerencias IA deja de montarse. En su lugar va una tarjeta «Ideas» con enlaces a donde fue cada una: Inicio › Resumen, Inicio › Productos, Compras › Sugerencias, y la ficha y Campañas de Clientes. SugerenciasIAModule queda sin montar: repórtalo. 3) Comandos › Precios en bloque suma el Plegable «Sugerencias de precio» con ForecastPrecios. Aplicar un precio escribe en /api/products/:id, así que ese diff pasa por reviewer. B) Metas y logros suma la vista indicadores («Indicadores propios») con CustomKPITab tal cual; pasarlo a metas es la decisión 11. Cada vista lleva un SectionTitle (hoy no tiene ninguno) y 15 botones o menos. REGISTRO: vistas con origen (indicadores ← analytics-pro); alias ai-command → asistente-ia&vista=comandos.",
+     "archivos": [
+      "components/admin/unified/AsistenteIAHubModule.tsx",
+      "components/admin/unified/ChatIAModule.tsx",
+      "ChatIAClean.tsx (ubicar)",
+      "components/admin/unified/AutomatizacionesModule.tsx",
+      "components/admin/automatizaciones/",
+      "components/admin/unified/SugerenciasIAModule.tsx",
+      "components/admin/comandos-ia/precios/",
+      "components/admin/forecasting/ForecastPrecios.tsx",
+      "components/admin/unified/MetasLogrosModule.tsx",
+      "components/admin/metas/",
+      "components/admin/analytics/CustomKPITab.tsx"
+     ],
+     "tipo": "frontend",
+     "toca": "Asistente IA y Metas (UI). Aplicar precio pasa por reviewer."
+    },
+    {
+     "k": "O4-K3",
+     "titulo": "Clientes absorbe Crecimiento",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O4-K3.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: Opus. TAREA: Clientes absorbe el hub Crecimiento y queda con 8 vistas: crm · segmentos · campanas · premios · programas · resenas («Opiniones») · mapa · leads. 1) Segmentos junta AutoSegments, SegmentsTab y RFMTab como secciones (elegir un solo criterio es la decisión 9) y suma los huérfanos InactiveCustomersCard y BirthdayCard como bloques «Inactivos» y «Cumpleaños». Agrega un botón «Mandar campaña a estos» que abre Campañas con el segmento ya puesto (?segmento=); los filtros de Mis clientes llevan el mismo botón. 2) Campañas = MarketingAutomationTab + MassMessageSender como modo «uno por uno por WhatsApp» + Estrategias. Lee Estrategias antes de moverla; si no trata de clientes, repórtalo y déjala donde está. 3) Premios = Puntos + Gift Cards + FidelidadTab, con un selector de programa, más un enlace a Ofertas y cupones. 4) Programas lleva Socio · Bodega al Mes · En vivo como 2.º nivel. Sus barras propias (Socio :613, Subscriptions :410) pasan a Plegables. En vivo lleva la marca «Ejemplo» (MOCK en :42-122) hasta la decisión 17. 5) Opiniones = NPS + moderación (ResenasTab), con filtro de canal. 6) La ficha de Mis clientes suma «Qué ofrecerle» con TabClientes. 7) Un título por pantalla: salen los AdminModuleHeader internos (MarketingAutomationTab :234, GiftCards :371, Socio :573, Subscriptions :374, Lives :161, LeadsFunnel :169), y los hex de NPSTab:43 pasan a tokens. 8) En celular, Mis clientes baja de 3,99 a 2,5 pantallas o menos. REGISTRO: vistas con origen (campanas ← campanas + clientes; premios ← puntos + gift-cards-admin + marketplace; programas ← socio-members + subscriptions + lives-admin; resenas ← clientes + marketplace); alias campanas, puntos, gift-cards-admin, socio-members, subscriptions, lives-admin, leads-funnel, fidelizacion, programa-puntos y resenas; VISTA_MIGRATION clientes&vista=mensajes → campanas&sub=uno-a-uno. RIESGO: la plantilla global oculta clientes en 11 negocios pero no campanas. Gracias al origen, esos negocios siguen viendo solo lo que tenía Crecimiento.",
+     "archivos": [
+      "components/admin/unified/CRMClientesModule.tsx",
+      "components/admin/crm/",
+      "components/admin/cliente360/",
+      "components/admin/clientes/",
+      "NPSTab.tsx, AutoSegments.tsx, MassMessageSender.tsx, CustomerGeoMap.tsx (ubicar)",
+      "components/admin/unified/LeadsFunnelModule.tsx",
+      "components/admin/unified/CrecimientoHubModule.tsx",
+      "components/admin/crecimiento/",
+      "components/admin/unified/GiftCardsAdminModule.tsx + gift-cards-admin/",
+      "components/admin/unified/SocioMembersAdminModule.tsx + socio-admin/",
+      "components/admin/unified/SubscriptionsModule.tsx",
+      "components/admin/unified/LivesAdminModule.tsx + lives-admin/",
+      "components/admin/marketplace/tabs/ResenasTab.tsx",
+      "components/admin/marketplace/tabs/FidelidadTab.tsx",
+      "components/admin/sugerencias/TabClientes.tsx (+ estrategias)",
+      "components/admin/smart-dashboard/InactiveCustomersCard.tsx",
+      "components/admin/smart-dashboard/BirthdayCard.tsx"
+     ],
+     "tipo": "frontend",
+     "toca": "Clientes y Crecimiento (UI)."
+    },
+    {
+     "k": "O4-K4",
+     "titulo": "Mensajes: una bandeja con canales",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O4-K4.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: sonnet. TAREA: el hub que abre «WhatsApp» (?tab=whatsapp-inbox) se rotula «Mensajes» y queda con 4 vistas: bandeja · avisos · plantillas · bot. 1) Bandeja lleva chips de canal: WhatsApp · Chat de la tienda · Soporte (?canal=). Cada chip conserva su componente con TODAS sus acciones (WhatsAppInboxTab, ChatTab, UnifiedSupportInbox), muestra su contador de sin leer y va dentro de su PermisoDe (Soporte es plan Pro y Chat es Enterprise). 2) Plantillas es una sola pantalla con 3 secciones: respuestas rápidas y plantillas del chat (guardadas en este navegador) y plantillas aprobadas por Meta (guardadas en el servidor). Llevarlas al servidor es la decisión 10. 3) Sale el SectionTitle «Chat con clientes» de ChatTab/index.tsx:124, y «Notificaciones WhatsApp» pasa a «Avisos por pedido». 4) La ficha del contacto (WaCustomerCard) enlaza a Clientes › Mis clientes ?cliente=; pide ese enlace en el registro. 5) Los párrafos de ayuda pasan a ⓘ. REGISTRO: vistas con origen (bandeja ← whatsapp-inbox + marketplace-chat + support-inbox); alias marketplace-chat, chat, support-inbox, soporte y encuestas-soporte → whatsapp-inbox&vista=bandeja&canal=…; VISTA_MIGRATION whatsapp|chat|soporte → bandeja; rótulo «Mensajes».",
+     "archivos": [
+      "components/admin/unified/MensajesHubModule.tsx",
+      "WhatsAppInboxTab.tsx (ubicar)",
+      "components/admin/whatsapp/",
+      "components/admin/ChatTab/",
+      "UnifiedSupportInbox.tsx",
+      "NotificationsTab.tsx",
+      "WhatsAppTemplates.tsx",
+      "WhatsAppBotConfig.tsx (ubicar)"
+     ],
+     "tipo": "frontend",
+     "toca": "Mensajes (UI)."
+    },
+    {
+     "k": "O4-K5",
+     "titulo": "Marketplace: 6 vistas y su URL",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas: pide las altas en SP/panel/registro/O4-K5.json (formato §6.1). Nada se borra: mover = montar + enlace. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada, 1 captura (node scripts/qa-capturas.mjs) y medir-orden de tus vistas antes y después. El reporte final va en TEXTO: archivos exactos, origen → destino, cifras, pendientes y «Para acelerar:». MODELO: sonnet. Zona de peligro cerca: NO toques lib/db/marketplace.db.ts ni commissions.ts; este carril es solo UI. TAREA: Marketplace pasa de useState (MarketplaceModule.tsx:50) a useVistaModulo y de 9 a 6 vistas: resumen · tienda («Mi tienda en el marketplace») · productos («Productos publicados») · ordenes · comisiones («Comisiones de la plataforma») · precios. 1) Mi tienda en el marketplace suma MarketplaceBrandingTab: sácalo de app/admin/store-page/page.tsx y deja ahí un enlace. 2) Cupones, Reseñas y Fidelidad ya viven en Productos e inventario y en Clientes: aquí solo quedan como redirección. 3) Órdenes se queda y suma un enlace «ver en Pedidos (origen marketplace)». Con un SELECT READ ONLY (scripts/sql-lectura.mjs), mide si /api/marketplace/orders y los Pedidos con source=marketplace son las mismas filas, y repórtalo (decisión 19). 4) «Actualizar» recarga la vista abierta; hoy solo recarga los KPIs del Resumen. 5) El estado vacío queda en una frase sin h2, y la descripción de la cabecera pasa a ⓘ. REGISTRO: vistas con origen marketplace; VISTA_MIGRATION cupones → inventario&vista=ofertas&canal=marketplace, resenas → clientes&vista=resenas&canal=marketplace, fidelidad → clientes&vista=premios&programa=marketplace, y pagina-inicio&vista=contenido&sub=branding → marketplace&vista=tienda.",
+     "archivos": [
+      "components/admin/unified/MarketplaceModule.tsx",
+      "components/admin/marketplace/ (salvo tabs/CuponesTab, tabs/ResenasTab y tabs/FidelidadTab)",
+      "MarketplaceBrandingTab.tsx (ubicar)",
+      "app/admin/store-page/page.tsx"
+     ],
+     "tipo": "frontend",
+     "toca": "Marketplace (UI). No toca marketplace.db ni commissions.ts."
+    },
+    {
+     "k": "O4-K6",
+     "titulo": "Integrador de la ola 4",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1, §5, §6 y §7.0. Tú SÍ tocas los registros de tu lista; nadie más los toca en esta ola. Toca SOLO tus archivos y haz ls antes de crear. Nada se borra: los ids viejos quedan como alias. Sin git stash/reset/checkout. Haz los commits en serie con git commit -F <msg> -- <archivos> (Conventional, en minúscula, ≤ 100 caracteres, trailer Co-Authored-By). El reporte final va en TEXTO: archivos exactos, cifras, pendientes y «Para acelerar:». MODELO: Opus. Corres DESPUÉS de O4-K1 a O4-K5: espera sus reportes. TAREA: 1) Aplica SP/panel/registro/O4-*.json. 2) Barra: salen los grupos Análisis (graficos) y Crecimiento, y whatsapp-inbox se rotula «Mensajes». En Modo Fácil, si un origen estaba, el destino también está. Actualiza MODULE_INFO, TAB_LOADERS y PREFETCH_MAP. 3) Gates: los mismos de O2-K6 (typecheck + 9 tests + test:guardianes). 4) Camino del usuario: con node scripts/qa-capturas.mjs, comprueba ?tab=analytics-pro, forecasting, demand-prediction, sugerencias-ia, ai-command, campanas, puntos, gift-cards-admin, socio-members, subscriptions, lives-admin, leads-funnel, marketplace-chat y support-inbox, y también marketplace&vista=cupones|resenas|fidelidad. Corre rol-probe --todos y verifica que los planes Básico, Pro, Enterprise y Max ven lo mismo que antes (panel-sin-perdida). 5) Guarda medir-orden por vista en reports/orden-admin/ola4.json y compáralo con la línea base. 6) Commits en serie, uno por carril; el tuyo va al final.",
+     "archivos": [
+      "app/admin/_lib/tab-migration.ts",
+      "lib/admin/subvistas-modulos.ts",
+      "app/admin/_lib/tab-categories.ts",
+      "app/admin/_lib/tab-data.ts",
+      "app/admin/_lib/tab-preload.ts",
+      "app/admin/_components/TabRouter.tsx",
+      "lib/admin/enlaces-panel.ts",
+      "lib/verticals/registry.ts (solo si hace falta)",
+      "reports/orden-admin/ola4.json"
+     ],
+     "tipo": "frontend",
+     "toca": "Los registros de pestañas (único dueño en la ola), gates, capturas y commits."
+    }
+   ]
+  },
+  {
+   "n": 5,
+   "titulo": "Diseño unificado por carpeta (necesita las decisiones 1 y 2: altura de botones y filtros, y tarjeta de cifra)",
+   "carriles": [
+    {
+     "k": "O5-D1",
+     "titulo": "Diseño: forestal, cacao, cámaras y a medida",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus carpetas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras del censo antes y después, pendientes y «Para acelerar:». MODELO: sonnet; usa Opus si hay layout. Requiere las decisiones 1 y 2 de Brandon: si faltan, para y avisa. TAREA: aplica PLAN §5 SOLO en components/admin/forestal/, components/admin/cacao/, components/admin/a-medida/ y components/admin/CamarasModule.tsx. 1) Corre los codemods de scripts/codemods con --carpeta, de a uno, y revisa el diff antes de pasar al siguiente: btn-constantes (BTN/BOTON → button({variant,size})), kicker (solo elementos hoja, nunca <th>), datatable (<table> de JSX → DataTable con thead/tbody intactos; las plantillas de impresión no se tocan), casilla, hex-graficos (hex → var(--data-*)) y motion (duration/ease literales → DURATION/EASE). 2) A mano: tarjetas KPI locales → StatCard (adapta scripts/migrate-unified-kpi-to-statcard.mjs); filtros locales → barra única + filtros-columna; transition-all → transition-colors/transform; animate-spin → LoadingSpinner. 3) Cámaras: AdminModuleHeader + SegmentedControl pasan a AdminTabBar con heading y ?vista= (fotos, patio, personas, camaras), y la descripción pasa a ⓘ. A medida: los botones propios pasan a AdminTabBar; ?pieza= se queda. 4) Carga la skill serfor-osinfor-compliance: no cambies textos legales, formatos SERFOR ni lógica; solo tildes. 5) Corre node scripts/censo-ds-admin.mjs --carpeta=… antes y después y guarda el resultado en SP/panel/O5-D1/censo.json. 6) Saca una captura clara por cada familia que tocaste. No toques components/admin/shared ni components/ui-system.",
+     "archivos": [
+      "components/admin/forestal/",
+      "components/admin/cacao/",
+      "components/admin/a-medida/",
+      "components/admin/CamarasModule.tsx"
+     ],
+     "tipo": "frontend",
+     "toca": "Diseño (codemods y a mano) de forestal, cacao, cámaras y a medida, sin tocar lógica."
+    },
+    {
+     "k": "O5-D2",
+     "titulo": "Diseño: ventas, pedidos y comprobantes",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus carpetas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras del censo antes y después, pendientes y «Para acelerar:». MODELO: sonnet. Requiere las decisiones 1 y 2 de Brandon: si faltan, para y avisa. TAREA: aplica PLAN §5 SOLO en pos/, caja/, turnos/, arqueo/, fiados/, comisiones/, OrdersTab/, delivery/, DeliveryTab/, unified/POSCajaModule.tsx, unified/DeliveryPartnersModule.tsx, unified/ComprobantesHubModule.tsx, EInvoiceTab, CotizacionesModule, GuiasRemisionModule y NotasCreditoModule + notas-credito/. 1) Corre los codemods de scripts/codemods con --carpeta, de a uno, y revisa el diff antes de pasar al siguiente: btn-constantes, kicker (nunca <th>), datatable (las plantillas de impresión de Guías y Cotizaciones NO se tocan), casilla, hex-graficos y motion. 2) A mano: KPIs locales → StatCard; filtros locales → barra única + filtros-columna; transition-all → transition-colors/transform; animate-spin → LoadingSpinner; AdminModuleHeader residual → AdminTabBar. 3) Las invariantes de caja quedan intactas: close(null), esCierreAutomatico y el lock del cobro de fiado a caja. No cambies lógica ni textos, salvo tildes. 4) Corre node scripts/censo-ds-admin.mjs --carpeta=… antes y después y guarda el resultado en SP/panel/O5-D2/censo.json. 5) Saca una captura por familia. No toques components/admin/shared ni components/ui-system.",
+     "archivos": [
+      "components/admin/pos/",
+      "components/admin/caja/",
+      "components/admin/turnos/",
+      "components/admin/arqueo/",
+      "components/admin/fiados/",
+      "components/admin/comisiones/",
+      "components/admin/OrdersTab/",
+      "components/admin/delivery/",
+      "components/admin/DeliveryTab/",
+      "components/admin/unified/POSCajaModule.tsx",
+      "components/admin/unified/DeliveryPartnersModule.tsx",
+      "components/admin/unified/ComprobantesHubModule.tsx",
+      "EInvoiceTab, CotizacionesModule, GuiasRemisionModule, NotasCreditoModule + notas-credito/"
+     ],
+     "tipo": "frontend",
+     "toca": "Diseño de Ventas, Pedidos y Comprobantes, sin tocar lógica."
+    },
+    {
+     "k": "O5-D3",
+     "titulo": "Diseño: abastecimiento",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus carpetas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras del censo antes y después, pendientes y «Para acelerar:». MODELO: sonnet. Requiere las decisiones 1 y 2 de Brandon: si faltan, para y avisa. TAREA: aplica PLAN §5 SOLO en inventario/, compras/, cuentas-por-pagar/, promociones/, cupones/, forecasting/, RecetasModule.tsx, unified/ComprasModule.tsx, unified/InventarioAlmacenesModule.tsx, unified/CatalogoTiendaModule.tsx, unified/DropshipModule.tsx, SuppliersTab, ReceivingTab, SugerenciasCompraTab, SupplierComparator, DevolucionesProveedorModule, CategoriesEditorTab y PromotionsTab. Este grupo tiene 78 animate-spin y 0 LoadingSpinner. 1) Corre los codemods de scripts/codemods con --carpeta, de a uno, y revisa el diff antes de pasar al siguiente: btn-constantes, kicker, datatable, casilla, hex-graficos (RecetasModule tiene 9 hex) y motion. 2) A mano: KPIs locales → StatCard; filtros locales → barra única + filtros-columna; transition-all → transition-colors/transform; animate-spin → LoadingSpinner. 3) No cambies lógica ni textos, salvo tildes. 4) Corre node scripts/censo-ds-admin.mjs --carpeta=… antes y después y guarda el resultado en SP/panel/O5-D3/censo.json. 5) Saca una captura por familia. No toques components/admin/shared ni components/ui-system.",
+     "archivos": [
+      "components/admin/inventario/",
+      "components/admin/compras/",
+      "components/admin/cuentas-por-pagar/",
+      "components/admin/promociones/",
+      "components/admin/cupones/",
+      "components/admin/forecasting/",
+      "RecetasModule.tsx",
+      "components/admin/unified/ComprasModule.tsx",
+      "components/admin/unified/InventarioAlmacenesModule.tsx",
+      "components/admin/unified/CatalogoTiendaModule.tsx",
+      "components/admin/unified/DropshipModule.tsx",
+      "SuppliersTab, ReceivingTab, SugerenciasCompraTab, SupplierComparator, DevolucionesProveedorModule, CategoriesEditorTab, PromotionsTab"
+     ],
+     "tipo": "frontend",
+     "toca": "Diseño de Abastecimiento, sin tocar lógica."
+    },
+    {
+     "k": "O5-D4",
+     "titulo": "Diseño: clientes y canales",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus carpetas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras del censo antes y después, pendientes y «Para acelerar:». MODELO: sonnet. Requiere las decisiones 1 y 2 de Brandon: si faltan, para y avisa. TAREA: aplica PLAN §5 SOLO en crm/, cliente360/, clientes/, crecimiento/, whatsapp/, ChatTab/, marketplace/, cms/, app/admin/store-page/, StoreCustomizer.tsx, tabs/SalesChannelsTab.tsx y estos archivos de unified/: CRMClientesModule, CrecimientoHubModule, MensajesHubModule, MarketplaceModule, MiTiendaHubModule, GiftCardsAdminModule, SocioMembersAdminModule, SubscriptionsModule, LivesAdminModule y LeadsFunnelModule. 1) Corre los codemods de scripts/codemods con --carpeta, de a uno, y revisa el diff antes de pasar al siguiente: btn-constantes, kicker, datatable, casilla, hex-graficos y motion. 2) A mano: KPIs locales → StatCard (por ejemplo, KpiTile de marketplace/shared.tsx según la decisión 2); filtros locales → barra única + filtros-columna; transition-all → transition-colors/transform; animate-spin → LoadingSpinner. 3) No cambies lógica ni textos, salvo tildes. 4) Corre node scripts/censo-ds-admin.mjs --carpeta=… antes y después y guarda el resultado en SP/panel/O5-D4/censo.json. 5) Saca una captura por familia. No toques components/admin/shared ni components/ui-system.",
+     "archivos": [
+      "components/admin/crm/",
+      "components/admin/cliente360/",
+      "components/admin/clientes/",
+      "components/admin/crecimiento/",
+      "components/admin/whatsapp/",
+      "components/admin/ChatTab/",
+      "components/admin/marketplace/",
+      "components/admin/cms/",
+      "app/admin/store-page/",
+      "StoreCustomizer.tsx",
+      "components/admin/tabs/SalesChannelsTab.tsx",
+      "components/admin/unified/ (CRMClientes, CrecimientoHub, MensajesHub, Marketplace, MiTiendaHub, GiftCardsAdmin, SocioMembersAdmin, Subscriptions, LivesAdmin, LeadsFunnel)"
+     ],
+     "tipo": "frontend",
+     "toca": "Diseño de Clientes y Canales, sin tocar lógica."
+    },
+    {
+     "k": "O5-D5",
+     "titulo": "Diseño: gestión y configuración",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus carpetas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras del censo antes y después, pendientes y «Para acelerar:». MODELO: sonnet. Requiere las decisiones 1 y 2 de Brandon: si faltan, para y avisa. TAREA: aplica PLAN §5 SOLO en unified/finanzas/, unified/FinanzasModule.tsx, prestamos/, adelantos/, activos/, por-cobrar/, gastos/, rrhh/, documentos/, contratos/, settings/ y rendimiento/; en estos archivos de unified/: RecursosHumanosHubModule, DocumentosHubModule, DocumentosModule, SistemaHubModule y RendimientoModule; y en tabs/SettingsTab.tsx, PlanTab, PlanTierSelector, MiPerfilTab, AuditTrailModule, ColasTab, ReportsTab y los demás vecinos de Mi Plata. 1) Corre los codemods de scripts/codemods con --carpeta, de a uno, y revisa el diff antes de pasar al siguiente: btn-constantes (por-cobrar/estilo.ts exporta constantes BOTON), kicker, datatable (las 8 tablas de impresión de ReportsTab NO se tocan), casilla, hex-graficos y motion. 2) A mano: los 3 estilos de KPI de Mi Plata (SparklineKPICard, StatCard y tarjetas propias) → StatCard; filtros locales → barra única + filtros-columna; transition-all → transition-colors/transform; animate-spin → LoadingSpinner. 3) No cambies lógica ni textos, salvo tildes. 4) Corre node scripts/censo-ds-admin.mjs --carpeta=… antes y después y guarda el resultado en SP/panel/O5-D5/censo.json. 5) Saca una captura por familia. No toques components/admin/shared ni components/ui-system.",
+     "archivos": [
+      "components/admin/unified/finanzas/",
+      "components/admin/unified/FinanzasModule.tsx",
+      "components/admin/prestamos/",
+      "components/admin/adelantos/",
+      "components/admin/activos/",
+      "components/admin/por-cobrar/",
+      "components/admin/gastos/",
+      "components/admin/rrhh/",
+      "components/admin/documentos/",
+      "components/admin/contratos/",
+      "components/admin/settings/",
+      "components/admin/rendimiento/",
+      "components/admin/unified/ (RecursosHumanosHub, DocumentosHub, Documentos, SistemaHub, Rendimiento)",
+      "components/admin/tabs/SettingsTab.tsx",
+      "PlanTab, PlanTierSelector, MiPerfilTab, AuditTrailModule, ColasTab, ReportsTab y vecinos de Mi Plata"
+     ],
+     "tipo": "frontend",
+     "toca": "Diseño de Gestión y Configuración, sin tocar lógica."
+    },
+    {
+     "k": "O5-D6",
+     "titulo": "Diseño: inicio, IA y metas",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus carpetas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, cifras del censo antes y después, pendientes y «Para acelerar:». MODELO: sonnet. Requiere las decisiones 1 y 2 de Brandon: si faltan, para y avisa. TAREA: aplica PLAN §5 SOLO en inicio/, hoy/, analytics/, metas/ (clases-meta.ts exporta constantes BTN), comandos-ia/, sugerencias/, automatizaciones/ y smart-dashboard/; en estos archivos de unified/: VendorDashboardModule, AsistenteIAHubModule, ChatIAModule, AutomatizacionesModule y MetasLogrosModule; y en ChatIAClean. 1) Corre los codemods de scripts/codemods con --carpeta, de a uno, y revisa el diff antes de pasar al siguiente: btn-constantes, kicker, datatable, casilla, hex-graficos (smart-dashboard/DashboardCharts tiene 16 hex y analytics/FiadoAnalyticsPanel 9) y motion. 2) A mano: el KpiTile del Inicio se maneja según la decisión 2; el resto de KPIs locales → StatCard; transition-all → transition-colors/transform; animate-spin → LoadingSpinner. 3) No cambies lógica ni textos, salvo tildes. Inicio, Comandos IA y Metas se rehicieron hoy: cambia solo la forma, no el contenido. 4) Corre node scripts/censo-ds-admin.mjs --carpeta=… antes y después y guarda el resultado en SP/panel/O5-D6/censo.json. 5) Saca una captura por familia. No toques components/admin/shared ni components/ui-system.",
+     "archivos": [
+      "components/admin/inicio/",
+      "components/admin/hoy/",
+      "components/admin/analytics/",
+      "components/admin/metas/",
+      "components/admin/comandos-ia/",
+      "components/admin/sugerencias/",
+      "components/admin/automatizaciones/",
+      "components/admin/smart-dashboard/",
+      "components/admin/unified/ (VendorDashboard, AsistenteIAHub, ChatIA, Automatizaciones, MetasLogros)",
+      "ChatIAClean.tsx (ubicar)"
+     ],
+     "tipo": "frontend",
+     "toca": "Diseño de Inicio, IA y Metas, sin tocar lógica."
+    }
+   ]
+  },
+  {
+   "n": 6,
+   "titulo": "Modales a mano, archivos gigantes, caja única y datos aprobados por Brandon",
+   "carriles": [
+    {
+     "k": "O6-M1",
+     "titulo": "Modales a mano → AdminModal (operaciones y forestal)",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus carpetas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, la cantidad de modales migrados, pendientes y «Para acelerar:». MODELO: sonnet. TAREA: en components/admin/forestal/, cacao/, inventario/, compras/, OrdersTab/, delivery/, DeliveryTab/ y pos/ (sin caja/, turnos/ ni arqueo/, que son de O6-C1), más MobilePOS.tsx, BarcodeScanner.tsx y CategoriesEditorTab.tsx, migra los modales hechos a mano (un overlay fixed inset-0 con role=dialog o aria-modal y sin AdminModal). Pasan a AdminModal, con aboveModals si se abren desde otro modal. Si alguno tiene que seguir hecho a mano, usa useModalAccesible. Los AdminModal sin footer= que tienen las acciones dentro del cuerpo pasan a usar ModalFooter. Ojo con el forestal: sus modales a mano van en z-60 y Radix va en z-50 (ver .claude/rules/ui-components.md). Para la lista inicial, busca 'fixed inset-0' en tus carpetas y crúzalo con role=dialog. No cambies lógica. CIERRE: node scripts/barrido-modales-anidados.mjs en verde; tests admin-modal-escape-menu, modal-anidado-cede-el-teclado e infotip-escape-no-cierra-el-modal; captura de los 5 modales más usados; npm run typecheck.",
+     "archivos": [
+      "components/admin/forestal/",
+      "components/admin/cacao/",
+      "components/admin/inventario/",
+      "components/admin/compras/",
+      "components/admin/OrdersTab/",
+      "components/admin/delivery/",
+      "components/admin/DeliveryTab/",
+      "components/admin/pos/ (sin caja/, turnos/ ni arqueo/)",
+      "MobilePOS.tsx",
+      "BarcodeScanner.tsx",
+      "CategoriesEditorTab.tsx"
+     ],
+     "tipo": "frontend",
+     "toca": "Modales (UI) de operaciones y forestal."
+    },
+    {
+     "k": "O6-M2",
+     "titulo": "Modales a mano → AdminModal (clientes, canales, gestión e inicio)",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus carpetas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, la cantidad de modales migrados, pendientes y «Para acelerar:». MODELO: sonnet. TAREA: haz lo mismo que O6-M1 en estas carpetas: crm/ (sin CrmFiltros.tsx), cliente360/, clientes/, crecimiento/, whatsapp/ (sin inbox/WaTemplatePicker.tsx), ChatTab/ (sin TemplatesPanel.tsx), marketplace/ (sin tabs/ProductosTab.tsx), app/admin/store-page/, documentos/ (sin DocumentosModule.tsx ni DocumentPreviewModal.tsx), adelantos/ (sin cobranza/MetaModal.tsx), rrhh/, settings/, inicio/, metas/, comandos-ia/, GlobalSearch.tsx e ImageCropModal.tsx. Los modales a mano pasan a AdminModal (con aboveModals si se abren desde otro modal) o, si deben seguir a mano, a useModalAccesible. Los AdminModal sin footer pasan a ModalFooter. Además, ActivosModule.tsx pasa sus 5 modales del ModalShell y ModalFooter propios a AdminModal + el ModalFooter compartido. No cambies lógica. CIERRE: node scripts/barrido-modales-anidados.mjs en verde; los tests de modales; captura de los 5 modales más usados; npm run typecheck.",
+     "archivos": [
+      "components/admin/crm/ (sin CrmFiltros.tsx)",
+      "components/admin/cliente360/",
+      "components/admin/clientes/",
+      "components/admin/crecimiento/",
+      "components/admin/whatsapp/ (sin inbox/WaTemplatePicker.tsx)",
+      "components/admin/ChatTab/ (sin TemplatesPanel.tsx)",
+      "components/admin/marketplace/ (sin tabs/ProductosTab.tsx)",
+      "app/admin/store-page/",
+      "components/admin/documentos/ (sin DocumentosModule.tsx ni DocumentPreviewModal.tsx)",
+      "components/admin/adelantos/ (sin cobranza/MetaModal.tsx)",
+      "ActivosModule.tsx",
+      "components/admin/rrhh/",
+      "components/admin/settings/",
+      "components/admin/inicio/",
+      "components/admin/metas/",
+      "components/admin/comandos-ia/",
+      "GlobalSearch.tsx",
+      "ImageCropModal.tsx"
+     ],
+     "tipo": "frontend",
+     "toca": "Modales (UI) de clientes, canales, gestión e inicio."
+    },
+    {
+     "k": "O6-G1",
+     "titulo": "Archivos gigantes de comercio, sin cambiar comportamiento",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 y §7.0 y .claude/rules/code-quality.md §5. Toca SOLO tus archivos y sus piezas nuevas: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: líneas antes y después por archivo, piezas creadas, pendientes y «Para acelerar:». MODELO: Opus. TAREA: el comportamiento no cambia. Parte cada archivo en componentes de 300 líneas o menos, extrayendo de abajo hacia arriba y copiando a nivel shell, sin reescribir lógica. Sigue este orden y llega hasta donde alcance: StoreCustomizer 3.672 · unified/DocumentosModule 3.545 · PrestamosModule 2.865 · ContratosModule 1.773 · CotizacionesModule 1.578 · documentos/DocumentPreviewModal 1.570 · GuiasRemisionModule 1.393 · marketplace/tabs/ProductosTab 1.104 · DevolucionesProveedorModule 1.091 · RepartidoresTab 1.009. Para cada archivo: un diff que muestre que no se perdió lógica (líneas que no son className), vitest related y 1 captura. Las piezas nuevas van en la carpeta de su módulo. Lo que no alcances, déjalo listado en el reporte. CIERRE: npm run typecheck.",
+     "archivos": [
+      "StoreCustomizer.tsx",
+      "components/admin/unified/DocumentosModule.tsx",
+      "PrestamosModule.tsx",
+      "ContratosModule.tsx",
+      "CotizacionesModule.tsx",
+      "components/admin/documentos/DocumentPreviewModal.tsx",
+      "GuiasRemisionModule.tsx",
+      "components/admin/marketplace/tabs/ProductosTab.tsx",
+      "DevolucionesProveedorModule.tsx",
+      "RepartidoresTab.tsx",
+      "piezas nuevas en las carpetas de esos módulos"
+     ],
+     "tipo": "frontend",
+     "toca": "Partir archivos sin cambiar comportamiento."
+    },
+    {
+     "k": "O6-C1",
+     "titulo": "Contador de efectivo e historial de cierres únicos",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 (R1-R7), §5 (contrato de diseño) y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. No toques los registros de pestañas. Nada se borra. Sin git stash/reset/checkout/commit. CIERRE: npm run typecheck 1 vez, vitest de la lógica tocada y 1 captura. El reporte final va en TEXTO: archivos exactos, cifras, pendientes y «Para acelerar:». MODELO: Opus. Al final revisan tu diff un reviewer Opus y security, porque es dinero. Hay invariantes que NO se tocan (memoria ventas-caja-potenciada-2026-10-08): un cierre sin conteo es close(null) + esCierreAutomatico; el cobro de fiado a caja lleva lock; la comisión no se paga dos veces. TAREA: 1) Hoy hay 3 contadores de efectivo por denominaciones: arqueo/ContadorEfectivo (259 líneas), turnos/ConteoDenominaciones (80) y caja/ModalArqueoGuiado + ModalArqueoExpress (364). Déjalos en uno solo, components/admin/caja/ContadorEfectivo.tsx (haz ls antes), que usan Turnos, Caja y Cuadrar. Las sumas llevan tests de denominaciones y centavos. 2) Hoy hay 3 historiales: CajaHistorial, TurnosHistorial + HistorialTabla y TablaCuadres. Déjalos en un solo historial filtrable (turno · caja · cuadre) en Ventas y caja › Caja. Los Cierres de Mi Plata (HistorialCierresTab) siguen con su propio lector y un enlace. 3) Los endpoints y las escrituras no cambian: el carril es solo UI. Verifica en main abrir y cerrar turno, y el arqueo guiado y el exprés.",
+     "archivos": [
+      "components/admin/caja/",
+      "components/admin/turnos/",
+      "components/admin/arqueo/"
+     ],
+     "tipo": "frontend",
+     "toca": "Caja. Es dinero: pasa por reviewer y security, con las invariantes de cierre."
+    },
+    {
+     "k": "O6-B1",
+     "titulo": "Datos de Mi Plata aprobados (presupuesto único, gastos de máquinas, alquileres)",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, SELECT antes y después, pendientes y «Para acelerar:». MODELO: Opus. Haz SOLO los puntos que Brandon aprobó por escrito (decisiones 7 y 8). Al final, un reviewer Opus revisa el diff. Si algo pidiera cambiar el schema, carga migration-planner y para. REGLAS: lib/db/*.db.ts es la única vía a Prisma; tenantId va primero y sin fallback; Zod con safeParse; invalidate después de cada write; los totales se calculan en el backend. TAREA: a) Presupuesto único en ExpenseBudget. Escribe un script idempotente con --seco que migra, por tenant, la nota «__PRESUPUESTO_MENSUAL__» (app/api/presupuesto/route.ts). /api/presupuesto pasa a leer y escribir ExpenseBudget. Lo guardado en el localStorage «bodega-budget-config» (BudgetVsRealTab.tsx:91) se ofrece importar una sola vez. use-secciones-con-datos.ts:39 pasa a mirar el almacén nuevo. b) Los gastos de máquinas (AssetExpense) aparecen en Gastos y en Ganancias y pérdidas, marcados «de máquina». Se leen desde su tabla; no se copian filas. c) Los alquileres pendientes (AssetIncome) aparecen en «Todo lo que me deben» con un tipo nuevo, «alquiler» (por-cobrar.db.ts:72). VERIFICACIÓN: SELECT READ ONLY antes y después en main (1 fila en ExpenseBudget; 4 gastos de máquina por S/ 2.700,00) y en Blas; captura de Mi Plata; tests.",
+     "archivos": [
+      "app/api/presupuesto/route.ts",
+      "app/api/expenses/presupuesto/route.ts",
+      "lib/db/ (presupuesto, por-cobrar.db.ts, assets.db.ts)",
+      "lib/finance/",
+      "components/admin/unified/finanzas/use-secciones-con-datos.ts",
+      "BudgetVsRealTab.tsx",
+      "scripts/migrar-presupuesto-unico.mjs",
+      "__tests__/"
+     ],
+     "tipo": "backend",
+     "toca": "Datos de Mi Plata: migración de datos solo con el OK de Brandon. Pasa por reviewer."
+    },
+    {
+     "k": "O6-B2",
+     "titulo": "Datos de clientes y catálogo aprobados (plantillas, precios del mercado, metas de cobranza, segmentos, recetario)",
+     "prompt": "CONTEXTO: repo /home/usuario/proyectos/Mercado, checkout principal (nunca worktree). SP=/tmp/claude-1000/-home-usuario-proyectos-Mercado/ce6f086b-a736-4d2b-be95-41a0a8c6777a/scratchpad. PLAN=docs/panel/plan-unificacion-2026-10.md (si no existe, SP/panel/plan.md). Cumple sus §1 y §7.0. Toca SOLO tus archivos: otros agentes editan en paralelo, así que haz ls antes de crear. Sin git stash/reset/checkout/commit. El reporte final va en TEXTO: archivos exactos, dry-run y resultado, pendientes y «Para acelerar:». MODELO: Opus. Haz SOLO los puntos aprobados por escrito (decisiones 9, 10, 11 y 12). Usa las mismas reglas de backend que O6-B1. Si un punto pide un modelo nuevo: migration-planner + agente database. Es zona de peligro (prisma/schema.prisma con DIRECT_URL). Al final, un reviewer revisa el diff. TAREA: a) Plantillas de mensajes en el servidor: una sola fuente que leen los 3 compositores (WhatsAppTemplates/quick-replies, ChatTab/TemplatesPanel y WaTemplatePicker), con una importación única de lo que hoy está guardado en el navegador. b) Precios del mercado (CompetitorPriceTracker) guardados en la base, por tenant. c) Las metas de cobranza (fiados/cobranza/MetaModal.tsx:38 y adelantos/cobranza/MetaModal.tsx:39) pasan a AdminGoal con área Cobranza, y sus vistas leen /api/goals/avance. d) Un solo criterio de segmentos en el servidor (/api/analytics/rfm) para el filtro de Mis clientes, Segmentos, la audiencia de Campañas e Inicio › Clientes. e) El Recetario entra en Recetas: las notas de /api/admin/recetario pasan a recetas con salida imprimible. Cada punto lleva dry-run, tests y captura.",
+     "archivos": [
+      "lib/db/",
+      "app/api/ (plantillas, precios del mercado, goals, analytics/rfm, recetario)",
+      "components/admin/whatsapp/inbox/WaTemplatePicker.tsx",
+      "WhatsAppTemplates.tsx",
+      "components/admin/ChatTab/TemplatesPanel.tsx",
+      "components/admin/analytics/CompetitorPriceTracker.tsx",
+      "components/admin/fiados/cobranza/MetaModal.tsx",
+      "components/admin/adelantos/cobranza/MetaModal.tsx",
+      "components/admin/crm/CrmFiltros.tsx",
+      "RecetasModule.tsx",
+      "RecetarioAdminTab.tsx",
+      "scripts/migrar-*.mjs",
+      "__tests__/"
+     ],
+     "tipo": "backend",
+     "toca": "Datos de clientes y catálogo. Si toca el schema, es zona de peligro con migration-planner. Solo con el OK de Brandon."
+    }
+   ]
+  }
+ ],
+ "decideBrandon": [
+  "Altura de botones y filtros: 40 px (más compacto) o 48 px (más cómodo con el dedo). Hay que decidirlo antes de la tanda 5.",
+  "Tarjeta de cifra del Inicio de hoy: ¿queda como modelo oficial o se iguala a la del resto del panel?",
+  "Fiados: ¿su casa es Ventas y caja › Me deben, donde se cobran (recomendado), o Mi Plata?",
+  "¿Juntar Turnos y Caja en «Turno y caja», de modo que abrir el turno abra también la caja? Toca dinero.",
+  "Delivery: ¿dentro de Pedidos como «Pedidos y reparto» (recomendado) o como pestaña propia en Ventas?",
+  "Leads: ¿son interesados de tu negocio o el embudo de venta de Buleje? Si es lo segundo, pasa a Superadmin.",
+  "Un solo presupuesto: hoy vive en 3 lugares, y el que cargaste en Compras no se ve en Mi Plata.",
+  "Gastos de máquinas (S/ 2.700 en main) y alquileres pendientes: ¿entran a Gastos, a Ganancias y pérdidas y a «Todo lo que me deben»?",
+  "Un solo criterio para agrupar clientes: hoy un mismo cliente sale «VIP», «Champions» y «Frecuente» en 3 pantallas distintas.",
+  "Plantillas de mensajes y precios de la competencia guardados en el servidor: hoy cada computadora ve los suyos.",
+  "Metas de cobranza de Fiados y Adelantos dentro de Metas y logros, como una sola forma de poner metas.",
+  "Recetario dentro de Recetas, para escribir cada receta una sola vez.",
+  "Lotes comerciales con QR dentro de Libro CTP › Despacho. Tú los sacaste del menú el 09-09; el QR seguiría abriendo.",
+  "La plantilla general de Superadmin oculta Mi Plata, Compras, Clientes y Documentos en 11 de 14 negocios. ¿Se mantiene así? Antes hay que confirmar en el navegador si main también los oculta.",
+  "El cajero hoy solo ve Pedidos y Clientes en la barra, por un error de nombres viejos. Arreglarlo hace que vea también Ventas y caja, Productos, Mensajes y otras. ¿Lo quieres así?",
+  "Código que nadie usa: comisiones viejas, auditoría vieja, asistente flotante, 4 gráficos de análisis, avisos de lotes, tarjetas de cumpleaños e inactivos y una copia vieja de los tipos del panel. ¿Se monta o se borra?",
+  "«En vivo» muestra transmisiones de ejemplo: ¿marcarlas como «Ejemplo» o esconderlas hasta conectarlas de verdad?",
+  "Nombres nuevos: «Mi Plata», «Equipo» (y en Configuración, «Usuarios y acceso»), «Comprobantes», «Documentos», «Tienda online» y «Abastecimiento». Además, renombrar los contratos del forestal a «Tratos por permiso».",
+  "Marketplace › Órdenes: si la medición muestra que son los mismos pedidos que ves en Pedidos, ¿se juntan?",
+  "Catálogo de planes: hay dos, con nombres distintos para el mismo plan. Unificarlos toca los cobros y va como trabajo aparte con revisión de seguridad.",
+  "Opción de la barra: ¿Mi Plata, Equipo y Documentos como 3 enlaces directos (1 clic) o dentro de un grupo «Gestión» (2 renglones menos y 1 clic más)?"
+ ]
+}

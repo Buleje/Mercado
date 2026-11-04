@@ -1,0 +1,23 @@
+Pedidos del agente B (Ingresos, Producción, Despacho + Guías) — 2026-10-17
+
+1) Para E (CTPLibroOperaciones.tsx): pasar `period={period}` a <CtpDespachoPestanas>.
+   Hoy la sección «Guías emitidas» de Despacho saca el período de `despachos.props.period`
+   (el <CtpEntriesView> que ya recibe), así que anda igual; el prop explícito es más claro.
+   `?vista=guias` sigue pintando la vista vieja (con «Ir a Despacho») hasta que E la mude a
+   `vista=despacho&sub=guias`.
+
+2) Para A (libro-chrome, riel): a 1280 con la barra lateral el riel mide ~60,25rem (964 px);
+   las pestañas de Operación ocupan ~696 px y quedan ~240 px para acciones. Ingresos manda
+   Indicadores + lupa + Filtros + Opciones + Nuevo (~370 px) y Despacho lo mismo: con el
+   tablist en flex-1/overflow-x-auto las pestañas se deslizan y Despacho queda tapado.
+   Propuesta: subir el umbral del nowrap (p. ej. 72rem) para que a 1280 las acciones envuelvan
+   a su propia línea, o rótulos cortos en las pestañas. (Ver medidas en el reporte de B.)
+
+3) Para A (libro-chrome, MEDIDO 14:36): la pestaña ACTIVA del riel de vistas queda fuera de
+   la vista y nadie la desliza a la vista (no hay scrollIntoView en libro-chrome.tsx:392).
+   - 1280: Despacho activa → tablist «Operación» 554 de 694 px, Despacho visible:false.
+   - 400 (tablist en su propia fila, 350 de 670 px): Producción y Despacho visible:false;
+     esto ya pasaba antes de B (a 400 las acciones van en otra fila).
+   Arreglo propuesto: al cambiar `activa`, `tabRef.scrollIntoView({inline:"nearest",
+   block:"nearest"})` (o fijar scrollLeft del tablist). Sin eso el usuario no ve en qué
+   pestaña está.

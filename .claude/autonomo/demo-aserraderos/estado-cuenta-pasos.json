@@ -1,0 +1,71 @@
+[
+{
+"eval": "(async()=>{const c=decodeURIComponent(document.cookie.match(/csrf-token=([^;]+)/)?.[1]||'');const r=await fetch('/api/admin/forestal/cubicaciones',{method:'POST',headers:{'content-type':'application/json','x-csrf-token':c},credentials:'include',body:JSON.stringify({nombre:'Carga 14 de tornillo',fecha:'2026-10-31',cliente:'Maderera El Bosque',precioPt:0,gtfNumber:'001-0000245',ficha:{comunidad:'CCNN Demo',placa:'ABC-123',tituloHabilitante:'25-DEMO-001',chofer:'Chofer Demo',adelanto:'3000.00'},piezas:[{id:'p1',cantidad:40,espesor:2,ancho:8,largo:10,especie:'Tornillo',tipo:'Comercial',precio:5.5},{id:'p2',cantidad:30,espesor:2,ancho:4,largo:10,especie:'Tornillo',tipo:'Larga angosta',precio:4.2},{id:'p3',cantidad:25,espesor:2,ancho:6,largo:6,especie:'Tornillo',tipo:'Corta',precio:3},{id:'p4',cantidad:20,espesor:2,ancho:8,largo:12,especie:'Cumala',tipo:'Comercial',precio:3.8}]})});if(!r.ok)throw new Error('no se sembró: HTTP '+r.status+' '+(await r.text()).slice(0,200));location.reload()})()"
+},
+{
+"esperar": "article[aria-label=\"Carga 14 de tornillo\"]"
+},
+{
+"click": "article[aria-label=\"Carga 14 de tornillo\"] >> text=Ver detalle"
+},
+{
+"click": "[data-accion=estado-cuenta-carga]"
+},
+{
+"esperar": "[data-total]"
+},
+{
+"llenar": [
+"[role=dialog] label:has-text(\"Carga\") input",
+"Carga 14 de tornillo · Camión ABC-123 (31/10)"
+]
+},
+{
+"llenar": [
+"input[aria-label=\"Lo que ya dio el cliente (se resta): concepto\"]",
+"Adelanto en efectivo (28/10)"
+]
+},
+{
+"eval": "(()=>{const ins=[...document.querySelectorAll('input[aria-label=\"Lo que se suma: monto en soles\"]')];return ins.length})()"
+},
+{
+"llenar": [
+"input[aria-label=\"Lo que se suma: monto en soles\"] >> nth=0",
+"1250"
+]
+},
+{
+"llenar": [
+"input[aria-label=\"Lo que se suma: aclaración\"] >> nth=0",
+"Carga del 20/10, ya descontado su depósito de S/ 2,000"
+]
+},
+{
+"llenar": [
+"input[aria-label=\"Lo que se suma: monto en soles\"] >> nth=1",
+"300"
+]
+},
+{
+"eval": "document.querySelector('[data-total]').getAttribute('data-total')+' | '+[...document.querySelectorAll('[role=dialog] tbody tr')].map(t=>t.innerText.replace(/\\s+/g,' ')).join(' / ')"
+},
+{
+"eval": "(()=>{document.activeElement&&document.activeElement.blur();const i=document.querySelector('[data-total]').closest('[role=dialog]').querySelector('input');i.scrollIntoView({block:'start'});let e=i.parentElement;while(e&&e.scrollTop===0)e=e.parentElement;if(e){e.scrollTop=Math.max(0,e.scrollTop-110)};return (e?e.tagName+':'+e.scrollTop:'nada')+' y='+Math.round(i.getBoundingClientRect().top)})()"
+},
+{
+"captura": "1-carga"
+},
+{
+"eval": "(()=>{document.querySelector('[data-total]').scrollIntoView({block:'end'});return document.querySelector('[data-total]').getBoundingClientRect().bottom})()"
+},
+{
+"captura": "2-total"
+},
+{
+"bajar": "[data-accion=bajar-estado-cuenta]"
+},
+{
+"eval": "(async()=>{const c=decodeURIComponent(document.cookie.match(/csrf-token=([^;]+)/)?.[1]||'');const l=await (await fetch('/api/admin/forestal/cubicaciones',{credentials:'include'})).json();const ids=(l.cubicaciones||[]).filter(x=>x.nombre==='Carga 14 de tornillo'&&x.cliente==='Maderera El Bosque').map(x=>x.id);const st=[];for(const id of ids){const r=await fetch('/api/admin/forestal/cubicaciones?id='+encodeURIComponent(id),{method:'DELETE',headers:{'x-csrf-token':c},credentials:'include'});st.push(r.status)}return {borradas:ids.length,estados:st}})()"
+}
+]

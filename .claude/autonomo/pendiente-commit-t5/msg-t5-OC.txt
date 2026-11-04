@@ -1,0 +1,13 @@
+refactor(compras): ordenes de compra partida en piezas y recurrentes con pausar y activar
+
+- PurchaseOrdersTab de 2331 a 171 lineas: 8 hooks encadenados y 15 bloques en
+  components/admin/ordenes-compra (mismo DOM, probado contra el original)
+- cabecera en una fila, indicadores plegables y recordados, buscador y chips
+  pegados a la lista
+- recurrentes: lista de pausados con activar (fecha vencida pasa a hoy + intervalo)
+  y boton pausar en cada activo; las plantillas de punto de compra ya se ven aca
+- un aviso nuevo reinicia el temporizador del anterior
+- texto de aviso ambar con token ink (contraste en claro)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Hhr4AnXJ3u4wWG6fZKtjpw

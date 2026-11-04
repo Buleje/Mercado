@@ -1,0 +1,1474 @@
+BULEJE / COMPRAS                                                                                                  15 OCT 2026
+
+
+
+
+ BULEJE · AUDITORÍA AMPLIADA · 15 OCTUBRE 2026
+
+
+
+
+ Compras más ágiles.
+ Abastecimiento
+ con criterio.
+ Todas las pestañas, mejores conexiones y nuevas funciones
+ Revisión de Comprar, Órdenes y Recepciones, Sugerencias, Proveedores y Comparar, Por pagar y
+ Devoluciones. Plan para comprar con menos recaptura y controlar lo pedido, recibido, facturado y pagado.
+
+    CONTENIDO                          RESULTADO
+
+
+    Diagnóstico                        14 observaciones de interfaz, con evidencia y límites.
+
+
+    Mejoras                            64 propuestas con prioridad, esfuerzo relativo y aceptación.
+
+
+    Nuevos espacios                    8 fichas funcionales para ampliar el módulo sin saturarlo.
+
+
+    Diseño y ejecución                 4 bocetos; flujos, accesos rápidos, fases, pruebas y métricas.
+
+
+
+   Lo primero que resolvería
+   Asegurar que descartar o vaciar la canasta se conserve al volver; identificar producto, cantidad y costo;
+   aclarar la diferencia entre crear una orden, recibir mercadería y registrar un pago.
+
+ Guía: 2 cobertura; 3-4 hallazgos; 5-12 mejoras por área; 13-14 flujos y navegación; 15-18 nuevos espacios; 19-22 bocetos;
+ 23-26 ejecución, pruebas, métricas y fuentes.
+
+ Documento de auditoría y propuestas. No se modificó el código ni se implementaron pestañas. No se emitieron órdenes,
+ guardaron recepciones, crearon deudas, enviaron mensajes ni realizaron pagos.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                  01
+BULEJE / COMPRAS                                                                                                          15 OCT 2026
+
+
+
+
+ COMPRAS / 02
+
+
+
+ Cobertura y límites
+ Inspección directa de la interfaz de escritorio: /admin?tab=compras#compras, el 15 de octubre de 2026.
+
+    ÁREA                          RECORRIDO REAL
+
+
+    Comprar                       Catálogo, Mi inventario, reposición, proveedor, categorías, búsqueda, F2, Más; Carrito,
+                                  Frecuentes, Paquetes y plantillas.
+
+
+    Canasta / factura             Línea sugerida de 21 unidades, costo ficticio S/10 y vista de IGV incluido. Menú
+                                  WhatsApp/PDF/borrador/venta. Leer factura: cámara e imagen, sin cargar archivos.
+
+
+    Órdenes                       Indicadores expandidos; estado vacío; Más con historial, comparación de hasta 3 órdenes y
+                                  Excel deshabilitados según disponibilidad.
+
+
+    Recepciones                   Tabla y filtros; modal Recibir: proveedor, N° OC, fecha, inspector, checklist, condición, lote,
+                                  vencimiento y foto. Cerrado sin guardar.
+
+
+    Sugerencias                   Ventanas de análisis, bajo mínimo sin ventas, sin rotación, reorden por predicción y qué se
+                                  acaba esta semana; paneles expandidos.
+
+
+    Proveedores                   Lista, filtros, ficha Simple/Completo y comercial; menús de fila y global; Comparar, evaluación,
+                                  ganancias, precio por producto y mercado.
+
+
+    Por pagar                     Estado sin deuda; Nueva cuenta y campos; Más con actualizar/CSV. Formulario cancelado sin
+                                  crear.
+
+
+    Devoluciones                  Filtros, registro existente de prueba y detalle; alta sin guardar; motivos, unidades, costo,
+                                  exportación y menú de eliminación.
+
+
+
+ Muestra y límites
+ Se vieron 0 órdenes, 0 recepciones, 0 cuentas por pagar, 1 proveedor de prueba y 1 devolución previa. No se verificaron
+ entregas, pagos, conciliación bancaria, OCR real, PDF exportado, cálculos con históricos ni efectos de servidor. No se revisó
+ código, seguridad, móvil u otros perfiles.
+
+ La prueba local fue 21 x S/10 = S/210; con IGV incluido se mostró S/32.03. No es un costo real ni una compra. La limpieza
+ mostró canasta vacía, pero la línea reapareció al navegar rápidamente fuera y volver: ver O01 y pruebas de regresión.
+
+ P1: integridad y dinero. P2: claridad y rapidez. P3: diferenciación. B/M/A: esfuerzo relativo bajo/medio/alto, sujeto a revisar
+ código y dependencias.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                         02
+BULEJE / COMPRAS                                                                                                       15 OCT 2026
+
+
+
+
+ COMPRAS / 03
+
+
+
+ Siete hallazgos en Comprar
+ Situaciones observadas; su impacto es una interpretación de diseño. No prueban que el servidor permita
+ guardar datos incorrectos.
+
+ O01 · Vaciar no se conservó al volver
+ Eliminar la línea dejó la canasta vacía; al cambiar de pestaña y regresar reaparecieron las 21 unidades a S/10. Ocurrió tras
+ Limpiar y confirmar, al navegar enseguida y después de dejar tiempo. Revisar persistencia, sincronización y guardado. C07,
+ C58.
+
+ O02 · Un clic añade toda la sugerencia
+ Tabla de tornillo 1m ofrecía 21 unidades y el clic añadió las 21. El nombre accesible lo explica; conviene una acción visible
+ distinta de +1 para evitar cantidades no intencionadas. C02.
+
+ O03 · Costo del catálogo y costo vacío
+ La tarjeta mostraba costo S/35 en su ayuda; la canasta pidió costo y quedó en cero total hasta escribirlo. Hacer explícita la
+ fuente y permitir reutilizarla con revisión. C03.
+
+ O04 · Subtotal e IGV incluido
+ En el ejemplo, Subtotal S/210 y Total S/210 coexistieron con IGV S/32.03. El cálculo del impuesto incluido cuadra; faltó base
+ visible y mayor claridad de etiquetas. C04.
+
+ O05 · Método mezcla medio y plazo
+ La lista Método de pago contiene Contado, Crédito 7/15/30 días y Transferencia. Un pago por transferencia también puede ser
+ a crédito; separar ambos conceptos. C05.
+
+ O06 · Un solo selector para documentos distintos
+ Comprobante del proveedor ofrece Sin comprobante, Factura, Boleta y Guía de remisión. Permitir documentos de facturación y
+ de traslado vinculados por separado evita excluir uno al elegir otro. C06.
+
+ O07 · Naturaleza de la compra poco diferenciada
+ Aserrado de madera aparece agotado y con reposición de 30 und; el alquiler de Cargador Frontal CAT aparece con stock en
+ horas. Revisar configuración y distinguir inventario, servicio y alquiler antes de sugerir stock físico. C01, C25.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                      03
+BULEJE / COMPRAS                                                                                                         15 OCT 2026
+
+
+
+
+ COMPRAS / 04
+
+
+
+ Siete hallazgos del ciclo completo
+ La aplicación ya tiene capacidades amplias. Las oportunidades principales son precisión, continuidad y
+ trazabilidad.
+
+ O08 · Cantidades sin etiquetas en recepción
+ El checklist presenta dos campos numéricos con cero, sin nombres visibles ni accesibles que expliquen cada cantidad.
+ Confirmado visualmente en el modal. C17.
+
+ O09 · Referencia de orden escrita a mano
+ Recibir pide Nro. Orden de Compra con ejemplo OC-001. No se vio selección y precarga desde una orden en ese formulario
+ vacío. No había órdenes para probar otra entrada. C18.
+
+ O10 · Sugerencias con criterios diferentes
+ Comprar sugiere metas; Sugerencias dice Nada que reponer con ventas de 30 días, pero muestra 2 bajo mínimo, además de
+ predicción y semana. No es contradicción aritmética: unificar prioridad y explicar cada criterio. C26-C28.
+
+ O11 · Ficha abre edición directamente
+ Ficha del proveedor abrió Editar proveedor. La pantalla completa ya tiene identificación, contacto y condiciones; añadir
+ resumen de consulta y separar Editar reduce cambios accidentales. C33.
+
+ O12 · Mercado guardado en el navegador
+ El propio panel indica almacenamiento en este navegador. Ya existe comparación de competencia; ampliar colaboración,
+ vigencia y origen, manteniendo estos precios separados de cotizaciones reales. C38.
+
+ O13 · Deuda manual con referencia libre
+ Nueva cuenta permite proveedor, monto, Qué es y vencimiento. No se vio campo estructurado de factura/orden ni adjunto en
+ esa captura; revisar duplicados con cuentas automáticas de compras a crédito. C41-C42.
+
+ O14 · Devolución sin costo y eliminación definitiva
+ El registro previo mostraba 1 und de Aserrado, S/0 en indicadores y detalle sin valoración. Su menú advierte eliminación
+ definitiva y restitución de stock si se retiró. No se ejecutó. Reforzar costo pendiente, origen y reversión trazable. C49, C51,
+ C55.
+
+
+ Conservar y potenciar
+ OCR; F2; frecuentes, paquetes y plantillas; comparación de cotizaciones; recepción con condiciones/lotes; predicción;
+ evaluación con mínimo de 3 órdenes; rentabilidad y precios por producto; deuda automática a crédito; CSV/Excel y filtros.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                        04
+BULEJE / COMPRAS                                                                                         15 OCT 2026
+
+
+
+
+ COMPRAS / 05
+
+
+
+ Comprar: rapidez con revisión
+ Ocho mejoras sobre la canasta y el catálogo existentes.
+
+ C01 · Compra según naturaleza
+ P1 · Esfuerzo M | Mostrar inventariable, servicio, alquiler o gasto y adaptar unidad, reposición y recepción.
+ Aceptación: Un servicio no solicita unidades físicas ni fecha de vencimiento por defecto.
+
+ C02 · +1 y añadir sugerido separados
+ P2 · Esfuerzo B | Dar dos acciones; al añadir sugerido, mostrar cantidad y explicación antes de aceptar.
+ Aceptación: El usuario distingue 1 de 21; puede editar cantidad directamente sin 20 clics.
+
+ C03 · Costo con fuente y antigüedad
+ P1 · Esfuerzo M | Ofrecer último costo, cotización y costo de ficha, indicando fecha, proveedor y moneda.
+ Aceptación: Una línea sin costo queda pendiente; usar un valor previo requiere identificar su origen.
+
+ C04 · Base, tributo y total claros
+ P1 · Esfuerzo M | Aclarar precio incluido/excluido, descuentos, cargos y redondeo por política aplicable.
+ Aceptación: El ejemplo de S/210 incluido muestra base S/177.97 e impuesto S/32.03; no se aplica 18%
+ universalmente.
+
+ C05 · Condición y medio independientes
+ P1 · Esfuerzo M | Separar contado/crédito/cuotas del medio previsto; pedir vencimiento sólo cuando
+ corresponde.
+ Aceptación: Crédito 15 días puede combinarse con transferencia; crear orden no registra por sí solo un pago.
+
+ C06 · Documentos vinculados por función
+ P1 · Esfuerzo M | Guardar factura/boleta, guía y evidencias en campos distintos, con emisor, serie y número.
+ Aceptación: Una operación conserva factura y guía a la vez; Sin comprobante se muestra como pendiente
+ documental.
+
+ C07 · Borrador persistente y descarte fiable
+ P1 · Esfuerzo A | Mostrar guardando/guardado/error, dueño y fecha; vaciar debe invalidar el borrador anterior.
+ Aceptación: Tras quitar la última línea o limpiar, navegar o recargar no resucita productos; revisar también dos
+ pestañas.
+
+ C08 · Revisión final y CTA coherente
+ P1 · Esfuerzo M | Resumen con proveedor, cantidades, costos, total, entrega y pendientes; habilitar según
+ validación.
+ Aceptación: Faltan proveedor o costo: se explican antes de confirmar y el servidor valida; no se presupone que
+ hoy los acepte.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                      05
+BULEJE / COMPRAS                                                                                       15 OCT 2026
+
+
+
+
+ COMPRAS / 06
+
+
+
+ Órdenes: de intención a seguimiento
+ Ampliar la gestión existente; el comparador de hasta tres órdenes y Excel ya aparecen en Más.
+
+ C09 · Expediente de compra único
+ P1 · Esfuerzo A | Unir solicitud, versiones de orden, recepción, factura, deuda y pagos mediante referencias
+ estables.
+ Aceptación: Abrir una orden muestra sus documentos y saldos; no genera registros duplicados.
+
+ C10 · Estados separados y próxima acción
+ P1 · Esfuerzo M | Distinguir aprobación, confirmación del proveedor, entrega, facturación y pago.
+ Aceptación: Una orden pagada puede seguir pendiente de recepción; cada estado indica responsable y
+ siguiente paso.
+
+ C11 · Comparar ofertas equivalentes
+ P2 · Esfuerzo A | Extender el comparador existente con unidad normalizada, flete, moneda, impuestos y plazo.
+ Aceptación: Una caja de 12 se compara con 12 unidades; no gana una oferta sólo por su precio nominal.
+
+ C12 · Aprobación por excepción
+ P1 · Esfuerzo A | Definir umbrales por monto, categoría o desviación; registrar versión aprobada y motivo.
+ Aceptación: Cambiar cantidad o precio relevante exige nueva revisión; el aprobador ve el efecto completo.
+
+ C13 · Acuse y fecha prometida
+ P2 · Esfuerzo M | Preparar envío con destinatario revisable y registrar aceptación o cambio del proveedor.
+ Aceptación: Enviar WhatsApp no equivale a confirmar entrega; el acuse conserva evidencia y nueva fecha.
+
+ C14 · Calendario de pendientes
+ P2 · Esfuerzo M | Vista por fecha y almacén con entregas previstas, parciales y atrasadas; acceso a Recibir.
+ Aceptación: Cambiar una fecha deja rastro y actualiza la planificación sin marcar mercadería como recibida.
+
+ C15 · Versiones y cancelación explicadas
+ P1 · Esfuerzo A | Comparar cambios de orden y gestionar cancelación según lo recibido/facturado/pagado.
+ Aceptación: Cancelar no borra recepciones ni devuelve dinero automáticamente; muestra remanentes y
+ acciones.
+
+ C16 · Repetir con revalidación
+ P2 · Esfuerzo M | Desde historial o frecuentes, copiar líneas y proponer actualización de costos, proveedor y
+ entrega.
+ Aceptación: No se copian comprobantes ni pagos previos; las condiciones vencidas quedan señaladas.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                      06
+BULEJE / COMPRAS                                                                                        15 OCT 2026
+
+
+
+
+ COMPRAS / 07
+
+
+
+ Recepciones: aceptar lo correcto
+ El checklist de daño, vencimiento, faltante, lote y vencimiento ya existe; estas mejoras lo hacen más preciso.
+
+ C17 · Etiquetar cantidades y unidades
+ P1 · Esfuerzo B | Identificar esperado, entregado, aceptado y rechazado; mostrar unidad en cada campo y
+ nombre accesible.
+ Aceptación: Se comprende qué representan ambos ceros actuales sin abrir ayuda; teclado y lector distinguen
+ los campos.
+
+ C18 · Elegir orden y precargar
+ P1 · Esfuerzo M | Buscar OC por código, proveedor o fecha y traer líneas pendientes; permitir sin OC con
+ motivo explícito.
+ Aceptación: La recepción queda vinculada al identificador real; un texto coincidente no reemplaza ese vínculo.
+
+ C19 · Parciales y remanente visible
+ P1 · Esfuerzo A | Mostrar acumulado recibido, pendiente y cierre de faltante definitivo con revisión.
+ Aceptación: Dos recepciones parciales no superan la orden sin excepción autorizada; el remanente no
+ desaparece.
+
+ C20 · Aceptación y cuarentena separadas
+ P1 · Esfuerzo A | Definir disponible, en revisión y rechazado por línea; ampliar condiciones actuales con efecto
+ visible.
+ Aceptación: Un producto dañado no aumenta stock vendible; liberar revisión exige una decisión registrada.
+
+ C21 · Escaneo y captura por lote
+ P2 · Esfuerzo A | Recibir por código, serie o bulto, convirtiendo unidad de compra a inventario y conservando
+ evidencia.
+ Aceptación: Escanear dos veces avisa o acumula explícitamente; una caja no se interpreta como una unidad.
+
+ C22 · Fechas y conformidad pertinentes
+ P1 · Esfuerzo M | Separar programada, llegada y aceptación; aplicar lote/vencimiento según producto y
+ conformidad para servicios.
+ Aceptación: Un servicio registra alcance aceptado y responsable; un bien perecible solicita su control
+ pertinente.
+
+ C23 · Confirmar efectos antes de guardar
+ P1 · Esfuerzo A | Resumir cantidades aceptadas/rechazadas, ubicación, costo provisional y pendientes
+ documentales.
+ Aceptación: Guardar recepción no paga ni duplica deuda por accidente; cada efecto usa una identidad
+ rastreable.
+
+ C24 · Corrección con historial
+ P1 · Esfuerzo A | Corregir una recepción mediante ajuste vinculado con motivo, límites y autorización aplicable.
+ Aceptación: El original se conserva; el inventario no se mueve dos veces si se reintenta tras un corte de
+ conexión.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                         07
+BULEJE / COMPRAS                                                                                         15 OCT 2026
+
+
+
+
+ COMPRAS / 08
+
+
+
+ Sugerencias: decidir con contexto
+ La predicción y las alertas semanales ya están presentes. Unificar criterios antes de añadir más
+ recomendaciones.
+
+ C25 · Excluir reposición no pertinente
+ P1 · Esfuerzo M | Aplicar reglas de stock sólo a bienes gestionados como inventario; tratar alquiler y servicios
+ por capacidad o agenda.
+ Aceptación: El tipo de producto explica por qué entra en la lista; no se repone un servicio por saldo físico cero.
+
+ C26 · Una cola de compra explicable
+ P2 · Esfuerzo M | Agrupar mínimo, demanda de 30 días, predicción y semana; permitir ordenar por causa y
+ urgencia.
+ Aceptación: Nada por ventas no oculta los bajo mínimo; cada recomendación conserva su criterio y fecha.
+
+ C27 · Necesidad neta real
+ P1 · Esfuerzo A | Considerar disponible utilizable, reservado, en tránsito confirmado y pedidos abiertos, sin
+ doble conteo.
+ Aceptación: Una orden vigente reduce la siguiente sugerencia cuando corresponde; cancelar la orden vuelve a
+ calcularla.
+
+ C28 · Explicación numérica desplegable
+ P2 · Esfuerzo M | Mostrar demanda, plazo de entrega, cobertura, seguridad y datos insuficientes, ampliando la
+ ayuda Meta actual.
+ Aceptación: El usuario reconstruye la cantidad; una falta de ventas no se presenta como certeza de demanda
+ cero.
+
+ C29 · Simular con presupuesto
+ P3 · Esfuerzo A | Comparar escenarios de cantidad/plazo con límite de inversión y prioridades definidas por el
+ negocio.
+ Aceptación: Simular no emite órdenes; se ve el gasto propuesto y qué demanda queda sin cubrir.
+
+ C30 · Mínimos y múltiplos del proveedor
+ P2 · Esfuerzo M | Aplicar presentación, mínimo de compra, caducidad y capacidad de almacén a la sugerencia.
+ Aceptación: Redondear a cajas muestra unidades y excedente; el ajuste es revisable antes de pedir.
+
+ C31 · Mover antes de comprar
+ P3 · Esfuerzo A | Sugerir transferencia entre almacenes o sustituto aprobado cuando exista stock utilizable.
+ Aceptación: La alternativa respeta reservas y costo de traslado; no sustituye un producto sin revisión.
+
+ C32 · Aprender del resultado
+ P3 · Esfuerzo A | Comparar pronóstico con demanda, faltantes y excedentes; registrar por qué el comprador
+ cambió la cantidad.
+ Aceptación: Se ve muestra y error del pronóstico por período; no se autoaprueba una compra por llamarse IA.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                       08
+BULEJE / COMPRAS                                                                                       15 OCT 2026
+
+
+
+
+ COMPRAS / 09
+
+
+
+ Proveedores: negociar con evidencia
+ Ya existen ficha completa, comparación, evaluación, ganancias y precio por producto. Se propone profundizar y
+ conectar.
+
+ C33 · Resumen de consulta y editar aparte
+ P2 · Esfuerzo M | Ficha inicial de contacto, condiciones, documentación y compras; acción Editar claramente
+ separada.
+ Aceptación: Consultar no entra directamente en formulario editable; volver conserva filtro y proveedor
+ seleccionado.
+
+ C34 · Identidad y duplicados revisables
+ P1 · Esfuerzo M | Buscar por documento normalizado y alias; advertir coincidencias de razón social, documento
+ o contacto.
+ Aceptación: Una coincidencia no fusiona sola; unir proveedores preserva referencias e historial con revisión.
+
+ C35 · Condiciones con vigencia
+ P1 · Esfuerzo M | Versionar plazos, días de crédito, entrega, moneda y cuentas de destino; conservar datos
+ usados en cada operación.
+ Aceptación: Cambiar la ficha no reescribe una orden antigua ni cambia el destino de una propuesta de pago
+ aprobada.
+
+ C36 · Puntaje transparente y comparable
+ P2 · Esfuerzo M | Extender la evaluación existente con período, muestra, fórmula y distinción de atraso/entrega
+ parcial.
+ Aceptación: Sin datos sigue sin evaluar; una orden sin fecha prometida no se clasifica como puntual por
+ defecto.
+
+ C37 · Costo comparable por producto
+ P2 · Esfuerzo A | Potenciar Precio por producto con unidad, flete, descuentos, vigencia y última recepción
+ aceptada.
+ Aceptación: No se ordena por promedio de productos heterogéneos sin contexto; se compara el mismo
+ alcance.
+
+ C38 · Mercado compartido y con origen
+ P2 · Esfuerzo A | Ampliar el panel local con fecha, fuente, moneda, responsable y sincronización opcional de
+ equipo.
+ Aceptación: Una referencia de competencia se distingue de una oferta formal y de un precio realmente
+ pagado.
+
+ C39 · Historial conectado y rentabilidad
+ P2 · Esfuerzo A | Desde proveedor abrir órdenes, recepciones, devoluciones, factura y saldo; explicar
+ asignación del costo a ventas.
+ Aceptación: Ganancia muestra método, período y cobertura; sin trazabilidad no se atribuye rentabilidad
+ exacta.
+
+ C40 · Documentos y acuerdos por vencer
+ P3 · Esfuerzo M | Vigilar vigencia de acuerdos, garantías y documentación exigida por política de la empresa.
+ Aceptación: Las alertas tienen dueño y acción; no se declara validado un documento sólo por estar adjunto.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                      09
+BULEJE / COMPRAS                                                                                           15 OCT 2026
+
+
+
+
+ COMPRAS / 10
+
+
+
+ Por pagar: saldos sin duplicaciones
+ Actualmente no hay cuentas. La alta manual y la creación automática por crédito deben convivir con referencias
+ claras.
+
+ C41 · Cuenta vinculada al origen
+ P1 · Esfuerzo A | Elegir factura, orden o saldo inicial al crear; permitir deuda sin orden con motivo y soporte.
+ Aceptación: Repetir el mismo documento no crea otra deuda; una cuenta manual puede conciliarse con el
+ origen posterior.
+
+ C42 · Referencia de documento estructurada
+ P1 · Esfuerzo M | Separar emisor, tipo, serie, número, fecha y moneda del texto libre Qué es.
+ Aceptación: La búsqueda detecta variantes del mismo número; coincidencias sólo por importe se revisan, no
+ se bloquean solas.
+
+ C43 · Conciliar antes de proponer pago
+ P1 · Esfuerzo A | Cruzar precio de orden, cantidades aceptadas y factura, con tolerancias y excepciones por
+ política [R1].
+ Aceptación: Una diferencia abre revisión; no se ignora una entrega parcial ni se impone la misma regla a todo
+ servicio.
+
+ C44 · Abonos, anticipos y notas aplicados
+ P1 · Esfuerzo A | Mostrar cargo, abonos, crédito aplicable y saldo; separar anticipo no aplicado de gasto o
+ deuda cancelada.
+ Aceptación: Un anticipo se aplica una sola vez y conserva remanente; sumar movimientos no duplica el
+ desembolso.
+
+ C45 · Calendario y antigüedad de saldo
+ P2 · Esfuerzo M | Ver vencido, vence hoy, semana y futuro, con responsable y promesa de pago.
+ Aceptación: Las cifras indican fecha de corte y moneda; reagendar no borra el vencimiento original.
+
+ C46 · Propuesta de pagos revisable
+ P2 · Esfuerzo A | Preparar selección según caja prevista, prioridad y descuentos; mostrar cuenta de destino y
+ documentos.
+ Aceptación: Preparar o aprobar la propuesta no transfiere dinero; ejecución y confirmación tienen acciones
+ distintas.
+
+ C47 · Conciliación del desembolso
+ P1 · Esfuerzo A | Vincular operación bancaria o caja, fecha, importe y soporte; distinguir informado, verificado y
+ conciliado.
+ Aceptación: Un voucher adjunto no prueba por sí solo un pago; un reintento no duplica el abono.
+
+ C48 · Estado de cuenta reproducible
+ P2 · Esfuerzo M | Exportar movimientos y saldos con corte, filtros y conciliaciones pendientes, además del CSV
+ existente.
+ Aceptación: El saldo mostrado se explica por sus componentes; el archivo respeta permisos y no expone
+ cuentas innecesarias.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                         10
+BULEJE / COMPRAS                                                                                          15 OCT 2026
+
+
+
+
+ COMPRAS / 11
+
+
+
+ Devoluciones: recuperar y cerrar
+ La pestaña ya registra motivos, unidades y estados. Vincular el origen y la solución económica aporta mayor
+ control.
+
+ C49 · Elegir recepción y línea de origen
+ P1 · Esfuerzo A | Traer producto, lote, unidad, costo y cantidades aún retornables; alternativa sin origen con
+ motivo.
+ Aceptación: No se devuelve más de lo recibido neto de retornos previos; un servicio usa un ajuste de alcance
+ pertinente.
+
+ C50 · Cantidad y disposición física
+ P1 · Esfuerzo A | Distinguir solicitado, separado, enviado y recibido por proveedor, con ubicación de
+ cuarentena.
+ Aceptación: Marcar enviada mueve sólo la cantidad que corresponde, una vez; pendiente no significa salida
+ confirmada.
+
+ C51 · Costo desconocido visible
+ P1 · Esfuerzo M | Mostrar Pendiente de valoración cuando falte costo; proponer el del origen con fecha y
+ trazabilidad.
+ Aceptación: S/0 no se interpreta como recuperación cero si falta información; el total excluye o identifica esos
+ casos.
+
+ C52 · Solución económica independiente
+ P1 · Esfuerzo A | Elegir reposición, nota de crédito, devolución de dinero u otra solución acordada, con
+ importes.
+ Aceptación: Cerrar el reclamo no acredita efectivo ni cancela deuda sin su movimiento vinculado.
+
+ C53 · Evidencia y seguimiento de reclamo
+ P2 · Esfuerzo M | Añadir fotos pertinentes, contacto, fecha prometida, mensajes preparados y próxima acción.
+ Aceptación: Cada reclamo tiene responsable; preparar texto no lo envía y el destinatario se revisa antes de
+ comunicar.
+
+ C54 · Reposición vinculada y verificable
+ P2 · Esfuerzo A | Seguir el bien sustituto como entrega asociada a la devolución, con inspección y saldo
+ remanente.
+ Aceptación: Una reposición no se factura de nuevo automáticamente ni se cuenta como ahorro sin explicar el
+ criterio.
+
+ C55 · Anular con reversión rastreable
+ P1 · Esfuerzo A | Sustituir la eliminación definitiva por anulación o corrección con motivo y efectos previos
+ calculados.
+ Aceptación: Se conserva el original; no se restaura stock vendible de un bien todavía fuera del almacén.
+
+ C56 · Medir recuperación y reincidencia
+ P3 · Esfuerzo M | Analizar causa, proveedor, lote, días de solución y recuperado frente a solicitado.
+ Aceptación: Tasas usan denominador y período; valor pendiente no se suma como dinero recuperado.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                         11
+BULEJE / COMPRAS                                                                                         15 OCT 2026
+
+
+
+
+ COMPRAS / 12
+
+
+
+ Accesos rápidos y continuidad
+ Mejoras transversales para que las seis pestañas funcionen como una sola operación.
+
+ C57 · Buscador de compras y comandos
+ P2 · Esfuerzo M | Encontrar OC, factura, proveedor o devolución y ofrecer Crear, Recibir o Revisar según
+ contexto.
+ Aceptación: La misma cadena localiza documentos vinculados; el comando abre revisión y no confirma una
+ operación financiera.
+
+ C58 · Guardado resistente a interrupciones
+ P1 · Esfuerzo A | Resolver persistencia del borrador y conflictos entre pestañas; mostrar estado y recuperación.
+ Aceptación: Eliminar la última línea persiste incluso con navegación rápida; una versión vieja no sobrescribe la
+ nueva.
+
+ C59 · Continuar desde el contexto
+ P2 · Esfuerzo M | Abrir Recibir, Ver factura o Revisar deuda desde su origen; volver mantiene filtros y selección.
+ Aceptación: La navegación evita copiar IDs; un enlace conserva módulo/vista tras iniciar sesión.
+
+ C60 · OCR con revisión por campo
+ P1 · Esfuerzo A | Potenciar Leer factura con confianza, fuente visual, unidades y conciliación; evaluar PDF/XML
+ cuando convenga.
+ Aceptación: Ninguna lectura crea una orden o deuda sin revisión; documento repetido y costo incierto se
+ señalan.
+
+ C61 · Plantillas y paquetes fáciles de usar
+ P2 · Esfuerzo M | Añadir acceso al gestor de paquetes, nombres de negocio y versiones de equipo para
+ plantillas.
+ Aceptación: No hay paquetes activos ofrece un paso útil; reutilizar no copia proveedor o precio vencido sin
+ aviso.
+
+ C62 · Permisos y bitácora por efecto
+ P1 · Esfuerzo A | Separar preparar, aprobar, recibir, ajustar y registrar pagos, según tamaño del equipo.
+ Aceptación: Autor, fecha, antes/después y motivo quedan trazables; los límites se validan en servidor, no sólo
+ ocultando botones.
+
+ C63 · Teclado y móvil por tarea
+ P2 · Esfuerzo M | Conservar F2 y añadir accesos anunciados, foco, etiquetas, errores junto al campo y
+ recepción móvil.
+ Aceptación: Sin ratón se revisa canasta y recepción; zoom y pantalla pequeña mantienen importes, unidades y
+ acción visibles.
+
+ C64 · Bandeja de excepciones con dueño
+ P2 · Esfuerzo A | Agrupar costo faltante, entrega tardía, factura duplicada posible y saldo sin conciliación.
+ Aceptación: Cada aviso abre la diferencia y su responsable; repetir alertas no crea nuevas operaciones ni
+ acusa fraude.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                       12
+BULEJE / COMPRAS                                                                                                       15 OCT 2026
+
+
+
+
+ COMPRAS / 13
+
+
+
+ Un ciclo con estados independientes
+ Propuesta de integración. Una orden, una recepción, una factura y un pago representan hechos diferentes.
+
+    PASO                            REGISTRO Y SALIDA ESPERADA
+
+
+    1. Necesidad                    Sugerencia, solicitud o compra directa. Cantidad, causa, destino y presupuesto; todavía no es
+                                    una obligación pagada.
+
+
+    2. Negociación                  Ofertas comparables, vigencia y elección explicada; ampliar el comparador actual, sin crear
+                                    otro aislado.
+
+
+    3. Orden                        Versión revisada/aprobada, enviada y confirmada por proveedor. Entrega prometida y
+                                    pendientes.
+
+
+    4. Recepción                    Cantidades físicas aceptadas, rechazadas y por llegar; para servicios, conformidad de
+                                    alcance.
+
+
+    5. Factura / cuenta             Documento del proveedor vinculado; política de reconocimiento, conciliación y excepciones
+                                    revisadas [R1, R2].
+
+
+    6. Pago / conciliación          Aplicar anticipos y abonos; ejecución, soporte y verificación. Estado bancario separado del
+                                    estado documental.
+
+
+    7. Devolución / solución        Salida física, aceptación del reclamo y reposición/nota/reembolso con sus propios estados.
+
+
+
+   Ejemplo parcial, exclusivamente de diseño
+   Se piden 10 unidades, llegan 8 y se factura 10. La orden conserva 2 pendientes; la factura presenta
+   diferencia para revisar. No se borra la recepción ni se igualan las cantidades para que cuadren. La política y
+   el acuerdo determinan cómo resolver el saldo.
+
+
+ Reglas de consistencia
+ Una identidad estable por operación y por línea; vínculos verificables; acumulados de parciales; moneda y unidad explícitas;
+ historial de cambios. Reintentar una confirmación debe devolver el resultado ya creado cuando corresponda, evitando
+ duplicados.
+
+ La conciliación de tres documentos es un patrón de diseño [R1], no una afirmación de que la aplicación ya lo implemente ni
+ una regla tributaria universal. Para servicios, anticipos y compras sin OC se define la política correspondiente.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                       13
+BULEJE / COMPRAS                                                                                                        15 OCT 2026
+
+
+
+
+ COMPRAS / 14
+
+
+
+ Más acceso sin llenar el menú
+ Conservar las seis pestañas principales. Incorporar los espacios nuevos de forma progresiva y según rol.
+
+    PUNTO ACTUAL                   ACCESOS Y UBICACIÓN PROPUESTOS
+
+
+    Comprar                        Carrito / Frecuentes / Paquetes; accesos visibles a Leer factura, borradores y plantillas. N01
+                                   Solicitudes como entrada opcional.
+
+
+    Órdenes                        Órdenes / Recepciones; ampliar Comparar cotizaciones. N03 Agenda y N06 Contratos como
+                                   vistas secundarias.
+
+
+    Sugerencias                    Resumen de criterios; N02 Plan y presupuesto como simulador integrado; N07 Costos al
+                                   evaluar alternativas.
+
+
+    Proveedores                    Lista / Comparar; N08 Colaboración desde la ficha. Mantener sus comparadores, evaluación y
+                                   márgenes existentes.
+
+
+    Por pagar                      Cuentas / Calendario / Propuestas; N04 Conciliación de documentos y N05 Anticipos como
+                                   vistas relacionadas.
+
+
+    Devoluciones                   Registro / Seguimiento / Soluciones; acceso al expediente y a la recepción de reposición sin
+                                   crear otra pestaña principal.
+
+
+
+ Barra de trabajo contextual
+ Buscar en Compras | Nueva solicitud | Preparar compra | Recibir | Revisar pendientes. Fijar sólo las acciones
+ más usadas por cada rol; el resto en un menú con nombres claros. Las acciones financieras siempre muestran
+ revisión y efecto antes de confirmar.
+
+    TAREA                            RUTA RÁPIDA PROPUESTA
+
+
+    Reponer una tabla                Buscar producto > ver causa y en camino > añadir cantidad > revisar orden.
+
+
+    Recibir entrega parcial          Buscar OC > Recibir > cantidades y evidencia > revisar efecto > confirmar.
+
+
+    Consultar saldo                  Buscar proveedor > Estado de cuenta > documento > abonos y conciliación.
+
+
+    Reclamar daño                    Recepción > línea dañada > preparar devolución > seguimiento y solución.
+
+
+ Atajos propuestos: / buscar, N preparar nueva compra, R abrir búsqueda para recibir, Esc cerrar. Deben anunciarse, poder
+ desactivarse y no interceptar escritura en campos. F2 ya existe para código de barras.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                         14
+BULEJE / COMPRAS                                                                                      15 OCT 2026
+
+
+
+
+ COMPRAS / 15
+
+
+
+ Nuevos espacios: solicitar y planificar
+ Fichas de diseño propuestas; no implementadas. Evitar duplicar Sugerencias y Comparar ya existentes.
+
+ N01 · Solicitudes internas
+ Ubicación: Órdenes > Solicitudes, opcional según rol.
+ Quién la usa: Operación, encargado de almacén y comprador.
+
+ Campos mínimos: Solicitante, producto/servicio, cantidad, unidad, fecha necesaria, destino, motivo y centro de
+ costo.
+
+ Flujo: Solicitar > revisar duplicados y stock > aprobar necesidad > agrupar en compra > seguir entrega.
+
+ Función innovadora: Agrupar varias solicitudes por proveedor sin perder quién pidió cada cantidad ni su
+ destino.
+
+   Criterio para aprobar el prototipo
+   Dos solicitudes de 5 unidades forman una orden de 10, pero cada solicitante conserva trazabilidad y puede
+   recibir su parte.
+
+
+ N02 · Plan y presupuesto
+ Ubicación: Sugerencias > Plan de abastecimiento.
+ Quién la usa: Comprador y responsable de caja.
+
+ Campos mínimos: Horizonte, presupuesto, prioridades, demanda, tránsito, plazos, múltiplos y restricciones.
+
+ Flujo: Seleccionar causas > simular cantidades y proveedores > ver cobertura y dinero comprometido >
+ convertir selección revisada.
+
+ Función innovadora: Escenarios Continuidad, Menor inversión y Menor costo total, con supuestos
+ transparentes y comparables.
+
+   Criterio para aprobar el prototipo
+   Cambiar presupuesto recalcula propuestas; ningún escenario confirma órdenes ni movimientos de dinero.
+   Demanda sin cubrir queda visible.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                    15
+BULEJE / COMPRAS                                                                                        15 OCT 2026
+
+
+
+
+ COMPRAS / 16
+
+
+
+ Nuevos espacios: recibir y conciliar
+ Extensiones de la operación actual para resolver diferencias antes de cerrar documentos.
+
+ N03 · Agenda de entregas y capacidad
+ Ubicación: Órdenes > Agenda, vinculada a Recepciones.
+ Quién la usa: Almacén, inspector y comprador.
+
+ Campos mínimos: OC, proveedor, ventana, ubicación, volumen/bultos, responsable, entrega parcial y
+ requisitos de descarga.
+
+ Flujo: Ver día/semana > identificar choques > proponer horario > confirmar con proveedor > abrir recepción.
+
+ Función innovadora: Semáforo de carga de trabajo que combina espacio, personal y entregas previstas, sin
+ cambiar fechas por sí solo.
+
+   Criterio para aprobar el prototipo
+   Reprogramar mantiene la fecha anterior y motivo; una cita cumplida no marca recepción hasta registrar la
+   aceptación real.
+
+
+ N04 · Conciliación de documentos
+ Ubicación: Por pagar > Conciliación; acceso desde expediente.
+ Quién la usa: Compras, almacén y administración.
+
+ Campos mínimos: Líneas OC/recepción/factura, unidades, precios, cargos, moneda, tolerancias, diferencias y
+ dueño.
+
+ Flujo: Relacionar documentos > comparar acumulados > resolver excepción > dejar listo para revisión de pago
+ [R1].
+
+ Función innovadora: Vista lado a lado con origen de cada diferencia y propuesta explicada de vinculación, sin
+ forzar igualdades.
+
+   Criterio para aprobar el prototipo
+   Factura de 10 frente a 8 aceptadas muestra diferencia de 2; servicios o anticipos usan su política. Un pago
+   no se ejecuta desde la comparación.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                      16
+BULEJE / COMPRAS                                                                                      15 OCT 2026
+
+
+
+
+ COMPRAS / 17
+
+
+
+ Nuevos espacios: anticipos y acuerdos
+ Evitar que los adelantos o compras recurrentes se pierdan entre textos y órdenes repetidas.
+
+ N05 · Anticipos y saldos a favor
+ Ubicación: Por pagar > Anticipos.
+ Quién la usa: Administración y comprador autorizado.
+
+ Campos mínimos: Proveedor, moneda, desembolso de origen, referencia, saldo no aplicado, comprobación y
+ aplicaciones.
+
+ Flujo: Registrar o vincular desembolso > verificar > proponer aplicación a documento > revisar > conservar
+ remanente.
+
+ Función innovadora: Sugerir aplicaciones por proveedor y moneda, explicando coincidencias; nunca elegir
+ sólo por monto igual.
+
+   Criterio para aprobar el prototipo
+   Anticipo de S/500 aplicado S/300 deja S/200; no genera otro gasto de S/300 ni se puede aplicar
+   simultáneamente a dos facturas por el mismo saldo.
+
+
+ N06 · Contratos y entregas programadas
+ Ubicación: Órdenes > Acuerdos, desde proveedor.
+ Quién la usa: Comprador y responsable del acuerdo.
+
+ Campos mínimos: Vigencia, productos/servicios, precios o regla, topes, calendario, consumo y evidencia de
+ aprobación.
+
+ Flujo: Preparar acuerdo > revisar > programar entregas > generar orden derivada revisable > medir consumo.
+
+ Función innovadora: Alertar compromiso próximo a agotar o precio fuera de acuerdo antes de preparar la
+ siguiente orden.
+
+   Criterio para aprobar el prototipo
+   Una programación genera borradores identificados y no compras duplicadas; cambiar acuerdo no reescribe
+   órdenes anteriores ni compromete dinero automáticamente.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                   17
+BULEJE / COMPRAS                                                                                          15 OCT 2026
+
+
+
+
+ COMPRAS / 18
+
+
+
+ Nuevos espacios: costo y colaboración
+ Funciones avanzadas para decidir mejor y reducir recaptura con el proveedor.
+
+ N07 · Costo puesto en almacén
+ Ubicación: Panel de orden y Comparar; vista analítica en Sugerencias.
+ Quién la usa: Comprador y administración.
+
+ Campos mínimos: Precio neto, flete, seguro/cargos aplicables, moneda, cambio usado, criterio de reparto y
+ costo provisional/final.
+
+ Flujo: Capturar cargos > simular reparto > comparar alternativas > revisar > registrar ajuste trazable cuando
+ corresponda.
+
+ Función innovadora: Comparar un proveedor barato y lejano con uno cercano mostrando costo por unidad
+ equivalente y plazo.
+
+   Criterio para aprobar el prototipo
+   S/1,000 de bienes más S/100 de cargo distribuible arroja S/1,100 de costo considerado en el ejemplo; no se
+   suman tributos recuperables por defecto. La política la define el responsable.
+
+
+ N08 · Colaboración del proveedor
+ Ubicación: Ficha de proveedor > Colaboración; acceso restringido si se construye portal.
+ Quién la usa: Proveedor invitado y comprador.
+
+ Campos mínimos: Orden y versión compartida, destinatario, oferta, acuse, fecha prometida, adjuntos y
+ permisos de alcance.
+
+ Flujo: Preparar invitación > revisar contenido > enviar por acción explícita > recibir respuesta > revisar cambios.
+
+ Función innovadora: El proveedor propone fecha/cantidad en la misma versión y el comprador compara
+ cambios antes de aceptarlos.
+
+   Criterio para aprobar el prototipo
+   El proveedor ve sólo sus documentos autorizados; no ve márgenes, otros proveedores ni saldos internos no
+   compartidos. Aceptar cambios exige revisión, no una respuesta automática del portal.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                        18
+BULEJE / COMPRAS                                                                                                       15 OCT 2026
+
+
+
+
+ COMPRAS / 19
+
+
+
+ Boceto 1: compra con menos pasos
+ Diseño conceptual, no captura de la aplicación ni función implementada. Importes y cantidades de ejemplo.
+
+
+
+       COMPRAS · DISEÑO PROPUESTO · DATOS FICTICIOS
+
+
+
+       Comprar | Órdenes | Sugerencias | Proveedores | Por pagar
+
+
+        Buscar producto, código o proveedor / Leer factura / F2
+
+
+
+
+        Catálogo / Reponer                                                Canasta revisable
+
+        Tabla de ejemplo · und                                            Proveedor: Ejemplo A
+
+        Stock 3 | En camino 10 | Meta 24                                  11 und x S/10.00
+
+        Sugerencia neta: 11 und                                           Base / tributo / total
+
+        [ +1 ] [ Añadir sugerido: 11 ]                                    Condición: crédito 15 días
+
+                                                                          Medio previsto: transferencia
+
+
+
+
+        Revisar orden · No registra un pago
+        Borrador guardado 14:35 | Descartar y verificar | Ver cambios
+
+
+
+
+   Qué cambia
+   La cantidad sugerida tiene una acción distinta de +1. El usuario ve stock en camino, costo revisable,
+   condición y medio separados. El guardado explica su estado y permite descartar de forma fiable.
+
+ Interacciones: buscar conserva proveedor/filtro; seleccionar línea abre cantidad directa; el resumen fija total y pendientes. La
+ acción final abre revisión antes de crear orden. C02-C08, C27, C58.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                         19
+BULEJE / COMPRAS                                                                                                     15 OCT 2026
+
+
+
+
+ COMPRAS / 20
+
+
+
+ Boceto 2: diferencia a la vista
+ Diseño propuesto para N04. El caso es ficticio y no representa una deuda real del negocio.
+
+
+
+       COMPRAS · DISEÑO PROPUESTO · DATOS FICTICIOS
+
+
+
+       Expediente #CP-024 · Factura del proveedor ejemplo
+
+
+
+        Orden                                          Recepción                           Factura
+
+        10 und                                         8 und aceptadas                     10 und
+
+        S/100.00                                       2 pendientes                        S/100.00
+
+
+
+
+        Diferencia: 2 unidades aún no aceptadas
+        Revisar entrega parcial, acuerdo y política aplicable.
+
+        No se libera automáticamente un pago por tener PDF.
+
+
+
+
+         Resolver diferencia                                             Ver documentos originales
+
+
+
+
+   Qué cambia
+   Orden, recepción y factura se comparan por línea y unidad. El caso muestra 10 pedidas, 8 aceptadas y 10
+   facturadas. El responsable resuelve la diferencia sin editar el original para ocultarla.
+
+ Interacciones: abrir documento original, cambiar vínculo con revisión, registrar acuerdo o excepción, seguir entregas
+ pendientes. La comparación no ejecuta un pago y debe respetar la política aplicable a servicios y anticipos. C43, N04.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                  20
+BULEJE / COMPRAS                                                                                                   15 OCT 2026
+
+
+
+
+ COMPRAS / 21
+
+
+
+ Boceto 3: recibir una entrega parcial
+ Diseño conceptual para extender el checklist actual; valores ficticios. Las cantidades se etiquetan por su
+ significado.
+
+
+
+       COMPRAS · DISEÑO PROPUESTO · DATOS FICTICIOS
+
+
+
+       Recibir OC-024 · Parcial · Almacén ejemplo
+
+       Esperado 10 | Aceptado 7 | Dañado 1 | Pendiente 2
+
+
+
+        Producto: tabla de ejemplo · Unidad: und
+
+        Aceptado [7]      Dañado [1]      Vencido [0]     No llegó [2]
+
+        Lote L-024 | Evidencia adjunta | Responsable identificado
+
+
+
+
+        Resultado que se va a registrar
+        +7 disponibles | 1 en revisión | 2 por entregar
+
+        La obligación y el pago conservan su propio estado.
+
+
+
+
+         Revisar y confirmar recepción parcial
+
+
+
+
+   Qué cambia
+   El inspector ve 7 aceptadas, 1 dañada y 2 pendientes de las 10 pedidas. La revisión final anticipa disponible,
+   cuarentena y remanente. Fecha programada y recepción efectiva no se confunden.
+
+ Interacciones: escanear o elegir producto de la orden, capturar lote/evidencia cuando aplique y revisar antes de guardar. Una
+ segunda entrega trabaja sobre el remanente y conserva la primera. C17-C24, N03.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                  21
+BULEJE / COMPRAS                                                                                                   15 OCT 2026
+
+
+
+
+ COMPRAS / 22
+
+
+
+ Boceto 4: plan con presupuesto
+ Diseño propuesto para N02. No se ejecutó ninguna simulación ni compra real en la aplicación.
+
+
+
+       COMPRAS · DISEÑO PROPUESTO · DATOS FICTICIOS
+
+
+
+       Plan de abastecimiento · Escenario de ejemplo
+
+       Presupuesto disponible: S/1,000 | Objetivo: continuidad
+
+
+
+        Urgente · Demanda confirmada
+        Pedido propuesto S/450
+        Proveedor A · entrega 1 día
+
+
+
+
+        Planificar · Reposición neta
+        Pedido propuesto S/300
+        Proveedor B · entrega 3 días
+
+
+
+
+        Revisar · Baja rotación
+        No comprar por ahora
+        Transferir stock o esperar
+
+
+
+       Compromiso propuesto S/750 | Remanente S/250
+       Simular no confirma compras, no envía pedidos y no paga.
+
+
+
+
+   Qué cambia
+   Una sola vista prioriza urgencia, necesidad neta y baja rotación. Muestra el presupuesto comprometido
+   propuesto y el remanente; permite dejar una recomendación para revisión sin crear una orden.
+
+ Interacciones: comparar escenarios, ver supuestos, cambiar prioridad con motivo y convertir sólo las propuestas elegidas.
+ Una referencia de competencia no se toma como oferta firme ni como costo real. C26-C32, N02, N07.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                  22
+BULEJE / COMPRAS                                                                                                    15 OCT 2026
+
+
+
+
+ COMPRAS / 23
+
+
+
+ Orden de construcción recomendado
+ Secuencia propuesta, no cronograma comprometido. El esfuerzo debe contrastarse con el código y los datos
+ existentes.
+
+    ETAPA                          ENTREGA Y CONDICIÓN PARA AVANZAR
+
+
+    1. Integridad visible          C07/C58 persistencia; C17 etiquetas; C03-C06 costo, tributos, pago y documentos. Revisar
+                                   que orden no implique cobro/recepción indebidamente.
+
+
+    2. Ciclo vinculado             C09-C10 expediente y estados; C18-C24 parciales; C41-C44 origen de deuda/anticipos;
+                                   C49-C55 devoluciones y reversión. Probar acumulados antes de automatizar.
+
+
+    3. Operación rápida            C02 cantidad directa, C14 agenda, C16 repetir, C33 ficha, C57/C59 búsqueda y contexto.
+                                   Medir tareas de usuarios con los mismos casos antes/después.
+
+
+    4. Decisión asistida           C26-C32 cola y necesidad neta; C36-C39 comparaciones y puntajes; N02/N07 presupuesto y
+                                   costo. Mostrar muestra, vigencia y supuestos.
+
+
+    5. Expansión selectiva         N01 solicitudes, N06 acuerdos, N08 colaboración, según necesidad real. Primero prototipo con
+                                   responsables; luego integración y permisos.
+
+
+
+ Primer paquete concreto para desarrollo
+ Corregir descarte del borrador; separar +1/sugerido y editar cantidad; etiquetar cantidades de recepción; dividir
+ condición/medio; diferenciar factura y guía; mostrar costo fuente, base y total. Añadir pruebas de servidor
+ cuando el flujo persista dinero, inventario o deuda.
+
+   Dependencias que conviene resolver juntas
+   Modelo de producto/unidad; líneas de compra y recepciones parciales; documento proveedor; movimientos
+   monetarios y aplicaciones; moneda; permisos y bitácora. La IA y el portal dependen de estas bases, no las
+   reemplazan.
+
+ No se propone añadir ocho pestañas principales de golpe. Cada ficha N01-N08 puede comenzar como panel contextual y
+ elevarse a sección sólo si su uso lo justifica.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                   23
+BULEJE / COMPRAS                                                                                                        15 OCT 2026
+
+
+
+
+ COMPRAS / 24
+
+
+
+ Pruebas antes de operar con dinero
+ Plan de aceptación pendiente para un entorno controlado con datos de prueba. Esta auditoría no ejecutó
+ compras ni pagos.
+
+    CASO                               RESULTADO QUE DEBE COMPROBARSE
+
+
+    Borrador / navegación              Quitar última línea y Limpiar; salir inmediatamente o tras guardado, volver y recargar. No
+                                       reaparece; dos pestañas no restauran versión anterior.
+
+
+    Reintento / doble clic             Corte tras confirmar orden o recepción: consultar resultado. Una operación y un efecto por
+                                       confirmación, incluso con reintento.
+
+
+    Cantidad / unidad                  +1 frente a sugerido, decimal permitido, caja de 12, kg/hora/und y servicio. Conversiones y
+                                       límites visibles y persistidos.
+
+
+    Costo / tributo                    Sin costo, cero intencional, descuento, incluido/excluido, cargos y redondeo. Mismos
+                                       importes en vista, servidor y documento.
+
+
+    Recepción parcial                  Pedir 10, recibir 7 aceptadas y 1 dañada, 2 pendientes. Disponible y revisión correctos;
+                                       segunda recepción respeta remanente.
+
+
+    Factura / duplicados               Factura repetida desde OCR y manual; números normalizados y distinto proveedor. Alertar
+                                       posibles duplicados sin bloquear sólo por monto igual.
+
+
+    Saldo / anticipo                   Cargo S/1,000, abono S/200 y anticipo aplicado S/300: saldo S/500. Aplicar anticipo no
+                                       genera nuevo desembolso.
+
+
+    Devolución / solución              Retorno parcial, reposición, nota y reembolso. Cada efecto físico/monetario ocurre una vez;
+                                       anular conserva historial.
+
+
+    Permisos / concurrencia            Roles, dos operadores sobre una recepción y documento de otra empresa. Validación de
+                                       acceso y versión en servidor.
+
+
+    Interfaz / archivos                Teclado, foco, zoom, móvil, lectura de etiquetas; PDF/CSV con cortes, totales y permisos
+                                       coherentes. Sin datos no equivale a puntaje cero.
+
+
+ Pasar pruebas de interfaz no demuestra por sí solo integridad contable. Los casos de inventario, deuda y pago deben
+ contrastarse contra registros persistidos por el equipo de desarrollo y el responsable administrativo.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                         24
+BULEJE / COMPRAS                                                                                                          15 OCT 2026
+
+
+
+
+ COMPRAS / 25
+
+
+
+ Cómo medir si las mejoras sirven
+ Definir línea base y comparar casos equivalentes. No se promete un ahorro de tiempo o dinero sin medirlo.
+
+    INDICADOR                            DEFINICIÓN Y LECTURA
+
+
+    Tiempo de preparación                Mediana y p90 desde buscar producto hasta revisión de orden, separando compra
+                                         nueva/repetida/OCR.
+
+
+    Recaptura                            Campos escritos de nuevo entre orden, recepción y cuenta. Contar por operación, no sólo
+                                         clics.
+
+
+    Borradores fiables                   Porcentaje recuperado como se dejó; reapariciones tras descarte deben ser cero en los
+                                         casos cubiertos.
+
+
+    Exactitud al primer intento          Órdenes/recepciones sin corrección posterior sobre total procesado, por período y tipo.
+
+
+    Entrega del proveedor                Órdenes a tiempo y completas sobre órdenes evaluables; mostrar fecha prometida,
+                                         muestra y parciales.
+
+
+    Diferencias pendientes               Cantidad e importe sin conciliar, edad y dueño; distinguir falta de documento de
+                                         discrepancia material.
+
+
+    Cobertura y quiebres                 Días de cobertura y faltantes por producto inventariable; separar baja demanda de datos
+                                         insuficientes.
+
+
+    Costo y ahorro comparable            Costo por unidad equivalente con el mismo alcance, moneda y período; no comparar
+                                         productos heterogéneos.
+
+
+    Saldo conciliado                     Importe conciliado sobre importe exigible al corte; anticipos no aplicados visibles aparte.
+
+
+    Recuperación de                      Dinero/nota/reposición efectivamente verificados frente a lo reclamado, con costo
+    devoluciones                         pendiente identificado.
+
+
+
+   Panel por rol
+   Comprador: necesidad y entrega. Almacén: próximas recepciones y revisión. Administración: diferencias y
+   vencimientos. Dirección: inversión, cumplimiento y costo con muestra. Cada cifra abre los registros que la
+   componen.
+
+ Medir también errores evitados, solicitudes resueltas sin compra y accesos de búsqueda utilizados. Si un nuevo panel aumenta
+ recaptura o exige completar datos innecesarios, simplificarlo antes de extenderlo al equipo.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                            25
+BULEJE / COMPRAS                                                                                                        15 OCT 2026
+
+
+
+
+ COMPRAS / 26
+
+
+
+ Evidencia, referencias y estado final
+ Fuente principal: interfaz autenticada local de Compras, revisada el 15 de octubre de 2026. Las propuestas se
+ distinguen de capacidades verificadas.
+
+    EVIDENCIA LOCAL                  QUÉ RESPALDA
+
+
+    E1 · Canasta                     21 unidades sugeridas, costo inicialmente vacío, cálculo ficticio S/210, IGV incluido S/32.03,
+                                     selectores y restauración tras limpiar/navegar.
+
+
+    E2 · Órdenes / recepción         0 órdenes, Más y comparador visible; recepción con dos cantidades sin etiquetas, OC libre,
+                                     condiciones, lote y adjunto.
+
+
+    E3 · Sugerencias                 2 bajo mínimo sin ventas; predicción y semana desplegadas; tres productos sin venta, con
+                                     naturaleza de compra por revisar.
+
+
+    E4 · Proveedores                 1 proveedor de prueba; Ficha abre edición; condiciones completas; evaluación mínima de 3
+                                     órdenes; márgenes, precios y mercado local.
+
+
+    E5 · Deudas /                    0 cuentas; alta manual simple y crédito automático anunciado. 1 devolución previa sin
+    devoluciones                     valoración visible; menú de eliminación definitiva.
+
+
+
+ Referencias primarias para patrones de diseño
+ R1 · Microsoft Learn: Accounts payable invoice matching overview
+ Sustenta comparar precios de orden/factura y cantidades de recepción, con tolerancias. Se usa como referencia de diseño
+ para C43 y N04; no demuestra que el servidor local ya lo haga ni obliga a una política única.
+
+ R2 · Odoo 19: Manage vendor bills
+ La documentación oficial consultada en resultados de búsqueda distingue políticas por cantidades pedidas y recibidas. Apoya
+ separar pedido, recepción y documento del proveedor; la apertura completa de la página no respondió durante la revisión.
+
+ Consulta de referencias: 15/10/2026. El documento desarrolla diseño operativo; no certifica normativa tributaria,
+ reconocimiento contable, seguridad ni funcionamiento de integraciones. Las políticas de costos, tributos y obligaciones deben
+ validarse para el negocio.
+
+
+   Estado de la entrega
+   64 mejoras, 8 espacios funcionales y 4 bocetos. No se implementaron cambios en la web. No se crearon
+   órdenes, recepciones, proveedores, cuentas o devoluciones ni se pagó o envió nada. Se retiró el costo
+   ficticio y se vació la canasta en pantalla; por O01 la línea de 21 unidades podría restaurarse. Revisar el
+   borrador antes de una compra real.
+
+
+
+
+Auditoría de interfaz · Plan de funciones y accesos rápidos                                                                       26
+

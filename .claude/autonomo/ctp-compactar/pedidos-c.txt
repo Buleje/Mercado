@@ -1,0 +1,46 @@
+Pedidos del agente C (Lotes, Consumos, Volumen disponible, Radar, Reprocesos, Planta, EUDR) — 2026-10-17
+
+Fusiones listas del lado de las vistas; falta el cableado del libro (E). Mientras tanto
+`?vista=trozas` y `?vista=historia-lote` siguen pintando lo viejo (medido 14:39: Trozas vieja
+carga y su riel trae Indicadores, ⓘ, Plan del día, conteo y Actualizar).
+
+1) E · CTPLibroOperaciones.tsx — montar Lotes con sus props nuevas:
+     <CtpLotesView ... pedido={pedidoSub?.vista === "lotes" ? pedidoSub : null} loteInicial={loteHistoria} />
+   `loteInicial` abre la pestaña «Historia del lote» en ese lote (efecto con ref: sólo cuando cambia).
+
+2) E · Volumen disponible:
+     <CtpVolumenDisponible ... pedido={pedidoSub?.vista === "disponibles" ? pedidoSub : null}
+        onAbrirLote={(id) => { setLoteHistoria(id); irA("lotes", /* sub */ "historia"); }} />
+   (hoy hace irA("historia-lote"), que sigue andando hasta que historia-lote sea alias).
+
+3) E · pasar onIr={irA} a <CtpReprocesosDeclarados period={period} /> (línea ~794) y a
+   <CtpTrazaRadar period={period} /> (~810). Sin onIr usan irAEnlace con la URL entera:
+   anda (medido: «Declarar en Volumen disponible» → vista=disponibles&fuentes=productos;
+   «Cobertura en el Radar» de EUDR → vista=radar), pero con onIr no recarga la vista.
+
+4) E · parámetros por vista (~línea 284): agregar `lotes: ["sub"]` y `disponibles: ["sub"]`.
+   MEDIDO: de Volumen › Por troza a EUDR la URL queda `&vista=eudr&sub=por-troza`; de
+   Lotes › Historia a Consumos, `&vista=consumos&sub=historia`. usePestanaInterna descarta
+   el sub inválido, así que no rompe nada, pero ensucia el enlace que se comparte.
+
+5) E · ctp-vistas-fusionadas.ts: CTP_VISTAS_FUSIONADAS
+     trozas        → { vista: "disponibles", sub: "por-troza" }
+     historia-lote → { vista: "lotes",       sub: "historia" }
+   y TECLAS_FUSIONADAS (g t → Por troza, g h → Historia del lote). Las dos vistas ya leen
+   la URL vieja al montar con subPedidoPorVistaVieja("disponibles" | "lotes").
+
+6) E · lib/admin/subvistas-modulos.ts: moduleIds nuevos de usePestanaInterna
+     "ctp-lotes"       → lotes, historia
+     "ctp-disponibles" → volumen, por-troza
+   (ANIDADAS_POR_MODULO + guardián admin-subvistas-sincronizadas / panel-sin-perdida).
+
+7) A · PestanasDeVista con 2 pestañas ocupa 72 px de alto (botón 48 + p-1 + space-y-4) a
+   todo el ancho. En Lotes y Volumen se come lo que ganó sacar la barra (primer dato: Lotes
+   366→370, Volumen 790→810, descontando la franja «Sigue: …» de 56 px que ahora sale en
+   todas las vistas). Una variante compacta (w-auto, a la izquierda, gap 3) devolvería ~16 px
+   por vista fusionada; no la toqué porque es compartida.
+
+8) A · lo mismo que reportó B (pedidos-b 2-3): con 5-6 acciones el riel tapa vistas del
+   grupo. Mis vistas ahora dejan ver la activa a 1280 (Volumen: Despacho entero; Planta:
+   Planta y EUDR enteras, sólo Guías emitidas tapada), pero en Lotes «Volumen disponible» y
+   «Despacho» quedan tapadas por la cifra del VistaHeader («todavía ninguno») + 4 botones.

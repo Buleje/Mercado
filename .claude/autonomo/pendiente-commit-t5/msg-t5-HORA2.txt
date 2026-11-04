@@ -1,0 +1,12 @@
+fix(panel): hoy, mes y dia elegido con la hora de lima en las rutas que faltaban
+
+El servidor corre en UTC: setHours(0), new Date(y, m, 1) y toISOString().slice(0, 10)
+daban el dia de Lima recien desde las 19:00 del anterior. Ayudantes nuevos en lib/utils
+(limaDayRange, startOfLimaMonth, limaWeekday) y 57 cortes corregidos: frecuentes del POS,
+documentos emitidos, auditoria, kardex, kpis y tendencias, resumen del panel, reporte diario,
+cierre, repartos, tienda del vendedor, superadmin, crons y fecha de emision de boleta/factura.
+Anomalias: el cron de las 18:00 compara la misma franja de hace 7 dias, no 18 h contra 24 h.
+Columnas de dia calendario (DailySummary.fecha, vencimientos) conservan su formato 00:00Z.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Hhr4AnXJ3u4wWG6fZKtjpw

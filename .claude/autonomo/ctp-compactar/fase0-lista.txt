@@ -1,0 +1,35 @@
+FASE 0 lista (agente A, 17-10). typecheck verde. API documentada en components/admin/shared/libro-acciones-vista.tsx
+
+Exporta: AccionesDeLaVista, TextoDeAccion, ORDEN_ACCION {info:-30, indicadores:-20, normal:0, principal:20},
+useEnElLibro(), CLASE_TEXTO_ACCION, CLASE_SOLO_ANCHO (ProveedorAccionesDeLaVista es sólo para LibroChrome).
+
+Uso (raíz de la vista, nunca dentro de una ventana):
+  import { AccionesDeLaVista, ORDEN_ACCION, TextoDeAccion } from "@/components/admin/shared/libro-acciones-vista";
+  <AccionesDeLaVista>
+    <ActionMenu label="Opciones" actions={opciones} soloIcono />
+  </AccionesDeLaVista>
+  <AccionesDeLaVista orden={ORDEN_ACCION.principal}>
+    <Btn variant="primary"><Plus className="h-4 w-4" /><TextoDeAccion corto="Nuevo">Nuevo ingreso</TextoDeAccion></Btn>
+  </AccionesDeLaVista>
+
+Fuera del libro / en un test / dentro de un role="dialog": se pinta en su lugar (fila flex a la derecha, o `fueraDelLibro`).
+VistaHeader y useKpisPlegables lo hacen solos (fase 1 del agente A).
+
+ctp-vistas-fusionadas.ts: SUBS_SALDOS [estado,capacidad,movimiento,libro] · SUBS_LOTES [lotes,historia] ·
+SUBS_DISPONIBLES [volumen,por-troza] · SUBS_CUMPLIMIENTO [chequeo,cerrar] ·
+SUBS_DIRECTORIO [proveedor,destinatario,transportista,conductor,cliente,establecimiento,vehiculos,tu-ctp] ·
+SUBS_DESPACHO + guias · VistaConSubs ampliado a esas vistas.
+OJO: __tests__/admin-subvistas-sincronizadas queda ROJO en despacho hasta que E agregue `guias` en lib/admin/subvistas-modulos.ts.
+
+FASE 1 lista (agente A, 17-10). typecheck verde, vitest related 98 archivos/729 tests verdes, tokens 0.
+- VistaHeader dentro del libro: título callado; ⓘ + meta + children al riel. Fuera del libro o en ventana: igual que antes.
+- useKpisPlegables: `boton` va SOLO al riel (orden indicadores); `enSuLugar` = el mismo botón sin mudarse
+  (para sub-secciones); prop `alRiel:false` lo deja en su lugar.
+- CtpKpisPlegables: por defecto NO va al riel (`alRiel` default false: su fila compone botón + antes + acciones).
+  Las vistas raíz que lo usan (Reprocesos, EUDR = C; KpisDeExistencias/SeccionEstado = D; CtpSeccionKpis en Ingresos = B)
+  pasan `alRiel` y envuelven sus `acciones` en <AccionesDeLaVista>.
+- Para E (CTPLibroOperaciones): `tituloCorto="Libro CTP"` (a 1280 con barra lateral el título se corta en 146 px) y
+  `avisos={<CtpPendientes…/>}` fuera de `tools` (va a la vista cuando el grupo de acciones mide ≥56rem; si no, al «⋯»).
+  `actionsLabel` quedó @deprecated (sin uso). LO-TH podría pasar tituloCorto="Libro TH".
+- scripts/qa-pasos/ctp-ventanas.json: el paso que clica al HERMANO de «Herramientas del libro» ya no aplica
+  (las acciones del libro viven dentro del «⋯» mismo).

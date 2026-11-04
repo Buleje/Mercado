@@ -1,0 +1,222 @@
+{
+  "ventas-p1": {
+    "titulo": "Caja de hoy vs. turno, quién vendió, fiados sin plazo y la regla de comisión",
+    "area": "Ventas y caja",
+    "donde": "Ventas y caja › Caja, Me deben, Comisiones"
+  },
+  "ventas-p2": {
+    "titulo": "POS en tarjetas o lista, Ctrl+K, ticket promedio real y la cuenta de cada fiado",
+    "area": "Ventas y caja",
+    "donde": "Ventas y caja › Vender, Cajeros, Me deben"
+  },
+  "ventas-p3": {
+    "titulo": "Bandeja del turno, «¿por qué no cuadra?», cierre sin duplicar y caja sin conexión",
+    "area": "Ventas y caja",
+    "donde": "Ventas y caja › Caja"
+  },
+  "ventas-r1": {
+    "titulo": "La caja ya no frena en la venta 11 ni cobra dos veces sin conexión",
+    "area": "Ventas y caja",
+    "donde": "Ventas y caja › Vender"
+  },
+  "ventas-dev": {
+    "titulo": "Devolver una venta: nunca más que lo vendido",
+    "area": "Ventas y caja",
+    "donde": "Ventas y caja"
+  },
+  "ventas-dev2": {
+    "titulo": "Devolver un pedido con tope y el saldo a favor del cliente bien mostrado",
+    "area": "Ventas y caja",
+    "donde": "Clientes y Pedidos"
+  },
+  "pedidos-p1": {
+    "titulo": "Cada pedido dice qué sigue, quién lo lleva y cuánto falta cobrar",
+    "area": "Pedidos y reparto",
+    "donde": "Pedidos › Tablero, Lista, Archivados"
+  },
+  "pedidos-p2": {
+    "titulo": "Reparto: el equipo guarda de verdad, asignar eligiendo el pedido, ranking honesto",
+    "area": "Pedidos y reparto",
+    "donde": "Pedidos › Reparto"
+  },
+  "pedidos-p3": {
+    "titulo": "Reparto: retiros con filtros, ficha del repartidor y lo que pasó en el día",
+    "area": "Pedidos y reparto",
+    "donde": "Pedidos › Reparto"
+  },
+  "pedidos-n": {
+    "titulo": "Pestañas nuevas: Preparación, Análisis y agenda de entregas",
+    "area": "Pedidos y reparto",
+    "donde": "Pedidos"
+  },
+  "compras-p1": {
+    "titulo": "Comprar: la canasta vaciada ya no vuelve, costo real e IGV a la vista",
+    "area": "Compras",
+    "donde": "Compras › Comprar"
+  },
+  "compras-p2": {
+    "titulo": "Órdenes: en qué va cada una, entregas por día y recibir con o sin orden",
+    "area": "Compras",
+    "donde": "Compras › Órdenes y recepción"
+  },
+  "compras-p3": {
+    "titulo": "Por pagar: de dónde sale cada deuda, calendario, propuesta y estado de cuenta",
+    "area": "Compras",
+    "donde": "Compras › Por pagar"
+  },
+  "compras-p4": {
+    "titulo": "Devoluciones al proveedor con tope y anuladas en vez de borradas",
+    "area": "Compras",
+    "donde": "Compras › Devoluciones"
+  },
+  "compras-p5": {
+    "titulo": "Sugerencias que explican su cuenta, sin servicios; órdenes sin stock doble",
+    "area": "Compras",
+    "donde": "Compras › Sugerencias, Órdenes"
+  },
+  "compras-p6": {
+    "titulo": "Ficha del proveedor, duplicados, evaluación y precios del mercado",
+    "area": "Compras",
+    "donde": "Compras › Proveedores"
+  },
+  "compras-p7": {
+    "titulo": "Buscar en todo Compras, bandeja «Revisar» y atajos",
+    "area": "Compras",
+    "donde": "Compras"
+  },
+  "compras-n": {
+    "titulo": "Pestaña nueva: conciliación orden ↔ recepción ↔ factura ↔ pago",
+    "area": "Compras",
+    "donde": "Compras › Por pagar › Conciliación"
+  },
+  "compras-rem": {
+    "titulo": "Entregas con valor real en órdenes automáticas",
+    "area": "Compras",
+    "donde": "Compras › Órdenes › Entregas"
+  },
+  "compras-403": {
+    "titulo": "Aviso de permiso correcto en Devoluciones",
+    "area": "Compras",
+    "donde": "Compras › Devoluciones"
+  },
+  "comp-p1": {
+    "titulo": "Emitir comprobante eligiendo el pedido, con revisión y resultado real",
+    "area": "Comprobantes",
+    "donde": "Comprobantes › Facturas y boletas"
+  },
+  "comp-p2": {
+    "titulo": "Notas de crédito: lo que queda por acreditar y campos por motivo",
+    "area": "Comprobantes",
+    "donde": "Comprobantes › Notas de crédito"
+  },
+  "comp-r1": {
+    "titulo": "Notas de crédito: dos a la vez ya no acreditan el doble",
+    "area": "Comprobantes",
+    "donde": "Comprobantes › Notas de crédito"
+  },
+  "comp-p3": {
+    "titulo": "Guía de remisión desde el pedido, en 5 etapas",
+    "area": "Comprobantes",
+    "donde": "Comprobantes › Guías"
+  },
+  "comp-p4": {
+    "titulo": "Cotizaciones: cliente de tu lista, stock, confirmar todo y plantillas",
+    "area": "Comprobantes",
+    "donde": "Comprobantes › Cotizaciones"
+  },
+  "comp-p5": {
+    "titulo": "Pestañas nuevas: Seguimiento, Expediente y Conciliación; búsqueda en la base",
+    "area": "Comprobantes",
+    "donde": "Comprobantes"
+  },
+  "seg-t1": {
+    "titulo": "Quién puede cambiar y borrar pedidos; notas que no se pierden",
+    "area": "Seguridad y datos",
+    "donde": "Pedidos"
+  },
+  "seg-t3": {
+    "titulo": "Convertir cotización funciona; el alta de cliente ya no pisa datos; CSV sin fórmulas",
+    "area": "Seguridad y datos",
+    "donde": "Cotizaciones, Clientes, exportes"
+  },
+  "seg-rl": {
+    "titulo": "Límites que frenaban la operación: repartidor en el mapa, chat, boletas, caja",
+    "area": "Seguridad y datos",
+    "donde": "Reparto, chat, caja"
+  },
+  "seg-pii": {
+    "titulo": "El chat ya no muestra datos de un cliente a quien solo sabe su celular",
+    "area": "Seguridad y datos",
+    "donde": "Tienda › Chat"
+  },
+  "seg-chat": {
+    "titulo": "Chat de invitados del marketplace: cada uno ve solo su conversación",
+    "area": "Seguridad y datos",
+    "donde": "Marketplace › Chat"
+  },
+  "seg-t4": {
+    "titulo": "Chat: escribir pide sesión, el acceso vence, subidas protegidas",
+    "area": "Seguridad y datos",
+    "donde": "Tienda › Chat"
+  },
+  "panel-m": {
+    "titulo": "Buscador con comandos, recientes, vistas guardadas y avisos agrupados",
+    "area": "Todo el panel",
+    "donde": "Todo el panel"
+  },
+  "panel-surface": {
+    "titulo": "Fondos que faltaban en 120 pantallas",
+    "area": "Todo el panel",
+    "donde": "Todo el panel"
+  },
+  "pedidos-p4": {
+    "titulo": "Pedidos por rol, Emitir y Guía desde el pedido, y Preparación/Análisis montadas",
+    "area": "Pedidos y reparto",
+    "donde": "Pedidos › detalle, Lista, Preparación, Análisis"
+  },
+  "ventas-dev3": {
+    "titulo": "Devoluciones: sólo lo entregado y lo cobrado",
+    "area": "Ventas y caja",
+    "donde": "Ventas y caja, Pedidos"
+  },
+  "panel-minw": {
+    "titulo": "Anchos mínimos que nunca funcionaban: 342 → 0 en 44 vistas",
+    "area": "Todo el panel",
+    "donde": "Todo el panel (sobre todo en el celular)"
+  },
+  "pedidos-rem": {
+    "titulo": "Detalle del pedido con la franja de entrega y «Listo para salir»",
+    "area": "Pedidos y reparto",
+    "donde": "Pedidos › detalle"
+  },
+  "ventas-motivo": {
+    "titulo": "Motivo obligatorio al ajustar stock, cambiar un medio o cancelar una orden",
+    "area": "Ventas y caja",
+    "donde": "Caja, Inventario, Compras"
+  },
+  "compras-rem2": {
+    "titulo": "Órdenes sin desborde y conformidad al recibir servicios y perecibles",
+    "area": "Compras",
+    "donde": "Compras › Órdenes y recepción"
+  },
+  "panel-kv": {
+    "titulo": "Vistas guardadas y recientes que te siguen a otro equipo",
+    "area": "Todo el panel",
+    "donde": "Clientes, Pedidos, cabecera"
+  },
+  "ventas-contacto": {
+    "titulo": "Me deben con el último contacto y la promesa; repartidor con su historial",
+    "area": "Ventas y caja",
+    "donde": "Me deben, Reparto › ficha"
+  },
+  "compras-pres": {
+    "titulo": "Presupuesto de compras del mes y aceptación por línea al recibir",
+    "area": "Compras",
+    "donde": "Compras › Órdenes y recepción"
+  },
+  "compras-rrec": {
+    "titulo": "Recibir: lo rechazado no se le paga al proveedor",
+    "area": "Compras",
+    "donde": "Compras › Recibir"
+  }
+}

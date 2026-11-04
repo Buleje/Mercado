@@ -1,0 +1,239 @@
+{
+ "2": {
+  "ola": 2,
+  "carriles": [
+   {
+    "k": "O2-K1",
+    "tipo": "frontend",
+    "titulo": "Configuración absorbe Plan y Sistema",
+    "integrador": false
+   },
+   {
+    "k": "O2-K2",
+    "tipo": "frontend",
+    "titulo": "Equipo: RRHH + Tareas + Notas",
+    "integrador": false
+   },
+   {
+    "k": "O2-K3",
+    "tipo": "frontend",
+    "titulo": "Tienda online: una barra y Redes y medición",
+    "integrador": false
+   },
+   {
+    "k": "O2-K4",
+    "tipo": "frontend",
+    "titulo": "Pedidos y reparto",
+    "integrador": false
+   },
+   {
+    "k": "O2-K5",
+    "tipo": "frontend",
+    "titulo": "Forestal y cacao: menos entradas, mismas funciones",
+    "integrador": false
+   },
+   {
+    "k": "O2-K6",
+    "tipo": "frontend",
+    "titulo": "Integrador de la ola 2",
+    "integrador": true
+   }
+  ],
+  "seguridad": [
+   "O2-K6"
+  ],
+  "opus": [],
+  "sinDiseno": [
+   "O2-K6"
+  ],
+  "soloLectura": []
+ },
+ "3": {
+  "ola": 3,
+  "carriles": [
+   {
+    "k": "O3-K1",
+    "tipo": "frontend",
+    "titulo": "Mi Plata en 2 niveles y lo que le llega",
+    "integrador": false
+   },
+   {
+    "k": "O3-K2",
+    "tipo": "frontend",
+    "titulo": "Ventas y caja: Caja con cuadre y Me deben única",
+    "integrador": false
+   },
+   {
+    "k": "O3-K3",
+    "tipo": "frontend",
+    "titulo": "Compras: 7 vistas y un solo «qué reponer»",
+    "integrador": false
+   },
+   {
+    "k": "O3-K4",
+    "tipo": "frontend",
+    "titulo": "Productos e inventario",
+    "integrador": false
+   },
+   {
+    "k": "O3-K5",
+    "tipo": "frontend",
+    "titulo": "Comprobantes y Documentos",
+    "integrador": false
+   },
+   {
+    "k": "O3-K6",
+    "tipo": "frontend",
+    "titulo": "Integrador de la ola 3",
+    "integrador": true
+   }
+  ],
+  "seguridad": [
+   "O3-K6"
+  ],
+  "opus": [
+   "O3-K1",
+   "O3-K2",
+   "O3-K3",
+   "O3-K4"
+  ],
+  "sinDiseno": [
+   "O3-K6"
+  ],
+  "soloLectura": []
+ },
+ "4": {
+  "ola": 4,
+  "carriles": [
+   {
+    "k": "O4-K1",
+    "tipo": "frontend",
+    "titulo": "Inicio absorbe Análisis",
+    "integrador": false
+   },
+   {
+    "k": "O4-K2",
+    "tipo": "frontend",
+    "titulo": "Asistente IA y Metas",
+    "integrador": false
+   },
+   {
+    "k": "O4-K3",
+    "tipo": "frontend",
+    "titulo": "Clientes absorbe Crecimiento",
+    "integrador": false
+   },
+   {
+    "k": "O4-K4",
+    "tipo": "frontend",
+    "titulo": "Mensajes: una bandeja con canales",
+    "integrador": false
+   },
+   {
+    "k": "O4-K5",
+    "tipo": "frontend",
+    "titulo": "Marketplace: 6 vistas y su URL",
+    "integrador": false
+   },
+   {
+    "k": "O4-K6",
+    "tipo": "frontend",
+    "titulo": "Integrador de la ola 4",
+    "integrador": true
+   }
+  ],
+  "seguridad": [
+   "O4-K6"
+  ],
+  "opus": [
+   "O4-K2"
+  ],
+  "sinDiseno": [
+   "O4-K6"
+  ],
+  "soloLectura": []
+ },
+ "5": {
+  "ola": 5,
+  "carriles": [
+   {
+    "k": "O5-D1",
+    "tipo": "frontend",
+    "titulo": "Diseño: forestal, cacao, cámaras y a medida",
+    "integrador": false
+   },
+   {
+    "k": "O5-D2",
+    "tipo": "frontend",
+    "titulo": "Diseño: ventas, pedidos y comprobantes",
+    "integrador": false
+   },
+   {
+    "k": "O5-D3",
+    "tipo": "frontend",
+    "titulo": "Diseño: abastecimiento",
+    "integrador": false
+   },
+   {
+    "k": "O5-D4",
+    "tipo": "frontend",
+    "titulo": "Diseño: clientes y canales",
+    "integrador": false
+   },
+   {
+    "k": "O5-D5",
+    "tipo": "frontend",
+    "titulo": "Diseño: gestión y configuración",
+    "integrador": false
+   },
+   {
+    "k": "O5-D6",
+    "tipo": "frontend",
+    "titulo": "Diseño: inicio, IA y metas",
+    "integrador": false
+   }
+  ],
+  "seguridad": [],
+  "opus": [],
+  "sinDiseno": [
+   "O5-D1",
+   "O5-D2",
+   "O5-D3",
+   "O5-D4",
+   "O5-D5",
+   "O5-D6"
+  ],
+  "soloLectura": []
+ },
+ "6": {
+  "ola": 6,
+  "carriles": [
+   {
+    "k": "O6-M1",
+    "tipo": "frontend",
+    "titulo": "Modales a mano → AdminModal (operaciones y forestal)",
+    "integrador": false
+   },
+   {
+    "k": "O6-M2",
+    "tipo": "frontend",
+    "titulo": "Modales a mano → AdminModal (clientes, canales, gestión e inicio)",
+    "integrador": false
+   },
+   {
+    "k": "O6-G1",
+    "tipo": "frontend",
+    "titulo": "Archivos gigantes de comercio, sin cambiar comportamiento",
+    "integrador": false
+   }
+  ],
+  "seguridad": [],
+  "opus": [
+   "O6-G1"
+  ],
+  "sinDiseno": [
+   "O6-G1"
+  ],
+  "soloLectura": []
+ }
+}

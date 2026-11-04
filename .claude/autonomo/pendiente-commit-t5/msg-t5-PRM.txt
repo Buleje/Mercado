@@ -1,0 +1,13 @@
+refactor(promociones): partir promociones y cupones, ordenar la vista y quitar precarga muerta
+
+- PromotionsTab 1386 -> 39 lineas + 16 piezas en promociones/; CouponsTab 628 -> 30 + 6 en cupones/
+- particion sin cambiar el DOM: 12/12 huellas iguales (raiz + ventanas) antes y despues
+- ley de la vista: cabecera en una fila con menu Mas, indicadores plegables recordados,
+  promos antes que campanas, cupones antes que reglas, busqueda pegada y ver todos (10)
+- usos e ingreso estimados, campanas y reglas automaticas explicados con info
+- cupones: aviso si activar o eliminar falla, copiar con aviso, alcance de mi tienda legible, tildes
+- whatsapp con el nombre del negocio del tenant (decia Buleje fijo y Tu Tienda en promociones)
+- tab-preload: promociones precarga el hub de catalogo, no PromocionesModule que nunca se dibuja
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Hhr4AnXJ3u4wWG6fZKtjpw

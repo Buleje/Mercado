@@ -1,0 +1,21 @@
+refactor(clientes): partir ficha 360 y crm en piezas y ordenarlas con la ley de la vista
+
+- Customer360Tab 1366 -> 151 + 18 piezas en cliente360/; CRMTab 1226 -> 99 + 12 en crm/
+- corte por rangos sin cambiar el dom (crm con el mismo hash en el navegador)
+- ficha: cabecera en una fila con indicadores plegables, editar ficha al menu,
+  bloque plegable mas del cliente que no pide datos hasta abrirse
+- arreglo: notas del vendedor cargan la nota guardada (antes vacia y se pisaba)
+- crm: indicadores plegables recordados, cabecera en una fila, segmentos con los filtros
+- tokens: verde whatsapp, colores del canal e info en etiquetas; trofeo emoji -> icono
+
+Tras la revision: notas del vendedor que cargan y no se pisan; tope de fiado del crm que si guarda
+- GET /api/customers/[phone] devuelve privateNotes (mismos roles que el PATCH)
+- la ficha 360 llena nota, observaciones, etiquetas y tope en load(), no en un
+  efecto de customer: marcar un aviso ya no borra lo escrito ni la etiqueta nueva
+- al guardar bien, el cliente en memoria refleja nota, observaciones y etiquetas
+- CRM: el tope de fiado iba por PUT (405 callado); ahora PATCH via guardarCliente con aviso
+- CrmIndicadores plegado conserva id para el aria-controls del boton
+- test: cliente360-notas-vendedor (GET con la clave + hook que no pisa lo escrito)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Hhr4AnXJ3u4wWG6fZKtjpw

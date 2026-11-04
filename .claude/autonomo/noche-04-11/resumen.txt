@@ -1,0 +1,73 @@
+# Lo que hice esta noche (04-11, 00:15 a 07:00)
+57 mejoras guardadas en tu sistema, ninguna subida a internet. Lo más importante: la propia Blas y un proveedor tuyo salen en la lista de sancionados de SERFOR (página 2).
+
+## En una tabla
+| Área | Guardadas | Lo que más te sirve |
+| Forestal | 14 | Revisar proveedores en OSINFOR y SERFOR; cuánto pagar por la troza |
+| Superadmin | 13 | Las cifras de uso ya cuentan al aserradero; comisiones a la vista |
+| Compras | 5 | Crear la compra desde la factura XML del proveedor |
+| SUNAT y contador | 5 | Registro de ventas en formato SIRE y cruce con la propuesta |
+| Ventas, caja y otros | 11 | Cotización que el cliente acepta con un enlace |
+| Herramientas internas | 9 | Guardar ya no repite revisiones (1 min menos cada vez) |
+
+## Lo legal que encontré (solo lectura, no toqué nada de Blas)
+- La propia INVERSIONES AGROFORESTALES BLAS SAC (RUC 20605859438) figura en el Registro de Infractores de SERFOR: Resolución Administrativa N° D000511-2023-MIDAGRI-SERFOR-ATFFS SELVA CENTRAL, del 12-09-2023. Si un comprador o SERFOR busca tu RUC, sale. Conviene tener a mano la constancia de que está pagada o cerrada.
+- Tu proveedor COMUNIDAD NATIVA SEPTIMO UNIDOS DE SANTA FE DE AGUACHINI (RUC 20156700615) tiene 2 sanciones de 2026: RA D000032-2026 (21-01-2026) y RA D000118-2026 (16-03-2026), ATFFS Selva Central. Antes de comprarle otra vez, pídele las resoluciones.
+- El registro de plantación 19-SEC/REG-PLT-2021-017 está en SERFOR a nombre de SHARIHUA CAPATAZ, GERMAN (0,94 ha de tornillo); en tu panel figura como de la C.N. Santa Rosa de Chivis. Con 0,94 ha, revisa que lo comprado con ese registro no pase lo que da esa área.
+- Tus 7 permisos salen «sin supervisión» en OSINFOR (6 son registros de plantación, que OSINFOR no publica).
+
+## Forestal (14)
+- Botón «Revisar en OSINFOR y SERFOR» en la ficha de cada permiso y de cada proveedor: dice si está en lista roja, con proceso sancionador o en el registro de infractores. Es como pedirle al proveedor sus antecedentes antes de pagarle, pero en 2 segundos.
+- NUEVO al final: «Revisar a todos» en Cumplimiento > Chequeo del período: toda tu libreta de una vez (13 fichas y 8 permisos en 6 segundos en la prueba).
+- «Revisar a todos» ya no dice «todo bien» si OSINFOR no contestó: sale un aviso; «Sancionado» solo con sanción de SERFOR por RUC/DNI (si es solo lista roja, lo dice); un homónimo con otro DNI ya no se pega a tu proveedor.
+- Buscar sancionados es 6 veces más rápido (600 búsquedas: 0,76 s a 0,12 s).
+- «Cuánto pagar por la troza»: precio máximo por m³ de rollo con tu rendimiento real, y qué proveedor te da más pie tablar por m³.
+- El reporte de rendimiento del aserradero responde en 0,9 s (antes 7 s).
+- El puntaje de cumplimiento ya no premia el libro quieto; la tarjeta del plan dice qué especies están fuera del plan.
+- Pasar una línea del libro a inventario ya no crea productos repetidos; «producir sin lote» avisa si lo cubicado es de otro día.
+- Programa que lista las guías que solo viven como Anexo 04 (para tus 15 guías sin despacho).
+
+## Superadmin (13)
+- Uso por negocio, adopción, crecimiento, salud y alertas ya cuentan al aserradero: Blas pasó de 0 a 12 operaciones y dejó de salir «crítico» o «dormido».
+- Comisiones del marketplace a la vista (S/ 142,22 de 5 negocios), solo lectura.
+- La campana de avisos responde en 0,68 s (antes 1,2 s); salud de tiendas marca «sin uso» a las que no movieron nada en 30 días.
+
+## Compras (5)
+- Subir la factura XML del proveedor y crear la compra con sus líneas; si viene en dólares, se pasa a soles con el tipo de cambio de SUNAT.
+- La factura avisa si SUNAT tiene al proveedor como no habido o de baja.
+- Pedir precio a varios proveedores por WhatsApp desde las sugerencias de compra.
+
+## SUNAT y contador (5)
+- Registro de ventas en formato SIRE para el contador, y cruce con la propuesta que baja de SUNAT (qué falta o sobra).
+- Notas de crédito con su comprobante original; rangos de boletas entendidos; diseño del registro de compras listo (sin aplicar).
+
+## Ventas, caja y otros (11)
+- La dirección /marketplace ya no deja un error en el registro en cada visita (podía trabar la próxima subida a internet).
+- Lo que debe cada cliente de fiados sale en 1 consulta en vez de 2 (0,55 s a 0,47 s; mismas cifras en los 6 negocios con fiados).
+- Clientes del panel: las compras de cada cliente salen en 1 consulta en vez de 5 (desde la PC 0,92 s a 0,65 s; mismas cifras en 8 negocios).
+- Cotización con enlace: el cliente la abre sin clave y la acepta; queda con fecha y hora.
+- Tipo de cambio del dólar de SUNAT y BCRP automático.
+- Caja: tras vender, una lectura vieja ya no pinta el stock de antes. Guardar y recargar ya muestra lo nuevo en 36 lugares.
+- Aviso de las 9 dice desde cuándo nadie pasa lista; demo de aserradero con datos de ejemplo (lista, sin correr).
+
+## Qué tan ordenado trabajo (últimas 40 sesiones contra las del 02-10)
+- Revisiones repetidas a mano por sesión: de 30 a 4. Es como no volver a contar la carga que ya contaste en la balanza.
+- Cada ayudante termina en 25 pasos en vez de 92, y mira 1 foto de pantalla en vez de 4.
+
+## Decide tú (en orden)
+1. Resolución D000511-2023 de Blas en SERFOR: ¿está pagada o cerrada? Ten la constancia lista.
+2. C.N. Séptimo Unidos de Santa Fe de Aguachini: ¿le sigues comprando? Pídele las 2 resoluciones de 2026.
+3. ¿Aviso automático al registrar un ingreso de madera (lista roja de OSINFOR o infractor de SERFOR) en vez de solo botón? Es aviso legal: decides tú.
+4. Registro 2021-017 a nombre de Germán Sharihua (0,94 ha): ¿es comunero que vende por la comunidad? ¿Cargamos las áreas (5,4 y 0,94 ha) en el panel?
+5. Anexo 04 de Blas: 3 guías listas para registrar (068, 071, 072); 3 de agosto (054, 055, 056) con 23,2 m³ sin corrida piden tu OK; faltan en el talonario 059, 061, 069 y 070.
+6. Libro CTP de Blas: 10 producciones, 0 ingresos y 0 despachos en el panel. ¿Pasamos los ingresos del SNIFFS al panel?
+7. Superadmin: ningún negocio paga (son cortesías) y el plan «Aserradero S/ 349» no existe. ¿Lo creamos? (dinero)
+8. Blas tiene 4 productos «Madera aserrada - Tornillo» repetidos e inactivos (S/ 0): ¿los borro?
+9. Asistencia de Blas sin marcar desde el 27-10: el aviso de las 9 ya avisa; truco: marca primero las faltas y luego «Todos presentes».
+10. Marcar o apagar los negocios de prueba (demo, luis, tienda-3, etc.) y prender los avisos de fuga a clientes por WhatsApp/correo.
+11. Sanción de SERFOR sin RUC/DNI pero con el mismo número de permiso de tu proveedor: hoy cuenta como segura. Recomiendo dejarla así (752 casos; casi siempre es la misma persona escrita distinto).
+12. Candado de la base que hoy no cierra: 87 lecturas del panel dan 3 vueltas de más a la base. Es como un portero que pide DNI pero deja pasar a todos. Ventas: 0,70 s con él y 0,38 s sin él desde la PC (en internet, unos 0,05 s menos). ¿Lo activamos de verdad o lo quitamos? (seguridad)
+
+## Qué sigue
+- Nada se subió a internet: cuando quieras, lo subimos juntos.
+- Detalle técnico y bitácora: .claude/autonomo/noche-04-11/plan.md.

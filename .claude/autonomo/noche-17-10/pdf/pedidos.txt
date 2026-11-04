@@ -1,0 +1,1160 @@
+BULEJE / PEDIDOS Y REPARTO                                                                                           15 OCT 2026
+
+
+
+
+ BULEJE · AUDITORÍA ESPECÍFICA · 15 OCTUBRE 2026
+
+
+
+
+ Pedidos bajo control.
+ Reparto con menos pasos.
+ Diagnóstico y diseño de nuevas funciones
+ Revisión ampliada de Tablero, Lista, Archivados y las cinco secciones de Reparto, incluyendo rutas,
+ postulantes, permisos, pagos y configuración de la red Buleje.
+
+    CONTENIDO                          RESULTADO
+
+
+    Auditoría                          10 observaciones verificadas en la interfaz y una matriz de cobertura.
+
+
+    Mejoras                            48 propuestas identificadas, con prioridad, esfuerzo relativo y aceptación.
+
+
+    Nuevas pestañas                    6 fichas funcionales y una arquitectura que evita saturar el menú.
+
+
+    Diseño y ejecución                 3 bocetos, flujos operativos, fases de construcción y pruebas.
+
+
+
+   Mi recomendación principal
+   Conservar el tablero, filtros, equipo, pagos y mapas existentes. Conectar cada pedido con su siguiente
+   acción, responsable y dinero; después añadir programación, preparación e incidencias.
+
+ Lectura rápida: 2-3 cobertura y observaciones; 4-11 mejoras por sección; 12 navegación; 13-15 nuevas pestañas; 16-17
+ bocetos; 18-20 implementación, pruebas y fuentes.
+
+ Se trata de una auditoría de interfaz y propuestas para implementar. Las pestañas nuevas están diseñadas en este
+ documento; no se modificó el código ni se añadieron a la página. No se crearon pedidos ni repartidores, no se pagaron retiros
+ y no se cambiaron permisos o la red Buleje.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                   01
+BULEJE / PEDIDOS Y REPARTO                                                                                               15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 02
+
+
+
+ Cobertura real de la revisión
+ Ruta solicitada: /admin?tab=pedidos&vista=tablero#pedidos. Se navegó la interfaz autenticada en escritorio.
+
+    SECCIÓN                             QUÉ SE INSPECCIONÓ
+
+
+    Tablero                             Buscador, indicadores expandidos y modal de filtros: seis estados, origen, pago, fechas,
+                                        monto, cliente, deuda y notas.
+
+
+    Lista                               Buscador y filtros compartidos, indicadores y acceso a imprimir la lista. Sin pedidos para
+                                        revisar filas.
+
+
+    Archivados                          Todos, Entregados y Cancelados; búsqueda de cliente/teléfono, rango de fecha y estado
+                                        vacío.
+
+
+    Reparto / En vivo                   Mapa, estados Libre/Con oferta/Atendiendo, actualización, equipo; Rutas y paradas
+                                        expandido, segundo mapa, cifras y feed.
+
+
+    Reparto / Equipo                    Tu equipo y Postulantes; alta de repartidor abierta y cancelada sin guardar. Formulario de
+                                        nombre, teléfono, tarifa, zona, vehículo y activo.
+
+
+    Reparto / Asignaciones              Estado vacío, botón inicial deshabilitado, indicadores y sección Permisos de tienda
+                                        expandida.
+
+
+    Reparto / Pagos                     Retiros por pagar, historial Todos/Pagados/Rechazados e indicadores de importe
+                                        pendiente y pagado del mes.
+
+
+    Reparto / Ranking                   Esta semana / Este mes / Todo; cifras de repartidores, entregas, ganado en tarifas y
+                                        completadas.
+
+
+    Red Buleje / Más                    Configuración leída; figuraba Desactivada. El texto explica visibilidad en /delivery-app y
+                                        aceptación de pedidos por la red.
+
+
+
+ Alcance y límites
+ No había pedidos, repartidores, postulantes ni retiros en las vistas examinadas. Se pudo evaluar navegación,
+ mensajes, opciones y formularios; quedó pendiente la operación con datos, los detalles de un pedido y las
+ transiciones reales.
+ No se revisaron código, base de datos, seguridad, otros perfiles, app del repartidor, GPS real, entrega física, impresión, móvil
+ ni rendimiento medido. No se demuestra que una función falte en el servidor sólo porque no aparezca en un estado vacío.
+
+ Prioridad: P1 dinero, integridad o responsabilidad; P2 rapidez y claridad; P3 diferenciación. Esfuerzo: B bajo, M medio, A alto.
+ Tamaños relativos, sujetos a revisar la implementación.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                       02
+BULEJE / PEDIDOS Y REPARTO                                                                                              15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 03
+
+
+
+ Diez observaciones de la interfaz
+ Hechos vistos durante la sesión. Las consecuencias son interpretaciones de diseño, no fallas de servidor
+ demostradas.
+
+ O01 · Entrada por enlace
+ La primera apertura pasó por login y terminó en Ventas & Caja; volver a abrir la URL específica cargó Pedidos. Revisar
+ conservación de tab/vista tras autenticación. P43.
+
+ O02 · Inicio sin siguiente paso
+ Tablero dice que los nuevos pedidos aparecerán al momento; no se vio una acción para crear o traer el primero en ese estado.
+ Es oportunidad de orientación, no prueba de ausencia global. P01.
+
+ O03 · Filtros potentes poco visibles
+ Estado y varias condiciones se encuentran dentro de Filtros. En la barra sólo se vieron Yape y Efectivo como métodos.
+ Conservar capacidades y hacer visibles los criterios activos. P02, P07.
+
+ O04 · Indicadores en lista vacía
+ Con cero pedidos se muestra “Ninguno / todo se mueve”. Es más preciso “sin pedidos para evaluar”; lo mismo aplica al 0% de
+ completadas sin entregas. P06, P38.
+
+ O05 · Dos zonas de mapa
+ En vivo tiene mapa; Rutas y paradas abre Delivery en vivo con otro mapa y feed. Ya existen rutas y cifras; conviene unificar o
+ explicar sus alcances. P13, P17.
+
+ O06 · Alta con tarifa sin contexto
+ Nuevo repartidor trae tarifa base S/5 y una lista de zonas/vehículos. No se vio junto al campo qué incluye esa tarifa ni su
+ relación con el cobro al cliente. P20, N05.
+
+ O07 · Asignación bloqueada
+ “Asignar el primero” está deshabilitado y no hay pedidos ni equipo. Permisos dice que nadie tiene permisos. Son conceptos
+ que necesitan pasos y explicaciones diferenciados. P25, P29.
+
+ O08 · Pagos significa retiros
+ Pagos muestra retiros del repartidor por pagar, pagados y rechazados. No debe confundirse con el pago del cliente o el
+ efectivo que un repartidor debe rendir. P31-P33.
+
+ O09 · Archivo con texto genérico
+ Entregados y Cancelados muestran el mismo texto: todavía no hay pedidos entregados ni cancelados. Adaptar mensaje,
+ búsqueda y acciones a cada estado. P11-P12.
+
+ O10 · Red externa fuera del flujo
+ Más permite configurar la red Buleje; estaba desactivada. El texto indica que, al activarse, los pedidos van a la red al
+ confirmarse. Mostrar el alcance de esa decisión antes de despachar. P30.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                    03
+BULEJE / PEDIDOS Y REPARTO                                                                               15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 04
+
+
+
+ Tablero: decidir qué hacer ahora
+ Mantener el tablero como vista principal de operación. Las tarjetas y transiciones con pedidos reales deberán
+ verificarse en un entorno de prueba.
+
+ P01 · Empezar con un pedido
+ P2 · Esfuerzo B | En el vacío, ofrecer Nuevo pedido y accesos a traer un pedido de POS, tienda o WhatsApp si
+ esas vías están disponibles.
+ Aceptación: El operador identifica cómo empezar sin salir a buscar otro módulo; un filtro vacío muestra Limpiar
+ filtros.
+
+ P02 · Criterios activos a la vista
+ P2 · Esfuerzo B | Mostrar chips de fecha, origen, estado, deuda y monto fuera del modal, con contador y limpiar
+ individual.
+ Aceptación: Lo aplicado en Filtros se puede leer sin abrirlo; cambiar a Lista mantiene los mismos criterios.
+
+ P03 · Tarjeta con datos para actuar
+ P1 · Esfuerzo M | Pedido corto, cliente, hora prometida, pago, saldo, responsable y siguiente acción; detalle
+ lateral con el historial.
+ Aceptación: Un operador decide qué falta sin abrir varias pantallas; el estado del pago no se confunde con el
+ de preparación.
+
+ P04 · Tiempo prometido y tiempo esperando
+ P2 · Esfuerzo M | Separar antigüedad del pedido, tiempo en estado y compromiso de entrega, con umbrales
+ configurables.
+ Aceptación: Un pedido recién creado con entrega futura no aparece atrasado; cada aviso explica su motivo.
+
+ P05 · Transiciones con requisitos
+ P1 · Esfuerzo A | Al confirmar, preparar o despachar, validar datos requeridos y dejar ver el efecto sobre stock,
+ cobro y reparto.
+ Aceptación: No se marca entrega por un arrastre accidental; cada cambio conserva actor, hora y estado
+ previo.
+
+ P06 · Indicadores que llevan a resolver
+ P2 · Esfuerzo M | Potenciar Sin avanzar, El que más espera y Con deuda con listas filtradas y contexto del
+ período.
+ Aceptación: Cero pedidos se presenta como Sin datos; pulsar un indicador abre exactamente los registros que
+ lo explican.
+
+
+   Flujo propuesto
+   Entrada del pedido > verificar datos y pago > confirmar > preparar > despachar o retirar > entregar > resolver
+   cobro y rendición. Pago y preparación deben poder avanzar por vías distintas, con reglas claras.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                       04
+BULEJE / PEDIDOS Y REPARTO                                                                                      15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 05
+
+
+
+ Lista y Archivados: localizar y revisar
+ Lista es otra vista de los mismos pedidos; Archivados conserva el resultado y su historia.
+
+ P07 · Buscar por referencias útiles
+ P2 · Esfuerzo M | Ampliar la búsqueda según necesidad: número, cliente, teléfono, canal y referencia de pago;
+ indicar qué campos acepta.
+ Aceptación: Tablero, Lista y Archivo encuentran el mismo pedido por su código, con el alcance de cada vista
+ explícito.
+
+ P08 · Columnas y filtros guardados
+ P2 · Esfuerzo M | Vistas Preparación, Entregas de hoy, Por cobrar y Sin asignar, con columnas y orden por
+ usuario.
+ Aceptación: Guardar una vista no cambia la de otro operador; se puede volver a la vista estándar.
+
+ P09 · Operaciones por lote revisables
+ P1 · Esfuerzo A | Seleccionar pedidos para imprimir, preparar o proponer asignación, con vista previa de
+ elegibles y excluidos.
+ Aceptación: El lote informa qué cambió, qué falló y por qué; reintentar procesa sólo los pendientes.
+
+ P10 · Detalle sin perder el lugar
+ P2 · Esfuerzo M | Abrir un panel lateral con cliente, líneas, pago, transporte, evidencias y notas internas.
+ Aceptación: Cerrar devuelve al mismo orden, fila, búsqueda y filtros. Las notas internas se distinguen del
+ mensaje al cliente.
+
+ P11 · Archivo específico y recuperable
+ P1 · Esfuerzo M | En Entregados mostrar fecha y prueba; en Cancelados, motivo, actor y resolución del dinero;
+ reabrir según política.
+ Aceptación: Cancelar un pedido no lo elimina; reabrir no repite venta, cobro o reserva ya existentes.
+
+ P12 · Impresión y exportación con contexto
+ P2 · Esfuerzo M | Potenciar Imprimir lista con período, filtros, hora de corte, código corto y versión apta para
+ preparación.
+ Aceptación: Lo impreso corresponde al filtro visible y no expone teléfono o dirección en copias que no los
+ necesitan.
+
+ Mejora rápida de textos: en Entregados, “Aún no hay entregas en este rango”; en Cancelados, “Aún no hay cancelaciones en
+ este rango”. Si hay criterios activos, ofrecer quitarlos.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                              05
+BULEJE / PEDIDOS Y REPARTO                                                                              15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 06
+
+
+
+ En vivo y Rutas y paradas
+ Ya hay mapas, rutas activas/planificadas, distancia y feed. La propuesta es darles un alcance y una fuente
+ coherentes.
+
+ P13 · Un mapa con capas claras
+ P2 · Esfuerzo M | Integrar o conectar los dos mapas: equipo, pedidos, rutas y eventos como capas del mismo
+ contexto.
+ Aceptación: No aparecen contadores incompatibles sin explicación; seleccionar ruta o repartidor filtra mapa,
+ paradas y feed.
+
+ P14 · Frescura por repartidor
+ P1 · Esfuerzo M | Conservar la actualización global y añadir fecha de posición, precisión y estado sin señal de
+ cada repartidor [R3].
+ Aceptación: Actualizar la pantalla no hace parecer reciente una posición antigua; el mapa identifica el dato
+ estimado.
+
+ P15 · Sugerir rutas por capacidad
+ P3 · Esfuerzo A | Proponer agrupación usando peso, volumen, vehículo, zona y ventanas de entrega, con
+ edición manual [R1-R2].
+ Aceptación: La propuesta respeta límites o explica que no hay solución; no descarta silenciosamente una
+ parada.
+
+ P16 · Replanificar con impacto visible
+ P2 · Esfuerzo A | Ante demora o cambio de dirección, comparar ruta actual y propuesta, entregas afectadas y
+ nueva promesa.
+ Aceptación: Un responsable aprueba el cambio; no se envían notificaciones al cliente por una simulación sin
+ confirmar.
+
+ P17 · Dar acceso directo a rutas
+ P2 · Esfuerzo B | Promover Rutas y paradas a acceso o subpestaña cuando haya uso frecuente, reutilizando su
+ feed y métricas.
+ Aceptación: El cambio reorganiza lo existente; no crea otro planificador ni otro registro de la misma ruta.
+
+ P18 · Feed vinculado al pedido
+ P2 · Esfuerzo M | Cada evento abre su pedido/parada, conserva fecha y actor, y diferencia GPS, acción
+ humana y cálculo.
+ Aceptación: Eventos repetidos se agrupan sin borrar la trazabilidad; el operador puede filtrar sólo lo que
+ necesita atender.
+
+
+   Validación pendiente
+   El mapa cargó y permitió ver controles y estados vacíos. No hubo repartidores ni rutas reales para
+   comprobar ubicación, ETA, distancia, continuidad de señal o calidad de una ruta.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                     06
+BULEJE / PEDIDOS Y REPARTO                                                                                 15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 07
+
+
+
+ Equipo y Postulantes
+ Conservar ambas vistas. Las nuevas capacidades deben ayudar a preparar el trabajo y comprender
+ disponibilidad, tarifas y responsabilidades.
+
+ P19 · Estado operativo distinto de activo
+ P1 · Esfuerzo M | Separar habilitado, de turno, disponible, ocupado y sin conexión; Activo no debe significar
+ automáticamente disponible.
+ Aceptación: Una persona habilitada que está fuera de jornada no recibe asignaciones como si estuviera libre.
+
+ P20 · Explicar tarifa base
+ P1 · Esfuerzo B | Junto al campo de S/5, indicar si es pago al repartidor, cargo de entrega o valor inicial;
+ mostrar vigencia y extras.
+ Aceptación: Antes de guardar se entiende qué importe cambia y en qué operaciones futuras se usará.
+
+ P21 · Capacidad y cobertura por vehículo
+ P1 · Esfuerzo M | Extender vehículo/zona con capacidad, restricciones de carga y cobertura configurable de
+ cada persona.
+ Aceptación: La asignación distingue moto, auto, bicicleta u otros; una limitación de volumen no se reemplaza
+ por cercanía.
+
+ P22 · Alta guiada y estado incompleto
+ P2 · Esfuerzo M | Validar nombre/contacto, explicar los datos opcionales y ofrecer completar información sin
+ habilitar por accidente.
+ Aceptación: Los errores aparecen junto al campo; guardar dos veces no crea dos repartidores con el mismo
+ identificador.
+
+ P23 · Postulantes con revisión humana
+ P2 · Esfuerzo M | Añadir requisitos operativos visibles, pendientes y registro de revisión para quien
+ corresponde.
+ Aceptación: Ningún puntaje automático aprueba o rechaza una persona; la decisión muestra responsable,
+ razón y alcance.
+
+ P24 · Ficha de trabajo y antecedentes
+ P2 · Esfuerzo M | Desde Equipo abrir entregas, incidencias, tarifas aplicadas y pagos relacionados, con período
+ y permisos.
+ Aceptación: Un indicador lleva a sus registros; desactivar conserva historial y resuelve asignaciones abiertas.
+
+
+   Diseñar con los datos actuales
+   El formulario observado solicita nombre, teléfono, tarifa base, zona, vehículo y estado activo. No se propone
+   añadir datos personales sin necesidad: cada dato nuevo debe ayudar a una decisión de operación.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                     07
+BULEJE / PEDIDOS Y REPARTO                                                                                             15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 08
+
+
+
+ Asignaciones y permisos
+ El despacho debe explicar por qué alguien puede recibir un pedido, qué está pendiente y qué ocurre si dos
+ personas actúan a la vez.
+
+ P25 · Mostrar prerrequisitos del bloqueo
+ P2 · Esfuerzo B | Sustituir el botón inicial sin explicación por una lista: crear/recibir pedido, preparar equipo y
+ habilitar lo necesario.
+ Aceptación: Cada bloqueo tiene una razón visible y un acceso para resolverla; no se invita a pulsar una acción
+ imposible.
+
+ P26 · Prechequeo de despacho
+ P1 · Esfuerzo M | Revisar dirección, contacto, preparación, cobro al entregar, capacidad y documentos antes de
+ asignar.
+ Aceptación: Las excepciones muestran su efecto y responsable; un dato pendiente no queda oculto después
+ de despachar.
+
+ P27 · Asignación sugerida y explicada
+ P3 · Esfuerzo A | Proponer candidatos por zona, disponibilidad, capacidad y carga actual; mostrar los factores
+ al despachador.
+ Aceptación: La cercanía no basta por sí sola; el operador puede elegir otro candidato y dejar motivo cuando
+ corresponda.
+
+ P28 · Reserva de oferta y aceptación única
+ P1 · Esfuerzo A | Definir ofertado, aceptado, vencido, rechazado y reasignado; vencimiento de la oferta y aviso
+ al operador.
+ Aceptación: Dos repartidores no aceptan la misma entrega; reasignar no deja dos responsables activos sin
+ distinguir funciones.
+
+ P29 · Separar equipo de permisos
+ P1 · Esfuerzo M | Explicar en Permisos de tienda quién puede ver, aceptar, modificar o liquidar y qué relación
+ tiene con pertenecer al equipo.
+ Aceptación: Los permisos se verifican también al ejecutar; un cambio registra quién lo hizo y no altera
+ entregas anteriores.
+
+ P30 · Estado de red en el despacho
+ P1 · Esfuerzo M | Mostrar Equipo propio / Red Buleje y alcance antes de confirmar el pedido; conservar la
+ configuración en Más.
+ Aceptación: El usuario sabe quién podrá verlo y aceptarlo; cambiar la red no reasigna silenciosamente pedidos
+ en curso.
+
+ Estado observado: red Buleje desactivada. Se leyó la configuración y no se cambió. La relación real entre permisos,
+ aceptación y visibilidad queda pendiente de una prueba con perfiles de repartidor.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                 08
+BULEJE / PEDIDOS Y REPARTO                                                                                  15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 09
+
+
+
+ Pagos: tres cuentas distintas
+ La pestaña actual gestiona retiros del repartidor. Conviene distinguir ese proceso del cobro al cliente y de la
+ rendición de efectivo.
+
+ P31 · Nombres que expliquen el dinero
+ P1 · Esfuerzo B | Dentro de Pagos, separar Retiros del repartidor, Cobros de clientes y Efectivo por rendir si se
+ integran esos flujos.
+ Aceptación: Cada importe aclara quién debe a quién; “por pagar” no incluye dinero que el repartidor debe
+ entregar a la tienda.
+
+ P32 · Cuenta por pedido y por persona
+ P1 · Esfuerzo A | Enlazar venta, pago del cliente, tarifa ganada, retiro solicitado, pago del retiro y efectivo
+ entregado a caja.
+ Aceptación: Una rendición no se registra como una segunda venta ni como otro pago del cliente.
+
+ P33 · Rendición con diferencia explicada
+ P1 · Esfuerzo A | Mostrar efectivo esperado, entregado, ajustes autorizados y saldo pendiente por jornada de
+ reparto.
+ Aceptación: El ejemplo 300 cobrados menos 280 rendidos deja 20 pendientes, salvo ajuste justificado; no se
+ compensa automáticamente con tarifas.
+
+ P34 · Pago con soporte y reintento único
+ P1 · Esfuerzo A | Para retiros, validar estado, monto y medio; adjuntar referencia y constancia al resolver la
+ solicitud.
+ Aceptación: Doble clic o reconexión no paga dos veces; el historial distingue pendiente, pagado, rechazado y
+ error por confirmar.
+
+ P35 · Historial conciliable
+ P1 · Esfuerzo M | Potenciar Todos/Pagados/Rechazados con fecha, repartidor, período, referencia, motivo y
+ exportación.
+ Aceptación: La suma de filas coincide con los indicadores del mismo rango; un rechazo conserva por qué y
+ qué se debe hacer.
+
+ P36 · Alertas de coincidencia y cierre
+ P1 · Esfuerzo M | Revisar referencias repetidas, importes similares y rendiciones pendientes con vínculos a sus
+ registros.
+ Aceptación: Mismo monto por sí solo no elimina ni bloquea un pago; el supervisor puede justificar operaciones
+ distintas.
+
+
+   Caso de prueba necesario
+   Pedido de S/300 cobrado contra entrega, tarifa de reparto acordada y rendición parcial. Debe explicar saldo
+   del cliente, efectivo en custodia y saldo de tarifa del repartidor de forma independiente.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                       09
+BULEJE / PEDIDOS Y REPARTO                                                                                        15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 10
+
+
+
+ Ranking: medir para mejorar
+ Los indicadores actuales son repartidores, entregas, ganado en tarifas y completadas. Antes de usar el ranking,
+ hay que explicar sus bases.
+
+ P37 · Período y fórmula visibles
+ P1 · Esfuerzo B | Conservar semana/mes/todo, mostrar fechas y explicar base de entregas, completadas y
+ tarifas.
+ Aceptación: La cifra del indicador se reproduce con los registros del período, sin mezclar fecha de creación y
+ fecha de entrega.
+
+ P38 · Sin muestra no es cero desempeño
+ P2 · Esfuerzo B | Con cero entregas, mostrar Sin datos para tasa de completadas; con pocas, indicar tamaño
+ de muestra.
+ Aceptación: Una persona nueva no parece tener peor desempeño sólo porque aún no hay trabajo registrado.
+
+ P39 · Calidad y puntualidad además de volumen
+ P2 · Esfuerzo M | Añadir entregas a tiempo, primer intento, incidencias resueltas y tiempos por tramo; conservar
+ detalle.
+ Aceptación: Una demora de preparación no se atribuye al repartidor como si hubiera ocurrido en su recorrido.
+
+ P40 · Comparaciones con contexto
+ P2 · Esfuerzo M | Comparar por zona, vehículo, carga y franja; evitar un único orden absoluto para trabajos
+ distintos.
+ Aceptación: El usuario distingue muestra comparable y mezcla de casos; el criterio y los filtros son
+ consultables.
+
+ P41 · Tarifas ganadas frente a pagadas
+ P1 · Esfuerzo M | Mostrar devengado por entregas y pagado por retiros como cifras distintas, conectadas con
+ Pagos.
+ Aceptación: Un retiro pagado no cambia el número de entregas; un ajuste conserva su pedido y su período.
+
+ P42 · Acciones de mejora desde la métrica
+ P2 · Esfuerzo M | Abrir pedidos que explican atrasos o fallos y crear una tarea de revisión con responsable.
+ Aceptación: El ranking ayuda a resolver causas; no sanciona ni cambia permisos automáticamente por una
+ puntuación.
+
+ No se evaluaron fórmulas de ranking con datos reales: no había entregas en la vista revisada. Las métricas propuestas
+ requieren definiciones de negocio y datos de eventos consistentes.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                            10
+BULEJE / PEDIDOS Y REPARTO                                                                             15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 11
+
+
+
+ Rapidez e innovación transversal
+ Estas capacidades conectan las pestañas y evitan recapturar información. No requieren añadir una pestaña
+ principal por cada herramienta.
+
+ P43 · Enlaces que conservan el destino
+ P2 · Esfuerzo M | Tras login, restaurar pestaña, vista y filtros autorizados del enlace; permitir compartir
+ internamente un pedido.
+ Aceptación: Abrir la URL de Pedidos después de autenticarse vuelve al tablero solicitado, sin enviarlo a otro
+ módulo.
+
+ P44 · Barra de acciones fijadas
+ P2 · Esfuerzo M | Personalizar Nuevo pedido, Importar, Buscar, Preparar, Asignar y Ver pendientes; ampliar el
+ buscador global existente.
+ Aceptación: Una acción frecuente se abre con un clic; atajos no se activan mientras se escribe en un
+ formulario.
+
+ P45 · Seguimiento del cliente por pedido
+ P3 · Esfuerzo A | Acción para generar un enlace acotado al pedido con estado, franja estimada y opciones de
+ contacto.
+ Aceptación: El enlace no expone datos de otras entregas, la ruta completa ni ubicaciones personales fuera del
+ servicio.
+
+ P46 · Borradores desde mensajes
+ P3 · Esfuerzo A | Integrar el pedido por WhatsApp ya presente en el POS para sugerir cliente, productos,
+ dirección y horario.
+ Aceptación: Se revisan ambigüedades, precio y posible duplicidad antes de crear; leer un mensaje no confirma
+ automáticamente el pedido.
+
+ P47 · Continuidad sin conexión
+ P3 · Esfuerzo A | Cola de borradores/eventos con estado local, pendiente y confirmado; sincronización y
+ resolución de conflictos.
+ Aceptación: Un intento de entrega fuera de línea no aparece confirmado en caja hasta reconciliar; reintentar
+ no duplica eventos.
+
+ P48 · Control de carga y consolidación
+ P3 · Esfuerzo A | Para cargas grandes, agrupar por vehículo, peso, volumen, bultos y ventana; enlazar
+ documentos de transporte.
+ Aceptación: Cada entrega parcial mantiene cantidades pendientes; no se da por completado todo el pedido
+ con una sola descarga parcial.
+
+
+   Innovar sobre funciones existentes
+   WhatsApp, mapas, rutas, feed, red externa y ranking ya ofrecen una base. Las propuestas añaden revisión,
+   continuidad y conexión entre registros, sin presentar esas funciones como si hoy no existieran.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                   11
+BULEJE / PEDIDOS Y REPARTO                                                                                              15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 12
+
+
+
+ Arquitectura de pestañas propuesta
+ Seis destinos principales son suficientes. Las nuevas funciones especializadas quedan dentro del área donde
+ se usan.
+
+    NIVEL PRINCIPAL                      VISTAS Y FUNCIONES
+
+
+    Operación                            Tablero + Lista existentes; Preparación (N02). Mismo pedido, filtros y panel de detalle.
+
+
+    Programados (N01)                    Agenda de entregas y retiros por franja; capacidad y reprogramaciones.
+
+
+    Reparto                              En vivo, Equipo, Asignaciones, Pagos y Ranking existentes. Rutas y paradas puede
+                                         promocionarse a subpestaña; Zonas y tarifas (N05).
+
+
+    Incidencias (N03)                    Atención de fallos y reintentos; Devoluciones (N04) como subpestaña de logística
+                                         inversa.
+
+
+    Análisis (N06)                       Demanda, tiempos, zonas y costo del servicio; diferente del ranking de personas.
+
+
+    Historial                            Archivados actual: entregados y cancelados; acceso al mismo detalle y a sus incidencias.
+
+
+
+ Qué es nuevo y qué es reorganización
+ Nuevo propuesto: Programados, Preparación, Incidencias, Devoluciones, Zonas y tarifas, Análisis operativo.
+ La ausencia en el menú inspeccionado no demuestra que no haya lógica relacionada en otros módulos.
+
+ Reorganización: Tablero y Lista se vuelven vistas de Operación; Archivados puede llamarse Historial; Rutas y
+ paradas se hace más accesible reutilizando el componente existente.
+
+ Accesos por función
+
+    PERSONA                              INICIO PROPUESTO
+
+
+    Mostrador / ventas                   Operación: recibir, verificar y buscar pedido.
+
+
+    Preparación                          Preparación: cola, faltantes, empaque y listo para salida.
+
+
+    Despacho                             Asignaciones / En vivo: capacidad, ruta, incidencias.
+
+
+    Caja / supervisor                    Pagos: retiros y rendiciones; Análisis para revisar diferencias.
+
+
+ Implantar por fases y habilitar sólo lo que se usa. Evitar una fila con diez pestañas principales o dos fuentes independientes
+ para el mismo pedido.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                      12
+BULEJE / PEDIDOS Y REPARTO                                                                                  15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 13
+
+
+
+ Nuevas pestañas 1 y 2
+ Agenda y preparación añaden decisiones antes de despachar. Son especificaciones propuestas para un
+ prototipo.
+
+ N01 · Programados
+ Ubicación: Destino principal Programados.
+ Quién la usa: Mostrador y despacho.
+
+ Campos mínimos: Pedido, fecha, franja, entrega/retiro, zona, tiempo de preparación, capacidad y
+ responsable.
+
+ Flujo: Elegir franja > validar cupo > confirmar compromiso > liberar a Preparación. Reprogramar conserva
+ horario anterior, motivo y quien lo cambió.
+
+ Función innovadora: Semáforo de capacidad que advierte antes de prometer una hora; pedidos recurrentes
+ crean borradores revisables, sin cobrar automáticamente.
+
+   Criterio para aprobar el prototipo
+   Una franja llena se explica y ofrece alternativas. Dos operadores no reservan el último cupo a la vez.
+   Cambiar horario no duplica pedido, cobro ni reserva de inventario.
+
+
+ N02 · Preparación
+ Ubicación: Subpestaña de Operación junto a Tablero y Lista.
+ Quién la usa: Almacén y preparador.
+
+ Campos mínimos: Líneas, unidad, cantidad solicitada/preparada, ubicación, sustitución, faltante, bultos y
+ responsable.
+
+ Flujo: Tomar tarea > recoger o medir > revisar faltantes > empacar > marcar Listo. Sugerir sustitución no la
+ confirma sin la política del negocio.
+
+ Función innovadora: Preparación por oleadas: agrupar recorridos por ubicación y hora de salida; escaneo o
+ lista de control confirma cada línea.
+
+   Criterio para aprobar el prototipo
+   Se distingue listo parcial de completo. Un faltante no desaparece al empacar; quedan cantidades pendientes
+   y el pedido no sale como íntegro si falta mercancía.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                      13
+BULEJE / PEDIDOS Y REPARTO                                                                                15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 14
+
+
+
+ Nuevas pestañas 3 y 4
+ Resolver excepciones y devoluciones requiere registros propios vinculados al pedido, no una edición que borre
+ lo sucedido.
+
+ N03 · Incidencias
+ Ubicación: Destino principal, con bandeja de atención.
+ Quién la usa: Despacho, atención y supervisor.
+
+ Campos mínimos: Pedido, tipo, intento, causa, evidencia, responsable, próxima acción, hora objetivo y
+ resolución.
+
+ Flujo: Registrar fallo > asignar responsable > proponer contacto, corrección o reintento > confirmar acuerdo >
+ resolver. Separar causa de la persona que reporta.
+
+ Función innovadora: Bandeja por próxima acción, con guion de contacto revisable; agrupar incidencias por
+ causa para detectar problemas de dirección o preparación.
+
+   Criterio para aprobar el prototipo
+   Cerrar exige resultado y conserva intentos. Un reintento fallido no marca entregado; no se envían mensajes
+   ni se aplica un descuento por una sugerencia automática.
+
+
+ N04 · Devoluciones
+ Ubicación: Subpestaña dentro de Incidencias.
+ Quién la usa: Despacho, almacén, caja y supervisor según etapa.
+
+ Campos mínimos: Pedido original, líneas, motivo, cantidad devuelta, estado físico, recogida, recepción y
+ resolución de dinero.
+
+ Flujo: Solicitar devolución > coordinar recogida > recibir y revisar > decidir reingreso, reparación o baja >
+ resolver crédito/reembolso con autorización.
+
+ Función innovadora: Consolidar recogidas con rutas de salida compatibles; mostrar el ciclo físico y financiero
+ por separado.
+
+   Criterio para aprobar el prototipo
+   Recibir mercancía no confirma un reembolso. No se devuelve más que lo entregado y no devuelto antes;
+   stock y dinero se actualizan una sola vez con sus soportes.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                    14
+BULEJE / PEDIDOS Y REPARTO                                                                                 15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 15
+
+
+
+ Nuevas pestañas 5 y 6
+ Tarifas y análisis necesitan separar precio, costo y dinero pagado. No sustituyen al ranking de repartidores.
+
+ N05 · Zonas y tarifas
+ Ubicación: Subpestaña de Reparto, visible a responsables autorizados.
+ Quién la usa: Administrador y despacho.
+
+ Campos mínimos: Cobertura, zona, vehículo, tarifa al cliente, tarifa al repartidor, extras, límites, horario,
+ vigencia y versión.
+
+ Flujo: Definir cobertura > configurar reglas > simular con un pedido > revisar precio y costo > aprobar vigencia.
+ Explicar prioridades si dos reglas coinciden.
+
+ Función innovadora: Simulador: comparar vehículo, franja y consolidación antes de ofrecer el envío; avisar
+ cuando una dirección queda fuera de cobertura.
+
+   Criterio para aprobar el prototipo
+   El precio al cliente y el pago al repartidor son distintos y visibles. Cambiar la tarifa no modifica
+   silenciosamente lo ya confirmado; se registran excepciones.
+
+
+ N06 · Análisis operativo
+ Ubicación: Destino principal Análisis.
+ Quién la usa: Supervisor y planificación.
+
+ Campos mínimos: Período, origen, zona, franjas, volumen, tiempos por etapa, costo de reparto, ingresos por
+ envío, incidencias y muestras.
+
+ Flujo: Elegir período > detectar demora/costo > abrir pedidos fuente > asignar revisión > comparar tras el
+ cambio. Compartir filtros, no otro total independiente.
+
+ Función innovadora: Mapa de demanda por zona y franja, y comparador de escenarios “dos salidas pequeñas
+ o una consolidada”; datos agregados para planificación.
+
+   Criterio para aprobar el prototipo
+   Cada cifra lleva a su base. Se separan estimaciones de costos registrados; con cero muestra no se promete
+   demanda futura ni ahorro garantizado.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                     15
+BULEJE / PEDIDOS Y REPARTO                                                                                                15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 16
+
+
+
+ Boceto 1: centro de operación
+ Diseño conceptual con pedidos y cantidades ficticios. Los accesos rápidos no reemplazan las validaciones del
+ pedido.
+
+
+
+       PEDIDOS Y REPARTO · DISEÑO PROPUESTO
+
+
+      Operación | Programados | Reparto | Incidencias | Análisis | Historial
+
+
+       Nuevo pedido                      Importar WhatsApp                        Buscar pedido / cliente
+
+
+      Hoy | Canal: todos | Filtros guardados | Tablero / Lista / Preparación
+
+
+
+       Confirmar · 2                                Preparar · 2                              Despachar · 2
+
+
+        Pedido #024                                  Pedido #026                               Pedido #028
+        Entrega: 16:00-17:00                         Entrega: 16:00-17:00                      Entrega: 16:00-17:00
+        Pago: por verificar                          Pago: verificado                          Cobro: contra entrega
+
+
+
+
+        Pedido #025                                  Pedido #027                               Pedido #029
+        Esperando: 12 min                            Esperando: 12 min                         Esperando: 12 min
+        Siguiente acción visible                     Siguiente acción visible                  Siguiente acción visible
+
+
+
+
+        Resolver ahora: 1 dirección por confirmar · 1 entrega reprogramada
+        Cada aviso abre su pedido y conserva el filtro de origen.
+
+
+
+
+ Tres decisiones en la misma pantalla
+
+    DECISIÓN                       DATOS Y ACCIÓN
+
+
+    Qué atender                    Hora prometida, tiempo en estado y bloqueo visible.
+
+
+    Quién sigue                    Responsable de confirmar, preparar o despachar.
+
+
+    Qué falta                      Pago por verificar, dirección por confirmar, faltante o capacidad.
+
+
+ En una tarjeta real se ajustará la densidad para que importe, contacto y notas no compitan entre sí. El detalle completo queda
+ en un panel lateral. La vista Lista conserva los mismos registros y filtros.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                    16
+BULEJE / PEDIDOS Y REPARTO                                                                                             15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 17
+
+
+
+ Bocetos 2 y 3: agenda y excepción
+ Propuestas de interfaz; no son capturas de funciones implementadas. Fechas y registros de ejemplo.
+
+
+
+       PEDIDOS Y REPARTO · DISEÑO PROPUESTO
+
+
+      Programados · Hoy / Semana / Calendario
+
+
+        09:00-10:00                    Pedido #031 · Zona Centro
+                                       Cupo confirmado
+
+        11:00-12:00                    Pedido #032 · Retiro en tienda
+                                       Por preparar
+
+        16:00-17:00                    Pedido #033 · Entrega a domicilio
+                                       Revisar capacidad
+
+       Reprogramar con motivo | Liberar a preparación | Ver capacidad
+
+
+
+
+ Prometer con capacidad visible
+ La agenda muestra la franja comprometida y si el pedido ya puede pasar a preparación. Reservar un cupo y reservar inventario
+ son controles relacionados, pero diferentes.
+
+
+
+       PEDIDOS Y REPARTO · DISEÑO PROPUESTO
+
+
+      Incidencia #I-018 · Cliente ausente
+
+      Pedido #024 | Responsable: despacho | Próxima acción: 17:00
+
+        16:10 · Primer intento registrado
+
+
+        16:15 · Contacto anotado por el operador
+
+
+        17:00 · Nuevo intento propuesto; falta confirmar
+
+
+        Reprogramar                                   Iniciar devolución                    Ver pedido
+
+
+
+
+ Resolver sin borrar el intento
+ El fallo queda ligado al pedido. Reprogramar o devolver abre su propio flujo, conserva evidencia y actualiza la siguiente acción;
+ nunca equivale por sí solo a pagar o reembolsar.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                   17
+BULEJE / PEDIDOS Y REPARTO                                                                                          15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 18
+
+
+
+ Orden de implementación
+ Primero claridad y consistencia; después nuevos flujos. Los tamaños son relativos: no se estimaron días sin
+ revisar código y servicios.
+
+    FASE                    ENTREGAS                                  SALIDA REVISABLE
+
+
+    A · Acceso y            P01-P02, P06, P20, P25, P31, P38,         Vacíos útiles, filtros visibles, enlaces restaurados y
+    claridad                P43-P44.                                  nombres del dinero. Prototipo de navegación.
+
+
+    B · Pedido              P03-P05, P07-P12, P26, P28.               Un solo pedido con historia, actores, pago separado y
+    trazable                                                          transiciones válidas. Pruebas con pedidos ficticios.
+
+
+    C · Agenda y            N01-N02; P19, P21-P22.                    Cupo, inventario, preparación parcial y cola de salida
+    preparación                                                       coherentes.
+
+
+    D · Excepciones         N03-N04; P24, P29-P36.                    Reintentos, devoluciones, retiros y rendiciones sin
+    y dinero                                                          duplicidad.
+
+
+    E · Planificación       N05-N06; P13-P18, P27, P37-P42,           Tarifas versionadas, rutas sugeridas, análisis y
+    avanzada                P45-P48.                                  continuidad con evidencia de impacto.
+
+
+
+ Dependencias que hay que acordar
+ Pedido: estados y eventos únicos; responsabilidad por etapa; relación con venta, inventario y comprobantes.
+ Reparto: oferta y aceptación; trabajo propio o red; capacidad y vigencia de tarifas.
+
+ Dinero: cobrado al cliente, efectivo en custodia, rendido a caja, tarifa ganada y retiro pagado. Entrega:
+ completa/parcial, fallida, reprogramada y devolución.
+
+   Primer paquete recomendado
+   Resolver O01-O04 y O07-O08: entrada correcta, empezar el primer pedido, filtros visibles, métricas sin
+   muestra, prerrequisitos de asignación y Pagos con significado claro. En paralelo, prototipar Programados y
+   Preparación con los usuarios.
+
+ Los responsables propuestos son funciones de trabajo, no personas asignadas: operaciones define reglas, diseño valida el
+ recorrido y desarrollo verifica integridad y permisos.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                 18
+BULEJE / PEDIDOS Y REPARTO                                                                                              15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 19
+
+
+
+ Pruebas que hacen confiable el módulo
+ Pendientes para un entorno de prueba. Durante la auditoría se leyó la interfaz y se cancelaron los formularios
+ sin crear datos.
+
+    CASO                                RESULTADO QUE DEBE EXIGIRSE
+
+
+    Pedido al contado / crédito         Estados de pago y entrega independientes; saldo correcto. Tablero, Lista e Historial ven
+                                        el mismo código.
+
+
+    Dos canales, misma                  Detectar posible repetición sin fusionar por importe solamente; confirmar antes de crear
+    referencia                          otro pedido.
+
+
+    Último cupo / último stock          Dos operadores compiten; sólo uno confirma el recurso disponible o se explica la reserva
+                                        pendiente.
+
+
+    Asignación propia / red             Permisos y alcance correctos; dos aceptaciones simultáneas dejan un único responsable
+                                        activo.
+
+
+    Entrega parcial / cliente           Conservar cantidades e intentos; nueva acción con responsable y fecha; dinero aún
+    ausente                             pendiente visible.
+
+
+    Rendición parcial / retiro          Separar efectivo adeudado y tarifa a pagar. Un retiro pagado no liquida por sí solo el
+                                        efectivo en custodia.
+
+
+    Devolución después de               Recepción física y devolución de dinero enlazadas, con stock correcto y ajustes sin doble
+    cobrar                              registro.
+
+
+    Sin GPS / sin conexión              Posición antigua identificada; eventos locales pendientes; volver a conectar no duplica
+                                        entrega ni pago.
+
+
+    Cambio de tarifa / reintento        Vigencia correcta en cada pedido; reintentar un pago, una reserva o un cambio no lo
+                                        aplica dos veces.
+
+
+
+ Medir antes y después
+ Tiempo mediano y p90 para localizar, confirmar y asignar; clics por tarea; porcentaje de pedidos sin
+ responsable; entregas a tiempo; primer intento; incidencias abiertas; diferencias de rendición. Guardar fórmula,
+ período y tamaño de muestra.
+ Probar escritorio y móvil, teclado, zoom, nombres accesibles, formularios y foco en modales. Ningún ahorro de tiempo,
+ precisión de ETA, soporte móvil o cumplimiento de accesibilidad se da por demostrado en esta revisión.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                     19
+BULEJE / PEDIDOS Y REPARTO                                                                                              15 OCT 2026
+
+
+
+
+ PEDIDOS Y REPARTO / 20
+
+
+
+ Fuentes y cierre de la auditoría
+ La evidencia principal es la aplicación local observada el 15 de octubre de 2026. Los textos citados se usan
+ para ubicar la oportunidad de mejora.
+
+ Registro de evidencia
+
+    FUENTE                              EVIDENCIA
+
+
+    E1 · Tablero / Lista                Cero pedidos; filtros de estado/origen/pago/fecha/monto/deuda/notas; indicadores de
+                                        espera y deuda; imprimir lista.
+
+
+    E2 · En vivo                        Mapa, última actualización, equipo vacío; Rutas y paradas con cifras, segundo mapa y
+                                        feed de eventos.
+
+
+    E3 · Equipo / asignación            Postulantes vacío; alta con tarifa S/5; zonas y vehículos; primer despacho deshabilitado;
+                                        permisos vacíos.
+
+
+    E4 · Dinero y archivo               Pagos de retiros, historial por resultado; ranking con períodos y cuatro métricas; archivo
+                                        por entregados/cancelados.
+
+
+    E5 · Configuración de red           Opción Más > Red de repartidores Buleje, leída como Desactivada; descripción del
+                                        alcance de activarla.
+
+
+
+ Referencias de diseño técnico
+ R1 · Google OR-Tools · Capacity Constraints
+ Modelar rutas con demanda y capacidad de vehículos. Fundamenta la restricción propuesta en P15, no una recomendación de
+ integración obligatoria.
+
+ R2 · Google OR-Tools · Time Windows
+ Modelar ventanas de servicio y tiempos. Referencia para Programados y rutas; no garantiza factibilidad ni una ETA exacta.
+
+ R3 · W3C · Geolocation
+ La ubicación incluye tiempo y precisión, y su acceso requiere permiso. Referencia para distinguir actualización de pantalla y
+ posición del repartidor.
+
+ Resultado entregado
+ 48 mejoras y seis nuevas pestañas especificadas como propuestas, con navegación, criterios y pruebas. La implementación y
+ las transacciones completas quedan fuera de este informe; requieren trabajo sobre la aplicación y validación con datos de
+ prueba.
+
+ No se alteraron pedidos, repartidores, pagos, permisos ni la configuración de la red. Los tres bocetos son ejemplos diseñados
+ para este informe, no pantallas existentes.
+
+
+
+
+Auditoría de interfaz y propuestas de producto                                                                                       20
+

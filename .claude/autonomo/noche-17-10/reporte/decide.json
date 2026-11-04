@@ -1,0 +1,18 @@
+[
+ "Aprobar 5 cambios de base ya escritos (sin aplicar): presentaciones del proveedor (caja de 24 = 24 latas), fiado ligado a su venta, rendición de efectivo del repartidor, factura del proveedor única en la base, bandeja de aprobaciones. Detalle y orden en decide-brandon.md.",
+ "Comisión: ¿sobre la venta, lo cobrado o el margen? Recomiendo lo cobrado (un fiado que no se paga no paga comisión).",
+ "Vender sin turno abierto: recomiendo bloquear; vender en el turno de otro, sólo el dueño.",
+ "N.° de operación de Yape obligatorio en caja y en pedidos (recomiendo sí).",
+ "Motivo obligatorio al anular o ajustar (recomiendo siempre).",
+ "Lo recibido sin orden de compra: hoy no suma stock; recomiendo que sume y quede marcado «sin orden».",
+ "Tolerancia entre orden, recepción y factura: recomiendo 2 % o S/ 5 (lo menor); arriba de eso, aprobación.",
+ "Ofertas a repartidores pagan 5 + 1,5/km ignorando la tarifa de cada uno: recomiendo la tarifa de cada repartidor.",
+ "«Yape falso» BORRA el pedido: recomiendo cancelarlo con motivo para que quede el rastro (zona de peligro).",
+ "Emitir dos veces el mismo comprobante al reintentar: clave única por operación (la tabla está vacía: el momento es ahora; zona de peligro).",
+ "Facturar ventas del POS desde «Emitir comprobante»: hoy sólo se eligen pedidos (toca la emisión).",
+ "Cobro en línea con respuesta perdida (504) que el cajero vuelve a cobrar: reusar la misma clave (zona de peligro).",
+ "Pestañas nuevas que piden tablas: anticipos y contratos con proveedores, solicitudes internas, incidencias y devoluciones de pedidos, aprobaciones, notas de débito.",
+ "Unir proveedores duplicados (mismo RUC) y unir los dos motores que predicen reposición.",
+ "Limpieza QA en main: 5 notas de prueba del revisor en un pedido (sin forma de borrarlas por pantalla); 3 notas de crédito de prueba anuladas (NC-0001 a 0003 consumidos).",
+ "Deploy a producción sigue bloqueado (memoria del 09-10): nada de esta noche está en producción."
+]

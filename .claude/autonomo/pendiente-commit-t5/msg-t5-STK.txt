@@ -1,0 +1,24 @@
+fix(inventario): un solo stock minimo en todas las alertas y conteos
+
+- enStockBajo + minimoGlobalDelNegocio: el minimo propio o Settings.globalMinStock, leido una vez
+  por pedido (crons cross-tenant: uno por negocio)
+- crons, Inicio, header, resumen de hoy, dashboard, reportes, correos, sugerencias, buscador,
+  agente IA y superadmin dejan el ?? 5 / ?? 0 / COALESCE fijo
+- sugerencias contaba productos sin stock controlado como agotados: main 23 -> 1
+- ReportsTab leia minStock (campo inexistente): era un 5 fijo para todos
+- altas por IA y superadmin ya no graban un minimo propio que tapa al global
+- la OC borrador de reposicion nacia con total = cantidad x stock minimo; ahora 0 como sus lineas
+- guardian con trinquete: falla si vuelve el minimo escrito a mano
+
+Tras la revision: un solo stock minimo en todas las alertas
+- minimo efectivo = el del producto o Settings.globalMinStock del negocio, leido una vez
+  por pedido (enStockBajo / stockMinimoDe); antes cada pantalla ponia ?? 0 o ?? 5
+- sugerencias: el stock vacio ya no se vuelve 0; un servicio o plato preparado no es
+  compra urgente ni se repone (main: urgentes 13 -> 1)
+- cron de stock bajo: push y registro por negocio con su tenantId; antes iba a todos
+  los suscriptores con productos de todos los negocios
+- tests: mock de stock-minimo.server en el agente de inventario, consulta con COALESCE,
+  exportacion con minimo vacio, caso sin control de stock y aviso por negocio
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Hhr4AnXJ3u4wWG6fZKtjpw

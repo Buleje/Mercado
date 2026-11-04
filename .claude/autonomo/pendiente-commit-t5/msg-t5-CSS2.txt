@@ -1,0 +1,11 @@
+fix(ui): max-w-xs/sm/lg/xl vuelven a la escala de tailwind (320/384/512/576)
+
+- globals.css redefinia --container-xs/sm/lg/xl como escala de paginas (560/720/1200/1440)
+  desde abril; ~425 usos pensados para tailwind salian al doble: cajones de 1200 px,
+  buscadores de 720, paso 2 del asistente de NC mas ancho que el paso 1.
+- Nadie lee esas variables a mano; @sm:/@lg: usan el valor del tema.
+- Medido en 10 pantallas a 1280 y 400: sin desborde; ticket 720->384, buscadores 720->384.
+- Comentarios de AdminModal, GlobalSearch, AdminTopHeader y OnboardingWizard al dia.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Hhr4AnXJ3u4wWG6fZKtjpw
