@@ -168,7 +168,7 @@ Esto **no** es el DR drill de la regla 14: el drill pide restaurar y comprobar. 
 
 ## 9. Armado en GitHub, gratis (24-10)
 
-La máquina de Vercel Hobby (8 GB) muere por memoria armando la rama. El repo es público, así que `ubuntu-latest` de GitHub Actions (4 núcleos, 16 GB) es gratis: el job `deploy-preview` de `.github/workflows/ci.yml` arma con `vercel build` allí y sube el resultado con `vercel deploy --prebuilt` como **preview**.
+La máquina de Vercel Hobby (8 GB) muere por memoria armando la rama. El repo es público, así que `ubuntu-latest` de GitHub Actions (4 núcleos, 16 GB) es gratis: el job `armado-vercel` de `.github/workflows/ci.yml` arma con `vercel build` allí y sube el resultado con `vercel deploy --prebuilt`: como **preview** por defecto, o como **producción sin dominio** si se pide (04-11).
 
 | Paso | Quién | Cómo |
 |---|---|---|
@@ -176,9 +176,11 @@ La máquina de Vercel Hobby (8 GB) muere por memoria armando la rama. El repo es
 | 2. Secreto | Brandon | github.com/Buleje/Mercado → Settings → Secrets and variables → **Actions** → New repository secret → nombre `VERCEL_TOKEN`, valor el token. `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID` son opcionales: el workflow ya trae los ids de `.vercel/project.json` |
 | 3. Lanzar | hilo principal | la rama con este `ci.yml` tiene que estar en GitHub (commit + push); después `gh workflow run ci.yml --ref <rama>` y `gh run watch`. El botón «Run workflow» de la web aparece recién cuando este `ci.yml` llegue a `master` |
 | 4. Probar | Brandon | la URL sale en el resumen de la corrida; recorrer §6.4 |
+| 5. Producción sin dominio | hilo principal | con el preview probado: `gh workflow run ci.yml --ref <rama> -f destino=produccion-sin-dominio -f confirmar=PRODUCCION` → `gh run watch` → recorrer §6.4 sobre su URL propia. El dominio sigue en la versión de antes |
+| 6. Promover | Brandon da el OK | recién con su OK: `vercel promote <url>` (con un token de esa cuenta; el CLI de esta PC está bloqueado). Volver atrás: §7. Después avanzar `master` y `prod` al mismo commit (§6.6) |
 
-Qué hace el job a mano: no corre lint/tests/E2E (los corre el pre-commit), comprueba `VERCEL_TOKEN` y corta con el mensaje de qué cargar si falta, `vercel pull --environment=preview`, **oculta en el log todo valor sensible bajado** (los logs de un repo público son públicos), avisa si faltan `DATABASE_URL`/`DIRECT_URL`/`AUTH_SECRET` en Preview, `vercel build` (con 6 GB de swap extra) y `vercel deploy --prebuilt`. Nunca `--prod`.
+Qué hace el job a mano: no corre lint/tests/E2E (los corre el pre-commit), comprueba `VERCEL_TOKEN` y corta con el mensaje de qué cargar si falta, `vercel pull --environment=preview`, **oculta en el log todo valor sensible bajado** (los logs de un repo público son públicos), avisa si faltan `DATABASE_URL`/`DIRECT_URL`/`AUTH_SECRET` en Preview, `vercel build` (con 6 GB de swap extra) y `vercel deploy --prebuilt`. `--prod` sólo con `destino=produccion-sin-dominio` **y** `confirmar=PRODUCCION` (si no, corta), y siempre con `--skip-domain`; un push a `master`/`main` arma siempre preview.
 
 Ojo:
 - El build **necesita la base** (prerender, §1): si el `DATABASE_URL` de Preview sigue siendo el del ADR-114 (`app_user` @ `aws-0`), cae con `tenant/user app_user… not found` → corregirlo (§3.1).
-- **Promover un preview a producción lo vuelve a armar en Vercel** con las variables de producción (así lo describe la doc de Vercel; no medido acá), en la máquina de 8 GB: no sirve. Para producción se repite el armado en Actions con `vercel pull --environment=production`, `vercel build --prod` y `vercel deploy --prebuilt --prod --skip-domain` (sin dominio = el canario de §5), se prueba esa URL y recién ahí `vercel promote <url>`. Ese job no existe a propósito: lo decide Brandon.
+- **Promover un preview a producción lo vuelve a armar en Vercel** con las variables de producción (así lo describe la doc de Vercel; no medido acá), en la máquina de 8 GB: no sirve. Para producción se repite el armado en Actions con `vercel pull --environment=production`, `vercel build --prod` y `vercel deploy --prebuilt --prod --skip-domain` (sin dominio = el canario de §5), se prueba esa URL y recién ahí `vercel promote <url>`. Desde el 04-11 es el paso 5 de la tabla (Brandon eligió «que lo arme GitHub, gratis»); el promote sigue siendo decisión suya.

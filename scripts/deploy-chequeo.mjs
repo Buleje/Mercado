@@ -222,7 +222,7 @@ if (!gh.ok) {
       const ok = rs.filter((r) => r.conclusion === "success").length;
       add("Workflow backup-offsite", `${ok} éxitos en las últimas ${rs.length}; la última: ${rs[0]?.conclusion ?? "ninguna"} (${rs[0]?.createdAt ?? "-"})`, rs.length > 0 && rs[0].conclusion === "success", "gh run list --workflow backup-offsite.yml");
     }
-    // Armado gratis en Actions (ci.yml → deploy-preview, `vercel build` + `--prebuilt`): sólo pide VERCEL_TOKEN.
+    // Armado gratis en Actions (ci.yml → armado-vercel, `vercel build` + `--prebuilt`; preview o producción sin dominio): sólo pide VERCEL_TOKEN.
     const sec = await run("gh", ["secret", "list", "--json", "name", "--jq", ".[].name"]);
     if (!sec.ok) add("Secreto VERCEL_TOKEN (armado en Actions)", `sin medir (${sec.out.replace(/\s+/g, " ")})`, null, "gh secret list");
     else {
