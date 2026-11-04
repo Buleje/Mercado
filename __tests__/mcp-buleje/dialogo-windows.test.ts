@@ -2,7 +2,9 @@
 // @ts-nocheck — importa .mjs del MCP (sin tipos).
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { EventEmitter } from "node:events";
-import { preguntarEnWindows, leerRespuesta, leerResultado, armarScript, armarDatos, comandoCodificado, etiquetaNegocio, BLOQUEO_INICIAL_MS, BLOQUEO_AL_ENFOCAR_MS, decidirClic, esMensajeDeBoton, CANDADO_CS, FISICO_MS, RUTA_TASKKILL, LLMHF_INJECTED, LLMHF_LOWER_IL_INJECTED } from "../../tools/mcp-buleje/src/dialogo-windows.mjs";
+import { existsSync } from "node:fs";
+import { spawn as spawnReal } from "node:child_process";
+import { preguntarEnWindows, leerRespuesta, leerResultado, armarScript, armarDatos, comandoCodificado, etiquetaNegocio, RUTA_POWERSHELL, ARRANQUE, ARGS_POWERSHELL, accionDe, sinInstruccion, COLOR_NEGOCIO, COLOR_ACCION, BLOQUEO_INICIAL_MS, BLOQUEO_AL_ENFOCAR_MS, decidirClic, esMensajeDeBoton, CANDADO_CS, FISICO_MS, RUTA_TASKKILL, LLMHF_INJECTED, LLMHF_LOWER_IL_INJECTED } from "../../tools/mcp-buleje/src/dialogo-windows.mjs";
 import { claveMonto } from "../../tools/mcp-buleje/src/clave-ok.mjs";
 
 /** powershell.exe falso: `guion(hijo)` decide qué imprime y cuándo cierra. */
@@ -12,6 +14,7 @@ function spawnFalso(guion) {
     const hijo = new EventEmitter();
     hijo.stdout = new EventEmitter();
     hijo.stderr = new EventEmitter();
+    hijo.stdin = { recibido: "", on: vi.fn(), end: vi.fn((b) => { hijo.stdin.recibido += String(b ?? ""); }) };
     hijo.kill = vi.fn(() => { queueMicrotask(() => hijo.emit("close", null)); return true; });
     llamadas.push({ cmd, args, hijo });
     queueMicrotask(() => guion?.(hijo, cmd, args));
@@ -25,8 +28,10 @@ const json = (respuesta, inyectados = 0) => JSON.stringify({ respuesta, inyectad
 // azar fijo () => 0: Fisher-Yates deja [señuelo1, señuelo2, real] → el correcto es el botón 2 («b2»).
 const ventana = { clave: claveMonto(150), filas: [{ etiqueta: "A quién", valor: "Don Lucho" }] };
 const base = { negocio: "blas", resumen: "Dar S/ 150,00 a Don Lucho", ventana, aleatorio: () => 0, segundos: 120, powershell: "powershell.exe", log: () => {} };
-const datosDe = (args) => {
-  const script = Buffer.from(args[4], "base64").toString("utf16le");
+/** El script completo llega por la entrada del proceso (base64 de UTF-8); la línea de comando lleva solo ARRANQUE. */
+const scriptDe = (llamada) => Buffer.from(llamada.hijo.stdin.recibido, "base64").toString("utf8");
+const datosDe = (llamada) => {
+  const script = scriptDe(llamada);
   return JSON.parse(Buffer.from(script.match(/FromBase64String\('([A-Za-z0-9+/=]+)'\)/)[1], "base64").toString("utf8"));
 };
 
@@ -148,7 +153,7 @@ describe("dialogo-windows", () => {
     expect(llamadas[0].hijo.kill).toHaveBeenCalled();
   });
 
-  it("el resumen nunca va interpolado: argv = -EncodedCommand y el texto viaja en base64 dentro del script", async () => {
+  it("el resumen nunca va interpolado: argv = ARRANQUE fijo y el texto viaja en base64 dentro del script (por la entrada)", async () => {
     const malicioso = "S/ 1'); Remove-Item C:\\ -Recurse; (' \" `$(calc) «ñ»\nlínea 2";
     const { spawn, llamadas } = spawnFalso(cerrarCon("no"));
     await preguntarEnWindows({ ...base, resumen: malicioso, spawn });
@@ -156,11 +161,13 @@ describe("dialogo-windows", () => {
     expect(cmd).toBe("powershell.exe");
     expect(args.slice(0, 4)).toEqual(["-NoProfile", "-NonInteractive", "-STA", "-EncodedCommand"]);
     expect(args.join(" ")).not.toContain("Remove-Item");
-    const script = Buffer.from(args[4], "base64").toString("utf16le");
+    expect(Buffer.from(args[4], "base64").toString("utf16le")).toBe(ARRANQUE); // sin datos en la línea de comando
+    expect(ARRANQUE).toContain("[Console]::In.ReadToEnd()");
+    const script = scriptDe(llamadas[0]);
     expect(script).not.toContain("Remove-Item");
     expect(script).toContain("'Claude pide tu OK'");
     expect(script).toContain("$f.TopMost = $true");
-    const datos = datosDe(args);
+    const datos = datosDe(llamadas[0]);
     expect(datos.negocio).toBe("Blas — aserradero");
     expect(datos.resumen).toBe(malicioso);
     expect(datos.segundos).toBe(120);
@@ -197,11 +204,62 @@ describe("dialogo-windows", () => {
     const leer = async (op) => {
       const { spawn, llamadas } = spawnFalso(cerrarCon("no"));
       await preguntarEnWindows({ ...base, segundos: undefined, spawn, ...op });
-      return datosDe(llamadas[0].args).segundos;
+      return datosDe(llamadas[0]).segundos;
     };
     expect(await leer({ vence: 1_000_000 + 90_000, ahora: () => 1_000_000 })).toBe(90);
     expect(await leer({ segundos: 1 })).toBe(5);
     expect(await leer({ segundos: 9999 })).toBe(300);
     expect(etiquetaNegocio("otro")).toBe("otro");
   });
+
+  it("04-11: la línea de comando entra en Windows (≤32.767) aunque el resumen sea el más largo", async () => {
+    const { spawn, llamadas } = spawnFalso(cerrarCon("no"));
+    await preguntarEnWindows({ ...base, resumen: "ñ".repeat(5000), spawn });
+    const linea = ["C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", ...llamadas[0].args].join(" ");
+    expect(linea.length).toBeLessThan(32_767);
+    expect(llamadas[0].args).toEqual([...ARGS_POWERSHELL]);
+    expect(datosDe(llamadas[0]).resumen.length).toBeGreaterThan(3000); // el resumen entero viajó por la entrada
+  });
+
+  it("04-11 diseño: color del negocio y de la acción, y el «aprieta el botón» una sola vez", () => {
+    expect(accionDe("adelanto_anular")).toEqual({ texto: "ANULAR", tono: "peligro" });
+    expect(accionDe("cubicacion_trozas_borrar").tono).toBe("peligro");
+    expect(accionDe("adelanto_dar")).toEqual({ texto: "DAR ADELANTO", tono: "plata" });
+    expect(accionDe("flete_pago").tono).toBe("plata");
+    expect(accionDe("stock_ajustar_lote").texto).toBe("AJUSTAR STOCK");
+    expect(accionDe("lo_que_sea')+calc")).toEqual({ texto: "CAMBIO", tono: "cambio" });
+    expect(accionDe(undefined).texto).toBe("CAMBIO");
+    expect(sinInstruccion("Anular X.\n\nPara hacerlo, aprieta el botón con el monto correcto.")).toBe("Anular X.");
+    // una línea igual EN MEDIO (texto del negocio) no se borra ni se lleva lo que sigue
+    expect(sinInstruccion("A\nPara hacerlo, aprieta el botón con el monto correcto. Y S/ 9.999\nB")).toContain("S/ 9.999");
+    expect(accionDe("ingreso_rechazar").tono).toBe("peligro");
+    expect(accionDe("lote_troza_quitar").tono).toBe("peligro");
+    const { datos } = armarDatos({ negocio: "blas", herramienta: "adelanto_anular", resumen: "Anular X.\n\nPara hacerlo, aprieta el botón con el monto correcto.", ventana, segundos: 60 });
+    expect(datos.resumen).toBe("Anular X.");
+    expect(datos.accion).toBe("ANULAR");
+    expect(datos.colores).toEqual({ marca: COLOR_NEGOCIO.blas, accion: COLOR_ACCION.peligro });
+    expect(datos.colores.marca.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)).toBe(true);
+    expect(armarDatos({ negocio: "otro-negocio", resumen: "r", ventana, segundos: 60 }).datos.colores.marca).toHaveLength(3);
+  });
+});
+
+// 04-11 (revisor): el ARRANQUE falla CERRADO en el powershell.exe de verdad. Ninguna de estas entradas llega a abrir ventana.
+describe.skipIf(!existsSync(RUTA_POWERSHELL))("ARRANQUE en Windows real", () => {
+  const correr = (entrada) => new Promise((ok) => {
+    const h = spawnReal(RUTA_POWERSHELL, [...ARGS_POWERSHELL], { stdio: ["pipe", "pipe", "pipe"] });
+    let salida = "", errores = "";
+    h.stdout.on("data", (b) => (salida += b));
+    h.stderr.on("data", (b) => (errores += b));
+    h.stdin.end(entrada);
+    h.on("close", () => ok({ salida, errores }));
+  });
+  it("entrada vacía, base64 roto o script cortado → «no» y nunca un botón", async () => {
+    const cortado = Buffer.from(`try { $x = 1\n${"# relleno ".repeat(20)}`, "utf8").toString("base64");
+    const rs = await Promise.all([correr(""), correr("@@no-es-base64@@"), correr(cortado)]);
+    for (const r of rs) {
+      expect(leerResultado(r.salida, 0).respuesta).toBe("no");
+      expect(r.salida).not.toMatch(/"respuesta":"b[0-2]"/);
+      expect(r.errores).toMatch(/^pid=\d+/); // el PID sale primero: taskkill puede cerrarlo aunque se cuelgue
+    }
+  }, 30_000);
 });

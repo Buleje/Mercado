@@ -120,7 +120,7 @@ export function crearServidor(d) {
   const { config } = d;
   const seco = () => d.seco ?? secoInicial(config);
   const anotar = (e) => { try { d.anotar?.(e); } catch (err) { log(`registro falló: ${String(err)}`); } };
-  const enVentana = (p) => preguntarEnWindows({ negocio: p.negocio, resumen: p.resumen, ventana: p.ventana, vence: p.vence, signal: p.signal });
+  const enVentana = (p) => preguntarEnWindows({ negocio: p.negocio, herramienta: p.herramienta, resumen: p.resumen, ventana: p.ventana, vence: p.vence, signal: p.signal });
   // 01-11: el OK también llega a Telegram (botones Sí / No); gana el primero. Sin bot configurado o con
   // BULEJE_MCP_TELEGRAM=0, solo ventana como antes. Los tests pasan `preguntar` y no tocan nada de esto.
   const bot = d.preguntar ? null : d.telegram === undefined ? (process.env.BULEJE_MCP_TELEGRAM === "0" ? null : leerBot()) : d.telegram;

@@ -5,8 +5,8 @@
 // Los botones se habilitan 2 s después de mostrarse y se vuelven a apagar 1,5 s cada vez que la ventana gana el foco
 // (un clic que la activa no aprueba). Solo un clic de MOUSE aprueba (29-10: la 1.ª prueba real volvió "si" a los 9 s
 // por un clic suelto; Enter/espacio/UI Automation no disparan MouseClick).
-// Los textos viajan en base64 dentro de un -EncodedCommand: nunca se interpolan en el comando
-// (el resumen sale de datos del negocio y podría traer comillas o código).
+// Los textos viajan en base64 dentro del script, nunca interpolados (el resumen sale de datos del negocio y podría
+// traer comillas o código); desde 04-11 el script llega por la entrada del proceso, no por la línea de comando (ARRANQUE).
 // 29-10 (2.ª pasada de seguridad, CRÍTICO): desktop-control (nut-js) o un powershell con SendInput generan clics que
 // WinForms acepta como de mouse. Mientras la ventana está abierta, un gancho de mouse de bajo nivel (WH_MOUSE_LL)
 // DESCARTA los mensajes de botón sobre la ventana que traen LLMHF_INJECTED o LLMHF_LOWER_IL_INJECTED, y además un botón
@@ -123,6 +123,58 @@ export const ETIQUETAS = {
 /** @param {string} negocio */
 export const etiquetaNegocio = (negocio) => ETIQUETAS[/** @type {keyof typeof ETIQUETAS} */ (negocio)] ?? linea60(negocio || "¿negocio?");
 
+// Diseño 04-11 (Brandon: «mejórame el diseño de esta ventana»): franja arriba con el color del negocio y una etiqueta
+// con el color de la acción (rojo = anula/borra, ámbar = mueve plata, azul = cambia datos). Colores RGB fijos acá:
+// viajan como números en el JSON, nunca como texto que PowerShell interprete.
+/** @type {Record<string, [number, number, number]>} */
+export const COLOR_NEGOCIO = { blas: [22, 101, 52], bodega: [0, 122, 122], "qa-forestal": [71, 85, 105] };
+const COLOR_OTRO = /** @type {[number, number, number]} */ ([51, 65, 85]);
+/** @type {Record<"peligro"|"plata"|"cambio", [number, number, number]>} */
+export const COLOR_ACCION = { peligro: [185, 28, 28], plata: [180, 83, 9], cambio: [29, 78, 216] };
+
+/** Nombre completo de la herramienta → etiqueta (gana primero). @type {Record<string, [string, "peligro"|"plata"|"cambio"]>} */
+const ACCION_POR_NOMBRE = {
+  adelanto_dar: ["DAR ADELANTO", "plata"], venta_registrar: ["VENTA", "plata"], venta_devolver: ["DEVOLUCIÓN", "plata"],
+  compra_registrar: ["COMPRA", "plata"], caja_movimiento: ["MUEVE PLATA", "plata"], tesoreria_movimiento: ["MUEVE PLATA", "plata"],
+  tesoreria_transferir: ["TRANSFERENCIA", "plata"], caja_cerrar_turno: ["CIERRE DE CAJA", "plata"], cierre_diario: ["CIERRE DEL DÍA", "plata"],
+  trabajador_cesar: ["DAR DE BAJA", "peligro"], doc_papelera: ["A LA PAPELERA", "peligro"], ctp_declarar_produccion: ["DECLARAR", "cambio"],
+  asistencia_masiva: ["ASISTENCIA", "cambio"], gtf_crear: ["GUÍA (GTF)", "cambio"], anexo04_emitir: ["ANEXO 04", "cambio"],
+};
+/** Verbo (último trozo del nombre) → etiqueta. @type {Record<string, [string, "peligro"|"plata"|"cambio"]>} */
+const ACCION_POR_VERBO = {
+  anular: ["ANULAR", "peligro"], borrar: ["BORRAR", "peligro"], cancelar: ["CANCELAR", "peligro"], deshacer: ["DESHACER", "peligro"],
+  rechazar: ["RECHAZAR", "peligro"], quitar: ["QUITAR", "peligro"],
+  validar: ["VALIDAR", "cambio"], recepcionar: ["RECEPCIONAR", "cambio"], consumir: ["CONSUMIR", "cambio"], cerrar: ["CERRAR", "cambio"],
+  reabrir: ["REABRIR", "cambio"],
+  pago: ["PAGO", "plata"], pagar: ["PAGO", "plata"], cobrar: ["COBRO", "plata"],
+  guardar: ["GUARDAR", "cambio"], registrar: ["REGISTRAR", "cambio"], cargar: ["CARGAR", "cambio"], agregar: ["AGREGAR", "cambio"],
+  aplicar: ["APLICAR", "cambio"], anotar: ["ANOTAR", "cambio"], subir: ["SUBIR", "cambio"], usado: ["MARCAR", "cambio"],
+  marcar: ["MARCAR", "cambio"], ajustar: ["AJUSTAR STOCK", "cambio"], estado: ["CAMBIAR ESTADO", "cambio"], reingresar: ["REINGRESO", "cambio"],
+  recibir: ["RECIBIR", "cambio"], costo: ["COSTO", "cambio"], cuadrar: ["CUADRAR", "cambio"], iniciar: ["INICIAR", "cambio"],
+  enviar: ["ENVIAR", "cambio"], movimiento: ["MOVIMIENTO", "cambio"],
+};
+
+/**
+ * Etiqueta y color de la acción a partir del nombre de la herramienta (lo pone el servidor, no Claude).
+ * «stock_ajustar_lote» → busca «lote», después «ajustar». Sin nombre o desconocido → «CAMBIO» azul.
+ * @param {string} [herramienta] @returns {{ texto: string, tono: "peligro"|"plata"|"cambio" }}
+ */
+export function accionDe(herramienta) {
+  const n = String(herramienta ?? "").toLowerCase().replace(/[^a-z0-9_]/g, "");
+  const exacta = Object.hasOwn(ACCION_POR_NOMBRE, n) ? ACCION_POR_NOMBRE[n] : null;
+  if (exacta) return { texto: exacta[0], tono: exacta[1] };
+  for (const trozo of n.split("_").reverse()) {
+    if (Object.hasOwn(ACCION_POR_VERBO, trozo)) { const [texto, tono] = ACCION_POR_VERBO[trozo]; return { texto, tono }; }
+  }
+  return { texto: "CAMBIO", tono: "cambio" };
+}
+
+/**
+ * El servidor suma AL FINAL del resumen «Para hacerlo, aprieta el botón con el … correcto.»: en la ventana va una sola
+ * vez, junto a los botones. Solo se quita esa última línea; una igual en medio (texto del negocio) se queda.
+ */
+export const sinInstruccion = (resumen) => String(resumen ?? "").replace(/\n*Para hacerlo, aprieta el botón con el [^\n]{1,40} correcto\.\s*$/, "");
+
 /** @param {(r: string) => boolean} [existe] */
 export function rutaPowershell(existe = existsSync) {
   return existe(RUTA_POWERSHELL) ? RUTA_POWERSHELL : "powershell.exe";
@@ -161,49 +213,141 @@ ${CANDADO_CS}
   $f.FormBorderStyle = 'FixedDialog'
   $f.MaximizeBox = $false
   $f.MinimizeBox = $false
-  $f.ClientSize = New-Object System.Drawing.Size(660, 566)
   $f.Font = New-Object System.Drawing.Font('Segoe UI', 10)
 
+  # Diseño 04-11: franja del negocio, una tarjeta con lo que se hace y los datos, el aviso una sola vez, 3 botones
+  # iguales, «No» aparte y una barra que se acaba con el tiempo. Los colores llegan como números (RGB) en $d.colores.
+  function Color($c) { return [System.Drawing.Color]::FromArgb([int]$c[0], [int]$c[1], [int]$c[2]) }
+  function Mezcla($a, $b, $t) { return [System.Drawing.Color]::FromArgb([int]($a.R + ($b.R - $a.R) * $t), [int]($a.G + ($b.G - $a.G) * $t), [int]($a.B + ($b.B - $a.B) * $t)) }
+  $cBlanco = [System.Drawing.Color]::White
+  $cMarca = Color $d.colores.marca
+  $cAccion = Color $d.colores.accion
+  $cFondo = [System.Drawing.Color]::FromArgb(243, 245, 248)
+  $cBorde = [System.Drawing.Color]::FromArgb(214, 219, 227)
+  $cBordeBoton = [System.Drawing.Color]::FromArgb(160, 170, 184)
+  $cTexto = [System.Drawing.Color]::FromArgb(17, 24, 39)
+  $cGris = [System.Drawing.Color]::FromArgb(88, 98, 114)
+  $cRojo = [System.Drawing.Color]::FromArgb(185, 28, 28)
+  $f.BackColor = $cFondo
+  $W = 620; $M = 24; $AW = $W - 2 * $M
+
+  function Fuente($tam, $negrita) {
+    $estilo = if ($negrita) { [System.Drawing.FontStyle]::Bold } else { [System.Drawing.FontStyle]::Regular }
+    return New-Object System.Drawing.Font('Segoe UI', $tam, $estilo)
+  }
   function Etiqueta($texto, $x, $y, $w, $h, $tam, $negrita) {
     $l = New-Object System.Windows.Forms.Label
     $l.UseMnemonic = $false
     $l.AutoEllipsis = $true
     $l.Text = [string]$texto
-    $estilo = if ($negrita) { [System.Drawing.FontStyle]::Bold } else { [System.Drawing.FontStyle]::Regular }
-    $l.Font = New-Object System.Drawing.Font('Segoe UI', $tam, $estilo)
+    $l.Font = Fuente $tam $negrita
     $l.SetBounds($x, $y, $w, $h)
     return $l
   }
-
-  # Etiquetas fijas, una línea cada una (Node ya las dejó en ≤60 caracteres sin saltos).
-  $controles = New-Object System.Collections.ArrayList
-  [void]$controles.Add((Etiqueta $d.negocio 20 10 620 44 20 $true))
-  [void]$controles.Add((Etiqueta ([string]$d.etiqueta + ':') 22 56 620 20 10 $false))
-  [void]$controles.Add((Etiqueta $d.valor 20 76 620 38 18 $true))
-  $y = 118
-  foreach ($fila in @($d.filas)) {
-    if ($null -eq $fila) { continue }
-    [void]$controles.Add((Etiqueta ([string]$fila.etiqueta + ': ' + [string]$fila.valor) 22 $y 620 22 11 $true))
-    $y += 22
+  # Alto que ocupa un texto con salto de línea en ese ancho: nada se corta ni queda hueco.
+  function Alto($texto, $fuente, $ancho) {
+    $fl = [System.Windows.Forms.TextFormatFlags]::WordBreak -bor [System.Windows.Forms.TextFormatFlags]::TextBoxControl
+    $s = [System.Windows.Forms.TextRenderer]::MeasureText([string]$texto, $fuente, (New-Object System.Drawing.Size($ancho, 100000)), $fl)
+    return [int]$s.Height
+  }
+  function Ancho($texto, $fuente) { return [int][System.Windows.Forms.TextRenderer]::MeasureText([string]$texto, $fuente).Width }
+  function Bloque($x, $y, $w, $h, $color) {
+    $p = New-Object System.Windows.Forms.Panel
+    $p.BackColor = $color
+    $p.SetBounds($x, $y, $w, $h)
+    return $p
   }
 
-  $txt = New-Object System.Windows.Forms.TextBox
-  $txt.Multiline = $true
-  $txt.ReadOnly = $true
-  $txt.WordWrap = $true
-  $txt.ScrollBars = 'Vertical'
-  $txt.TabStop = $false
-  $txt.Font = New-Object System.Drawing.Font('Segoe UI', 12)
-  $txt.Text = ([string]$d.resumen) -replace "\`r?\`n", "\`r\`n"
-  $txt.SetBounds(20, 210, 620, 140)
-  [void]$controles.Add($txt)
+  $controles = New-Object System.Collections.ArrayList
 
-  $instr = Etiqueta $d.instruccion 22 356 620 40 10 $true
+  # 1) Franja de arriba: de qué negocio es (su color) y qué tipo de acción (etiqueta con el color de la acción).
+  $cab = Bloque 0 0 $W 76 $cMarca
+  $chip = New-Object System.Windows.Forms.Label
+  $chip.UseMnemonic = $false
+  $chip.AutoSize = $true
+  $chip.Text = [string]$d.accion
+  $chip.Font = Fuente 9.5 $true
+  $chip.Padding = New-Object System.Windows.Forms.Padding(10, 4, 10, 4)
+  $chip.BackColor = $cBlanco
+  $chip.ForeColor = $cAccion
+  $anchoChip = $chip.PreferredSize.Width
+  $chip.Location = New-Object System.Drawing.Point(($W - $M - $anchoChip), 24)
+  $l1 = Etiqueta $d.negocio $M 10 ($AW - $anchoChip - 12) 34 17 $true
+  $l1.ForeColor = $cBlanco
+  $l2 = Etiqueta 'Solo tú decides: Claude no puede apretar estos botones.' ($M + 1) 45 ($AW - $anchoChip - 12) 20 9.5 $false
+  $l2.ForeColor = Mezcla $cMarca $cBlanco 0.8
+  $cab.Controls.AddRange(@($l1, $l2, $chip))
+  [void]$controles.Add($cab)
+
+  # 2) Tarjeta blanca: qué se hace (texto suelto, sin caja gris), el dato clave grande y las filas en dos columnas.
+  $IW = $AW - 2; $X = 24; $CW = $IW - $X - 20
+  $tarjeta = New-Object System.Windows.Forms.Panel
+  $tarjeta.BackColor = $cBlanco
+  $cy = 16
+  $fRes = Fuente 12 $false
+  $altoRes = [math]::Min([math]::Max((Alto $d.resumen $fRes $CW) + 4, 24), 136)
+  $rt = New-Object System.Windows.Forms.RichTextBox
+  $rt.ReadOnly = $true
+  $rt.BorderStyle = 'None'
+  $rt.BackColor = $cBlanco
+  $rt.ForeColor = $cTexto
+  $rt.Font = $fRes
+  $rt.DetectUrls = $false
+  $rt.TabStop = $false
+  $rt.ScrollBars = 'Vertical'
+  $rt.Cursor = [System.Windows.Forms.Cursors]::Default
+  $rt.Text = [string]$d.resumen
+  $rt.SetBounds($X, $cy, $CW, $altoRes)
+  [void]$tarjeta.Controls.Add($rt)
+  $cy += $altoRes + 12
+  [void]$tarjeta.Controls.Add((Bloque $X $cy $CW 1 $cBorde))
+  $cy += 14
+  $et = Etiqueta $d.etiqueta $X $cy $CW 20 9.5 $false
+  $et.ForeColor = $cGris
+  [void]$tarjeta.Controls.Add($et)
+  $cy += 20
+  $fValor = Fuente 22 $true
+  if ((Ancho $d.valor $fValor) -gt $CW) { $fValor = Fuente 15 $true }
+  $altoValor = [math]::Min((Alto $d.valor $fValor $CW), 64)
+  $val = Etiqueta $d.valor $X $cy $CW $altoValor 10 $true
+  $val.Font = $fValor
+  $val.AutoEllipsis = $false
+  $val.ForeColor = $cAccion
+  [void]$tarjeta.Controls.Add($val)
+  $cy += $altoValor + 10
+  $fFila = Fuente 10.5 $true
+  foreach ($fila in @($d.filas)) {
+    if ($null -eq $fila) { continue }
+    $ef = Etiqueta $fila.etiqueta $X ($cy + 1) 150 22 10 $false
+    $ef.ForeColor = $cGris
+    $altoFila = [math]::Min([math]::Max((Alto $fila.valor $fFila ($CW - 156)), 22), 44)
+    $vf = Etiqueta $fila.valor ($X + 156) $cy ($CW - 156) $altoFila 10 $true
+    $vf.Font = $fFila
+    $vf.ForeColor = if (([string]$fila.etiqueta -eq 'OJO') -or ([string]$fila.valor).Contains([string][char]0x26A0)) { $cRojo } else { $cTexto }
+    [void]$tarjeta.Controls.Add($ef)
+    [void]$tarjeta.Controls.Add($vf)
+    $cy += $altoFila + 6
+  }
+  $cy += 10
+  [void]$tarjeta.Controls.Add((Bloque 0 0 5 $cy $cAccion))
+  $tarjeta.SetBounds(1, 1, $IW, $cy)
+  $borde = Bloque $M 94 $AW ($cy + 2) $cBorde
+  [void]$borde.Controls.Add($tarjeta)
+  [void]$controles.Add($borde)
+  $y = 94 + $cy + 2 + 18
+
+  # 3) El aviso, una sola vez y pegado a los botones.
+  $fInstr = Fuente 11 $true
+  $altoInstr = Alto $d.instruccion $fInstr $AW
+  $instr = Etiqueta $d.instruccion $M $y $AW $altoInstr 11 $true
   $instr.AutoEllipsis = $false
+  $instr.ForeColor = $cTexto
   [void]$controles.Add($instr)
-  $lblReloj = Etiqueta '' 22 398 620 20 10 $false
-  [void]$controles.Add($lblReloj)
+  $y += $altoInstr + 8
 
+  # 4) Los 3 botones IGUALES (el real y 2 parecidos, en orden al azar): ninguno se ve distinto del otro.
+  $fBoton = Fuente 13 $true
+  foreach ($tb in @($d.botones)) { if ((Ancho $tb $fBoton) -gt ($AW - 24)) { $fBoton = Fuente 11 $true } }
   $ops = New-Object System.Collections.ArrayList
   for ($i = 0; $i -lt 3; $i++) {
     $b = New-Object System.Windows.Forms.Button
@@ -213,8 +357,16 @@ ${CANDADO_CS}
     $b.Tag = $i
     $b.TabStop = $false
     $b.Enabled = $false
-    $b.Font = New-Object System.Drawing.Font('Segoe UI', 12, [System.Drawing.FontStyle]::Bold)
-    $b.SetBounds(20, (424 + 46 * $i), 466, 40)
+    $b.Font = $fBoton
+    $b.FlatStyle = 'Flat'
+    $b.FlatAppearance.BorderColor = $cBordeBoton
+    $b.FlatAppearance.BorderSize = 1
+    $b.FlatAppearance.MouseOverBackColor = Mezcla $cAccion $cBlanco 0.9
+    $b.FlatAppearance.MouseDownBackColor = Mezcla $cAccion $cBlanco 0.78
+    $b.BackColor = $cBlanco
+    $b.ForeColor = $cTexto
+    $b.Cursor = [System.Windows.Forms.Cursors]::Hand
+    $b.SetBounds($M, ($y + 54 * $i), $AW, 46)
     # Solo un clic de MOUSE aprueba: Enter/espacio (tecleo que cae en la ventana) o un Invoke de UI Automation no.
     $b.Add_MouseClick({ param($s, $e)
       $ms = $script:sw.ElapsedMilliseconds
@@ -233,15 +385,35 @@ ${CANDADO_CS}
     [void]$ops.Add($b)
     [void]$controles.Add($b)
   }
+  $y += 3 * 54 + 8
+
+  # 5) Abajo: la barra que se acaba con el tiempo, el reloj y «No» aparte (Esc o la X también dicen que no).
+  $pista = Bloque $M $y $AW 4 $cBorde
+  $script:anchoPista = $AW
+  $avance = Bloque 0 0 $AW 4 $cMarca
+  [void]$pista.Controls.Add($avance)
+  [void]$controles.Add($pista)
+  $y += 16
+  $lblReloj = Etiqueta '' $M ($y + 12) ($AW - 230) 22 10 $false
+  $lblReloj.ForeColor = $cGris
+  [void]$controles.Add($lblReloj)
 
   $no = New-Object System.Windows.Forms.Button
   $no.UseMnemonic = $false
-  $no.Text = 'No'
-  $no.Font = New-Object System.Drawing.Font('Segoe UI', 12)
-  $no.SetBounds(500, 424, 140, 132)
+  $no.Text = 'No, no lo hagas'
+  $no.Font = Fuente 11 $true
+  $no.FlatStyle = 'Flat'
+  $no.FlatAppearance.BorderColor = $cBordeBoton
+  $no.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(233, 236, 241)
+  $no.BackColor = $cBlanco
+  $no.ForeColor = $cTexto
+  $no.Cursor = [System.Windows.Forms.Cursors]::Hand
+  $no.SetBounds(($W - $M - 210), $y, 210, 44)
   $no.Add_Click({ $script:resp = 'no'; [Console]::Error.Write("no a los $([int]($script:sw.ElapsedMilliseconds / 1000)) s"); $f.Close() })
   $f.CancelButton = $no
   [void]$controles.Add($no)
+  $y += 44 + 20
+  $f.ClientSize = New-Object System.Drawing.Size($W, $y)
   $f.Controls.AddRange($controles.ToArray())
 
   # Cada vez que la ventana gana el foco, los botones se apagan 1,5 s: el clic que la activa no aprueba.
@@ -268,6 +440,9 @@ ${CANDADO_CS}
     $quedan = [int][math]::Ceiling(($script:total - $ms) / 1000)
     $texto = "Se cierra sola en $quedan s y no se hace nada."
     if ($lblReloj.Text -ne $texto) { $lblReloj.Text = $texto }
+    $largo = [int]($script:anchoPista * [math]::Max(0, $script:total - $ms) / [math]::Max(1, $script:total))
+    if ($avance.Width -ne $largo) { $avance.Width = $largo }
+    if ($quedan -le 15 -and $lblReloj.ForeColor -ne $cRojo) { $lblReloj.ForeColor = $cRojo; $avance.BackColor = $cRojo }
   })
   $f.Add_Shown({
     # Sin candado no hay ventana: si el gancho no se instala, se cierra con «no» (falla cerrada).
@@ -298,6 +473,28 @@ ${CANDADO_CS}
 export const comandoCodificado = (script) => Buffer.from(script, "utf16le").toString("base64");
 
 /**
+ * 04-11: Windows corta la línea de comando a 32.767 letras y la ventana completa ya medía 28 mil (con un resumen largo
+ * no abría → «no»; con el diseño nuevo, 43 mil). La línea lleva solo este arranque fijo, sin datos; el script entero
+ * llega por la ENTRADA del proceso (un tubo entre el servidor y powershell.exe, sin archivo que otro pueda cambiar),
+ * en base64 para que la página de códigos de la consola no rompa las tildes. Sin script = «no» (falla cerrada).
+ */
+export const ARRANQUE = `$ErrorActionPreference = 'Stop'
+[Console]::Error.WriteLine("pid=$PID")
+try {
+  $c = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([Console]::In.ReadToEnd().Trim()))
+  if ($c.Length -lt 100) { throw 'script vacio' }
+} catch {
+  [Console]::Error.Write('no llego el script de la ventana: no')
+  [Console]::Out.Write('{"respuesta":"no","inyectados":0}')
+  exit 1
+}
+. ([ScriptBlock]::Create($c))
+`;
+
+/** Argumentos de powershell.exe (iguales siempre: el script va por la entrada). */
+export const ARGS_POWERSHELL = Object.freeze(["-NoProfile", "-NonInteractive", "-STA", "-EncodedCommand", comandoCodificado(ARRANQUE)]);
+
+/**
  * La última línea tiene que ser el JSON {"respuesta","inyectados"}. Solo «b<correcto>» con 0 inyectados aprueba;
  * un señuelo, «no», texto suelto (el formato viejo «b2» incluido) o cualquier clic inyectado = «no».
  * @param {string} stdout @param {number} correcto índice (0-2) del botón con el dato real
@@ -320,13 +517,14 @@ export const leerRespuesta = (stdout, correcto) => leerResultado(stdout, correct
 
 /**
  * Datos que viajan a PowerShell (exportado para los tests). La clave y las filas ya saneadas: una línea, ≤60.
- * @param {{ negocio: string, resumen: string, ventana?: any, segundos: number, aleatorio?: (n: number) => number }} a
+ * @param {{ negocio: string, herramienta?: string, resumen: string, ventana?: any, segundos: number, aleatorio?: (n: number) => number }} a
  */
 export function armarDatos(a) {
   const ventana = sanearVentana(a.ventana, a.aleatorio);
   const { textos, correcto } = armarBotones(ventana.clave, a.aleatorio);
-  let resumen = String(a.resumen ?? "");
+  let resumen = sinInstruccion(a.resumen);
   if (resumen.length > MAX_RESUMEN) resumen = `${resumen.slice(0, MAX_RESUMEN)}\n… (texto recortado: pídele a Claude el detalle antes de decir que sí)`;
+  const accion = accionDe(a.herramienta);
   return {
     correcto,
     datos: {
@@ -335,7 +533,9 @@ export function armarDatos(a) {
       valor: conMarca(ventana.clave.valor), // la etiqueta de arriba lleva la marca; los botones no (delataría al real)
       filas: ventana.filas,
       resumen,
-      instruccion: `Para hacerlo, aprieta el botón con el ${ventana.clave.palabra} correcto. Claude no contesta esta ventana por su cuenta.`,
+      instruccion: `Para hacerlo, aprieta el botón con el ${ventana.clave.palabra} correcto:`,
+      accion: accion.texto,
+      colores: { marca: Object.hasOwn(COLOR_NEGOCIO, a.negocio) ? COLOR_NEGOCIO[a.negocio] : COLOR_OTRO, accion: COLOR_ACCION[accion.tono] },
       botones: textos,
       segundos: a.segundos,
     },
@@ -346,7 +546,7 @@ export function armarDatos(a) {
  * Abre la ventana y espera. Vuelve "si" | "no" | "vencio", o {respuesta:"no", inyectados:N} si llegaron clics
  * inyectados (el servidor lo registra como intento). Al vencer o cancelarse mata el proceso (taskkill por PID de Windows
  * + kill del lado WSL) y vuelve recién cuando cerró (≤4 s): la fila no abre la siguiente encima de ésta.
- * @param {{ negocio: string, resumen: string, ventana?: any, segundos?: number, vence?: number, signal?: AbortSignal,
+ * @param {{ negocio: string, herramienta?: string, resumen: string, ventana?: any, segundos?: number, vence?: number, signal?: AbortSignal,
  *   spawn?: typeof spawnReal, powershell?: string, taskkill?: string, ahora?: () => number, log?: (m: string) => void,
  *   aleatorio?: (n: number) => number }} a
  * @returns {Promise<"si"|"no"|"vencio"|{ respuesta: "no", inyectados: number }>}
@@ -355,9 +555,9 @@ export function preguntarEnWindows(a) {
   const ahora = a.ahora ?? Date.now;
   const crudo = a.segundos ?? (a.vence ? Math.round((a.vence - ahora()) / 1000) : SEGUNDOS_POR_DEFECTO);
   const segundos = Math.min(300, Math.max(5, Number.isFinite(crudo) ? Math.round(crudo) : SEGUNDOS_POR_DEFECTO));
-  const { correcto, datos: paraVentana } = armarDatos({ negocio: a.negocio, resumen: a.resumen, ventana: a.ventana, segundos, aleatorio: a.aleatorio });
+  const { correcto, datos: paraVentana } = armarDatos({ negocio: a.negocio, herramienta: a.herramienta, resumen: a.resumen, ventana: a.ventana, segundos, aleatorio: a.aleatorio });
   const datos = Buffer.from(JSON.stringify(paraVentana), "utf8").toString("base64");
-  const args = ["-NoProfile", "-NonInteractive", "-STA", "-EncodedCommand", comandoCodificado(armarScript(datos))];
+  const script = Buffer.from(armarScript(datos), "utf8").toString("base64");
   const log = a.log ?? ((m) => process.stderr.write(`[buleje-mcp] ${m}\n`));
   const spawn = a.spawn ?? spawnReal;
 
@@ -397,7 +597,10 @@ export function preguntarEnWindows(a) {
     const alAbortar = () => cortar("no");
     if (a.signal?.aborted) return entregar("no");
     try {
-      hijo = spawn(a.powershell ?? rutaPowershell(), args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: false });
+      hijo = spawn(a.powershell ?? rutaPowershell(), [...ARGS_POWERSHELL], { stdio: ["pipe", "pipe", "pipe"], windowsHide: false });
+      // Si el tubo se rompe (el proceso murió antes de leer), el arranque no recibe script y contesta «no».
+      hijo.stdin?.on?.("error", (e) => log(`no se pudo mandar el script a la ventana de OK: ${String(e?.code ?? e?.message ?? e)}`));
+      hijo.stdin?.end?.(script);
     } catch (e) {
       log(`no se pudo abrir la ventana de OK: ${String(/** @type {any} */ (e)?.message ?? e)}`);
       return entregar("no");
@@ -415,7 +618,7 @@ export function preguntarEnWindows(a) {
     hijo.on("error", (e) => { cerrado = true; log(`powershell.exe no disponible (${e?.code ?? e?.message ?? e}): la ventana de OK no se abrió → «no»`); entregar(pendiente ?? "no"); });
     hijo.on("close", (codigo) => {
       cerrado = true;
-      const bitacora = errores.replace(/^pid=\d+\r?\n?/m, "").trim();
+      const bitacora = errores.replace(/^pid=\d+\r?\n?/gm, "").trim();
       if (bitacora) log(`ventana de OK (código ${codigo}): ${bitacora.slice(0, 300)}`);
       if (pendiente) return entregar(pendiente);
       const r = leerResultado(salida, correcto);
