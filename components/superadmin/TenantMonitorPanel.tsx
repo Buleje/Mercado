@@ -49,7 +49,11 @@ const TENANT_STATUS = {
     text: "text-[var(--data-success-500)]",
     bg: "bg-[var(--data-success-50)]",
   },
-  warning: { dot: "bg-[var(--accent)]", text: "text-[var(--accent-ink)] dark:text-[var(--accent)]", bg: "bg-[var(--accent)]" },
+  warning: {
+    dot: "bg-[var(--accent)]",
+    text: "text-[var(--accent-ink)] dark:text-[var(--accent)]",
+    bg: "bg-[var(--accent)]",
+  },
   critical: {
     dot: "bg-[var(--data-error-500)]",
     text: "text-[var(--data-error-500)]",
@@ -148,9 +152,7 @@ export default function TenantMonitorPanel() {
           <div className="flex items-center gap-3">
             <StatusIcon className={`h-8 w-8 ${statusCfg.color}`} />
             <div>
-              <h2 className="text-lg font-bold text-[var(--text-primary)] ">
-                {statusCfg.label}
-              </h2>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] ">{statusCfg.label}</h2>
               <p className="text-sm text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
                 Última verificación: {fmtDate(data.checkedAt)} · {data.tenants.length} tiendas
                 monitoreadas
@@ -210,7 +212,7 @@ export default function TenantMonitorPanel() {
           icon={Store}
           label="Tiendas"
           value={data.tenants.length}
-          sub={`${data.tenants.filter((t) => t.status === "healthy").length} saludables`}
+          sub={`${data.tenants.filter((t) => t.status === "healthy").length} saludables · ${data.tenants.filter((t) => t.stats.operations30d === 0).length} sin uso en 30 d`}
           color="teal"
         />
         <StatCard
@@ -240,9 +242,7 @@ export default function TenantMonitorPanel() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Activity className="h-5 w-5 text-[var(--text-primary)] dark:text-[var(--text-secondary)]" />
-          <h3 className="text-base font-bold text-[var(--text-primary)] ">
-            Estado por Tienda
-          </h3>
+          <h3 className="text-base font-bold text-[var(--text-primary)] ">Estado por Tienda</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.tenants.map((tenant) => (
@@ -302,9 +302,7 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className={`h-3 w-3 rounded-full ${cfg.dot}`} />
-          <h4 className="font-bold text-[var(--text-primary)] text-sm">
-            {tenant.name}
-          </h4>
+          <h4 className="font-bold text-[var(--text-primary)] text-sm">{tenant.name}</h4>
         </div>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
           {tenant.status === "healthy"
@@ -318,25 +316,19 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="text-center">
-          <p className="text-lg font-bold text-[var(--text-primary)] ">
-            {tenant.stats.products}
-          </p>
+          <p className="text-lg font-bold text-[var(--text-primary)] ">{tenant.stats.products}</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
             Productos
           </p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-bold text-[var(--text-primary)] ">
-            {tenant.stats.orders}
-          </p>
+          <p className="text-lg font-bold text-[var(--text-primary)] ">{tenant.stats.orders}</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
             Pedidos
           </p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-bold text-[var(--text-primary)] ">
-            {tenant.stats.customers}
-          </p>
+          <p className="text-lg font-bold text-[var(--text-primary)] ">{tenant.stats.customers}</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] uppercase tracking-wide">
             Clientes
           </p>
@@ -363,9 +355,17 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
         <strong className="text-[var(--text-primary)] dark:text-[var(--text-secondary)]">
           {tenant.stats.operations30d ?? "—"}
         </strong>
+        {/* «Saludable» habla de los datos (todo pertenece a su tienda), no del uso: una tienda
+            vacía salía igual de verde que una que vende (04-11: 11 de 15 sin uso). */}
+        {tenant.stats.operations30d === 0 && (
+          <span className="ml-1.5 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 font-semibold text-[var(--text-secondary)]">
+            Sin uso
+          </span>
+        )}
         {tenant.stats.lastOperationAt && tenant.stats.operations30d === 0 && (
           <span className="text-[var(--text-tertiary)]">
-            {" "}· última {new Date(tenant.stats.lastOperationAt).toLocaleDateString("es-PE")}
+            {" "}
+            · última {new Date(tenant.stats.lastOperationAt).toLocaleDateString("es-PE")}
           </span>
         )}
       </p>
