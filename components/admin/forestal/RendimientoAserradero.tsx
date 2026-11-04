@@ -30,21 +30,26 @@ import CalculadoraRendimiento from "./CalculadoraRendimiento";
 import RendimientoPorEspecie from "./rendimiento-por-especie";
 import RendimientoPorCorrida from "./rendimiento-por-corrida";
 import RendimientoSimulador from "./rendimiento-simulador";
+import PrecioTrozaVista from "./precio-troza/PrecioTrozaVista";
 import { CeldaPlata, fmtPct } from "./rendimiento-compartido";
 import { useRendimientoAserradero } from "./hooks/use-rendimiento-aserradero";
 
-type Vista = "especie" | "corrida" | "simulador" | "calculadora";
+type Vista = "especie" | "corrida" | "simulador" | "calculadora" | "precio";
 const VISTAS: { value: Vista; label: string }[] = [
   { value: "especie", label: "Por especie" },
   { value: "corrida", label: "Por corrida" },
   { value: "simulador", label: "Simulador" },
   { value: "calculadora", label: "Calculadora" },
+  /* ¿Cuánto pagar por la troza? (04-11): lee su propio endpoint, no el del rendimiento. */
+  { value: "precio", label: "Cuánto pagar" },
 ];
 
 export default function RendimientoAserradero() {
   const [guardada, setVista] = useLocalStorage<Vista>("forestal-rendimiento-vista", "especie");
   /* Una vista recordada que ya no existe abre «Por especie», no una pantalla vacía. */
   const vista: Vista = VISTAS.some((v) => v.value === guardada) ? guardada : "especie";
+  /* Calculadora y Cuánto pagar no dependen de la lectura del rendimiento: su carga o su error no se muestran ahí. */
+  const propia = vista === "calculadora" || vista === "precio";
   const { datos, cargando, error, recargar } = useRendimientoAserradero({ plata: true });
   const t = datos?.total;
   const finParcial = useMemo(
@@ -66,7 +71,10 @@ export default function RendimientoAserradero() {
           />
         </span>
         {/* En el celular el «⋯» queda en la fila del título y las pestañas bajan enteras. */}
-        <SegmentedControl value={vista} onChange={setVista} options={VISTAS} size="sm" label="Vista del rendimiento" className="order-3 w-full sm:order-2 sm:ml-auto sm:w-auto" />
+        {/* 5 pestañas no caben en 400 px: la barra se desliza de lado en vez de encimar los nombres (04-11). */}
+        <div className="order-3 w-full overflow-x-auto sm:order-2 sm:ml-auto sm:w-auto">
+          <SegmentedControl value={vista} onChange={setVista} options={VISTAS} size="sm" label="Vista del rendimiento" className="w-max whitespace-nowrap" />
+        </div>
         <span className="order-2 ml-auto sm:order-3 sm:ml-0">
           <ActionMenu
             label="Opciones del rendimiento"
@@ -138,12 +146,12 @@ export default function RendimientoAserradero() {
         </p>
       )}
 
-      {cargando && !datos && vista !== "calculadora" && (
+      {cargando && !datos && !propia && (
         <p className="flex items-center gap-2 py-8 text-sm text-[var(--text-tertiary)]">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Leyendo el Libro CTP…
         </p>
       )}
-      {error && vista !== "calculadora" && (
+      {error && !propia && (
         <p className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--data-error-500)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           {error}
           <button type="button" onClick={recargar} className="font-bold underline">Reintentar</button>
@@ -153,6 +161,7 @@ export default function RendimientoAserradero() {
       {datos && vista === "especie" && <RendimientoPorEspecie datos={datos} />}
       {datos && vista === "corrida" && <RendimientoPorCorrida datos={datos} onCambio={recargar} />}
       {datos && vista === "simulador" && <RendimientoSimulador especies={datos.especies} />}
+      {vista === "precio" && <PrecioTrozaVista />}
       {vista === "calculadora" && (
         <CalculadoraRendimiento
           libro={t ? { ponderadoPct: t.ponderadoPct, corridas: t.corridas, enProceso: t.enProceso } : null}
