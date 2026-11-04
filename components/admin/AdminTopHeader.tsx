@@ -28,6 +28,7 @@ import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import GlobalSearch from "@/components/admin/GlobalSearch";
+import { LineaNegocio } from "@/components/admin/FranjaNegocio";
 import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
 import { useRegistrarRecientes } from "@/hooks/use-recientes-panel";
 import { useCabeceraOculta, useCabeceraEnBarra } from "@/hooks/use-cabecera-oculta";
@@ -186,6 +187,9 @@ export const AdminTopHeader = memo(function AdminTopHeader({
         oculta && "md:hidden!"
       )}
     >
+      {/* Línea de 3 px con el color del negocio: sigue a la vista al bajar (la franja
+          de arriba se va con el scroll). El header ya es `sticky`, así que ancla el absolute. */}
+      <LineaNegocio />
       {/* Left: buscador + accesos. En celular el menú se abre desde la barra
           de abajo («Menú», al alcance del pulgar, 29-10): la hamburguesa de
           arriba repetía ese botón y empujaba los íconos hasta encimarse a 400 px. */}

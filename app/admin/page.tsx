@@ -33,6 +33,7 @@ import {
 
 import { LastLoginToast } from "@/components/admin/LastLoginToast";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
+import { FranjaNegocio } from "@/components/admin/FranjaNegocio";
 import { ProveedorColumnaDerecha } from "@/components/admin/layout/columna-derecha";
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { useSuplantacionActiva } from "./_hooks/useSuplantacionActiva";
@@ -435,6 +436,11 @@ function AdminPage() {
              El token crece a 296/312px en monitores grandes (globals.css). */
           : "md:ml-[var(--admin-sidebar-w,276px)]",
       )}>
+        {/* Franja con la identidad del negocio (04-11): verde = forestal real,
+            turquesa = otro real, gris rayado + «PRUEBA» = copia. Evita anotar
+            una guía en la copia equivocada. Va en el flujo (se va con el scroll);
+            la línea de 3 px que queda a la vista vive en AdminTopHeader. */}
+        {!presentationMode && <FranjaNegocio />}
         {/* ADR-087: alertas operativas — adentro del shell para respetar
             el margin del sidebar fixed (260px / 60px compact / 660px config).
             Brandon 2026-05-28: en Inicio (vendor-dashboard) + mobile lo
