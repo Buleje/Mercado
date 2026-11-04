@@ -14,6 +14,7 @@ import {
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { AdminTabShell } from "../_components/_shared";
 import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
+import DemandaMaderaSection, { type MaderaDemanda } from "./DemandaMaderaSection";
 
 // ── Tipos locales (no dependen del backend) ───────────────────────────────────
 
@@ -53,6 +54,8 @@ interface DemandReport {
   unmetDemand: UnmetDemand[];
   byZone: ZoneDemand[];
   stockoutHotspots: StockoutSignal[];
+  /** Madera de los aserraderos (m³ por especie); puede faltar si el servidor es viejo. */
+  madera?: MaderaDemanda;
 }
 
 // ── Helpers de formato ────────────────────────────────────────────────────────
@@ -173,7 +176,8 @@ export default function IntelligenceClient() {
     report.fallingCategories.length === 0 &&
     report.unmetDemand.length === 0 &&
     report.byZone.length === 0 &&
-    report.stockoutHotspots.length === 0;
+    report.stockoutHotspots.length === 0 &&
+    (report.madera?.species.length ?? 0) === 0;
 
   if (isEmpty) {
     return (
@@ -433,6 +437,9 @@ export default function IntelligenceClient() {
           </ul>
         </SuperadminChartCard>
       )}
+
+      {/* ── 6. Madera de los aserraderos ──────────────────────────────────── */}
+      {report.madera && report.madera.species.length > 0 && <DemandaMaderaSection madera={report.madera} />}
     </AdminTabShell>
   );
 }
