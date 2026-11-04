@@ -13,36 +13,9 @@ import {
   Users,
   Activity,
 } from "@buleje/design-system/icons";
+import type { HealthResponse, TenantHealth } from "@/lib/superadmin/health-negocios";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type IsolationCheck = {
-  name: string;
-  passed: boolean;
-  detail: string;
-};
-
-type TenantHealth = {
-  tenantId: string;
-  slug: string;
-  name: string;
-  status: "healthy" | "warning" | "critical";
-  checks: IsolationCheck[];
-  stats: {
-    products: number;
-    orders: number;
-    customers: number;
-    ordersLast24h: number;
-    errorsLast24h: number;
-  };
-};
-
-type HealthResponse = {
-  overall: "healthy" | "warning" | "critical";
-  tenants: TenantHealth[];
-  isolationTests: IsolationCheck[];
-  checkedAt: string;
-};
+// Tipos compartidos con la ruta (lib pura, sin server-only): una sola definición.
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -380,6 +353,22 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
         </span>
         <span className="text-[var(--text-tertiary)]">slug: {tenant.slug}</span>
       </div>
+
+      {/* Operaciones: pedidos + ventas POS + libro CTP + trozas (un aserradero casi no tiene pedidos) */}
+      <p
+        className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-3"
+        title="Pedidos + ventas del POS + líneas del libro CTP + ingresos de trozas, últimos 30 días"
+      >
+        Operaciones 30 d:{" "}
+        <strong className="text-[var(--text-primary)] dark:text-[var(--text-secondary)]">
+          {tenant.stats.operations30d ?? "—"}
+        </strong>
+        {tenant.stats.lastOperationAt && tenant.stats.operations30d === 0 && (
+          <span className="text-[var(--text-tertiary)]">
+            {" "}· última {new Date(tenant.stats.lastOperationAt).toLocaleDateString("es-PE")}
+          </span>
+        )}
+      </p>
 
       {/* Isolation checks */}
       <div className="space-y-1">
