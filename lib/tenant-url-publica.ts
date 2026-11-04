@@ -85,6 +85,8 @@ export const RUTAS_CORTAS = {
   d: "verificar/despacho",
   l: "verificar/lote",
   k: "verificar-cacao",
+  /** papel emitido por el negocio (proforma, liquidación…; `?k=<clave>` aparte, ADR-534) */
+  p: "verificar/papel",
 } as const;
 export type TipoCorto = keyof typeof RUTAS_CORTAS;
 

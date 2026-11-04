@@ -9483,3 +9483,36 @@ model ContabilidadAjustes {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+/// ADR-534 · Papel emitido por el programa local `papel` (proforma, liquidación…).
+/// SIN datos personales a propósito: el QR de la hoja abre una página PÚBLICA
+/// que muestra solo tipo, número, fecha, estado y (con la clave del QR) el total.
+model PapelEmitido {
+  id             String   @id @default(cuid())
+  tenantId       String
+  /// PRO-0002 (se repite entre versiones; la fila más nueva es la vigente)
+  numero         String
+  /// proforma | nota-venta | estado-cuenta | liquidacion | recibo | contrato | solicitud | carta | informe | resumen | cubicacion
+  tipo           String
+  /// Lo que se muestra: «Proforma»
+  titulo         String
+  fecha          DateTime @db.Date
+  /// borrador | revision | oficial | reemplazado (solo el servidor) | anulado
+  estado         String
+  /// Impreso en el pie: BLAS-PRO-0002-7F3A (4 hex del sha256 del contenido)
+  codigo         String
+  /// 12 hex que SOLO van dentro del QR; sin ella la página no muestra el total
+  clave          String
+  total          Decimal? @db.Decimal(14, 2)
+  moneda         String   @default("PEN")
+  hojas          Int?
+  /// PDF en Documentos (opcional, del mismo negocio)
+  documentId     String?
+  /// Código de la versión que lo reemplazó
+  reemplazadoPor String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([tenantId, codigo])
+  @@index([tenantId, numero])
+}

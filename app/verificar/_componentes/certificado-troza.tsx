@@ -29,7 +29,21 @@ export const fdate = (iso: string) => {
 };
 
 /** La tarjeta con el encabezado verde y el pie legal; el cuerpo lo pone cada página. */
-export function MarcoVerificacion({ kicker, titulo, children }: { kicker: string; titulo: ReactNode; children: ReactNode }) {
+export function MarcoVerificacion({
+  kicker,
+  titulo,
+  children,
+  subtitulo = "Libro de Operaciones · Títulos Habilitantes (SERFOR)",
+  pie = "Verificación generada por el sistema Buleje · Información de origen conforme al LO-TH (RDE 264-2019-MINAGRI-SERFOR-DE)",
+}: {
+  kicker: string;
+  titulo: ReactNode;
+  children: ReactNode;
+  /** La línea bajo el título (por defecto, la del LO-TH). */
+  subtitulo?: string;
+  /** El pie gris (por defecto, el legal del LO-TH). */
+  pie?: string;
+}) {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900">
       <div className="mx-auto max-w-2xl">
@@ -37,11 +51,11 @@ export function MarcoVerificacion({ kicker, titulo, children }: { kicker: string
           <div className="bg-emerald-800 px-6 py-5 text-white">
             <div className="text-xs font-semibold uppercase tracking-widest text-emerald-200">{kicker}</div>
             <div className="mt-1 break-words text-2xl font-bold">{titulo}</div>
-            <div className="text-sm text-emerald-100">Libro de Operaciones · Títulos Habilitantes (SERFOR)</div>
+            <div className="text-sm text-emerald-100">{subtitulo}</div>
           </div>
           {children}
           <div className="bg-slate-50 px-6 py-3 text-center text-xs text-slate-500">
-            Verificación generada por el sistema Buleje · Información de origen conforme al LO-TH (RDE 264-2019-MINAGRI-SERFOR-DE)
+            {pie}
           </div>
         </div>
       </div>

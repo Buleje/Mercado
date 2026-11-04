@@ -10,6 +10,7 @@ import VerificarGuiaPage from "../../../verificar/guia/[id]/page";
 import VerificarDespachoPage from "../../../verificar/despacho/[id]/page";
 import VerificarLotePage from "../../../verificar/lote/[id]/page";
 import VerificarCacaoPage from "../../../verificar-cacao/[code]/page";
+import VerificarPapelPage from "../../../verificar/papel/[codigo]/page";
 
 /**
  * /v/… — la dirección CORTA de los QR (ADR-486). Muestra exactamente las
@@ -22,7 +23,8 @@ import VerificarCacaoPage from "../../../verificar-cacao/[code]/page";
  *     «Seguridad»).
  *
  * Letras: `t` troza (`?c=` aparte), `c` troza por código, `g` guía, `d`
- * despacho, `l` lote, `k` cacao (`RUTAS_CORTAS`). Público, sin sesión.
+ * despacho, `l` lote, `k` cacao, `p` papel emitido (`?k=` aparte, ADR-534)
+ * (`RUTAS_CORTAS`). Público, sin sesión.
  *
  * Seguridad: un código desconocido o de un negocio dado de baja muestra el
  * mismo «no encontrado» que un id inventado y nunca cae en otro negocio. El
@@ -75,5 +77,7 @@ async function Contenido({ params, searchParams }: Props) {
       return <VerificarLotePage params={porId} />;
     case "k":
       return <VerificarCacaoPage params={porCodigo} />;
+    case "p":
+      return <VerificarPapelPage params={Promise.resolve({ codigo: ruta.valor })} searchParams={searchParams} />;
   }
 }
