@@ -136,7 +136,7 @@ export class PagoExcedeSaldoError extends Error {
 
 function safeRevalidate(tag: string): void {
   try {
-    revalidateTag(tag, "max");
+    revalidateTag(tag, { expire: 0 });
   } catch {
     /* fuera de un request (test/script): la invalidación no es crítica */
   }

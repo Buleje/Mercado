@@ -364,7 +364,7 @@ export const ProductsDB = {
         specsJson: product.specsJson ?? null, richContentJson: product.richContentJson ?? null,
       },
     });
-    revalidateTag(`tenant:${product.tenantId}:products`, "max");
+    revalidateTag(`tenant:${product.tenantId}:products`, { expire: 0 });
     return mapProduct(row);
   },
   /** Soft-delete: sets deletedAt instead of physically removing the row. */
@@ -372,14 +372,14 @@ export const ProductsDB = {
     await prisma.$executeRaw`UPDATE "Product" SET "deletedAt" = NOW() WHERE id = ${id} AND "tenantId" = ${tenantId}`.catch((err) => {
       logger.error("[products.db] soft-delete failed", { id, tenantId, error: String(err) });
     });
-    revalidateTag(`tenant:${tenantId}:products`, "max");
+    revalidateTag(`tenant:${tenantId}:products`, { expire: 0 });
   },
   /** Hard-delete: permanently removes the row (admin use only). */
   async hardDelete(tenantId: string, id: number): Promise<void> {
     await prisma.product.deleteMany({ where: { id, tenantId } }).catch((err) => {
       logger.error("[products.db] hard-delete failed", { id, tenantId, error: String(err) });
     });
-    revalidateTag(`tenant:${tenantId}:products`, "max");
+    revalidateTag(`tenant:${tenantId}:products`, { expire: 0 });
   },
 
   /**
@@ -412,7 +412,7 @@ export const ProductsDB = {
       where: { id: { in: ids }, tenantId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
-    revalidateTag(`tenant:${tenantId}:products`, "max");
+    revalidateTag(`tenant:${tenantId}:products`, { expire: 0 });
     return result.count;
   },
 
@@ -448,7 +448,7 @@ export const ProductsDB = {
       data: rows,
       skipDuplicates: true,
     });
-    revalidateTag(`tenant:${tenantId}:products`, "max");
+    revalidateTag(`tenant:${tenantId}:products`, { expire: 0 });
     return result.count;
   },
 
@@ -501,7 +501,7 @@ export const ProductsDB = {
         barcode: data.barcode,
       },
     });
-    revalidateTag(`tenant:${tenantId}:products`, "max");
+    revalidateTag(`tenant:${tenantId}:products`, { expire: 0 });
   },
 
   /**

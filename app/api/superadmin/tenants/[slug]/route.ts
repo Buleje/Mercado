@@ -127,8 +127,8 @@ export async function PATCH(
     // tras cambiar el plan de un tenant.
     // Next 16: revalidateTag firma 2-arg (tag, "max" para invalidar todo).
     try {
-      revalidateTag("superadmin:analytics", "max");
-      revalidateTag(`superadmin:tenant:${slug}`, "max");
+      revalidateTag("superadmin:analytics", { expire: 0 });
+      revalidateTag(`superadmin:tenant:${slug}`, { expire: 0 });
     } catch (e) {
       logger.warn("[superadmin/tenants] revalidateTag failed", { error: String(e) });
     }

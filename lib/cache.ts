@@ -305,13 +305,19 @@ export function invalidateAll(): void {
  * dato queda bien en la base y viejo en pantalla: pasó con el stock recibido,
  * con el stock vendido y con las cuentas por pagar (2026-08-12).
  *
+ * `{ expire: 0 }` y no `"max"` (04-11): con `"max"` la PRÓXIMA lectura todavía
+ * recibe lo viejo mientras se recalcula de fondo (stale-while-revalidate, doc de
+ * Next 16 `revalidateTag.md` «Revalidation Behavior»), o sea que el arreglo del
+ * 12-08 recién se veía en la segunda recarga. Las rutas que guardan necesitan
+ * leer lo que acaban de escribir: la doc pide `{ expire: 0 }` en Route Handlers.
+ *
  * Envuelto en try/catch a propósito: fuera de un request de Next —tests
  * unitarios, scripts, seeds— `revalidateTag` lanza «static generation store
  * missing», y ahí no hay ningún cache que purgar.
  */
 export function revalidateTenantTag(tenantId: string, recurso: string): void {
   try {
-    revalidateTag(`tenant:${tenantId}:${recurso}`, "max");
+    revalidateTag(`tenant:${tenantId}:${recurso}`, { expire: 0 });
   } catch {
     /* fuera de contexto de request — no hay cache de Next que invalidar */
   }

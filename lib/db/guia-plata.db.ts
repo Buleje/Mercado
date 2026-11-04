@@ -266,7 +266,7 @@ function invalidarGastos(tenantId: string): void {
     import("next/cache")
       .then(({ revalidateTag }) => {
         try {
-          revalidateTag(tag, "max");
+          revalidateTag(tag, { expire: 0 });
         } catch {
           /* fuera de un request de Next (script/test): no hay caché que invalidar */
         }

@@ -143,7 +143,7 @@ export const CampaignsDB = {
         data: { opened: { increment: 1 } },
         select: { tenantId: true },
       });
-      revalidateTag(`tenant:${updated.tenantId}:campaigns`, "max");
+      revalidateTag(`tenant:${updated.tenantId}:campaigns`, { expire: 0 });
       return { tenantId: updated.tenantId };
     } catch {
       return null;
@@ -156,7 +156,7 @@ export const CampaignsDB = {
       where: { id },
       data: { status: "completada", sentAt: new Date(), totalAudience: audience, delivered: audience },
     });
-    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
+    revalidateTag(`tenant:${tenantId}:campaigns`, { expire: 0 });
   },
 
   async list(tenantId: string, opts: { status?: string } = {}) {
@@ -187,7 +187,7 @@ export const CampaignsDB = {
         ...(data.delivered !== undefined && { delivered: data.delivered }),
       },
     });
-    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
+    revalidateTag(`tenant:${tenantId}:campaigns`, { expire: 0 });
     return created;
   },
 
@@ -206,7 +206,7 @@ export const CampaignsDB = {
       update.sentAt = data.sentAt ? new Date(data.sentAt) : null;
     }
     const updated = await prisma.campaign.update({ where: { id }, data: update });
-    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
+    revalidateTag(`tenant:${tenantId}:campaigns`, { expire: 0 });
     return { previous: existing, updated };
   },
 
@@ -214,7 +214,7 @@ export const CampaignsDB = {
     const existing = await this.getForTenant(tenantId, id);
     if (!existing) return null;
     await prisma.campaign.delete({ where: { id } });
-    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
+    revalidateTag(`tenant:${tenantId}:campaigns`, { expire: 0 });
     return existing;
   },
 };

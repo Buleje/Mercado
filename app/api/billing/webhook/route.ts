@@ -263,8 +263,8 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       // SECURITY 2026-05-05 (audit Stripe #9): revalidar caches del tenant
       // tras cambio de plan — antes el sidebar/feature-flags quedaban
       // stale hasta 5min.
-      revalidateTag(`tenant:${tenantSlug}`, "max");
-      revalidateTag(`tenant:${tenantSlug}:plan`, "max");
+      revalidateTag(`tenant:${tenantSlug}`, { expire: 0 });
+      revalidateTag(`tenant:${tenantSlug}:plan`, { expire: 0 });
       await prisma.activityLog.create({
         data: { action: "plan_changed", entity: "tenant", entityId: tenantSlug, detail: `Plan updated to: ${updatedPlan}${sub.cancel_at_period_end ? " (canceling)" : ""}`, user: "stripe-webhook", tenantId: tenantSlug },
       }).catch((err) => { logger.warn("[Stripe Webhook] activityLog create failed", { tenantSlug, error: String(err) }); });

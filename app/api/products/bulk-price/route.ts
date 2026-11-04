@@ -113,7 +113,7 @@ export async function PATCH(req: NextRequest) {
     if (ops.length > 0) {
       await prisma.$transaction(ops);
       // Invalidar el cache de getAll (productos cambiaron de precio).
-      revalidateTag(`tenant:${auth.tenantId}:products`, "max");
+      revalidateTag(`tenant:${auth.tenantId}:products`, { expire: 0 });
       registrarBajoPiso(auth.tenantId, auth.username ?? "admin", avisos);
     }
 
@@ -188,7 +188,7 @@ export async function PUT(req: NextRequest) {
     );
 
     await prisma.$transaction(updates);
-    revalidateTag(`tenant:${tenantId}:products`, "max");
+    revalidateTag(`tenant:${tenantId}:products`, { expire: 0 });
     registrarBajoPiso(tenantId, auth.username ?? "admin", avisos);
 
     return NextResponse.json({

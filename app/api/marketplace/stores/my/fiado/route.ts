@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Invalida el listado público (SSR + API cachean con este tag).
-    revalidateTag("marketplace:stores", "max");
+    revalidateTag("marketplace:stores", { expire: 0 });
 
     logActivity(
       parsed.data.enabled ? "Activó" : "Desactivó",

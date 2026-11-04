@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     await PlatformSettingsDB.set(key, value, updatedBy);
     // Esta ruta escribe las MISMAS keys que /platform-config, así que revalida
     // el mismo tag: el root layout lee la marca desde ese caché.
-    revalidateTag("platform-config", "max");
+    revalidateTag("platform-config", { expire: 0 });
     return NextResponse.json({ ok: true, key, value });
   }
 
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     delete sanitized["plan-prices"];
 
     await PlatformSettingsDB.setMany(sanitized, updatedBy);
-    revalidateTag("platform-config", "max");
+    revalidateTag("platform-config", { expire: 0 });
     return NextResponse.json({ ok: true, keys: Object.keys(sanitized) });
   }
 

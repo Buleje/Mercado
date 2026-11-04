@@ -43,7 +43,7 @@ export function revalidarGastosAlInstante(tenantId: string): void {
 
 function safeRevalidate(tag: string): void {
   try {
-    revalidateTag(tag, "max");
+    revalidateTag(tag, { expire: 0 });
   } catch {
     /* fuera de contexto de request (test/script) — no crítico */
   }

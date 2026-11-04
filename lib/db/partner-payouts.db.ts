@@ -261,7 +261,7 @@ const NO_EXISTE: ResultadoAccionRetiro = { ok: false, status: 404, error: "No en
 
 function safeRevalidate(tag: string): void {
   try {
-    revalidateTag(tag, "max");
+    revalidateTag(tag, { expire: 0 });
   } catch {
     /* fuera de contexto de request (test/script): no crítico */
   }

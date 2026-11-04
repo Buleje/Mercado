@@ -158,12 +158,12 @@ export async function PATCH(req: NextRequest) {
   // FIX 2026-05-26: el GET (getStoresData) es "use cache" con tag
   // "superadmin:stores". Sin invalidar acá, el refetch tras un PATCH devolvía
   // data vieja → "el cambio no se aplica". Invalida SIEMPRE.
-  revalidateTag("superadmin:stores", "max");
+  revalidateTag("superadmin:stores", { expire: 0 });
   // 2026-10-10: despublicar (o cambiar rubro/zona) tiene que sacar la tienda de la home
   // del marketplace al instante; sus listados viven en getOrSet con 60-300 s de vida.
   if (data.isPublished !== undefined || data.category !== undefined || data.zone !== undefined) {
     invalidateByPrefix("marketplace:");
-    revalidateTag("marketplace:stores", "max");
+    revalidateTag("marketplace:stores", { expire: 0 });
   }
 
   // displayTier vive fuera del schema Prisma (columna parcheada en DB, mismo
@@ -175,7 +175,7 @@ export async function PATCH(req: NextRequest) {
       data.displayTier,
       storeId,
     );
-    revalidateTag("marketplace:stores", "max");
+    revalidateTag("marketplace:stores", { expire: 0 });
   }
 
   // Beneficios: merge JSONB (solo las claves enviadas se sobreescriben).
@@ -185,9 +185,9 @@ export async function PATCH(req: NextRequest) {
       JSON.stringify(data.benefits),
       storeId,
     );
-    revalidateTag("marketplace:stores", "max");
+    revalidateTag("marketplace:stores", { expire: 0 });
     // "Destacar en Home" afecta el listado del home → invalidar su cache.
-    revalidateTag("marketplace-top-stores", "max");
+    revalidateTag("marketplace-top-stores", { expire: 0 });
   }
 
   // Notify store owner via WhatsApp + email when their store gets published.

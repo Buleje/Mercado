@@ -110,6 +110,6 @@ export async function PATCH(req: NextRequest) {
   await PlatformSettingsDB.setMany(normalized, platformUser);
   // El root layout pinta colores y favicon desde un `"use cache"` con este
   // tag. Sin revalidar, el superadmin cambia la marca y no la ve cambiar.
-  revalidateTag("platform-config", "max");
+  revalidateTag("platform-config", { expire: 0 });
   return NextResponse.json({ ok: true, updated: Object.keys(normalized).length });
 }

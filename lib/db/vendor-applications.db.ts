@@ -132,9 +132,9 @@ const tagFor = (id: string) => `vendor-applications:${id}` as const;
 function invalidateAll(id?: string): void {
   // Next 16: revalidateTag requiere 2 args (tag, profile). "max" descarta
   // la entrada sin esperar al ciclo de revalidacion.
-  revalidateTag(TAG_LIST, "max");
-  revalidateTag(TAG_STATS, "max");
-  if (id) revalidateTag(tagFor(id), "max");
+  revalidateTag(TAG_LIST, { expire: 0 });
+  revalidateTag(TAG_STATS, { expire: 0 });
+  if (id) revalidateTag(tagFor(id), { expire: 0 });
 }
 
 // ─── DB class ────────────────────────────────────────────────────────────────
