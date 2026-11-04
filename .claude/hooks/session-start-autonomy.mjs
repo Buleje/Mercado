@@ -102,7 +102,9 @@ async function loginAdmin() {
     const res = await fetch(`${BASE}/api/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-tenant-id": TENANT },
-      body: JSON.stringify({ username: "qaadmin", password: "Qa-admin-1234" }),
+      /* `tenantSlug` (04-11): qaadmin tiene varios negocios; sin él el login responde 200 con
+         `requiresTenantChoice` y sólo la cookie csrf, y todo curl de los ayudantes daba 401. */
+      body: JSON.stringify({ username: "qaadmin", password: "Qa-admin-1234", tenantSlug: TENANT }),
       signal: ctrl.signal,
     });
     clearTimeout(tid);
@@ -112,6 +114,7 @@ async function loginAdmin() {
     const rawCookies = setCookie.length > 0 ? setCookie : [res.headers.get("set-cookie") ?? ""];
     const pairs = rawCookies.map((c) => c.split(";")[0]).filter(Boolean);
     const cookieHeader = pairs.join("; ");
+    if (!/buleje-admin-sess=/.test(cookieHeader)) return { ok: false, error: "login sin cookie de sesión (¿requiresTenantChoice?)" };
     const csrfMatch = cookieHeader.match(/csrf-token=([^;]+)/);
     const csrf = csrfMatch ? csrfMatch[1] : "";
 
