@@ -85,6 +85,8 @@ import { siguientesCorrelativos } from "@/lib/forestal/testas-medicion";
 import { candidatosCodigoUnico, partirCodigoUnico } from "@/lib/forestal/codigo-unico-troza";
 import { repitePlaca } from "@/lib/forestal/loth-restante";
 import { ForestLothArbolesAManoDB } from "@/lib/db/forest-loth-arboles-a-mano.db";
+import { avisarBorradoDelLibro } from "@/lib/forestal/loth-aviso-borrado.server";
+import { UMBRAL_AVISO_BORRADO, VENTANA_BORRADOS_SUELTOS_MS } from "@/lib/forestal/loth-aviso-borrado";
 import { revisarArbolDeTroza } from "@/lib/forestal/loth-arbol-a-mano";
 
 export { LOTH_SECTIONS };
@@ -2697,6 +2699,10 @@ export class ForestLothDB {
       detail: `Borró (soft-delete) ${entry.section} #${entry.lineNo} (${entry.trozaCode || entry.treeCode || entry.productType || "—"})`,
       user,
     });
+    // De a una también cuenta: 10 sueltas en 10 minutos avisan al celular (una vez por racha).
+    void ForestLothDB.avisarSiVanMuchasSueltas(tenantId, user).catch((err) =>
+      logger.error("[loth.borrar] aviso de borrados sueltos failed", { error: String(err), tenantId }),
+    );
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
   }
@@ -2791,6 +2797,9 @@ export class ForestLothDB {
         detail: `Borró (soft-delete) en bloque ${resultado.borradas} líneas del plan ${planId} (${secs}; ${fmtM3(resultado.m3)} m³).${saltos ? ` Se quedaron: ${saltos}.` : ""}${resultado.arbolesLiberados > 0 ? ` ${resultado.arbolesLiberados} árboles volvieron a «en pie».` : ""}`,
         user,
       });
+      void avisarBorradoDelLibro(tenantId, { borradas: resultado.borradas, porSeccion: resultado.porSeccion, m3: resultado.m3, user, cuando: new Date() }).catch((err) =>
+        logger.error("[loth.borrar] aviso de borrado grande failed", { error: String(err), tenantId }),
+      );
     }
     return resultado;
   }
@@ -2874,11 +2883,45 @@ export class ForestLothDB {
         detail: `Borró (soft-delete) en bloque ${resultado.borradas} líneas elegidas en Secciones (${secs}; por plan: ${planes}; ${fmtM3(resultado.m3)} m³).${resultado.agregadas > 0 ? ` ${resultado.agregadas} sumadas por «lo que cuelga».` : ""}${saltos ? ` Se quedaron: ${saltos}.` : ""}${resultado.arbolesLiberados > 0 ? ` ${resultado.arbolesLiberados} árboles volvieron a «en pie».` : ""} Ids: ${r.borradasIds.slice(0, 30).join(",")}${r.borradasIds.length > 30 ? ",…" : ""}`,
         user,
       });
+      void avisarBorradoDelLibro(tenantId, { borradas: resultado.borradas, porSeccion: resultado.porSeccion, m3: resultado.m3, user, cuando: new Date() }).catch((err) =>
+        logger.error("[loth.borrar] aviso de borrado grande failed", { error: String(err), tenantId }),
+      );
     }
     return resultado;
   }
 
   // ─── Papelera del libro (04-11-2026) ─────────────────────────────────────
+
+  /**
+   * Borrados de a una: si en los últimos 10 minutos ya van JUSTO 10 líneas
+   * borradas en el negocio, avisa al celular (`avisarBorradoDelLibro`, una vez
+   * por racha: la 11.ª ya no repite). Después del commit, fuera del request.
+   */
+  static async avisarSiVanMuchasSueltas(tenantId: string, user: string): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const desde = new Date(Date.now() - VENTANA_BORRADOS_SUELTOS_MS);
+    const recientes = await prisma.forestLothEntry.findMany({
+      where: { tenantId, deletedAt: { gte: desde } },
+      select: { section: true, status: true, volumeM3: true },
+      take: UMBRAL_AVISO_BORRADO + 1,
+    });
+    if (recientes.length !== UMBRAL_AVISO_BORRADO) return 0;
+    const porSeccion = new Map<LothSection, number>();
+    let m3 = 0;
+    for (const f of recientes) {
+      if (!esSeccion(f.section)) continue;
+      porSeccion.set(f.section, (porSeccion.get(f.section) ?? 0) + 1);
+      if (f.status === "registrado") m3 += Number(f.volumeM3 ?? 0);
+    }
+    return avisarBorradoDelLibro(tenantId, {
+      borradas: recientes.length,
+      porSeccion: [...porSeccion].map(([section, borradas]) => ({ section, borradas })),
+      m3: r4(m3),
+      user,
+      cuando: new Date(),
+      sueltas: true,
+    });
+  }
 
   /**
    * Lo borrado del libro (soft-delete), agrupado por momento y con quién lo

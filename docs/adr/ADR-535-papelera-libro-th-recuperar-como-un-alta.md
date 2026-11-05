@@ -17,6 +17,7 @@ Borrar una línea del LO-TH es soft-delete (`deletedAt`), pero ninguna pantalla 
 5. **Vista previa exacta:** `POST ?vista=1` corre la misma transacción y la deshace (`SimulacionDeshecha`). Auditoría (`loth_linea_restaurar`), caché y censo («talado», plan por plan) van sólo después del commit real.
 6. Sólo admin/dueño (los mismos que borran). Tope 300 líneas por pedido; la ruta tiene 300 s en `vercel.json`.
 7. El grupo borrado por una limpieza de pruebas (`por` con «limpieza») se marca en la pantalla: no devolverlo.
+8. **Aviso al celular al borrar mucho** (Brandon eligió «Aviso al borrar mucho», 04-11): 10+ líneas en un borrado en bloque (Secciones o todo un plan), o la 10.ª suelta en 10 minutos (una vez por racha), mandan un Telegram a los chats vinculados a ESE negocio: cuántas, quién, hora de Lima, secciones, m³ y «Papelera del libro». Después del commit y con `.catch(logger)`: un Telegram caído no frena un borrado (`lib/forestal/loth-aviso-borrado*.ts`).
 
 ## Alternativas descartadas
 
