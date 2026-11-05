@@ -15,6 +15,7 @@ import {
   mensajeVigilante,
   type MensajeVigilante,
 } from "@/lib/forestal/vigilante-proveedores";
+import { GET as puntuarProveedores } from "@/app/api/cron/supplier-scoring/route";
 
 /**
  * GET /api/cron/vigilante-proveedores — el vigilante mensual (04-11-2026).
@@ -28,6 +29,9 @@ import {
  * `?tenant=<id>` revisa un solo negocio.
  *
  * vercel.json `0 14 1 * *` (09:00 de Lima del día 1) + disparador local de la PC.
+ * `?con=puntaje` (solo lo pone vercel.json) corre también el puntaje mensual de proveedores
+ * (`supplier-scoring`) en paralelo: Vercel admite 100 avisos programados y había 101 (04-11-2026).
+ * El disparador de la PC no lo pasa, así el ranking por WhatsApp no sale dos veces.
  * Autorización: `Bearer <CRON_SECRET>`.
  */
 
@@ -83,6 +87,15 @@ export const GET = withCronAuth("vigilante-proveedores", async (req) => {
   const solo = sp.get("tenant")?.trim() || null;
   const inicio = Date.now();
   const ahora = new Date().toISOString();
+  const puntaje =
+    sp.get("con") === "puntaje" && !seco && !solo
+      ? puntuarProveedores(req)
+          .then((r) => r.status)
+          .catch((err) => {
+            logger.error("[cron/vigilante-proveedores] puntaje de proveedores falló", { error: String(err) });
+            return 500;
+          })
+      : null;
 
   const tenants = solo ? [solo] : await ForestVigilanteDB.tenantsConProveedores();
   const negocios: Array<Record<string, unknown>> = [];
@@ -147,13 +160,22 @@ export const GET = withCronAuth("vigilante-proveedores", async (req) => {
   }
 
   const fallidos = negocios.filter((n) => n.resultado === "error" || n.resultado === "serfor_no_respondio").length;
+  const puntajeHttp = puntaje ? await puntaje : null;
   logger.info("[cron/vigilante-proveedores] vuelta del mes", {
     seco,
     negocios: tenants.length,
     avisados,
     fallidos,
     sinTiempo: sinTiempo.length,
+    puntaje: puntajeHttp,
     ms: Date.now() - inicio,
   });
-  return NextResponse.json({ ok: fallidos === 0, seco, avisados, sinTiempo, negocios });
+  return NextResponse.json({
+    ok: fallidos === 0 && (puntajeHttp === null || puntajeHttp < 400),
+    seco,
+    avisados,
+    sinTiempo,
+    negocios,
+    ...(puntajeHttp !== null ? { puntaje: puntajeHttp } : {}),
+  });
 });

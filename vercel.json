@@ -289,7 +289,7 @@
       "schedule": "0 2 * * *"
     },
     {
-      "path": "/api/cron/vigilante-proveedores",
+      "path": "/api/cron/vigilante-proveedores?con=puntaje",
       "schedule": "0 14 1 * *"
     },
     {
@@ -371,10 +371,6 @@
     {
       "path": "/api/cron/category-margins-report",
       "schedule": "7 8 * * 1"
-    },
-    {
-      "path": "/api/cron/supplier-scoring",
-      "schedule": "0 8 1 * *"
     },
     {
       "path": "/api/cron/marketplace-weekly-report",
