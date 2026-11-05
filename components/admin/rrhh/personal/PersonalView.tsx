@@ -44,6 +44,7 @@ import ColaboradorFormModal from "./ColaboradorFormModal";
 import FotochecksVista from "./FotochecksVista";
 import FichaColaboradorModal from "./FichaColaboradorModal";
 import TraerDesdeAdelantosModal from "./TraerDesdeAdelantosModal";
+import { AvisoUnirConAdelantos } from "./UnirConAdelantos";
 import TablaPersonal from "./TablaPersonal";
 import FichasPorCompletar from "@/components/admin/shared/FichasPorCompletar";
 import { personasPorCompletar, resumenDeFaltas, type ClaveFaltaPersona } from "@/lib/rrhh/fichas-por-completar";
@@ -91,7 +92,8 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   // conocidas desde Adelantos en vez de tipearlas de cero. Sólo nivel
   // completo — el vínculo con la cuenta de Adelantos es territorio de admin/
   // owner (mismo criterio que `vincular_beneficiario`, ADR-414 §1).
-  const { candidatos: candidatosAdelantos } = useRrhhDesdeAdelantos(nivel === "completo");
+  // 04-11: y si ya está en Equipo con otro nombre («Chato» ↔ «Chato Gallinero»), unirlo en vez de traerlo.
+  const { candidatos: candidatosAdelantos, unir: unirConAdelantos, recargar: recargarAdelantos } = useRrhhDesdeAdelantos(nivel === "completo");
 
   const kpis = useMemo(() => {
     const base: Record<EstadoColaborador, number> = { ACTIVO: 0, VACACIONES: 0, LICENCIA: 0, SUSPENDIDO: 0, CESADO: 0 };
@@ -188,6 +190,8 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
         onCompletar={completarFicha}
       />
 
+      {nivel === "completo" && <AvisoUnirConAdelantos candidatos={candidatosAdelantos} onUnir={unirConAdelantos} onUnido={recargar} />}
+
       {contratos.sinPersona > 0 && (
         <p className="flex flex-wrap items-center gap-x-2 text-sm text-[var(--text-secondary)]">
           <FileSignature className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
@@ -255,7 +259,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           open={traerAbierta}
           onClose={() => setTraerAbierta(false)}
           nivel={nivel}
-          onCambio={recargar}
+          onCambio={() => { recargar(); recargarAdelantos(); }}
         />
       )}
       {ficha.id && (
@@ -268,6 +272,8 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           onCambio={() => {
             recargar();
             contratos.recargar();
+            // La ficha también une/desune la cuenta: el aviso de arriba tiene que enterarse.
+            if (nivel === "completo") recargarAdelantos();
           }}
         />
       )}

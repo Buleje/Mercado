@@ -11,9 +11,9 @@ import TraerDesdeAdelantosModal from "@/components/admin/rrhh/personal/TraerDesd
 import type { CandidatoDesdeAdelantosDTO, ColaboradorDTO } from "@/lib/rrhh/tipos";
 
 const CANDIDATOS: CandidatoDesdeAdelantosDTO[] = [
-  { beneficiarioId: "b1", nombre: "Victor Quispe", tipoDocumento: null, documentoEnmascarado: null, tieneCelular: false, esEmpresa: false, saldoAbierto: 17000 },
-  { beneficiarioId: "b2", nombre: "Mama de Alex", tipoDocumento: null, documentoEnmascarado: null, tieneCelular: true, esEmpresa: false, saldoAbierto: 0 },
-  { beneficiarioId: "b3", nombre: "Ferretería El Clavo SAC", tipoDocumento: "RUC", documentoEnmascarado: "•••• 6789", tieneCelular: true, esEmpresa: true, saldoAbierto: 500 },
+  { beneficiarioId: "b1", nombre: "Victor Quispe", tipoDocumento: null, documentoEnmascarado: null, tieneCelular: false, esEmpresa: false, saldoAbierto: 17000, pareceA: null },
+  { beneficiarioId: "b2", nombre: "Mama de Alex", tipoDocumento: null, documentoEnmascarado: null, tieneCelular: true, esEmpresa: false, saldoAbierto: 0, pareceA: null },
+  { beneficiarioId: "b3", nombre: "Ferretería El Clavo SAC", tipoDocumento: "RUC", documentoEnmascarado: "•••• 6789", tieneCelular: true, esEmpresa: true, saldoAbierto: 500, pareceA: null },
 ];
 
 function colaborador(over: Partial<ColaboradorDTO> & { id: string; nombre: string }): ColaboradorDTO {
@@ -134,5 +134,37 @@ describe("TraerDesdeAdelantosModal", () => {
     expect(postCall).toBeDefined();
     const body = JSON.parse((postCall![1] as RequestInit).body as string) as { beneficiarioIds: string[] };
     expect(body.beneficiarioIds.sort()).toEqual(["b1", "b2"]);
+  });
+
+  it("la que ya está en Equipo con otro nombre no se premarca y se une con «Unir» (04-11, «Chato» ↔ «Chato Gallinero»)", async () => {
+    const conRepetido: CandidatoDesdeAdelantosDTO[] = [
+      ...CANDIDATOS.slice(0, 2),
+      { beneficiarioId: "b4", nombre: "Chato", tipoDocumento: null, documentoEnmascarado: null, tieneCelular: false, esEmpresa: false, saldoAbierto: 500, pareceA: { colaboradorId: "c9", nombre: "Chato Gallinero" } },
+    ];
+    const fetchMock = mockFetch([
+      { ok: true, json: async () => ({ candidatos: conRepetido }) },
+      { ok: true, json: async () => ({ colaborador: colaborador({ id: "c9", nombre: "Chato Gallinero", beneficiarioId: "b4" }) }) },
+      { ok: true, json: async () => ({ candidatos: CANDIDATOS.slice(0, 2) }) },
+    ]);
+    const onCambio = vi.fn();
+
+    render(<TraerDesdeAdelantosModal open onClose={() => {}} nivel="completo" onCambio={onCambio} />);
+
+    await waitFor(() => expect(screen.getByText("Chato")).toBeInTheDocument());
+    expect(screen.getByText("Ya está en tu equipo")).toBeInTheDocument();
+    // Solo las 2 nuevas van marcadas: traer a «Chato» crearía un segundo trabajador.
+    expect(screen.getByRole("button", { name: /Traer 2 personas/i })).toBeInTheDocument();
+    const filaChato = screen.getByText("Chato").closest("li")!;
+    expect((filaChato.querySelector('input[type="checkbox"]') as HTMLInputElement).checked).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: /Unir con Chato Gallinero/i }));
+
+    await waitFor(() => expect(screen.getByText(/Unidas a su cuenta/i)).toBeInTheDocument());
+    expect(onCambio).toHaveBeenCalledTimes(1);
+    // Une con la misma acción de la ficha, contra el trabajador que ya existía.
+    const patch = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === "PATCH");
+    expect(patch?.[0]).toBe("/api/rrhh/colaboradores/c9");
+    expect(JSON.parse((patch![1] as RequestInit).body as string)).toEqual({ action: "vincular_beneficiario", beneficiarioId: "b4" });
+    await waitFor(() => expect(screen.queryByText("Chato")).not.toBeInTheDocument());
   });
 });

@@ -31,6 +31,12 @@ export interface UseRrhhDesdeAdelantosResult {
     fechaIngreso?: FechaKey,
     incluirEmpresas?: string[],
   ) => Promise<({ ok: true } & ResultadoTraerDesdeAdelantosDTO) | { ok: false; error: RrhhApiError }>;
+  /**
+   * Une la cuenta de Adelantos con el trabajador que YA está en Equipo
+   * (`pareceA`, nombre parecido) en vez de traerlo de nuevo. Misma acción que
+   * la ficha (`vincular_beneficiario`); al salir bien, la lista se relee.
+   */
+  unir: (colaboradorId: string, beneficiarioId: string) => Promise<{ ok: true } | { ok: false; error: RrhhApiError }>;
 }
 
 /**
@@ -97,5 +103,20 @@ export function useRrhhDesdeAdelantos(activo = true): UseRrhhDesdeAdelantosResul
     return { ok: true as const, ...data };
   }, []);
 
-  return { candidatos, yaVinculados, loading, error, recargar, traer };
+  const unir = useCallback(async (colaboradorId: string, beneficiarioId: string) => {
+    const res = await fetch(`/api/rrhh/colaboradores/${encodeURIComponent(colaboradorId)}`, {
+      method: "PATCH",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ action: "vincular_beneficiario", beneficiarioId }),
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const error = (await res.json().catch(() => ({ error: "error_desconocido" }))) as RrhhApiError;
+      return { ok: false as const, error };
+    }
+    setTick((t) => t + 1);
+    return { ok: true as const };
+  }, []);
+
+  return { candidatos, yaVinculados, loading, error, recargar, traer, unir };
 }

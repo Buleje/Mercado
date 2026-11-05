@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * FichaCuenta — vínculo con Adelantos, sugeridos por documento, saldo abierto
- * (ADR-414 §1/§5/§7). «Ver su cuenta» salta al módulo de Adelantos — no hay
+ * FichaCuenta — vínculo con Adelantos, sugeridos por documento (o por nombre
+ * parecido si no hay, 04-11), saldo abierto (ADR-414 §1/§5/§7). «Ver su cuenta» salta al módulo de Adelantos — no hay
  * una segunda pantalla de plata acá, sólo el puente.
  */
 
@@ -16,6 +16,7 @@ import { formatearPEN, pluralizar } from "../rrhh-ui";
 import type { FichaColaboradorDTO } from "@/lib/rrhh/tipos";
 import type { RrhhApiError } from "@/hooks/use-rrhh-puestos";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { palabrasDelNombre } from "@/lib/rrhh/parecido-nombre";
 
 interface BeneficiarioLite {
   id: string;
@@ -29,6 +30,14 @@ interface Props {
   guardando: boolean;
   onVincular: (beneficiarioId: string | null) => Promise<{ ok: true } | { ok: false; error: RrhhApiError }>;
   onCambio: () => void;
+}
+
+/** Las palabras que coinciden, como están escritas en la cuenta («Ríos», no «rios»). */
+function comoSeEscriben(nombre: string, comun: readonly string[]): string {
+  return nombre
+    .split(/\s+/)
+    .filter((w) => palabrasDelNombre(w).some((p) => comun.includes(p)))
+    .join(" ");
 }
 
 /** Salta a Adelantos sin remontar el hub entero (memoria: `admin:navigate`, mismo patrón que `PorCobrarDashboard`). */
@@ -132,11 +141,19 @@ export default function FichaCuenta({ vinculo, cuenta, guardando, onVincular, on
 
       {!vinculo.beneficiario && vinculo.sugeridos.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-[var(--text-secondary)]">Con su mismo documento, sin vincular:</p>
+          {/* Por nombre es una pista, no una prueba (10 de 11 en Blas sin DNI): se dice qué palabra coincide. */}
+          <p className="text-sm font-semibold text-[var(--text-secondary)]">
+            {vinculo.sugeridos.every((s) => s.por === "documento") ? "Con su mismo documento, sin vincular:" : "Con nombre parecido, sin vincular (revisa que sea la misma persona):"}
+          </p>
           <ul className="space-y-2">
             {vinculo.sugeridos.map((s) => (
               <li key={s.id} className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-3.5 py-2.5">
-                <span className="min-w-0 truncate text-sm text-[var(--text-primary)]">{s.nombre}</span>
+                <span className="min-w-0 truncate text-sm text-[var(--text-primary)]">
+                  {s.nombre}
+                  {s.por === "nombre" && s.comun && s.comun.length > 0 && comoSeEscriben(s.nombre, s.comun) !== s.nombre.trim().replace(/\s+/g, " ") && (
+                    <span className="text-xs text-[var(--text-tertiary)]"> · coincide «{comoSeEscriben(s.nombre, s.comun) || s.comun.join(" ")}»</span>
+                  )}
+                </span>
                 <button type="button" disabled={guardando} onClick={() => vincular(s.id)} className={BOTON.chico}>
                   <Link2 className="h-4 w-4" /> Vincular
                 </button>

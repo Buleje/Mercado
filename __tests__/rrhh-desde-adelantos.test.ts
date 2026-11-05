@@ -206,4 +206,39 @@ describe("ColaboradoresDB.candidatosDesdeAdelantos", () => {
     const r = await ColaboradoresDB.candidatosDesdeAdelantos("t1");
     expect(r.candidatos[0].esEmpresa).toBe(true);
   });
+
+  describe("pareceA — ya está en Equipo con otro nombre (04-11)", () => {
+    const chato = { id: "c1", nombre: "Chato Gallinero", apodo: null, documento: null, beneficiarioId: null };
+
+    it("«Chato» de Adelantos ↔ «Chato Gallinero» sin cuenta → se marca para unir", async () => {
+      mockListBeneficiarios.mockResolvedValue([benef({ id: "b1", nombre: "Chato", documento: null, tipoDocumento: null })]);
+      mockColaboradorFindMany.mockResolvedValue([chato]);
+      const r = await ColaboradoresDB.candidatosDesdeAdelantos("t1");
+      expect(r.candidatos[0].pareceA).toEqual({ colaboradorId: "c1", nombre: "Chato Gallinero" });
+    });
+
+    it("con OTRO documento no se marca (el servidor rechazaría el enlace)", async () => {
+      mockListBeneficiarios.mockResolvedValue([benef({ id: "b1", nombre: "Chato", documento: "11111111" })]);
+      mockColaboradorFindMany.mockResolvedValue([{ ...chato, documento: "22222222" }]);
+      const r = await ColaboradoresDB.candidatosDesdeAdelantos("t1");
+      expect(r.candidatos[0].pareceA).toBeNull();
+    });
+
+    it("una cuenta de RUC de empresa no se marca («Aserradero Chato SAC» no es el Chato)", async () => {
+      mockListBeneficiarios.mockResolvedValue([benef({ id: "b1", nombre: "Aserradero Chato SAC", documento: "20456789012", tipoDocumento: "RUC" })]);
+      mockColaboradorFindMany.mockResolvedValue([{ ...chato, nombre: "Chato" }]);
+      const r = await ColaboradoresDB.candidatosDesdeAdelantos("t1");
+      expect(r.candidatos[0].pareceA).toBeNull();
+    });
+
+    it("un rival YA unido también cuenta: «Quispe» se parece a dos → ambiguo, no se marca", async () => {
+      mockListBeneficiarios.mockResolvedValue([benef({ id: "b1", nombre: "Quispe", documento: null }), benef({ id: "b9", nombre: "Rosa Quispe" })]);
+      mockColaboradorFindMany.mockResolvedValue([
+        { id: "c1", nombre: "Victor Quispe", apodo: null, documento: null, beneficiarioId: null },
+        { id: "c2", nombre: "Rosa Quispe", apodo: null, documento: null, beneficiarioId: "b9" },
+      ]);
+      const r = await ColaboradoresDB.candidatosDesdeAdelantos("t1");
+      expect(r.candidatos.map((c) => [c.beneficiarioId, c.pareceA])).toEqual([["b1", null]]);
+    });
+  });
 });

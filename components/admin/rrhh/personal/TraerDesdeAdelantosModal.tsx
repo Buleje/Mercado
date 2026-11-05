@@ -10,6 +10,11 @@
  *
  * Las de RUC de empresa arrancan SIN marcar (es plata que sale a una empresa,
  * no a una persona que trabaja) — se pueden tildar a mano si corresponde.
+ *
+ * 04-11: las que ya están en Equipo con otro nombre (`pareceA`, «Chato» ↔
+ * «Chato Gallinero») tampoco se premarcan: traerlas crearía un trabajador
+ * repetido. Llevan su «Unir» al lado, fuera del `<label>` (un botón dentro
+ * de la etiqueta también marcaría la casilla).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -23,6 +28,7 @@ import { AvisoRrhh, BOTON, CLASE_CAMPO, CLASE_CHIP } from "../rrhh-form";
 import { formatearPEN, pluralizar } from "../rrhh-ui";
 import { cn } from "@/lib/utils";
 import FichaColaboradorModal from "./FichaColaboradorModal";
+import { BotonUnirConAdelantos } from "./UnirConAdelantos";
 import type { NivelRrhh, ResultadoTraerDesdeAdelantosDTO } from "@/lib/rrhh/tipos";
 
 interface Props {
@@ -47,7 +53,7 @@ function irAAsistenciaDeHoy() {
 }
 
 export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambio, aboveModals }: Props) {
-  const { candidatos, loading, error, traer } = useRrhhDesdeAdelantos();
+  const { candidatos, loading, error, traer, unir } = useRrhhDesdeAdelantos();
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const inicializadoRef = useRef(false);
   const [fechaIngreso, setFechaIngreso] = useState("");
@@ -55,12 +61,13 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [resultado, setResultado] = useState<ResultadoTraerDesdeAdelantosDTO | null>(null);
   const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
+  const [unidos, setUnidos] = useState<string[]>([]);
 
-  // Las que NO son empresa arrancan marcadas — sólo una vez, cuando llegan los datos.
+  // Las que NO son empresa ni ya están en Equipo arrancan marcadas — sólo una vez, cuando llegan los datos.
   useEffect(() => {
     if (inicializadoRef.current || candidatos.length === 0) return;
     inicializadoRef.current = true;
-    setSeleccion(new Set(candidatos.filter((c) => !c.esEmpresa).map((c) => c.beneficiarioId)));
+    setSeleccion(new Set(candidatos.filter((c) => !c.esEmpresa && !c.pareceA).map((c) => c.beneficiarioId)));
   }, [candidatos]);
 
   const toggle = (id: string) => {
@@ -72,8 +79,20 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
     });
   };
 
-  const todasMarcadas = candidatos.length > 0 && seleccion.size === candidatos.length;
-  const alternarTodas = () => setSeleccion(todasMarcadas ? new Set() : new Set(candidatos.map((c) => c.beneficiarioId)));
+  // «Marcar todas» deja afuera a las que ya están en Equipo: se unen, no se traen.
+  const marcables = candidatos.filter((c) => !c.pareceA);
+  const todasMarcadas = marcables.length > 0 && marcables.every((c) => seleccion.has(c.beneficiarioId));
+  const alternarTodas = () => setSeleccion(todasMarcadas ? new Set() : new Set(marcables.map((c) => c.beneficiarioId)));
+
+  const alUnir = (beneficiarioId: string, texto: string) => {
+    setSeleccion((prev) => {
+      const siguiente = new Set(prev);
+      siguiente.delete(beneficiarioId);
+      return siguiente;
+    });
+    setUnidos((prev) => [...prev, texto]);
+    onCambio();
+  };
 
   const confirmarTraer = async () => {
     setEnviando(true);
@@ -136,6 +155,12 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
       }
     >
       <div className={cn(MODAL_BODY, "space-y-4")}>
+        {/* Afuera de la lista: si se unió la última, queda el estado vacío y esto sigue a la vista. */}
+        {!resultado && unidos.length > 0 && (
+          <AvisoRrhh tono="info" icono={Check}>
+            Unidas a su cuenta: {unidos.join(" · ")}
+          </AvisoRrhh>
+        )}
         {resultado ? (
           <>
             <div className="flex items-center gap-3">
@@ -182,7 +207,8 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
               </div>
             )}
           </>
-        ) : loading ? (
+        ) : loading && candidatos.length === 0 ? (
+          /* Solo la primera carga: tras un «Unir» la lista relee sin desmontarse (no se pierde el scroll). */
           <LoadingState message="Buscando personas en Adelantos..." />
         ) : error ? (
           <AvisoRrhh tono="error">{error}</AvisoRrhh>
@@ -203,13 +229,14 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
               {candidatos.map((c) => {
                 const marcada = seleccion.has(c.beneficiarioId);
                 return (
-                  <li key={c.beneficiarioId}>
-                    <label
-                      className={cn(
-                        "flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3.5 transition-colors has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--accent)]",
-                        marcada ? "border-primary bg-primary/5" : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)]",
-                      )}
-                    >
+                  <li
+                    key={c.beneficiarioId}
+                    className={cn(
+                      "flex flex-col rounded-xl border transition-colors has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--accent)]",
+                      marcada ? "border-primary bg-primary/5" : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)]",
+                    )}
+                  >
+                    <label className="flex min-w-0 cursor-pointer items-start gap-3 px-4 py-3.5">
                       <span
                         aria-hidden
                         className={cn(
@@ -230,6 +257,11 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
                               Tiene RUC de empresa: ¿es una persona?
                             </span>
                           )}
+                          {c.pareceA && (
+                            <span className={cn(CLASE_CHIP, "bg-[var(--data-info-500)]/10 font-semibold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]")}>
+                              Ya está en tu equipo
+                            </span>
+                          )}
                         </span>
                       </span>
                       {c.saldoAbierto > 0 && (
@@ -239,6 +271,17 @@ export default function TraerDesdeAdelantosModal({ open, onClose, nivel, onCambi
                         </span>
                       )}
                     </label>
+                    {c.pareceA && (
+                      <span className="-mt-1.5 flex px-4 pb-3.5 pl-12">
+                        <BotonUnirConAdelantos
+                          colaboradorId={c.pareceA.colaboradorId}
+                          beneficiarioId={c.beneficiarioId}
+                          onUnir={unir}
+                          onUnido={() => alUnir(c.beneficiarioId, `«${c.nombre}» → ${c.pareceA?.nombre ?? ""}`)}
+                          etiqueta={`Unir con ${c.pareceA.nombre}`}
+                        />
+                      </span>
+                    )}
                   </li>
                 );
               })}

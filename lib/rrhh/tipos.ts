@@ -145,8 +145,12 @@ export interface FichaColaboradorDTO {
   tarifas?: TarifaDTO[];
   vinculo: {
     beneficiario: { id: string; nombre: string; documento: string | null } | null;
-    /** Mismo documento normalizado, sin vincular. Nunca se vinculan solos. */
-    sugeridos: { id: string; nombre: string }[];
+    /**
+     * Cuentas de Adelantos sin vincular que parecen de esta persona: por mismo
+     * documento normalizado o, si no hay, por nombre parecido (`lib/rrhh/parecido-nombre.ts`;
+     * `comun` = las palabras en común). Nunca se vinculan solos.
+     */
+    sugeridos: { id: string; nombre: string; por: "documento" | "nombre"; comun?: string[] }[];
     adminUser: { id: string; username: string; role: string } | null;
   };
   /**
@@ -313,6 +317,12 @@ export interface CandidatoDesdeAdelantosDTO {
   tieneCelular: boolean;
   saldoAbierto: number;
   esEmpresa: boolean;
+  /**
+   * Ya está en Equipo con otro nombre y SIN cuenta unida («Chato» ↔ «Chato
+   * Gallinero», nombre parecido fuerte y sin ambigüedad): unirlo, no traerlo
+   * de nuevo (saldría un trabajador duplicado).
+   */
+  pareceA: { colaboradorId: string; nombre: string } | null;
 }
 
 export interface ResultadoTraerDesdeAdelantosDTO {

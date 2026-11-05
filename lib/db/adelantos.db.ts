@@ -915,6 +915,21 @@ export const AdelantosDB = {
     return row ? mapBeneficiario(row) : null;
   },
 
+  /**
+   * Solo lo que identifica a la cuenta (sin sus adelantos): para sugerir el
+   * enlace con RRHH al abrir una ficha (04-11). `listBeneficiarios` trae todos
+   * los adelantos de cada cuenta y la ficha no los usa.
+   */
+  async listBeneficiariosParaEnlazar(tenantId: string): Promise<{ id: string; nombre: string; documento: string | null; activo: boolean }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.adelantoBeneficiario.findMany({
+      where: { tenantId },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true, documento: true, activo: true },
+    });
+    return rows.map((b) => ({ id: b.id, nombre: b.nombre, documento: b.documento ?? null, activo: b.activo ?? true }));
+  },
+
   async listBeneficiarios(tenantId: string): Promise<(DbBeneficiario & ResumenPersona)[]> {
     const rows = await prisma.adelantoBeneficiario.findMany({
       where: { tenantId },

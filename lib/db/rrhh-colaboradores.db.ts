@@ -18,6 +18,7 @@ import {
 } from "@/lib/rrhh/documento";
 import { dateDeFechaKey, etiquetaCorta, fechaKeyDeDate, mesDe, rangoDeDias, sumarDias } from "@/lib/rrhh/fechas";
 import { SALDO_DEL_SUELDO_VACIO, saldosDelSueldo, tarifaVigente as tarifaVigentePura } from "@/lib/rrhh/ganado";
+import { paresPorNombre } from "@/lib/rrhh/parecido-nombre";
 import {
   aAsistenciaDTO,
   aColaboradorDTO,
@@ -427,19 +428,35 @@ export const ColaboradoresDB = {
       if (u) adminUser = u;
     }
     const documentoNorm = normalizarDocumento(row.documento);
-    let sugeridos: { id: string; nombre: string }[] = [];
-    if (documentoNorm) {
+    let sugeridos: FichaColaboradorDTO["vinculo"]["sugeridos"] = [];
+    // Sin cuenta unida: primero por documento; si no hay, por nombre parecido
+    // (04-11, Blas: 10 de 11 sin DNI → la sugerencia por documento nunca salía).
+    if (!row.beneficiarioId) {
       const [todos, vinculados] = await Promise.all([
-        AdelantosDB.listBeneficiarios(tenantId),
+        AdelantosDB.listBeneficiariosParaEnlazar(tenantId),
         prisma.colaborador.findMany({
           where: { tenantId, deletedAt: null, beneficiarioId: { not: null }, id: { not: id } },
           select: { beneficiarioId: true },
         }),
       ]);
       const usados = new Set(vinculados.map((v) => v.beneficiarioId as string));
-      sugeridos = todos
-        .filter((b) => b.id !== row.beneficiarioId && !usados.has(b.id) && mismoDocumento(b.documento, documentoNorm))
-        .map((b) => ({ id: b.id, nombre: b.nombre }));
+      const libres = todos.filter((b) => b.activo !== false && !usados.has(b.id));
+      if (documentoNorm) {
+        sugeridos = libres.filter((b) => mismoDocumento(b.documento, documentoNorm)).map((b) => ({ id: b.id, nombre: b.nombre, por: "documento" as const }));
+      }
+      if (sugeridos.length === 0) {
+        // Una cuenta con OTRO documento no se ofrece (`vincularBeneficiario` la
+        // rechazaría), ni una de RUC de empresa («Aserradero Chato SAC» no es «Chato»).
+        const sinChoque = libres.filter(
+          (b) => !esRucEmpresa(b.documento ?? null) && (!documentoNorm || !b.documento || mismoDocumento(b.documento, documentoNorm)),
+        );
+        sugeridos = paresPorNombre([{ id: row.id, nombre: row.nombre, apodo: row.apodo }], sinChoque)
+          .slice(0, 5)
+          .flatMap((p) => {
+            const b = sinChoque.find((x) => x.id === p.cuentaId);
+            return b ? [{ id: b.id, nombre: b.nombre, por: "nombre" as const, comun: p.comun }] : [];
+          });
+      }
     }
 
     // ── Cuenta de Adelantos (sólo completo, y sólo si hay cuenta vinculada) ──
@@ -1305,17 +1322,34 @@ export const ColaboradoresDB = {
    */
   async candidatosDesdeAdelantos(tenantId: string): Promise<{ candidatos: CandidatoDesdeAdelantosDTO[]; yaVinculados: number }> {
     if (!tenantId) throw new Error("tenantId is required");
-    const [beneficiarios, vinculados] = await Promise.all([
+    const [beneficiarios, vivos] = await Promise.all([
       AdelantosDB.listBeneficiarios(tenantId),
       prisma.colaborador.findMany({
-        where: { tenantId, deletedAt: null, beneficiarioId: { not: null } },
-        select: { beneficiarioId: true },
+        where: { tenantId, deletedAt: null },
+        select: { id: true, nombre: true, apodo: true, documento: true, beneficiarioId: true },
       }),
     ]);
-    const usados = new Set(vinculados.map((v) => v.beneficiarioId as string));
-    const candidatos = beneficiarios
-      .filter((b) => b.activo !== false && !usados.has(b.id))
-      .map((b) => aCandidatoDesdeAdelantosDTO(b));
+    const usados = new Set(vivos.flatMap((v) => (v.beneficiarioId ? [v.beneficiarioId] : [])));
+    const libres = beneficiarios.filter((b) => b.activo !== false && !usados.has(b.id));
+    // «Chato» de Adelantos y «Chato Gallinero» de Equipo (04-11): traerlo
+    // crearía un segundo trabajador. Se marca para unirlo (solo fuertes y sin
+    // ambigüedad: la persona confirma con «Unir»).
+    // Revisión 04-11: los rivales son TODOS los vivos (un «Quispe» ya unido
+    // hace ambigua la cuenta «Quispe»); solo se ofrece unir a uno sin cuenta.
+    // Fuera las cuentas de empresa y las que chocan de documento con el trabajador.
+    const sinCuenta = new Map(vivos.filter((v) => !v.beneficiarioId).map((v) => [v.id, v]));
+    const deLibres = new Map(libres.map((b) => [b.id, b]));
+    const pareceA = new Map(
+      paresPorNombre(vivos, libres, { soloFuertes: true }).flatMap((p) => {
+        const t = sinCuenta.get(p.trabajadorId);
+        const b = deLibres.get(p.cuentaId);
+        if (!t || !b || esRucEmpresa(b.documento ?? null)) return [];
+        const docT = normalizarDocumento(t.documento);
+        if (docT && b.documento && !mismoDocumento(b.documento, docT)) return [];
+        return [[p.cuentaId, { colaboradorId: t.id, nombre: t.nombre }] as const];
+      }),
+    );
+    const candidatos = libres.map((b) => ({ ...aCandidatoDesdeAdelantosDTO(b), pareceA: pareceA.get(b.id) ?? null }));
     return { candidatos, yaVinculados: usados.size };
   },
 
@@ -1432,5 +1466,6 @@ function aCandidatoDesdeAdelantosDTO(b: DbBeneficiario & ResumenPersona): Candid
     tieneCelular: Boolean(b.telefono?.trim()),
     saldoAbierto: b.saldoPendiente.PEN ?? 0,
     esEmpresa: esRucEmpresa(b.documento ?? null),
+    pareceA: null,
   };
 }
