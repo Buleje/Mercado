@@ -78,8 +78,10 @@ export async function fuenteParaMiniaturas(): Promise<string | null> {
   }
 
   // Último intento: barrer los directorios de fuentes del sistema, si los hay.
+  // `turbopackIgnore` (04-11): sin él este `existsSync` también traza el proyecto entero y
+  // 18 funciones pesaban 483 MB (tope 250): la subida a Vercel se cayó.
   for (const dir of ["/usr/share/fonts", "/usr/local/share/fonts"]) {
-    if (!existsSync(dir)) continue;
+    if (!existsSync(/* turbopackIgnore: true */ dir)) continue;
     try {
       if (GlobalFonts.loadFontsFromDir(dir) > 0) {
         const alguna = GlobalFonts.families[0]?.family;
