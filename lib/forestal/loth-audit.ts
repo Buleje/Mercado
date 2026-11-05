@@ -57,6 +57,8 @@ export type LothAuditAction =
   | "loth_linea_create"
   | "loth_linea_annul"
   | "loth_linea_delete"
+  // Líneas borradas que vuelven desde la papelera, tras pasar las reglas de un alta (04-11-2026)
+  | "loth_linea_restaurar"
   // Líneas sin plan atadas a un permiso (ADR-459, 02-10-2026)
   | "loth_linea_atar_plan"
   // Guía desatada de su permiso: ella y sus líneas vuelven a sin plan (25-10)

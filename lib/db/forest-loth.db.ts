@@ -57,6 +57,21 @@ import {
   type ResultadoBorrarLineas,
 } from "@/lib/forestal/loth-borrar-del-plan";
 import {
+  MAX_LINEAS_A_RECUPERAR,
+  MAX_LINEAS_POR_RECUPERO,
+  claveDeCodigo,
+  sinSuFuente,
+  ORDEN_DE_RECUPERO,
+  agruparBorrados,
+  motivosGuardados,
+  ordenarParaRecuperar,
+  type BorradoDelLibro,
+  type LineaBorradaDTO,
+  type LineaNoRecuperada,
+  type MotivoNoRecupera,
+  type ResultadoRecuperar,
+} from "@/lib/forestal/loth-papelera";
+import {
   especiesDeLasFilas,
   notaPorFoto,
   observacionAMano,
@@ -357,6 +372,66 @@ const SEL_BORRAR = {
   volumeM3: true, entryDate: true, gtfNumber: true, planId: true,
 } as const satisfies Prisma.ForestLothEntrySelect;
 type FilaParaBorrar = Prisma.ForestLothEntryGetPayload<{ select: typeof SEL_BORRAR }>;
+
+/** Lo que la papelera muestra y lo que las reglas del alta necesitan para juzgar el regreso. */
+const SEL_PAPELERA = {
+  ...SEL_BORRAR,
+  deletedAt: true, productType: true, speciesCommon: true, speciesScientific: true,
+  quantity: true, unit: true, isRama: true, discarded: true, consumoInterno: true, observations: true,
+} as const satisfies Prisma.ForestLothEntrySelect;
+type FilaDePapelera = Prisma.ForestLothEntryGetPayload<{ select: typeof SEL_PAPELERA }> & { section: LothSection };
+
+const codigoDeFila = (f: { trozaCode: string | null; treeCode: string | null; productType: string | null }) =>
+  f.trozaCode || f.treeCode || f.productType || null;
+
+function aLineaBorrada(f: FilaDePapelera): LineaBorradaDTO {
+  return {
+    id: f.id,
+    section: f.section,
+    lineNo: f.lineNo,
+    entryDate: f.entryDate.toISOString(),
+    deletedAt: (f.deletedAt ?? new Date(0)).toISOString(),
+    status: f.status,
+    codigo: codigoDeFila(f),
+    speciesCommon: f.speciesCommon,
+    volumeM3: f.volumeM3 == null ? null : Number(f.volumeM3),
+    quantity: f.quantity == null ? null : Number(f.quantity),
+    unit: f.unit,
+    gtfNumber: f.gtfNumber,
+    planId: f.planId,
+  };
+}
+
+/** La línea borrada como un alta nueva: lo que juzgan T1–T9. Los motivos, los que YA llevaba. */
+function entradaDeRecupero(f: FilaDePapelera, user: string, puedeExcederCupo: boolean | undefined): LothEntryCreateInput {
+  return {
+    section: f.section,
+    planId: f.planId,
+    entryDate: f.entryDate,
+    treeCode: f.treeCode,
+    trozaCode: f.trozaCode,
+    speciesCommon: f.speciesCommon,
+    speciesScientific: f.speciesScientific,
+    volumeM3: f.volumeM3 == null ? null : Number(f.volumeM3),
+    productType: f.productType,
+    quantity: f.quantity == null ? null : Number(f.quantity),
+    unit: f.unit,
+    gtfNumber: f.gtfNumber,
+    isRama: f.isRama,
+    discarded: f.discarded,
+    consumoInterno: f.consumoInterno,
+    createdBy: user,
+    puedeExcederCupo,
+    ...motivosGuardados(f.observations),
+  };
+}
+
+/** La vista previa de la papelera hace lo mismo que recuperar y deshace la tx con esto. */
+class SimulacionDeshecha extends Error {
+  constructor(readonly resultado: ResultadoRecuperar) {
+    super("simulación de la papelera: se deshace");
+  }
+}
 
 export class ForestLothDB {
   // ─── Entries ─────────────────────────────────────────────────────────
@@ -2801,6 +2876,414 @@ export class ForestLothDB {
       });
     }
     return resultado;
+  }
+
+  // ─── Papelera del libro (04-11-2026) ─────────────────────────────────────
+
+  /**
+   * Lo borrado del libro (soft-delete), agrupado por momento y con quién lo
+   * borró según la auditoría (`loth_linea_delete` en esa ventana). Sólo
+   * lectura: la papelera muestra; `recuperarLineas` decide.
+   */
+  static async listarBorradas(tenantId: string): Promise<{ borrados: BorradoDelLibro[]; total: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const donde = { tenantId, deletedAt: { not: null } } satisfies Prisma.ForestLothEntryWhereInput;
+    const [crudas, total] = await Promise.all([
+      prisma.forestLothEntry.findMany({
+        where: donde,
+        select: SEL_PAPELERA,
+        orderBy: [{ deletedAt: "desc" }, { lineNo: "asc" }],
+        take: MAX_LINEAS_A_RECUPERAR,
+      }),
+      prisma.forestLothEntry.count({ where: donde }),
+    ]);
+    const filas = crudas.flatMap((f) => (esSeccion(f.section) ? [{ ...f, section: f.section }] : []));
+    if (filas.length === 0) return { borrados: [], total };
+    const masVieja = filas[filas.length - 1].deletedAt ?? new Date(0);
+    const eventos = await prisma.activityLog.findMany({
+      where: { tenantId, action: "loth_linea_delete", createdAt: { gte: new Date(masVieja.getTime() - 60_000) } },
+      select: { createdAt: true, user: true },
+      orderBy: { createdAt: "desc" },
+      take: 5000,
+    });
+    return {
+      borrados: agruparBorrados(
+        filas.map(aLineaBorrada),
+        eventos.map((e) => ({ createdAt: e.createdAt.toISOString(), user: e.user })),
+      ),
+      total,
+    };
+  }
+
+  /**
+   * Devuelve al libro líneas borradas. Cada una vuelve a pasar, contra el libro
+   * de HOY, las MISMAS reglas que un alta: mes cerrado (P1), plan vivo, guía no
+   * anulada, especie del censo y DMC (T8, con la justificación que ya llevaba),
+   * T1–T7 con sus candados y el cupo (T9, con el motivo que ya tenía; ninguno se
+   * inventa al recuperar). Conserva su id y su N°: el correlativo nunca lo
+   * reusó (`asentarEnTx` toma el máximo contando las borradas).
+   *
+   * De la fuente a la salida y en UNA transacción: la tala vuelve antes que su
+   * trozado y el trozado antes que su despacho, así cada una se juzga con la
+   * anterior ya en el libro. Trozados y salidas se juzgan primero juntos (las
+   * mismas validaciones en lote del importador: una guía de 50 trozas vencía la
+   * tx de a una) y, si algo no pasa, de a una para saber cuál. Lo que no pasa se
+   * queda en la papelera con el texto exacto de la regla.
+   *
+   * `simular`: la vista previa EXACTA — hace lo mismo y deshace la tx.
+   * `puedeExcederCupo` lo decide la ruta por el rol, como en el alta.
+   */
+  static async recuperarLineas(
+    tenantId: string,
+    ids: readonly string[],
+    user = "unknown",
+    opts: { simular?: boolean; puedeExcederCupo?: boolean } = {},
+  ): Promise<ResultadoRecuperar> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const unicos = [...new Set(ids.map((i) => i.trim()).filter(Boolean))].slice(0, MAX_LINEAS_POR_RECUPERO);
+    const simular = opts.simular === true;
+    const cierres = await ForestLothCierreDB.list(tenantId);
+
+    let hecho: Awaited<ReturnType<typeof ForestLothDB.recuperarEnTx>>;
+    try {
+      hecho = await prisma.$transaction(async (tx) => {
+        const r = await ForestLothDB.recuperarEnTx(tx, tenantId, unicos, cierres, user, opts.puedeExcederCupo);
+        if (simular) throw new SimulacionDeshecha({ ...r.resultado, simulado: true });
+        return r;
+      }, { timeout: 120_000, maxWait: 10_000 }); // 300 líneas de a una (si el lote no pasa) desde la PC; la función tiene 300 s (`vercel.json`)
+    } catch (err) {
+      if (err instanceof SimulacionDeshecha) return err.resultado;
+      throw err;
+    }
+
+    const resultado = hecho.resultado;
+    if (resultado.recuperadas === 0) return resultado;
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    // El censo vuelve a «talado» como en el alta, plan por plan (espejo de
+    // `liberarArboles` al borrar: un código repetido en otro plan no se toca).
+    // El libro ya quedó bien: un fallo acá sólo se loguea.
+    const porPlan = new Map<string | null, string[]>();
+    for (const a of hecho.arbolesDeTalas) porPlan.set(a.planId, [...(porPlan.get(a.planId) ?? []), a.treeCode]);
+    const marcados = await Promise.all(
+      [...porPlan].map(([planId, codigos]) =>
+        ForestPlanDB.marcarTaladosDelPlan(tenantId, codigos, planId).catch((err) => {
+          logger.error("[loth.papelera] marcar árboles talados failed", { error: String(err), tenantId, planId });
+          return 0;
+        }),
+      ),
+    );
+    resultado.arbolesTalados = marcados.reduce((a, n) => a + n, 0);
+    const secs = resultado.porSeccion.map((s) => `${s.section} ${s.recuperadas}`).join(", ");
+    const no = resultado.noRecuperadas.map((n) => `#${n.lineNo} ${n.section} (${n.motivo})`).join(", ");
+    auditLoth({
+      tenantId,
+      action: "loth_linea_restaurar",
+      entity: "ForestLothEntry",
+      entityId: `lineas:${resultado.recuperadas}`,
+      detail: `Recuperó de la papelera ${resultado.recuperadas} líneas (${secs}; ${fmtM3(resultado.m3)} m³).${no ? ` No volvieron: ${no.slice(0, 600)}.` : ""}${resultado.arbolesTalados > 0 ? ` ${resultado.arbolesTalados} árboles vuelven a «talado».` : ""} Ids: ${hecho.ids.slice(0, 30).join(",")}${hecho.ids.length > 30 ? ",…" : ""}`,
+      user,
+    });
+    return resultado;
+  }
+
+  /** El cuerpo de `recuperarLineas`, dentro de SU tx (que la vista previa deshace). */
+  private static async recuperarEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    ids: readonly string[],
+    cierres: Awaited<ReturnType<typeof ForestLothCierreDB.list>>,
+    user: string,
+    puedeExcederCupo: boolean | undefined,
+  ): Promise<{ resultado: ResultadoRecuperar; arbolesDeTalas: { treeCode: string; planId: string | null }[]; ids: string[] }> {
+    /* Las pedidas, bajo candado y en orden: dos recuperos del mismo grupo a la
+       vez se esperan, y el segundo ya no las ve borradas (re-chequeo del FOR
+       UPDATE): nada se cuenta ni se audita dos veces. */
+    const bloqueadas = ids.length === 0 ? [] : await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "ForestLothEntry"
+      WHERE "tenantId" = ${tenantId} AND "id" = ANY(${[...ids]}::text[]) AND "deletedAt" IS NOT NULL
+      ORDER BY "id" FOR UPDATE`;
+    const crudas = bloqueadas.length === 0 ? [] : await tx.forestLothEntry.findMany({
+      where: { tenantId, id: { in: bloqueadas.map((b) => b.id) }, deletedAt: { not: null } },
+      select: SEL_PAPELERA,
+    });
+    const filas: FilaDePapelera[] = crudas.flatMap((f) => (esSeccion(f.section) ? [{ ...f, section: f.section }] : []));
+
+    const planIds = [...new Set(filas.flatMap((f) => (f.planId ? [f.planId] : [])))];
+    const planesVivos = new Set(
+      planIds.length === 0
+        ? []
+        : (await tx.forestPlan.findMany({ where: { tenantId, id: { in: planIds }, deletedAt: null }, select: { id: true } })).map((p) => p.id),
+    );
+    /* Un despacho con el N° de una guía del sistema que hoy está anulada (o
+       borrada) no vuelve: quedaría una salida sobre un papel muerto. Un N° que
+       no es de ninguna guía del sistema (una GTF de afuera, tipeada) sí. */
+    const esDespacho = (f: FilaDePapelera) => f.section === "despacho_troza" || f.section === "despacho_producto";
+    const numeros = [...new Set(filas.flatMap((f) => (esDespacho(f) && f.gtfNumber?.trim() ? [f.gtfNumber.trim()] : [])))];
+    const guias = numeros.length === 0
+      ? []
+      : await tx.forestGtf.findMany({ where: { tenantId, gtfNumber: { in: numeros } }, select: { gtfNumber: true, status: true, deletedAt: true } });
+    const guiaAnulada = (n: string) => {
+      const de = guias.filter((g) => g.gtfNumber === n);
+      return de.length > 0 && !de.some((g) => g.status === "emitida" && !g.deletedAt);
+    };
+
+    const noRecuperadas: LineaNoRecuperada[] = [];
+    const saltar = (f: FilaDePapelera, motivo: MotivoNoRecupera, mensaje: string) =>
+      noRecuperadas.push({ id: f.id, section: f.section, lineNo: f.lineNo, codigo: codigoDeFila(f), motivo, mensaje });
+    const vueltas: FilaDePapelera[] = [];
+    const devolver = async (lista: readonly FilaDePapelera[]) => {
+      if (lista.length === 0) return;
+      // Las filas ya están bajo candado (arriba): el WHERE repite la condición por si acaso.
+      const r = await tx.forestLothEntry.updateMany({
+        where: { tenantId, id: { in: lista.map((f) => f.id) }, deletedAt: { not: null } },
+        data: { deletedAt: null },
+      });
+      if (r.count === lista.length) vueltas.push(...lista);
+      else {
+        const ya = new Set((await tx.forestLothEntry.findMany({ where: { tenantId, id: { in: lista.map((f) => f.id) }, deletedAt: null }, select: { id: true } })).map((x) => x.id));
+        vueltas.push(...lista.filter((f) => ya.has(f.id)));
+      }
+    };
+
+    const porSeccion = new Map<LothSection, FilaDePapelera[]>();
+    for (const f of ordenarParaRecuperar(filas)) {
+      const mes = closedPeriodOf(cierres, f.entryDate);
+      if (mes) {
+        saltar(f, "mes_cerrado", `El período ${mes.label} está cerrado: una línea de un mes cerrado no vuelve. Reábrelo primero.`);
+        continue;
+      }
+      if (f.planId && !planesVivos.has(f.planId)) {
+        saltar(f, "plan_de_baja", "Su plan de manejo está dado de baja: la línea no puede volver a colgar de él.");
+        continue;
+      }
+      if (esDespacho(f) && f.gtfNumber?.trim() && guiaAnulada(f.gtfNumber.trim())) {
+        saltar(f, "guia_anulada", `La guía ${f.gtfNumber.trim()} está anulada o borrada: un despacho no vuelve sobre una guía muerta.`);
+        continue;
+      }
+      porSeccion.set(f.section, [...(porSeccion.get(f.section) ?? []), f]);
+    }
+
+    /* Candados en el orden de siempre, ANTES de juzgar: los árboles (tala y
+       trozado, ordenados) y, si vuelve alguna tala, las filas de Tala (lo que
+       toma el correlativo de un alta de tala antes del cupo). Así el cupo que
+       toma la 1.ª tala nunca espera a un alta que lo espera a él. */
+    const registradasDe = (s: LothSection) => (porSeccion.get(s) ?? []).filter((f) => f.status === "registrado");
+    const arboles = [...registradasDe("tala"), ...registradasDe("trozado")].flatMap((f) => (f.treeCode?.trim() ? [f.treeCode.trim()] : []));
+    if (arboles.length > 0) await ForestLothArbolesAManoDB.candadosDeArboles(tx, tenantId, arboles);
+    const arbolesBloqueados = new Set(arboles.map((c) => c.toUpperCase()));
+    if (registradasDe("tala").length > 0) {
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLothEntry"
+        WHERE "tenantId" = ${tenantId} AND "section" = 'tala' AND "deletedAt" IS NULL
+        ORDER BY "id" FOR UPDATE`;
+    }
+
+    for (const section of ORDEN_DE_RECUPERO) {
+      const lista = porSeccion.get(section) ?? [];
+      // Una anulada no suma en ningún saldo: no hay regla que juzgar.
+      await devolver(lista.filter((f) => f.status !== "registrado"));
+      const vueltasIds = new Set(vueltas.map((f) => f.id));
+      const registradas = await ForestLothDB.conSuFuenteEnTx(tx, tenantId, section, lista.filter((f) => f.status === "registrado"), filas, vueltasIds, saltar);
+      if (registradas.length === 0) continue;
+      const enLote = section === "trozado" || section === "despacho_troza" || section === "consumo_troza";
+      if (enLote) {
+        try {
+          const entradas = registradas.map((f) => entradaDeRecupero(f, user, puedeExcederCupo));
+          if (section === "trozado") await ForestLothDB.enforceTrozados(tx, tenantId, entradas, arbolesBloqueados);
+          else await ForestLothDB.enforceSalidaDeTrozas(tx, tenantId, entradas);
+          await devolver(registradas);
+          continue;
+        } catch (err) {
+          if (!(err instanceof LothInvariantError)) throw err;
+          // Alguna no pasa: de a una, para saber cuál (las que sí pasan vuelven igual).
+        }
+      }
+      for (const f of registradas) {
+        try {
+          await ForestLothDB.juzgarRegresoEnTx(tx, tenantId, f, user, puedeExcederCupo);
+          await devolver([f]);
+        } catch (err) {
+          if (err instanceof LothInvariantError || err instanceof LothPermisoError) saltar(f, "regla_del_libro", err.message);
+          else throw err;
+        }
+      }
+    }
+
+    const porSec = new Map<LothSection, { section: LothSection; recuperadas: number; m3: number }>();
+    for (const f of vueltas) {
+      const s = porSec.get(f.section) ?? { section: f.section, recuperadas: 0, m3: 0 };
+      porSec.set(f.section, s);
+      s.recuperadas += 1;
+      if (f.status === "registrado") s.m3 = r4(s.m3 + Number(f.volumeM3 ?? 0));
+    }
+    const secciones = ORDEN_DE_RECUPERO.flatMap((s) => {
+      const x = porSec.get(s);
+      return x ? [x] : [];
+    });
+    return {
+      resultado: {
+        simulado: false,
+        pedidas: ids.length,
+        ignoradas: ids.length - filas.length,
+        recuperadas: vueltas.length,
+        m3: r4(secciones.reduce((a, s) => a + s.m3, 0)),
+        porSeccion: secciones,
+        noRecuperadas: ordenarParaRecuperar(noRecuperadas),
+        arbolesTalados: 0,
+      },
+      arbolesDeTalas: vueltas.flatMap((f) =>
+        f.section === "tala" && f.status === "registrado" && f.treeCode?.trim() ? [{ treeCode: f.treeCode.trim(), planId: f.planId }] : [],
+      ),
+      ids: vueltas.map((f) => f.id),
+    };
+  }
+
+  /**
+   * Una línea de la papelera contra las reglas de un alta, en la tx de quien
+   * recupera: la tala con su censo (especie), DMC (T8) y cupo (T9, con su
+   * evento en la misma tx, como `asentarEnTx`); el resto con `enforceInvariants`.
+   */
+  private static async juzgarRegresoEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    f: FilaDePapelera,
+    user: string,
+    puedeExcederCupo: boolean | undefined,
+  ): Promise<void> {
+    const entrada = entradaDeRecupero(f, user, puedeExcederCupo);
+    if (f.section !== "tala") {
+      await ForestLothDB.enforceInvariants(tx, tenantId, entrada);
+      return;
+    }
+    const resuelta = await ForestLothDB.talaDelRegresoEnTx(tx, tenantId, entrada);
+    await ForestLothDB.enforceDmc(tenantId, resuelta);
+    await ForestLothDB.enforceInvariants(tx, tenantId, resuelta);
+    const cupo = await ForestLothDB.enforceCupoEspecie(tx, tenantId, resuelta);
+    if (cupo) {
+      await ForestLothDB.auditarSobreCupoEnTx(tx, tenantId, cupo, f, resuelta.motivoSobreCupo, user, "(recuperada de la papelera)");
+    }
+  }
+
+  /**
+   * La tala que vuelve, contra el censo como en el alta (`resolverPlanYArbol`):
+   * el árbol se busca en TODOS los planes (otro plan u otra especie → 422) y,
+   * leído en la tx, ve lo que ya volvió. Si hoy el plan que le tocaría no es
+   * el que tenía al borrarse, no vuelve: regístrala de nuevo (no se le cambia
+   * el plan a una línea del libro al recuperarla).
+   */
+  private static async talaDelRegresoEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: LothEntryCreateInput,
+  ): Promise<LothEntryCreateInput> {
+    const treeCode = input.treeCode?.trim() || null;
+    if (input.section !== "tala" || !treeCode) return input;
+    const planAntes = input.planId?.trim() || null;
+    const arboles = await tx.forestCensusTree.findMany({
+      where: { tenantId, treeCode, deletedAt: null },
+      select: { planId: true, speciesCommon: true, speciesScientific: true },
+      orderBy: { id: "asc" },
+      take: 50,
+    });
+    const r = resolverTalaContraCenso(
+      { treeCode, planId: planAntes, speciesCommon: input.speciesCommon ?? null, speciesScientific: input.speciesScientific ?? null },
+      arboles,
+    );
+    if (!r.ok) throw new LothInvariantError(r.mensaje, r.code, r.detail);
+    if ((r.planId ?? null) !== planAntes) {
+      throw new LothInvariantError(
+        `Hoy el árbol ${treeCode} es de otro plan de manejo que cuando se borró la tala: regístrala de nuevo con «Nueva línea».`,
+        "TALA_PLAN_DISTINTO_AL_CENSO",
+        { treeCode, planAntes, planHoy: r.planId ?? null },
+      );
+    }
+    return { ...input, planId: r.planId, speciesCommon: r.speciesCommon, speciesScientific: r.speciesScientific };
+  }
+
+  /**
+   * Antes de juzgar trozados y salidas que vuelven: (1) la hija cuya fuente
+   * pedida no volvió y no tiene otra viva se queda (`sinSuFuente`); (2) el
+   * plan, como en el alta (`planDeLaFuente`): si su tala o su trozado de hoy
+   * es de otro plan vivo, no vuelve. Lee en la tx: ve lo que ya volvió.
+   */
+  private static async conSuFuenteEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    section: LothSection,
+    registradas: FilaDePapelera[],
+    pedidas: readonly FilaDePapelera[],
+    vueltasIds: ReadonlySet<string>,
+    saltar: (f: FilaDePapelera, motivo: MotivoNoRecupera, mensaje: string) => void,
+  ): Promise<FilaDePapelera[]> {
+    const deTala = section === "trozado";
+    const deTrozado = section === "despacho_troza" || section === "consumo_troza";
+    if (registradas.length === 0 || (!deTala && !deTrozado)) return registradas;
+    const fuenteSec: LothSection = deTala ? "tala" : "trozado";
+    const codigoDe = (f: { treeCode: string | null; trozaCode: string | null }) => (deTala ? f.treeCode : f.trozaCode)?.trim() || null;
+
+    const codigos = [...new Set(registradas.flatMap((f) => (codigoDe(f) ? [codigoDe(f) as string] : [])))];
+    const vivas = codigos.length === 0 ? [] : await tx.forestLothEntry.findMany({
+      where: { tenantId, section: fuenteSec, status: "registrado", deletedAt: null, ...(deTala ? { treeCode: { in: codigos } } : { trozaCode: { in: codigos } }) },
+      select: { treeCode: true, trozaCode: true, planId: true },
+      orderBy: { id: "asc" },
+    });
+    const noVolvieron = new Set(
+      pedidas.flatMap((p) => (p.section === fuenteSec && p.status === "registrado" && !vueltasIds.has(p.id) ? [claveDeCodigo(codigoDe(p))] : [])).filter((k): k is string => k !== null),
+    );
+    const conViva = new Set(vivas.map((v) => claveDeCodigo(codigoDe(v))).filter((k): k is string => k !== null));
+    const huerfanas = new Set(sinSuFuente(registradas, codigoDe, noVolvieron, conViva).map((f) => f.id));
+    /* La fuente que no está viva pero SÍ en la papelera (no se marcó): en vez del
+       «registra el trozado» de T2, se dice cuál marcar junto (su N.º). */
+    const sinViva = [...new Set(registradas.flatMap((f) => {
+      const c = codigoDe(f);
+      return c && !huerfanas.has(f.id) && !conViva.has(claveDeCodigo(c) as string) ? [c] : [];
+    }))];
+    const enPapelera = new Map<string, number>();
+    if (sinViva.length > 0) {
+      const borradas = await tx.forestLothEntry.findMany({
+        where: { tenantId, section: fuenteSec, status: "registrado", deletedAt: { not: null }, ...(deTala ? { treeCode: { in: sinViva } } : { trozaCode: { in: sinViva } }) },
+        select: { lineNo: true, treeCode: true, trozaCode: true },
+        orderBy: { lineNo: "asc" },
+      });
+      for (const b of borradas) {
+        const k = claveDeCodigo(codigoDe(b));
+        if (k && !enPapelera.has(k)) enPapelera.set(k, b.lineNo);
+      }
+    }
+
+    // El plan de la fuente manda si sigue vivo (como `planDeLaFuente`: el primero por id).
+    const planDeFuente = new Map<string, string | null>();
+    for (const v of vivas) {
+      const c = codigoDe(v);
+      if (c && !planDeFuente.has(c)) planDeFuente.set(c, v.planId);
+    }
+    const planesFuente = [...new Set([...planDeFuente.values()].filter((x): x is string => Boolean(x)))];
+    const planesVivos = new Set(
+      planesFuente.length === 0 ? [] : (await tx.forestPlan.findMany({ where: { tenantId, id: { in: planesFuente }, deletedAt: null }, select: { id: true } })).map((x) => x.id),
+    );
+
+    const quedan: FilaDePapelera[] = [];
+    for (const f of registradas) {
+      const c = codigoDe(f);
+      if (huerfanas.has(f.id)) {
+        saltar(f, "fuente_no_volvio", deTala
+          ? `Su tala (árbol ${c}) se quedó en la papelera: el trozado no vuelve sin ella.`
+          : `Su trozado (troza ${c}) se quedó en la papelera: la salida no vuelve sin él.`);
+        continue;
+      }
+      const nFuente = enPapelera.get(claveDeCodigo(c) ?? "");
+      if (nFuente !== undefined) {
+        saltar(f, "fuente_no_volvio", `Su ${deTala ? "tala" : "trozado"} (N.º ${nFuente}, ${deTala ? "árbol" : "troza"} ${c}) también está en la papelera: márcalo junto con esta línea.`);
+        continue;
+      }
+      const planFuente = c ? planDeFuente.get(c) ?? null : null;
+      if (planFuente && planFuente !== (f.planId ?? null) && planesVivos.has(planFuente)) {
+        saltar(f, "regla_del_libro", `Hoy su ${deTala ? "tala" : "trozado"} es de otro plan de manejo que cuando se borró: regístrala de nuevo con «Nueva línea».`);
+        continue;
+      }
+      quedan.push(f);
+    }
+    return quedan;
   }
 
   /**

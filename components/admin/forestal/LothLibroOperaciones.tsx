@@ -31,6 +31,7 @@ import {
   LayoutGrid,
   FileDown,
   Trash2,
+  RotateCcw,
 } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -101,6 +102,7 @@ import { LothPermisoContext, useLothLibroPermiso } from "./hooks/use-loth-libro-
 import { LothAvisosBoton, LothAvisosVentana } from "./LothAvisosLibro";
 import { useLothAvisosLibro } from "./hooks/use-loth-avisos-libro";
 import LothBorrarLineasModal from "./LothBorrarLineasModal";
+import LothPapeleraModal from "./LothPapeleraModal";
 import { conColumnaPermiso, mapaDePermisos, mezclaPlanes, opcionBorrarFiltradas } from "./loth-seccion-permiso";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { CLAVE_PLAN_TABLERO } from "./hooks/use-loth-tablero-permiso";
@@ -212,6 +214,7 @@ export default function LothLibroOperaciones() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showCaratula, setShowCaratula] = useState(false);
+  const [showPapelera, setShowPapelera] = useState(false);
   const [annulReason, setAnnulReason] = useState("");
   const [cadenaCode, setCadenaCode] = useState<string | null>(null);
   // Foco que viaja desde la trazabilidad hacia otra vista del libro: al abrir
@@ -491,10 +494,21 @@ export default function LothLibroOperaciones() {
         icon: FileText,
         onSelect: () => setShowCaratula(true),
       },
+      ...(puedeBorrar
+        ? [
+            {
+              id: "papelera",
+              label: "Papelera del libro",
+              hint: "Ver lo borrado y recuperarlo",
+              icon: RotateCcw,
+              onSelect: () => setShowPapelera(true),
+            },
+          ]
+        : []),
     ],
     // doInforme se redefine por render; lo que cambia el menú es el trabajo en
     // curso, si ya hay carátula y de qué permiso sale el libro (`doExport`).
-    [exporting, informing, caratula, doExport, permisoExport, rotuloPermiso],
+    [exporting, informing, caratula, doExport, permisoExport, rotuloPermiso, puedeBorrar],
   );
 
   /* La PRIMERA página de la sección: se pinta mientras llega el libro entero
@@ -1728,6 +1742,16 @@ export default function LothLibroOperaciones() {
           onBorrado={() => {
             setBorrarLineas(null);
             setSeleccion(new Set());
+            void refreshAll();
+          }}
+        />
+      )}
+
+      {showPapelera && (
+        <LothPapeleraModal
+          onClose={() => setShowPapelera(false)}
+          onRecuperado={() => {
+            setShowPapelera(false);
             void refreshAll();
           }}
         />

@@ -13,6 +13,9 @@
     "app/api/admin/forestal/ctp/respaldos/**": {
       "maxDuration": 300
     },
+    "app/api/admin/forestal/loth/papelera/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/cron/ctp-respaldos/route.ts": {
       "maxDuration": 300
     },

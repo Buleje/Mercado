@@ -1103,6 +1103,25 @@ export class ForestPlanDB {
   }
 
   /**
+   * Espejo de `marcarEnPieLosTalados` para la papelera del Libro TH: la tala
+   * volvió, sus árboles vuelven a «talado» — sólo los del plan de esa tala (un
+   * código repetido en otro censo no se toca). Devuelve cuántos cambiaron.
+   */
+  static async marcarTaladosDelPlan(tenantId: string, codigos: readonly string[], planId: string | null): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const unicos = [...new Set(codigos.map((c) => c.trim()).filter(Boolean))];
+    if (unicos.length === 0) return 0;
+    const r = await prisma.forestCensusTree.updateMany({
+      where: { tenantId, treeCode: { in: unicos }, estado: { not: "talado" }, deletedAt: null, ...(planId ? { planId } : {}) },
+      data: { estado: "talado" },
+    });
+    if (r.count > 0) {
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    }
+    return r.count;
+  }
+
+  /**
    * Devuelve a «en pie» los árboles TALADOS con estos códigos (los de `planId`;
    * sin plan, los del negocio). El que llama ya comprobó que no les queda una
    * tala vigente (`liberarArboles`). Devuelve cuántos cambiaron.
