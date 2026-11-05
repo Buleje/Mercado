@@ -37,6 +37,7 @@ import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
 import {
   claveEspecie,
@@ -1002,7 +1003,7 @@ export default function LothEntryForm({
     setPhotoError(null);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", await comprimirParaArchivo(file));
       fd.append("folder", "general");
       const res = await fetch("/api/upload", {
         method: "POST",

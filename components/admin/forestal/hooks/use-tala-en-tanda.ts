@@ -16,6 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { logger } from "@/lib/logger";
 import type { ArbolParaElegir } from "@/lib/forestal/loth-censo-uso";
 import { cambiarForma, type FormaMedicion } from "@/lib/forestal/loth-forma-medicion";
@@ -237,7 +238,7 @@ export function useMotosierristas(): Motosierrista[] {
 /** Sube la foto del tocón de una fila (mismo camino que la tala de a una). */
 export async function subirFotoEvidencia(file: File): Promise<string> {
   const fd = new FormData();
-  fd.append("file", file);
+  fd.append("file", await comprimirParaArchivo(file));
   fd.append("folder", "general");
   const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders({}), credentials: "include", body: fd });
   const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };

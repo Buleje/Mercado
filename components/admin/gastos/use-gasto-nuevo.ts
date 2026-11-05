@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { limaDateKey } from "@/lib/utils";
 import type { ExpensePaymentMethod } from "@/lib/expense-meta";
 import { errorDeRuc, igvIncluido, type TipoComprobante } from "@/lib/gastos/comprobante-del-gasto";
@@ -132,7 +133,7 @@ export function useGastoNuevo(abierto: boolean, onGuardado: (r: GastoGuardado) =
     setError(null);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", await comprimirParaArchivo(file));
       fd.append("folder", "gastos");
       const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
       const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };

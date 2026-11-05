@@ -13,7 +13,7 @@ import type {
   DocumentListFilters,
 } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { comprimirImagen } from "@/lib/documents/compress-image";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { motivoRechazo } from "@/lib/documents/upload-limits";
 import { enLotes, CARPETAS_POR_LLAMADA } from "@/lib/documentos/importar-arbol";
 import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
@@ -154,7 +154,7 @@ export async function subirArchivosAlDrive(files: File[], opts?: OpcionesSubida)
   // rápido con datos móviles); lo que no es imagen sale intacto.
   const listos = await Promise.all(files.map(async (f) => {
     if (f.type.startsWith("image/")) opts?.onEstado?.(f, "comprimiendo");
-    const c = await comprimirImagen(f);
+    const c = await comprimirParaArchivo(f);
     opts?.onEstado?.(f, "en-cola");
     return c;
   }));

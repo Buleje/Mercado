@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { undoToast } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { errorDeRuc, igvIncluido, type TipoComprobante } from "@/lib/gastos/comprobante-del-gasto";
 import { igvAlCambiarMonto } from "@/lib/gastos/corregir-comprobante";
 import type { ComprobanteEditable, CamposPapel } from "@/components/admin/gastos/ComprobanteCampos";
@@ -130,7 +131,7 @@ export function useGastoEditar(item: HistorialItem, onGuardado: () => void, onCl
     setError(null);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", await comprimirParaArchivo(file));
       fd.append("folder", "gastos");
       const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
       const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };

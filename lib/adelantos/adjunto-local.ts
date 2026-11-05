@@ -11,6 +11,7 @@
  * se corta temprano lo que seguro no pasa, para decirlo sin esperar la subida.
  */
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { leerJson } from "@/lib/errores/sin-dato";
 
 /** El mismo tope del servidor (`MAX_BYTES_ADJUNTO`). */
@@ -27,10 +28,12 @@ export const esPdfLocal = (u: unknown): boolean => typeof u === "string" && u.st
 const esPdf = (f: File) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
 
 /** Lee el archivo elegido como data URL. Un PDF sin `type` (pasa en Windows) sale igual como PDF. */
-export function leerAdjuntoLocal(file: File): Promise<{ ok: true; dataUrl: string; pdf: boolean } | { ok: false; error: string }> {
-  const pdf = esPdf(file);
-  if (!pdf && !file.type.startsWith("image/")) return Promise.resolve({ ok: false, error: "Elige una foto (JPG, PNG, WebP) o un PDF." });
-  if (file.size > MAX_BYTES_ADJUNTO_LOCAL) return Promise.resolve({ ok: false, error: "El archivo pesa más de 4 MB." });
+export async function leerAdjuntoLocal(origen: File): Promise<{ ok: true; dataUrl: string; pdf: boolean } | { ok: false; error: string }> {
+  const pdf = esPdf(origen);
+  /* La foto se achica ANTES de medir el tope: una de celular de 5 MB entra como ~1 MB (PDF y demás, intactos). */
+  const file = pdf ? origen : await comprimirParaArchivo(origen, MAX_BYTES_ADJUNTO_LOCAL);
+  if (!pdf && !file.type.startsWith("image/")) return { ok: false, error: "Elige una foto (JPG, PNG, WebP) o un PDF." };
+  if (file.size > MAX_BYTES_ADJUNTO_LOCAL) return { ok: false, error: "El archivo pesa más de 4 MB." };
   return new Promise((resolve) => {
     const r = new FileReader();
     r.onload = () => {

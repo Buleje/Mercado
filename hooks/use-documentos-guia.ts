@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { comprimirImagen } from "@/lib/documents/compress-image";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { logger } from "@/lib/logger";
 import { MAX_BYTES_DOC_GUIA, type CasilleroGuia } from "@/lib/forestal/documentos-guia";
 
@@ -93,7 +93,7 @@ export function useDocumentosGuia(gtf: string | null) {
       if (!gtf) return "Falta la guía.";
       setSubiendo((s) => ({ ...s, [casillero]: true }));
       try {
-        const listo = file.type.startsWith("image/") ? await comprimirImagen(file) : file;
+        const listo = file.type.startsWith("image/") ? await comprimirParaArchivo(file, MAX_BYTES_DOC_GUIA) : file;
         if (listo.size > MAX_BYTES_DOC_GUIA) {
           return `«${file.name}» pesa ${(listo.size / 1024 / 1024).toFixed(1).replace(".", ",")} MB: el máximo es 4 MB. Parte el PDF o sácale foto con menos resolución.`;
         }
