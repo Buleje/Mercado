@@ -28,8 +28,11 @@ const args = process.argv.slice(2);
 /* Con todos los hilos el chequeo pide ≈7 GB. Si hay menos libres (dev server
    + servidor de tipos del editor ocupan ~9 GB), earlyoom lo mata con 137 y el
    commit cae sin decir por qué (28-10, dos veces). En un hilo da lo mismo y
-   pide bastante menos: se pasa solo. */
-const GB_PARA_HILOS = 8;
+   pide bastante menos: se pasa solo.
+   04-11 re-medido (/usr/bin/time, 16 GB libres): todos los hilos 6,6 s y pico
+   3,96 GB · --checkers 2 6,7 s y 3,90 GB · un hilo 20,0 s y 3,83 GB. Un hilo ya
+   no ahorra RAM (−0,13 GB) y triplica el tiempo: solo con muy poca libre. */
+const GB_PARA_HILOS = 4.5;
 function gbDisponibles() {
   try {
     const m = readFileSync("/proc/meminfo", "utf8").match(/^MemAvailable:\s+(\d+)\s+kB/m);
