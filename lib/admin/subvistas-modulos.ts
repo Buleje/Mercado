@@ -191,6 +191,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "drive", label: "Archivo", hint: "Tus documentos en carpetas, con su vencimiento: contratos, licencias, facturas, fotos y planillas", origen: ["documentos", "contratos"] },
     { key: "esenciales", label: "Esenciales", hint: "Las carpetas más valiosas y usadas que marcaste en el Archivo, con lo que tienen adentro y lo que vence", origen: ["documentos", "contratos"] },
     { key: "contratos", label: "Contratos", hint: "Contratos con plantillas peruanas, su firma y su vencimiento", origen: ["contratos", "documentos"] },
+    { key: "papeles", label: "Papeles emitidos", hint: "Proformas, estados de cuenta y liquidaciones que salieron del negocio, con su estado, su PDF y su QR", origen: ["documentos"] },
   ],
   clientes: [
     { key: "crm", label: "Mis clientes", hint: "Ficha de cada cliente" },

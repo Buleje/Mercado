@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Archive, FileSignature, FolderArchive, Star } from "@buleje/design-system/icons";
+import { Archive, FileSignature, FolderArchive, Stamp, Star } from "@buleje/design-system/icons";
 import { useVistaModulo, type AliasDeVista, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
+import { useMiRol } from "@/hooks/use-mi-rol";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -24,17 +25,23 @@ import { useColumnaDerecha } from "@/components/admin/layout/columna-derecha";
 const ContratosModule = dynamic(() => import("@/components/admin/ContratosModule"), { loading: S });
 const DriveDocumentos = dynamic(() => import("@/components/admin/documentos/DocumentosModule"), { loading: S, ssr: false });
 const EsencialesDocumentos = dynamic(() => import("@/components/admin/documentos/esenciales/EsencialesModule"), { loading: S, ssr: false });
+const PapelesEmitidos = dynamic(() => import("@/components/admin/documentos/papeles/PapelesEmitidosVista"), { loading: S, ssr: false });
 
 const MODULE_ID = "documentos-hub";
 
-type Vista = "drive" | "esenciales" | "contratos";
+type Vista = "drive" | "esenciales" | "contratos" | "papeles";
 
 const TABS: readonly (AdminTab & { id: Vista })[] = [
   { id: "drive", label: "Archivo", icon: Archive },
   // Las carpetas marcadas en el Archivo («Llevar a Esenciales», Brandon 23-10).
   { id: "esenciales", label: "Esenciales", icon: Star },
   { id: "contratos", label: "Contratos", icon: FileSignature },
+  // Lo que emite el programa `papel` con su QR (ADR-534): solo dueño y admin,
+  // los mismos roles de `/api/admin/papeles`.
+  { id: "papeles", label: "Papeles emitidos", icon: Stamp },
 ];
+
+const ROLES_PAPELES: ReadonlySet<string> = new Set(["admin", "owner"]);
 
 /**
  * Las vistas que se fueron a Comprobantes: un `?vista=` viejo que se colara
@@ -56,12 +63,21 @@ const ALIAS: AliasDeVista<Vista> = {
 const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { drive: ["sub", "carpeta"], esenciales: ["esencial", "amplia"], contratos: ["sub"] };
 
 const AYUDA_DEL_HUB =
-  "El archivo del negocio: tus documentos con su vencimiento, las carpetas esenciales a mano y los contratos con sus plantillas y firmas. Facturas, guías y cotizaciones están en Comprobantes.";
+  "El archivo del negocio: tus documentos con su vencimiento, las carpetas esenciales a mano, los contratos con sus plantillas y firmas, y los papeles que emitiste con su QR. Facturas, guías y cotizaciones están en Comprobantes.";
 
 export default function DocumentosHubModule({ initialTab }: { initialTab?: string } = {}) {
   // Las dos vistas son de esta pestaña (Contratos también declara `contratos`
   // como origen), así que no hace falta esperar al rol para validar la URL.
-  const tabs = useVistasPermitidas("documentos", TABS);
+  const rol = useMiRol();
+  const permitidas = useVistasPermitidas("documentos", TABS);
+  /* Papeles: se esconde cuando el rol YA se sabe y no es dueño ni admin. Mientras
+     carga queda: la vista inicial se decide al montar, y sin ella un
+     `?vista=papeles` (o la última vista recordada) caía en el Archivo. Si un
+     cajero llega igual, la vista dice que es solo para dueño y admin (la ruta da 403). */
+  const tabs = useMemo(
+    () => permitidas.filter((t) => t.id !== "papeles" || rol == null || ROLES_PAPELES.has(rol)),
+    [permitidas, rol],
+  );
   const tabIds = useMemo(() => tabs.map((t) => t.id), [tabs]);
   const forzada = initialTab ? (ALIAS[initialTab] ?? initialTab) : undefined;
   const { vista, irA } = useVistaModulo<Vista>(MODULE_ID, tabIds, tabIds[0] ?? "drive", forzada, {
@@ -109,6 +125,7 @@ export default function DocumentosHubModule({ initialTab }: { initialTab?: strin
               <EsencialesDocumentos onAbrirEnArchivo={(id) => irA("drive", id ? { sub: "folder", carpeta: id } : {})} />
             )}
             {vista === "contratos" && <ContratosModule />}
+            {vista === "papeles" && <PapelesEmitidos />}
           </ProveedorHuecoLateral>
           </ProveedorHuecoAvisos>
         </ProveedorAccionesDeLaVista>

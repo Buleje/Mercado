@@ -45,3 +45,7 @@ Veto solo para imprimir el 1.er QR real hasta cerrar H1; todos arreglados antes 
 - **H5** — los rechazos quedan anotados (`logger.warn`).
 
 En pruebas sobre la base compartida se usa el prefijo `QAPR`, nunca `BLAS` (el prefijo quedaría reservado para `main`). Probado en el panel local 04-11: alta 200, mismo código con otro total 409, página sin clave sin total, con clave S/ 1,250.00, anulado en rojo, código inventado «no encontrado».
+
+## Pantalla en el panel (04-11 noche)
+
+`Documentos › Papeles emitidos` (`components/admin/documentos/papeles/`): un papel por número con su versión vigente (la más nueva), las anteriores plegadas debajo, filtros por estado con su cuenta, buscador (número, código o tipo), «Ver PDF» con el visor del Archivo y «QR» a la dirección corta del negocio (`useBaseVerificacion` + `/p/<código>`, sin la clave → sin total). Solo lectura a propósito: el estado va impreso en la hoja, cambiarlo es rehacer el PDF con el programa `papel`. La pestaña se esconde cuando el rol ya se sabe y no es admin/owner (mientras carga queda, para no perder `?vista=papeles` ni la vista recordada); un cajero que llegue igual ve «solo dueño y administrador» (la ruta da 403).
