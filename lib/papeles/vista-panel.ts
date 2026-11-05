@@ -115,3 +115,21 @@ export function totalDelPapel(p: Pick<PapelDelPanel, "total" | "moneda">): strin
 export function enlaceVerificacion(base: string, codigo: string): string {
   return `${base.replace(/\/+$/, "")}/p/${encodeURIComponent(codigo)}`;
 }
+
+/** ¿Tiene sentido mandarlo a un cliente? Solo la versión que vale hoy y no anulada. */
+export function sePuedeMandar(p: Pick<PapelDelPanel, "estado" | "documentId">, anterior: boolean): boolean {
+  return !anterior && !!p.documentId && p.estado !== "anulado" && p.estado !== "reemplazado";
+}
+
+/**
+ * El mensaje que acompaña al PDF por WhatsApp. El enlace va porque quien recibe
+ * el PDF en el celular no puede escanear el QR de su propia pantalla; sin la
+ * clave, la página muestra tipo, número, fecha y estado (nunca el total).
+ */
+export function mensajeDelPapel(p: Pick<PapelDelPanel, "tipo" | "titulo" | "numero">, enlace: string | null): string {
+  const que = `${rotuloTipoPapel(p).toLowerCase()} ${p.numero}`;
+  const comprobar = enlace
+    ? `Para comprobar que es auténtico, escanea el QR al pie de la hoja o entra aquí: ${enlace}`
+    : "Para comprobar que es auténtico, escanea el QR al pie de la hoja.";
+  return `Hola, te envío tu ${que}. ${comprobar}`;
+}

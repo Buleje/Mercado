@@ -2,7 +2,7 @@
 
 import { Fragment, useState, type ReactNode } from "react";
 import { DataTable } from "@buleje/design-system";
-import { ChevronDown, ExternalLink, FileText } from "@buleje/design-system/icons";
+import { ChevronDown, ExternalLink, FileText, Loader2, MessageCircle } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import {
   ROTULO_ESTADO_PAPEL,
   enlaceVerificacion,
   rotuloTipoPapel,
+  sePuedeMandar,
   totalDelPapel,
   type GrupoDePapel,
   type PapelDelPanel,
@@ -31,6 +32,9 @@ interface Props {
   /** Base pública del negocio para el QR; `null` mientras llega. */
   baseQr: string | null;
   onVerPdf: (documentId: string) => void;
+  /** Mandar el PDF por WhatsApp; `preparando` = id del papel que se está trayendo. */
+  onMandar: (p: PapelDelPanel) => void;
+  preparando: string | null;
 }
 
 /**
@@ -38,7 +42,7 @@ interface Props {
  * número se abren debajo, en gris. En el celular el panel la dibuja como
  * tarjetas (`useMobileTableCards` rotula cada celda con su encabezado).
  */
-export function TablaPapeles({ grupos, baseQr, onVerPdf }: Props) {
+export function TablaPapeles({ grupos, baseQr, onVerPdf, onMandar, preparando }: Props) {
   const [abiertos, setAbiertos] = useState<ReadonlySet<string>>(new Set());
   const alternar = (numero: string) =>
     setAbiertos((s) => {
@@ -51,12 +55,12 @@ export function TablaPapeles({ grupos, baseQr, onVerPdf }: Props) {
   return (
     <DataTable className="table-fixed">
       <colgroup className="max-sm:hidden">
-        <col className="w-48" />
+        <col className="w-44" />
         <col />
-        <col className="w-32" />
         <col className="w-28" />
-        <col className="w-32" />
-        <col className="w-60" />
+        <col className="w-28" />
+        <col className="w-28" />
+        <col className="w-72" />
       </colgroup>
       <thead>
         <tr>
@@ -73,7 +77,7 @@ export function TablaPapeles({ grupos, baseQr, onVerPdf }: Props) {
           const abierto = abiertos.has(g.numero);
           return (
             <Fragment key={g.numero}>
-              <FilaPapel papel={g.vigente} baseQr={baseQr} onVerPdf={onVerPdf}>
+              <FilaPapel papel={g.vigente} baseQr={baseQr} onVerPdf={onVerPdf} onMandar={onMandar} preparando={preparando}>
                 {g.anteriores.length > 0 && (
                   <button
                     type="button"
@@ -86,7 +90,7 @@ export function TablaPapeles({ grupos, baseQr, onVerPdf }: Props) {
                   </button>
                 )}
               </FilaPapel>
-              {abierto && g.anteriores.map((p) => <FilaPapel key={p.id} papel={p} baseQr={baseQr} onVerPdf={onVerPdf} anterior />)}
+              {abierto && g.anteriores.map((p) => <FilaPapel key={p.id} papel={p} baseQr={baseQr} onVerPdf={onVerPdf} onMandar={onMandar} preparando={preparando} anterior />)}
             </Fragment>
           );
         })}
@@ -99,12 +103,16 @@ function FilaPapel({
   papel: p,
   baseQr,
   onVerPdf,
+  onMandar,
+  preparando,
   anterior = false,
   children,
 }: {
   papel: PapelDelPanel;
   baseQr: string | null;
   onVerPdf: (documentId: string) => void;
+  onMandar: (p: PapelDelPanel) => void;
+  preparando: string | null;
   anterior?: boolean;
   children?: ReactNode;
 }) {
@@ -134,7 +142,7 @@ function FilaPapel({
       <td className={cn("whitespace-nowrap font-semibold", CLASE_ESTADO[p.estado])}>{ROTULO_ESTADO_PAPEL[p.estado]}</td>
       <td className="whitespace-nowrap text-right font-semibold tabular-nums">{total ?? "—"}</td>
       <td>
-        <div className="flex flex-wrap items-center gap-1.5 max-sm:justify-end">
+        <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap max-sm:justify-end">
           {p.documentId ? (
             <button type="button" onClick={() => onVerPdf(p.documentId as string)} className={BOTON} aria-label={`Ver el PDF de ${p.numero}`}>
               <FileText className="h-4 w-4" aria-hidden />
@@ -142,6 +150,18 @@ function FilaPapel({
             </button>
           ) : (
             <span className="text-xs text-[var(--text-tertiary)]">Sin PDF</span>
+          )}
+          {sePuedeMandar(p, anterior) && (
+            <button
+              type="button"
+              onClick={() => onMandar(p)}
+              disabled={preparando === p.id}
+              className={button({ variant: "secondary", size: "icon", className: "rounded-xl" })}
+              title="Mandar por WhatsApp (el PDF y cómo comprobarlo)"
+              aria-label={`Mandar ${p.numero} por WhatsApp`}
+            >
+              {preparando === p.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <MessageCircle className="h-4 w-4" aria-hidden />}
+            </button>
           )}
           {baseQr ? (
             <a

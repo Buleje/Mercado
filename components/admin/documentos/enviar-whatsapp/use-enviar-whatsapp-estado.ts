@@ -10,7 +10,7 @@ import {
 } from "./compartido";
 import { logger } from "@/lib/logger";
 export function useEnviarWhatsAppEstado(propsDelModal: PropsEnviarWhatsApp) {
-  const { docs, mode = "share", telefono, onClose } = propsDelModal;
+  const { docs, mode = "share", telefono, mensaje, onClose } = propsDelModal;
 
   const isSign = mode === "sign";
   const doc = docs[0];
@@ -45,7 +45,7 @@ export function useEnviarWhatsAppEstado(propsDelModal: PropsEnviarWhatsApp) {
   const [message, setMessage] = useState(
     isSign
       ? `Hola, te pido que firmes este documento "${doc?.name ?? ""}". Puedes firmarlo desde este enlace:`
-      : "",
+      : (mensaje ?? ""),
   );
 
   const problemas = useMemo(

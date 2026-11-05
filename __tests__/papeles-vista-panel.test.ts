@@ -4,7 +4,9 @@ import {
   contarPorEstado,
   enlaceVerificacion,
   filtrarPapeles,
+  mensajeDelPapel,
   rotuloTipoPapel,
+  sePuedeMandar,
   totalDelPapel,
   type PapelDelPanel,
 } from "@/lib/papeles/vista-panel";
@@ -81,5 +83,22 @@ describe("papeles emitidos en el panel (ADR-534)", () => {
   it("el enlace del QR usa la base corta del negocio (host o código del negocio)", () => {
     expect(enlaceVerificacion("https://blas.buleje.pe/v", "BLAS-EC-0001-2266")).toBe("https://blas.buleje.pe/v/p/BLAS-EC-0001-2266");
     expect(enlaceVerificacion("https://x.vercel.app/v/a1b2c/", "BLAS-PRO-0002-7F3A")).toBe("https://x.vercel.app/v/a1b2c/p/BLAS-PRO-0002-7F3A");
+  });
+
+  it("solo se manda la versión vigente con PDF, nunca una anulada o reemplazada", () => {
+    expect(sePuedeMandar({ estado: "oficial", documentId: "d1" }, false)).toBe(true);
+    expect(sePuedeMandar({ estado: "revision", documentId: "d1" }, false)).toBe(true);
+    expect(sePuedeMandar({ estado: "oficial", documentId: null }, false)).toBe(false);
+    expect(sePuedeMandar({ estado: "anulado", documentId: "d1" }, false)).toBe(false);
+    expect(sePuedeMandar({ estado: "oficial", documentId: "d1" }, true)).toBe(false);
+  });
+
+  it("el mensaje dice qué papel es y cómo comprobarlo (con enlace si lo hay)", () => {
+    expect(mensajeDelPapel({ tipo: "estado-cuenta", titulo: "Estado de cuenta", numero: "EC-0001" }, "https://x/v/p/BLAS-EC-0001-2266")).toBe(
+      "Hola, te envío tu estado de cuenta EC-0001. Para comprobar que es auténtico, escanea el QR al pie de la hoja o entra aquí: https://x/v/p/BLAS-EC-0001-2266",
+    );
+    expect(mensajeDelPapel({ tipo: "proforma", titulo: "Proforma", numero: "PRO-0002" }, null)).toBe(
+      "Hola, te envío tu proforma PRO-0002. Para comprobar que es auténtico, escanea el QR al pie de la hoja.",
+    );
   });
 });

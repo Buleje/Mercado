@@ -19,7 +19,7 @@ import { AlertCircle, Lock, RefreshCw, Search } from "@buleje/design-system/icon
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
 import { useBaseVerificacion } from "@/hooks/use-base-verificacion";
-import { usePapelesEmitidos } from "@/hooks/use-papeles-emitidos";
+import { useMandarPapel, usePapelesEmitidos } from "@/hooks/use-papeles-emitidos";
 import { cn } from "@/lib/utils";
 import {
   FILTROS_ESTADO_PAPEL,
@@ -34,6 +34,8 @@ import { TablaPapeles } from "./TablaPapeles";
 
 /** El mismo visor del Archivo (PDF.js pesa): entra al abrir el primer PDF. */
 const VistaPreviaDoc = dynamic(() => import("@/components/admin/forestal/plan-documentos/VistaPreviaDoc"), { ssr: false });
+/** El envío por WhatsApp del Archivo: manda el PDF como archivo, no un enlace. */
+const SendWhatsAppModal = dynamic(() => import("@/components/admin/documentos/SendWhatsAppModal").then((m) => m.SendWhatsAppModal), { ssr: false });
 
 const CHIP = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";
 const CHIP_ON = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
@@ -51,6 +53,7 @@ const VACIO: Record<FiltroEstadoPapel, string> = {
 export default function PapelesEmitidosVista() {
   const { papeles, error, recargar } = usePapelesEmitidos();
   const { base: baseQr } = useBaseVerificacion();
+  const envio = useMandarPapel(baseQr);
   const [filtro, setFiltro] = useState<FiltroEstadoPapel>("todos");
   const [texto, setTexto] = useState("");
   const [pdf, setPdf] = useState<string | null>(null);
@@ -141,10 +144,18 @@ export default function PapelesEmitidosVista() {
           {texto.trim() ? `Ningún papel coincide con «${texto.trim()}».` : VACIO[filtro]}
         </p>
       ) : (
-        <TablaPapeles grupos={filas} baseQr={baseQr} onVerPdf={setPdf} />
+        <TablaPapeles grupos={filas} baseQr={baseQr} onVerPdf={setPdf} onMandar={(p) => void envio.mandar(p)} preparando={envio.preparando} />
+      )}
+
+      {envio.error && (
+        <p role="alert" className="flex items-center gap-2 text-sm text-[var(--data-error-ink)]">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+          {envio.error}
+        </p>
       )}
 
       <VistaPreviaDoc docId={pdf} onClose={() => setPdf(null)} onCambio={recargar} />
+      {envio.envio && <SendWhatsAppModal docs={[envio.envio.doc]} mensaje={envio.envio.mensaje} onClose={envio.cerrar} />}
     </div>
   );
 }

@@ -97,5 +97,7 @@ export type PropsEnviarWhatsApp = {
   mode?: "share" | "sign";
   /** Número precargado (ej. el cliente de la cotización recién generada). */
   telefono?: string;
+  /** Mensaje precargado al compartir (ej. un papel emitido: «Te envío tu estado de cuenta…»). Firmar usa el suyo. */
+  mensaje?: string;
   onClose: () => void;
 };
