@@ -114,6 +114,8 @@
  * Reporte: SIEMPRE se escribe `<salida>/reporte.json` (el JSON completo) y su ruta va en `reporte`. Con `--resumen`
  * stdout trae sólo ok, falla, nº de capturas, errores y la ruta del reporte (evals y reglas se leen en el archivo).
  * El primer login espera hasta 120 s (dev server cargado/compilando) y avisa por stderr cada 15 s cuánto lleva.
+ * El reporte trae `fases` (ms): servidor, chromium, login y por tema abrir/carga/quietud/pasos/captura. «quietud» alta =
+ *   la PANTALLA tarda en traer sus datos (medir el endpoint), no el programa (04-11: 4-5 s de 8 en Libro diario).
  * Si el login responde ≠200 la falla trae el mensaje del servidor (campo error/message o el cuerpo), no sólo el código.
  *
  * Sale un JSON: capturas, respuestas ≥400 (con ruta), errores de consola (nº y textos),
@@ -133,6 +135,12 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync, readdir
 import path from "node:path";
 import { execSync, spawn } from "node:child_process";
 import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
+
+/* 04-11 (ronda de velocidad): cuánto se lleva cada fase va en el reporte («fases», ms). La 1.ª
+   cuenta el arranque de node + playwright + la espera del candado. */
+const fases = {};
+let ultimaMarca = performance.now();
+const marcar = (n) => { const a = performance.now(); fases[n] = Math.round((fases[n] ?? 0) + a - ultimaMarca); ultimaMarca = a; };
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
   const fuente = readFileSync(new URL(import.meta.url), "utf8");
@@ -185,6 +193,9 @@ if (process.env.QA_CANDADO_MARCA) {
    (no toca la base, a diferencia de `/api/health`, que se colgaba con la conexión caída). */
 async function baseQueResponde() {
   const candidatos = ["http://localhost:3000", "http://localhost:3001"];
+  /* 04-11: sólo se pregunta a los puertos que `ss` ve escuchando. Preguntarle a :3001 cerrado
+     costaba 10,5 s en CADA corrida (Promise.all esperaba su «connect timeout»; medido 3 de 3). */
+  let aProbar = candidatos;
   // 15-10: con el dev apagado esperaba 260 s; en este WSL un puerto cerrado no rechaza, tarda 10,5 s
   // en «timeout». Se pregunta a `ss` si alguien escucha y, si nadie, se corta ya.
   /* 24-10: dos carriles perdieron una corrida porque el dev se estaba REINICIANDO (otro lo
@@ -212,8 +223,11 @@ async function baseQueResponde() {
       console.error("[qa-capturas] no hay servidor en :3000 ni :3001 — levantalo con `nohup npm run dev > /tmp/dev-server.log 2>&1 &`");
       process.exit(2);
     }
+    const lista = execSync("ss -ltnH", { encoding: "utf8" });
+    const escuchan = candidatos.filter((b) => new RegExp(`:${b.slice(-4)}\\s`).test(lista));
+    if (escuchan.length) aProbar = escuchan;
   } catch { /* sin `ss`: sigue la prueba por fetch */ }
-  const vivos = await Promise.all(candidatos.map(async (b) => {
+  const vivos = await Promise.all(aProbar.map(async (b) => {
     try { await fetch(`${b}/login`, { signal: AbortSignal.timeout(20_000), redirect: "manual" }); return true; }
     catch { return false; }
   }));
@@ -222,10 +236,12 @@ async function baseQueResponde() {
     console.error("[qa-capturas] servidor colgado: ni :3000 ni :3001 contestan /login en 20 s (¿swap lleno? `free -g`); sigo con :3000");
     return candidatos[0];
   }
-  if (i > 0) console.error(`[qa-capturas] el dev contesta en ${candidatos[i]} (se reinició): uso ese`);
-  return candidatos[i];
+  if (aProbar[i] !== candidatos[0]) console.error(`[qa-capturas] el dev contesta en ${aProbar[i]} (se reinició): uso ese`);
+  return aProbar[i];
 }
+marcar("arranque");
 const BASE = process.env.QA_BASE ?? (await baseQueResponde());
+marcar("servidor");
 
 function arg(nombre, porDefecto) {
   const i = process.argv.indexOf(`--${nombre}`);
@@ -404,6 +420,7 @@ if (sembrarLs) {
   }, pares);
 }
 const page = await ctx.newPage(); // sólo para el login: cada tema abre la suya
+marcar("chromium");
 
 const consola = [];
 const pageerrors = [];
@@ -680,8 +697,11 @@ async function recorrido(t, primero) {
     rutasIniciales++;
   }
   try {
+    marcar(`${t}:abrir`);
     await page.goto(`${BASE}${ruta}`, { waitUntil: "domcontentloaded", timeout: 90_000 });
+    marcar(`${t}:carga`);
     await esperarQuietud();
+    marcar(`${t}:quietud`);
     /* «Pendientes y avisos» se abre sola al entrar si hay atrasadas y tapa los clics (03-11: 1 vuelta
        perdida en el Libro CTP). Se recuerda también en el servidor, así que se cierra acá con Escape. */
     await cerrarAvisos(page);
@@ -925,7 +945,9 @@ async function recorrido(t, primero) {
         throw new Error(`[${t}] paso ${i} (${tipo}): ${String(e?.message ?? e).split("\n")[0]}`);
       }
     }
+    marcar(`${t}:pasos`);
     if (!huboCaptura) await matriz(page, nombreBase, t);
+    marcar(`${t}:captura`);
   } finally {
     await page.close().catch(() => {});
     const v = dirVideo ? page.video() : null;
@@ -975,13 +997,16 @@ try {
     const latido = setInterval(() => console.error(`[qa-capturas] esperando al servidor para entrar: ${Math.round((Date.now() - inicioLogin) / 1000)} s (tope 120 s por pedido)`), 15_000);
     /* 08-10: `/api/health` se colgaba cuando la base tardaba en conectar; la cookie también sale de
        `/login`, y el login no exige csrf: si nada contesta, se intenta entrar igual sin la cookie. */
-    for (const [ruta, tope] of [["/api/health", 20_000], ["/login", 60_000], ["/login", 60_000]]) {
-      try { await page.request.get(`${BASE}${ruta}`, { timeout: tope }); break; }
-      catch { console.error(`[qa-capturas] ${ruta} no contestó en ${tope / 1000} s`); }
-    }
-    const csrf = (await ctx.cookies()).find((c) => c.name === "csrf-token")?.value ?? "";
-    const entrar = () => page.request.post(`${BASE}/api/auth/login`, {
-      headers: { "content-type": "application/json", "x-tenant-id": tenant, "x-csrf-token": csrf },
+    /* 04-11: la cookie y el login van A LA VEZ (antes en fila: +0,2-1,7 s por corrida). El login no
+       pide el csrf (medido: 200 sin la cabecera); la cookie igual se espera antes de abrir el panel. */
+    const sembrarCookie = (async () => {
+      for (const [ruta, tope] of [["/api/health", 20_000], ["/login", 60_000], ["/login", 60_000]]) {
+        try { await page.request.get(`${BASE}${ruta}`, { timeout: tope }); break; }
+        catch { console.error(`[qa-capturas] ${ruta} no contestó en ${tope / 1000} s`); }
+      }
+    })();
+    const entrar = async () => page.request.post(`${BASE}/api/auth/login`, {
+      headers: { "content-type": "application/json", "x-tenant-id": tenant, "x-csrf-token": (await ctx.cookies()).find((c) => c.name === "csrf-token")?.value ?? "" },
       data: { username: usuario, password: clave, tenantSlug: tenant },
       timeout: 120_000,
     });
@@ -995,6 +1020,7 @@ try {
       await new Promise((ok) => setTimeout(ok, 20_000));
       r = await entrar();
     }
+    await sembrarCookie;
     clearInterval(latido);
     if (r.status() !== 200) {
       /* El mensaje del servidor (error/message/detalle del JSON, o el cuerpo crudo): un 500 sin
@@ -1005,6 +1031,7 @@ try {
       throw new Error(`login ${r.status()} ${r.statusText()}: ${msg.replace(/\s+/g, " ").slice(0, 400) || "(cuerpo vacío)"}`);
     }
   }
+  marcar("login");
   await page.close();
   if (dirVideo) await page.video()?.delete().catch(() => {});
   // Los temas van en serie a propósito: en paralelo (probado 2026-09-25)
@@ -1022,10 +1049,11 @@ try {
   }
 } finally {
   await browser.close().catch(() => {});
+  marcar("cierre");
 }
 
 const ok = !falla && pageerrors.length === 0;
-const reporte = { ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, espiados, ...(dirVideo ? { videos } : {}), ms: Date.now() - t0 };
+const reporte = { ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, espiados, ...(dirVideo ? { videos } : {}), ms: Date.now() - t0, fases };
 const archivoReporte = path.join(salida, "reporte.json");
 try { writeFileSync(archivoReporte, JSON.stringify({ ...reporte, generado: new Date().toISOString() }, null, 1)); }
 catch (e) { console.error(`no pude escribir ${archivoReporte}: ${e.message}`); }
@@ -1034,7 +1062,7 @@ if (bandera("resumen")) {
      y un carril lo pidió como «Para acelerar»). El valor entero sigue en reporte.json. */
   const corto = (v) => { const j = JSON.stringify(v) ?? "undefined"; return j.length > 400 ? `${j.slice(0, 400)}…` : v; };
   const evalsCortos = evals.map(({ valor, ...resto }) => ({ ...resto, valor: corto(valor) }));
-  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.slice(0, 5), consola: reporte.consola, pageerrors, evals: evalsCortos, ...(espiados.length ? { espiados: espiados.map((e) => ({ ...e, cuerpo: e.cuerpo.slice(0, 300) })) } : {}), ...(dirVideo ? { videos } : {}), ms: reporte.ms, reporte: archivoReporte }, null, 1));
+  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.slice(0, 5), consola: reporte.consola, pageerrors, evals: evalsCortos, ...(espiados.length ? { espiados: espiados.map((e) => ({ ...e, cuerpo: e.cuerpo.slice(0, 300) })) } : {}), ...(dirVideo ? { videos } : {}), ms: reporte.ms, fases, reporte: archivoReporte }, null, 1));
 } else {
   console.log(JSON.stringify({ ...reporte, reporte: archivoReporte }, null, 1));
 }
