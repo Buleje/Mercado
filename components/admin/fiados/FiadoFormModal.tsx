@@ -7,6 +7,7 @@ import {
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
 import { formatCurrency } from "@/lib/format";
@@ -259,9 +260,11 @@ export default function FiadoFormModal({
                             accept="image/*"
                             capture="environment"
                             className="hidden"
-                            onChange={e => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
+                            onChange={async e => {
+                              const original = e.target.files?.[0];
+                              if (!original) return;
+                              // 05-11: se achica ANTES de medir el tope; una foto de celular de 4 MB baja a ~1,9 MB y entra.
+                              const file = await comprimirParaArchivo(original, 2 * 1024 * 1024);
                               if (file.size > 2 * 1024 * 1024) {
                                 setCreateError("La imagen no puede pesar más de 2MB");
                                 return;
