@@ -100,6 +100,12 @@ const nextConfig: NextConfig = {
     "/api/admin/forestal/guias/documentos": ARCHIVOS_OCR,
     "/api/admin/forestal/loth/medicion-carga/[id]/fotos": ARCHIVOS_OCR,
   },
+  // 04-11: lo que `.vercelignore` no sube (`*.log`, `.claude`, `/tmp`) tampoco puede viajar dentro de una
+  // función: el armado en GitHub (`vercel deploy --prebuilt`) murió con ENOENT en `reports/**/*.log`
+  // porque alguna ruta arrastra la carpeta del proyecto entera (`process.cwd()`).
+  outputFileTracingExcludes: {
+    "**": ["**/*.log", ".claude/**", "tmp/**"],
+  },
   serverExternalPackages: [
     "@prisma/client",
     "@prisma/adapter-pg",

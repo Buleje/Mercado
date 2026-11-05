@@ -117,7 +117,9 @@
     }
   },
   "git": {
-    "deploymentEnabled": true
+    "deploymentEnabled": {
+      "audit/storefront-mejoras-verificadas-2026-06-15": false
+    }
   },
   "headers": [
     {
