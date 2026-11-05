@@ -2,6 +2,7 @@ import { useState, useEffect, useId, useCallback, useRef, type Dispatch, type Se
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { limaDateKey } from "@/lib/utils";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -100,7 +101,7 @@ export function useNuevaRecepcion(setReceptions: Dispatch<SetStateAction<Recepti
     setUploadingInvoice(true);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", await comprimirParaArchivo(file));
       fd.append("folder", "recepciones");
       const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
       const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };

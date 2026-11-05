@@ -25,6 +25,7 @@ import { AlertTriangle, ChevronDown, Loader2, Upload } from "@buleje/design-syst
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { especiesSinFoto, type FotoEspecie } from "@/lib/forestal/especies-fotos";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import { Btn } from "./ctp-shared";
@@ -89,7 +90,7 @@ export default function EspeciesFotosBiblioteca() {
     setError(null);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", await comprimirParaArchivo(file));
       fd.append("folder", "image-bank");
       // El POST pasa por el guard CSRF del middleware: sin el header es 403.
       const up = await fetch("/api/upload", {

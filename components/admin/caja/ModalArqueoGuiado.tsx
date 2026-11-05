@@ -5,6 +5,7 @@ import { Banknote, Calculator, Check, DollarSign, Loader2 } from "@buleje/design
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { button } from "@/components/ui-system/button-variants";
 import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
@@ -75,7 +76,7 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
         try {
           const blob = await (await fetch(foto)).blob();
           const fd = new FormData();
-          fd.append("file", new File([blob], `arqueo-${caja.id}.jpg`, { type: blob.type || "image/jpeg" }));
+          fd.append("file", await comprimirParaArchivo(new File([blob], `arqueo-${caja.id}.jpg`, { type: blob.type || "image/jpeg" })));
           fd.append("folder", "general");
           const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
           const up = upRes.ok ? ((await upRes.json()) as { url?: string }) : null;

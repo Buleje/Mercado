@@ -5,6 +5,7 @@
  */
 import type { BadgeStatusVariant } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { estadoLicencia, type EstadoLicencia } from "@/lib/planificacion/calculos";
 import type { DatosSeccion } from "@/lib/planificacion/secciones";
 
@@ -44,7 +45,7 @@ export function ordenarLicencias(items: readonly Licencia[], hoy: string): Licen
 /** Sube una foto a `/api/upload` (carpeta del plan) y devuelve su URL pública. */
 export async function subirArchivoPlan(file: File): Promise<string> {
   const fd = new FormData();
-  fd.append("file", file);
+  fd.append("file", await comprimirParaArchivo(file));
   fd.append("folder", "planificacion");
   const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders({}), credentials: "include", body: fd });
   const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };

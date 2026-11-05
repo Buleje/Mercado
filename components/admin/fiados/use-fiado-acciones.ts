@@ -11,6 +11,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { formatDateLong } from "@/lib/format";
 import type { DatosCobro, Fiado, ReciboData } from "./tipos";
 import { diaLeido } from "./fechas";
@@ -81,7 +82,7 @@ export function useFiadoAcciones(alCambiar: () => void) {
         try {
           const blob = await (await fetch(dniPhoto)).blob();
           const fd = new FormData();
-          fd.append("file", new File([blob], "fiado-dni.jpg", { type: blob.type || "image/jpeg" }));
+          fd.append("file", await comprimirParaArchivo(new File([blob], "fiado-dni.jpg", { type: blob.type || "image/jpeg" })));
           fd.append("folder", "general");
           const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
           if (upRes.ok) {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import type { StoreMode } from "@/lib/jsondb";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import type { FaltaItem } from "@/components/admin/settings/navegacion";
 import type { SeccionAjustes } from "@/components/admin/settings/secciones";
 import { TOPE_DESCUENTO_CAJERO_PCT, topeCajeroPct, topeCajeroParaGuardar } from "@/lib/pos/descuento-cajero";
@@ -328,7 +329,7 @@ export function useAjustes(storeMode: StoreMode) {
       const t = toast.loading(`Subiendo ${fieldId}…`);
       try {
         const fd = new FormData();
-        fd.append("file", file);
+        fd.append("file", await comprimirParaArchivo(file));
         fd.append("folder", folder);
         // CSRF: el endpoint valida double-submit cookie via header.
         const res = await fetch("/api/upload", {

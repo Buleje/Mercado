@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { useInventarioCarga } from "@/components/admin/inventario/hooks/use-inventario-carga";
 
@@ -43,7 +44,7 @@ export function useInventarioImagenes(previo: ReturnType<typeof useInventarioEst
     const t = toast.loading("Subiendo imagen...");
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", await comprimirParaArchivo(file));
       fd.append("folder", "products");
       const res = await fetch("/api/upload", {
         method: "POST",

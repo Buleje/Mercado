@@ -6,6 +6,7 @@
  * «hay», un pago con su comprobante, un alquiler con su contrato).
  */
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirParaArchivo } from "@/lib/documents/compress-image";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import type { Dia, VinculoDocumento } from "@/lib/admin/fichas-tramites-alquileres";
 
@@ -23,7 +24,7 @@ export type ResultadoSubida = { ok: true; id: string; vinculado: boolean } | { o
 export async function subirDocumento(archivo: File, o: OpcionesSubida): Promise<ResultadoSubida> {
   if (archivo.size > MAX_UPLOAD_SIZE) return { ok: false, error: "El archivo pasa de 50 MB: achícalo o pártelo." };
   const fd = new FormData();
-  fd.append("file", archivo);
+  fd.append("file", await comprimirParaArchivo(archivo));
   fd.append("carpetaRuta", o.carpetaRuta);
   fd.append("vinculoTipo", o.vinculoTipo);
   fd.append("vinculoId", o.vinculoId);
