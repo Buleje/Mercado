@@ -33,4 +33,25 @@ npx lint-staged || exit 1
 #      (2026-09-25: en fila el commit pagaba la suma; ahora paga el más lento).
 #      Detalle, medición y mensajes de error en scripts/pre-commit-gates.sh.
 #      Escapes: SKIP_VITEST_GATE=1 (sólo vitest) · HUSKY=0 git commit (todo).
-sh scripts/pre-commit-gates.sh || exit 1
+#      04-11 (Brandon eligió «fila para lo pesado»): esperan su turno en /tmp/bsm-pesado.lock, la misma
+#      fila de commit-carril.sh y qa-capturas --candado. Ese día earlyoom cerró 40 `tsc` porque un guardado
+#      (tipos ~4 GB + vitest ~4,7 GB) y la compilación del panel corrían juntos: la revisión de 7 s tardó
+#      111 s y llegó a 12 GB. Si un proceso de arriba ya tiene la fila (commit-carril), no se pide otra vez
+#      (si no, se esperaría a sí mismo); tope 15 min y sigue igual. Escape: BSM_SIN_FILA=1.
+FILA=/tmp/bsm-pesado.lock; YA=""; P=$PPID
+for _ in 1 2 3 4 5 6 7 8; do
+  [ -r "/proc/$P/cmdline" ] || break
+  # El programa tiene que SER flock y llevar la fila como argumento (el texto suelto engaña: el pedido de
+  # una charla de Claude puede nombrar «flock» y la fila).
+  if tr '\0' '\n' < "/proc/$P/cmdline" | head -1 | grep -qE '(^|/)flock$' \
+     && tr '\0' '\n' < "/proc/$P/cmdline" | grep -qxF "$FILA"; then YA=1; break; fi
+  P=$(sed 's/.*) //' "/proc/$P/stat" | cut -d' ' -f2); [ "${P:-1}" -gt 1 ] || break
+done
+if [ -n "$YA" ] || [ "${BSM_SIN_FILA:-0}" = 1 ] || ! command -v flock >/dev/null 2>&1; then
+  sh scripts/pre-commit-gates.sh || exit 1
+else
+  flock -n "$FILA" true 2>/dev/null || echo "⏳ Espero turno: otro trabajo pesado (compilación del panel, capturas u otro guardado) está usando la RAM…"
+  flock -w 900 -E 75 "$FILA" sh scripts/pre-commit-gates.sh; rc=$?
+  if [ "$rc" = 75 ]; then echo "⚠️ 15 min sin turno: sigo sin esperar."; sh scripts/pre-commit-gates.sh || exit 1
+  elif [ "$rc" != 0 ]; then exit 1; fi
+fi

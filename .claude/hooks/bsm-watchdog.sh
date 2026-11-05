@@ -113,6 +113,15 @@ while true; do
     ZRAM=$(awk '$1 ~ /zram/ {printf "%.1fG", $4/1048576}' /proc/swaps)
     log "RAM baja ${AVAIL}MB libres · zram ${ZRAM:-0} · top: ${TOP%, }"
   fi
+  # 3a. (04-11, Brandon «pillar al tsc de 12 GB») El nombre solo («tsc 11.2G») no dice si es la revisión de
+  #     un guardado, el servidor de TypeScript de una charla u otra cosa: con RAM baja o un proceso de más de
+  #     6 GB, anotar sus argumentos y quién lo lanzó (padre y abuelo), para saber a quién arreglar.
+  ps -eo pid=,ppid=,rss=,args= --sort=-rss | head -4 | while read -r P PP R A; do
+    [[ "$R" -gt 6291456 || ( "$AVAIL" -lt 1500 && "$R" -gt 2097152 ) ]] || continue
+    A1=$(ps -o args= -p "$PP" 2>/dev/null | cut -c1-70); PPP=$(ps -o ppid= -p "$PP" 2>/dev/null | tr -d ' ')
+    A2=$(ps -o args= -p "${PPP:-0}" 2>/dev/null | cut -c1-60)
+    log "gordo pid=$P $(awk -v r="$R" 'BEGIN{printf "%.1fG", r/1048576}') «${A:0:90}» ← «$A1» ← «$A2»"
+  done
   # Lo que earlyoom cerró en el último ciclo, al mismo log (el journal no se mira).
   journalctl -u earlyoom --since "-${INTERVAL}s" -o cat 2>/dev/null | grep -E 'sending SIG' | while read -r l; do log "earlyoom: $l"; done
 
