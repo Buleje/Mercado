@@ -266,7 +266,7 @@ jobs:
         id: deploy
         run: |
           # shellcheck disable=SC2086  # DEPLOY_FLAGS: vacío o `--prod --skip-domain`
-          url=$(vercel deploy --prebuilt $DEPLOY_FLAGS --token="$VERCEL_TOKEN")
+          url=$(vercel deploy --prebuilt --archive=tgz $DEPLOY_FLAGS --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Resumen
