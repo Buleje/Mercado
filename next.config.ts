@@ -104,7 +104,15 @@ const nextConfig: NextConfig = {
   // función: el armado en GitHub (`vercel deploy --prebuilt`) murió con ENOENT en `reports/**/*.log`
   // porque alguna ruta arrastra la carpeta del proyecto entera (`process.cwd()`).
   outputFileTracingExcludes: {
-    "**": ["**/*.log", ".claude/**", "tmp/**"],
+    // sharp trae su copia para Linux «musl» (Alpine) además de la de glibc; Vercel corre en glibc.
+    // Medido 04-11: la función del webhook de WhatsApp pesaba 260,5 MB (tope 250) y la musl son 17 MB.
+    "**": [
+      "**/*.log",
+      ".claude/**",
+      "tmp/**",
+      "**/@img/sharp-libvips-linuxmusl-x64/**",
+      "**/@img/sharp-linuxmusl-x64/**",
+    ],
   },
   serverExternalPackages: [
     "@prisma/client",
