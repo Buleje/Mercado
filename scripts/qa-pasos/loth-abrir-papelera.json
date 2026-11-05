@@ -1,0 +1,13 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=loth-libro-operaciones",
+ "pasos": [
+  {"esperar": 8000},
+  {"eval": "(() => { const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='Entendido'); if(b) b.click(); return !!b; })()"},
+  {"esperar": 800},
+  {"click": "[aria-label=\"Herramientas del libro\"]"},
+  {"esperar": 800},
+  {"click": "text=Papelera del libro >> nth=0"},
+  {"esperar": "text=Lo que se borró del libro"}
+ ]
+}
