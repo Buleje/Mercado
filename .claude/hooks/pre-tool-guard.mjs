@@ -227,9 +227,18 @@ const BLOCK_PATTERNS = [
   { pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/, label: "rm -rf (recursivo)", severity: "critical", reason: "Borrado recursivo fuera de las carpetas temporales (/tmp, /var/tmp, ~/.cache, %TEMP% de Windows). Usá `tirar <ruta>` (a la papelera, se deshace con `tirar --volver`; rutas de Windows → Papelera de reciclaje) o `git rm` si está en git.", sobre: "ejecutable" },
   // 04-11: `pkill -f X` mata también a la terminal de Claude (su línea contiene X) → «Exit code 143/144», 12 veces en 3 días.
   { pattern: /\bpkill\b[^;&|\n]*\s-[a-zA-Z]*f\b(?![^;&|\n]*\[)|\bkill\b[^;&|\n]*\$\(\s*pgrep\b[^)]*\s-[a-zA-Z]*f\b(?![^)]*\[)/, label: "pkill -f (se mata solo)", severity: "high", reason: "`pkill -f` / `kill $(pgrep -f …)` cierra también ESTA terminal porque su línea contiene el patrón. Usá `matar '<patrón>'` (`matar -n` solo lista) o el truco del corchete: `pkill -f '[q]r-web.py'`.", sobre: "ejecutable" },
+  // 04-11: abrir un programa de Windows con `cmd.exe /c start` o `Start-Process` desde WSL ESPERA a que ese
+  // programa se cierre (hereda la tubería, aunque la salida vaya a /dev/null): 46 veces = 62 min en 2 días;
+  // AutoHotkey colgó 30 y 26 min, Chrome 8,5 min. `abrir-windows` (setsid -f) vuelve en 7-25 ms y abre igual.
+  { pattern: /\bcmd(?:\.exe)?\s+\/c\s+start\b(?![^;&|\n]*\/wait\b)/i, label: "abrir programa de Windows (se cuelga)", severity: "high", reason: "`cmd.exe /c start …` desde Ubuntu se queda esperando hasta que el programa abierto se CIERRE (62 min perdidos en 2 días; AutoHotkey colgó 30 min). Usá `abrir-windows <programa|archivo|url> [args…]` (vuelve al instante; rutas de Ubuntu se convierten solas) o anteponé `setsid -f … </dev/null >/dev/null 2>&1`. Si de verdad querés esperar: `start /wait`.", sobre: "ejecutable" },
+  { pattern: /\bpowershell(?:\.exe)?\b[^\n]*\bStart-Process\b(?![^\n]*-(?:Wait|PassThru)\b)/i, label: "abrir programa de Windows (se cuelga)", severity: "high", reason: "`Start-Process` desde Ubuntu puede quedarse esperando hasta que el programa abierto se CIERRE (Chrome colgó 8,5 min). Usá `abrir-windows <programa|archivo|url> [args…]`, o anteponé `setsid -f powershell.exe … </dev/null >/dev/null 2>&1`, o agregá `-Wait`/`-PassThru` si necesitás esperarlo o su resultado." },
   // [^;&|\n]* = sólo los argumentos de ESE rm (28-10: `df -h / ; ollama rm x` se bloqueaba por el `/` del df).
   { pattern: /\brm\b[^;&|\n]*(--no-preserve-root|\s\/\*?(?:\s|$)|\s(?:~|\$HOME)\/?\*?(?:\s|$))/, label: "rm sobre / o ~", severity: "critical", reason: "rm apuntando a raíz o home. Bloqueado siempre.", sobre: "ejecutable" },
   { pattern: /\bDROP\s+(TABLE|DATABASE|SCHEMA|INDEX)\b/i, label: "DROP SQL", severity: "critical", reason: "La base de .env.local es PRODUCCIÓN. Escribí el .sql con Write en prisma/migrations/<carpeta>/ y aplicalo con `node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <archivo.sql> --ensayo dotenv_config_path=.env.local` (DIRECT_URL no resuelve desde esta red)." },
+  // 04-11: `vitest related` arma el grafo de los 2.254 tests en CADA llamada: 30 s fijos aunque corra 1 test
+  // (34 s contra 4,5 s directo); 17 veces a mano = 41 min en 3 días. probar.sh corre los MISMOS tests
+  // (lista de pruebas-relacionadas.mjs, 0,4 s, comparada contra vitest) y deja el sello del commit.
+  { pattern: /\bvitest\s+related\b/, label: "vitest related (30 s de más)", severity: "medium", reason: "`vitest related` tarda 30 s solo en buscar qué tests correr. Usá `sh scripts/dev-helpers/probar.sh <archivos>`: mismos tests en 0,4 s + el sello (el commit no los repite). Para comparar contra el grafo de vitest a propósito: `VITEST_RELATED_OK=1 npx vitest related …`.", sobre: "ejecutable" },
   { pattern: /\bvitest\b[^|;&]*--root[= ]\/(?:\s|$)/, label: "vitest --root /", severity: "critical", reason: "Recorre TODO el disco: el 05-10 quedó 87 min colgado con 8,2 GB y tumbó el dev 2 veces. Agregá el caso a un test del repo o usá --root del proyecto." },
   { pattern: /\bTRUNCATE\s+TABLE\b/i, label: "TRUNCATE TABLE", severity: "critical", reason: "Usá soft-delete o migration formal." },
   { pattern: /\bDELETE\s+FROM\s+[A-Za-z_][A-Za-z0-9_]*\s*(?!WHERE|LIMIT)/i, label: "DELETE sin WHERE", severity: "critical", reason: "Agregá WHERE explícito." },
@@ -388,6 +397,9 @@ function bashGuard(toolInput) {
     if (!p.pattern.test(texto)) continue;
     if (p.sobre === "ejecutable" && p.severity === "critical" && /recursivo/.test(p.label) && rmRecursivoSeguro(ejecutable)) continue;
     // El patrón entre comillas desaparece de lo ejecutable: el truco del corchete se mira en el texto entero.
+    // `setsid` suelta al programa abierto: ya no se cuelga.
+    if (p.label === "abrir programa de Windows (se cuelga)" && /\bsetsid\b/.test(command)) continue;
+    if (p.label === "vitest related (30 s de más)" && /\bVITEST_RELATED_OK=1\b/.test(command)) continue;
     if (p.label === "pkill -f (se mata solo)" && /\b(?:pkill|pgrep)\b[^;&|\n]*\s-[a-zA-Z]*f\s+['"]?[^'"\s;&|]*\[/.test(command)) continue;
     return p;
   }

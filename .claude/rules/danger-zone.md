@@ -26,4 +26,4 @@ Antes de tocar (1 minuto, sin reporte):
 - `role-permissions.ts`: 26 recursos × 6 roles; cambios = revisar matriz completa.
 - `schema.prisma` (~272 modelos): migración = skill `migrar-esquema` (SQL a mano, nunca `migrate dev`), luego `prisma generate` + reiniciar dev.
 - Dinero cross-vendor (`marketplace.db.ts`, `commissions.ts`): commission es Decimal en prod; vendor NO puede fijar su propia comisión.
-- Tests de la zona: `npx vitest related <archivos> --run` + `npm run test:guardianes` (checkout, fiado, sunat, multi-tenant) antes de dar por listo.
+- Tests de la zona: `sh scripts/dev-helpers/probar.sh <archivos>` (los mismos de `vitest related` sin sus 30 s) + `npm run test:guardianes` (checkout, fiado, sunat, multi-tenant) antes de dar por listo.

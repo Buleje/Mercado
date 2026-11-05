@@ -136,8 +136,23 @@ if [ "${SKIP_VITEST_GATE:-0}" != "1" ]; then
     if sh scripts/dev-helpers/sello.sh ok vitest "$CLAVE_VT" $STAGED_CODE; then
       echo "⏭️  tests ya pasados con este mismo código (sello)" >"$TMP/vitest.log"; echo 0 >"$TMP/vitest.rc"
     else
+      # 04-11: la lista de relacionados la arma pruebas-relacionadas.mjs (0,4 s; más ancha que vitest)
+      # en vez de `vitest related`, que pagaba 30 s fijos armando el grafo de los 2.254 tests. Si no
+      # puede decidir (código 3: toca vitest.setup o no leyó el repo) se vuelve a `vitest related`.
+      # Una lista vacía NUNCA llega a `vitest run`: sin filtros correría los 2.254 (12 min).
       # shellcheck disable=SC2086
-      lanzar vitest npx vitest related $STAGED_CODE $VITEST_EXTRA --project unit --run --passWithNoTests
+      VITEST_REL=$(node scripts/dev-helpers/pruebas-relacionadas.mjs $STAGED_CODE 2>/dev/null); REL_RC=$?
+      # shellcheck disable=SC2086
+      VITEST_LISTA=$(printf '%s\n' $VITEST_REL $VITEST_EXTRA | grep . | sort -u | tr '\n' ' ')
+      if [ "$REL_RC" != "0" ]; then
+        # shellcheck disable=SC2086
+        lanzar vitest npx vitest related $STAGED_CODE $VITEST_EXTRA --project unit --run --passWithNoTests
+      elif [ -n "$VITEST_LISTA" ]; then
+        # shellcheck disable=SC2086
+        lanzar vitest npx vitest run $VITEST_LISTA --project unit --passWithNoTests
+      else
+        echo "Test Files  0 (ningún test depende de estos archivos)" >"$TMP/vitest.log"; echo 0 >"$TMP/vitest.rc"
+      fi
       VITEST_LANZADO=1
     fi
     set +f
@@ -187,7 +202,7 @@ if [ -f "$TMP/vitest.rc" ]; then
     no_termino vitest
     echo ""
     echo "❌ Tests related to staged changes failed."
-    echo "   Reproducir: npx vitest related <archivos staged> --run"
+    echo "   Reproducir: sh scripts/dev-helpers/probar.sh <archivos staged>"
     echo "   Skip gate for this commit: SKIP_VITEST_GATE=1 git commit ..."
     FALLO=1
   fi

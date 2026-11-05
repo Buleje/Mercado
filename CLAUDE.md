@@ -96,7 +96,7 @@ Env mínimas: `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_BASE_URL` (schema comp
 5. **Pre-refactor**: `LSP` findReferences del símbolo + grep `function <X>|const <X> =` en todo el repo para evitar shadowing.
 6. **QA**: `qaadmin` / `Qa-admin-1234` en `main` (forestal: `inversiones-agroforestales-blas-sociedad-op-qa-ui`). Recorrido conocido → `node scripts/qa-capturas.mjs` (1 llamada, ya resuelve onboarding y oscuro); el MCP de Playwright, para explorar. En localhost el panel es siempre el tenant `main`.
 7. **Prisma drift** (`ColumnNotFound`/P2022): `prisma migrate deploy` con DIRECT_URL accesible; ver hub `hub-next-dev-cache`.
-8. **Commits**: `HUSKY_SKIP_POSTCOMMIT=1` es default; el pre-commit corre lint-staged + tsc 7 + vitest related + tokens + anidado en paralelo.
+8. **Commits**: `HUSKY_SKIP_POSTCOMMIT=1` es default; el pre-commit corre lint-staged + tsc 7 + tests relacionados (`pruebas-relacionadas.mjs`, 0,4 s; antes `vitest related`, 30 s) + tokens + anidado en paralelo.
 9. **CLI**: subagentes en background, anidados hasta 3; `/verify` y `/code-review` no se auto-invocan; no existe `/gates`. Novedades: memoria `claude-code-novedades-2026-07`.
 10. **Auditorías** → ayudantes por dimensión + un refutador por hallazgo (receta de `audit-verificado`). Desde 02-11 `Workflow`, `Artifact`, `ReportFindings` y `SendFeedback` están en `permissions.deny` de `~/.claude/settings.json` (−17 mil por chat, Brandon): prender = quitar de esa lista y abrir chat nuevo.
 
