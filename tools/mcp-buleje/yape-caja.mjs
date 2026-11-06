@@ -20,12 +20,19 @@
 // Botones como los pnl: del 01-11: el estado vive en botones/<sha256(id)>.json firmado con HMAC(id); el id solo está en Telegram.
 // YAPE_SECO=1: no llama al panel ni a Telegram (imprime lo que haría; llaves-seco/ y botones-seco/). Ley 29733: lo mínimo,
 // 0600/0700, y el buzón borra lo de más de 60 días.
+// Fiados (06-11, «Yape cobra solo»): si el pagador se parece POR NOMBRE a quien debe un fiado abierto en un negocio del
+// equipo (src/fiados-yape.mjs, solo lectura de GET /api/fiados), el pendiente trae «💳 Cobrar fiado de <Nombre>» primero
+// (yp:<id>:f<i>, índice en la lista FIRMADA, máx. 3) y ese Yape nunca entra solo a la caja. El toque cobra con la ruta de
+// fiado_cobrar (aCaja:true = el panel baja la deuda y anota la caja en la misma transacción; NO se manda aparte a la caja),
+// con marca de idempotencia llaves/fiado-<sha>.json, y deja el recibo de 3 líneas en el mensaje. Si el Yape pasa la deuda,
+// lo que sobra queda con la pregunta normal «¿a la caja?» (llave propia). A seco: YAPE_FIADOS_STUB. YAPE_FIADOS=0 lo apaga.
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { appendFileSync, closeSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, writeSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
+import { MAX_FIADOS, cobrar as cobrarFiado, crearPedir, fechaLima, leerDeudas, parecidos, recibo } from "./src/fiados-yape.mjs";
 
 const CASA = process.env.YAPE_CASA || homedir();
 const SECO = process.env.YAPE_SECO === "1";
@@ -51,7 +58,7 @@ const ESPERA_MS = 600_000; // lo automático espera 10 min desde el pago: así e
 const CANDADO_ESPERA_MS = 5_000, CANDADO_MUERTO_MS = 30_000;
 const RE_NEGOCIO = /^[a-z0-9-]{1,60}$/, RE_EQUIPO = /^[a-z0-9._-]{1,40}$/;
 const VIEJO_MS = 24 * 3600_000; // aviso que llega (o se procesa) con más de 24 h de atraso → pendiente
-const RE_BOTON = /^yp:([A-Z2-7]{24}):(si|otro|pers|no|[no][0-3])$/; // n<i> = a ese negocio · o<i> = es otro pago, a ese negocio
+const RE_BOTON = /^yp:([A-Z2-7]{24}):(si|otro|pers|no|[no][0-3]|f[0-2])$/; // n<i> = a ese negocio · o<i> = es otro pago, a ese negocio · f<i> = cobrar ese fiado
 const MAX_OPCIONES = 4;
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const ETIQUETAS = { main: "Bodega", blas: "Blas", "qa-forestal": "QA forestal" };
@@ -75,7 +82,11 @@ const MOTIVOS = {
   panel_panel_apagado: "El panel está apagado: préndelo y toca «Sí» otra vez.",
   panel_compilando: "El panel está arrancando: toca «Sí» en un minuto.",
   panel_sin_sesion: "No pude entrar al panel con la sesión de la conexión.",
+  fiado: (st) => `Parece de alguien que te debe fiado: ${(st.fiados ?? []).map((f) => `${f.nombre} debe ${soles(f.saldoCentimos)} en ${etiqueta(f.negocio)}`).join(" · ")}.${st.fiadosMas ? " Hay más parecidos: si no es ninguno, cóbralo en el panel." : ""} Si este Yape es para pagarlo, toca «💳 Cobrar fiado»: baja la deuda y entra a la caja como Yape.`,
 };
+// A seco solo con YAPE_FIADOS_STUB (nunca el panel); de verdad solo en la casa real (con YAPE_CASA de los tests, sin panel).
+const CONSULTA_FIADOS = process.env.YAPE_FIADOS !== "0" && (SECO ? Boolean(process.env.YAPE_FIADOS_STUB) : CASA === homedir());
+const corto = (s, n) => (String(s).length > n ? `${String(s).slice(0, n - 1)}…` : String(s));
 
 export const sha = (s) => createHash("sha256").update(String(s)).digest("hex");
 export const plano = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
@@ -323,12 +334,26 @@ function textoPendiente(st) {
   const crudo = `Aviso: «${[st.titulo, st.texto].filter(Boolean).join(" — ").slice(0, 300)}»`;
   const ops = conOpciones(st);
   const antes = ops && st.recordado ? `\nLa vez pasada ${a?.pagador} fue de ${etiqueta(st.recordado)}.` : "";
-  const pregunta = !a ? "No lo anoto solo: si es un pago, anótalo a mano en la caja."
+  const fh = st.fiadoHecho;
+  const cobro = fh ? textoCobro(st) : "";
+  const pregunta = fh && !st.restoCentimos ? ""
+    : fh ? `Sobran ${soles(st.restoCentimos)} de este Yape (ya no debía más). ¿Los anoto en la caja de ahora${ops ? `? Toca el negocio (${ops.map(etiqueta).join(" o ")})` : ` (${etiqueta(st.negocio)})?`}`
+    : !a ? "No lo anoto solo: si es un pago, anótalo a mano en la caja."
     : dup && ops ? `¿Es OTRO pago o el mismo que ya llegó? Si es otro, toca el negocio al que va.${antes}`
     : dup ? `¿Es OTRO pago o el mismo que ya llegó? (caja de ${etiqueta(st.negocio)})`
     : ops && !(st.negocio && enPanel(st)) ? `¿De qué negocio es: ${ops.map(etiqueta).join(" o ")}? Lo anoto en la caja de ahora de ese negocio.${antes}\nToca solo si este Yape NO lo cobraste ya en la caja como venta.`
     : `¿Lo anoto en la caja de ahora (${etiqueta(st.negocio)})?\nToca «Sí» solo si este Yape NO lo cobraste ya en la caja como venta.`;
-  return [cab + linea + desde, motivos, crudo, pregunta].filter(Boolean).join("\n\n");
+  return [cab + linea + desde, motivos, crudo, cobro, pregunta].filter(Boolean).join("\n\n");
+}
+
+/** «✅ Cobrado S/ Y del fiado de X · queda S/ Z» + caja + el recibo de 3 líneas listo para pegar en WhatsApp. */
+function textoCobro(st) {
+  const fh = st.fiadoHecho;
+  const calculado = fh.quedaCentimos == null;
+  const queda = calculado ? Math.max(0, fh.saldoVistoCentimos - fh.cobradoCentimos) : fh.quedaCentimos;
+  const caja = fh.sinCaja ? "⚠️ No había caja abierta: la deuda bajó, pero el Yape NO entró a la caja. Anótalo a mano al abrirla."
+    : `Entró a la caja de ahora (${etiqueta(fh.negocio)}) como Yape.`;
+  return `✅ Cobrado ${soles(fh.cobradoCentimos)} del fiado de ${fh.nombre} · queda ${soles(queda)}${calculado ? " (calculado: no pude releer el panel, confírmalo)" : ""}\n${caja}\n\n📄 Recibo listo para pegar en WhatsApp:\n${recibo({ nombre: fh.nombre, cobradoCentimos: fh.cobradoCentimos, quedaCentimos: queda, fecha: fechaLima(st.recibidoEn) })}`;
 }
 
 /** Lista firmada de negocios del equipo (≥2) o null. */
@@ -336,7 +361,16 @@ const conOpciones = (st) => (Array.isArray(st.opciones) && st.opciones.length > 
 /** El panel ya contestó algo (sin caja, venta parecida, error): queda «Sí»/«Anotar igual» sobre el negocio elegido. */
 const enPanel = (st) => st.motivos.some((m) => PANEL.has(m) || String(m).startsWith("panel_"));
 
-function botonesDe(id, st) {
+/** Una fila «💳 Cobrar fiado» por cada parecido de la lista firmada (nunca en repetidos ni tras cobrar). */
+function filasFiado(id, st) {
+  if (!st.aviso || st.fiadoHecho || st.motivos.includes("duplicado") || !Array.isArray(st.fiados)) return [];
+  const dos = new Set(st.fiados.map((f) => f.negocio)).size > 1 || Boolean(conOpciones(st));
+  return st.fiados.slice(0, MAX_FIADOS).map((f, i) => [[`💳 Cobrar fiado de ${corto(f.nombre, 28)} (debe ${soles(f.saldoCentimos)})${dos ? ` · ${etiqueta(f.negocio)}` : ""}`, `yp:${id}:f${i}`]]);
+}
+
+const botonesDe = (id, st) => [...filasFiado(id, st), ...botonesBase(id, st)];
+
+function botonesBase(id, st) {
   if (!st.aviso) return [[["❌ Listo, no va a la caja", `yp:${id}:no`]]];
   const dup = st.motivos.includes("duplicado");
   const lista = conOpciones(st);
@@ -357,7 +391,8 @@ function botonesDe(id, st) {
 
 // ── salidas: panel y Telegram ────────────────────────────────────────────────────────────────────────────────────────
 const cuerpoPanel = (st, forzar) => ({
-  llave: st.llave, montoCentimos: st.aviso.montoCentimos, pagador: limpio(st.aviso.pagador, 80),
+  // Tras cobrar un fiado solo va lo que sobró, con llave propia (el resto del Yape es otro movimiento de caja).
+  llave: st.restoCentimos ? sha(`${st.llave}|resto-fiado`) : st.llave, montoCentimos: st.restoCentimos || st.aviso.montoCentimos, pagador: limpio(st.aviso.pagador, 80),
   ...(st.aviso.codigo ? { codigo: st.aviso.codigo } : {}), ...(st.aviso.nroOperacion ? { nroOperacion: st.aviso.nroOperacion } : {}),
   recibidoEn: st.recibidoEn, ...(forzar ? { forzar: true } : {}),
 });
@@ -472,16 +507,19 @@ async function decidir(h, e) {
   const negocio = aj.roto ? null : opciones ? recordado : (posibles?.[0] ?? null);
   if (atrasado(e)) motivos.push("viejo");
   if (aj.roto) motivos.push("ajustes");
+  // Fiados: quien paga debe en un negocio del equipo → botón «Cobrar fiado» y no entra solo a la caja (repetido: no se busca).
+  const fiados = aviso && !motivos.includes("duplicado") && posibles?.length && CONSULTA_FIADOS ? await buscarFiados(aviso.pagador, posibles) : null;
+  if (fiados?.lista.length) motivos.push("fiado");
   const fresco = Date.now() - ms < ESPERA_MS;
   const sinAprender = motivos.length ? "pendiente" : fresco ? "esperaria" : "anotaria";
   if (aj.aprender) motivos.push("aprender");
   const base = { h: h.slice(0, 8), monto: aviso ? soles(aviso.montoCentimos) : null, motivos };
-  const st = { v: 1, negocio, equipo, h, aviso, llave, titulo, texto, recibidoEn: new Date(ms).toISOString(), motivos, estado: "pendiente", creado: Date.now(), ...(opciones ? { opciones, recordado } : {}) };
+  const st = { v: 1, negocio, equipo, h, aviso, llave, titulo, texto, recibidoEn: new Date(ms).toISOString(), motivos, estado: "pendiente", creado: Date.now(), ...(opciones ? { opciones, recordado } : {}), ...(fiados?.lista.length ? { fiados: fiados.lista, fiadosMas: fiados.mas } : {}) };
   if (SECO) {
     // A seco el pendiente deja su botón en botones-seco/ (para `buzon-telegram --simular-toque`) y muestra los botones.
     const extra = {};
     if (motivos.length) { const id = idNuevo(); guardarBoton(id, st); extra.botones = botonesDe(id, st); }
-    return { ...base, estado: motivos.length ? "pendiente" : sinAprender, sinAprender, seco: true, pagador: aviso?.pagador ?? null, negocio, equipo, ...(opciones ? { opciones, recordado } : {}), ...extra };
+    return { ...base, estado: motivos.length ? "pendiente" : sinAprender, sinAprender, seco: true, pagador: aviso?.pagador ?? null, negocio, equipo, ...(opciones ? { opciones, recordado } : {}), ...(st.fiados ? { fiados: st.fiados.length } : {}), ...extra };
   }
   if (!motivos.length && aviso && fresco) return { ...base, estado: "esperando", hasta: ms + ESPERA_MS };
   if (!motivos.length && aviso) {
@@ -498,6 +536,21 @@ async function decidir(h, e) {
   guardarBoton(id, st);
   await telegram(textoPendiente(st), botonesDe(id, st));
   return { ...base, estado: "pendiente", motivos: st.motivos };
+}
+
+/** Deudores parecidos en los negocios del equipo; nunca rompe ni demora el aviso (15 s de tope, error = sin botón). */
+async function buscarFiados(pagador, negocios) {
+  let tope;
+  try {
+    const deudas = await Promise.race([
+      leerDeudas(negocios.filter((n) => RE_NEGOCIO.test(String(n))), crearPedir("automatico (yape-caja)")),
+      new Promise((_, no) => { tope = setTimeout(() => no(new Error("los fiados tardaron más de 15 s")), 15_000); }),
+    ]);
+    return parecidos(pagador, deudas);
+  } catch (err) {
+    console.error("[yape-caja] no pude buscar fiados", String(/** @type {any} */ (err)?.message ?? err));
+    return null;
+  } finally { clearTimeout(tope); }
 }
 
 // ── toque de Brandon ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -524,6 +577,8 @@ export async function boton(data, quien = "?") {
   if (!st.aviso) return { toque: "No leí el monto: anótalo a mano o toca «No»" };
   // La prueba va ANTES que «personal»: tocar «Es personal» en la prueba no mete a «PERSONA DE PRUEBA» en personales.txt.
   if (st.prueba) return cerrar(`${base}\n\n🧪 Era una prueba: no se anotó nada.`, "Prueba: nada se anotó");
+  const fx = /^f([0-2])$/.exec(accion);
+  if (fx) return tocarFiado(id, st, Number(fx[1]), quien, base, cerrar);
   if (acc === "si" && dup) return { toque: conOpciones(st) ? "Es repetido: elige «Otro pago» o «Es el mismo»" : "Es repetido: elige «Es otro pago» o «Es el mismo»" };
   if (acc === "pers") {
     agregarPersonal(st.aviso.pagador);
@@ -553,12 +608,58 @@ export async function boton(data, quien = "?") {
     const fin = resultadoPanel(r);
     if (!SECO) errorDePanel(fin, String(st.h));
     if (fin.listo) {
-      return cerrar(`${base}\n\n${fin.estado === "ya_estaba" ? "ℹ️ Ya estaba en la caja: no se anotó dos veces." : `✅ Anotado en la caja de ahora (${etiqueta(st.negocio)}).`}${recuerdo}`, "Listo");
+      const ok = st.restoCentimos ? `✅ Lo que sobró (${soles(st.restoCentimos)}) entró a la caja de ahora (${etiqueta(st.negocio)}).` : `✅ Anotado en la caja de ahora (${etiqueta(st.negocio)}).`;
+      return cerrar(`${base}\n\n${fin.estado === "ya_estaba" ? "ℹ️ Ya estaba en la caja: no se anotó dos veces." : ok}${recuerdo}`, "Listo");
     }
     st.motivos = [...st.motivos.filter((x) => x !== "aprender" && !x.startsWith("panel_") && !PANEL.has(x)), fin.motivo];
     st.detalle = fin.detalle;
     guardarBoton(id, st);
     return { texto: textoPendiente(st), botones: botonesDe(id, st), toque: "Todavía no se anotó" };
+  } finally { rmSync(toma, { force: true }); }
+}
+
+/**
+ * «💳 Cobrar fiado»: cobra el Yape contra el fiado elegido de la lista FIRMADA (ruta de fiado_cobrar, aCaja:true).
+ * Idempotencia: marca exclusiva por llave del aviso; se suelta solo si el panel dijo con certeza que no cobró.
+ */
+async function tocarFiado(id, st, i, quien, base, cerrar) {
+  const f = Array.isArray(st.fiados) ? st.fiados[i] : null;
+  if (st.fiadoHecho) return { toque: "Ese fiado ya se cobró" };
+  if (!f || st.motivos.includes("duplicado") || !RE_NEGOCIO.test(String(f.negocio))) return { toque: "Botón inválido" };
+  const toma = join(BOTONES, `${sha(id)}.tomado`);
+  if (!tomar(toma)) return { toque: "Ya lo estoy cobrando…" };
+  try {
+    const marca = join(LLAVES, `fiado-${sha(`fiado|${st.llave}`)}.json`);
+    if (!crearExclusivo(marca, JSON.stringify({ estado: "cobrando", t: Date.now(), h: String(st.h).slice(0, 8) }))) {
+      return cerrar(`${base}\n\nℹ️ Este Yape ya se usó para cobrar un fiado: no se cobró dos veces. Míralo en el panel (Clientes › Fiados).`, "Ya estaba cobrado");
+    }
+    const r = await cobrarFiado({ negocio: f.negocio, cliente: f.cliente, nombre: f.nombre, montoCentimos: st.aviso.montoCentimos, clave: st.llave }, crearPedir(quien));
+    if (r.estado === "no_cobrado" || r.estado === "sin_deuda") rmSync(marca, { force: true });
+    else escribirPrivado(marca, JSON.stringify({ estado: r.estado, t: Date.now(), h: String(st.h).slice(0, 8) }));
+    if (r.estado === "sin_deuda") {
+      st.fiados = st.fiados.filter((_, j) => j !== i);
+      if (!st.fiados.length) st.motivos = st.motivos.filter((x) => x !== "fiado");
+      guardarBoton(id, st);
+      return { texto: `${textoPendiente(st)}\n\nℹ️ ${f.nombre} ya no tiene fiado abierto en ${etiqueta(f.negocio)}: no se cobró nada. Elige qué hacer con el Yape.`, botones: botonesDe(id, st), toque: "Ya no debe" };
+    }
+    if (r.estado === "no_cobrado") {
+      const porque = { panel_apagado: "el panel está apagado, préndelo.", sin_sesion: "no pude entrar al panel con la sesión de la conexión.", seco_sin_stub: "prueba a seco sin fiados de prueba." }[r.motivo] ?? `el panel no lo cobró (${r.motivo}).`;
+      return { texto: `${base}\n\n⚠️ Todavía no se cobró el fiado: ${porque} Toca «Cobrar fiado» otra vez cuando esté listo.`, botones: botonesDe(id, st), toque: "Todavía no se cobró" };
+    }
+    if (r.estado === "dudoso") {
+      anotarEvento({ tipo: "error", motivo: `fiado_${r.motivo}`.slice(0, 40), h: String(st.h).slice(0, 8) });
+      return cerrar(`${base}\n\n⚠️ El panel no respondió bien (${r.motivo}): NO SÉ si se cobró. Revisa en el panel el fiado de ${f.nombre} y la caja; si no se cobró, cóbralo ahí con Yape. Este botón ya no cobra, para no cobrar dos veces.`, "No sé si se cobró: revisa el panel");
+    }
+    if (conOpciones(st)?.includes(f.negocio)) recordar(st.aviso.pagador, f.negocio);
+    st.negocio = f.negocio;
+    st.fiadoHecho = { nombre: f.nombre, negocio: f.negocio, cobradoCentimos: r.cobradoCentimos, quedaCentimos: r.quedaCentimos, saldoVistoCentimos: f.saldoCentimos, sinCaja: r.sinCaja };
+    st.motivos = st.motivos.filter((x) => !["fiado", "elegir", "dos"].includes(x));
+    if (r.restoCentimos > 0) {
+      st.restoCentimos = r.restoCentimos;
+      guardarBoton(id, st);
+      return { texto: textoPendiente(st), botones: botonesDe(id, st), toque: `Cobrado ${soles(r.cobradoCentimos)}; sobran ${soles(r.restoCentimos)}` };
+    }
+    return cerrar(textoPendiente(st), "Fiado cobrado");
   } finally { rmSync(toma, { force: true }); }
 }
 
