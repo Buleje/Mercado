@@ -18,12 +18,13 @@ import { formatDateShort } from "@/lib/format";
 import { CodigoChip } from "../CodigoDocumento";
 import { marcarRegistradoConAviso } from "../menu-registrado";
 import { codigoFisicoPendiente } from "@/lib/documentos/codigo-documento";
+import CarteroChip from "../cartero/CarteroChip";
 import type { ModeloArchivo } from "./use-archivo";
 export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
   const { selectedIds, setSelectedIds, displayDocs, clearSelection, sortBy, setSortBy, colsVisibles,
     explorandoVista, ex, abrirCarpetaExp, dropDocOnFolder, abrirMenuEn, setPreview, toggleSelect, renaming,
     setRenaming, commitRename, marcarCodigoFisico, terminosBusqueda, patch, filterMode, folderById, setFilterMode,
-    setActiveFolderId, menuDe, panelPrevia } = arch;
+    setActiveFolderId, menuDe, panelPrevia, vincularEntidad } = arch;
   const base = explorandoVista ? ex.contenido.docs : displayDocs;
   // Filtros de columna sobre lo que ya dejaron la búsqueda y los filtros de arriba; el orden sigue siendo el de «Ordenar por».
   const columnas = useMemo<readonly ColumnaFiltro<DbDocument>[]>(() => [
@@ -166,7 +167,7 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                                 <Icon className={cn("h-4 w-4", tint)} />
                               </span>
                               <span className="font-bold text-[var(--text-primary)] truncate max-w-[280px]">{doc.name}</span>
-                              {doc.favorite && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />}
+                              {doc.favorite && <Star className="h-3.5 w-3.5 fill-amber-400 text-[var(--data-warning-500)] shrink-0" />}
                               {doc.versionCount && doc.versionCount > 0 && (
                                 <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)] font-bold">v{doc.versionCount + 1}</span>
                               )}
@@ -181,6 +182,8 @@ export default function ListaDocs({ arch }: { arch: ModeloArchivo }) {
                           {renaming?.id !== doc.id && (
                             <PorQueAparecio doc={doc} terminos={terminosBusqueda} variante="list" />
                           )}
+                          {/* El cartero: «¿Es de Ronal?» ✓ ✗, o «Ronal» ya ligado. Debajo del nombre, sin ensanchar la fila. */}
+                          {renaming?.id !== doc.id && doc.cartero && <CarteroChip doc={doc} onDecidir={vincularEntidad} className="mt-1" />}
                         </td>
                         {colsVisibles.categoria && (
                         <td className="hidden sm:table-cell">

@@ -6,7 +6,7 @@ import type { ModeloArchivo } from "./use-archivo";
 export default function GrillaDocs({ arch }: { arch: ModeloArchivo }) {
   const { displayDocs, tarjetasVisibles, selectedIds, renaming, terminosBusqueda, filterMode, folderById,
     toggleSelect, setPreview, filtros, patch, reloadAllTags, menuDe, abrirMenuEn, commitRename, marcarCodigoFisico,
-    setRenaming, setDraggingDocId, setDragOverFolderId, draggingDocId, setTarjetasVisibles, panelPrevia } = arch;
+    setRenaming, vincularEntidad, setDraggingDocId, setDragOverFolderId, draggingDocId, setTarjetasVisibles, panelPrevia } = arch;
   return (
     <>
             {/* Columnas según el ancho que QUEDA (no el de la pantalla): con la
@@ -28,6 +28,7 @@ export default function GrillaDocs({ arch }: { arch: ModeloArchivo }) {
                   onAbrir={() => setPreview(doc)}
                   enPanel={panelPrevia.enPanelId === doc.id}
                   onMarcarCodigo={() => marcarRegistradoConAviso(doc, marcarCodigoFisico, true)}
+                  onCartero={vincularEntidad}
                   tagsActivos={filtros.tags}
                   onPromoteAiTag={(t) => {
                     if (doc.tags.includes(t)) return;

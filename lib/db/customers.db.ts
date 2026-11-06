@@ -194,6 +194,18 @@ export const CustomersDB = {
     return rows.map(mapCustomer);
   },
 
+  /** Lo mínimo para el cartero de papeles: teléfono (= `Document.customerId`), nombre, razón social y DNI/RUC. */
+  async paraCartero(tenantId: string) {
+    return withRlsTx(tenantId, (tx) =>
+      tx.customer.findMany({
+        where: { tenantId },
+        select: { phone: true, name: true, razonSocial: true, documento: true },
+        orderBy: { updatedAt: "desc" },
+        take: 5000,
+      }),
+    );
+  },
+
   /**
    * Lo que cada cliente debe DE VERDAD: suma del `saldo` de sus fiados ACTIVO +
    * VENCIDO (la misma regla que `FiadosDB.resumenByCustomer`). La columna

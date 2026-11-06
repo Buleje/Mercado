@@ -47,6 +47,34 @@ export const DOC_CATEGORIES = [
 ] as const;
 export type DocCategory = (typeof DOC_CATEGORIES)[number];
 
+/**
+ * El cartero (06-11): a quién cree que pertenece un papel que llegó sin dueño. `seguro` = ya lo ligó;
+ * `duda` = pregunta «¿Es de X?» con los candidatos; `nadie` = no hay a quién. Lo llena el servidor.
+ */
+export interface CarteroCandidato {
+  tipo: "cliente" | "proveedor";
+  id: string;
+  nombre: string;
+  /** Cuántas veces aparece ese nombre en el papel o en sus parecidos. */
+  veces: number;
+}
+export interface CarteroDoc {
+  estado: "seguro" | "duda" | "nadie";
+  /** Máx. 3, el más probable primero. */
+  candidatos: CarteroCandidato[];
+  motivo: string;
+  /** Lo que quedó resuelto: por el cartero (seguro) o por quien tocó ✓ / ✗. */
+  decidido?: {
+    tipo: "cliente" | "proveedor" | "ninguno";
+    id?: string;
+    nombre?: string;
+    por: "cartero" | "usuario";
+    at: string;
+  };
+}
+/** Cuerpo de `POST /api/admin/documents/:id/entidad`. */
+export type DecisionCartero = { tipo: "cliente" | "proveedor"; id: string } | { tipo: "ninguno" };
+
 export interface DbDocument {
   id: string;
   tenantId: string;
@@ -88,6 +116,8 @@ export interface DbDocument {
   ubicacionFisica?: string | null;
   versionCount?: number;
   shareCount?: number;
+  /** El cartero: papel sin dueño seguro → «¿Es de X?» (null/ausente = nada que preguntar). */
+  cartero?: CarteroDoc | null;
 }
 
 export interface DbDocumentFolder {

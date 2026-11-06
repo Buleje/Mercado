@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { esImagenAnalizable, isAnalyzableMime } from "./analyzable-mime";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { correrCartero } from "@/lib/documentos/cartero-server";
 import { downloadFromStorage, getSignedUrl } from "@/lib/documents/storage";
 import { smartModel, getActiveProvider } from "@/lib/ai/provider";
 import { cleanJSONResponse } from "@/lib/ai-json-parser";
@@ -399,6 +400,12 @@ export async function analyzeDocumentContent(
 
   DocumentsDB.log(tenantId, { documentId: docId, actorId, action: "ai_categorize" }).catch((err) =>
     logger.warn("documents.analyze.audit_fail", { err: String(err) }),
+  );
+
+  // El cartero (06-11): con el texto ya leído, ¿de qué cliente o proveedor es el papel?
+  // Esperado (corre dentro de `after()` en la subida) y con su propio catch: nunca rompe el análisis.
+  await correrCartero(tenantId, docId).catch((err) =>
+    logger.error("[cartero] decidir el dueño del papel falló", { docId, error: String(err) }),
   );
 
   return {

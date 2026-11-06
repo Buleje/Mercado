@@ -48,7 +48,7 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
   const {
     documents, semanticTerms, folders, loading, error, refresh,
     upload, scan, patch, bulk, restore, purge, restoreMany, purgeMany, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder,
-    marcarCodigoFisico,
+    marcarCodigoFisico, vincularEntidad,
   } = useDocuments(filters);
   /** `?doc=<id>` abre ese papel y `?q=` pone la búsqueda (buscador del panel). */
   useAbrirDesdeUrl({ documents, loading, preview, setPreview, setBuscar: setSearch });
@@ -190,6 +190,6 @@ export function useArchivoLista(previo: HastaArchivoEstados) {
   return { filters, documents, semanticTerms, folders, loading, error, refresh, upload, scan, patch, bulk,
     restore, purge, restoreMany, purgeMany, createFolder, createFolderTree, existingNames, moveFolder,
     updateFolder, bulkFolders, deleteFolder, terminosBusqueda, handleScan, hayBusqueda, displayDocs,
-    statusCounts, indexableDocs, sinVenceDocs, marcarCodigoFisico };
+    statusCounts, indexableDocs, sinVenceDocs, marcarCodigoFisico, vincularEntidad };
 }
 export type HastaArchivoLista = HastaArchivoEstados & ReturnType<typeof useArchivoLista>;

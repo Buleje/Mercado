@@ -11,6 +11,7 @@ import type {
   DbDocumentActivity,
   DbDocumentTemplate,
   DocumentListFilters,
+  DecisionCartero,
 } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { comprimirParaArchivo } from "@/lib/documents/compress-image";
@@ -118,6 +119,8 @@ export interface UseDocumentsResult {
   deleteFolder: (id: string, opciones?: { conDocumentos?: boolean }) => Promise<void>;
   /** ADR-516 — marcar (o desmarcar) el código como puesto en el papel físico; devuelve cuántos cambiaron. */
   marcarCodigoFisico: (ids: string[], puesto: boolean) => Promise<number>;
+  /** El cartero: ✓ liga el papel a su cliente/proveedor, «ninguno» lo descarta. Lanza si el servidor no lo aceptó. */
+  vincularEntidad: (id: string, decision: DecisionCartero) => Promise<void>;
 }
 
 /** Lo que se le puede pedir a una subida del drive. */
@@ -526,6 +529,18 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     return r.ids.length;
   }, [optimista, cambiarLocal]);
 
+  /**
+   * El cartero (06-11): lo que dijo el servidor (cliente/proveedor, etiquetas y la decisión) reemplaza esos
+   * campos del papel en la lista, sin recargarla. No es optimista: un ✓ que el servidor rechaza no debe verse.
+   */
+  const vincularEntidad = useCallback(async (id: string, decision: DecisionCartero) => {
+    const r = await http<{ ok: true; documento: Pick<DbDocument, "id" | "customerId" | "supplierId" | "tags" | "cartero"> }>(
+      `${BASE}/${id}/entidad`,
+      { method: "POST", body: JSON.stringify(decision) },
+    );
+    setDocuments((docs) => docs.map((d) => (d.id === id ? { ...d, ...r.documento } : d)));
+  }, []);
+
   const remove = useCallback(async (id: string) => {
     const revertir = cambiarLocal((docs) => docs.filter((d) => d.id !== id));
     await optimista(() => {}, revertir, () => http(`${BASE}/${id}`, { method: "DELETE" }));
@@ -842,7 +857,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     );
   }, [optimista, cambiarCarpetas, cambiarLocal]);
 
-  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, restoreMany, purgeMany, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder, marcarCodigoFisico };
+  return { documents, semanticTerms, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, restoreMany, purgeMany, bulk, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, bulkFolders, deleteFolder, marcarCodigoFisico, vincularEntidad };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────

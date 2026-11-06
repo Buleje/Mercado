@@ -13,6 +13,8 @@ import PorQueAparecio from "../PorQueAparecio";
 import { FolderChip, ExpiryBadge } from "./piezas-sueltas";
 import { StructuredChip, tagsVisibles } from "./compartido";
 import { CodigoChip } from "../CodigoDocumento";
+import CarteroChip from "../cartero/CarteroChip";
+import type { DecisionCartero } from "@/lib/types/documents";
 
 /**
  * ¿El clic es de la tarjeta misma? No si vino de un control (botón, casilla, enlace, campo) ni de
@@ -28,7 +30,7 @@ export function DocCard({
   doc, selected, isRenaming, renameValue, terminos, folderNombre,
   onSelect, onPreview, onSetStatus, menu, onMenuContextual,
   onCommitRename, onCancelRename, onRenameChange,
-  onDragStart, onDragEnd, dragging, tagsActivos, onPromoteAiTag, onAbrir, enPanel = false, onMarcarCodigo,
+  onDragStart, onDragEnd, dragging, tagsActivos, onPromoteAiTag, onAbrir, enPanel = false, onMarcarCodigo, onCartero,
 }: {
   doc: DbDocument;
   selected: boolean;
@@ -44,6 +46,8 @@ export function DocCard({
   onAbrir?: () => void;
   /** «Ya lo anoté»: el código quedó escrito en la hoja física (ADR-516). Sin esto no se ofrece. */
   onMarcarCodigo?: () => void;
+  /** El cartero: ✓ / ✗ de «¿Es de Ronal?». Sin esto el chip no se dibuja. */
+  onCartero?: (id: string, decision: DecisionCartero) => Promise<void>;
   /** Es la que se ve en el panel de vista previa: va resaltada. */
   enPanel?: boolean;
   onSetStatus: (s: string) => void;
@@ -70,7 +74,7 @@ export function DocCard({
     // completos»), no sólo la miniatura. Los botones, la casilla y el campo de renombrar hacen lo suyo;
     // el menú «⋯» va en un portal (no es hijo en el DOM) y sus clics no deben abrir nada acá.
     // La miniatura es el botón con teclado; esto es el atajo del mouse.
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div
       onClick={(e) => { if (esDeLaTarjeta(e)) onPreview(); }}
       onDoubleClick={(e) => { if (esDeLaTarjeta(e)) onAbrir?.(); }}
@@ -131,7 +135,7 @@ export function DocCard({
       {/* Info */}
       <div className="p-3">
         <div className="flex items-center gap-1">
-        {doc.favorite && <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" aria-label="Favorito" />}
+        {doc.favorite && <Star className="h-4 w-4 shrink-0 fill-amber-400 text-[var(--data-warning-500)]" aria-label="Favorito" />}
         {isRenaming ? (
           <input
             type="text"
@@ -162,6 +166,8 @@ export function DocCard({
           </span>
           <span className="shrink-0 tabular-nums text-[var(--text-tertiary)]">{formatBytes(doc.size)}</span>
         </div>
+        {/* El cartero: «¿Es de Ronal?» ✓ ✗ si no pudo ligarlo con seguridad; «Ronal» si ya está ligado. */}
+        {onCartero && doc.cartero && <CarteroChip doc={doc} onDecidir={onCartero} className="mt-1.5" />}
         {/* De qué se trata (o por qué apareció en la búsqueda). */}
         <PorQueAparecio doc={doc} terminos={terminos} />
         <div className="mt-2 flex flex-wrap items-center gap-1.5">

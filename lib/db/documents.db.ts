@@ -20,6 +20,7 @@ import { palabrasUtiles } from "@/lib/documentos/terminos-busqueda";
 import { leerCodigoDocumento } from "@/lib/documentos/codigo-documento";
 import { DIAS_AVISO_CODIGO_FISICO } from "@/lib/documentos/codigo-fisico-avisos";
 import { TAGS_FOTOS_DE_MAQUINA } from "@/lib/documents/fotos-de-maquina";
+import { PREFIJO_ETIQUETA_ENTIDAD, leerCartero, type CarteroDocumento } from "@/lib/documentos/cartero";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   Document as PDocument,
@@ -123,6 +124,7 @@ function mapDoc(
     supplierId: d.supplierId,
     ocrText: d.ocrText,
     ocrMetadata: (d.ocrMetadata as Record<string, unknown> | null) ?? null,
+    cartero: leerCartero(d.ocrMetadata),
     aiCategory: d.aiCategory,
     aiTags: d.aiTags,
     allowedRoles: d.allowedRoles ?? [],
@@ -2606,6 +2608,78 @@ export class DocumentsDB {
   }
 
   // ── Audit log ──────────────────────────────────────────────────────────────
+
+  /**
+   * El cartero de papeles (06-11): guarda `ocrMetadata.cartero` y, si toca, ata el papel a su
+   * cliente (`customerId` = teléfono) o proveedor y pone la etiqueta «👤 Nombre». Un solo UPDATE:
+   * la mezcla del jsonb y las etiquetas se hacen en la base (sin leer-y-pisar). Con `siSigueComo`
+   * (el cartero automático) sólo escribe si el papel sigue atado igual que cuando lo leyó y nadie
+   * eligió a mano mientras tanto. `quitarEtiquetas` borra las «👤 …» anteriores.
+   */
+  static async guardarCartero(
+    tenantId: string,
+    id: string,
+    p: {
+      cartero: CarteroDocumento;
+      customerId: string | null;
+      supplierId: string | null;
+      etiqueta: string | null;
+      quitarEtiquetas: boolean;
+      siSigueComo?: { customerId: string | null; supplierId: string | null };
+    },
+  ): Promise<{ id: string; customerId: string | null; supplierId: string | null; tags: string[]; cartero: CarteroDocumento | null } | null> {
+    const auto = !!p.siSigueComo;
+    const rows = await prisma.$queryRaw<
+      { id: string; customerId: string | null; supplierId: string | null; tags: string[] | null; cartero: unknown }[]
+    >`
+      UPDATE "Document" SET
+        "customerId" = ${p.customerId}::text,
+        "supplierId" = ${p.supplierId}::text,
+        tags = (
+          WITH base AS (
+            SELECT CASE WHEN ${p.quitarEtiquetas}::boolean
+              THEN array(SELECT t FROM unnest(coalesce(tags, '{}'::text[])) AS t WHERE NOT starts_with(t, ${PREFIJO_ETIQUETA_ENTIDAD}::text))
+              ELSE coalesce(tags, '{}'::text[]) END AS b
+          )
+          SELECT CASE WHEN ${p.etiqueta}::text IS NULL OR ${p.etiqueta}::text = ANY(b) THEN b
+                      ELSE array_append(b, ${p.etiqueta}::text) END
+          FROM base
+        ),
+        "ocrMetadata" = (CASE WHEN jsonb_typeof("ocrMetadata") = 'object' THEN "ocrMetadata" ELSE '{}'::jsonb END)
+          || jsonb_build_object('cartero', ${JSON.stringify(p.cartero)}::jsonb),
+        "updatedAt" = now()
+      WHERE id = ${id} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        AND (NOT ${auto}::boolean OR (
+          "customerId" IS NOT DISTINCT FROM ${p.siSigueComo?.customerId ?? null}::text
+          AND "supplierId" IS NOT DISTINCT FROM ${p.siSigueComo?.supplierId ?? null}::text
+          AND coalesce("ocrMetadata"->'cartero'->'decidido'->>'por', '') <> 'usuario'
+        ))
+      RETURNING id, "customerId", "supplierId", tags, "ocrMetadata"->'cartero' AS cartero`;
+    const r = rows[0];
+    if (!r) return null;
+    return { id: r.id, customerId: r.customerId, supplierId: r.supplierId, tags: r.tags ?? [], cartero: leerCartero({ cartero: r.cartero }) };
+  }
+
+  /** Papeles que el cartero nunca miró (los más nuevos primero; sin fotos de máquina). */
+  static async idsSinCartero(tenantId: string, limite = 50): Promise<string[]> {
+    const rows = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "Document"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        AND ("ocrMetadata"->'cartero') IS NULL
+        AND NOT (coalesce(tags, '{}'::text[]) && ${[...TAGS_FOTOS_DE_MAQUINA]}::text[])
+      ORDER BY "uploadedAt" DESC
+      LIMIT ${Math.max(1, Math.min(200, Math.trunc(limite)))}::int`;
+    return rows.map((r) => r.id);
+  }
+
+  static async contarSinCartero(tenantId: string): Promise<number> {
+    const rows = await prisma.$queryRaw<{ n: number }[]>`
+      SELECT count(*)::int AS n FROM "Document"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        AND ("ocrMetadata"->'cartero') IS NULL
+        AND NOT (coalesce(tags, '{}'::text[]) && ${[...TAGS_FOTOS_DE_MAQUINA]}::text[])`;
+    return Number(rows[0]?.n ?? 0);
+  }
 
   static async log(
     tenantId: string,

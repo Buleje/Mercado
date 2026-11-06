@@ -12,6 +12,7 @@ import {
 import { aiCategorize } from "@/lib/documents/ai-categorize";
 import { analyzeDocumentContent, isAnalyzableMime } from "@/lib/documents/analyze-document";
 import { enColaDeAnalisis } from "@/lib/documents/cola-analisis";
+import { correrCartero } from "@/lib/documentos/cartero-server";
 import { precalcularMiniatura } from "@/lib/documents/precalcular-miniatura";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { resolverMime } from "@/lib/documents/tipos-archivo";
@@ -348,6 +349,17 @@ export async function POST(req: NextRequest) {
           analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role),
         ).catch((err) => logger.warn("documents.autoanalyze_fail", { err: String(err) })),
       );
+    } else {
+      // Sin texto que leer: el cartero mira sólo el nombre del archivo («Cubicación Ronal.xlsx»).
+      const decidirDueno = () =>
+        correrCartero(auth.tenantId, draft.id).catch((err) =>
+          logger.error("[cartero] papel sin texto: decidir el dueño falló", { error: String(err) }),
+        );
+      try {
+        after(decidirDueno);
+      } catch {
+        void decidirDueno(); // fuera de una petición de Next (pruebas) no hay after(): igual fire-and-forget
+      }
     }
 
     // La carita del archivo se dibuja ahora, no cuando alguien abra la carpeta.
