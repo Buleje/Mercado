@@ -166,7 +166,7 @@ export default function ElementoExplorador({
         <span className={cn("relative flex shrink-0 items-center justify-center", vista === "grandes" ? "aspect-square w-full max-w-36" : "h-14 w-14")}>
           {esCarpeta ? <IconoCarpeta carpeta={objeto.carpeta} tam={TAM[vista]} /> : <IconoArchivo doc={objeto.doc} tam={TAM[vista]} />}
           {!esCarpeta && objeto.doc.favorite && (
-            <Star className="absolute right-0 top-0 h-4 w-4 fill-yellow-400 text-yellow-500" aria-label="Favorito" />
+            <Star className="absolute right-0 top-0 h-4 w-4 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" aria-label="Favorito" />
           )}
           {/* ADR-516 — registrado: el visto verde sobre el ícono (la etiqueta con texto no cabe). */}
           {codigo && !codigoPendiente && !esCarpeta && (
