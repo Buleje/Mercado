@@ -18,8 +18,9 @@ import { useState, type DragEvent } from "react";
 import { Check, Star } from "@buleje/design-system/icons";
 import { CLASE_REGISTRADO, EtiquetaRegistrado, textoCodigoPuesto } from "../CodigoDocumento";
 import { cn } from "@/lib/utils";
-import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
+import type { DbDocument, DbDocumentFolder, DecisionCartero } from "@/lib/types/documents";
 import { formatBytes } from "../archivo-visual";
+import CarteroChip from "../cartero/CarteroChip";
 import { codigoFisicoPendiente, formatoCodigoDocumento } from "@/lib/documentos/codigo-documento";
 import { arrastreActual, escribirCarga, fijarArrastre, hayCargaInterna, leerCarga, type CargaArrastre } from "./destino-soltar";
 import IconoArchivo from "./IconoArchivo";
@@ -51,12 +52,14 @@ interface Props {
   /** Carpetas: ¿lo que viene arrastrado puede entrar acá? */
   puedeSoltar?: () => boolean;
   onSoltar?: (carga: CargaArrastre) => void;
+  /** El cartero: ✓ / ✗ de «¿Es de Ronal?» (06-11). Sin esto el chip no se dibuja. */
+  onCartero?: (id: string, decision: DecisionCartero) => Promise<void>;
 }
 
 const TAM = { grandes: "grande", medianos: "mediano", lista: "chico" } as const;
 
 export default function ElementoExplorador({
-  vista, objeto, clave, enfocable, elegido, cortado, onClic, onAbrir, onMenu, onFoco, cargaAlArrastrar, puedeSoltar, onSoltar,
+  vista, objeto, clave, enfocable, elegido, cortado, onClic, onAbrir, onMenu, onFoco, cargaAlArrastrar, puedeSoltar, onSoltar, onCartero,
 }: Props) {
   const pulsacion = usePulsacionLarga(onMenu);
   const [sobre, setSobre] = useState(false);
@@ -110,6 +113,11 @@ export default function ElementoExplorador({
     : {};
 
   const lista = vista === "lista";
+  // El cartero (06-11): «¿Es de Ronal?» ✓ ✗ o «Ronal» ya ligado, también en íconos (antes sólo
+  // en Tarjetas y Detalles). Debajo del nombre; en íconos grandes y medianos, chico y centrado.
+  const chipCartero = !esCarpeta && onCartero && objeto.doc.cartero
+    ? <CarteroChip doc={objeto.doc} onDecidir={onCartero} compacto centrado={!lista} className="mt-0.5" />
+    : null;
   return (
     <div
       role="option"
@@ -181,15 +189,24 @@ export default function ElementoExplorador({
           )}
         </span>
       )}
-      <span
-        className={cn(
-          "min-w-0 text-[var(--text-primary)]",
-          lista ? "flex-1 truncate text-sm font-semibold" : "line-clamp-3 w-full break-words leading-tight",
-          vista === "grandes" ? "text-sm font-semibold" : vista === "medianos" ? "text-xs font-medium" : "",
-        )}
-      >
-        {nombre}
-      </span>
+      {lista && chipCartero ? (
+        // Con el cartero, nombre y chip uno debajo del otro: la fila crece, no se ensancha.
+        <span className="flex min-w-0 flex-1 flex-col items-start">
+          <span className="w-full truncate text-sm font-semibold text-[var(--text-primary)]">{nombre}</span>
+          {chipCartero}
+        </span>
+      ) : (
+        <span
+          className={cn(
+            "min-w-0 text-[var(--text-primary)]",
+            lista ? "flex-1 truncate text-sm font-semibold" : "line-clamp-3 w-full break-words leading-tight",
+            vista === "grandes" ? "text-sm font-semibold" : vista === "medianos" ? "text-xs font-medium" : "",
+          )}
+        >
+          {nombre}
+        </span>
+      )}
+      {!lista && chipCartero}
       {lista && esCarpeta && <MarcasCarpeta carpeta={objeto.carpeta} />}
       {lista && codigo && (
         <span

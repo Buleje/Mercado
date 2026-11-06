@@ -13,7 +13,7 @@
 
 import { useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
-import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
+import type { DbDocument, DbDocumentFolder, DecisionCartero } from "@/lib/types/documents";
 import ElementoExplorador from "./ElementoExplorador";
 import { claveCarpeta, claveDoc } from "./contenido-explorador";
 import type { CargaArrastre } from "./destino-soltar";
@@ -44,6 +44,8 @@ export interface PropsVistaExplorador {
   vacio: string;
   /** «5 carpetas · 12 archivos», en la barra de estado de abajo. */
   resumen: string;
+  /** El cartero: ✓ / ✗ de «¿Es de Ronal?» en cada archivo (sin esto el chip no se dibuja). */
+  onCartero?: (id: string, decision: DecisionCartero) => Promise<void>;
 }
 
 const POR_TANDA = 60;
@@ -134,6 +136,7 @@ export default function VistaExplorador(p: PropsVistaExplorador) {
                   cargaAlArrastrar={() => p.cargaAlArrastrar(clave)}
                   puedeSoltar={objeto.tipo === "carpeta" ? () => p.puedeSoltar(objeto.carpeta.id) : undefined}
                   onSoltar={objeto.tipo === "carpeta" ? (carga) => p.soltar(carga, objeto.carpeta.id) : undefined}
+                  onCartero={p.onCartero}
                 />
               ))}
             </div>

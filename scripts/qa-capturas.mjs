@@ -13,6 +13,7 @@
  *   node scripts/qa-capturas.mjs --tenant <slug> --ruta "/admin?tab=x" \
  *     [--pasos '<json>' | --pasos-archivo pasos.json] [--salida <dir>] \
  *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa] \
+ *       (06-11: si vas a recortar por getBoundingClientRect de un eval, pasá --completa: sin eso lo que queda bajo el pliegue de 900 px no sale)
  *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes; `despacho-guia-a-mano` =
  *       guía entera en QA-ui con 1 troza a mano, registrada y ANULADA al final: escribe → --anchos 1280 --temas claro) \
  *       un preset puede ser {"tenant","ruta","pasos"} (sus --tenant/--ruta por defecto) y un paso {"preset":"otro"} lo incluye entero \

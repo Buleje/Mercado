@@ -33,7 +33,7 @@ export function useArchivoMenu(previo: HastaArchivoAcciones) {
     setSelectedIds, toggleSelect, prompt, createFolder, updateFolder, upload, moveFolder, deleteFolder,
     restoreMany, refresh, fileInputRef, setEditingFolder, setSharingFolder, setExpediente, setBorrandoCarpeta,
     zipAndDownload, bulkDownloadZip, bulkFavorite, bulkStatus, smartFolders, activeSmartId, setActiveSmartId,
-    setSmartModal, setShowTags, etiquetaFiltro, semantic, search, setSearch, bulkFolders, marcarCodigoFisico } = previo;
+    setSmartModal, setShowTags, etiquetaFiltro, semantic, search, setSearch, bulkFolders, marcarCodigoFisico, vincularEntidad } = previo;
   const [menuEn, setMenuEn] = useState<({ id: string } & PuntoDeMenu) | null>(null);
   // «Vínculos con el sistema…» (Archivo, Terceros y Esenciales): el id, para releer la carpeta
   // de la lista tras cada vínculo (la etiqueta cambia y la ventana la muestra).
@@ -128,6 +128,7 @@ export function useArchivoMenu(previo: HastaArchivoAcciones) {
     zip: zipAndDownload,
     verDoc: setPreview,
     accionesDoc: accionesDe,
+    vincularEntidad,
     extrasCodigo: (doc) => extrasRegistrado(doc, marcarCodigoFisico),
     estados: ESTADOS_DEL_MENU,
     lote: {

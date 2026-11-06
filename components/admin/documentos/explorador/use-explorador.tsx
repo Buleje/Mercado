@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import type { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
+import type { DbDocument, DbDocumentFolder, DecisionCartero } from "@/lib/types/documents";
 import type { AccionesDocumento, EstadoDelMenu, ExtraDelMenu } from "../MenuDocumento";
 import type { ObjetoPropiedades } from "./PropiedadesExplorador";
 import type { PropsVistaExplorador } from "./VistaExplorador";
@@ -80,6 +80,8 @@ export interface DepsExplorador {
   zip: (docs: DbDocument[], nombre: string) => Promise<void>;
   verDoc: (d: DbDocument) => void;
   accionesDoc: (doc: DbDocument) => AccionesDocumento;
+  /** El cartero (06-11): guarda el ✓ / ✗ de «¿Es de Ronal?» y actualiza el papel en la lista. */
+  vincularEntidad?: (id: string, decision: DecisionCartero) => Promise<void>;
   estados: readonly EstadoDelMenu[];
   lote: AccionesLote;
   etiquetaEstado: (estado: string) => string;
@@ -261,6 +263,7 @@ export function useExplorador(d: DepsExplorador) {
           ? "Nada coincide con lo que buscas."
           : enCarpetas ? "Esta carpeta está vacía: arrastra archivos aquí o haz clic derecho › Nuevo." : "No hay nada aquí.",
         resumen,
+        onCartero: d.vincularEntidad,
       }
     : null;
 
