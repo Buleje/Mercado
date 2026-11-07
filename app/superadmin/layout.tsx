@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getPlatformSession, maybeRotateToken, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import SuperAdminShell from "@/components/superadmin/SuperAdminShell";
 import MotionProvider from "@/components/MotionProvider";
+import { CabeceraCompactaProvider } from "@/components/admin/shared/cabecera-compacta";
 
 export const metadata = {
   title: "Platform Admin — Buleje SaaS",
@@ -91,7 +92,8 @@ async function SuperAdminAuthGate({ children }: { children: ReactNode }) {
 
   return (
     <SuperAdminShell username={session.username} freshToken={freshToken}>
-      {children}
+      {/* Cabecera de una fila (título + pestañas al lado) en todo el superadmin. */}
+      <CabeceraCompactaProvider>{children}</CabeceraCompactaProvider>
     </SuperAdminShell>
   );
 }

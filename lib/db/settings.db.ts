@@ -11,6 +11,8 @@ import {
   type StoreMode,
   type NavLinkItem,
 } from "./misc.db";
+import { parseSalesChannels, type SalesChannelsConfig } from "@/lib/types/sales-channels";
+import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
 
 // ── JSON parse helper ─────────────────────────────────────────────────────────
 function safeJson<T>(raw: string | null | undefined, fallback?: T): T | undefined {
@@ -65,6 +67,7 @@ function mapSettings(s: PSettings): DbSettings {
     ...(r.currency != null && { currency: r.currency as string }),
     ...(r.timezone != null && { timezone: r.timezone as string }),
     ...(r.businessType != null && { businessType: r.businessType as string }),
+    ...(r.regimenTributario != null && { regimenTributario: r.regimenTributario as string }),
     ...spreadJson(r.socialLinksJson as string, 'socialLinks'),
 
     // ── Apariencia ──
@@ -106,6 +109,8 @@ function mapSettings(s: PSettings): DbSettings {
     // ── Caja y pagos ──
     ...(r.cashOpeningAmount != null && { cashOpeningAmount: Number(r.cashOpeningAmount) }),
     ...(r.cashAlertMax != null && { cashAlertMax: Number(r.cashAlertMax) }),
+    // ADR-491: null = TOPE_CAJERO_POR_DEFECTO (500); 0 = el cajero no entrega.
+    ...(r.adelantoTopeCajero != null && { adelantoTopeCajero: Number(r.adelantoTopeCajero) }),
     ...(r.returnPolicyDays != null && { returnPolicyDays: r.returnPolicyDays as number }),
     ...(r.returnMaxNoAuth != null && { returnMaxNoAuth: Number(r.returnMaxNoAuth) }),
     ...(r.autoCloseTime != null && { autoCloseTime: r.autoCloseTime as string }),
@@ -168,14 +173,58 @@ function mapSettings(s: PSettings): DbSettings {
 
 // ── Settings DB ───────────────────────────────────────────────────────────────
 
+/**
+ * `featureFlagsJson` (text) como objeto jsonb, tolerante a NULL y a vacío.
+ * Texto que no es JSON hace fallar la sentencia: mejor eso que pisar los
+ * flags de todos. Constantes de SQL (sin valores): los valores van en $1, $2.
+ */
+const FLAGS_JSONB = `COALESCE(NULLIF(btrim("featureFlagsJson"), '')::jsonb, '{}'::jsonb)`;
+export const SQL_FLAGS_OBJETO = `(CASE WHEN jsonb_typeof(${FLAGS_JSONB}) = 'object' THEN ${FLAGS_JSONB} ELSE '{}'::jsonb END)`;
+/** El objeto guardado en la clave $1 de los flags (`{}` si falta o no es objeto). */
+export const SQL_SUBCLAVE_FLAGS = `(CASE WHEN jsonb_typeof(${SQL_FLAGS_OBJETO} -> $1::text) = 'object' THEN ${SQL_FLAGS_OBJETO} -> $1::text ELSE '{}'::jsonb END)`;
+/** $1 claves (json) · $2 tenantId. */
+const SQL_PISAR_CLAVES_FLAGS = `UPDATE "Settings" SET "featureFlagsJson" = (${SQL_FLAGS_OBJETO} || $1::jsonb)::text WHERE "tenantId" = $2`;
+/** $1 clave · $2 subclaves (json) · $3 tenantId. Se le puede sumar `AND …` al WHERE. */
+export const SQL_PISAR_SUBCLAVES_FLAGS = `UPDATE "Settings" SET "featureFlagsJson" = (${SQL_FLAGS_OBJETO} || jsonb_build_object($1::text, ${SQL_SUBCLAVE_FLAGS} || $2::jsonb))::text WHERE "tenantId" = $3`;
+
+/** Corre una escritura de flags; si el negocio no tiene fila de Settings, la crea vacía y repite. */
+async function escribirFlags(tenantId: string, sql: string, ...valores: string[]): Promise<void> {
+  let n = await prisma.$executeRawUnsafe(sql, ...valores);
+  if (n === 0) {
+    await prisma.settings.upsert({ where: { tenantId }, create: { tenantId }, update: {} });
+    n = await prisma.$executeRawUnsafe(sql, ...valores);
+  }
+  if (n === 0) throw new Error("settings: no se pudo guardar featureFlagsJson");
+  invalidateByPrefix(`settings:${tenantId}`);
+}
+
 export const SettingsDB = {
   async get(tenantId: string): Promise<DbSettings> {
     return getOrSet<DbSettings>(`settings:${tenantId}`, 60, async () => {
       try {
         const tid = tenantId;
+        // La fila y las columnas fuera del schema (portada/banner/orden) salen
+        // juntas por tenantId (16-10, velocidad: eran dos idas en serie en
+        // frío). Si la fila se encuentra por otro camino, abajo se releen.
+        type Extras = Array<{ coverUrl: string | null; bannerUrl: string | null; categoryOrderJson: string | null }>;
+        const leerExtras = async (id: string): Promise<Extras | null> => {
+          try {
+            return await prisma.$queryRawUnsafe<Extras>(
+              `SELECT "coverUrl", "bannerUrl", "categoryOrderJson" FROM "Settings" WHERE "tenantId" = $1 LIMIT 1`,
+              id,
+            );
+          } catch (err) {
+            logger.warn("[settings.db] cover/banner/categoryOrder raw read skipped", { error: String(err) });
+            return null;
+          }
+        };
+        const [porTenant, extrasPorTenant] = await Promise.all([
+          prisma.settings.findUnique({ where: { tenantId: tid } }),
+          leerExtras(tid),
+        ]);
         // Try by tenantId first (multi-tenant), fallback to id:1 (legacy)
-        let row = await prisma.settings.findUnique({ where: { tenantId: tid } })
-          ?? (tid === "main" ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
+        let row = porTenant
+          ?? (esTenantPorDefecto(tid) ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
         // El middleware `slug-routes.ts` envía el SLUG en `x-tenant-id`
         // (no el cuid). Si no encontramos por id, resolvemos slug → cuid.
         if (!row) {
@@ -190,19 +239,13 @@ export const SettingsDB = {
         // Prisma `findUnique` ignora columnas que no están en schema.prisma.
         // coverUrl + bannerUrl se agregaron via ALTER TABLE pero el schema no
         // se regeneró (zona peligrosa). Leemos esos 2 campos via raw query.
-        try {
-          const extras = await prisma.$queryRawUnsafe<Array<{ coverUrl: string | null; bannerUrl: string | null; categoryOrderJson: string | null }>>(
-            `SELECT "coverUrl", "bannerUrl", "categoryOrderJson" FROM "Settings" WHERE "tenantId" = $1 LIMIT 1`,
-            (row as { tenantId?: string }).tenantId ?? tid,
-          );
-          const e = extras[0];
-          if (e) {
-            (row as Record<string, unknown>).coverUrl = e.coverUrl;
-            (row as Record<string, unknown>).bannerUrl = e.bannerUrl;
-            (row as Record<string, unknown>).categoryOrderJson = e.categoryOrderJson;
-          }
-        } catch (err) {
-          logger.warn("[settings.db] cover/banner/categoryOrder raw read skipped", { error: String(err) });
+        const idFila = (row as { tenantId?: string }).tenantId ?? tid;
+        const extras = idFila === tid ? extrasPorTenant : await leerExtras(idFila);
+        const e = extras?.[0];
+        if (e) {
+          (row as Record<string, unknown>).coverUrl = e.coverUrl;
+          (row as Record<string, unknown>).bannerUrl = e.bannerUrl;
+          (row as Record<string, unknown>).categoryOrderJson = e.categoryOrderJson;
         }
 
         return mapSettings(row);
@@ -239,6 +282,7 @@ export const SettingsDB = {
       ...(s.currency !== undefined && { currency: s.currency }),
       ...(s.timezone !== undefined && { timezone: s.timezone }),
       ...(s.businessType !== undefined && { businessType: s.businessType }),
+      ...(s.regimenTributario !== undefined && { regimenTributario: s.regimenTributario }),
       ...(s.socialLinks !== undefined && { socialLinksJson: JSON.stringify(s.socialLinks) }),
 
       // ── Apariencia ──
@@ -277,6 +321,7 @@ export const SettingsDB = {
       // ── Caja y pagos ──
       ...(s.cashOpeningAmount !== undefined && { cashOpeningAmount: s.cashOpeningAmount }),
       ...(s.cashAlertMax !== undefined && { cashAlertMax: s.cashAlertMax }),
+      ...(s.adelantoTopeCajero !== undefined && { adelantoTopeCajero: s.adelantoTopeCajero }),
       ...(s.returnPolicyDays !== undefined && { returnPolicyDays: s.returnPolicyDays }),
       ...(s.returnMaxNoAuth !== undefined && { returnMaxNoAuth: s.returnMaxNoAuth }),
       ...(s.autoCloseTime !== undefined && { autoCloseTime: s.autoCloseTime }),
@@ -441,6 +486,28 @@ export const SettingsDB = {
     invalidateByPrefix(`settings:${tenantId}`);
   },
 
+  /**
+   * Pisa SÓLO las claves de `cambios` dentro de `featureFlagsJson`, en una
+   * sentencia. Lo comparten webhooks, etiquetas, preferencias, n8n, el kiosko
+   * de asistencia…: un leer-mezclar-escribir desde Node devolvía a la vida lo
+   * que otro cambió en el medio (un enlace de kiosko revocado volvía a servir,
+   * security 10-10 H3). Usar esto en vez de `setFeatureFlags` para una clave.
+   */
+  async pisarClavesFlags(tenantId: string, cambios: Record<string, unknown>): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    await escribirFlags(tenantId, SQL_PISAR_CLAVES_FLAGS, JSON.stringify(cambios), tenantId);
+  },
+
+  /**
+   * Igual, un nivel más adentro: pisa sólo `cambios` dentro del objeto
+   * `featureFlagsJson[clave]` (lo demás de esa clave queda). Un valor
+   * `undefined` no se escribe (no borra la subclave): usar `null`.
+   */
+  async pisarSubclavesFlags(tenantId: string, clave: string, cambios: Record<string, unknown>): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    await escribirFlags(tenantId, SQL_PISAR_SUBCLAVES_FLAGS, clave, JSON.stringify(cambios), tenantId);
+  },
+
   // ── storeThemeJson (config visual del storefront) ─────────────────────────
 
   /**
@@ -460,5 +527,37 @@ export const SettingsDB = {
     } catch {
       return null;
     }
+  },
+
+  /**
+   * Merge-patch de `storeThemeJson` — preserva las demás claves.
+   * Brandon 2026-06-24: el storefront `/t/[slug]` lee `settings.storeTheme`
+   * PRIMERO (fuente de verdad). El editor "Mi tienda pública" (TenantStorePage)
+   * quedaba pisado → sus cambios no se veían. Con esto, sus saves escriben-
+   * through los campos compartidos al storeTheme, así SÍ se reflejan.
+   * No-op si no hay fila de settings (entonces storeTheme es null y el
+   * storefront ya cae al valor del editor B vía la cadena de fallback).
+   */
+  async patchStoreThemeJson(
+    tenantId: string,
+    patch: Record<string, unknown>,
+  ): Promise<void> {
+    const cur = (await this.getStoreThemeJson(tenantId)) ?? {};
+    const merged = { ...cur, ...patch };
+    await prisma.settings.updateMany({
+      where: { tenantId },
+      data: { storeThemeJson: JSON.stringify(merged) },
+    });
+    invalidateByPrefix(`settings:${tenantId}`);
+  },
+
+  /** Config de canales de venta social (TikTok + Meta), guardada en storeTheme.salesChannels. */
+  async getSalesChannels(tenantId: string): Promise<SalesChannelsConfig> {
+    const theme = await this.getStoreThemeJson(tenantId);
+    return parseSalesChannels(theme?.salesChannels);
+  },
+
+  async setSalesChannels(tenantId: string, config: SalesChannelsConfig): Promise<void> {
+    await this.patchStoreThemeJson(tenantId, { salesChannels: config });
   },
 };

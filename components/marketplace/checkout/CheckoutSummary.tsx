@@ -20,11 +20,11 @@ import {
   ShieldCheck,
   Truck,
   ArrowRight,
-  Smartphone,
   CheckCircle2,
   TrendingDown,
   ChevronRight,
 } from "@buleje/design-system/icons";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import Tooltip from "@/components/ui-system/Tooltip";
@@ -180,7 +180,7 @@ export default function CheckoutSummary({
           "p-5 space-y-4",
         )}
       >
-        <h2 className="text-xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+        <h2 className="text-lg font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           Resumen
         </h2>
 
@@ -195,7 +195,7 @@ export default function CheckoutSummary({
                 {it.image ? (
                   <Image src={it.image} alt={it.name} fill sizes="44px" className="object-cover" />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center text-sm font-black uppercase text-[var(--accent)]">
+                  <span className="flex h-full w-full items-center justify-center text-sm font-bold uppercase text-[var(--accent)]">
                     {it.name.trim().charAt(0)}
                   </span>
                 )}
@@ -289,7 +289,7 @@ export default function CheckoutSummary({
             <span className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)]">
               Estimación total
             </span>
-            <span className="text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
+            <span className="text-2xl font-bold tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
               {fmt(total)}
             </span>
           </div>
@@ -323,13 +323,24 @@ export default function CheckoutSummary({
             <TrustBlock
               Icon={Truck}
               title="Entrega rápida"
-              lines={["Delivery en ~25 min", "Pago al recibir o por Yape", "Coordinás todo por WhatsApp"]}
+              lines={["Delivery en ~25 min", "Pago al recibir o por Yape", "Coordinas todo por WhatsApp"]}
             />
             <TrustBlock
               Icon={ShieldCheck}
               title="Seguridad & Privacidad"
               lines={["Pago seguro", "Tus datos personales protegidos"]}
             />
+            {/* Medios de pago con ícono de marca (arte original) */}
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+                Aceptamos
+              </span>
+              <span className="flex items-center gap-1.5">
+                <PaymentMethodIcon method="yape" size={22} title="Yape" />
+                <PaymentMethodIcon method="plin" size={22} title="Plin" />
+                <PaymentMethodIcon method="efectivo" size={22} title="Efectivo" />
+              </span>
+            </div>
           </div>
         )}
       </aside>
@@ -454,7 +465,7 @@ export default function CheckoutSummary({
             </dt>
             <dd>
               {shipping === 0 ? (
-                <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Gratis
                 </span>
               ) : (
@@ -495,7 +506,7 @@ export default function CheckoutSummary({
           {shipping === 0 && subtotal >= FREE_SHIPPING_THRESHOLD && (
             <p className="text-xs font-bold text-[var(--accent)] -mt-1 inline-flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-              Ya tenés envío gratis
+              Ya tienes envío gratis
             </p>
           )}
         </dl>
@@ -552,7 +563,6 @@ export default function CheckoutSummary({
           {[
             { Icon: ShieldCheck, label: "Seguro" },
             { Icon: Truck, label: "25 min" },
-            { Icon: Smartphone, label: "Yape / Plin" },
           ].map(({ Icon, label }) => (
             <li
               key={label}
@@ -562,6 +572,12 @@ export default function CheckoutSummary({
               {label}
             </li>
           ))}
+          {/* Íconos de marca para los pagos (arte original) */}
+          <li className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] py-1 pl-1 pr-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
+            <PaymentMethodIcon method="yape" size={18} />
+            <PaymentMethodIcon method="plin" size={18} />
+            Yape · Plin
+          </li>
         </ul>
       )}
     </aside>

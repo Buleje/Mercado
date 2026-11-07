@@ -87,7 +87,7 @@ export function DeliveryMapMock({
     <section
       aria-labelledby="tracking-map-heading"
       className={cn(
-        "relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden",
+        "relative border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden",
         className,
       )}
     >
@@ -108,7 +108,7 @@ export function DeliveryMapMock({
             type="button"
             onClick={() => setZoomed(true)}
             aria-label="Acercar mapa"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-muted hover:text-[var(--text-primary)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 transition-colors"
+            className="inline-flex h-8 w-8 items-center justify-center border border-[var(--rule-base)] text-muted hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
@@ -116,7 +116,7 @@ export function DeliveryMapMock({
             type="button"
             onClick={() => setZoomed(false)}
             aria-label="Alejar mapa"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-muted hover:text-[var(--text-primary)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 transition-colors"
+            className="inline-flex h-8 w-8 items-center justify-center border border-[var(--rule-base)] text-muted hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
           >
             <Minus className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
@@ -226,7 +226,7 @@ export function DeliveryMapMock({
         </svg>
 
         {/* Footer info sobre el mapa */}
-        <div className="absolute left-3 bottom-3 right-3 flex items-center justify-between bg-white/95 dark:bg-[var(--surface-raised)]/95 backdrop-blur rounded-xl border border-[var(--rule-base)] px-3 py-2">
+        <div className="absolute left-3 bottom-3 right-3 flex items-center justify-between bg-white/95 dark:bg-[var(--surface-raised)]/95 backdrop-blur border-2 border-[var(--rule-base)] px-3 py-2">
           <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-primary)]">
             <Navigation className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
             <span className="font-bold tabular-nums">

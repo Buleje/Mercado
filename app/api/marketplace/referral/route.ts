@@ -4,6 +4,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import { ReferralsDB } from "@/lib/db/referrals.db";
+import { mensajeInvitacion, PUNTOS_POR_REFERIDA_SIN_CONFIG, resumenDelPrograma } from "@/lib/referidas/reglas";
 
 // GET /api/marketplace/referral?phone=...
 // Returns referral code + stats for a customer.
@@ -40,13 +42,17 @@ export async function GET(req: NextRequest) {
     // Audit project-wide 2026-05-19: migrado a CustomersDB.
     const referredCount = await CustomersDB.countReferralsByPhone(phone);
 
-    // Calculate points earned from referrals (50 per referral)
-    const totalEarned = referredCount * 50;
+    // Programa del negocio (ADR-510): con config guardada premia con cupones, no con puntos.
+    const { config, guardada } = await ReferralsDB.config(tenantId);
+    const totalEarned = guardada ? 0 : referredCount * PUNTOS_POR_REFERIDA_SIN_CONFIG;
 
     // Get share URL
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
     const shareUrl = `${baseUrl}/marketplace?ref=${code}`;
-    const shareMessage = `¡Compra en Buleje y usa mi código ${code} para ganar puntos! ${shareUrl}`;
+    const shareMessage = guardada
+      ? `${mensajeInvitacion(config, code, "Buleje")} ${shareUrl}`
+      : `¡Compra en Buleje y usa mi código ${code} para ganar puntos! ${shareUrl}`;
+    const premios = guardada ? (await ReferralsDB.deQuienRefiere(tenantId, phone)).cupones : [];
 
     return NextResponse.json({
       code,
@@ -54,6 +60,7 @@ export async function GET(req: NextRequest) {
       totalEarned,
       shareUrl,
       shareMessage,
+      ...(guardada ? { programa: resumenDelPrograma(config), premios } : {}),
     });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);

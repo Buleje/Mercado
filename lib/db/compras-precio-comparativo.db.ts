@@ -1,28 +1,25 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { limaDateKey } from "@/lib/utils";
+import { compararPrecios, type FilaComparable, type LineaDeCompra } from "@/lib/compras/precio-comparable";
 
 /**
  * Audit project-wide 2026-05-19 — DB class para comparación de precios por proveedor.
- * Encapsula la query de historial de compras de un producto agrupado por supplierId.
+ * Encapsula la query de historial de compras de un producto agrupado por proveedor y unidad.
  */
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type DbPrecioComparativoRow = {
-  supplierId: string;
-  supplierName: string;
-  lastPrice: number;
-  lastDate: string;
-  purchaseCount: number;
-  isCheapest: boolean;
-};
+/** Una fila por proveedor y unidad (C37): ver `lib/compras/precio-comparable.ts`. */
+export type DbPrecioComparativoRow = FilaComparable;
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 /**
- * Obtiene comparación de precios de un producto entre todos sus proveedores.
- * Retorna el precio más reciente de cada proveedor + flag del más barato.
+ * Cuánto cuesta un producto con cada proveedor, puesto en tu tienda y en la
+ * misma unidad (C37, 17-10). Antes: el `unitCost` crudo de la última orden de
+ * cada proveedor, con anuladas, unidades mezcladas y sin descuento ni flete.
  */
 export async function getComparativoPrecios(
   tenantId: string,
@@ -31,45 +28,57 @@ export async function getComparativoPrecios(
   const items = await prisma.purchaseItem.findMany({
     where: {
       productId,
-      purchaseOrder: { tenantId },
+      purchaseOrder: { tenantId, status: { notIn: ["cancelado", "auto_generated"] } },
     },
-    include: {
+    select: {
+      quantity: true,
+      unitCost: true,
+      unit: true,
       purchaseOrder: {
-        include: { supplier: true },
+        select: {
+          id: true,
+          supplierId: true,
+          supplierName: true,
+          status: true,
+          createdAt: true,
+          receivedDate: true,
+          discount: true,
+          igvIncluded: true,
+          flete: true,
+          otrosCostos: true,
+          supplier: { select: { name: true } },
+          // El subtotal de la orden entera: el flete se reparte por valor (ADR-377).
+          items: { select: { quantity: true, unitCost: true } },
+        },
       },
     },
     orderBy: { purchaseOrder: { createdAt: "desc" } },
+    take: 500,
   });
 
-  // Agrupar por supplierId, tomando el más reciente de cada uno
-  const supplierMap = new Map<
-    string,
-    Omit<DbPrecioComparativoRow, "isCheapest">
-  >();
+  const lineas: LineaDeCompra[] = items.map((it) => {
+    const o = it.purchaseOrder;
+    return {
+      supplierId: o.supplierId,
+      // El nombre de hoy del proveedor; el de la orden si ya no está en el padrón.
+      supplierName: o.supplier?.name ?? o.supplierName,
+      ordenId: o.id,
+      estado: o.status,
+      creada: o.createdAt.toISOString(),
+      recibida: o.receivedDate ? o.receivedDate.toISOString() : null,
+      unidad: it.unit,
+      cantidad: it.quantity,
+      // TD-018: unitCost es Decimal
+      costoUnitario: toNumOrZero(it.unitCost),
+      orden: {
+        subtotal: o.items.reduce((s, x) => s + x.quantity * toNumOrZero(x.unitCost), 0),
+        descuentoPct: toNumOrZero(o.discount),
+        igvIncluido: o.igvIncluded !== false,
+        flete: toNumOrZero(o.flete),
+        otros: toNumOrZero(o.otrosCostos),
+      },
+    };
+  });
 
-  for (const item of items) {
-    const sid = item.purchaseOrder.supplierId;
-    const existing = supplierMap.get(sid);
-    if (!existing) {
-      supplierMap.set(sid, {
-        supplierId: sid,
-        supplierName: item.purchaseOrder.supplier?.name ?? item.purchaseOrder.supplierName,
-        // TD-018: unitCost es Decimal
-        lastPrice: toNumOrZero(item.unitCost),
-        lastDate: item.purchaseOrder.createdAt.toISOString(),
-        purchaseCount: 1,
-      });
-    } else {
-      existing.purchaseCount++;
-    }
-  }
-
-  const comparaciones = Array.from(supplierMap.values());
-  const minPrice =
-    comparaciones.length > 0 ? Math.min(...comparaciones.map((c) => c.lastPrice)) : 0;
-
-  return comparaciones.map((c) => ({
-    ...c,
-    isCheapest: c.lastPrice === minPrice,
-  }));
+  return compararPrecios(lineas, limaDateKey());
 }

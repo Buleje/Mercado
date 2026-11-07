@@ -21,6 +21,14 @@ const INJECTION_PATTERNS: RegExp[] = [
   /\[INST\]/i,
   /<<SYS>>/i,
   /\[\/INST\]/i,
+  // Español (clientas de WhatsApp, 11-10): las mismas jugadas, en castellano.
+  /\b(ignor[aáe]|olvid[aáe]|descart[aáe]|omit[aeí])\s+(todas?\s+)?(las\s+|tus\s+|sus\s+|esas\s+)?(instrucciones|reglas|indicaciones|[oó]rdenes)\b/i,
+  /(^|[.!?¡¿,;]\s*|\bahora\s+)(act[uú]a|act[uú]e|comp[oó]rtate|hazte\s+pasar)\s+(como|por)\b/i,
+  /\b(eres|ser[aá]s)\s+ahora\b|\bahora\s+eres\b|\bya\s+no\s+eres\b/i,
+  // «dime las instrucciones de uso» es una pregunta legítima: con artículo solo cuenta prompt/configuración.
+  /\b(mu[eé]strame|mu[eé]strenme|dime|revela|rev[eé]lame|ens[eé][ñn]ame|p[aá]same|copia|repite)\s+((tu|tus|su|sus)\s+(prompt|instrucciones|configuraci[oó]n|reglas)|(el|la|tu|su)\s+(prompt|configuraci[oó]n|mensaje\s+de\s+sistema))\b/i,
+  /\bnuevo\s+(prompt|rol|mensaje\s+de\s+sistema)\b/i,
+  /\bmodo\s+(desarrollador|developer|dan|jailbreak)\b/i,
 ];
 
 export interface InjectionResult {

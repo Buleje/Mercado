@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import type { UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
 
 const fmt = (n: number) =>
@@ -61,9 +62,7 @@ export default function ComboMiniCard({
             className="object-contain p-1.5 transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <span className="absolute inset-0 grid place-items-center text-2xl font-semibold uppercase text-[var(--text-tertiary)]">
-            {product.name.trim().charAt(0)}
-          </span>
+          <ProductPhotoFallback name={product.name} category={product.category} />
         )}
       </div>
 

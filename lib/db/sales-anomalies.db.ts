@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma";
 import { invalidateByPrefix, getOrSet } from "@/lib/cache";
 import type { SalesAnomaly as PSalesAnomaly } from "@/lib/generated/prisma/client";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { limaDayRange } from "@/lib/utils";
 
 export type AnomalySeverity = "low" | "medium" | "high" | "critical";
 export type AnomalyDirection = "drop" | "spike";
@@ -65,10 +66,26 @@ function calculateSeverity(deltaPctAbs: number): AnomalySeverity {
   return "low";
 }
 
-function getDayRange(date: Date): { start: Date; end: Date } {
-  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
-  return { start, end };
+const SIETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * El día de Lima que se analiza y su espejo de hace 7 días, como `[start, end)`.
+ * El día en curso se corta en `ahora` y el espejo en la MISMA franja: el cron
+ * corre a las 18:00 de Lima y comparar 18 h contra 24 h daba una «caída» del
+ * 25 % todos los días. Un día pasado se compara entero contra entero.
+ */
+export function rangosDeAnomalia(
+  date: Date | undefined,
+  ahora: Date = new Date(),
+): { target: { start: Date; end: Date }; comparison: { start: Date; end: Date } } {
+  const dia = limaDayRange(date ?? ahora);
+  const end = new Date(Math.min(dia.end.getTime(), Math.max(ahora.getTime(), dia.start.getTime())));
+  const largo = end.getTime() - dia.start.getTime();
+  const comparisonStart = new Date(dia.start.getTime() - SIETE_DIAS_MS);
+  return {
+    target: { start: dia.start, end },
+    comparison: { start: comparisonStart, end: new Date(comparisonStart.getTime() + largo) },
+  };
 }
 
 /** Aggregate stats de orders + items que pertenezcan al store via productos. */
@@ -119,13 +136,10 @@ export const SalesAnomaliesDB = {
    * Devuelve la cantidad de anomalías creadas.
    */
   async detect(tenantId: string, storeId: string, date?: Date): Promise<number> {
-    const targetDate = date ? new Date(date) : new Date();
-    targetDate.setHours(0, 0, 0, 0);
-    const comparisonDate = new Date(targetDate);
-    comparisonDate.setDate(comparisonDate.getDate() - 7);
-
-    const targetRange = getDayRange(targetDate);
-    const comparisonRange = getDayRange(comparisonDate);
+    // Día de LIMA (el servidor corre en UTC: `setHours(0)` era las 19:00 del día anterior).
+    const { target: targetRange, comparison: comparisonRange } = rangosDeAnomalia(date);
+    const targetDate = targetRange.start;
+    const comparisonDate = comparisonRange.start;
 
     const [target, comparison] = await Promise.all([
       aggregateStoreStats(tenantId, storeId, targetRange),

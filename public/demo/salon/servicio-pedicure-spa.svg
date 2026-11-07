@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-label="Pedicure spa">
+<defs><linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8ece7"/><stop offset="1" stop-color="#ecd3ca"/></linearGradient>
+<linearGradient id="mecha" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2420"/><stop offset=".55" stop-color="#8a5a3c"/><stop offset="1" stop-color="#e2bd7f"/></linearGradient></defs>
+<rect width="600" height="600" fill="url(#f)"/><circle cx="300" cy="300" r="214" fill="#fff" opacity=".55"/><circle cx="300" cy="300" r="214" fill="none" stroke="#d9a59b" stroke-width="2" stroke-dasharray="2 10"/>
+<path d="M300 200Q340 260 300 330Q260 260 300 200Z" stroke="#6e2f3a" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M300 330Q220 320 200 250Q260 250 300 330Q340 250 400 250Q380 320 300 330Z" stroke="#6e2f3a" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M170 410Q235 380 300 410T430 410" stroke="#d9a59b" stroke-width="14" fill="none" stroke-linecap="round"/>
+</svg>

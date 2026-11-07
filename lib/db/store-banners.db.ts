@@ -98,6 +98,19 @@ export const StoreBannersDB = {
     });
   },
 
+  /**
+   * Lista admin: TODOS los banners (activos e inactivos, fuera de ventana de
+   * fechas). El editor del admin debe verlos todos para poder gestionarlos.
+   * Sin caché — el admin necesita estado fresco tras cada edición.
+   */
+  async listForAdmin(tenantId: string, storeId: string, section?: string): Promise<DbStoreBanner[]> {
+    const rows = await prisma.storeBanner.findMany({
+      where: { tenantId, storeId, ...(section ? { section } : {}) },
+      orderBy: [{ section: "asc" }, { position: "asc" }],
+    });
+    return rows.map(mapBanner);
+  },
+
   async create(tenantId: string, params: DbStoreBannerCreateInput): Promise<DbStoreBanner> {
     const row = await prisma.storeBanner.create({
       data: {

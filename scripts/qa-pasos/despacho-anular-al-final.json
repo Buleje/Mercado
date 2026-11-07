@@ -1,0 +1,8 @@
+{
+ "nota": "Pieza: anula por PATCH la guía de window.__qaGuia con sus despachos, para poder repetir el preset.",
+ "pasos": [
+  {
+   "eval": "(async () => { const g = window.__qaGuia; if (!g || !g.id) return { anulada: false, guia: g ?? null }; const tok = (document.cookie.match(/(?:^|;\\s*)csrf-token=([^;]+)/) || [])[1]; const r = await fetch('/api/admin/forestal/loth/despacho-guia', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(tok ? { 'x-csrf-token': decodeURIComponent(tok) } : {}) }, body: JSON.stringify({ id: g.id, action: 'anular', reason: 'QA preset: se anula para poder repetirlo', conDespachos: true }) }); const j = await r.json().catch(() => null); return { guia: g, anular: r.status, estado: j && j.gtf && j.gtf.status, lineasAnuladas: j && j.lineasAnuladas, trozasAnuladas: j && j.trozasAnuladas, error: j && (j.message || j.error) }; })()"
+  }
+ ]
+}

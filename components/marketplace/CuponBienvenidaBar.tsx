@@ -17,7 +17,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Gift, Copy, Check, X } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 
 const COUPON = "BIENVENIDO10";

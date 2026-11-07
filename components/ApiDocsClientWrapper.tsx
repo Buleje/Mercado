@@ -17,16 +17,13 @@
  * Ver ADR-019 (ampliación 4x, 2026-04-09).
  */
 import dynamic from "next/dynamic";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 const ApiDocsPage = dynamic(
   () => import("./ApiDocsPage").then((m) => m.ApiDocsPage),
   {
     
-    loading: () => (
-      <div className="min-h-screen flex items-center justify-center text-sm text-muted">
-        Cargando documentación de la API…
-      </div>
-    ),
+    loading: () => <CargaPagina etiqueta="Cargando la documentación de la API" />,
   },
 );
 

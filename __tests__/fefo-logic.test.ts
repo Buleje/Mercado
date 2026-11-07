@@ -158,6 +158,26 @@ describe("InventoryMovementsDB.decrementFEFO", () => {
     expect(mockBatchUpdate).not.toHaveBeenCalled();
   });
 
+  it("con stockYaAplicado NO vuelve a bajar Product.stock (venta online: vender 1 resta 1, no 2)", async () => {
+    // POST /api/orders ya bajó el stock en su UPDATE atómico; acá solo se
+    // anota el kardex. Bug 2026-10-08: sin la marca, vender 1 restaba 2 y
+    // cancelar devolvía 1.
+    mockBatchFindMany.mockResolvedValue([]);
+
+    await InventoryMovementsDB.decrementFEFO(1, 5, "test-tenant", "ord-1", "venta_online", {
+      stockYaAplicado: true,
+    });
+
+    const escriturasDeStock = mockProductUpdateMany.mock.calls.filter(
+      ([args]) => (args as { data?: { stock?: unknown } }).data?.stock !== undefined,
+    );
+    expect(escriturasDeStock).toHaveLength(0);
+    const kardex = mockInventoryMovementCreate.mock.calls[0][0].data;
+    // El stock leído (100) ya es el de después de la venta.
+    expect(kardex.previousStock).toBe(105);
+    expect(kardex.newStock).toBe(100);
+  });
+
   it("always calls record() to decrement Product.stock globally", async () => {
     mockBatchFindMany.mockResolvedValue([]);
 

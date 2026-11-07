@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Loader2, CheckCircle2, AlertCircle } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -11,6 +12,7 @@ type Status =
   | { kind: "error"; message: string };
 
 export default function AplicarCuponForm() {
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
@@ -36,6 +38,7 @@ export default function AplicarCuponForm() {
         message: `Cupon "${data.cupon.title}" agregado a tu coleccion`,
       });
       setCode("");
+      router.refresh(); // revalida la lista server-rendered → el cupon aparece al instante
     } catch {
       setStatus({ kind: "error", message: "Error de conexion. Intentalo de nuevo." });
     }
@@ -86,7 +89,7 @@ export default function AplicarCuponForm() {
       {status.kind === "success" && (
         <p
           role="status"
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[var(--data-success-500)]/10 px-3 py-2 text-xs font-medium text-[var(--data-success-600)]"
         >
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           {status.message}
@@ -95,7 +98,7 @@ export default function AplicarCuponForm() {
       {status.kind === "error" && (
         <p
           role="alert"
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-800 dark:bg-red-900/20 dark:text-red-300"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[var(--data-error-500)]/10 px-3 py-2 text-xs font-medium text-[var(--data-error-600)]"
         >
           <AlertCircle className="h-4 w-4" aria-hidden="true" />
           {status.message}

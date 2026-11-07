@@ -146,6 +146,11 @@ export function useRouteStops(routeId: string | null) {
   return { stops, loading, error, reload: load, markStop };
 }
 
+/**
+ * Movimientos del reparto de las últimas 24 h (17-10, P18): todos los eventos
+ * (no sólo el último por pedido) para que el feed los agrupe sin perder la
+ * trazabilidad. El mapa filtra los pedidos en camino con `eventosDePedidosActivos`.
+ */
 export function useLiveTrackingFeed() {
   const [events, setEvents] = useState<LiveTrackingEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,7 +164,7 @@ export function useLiveTrackingFeed() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const res = await tenantFetch("/api/admin/delivery/tracking?limit=50", { signal: controller.signal });
+      const res = await tenantFetch("/api/admin/delivery/tracking?feed=dia&limit=300", { signal: controller.signal });
       if (cancelledRef.current) return;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as { data: LiveTrackingEvent[] };

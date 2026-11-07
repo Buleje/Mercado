@@ -1,0 +1,12 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=ctp-libro-operaciones&vista=ingresos",
+ "pasos": [
+  {
+   "esperar": 1500
+  },
+  {
+   "eval": "(async()=>{const t=decodeURIComponent(document.cookie.match(/(?:^|;\\\\s*)csrf-token=([^;]+)/)?.[1]||'');const out=[];for(const [cas,txt] of [['factura','Factura de prueba QA'],['guia_remitente','Guia de remision de prueba QA']]){const c=document.createElement('canvas');c.width=900;c.height=1200;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,900,1200);x.fillStyle='#222';x.font='40px sans-serif';x.fillText(txt,60,120);x.fillText('QA19-GTF-A1',60,200);const b=await new Promise(r=>c.toBlob(r,'image/png'));const fd=new FormData();fd.append('gtf','QA19-GTF-A1');fd.append('casillero',cas);fd.append('file',new File([b],'QA-PAPEL-COSTADO-'+cas+'.png',{type:'image/png'}));const r=await fetch('/api/admin/forestal/guias/documentos',{method:'POST',credentials:'include',headers:{'x-csrf-token':t},body:fd});out.push(cas+' '+r.status)}return out.join(' | ')})()"
+  }
+ ]
+}

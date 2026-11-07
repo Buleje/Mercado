@@ -61,7 +61,7 @@ export default function AboutBlock(props: Partial<AboutBlockProps>) {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
           <div>
-            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-6">
+            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] mb-6">
               {badge}
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] leading-tight mb-6">

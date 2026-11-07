@@ -24,7 +24,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Gift, Send, X, Heart, MessageCircle } from "@buleje/design-system/icons";
+import { Gift, X, Heart, MessageCircle } from "@buleje/design-system/icons";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { serializeCart } from "@/lib/marketplace/cart-sharing";
 import { cn } from "@/lib/utils";
@@ -70,15 +70,15 @@ export default function GiftCartBanner() {
         className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6"
       >
         <div className="flex items-start gap-3 mb-4">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <Gift className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1">
             <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              ¿Querés regalárselo a alguien?
+              ¿Quieres regalárselo a alguien?
             </h3>
             <p className="text-sm text-[var(--text-tertiary)] mt-1 leading-relaxed">
-              Pagás vos, le llega a quien vos quieras. Cumpleaños, emergencias,
+              Pagas tú, le llega a quien tú quieras. Cumpleaños, emergencias,
               o solo por cariño.
             </p>
           </div>
@@ -90,7 +90,7 @@ export default function GiftCartBanner() {
           className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] py-3 text-sm font-bold hover:bg-[var(--accent)] transition-colors active:scale-[0.98]"
         >
           <Heart className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-          Regalá este carrito
+          Regala este carrito
         </button>
       </section>
 
@@ -137,7 +137,7 @@ export default function GiftCartBanner() {
                   ¡WhatsApp abierto!
                 </p>
                 <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                  Mandá el mensaje para terminar el regalo
+                  Manda el mensaje para terminar el regalo
                 </p>
               </div>
             ) : (
@@ -232,7 +232,7 @@ export default function GiftCartBanner() {
                 </button>
 
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center leading-relaxed">
-                  El destinatario recibe el mensaje con un link. Vos pagás y la
+                  El destinatario recibe el mensaje con un link. Vos pagas y la
                   bodega entrega a la dirección que pongas en el checkout.
                 </p>
               </div>

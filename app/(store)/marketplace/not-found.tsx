@@ -17,7 +17,7 @@ export default function MarketplaceNotFound() {
         </h1>
         <p className="mt-3 text-base text-[var(--text-secondary)] leading-relaxed">
           Es posible que el link esté roto o que la tienda ya no esté
-          publicada. Probá explorando las bodegas activas o volvé al inicio.
+          publicada. Prueba explorando las bodegas activas o vuelve al inicio.
         </p>
         <div className="mt-8 flex flex-wrap gap-3 justify-center">
           <Link

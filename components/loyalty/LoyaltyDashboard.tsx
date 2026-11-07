@@ -249,7 +249,7 @@ function BalanceCard({ data, level }: BalanceCardProps) {
         {data.creditBalance !== undefined && data.creditBalance > 0 ? (
           <div className="px-4 py-3 text-center">
             <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-0.5">
-              Crédito
+              Saldo a favor
             </p>
             <p className="text-sm font-bold text-[color:var(--color-primary)]">
               S/ {Number(data.creditBalance).toFixed(2)}

@@ -1,0 +1,98 @@
+{
+ "nota": "Pieza: «Datos de la guía» (N° que sigue, ubigeos, lista N° 1), registra la guía, guarda window.__qaGuia y vuelve al libro. Escribe: cerrar con despacho-anular-al-final.",
+ "pasos": [
+  {
+   "clicTexto": "Datos de la guía"
+  },
+  {
+   "esperar": "input[aria-label^=\"N° de GTF\"]"
+  },
+  {
+   "eval": "(() => { /* El N° que sigue del talonario (un N° anulado no se reusa: 409). Sin propuesta, uno por la hora. */ const b = [...document.querySelectorAll('[role=dialog] button')].find((x) => /^Usar el que sigue/.test(x.textContent.trim())); if (b) { b.click(); return 'siguiente: ' + b.textContent.replace(/\\s+/g, ' ').trim(); } const i = document.querySelector('input[aria-label^=\"N° de GTF\"]'); if (!i) return 'sin campo'; const v = String(Date.now() % 900000 + 100000); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(i, v); i.dispatchEvent(new Event('input', { bubbles: true })); return 'por la hora: ' + v; })()"
+  },
+  {
+   "eval": "(() => { const sec=[...document.querySelectorAll(\"[role=dialog] section\")].find(s=>/N° del título habilitante/.test(s.textContent)); const ss=[...sec.querySelectorAll(\"select\")].slice(-3); ss.forEach((s,k)=>s.setAttribute(\"data-qa\",\"ubi-\"+k)); return ss.length; })()"
+  },
+  {
+   "elegir": [
+    "[data-qa=ubi-0]",
+    "Ucayali"
+   ]
+  },
+  {
+   "elegirPrimera": [
+    "[data-qa=ubi-1]",
+    "^$"
+   ]
+  },
+  {
+   "elegirPrimera": [
+    "[data-qa=ubi-2]",
+    "^$"
+   ]
+  },
+  {
+   "llenar": [
+    "input[aria-label=\"N° de la lista de trozas (35)\"]",
+    "1"
+   ]
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "eval": "[...document.querySelectorAll(\"[role=dialog] section\")].map(s=>s.querySelector(\"header\")?.innerText.replace(/\\s+/g,\" \")).filter(t=>/Falta/.test(t||\"\"))"
+  },
+  {
+   "eval": "(() => { /* 15-10: el ubigeo de la partida vive en su bloque «Punto de partida» (formato 2024, casilleros 17-20): son sus 3 últimos select. */ const sec=[...document.querySelectorAll(\"[role=dialog] section\")].find(s=>/Punto de partida/.test(s.querySelector(\"header\")?.textContent||\"\")); if(!sec) return \"sin bloque Punto de partida\"; const ss=[...sec.querySelectorAll(\"select\")].slice(-3); ss.forEach((s,k)=>s.setAttribute(\"data-qa\",\"par-\"+k)); return ss.map(s=>s.value); })()"
+  },
+  {
+   "elegir": [
+    "[data-qa=par-0]",
+    "Ucayali"
+   ]
+  },
+  {
+   "elegirPrimera": [
+    "[data-qa=par-1]",
+    "^$"
+   ]
+  },
+  {
+   "elegirPrimera": [
+    "[data-qa=par-2]",
+    "^$"
+   ]
+  },
+  {
+   "esperar": 500
+  },
+  {
+   "eval": "(() => { const i=document.querySelector(\"input[aria-label^=\\\"N° de GTF\\\"]\"); const pie=[...document.querySelectorAll(\"[role=dialog] *\")].find(x=>/para registrar/.test(x.textContent) && x.children.length===0); return { numero: i && i.value, faltan: pie ? pie.textContent : \"nada falta\" }; })()"
+  },
+  {
+   "captura": "guia-datos"
+  },
+  {
+   "clicTexto": "Registrar despacho y guía"
+  },
+  {
+   "esperar": 3000
+  },
+  {
+   "eval": "(() => { const b=[...document.querySelectorAll(\"[role=dialog] button\")].find(x=>/Sí, usar ese número/.test(x.textContent)); if(b){ b.click(); return \"confirmó número\"; } return \"sin pregunta\"; })()"
+  },
+  {
+   "esperar": "text=Cerrar y volver al libro"
+  },
+  {
+   "eval": "({ guia: window.__qaGuia ?? null, dialogo: document.querySelector('[role=dialog]').innerText.replace(/\\s+/g, ' ').slice(0, 300) })"
+  },
+  {
+   "captura": "registrada"
+  },
+  {
+   "clicTexto": "Cerrar y volver al libro"
+  }
+ ]
+}

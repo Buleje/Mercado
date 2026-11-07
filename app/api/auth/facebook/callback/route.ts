@@ -11,6 +11,7 @@ import {
   createCustomerToken,
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 const PLATFORM_TENANT_ID = "main";
 
@@ -86,7 +87,7 @@ export async function GET(req: NextRequest) {
     // sintético `facebook_<id>`. Para linkear cuentas se requerirá flow OTP
     // explícito en el futuro.
     const syntheticPhone = `facebook_${fbUser.id}`;
-    const existing = await CustomersDB.getByPhone(syntheticPhone, tenantId).catch(() => null);
+    const existing = await CustomersDB.getByPhone(syntheticPhone, tenantId).catch(sinDato("api/auth/facebook/callback cliente existente"));
     const phone = syntheticPhone;
     const isNew = !existing;
 

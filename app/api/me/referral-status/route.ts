@@ -15,6 +15,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { MeReferralStatusDB } from "@/lib/db/me-referral-status.db";
+import { ReferralsDB } from "@/lib/db/referrals.db";
+import { mensajeInvitacion, PUNTOS_POR_REFERIDA_SIN_CONFIG, resumenDelPrograma } from "@/lib/referidas/reglas";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -47,20 +49,25 @@ export async function GET(req: NextRequest) {
     }
 
     // Find all customers who used my referral code
-    const referrals = await MeReferralStatusDB.getReferredCustomers(tenantId, me.referralCode, 20);
+    const referrals = await MeReferralStatusDB.getReferredCustomers(tenantId, customerPhone, 20);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
     const shareUrl = `${baseUrl}/registro?ref=${me.referralCode}`;
 
-    // Calculate rewards (10 points per referral is the default)
-    const pointsPerReferral = 10;
-    const totalPointsEarned = referrals.length * pointsPerReferral;
+    // Programa del negocio (ADR-510). Sin config: los 50 puntos que da
+    // CustomersDB.applyReferralCode (acá decía 10, y no era lo que se daba).
+    const { config, guardada, negocio } = await ReferralsDB.config(tenantId);
+    const totalPointsEarned = guardada ? 0 : referrals.length * PUNTOS_POR_REFERIDA_SIN_CONFIG;
+    const premios = guardada ? (await ReferralsDB.deQuienRefiere(tenantId, customerPhone)).cupones : [];
 
     return NextResponse.json({
       hasReferralCode: true,
       referralCode: me.referralCode,
       shareUrl,
-      shareMessage: `Usa mi codigo ${me.referralCode} en Buleje y ambos ganamos puntos! ${shareUrl}`,
+      shareMessage: guardada
+        ? `${mensajeInvitacion(config, me.referralCode, negocio)} ${shareUrl}`
+        : `Usa mi codigo ${me.referralCode} en Buleje y ambos ganamos puntos! ${shareUrl}`,
+      ...(guardada ? { programa: resumenDelPrograma(config), premios } : {}),
       totalReferred: referrals.length,
       totalPointsEarned,
       currentPoints: me.loyaltyPoints,

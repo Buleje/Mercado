@@ -4,8 +4,8 @@
  * app/admin/_components/AdminOverlaysLayer.tsx
  *
  * Capa de overlays que siempre viven al final del AdminPage sin importar
- * qué tab esté activa: floating buttons, atajos, bottom bar mobile, SSE
- * listener, morning summary, onboarding wizard y onboarding tour.
+ * qué tab esté activa: floating buttons, atajos, bottom bar mobile, morning
+ * summary, onboarding wizard y onboarding tour.
  *
  * Extraído de app/admin/page.tsx en el Sprint A final del refactor.
  */
@@ -16,19 +16,27 @@ import { ShortcutsModal } from "@/components/admin/AdminModals";
 import { AdminFloatingButtons } from "@/components/admin/AdminFloatingButtons";
 import { AdminMobileBottomBar } from "@/components/admin/AdminMobileBottomBar";
 import { OnboardingTour } from "@/components/admin/OnboardingTour";
-import SSEListener from "@/components/admin/SSEListener";
 
 const AIStatusBanner = dynamic(() => import("@/components/admin/AIStatusBanner"), {
   ssr: false,
 });
 import type { useOnboarding } from "@/hooks/use-onboarding";
 import type { Tab } from "../_lib/tabs.types";
+import type { AdminRole } from "@/lib/session";
 
 // 2026-05-26: MorningSummaryModal (overlay bloqueante "¡Buenos días!") removido.
 // Reemplazado por MorningBriefingCard embebido en el tab Inicio — no bloquea la
 // pantalla y solo aparece si hay algo accionable. Ver InicioDashboard.
 const OnboardingWizard = dynamic(
   () => import("@/components/admin/OnboardingWizard"),
+  { ssr: false },
+);
+
+// Aviso en pantalla de la agenda (Brandon 2026-10-20): «Lo que te falta hacer»
+// sale solo cada tanto, en cualquier pestaña. Sólo con Administración a la vista
+// y fuera del modo presentación (no se le muestra al cliente).
+const AvisoAgendaProgramado = dynamic(
+  () => import("@/components/admin/administracion/aviso/AvisoAgendaProgramado"),
   { ssr: false },
 );
 
@@ -52,7 +60,14 @@ export interface AdminOverlaysLayerProps {
   onCloseShortcuts: () => void;
 
   // Mobile bottom bar
-  userRole: string;
+  // Mismo tipo que entrega useAdminAuth: AIStatusBanner lo exige para el gate de rol.
+  userRole: AdminRole;
+  // Gate de rol para AIStatusBanner (2026-09-14): pega a una ruta con
+  // allowedRoles acotado (ai-assistant/health) — antes se montaba sin saber si
+  // el rol logueado podía pedirla y almacenero recibía 403 en cada carga.
+  // `false` hasta que useAdminAuth resuelva el rol real evita pedir con el
+  // "admin" optimista por default.
+  authReady: boolean;
   tab: Tab;
   filteredTabs: FilteredTabs;
   alerts: Record<string, number>;
@@ -74,6 +89,7 @@ export function AdminOverlaysLayer({
   showShortcuts,
   onCloseShortcuts,
   userRole,
+  authReady,
   tab,
   filteredTabs,
   alerts,
@@ -104,11 +120,14 @@ export function AdminOverlaysLayer({
         onOpenMobileNav={onOpenMobileNav}
       />
 
-      <AIStatusBanner />
-      <SSEListener />
+      <AIStatusBanner userRole={userRole} authReady={authReady} />
       {/* Burbuja flotante de chat (Brandon 2026-06-06): cliente escribe →
           avatar + badge abajo-derecha; responde sin salir del tab actual. */}
       <AdminChatHead />
+
+      {authReady && !presentationMode && filteredTabs.some((t) => t.id === "administracion") && (
+        <AvisoAgendaProgramado rol={userRole} />
+      )}
 
       {showOnboarding && (
         <OnboardingWizard

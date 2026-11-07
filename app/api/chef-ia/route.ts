@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { generateObject } from "ai";
+import { GATEWAY_MODEL_IDS } from "@/lib/claude-router";
 import { logger } from "@/lib/logger";
 
 /**
@@ -12,7 +13,7 @@ import { logger } from "@/lib/logger";
  *   - ingredientes que ya tiene el usuario (opcional)
  *   - restriccion (vegetariano, sin gluten, etc)
  *
- * Uso del Vercel AI Gateway con plain string "anthropic/claude-haiku-4-5"
+ * Uso del Vercel AI Gateway con Haiku 5.5 (`GATEWAY_MODEL_IDS.haiku`, sin temperature: da 400)
  * — si AI_GATEWAY_API_KEY no esta configurado, devuelve 6 recetas mock
  * precargadas de cocina peruana (nunca falla el endpoint).
  */
@@ -190,10 +191,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const { object } = await generateObject({
-      model: "anthropic/claude-haiku-4-5",
+      model: GATEWAY_MODEL_IDS.haiku,
+      // Haiku 5.5 razona por defecto (effort medium); `low` es lo indicado para rutas cortas.
+      providerOptions: { anthropic: { effort: "low" } },
       schema: ResponseSchema,
       prompt: buildPrompt(input),
-      temperature: 0.7,
     });
     return NextResponse.json({ recetas: object.recetas, source: "ai" });
   } catch (err) {

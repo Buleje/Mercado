@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NotificationCenterDB, visibilidadDeRol } from "@/lib/db/notification-center.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * PATCH /api/notification-center/[id]/read
  *
- * Marca una notificación específica como leída.
+ * Marca una notificación específica como leída, sólo si ese rol la ve
+ * (mismo filtro que la lista): la que no ve da 404, como la de otro negocio.
  */
 export async function PATCH(
   req: NextRequest,
@@ -19,14 +20,11 @@ export async function PATCH(
   const { id } = await params;
 
   try {
-    // updateMany acepta compound where (id + tenantId) sin requerir la
-    // preview feature extendedWhereUnique. Garantiza aislamiento de tenant.
-    const result = await prisma.notification.updateMany({
-      where: { id, tenantId: auth.tenantId },
-      data: { readAt: new Date() },
-    });
+    // updateMany con id + tenantId + filtro del rol en el WHERE: aislamiento de
+    // negocio y de rol en la misma escritura.
+    const cambiadas = await NotificationCenterDB.marcarLeida(auth.tenantId, id, visibilidadDeRol(auth.role));
 
-    if (result.count === 0) {
+    if (cambiadas === 0) {
       return NextResponse.json({ error: "not found" }, { status: 404 });
     }
 

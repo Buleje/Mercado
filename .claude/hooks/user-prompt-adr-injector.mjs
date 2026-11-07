@@ -60,15 +60,15 @@ async function readStdin() {
 
 // Map keyword → ADR hints (solo los mas criticos, no inundar)
 const KEYWORD_TO_ADRS = {
-  checkout: ["015-checkout-idempotency", "058-fast-path-routing"],
-  "components/checkout": ["015-checkout-idempotency"],
+  checkout: ["112-checkout-payment-proof-multi-vendor", "092-webhook-idempotency-unique-p2002"],
+  "components/checkout": ["054-plan-refactor-checkout-modal"],
   "orders.db": ["state-machine orders"],
   "lib/db/orders": ["state-machine orders"],
-  migration: ["migration-planner expand-migrate-contract"],
-  schema: ["migration-planner expand-migrate-contract"],
-  "schema.prisma": ["DIRECT_URL required", "expand-migrate-contract"],
-  proxy: ["014-proxy-middleware-split"],
-  middleware: ["014-proxy-middleware-split"],
+  migration: ["skill migrar-esquema"],
+  schema: ["skill migrar-esquema"],
+  "schema.prisma": ["skill migrar-esquema", "Prisma solo por scripts/prisma-session.mjs (DIRECT_URL no resuelve)"],
+  proxy: ["014-middleware-module-split"],
+  middleware: ["014-middleware-module-split"],
   rbac: ["role-permissions 26x6 matrix — RBAC tests obligatorios"],
   "role-permissions": ["role-permissions 26x6 matrix"],
   fiado: ["fiados module — credit semantic success"],
@@ -126,7 +126,7 @@ try {
   const parts = [];
   if (dangerHit) {
     parts.push(
-      `⚠️ DANGER ZONE detectada en el prompt: \`${dangerHit}\` — usar \`audit-first\` skill + ADR lectura obligatoria ANTES de editar. Checkout/orders → invocar \`checkout-squad\`.`
+      `⚠️ DANGER ZONE detectada en el prompt: \`${dangerHit}\` — leer la regla .claude/rules/danger-zone.md + los ADR del área ANTES de editar. Checkout/orders → agentes \`security\` + \`reviewer\`.`
     );
   }
   if (hints.size > 0) {

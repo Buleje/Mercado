@@ -1,0 +1,15 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=plan",
+ "pasos": [
+  {
+   "eval": "(async()=>{const sel='[data-plan-tarjeta=\"cmpq6yhdu000073vzx1khmlap\"]';for(let i=0;i<60;i++){if(document.querySelector('#loth-plan-tab-avance'))return 'ya';const c=document.querySelector(sel);if(c){c.click();return 'clic'}await new Promise(r=>setTimeout(r,500))}return 'nada'})()"
+  },
+  {
+   "esperar": "#loth-plan-tab-avance"
+  },
+  {
+   "esperar": 1500
+  }
+ ]
+}

@@ -181,7 +181,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json(
       {
         error: "cooldown_active",
-        message: `Esperá ${cooldown.remainingSeconds}s antes de reintentar. Si no fuiste vos, revocá tu sesión ahora desde otro dispositivo.`,
+        message: `Espera ${cooldown.remainingSeconds}s antes de reintentar. Si no fuiste tú, revoca tu sesión ahora desde otro dispositivo.`,
         remainingSeconds: cooldown.remainingSeconds,
       },
       { status: 429 },

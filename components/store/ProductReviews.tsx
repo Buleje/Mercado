@@ -29,8 +29,8 @@ function StarIcon({ filled, size = 16 }: { filled: boolean; size?: number }) {
       width={size}
       height={size}
       viewBox="0 0 20 20"
-      fill={filled ? "#f97316" : "none"}
-      stroke={filled ? "#f97316" : "#9ca3af"}
+      fill={filled ? "#ff6b5b" : "none"}
+      stroke={filled ? "#ff6b5b" : "#9ca3af"}
       strokeWidth={1.5}
       aria-hidden="true"
     >

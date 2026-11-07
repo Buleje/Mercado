@@ -88,7 +88,7 @@ export function calculateForecast(sales: SaleRecord[]): ForecastResult {
   }
 
   // ── Mejor y peor día ─────────────────────────────────────────────────────
-  const sortedDays = [...avgByWeekday.map((avg, idx) => ({ day: DAY_NAMES[idx], avg }))]
+  const sortedDays = avgByWeekday.map((avg, idx) => ({ day: DAY_NAMES[idx], avg }))
     .sort((a, b) => b.avg - a.avg);
   const bestDay = sortedDays[0]?.day ?? "Sábado";
   const worstDay = sortedDays[sortedDays.length - 1]?.day ?? "Martes";

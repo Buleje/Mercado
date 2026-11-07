@@ -165,12 +165,11 @@ describe("QuotaAlertBanner", () => {
 // ─── Tests: QuotaAlertModal ───────────────────────────────────────────────────
 
 describe("QuotaAlertModal", () => {
-  it("tiene role=dialog y aria-modal=true", () => {
+  it("es un diálogo con nombre (AdminModal desde 11-10)", () => {
     const snapshot = buildSnapshot();
     const onClose = vi.fn();
     render(<QuotaAlertModal snapshot={snapshot} onClose={onClose} />);
-    const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("dialog", { name: /Uso de cuota/i })).toBeInTheDocument();
   });
 
   it("tiene aria-labelledby apuntando al título", () => {
@@ -217,7 +216,8 @@ describe("QuotaAlertModal", () => {
     const onClose = vi.fn();
     const snapshot = buildSnapshot();
     render(<QuotaAlertModal snapshot={snapshot} onClose={onClose} />);
-    const closeBtn = screen.getByRole("button", { name: /Cerrar modal/i });
+    // La X del encabezado de AdminModal (el pie tiene otro «Cerrar»).
+    const closeBtn = screen.getAllByRole("button", { name: /^Cerrar$/i })[0];
     await user.click(closeBtn);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -226,10 +226,11 @@ describe("QuotaAlertModal", () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const snapshot = buildSnapshot();
-    const { container } = render(<QuotaAlertModal snapshot={snapshot} onClose={onClose} />);
-    // El backdrop es el primer div con aria-hidden
-    const backdrop = container.querySelector("[aria-hidden='true']");
-    if (backdrop) await user.click(backdrop as HTMLElement);
+    render(<QuotaAlertModal snapshot={snapshot} onClose={onClose} />);
+    // El velo de AdminModal (Radix) vive en un portal a <body>.
+    const backdrop = document.querySelector(".modal-backdrop");
+    expect(backdrop).not.toBeNull();
+    await user.click(backdrop as HTMLElement);
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -263,10 +264,11 @@ describe("QuotaAlertModal", () => {
   it("bloquea el scroll del body mientras está abierto", () => {
     const snapshot = buildSnapshot();
     const { unmount } = render(<QuotaAlertModal snapshot={snapshot} onClose={vi.fn()} />);
-    expect(document.body.style.overflow).toBe("hidden");
+    // AdminModal (Radix) bloquea con react-remove-scroll: marca el <body>.
+    expect(document.body.hasAttribute("data-scroll-locked")).toBe(true);
     unmount();
     // Después de unmount se restaura
-    expect(document.body.style.overflow).not.toBe("hidden");
+    expect(document.body.hasAttribute("data-scroll-locked")).toBe(false);
   });
 
   it("muestra el plan del tenant en el subtítulo", () => {

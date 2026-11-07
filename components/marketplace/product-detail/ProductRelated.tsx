@@ -6,7 +6,6 @@
  * Recibe productos del Server Component (misma categoría o tienda).
  */
 
-import Link from "next/link";
 import { Kicker, SectionTitle } from "@buleje/design-system";
 import UnifiedProductCard, { type UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
 
@@ -21,6 +20,7 @@ export interface RelatedProduct {
   storeName?: string;
   storeSlug?: string;
   storeId?: string;
+  storeLogo?: string | null;
   storeProductId?: string;
   unit?: string | null;
   category?: string;
@@ -44,7 +44,10 @@ export function ProductRelated({ products, storeSlug }: ProductRelatedProps) {
         <SectionTitle as="h2">También te puede interesar</SectionTitle>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* Grid normalizado a tamaño estándar de "relacionados" (Brandon 2026-07-04):
+          máx 5 columnas + gap mayor → cards más grandes y legibles que la grilla
+          densa del catálogo (que en el detalle, más angosto, salían diminutas). */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {products.map((product, index) => {
           const cardProduct: UnifiedProductCardProduct = {
             id: product.id,
@@ -55,6 +58,7 @@ export function ProductRelated({ products, storeSlug }: ProductRelatedProps) {
             storeName: product.storeName,
             storeSlug: product.storeSlug,
             storeId: product.storeId,
+            storeLogo: product.storeLogo,
             storeProductId: product.storeProductId,
             unit: product.unit,
             category: product.category,

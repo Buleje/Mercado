@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, AlertTriangle, Sparkles } from "@buleje/design-system/icons";
 
+import { PageTitle, SectionTitle } from "@buleje/design-system";
 function csrf(): string {
   return document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1] ?? "";
 }
@@ -74,14 +75,14 @@ export default function MockCheckoutPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
           {!done && (
             <>
               <div className="text-center mb-6">
                 <Sparkles className="h-10 w-10 mx-auto text-[var(--accent)]" strokeWidth={2.25} />
-                <h1 className="mt-3 text-2xl font-extrabold text-[var(--text-primary)]">
+                <PageTitle className="mt-3 text-[var(--text-primary)]">
                   Activar plan {planInfo.name}
-                </h1>
+                </PageTitle>
                 <p className="mt-1 text-3xl font-extrabold text-[var(--accent)]">{planInfo.price}<span className="text-sm font-bold text-[var(--text-tertiary)]">/mes</span></p>
               </div>
 
@@ -95,7 +96,7 @@ export default function MockCheckoutPage() {
                 type="button"
                 onClick={simulatePayment}
                 disabled={submitting}
-                className="w-full h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-extrabold text-white shadow-md disabled:opacity-50"
+                className="w-full h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-semibold text-white shadow-md disabled:opacity-50"
               >
                 {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
                 Simular pago exitoso
@@ -113,7 +114,7 @@ export default function MockCheckoutPage() {
           {done && (
             <div className="text-center py-4">
               <CheckCircle2 className="h-16 w-16 mx-auto text-[var(--data-success-500)]" strokeWidth={2.25} />
-              <h2 className="mt-4 text-xl font-extrabold text-[var(--text-primary)]">¡Plan activado!</h2>
+              <SectionTitle className="mt-4 text-[var(--text-primary)]">¡Plan activado!</SectionTitle>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
                 Llevándote al admin…
               </p>

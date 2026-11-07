@@ -98,6 +98,17 @@ export const MermasDB = {
 
     const where: Record<string, unknown> = { tenantId, type: "merma" };
 
+    /* Una pérdida revertida desde su ficha (un movimiento inverso con `reference` = su id) ya
+       no es pérdida: sin esto seguía sumando en «Pérdida total» (10-10, carril Movimientos). */
+    const revertidas = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT m.id FROM "InventoryMovement" m
+      WHERE m."tenantId" = ${tenantId} AND m.type = 'merma'
+        AND EXISTS (
+          SELECT 1 FROM "InventoryMovement" r
+          WHERE r."tenantId" = ${tenantId} AND r.reference = m.id AND r.type <> 'merma'
+        )`;
+    if (revertidas.length > 0) where.id = { notIn: revertidas.map((r) => r.id) };
+
     if (filters.productId) where.productId = filters.productId;
     if (filters.lossType) where.lossType = filters.lossType;
     if (filters.warehouseId) where.warehouseId = filters.warehouseId;

@@ -54,7 +54,7 @@ export const NAV_LINK_CATALOG: Record<NavScope, NavLinkEntry[]> = {
   // Por defecto OFF para mantener el home limpio (pedido del negocio).
   "marketplace-sections": [
     { id: "asistente-ia", label: "Asistente IA", href: "/asistente", description: "Banner Buleje IA en home", defaultVisible: false },
-    { id: "gift-cards", label: "Gift Cards", href: "/marketplace/gift-cards", description: "Banner regalá Buleje", defaultVisible: false },
+    { id: "gift-cards", label: "Gift Cards", href: "/marketplace/gift-cards", description: "Banner regala Buleje", defaultVisible: false },
     { id: "socio-buleje", label: "Socio Buleje", href: "/marketplace/mi-cuenta?tab=socio", description: "Promo membresía", defaultVisible: false },
     { id: "bodega-al-mes", label: "Bodega al Mes", href: "/marketplace/bodega-al-mes", description: "Subscribe & save · 5% off", defaultVisible: false },
     { id: "comparar-productos", label: "Comparar productos", href: "/marketplace/comparar", description: "Cross-sell comparador", defaultVisible: false },
@@ -88,11 +88,11 @@ export function readNavVisibility(): Store {
     const parsed = JSON.parse(raw) as Partial<Store>;
     const base = defaultStore();
     return {
-      landing: { ...base.landing, ...(parsed.landing ?? {}) },
-      marketplace: { ...base.marketplace, ...(parsed.marketplace ?? {}) },
+      landing: { ...base.landing, ...parsed.landing },
+      marketplace: { ...base.marketplace, ...parsed.marketplace },
       "marketplace-sections": {
         ...base["marketplace-sections"],
-        ...(parsed["marketplace-sections"] ?? {}),
+        ...parsed["marketplace-sections"],
       },
     };
   } catch {

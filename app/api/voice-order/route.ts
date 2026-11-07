@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateObject } from "ai";
+import { GATEWAY_MODEL_IDS } from "@/lib/claude-router";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -106,10 +107,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const { object } = await generateObject({
-      model: "anthropic/claude-haiku-4-5",
+      model: GATEWAY_MODEL_IDS.haiku,
+      // Haiku 5.5 razona por defecto (effort medium); `low` es lo indicado para rutas cortas.
+      providerOptions: { anthropic: { effort: "low" } },
       schema: ResponseSchema,
       prompt: PARSE_PROMPT(transcription),
-      temperature: 0.2,
     });
     return NextResponse.json({
       transcription,

@@ -39,7 +39,7 @@ export default function TiendasWelcomeBanner({
     >
       <Gift className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
       <span className="flex-1 text-sm font-extrabold tracking-tight truncate">
-        Iniciá sesión · Delivery gratis en tu 1er pedido
+        Inicia sesión · Delivery gratis en tu 1er pedido
       </span>
       <ArrowRight
         className="h-4 w-4 shrink-0 opacity-90 transition-transform group-hover:translate-x-0.5"

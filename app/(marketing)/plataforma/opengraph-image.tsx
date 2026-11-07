@@ -1,9 +1,13 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
 export const alt = "Buleje — Sistema ERP para bodegas y minimarkets en Perú";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+
+// El generador de imágenes (Satori) no lee variables CSS: `var(--accent)` llegaba como
+// `background: initial` y rompía la imagen (01-11, Next 16.4 la genera en el build).
+// = `--accent` del tema oscuro de app/globals.css, sobre el fondo oscuro de abajo.
+const ACENTO = "#2EC4BA";
 
 export default function OGImage() {
   return new ImageResponse(
@@ -34,7 +38,7 @@ export default function OGImage() {
               width: "64px",
               height: "64px",
               borderRadius: "16px",
-              background: "var(--accent)",
+              background: ACENTO,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -49,7 +53,7 @@ export default function OGImage() {
             style={{
               fontSize: "48px",
               fontWeight: 800,
-              color: "var(--accent)",
+              color: ACENTO,
               letterSpacing: "-1px",
             }}
           >
@@ -95,7 +99,7 @@ export default function OGImage() {
         >
           <div
             style={{
-              background: "var(--accent)",
+              background: ACENTO,
               color: "white",
               padding: "14px 32px",
               borderRadius: "12px",

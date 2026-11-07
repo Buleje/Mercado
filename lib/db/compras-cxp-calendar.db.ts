@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { limaDateKey } from "@/lib/utils";
 
 /**
  * Audit project-wide 2026-05-19 — DB class para calendario de cuentas por pagar (CxP).
@@ -50,11 +51,12 @@ export async function getCxpCalendar(
 
   const calendar: Record<string, DbCxpCalendarEntry[]> = {};
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Los vencimientos son días de calendario (00:00 UTC); «hoy» es el de LIMA,
+  // no el del servidor (UTC), que después de las 19:00 ya era mañana.
+  const today = new Date(`${limaDateKey()}T00:00:00.000Z`);
 
   const weekEnd = new Date(today);
-  weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
+  weekEnd.setUTCDate(weekEnd.getUTCDate() + (7 - weekEnd.getUTCDay()));
 
   let venceEstaSemana = 0;
   let venceEsteMes = 0;
@@ -63,7 +65,7 @@ export async function getCxpCalendar(
   for (const p of payables) {
     const dateKey = p.dueDate.toISOString().slice(0, 10);
     const dueDate = new Date(p.dueDate);
-    dueDate.setHours(0, 0, 0, 0);
+    dueDate.setUTCHours(0, 0, 0, 0);
 
     const daysOverdue = Math.floor(
       (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),

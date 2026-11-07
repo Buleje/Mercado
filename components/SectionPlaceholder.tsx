@@ -35,7 +35,7 @@ export default function SectionPlaceholder({
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
       {/* Section header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
+        <div className="inline-flex items-center gap-1.5 bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
           <Icon className="w-3.5 h-3.5" />
           {resolvedTitle}
         </div>

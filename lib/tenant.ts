@@ -279,6 +279,19 @@ const TENANT_MODELS = new Set([
   "supplierPortal",
   "mpPendingPlan",
   "documentVersion",
+  // Metas y tareas del panel (ADR-415): antes vivían en local-data/*.json, sin tenant.
+  "adminGoal",
+  "adminTask",
+  // Plan de la empresa (ADR-497): socios con DNI y plata de la inversión.
+  "planEmpresaSeccion",
+  "planEmpresaVersion",
+  // Fichas, trámites y alquileres (ADR-524): requisitos y pagos llevan su propio tenantId.
+  "tramite",
+  "tramiteRequisito",
+  "alquiler",
+  "alquilerPago",
+  // Papeles emitidos con QR público (ADR-534): número, código y clave por negocio.
+  "papelEmitido",
 ]);
 
 /**

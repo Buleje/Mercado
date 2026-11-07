@@ -1,10 +1,7 @@
 import dynamic from "next/dynamic";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 
 const PanelClient = dynamic(() => import("./PanelClient"));
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 /**
  * /panel — Hub del cliente para una tienda individual (tenant-scoped).

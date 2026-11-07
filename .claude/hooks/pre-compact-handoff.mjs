@@ -24,6 +24,8 @@ function tryExec(cmd) {
       encoding: "utf-8",
       timeout: 2000,
       stdio: ["ignore", "pipe", "pipe"],
+      // 01-11: `git status` cortado por el tope dejaba .git/index.lock huérfano; así no lo toma.
+      env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
     }).trim();
   } catch {
     return "";
@@ -67,7 +69,7 @@ ${lastCommits.map((c) => `- ${c}`).join("\n")}
 - Dev server: http://localhost:3000 (verificar con \`curl -I localhost:3000\`)
 - Memoria persistente: \`~/.claude/projects/.../memory/MEMORY.md\`
 - CLAUDE.md root: power rules activas (paralelismo, no-restart, grep-first, worktrees)
-- Hooks activos: danger-zone + pre-bash-guard + hex-code-guard + post-tool-lint + session-start + user-prompt-adr-injector + pre-compact-handoff + subagent-cost-log
+- Hooks activos: mem-guard + danger-zone + pre-bash-guard (Pre) · hex-code-guard + auto-learn + typography + screenshot + rubric (Post async) · session-start + adr-injector + pre-compact-handoff + subagent-cost-log + stop-gate
 
 ## Acciones típicas post-retome
 

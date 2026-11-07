@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
+import { FiadosDB } from "@/lib/db/fiados.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
@@ -8,6 +9,7 @@ import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import type { HealthScore } from "@/app/api/customers/health-scores/route";
+import { cumpleDe, cumpleParaGuardar } from "@/lib/clientes/cumpleanos";
 
 const CustomerPatchSchema = z.object({
   // Existing fields
@@ -40,6 +42,11 @@ const CustomerPatchSchema = z.object({
   genero: z.string().max(10).optional().nullable(),
   comoLlego: z.string().max(30).optional().nullable(),
   observaciones: z.string().max(2000).optional().nullable(),
+  // Avisos que acepta el cliente (Ley 29733: él decide). Antes ninguna
+  // pantalla del panel los mostraba ni los cambiaba.
+  notifOrderUpdates: z.boolean().optional(),
+  notifPromotions: z.boolean().optional(),
+  notifRestock: z.boolean().optional(),
 }).partial();
 
 export async function GET(
@@ -77,9 +84,16 @@ export async function GET(
     // Usamos customer.phone (valor real almacenado, ya resuelto por getByPhone
     // tolerante) en vez de `normalized` — así matchea filas legacy con prefijo.
      
-    const fullCustomer = await prisma.customer.findFirst({
-      where: { phone: customer.phone, tenantId: auth.tenantId },
-    });
+    const [fullCustomer, fiado] = await Promise.all([
+      prisma.customer.findFirst({
+        where: { phone: customer.phone, tenantId: auth.tenantId },
+      }),
+      // Lo que debe de fiados ACTIVO+VENCIDO: es lo que consume el límite de crédito.
+      FiadosDB.resumenByCustomer(auth.tenantId, customer.phone).catch((err) => {
+        logger.error("[customers GET] fiado resumen failed", { error: String(err), phone: normalized });
+        return null;
+      }),
+    ]);
 
     return NextResponse.json({
       name: customer.name,
@@ -89,9 +103,15 @@ export async function GET(
       locations: customer.locations ?? [],
       activeLocationId: customer.activeLocationId ?? null,
       birthday: customer.birthday ?? null,
+      // Un solo cumpleaños: la columna que tenga dato (tienda o ficha).
+      cumple: cumpleDe({ birthday: fullCustomer?.birthday ?? customer.birthday, fechaNacimiento: fullCustomer?.fechaNacimiento }),
       healthScore,
       creditLimit: fullCustomer?.creditLimit ?? 0,
       creditBalance: fullCustomer?.creditBalance ?? 0,
+      // 17-10: la columna `creditBalance` es SALDO A FAVOR (lo suben las devoluciones a
+      // crédito); la deuda es la de los fiados. Cada pantalla lee el campo con su nombre.
+      saldoAFavor: Number(fullCustomer?.creditBalance ?? 0),
+      deudaFiado: fiado?.montoPendiente ?? null,
       tags: fullCustomer?.tags ?? null,
       // New ficha fields
       tipoPersona: fullCustomer?.tipoPersona ?? null,
@@ -115,6 +135,12 @@ export async function GET(
       genero: fullCustomer?.genero ?? null,
       comoLlego: fullCustomer?.comoLlego ?? null,
       observaciones: fullCustomer?.observaciones ?? null,
+      // Las «Notas del vendedor» de la ficha: sin esta clave salían vacías y al
+      // guardar pisaban la anterior. Las leen los mismos roles que el PATCH escribe.
+      privateNotes: fullCustomer?.privateNotes ?? null,
+      notifOrderUpdates: fullCustomer?.notifOrderUpdates ?? true,
+      notifPromotions: fullCustomer?.notifPromotions ?? true,
+      notifRestock: fullCustomer?.notifRestock ?? false,
     });
   } catch (e) {
     logger.error("[customers/phone] GET error", { err: e instanceof Error ? e.message : String(e) });
@@ -140,7 +166,7 @@ export async function PATCH(
 async function patchCustomer(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> },
-  auth: { tenantId: string; username: string },
+  auth: { tenantId: string; username: string; role: string },
 ): Promise<NextResponse> {
   const { phone } = await params;
   const normalized = normalizePhone(phone);
@@ -154,7 +180,23 @@ async function patchCustomer(
       await CustomersDB.updatePrivateNotes(auth.tenantId, normalized, parsed.data.privateNotes);
     }
     if (parsed.data.creditDelta !== undefined && parsed.data.creditDelta !== 0) {
-      await CustomersDB.updateCreditBalance(auth.tenantId, normalized, parsed.data.creditDelta);
+      // Ajustar el saldo a favor a mano es plata que la tienda le debe al cliente:
+      // sólo admin o dueño (la misma regla que devolver en efectivo).
+      if (auth.role !== "admin" && auth.role !== "owner") {
+        return NextResponse.json({ error: "Ajustar el saldo a favor requiere al admin o al dueño" }, { status: 403 });
+      }
+      try {
+        await CustomersDB.updateCreditBalance(auth.tenantId, normalized, parsed.data.creditDelta);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg === "SALDO_A_FAVOR_INSUFICIENTE") {
+          return NextResponse.json({ error: "El cliente no tiene ese saldo a favor", code: msg }, { status: 422 });
+        }
+        if (msg === "CLIENTE_NO_ENCONTRADO") {
+          return NextResponse.json({ error: "Cliente no encontrado", code: msg }, { status: 404 });
+        }
+        throw err;
+      }
     }
     if (parsed.data.aiNotes !== undefined) {
       await CustomersDB.updateAiNotes(auth.tenantId, normalized, parsed.data.aiNotes);
@@ -185,8 +227,14 @@ async function patchCustomer(
     if (parsed.data.diasCredito !== undefined) prismaUpdate.diasCredito = parsed.data.diasCredito;
     if (parsed.data.alertasWhatsapp !== undefined) prismaUpdate.alertasWhatsapp = parsed.data.alertasWhatsapp;
     if (parsed.data.fechaNacimiento !== undefined) {
-      prismaUpdate.fechaNacimiento = parsed.data.fechaNacimiento ? new Date(parsed.data.fechaNacimiento) : null;
+      // Las DOS columnas: `birthday` es la que leen cupón, saludo y campañas.
+      const cumple = cumpleParaGuardar(parsed.data.fechaNacimiento);
+      prismaUpdate.fechaNacimiento = cumple;
+      prismaUpdate.birthday = cumple;
     }
+    if (parsed.data.notifOrderUpdates !== undefined) prismaUpdate.notifOrderUpdates = parsed.data.notifOrderUpdates;
+    if (parsed.data.notifPromotions !== undefined) prismaUpdate.notifPromotions = parsed.data.notifPromotions;
+    if (parsed.data.notifRestock !== undefined) prismaUpdate.notifRestock = parsed.data.notifRestock;
     if (parsed.data.genero !== undefined) prismaUpdate.genero = parsed.data.genero;
     if (parsed.data.comoLlego !== undefined) prismaUpdate.comoLlego = parsed.data.comoLlego;
     if (parsed.data.observaciones !== undefined) prismaUpdate.observaciones = parsed.data.observaciones;

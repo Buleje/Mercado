@@ -2,15 +2,30 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { createSessionToken, SESSION } from "@/lib/session";
+import { createSessionToken, getRefreshPayload, SESSION, REFRESH } from "@/lib/session";
+import {
+  MINUTOS_SUPLANTACION_DEFECTO,
+  MINUTOS_SUPLANTACION_MAX,
+  MINUTOS_SUPLANTACION_MIN,
+  usuarioDeSuplantacion,
+} from "@/lib/auth/suplantacion";
+import { cerrarRefresh } from "@/lib/auth/refresh-sucesor";
+import { cacheStore } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
+import { respuestaSiCandadoCerrado } from "@/lib/superadmin/candado";
 
 const ImpersonateSchema = z.object({
   slug: z.string().min(1).max(64),
+  /**
+   * Cuánto dura la vista de tienda (18-10): entero de 5 a 60. Fuera de rango o
+   * con decimales → 400 (no se acota callado). Sin el campo, 10 como antes:
+   * los que todavía no lo mandan no cambian.
+   */
+  minutos: z.number().int().min(MINUTOS_SUPLANTACION_MIN).max(MINUTOS_SUPLANTACION_MAX).optional(),
 });
 
 async function requirePlatform(req: NextRequest) {
@@ -50,6 +65,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  // 1.5. Candado de credenciales (11-10): si el superadmin lo configuró, entrar
+  // como una tienda exige tenerlo abierto (423 si no). Sin candado, como antes.
+  const candadoCerrado = await respuestaSiCandadoCerrado(req, platformSession.username);
+  if (candadoCerrado) return candadoCerrado;
+
   // 2. Validar body
   let body: unknown;
   try {
@@ -60,13 +80,22 @@ export async function POST(req: NextRequest) {
 
   const parsed = ImpersonateSchema.safeParse(body);
   if (!parsed.success) {
+    const porMinutos = parsed.error.issues.some((i) => i.path[0] === "minutos");
     return NextResponse.json(
-      { error: "Datos inválidos", issues: parsed.error.issues },
+      {
+        error: "Datos inválidos",
+        ...(porMinutos
+          ? { message: `El tiempo de la vista va de ${MINUTOS_SUPLANTACION_MIN} a ${MINUTOS_SUPLANTACION_MAX} minutos, en minutos enteros.` }
+          : {}),
+        issues: parsed.error.issues,
+      },
       { status: 400 },
     );
   }
 
   const { slug } = parsed.data;
+  const minutos = parsed.data.minutos ?? MINUTOS_SUPLANTACION_DEFECTO;
+  const duracionS = minutos * 60;
 
   // 3. Buscar el tenant por slug
   let tenant: { id: string; name: string; slug: string } | null = null;
@@ -91,11 +120,12 @@ export async function POST(req: NextRequest) {
   try {
     await logSuperadminAction(
       "impersonate",
-      `Superadmin "${platformSession.username}" impersonó tenant "${tenant.slug}" (${tenant.name})`,
+      `Superadmin "${platformSession.username}" impersonó tenant "${tenant.slug}" (${tenant.name}) por ${minutos} min`,
       {
         targetTenantId: tenant.id,
         targetTenantSlug: tenant.slug,
         targetTenantName: tenant.name,
+        minutos,
         ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
         userAgent: req.headers.get("user-agent") || null,
         timestamp: new Date().toISOString(),
@@ -122,9 +152,12 @@ export async function POST(req: NextRequest) {
   // en audit y para que /api/superadmin/impersonate/exit valide que es sesion impersonada.
   const token = await createSessionToken(
     "admin",
-    `impersonated-by:${platformSession.username}`,
+    usuarioDeSuplantacion(platformSession.username),
     tenant.id,
     `SuperAdmin→${tenant.slug}`,
+    // El token muere con su cookie (los minutos elegidos): antes vivía 15 fijos
+    // aunque la cookie durara 10 (security 11-10).
+    duracionS * 1000,
   );
 
   // 5. Escribir la misma cookie que usa /api/auth/login
@@ -136,6 +169,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       tenantName: tenant.name,
       tenantSlug: tenant.slug,
+      minutos,
     },
     {
       headers: {
@@ -150,7 +184,9 @@ export async function POST(req: NextRequest) {
   // superadmin se compromete. 10min cubre operaciones típicas (revisar,
   // ajustar, salir) y fuerza re-impersonate para sesiones largas, que
   // queda logueado en audit trail dando trazabilidad fina.
-  const IMPERSONATE_MAX_AGE = 10 * 60; // 10 min en segundos
+  // 18-10: el superadmin elige de 5 a 60 min (10 sigue siendo el defecto);
+  // cada entrada queda auditada con sus `minutos` y no se renueva.
+  const IMPERSONATE_MAX_AGE = duracionS;
   response.cookies.set(SESSION.COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProd,
@@ -158,6 +194,19 @@ export async function POST(req: NextRequest) {
     path: "/",
     maxAge: IMPERSONATE_MAX_AGE,
   });
+
+  // «Entrar como esta tienda» (11-10): la suplantación no lleva refresh. Si el
+  // navegador guardaba el refresh de otra sesión (el superadmin logueado en su
+  // propia bodega), el panel lo rotaba al montar y la pestaña de esta tienda
+  // quedaba con la sesión de OTRO negocio. La sesión anterior ya se reemplazó
+  // arriba: su refresh se borra con ella, y se anula en el servidor como en el
+  // logout (si no, una copia seguía rotando 7 días — security 11-10).
+  const refreshViejo = req.cookies.get(REFRESH.COOKIE_NAME)?.value;
+  if (refreshViejo) {
+    const viejo = await getRefreshPayload(refreshViejo);
+    if (viejo?.jti) cerrarRefresh(cacheStore, viejo.jti);
+  }
+  response.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
 
   // Set active-tenant cookie with canonical Tenant.id for proxy.ts resolution
   response.cookies.set("active-tenant", tenant.id, {

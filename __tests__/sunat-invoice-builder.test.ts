@@ -28,6 +28,7 @@ import {
   type BuilderTenant,
   type BuilderSettings,
 } from "@/lib/sunat/invoice-builder";
+import { calcularDetraccion } from "@/lib/sunat/detraccion";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -192,6 +193,57 @@ describe("buildFactura", () => {
     const payload = buildFactura(singleItemOrder, tenant, settings, customer);
     expect(payload.total_gravada).toBeCloseTo(100, 0);
     expect(payload.total_igv).toBeCloseTo(18, 0);
+  });
+});
+
+// ── Tests buildFactura con detracción (SPOT madera) ──────────────────────────
+
+describe("buildFactura con detracción", () => {
+  const customer = {
+    ruc: "20601234568",
+    razonSocial: "MADERERA LIMA SRL",
+    direccion: "Av. Lima 456",
+  };
+
+  it("arma sunat_transaction=30 + campos de detracción cuando aplica", () => {
+    const detr = calcularDetraccion({
+      tipoComprobante: "factura",
+      totalGravadoConIgv: 1180,
+      bienSujeto: "008",
+    });
+    const payload = buildFactura(singleItemOrder, tenant, settings, customer, detr);
+
+    expect(payload.sunat_transaction).toBe(30);
+    expect(payload.detraccion).toBe(true);
+    expect(payload.detraccion_tipo).toBe(8); // 008 Madera
+    expect(payload.detraccion_porcentaje).toBe(4);
+    expect(payload.detraccion_total).toBe(47.2); // 1180 × 4 %
+    expect(payload.medio_de_pago_detraccion).toBe(1); // 001 depósito
+  });
+
+  it("sin detracción: payload idéntico al de hoy (sunat_transaction=1, sin campos SPOT)", () => {
+    const base = buildFactura(singleItemOrder, tenant, settings, customer);
+    const conInerte = buildFactura(
+      singleItemOrder,
+      tenant,
+      settings,
+      customer,
+      calcularDetraccion({
+        tipoComprobante: "factura",
+        totalGravadoConIgv: 100, // <= 700 → no aplica
+        bienSujeto: "008",
+      }),
+    );
+
+    for (const payload of [base, conInerte]) {
+      expect(payload.sunat_transaction).toBe(1);
+      expect(payload.detraccion).toBeUndefined();
+      expect(payload.detraccion_tipo).toBeUndefined();
+      expect(payload.detraccion_total).toBeUndefined();
+      expect(payload.medio_de_pago_detraccion).toBeUndefined();
+    }
+    // El payload sin el parámetro y con una detracción inerte son iguales.
+    expect(conInerte).toEqual(base);
   });
 });
 

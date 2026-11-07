@@ -763,6 +763,8 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   // SEGURIDAD: Solo tenant "main"
+  // TODO(ADR-457 §Excepciones): excepción de negocio — la siembra de catálogo peruano es de la bodega de prueba (`main`).
+  // Debe pasar a una acción de superadmin o a una pieza asignable; requiere pantalla, por eso queda escrita.
   if (auth.tenantId !== "main") {
     return NextResponse.json(
       { error: "Este endpoint solo funciona para la tienda principal (main)" },

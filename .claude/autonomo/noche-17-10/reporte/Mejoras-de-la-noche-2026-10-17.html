@@ -1,0 +1,474 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Mejoras de la noche · 17 de octubre</title><style>
+  @page { size: A4; margin: 16mm 14mm; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; color: #1c2321; font-size: 11pt; line-height: 1.45; }
+  h1 { font-size: 26pt; margin: 0 0 6mm; } h2 { font-size: 16pt; margin: 1mm 0 3mm; } h3 { font-size: 11.5pt; margin: 5mm 0 2mm; color: #0f5f57; }
+  .kicker { font-size: 8.5pt; letter-spacing: .08em; text-transform: uppercase; color: #0f766e; font-weight: 700; }
+  .donde { color: #475569; margin: 0 0 3mm; } .mejora { page-break-before: always; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0; font-size: 9.5pt; } th, td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; vertical-align: top; } th { background: #ecfdf5; }
+  code { font-family: Consolas, monospace; font-size: 8.5pt; background: #f1f5f9; padding: 0 3px; border-radius: 3px; word-break: break-all; }
+  img { max-width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 2mm; }
+  .cifras { display: flex; gap: 6mm; margin: 6mm 0; } .cifra { border: 1px solid #99f6e4; border-radius: 10px; padding: 4mm 6mm; } .cifra b { display: block; font-size: 22pt; color: #0f766e; }
+  ul { margin: 1mm 0 2mm 5mm; padding: 0; } li { margin: 0.6mm 0; }
+</style></head><body>
+<section>
+  <div class="kicker">Buleje · noche autónoma</div>
+  <h1>Mejoras de la noche · 17 de octubre</h1>
+  <p>Trabajé solo mientras dormías, con varios equipos de agentes a la vez. Lo que toca plata, datos o permisos pasó por un revisor distinto del que lo construyó (y por seguridad cuando tocaba permisos); cada cambio se midió antes y después y solo se guarda con las pruebas en verde. Nada se subió a producción.</p>
+  <div class="cifras">
+    <div class="cifra"><b>44</b>mejoras guardadas</div>
+    <div class="cifra"><b>48</b>commits</div>
+    <div class="cifra"><b>6</b>áreas del panel</div>
+  </div>
+  <h3>Por área</h3>
+  <table><thead><tr><th>Área</th><th>Mejoras</th></tr></thead><tbody>
+  <tr><td>Ventas y caja</td><td>Caja de hoy vs. turno, quién vendió, fiados sin plazo y la regla de comisión<br>POS en tarjetas o lista, Ctrl+K, ticket promedio real y la cuenta de cada fiado<br>Bandeja del turno, «¿por qué no cuadra?», cierre sin duplicar y caja sin conexión<br>La caja ya no frena en la venta 11 ni cobra dos veces sin conexión<br>Devolver una venta: nunca más que lo vendido<br>Devolver un pedido con tope y el saldo a favor del cliente bien mostrado<br>Devoluciones: sólo lo entregado y lo cobrado<br>Motivo obligatorio al ajustar stock, cambiar un medio o cancelar una orden<br>Me deben con el último contacto y la promesa; repartidor con su historial</td></tr><tr><td>Pedidos y reparto</td><td>Cada pedido dice qué sigue, quién lo lleva y cuánto falta cobrar<br>Reparto: el equipo guarda de verdad, asignar eligiendo el pedido, ranking honesto<br>Reparto: retiros con filtros, ficha del repartidor y lo que pasó en el día<br>Pestañas nuevas: Preparación, Análisis y agenda de entregas<br>Pedidos por rol, Emitir y Guía desde el pedido, y Preparación/Análisis montadas<br>Detalle del pedido con la franja de entrega y «Listo para salir»</td></tr><tr><td>Compras</td><td>Comprar: la canasta vaciada ya no vuelve, costo real e IGV a la vista<br>Órdenes: en qué va cada una, entregas por día y recibir con o sin orden<br>Por pagar: de dónde sale cada deuda, calendario, propuesta y estado de cuenta<br>Devoluciones al proveedor con tope y anuladas en vez de borradas<br>Sugerencias que explican su cuenta, sin servicios; órdenes sin stock doble<br>Ficha del proveedor, duplicados, evaluación y precios del mercado<br>Buscar en todo Compras, bandeja «Revisar» y atajos<br>Pestaña nueva: conciliación orden ↔ recepción ↔ factura ↔ pago<br>Entregas con valor real en órdenes automáticas<br>Aviso de permiso correcto en Devoluciones<br>Órdenes sin desborde y conformidad al recibir servicios y perecibles<br>Presupuesto de compras del mes y aceptación por línea al recibir<br>Recibir: lo rechazado no se le paga al proveedor</td></tr><tr><td>Comprobantes</td><td>Emitir comprobante eligiendo el pedido, con revisión y resultado real<br>Notas de crédito: lo que queda por acreditar y campos por motivo<br>Notas de crédito: dos a la vez ya no acreditan el doble<br>Guía de remisión desde el pedido, en 5 etapas<br>Cotizaciones: cliente de tu lista, stock, confirmar todo y plantillas<br>Pestañas nuevas: Seguimiento, Expediente y Conciliación; búsqueda en la base</td></tr><tr><td>Seguridad y datos</td><td>Quién puede cambiar y borrar pedidos; notas que no se pierden<br>Convertir cotización funciona; el alta de cliente ya no pisa datos; CSV sin fórmulas<br>Límites que frenaban la operación: repartidor en el mapa, chat, boletas, caja<br>El chat ya no muestra datos de un cliente a quien solo sabe su celular<br>Chat de invitados del marketplace: cada uno ve solo su conversación<br>Chat: escribir pide sesión, el acceso vence, subidas protegidas</td></tr><tr><td>Todo el panel</td><td>Buscador con comandos, recientes, vistas guardadas y avisos agrupados<br>Fondos que faltaban en 120 pantallas<br>Anchos mínimos que nunca funcionaban: 342 → 0 en 44 vistas<br>Vistas guardadas y recientes que te siguen a otro equipo</td></tr>
+  </tbody></table>
+  <h3>Lo que decides tú</h3><ul><li>Aprobar 5 cambios de base ya escritos (sin aplicar): presentaciones del proveedor (caja de 24 = 24 latas), fiado ligado a su venta, rendición de efectivo del repartidor, factura del proveedor única en la base, bandeja de aprobaciones. Detalle y orden en decide-brandon.md.</li><li>Comisión: ¿sobre la venta, lo cobrado o el margen? Recomiendo lo cobrado (un fiado que no se paga no paga comisión).</li><li>Vender sin turno abierto: recomiendo bloquear; vender en el turno de otro, sólo el dueño.</li><li>N.° de operación de Yape obligatorio en caja y en pedidos (recomiendo sí).</li><li>Motivo obligatorio al anular o ajustar (recomiendo siempre).</li><li>Lo recibido sin orden de compra: hoy no suma stock; recomiendo que sume y quede marcado «sin orden».</li><li>Tolerancia entre orden, recepción y factura: recomiendo 2 % o S/ 5 (lo menor); arriba de eso, aprobación.</li><li>Ofertas a repartidores pagan 5 + 1,5/km ignorando la tarifa de cada uno: recomiendo la tarifa de cada repartidor.</li><li>«Yape falso» BORRA el pedido: recomiendo cancelarlo con motivo para que quede el rastro (zona de peligro).</li><li>Emitir dos veces el mismo comprobante al reintentar: clave única por operación (la tabla está vacía: el momento es ahora; zona de peligro).</li><li>Facturar ventas del POS desde «Emitir comprobante»: hoy sólo se eligen pedidos (toca la emisión).</li><li>Cobro en línea con respuesta perdida (504) que el cajero vuelve a cobrar: reusar la misma clave (zona de peligro).</li><li>Pestañas nuevas que piden tablas: anticipos y contratos con proveedores, solicitudes internas, incidencias y devoluciones de pedidos, aprobaciones, notas de débito.</li><li>Unir proveedores duplicados (mismo RUC) y unir los dos motores que predicen reposición.</li><li>Limpieza QA en main: 5 notas de prueba del revisor en un pedido (sin forma de borrarlas por pantalla); 3 notas de crédito de prueba anuladas (NC-0001 a 0003 consumidos).</li><li>Deploy a producción sigue bloqueado (memoria del 09-10): nada de esta noche está en producción.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 00:46 (40aa36e23)</div>
+  <h2>Caja de hoy vs. turno, quién vendió, fiados sin plazo y la regla de comisión</h2>
+  <p class="donde">Dónde se ve: <b>Ventas y caja › Caja, Me deben, Comisiones</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>H01/M01/M23</td><td>Sí</td><td>Caja abierta hace 7 días = «Caja de hoy» → «Caja en curso» + chip «Desde el sábado 10/10 · 7 días» + línea «Hoy…» aparte</td></tr><tr><td>H02/M02/M17/M39</td><td>Sí (mostrar)</td><td>Chip del turno sin nombre → «QA · sin turno»; aviso falso «sin turno no comisiona» corregido; <code>/api/turnos/activo</code> devuelve <code>esMio</code></td></tr><tr><td>H03/M31/M33</td><td>Sí</td><td>Fiado sin fecha caía en «31 a 60» y «Al día» → «Sin plazo · lleva 40 d» + «Poner fecha»</td></tr><tr><td>H04/M40/M41/M46</td><td>Sí (M46 parcial)</td><td>«2 % · por defecto» → «Regla vigente» con ⓘ, simulador «Si vende S/», CSV con base/regla/tramo; ningún cálculo cambió (21 tests)</td></tr><tr><td>H05/M25/M19</td><td>Sí</td><td>Arqueo S/ 0.00 sin conteo → «sin contar»</td></tr><tr><td>H08/M24</td><td>Sí</td><td>UUID y sólo hora → día y hora, «Venta #63a4541a», buscador</td></tr><tr><td>H11/M28</td><td>Alcance</td><td>Auditoría dice qué cubre</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Evidencia: typecheck ✅ 14,6 s; vitest related 755 ✅; qa-capturas main claro 1280, 0 ≥400 (datos simulados con <code>parchear</code>, PATCH frenado con <code>espiar</code>).</p>
+<p>Ver: venta <code>bc19cbe5</code> S/ 0,10 con devolución S/ 24,90 (¿devolver más de lo vendido?).</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>PEDIR SECURITY: PATCH `{fechaVence}` en `app/api/fiados/[id]/route.ts`; `esMio` de `/api/turnos/activo`.</li><li>DECIDE BRANDON: M43 base de comisión (venta/cobrado/margen); M12/M39 vendedor ≠ cajero; vender sin turno o en turno ajeno; mover fecha de vencimiento ya puesta.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 01:36 (03abcdc75)</div>
+  <h2>POS en tarjetas o lista, Ctrl+K, ticket promedio real y la cuenta de cada fiado</h2>
+  <p class="donde">Dónde se ve: <b>Ventas y caja › Vender, Cajeros, Me deben</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>H07/M09</td><td>Sí</td><td>Catálogo sólo en grilla → tarjetas o lista (se recuerda)</td></tr><tr><td>M10</td><td>Sí</td><td>«Bajo» con `stockMin</td><td></td><td>5<code> → disponibilidad por tipo (unidad, servicio, alquiler) y regla única </code>enStockBajo`</td></tr><tr><td>H06/M03</td><td>Parcial</td><td>Todo dentro de «Más» → hasta 4 accesos fijos por usuario; F3 pide confirmar (faltan «cobrar deuda» y «emitir»)</td></tr><tr><td>H12/M05</td><td>Sí</td><td>«⌘K» en todos lados → «Ctrl+K» en Windows/Linux; hoja de atajos con los del POS</td></tr><tr><td>M20</td><td>Sí</td><td>Período fijo → Cajeros por semana, mes o todo</td></tr><tr><td>M21</td><td>Sí</td><td>Ticket promedio dividía entre turnos → entre tickets (contados en el servidor), fórmula en ⓘ</td></tr><tr><td>M26</td><td>Sí</td><td>Esperado S/ −3.472 sin explicación → egresos en efectivo que lo bajan + «Ver en Movimientos»</td></tr><tr><td>M32</td><td>Sí</td><td>Sin historial del cliente → pestaña «Cuenta» con compras, abonos con recibo y gestiones</td></tr><tr><td>M38</td><td>Sí</td><td>«+0 %» sin cobros previos → «sin cobros: no hay con qué comparar»</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>816 tests ✅, guardianes 334 ✅. DECIDE BRANDON: ticket promedio = ventas ÷ tickets; con stockMin 0 el POS avisa sólo al agotarse (antes lo volvía 5); fiado-analytics agrupa meses en UTC. Datos de main: fotos de producto cruzadas.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 02:25 (1b146ad9b)</div>
+  <h2>Bandeja del turno, «¿por qué no cuadra?», cierre sin duplicar y caja sin conexión</h2>
+  <p class="donde">Dónde se ve: <b>Ventas y caja › Caja</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>M22</td><td>Sí</td><td>Lo raro del turno suelto → «Para revisar del turno» en Caja › Hoy (5 tipos de aviso con «Ver»)</td></tr><tr><td>M60</td><td>Parcial</td><td>Descuadre sin explicar → «¿Por qué no cuadra?» busca la venta o retiro del mismo monto</td></tr><tr><td>Arreglo</td><td>Sí</td><td>El faltante del Arqueo express («S/ -15.50») se leía sin diferencia → se leen los dos formatos</td></tr><tr><td>M28</td><td>Sí</td><td>Bitácora sin qué cambió → antes → después; editar/anular movimiento y arqueo anotados; cambiar medio pide motivo</td></tr><tr><td>M29</td><td>Sí</td><td>Cobros repetidos invisibles → «Para revisar (1): la misma venta entró 2 veces»</td></tr><tr><td>M30</td><td>Sí</td><td>Cierre sin pendientes → constancia y pendientes antes de cerrar; cerrar dos veces = 409</td></tr><tr><td>M34 + recibos</td><td>Sí</td><td>Abono sin saldo → saldo antes → después; recibo con la deuda original de SU compra y cuotas del mismo cobro juntas</td></tr><tr><td>M36</td><td>Sí</td><td>Recordatorio directo → vista previa editable, queda anotado</td></tr><tr><td>M59 (BUG)</td><td>Sí</td><td>Cola sin conexión mezclada y POST DOBLE por venta → separada por negocio, «Descartar», 1 POST con clave de idempotencia</td></tr><tr><td>H06</td><td>Sí</td><td>«Cobrar una deuda» y «Emitir boleta o factura» en el «Más»; el «Más» entra en una fila a 1280</td></tr><tr><td>fiado-analytics</td><td>Sí</td><td>Meses en UTC → hora de Lima</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: motivo siempre obligatorio, tolerancia 0 en pagos digitales, deshacer un abono, N.° de operación Yape, asignar cada aviso a una persona, último contacto en el recordatorio.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 02:48 (ff38a9ba7)</div>
+  <h2>La caja ya no frena en la venta 11 ni cobra dos veces sin conexión</h2>
+  <p class="donde">Dónde se ve: <b>Ventas y caja › Vender</b></p>
+  <div class="bloque"><table><thead><tr><th>Hallazgo</th><th>Antes → Después</th></tr></thead><tbody><tr><td>ALTO: límite de ventas</td><td>10 ventas cada 15 min por conexión: la venta 11 en hora punta rebotaba (dueño y cajeros comparten conexión) → 100 por minuto por cajero, después del login</td></tr><tr><td>ALTO: cola sin conexión</td><td>Cualquier error dejaba la venta en «No pasó» para siempre; con un 504 la venta pudo guardarse y el aviso pedía volver a anotarla (cobro doble) → 429/5xx/sin red siguen pendientes con la misma clave; «Reintentar»; «Descartar» primero busca la venta por su clave</td></tr><tr><td>Dos envíos con la misma clave</td><td>El segundo daba 500 y la venta (que existía) quedaba en «No pasó» → 200 «ya estaba»</td></tr><tr><td>Venta descartada</td><td>Reaparecía si se descartaba durante la sincronización → no reaparece</td></tr><tr><td>Cierre ya hecho</td><td>Reintentar mostraba error → muestra el cierre guardado</td></tr><tr><td>Negocio de cada venta en cola</td><td>Salía de una cookie de 7 días → sale de la sesión</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>58 tests ✅. DECIDE BRANDON: cobro en línea con error ambiguo (504) puede duplicarse si el cajero vuelve a cobrar con otra clave.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 04:09 (7bf2d342a)</div>
+  <h2>Devolver una venta: nunca más que lo vendido</h2>
+  <p class="donde">Dónde se ve: <b>Ventas y caja</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Venta rara S/ 0,10 con devolución S/ 24,90</td><td>Dato de prueba del 09-10 (trueque QA) creado 3 h antes del arreglo de la pantalla del POS; desde entonces 0 devoluciones pasan lo vendido</td></tr><tr><td><code>POST /api/returns</code> con venta</td><td>Seguía SIN tope: devolvía precio × cantidad sin descontar trueque ni descuento, la misma unidad N veces, acreditaba al teléfono que mandaran, saltaba «efectivo sólo admin o dueño» y no validaba el cuerpo → pasa por la misma cuenta del POS con candado y Zod</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>6 de 8 tests fallaban sin el arreglo; 26/26 con él. Ninguna pantalla llama a esa ruta, pero un cajero o almacenero podía usarla directo.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Queda: devolver un PEDIDO por la misma ruta tiene los mismos huecos; el saldo de crédito del cliente se usa con dos sentidos (la devolución a crédito sube saldo a favor, pero Clientes lo muestra como «Debe S/ X»).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 04:24 (0321542f1)</div>
+  <h2>Devolver un pedido con tope y el saldo a favor del cliente bien mostrado</h2>
+  <p class="donde">Dónde se ve: <b>Clientes y Pedidos</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Devolver un pedido por la ruta directa</td><td>Sin tope (la misma unidad N veces), acreditaba al teléfono que mandaran, sin candado → candado por pedido, tope por unidades y por total, crédito al cliente DEL pedido; el estado del pedido no se toca</td></tr><tr><td>Devoluciones en efectivo</td><td>También cualquier rol → sólo admin o dueño; unidades enteras</td></tr><tr><td>Saldo del cliente</td><td>El mismo campo se usaba como «saldo a favor» (devoluciones) y se mostraba como «Debe S/ X» → es saldo a favor; Clientes muestra «A favor S/ X»; consumir más del que hay = 422; moverlo a mano sólo admin/dueño</td></tr><tr><td>Ficha del cliente</td><td>«Disponible» mezclaba el saldo → límite − deuda de fiados, con su línea de saldo a favor aparte</td></tr><tr><td>Campañas</td><td>El segmento «deudores» salía vacío → lee la deuda real</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Con sesión real: devolver 5 de 4 = 400, producto ajeno = 400, pedido de otro negocio = 404, sin sesión = 401; 0 devoluciones creadas. Ningún cliente tenía saldo distinto de 0: nada ambiguo en los datos.</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 04:37 (b56368a17)</div>
+  <h2>Devoluciones: sólo lo entregado y lo cobrado</h2>
+  <p class="donde">Dónde se ve: <b>Ventas y caja, Pedidos</b></p>
+  <div class="bloque"><table><thead><tr><th>Hallazgo</th><th>Antes → Después</th></tr></thead><tbody><tr><td>ALTO: pedido no entregado</td><td>Se podía devolver; si luego se cancelaba, el stock volvía dos veces y el saldo a favor quedaba → 409 «cancélalo en vez de devolverlo»</td></tr><tr><td>Venta fiada</td><td>Devolverla a crédito daba saldo a favor con el fiado entero → 409 «descuéntalo del fiado» mientras el cliente deba</td></tr><tr><td>Pedido por cobrar</td><td>409 «cóbralo primero y después registra la devolución»</td></tr><tr><td>Envío</td><td>Devolver todo devolvía también el envío → tope = productos</td></tr><tr><td>Rótulo</td><td>«Crédito» en Fidelidad → «Saldo a favor»</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>82 tests ✅ (5 nuevos fallan sin el arreglo). 0 devoluciones de pedidos y 0 de ventas fiadas en la base: nada que corregir. Solución completa del fiado: migración 02 (fiado ↔ venta), decides tú.</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 05:30 (7f6e70643)</div>
+  <h2>Motivo obligatorio al ajustar stock, cambiar un medio o cancelar una orden</h2>
+  <p class="donde">Dónde se ve: <b>Caja, Inventario, Compras</b></p>
+  <div class="bloque"><table><thead><tr><th>Acción</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Caja: cambiar el medio de un movimiento</td><td>Motivo opcional → obligatorio (la pantalla no deja confirmar)</td></tr><tr><td>Ajuste de stock (uno o en lote)</td><td>Opcional → obligatorio</td></tr><tr><td>Cambiar el stock desde la ficha del producto</td><td>Se guardaba «sin razón documentada» → obligatorio</td></tr><tr><td>Cancelar orden de compra</td><td>La pantalla nunca mandaba el motivo → obligatorio y se guarda</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Regla única: al menos 3 letras o números («..» no pasa). Probado en main: sin motivo = 400 y nada cambia (el stock siguió en 108, la orden siguió pendiente).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Ventas y caja · guardado 05:56 (16e14b022)</div>
+  <h2>Me deben con el último contacto y la promesa; repartidor con su historial</h2>
+  <p class="donde">Dónde se ve: <b>Me deben, Reparto › ficha</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Me deben</td><td>«Le escribí hace 2 d» → «Último contacto: miércoles 14/10 por WhatsApp · prometió pagar S/ 150,00 el viernes 23/10»; promesa vencida dice «y no cumplió»</td></tr><tr><td>Recordatorio de cobro</td><td>Sin el último contacto → lo muestra en la vista previa; plantillas con {ultimo_contacto} y {promesa}</td></tr><tr><td>Ficha del repartidor (P39/P40)</td><td>Sin historial por pedido → estados en orden y cada entrega partida en espera y recorrido («asignado 8 min después · esperó 32 min · 18 min de recorrido»)</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>26 tests ✅. Queda: las plantillas por defecto no usan aún las variables nuevas.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Pedidos y reparto · guardado 00:48 (361f7036a)</div>
+  <h2>Cada pedido dice qué sigue, quién lo lleva y cuánto falta cobrar</h2>
+  <p class="donde">Dónde se ve: <b>Pedidos › Tablero, Lista, Archivados</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>B1</td><td>Sí</td><td>Repartidor asignado no se guardaba → se guarda («Lo lleva Vecino QA», probado y borrado)</td></tr><tr><td>B2</td><td>Sí</td><td>Motivo de cancelar se perdía → se guarda y Archivados lo muestra en «Cierre»</td></tr><tr><td>B3</td><td>Sí, SECURITY</td><td>Notas internas nunca se guardaban → quedan con autor y hora</td></tr><tr><td>B4</td><td>Sí, SECURITY</td><td>Historial decía siempre «admin» → usuario de la sesión</td></tr><tr><td>B5</td><td>No, SECURITY</td><td>Cambio de estado en lote sin historial (<code>orders.db.ts:744</code>, zona de peligro)</td></tr><tr><td>B6</td><td>No, DECIDE BRANDON</td><td>«Yape falso» borra el pedido en vez de cancelarlo</td></tr><tr><td>P03/M49, P26</td><td>Sí</td><td>Botón con el paso que sigue, la plata («Cobrar S/ 31.50 al entregar»), quién lo lleva, «Falta teléfono · dirección»</td></tr><tr><td>P05, P10</td><td>Parcial / Sí</td><td>Línea de tiempo real con quién y nota</td></tr><tr><td>O02/P01, O03/P02, O04/P06</td><td>Sí</td><td>Vacíos con salida, filtros visibles y quitables, «Sin pedidos», «Por cobrar»</td></tr><tr><td>O09/P11, P07</td><td>Sí</td><td>Archivados con «Plata», «Pedido el», «Cierre»; búsqueda por número</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Endpoint nuevo <code>/api/orders/historial</code>: 200 con sesión, 400 sin pedidos, 401 sin sesión, 403 ids ajenos. Typecheck ✅, 47 tests ✅.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Queda: asignar repartidor reinicia «sin avanzar»; B5; B7 filtro «con notas» muerto (p2); nota de prueba en pedido QA «Test» de main.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Pedidos y reparto · guardado 01:33 (b5276095d)</div>
+  <h2>Reparto: el equipo guarda de verdad, asignar eligiendo el pedido, ranking honesto</h2>
+  <p class="donde">Dónde se ve: <b>Pedidos › Reparto</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>P20/P22</td><td>Sí</td><td>Editar, pausar y borrar repartidor daban 404 y la pantalla fingía guardar → ruta <code>delivery/partners/[id]</code> real, teléfono único; con historial se pausa, no se borra (11 tests)</td></tr><tr><td>P25/M47</td><td>Sí</td><td>Botón apagado sin explicación + «ID de orden» a mano → «Para asignar necesitas» con botones; pedido elegido de una lista; tabla con repartidor y fecha (salían vacíos)</td></tr><tr><td>P29</td><td>Sí</td><td>Permisos sin explicación → ⓘ por rol y quién hizo el último cambio</td></tr><tr><td>P30</td><td>Sí</td><td>Red de reparto invisible → «Reparten: tu equipo»</td></tr><tr><td>P31</td><td>Sí</td><td>«Pagos / Por pagar» → «Retiros / Les debes» (no incluye efectivo cobrado a clientes)</td></tr><tr><td>P37/P38</td><td>Sí</td><td>Periodo falso y 0 % sin ofertas → fechas reales y «Sin datos» (9 tests)</td></tr><tr><td>P14</td><td>Sí</td><td>Igual con o sin señal → «Sin señal desde el 18 jun.» y punto punteado</td></tr><tr><td>P17</td><td>Sí</td><td>Rutas plegadas bajo el mapa → sección «Rutas y paradas»</td></tr><tr><td>B7</td><td>→ p4</td><td>—</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Seguridad de paso: la lista de repartidores mandaba <code>passwordHash</code> al navegador del cajero → la clase lo omite.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: ofertas automáticas pagan 5 + 1,5/km ignorando la tarifa de cada repartidor; las marcas de «Permisos de tienda» no se hacen cumplir en ninguna acción; P13, P19, P21.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Pedidos y reparto · guardado 02:15 (3ef78538d)</div>
+  <h2>Reparto: retiros con filtros, ficha del repartidor y lo que pasó en el día</h2>
+  <p class="donde">Dónde se ve: <b>Pedidos › Reparto</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>P34/P35/P36</td><td>Sí</td><td>Retiros sin filtros → filtro por estado, fechas y repartidor; totales del rango; alertas que avisan sin decidir; CSV</td></tr><tr><td>P24/P41/P42</td><td>Sí</td><td>Sin ficha → ficha del repartidor desde Equipo y Ranking: 5 cifras, «Ganado» y «Pagado» aparte, incidencias, tarea con responsable</td></tr><tr><td>P18</td><td>Sí</td><td>Último estado suelto (el mapa lo leía mal) → feed del día por pedido con quién hizo cada cambio</td></tr><tr><td>P45</td><td>Parcial</td><td>Botón copiar/abrir seguimiento en el feed</td></tr><tr><td>P23</td><td>Sí</td><td>Rechazar postulante con un clic sin motivo → ventana con motivo y alcance; la tarjeta dice quién decidió</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>698 tests ✅. DECIDE BRANDON: N.° de operación obligatorio al pagar por Yape; constancia o foto del pago.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Pedidos y reparto · guardado 03:20 (24819012c)</div>
+  <h2>Pestañas nuevas: Preparación, Análisis y agenda de entregas</h2>
+  <p class="donde">Dónde se ve: <b>Pedidos</b></p>
+  <div class="bloque"><table><thead><tr><th>N</th><th>Estado</th><th>Antes → Después</th></tr></thead><tbody><tr><td>N02 Preparación</td><td>HECHO</td><td>No existía → qué juntar por producto y por pedido, «listo para salir» (sin tocar la máquina de estados), hoja de recojo imprimible</td></tr><tr><td>N06 Análisis operativo</td><td>HECHO</td><td>No existía → tiempo por paso, atascados, cancelados por motivo, entregas por repartidor y zona, demanda por hora/día/canal (servidor)</td></tr><tr><td>N01 Programados</td><td>HECHO</td><td>La agenda tenía 0 filas: el pedido DESCARTABA el día y la franja que el cliente elegía en el checkout → se guardan (si falla, el pedido sale igual) y la agenda los muestra</td></tr><tr><td>N03 Incidencias, N04 Devoluciones, N05 Zonas y tarifas</td><td>DECIDE BRANDON</td><td>Los pedidos no guardan su zona y no hay tabla de devoluciones ni de incidencias</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Rutas nuevas 200 en main (Preparación: 10 pedidos; Análisis: 20). 56 tests ✅.</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Pedidos y reparto · guardado 04:25 (8246a15d6)</div>
+  <h2>Pedidos por rol, Emitir y Guía desde el pedido, y Preparación/Análisis montadas</h2>
+  <p class="donde">Dónde se ve: <b>Pedidos › detalle, Lista, Preparación, Análisis</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Roles</td><td>Sí</td><td>El almacenero no podía abrir el detalle → lo abre en sólo lectura (sin mover ni cobrar); el cajero podía borrar → ya no</td></tr><tr><td>Emitir / Guía</td><td>Sí</td><td>No había → «Emitir comprobante» y «Guía de remisión» en el pie del detalle, con el pedido ya elegido</td></tr><tr><td>B7</td><td>Sí</td><td>El filtro «Con notas» no encontraba nada → busca en el historial</td></tr><tr><td>P08</td><td>Sí</td><td>Vistas guardadas de la Lista con el menú de todo el panel</td></tr><tr><td>P09</td><td>Sí</td><td>Acción masiva sin aviso → revisión antes e informe después</td></tr><tr><td>P12</td><td>Sí</td><td>Hoja impresa sin contexto → en el orden de la Lista, con filtros y vista</td></tr><tr><td>N01/N02/N06</td><td>Sí</td><td>Preparación y Análisis montadas como pestañas de Pedidos</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>343 tests ✅; probado con admin, cajero y almacenero. Queda: chip «Listo para salir» y franja de entrega en el detalle; vistas guardadas entre equipos = columna nueva (decides tú).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Pedidos y reparto · guardado 05:23 (01c2fa25f)</div>
+  <h2>Detalle del pedido con la franja de entrega y «Listo para salir»</h2>
+  <p class="donde">Dónde se ve: <b>Pedidos › detalle</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Franja de entrega</td><td>No se veía → «Lo pidió para hoy · de 14:00 a 16:00» en Contacto y entrega; «atrasado» si el día pasó y sigue en marcha</td></tr><tr><td>«Listo para salir»</td><td>No había → chip en la cabecera (o «Listo con faltante»), con quién lo dejó listo, bultos y lo que faltó</td></tr><tr><td>Unir los dos mapas de reparto</td><td>No hecho (grande; main tiene 0 rutas para verificar): diseño listo para otra sesión</td></tr><tr><td>Reparto no aparece en main</td><td>Es la plantilla global (reparto oculto por defecto), no el código: se activa en superadmin › Plantilla (decides tú)</td></tr></tbody></table></div>
+  
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 00:40 (bd9d97e13)</div>
+  <h2>Comprar: la canasta vaciada ya no vuelve, costo real e IGV a la vista</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Comprar</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>C07/C58 (BUG)</td><td>Sí</td><td>Vaciar la canasta dejaba el borrador y volvía al recargar → se borra; dos pestañas no se pisan; «Guardada HH:MM»</td></tr><tr><td>C02</td><td>Sí</td><td>Un clic sumaba toda la sugerencia (21) → botones «+1» y «+N» con «Sugerido: N und»; cantidad editable</td></tr><tr><td>C03</td><td>Sí</td><td>La tarjeta mostraba el precio de VENTA como costo → costo real o «sin costo»; cada línea dice de dónde sale su costo</td></tr><tr><td>C04</td><td>Sí</td><td>IGV escondido → base, IGV y exonerado a la vista (Carne de Res: 19,49 + 3,51 = 23,00)</td></tr><tr><td>C05</td><td>Parcial</td><td>«Condición de pago» con su efecto y fecha («vence el domingo 01/11»); medio previsto = DECIDE BRANDON (columna)</td></tr><tr><td>C08 + crear/recibir/pagar</td><td>Sí</td><td>La orden creada dice qué sigue y si dejó deuda; ⓘ explica los tres pasos</td></tr><tr><td>C17/C18</td><td>Sí</td><td>Recibir con rótulos «Esperado»/«Llegó» y aviso cuando no hay órdenes pendientes</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Probado en main: vaciar + recargar → borrador null, 0 líneas. 75 tests ✅.</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 01:35 (7a1f862de)</div>
+  <h2>Órdenes: en qué va cada una, entregas por día y recibir con o sin orden</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Órdenes y recepción</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>C10/C59</td><td>Sí</td><td>Sólo el estado → «Sigue: Pagar S/ 250.00» en la fila; detalle con Aprobación, Entrega, Comprobante y Pago, con botón</td></tr><tr><td>C15</td><td>Sí</td><td>Cancelaba a ciegas → antes de confirmar dice qué pasa con stock y deuda; Pago lee Por pagar (antes «Contado» con S/ 200 de deuda)</td></tr><tr><td>C16</td><td>Sí</td><td>Duplicar → «Repetir con revisión», avisa costos cambiados</td></tr><tr><td>C19</td><td>Sí</td><td>Faltante invisible → «Llegó 10 de 24 · faltan 14»</td></tr><tr><td>C23</td><td>Sí</td><td>Guardar a ciegas → «Suma al stock / De más / La orden queda recibida entera», en vivo</td></tr><tr><td>C18</td><td>Sí (BUG)</td><td>La recepción sin orden nunca se guardaba → se guarda con motivo; no suma stock ni deuda</td></tr><tr><td>C14</td><td>Sí (sin almacén)</td><td>Nuevo: sección Entregas (atrasadas, hoy, sin fecha) con cambio de fecha y «Recibir»</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>29 tests ✅ (<code>compras-ciclo-oc</code>); 7 capturas 1280 sin errores ni escrituras.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: cancelar una OC a crédito con parte recibida anula la deuda ENTERA; lo recibido sin orden no suma stock; «marcar recibida» suma también lo marcado «no llegará».</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 01:32 (a5ba47375)</div>
+  <h2>Por pagar: de dónde sale cada deuda, calendario, propuesta y estado de cuenta</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Por pagar</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>C41</td><td>Sí</td><td>Descripción libre e id técnico → origen elegido (factura/boleta con serie y número, orden, saldo inicial, otro); orden visible «Orden de compra #053-YI71»; «Vincular a orden» en el ⋯</td></tr><tr><td>C42</td><td>Sí</td><td>La misma factura creaba otra deuda → aviso rojo al escribirla + 409 en el servidor; mismo importe sólo avisa; buscador encuentra «F1-123»</td></tr><tr><td>C45</td><td>Vista</td><td>Sección Calendario con antigüedad del saldo por tramos</td></tr><tr><td>C46</td><td>Vista</td><td>Sección Propuesta: vencidas y de la semana marcadas, total y CSV (no paga)</td></tr><tr><td>C48</td><td>Sí</td><td>Estado de cuenta del proveedor al corte (cargos, abonos, saldo, vencido) calculado en el servidor, con CSV</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Evidencia: fila del título 104 → 48 px a 1280; 60 tests ✅; 0 errores, 0 ≥400.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: C44 anticipos; C45 reagendar con promesa; C46 caja prevista y cuenta destino; moneda/emisor/adjunto como columnas.</li><li>PEDIR SECURITY: PATCH `/api/payables/[id]` deja cambiar monto y estado sin registrar pagos (no tocado).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 01:37 (563465fcb)</div>
+  <h2>Devoluciones al proveedor con tope y anuladas en vez de borradas</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Devoluciones</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>C49</td><td>Sí</td><td>Se podía devolver cualquier cantidad → tope en el servidor (409 «pides 11 y puedes devolver hasta 10»), aviso previo en el formulario</td></tr><tr><td>C51</td><td>Sí</td><td>Sin costo salía S/ 0 → «Pendiente de valoración» + «Poner costo» (orden de origen → última compra → ficha)</td></tr><tr><td>C53</td><td>Sí</td><td>Mandaba un WhatsApp solo → mensaje preparado que revisas y envías; próximo paso y «esperando hace N días»</td></tr><tr><td>C55</td><td>Sí</td><td>Borrar se llevaba el registro y devolvía stock a ciegas → «Anulada» con motivo, quién y fecha; el stock vuelve una vez y sólo si la mercadería volvió</td></tr><tr><td>C56</td><td>Sí</td><td>Recuperación sin base → «4 devoluciones (sin 1 anulada) · recuperado S/ 22,80 de S/ 49,50»; sin valorar aparte</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>75 tests ✅ (3 archivos nuevos sobre stock). PEDIR SECURITY: rutas nuevas `anular` y `reingresar` (mueven stock, sólo admin).</li><li>DECIDE BRANDON: columnas para responsable, fecha prometida, fotos, origen, lote y resolución; monto parcial de la nota de crédito.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 02:10 (0dfc397ee)</div>
+  <h2>Sugerencias que explican su cuenta, sin servicios; órdenes sin stock doble</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Sugerencias, Órdenes</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>C01/O07</td><td>Sí</td><td>Servicios entraban como «AGOTADO / a reponer» → insignia SERVICIO/ALQUILER, «se contrata por m³», sin sugerido (en Blas: «Aserrado de madera», «Cargador Frontal CAT»); también fuera del auto-reorden y alertas</td></tr><tr><td>C25</td><td>Sí</td><td>«No se reponen por stock: 1 servicio y 1 alquiler» con ⓘ; «Nada que reponer» ya no sale verde con productos bajo mínimo</td></tr><tr><td>C26</td><td>Sí</td><td>Cada tarjeta dice causa y criterio; agrupar por urgencia o por causa; la OC nace con criterio y fecha</td></tr><tr><td>C27</td><td>Sí</td><td>En camino = pedido − recibido − no llegará; borradores aparte; «+6 en camino (llega martes 20/10)»</td></tr><tr><td>C28</td><td>Sí</td><td>«¿Cómo se calculó?»: venta, plazo, cuándo pedir, lo que tienes, cuánto pedir; aviso si hay pocos datos</td></tr><tr><td>C30</td><td>No</td><td>DECIDE BRANDON (presentación y mínimo por proveedor = schema)</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>«A reponer» en Comprar: 3 → 1 (los 2 servicios fuera). 60 tests ✅.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: tipo propio «alquiler»; unificar motores de predicción, IA y compras.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 02:23 (c608a8e78)</div>
+  <h2>Ficha del proveedor, duplicados, evaluación y precios del mercado</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Proveedores</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>C33</td><td>Sí</td><td>Sólo existía Editar → ficha de consulta (deuda, compras, en camino, devoluciones, datos, historial) con <code>?proveedor=</code></td></tr><tr><td>C34</td><td>Sí</td><td>Sin validar → RUC 11 / DNI 8; mismo documento = 409 salvo confirmar; «Posible duplicado» por nombre/teléfono/correo</td></tr><tr><td>C36</td><td>Sí</td><td>Puntaje sin muestra → «Sin evaluar» con menos de 3 órdenes; muestra y fórmula a la vista; 3/6/12 meses</td></tr><tr><td>C37</td><td>Sí</td><td>Precio crudo mezclando unidades → costo puesto (descuento, IGV, flete repartidos) dentro de la misma unidad</td></tr><tr><td>C38</td><td>Sí</td><td>Un número en el navegador → precios del mercado con fecha, fuente, moneda y quién lo vio; sólo soles ≤30 días; compartir opcional</td></tr><tr><td>C39</td><td>Ya existía</td><td>Revisado</td></tr><tr><td>Textos</td><td>Sí</td><td>«ordenes», «recepciónes» con tilde; fechas con año</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Typecheck 0 en todo el repo (en su momento); 48 tests ✅.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: unir proveedores duplicados; precios del mercado ligados al catálogo o tabla propia.</li><li>PEDIR SECURITY: `app/api/suppliers/[id]/ficha` (deuda sólo gestión), PUT `app/api/compras/mercado` (admin y almacenero).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 02:36 (ad380bae5)</div>
+  <h2>Buscar en todo Compras, bandeja «Revisar» y atajos</h2>
+  <p class="donde">Dónde se ve: <b>Compras</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>C57</td><td>Sí</td><td>Sin buscador → «Buscar» (o «/») encuentra órdenes, proveedores, cuentas, recepciones y devoluciones y abre cada una</td></tr><tr><td>C64</td><td>Sí</td><td>Sin bandeja → «Revisar 7»: costo faltante, órdenes vencidas, cuentas vencidas, recepciones con diferencia</td></tr><tr><td>C63</td><td>Sí</td><td>Sin atajos → / N R anunciados y apagables, sin dispararse con un modal abierto</td></tr><tr><td>C61</td><td>Sí</td><td>«No hay paquetes» sin salida → plantilla; el paquete usa el costo de tu última compra; avisa proveedor cambiado y costos viejos</td></tr><tr><td>C60</td><td>Sí</td><td>Nada avisaba → comprobante repetido bajo el campo y costos dudosos de la factura leída (±50 %)</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>28 tests ✅. C62 = zona de peligro (no). DECIDE BRANDON: pantalla para armar paquetes; almacenero sin acceso a paquetes (role-permissions).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 03:39 (a1045d718)</div>
+  <h2>Pestaña nueva: conciliación orden ↔ recepción ↔ factura ↔ pago</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Por pagar › Conciliación</b></p>
+  <div class="bloque"><table><thead><tr><th>N</th><th>Estado</th><th>Detalle</th></tr></thead><tbody><tr><td>N03 Agenda de entregas</td><td>Ya hecho hoy</td><td>Sección Entregas (p2)</td></tr><tr><td>N07 Costo puesto</td><td>Parcial hoy</td><td>Costo puesto en Comparar (p6)</td></tr><tr><td>N04 Conciliación de documentos</td><td>HECHO</td><td>Por pagar › Conciliación: orden ↔ llegó ↔ factura ↔ cuenta ↔ pago lado a lado, 18 tipos de diferencia con su papel de origen, calculado en el servidor (18 tests). Main: 10 filas, 2 por revisar. Hallazgo: orden cancelada con mercadería recibida salía «Cuadra» → «Por revisar: 2 u (S/ 30) sin deuda»</td></tr><tr><td>N01 Solicitudes internas</td><td>DECIDE BRANDON</td><td>Tabla nueva de pedidos internos de compra</td></tr><tr><td>N02 Plan y presupuesto</td><td>DECIDE BRANDON</td><td>No hay presupuesto de compras: guardarlo por mes (y categoría/proveedor) + 3 escenarios sobre las sugerencias</td></tr><tr><td>N05 Anticipos</td><td>DECIDE BRANDON</td><td>Tabla de adelantos al proveedor con candado para no aplicarlos dos veces</td></tr><tr><td>N06 Contratos</td><td>DECIDE BRANDON</td><td>Acuerdos de compra con precio y tope</td></tr><tr><td>N08 Colaboración del proveedor</td><td>DECIDE BRANDON</td><td>0 portales de proveedor en la base; dar acceso pasa por security</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Pendiente: Entregas valora en S/ 0 las órdenes automáticas con costo 0 por producto (`lib/compras/ciclo-oc.ts:117`).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 03:15 (75846925f)</div>
+  <h2>Entregas con valor real en órdenes automáticas</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Órdenes › Entregas</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Entregas</td><td>Las órdenes automáticas con costo 0 por producto valían S/ 0 → regla única: el total se reparte por unidad pedida (15 de 20 unidades = S/ 150)</td></tr></tbody></table></div>
+  
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 02:43 (c2bc195e2)</div>
+  <h2>Aviso de permiso correcto en Devoluciones</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Devoluciones</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Sin permiso para anular/reingresar</td><td>Decía «Tu sesión venció, recarga» → «Tu usuario no tiene permiso para esto» (401 sigue siendo sesión vencida)</td></tr></tbody></table></div>
+  
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 05:32 (045099166)</div>
+  <h2>Órdenes sin desborde y conformidad al recibir servicios y perecibles</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Órdenes y recepción</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Tabla de Órdenes a 1280 px</td><td>Se salía 120 px → 0 (la columna del proveedor toma el espacio y corta con «…»)</td></tr><tr><td>Fechas al recibir</td><td>Una sola fecha → «Programada miércoles 14/10 · Llegó viernes 16/10 · Aceptada viernes 16/10 por Brandon»</td></tr><tr><td>Servicios</td><td>Se recibían como mercadería → piden «qué se aceptó» y «quién acepta», no suman stock</td></tr><tr><td>Perecibles</td><td>Se guardaban sin vencimiento → avisa antes de guardar</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Queda: «perecible» se decide por la categoría (nadie llena la vida útil); aceptar otro día que la llegada pide columna (decides tú); `OCRecepcionModal.tsx` pasa las 300 líneas.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 05:57 (a77a83985)</div>
+  <h2>Presupuesto de compras del mes y aceptación por línea al recibir</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Órdenes y recepción</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>N02 Presupuesto</td><td>No existía → sección «Presupuesto» en Órdenes: lo comprado en el mes (servidor; main S/ 4.218,50 = SELECT) contra el presupuesto total y por proveedor, barra, «Te quedan / Te pasaste», «Fijar» en línea; usa el presupuesto de Mi Plata con categorías <code>compras:</code> (Mi Plata no las suma como gasto)</td></tr><tr><td>C20 Aceptación al recibir</td><td>Lo «en buen estado» entraba entero → se parte en disponible / en revisión / rechazado; sólo lo disponible entra a stock y lo rechazado va a merma (10 recibidos, 2 en revisión, 1 rechazado → «Entra a stock: 7»)</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>488 tests ✅. Queda: escenarios del presupuesto, botón «Liberar» lo que quedó en revisión, nota de crédito por lo rechazado; revisar por qué Recibir dice «No hay órdenes esperando» con 8 pendientes en main.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Compras · guardado 06:07 (b13abd62c)</div>
+  <h2>Recibir: lo rechazado no se le paga al proveedor</h2>
+  <p class="donde">Dónde se ve: <b>Compras › Recibir</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>ALTO: rechazado al recibir</td><td>Llegaban 10, se rechazaban 3: entraban 7 al stock pero Por pagar seguía por 10 → lo rechazado se descuenta como lo dañado (con el mismo tope por producto); lo «en revisión» sí se paga</td></tr><tr><td>Pregunta «¿Le descuentas…?»</td><td>No salía si sólo había rechazos → sale</td></tr><tr><td>«No hay órdenes esperando» con 9 pendientes en main</td><td>Era el mensaje mientras cargaba (y fijo si fallaba) → «Buscando…» y «Reintentar»</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>87 tests ✅. Queda: «Recibir» desde la fila de la orden descuenta sin preguntar (ya pasaba con lo dañado); liberar lo «en revisión» dos veces (decides tú).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Comprobantes · guardado 00:34 (e81701b8e)</div>
+  <h2>Emitir comprobante eligiendo el pedido, con revisión y resultado real</h2>
+  <p class="donde">Dónde se ve: <b>Comprobantes › Facturas y boletas</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho/No</th><th>Antes → Después</th></tr></thead><tbody><tr><td>F01</td><td>Hecho</td><td>Título fijo «Emitir comprobante SUNAT» → aviso oficial / prueba / «no se crea nada»; botón deshabilitado con modo apagado</td></tr><tr><td>F02 / M54</td><td>Hecho</td><td>Requisitos sólo en un ⓘ → lista con ✓/✗, ⓘ «qué hacer» y «Configurar →»</td></tr><tr><td>F03</td><td>Hecho</td><td>Sin ambiente ni serie → «Emite &lt;razón social&gt; · RUC» y la serie real</td></tr><tr><td>F04 / M53</td><td>Hecho</td><td>ID del pedido a mano → buscador; facturados/cancelados visibles pero no elegibles; <code>?emitir=</code></td></tr><tr><td>F05</td><td>Parcial</td><td>Cliente precargado del pedido y validado (RUC 11, DNI 8, boleta &gt; S/ 700 pide DNI)</td></tr><tr><td>F07 / F43</td><td>Hecho</td><td>Sin resumen → líneas, descuento, total y «no cobra otra vez ni descuenta stock»</td></tr><tr><td>F08 / F47</td><td>Hecho</td><td>Aviso genérico → resultado según la respuesta real</td></tr><tr><td>F41 (UI) / F42 (UI)</td><td>Hecho</td><td>Doble clic / «Emitiendo…» eterno → no se elige un pedido ya facturado; red caída = «Revisar el pedido»</td></tr><tr><td>F10</td><td>Hecho</td><td>«Seguir sin documento (ajuste interno)» + aviso en Confirmar</td></tr><tr><td>B1-B8</td><td>Hecho</td><td>retrying=Pendiente · sin fila inventada · red caída · texto falso del modo · buscador NC que filtra · «Marcar emitida» · 202 = en cola · fuera Dirección ignorada</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Evidencia: typecheck limpio; 317 tests verdes (20 nuevos); navegador en main: 20 pedidos (1 cancelado bloqueado), paso 2 en S/ 7,20; NC «18,00 cono» deja 2 de 13; 0 respuestas ≥400.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Queda: F06 y F15 (decide Brandon); ventas POS no facturables desde aquí (zona de peligro); F41 servidor (migración + security); → pedidos: «Emitir comprobante» en el ⋯ del pedido con `?emitir=&lt;id&gt;`.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Comprobantes · guardado 01:38 (d61d45d8f)</div>
+  <h2>Notas de crédito: lo que queda por acreditar y campos por motivo</h2>
+  <p class="donde">Dónde se ve: <b>Comprobantes › Notas de crédito</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>F09</td><td>Sí</td><td>Tope sólo en el POST → «lo que queda por acreditar» calculado en el servidor (<code>lib/notas-credito/remanente.ts</code> + GET) que leen pantalla y POST</td></tr><tr><td>F11</td><td>Sí</td><td>Monto suelto → cada motivo pide lo suyo (03 decía/debe decir, 02 RUC, 07/08 unidades, 04/05/09/10 base)</td></tr><tr><td>F12</td><td>Sí</td><td>Precio de lista → unidades × precio cobrado (venta 18,00, 1 de 3 conos = 6,00 = 5,08 + 0,92)</td></tr><tr><td>F13</td><td>Sí</td><td>Nuevo «Qué cambia al crearla» (18,00 → 12,00; stock, caja, saldo, comisión)</td></tr><tr><td>F14</td><td>Sí</td><td>Plantillas con versión, alcance y reglas</td></tr><tr><td>F16</td><td>Sí</td><td>Detalle con el documento de origen: venta, sus notas, devoluciones de caja y lo que queda</td></tr><tr><td>M55</td><td>Sí</td><td><code>pos-devolucion</code> verde (fixture mandaba 06 por la mitad; la ruta no cambió)</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Hallazgo transversal: <code>--surface-alt</code> no existe y lo usan ~120 archivos (salen sin fondo).</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Sin hacer: guardar unidades por nota (schema): dos notas 07 pueden acreditar la misma unidad (hay aviso).</li><li>DECIDE BRANDON: plantillas en localStorage; sin documento el IGV se estima al 18 %.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Comprobantes · guardado 02:12 (c6bfa40cc)</div>
+  <h2>Notas de crédito: dos a la vez ya no acreditan el doble</h2>
+  <p class="donde">Dónde se ve: <b>Comprobantes › Notas de crédito</b></p>
+  <div class="bloque"><table><thead><tr><th>Hallazgo</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Dos notas a la vez sobre la misma venta</td><td>Se acreditaba el doble y repetían número → candado por documento y por número: probado en main, 201 + 400</td></tr><tr><td>Número de la nota</td><td>Tomaba «la última nota» → el correlativo más alto ya usado, bajo candado del negocio</td></tr><tr><td>«Usar lo devuelto en Caja»</td><td>Volvía a proponer la unidad ya acreditada → se esconde cuando lo acreditado cubre lo devuelto</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>5 tests de concurrencia (3 fallan sin el candado). Las 3 notas de prueba de main quedaron ANULADAS (NC-0001 a 0003 consumidos).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Comprobantes · guardado 01:23 (71a54c81a)</div>
+  <h2>Guía de remisión desde el pedido, en 5 etapas</h2>
+  <p class="donde">Dónde se ve: <b>Comprobantes › Guías</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>F17/M56</td><td>Sí</td><td>N° de orden a mano → buscador; precarga destinatario, RUC, dirección, llegada, comprobante e ítems; enlace <code>?guia=&lt;pedido&gt;</code></td></tr><tr><td>F18</td><td>Sí</td><td>Un formulario → 5 etapas con «!» donde falta, resumen fijo, borrador 7 días; «Crear guía» bloqueado hasta completar</td></tr><tr><td>F19</td><td>Sí</td><td>«Usar de nuevo» partidas, destinos y transportes anteriores</td></tr><tr><td>F20</td><td>Sí</td><td>Privado/Público con ⓘ (no se guarda: falta columna)</td></tr><tr><td>F22</td><td>Sí</td><td>«Und» libre → unidad por nombre con código SUNAT; peso estimado aparte</td></tr><tr><td>F23</td><td>Parcial</td><td>Etapa Revisar con lo que falta y «Ir a…»; sin mapa</td></tr><tr><td>F21, F24</td><td>No</td><td>DECIDE BRANDON (cambio de base)</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Seguridad arreglada de paso: <code>app/api/guias-remision/route.ts:84</code> enlazaba un pedido de OTRO negocio si venían ítems → ahora valida siempre el negocio; la impresión no escapaba HTML (XSS) → <code>escapeHtml</code>. Desborde a 400 px arreglado.</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Comprobantes · guardado 02:14 (815afaae0)</div>
+  <h2>Cotizaciones: cliente de tu lista, stock, confirmar todo y plantillas</h2>
+  <p class="donde">Dónde se ve: <b>Comprobantes › Cotizaciones</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>F25</td><td>Sí</td><td>Cliente a mano → buscador (nombre, RUC/DNI, celular); «Nuevo cliente» encima con lo escrito; RUC repetido avisa «Usar este»</td></tr><tr><td>F26</td><td>Sí (sin alquiler)</td><td>Sin stock → cada línea dice cuánto hay («faltan 8 (hay 12)», «servicio: no usa stock»), cotizar no aparta; convertir revisa otra vez y no convierte dos veces</td></tr><tr><td>F27</td><td>Sí</td><td>Confirmar sólo pedía fecha → cliente, líneas, base, IGV, total, vigencia 7/15/30, condiciones, «Cambiar» por bloque, vista impresa</td></tr><tr><td>F28</td><td>Sí</td><td>Plantillas sólo del navegador → también «De tu empresa» (dueño, versiones)</td></tr><tr><td>F31</td><td>Sí</td><td>Sin bandeja → «Por seguir» con autor, celular y último recordatorio; pregunta antes de repetir en 24 h</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Arreglos de paso: vigencia salía un día antes; el impreso mostraba el % de descuento como soles; buscador de productos ignoraba el filtro; WhatsApp sin celular; renovar perdía el cliente.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>PEDIR SECURITY: convertir + cliente/producto de otro negocio al crear. DECIDE BRANDON: alquiler como tipo. Clientes: el alta pisa un cliente por celular (ver).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Comprobantes · guardado 03:38 (736978abc)</div>
+  <h2>Pestañas nuevas: Seguimiento, Expediente y Conciliación; búsqueda en la base</h2>
+  <p class="donde">Dónde se ve: <b>Comprobantes</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>F33</td><td>Sí</td><td>Sin accesos → hasta 3 fijados por persona</td></tr><tr><td>F34</td><td>Sí</td><td>Buscaba en 100 filas del navegador → busca en la base por serie-número, cliente/RUC, #pedido, importe y estado</td></tr><tr><td>F36</td><td>Sí</td><td>Sin período → período, chips, «Restablecer alcance», vistas guardadas; tabla, cifras y Excel con el mismo alcance</td></tr><tr><td>F37</td><td>Sí</td><td>Sin atajos → «/» busca, «N» abre Emitir; Enter no envía nada</td></tr><tr><td>F38</td><td>Sí</td><td>4 cifras sin período → 10 con período, fórmula y «Sin datos»; emitido ≠ cobrado</td></tr><tr><td>F40</td><td>Sí</td><td>RUC a mano → sugiere clientes anteriores y avisa si ese RUC salió con otro nombre</td></tr><tr><td>F56/M58/N02</td><td>Sí</td><td>Nueva vista «Seguimiento» con la bandeja de pendientes</td></tr><tr><td>N03</td><td>Sí</td><td>Nuevo expediente de la operación (<code>?expediente=&lt;id&gt;</code>): venta, comprobante, notas, guías, cotización, pagos; separa «Electrónico · SUNAT» de «Interno»</td></tr><tr><td>N08</td><td>Sí</td><td>Nueva conciliación documental por período</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Arreglos de paso: filtros aplastados a 400 px («Tip»); cotización que vence el lunes decía «domingo · hoy».</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: N04 aprobaciones (tabla nueva), N07 notas de débito (emisión + tabla + motivos), N01 borradores, N05/N06; filtro «responsable» (el comprobante no guarda quién lo emitió).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Seguridad y datos · guardado 00:56 (4cfd43e9f)</div>
+  <h2>Quién puede cambiar y borrar pedidos; notas que no se pierden</h2>
+  <p class="donde">Dónde se ve: <b>Pedidos</b></p>
+  <div class="bloque"><table><thead><tr><th>Hallazgo</th><th>Antes → Después</th></tr></thead><tbody><tr><td>ALTO: cambiar y borrar pedidos</td><td>Cualquier rol del panel (el almacenero, que sólo lee pedidos) podía cambiar estado, cancelar (devuelve stock), tocar deuda y borrar → cambiar: cajero y dueño de tienda (+ gestión); borrar: sólo gestión; el cambio en lote igual</td></tr><tr><td>Historial de pedidos</td><td>Entraban repartidor y proveedor → cajero, almacenero, analista y dueño de tienda</td></tr><tr><td>Registro de actividad</td><td>8 filas quedaban sin negocio (<code>__unknown__</code>) → llevan el negocio</td></tr><tr><td>Notas internas</td><td>Se borraban a los 90 días con la limpieza → quedan fuera de la limpieza</td></tr><tr><td>Plazo del fiado</td><td>Cerrar el fiado y ponerle plazo a la vez guardaba el estado aunque la fecha fallara → valida la fecha antes de escribir</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Probado con los 4 usuarios QA (rol-probe): almacenero 403 al cambiar y en lote; cajero 403 al borrar. 101 tests ✅.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Pendiente: 5 notas de prueba del revisor en el pedido QA de main (no hay forma de borrarlas sin SQL a mano).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Seguridad y datos · guardado 02:40 (1b09fa088)</div>
+  <h2>Convertir cotización funciona; el alta de cliente ya no pisa datos; CSV sin fórmulas</h2>
+  <p class="donde">Dónde se ve: <b>Cotizaciones, Clientes, exportes</b></p>
+  <div class="bloque"><table><thead><tr><th>Hallazgo</th><th>Antes → Después</th></tr></thead><tbody><tr><td>ALTO: convertir cotización en pedido</td><td>Fallaba SIEMPRE (503: celular vacío contra la referencia al cliente) → convierte (probado de punta a punta en main y limpiado)</td></tr><tr><td>Estado de una cotización</td><td>Se podía poner cualquiera (CONVERTIDA → BORRADOR → segundo pedido) → tabla de pasos; CONVERTIDA es final (409)</td></tr><tr><td>Alta de cliente</td><td>Un segundo alta con el mismo celular PISABA nombre, RUC, razón social y borraba direcciones → 409 con el cliente existente y «Usar este»; POS, alta inicial y tienda usan «si existe, úsalo» sin modificarlo; ahora guarda el límite de crédito</td></tr><tr><td>Cancelar orden de compra</td><td>El almacenero podía cancelar y bajar una cuenta por pagar → con deuda, sólo gestión; cuerpo vacío daba 500 → 400</td></tr><tr><td>Anular/reingresar devoluciones</td><td>También el encargado → sólo dueño o administrador</td></tr><tr><td>Exportes CSV</td><td>Un texto que empieza con = + - @ llegaba a Excel como fórmula → helper único <code>lib/csv/celda.ts</code> en 5 exportes</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Nota: el aviso «ya está registrado en otra tienda de la red» (decisión del 10-06) revela que ese celular existe en otra tienda.</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Seguridad y datos · guardado 03:03 (7f7b2895b)</div>
+  <h2>Límites que frenaban la operación: repartidor en el mapa, chat, boletas, caja</h2>
+  <p class="donde">Dónde se ve: <b>Reparto, chat, caja</b></p>
+  <div class="bloque"><table><thead><tr><th>Ruta</th><th>Antes</th><th>Después</th><th>Por qué</th></tr></thead><tbody><tr><td>POST /api/sales (yo)</td><td>STRICT por IP antes del login (10 ventas/15 min)</td><td>GENEROUS por negocio+cajero tras el login</td><td>La venta 11 en hora punta daba 429 (IP compartida)</td></tr><tr><td>delivery/me/ping</td><td>STRICT por IP</td><td>POLL (60/5 min) por repartidor</td><td>La app manda la ubicación cada 30 s: a los 5 min el repartidor quedaba congelado 10 min en el mapa</td></tr><tr><td>chat GET/POST</td><td>un límite compartido</td><td>GET con POLL, POST sigue STRICT</td><td>El widget se refresca cada 15 s: a los 10 refrescos el cliente no podía escribir</td></tr><tr><td>admin/sunat/generate-invoice</td><td>STRICT por IP</td><td>GENEROUS por negocio+usuario</td><td>Una boleta por venta</td></tr><tr><td>ocr/invoice, admin/whatsapp/suggest</td><td>STRICT por IP</td><td>MODERATE por negocio+usuario</td><td>Facturas en lote, IP compartida</td></tr><tr><td>cash-registers POST/PATCH</td><td>STRICT/MODERATE por IP</td><td>MODERATE por negocio+usuario</td><td>Abrir, movimientos, arqueo, cierre</td></tr><tr><td>delivery proof/deliver</td><td>STRICT por IP</td><td>STRICT por repartidor</td><td>Varios repartidores salen por la misma IP móvil</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>9 rutas revisadas quedan igual (ocasionales, cron o públicas contra abuso).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Seguridad y datos · guardado 03:16 (1d8656c18)</div>
+  <h2>El chat ya no muestra datos de un cliente a quien solo sabe su celular</h2>
+  <p class="donde">Dónde se ve: <b>Tienda › Chat</b></p>
+  <div class="bloque"><table><thead><tr><th>Hallazgo</th><th>Antes → Después</th></tr></thead><tbody><tr><td>ALTO: chat del cliente</td><td><code>GET /api/chat?phone=…</code> SIN sesión devolvía el nombre completo del cliente y sus mensajes (probado: 200 con nombre y 2 mensajes) → exige la sesión de cliente verificada y que el celular sea el suyo (sin cookie 401, otro celular 403)</td></tr><tr><td>Listas de compras</td><td>La ruta no pedía rol y tomaba el negocio de la petición → roles según la matriz y negocio de la sesión</td></tr><tr><td>Respuestas sugeridas de WhatsApp (IA)</td><td>Cualquier sesión, sin tope de gasto → roles que contestan WhatsApp, presupuesto mensual de IA y tope de 150 por negocio y día</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>20 tests nuevos ✅.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: `/api/chat/public?action=open` devuelve sin sesión la conversación abierta de cualquier celular (chat de invitado del marketplace).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Seguridad y datos · guardado 03:41 (553578d2d)</div>
+  <h2>Chat de invitados del marketplace: cada uno ve solo su conversación</h2>
+  <p class="donde">Dónde se ve: <b>Marketplace › Chat</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes (sin sesión) → Después</th></tr></thead><tbody><tr><td>ALTO: abrir el chat con el celular de otro</td><td>200 + la conversación de esa persona → 401 «inicia sesión», sin datos</td></tr><tr><td>Leer mensajes</td><td>200 con 7 mensajes AJENOS: nombre, texto, fotos, ubicación y pedido → 401 sin token, 403 con token de otra conversación, 200 con el propio</td></tr><tr><td>Escribir y escuchar en vivo</td><td>Se podía en conversaciones ajenas → 401 sin token</td></tr><tr><td>Abrir un chat nuevo</td><td>200 → 200, ahora con un token firmado que el widget guarda</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Efecto: un invitado que abrió su chat antes del cambio pierde su historial hasta que inicie sesión (la tienda lo conserva).</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Seguridad y datos · guardado 03:48 (a2ea15638)</div>
+  <h2>Chat: escribir pide sesión, el acceso vence, subidas protegidas</h2>
+  <p class="donde">Dónde se ve: <b>Tienda › Chat</b></p>
+  <div class="bloque"><table><thead><tr><th>Hallazgo</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Escribir por el chat</td><td>Sin sesión se escribía con el celular de otro; un cliente logueado escribía como «sistema» → sin sesión 401, otro celular 403, «sistema»/«bot» 403 (el aviso del bot lo arma el servidor)</td></tr><tr><td>Token del hilo</td><td>No vencía → vence a los 30 días</td></tr><tr><td>Sentry</td><td>Guardaba el token de la URL → se tacha <code>*token=</code> en URLs, migas y eventos</td></tr><tr><td>Pedido en el chat</td><td>Con un pedido ajeno se veía su estado y total → sólo si el celular del pedido es el del hilo</td></tr><tr><td>Subir fotos/audio</td><td>Sin hilo ni token → hilo propio, abierto y con token</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>De paso: <code>auto-reply</code> usaba el negocio «main» por defecto → corregido. 153 tests ✅.</p>
+<p>Efecto: quien no inició sesión ya no escribe por el chat de la tienda; el widget le pide ingresar.</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Todo el panel · guardado 03:12 (9e783308f)</div>
+  <h2>Buscador con comandos, recientes, vistas guardadas y avisos agrupados</h2>
+  <p class="donde">Dónde se ve: <b>Todo el panel</b></p>
+  <div class="bloque"><table><thead><tr><th>Código</th><th>Hecho</th><th>Antes → Después</th></tr></thead><tbody><tr><td>M04</td><td>Sí</td><td>El buscador sólo encontraba lugares → «cobrar a Ana» ofrece «Cobrar a Ana» (Me deben) y busca a la persona; «nueva» da Nueva venta / Nueva oferta</td></tr><tr><td>M06</td><td>Sí</td><td>Sin historial → «Abriste hace poco» en la cabecera</td></tr><tr><td>M07</td><td>Sí</td><td>Sin vistas → Mis clientes trae Estándar, Con deuda, Frecuentes, Para recuperar y «Guardar lo que se ve…»</td></tr><tr><td>M08</td><td>Sí</td><td>Una fila por aviso → «Cuadrar la caja, Cobrar 2, Revisar 2 comprobantes, Reponer 1» con «Resolver» que lleva al lugar</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Arreglos de paso: el buscador entraba en bucle («Maximum update depth») y nunca traía productos ni clientes; «Cobrar 44» contaba el mismo resumen diario repetido → «Cobrar 2».</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>DECIDE BRANDON: vistas y recientes viven en el navegador; llevarlos entre equipos = guardarlos por usuario.</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Todo el panel · guardado 01:39 (814fcc315)</div>
+  <h2>Fondos que faltaban en 120 pantallas</h2>
+  <p class="donde">Dónde se ve: <b>Todo el panel</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td><code>--surface-alt</code></td><td>Usado 193 veces en 120 archivos y nunca definido: filas, cajas y secciones alternas salían transparentes → definido como el fondo hundido de cada tema</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Medido en el navegador: claro #fafafa, oscuro #161b22.</p></div>
+  
+  
+</section>
+
+<section class="mejora">
+  <div class="kicker">Todo el panel · guardado 05:09 (add5fc1ec)</div>
+  <h2>Anchos mínimos que nunca funcionaban: 342 → 0 en 44 vistas</h2>
+  <p class="donde">Dónde se ve: <b>Todo el panel (sobre todo en el celular)</b></p>
+  <div class="bloque"><table><thead><tr><th>Área (vistas)</th><th>Anchos mínimos anulados a 400 px: antes → después</th><th>Desborde a 400 px</th></tr></thead><tbody><tr><td>Ventas y caja (7)</td><td>51 → 0</td><td>0 → 0</td></tr><tr><td>Pedidos (5)</td><td>41 → 0</td><td>0 → 0</td></tr><tr><td>Compras (8)</td><td>60 → 0</td><td>0 → 0</td></tr><tr><td>Comprobantes (5)</td><td>37 → 0</td><td>0 → 0</td></tr><tr><td>Inventario (6)</td><td>44 → 0</td><td>0 → 0</td></tr><tr><td>Clientes · Mi Plata · Configuración (13)</td><td>109 → 0</td><td>0 → 0</td></tr><tr><td><b>Total (44 vistas)</b></td><td><b>342 → 0 (a 1280: 313 → 0)</b></td><td>0 → 0</td></tr></tbody></table></div>
+  <h3>Antes y ahora (medido)</h3><div class="bloque"><p>Ejemplo: el buscador de Compras › Órdenes a 400 px medía 15 px y tapaba «Todas 43» → 368 px.</p></div>
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Causa: una regla global `* { min-width: 0 }` fuera de capa le ganaba a todo `min-w-*` de Tailwind 4 (382 archivos). Pasó a `@layer base`; las tablas-tarjeta del celular quedaron sin piso (368 px a 400, no 640).</li></ul>
+</section>
+
+<section class="mejora">
+  <div class="kicker">Todo el panel · guardado 05:51 (9e25140b2)</div>
+  <h2>Vistas guardadas y recientes que te siguen a otro equipo</h2>
+  <p class="donde">Dónde se ve: <b>Clientes, Pedidos, cabecera</b></p>
+  <div class="bloque"><table><thead><tr><th>Qué</th><th>Antes → Después</th></tr></thead><tbody><tr><td>Vistas guardadas (Clientes, Pedidos)</td><td>Sólo en este navegador → se guardan en el servidor por persona y negocio; borrar el navegador y recargar: siguen ahí</td></tr><tr><td>«Abriste hace poco»</td><td>Sólo en este navegador → se juntan los de tus equipos sin repetir</td></tr><tr><td>Seguridad</td><td>Negocio y persona salen de la sesión (otro usuario no ve las tuyas; sin sesión 401); topes 15 recientes, 20 vistas por pantalla</td></tr></tbody></table></div>
+  
+  
+  <h3>Lo que quedó pendiente</h3><ul><li>Sin tabla nueva: usa los ajustes por persona que ya usaba el Acceso rápido del Drive. Queda: las vistas de Comprobantes siguen en el navegador.</li></ul>
+</section>
+<section class="mejora"><div class="kicker">Registro</div><h2>Todos los commits de la noche</h2>
+<table><thead><tr><th>Hora</th><th>Commit</th><th>Qué</th></tr></thead><tbody>
+<tr><td>00:34</td><td><code>e81701b8e</code></td><td>feat(comprobantes): emitir eligiendo el pedido, con revisión antes y resultado real</td></tr><tr><td>00:40</td><td><code>bd9d97e13</code></td><td>fix(compras): la canasta vaciada no resucita y comprar separa +1, costo con fuente, igv y condición</td></tr><tr><td>00:46</td><td><code>40aa36e23</code></td><td>feat(ventas): caja de hoy vs sesión, responsable de la venta, plazo de fiados y comisión visible</td></tr><tr><td>00:48</td><td><code>361f7036a</code></td><td>feat(pedidos): siguiente paso, quién lo lleva y la plata en cada pedido + historial real</td></tr><tr><td>00:56</td><td><code>4cfd43e9f</code></td><td>fix(seguridad): pedidos solo los cambia quien escribe; notas y plazo de fiados sin pérdidas</td></tr><tr><td>01:23</td><td><code>71a54c81a</code></td><td>feat(guias): guía de remisión desde el pedido, en 5 etapas, unidades por nombre y borrador</td></tr><tr><td>01:32</td><td><code>a5ba47375</code></td><td>feat(compras): por pagar con origen y documento, calendario, propuesta y estado de cuenta</td></tr><tr><td>01:33</td><td><code>b5276095d</code></td><td>feat(reparto): equipo que guarda, asignar eligiendo el pedido, ranking honesto y rutas aparte</td></tr><tr><td>01:35</td><td><code>7a1f862de</code></td><td>feat(compras): en qué va cada orden, entregas por día y recibir con o sin orden</td></tr><tr><td>01:36</td><td><code>03abcdc75</code></td><td>feat(ventas): pos en tarjetas o lista, accesos fijos, esperado negativo explicado y cuenta del fiado</td></tr><tr><td>01:37</td><td><code>563465fcb</code></td><td>feat(compras): devoluciones con tope de lo recibido, anular en vez de borrar y costo pendiente</td></tr><tr><td>01:38</td><td><code>d61d45d8f</code></td><td>feat(notas-credito): lo que queda por acreditar, campos por motivo, efectos y plantillas</td></tr><tr><td>01:39</td><td><code>814fcc315</code></td><td>fix(ui): el fondo --surface-alt existe (193 usos en 120 archivos salían sin fondo)</td></tr><tr><td>02:10</td><td><code>0dfc397ee</code></td><td>feat(compras): sugerencias con su cuenta y sin servicios; órdenes sin doble stock ni deuda borrada</td></tr><tr><td>02:12</td><td><code>c6bfa40cc</code></td><td>fix(notas-credito): alta en fila con candado por documento y número, sin acreditar dos veces</td></tr><tr><td>02:14</td><td><code>815afaae0</code></td><td>feat(cotizaciones): cliente de tu lista, stock sin reservar, confirmar todo y plantillas del equipo</td></tr><tr><td>02:15</td><td><code>3ef78538d</code></td><td>feat(reparto): retiros conciliables, ficha del repartidor, feed por pedido y revisar con motivo</td></tr><tr><td>02:23</td><td><code>c608a8e78</code></td><td>feat(compras): ficha del proveedor, duplicados, evaluación por período y precios del mercado</td></tr><tr><td>02:25</td><td><code>1b146ad9b</code></td><td>feat(caja): bandeja del turno, por qué no cuadra, cola offline por negocio y recordatorio revisable</td></tr><tr><td>02:36</td><td><code>ad380bae5</code></td><td>feat(compras): buscar en todo, revisar pendientes, atajos y avisos de plantilla, paquete y factura</td></tr><tr><td>02:40</td><td><code>1b09fa088</code></td><td>fix(seguridad): cotización convierte sin 503, estados con tabla, alta sin pisar y csv sin fórmulas</td></tr><tr><td>02:43</td><td><code>c2bc195e2</code></td><td>fix(compras): sin permiso en devoluciones ya no dice «tu sesión venció»</td></tr><tr><td>02:48</td><td><code>ff38a9ba7</code></td><td>fix(pos): la cola sin conexión reintenta 429/5xx con la misma clave y resuelve la carrera por clave</td></tr><tr><td>03:03</td><td><code>7f7b2895b</code></td><td>fix(api): límites de la operación diaria después del login y por usuario; ping y chat sin 429</td></tr><tr><td>03:12</td><td><code>9e783308f</code></td><td>feat(panel): comandos en el buscador, recientes, vistas guardadas y avisos agrupados por acción</td></tr><tr><td>03:15</td><td><code>75846925f</code></td><td>fix(compras): las entregas valoran las órdenes automáticas sin costo por producto</td></tr><tr><td>03:16</td><td><code>1d8656c18</code></td><td>fix(seguridad): chat de la tienda y listas piden identidad; sugerir por whatsapp con roles y tope</td></tr><tr><td>03:20</td><td><code>24819012c</code></td><td>feat(pedidos): preparación con hoja de recojo, análisis operativo y agenda de entregas</td></tr><tr><td>03:38</td><td><code>736978abc</code></td><td>feat(comprobantes): seguimiento de pendientes, expediente, conciliación y filtros con período</td></tr><tr><td>03:39</td><td><code>a1045d718</code></td><td>feat(compras): conciliación de documentos en por pagar: orden, recepción, factura, cuenta y pago</td></tr><tr><td>03:41</td><td><code>553578d2d</code></td><td>fix(seguridad): el chat de invitado pide el token de la conversación para leer o escribir</td></tr><tr><td>03:48</td><td><code>a2ea15638</code></td><td>fix(seguridad): el chat exige sesión para escribir, el token vence y las subidas piden el hilo</td></tr><tr><td>04:09</td><td><code>7bf2d342a</code></td><td>fix(caja): /api/returns con venta usa el mismo tope que la devolucion del POS</td></tr><tr><td>04:24</td><td><code>0321542f1</code></td><td>fix(caja): devolver un pedido topa como la venta y el saldo de credito es saldo a favor</td></tr><tr><td>04:25</td><td><code>8246a15d6</code></td><td>feat(pedidos): botones por rol, emitir y guía desde el pedido, vistas, lote revisado y preparación</td></tr><tr><td>04:37</td><td><code>b56368a17</code></td><td>fix(caja): devolver sólo pedidos entregados y cobrados, frenar lo fiado y no devolver el envío</td></tr><tr><td>05:09</td><td><code>add5fc1ec</code></td><td>fix(ui): los min-w-* vuelven a regir: la regla global min-width 0 pasa a @layer base</td></tr><tr><td>05:14</td><td><code>73a166783</code></td><td>chore(scripts): commit en fila por carril que no se traba por el árbol a medias de otro carril</td></tr><tr><td>05:15</td><td><code>f9e274d3b</code></td><td>docs(handoff): noche 17-10 con los 4 pdf de codex implementados y lo que decide brandon</td></tr><tr><td>05:23</td><td><code>01c2fa25f</code></td><td>feat(pedidos): el detalle dice para cuándo lo pidió el cliente y si ya está listo para salir</td></tr><tr><td>05:30</td><td><code>7f6e70643</code></td><td>feat(motivo): motivo obligatorio al cambiar medio de caja, ajustar stock y cancelar una compra</td></tr><tr><td>05:32</td><td><code>045099166</code></td><td>fix(compras): órdenes sin desborde a 1280 y recepción con fechas y conformidad según el producto</td></tr><tr><td>05:33</td><td><code>2072b38c1</code></td><td>docs(handoff): cierre de la noche 17-10 con 42 commits y los remates de las 05:30</td></tr><tr><td>05:42</td><td><code>55002f436</code></td><td>refactor(admin): recibir la orden, vender y ficha del cliente partidos bajo las 300 líneas</td></tr><tr><td>05:51</td><td><code>9e25140b2</code></td><td>feat(panel): vistas guardadas y recientes siguen a la persona en otra computadora</td></tr><tr><td>05:56</td><td><code>16e14b022</code></td><td>feat(fiados): último contacto en me deben y tramos con historial en la ficha del repartidor</td></tr><tr><td>05:57</td><td><code>a77a83985</code></td><td>feat(compras): presupuesto de compras del mes y recepción con revisión y rechazo por línea</td></tr><tr><td>06:07</td><td><code>b13abd62c</code></td><td>fix(compras): lo rechazado al recibir baja la cuenta y recibir no dice «sin órdenes» al cargar</td></tr>
+</tbody></table></section>
+</body></html>

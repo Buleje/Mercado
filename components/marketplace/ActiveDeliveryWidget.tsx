@@ -48,8 +48,8 @@ const STATUS_CONFIG: Record<
   asignado: { label: "Repartidor asignado", sub: "Está por ir a recogerlo", tone: "neutral" },
   recogido: { label: "Recogido, en camino", sub: "Sale para tu dirección", tone: "accent" },
   en_camino: { label: "En camino", sub: "Llega en minutos", tone: "accent" },
-  llegando: { label: "¡Ya está llegando!", sub: "Prepará el pago", tone: "warn" },
-  entregado: { label: "Entregado", sub: "Disfrutá tu pedido", tone: "neutral" },
+  llegando: { label: "¡Ya está llegando!", sub: "Prepara el pago", tone: "warn" },
+  entregado: { label: "Entregado", sub: "Disfruta tu pedido", tone: "neutral" },
 };
 
 export default function ActiveDeliveryWidget({

@@ -88,6 +88,13 @@ describe("Middleware - Route Protection", () => {
       expect(location).toContain("from=%2Fadmin");
     });
 
+    it("sin sesión, el login vuelve al papel del QR (conserva el ?…)", async () => {
+      const res = await proxy(mockRequest("/admin?tab=documentos&doc=cmabc123", "GET"));
+      expect(res.status).toBe(307);
+      const from = new URL(res.headers.get("location") ?? "", "http://x").searchParams.get("from");
+      expect(from).toBe("/admin?tab=documentos&doc=cmabc123");
+    });
+
     it("should redirect /admin/dashboard without auth", async () => {
       const req = mockRequest("/admin/dashboard", "GET");
       const res = await proxy(req);

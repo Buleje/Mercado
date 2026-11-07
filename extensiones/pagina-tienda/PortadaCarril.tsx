@@ -1,0 +1,70 @@
+"use client";
+
+/**
+ * Fila horizontal de tarjetas de la portada (como `pagina-musa/Carril.tsx`):
+ * se desliza con el dedo, la rueda o el teclado (la fila es enfocable) y, en
+ * pantallas anchas, con las flechas de los lados. Las flechas no se apagan con
+ * `disabled` al llegar al borde (tiraría el foco al `<body>`): se atenúan y no
+ * hacen nada. Ancho de cada tarjeta: 1,7 en el celular, 3 en tablet, 4-5 en
+ * escritorio.
+ */
+import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
+
+const ANCHO_ITEM = "w-[58%] sm:w-[31%] lg:w-[calc((100%_-_3*1.5rem)/4)] xl:w-[calc((100%_-_4*1.5rem)/5)]";
+
+export function PortadaCarril({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
+  const fila = useRef<HTMLDivElement>(null);
+  const [borde, setBorde] = useState({ inicio: true, fin: false });
+
+  const medir = useCallback(() => {
+    const el = fila.current;
+    if (!el) return;
+    setBorde({ inicio: el.scrollLeft < 8, fin: el.scrollLeft + el.clientWidth >= el.scrollWidth - 8 });
+  }, []);
+
+  useEffect(() => {
+    const el = fila.current;
+    if (!el) return;
+    medir();
+    el.addEventListener("scroll", medir, { passive: true });
+    window.addEventListener("resize", medir);
+    return () => {
+      el.removeEventListener("scroll", medir);
+      window.removeEventListener("resize", medir);
+    };
+  }, [medir]);
+
+  const mover = (dir: 1 | -1) => {
+    const el = fila.current;
+    if (!el) return;
+    if ((dir === -1 && borde.inicio) || (dir === 1 && borde.fin)) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" });
+  };
+
+  // Flechas: papel con filete y la sombra flotante; al pasar se rellenan con la tinta.
+  const flecha =
+    "ti-sombra-flotante ti-foco absolute top-[38%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--ti-linea)] bg-[var(--ti-fondo)] text-[var(--ti-texto)] transition duration-[var(--ti-dur-corto)] ease-[var(--ti-ease)] hover:border-[var(--ti-texto)] hover:bg-[var(--ti-texto)] hover:text-[var(--ti-fondo)] active:scale-[.97] md:flex aria-disabled:pointer-events-none aria-disabled:opacity-0";
+
+  return (
+    <div className="relative">
+      <div
+        ref={fila}
+        role="region"
+        aria-label={etiqueta}
+        tabIndex={0}
+        className="ti-sin-barra -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-3 pt-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ti-texto)] sm:-mx-6 sm:scroll-px-6 sm:gap-6 sm:px-6 lg:mx-0 lg:scroll-px-0 lg:px-0"
+      >
+        {Children.map(children, (hijo) => (
+          <div className={`shrink-0 snap-start ${ANCHO_ITEM}`}>{hijo}</div>
+        ))}
+      </div>
+      <button type="button" aria-label="Ver anteriores" aria-disabled={borde.inicio} onClick={() => mover(-1)} className={`${flecha} -left-5`}>
+        <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+      </button>
+      <button type="button" aria-label="Ver siguientes" aria-disabled={borde.fin} onClick={() => mover(1)} className={`${flecha} -right-5`}>
+        <ChevronRight className="h-6 w-6" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}

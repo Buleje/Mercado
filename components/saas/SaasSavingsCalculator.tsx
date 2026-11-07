@@ -41,7 +41,7 @@ export default function SaasSavingsCalculator() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ventas por dia</label>
-                <span className="text-sm font-extrabold text-[var(--accent-dark)]">{salesPerDay}</span>
+                <span className="text-sm font-extrabold text-[var(--accent-dark)] dark:text-[var(--accent)]">{salesPerDay}</span>
               </div>
               <input
                 type="range"
@@ -60,7 +60,7 @@ export default function SaasSavingsCalculator() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Empleados</label>
-                <span className="text-sm font-extrabold text-[var(--accent-dark)]">{employees}</span>
+                <span className="text-sm font-extrabold text-[var(--accent-dark)] dark:text-[var(--accent)]">{employees}</span>
               </div>
               <input
                 type="range"
@@ -79,7 +79,7 @@ export default function SaasSavingsCalculator() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Merma actual (%)</label>
-                <span className="text-sm font-extrabold text-[var(--accent-dark)]">{wastePercent}%</span>
+                <span className="text-sm font-extrabold text-[var(--accent-dark)] dark:text-[var(--accent)]">{wastePercent}%</span>
               </div>
               <input
                 type="range"
@@ -120,7 +120,7 @@ export default function SaasSavingsCalculator() {
               </p>
               <a
                 href="/registro"
-                className="inline-block mt-3 px-5 py-2 rounded-xl bg-white text-[var(--accent-dark)] text-sm font-bold hover:bg-white/90 transition-colors"
+                className="inline-block mt-3 px-5 py-2 rounded-xl bg-white text-[var(--accent-dark)] dark:text-[var(--accent)] text-sm font-bold hover:bg-white/90 transition-colors"
               >
                 Empezar gratis
               </a>

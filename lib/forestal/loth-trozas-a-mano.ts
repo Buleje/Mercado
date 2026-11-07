@@ -1,0 +1,477 @@
+/**
+ * loth-trozas-a-mano — las trozas que se anotan A MANO en «Despachar con guía»
+ * (Brandon 15-10: «poner D1, D2, largo, cantidad y que el volumen salga solo;
+ * crear y agregar esas trozas sin vincularlas todavía a un permiso»).
+ *
+ * Una fila = N trozas iguales (cantidad, casi siempre 1). Al registrar, cada
+ * troza se asienta en el Trozado del libro y sale en la guía con el resto: la
+ * lista de trozas a movilizar imprime una fila por troza, con cantidad 1, como
+ * las del libro.
+ *
+ * El volumen es la fórmula SERFOR (`smalianVolume`, 4 decimales) por troza, ×
+ * la cantidad. El navegador lo muestra; el SERVIDOR lo vuelve a calcular con
+ * esta misma función desde las medidas (nunca se cree el volumen del cliente).
+ *
+ * Los límites de las medidas son los del Cubicador (`RANGO_FORMULA.smalian`).
+ * PURO y client-safe: lo importan el modal, la ruta y la DB class.
+ */
+import { z } from "zod";
+import { smalianVolume } from "./loth-constants";
+import { RANGO_FORMULA } from "./cubicacion-trozas-formula";
+import { r4, type TrozaDelLibro } from "./loth-guia-despacho";
+import { claveEspecie } from "./loth-constants";
+import { cientificoDeEspecie, especiesDisponibles, type CatalogoEspecies } from "./especies-catalogo";
+import { especieEnRegistro, rechazoT7, type EspecieRegistrada } from "./loth-plan-especie";
+import { siguienteCodigoDelArbol } from "./loth-arbol-a-mano";
+
+const R = RANGO_FORMULA.smalian;
+
+/** Una guía lleva hasta 150 trozas (= el tope del POST de despacho). */
+export const TROZAS_POR_GUIA_MAX = 150;
+
+/** Lo que se anota de una fila: medidas del papel (cm y m) y cuántas trozas iguales. */
+export interface TrozaAMano {
+  d1Cm: number;
+  d2Cm: number;
+  largoM: number;
+  cantidad: number;
+  /**
+   * La especie (nombre común) de las trozas de la fila (15-10: «poner una
+   * especie y fijarla»). Sale en el casillero (37) de la guía y es la que mide
+   * T6/T7. Opcional en el servidor: el libro admite el hueco y la guía dice
+   * «Falta»; el modal la pide siempre.
+   */
+  especie?: string | null;
+  /**
+   * El árbol del censo de donde salieron (id de `ForestCensusTree`; 15-10:
+   * «¿de qué árbol salió?»). Opcional: sin árbol la troza nace como antes. Con
+   * árbol, el código es el del trozado de siempre («001-TOR-A») y el servidor
+   * exige que el árbol sea del permiso de la guía y de su especie
+   * (`revisarArbolDeTroza`).
+   */
+  arbolId?: string | null;
+  /**
+   * La fila salió de «Medir por foto» (16-10, `testas-medicion`): D1 lo dio la
+   * testa en la foto y el operador lo confirmó. Queda escrito en la
+   * observación de la línea de Trozado (`notaPorFoto`).
+   */
+  medidoPorFoto?: boolean;
+  /** D2 no se midió (no hubo foto de la otra punta ni se tipeó): va pareja, D2 = D1 (ADR-492), y se marca. */
+  d2Supuesto?: boolean;
+}
+
+/** Lo que el libro guarda: Ø en METROS a 3 decimales (Decimal 8,3), largo a 2 (Decimal 8,2). */
+const aM = (cm: number): number => Math.round(cm * 10) / 1000;
+const largo2 = (m: number): number => Math.round(m * 100) / 100;
+
+/** El largo más corto que el libro puede guardar (Decimal 8,2): 1 cm. */
+const LARGO_MIN_M = 0.01;
+const RANGO_D = `va de ${R.diametroMin} a ${R.diametroMax} cm`;
+const RANGO_L = `El largo va de ${String(LARGO_MIN_M).replace(".", ",")} a ${R.largoMax} m`;
+
+/*
+ * El largo se valida YA redondeado a lo que guarda el libro: «0,001» pasaba
+ * `> 0` y quedaba 0 m y 0 m³ en el Trozado (revisión 15-10). Y la troza tiene
+ * que dar volumen: una de 0 m³ no se despacha.
+ */
+export const trozaAManoSchema = z
+  .object({
+    d1Cm: z.number().finite().min(R.diametroMin, `D1 ${RANGO_D}`).max(R.diametroMax, `D1 ${RANGO_D}`),
+    d2Cm: z.number().finite().min(R.diametroMin, `D2 ${RANGO_D}`).max(R.diametroMax, `D2 ${RANGO_D}`),
+    largoM: z
+      .number()
+      .finite()
+      .max(R.largoMax, RANGO_L)
+      .refine((m) => largo2(m) >= LARGO_MIN_M, RANGO_L),
+    cantidad: z
+      .number()
+      .int("La cantidad es un número entero")
+      .min(1, "Al menos 1 troza")
+      .max(TROZAS_POR_GUIA_MAX, `Hasta ${TROZAS_POR_GUIA_MAX} trozas`),
+    especie: z.string().trim().max(120, "La especie es muy larga").nullish(),
+    arbolId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .regex(/^[A-Za-z0-9_-]+$/, "Árbol no válido")
+      .nullish(),
+    medidoPorFoto: z.boolean().optional(),
+    d2Supuesto: z.boolean().optional(),
+  })
+  .superRefine((t, ctx) => {
+    if (!(volumenPorTroza(t) > 0)) {
+      ctx.addIssue({ code: "custom", path: ["largoM"], message: "Con esas medidas el volumen da 0 m³: revisa el largo" });
+    }
+  });
+
+/**
+ * Las medidas de UNA troza como las guarda el libro y su volumen SERFOR (m³, 4
+ * decimales). D1 es el mayor y D2 el menor (las columnas del libro): Smalian no
+ * cambia. El volumen sale DESPUÉS de redondear las medidas a lo que guarda el
+ * libro: así la línea de Trozado, la guía y la fila de alta dicen lo mismo.
+ */
+export function medidasDelLibro(t: Pick<TrozaAMano, "d1Cm" | "d2Cm" | "largoM">) {
+  const diamMayorM = aM(Math.max(t.d1Cm, t.d2Cm));
+  const diamMenorM = aM(Math.min(t.d1Cm, t.d2Cm));
+  const lengthM = largo2(t.largoM);
+  return { diamMayorM, diamMenorM, lengthM, volumeM3: smalianVolume(diamMayorM, diamMenorM, lengthM) };
+}
+
+/** Volumen SERFOR de UNA troza de la fila (m³, 4 decimales). */
+export const volumenPorTroza = (t: Pick<TrozaAMano, "d1Cm" | "d2Cm" | "largoM">): number => medidasDelLibro(t).volumeM3;
+
+/** Volumen de la fila: el de una troza × la cantidad (lo que suma la guía). */
+export const volumenDeFila = (t: TrozaAMano): number => r4(volumenPorTroza(t) * t.cantidad);
+
+/** Cuántas trozas suman las filas. */
+export const trozasDeFilas = (filas: readonly TrozaAMano[]): number => filas.reduce((a, f) => a + f.cantidad, 0);
+
+export type CampoAMano = "especie" | "d1" | "d2" | "largo" | "cantidad";
+export type CrudoAMano = Record<CampoAMano, string>;
+
+/** «45,5» y «45.5» valen lo mismo; vacío o letras → `null`. */
+function leer(v: string): number | null {
+  const t = v.trim().replace(/\s+/g, "").replace(",", ".");
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+/** El mismo `leer` para las pantallas que tipean medidas sueltas («Medir por foto»). */
+export const leerMedida = leer;
+
+const CAMPO_DE: Partial<Record<keyof TrozaAMano, CampoAMano>> = { especie: "especie", d1Cm: "d1", d2Cm: "d2", largoM: "largo", cantidad: "cantidad" };
+
+/**
+ * Revisa lo tipeado en la fila de alta. Cantidad vacía = 1 (lo de siempre).
+ * La especie se pide: sin ella la guía imprime «Falta» en el casillero (37).
+ * Devuelve la troza lista para agregar o, por campo, qué está mal.
+ */
+export function revisarTrozaAMano(
+  crudo: CrudoAMano,
+): { ok: true; troza: TrozaAMano } | { ok: false; errores: Partial<Record<CampoAMano, string>> } {
+  const errores: Partial<Record<CampoAMano, string>> = {};
+  const especie = crudo.especie.trim();
+  if (!especie) errores.especie = "Falta la especie";
+  const d1 = leer(crudo.d1);
+  const d2 = leer(crudo.d2);
+  const largo = leer(crudo.largo);
+  const cantidad = crudo.cantidad.trim() ? leer(crudo.cantidad) : 1;
+  if (d1 == null) errores.d1 = "Falta D1";
+  if (d2 == null) errores.d2 = "Falta D2";
+  if (largo == null) errores.largo = "Falta el largo";
+  if (cantidad == null) errores.cantidad = "Falta la cantidad";
+  if (Object.keys(errores).length > 0) {
+    /* Lo que sí se tipeó también se revisa: «D1 300» no espera a que llegue el largo. */
+    const forma = trozaAManoSchema.shape;
+    const fuera: [CampoAMano, number | null, z.ZodType][] = [["d1", d1, forma.d1Cm], ["d2", d2, forma.d2Cm], ["largo", largo, forma.largoM], ["cantidad", cantidad, forma.cantidad]];
+    for (const [campo, v, esquema] of fuera) {
+      const r = v == null ? null : esquema.safeParse(v);
+      if (r && !r.success) errores[campo] = r.error.issues[0]?.message ?? "Fuera de rango";
+    }
+    return { ok: false, errores };
+  }
+  const r = trozaAManoSchema.safeParse({ d1Cm: d1, d2Cm: d2, largoM: largo, cantidad, especie });
+  if (!r.success) {
+    for (const issue of r.error.issues) {
+      const campo = CAMPO_DE[issue.path[0] as keyof TrozaAMano];
+      if (campo && !errores[campo]) errores[campo] = issue.message;
+    }
+    return { ok: false, errores };
+  }
+  return { ok: true, troza: r.data };
+}
+
+/** Una troza a mano ya numerada: el código que imprime la guía y sus medidas como las guarda el libro. */
+export interface PiezaAMano {
+  /** El código impreso en la guía y la lista («1», «2»…). El del libro lo arma el servidor (ADR-477). */
+  codigo: string;
+  diamMayorM: number;
+  diamMenorM: number;
+  lengthM: number;
+  volumeM3: number;
+  /** La especie de su fila (`null` = sin especie). */
+  especie: string | null;
+  /** El árbol de su fila (`null` = sin árbol): `treeCode` del censo y su id. */
+  treeCode: string | null;
+  arbolId: string | null;
+  /** Medida por foto (`medidoPorFoto`): «pareja» = D2 no se midió y va igual a D1. `null` = a mano. */
+  porFoto: "medida" | "pareja" | null;
+}
+
+/** Lo que hace falta de un árbol para numerar sus trozas: su código y los de las que ya tiene. */
+export interface ArbolParaNumerar {
+  treeCode: string;
+  trozas: readonly string[];
+}
+
+/**
+ * Las trozas de las filas, una por unidad, numeradas 1, 2, 3… en el orden en
+ * que se anotaron, saltando los códigos que ya imprimen las trozas del libro
+ * de la misma guía (`ocupados`): en el papel no puede haber dos «3».
+ *
+ * Una fila con árbol (y el árbol en `arboles`) numera como el trozado de
+ * siempre: el árbol + la letra que sigue a las que ya tiene en el libro, en la
+ * guía o en esta misma lista («001-TOR-A», «001-TOR-B»). Si el árbol no está
+ * (todavía cargando en la pantalla), la troza va con número y sin árbol: el
+ * servidor rechaza un árbol que no existe antes de numerar.
+ *
+ * `desde` (16-10, «asignar código según el correlativo que se quede»): el
+ * primer número de las trozas sin árbol. 1 = lo de siempre; la foto propone
+ * el que sigue al mayor del permiso (`siguienteCorrelativo`).
+ */
+export function piezasAMano(
+  filas: readonly TrozaAMano[],
+  ocupados: Iterable<string> = [],
+  arboles: ReadonlyMap<string, ArbolParaNumerar> = new Map(),
+  desde = 1,
+): PiezaAMano[] {
+  const usados = new Set([...ocupados].map((c) => c.trim()));
+  const piezas: PiezaAMano[] = [];
+  let n = Number.isFinite(desde) ? Math.max(0, Math.floor(desde) - 1) : 0;
+  for (const f of filas) {
+    const medidas = medidasDelLibro(f);
+    const especie = f.especie?.trim() || null;
+    const arbolId = f.arbolId?.trim() || null;
+    const arbol = arbolId ? arboles.get(arbolId) : undefined;
+    const porFoto = f.medidoPorFoto ? (f.d2Supuesto ? "pareja" : "medida") : null;
+    for (let i = 0; i < f.cantidad; i++) {
+      if (arbol && arbolId) {
+        const codigo = siguienteCodigoDelArbol(arbol.treeCode, [...arbol.trozas, ...usados]);
+        usados.add(codigo);
+        piezas.push({ codigo, ...medidas, especie, treeCode: arbol.treeCode, arbolId, porFoto });
+        continue;
+      }
+      do n += 1;
+      while (usados.has(String(n)));
+      piezas.push({ codigo: String(n), ...medidas, especie, treeCode: null, arbolId: null, porFoto });
+    }
+  }
+  return piezas;
+}
+
+/** Prefijo del `id` de una troza a mano en el modal (no es una línea del libro). */
+export const ID_A_MANO = "a-mano:";
+
+/**
+ * Las trozas a mano con la forma de las del libro, para que la guía las trate
+ * igual (detalle, lista, papeles). El científico lo completa la vista previa
+ * con el catálogo (`cientificoDe`), como hace con las del libro sin binomio.
+ */
+export function trozasDelLibroAMano(piezas: readonly PiezaAMano[], planId: string | null): TrozaDelLibro[] {
+  return piezas.map(({ especie, treeCode, arbolId: _arbolId, porFoto: _porFoto, ...p }) => ({
+    ...p,
+    id: `${ID_A_MANO}${p.codigo}`,
+    lineNo: 0,
+    planId,
+    fecha: null,
+    arbol: treeCode,
+    comun: especie,
+    cientifico: null,
+    cites: false,
+  }));
+}
+
+/**
+ * Las trozas a mano con el código que les dio el servidor al registrar
+ * (`codigosAMano`, en el mismo orden). La vista previa numera con lo que vio;
+ * el servidor, bajo candado: si otra guía se llevó la letra en el medio, el
+ * papel que se imprime tiene que decir lo que quedó en el libro. Si no viene
+ * la lista (o no cuadra), quedan las de la vista previa.
+ */
+export function conCodigosDelServidor(piezas: readonly TrozaDelLibro[], codigos?: readonly string[] | null): TrozaDelLibro[] {
+  if (!codigos || codigos.length !== piezas.length) return [...piezas];
+  return piezas.map((p, i) => (p.codigo === codigos[i] ? p : { ...p, codigo: codigos[i], id: `${ID_A_MANO}${codigos[i]}` }));
+}
+
+/** Una especie ya cruzada con el catálogo: la grafía del aserradero y su binomio. */
+export interface EspecieResuelta {
+  nombre: string;
+  cientifico: string | null;
+}
+
+/**
+ * La especie de una troza a mano contra el catálogo del aserradero (el mismo
+ * que ofrece el desplegable): devuelve la grafía del catálogo («TORNILLO» →
+ * «Tornillo») y su científico, o el motivo si no está. El servidor no asienta
+ * una especie que la planta no tiene: el desplegable sólo ofrece las suyas, así
+ * que una ajena es un pedido armado a mano o un catálogo que cambió mientras
+ * tanto.
+ */
+export function especieDelCatalogo(
+  nombre: string,
+  catalogo: CatalogoEspecies,
+): { ok: true; especie: EspecieResuelta } | { ok: false; motivo: string } {
+  const disponibles = especiesDisponibles(catalogo);
+  const esquema = z
+    .string()
+    .trim()
+    .min(1, "Falta la especie")
+    .refine(
+      (n) => disponibles.some((e) => e.clave === claveEspecie(n)),
+      `«${nombre.trim()}» no está en el catálogo de especies del aserradero: agrégala ahí o elige otra.`,
+    );
+  const r = esquema.safeParse(nombre);
+  if (!r.success) return { ok: false, motivo: r.error.issues[0]?.message ?? "Especie no válida" };
+  const clave = claveEspecie(r.data);
+  const enLista = disponibles.find((e) => e.clave === clave);
+  const grafia = enLista?.nombre ?? r.data;
+  return { ok: true, especie: { nombre: grafia, cientifico: cientificoDeEspecie(grafia, catalogo) } };
+}
+
+/**
+ * Las especies de todas las filas contra el catálogo, de una vez: la primera
+ * que no esté corta (con su motivo). Sin especie se deja `null` (el libro
+ * admite el hueco). Devuelve una resolución por fila, en el mismo orden.
+ */
+export function especiesDeLasFilas(
+  filas: readonly TrozaAMano[],
+  catalogo: CatalogoEspecies,
+): { ok: true; especies: (EspecieResuelta | null)[] } | { ok: false; motivo: string; especie: string } {
+  const memo = new Map<string, EspecieResuelta>();
+  const especies: (EspecieResuelta | null)[] = [];
+  for (const f of filas) {
+    const nombre = f.especie?.trim();
+    if (!nombre) {
+      especies.push(null);
+      continue;
+    }
+    const clave = claveEspecie(nombre);
+    let resuelta = memo.get(clave);
+    if (!resuelta) {
+      const r = especieDelCatalogo(nombre, catalogo);
+      if (!r.ok) return { ok: false, motivo: r.motivo, especie: nombre };
+      resuelta = r.especie;
+      memo.set(clave, resuelta);
+    }
+    especies.push(resuelta);
+  }
+  return { ok: true, especies };
+}
+
+/** Lo que la cita de una guía tiene siempre igual: hasta el «(» que cierra el N° (así «…0001» no agarra «…00012»). */
+const citaDeLaGuia = (gtfNumber: string): string => `Troza anotada a mano al despachar con la GTF ${gtfNumber} (`;
+
+/**
+ * La cita que deja en el Trozado cada troza anotada a mano: de qué guía nació.
+ * Una sola definición para quien la escribe (`asentarTrozasAManoEnTx`) y quien
+ * la lee (`trozadosNacidosDeLaGuia`).
+ */
+export const observacionAMano = (gtfNumber: string, codigo: string, nota?: string | null): string =>
+  `${citaDeLaGuia(gtfNumber)}en la guía: ${codigo}).${nota ? ` ${nota}` : ""}`;
+
+/**
+ * Lo que la línea de Trozado dice de una troza medida por foto (16-10): de
+ * dónde salió cada Ø y quién lo confirmó. `null` = anotada a mano.
+ */
+export function notaPorFoto(porFoto: PiezaAMano["porFoto"], usuario: string): string | null {
+  if (!porFoto) return null;
+  const d2 = porFoto === "pareja" ? "D2 = D1 (troza pareja, ADR-492: no se midió la otra punta)" : "D2 a mano";
+  return `Medido por foto: D1 de la testa, ${d2}; confirmado por ${usuario}.`;
+}
+
+/** Una línea de Trozado, con lo que hace falta para saber si nació con una guía. */
+export interface TrozadoDeLaGuia {
+  id: string;
+  treeCode: string | null;
+  observations: string | null;
+}
+
+/**
+ * Las líneas de Trozado que NACIERON con esta guía (anotadas a mano al
+ * despacharla): anular la guía las anula con ella. Si quedaran vivas, la
+ * guía reanotada crearía otras («1-0123» y «1-019/0123») y el Trozado sumaría
+ * la misma madera dos veces; con N° corto el 2.º intento daba T3 (revisión 15-10).
+ *
+ * El lazo es el `trozadoId` que la guía guarda en sus items (ADR-450 L4) y,
+ * desde el 15-10, la marca `aMano: true` que el registro pone en el item de
+ * cada troza que nació con ella: firme, no depende del texto ni del árbol (una
+ * troza a mano puede llevar árbol). Las guías registradas antes no tienen la
+ * marca: para ellas vale lo de antes, sin árbol y con la cita EXACTA de esta
+ * GTF. Una troza del libro que ya existía (con árbol o sin él) también va en
+ * los items, pero no nació con la guía: anularla solo la libera, no la borra
+ * del Trozado.
+ */
+export function trozadosNacidosDeLaGuia(
+  gtf: { gtfNumber: string; items: unknown },
+  trozados: readonly TrozadoDeLaGuia[],
+): string[] {
+  const enLaGuia = new Set(trozadoIdsDeItems(gtf.items));
+  const marcados = new Set(trozadoIdsDeItems(gtf.items, { soloAMano: true }));
+  const cita = citaDeLaGuia(gtf.gtfNumber.trim());
+  return trozados
+    .filter((l) => enLaGuia.has(l.id) && (marcados.has(l.id) || (!l.treeCode && (l.observations ?? "").startsWith(cita))))
+    .map((l) => l.id);
+}
+
+/**
+ * Los `trozadoId` que la guía guarda en sus items (para buscar sus líneas).
+ * `soloAMano`: sólo los de las trozas que nacieron con la guía (marca `aMano`).
+ */
+export function trozadoIdsDeItems(items: unknown, opciones: { soloAMano?: boolean } = {}): string[] {
+  if (!Array.isArray(items)) return [];
+  return [
+    ...new Set(
+      items.flatMap((it: unknown) => {
+        if (!it || typeof it !== "object") return [];
+        const item = it as { trozadoId?: unknown; aMano?: unknown };
+        if (opciones.soloAMano && item.aMano !== true) return [];
+        return typeof item.trozadoId === "string" && item.trozadoId ? [item.trozadoId] : [];
+      }),
+    ),
+  ];
+}
+
+/**
+ * Lo que la pantalla sabe para juzgar la especie de una troza a mano ANTES de
+ * registrar (revisión 15-10: el 422 llegaba recién al Registrar, con N filas ya
+ * cargadas).
+ */
+export interface ContextoEspecieAMano {
+  /** El catálogo leído; `null` mientras carga o si no se pudo leer: no se juzga (lo hace el servidor). */
+  catalogo: CatalogoEspecies | null;
+  /** Las especies del permiso de la guía; `null` = sin permiso o sin leer. */
+  permiso: { registro: readonly EspecieRegistrada[]; plantacion: boolean } | null;
+}
+
+export interface ProblemaEspecieAMano {
+  tipo: "catalogo" | "permiso";
+  motivo: string;
+}
+
+/**
+ * Lo que el servidor rechazaría, dicho antes: fuera del catálogo
+ * (`especieDelCatalogo`, el 422 de `especiesDeLasFilas`) o fuera del permiso
+ * (`rechazoT7`, el juicio de T7 al despachar). Con el nombre y el científico
+ * DEL CATÁLOGO, que son los que el servidor guarda y juzga.
+ */
+export function problemaDeEspecieAMano(
+  especie: string | null | undefined,
+  ctx: ContextoEspecieAMano,
+): ProblemaEspecieAMano | null {
+  const nombre = especie?.trim();
+  if (!nombre) return null;
+  let comun = nombre;
+  let cientifico: string | null = null;
+  if (ctx.catalogo) {
+    const r = especieDelCatalogo(nombre, ctx.catalogo);
+    if (!r.ok) return { tipo: "catalogo", motivo: `${nombre} ya no está en el catálogo: elige otra especie.` };
+    comun = r.especie.nombre;
+    cientifico = r.especie.cientifico;
+  }
+  const rechazo = ctx.permiso ? rechazoT7(ctx.permiso.registro, comun, cientifico, ctx.permiso.plantacion) : null;
+  return rechazo ? { tipo: "permiso", motivo: rechazo } : null;
+}
+
+/**
+ * Las del catálogo que el permiso autoriza (`especieEnRegistro`, la regla de
+ * T7), en el orden del catálogo. Permiso sin especies cargadas = T7 no juzga = `[]`.
+ */
+export function especiesDelPermiso(
+  nombres: readonly string[],
+  cientificoDe: (nombre: string) => string | null,
+  registro: readonly EspecieRegistrada[],
+): string[] {
+  if (registro.length === 0) return [];
+  return nombres.filter((n) => especieEnRegistro(registro, n, cientificoDe(n)));
+}

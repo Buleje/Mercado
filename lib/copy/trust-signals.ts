@@ -24,8 +24,8 @@ export const TRUST = {
 
   // ── Vendor pitch ──────────────────────────────────────────
   freeTrial: "14 días gratis — sin tarjeta de crédito",
-  noContract: "Sin contratos ni permanencia — salís cuando quieras",
-  setupTime: "Configurás tu tienda en 5 minutos",
+  noContract: "Sin contratos ni permanencia — sales cuando quieras",
+  setupTime: "Configuras tu tienda en 5 minutos",
   supportIncluded: "Soporte por WhatsApp incluido en todos los planes",
 
   // ── Social proof real desde DB (usar con fallback) ────────
@@ -46,7 +46,7 @@ export const TRUST_CHIPS = {
   signup: [
     "14 días gratis",
     "Sin tarjeta",
-    "Cancelás cuando quieras",
+    "Cancelas cuando quieras",
   ],
   marketplace: [
     "Bodegas verificadas",

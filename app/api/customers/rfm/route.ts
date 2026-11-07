@@ -43,7 +43,7 @@ function assignSegment(r: number, f: number, m: number): { segment: string; colo
   if (r >= 3 && f >= 3) return { segment: "Leal", color: "#2563eb" };
   if (r >= 4 && avg < 3) return { segment: "Nuevo", color: "#06b6d4" };
   if (r >= 3 && avg >= 2) return { segment: "Prometedor", color: "#16a34a" };
-  if (r <= 2 && avg >= 3) return { segment: "En riesgo", color: "#f59e0b" };
+  if (r <= 2 && avg >= 3) return { segment: "En riesgo", color: "#ff6b5b" };
   if (r <= 2 && avg < 3) return { segment: "Dormido", color: "#9ca3af" };
   return { segment: "Perdido", color: "#dc2626" };
 }

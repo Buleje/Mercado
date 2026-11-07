@@ -22,6 +22,14 @@ import {
   type StoreHours,
 } from "@/lib/marketplace-store-hours";
 
+/** Un instante dado en hora de Lima (UTC−5), sin depender del reloj de la máquina (11-10). */
+const lima = (y: number, m: number, d: number, h: number, mi: number) => new Date(Date.UTC(y, m, d, h + 5, mi));
+/** La hora y el día del mes de un instante, en Lima. */
+const horaLima = (d: Date) => new Date(d.getTime() - 5 * 3_600_000).getUTCHours();
+const diaLima = (d: Date) => new Date(d.getTime() - 5 * 3_600_000).getUTCDate();
+const diaSemanaLima = (d: Date) => new Date(d.getTime() - 5 * 3_600_000).getUTCDay();
+
+
 const STANDARD: StoreHours = {
   mon: { open: "08:00", close: "20:00", closed: false },
   tue: { open: "08:00", close: "20:00", closed: false },
@@ -44,13 +52,13 @@ const LATE_NIGHT: StoreHours = {
 };
 
 // 2026-05-04 es lunes
-const MON_10AM = new Date(2026, 4, 4, 10, 0);   // 10:00 AM lunes
-const MON_7AM  = new Date(2026, 4, 4, 7, 0);    // 07:00 AM lunes (antes de abrir)
-const MON_9PM  = new Date(2026, 4, 4, 21, 0);   // 21:00 lunes (después de cerrar)
-const SUN_11AM = new Date(2026, 4, 3, 11, 0);   // 11:00 AM domingo (closed=true)
-const FRI_8PM  = new Date(2026, 4, 1, 20, 0);   // 20:00 viernes (LATE_NIGHT abierto)
-const SAT_1AM  = new Date(2026, 4, 2, 1, 0);    // 01:00 sábado madrugada (LATE_NIGHT viernes aún)
-const SAT_3AM  = new Date(2026, 4, 2, 3, 0);    // 03:00 sábado (cerrado, LATE_NIGHT)
+const MON_10AM = lima(2026, 4, 4, 10, 0);   // 10:00 AM lunes
+const MON_7AM  = lima(2026, 4, 4, 7, 0);    // 07:00 AM lunes (antes de abrir)
+const MON_9PM  = lima(2026, 4, 4, 21, 0);   // 21:00 lunes (después de cerrar)
+const SUN_11AM = lima(2026, 4, 3, 11, 0);   // 11:00 AM domingo (closed=true)
+const FRI_8PM  = lima(2026, 4, 1, 20, 0);   // 20:00 viernes (LATE_NIGHT abierto)
+const SAT_1AM  = lima(2026, 4, 2, 1, 0);    // 01:00 sábado madrugada (LATE_NIGHT viernes aún)
+const SAT_3AM  = lima(2026, 4, 2, 3, 0);    // 03:00 sábado (cerrado, LATE_NIGHT)
 
 describe("isOpenNow", () => {
   it("retorna false sin hours", () => {
@@ -88,6 +96,15 @@ describe("isOpenNow", () => {
     expect(isOpenNow(LATE_NIGHT, SAT_3AM)).toBe(false);
   });
 
+  it("LATE_NIGHT — domingo 01:00 sigue abierta por el turno del sábado (el domingo está cerrado)", () => {
+    expect(isOpenNow(LATE_NIGHT, lima(2026, 4, 3, 1, 0))).toBe(true);
+    expect(isOpenNow(LATE_NIGHT, lima(2026, 4, 3, 3, 0))).toBe(false);
+  });
+
+  it("LATE_NIGHT — viernes 01:00 cerrada: el jueves no abrió y el turno del viernes empieza a las 19:00", () => {
+    expect(isOpenNow(LATE_NIGHT, lima(2026, 4, 8, 1, 0))).toBe(false);
+  });
+
   it("retorna false si la hora es inválida", () => {
     expect(isOpenNow({ mon: { open: "abc", close: "20:00" } }, MON_10AM)).toBe(false);
   });
@@ -97,22 +114,22 @@ describe("nextOpening", () => {
   it("hoy si la apertura es más tarde", () => {
     const next = nextOpening(STANDARD, MON_7AM);
     expect(next).not.toBeNull();
-    expect(next!.getHours()).toBe(8);
-    expect(next!.getDate()).toBe(MON_7AM.getDate());
+    expect(horaLima(next!)).toBe(8);
+    expect(diaLima(next!)).toBe(diaLima(MON_7AM));
   });
 
   it("mañana si ya cerró hoy", () => {
     const next = nextOpening(STANDARD, MON_9PM);
-    expect(next!.getDate()).toBe(MON_9PM.getDate() + 1);
-    expect(next!.getHours()).toBe(8);
+    expect(diaLima(next!)).toBe(diaLima(MON_9PM) + 1);
+    expect(horaLima(next!)).toBe(8);
   });
 
   it("salta domingo (closed:true) y va al lunes", () => {
     // Sábado 10pm → siguiente apertura es lunes 8am (porque domingo closed)
-    const SAT_10PM = new Date(2026, 4, 2, 22, 0);
+    const SAT_10PM = lima(2026, 4, 2, 22, 0);
     const next = nextOpening(STANDARD, SAT_10PM);
-    expect(next!.getDay()).toBe(1); // lunes
-    expect(next!.getHours()).toBe(8);
+    expect(diaSemanaLima(next!)).toBe(1); // lunes
+    expect(horaLima(next!)).toBe(8);
   });
 
   it("retorna null si todos los días son closed", () => {
@@ -208,27 +225,36 @@ describe("isValidReservationSlot", () => {
 
   it("rechaza más de maxDaysAhead", () => {
     const future = new Date(MON_10AM);
-    future.setDate(future.getDate() + 10);
+    future.setDate(diaLima(future) + 10);
     const r = isValidReservationSlot(STANDARD, future, MON_10AM, 7);
     expect(r.ok).toBe(false);
   });
 
   it("rechaza día closed", () => {
     // Domingo es closed en STANDARD
-    const SUN_NEXT = new Date(2026, 4, 10, 11, 0); // próximo domingo
+    const SUN_NEXT = lima(2026, 4, 10, 11, 0); // próximo domingo
     const r = isValidReservationSlot(STANDARD, SUN_NEXT, MON_10AM);
     expect(r.ok).toBe(false);
   });
 
   it("rechaza hora fuera del rango", () => {
-    const TUE_3AM = new Date(2026, 4, 5, 3, 0);
+    const TUE_3AM = lima(2026, 4, 5, 3, 0);
     const r = isValidReservationSlot(STANDARD, TUE_3AM, MON_10AM);
     expect(r.ok).toBe(false);
   });
 
   it("acepta hora dentro del rango y dentro del límite", () => {
-    const TUE_10AM = new Date(2026, 4, 5, 10, 0);
+    const TUE_10AM = lima(2026, 4, 5, 10, 0);
     const r = isValidReservationSlot(STANDARD, TUE_10AM, MON_10AM);
     expect(r.ok).toBe(true);
+  });
+});
+
+describe("hora de Lima aunque el servidor corra en UTC (11-10)", () => {
+  it("sábado 20:30 de Lima = domingo 01:30 UTC: cuenta como SÁBADO", () => {
+    const hours = { sat: { open: "08:00", close: "22:00" }, sun: { closed: true } };
+    const sab2030 = new Date(Date.UTC(2026, 9, 11, 1, 30)); // 2026-10-10 20:30 en Lima
+    expect(isOpenNow(hours, sab2030)).toBe(true);
+    expect(isValidReservationSlot(hours, new Date(Date.UTC(2026, 9, 11, 2, 0)), sab2030).ok).toBe(true);
   });
 });

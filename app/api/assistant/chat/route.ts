@@ -54,7 +54,7 @@ const INTENTS: IntentRule[] = [
   },
   {
     keywords: ["precio", "cuesta", "cuanto", "cuánto", "vale"],
-    reply: "El precio que ves en la ficha es el de venta directa de la bodega. Si pedís cantidad mayor, el vendedor puede darte precio mayorista.",
+    reply: "El precio que ves en la ficha es el de venta directa de la bodega. Si pides cantidad mayor, el vendedor puede darte precio mayorista.",
     followUp: ["¿Hay precio por mayor?", "¿Tienen descuento por docena?", "¿Cuánto cuesta el delivery?"],
   },
   {
@@ -64,7 +64,7 @@ const INTENTS: IntentRule[] = [
   },
   {
     keywords: ["pago", "yape", "plin", "efectivo", "tarjeta"],
-    reply: "Pagás con Yape, Plin, tarjeta o efectivo contra entrega. Todo lo elegís en el checkout antes de confirmar.",
+    reply: "Pagas con Yape, Plin, tarjeta o efectivo contra entrega. Todo lo eliges en el checkout antes de confirmar.",
     followUp: ["¿Aceptan Plin?", "¿Cobran por Yape?", "¿Dan factura?"],
   },
 ];

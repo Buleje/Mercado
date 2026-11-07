@@ -24,6 +24,7 @@ import {
   getActiveTenantSlug,
   tenantCacheKey,
 } from "@/lib/tenant-cache";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { resolveTenantIdForRoute } from "@/lib/resolve-tenant";
 
 // Mock tryAdmin para tests del resolver
@@ -139,6 +140,19 @@ describe("tenant-cache.ts — clearAllTenantCache", () => {
 
     expect(localStorage.getItem("__tenant-cache-owner")).toBe("tenant-x");
     expect(localStorage.getItem("admin-sales-cache")).toBeNull();
+  });
+
+  it("borra también lo leído en memoria por cachedJson (no se sirve en el tenant nuevo)", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ businessName: "A" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await cachedJson("/api/settings", 30_000);
+      clearAllTenantCache();
+      await cachedJson("/api/settings", 30_000);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

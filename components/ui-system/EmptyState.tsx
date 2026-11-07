@@ -68,9 +68,9 @@ export function EmptyState({
         {title}
       </h3>
       {description && (
-        <p className="mt-3 text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed">
+        <div className="mt-3 text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed">
           {description}
-        </p>
+        </div>
       )}
       {(action || secondaryAction) && (
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

@@ -20,7 +20,7 @@ export default function GiftCardsHero() {
   return (
     <UnifiedHero
       kicker="Tarjetas de Regalo Buleje"
-      title="Regalá lo que más se disfruta en el barrio"
+      title="Regala lo que más se disfruta en el barrio"
       description="Tarjetas digitales desde S/ 20 que se canjean en cualquier bodega del marketplace. Sin vencimiento, sin letra chica."
       trustChips={[
         "Envío instantáneo",

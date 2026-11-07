@@ -137,7 +137,7 @@ export default function MisTiendasFavoritasStrip({
       <header className="mb-6 flex items-end justify-between gap-4">
         <div>
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            Para vos
+            Para ti
           </p>
           <h2
             id="mis-favoritas-heading"
@@ -146,7 +146,7 @@ export default function MisTiendasFavoritasStrip({
             Tus tiendas favoritas
           </h2>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Las {enriched.length} tiendas donde más comprás —
+            Las {enriched.length} tiendas donde más compras —
             <span className="font-semibold text-[var(--text-secondary)]">
               {" "}
               {ranking.total} pedidos en {ranking.distinct} tiendas

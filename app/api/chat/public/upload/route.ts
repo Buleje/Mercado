@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isFeatureEnabled } from "@/lib/feature-flags";
+import { exigirHiloDelComprador } from "@/lib/chat/acceso-hilo-publico";
 
 /**
  * POST /api/chat/public/upload — Tanda 4 · Comprobante/foto en el hilo
@@ -13,6 +14,7 @@ import { isFeatureEnabled } from "@/lib/feature-flags";
  * adjuntarla al chat. Devuelve `{ url }` y el cliente manda un mensaje con
  * attachmentUrl + messageType "image". Reusa el patrón hardenado de
  * reviews/upload: público, rate-limited, sharp re-encodea (mata payloads no-img).
+ * Desde el 17-10 (T4) exige el hilo y su token (`lib/chat/acceso-hilo-publico`).
  */
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -29,6 +31,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData();
+    // Security 17-10 (T4): sólo el dueño del hilo abierto sube (token o sesión).
+    const hilo = await exigirHiloDelComprador(req, formData);
+    if (!hilo.ok) return hilo.res;
     const file = formData.get("file") as File | null;
 
     if (!file) {

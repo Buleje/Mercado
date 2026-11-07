@@ -16,7 +16,14 @@ async function main() {
     return;
   }
   await prisma.store.delete({ where: { id: store.id } });
-  await prisma.tenant.delete({ where: { id: store.tenantId } });
+  // ADR-491: el registro de firmas de adelantos es solo de agregar; el cascade
+  // del tenant lo borra sólo con este permiso LOCAL a la transacción (nunca un
+  // SET de sesión: el pooler lo pega a conexiones ajenas). Inline y no
+  // `permitirBorrarFirmas()` porque la DB class importa `server-only`.
+  await prisma.$transaction([
+    prisma.$queryRaw`SELECT set_config('app.permitir_borrar_firmas', 'on', true)`,
+    prisma.tenant.delete({ where: { id: store.tenantId } }),
+  ]);
   console.log(`Borrado: ${store.name} (${SLUG}) y su tenant`);
 }
 

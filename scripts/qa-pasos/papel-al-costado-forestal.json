@@ -1,0 +1,45 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=ctp-libro-operaciones&vista=ingresos&sub=recepcionadas",
+ "pasos": [
+  {
+   "esperar": "[aria-label^=\"Papeles de la gu\u00eda QA19-GTF-A1\"]"
+  },
+  {
+   "eval": "(()=>{const b=document.querySelector('[aria-label^=\"Papeles de la gu\u00eda QA19-GTF-A1\"]');b.click();return (b.textContent||'').trim()})()"
+  },
+  {
+   "esperar": "[role=dialog] a[title^=\"Ver \u00ab\"]"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "(()=>{const a=document.querySelector('[role=dialog] a[title^=\"Ver \u00ab\"]');a.click();return a.title})()"
+  },
+  {
+   "esperar": "[data-qa=papel-al-costado]"
+  },
+  {
+   "esperar": 2500
+  },
+  {
+   "eval": "(()=>{const p=document.querySelector('[data-qa=papel-al-costado]');const r=p.getBoundingClientRect();const d=document.querySelector('[role=dialog]').getBoundingClientRect();return {panel:{x:Math.round(r.x),ancho:Math.round(r.width)},modal:{x:Math.round(d.x),ancho:Math.round(d.width)},volver:p.querySelector('button')?.textContent?.trim(),posicion:(p.textContent.match(/\\d+ de \\d+/)||[''])[0],queEs:/Qu\u00e9 es/.test(p.textContent),ordenar:/Ordenar/.test(p.textContent),listaVisible:[...document.querySelectorAll('[role=dialog] section')].some(s=>s.getBoundingClientRect().width>0),pestanasNuevas:0}})()"
+  },
+  {
+   "captura": "gtf-papel-al-costado"
+  },
+  {
+   "eval": "(()=>{const b=document.querySelector('[data-qa=papel-al-costado] button[aria-label=\"Archivo siguiente\"]');if(!b||b.disabled)return 'sin siguiente';b.click();return 'siguiente'})()"
+  },
+  {
+   "esperar": 1800
+  },
+  {
+   "eval": "(()=>(document.querySelector('[data-qa=papel-al-costado]')?.textContent.match(/\\d+ de \\d+/)||[''])[0])()"
+  },
+  {
+   "captura": "gtf-papel-siguiente"
+  }
+ ]
+}

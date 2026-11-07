@@ -41,11 +41,16 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 }
 
 export async function POST(req: NextRequest) {
-  const rl = applyRateLimit(req, "STRICT", "delivery-ping");
-  if (rl) return rl;
-
   const session = await requirePartner(req);
   if (session instanceof NextResponse) return session;
+
+  // 17-10: era STRICT por IP (10 cada 15 min) ANTES del login y la app pinguea
+  // cada 30 s → a los 5 min en línea el ping daba 429 y el repartidor quedaba
+  // congelado en el mapa (y el matching lo daba por desconectado). Ahora va
+  // después del login, por repartidor (varios comparten la IP del operador
+  // móvil), con POLL = 1 cada 5 s sostenido.
+  const rl = applyRateLimit(req, "POLL", `delivery-ping:${session.tenantId}:${session.partnerId}`);
+  if (rl) return rl;
 
   let body: unknown;
   try { body = await req.json(); } catch { body = {}; }

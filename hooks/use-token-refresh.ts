@@ -1,63 +1,33 @@
 "use client";
 import { useEffect, useRef, useCallback } from "react";
+import { refrescarSesion } from "@/lib/auth/session-refresh";
 
 /**
  * Silent token refresh hook.
  *
- * Calls POST /api/auth/refresh every `intervalMs` (default: 12 min)
- * to rotate the short-lived access token before it expires (15 min).
+ * Rota el access token (15 min de vida) antes de que venza: al montar, cada
+ * `intervalMs` y al volver a la pestaña.
  *
- * If the refresh fails (e.g. refresh token expired), redirects to login.
- * Also intercepts 401 responses from any fetch to trigger an early refresh.
+ * El presupuesto de requests NO se decide acá: lo administra
+ * `lib/auth/session-refresh`, que es la única puerta al endpoint y la comparte
+ * con `useSessionKeepAlive` y `SessionExpiryGuard`. Antes cada uno llevaba su
+ * propia cuenta y entre los tres reventaban el límite de 20 req / 5 min
+ * (reporte de HTTP 429, 2026-07-22).
  */
 export function useTokenRefresh(intervalMs = 12 * 60 * 1000) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isRefreshingRef = useRef(false);
 
-  const doRefresh = useCallback(async (): Promise<boolean> => {
-    if (isRefreshingRef.current) return true;
-    isRefreshingRef.current = true;
-
-    try {
-      const res = await fetch("/api/auth/refresh", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        return true;
-      }
-
-      // Refresh token expired — session is dead, redirect to login
-      if (res.status === 401) {
-        const currentPath = window.location.pathname;
-        if (currentPath.startsWith("/admin") || currentPath.startsWith("/t/")) {
-          window.location.href = "/admin/login";
-        }
-        return false;
-      }
-
-      return false;
-    } catch {
-      // Network error — don't redirect, might be temporary
-      return false;
-    } finally {
-      isRefreshingRef.current = false;
-    }
-  }, []);
+  const doRefresh = useCallback(
+    (forzar = false) => refrescarSesion({ forzar, motivo: "token-refresh" }),
+    [],
+  );
 
   useEffect(() => {
-    // Initial refresh on mount (in case access token expired while tab was inactive)
     doRefresh();
+    timerRef.current = setInterval(() => doRefresh(), intervalMs);
 
-    // Periodic refresh
-    timerRef.current = setInterval(doRefresh, intervalMs);
-
-    // Refresh when tab becomes visible again (user returns after long inactivity)
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        doRefresh();
-      }
+      if (document.visibilityState === "visible") doRefresh();
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
@@ -67,5 +37,6 @@ export function useTokenRefresh(intervalMs = 12 * 60 * 1000) {
     };
   }, [doRefresh, intervalMs]);
 
-  return { refreshNow: doRefresh };
+  /** Para el 401 interceptado: ahí el token ya venció y esperar no sirve. */
+  return { refreshNow: () => doRefresh(true) };
 }

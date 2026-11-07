@@ -1,0 +1,304 @@
+/**
+ * Sembrar bloques en la distribución de rolliza y abrir la herramienta.
+ *
+ * Es el camino que ya usaba «Resumen por permiso» (Consumo) para mandar madera
+ * al cubicador; vive acá porque desde 2026-09-08 lo usa también la tarjeta de
+ * Capacidad de la planta, y dos copias del mismo guardado terminan escribiendo
+ * en claves distintas o sembrando con reglas distintas.
+ *
+ * Lo que hace, y por qué así:
+ *
+ *  · **Suma, nunca reemplaza.** Los bloques que ya estaban cargados se
+ *    respetan: sembrar desde otra pantalla no puede borrar lo que alguien
+ *    acaba de tipear a mano.
+ *  · **No siembra dos veces lo mismo.** La huella es `etiqueta::especie` —o el
+ *    `paqueteId` cuando la línea viene de una corrida del Libro, que es el
+ *    mismo `ref` del picker de paquetes—. Duplicar un bloque duplica su m³
+ *    dentro de la hoja que se firma.
+ *  · **Navegación DURA a `?tab=`.** El sidebar del panel cambia de módulo por
+ *    su propio estado, no leyendo la URL en cada render: un `router.push`
+ *    movía la barra de direcciones y dejaba la pantalla donde estaba (bug real
+ *    de 2026-09-01, Brandon).
+ */
+
+import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
+
+/**
+ * La clave de localStorage del cubicador para el tenant activo.
+ * `buleje-cubicacion-{slug}{sufijo}` — el slug al medio; el de trozas lo lleva
+ * al final (`buleje-cubicacion-trozas-{slug}`), que ya costó un botón muerto.
+ */
+/**
+ * El slug del tenant activo, para colgar de él una clave de `localStorage`.
+ *
+ * Los dos libros hermanos (ADR-395) viven en el MISMO origen y cambiar de
+ * operación sólo swapea la cookie y recarga: sin el slug en la clave, lo que
+ * quedó a medio cargar en una operación reaparece en la otra. Se lee la cookie
+ * primero —es lo que el servidor acaba de setear al cambiar— y el localStorage
+ * como respaldo.
+ */
+export function tenantDeLaClave(): string {
+  return tenantSlugActivo() ?? SIN_TENANT;
+}
+
+/** Marca de una clave sin operación activa: nunca es la de otra (ADR-519, «main» de respaldo = fuga). */
+export const SIN_TENANT = "sin-tenant";
+
+/**
+ * El slug de la operación activa (cookie, y localStorage como respaldo), o
+ * `null`. Nunca cae a `"main"`: una hoja guardada bajo el tenant equivocado
+ * aparece en otra operación (tenant hardcodeado = fuga entre tenants).
+ */
+export function tenantSlugActivo(): string | null {
+  if (typeof document !== "undefined") {
+    const m = document.cookie.match(/(?:^|;\s*)active-tenant-slug=([^;]+)/);
+    if (m) return decodeURIComponent(m[1]!);
+  }
+  try {
+    return localStorage.getItem("active-tenant-slug") || null;
+  } catch {
+    return null;
+  }
+}
+
+export function slugKey(sufijo = "") {
+  /* Sin operación, una clave propia y aislada: lo que se escriba ahí no lo lee
+     ningún tenant real. `sembrarBloques` ni siquiera escribe. */
+  return `buleje-cubicacion-${tenantSlugActivo() ?? SIN_TENANT}${sufijo}`;
+}
+
+/**
+ * Un bloque listo para sembrar, sin `id`: se lo pone esta función.
+ * `partidoDe` (no se guarda): la etiqueta de la línea ENTERA de la que este
+ * bloque es una parte por permiso (Saldos → «Llevar al cubicador», 2026-10-19).
+ * `etiquetaPrevia` (no se guarda): el nombre que esa parte tuvo antes; la hoja
+ * que ya la tiene así la renombra en vez de sumarla otra vez.
+ */
+export type BloqueSembrable = Omit<BloqueRolliza, "id"> & { partidoDe?: string; etiquetaPrevia?: string };
+
+export interface ResultadoSiembra {
+  sembrados: number;
+  /** Los que ya estaban cargados y no se repitieron. */
+  repetidos: number;
+  /** De esos repetidos, los que estaban SIN especie y ahora la recibieron. */
+  conEspecie?: number;
+  /** De esos repetidos, los que no sabían sus trozas y ahora las saben (ADR-464). */
+  conTrozas?: number;
+  /** No hay operación activa: no se sembró nada y hay que avisarlo. */
+  sinTenant?: true;
+}
+
+/** La huella con la que se decide si un bloque ya está cargado. */
+const huella = (b: Pick<BloqueRolliza, "etiqueta" | "especie" | "paqueteId">) =>
+  b.paqueteId ? `ref::${b.paqueteId}` : `${b.etiqueta}::${b.especie}`;
+
+/** `""`, `"  "` y `null` son «sin especie». */
+const sinEspecie = (b: Pick<BloqueRolliza, "especie">) => !String(b.especie ?? "").trim();
+
+/**
+ * Tolerancia para decir «es el mismo m³», en la unidad del negocio: la GTF
+ * declara m³ a 3 decimales, así que medio litro es «igual» y un litro, no.
+ */
+const MISMO_M3 = 0.0005;
+
+/**
+ * ¿Se le pueden poner sus trozas a un bloque que ya estaba cargado sin ellas?
+ * Sólo si es la MISMA madera: misma huella y el mismo m³. Si el m³ cambió
+ * (se consumió o llegó una pieza desde que se sembró), las trozas de hoy no
+ * son las de ese bloque, y pegárselas le haría escribir en el Libro piezas que
+ * no son las suyas (T1). Queda sin trozas y la pantalla dice «Tráelo del Libro».
+ */
+const puedeRecibirTrozas = (b: BloqueRolliza, c: BloqueSembrable) =>
+  !(b.trozaIds && b.trozaIds.length > 0) &&
+  Boolean(c.trozaIds && c.trozaIds.length > 0) &&
+  huella(b) === huella(c) &&
+  Math.abs((Number(b.m3) || 0) - (Number(c.m3) || 0)) <= MISMO_M3;
+
+/**
+ * La hoja de rolliza después de sembrar — PURO, sin `localStorage`.
+ *
+ * Además de sumar los nuevos sin repetir, completa la especie de un bloque que
+ * ya estaba cargado SIN ella (Brandon, 2026-10-02: «que se pase a distribución
+ * con la especie asignada»). Sin esto, volver a llevar el mismo lote:
+ *  · por `paqueteId` lo daba por repetido y la especie no llegaba nunca;
+ *  · por `etiqueta::especie` la huella cambiaba («Lote 7::» ≠ «Lote 7::Copal»)
+ *    y sembraba un SEGUNDO bloque con el mismo m³ — madera contada dos veces
+ *    en la hoja que se firma.
+ * Una especie ya puesta NO se pisa: la eligió alguien en la tabla.
+ */
+export function unirSiembra(
+  actuales: readonly BloqueRolliza[],
+  candidatos: readonly BloqueSembrable[],
+  prefijo: string,
+  marca: string,
+): { lista: BloqueRolliza[]; sembrados: number; repetidos: number; conEspecie: number; conTrozas: number } {
+  const lista = actuales.map((b) => ({ ...b }));
+  const yaEstan = new Set(lista.map(huella));
+  /* Un lote ya puesto en un bloque (el que se creó desde la Distribución, o uno
+     traído antes) no entra otra vez con otra etiqueta: sería la misma madera
+     dos veces (revisión de ADR-464). Por lote Y tipo: el «apartado» (rolliza
+     sin aserrar) y el «margen» (aserrada que admite) del mismo lote son madera
+     distinta y van los dos. */
+  const deLote = (b: Pick<BloqueRolliza, "loteId" | "tipo">) => (b.loteId ? `${b.loteId}|${b.tipo ?? "rolliza"}` : null);
+  let sembrados = 0;
+  let conEspecie = 0;
+  let conTrozas = 0;
+  /* Partido por permiso (2026-10-19): la hoja puede tener de antes el bloque
+     ENTERO («Trozas en el patio · TORNILLO», 96.957 m³, sin permiso). Si sus
+     partes suman la MISMA madera, el entero sale y entran las partes; si la
+     madera cambió, se respeta como siempre (las partes cuentan como repetidas).
+     Nunca las dos versiones juntas: sería la misma madera dos veces. */
+  const sumaDePartes = new Map<string, { m3: number; de: BloqueSembrable }>();
+  for (const c of candidatos) {
+    if (!c.partidoDe) continue;
+    const k = `${c.partidoDe}::${c.especie}`;
+    const g = sumaDePartes.get(k) ?? { m3: 0, de: c };
+    g.m3 += Number(c.m3) || 0;
+    sumaDePartes.set(k, g);
+  }
+  /* El entero de un LOTE partido por permiso es el bloque de ese lote y tipo
+     con la etiqueta de la línea entera; el de una CORRIDA, el de su
+     `paqueteId` (2026-10-19). Uno armado desde la Distribución se llama
+     distinto y no se toca: sigue frenando las partes como siempre. */
+  const esEntero = (b: BloqueRolliza, k: string, de: BloqueSembrable) =>
+    de.paqueteId
+      ? b.paqueteId === de.paqueteId
+      : !b.paqueteId && huella(b) === k && (de.loteId ? deLote(b) === deLote(de) : !b.loteId);
+  const enteroQueSigue = new Set<string>();
+  for (const [k, { m3, de }] of sumaDePartes) {
+    /* Con o sin permiso: el entero de una especie de UN solo permiso también
+       lo traía en su campo, y su parte ya se llama distinto («… · PLT-…»). */
+    const i = lista.findIndex((b) => esEntero(b, k, de));
+    if (i < 0) continue;
+    if (Math.abs((Number(lista[i]!.m3) || 0) - m3) <= MISMO_M3) {
+      const [entero] = lista.splice(i, 1);
+      const hEntero = huella(entero!);
+      if (!lista.some((b) => huella(b) === hEntero)) yaEstan.delete(hEntero);
+    } else {
+      enteroQueSigue.add(k);
+    }
+  }
+  /* Partes sembradas con el nombre de antes («Trozas en el patio · TORNILLO ·
+     PLT-…», 19-10): la MISMA madera toma el nombre de hoy (el permiso
+     adelante, lo que se lee en la casilla); si cambió, se respeta y la parte
+     no entra. Nunca las dos. */
+  const previaQueSigue = new Set<string>();
+  for (const c of candidatos) {
+    if (!c.etiquetaPrevia) continue;
+    const kPrevia = `${c.etiquetaPrevia}::${c.especie}`;
+    const b = lista.find((x) => !x.paqueteId && !x.loteId && huella(x) === kPrevia);
+    if (!b) continue;
+    if (Math.abs((Number(b.m3) || 0) - (Number(c.m3) || 0)) <= MISMO_M3) {
+      b.etiqueta = c.etiqueta;
+      if (!lista.some((x) => huella(x) === kPrevia)) yaEstan.delete(kPrevia);
+      yaEstan.add(huella(b));
+    } else {
+      previaQueSigue.add(kPrevia);
+    }
+  }
+  /* Después de sacar los enteros: un lote que sólo estaba en su bloque entero
+     ya no frena a sus partes. */
+  const lotes = new Set(lista.map(deLote).filter((k): k is string => k !== null));
+  /* Hermanas del mismo envío: las partes de UN lote o UNA corrida comparten
+     lote o `paqueteId` y entran todas; lo que ya estaba en la hoja, no. */
+  const loteDeLaParte = new Map<string, string>();
+  const refDeLaParte = new Map<string, string>();
+  for (const { partidoDe, etiquetaPrevia, ...c } of candidatos) {
+    if (partidoDe && enteroQueSigue.has(`${partidoDe}::${c.especie}`)) continue;
+    if (etiquetaPrevia && previaQueSigue.has(`${etiquetaPrevia}::${c.especie}`)) continue;
+    /* El mismo bloque, cargado antes sin especie: se le pone, no se duplica.
+       Va ANTES de la huella: por `paqueteId` la huella ya coincide y lo daría
+       por repetido sin completarlo. */
+    const vacio = sinEspecie(c)
+      ? undefined
+      : lista.find((b) =>
+          sinEspecie(b) &&
+          (c.paqueteId ? b.paqueteId === c.paqueteId : !b.paqueteId && b.etiqueta === c.etiqueta),
+        );
+    if (vacio) {
+      yaEstan.delete(huella(vacio));
+      vacio.especie = c.especie;
+      yaEstan.add(huella(vacio));
+      conEspecie += 1;
+      if (puedeRecibirTrozas(vacio, c)) {
+        vacio.trozaIds = [...c.trozaIds!];
+        if (c.trozasMedidas?.length) vacio.trozasMedidas = [...c.trozasMedidas];
+        conTrozas += 1;
+      }
+      continue;
+    }
+    const kLote = deLote(c);
+    if (kLote && lotes.has(kLote) && !(partidoDe && loteDeLaParte.get(kLote) === partidoDe)) continue;
+    const h = huella(c);
+    /* Las partes de una corrida comparten `paqueteId`: entre ellas se
+       distinguen por la etiqueta (el permiso adelante). */
+    const hParte = partidoDe && c.paqueteId ? `${h}::${c.etiqueta}` : null;
+    const hermana = hParte !== null && refDeLaParte.get(h) === partidoDe;
+    if (hParte && yaEstan.has(hParte)) continue;
+    if (yaEstan.has(h) && !hermana) {
+      /* Sembrado antes de que el bloque guardara sus trozas (ADR-464): volver
+         a traerlo del Libro se las pone, en vez de dejarlo apagado para siempre. */
+      const previo = lista.find((b) => puedeRecibirTrozas(b, c));
+      if (previo) {
+        previo.trozaIds = [...c.trozaIds!];
+        if (c.trozasMedidas?.length) previo.trozasMedidas = [...c.trozasMedidas];
+        conTrozas += 1;
+      }
+      continue;
+    }
+    yaEstan.add(h);
+    if (hParte) {
+      yaEstan.add(hParte);
+      refDeLaParte.set(h, partidoDe!);
+    }
+    if (kLote) {
+      if (partidoDe && !lotes.has(kLote)) loteDeLaParte.set(kLote, partidoDe);
+      lotes.add(kLote);
+    }
+    lista.push({ ...c, id: `${prefijo}-${marca}-${sembrados}` });
+    sembrados += 1;
+  }
+  return { lista, sembrados, repetidos: candidatos.length - sembrados, conEspecie, conTrozas };
+}
+
+/**
+ * Escribe los bloques nuevos en la hoja de rolliza y deja la vista de
+ * Resúmenes lista en «Rolliza». No navega: eso lo decide quien llama.
+ */
+export function sembrarBloques(
+  candidatos: readonly BloqueSembrable[],
+  /** Prefijo del id, para reconocer en el JSON de dónde salió cada bloque. */
+  prefijo = "sembrado",
+): ResultadoSiembra {
+  if (candidatos.length === 0) return { sembrados: 0, repetidos: 0 };
+  if (tenantSlugActivo() === null) return { sembrados: 0, repetidos: 0, sinTenant: true };
+  try {
+    const raw = localStorage.getItem(slugKey("-rolliza"));
+    const actuales: BloqueRolliza[] = raw ? (JSON.parse(raw) as BloqueRolliza[]) : [];
+    const r = unirSiembra(actuales, candidatos, prefijo, Date.now().toString(36));
+    if (r.sembrados > 0 || r.conEspecie > 0 || r.conTrozas > 0) {
+      localStorage.setItem(slugKey("-rolliza"), JSON.stringify(r.lista));
+    }
+    /* Que Resúmenes abra en la pestaña donde están los bloques recién
+       sembrados: llegar a «Tablas» y tener que buscarlos es la mitad del viaje. */
+    localStorage.setItem(slugKey("-vista-resumen"), "rolliza");
+    return { sembrados: r.sembrados, repetidos: r.repetidos, conEspecie: r.conEspecie, conTrozas: r.conTrozas };
+  } catch {
+    /* localStorage puede fallar (modo privado). Se informa que no se sembró
+       nada; quien llama decide si navega igual. */
+    return { sembrados: 0, repetidos: 0 };
+  }
+}
+
+/** Clave de sesión que le dice a Herramientas Forestales qué pestaña abrir. */
+export const TOOL_ONCE_STORAGE_KEY = "buleje-herramientas-tool-once";
+
+/** Abre Herramientas Forestales en Resúmenes (una sola vez, no la recuerda). */
+export function abrirResumenesDelCubicador() {
+  try {
+    sessionStorage.setItem(TOOL_ONCE_STORAGE_KEY, "resumenes");
+  } catch {
+    /* sin sessionStorage se abre la herramienta por defecto: dos clicks más */
+  }
+  window.location.href = "/admin?tab=forestal-herramientas";
+}

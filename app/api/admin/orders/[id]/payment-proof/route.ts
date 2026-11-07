@@ -51,12 +51,16 @@ export async function GET(
       return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
     }
 
-    // Multi-tenant guard: solo admin del mismo tenant (superadmin pasa porque
-    // tenantId === "main" o role especial)
-    const isSuperadmin =
-      auth.tenantId === "main" ||
-      ("role" in auth && (auth as { role?: string }).role === "superadmin");
-    if (!isSuperadmin && order.tenantId !== auth.tenantId) {
+    // Multi-tenant guard: sólo el admin del MISMO negocio.
+    //
+    // Antes, `auth.tenantId === "main"` contaba como superadmin: cualquier
+    // owner/admin/manager de `main` (marketplace + bodega de prueba) leía el
+    // comprobante Yape —imagen, montos, operación— de un pedido de CUALQUIER
+    // negocio con sólo saber su id (diseño ADR-457, 2026-10-01). La rama
+    // `role === "superadmin"` estaba muerta: `requireAdmin` rechaza ese rol en
+    // una sesión admin (lib/require-admin.ts:62). El superadmin real mira los
+    // comprobantes por /api/superadmin/payment-proofs.
+    if (order.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
@@ -68,13 +72,10 @@ export async function GET(
     // Antes findUnique({ where: { id } }) sin tenantId. Guard previo via
     // `order.tenantId === auth.tenantId` cubre HOY, pero si alguien
     // refactoriza y mueve la lectura antes del guard hay leak. Defense
-    // in-depth: filtra por tenantId (superadmin bypass mantiene el patrón
-    // del bloque anterior).
+    // in-depth: filtra por tenantId.
     // eslint-disable-next-line no-restricted-properties -- ya validamos tenant arriba; PaymentApproval no tiene clase DB dedicada todavía
     const approval = await prisma.paymentApproval.findFirst({
-      where: isSuperadmin
-        ? { id: order.paymentApprovalId }
-        : { id: order.paymentApprovalId, tenantId: auth.tenantId },
+      where: { id: order.paymentApprovalId, tenantId: auth.tenantId },
       select: {
         id: true,
         imageUrl: true,

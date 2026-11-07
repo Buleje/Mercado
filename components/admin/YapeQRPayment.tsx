@@ -1,272 +1,93 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Check, Clock, Smartphone } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-
-// ── Types ────────────────────────────────────────────────────────────────────
+import { ArrowLeft, Check, Loader2 } from "@buleje/design-system/icons";
+import { formatCurrency } from "@/lib/format";
 
 type QRProvider = "yape" | "plin";
 
+const ETIQUETA: Record<QRProvider, string> = { yape: "Yape", plin: "Plin" };
+
 interface YapeQRPaymentProps {
+  provider: QRProvider;
+  /** Imagen del QR que el negocio subió en Ajustes › Cobros (Settings.yapeImage / plinImage). */
+  qrImage: string;
+  titular?: string;
+  numero?: string;
   amount: number;
   onConfirm: () => void;
   onCancel: () => void;
+  processing?: boolean;
+  /** Por qué todavía no se puede confirmar (falta el RUC, falta cobrar parte…). */
+  aviso?: string | null;
 }
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const PROVIDER_CONFIG: Record<QRProvider, { label: string; color: string }> = {
-  yape: { label: "Yape", color: "#6C2DA4" },
-  plin: { label: "Plin", color: "#00BFA5" },
-};
-
-const TIMER_SECONDS = 5 * 60;
-
-function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+/** «9XX XXX XXX» para leerlo en voz alta si el cliente no puede escanear. */
+function numeroLegible(n: string): string {
+  const d = n.replace(/\D/g, "");
+  return d.length === 9 ? `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}` : n;
 }
 
-// ── QR Canvas drawing ────────────────────────────────────────────────────────
-
-function drawQRPattern(canvas: HTMLCanvasElement, amount: number, provider: QRProvider) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  const size = canvas.width;
-  const config = PROVIDER_CONFIG[provider];
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(0, 0, size, size);
-
-  const moduleSize = 8;
-  const modules = Math.floor(size / moduleSize);
-
-  const seed = Math.round(amount * 100) + (provider === "yape" ? 7919 : 1301);
-  function pseudoRandom(i: number) {
-    const x = Math.sin(seed + i * 9301 + 49297) * 49297;
-    return x - Math.floor(x);
-  }
-
-  const finderSize = 7;
-  const drawFinder = (ox: number, oy: number) => {
-    ctx.fillStyle = "#000000";
-    for (let r = 0; r < finderSize; r++) {
-      for (let c = 0; c < finderSize; c++) {
-        if (r === 0 || r === finderSize - 1 || c === 0 || c === finderSize - 1 ||
-            (r >= 2 && r <= 4 && c >= 2 && c <= 4)) {
-          ctx.fillRect((ox + c) * moduleSize, (oy + r) * moduleSize, moduleSize, moduleSize);
-        }
-      }
-    }
-  };
-
-  drawFinder(1, 1);
-  drawFinder(modules - finderSize - 1, 1);
-  drawFinder(1, modules - finderSize - 1);
-
-  ctx.fillStyle = "#000000";
-  let idx = 0;
-  for (let r = 0; r < modules; r++) {
-    for (let c = 0; c < modules; c++) {
-      const inFinder1 = r >= 1 && r < 1 + finderSize && c >= 1 && c < 1 + finderSize;
-      const inFinder2 = r >= 1 && r < 1 + finderSize && c >= modules - finderSize - 1 && c < modules - 1;
-      const inFinder3 = r >= modules - finderSize - 1 && r < modules - 1 && c >= 1 && c < 1 + finderSize;
-      if (inFinder1 || inFinder2 || inFinder3) continue;
-      if (r === 0 || r === modules - 1 || c === 0 || c === modules - 1) continue;
-
-      if (pseudoRandom(idx++) > 0.55) {
-        ctx.fillRect(c * moduleSize, r * moduleSize, moduleSize, moduleSize);
-      }
-    }
-  }
-
-  // Center overlay with provider color
-  const centerSize = size * 0.22;
-  const centerX = (size - centerSize) / 2;
-  const centerY = (size - centerSize) / 2;
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.beginPath();
-  ctx.roundRect(centerX - 4, centerY - 4, centerSize + 8, centerSize + 8, 8);
-  ctx.fill();
-
-  ctx.fillStyle = config.color;
-  ctx.beginPath();
-  ctx.roundRect(centerX, centerY, centerSize, centerSize, 6);
-  ctx.fill();
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = `bold ${Math.round(centerSize * 0.55)}px system-ui, sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(config.label[0], size / 2, size / 2);
-}
-
-// ── Component ────────────────────────────────────────────────────────────────
-
-export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPaymentProps) {
-  const [provider, setProvider] = useState<QRProvider>("yape");
-  const [secondsLeft, setSecondsLeft] = useState(TIMER_SECONDS);
-  const [expired, setExpired] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) drawQRPattern(canvas, amount, provider);
-  }, [provider, amount]);
-
-  useEffect(() => {
-    setSecondsLeft(TIMER_SECONDS);
-    setExpired(false);
-  }, [provider]);
-
-  useEffect(() => {
-    if (expired) return;
-    const interval = setInterval(() => {
-      setSecondsLeft(prev => {
-        if (prev <= 1) {
-          setExpired(true);
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [expired, provider]);
-
-  const handleRegenerate = useCallback(() => {
-    setSecondsLeft(TIMER_SECONDS);
-    setExpired(false);
-    const canvas = canvasRef.current;
-    if (canvas) drawQRPattern(canvas, amount + Math.random() * 0.001, provider);
-  }, [amount, provider]);
-
-  const minutes = Math.floor(secondsLeft / 60);
-  const seconds = secondsLeft % 60;
-  const config = PROVIDER_CONFIG[provider];
-  const timerPercent = (secondsLeft / TIMER_SECONDS) * 100;
-
+/**
+ * QR de Yape/Plin en grande para mostrárselo al cliente desde el cobro del POS.
+ * Antes dibujaba un QR inventado (patrón pseudoaleatorio con un temporizador de 5 min) que ningún
+ * celular podía pagar; ahora muestra el QR real del negocio y sólo se ofrece si está subido.
+ */
+export default function YapeQRPayment({ provider, qrImage, titular, numero, amount, onConfirm, onCancel, processing = false, aviso }: YapeQRPaymentProps) {
+  const etiqueta = ETIQUETA[provider];
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-hidden">
-      {/* Tabs */}
-      <div className="flex">
-        {(["yape", "plin"] as const).map(p => {
-          const cfg = PROVIDER_CONFIG[p];
-          const active = provider === p;
-          return (
-            <button
-              key={p}
-              onClick={() => setProvider(p)}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all",
-                active
-                  ? "text-white"
-                  : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] bg-gray-50 dark:bg-surface"
-              )}
-              style={active ? { backgroundColor: cfg.color } : undefined}
-            >
-              <Smartphone className="h-4 w-4" />
-              {cfg.label}
-            </button>
-          );
-        })}
+    <div className="space-y-4" data-pos-qr-grande={provider}>
+      <div className="text-center">
+        <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Monto a cobrar</p>
+        <p className="text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(amount)}</p>
       </div>
 
-      {/* Body */}
-      <div className="p-4 sm:p-6 space-y-4">
-        {/* Amount */}
-        <div className="text-center">
-          <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-1">Monto a cobrar</p>
-          <p className="text-3xl sm:text-4xl font-extrabold" style={{ color: config.color }}>
-            {fmt(amount)}
-          </p>
-        </div>
+      <div className="flex justify-center">
+        {/* El QR necesita fondo blanco para que la cámara lo lea, también en oscuro. */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- imagen subida por el negocio (URL de su almacenamiento) */}
+        <img
+          src={qrImage}
+          alt={`QR ${etiqueta} del negocio`}
+          width={288}
+          height={288}
+          className="w-72 max-w-[80vw] aspect-square rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] dark:bg-white p-2 object-contain"
+        />
+      </div>
 
-        {/* QR Code */}
-        <div className="flex justify-center">
-          <div
-            className={cn(
-              "relative rounded-xl p-3 border-2 transition-colors",
-              expired ? "border-[var(--rule-base)] dark:border-[var(--rule-base)] opacity-50" : ""
-            )}
-            style={!expired ? { borderColor: config.color } : undefined}
-          >
-            <canvas ref={canvasRef} width={240} height={240} className="rounded-lg" />
-            {expired && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-[var(--surface-raised)]/80 rounded-xl">
-                <Clock className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted mb-2" />
-                <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">QR expirado</p>
-                <button
-                  onClick={handleRegenerate}
-                  className="mt-2 px-4 py-1.5 rounded-lg text-xs font-bold text-white transition-colors"
-                  style={{ backgroundColor: config.color }}
-                >
-                  Generar nuevo QR
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Instructions */}
-        <div className={cn(
-          "rounded-xl p-3 text-center",
-          provider === "yape" ? "bg-[var(--surface-sunken)]" : "bg-teal-50 dark:bg-teal-950/20"
-        )}>
-          <p className="text-xs font-semibold" style={{ color: config.color }}>
-            Pide al cliente que escanee el QR con {config.label}
+      <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-center">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">Escanea con {etiqueta} y paga {formatCurrency(amount)}</p>
+        {(titular || numero) && (
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            {titular}
+            {titular && numero ? " · " : ""}
+            {numero && <span className="tabular-nums">{numeroLegible(numero)}</span>}
           </p>
-          <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted mt-1">
-            Abre {config.label} &gt; Escanear QR &gt; Confirmar pago de {fmt(amount)}
-          </p>
-        </div>
-
-        {/* Timer */}
-        {!expired && (
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
-                <Clock className="h-3 w-3" /> Tiempo restante
-              </span>
-              <span className={cn(
-                "font-bold tabular-nums",
-                secondsLeft <= 60 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-              )}>
-                {minutes}:{seconds.toString().padStart(2, "0")}
-              </span>
-            </div>
-            <div className="w-full h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-[var(--dur-slower)] ease-linear"
-                style={{
-                  width: `${timerPercent}%`,
-                  backgroundColor: secondsLeft <= 60 ? "#ef4444" : config.color,
-                }}
-              />
-            </div>
-          </div>
         )}
+      </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted font-bold text-sm hover:bg-gray-50 dark:hover:bg-surface transition-colors flex items-center justify-center gap-1.5"
-          >
-            <X className="h-4 w-4" />
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={expired}
-            className="flex-1 py-3 rounded-lg text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:bg-gray-400"
-          >
-            <Check className="h-4 w-4" />
-            Pago recibido
-          </button>
-        </div>
+      {aviso && (
+        <p role="status" className="text-center text-sm font-semibold text-[var(--data-error-500)]">
+          {aviso}
+        </p>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 min-h-12 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] font-semibold text-sm hover:bg-[var(--surface-sunken)] transition-colors inline-flex items-center justify-center gap-1.5"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Volver al cobro
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={processing || !!aviso}
+          className="flex-[1.4] min-h-12 rounded-xl bg-primary text-white font-semibold text-sm hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
+        >
+          {processing ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
+          {processing ? "Registrando…" : "Ya pagó · Confirmar venta"}
+        </button>
       </div>
     </div>
   );

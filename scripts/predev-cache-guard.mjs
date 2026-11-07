@@ -11,17 +11,22 @@
  * Solución: antes de arrancar dev, si .next/dev supera el umbral, lo borramos.
  * Next.js lo regenera en el primer request (~60-90s). Trade razonable.
  *
- * Umbral default: 5 GB. Configurable via NEXT_CACHE_MAX_GB.
+ * Umbral default: 25 GB (NEXT_CACHE_MAX_GB), o menos de 20 GB libres en disco (NEXT_CACHE_MIN_LIBRE_GB).
  *
  * Silencioso si todo OK. Logs claros si actúa.
  */
 
-import { statSync, readdirSync, rmSync, existsSync } from "node:fs";
+import { statSync, statfsSync, readdirSync, rmSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { platform } from "node:os";
 
-const THRESHOLD_GB = Number(process.env.NEXT_CACHE_MAX_GB ?? 5);
+/* 5 → 25 GB (10-10): con `turbopackFileSystemCacheForDev` la caché ES lo que hace rápido el
+   reinicio, y en un día de trabajo llega a ~8 GB: con 5 se borraba en cada arranque y cada
+   página volvía a compilar desde cero (60-90 s la primera). El riesgo de llenar el disco (45 GB
+   en el C: de Windows) lo cubre MIN_LIBRE_GB: se limpia igual si el disco queda corto. */
+const THRESHOLD_GB = Number(process.env.NEXT_CACHE_MAX_GB ?? 25);
+const MIN_LIBRE_GB = Number(process.env.NEXT_CACHE_MIN_LIBRE_GB ?? 20);
 const THRESHOLD_BYTES = THRESHOLD_GB * 1024 ** 3;
 const DEV_CACHE = join(process.cwd(), ".next", "dev");
 const MAX_NODE_PROCS = Number(process.env.NEXT_MAX_NODE_PROCS ?? 20);
@@ -52,6 +57,16 @@ function dirSizeBytes(dir) {
     }
   }
   return total;
+}
+
+/** Bytes libres del disco donde vive el proyecto; `null` si no se puede saber. */
+function discoLibreBytes() {
+  try {
+    const st = statfsSync(process.cwd());
+    return st.bavail * st.bsize;
+  } catch {
+    return null;
+  }
 }
 
 function formatGB(bytes) {
@@ -115,7 +130,10 @@ function main() {
   if (!existsSync(DEV_CACHE)) return;
 
   const size = dirSizeBytes(DEV_CACHE);
-  if (size <= THRESHOLD_BYTES) return;
+  const libre = discoLibreBytes();
+  const discoCorto = libre !== null && libre < MIN_LIBRE_GB * 1024 ** 3;
+  if (size <= THRESHOLD_BYTES && !discoCorto) return;
+  if (discoCorto) console.log(`⚠️  Quedan ${formatGB(libre)} GB libres en disco (< ${MIN_LIBRE_GB} GB).`);
 
   console.log(
     `⚠️  .next/dev ocupa ${formatGB(size)} GB (> ${THRESHOLD_GB} GB). Limpiando...`,

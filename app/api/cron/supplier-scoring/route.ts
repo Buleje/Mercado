@@ -20,7 +20,8 @@ import { toNumOrZero } from "@/lib/decimal-utils";
  * Crea SupplierEvaluation automáticas para que el dueño vea el ranking
  * sin tener que calificar manualmente.
  *
- * vercel.json: "0 8 1 * *" (primer día del mes, 8:00 AM)
+ * Sin cron propio desde 04-11-2026 (tope de 100 en Vercel): lo corre `/api/cron/vigilante-proveedores?con=puntaje`
+ * el día 1 a las 09:00 de Lima. Llamarlo a mano sigue sirviendo.
  * Autorización: Bearer <CRON_SECRET>
  */
 export async function GET(req: NextRequest) {
@@ -191,6 +192,7 @@ export async function GET(req: NextRequest) {
             where: { tenantId: { in: tenantIds } },
             select: { businessPhone: true },
           });
+          // TODO(ADR-457 §Excepciones): excepción de negocio — el teléfono de aviso de `main` sale de NOTIFY_PHONE. Debe ser una opción del dueño (campo/pantalla), no un `=== "main"`; requiere schema + pantalla, por eso queda escrita.
           const phone = settings?.businessPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
 
           if (phone) {

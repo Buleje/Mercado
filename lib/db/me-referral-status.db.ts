@@ -7,10 +7,9 @@ import { prisma } from "@/lib/prisma";
  *
  * Acceso canónico al estado del programa de referidos para el customer
  * autenticado. Encapsula las queries de Customer (referralCode, loyaltyPoints)
- * y la lista de referidos (customers con `referredBy` = mi código).
- *
- * No toca ReferralsDB (tabla Referral — archivo compartido de otro agente).
- * Solo usa el modelo Customer (campo referredBy).
+ * y la lista de referidos (customers con `referredBy` = mi CELULAR: así lo
+ * escriben `CustomersDB.applyReferralCode` y `ReferralsDB.vincular`; hasta el
+ * 20-10 se buscaba por código y la lista salía vacía siempre).
  *
  * tenantId obligatorio como primer argumento (CLAUDE.md regla #3).
  */
@@ -33,21 +32,20 @@ export const MeReferralStatusDB = {
   },
 
   /**
-   * Lista de customers que usaron el código de referido del caller.
-   * Busca por `referredBy` = referralCode + tenantId para aislamiento.
+   * Clientas que llegaron recomendadas por el caller (tenantId en el WHERE).
    *
-   * @param tenantId     tenant scope
-   * @param referralCode código a buscar en Customer.referredBy
-   * @param take         máximo de resultados (default 20)
+   * @param tenantId      tenant scope
+   * @param customerPhone celular de quien recomendó (Customer.referredBy)
+   * @param take          máximo de resultados (default 20)
    */
   async getReferredCustomers(
     tenantId: string,
-    referralCode: string,
+    customerPhone: string,
     take = 20,
   ) {
     return prisma.customer.findMany({
       where: {
-        referredBy: referralCode,
+        referredBy: customerPhone,
         tenantId,
       },
       select: {

@@ -1,5 +1,10 @@
 // Buleje Editorial Design System v4 — Primitive exports
 export { Button, type ButtonProps } from "./Button";
+// `button()` y la altura salen del módulo SIN "use client": también los llama un componente de servidor
+export { button, ALTURA_CONTROL, type ButtonVariants } from "./button-variants";
+// Contrato de diseño del panel (ADR-489): el switch y la casilla canónicos
+export { Interruptor, type InterruptorProps } from "./Interruptor";
+export { Casilla, CLASE_CASILLA, type CasillaProps } from "./Casilla";
 export { Card, CardHeader, CardBody, CardFooter } from "./Card";
 export { Chip } from "./Chip";
 export { Eyebrow } from "./Eyebrow";

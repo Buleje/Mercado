@@ -1,0 +1,68 @@
+/**
+ * instrumentation-client — RUM de PostHog por el camino oficial de Next 15.3+.
+ *
+ * Historia: el provider casero (`components/providers/PostHogProvider.tsx`,
+ * mayo-2026) nunca se montó — knip lo destapó el 2026-08-03 — y al montarlo su
+ * lazy-load con requestIdleCallback + capture manual no entregaba eventos
+ * (verificado contra la API de PostHog: cero $pageview en el proyecto). Este
+ * archivo es el patrón que documenta PostHog para App Router: Next lo carga
+ * como entry propio antes de la hidratación, y `history_change` captura los
+ * pageviews de la SPA sin componente ni hook.
+ *
+ * Sin NEXT_PUBLIC_POSTHOG_KEY es no-op (dev sin key, previews). La key phc_*
+ * es publicable por diseño: viaja al navegador igual que la de GA.
+ */
+import { tacharSecretosEnObjeto } from "@/lib/telemetry/secretos-en-url";
+
+/*
+ * `import()` y no import estático (16-10, carril velocidad): posthog-js pesa
+ * ~80 KB comprimidos y este entry se evalúa ANTES de hidratar, en toda página.
+ * Así baja en paralelo y no frena la hidratación; el pageview inicial lo sigue
+ * capturando `init` (con `history_change` el primero sale al iniciar).
+ */
+const clavePosthog = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+if (clavePosthog) {
+  import("posthog-js")
+    .then(({ default: posthog }) => iniciarPosthog(posthog, clavePosthog))
+    .catch((err: unknown) => console.warn("[posthog] no cargó", err));
+}
+
+function iniciarPosthog(posthog: typeof import("posthog-js").default, clave: string): void {
+  posthog.init(clave, {
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+    defaults: "2025-05-24",
+    // Pageviews automáticos en cada navegación del router (patrón SPA oficial).
+    capture_pageview: "history_change",
+    capture_pageleave: true,
+    // El autocapture de clicks genera volumen que nadie mira todavía; los
+    // eventos de negocio ya viajan por la analítica propia del admin.
+    autocapture: false,
+    /**
+     * En dev el "bot" somos nosotros: posthog-js descarta TODO evento si
+     * `navigator.webdriver` es true o el UA parece automatizado (HeadlessChrome),
+     * así que la verificación con Playwright era imposible por diseño — el init
+     * corría, los scripts bajaban y jamás salía un capture (costó 4 rondas de
+     * diagnóstico encontrarlo: está en el gate del pageview, `_is_bot()`).
+     * En producción el filtro queda ACTIVO, que es para lo que existe.
+     */
+    opt_out_useragent_filter: process.env.NODE_ENV !== "production",
+    /**
+     * El enlace del kiosko de asistencia lleva su secreto en la ruta
+     * (`/kiosko/asistencia/<token>`): PostHog guarda la URL de cada visita
+     * ($current_url, $pathname, $referrer, $session_entry_url…). Se tacha en
+     * TODAS las propiedades antes de salir (security 10-10, H2).
+     */
+    before_send: (ev) => {
+      if (!ev) return ev;
+      tacharSecretosEnObjeto(ev.properties);
+      tacharSecretosEnObjeto(ev.$set);
+      tacharSecretosEnObjeto(ev.$set_once);
+      return ev;
+    },
+  });
+  // Para poder excluir el tráfico de desarrollo en los insights sin proyectos
+  // separados: toda captura de dev viaja etiquetada.
+  if (process.env.NODE_ENV !== "production") {
+    posthog.register({ environment: "development" });
+  }
+}

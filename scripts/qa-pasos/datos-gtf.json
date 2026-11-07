@@ -1,0 +1,10 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+  "pasos": [
+    {"esperar": "role=button[name=\"Acciones de la GTF 019-001-0000771\"]"},
+    {"click": "role=button[name=\"Acciones de la GTF 019-001-0000771\"]"},
+    {"click": "role=menuitem[name=/^Datos/]"},
+    {"esperar": 2500}
+  ]
+}

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "@buleje/design-system/icons";
+import { EmptyState, PageTitle } from "@buleje/design-system";
+import { ArrowRight, Radio } from "@buleje/design-system/icons";
 import { EnVivoHero } from "@/components/marketplace/en-vivo/EnVivoHero";
 import { LivePlayer } from "@/components/marketplace/en-vivo/LivePlayer";
 import { LiveChat } from "@/components/marketplace/en-vivo/LiveChat";
@@ -13,75 +14,35 @@ import { LiveCategoryChips } from "@/components/marketplace/en-vivo/LiveCategory
 import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
 import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
 import { relatedFor } from "@/lib/navigation/feature-registry";
-import {
-  getLiveCategories,
-  getLiveNow,
-  getPastLives,
-  getUpcomingLives,
-  LIVES_MOCK,
-  type LiveSession,
-} from "@/lib/mocks/lives.mock";
-import { fetchActiveLives } from "@/lib/lives/client";
+import { useLivesEnVivo } from "./use-lives-en-vivo";
 
+/**
+ * Hub /marketplace/en-vivo — SOLO transmisiones reales (live_sessions).
+ * Sin ninguna: cabecera sobria + estado vacío honesto (09-10: antes arrancaba
+ * con lives de ejemplo y los dejaba si la API venía vacía).
+ */
 export function EnVivoClient() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const { cargando, error, enVivo, proximas, pasadas, proximaEnHoras } = useLivesEnVivo();
+  const currentLive = enVivo[0] ?? null;
 
-  // ─── Initial mock state (SSR-friendly, reemplazado por API cuando carga) ──
-  const [currentLive, setCurrentLive] = useState<LiveSession | null>(() =>
-    getLiveNow(),
+  const categories = useMemo(
+    () => Array.from(new Set([...enVivo, ...proximas, ...pasadas].map((l) => l.category).filter(Boolean))),
+    [enVivo, proximas, pasadas],
   );
-  const [upcoming, setUpcoming] = useState<LiveSession[]>(() =>
-    getUpcomingLives(),
-  );
-  const [past, setPast] = useState<LiveSession[]>(() => getPastLives());
-  const categories = useMemo(() => getLiveCategories(), []);
-
-  // ─── Fetch real data y refresco cada 30s ──────────────────────────────────
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      try {
-        const result = await fetchActiveLives();
-        if (cancelled) return;
-        // Si el backend tiene datos reales, usarlos; si no, mantener mock inicial
-        if (result.active.length > 0 || result.upcoming.length > 0 || result.past.length > 0) {
-          setCurrentLive(result.active[0] ?? null);
-          setUpcoming(result.upcoming);
-          setPast(result.past);
-        }
-      } catch {
-        // swallowed — mantenemos el estado mock
-      }
-    };
-
-    void load();
-    const id = setInterval(() => void load(), 30_000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
-
-  // nextInHours se calcula una sola vez vía useState initializer para no
-  // llamar Date.now() durante el render body (regla de pureza de React 19).
-  const [nextInHours] = useState<number | undefined>(() => {
-    const ups = getUpcomingLives();
-    if (ups.length === 0) return undefined;
-    const diffMs = new Date(ups[0].startsAt).getTime() - Date.now();
-    return Math.max(1, Math.round(diffMs / (1000 * 60 * 60)));
-  });
-
   const filteredUpcoming = useMemo(
-    () => (activeCategory ? upcoming.filter((l) => l.category === activeCategory) : upcoming),
-    [upcoming, activeCategory],
+    () => (activeCategory ? proximas.filter((l) => l.category === activeCategory) : proximas),
+    [proximas, activeCategory],
   );
   const filteredPast = useMemo(
-    () => (activeCategory ? past.filter((l) => l.category === activeCategory) : past),
-    [past, activeCategory],
+    () => (activeCategory ? pasadas.filter((l) => l.category === activeCategory) : pasadas),
+    [pasadas, activeCategory],
   );
 
-  const liveCount = currentLive ? 1 : LIVES_MOCK.filter((l) => l.status === "live").length;
+  // El hero grande promete «en vivo ahora» o «la próxima en N h»: solo se usa
+  // cuando hay con qué cumplirlo.
+  const hayPromesa = enVivo.length > 0 || proximas.length > 0;
+  const sinNada = !cargando && enVivo.length === 0 && proximas.length === 0 && pasadas.length === 0;
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
@@ -96,9 +57,51 @@ export function EnVivoClient() {
         </div>
       </div>
 
-      <EnVivoHero liveCount={liveCount} nextInHours={nextInHours} />
+      {hayPromesa ? (
+        <EnVivoHero liveCount={enVivo.length} nextInHours={proximaEnHoras} />
+      ) : (
+        <header className="mx-auto max-w-6xl px-4 sm:px-6 pt-8 sm:pt-12">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent-dark)] dark:text-[var(--accent)]">
+            <Radio className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            Buleje · En vivo
+          </p>
+          <PageTitle className="mt-2 text-[var(--text-primary)]">Transmisiones de las tiendas</PageTitle>
+        </header>
+      )}
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12 space-y-12 sm:space-y-16">
+        {cargando && (
+          <p role="status" className="text-base text-[var(--text-secondary)]">
+            Buscando transmisiones…
+          </p>
+        )}
+
+        {error && (
+          <p role="alert" className="text-base text-[var(--data-error)]">
+            No pudimos revisar las transmisiones. Volvemos a intentar en 30 segundos.
+          </p>
+        )}
+
+        {sinNada && !error && (
+          <EmptyState
+            icon={Radio}
+            title="Ninguna tienda está transmitiendo ahora"
+            description="Cuando una bodega salga en vivo o programe una transmisión, aparece aquí."
+            action={{
+              label: "Ver tiendas",
+              node: (
+                <Link
+                  href="/marketplace/negocios"
+                  className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--accent)] text-white text-base font-semibold hover:bg-[var(--accent-600)]"
+                >
+                  Ver tiendas
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              ),
+            }}
+          />
+        )}
+
         {/* ── Transmisión en vivo ahora ── */}
         {currentLive && (
           <section aria-labelledby="live-now-title" className="space-y-5">
@@ -129,11 +132,13 @@ export function EnVivoClient() {
                   <LivePlayer live={currentLive} />
                 </Link>
 
-                <div className="rounded-2xl border border-[var(--rule-muted)] bg-[var(--surface-raised)] p-5">
-                  <p className="text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-relaxed">
-                    {currentLive.description}
-                  </p>
-                </div>
+                {currentLive.description && (
+                  <div className="rounded-2xl border border-[var(--rule-muted)] bg-[var(--surface-raised)] p-5">
+                    <p className="text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-relaxed">
+                      {currentLive.description}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <aside className="space-y-4">
@@ -149,8 +154,8 @@ export function EnVivoClient() {
           </section>
         )}
 
-        {/* ── Category chips ── */}
-        {categories.length > 0 && (
+        {/* ── Category chips (solo de lives reales) ── */}
+        {categories.length > 1 && (
           <section className="space-y-4" aria-labelledby="categories-title">
             <h2
               id="categories-title"
@@ -166,10 +171,7 @@ export function EnVivoClient() {
           </section>
         )}
 
-        {/* ── Upcoming ── */}
         <UpcomingLives lives={filteredUpcoming} />
-
-        {/* ── Past ── */}
         <PastLives lives={filteredPast} />
       </main>
 

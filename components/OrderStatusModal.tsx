@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef, useCallback, startTransition } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { X, Package, Truck, CheckCircle2, Clock, ShoppingBag, MapPin, Phone, User, Receipt, Star, ArrowRight, Hash, CreditCard, Calendar, ChefHat, ClipboardCheck, PackageCheck, Navigation } from "@buleje/design-system/icons";
+import { X, Package, Truck, CheckCircle2, ShoppingBag, MapPin, Phone, User, Receipt, Star, ArrowRight, Hash, CreditCard, Calendar, ChefHat, ClipboardCheck, PackageCheck, Navigation } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
+import { PedidoConfirmadoWhatsapp } from "@/components/checkout/parts/PedidoConfirmadoWhatsapp";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {});
 const Confetti  = dynamic(() => import("./Confetti"),   {});
@@ -48,13 +49,6 @@ const STATUS_INDEX: Record<string, number> = { pendiente: 0, confirmado: 1, en_c
 
 const ETA: Record<string, string> = {
   pendiente: "30–45 min", confirmado: "20–30 min", en_camino: "10–15 min", entregado: "Entregado ✓",
-};
-
-const STATUS_MESSAGE: Record<string, string> = {
-  pendiente:  "Hemos recibido tu pedido y lo estamos registrando.",
-  confirmado: "¡Confirmado! Estamos preparando tus productos.",
-  en_camino:  "¡Tu delivery ya está en camino hacia ti!",
-  entregado:  "¡Pedido entregado con éxito!",
 };
 
 /**
@@ -630,6 +624,10 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                   >
                     ← Ver todos mis pedidos ({activeOrders.length})
                   </button>
+                )}
+                {/* Pedido recién confirmado → al WhatsApp del negocio, con foto (pedidosCliente) */}
+                {order.status !== "entregado" && order.status !== "cancelado" && (
+                  <PedidoConfirmadoWhatsapp orderId={order.id} className="mb-4" />
                 )}
                 {/* ═══ HERO MAP — protagonista visual ═══ */}
                 {(() => {

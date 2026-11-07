@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LiveSessionsDB, type LiveSession } from "@/lib/db/live-sessions.db";
+import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 

@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import {
+  borrarTokenHilo,
+  guardarTokenHilo,
+  headersTokenHilo,
+  leerTokenHilo,
+} from "@/lib/chat/thread-token-client";
 import type {
   ChatBubbleSession,
   PublicMessageView,
@@ -9,6 +15,10 @@ import type {
 } from "./types";
 
 const sessionKey = (storeSlug: string) => `buleje-chat-${storeSlug}`;
+
+/** 401/403 del servidor: el hilo guardado no tiene token válido (o es de antes del 17-10). */
+const AVISO_PRIVACIDAD =
+  "Por tu privacidad, escribe de nuevo tu nombre y celular para seguir chateando.";
 
 function loadSession(storeSlug: string): ChatBubbleSession | null {
   if (typeof window === "undefined") return null;
@@ -56,20 +66,27 @@ export function usePublicChat(storeSlug: string) {
         storeSlug,
         customerPhone: session.customerPhone,
       });
-      const res = await fetch(`/api/chat/public?${qs.toString()}`);
+      const res = await fetch(`/api/chat/public?${qs.toString()}`, {
+        headers: headersTokenHilo(session.threadId),
+      });
       if (!res.ok) {
         if (res.status === 503) {
           setError("Chat temporalmente no disponible");
           return;
         }
-        if (res.status === 404) {
-          // Thread roto — limpiar sesión
-          if (typeof window !== "undefined") {
+        if (res.status === 404 || res.status === 401 || res.status === 403) {
+          // Thread roto o sin token de este equipo — limpiar sesión: el
+          // formulario vuelve y abre una conversación nueva.
+          try {
             window.localStorage.removeItem(sessionKey(storeSlug));
+          } catch {
+            // localStorage desactivado: no había nada persistido.
           }
+          borrarTokenHilo(session.threadId);
           setSession(null);
           setThread(null);
           setMessages([]);
+          if (res.status !== 404) setError(AVISO_PRIVACIDAD);
           return;
         }
         throw new Error(`HTTP ${res.status}`);
@@ -100,6 +117,9 @@ export function usePublicChat(storeSlug: string) {
         storeSlug,
         customerPhone: session.customerPhone,
       });
+      // EventSource no manda headers: el token del hilo va en la query.
+      const token = leerTokenHilo(session.threadId);
+      if (token) qs.set("threadToken", token);
       es = new EventSource(`/api/chat/public/stream?${qs.toString()}`);
       es.addEventListener("open", () => {
         pollInterval = 60_000;
@@ -159,9 +179,13 @@ export function usePublicChat(storeSlug: string) {
         if (!res.ok) {
           if (res.status === 503) throw new Error("Chat temporalmente no disponible");
           if (res.status === 404) throw new Error("Tienda no disponible");
-          throw new Error(`HTTP ${res.status}`);
+          // 401: ese celular ya tiene una conversación abierta y aquí no hay
+          // sesión ni token → el servidor explica que inicie sesión.
+          const j = (await res.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(j?.error ?? `HTTP ${res.status}`);
         }
         const json = (await res.json()) as { data: PublicThreadView };
+        guardarTokenHilo(json.data.threadId, json.data.threadToken);
         const newSession: ChatBubbleSession = {
           threadId: json.data.threadId,
           customerPhone: args.customerPhone,
@@ -200,10 +224,12 @@ export function usePublicChat(storeSlug: string) {
             customerPhone: session.customerPhone,
             customerName: session.customerName,
             body,
+            threadToken: leerTokenHilo(session.threadId) ?? undefined,
           }),
         });
         if (!res.ok) {
           if (res.status === 409) throw new Error("La conversación está cerrada");
+          if (res.status === 401 || res.status === 403) throw new Error(AVISO_PRIVACIDAD);
           if (res.status === 404) throw new Error("Conversación no encontrada");
           throw new Error(`HTTP ${res.status}`);
         }
@@ -218,18 +244,21 @@ export function usePublicChat(storeSlug: string) {
   );
 
   /**
-   * Cierra la sesión local (sin cerrar el thread del servidor — el buyer
-   * puede volver a abrir el chat en el futuro y recuperar los mensajes si
-   * todavía conocemos el threadId).
+   * Cierra la sesión local (sin cerrar el thread del servidor). Borra también
+   * el token del hilo: sin sesión de cliente, al volver se abre una
+   * conversación nueva (privacidad, 2026-10-17); la tienda conserva la vieja.
    */
   const clearSession = useCallback(() => {
-    if (typeof window !== "undefined") {
+    try {
       window.localStorage.removeItem(sessionKey(storeSlug));
+    } catch {
+      // localStorage desactivado: no había nada persistido.
     }
+    borrarTokenHilo(session?.threadId);
     setSession(null);
     setThread(null);
     setMessages([]);
-  }, [storeSlug]);
+  }, [storeSlug, session?.threadId]);
 
   return {
     session,

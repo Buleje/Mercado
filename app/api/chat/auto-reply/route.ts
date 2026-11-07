@@ -4,6 +4,10 @@ import { chatCompletion, getActiveProvider } from "@/lib/ai-config";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { ProductsDB } from "@/lib/db/products.db";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ChatDB } from "@/lib/jsondb";
+import { getTenantIdFromRequest } from "@/lib/tenant";
+import { logger } from "@/lib/logger";
+import { CUSTOMER_SESSION, getCustomerPayload, telefonoDeLaSesion } from "@/lib/auth/customer-session";
 
 // ── FAQ knowledge base for auto-replies (fallback when no AI) ────────────────
 const FAQ_ENTRIES: { keywords: string[]; answer: string }[] = [
@@ -141,17 +145,46 @@ async function searchProducts(query: string, tenantId: string): Promise<string |
   }
 }
 
+/**
+ * Aviso «el bot no pudo responder» en la bandeja del negocio (conversación
+ * "sistema"). Lo arma SIEMPRE el servidor (security 17-10, T4): antes lo mandaba
+ * el widget a `POST /api/chat` con `phone: "sistema"` y cualquier cliente con
+ * sesión podía escribir avisos falsos. Sólo con la sesión verificada de un
+ * celular (nombre y número salen de la cookie, no del cuerpo).
+ */
+async function avisarAlNegocioSinRespuesta(req: NextRequest, tenantId: string, pregunta: string): Promise<void> {
+  const cookie = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+  if (!cookie) return;
+  const sesion = await getCustomerPayload(cookie);
+  const celular = telefonoDeLaSesion(sesion);
+  if (!celular) return;
+  const quien = sesion?.name?.trim() ? `${sesion.name.trim()} (${celular})` : celular;
+  await ChatDB.add(
+    tenantId,
+    "sistema",
+    "Bot",
+    "customer",
+    `⚠️ Cliente ${quien} preguntó algo que no pude responder: "${pregunta.slice(0, 300)}"`,
+  );
+}
+
 // POST: Get AI auto-reply for a customer message
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "chat-auto-reply"); if (_rl) return _rl;
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Mensaje inválido" }, { status: 400 });
+  }
   const parsed = BodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Mensaje inválido" }, { status: 400 });
   }
 
   const message = parsed.data.message;
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  // Negocio del host (lo pone el proxy); sin el fallback "main" de antes.
+  const tenantId = getTenantIdFromRequest(req);
 
   // 1. Try FAQ first (instant, no API cost)
   const faqReply = findAutoReply(message);
@@ -202,6 +235,9 @@ NO inventes precios ni stock. Si no encuentras el producto en los datos, sugiere
     });
   }
 
+  await avisarAlNegocioSinRespuesta(req, tenantId, message).catch((err) =>
+    logger.error("[chat/auto-reply] aviso al negocio falló", { err: String(err) }),
+  );
   return NextResponse.json({
     reply: "🤔 No tengo una respuesta automática para eso. Tu mensaje será enviado a nuestro equipo y te responderán pronto. ¡Gracias por tu paciencia!",
     type: "fallback" as const,

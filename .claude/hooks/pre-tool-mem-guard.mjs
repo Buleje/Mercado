@@ -108,6 +108,22 @@ if (!["Edit", "Write", "MultiEdit", "Bash"].includes(tool)) process.exit(0);
 
 if (process.env.BSM_SKIP_MEM_GUARD === "1") process.exit(0);
 
+// Allowlist de RECUPERACIÓN (Brandon 2026-07-03): con RAM crítica, bloquear
+// `free`/`kill`/`cat` creaba un deadlock — el agente no podía ni diagnosticar ni
+// liberar memoria (fricción real: sesión cacao 2026-07-02). Estos comandos usan
+// ~0 RAM y son justo los que SALEN de la saturación. Un comando compuesto pasa
+// solo si TODOS sus segmentos empiezan con un binario liviano.
+if (tool === "Bash") {
+  const LIGHT = new Set(["free", "ps", "pgrep", "pkill", "kill", "killall", "cat", "tail", "head", "ls", "wc", "echo", "df", "uptime", "true", "sleep", "grep", "awk", "sed", "which", "date", "id", "pwd", "ss"]);
+  const cmd = String(input.tool_input?.command ?? "");
+  const segments = cmd.split(/&&|\|\||;|\|/).map((s) => s.trim()).filter(Boolean);
+  const allLight = segments.length > 0 && segments.every((seg) => {
+    const first = (seg.match(/^[A-Za-z0-9_./-]+/) || [""])[0].split("/").pop();
+    return LIGHT.has(first);
+  });
+  if (allLight) process.exit(0);
+}
+
 const mem = memInfo();
 const load = loadAvg();
 const tscCount = countProcs("tsc --noEmit");

@@ -200,6 +200,12 @@ describe("inventory agent subtask delegation", () => {
       BatchesDB: { getExpiringBatches: vi.fn().mockResolvedValue([]) },
     }));
 
+    // Un solo stock mínimo (09-10): sin este mock lee Settings de verdad y
+    // el test se cuelga a los 15 s.
+    vi.mock("@/lib/inventario/stock-minimo.server", () => ({
+      minimoGlobalDelNegocio: vi.fn().mockResolvedValue(5),
+    }));
+
     vi.mock("@/lib/agents/bus", () => ({
       agentBus: { emit: vi.fn() },
     }));

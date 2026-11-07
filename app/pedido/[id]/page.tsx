@@ -10,6 +10,7 @@ import {
   Star, Send,
 } from "@buleje/design-system/icons";
 import type { OrderStatus, DbOrderItem } from "@/lib/jsondb";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 type PublicOrder = {
   id: string;
@@ -118,15 +119,29 @@ export default function PedidoPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchOrder = useCallback(async () => {
+    const phone = resolveCustomerPhone(searchParams.get("phone"));
+    // El endpoint público exige el teléfono (guard anti-IDOR): sin él SIEMPRE
+    // responde 404. No disparamos la request (evita el flood de 404 en consola)
+    // y guiamos al cliente a abrir el link correcto.
+    if (!phone) {
+      setError("Abrí el seguimiento desde tu confirmación de WhatsApp (incluye tu teléfono en el enlace).");
+      setLoading(false);
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      return;
+    }
     try {
-      const phone = resolveCustomerPhone(searchParams.get("phone"));
-      const url = phone
-        ? `/api/orders/${id}/public?phone=${encodeURIComponent(phone)}`
-        : `/api/orders/${id}/public`;
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(
+        `/api/orders/${id}/public?phone=${encodeURIComponent(phone)}`,
+        { cache: "no-store" },
+      );
       if (!res.ok) {
         setError("No encontramos este pedido. Verifica el enlace.");
         setLoading(false);
+        // Pedido inexistente/purgado → dejamos de pollear un endpoint muerto.
+        if (res.status === 404 && intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         return;
       }
       const data = await res.json() as PublicOrder;
@@ -163,14 +178,7 @@ export default function PedidoPage() {
   // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(45,106,79,0.06), #d1fae5)" }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-          </div>
-          <p className="text-gray-500 font-medium">Cargando tu pedido…</p>
-        </div>
-      </div>
+      <CargaPagina etiqueta="Cargando tu pedido" />
     );
   }
 
@@ -302,7 +310,7 @@ export default function PedidoPage() {
                     }`}>
                       {step.label}
                       {active && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                        <span className="ml-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-full px-2 py-0.5">
                           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                           Ahora
                         </span>

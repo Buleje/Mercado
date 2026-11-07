@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * GET /api/products/frecuentes?limit=8
@@ -15,8 +16,7 @@ export async function GET(req: NextRequest) {
   const tenantId = auth.tenantId;
 
   try {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    const startOfToday = new Date(startOfLimaDay());
 
     const topItems = await prisma.saleItem.groupBy({
       by: ["productId"],

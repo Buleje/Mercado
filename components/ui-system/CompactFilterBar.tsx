@@ -95,7 +95,7 @@ export default function CompactFilterBar({
                 <span
                   className={cn(
                     "inline-flex items-center justify-center h-4 min-w-[1rem] rounded-full text-[length:var(--ts-2xs)] font-bold px-1 tabular-nums",
-                    isActive ? "bg-[var(--surface-canvas)] text-[var(--text-primary)]" : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                    isActive ? "bg-[var(--surface-canvas)] text-[var(--text-primary)]" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                   )}
                 >
                   {f.count}

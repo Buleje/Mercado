@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Timer } from "@buleje/design-system/icons";
-import { SectionHeader } from "@/components/ui-system";
 import { ProductCard } from "@/components/ProductCard";
 import { pickWithDiscount, type MockProduct } from "@/lib/recommendations/mock";
 import { cn } from "@/lib/utils";
@@ -118,7 +117,7 @@ export function FlashDealsOfTheDay({ initialProducts, className }: Props) {
             className={cn(
               "flex items-center gap-2 px-4 py-3 rounded-xl border",
               countdown.urgent
-                ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                ? "border-[var(--accent)] bg-primary/10"
                 : "border-[var(--rule-base)] bg-white dark:bg-gray-900"
             )}
             aria-live="polite"

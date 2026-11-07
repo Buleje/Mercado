@@ -41,6 +41,10 @@ export interface DbSunatInvoice {
   nubefactId: string | null;
   pdfUrl: string | null;
   errorMessage: string | null;
+  tipoOperacion: string | null;
+  detraccionCodigo: string | null;
+  detraccionPorcentaje: number | null;
+  detraccionMonto: number | null;
   sentAt: string | null;
   acceptedAt: string | null;
   retryCount: number;
@@ -55,6 +59,8 @@ export interface DbTenantSunatConfig {
   razonSocial: string;
   direccionFiscal: string | null;
   ubigeo: string | null;
+  /** N° de cuenta de detracciones del Banco de la Nación (requerida para emitir con SPOT). */
+  cuentaDetracciones: string | null;
   nubefactToken: string;
   nubefactUrl: string;
   boletaSeries: string;
@@ -76,6 +82,12 @@ export interface CreateSunatInvoiceInput {
   subtotal: number;
   igv: number;
   total: number;
+  /** Tipo de operación SUNAT (Catálogo 51): "0101" venta interna | "1001" sujeta a detracción. */
+  tipoOperacion?: string | null;
+  /** Detracción (SPOT): código del bien "008", % y monto. Null = sin detracción. */
+  detraccionCodigo?: string | null;
+  detraccionPorcentaje?: number | null;
+  detraccionMonto?: number | null;
 }
 
 export interface UpdateSunatInvoiceInput {
@@ -115,6 +127,11 @@ function mapInvoice(r: PSunatInvoice): DbSunatInvoice {
     nubefactId: r.nubefactId ?? null,
     pdfUrl: r.pdfUrl ?? null,
     errorMessage: r.errorMessage ?? null,
+    tipoOperacion: r.tipoOperacion ?? null,
+    detraccionCodigo: r.detraccionCodigo ?? null,
+    detraccionPorcentaje:
+      r.detraccionPorcentaje != null ? toNumOrZero(r.detraccionPorcentaje) : null,
+    detraccionMonto: r.detraccionMonto != null ? toNumOrZero(r.detraccionMonto) : null,
     sentAt: toISO(r.sentAt),
     acceptedAt: toISO(r.acceptedAt),
     // retryCount no está en schema actual; fallback a 0
@@ -132,6 +149,7 @@ function mapConfig(c: PTenantSunatConfig): DbTenantSunatConfig {
     razonSocial: c.razonSocial,
     direccionFiscal: c.direccionFiscal ?? null,
     ubigeo: c.ubigeo ?? null,
+    cuentaDetracciones: c.cuentaDetracciones ?? null,
     nubefactToken: c.nubefactToken,
     nubefactUrl: c.nubefactUrl,
     boletaSeries: c.boletaSeries,
@@ -171,6 +189,10 @@ export const SunatDB = {
         total: data.total,
         sunatStatus: "pending",
         sentAt: new Date(),
+        ...(data.tipoOperacion !== undefined && { tipoOperacion: data.tipoOperacion }),
+        ...(data.detraccionCodigo !== undefined && { detraccionCodigo: data.detraccionCodigo }),
+        ...(data.detraccionPorcentaje !== undefined && { detraccionPorcentaje: data.detraccionPorcentaje }),
+        ...(data.detraccionMonto !== undefined && { detraccionMonto: data.detraccionMonto }),
       },
     });
     return mapInvoice(inv);
@@ -284,6 +306,62 @@ export const SunatDB = {
       where: { tenantId },
     });
     return cfg ? mapConfig(cfg) : null;
+  },
+
+  /**
+   * Crea o actualiza la configuración fiscal del tenant.
+   *
+   * El **token es opcional al actualizar**: el GET nunca lo devuelve (no se
+   * expone un secreto), así que la pantalla de conexión no puede reenviarlo, y
+   * sin esto cambiar una serie de B001 a B002 obligaba a pedirle al operador
+   * que fuera a Nubefact a copiar el token de nuevo. Si no viene, se conserva
+   * el guardado; al CREAR sigue siendo obligatorio y lo exige el endpoint.
+   *
+   * Los correlativos (`lastBoletaNum`/`lastFacturaNum`) NO se tocan acá: los
+   * mueve `incrementCorrelativo` dentro de la emisión. Pisarlos desde un
+   * formulario haría que dos comprobantes salieran con el mismo número.
+   */
+  async upsertConfig(
+    tenantId: string,
+    data: {
+      ruc: string;
+      razonSocial: string;
+      direccionFiscal?: string | null;
+      ubigeo?: string | null;
+      nubefactToken?: string;
+      nubefactUrl?: string;
+      boletaSeries?: string;
+      facturaSeries?: string;
+      isProduction?: boolean;
+    },
+  ): Promise<DbTenantSunatConfig> {
+    const actual = await prisma.tenantSunatConfig.findUnique({
+      where: { tenantId },
+      select: { nubefactToken: true },
+    });
+    const token = data.nubefactToken ?? actual?.nubefactToken;
+    if (!token) {
+      throw new Error("Falta el token de Nubefact para crear la configuración");
+    }
+
+    const comun = {
+      ruc: data.ruc,
+      razonSocial: data.razonSocial,
+      direccionFiscal: data.direccionFiscal ?? null,
+      ubigeo: data.ubigeo ?? null,
+      nubefactToken: token,
+      nubefactUrl: data.nubefactUrl ?? "https://api.nubefact.com/api/v1",
+      boletaSeries: data.boletaSeries ?? "B001",
+      facturaSeries: data.facturaSeries ?? "F001",
+      isProduction: data.isProduction ?? false,
+    };
+
+    const cfg = await prisma.tenantSunatConfig.upsert({
+      where: { tenantId },
+      create: { tenantId, ...comun },
+      update: comun,
+    });
+    return mapConfig(cfg);
   },
 
   /**

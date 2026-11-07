@@ -3,6 +3,7 @@ import { ProductsDB, CustomersDB, OrdersDB, ReviewsDB, SettingsDB, SuppliersDB, 
 import { enqueueActivityLog } from "@/lib/queue";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse(JSON.stringify(backup, null, 2), {
       headers: {
         "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="bodega-backup-${new Date().toISOString().slice(0, 10)}.json"`,
+        "Content-Disposition": `attachment; filename="bodega-backup-${limaDateKey()}.json"`,
       },
     });
 

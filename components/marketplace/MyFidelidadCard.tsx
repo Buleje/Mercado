@@ -248,13 +248,13 @@ export default function MyFidelidadCard({
         href="/marketplace"
         aria-label="Mi Fidelidad — tu primera compra te da 100 puntos de bienvenida"
         className={cn(
-          "group flex h-16 items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+          "group flex h-16 items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-primary/10",
           className,
         )}
       >
         <span
           aria-hidden
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
         >
           <Trophy className="h-[18px] w-[18px]" strokeWidth={2} />
         </span>
@@ -321,13 +321,13 @@ export default function MyFidelidadCard({
         href="/marketplace/mi-cuenta/fidelidad"
         aria-label={`Mi Fidelidad — ${data.points.toLocaleString("es-PE")} puntos (S/${data.soleEquivalent.toFixed(2)}). Ver panel completo`}
         className={cn(
-          "group flex h-16 items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+          "group flex h-16 items-center gap-2.5 rounded-2xl bg-[var(--surface-raised)] px-3 transition-colors hover:border-[var(--accent)] hover:bg-primary/10",
           className,
         )}
       >
         <span
           aria-hidden
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
         >
           <Trophy className="h-[18px] w-[18px]" strokeWidth={2} />
         </span>

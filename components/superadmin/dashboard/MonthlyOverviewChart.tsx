@@ -77,7 +77,8 @@ export function MonthlyOverviewChart({ data, description }: Props) {
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalSign = data.reduce((s, d) => s + d.signups, 0);
   const peakRev = data.reduce((m, d) => Math.max(m, d.revenue), 0);
-  const peakMonth = data.find((d) => d.revenue === peakRev)?.month ?? "—";
+  // Sin ingresos no hay «mejor mes» (antes elegía el primero de seis ceros).
+  const peakMonth = peakRev > 0 ? (data.find((d) => d.revenue === peakRev)?.month ?? "—") : "—";
 
   return (
     <ChartWrapper
@@ -122,7 +123,7 @@ export function MonthlyOverviewChart({ data, description }: Props) {
       </div>
 
       <div style={{ width: "100%", height: 320, minHeight: 240 }}>
-        <ResponsiveContainer width="99%" height="99%" debounce={50}>
+        <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="99%" height="99%" debounce={50}>
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="revArea" x1="0" y1="0" x2="0" y2="1">

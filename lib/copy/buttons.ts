@@ -67,7 +67,7 @@ export const BTN = {
   seePricing: "Ver planes desde S/0",
 
   // ── Newsletter / CRM ───────────────────────────────────────
-  subscribe: "Recibir ofertas — cancelás cuando quieras",
+  subscribe: "Recibir ofertas — cancelas cuando quieras",
   subscribeSending: "Suscribiendo…",
   unsubscribe: "Dejar de recibir",
 

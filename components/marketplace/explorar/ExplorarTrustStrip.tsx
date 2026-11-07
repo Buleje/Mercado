@@ -7,10 +7,13 @@
  * la fuerza está en la escala tipográfica y los dividers limpios.
  */
 
-import { Store, Users, Truck, Wallet, type LucideIcon } from "@buleje/design-system/icons";
+import { Store, Users, Truck, type LucideIcon } from "@buleje/design-system/icons";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 
 interface TrustItem {
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  /** Métodos de pago con ícono de marca (reemplaza al ícono Lucide). */
+  pays?: string[];
   big: string;
   label: string;
   sub: string;
@@ -20,7 +23,7 @@ const ITEMS: TrustItem[] = [
   { icon: Store, big: "200+", label: "Bodegas activas", sub: "En toda Ciudad Constitución" },
   { icon: Users, big: "5.4k", label: "Vecinos felices", sub: "Este mes" },
   { icon: Truck, big: "25 min", label: "Promedio entrega", sub: "Puerta a puerta" },
-  { icon: Wallet, big: "Yape · Plin", label: "Pago seguro", sub: "Efectivo también" },
+  { pays: ["yape", "plin", "efectivo"], big: "Yape · Plin", label: "Pago seguro", sub: "Efectivo también" },
 ];
 
 export default function ExplorarTrustStrip() {
@@ -35,9 +38,19 @@ export default function ExplorarTrustStrip() {
                 key={it.label}
                 className="group flex items-start gap-3 p-5 sm:p-6 transition-colors hover:bg-[var(--surface-canvas)]"
               >
-                <span className="inline-flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white">
-                  <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                </span>
+                {it.pays ? (
+                  <span className="flex shrink-0 items-center -space-x-1.5">
+                    {it.pays.map((m) => (
+                      <PaymentMethodIcon key={m} method={m} size={26} className="rounded-lg ring-2 ring-[var(--surface-raised)]" />
+                    ))}
+                  </span>
+                ) : (
+                  Icon && (
+                    <span className="inline-flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white">
+                      <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                    </span>
+                  )
+                )}
                 <div className="min-w-0">
                   <p className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
                     {it.big}

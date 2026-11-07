@@ -19,7 +19,20 @@ import { Truck, Loader2, AlertTriangle, CheckCircle2 } from "@buleje/design-syst
 import { csrfHeaders } from "@/lib/csrf-client";
 import { tenantFetch } from "@/lib/tenant-fetch";
 
-export default function NetworkToggleCard() {
+import { SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+/**
+ * `enVentana` (10-10): dentro de la ventana que abre Reparto › Más, que ya
+ * trae el título; sin caja ni encabezado propios, sólo la explicación corta y
+ * las dos opciones.
+ *
+ * `onCambio` (17-10, P30): avisa al módulo para que la pastilla «Reparten: …»
+ * de Asignaciones muestre el estado nuevo sin recargar.
+ */
+export default function NetworkToggleCard({
+  enVentana = false,
+  onCambio,
+}: { enVentana?: boolean; onCambio?: (enabled: boolean) => void } = {}) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,9 +69,14 @@ export default function NetworkToggleCard() {
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ enabled: next }),
         });
+        if (res.status === 403) {
+          setError("Sólo el dueño, el administrador o el encargado pueden cambiarlo.");
+          return;
+        }
         if (!res.ok) throw new Error();
         const json = (await res.json()) as { enabled: boolean };
         setEnabled(json.enabled);
+        onCambio?.(json.enabled);
         setToastVisible(true);
         setTimeout(() => setToastVisible(false), 2800);
       } catch {
@@ -67,30 +85,37 @@ export default function NetworkToggleCard() {
         setSaving(false);
       }
     },
-    [enabled, saving],
+    [enabled, saving, onCambio],
   );
 
   return (
     <section
-      aria-labelledby="network-toggle-title"
-      className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"
+      aria-labelledby={enVentana ? undefined : "network-toggle-title"}
+      aria-label={enVentana ? "Red de repartidores Buleje" : undefined}
+      className={enVentana ? "" : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"}
     >
+      {enVentana ? (
+        <p className="mb-4 text-sm text-[var(--text-secondary)]">
+          Si la activas, los repartidores de Buleje ven tu tienda en su mapa y pueden aceptar tus pedidos. Si no, sólo tu equipo los atiende.
+        </p>
+      ) : (
       <header className="flex items-start gap-3 mb-5">
-        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Truck className="h-6 w-6" strokeWidth={2.25} aria-hidden />
         </span>
         <div className="min-w-0">
-          <h2
+          <SectionTitle
             id="network-toggle-title"
-            className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-tight"
+            className="text-[var(--text-primary)]"
           >
             Red de repartidores Buleje
-          </h2>
+          </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-            Si activás esta opción, los repartidores de Buleje verán tu tienda en su mapa y podrán aceptar tus pedidos. Si la desactivás, solo tus repartidores propios atienden.
+            Si activas esta opción, los repartidores de Buleje verán tu tienda en su mapa y podrán aceptar tus pedidos. Si la desactivas, solo tus repartidores propios atienden.
           </p>
         </div>
       </header>
+      )}
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] py-6 justify-center">
@@ -101,7 +126,7 @@ export default function NetworkToggleCard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <OptionRadio
             label="Activada"
-            description="Tu tienda aparece en /delivery-app · pedidos van a la red Buleje apenas se confirman."
+            description="Tu tienda aparece en la app Buleje Delivery · tus pedidos se ofrecen a tu equipo y a la red apenas se confirman."
             selected={enabled === true}
             disabled={saving}
             tone="accent"
@@ -118,10 +143,22 @@ export default function NetworkToggleCard() {
         </div>
       )}
 
+      {!loading && (
+        <p className="mt-3 flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)]">
+          Cambiarlo no reasigna los pedidos que ya tienen repartidor.
+          <InfoTip
+            title="Qué cambia y qué no"
+            what="Sólo cambia a quién se OFRECEN los pedidos que todavía esperan repartidor: los nuevos y los que nadie aceptó."
+            affects="Los pedidos ya asignados siguen con su repartidor. Las ofertas ya enviadas vencen solas en 2 minutos. Sólo el dueño, el administrador o el encargado lo ven y lo cambian."
+            example="Activas la red con un pedido esperando: al vencer la oferta a tu equipo, se ofrece también a los repartidores de Buleje cercanos."
+          />
+        </p>
+      )}
+
       {error && (
         <p
           role="alert"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--brand-danger)]/10 border-2 border-[var(--brand-danger)]/30 px-3 py-2 text-sm font-bold text-[var(--brand-danger)]"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--data-error-500)]/10 border-2 border-[var(--data-error-500)]/30 px-3 py-2 text-sm font-bold text-[var(--data-error-ink)]"
         >
           <AlertTriangle className="h-4 w-4" aria-hidden />
           {error}
@@ -159,7 +196,7 @@ function OptionRadio({
 }) {
   const borderClass = selected
     ? tone === "accent"
-      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+      ? "border-[var(--accent)] bg-primary/10"
       : "border-[var(--text-secondary)] bg-[var(--surface-sunken)]"
     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)]";
   return (
@@ -181,7 +218,7 @@ function OptionRadio({
               : "border-[var(--rule-strong)] bg-transparent"
           }`}
         >
-          {selected && <span className="block h-2 w-2 rounded-full bg-white" />}
+          {selected && <span className="block h-2 w-2 rounded-full bg-[var(--surface-raised)]" />}
         </span>
         <span className="text-base font-extrabold text-[var(--text-primary)]">
           {label}

@@ -5,6 +5,7 @@ import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { storeOtp } from "@/lib/auth/otp-store";
 import { logger } from "@/lib/logger";
 import { sendSms, isTwilioConfigured } from "@/lib/twilio";
+import { sendWhatsAppText } from "@/lib/whatsapp";
 
 // Esquema: acepta 9 digitos peruanos (con o sin prefijo +51 / 51)
 const SendOtpSchema = z.object({
@@ -105,48 +106,53 @@ export async function POST(req: Request) {
   // 4. Almacenar OTP (TTL 5 min, single-use)
   storeOtp(phone, code);
 
-  // 5. Envio — Twilio SMS (prod y dev si hay credenciales).
-  //    Si Twilio NO está configurado, fallback a log en consola (solo dev).
+  // 5. Envio — canal preferido WhatsApp (dominante en Perú, más barato y mejor
+  //    tasa de apertura que SMS), con fallback a SMS (Twilio) y a consola en dev.
+  //    Envío INMEDIATO (no encolado): el OTP no puede tener delay.
   const isDev = process.env.NODE_ENV !== "production";
+  const text = `Tu codigo Buleje: ${code}. Expira en 5 min. No lo compartas.`;
 
-  if (isTwilioConfigured()) {
-    const smsBody = `Tu codigo Buleje: ${code}. Expira en 5 min. No lo compartas.`;
-    const result = await sendSms({
-      to: `+51${phone}`,
-      body: smsBody,
-    });
+  let channel: "whatsapp" | "sms" | null = null;
 
-    if (!result.ok) {
-      logger.error("[OTP/send] Twilio falló", { phone, reason: result.reason, error: result.error });
-      // En dev seguimos devolviendo ok y logueamos el código para que el user
-      // pueda seguir probando sin SMS. En prod retornamos 502.
-      if (isDev) {
-        console.info(`\n  OTP DEV (twilio falló) ▶  +51 ${phone}  →  ${code}\n`);
-        return NextResponse.json({
-          ok: true,
-          message: "Codigo generado (revisa la consola — SMS falló)",
-        });
-      }
-      return NextResponse.json(
-        { error: "No pudimos enviar el SMS. Intenta de nuevo en unos minutos." },
-        { status: 502 },
-      );
+  // 5a. WhatsApp primero.
+  try {
+    if (await sendWhatsAppText(phone, text)) {
+      channel = "whatsapp";
+      logger.info("[OTP/send] código enviado por WhatsApp", { phone });
     }
-
-    logger.info("[OTP/send] SMS enviado por Twilio", { phone, sid: result.sid });
-    return NextResponse.json({ ok: true, message: "Codigo enviado por SMS" });
+  } catch (err) {
+    logger.warn("[OTP/send] WhatsApp falló — intento SMS", { phone, error: String(err) });
   }
 
-  // Fallback: Twilio no configurado. En dev escribimos a consola; en prod error.
+  // 5b. Fallback SMS (Twilio).
+  if (!channel && isTwilioConfigured()) {
+    const result = await sendSms({ to: `+51${phone}`, body: text });
+    if (result.ok) {
+      channel = "sms";
+      logger.info("[OTP/send] código enviado por SMS (Twilio)", { phone, sid: result.sid });
+    } else {
+      logger.error("[OTP/send] Twilio falló", { phone, reason: result.reason, error: result.error });
+    }
+  }
+
+  if (channel) {
+    return NextResponse.json({
+      ok: true,
+      channel,
+      message: channel === "whatsapp" ? "Código enviado por WhatsApp" : "Código enviado por SMS",
+    });
+  }
+
+  // 5c. Ni WhatsApp ni SMS: en dev escribimos a consola; en prod error.
   if (isDev) {
     logger.info(`[OTP/send] [DEV] Codigo para +51${phone}: ${code}`, { phone });
     console.info(`\n  OTP DEV ▶  +51 ${phone}  →  ${code}\n`);
-    return NextResponse.json({ ok: true, message: "Codigo enviado (modo DEV — revisa consola)" });
+    return NextResponse.json({ ok: true, channel: "dev", message: "Codigo generado (modo DEV — revisa consola)" });
   }
 
-  logger.error("[OTP/send] Twilio no configurado en producción", { phone });
+  logger.error("[OTP/send] Sin canal disponible (WhatsApp/SMS) en producción", { phone });
   return NextResponse.json(
-    { error: "Servicio de SMS no disponible. Contacta soporte." },
+    { error: "No pudimos enviar el código. Intenta de nuevo en unos minutos." },
     { status: 503 },
   );
 }

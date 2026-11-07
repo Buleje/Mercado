@@ -26,14 +26,14 @@ function getDaypartSlide(): Slide {
       eyebrow: "Buen día · Hora del desayuno",
       title: "¿Café, pan y huevos?",
       titleAccent: "Llega en 30 min",
-      subtitle: "Desayunos rápidos de las bodegas cerca de vos. Pagás al recibir.",
+      subtitle: "Desayunos rápidos de las bodegas cerca de ti. Pagas al recibir.",
       cta: "Ver desayunos",
       href: "/marketplace/categoria/abarrotes?q=desayuno",
     };
   }
   if (h >= 10 && h < 13) {
     return {
-      eyebrow: "Mediodía · ¿Qué cocinás?",
+      eyebrow: "Mediodía · ¿Qué cocinas?",
       title: "Ingredientes para el almuerzo,",
       titleAccent: "en 30 minutos",
       subtitle: "Frescos del mercado, abarrotes y bebidas — todo en un solo pedido.",
@@ -44,7 +44,7 @@ function getDaypartSlide(): Slide {
   if (h >= 13 && h < 18) {
     return {
       eyebrow: "Buenas tardes · Ciudad Constitución",
-      title: "Lo que necesitás esta tarde,",
+      title: "Lo que necesitas esta tarde,",
       titleAccent: "directo a tu puerta",
       subtitle: "Snacks, bebidas frías, helados y más. Delivery 30 min promedio.",
       cta: "Ver lo más pedido",
@@ -56,7 +56,7 @@ function getDaypartSlide(): Slide {
       eyebrow: "Buenas noches · Hora de la cena",
       title: "Cena lista en minutos,",
       titleAccent: "sin moverte de casa",
-      subtitle: "Ingredientes frescos, comida lista y bebidas. Pagás con Yape o efectivo.",
+      subtitle: "Ingredientes frescos, comida lista y bebidas. Pagas con Yape o efectivo.",
       cta: "Pedir cena",
       href: "/marketplace/categoria/comida-preparada",
     };
@@ -64,7 +64,7 @@ function getDaypartSlide(): Slide {
   // 22:00 – 4:59
   return {
     eyebrow: "Estamos abiertos · Madrugada",
-    title: "Bodegas 24h cerca de vos,",
+    title: "Bodegas 24h cerca de ti,",
     titleAccent: "para lo urgente",
     subtitle: "Snacks, bebidas, productos básicos — abierto cuando otros cierran.",
     cta: "Ver bodegas 24h",
@@ -78,7 +78,7 @@ const STATIC_SLIDES: Slide[] = [
     title: "La bodega de tu barrio,",
     titleAccent: "ahora en tu bolsillo",
     subtitle:
-      "Abarrotes, bebidas y productos frescos. Entrega el mismo día. Pagás al recibir.",
+      "Abarrotes, bebidas y productos frescos. Entrega el mismo día. Pagas al recibir.",
     cta: "Explorar tiendas",
     href: "#tiendas",
   },

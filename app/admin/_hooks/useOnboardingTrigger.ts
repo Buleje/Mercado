@@ -7,6 +7,9 @@
  * Reglas:
  *  - NO mostrar si SuperAdmin está impersonando un tenant (bloquearía la UI)
  *  - NO mostrar si la clave `onboarding-completed-${slug}` existe
+ *  - NO mostrar si se llegó por un enlace a un papel (`?doc=`, el QR de una
+ *    etiqueta, 31-10): en un celular recién logueado tapaba el papel. No se
+ *    marca como visto: sale la próxima vez que se abra el panel sin enlace.
  *  - SÍ mostrar después de un delay de 1.2s (para que el panel renderice primero)
  *
  * Extraído de app/admin/page.tsx (Paso 4 del refactor).
@@ -28,6 +31,7 @@ export function useOnboardingTrigger(): UseOnboardingTriggerResult {
     try {
       // Saltar si SuperAdmin está impersonando — el wizard bloquea toda la UI
       if (localStorage.getItem("superadmin-impersonate-tenant")) return;
+      if (new URLSearchParams(window.location.search).has("doc")) return;
       const slug = localStorage.getItem("active-tenant-slug") ?? "main";
       const key = `onboarding-completed-${slug}`;
       if (localStorage.getItem(key)) return;

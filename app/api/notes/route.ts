@@ -5,20 +5,32 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
+import { NotaConFechaSchema } from "@/lib/agenda/schemas";
 
 const CreateSchema = z.object({
   title: z.string().min(1).max(200),
   content: z.string().max(5000).default(""),
   color: z.enum(["yellow", "green", "blue", "pink", "purple", "orange"]).default("yellow"),
   pinned: z.boolean().default(false),
-});
+}).extend(NotaConFechaSchema.shape);
 
 const UpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   content: z.string().max(5000).optional(),
   color: z.enum(["yellow", "green", "blue", "pink", "purple", "orange"]).optional(),
   pinned: z.boolean().optional(),
-});
+}).extend(NotaConFechaSchema.shape);
+
+/** `fecha` (ADR-501): llega «YYYY-MM-DD» y se guarda `@db.Date`; undefined = no tocar. */
+function fechaADate(fecha: string | null | undefined): Date | null | undefined {
+  if (fecha === undefined) return undefined;
+  return fecha === null ? null : new Date(`${fecha}T00:00:00Z`);
+}
+
+/** La nota como la ve el cliente: `fecha` en «YYYY-MM-DD» o null. */
+function conFecha<T extends { fecha?: Date | null }>(nota: T): Omit<T, "fecha"> & { fecha: string | null } {
+  return { ...nota, fecha: nota.fecha ? nota.fecha.toISOString().slice(0, 10) : null };
+}
 
 // GET /api/notes – list all notes for the current tenant
 export async function GET(req: NextRequest) {
@@ -27,7 +39,7 @@ export async function GET(req: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const notes = await NotesDB.list(auth.tenantId);
-    return NextResponse.json(notes);
+    return NextResponse.json(notes.map(conFecha));
 
   } catch (e) {
     logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
@@ -50,8 +62,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const note = await NotesDB.create(auth.tenantId, parsed.data);
-    return NextResponse.json(note, { status: 201 });
+    const { fecha, ...datos } = parsed.data;
+    const note = await NotesDB.create(auth.tenantId, { ...datos, fecha: fechaADate(fecha) ?? null });
+    return NextResponse.json(conFecha(note), { status: 201 });
 
   } catch (e) {
     logger.error("[post] error", { err: e instanceof Error ? e.message : String(e) });
@@ -75,9 +88,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
-    const updated = await NotesDB.updateForTenant(auth.tenantId, id, parsed.data);
+    const { fecha, ...cambios } = parsed.data;
+    const updated = await NotesDB.updateForTenant(auth.tenantId, id, { ...cambios, fecha: fechaADate(fecha) });
     if (!updated) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json(updated);
+    return NextResponse.json(conFecha(updated));
 
   } catch (e) {
     logger.error("[patch] error", { err: e instanceof Error ? e.message : String(e) });

@@ -33,7 +33,10 @@ async function main() {
   const res = await fetch(`${BASE}/api/auth/login`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-tenant-id": TENANT },
-    body: JSON.stringify({ username: USER, password: PASS }),
+    // `tenantSlug` es obligatorio para usuarios que existen en varias tiendas:
+    // sin él, el login responde el selector y NO devuelve la cookie de sesión
+    // (solo el csrf), y todo curl posterior sale 401.
+    body: JSON.stringify({ username: USER, password: PASS, tenantSlug: TENANT }),
   });
   if (!res.ok) {
     const txt = await res.text();
@@ -81,6 +84,10 @@ async function main() {
         `export BSM_TENANT='${TENANT}'`,
         `export BSM_BASE='${BASE}'`,
         `export BSM_CURL_FLAGS='${out.curlFlags}'`,
+        /* `curl $BSM_CURL_FLAGS` NO sirve tal cual: las comillas de adentro se
+           parten por palabra y el servidor responde 401 (03-10, una vuelta
+           perdida). La función arma los encabezados bien. */
+        `bsm_curl() { curl -s -H "Cookie: $BSM_COOKIE" -H "x-csrf-token: $BSM_CSRF" -H "x-tenant-id: $BSM_TENANT" "$@"; }`,
       ].join("\n"),
     );
   } catch {}
@@ -91,7 +98,7 @@ async function main() {
   console.log("");
   console.log("Para usar en bash:");
   console.log("  source /tmp/bsm-auth.env");
-  console.log('  curl $BSM_BASE/api/admin/X $BSM_CURL_FLAGS');
+  console.log('  bsm_curl "$BSM_BASE/api/admin/X"');
 }
 
 main().catch((err) => {

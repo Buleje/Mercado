@@ -30,16 +30,26 @@ export interface CacaoPrice {
   spark: number[]; // cierres recientes para sparkline (compat)
   series: PricePoint[]; // 1 año de cierres diarios para el gráfico de flujo
 }
-export interface CacaoNewsItem { title: string; source: string | null; link: string; pubDate: string | null }
+export interface CacaoNewsItem { title: string; source: string | null; link: string; pubDate: string | null; origen?: "pe" | "world" }
 export interface CacaoMarket {
   price: CacaoPrice | null;
   usdPen: number | null; // soles por dólar
+  fxSeries: PricePoint[]; // 1 año de cierres diarios USD/PEN → FX real por día en la tabla de conversión
+  intraday: PricePoint[]; // sesión de HOY en velas de 5 min → pulso intradía del noticiero
   pricePenPerKg: number | null; // referencia: S/ por kg seco (precio/1000 * fx)
   news: CacaoNewsItem[];
   generatedAt: string;
+  stale?: boolean; // true = el precio viene del último valor conocido (fuente caída)
+  staleAt?: string | null; // ISO de cuándo se obtuvo ese último precio
+  newsStale?: boolean; // true = las noticias vienen del último feed conocido
+  newsStaleAt?: string | null; // ISO de ese último feed
 }
 
 let cache: { at: number; data: CacaoMarket } | null = null;
+// Último precio conocido (para degradar con gracia si la fuente cae). In-memory:
+// se pierde en cold start serverless, pero cubre caídas transitorias de la fuente.
+let lastGood: { price: CacaoPrice; usdPen: number | null; fxSeries: PricePoint[]; intraday: PricePoint[]; pricePenPerKg: number | null; at: number } | null = null;
+let lastGoodNews: { news: CacaoNewsItem[]; at: number } | null = null;
 
 async function safeFetch(url: string, timeoutMs = 9000): Promise<Response | null> {
   try {
@@ -96,15 +106,45 @@ async function fetchCocoaPrice(): Promise<CacaoPrice | null> {
   }
 }
 
-async function fetchUsdPen(): Promise<number | null> {
-  const r = await safeFetch("https://query1.finance.yahoo.com/v8/finance/chart/PEN=X?interval=1d&range=1d");
-  if (!r) return null;
+async function fetchUsdPen(): Promise<{ current: number | null; series: PricePoint[] }> {
+  // range=1y → además del FX de hoy, la serie diaria para convertir cada día
+  // histórico con SU tipo de cambio (tabla de conversión), no con el de hoy.
+  const r = await safeFetch("https://query1.finance.yahoo.com/v8/finance/chart/PEN=X?interval=1d&range=1y");
+  if (!r) return { current: null, series: [] };
   try {
     const j = await r.json();
-    const p = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    return typeof p === "number" && p > 0 && p < 100 ? p : null;
+    const res = j?.chart?.result?.[0];
+    const p = res?.meta?.regularMarketPrice;
+    const ts: number[] = res?.timestamp ?? [];
+    const rawCloses: (number | null)[] = res?.indicators?.quote?.[0]?.close ?? [];
+    const series: PricePoint[] = [];
+    for (let i = 0; i < ts.length; i++) {
+      const c = rawCloses[i];
+      if (typeof c === "number" && c > 0 && c < 100) series.push({ t: ts[i] * 1000, c: Math.round(c * 10000) / 10000 });
+    }
+    return { current: typeof p === "number" && p > 0 && p < 100 ? p : null, series };
   } catch {
-    return null;
+    return { current: null, series: [] };
+  }
+}
+
+/** Sesión de HOY en velas de 5 min — el "pulso" intradía del precio ICE. */
+async function fetchIntraday(): Promise<PricePoint[]> {
+  const r = await safeFetch("https://query1.finance.yahoo.com/v8/finance/chart/CC=F?interval=5m&range=1d");
+  if (!r) return [];
+  try {
+    const j = await r.json();
+    const res = j?.chart?.result?.[0];
+    const ts: number[] = res?.timestamp ?? [];
+    const rawCloses: (number | null)[] = res?.indicators?.quote?.[0]?.close ?? [];
+    const series: PricePoint[] = [];
+    for (let i = 0; i < ts.length; i++) {
+      const c = rawCloses[i];
+      if (typeof c === "number" && c > 0) series.push({ t: ts[i] * 1000, c: Math.round(c * 100) / 100 });
+    }
+    return series;
+  } catch {
+    return [];
   }
 }
 
@@ -118,7 +158,7 @@ function decodeEntities(s: string): string {
     .trim();
 }
 
-function parseRss(xml: string, max: number): CacaoNewsItem[] {
+function parseRss(xml: string, max: number, origen: "pe" | "world"): CacaoNewsItem[] {
   const items: CacaoNewsItem[] = [];
   const blocks = xml.match(/<item>[\s\S]*?<\/item>/g) ?? [];
   for (const b of blocks.slice(0, max)) {
@@ -132,6 +172,7 @@ function parseRss(xml: string, max: number): CacaoNewsItem[] {
       link: decodeEntities(link),
       source: source ? decodeEntities(source) : null,
       pubDate: pub ? new Date(decodeEntities(pub)).toISOString() : null,
+      origen,
     });
   }
   return items;
@@ -143,11 +184,11 @@ async function fetchNews(): Promise<CacaoNewsItem[]> {
     safeFetch(q("cacao Perú precio OR exportación OR cosecha")),
     safeFetch(q("precio cacao mundial OR cocoa price market")),
   ]);
-  const local = a ? parseRss(await a.text(), 8) : [];
-  const global = b ? parseRss(await b.text(), 6) : [];
-  // dedupe por título y ordenar por fecha desc
+  const local = a ? parseRss(await a.text(), 8, "pe") : [];
+  const global = b ? parseRss(await b.text(), 6, "world") : [];
+  // dedupe por título; el origen "pe" (query local) tiene prioridad sobre "world".
   const seen = new Set<string>();
-  return [...local, ...global]
+  return [...local, ...global] // local primero → gana el origen "pe" en duplicados
     .filter((n) => { const k = n.title.toLowerCase().slice(0, 60); if (seen.has(k)) return false; seen.add(k); return true; })
     .sort((x, y) => (y.pubDate ?? "").localeCompare(x.pubDate ?? ""))
     .slice(0, 12);
@@ -155,10 +196,32 @@ async function fetchNews(): Promise<CacaoNewsItem[]> {
 
 export async function getCacaoMarket(force = false): Promise<CacaoMarket> {
   if (!force && cache && Date.now() - cache.at < TTL_MS) return cache.data;
-  const [price, usdPen, news] = await Promise.all([fetchCocoaPrice(), fetchUsdPen(), fetchNews()]);
+  const [price, fx, intraday, news] = await Promise.all([fetchCocoaPrice(), fetchUsdPen(), fetchIntraday(), fetchNews()]);
+  const usdPen = fx.current;
   const pricePenPerKg =
     price && usdPen ? Math.round((price.value / 1000) * usdPen * 100) / 100 : null;
-  const data: CacaoMarket = { price, usdPen, pricePenPerKg, news, generatedAt: new Date().toISOString() };
+  if (price) lastGood = { price, usdPen, fxSeries: fx.series, intraday, pricePenPerKg, at: Date.now() };
+  // Noticias: si el feed vuelve vacío (fuente caída) y hay último conocido, usarlo.
+  if (news.length > 0) lastGoodNews = { news, at: Date.now() };
+  const newsStale = news.length === 0 && !!lastGoodNews;
+  const effNews = newsStale ? lastGoodNews!.news : news;
+  const newsStaleAt = newsStale ? new Date(lastGoodNews!.at).toISOString() : null;
+  // Precio: fuente caída (price=null) pero hay último conocido → degradar con gracia.
+  const priceStale = !price && !!lastGood;
+  const src = priceStale ? lastGood! : null;
+  const data: CacaoMarket = {
+    price: src ? src.price : price,
+    usdPen: src ? src.usdPen : usdPen,
+    fxSeries: src ? src.fxSeries : fx.series,
+    intraday: src ? src.intraday : intraday,
+    pricePenPerKg: src ? src.pricePenPerKg : pricePenPerKg,
+    news: effNews,
+    generatedAt: new Date().toISOString(),
+    stale: priceStale,
+    staleAt: priceStale ? new Date(lastGood!.at).toISOString() : null,
+    newsStale,
+    newsStaleAt,
+  };
   cache = { at: Date.now(), data };
   return data;
 }

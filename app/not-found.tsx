@@ -6,6 +6,12 @@ import { categories } from "@/data/products";
 import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
 import { buildTenantTitle } from "@/lib/store-metadata";
 
+// El título depende de headers() (tenant por subdominio/slug) — esta ruta
+// nunca puede tener shell estático. `unstable_instant: false` se lo dice a
+// Next 16 explícitamente (Cache Components) en vez de dejar que lo infiera y
+// lo reporte como "Uncached data accessed inside generateMetadata".
+export const unstable_instant = false;
+
 // `title.absolute` evita el doble "Buleje" en tiendas individuales y mantiene
 // el sufijo del marketplace en resto del sitio.
 export async function generateMetadata(): Promise<Metadata> {

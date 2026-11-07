@@ -1,0 +1,301 @@
+{
+ "_fuente": "Planetary Computer, respuestas reales del 29-09-2026 sobre el predio de Blas (lat -9.79, lng -74.80). stac = POST /api/stac/v1/search (6 de 9 escenas de setiembre); scl = POST /api/data/v1/item/statistics?assets=SCL&categorical=true de la escena del 23-09. esri = GET World_Imagery/MapServer/12/query en el mismo punto.",
+ "stac": {
+  "type": "FeatureCollection",
+  "links": [
+   {
+    "rel": "root",
+    "type": "application/json",
+    "href": "https://planetarycomputer.microsoft.com/api/stac/v1/"
+   },
+   {
+    "rel": "self",
+    "type": "application/json",
+    "href": "https://planetarycomputer.microsoft.com/api/stac/v1/search?collections=sentinel-2-l2a"
+   }
+  ],
+  "features": [
+   {
+    "id": "S2B_MSIL2A_20260926T151719_R125_T18LWQ_20260926T203223",
+    "bbox": [
+     -75.0001825,
+     -10.0393213,
+     -73.999607,
+     -9.0448399
+    ],
+    "properties": {
+     "eo:cloud_cover": 88.437289,
+     "datetime": "2026-09-26T15:17:19.024000Z"
+    }
+   },
+   {
+    "id": "S2A_MSIL2A_20260923T151931_R125_T18LWQ_20260923T231509",
+    "bbox": [
+     -75.0001825,
+     -10.0393213,
+     -73.9996141,
+     -9.0448399
+    ],
+    "properties": {
+     "eo:cloud_cover": 16.029142,
+     "datetime": "2026-09-23T15:19:31.024000Z"
+    }
+   },
+   {
+    "id": "S2C_MSIL2A_20260921T151721_R125_T18LWQ_20260921T200217",
+    "bbox": [
+     -75.0001825,
+     -10.0393213,
+     -73.9996762,
+     -9.0448399
+    ],
+    "properties": {
+     "eo:cloud_cover": 19.53429,
+     "datetime": "2026-09-21T15:17:21.025000Z"
+    }
+   },
+   {
+    "id": "S2B_MSIL2A_20260916T151719_R125_T18LWQ_20260916T202410",
+    "bbox": [
+     -75.0001825,
+     -10.0393213,
+     -73.9995704,
+     -9.0448399
+    ],
+    "properties": {
+     "eo:cloud_cover": 29.457766,
+     "datetime": "2026-09-16T15:17:19.024000Z"
+    }
+   },
+   {
+    "id": "S2A_MSIL2A_20260913T151731_R125_T18LWQ_20260914T003409",
+    "bbox": [
+     -75.0001825,
+     -10.0393213,
+     -73.9995468,
+     -9.0448399
+    ],
+    "properties": {
+     "eo:cloud_cover": 54.706812,
+     "datetime": "2026-09-13T15:17:31.024000Z"
+    }
+   },
+   {
+    "id": "S2C_MSIL2A_20260911T151721_R125_T18LWQ_20260911T211913",
+    "bbox": [
+     -75.0001825,
+     -10.0393213,
+     -73.9995967,
+     -9.0448399
+    ],
+    "properties": {
+     "eo:cloud_cover": 9.636952,
+     "datetime": "2026-09-11T15:17:21.024000Z"
+    }
+   }
+  ],
+  "numberReturned": 6
+ },
+ "scl": {
+  "type": "Feature",
+  "geometry": {
+   "type": "Polygon",
+   "coordinates": [
+    [
+     [
+      -74.82,
+      -9.81
+     ],
+     [
+      -74.78,
+      -9.81
+     ],
+     [
+      -74.78,
+      -9.77
+     ],
+     [
+      -74.82,
+      -9.77
+     ],
+     [
+      -74.82,
+      -9.81
+     ]
+    ]
+   ]
+  },
+  "properties": {
+   "statistics": {
+    "SCL_b1": {
+     "min": 2.0,
+     "max": 9.0,
+     "mean": 4.818107700460642,
+     "count": 49062.0,
+     "sum": 236386.0,
+     "std": 1.8743650460709926,
+     "median": 4.0,
+     "majority": 4.0,
+     "minority": 2.0,
+     "unique": 7.0,
+     "histogram": [
+      [
+       54.0,
+       5798.0,
+       32032.0,
+       660.0,
+       217.0,
+       6772.0,
+       3529.0
+      ],
+      [
+       2.0,
+       3.0,
+       4.0,
+       5.0,
+       7.0,
+       8.0,
+       9.0
+      ]
+     ],
+     "valid_percent": 100.0,
+     "masked_pixels": 0.0,
+     "valid_pixels": 49062.0,
+     "percentile_2": 3.0,
+     "percentile_98": 9.0
+    }
+   }
+  }
+ },
+ "esri": {
+  "displayFieldName": "NICE_NAME",
+  "fieldAliases": {
+   "OBJECTID": "OBJECTID",
+   "SRC_DATE": "SRC_DATE",
+   "SRC_RES": "SRC_RES",
+   "SRC_ACC": "SRC_ACC",
+   "SAMP_RES": "SAMP_RES",
+   "SRC_DESC": "SRC_DESC",
+   "MinMapLevel": "MinMapLevel",
+   "MaxMapLevel": "MaxMapLevel",
+   "NICE_NAME": "NICE_NAME",
+   "DrawOrder": "DrawOrder",
+   "SRC_DATE2": "SRC_DATE2",
+   "NICE_DESC": "NICE_DESC",
+   "Shape_Length": "Shape_Length",
+   "Shape_Area": "Shape_Area",
+   "BlockName": "BlockName",
+   "ReleaseName": "ReleaseName"
+  },
+  "fields": [
+   {
+    "name": "OBJECTID",
+    "type": "esriFieldTypeOID",
+    "alias": "OBJECTID"
+   },
+   {
+    "name": "SRC_DATE",
+    "type": "esriFieldTypeInteger",
+    "alias": "SRC_DATE"
+   },
+   {
+    "name": "SRC_RES",
+    "type": "esriFieldTypeDouble",
+    "alias": "SRC_RES"
+   },
+   {
+    "name": "SRC_ACC",
+    "type": "esriFieldTypeDouble",
+    "alias": "SRC_ACC"
+   },
+   {
+    "name": "SAMP_RES",
+    "type": "esriFieldTypeDouble",
+    "alias": "SAMP_RES"
+   },
+   {
+    "name": "SRC_DESC",
+    "type": "esriFieldTypeString",
+    "alias": "SRC_DESC",
+    "length": 25
+   },
+   {
+    "name": "MinMapLevel",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "MinMapLevel"
+   },
+   {
+    "name": "MaxMapLevel",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "MaxMapLevel"
+   },
+   {
+    "name": "NICE_NAME",
+    "type": "esriFieldTypeString",
+    "alias": "NICE_NAME",
+    "length": 50
+   },
+   {
+    "name": "DrawOrder",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "DrawOrder"
+   },
+   {
+    "name": "SRC_DATE2",
+    "type": "esriFieldTypeDate",
+    "alias": "SRC_DATE2",
+    "length": 8
+   },
+   {
+    "name": "NICE_DESC",
+    "type": "esriFieldTypeString",
+    "alias": "NICE_DESC",
+    "length": 25
+   },
+   {
+    "name": "Shape_Length",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape_Length"
+   },
+   {
+    "name": "Shape_Area",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape_Area"
+   },
+   {
+    "name": "BlockName",
+    "type": "esriFieldTypeString",
+    "alias": "BlockName",
+    "length": 100
+   },
+   {
+    "name": "ReleaseName",
+    "type": "esriFieldTypeString",
+    "alias": "ReleaseName",
+    "length": 30
+   }
+  ],
+  "features": [
+   {
+    "attributes": {
+     "OBJECTID": 6101229,
+     "SRC_DATE": 20220618,
+     "SRC_RES": 0.5,
+     "SRC_ACC": 5,
+     "SAMP_RES": 1.2,
+     "SRC_DESC": "WV02",
+     "MinMapLevel": 12,
+     "MaxMapLevel": 17,
+     "NICE_NAME": "Vivid",
+     "DrawOrder": 80,
+     "SRC_DATE2": 1655510400000,
+     "NICE_DESC": "Vantor",
+     "Shape_Length": 127739.61807210185,
+     "Shape_Area": 673125967,
+     "BlockName": "Vivid_Standard_PE04_25Q4",
+     "ReleaseName": "Raster Basemaps 2026.R05"
+    }
+   }
+  ]
+ }
+}

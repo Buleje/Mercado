@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PrestamosDB } from "@/lib/db/prestamos.db";
 import { requireAdmin } from "@/lib/require-admin";
+import { ROLES_PRESTAMOS } from "@/lib/prestamos/roles";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -30,7 +31,7 @@ const CreatePrestamoSchema = z.object({
 
 // GET /api/prestamos — list prestamos with advanced filters
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_PRESTAMOS);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "prestamos"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_PRESTAMOS);
   if (auth instanceof NextResponse) return auth;
 
   try {

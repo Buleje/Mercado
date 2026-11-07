@@ -35,7 +35,7 @@ export default function FreeShippingProgress({ className }: { className?: string
       aria-live="polite"
       aria-label={
         unlocked
-          ? "Tenés delivery gratis en tu pedido"
+          ? "Tienes delivery gratis en tu pedido"
           : `Te faltan ${fmt(remaining)} para delivery gratis`
       }
       className={cn(
@@ -69,7 +69,7 @@ export default function FreeShippingProgress({ className }: { className?: string
             )}
           >
             {unlocked ? (
-              "¡Tenés delivery gratis!"
+              "¡Tienes delivery gratis!"
             ) : (
               <>
                 Te faltan{" "}

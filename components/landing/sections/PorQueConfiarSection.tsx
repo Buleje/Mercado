@@ -97,7 +97,7 @@ export default function PorQueConfiarSection() {
               >
                 <span
                   aria-hidden
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4 transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4 transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
                 >
                   <p.icon className="h-6 w-6" strokeWidth={1.75} />
                 </span>

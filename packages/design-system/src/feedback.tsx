@@ -24,6 +24,7 @@ import {
   Loader2,
   type LucideIcon,
 } from "./icons";
+import { CargaPagina } from "./carga-pagina";
 import { AdminCenter } from "./layout";
 import { CardTitle, BodyText, Caption } from "./typography";
 import { cn } from "./utils";
@@ -208,7 +209,8 @@ const SPINNER_SIZE: Record<NonNullable<LoadingStateProps["size"]>, string> = {
  * - `block` — cuadro centrado en layout admin estándar.
  * - `overlay` — absolute inset-0 con backdrop sutil para cubrir contenido que está refetcheando.
  * - `inline` — solo el `<Loader2>` (sin wrapper) para reemplazar spinners inline en botones.
- * - `fullscreen` — pantalla completa para bootstrap / loading de dynamic imports.
+ * - `fullscreen` — pantalla completa para bootstrap / loading de dynamic imports
+ *   (= `CargaPagina`: número 1→100, sin texto a la vista).
  */
 export function LoadingState({
   message = "Cargando...",
@@ -248,25 +250,14 @@ export function LoadingState({
     );
   }
 
+  // Pantalla completa = el cargador de página (número 1→100, sin texto a la
+  // vista; Brandon 2026-10-17). El mensaje queda para lectores de pantalla.
   if (variant === "fullscreen") {
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className={cn(
-          "min-h-screen flex flex-col items-center justify-center gap-3",
-          "bg-[var(--surface-canvas)]",
-          className,
-        )}
-      >
-        <Loader2
-          className={cn("animate-spin text-[var(--text-secondary)]", SPINNER_SIZE[size])}
-          aria-hidden
-        />
-        {message !== undefined && (
-          <Caption className="text-[var(--text-secondary)]">{message}</Caption>
-        )}
-      </div>
+      <CargaPagina
+        etiqueta={typeof message === "string" && message ? message : "Cargando"}
+        className={className}
+      />
     );
   }
 

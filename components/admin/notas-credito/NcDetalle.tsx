@@ -1,0 +1,163 @@
+"use client";
+
+import { CardTitle } from "@buleje/design-system";
+import { m, AnimatePresence } from "@/components/admin/providers";
+import { formatCurrency, formatDateTime } from "@/lib/format";
+import { X, Copy, Trash2, Send, History, MessageCircle, FileDown, Activity, Users, FileText, Link2, AlertTriangle } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { cn } from "@/lib/utils";
+import { STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
+import { button } from "@/components/ui-system/button-variants";
+import { StatusTimeline } from "@/components/admin/notas-credito/NcPiezas";
+import NcHistorialDocumento from "@/components/admin/notas-credito/NcHistorialDocumento";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import type { NotasCreditoVista } from "@/components/admin/notas-credito/hooks/use-notas-credito";
+
+/** Panel lateral con el detalle de una nota. Pieza de NotasCreditoModule: recibe `useNotasCredito` entero. */
+export default function NcDetalle({ nc }: { nc: NotasCreditoVista }) {
+  const {
+    selected, setSelected, detailTitleId, detailPanelRef, handleDuplicate, handleEmitSunat,
+    handleAnular, exportPDF, sendWhatsApp, kpis, impactoVentas, clienteHistorial,
+  } = nc;
+  return (
+    <>
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* ── Detail Side Panel ─────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {selected && (
+          <>
+            <m.div key="nc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
+            <m.div key="nc-panel" ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto">
+              <div className="p-4 sm:p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle id={detailTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
+                      NC {selected.numero}
+                    </CardTitle>
+                    <p className="text-sm text-[var(--text-tertiary)]">Creada {formatDateTime(selected.createdAt)}</p>
+                  </div>
+                  <button aria-label="Cerrar" onClick={() => setSelected(null)} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* F16: el estado de la nota en tu negocio y su estado ante SUNAT, por separado. */}
+                  <span className={cn("px-3 py-1.5 rounded-xl text-sm font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
+                    En tu negocio: {STATUS_META[selected.status].label.toLowerCase()}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                    Ante SUNAT: sin enviar
+                    <InfoTip title="Estado ante SUNAT" what="Esta pantalla no envía notas a SUNAT: «Marcar emitida» la deja emitida en tus registros y en el libro de ventas."
+                      affects="Hoy la nota vive en tus registros: el envío a SUNAT no sale de esta pantalla." example="Borrador → marcada emitida (resta en el libro) · ante SUNAT sigue sin enviar." />
+                  </span>
+                  {selected.orderNumero && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                      <Link2 className="h-4 w-4" aria-hidden /> Vinculada a {selected.orderNumero}
+                    </span>
+                  )}
+                  <div className="flex-1" />
+                  {selected.status === "BORRADOR" && (
+                    <button type="button" onClick={() => handleEmitSunat(selected)} title="Queda emitida en tus registros; no se envía a SUNAT desde aquí" className={button({ variant: "primary", className: "rounded-xl" })}>
+                      <Send className="h-4 w-4" aria-hidden />Marcar emitida
+                    </button>
+                  )}
+                  <ActionMenu
+                    label="Más acciones"
+                    size="md"
+                    actions={[
+                      { id: "whatsapp", label: "Enviar por WhatsApp", icon: MessageCircle, onSelect: () => sendWhatsApp(selected) },
+                      { id: "pdf", label: "Descargar PDF", icon: FileDown, onSelect: () => exportPDF(selected) },
+                      { id: "duplicar", label: "Duplicar", icon: Copy, onSelect: () => handleDuplicate(selected) },
+                      ...(selected.status !== "ANULADA" ? [{ id: "anular", label: "Anular", icon: Trash2, tone: "danger" as const, onSelect: () => handleAnular(selected) }] : []),
+                    ]}
+                  />
+                </div>
+
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-3">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">[{selected.motivoCodigo}] {selected.motivoDesc}</p>
+                  {selected.clienteNombre && (
+                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                      <span>Cliente: <strong className="text-[var(--text-primary)]">{selected.clienteNombre}</strong></span>
+                      {selected.clienteDocumento && <span className="text-[var(--text-tertiary)]">({selected.clienteDocumento})</span>}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[var(--rule-base)]">
+                    <div><p className="text-sm uppercase font-bold text-[var(--text-tertiary)]">Monto</p><p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.monto)}</p></div>
+                    <div><p className="text-sm uppercase font-bold text-[var(--text-tertiary)]">IGV</p><p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.igv)}</p></div>
+                    <div><p className="text-sm uppercase font-bold text-[var(--text-tertiary)]">Total</p><p className="text-sm font-bold text-[var(--data-error-500)]">{formatCurrency(selected.total)}</p></div>
+                  </div>
+                </div>
+
+                {selected.items && selected.items.length > 0 && (
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
+                    <p className="text-sm font-bold text-[var(--text-primary)] mb-2">Items</p>
+                    <div className="space-y-1.5">
+                      {selected.items.map((it, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm">
+                          <span className="text-[var(--text-secondary)]">{it.nombre} x{it.cantidad}</span>
+                          <span className="font-bold text-[var(--text-primary)]">{formatCurrency(it.cantidad * it.precio)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <NcHistorialDocumento nota={selected} />
+
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
+                  <p className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-1.5">
+                    <History className="h-3.5 w-3.5" />Historial
+                  </p>
+                  <StatusTimeline nc={selected} />
+                </div>
+
+                {selected.notas && (
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
+                    <p className="text-sm font-bold text-[var(--text-primary)] mb-1">Notas</p>
+                    <p className="text-sm text-[var(--text-secondary)]">{selected.notas}</p>
+                  </div>
+                )}
+
+                {/* ── Impacto en ventas ───────────────────────────────── */}
+                {impactoVentas !== null && (
+                  <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-4">
+                    <p className="text-sm font-bold text-[var(--data-warning-500)] mb-1 flex items-center gap-1.5">
+                      <Activity className="h-3.5 w-3.5" />Impacto en devoluciones del mes
+                    </p>
+                    <p className="text-sm text-[var(--data-warning-500)]">
+                      Esta NC representa el <strong>{impactoVentas.toFixed(1)}%</strong> del total devuelto este mes (<strong>{formatCurrency(kpis.total)}</strong>)
+                    </p>
+                    <div className="mt-2 h-2 bg-[var(--data-warning-100)] rounded-full overflow-hidden">
+                      <m.div className="h-full bg-[var(--data-warning-500)] rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.min(100, impactoVentas)}%` }} transition={{ duration: 0.6 }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Historial del cliente ───────────────────────────── */}
+                {selected.clienteNombre && (
+                  <div className="bg-[var(--surface-sunken)] rounded-xl p-4">
+                    <p className="text-sm font-bold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5" />Historial de {selected.clienteNombre}
+                    </p>
+                    {clienteHistorial === 0 ? (
+                      <p className="text-sm text-[var(--text-tertiary)]">Primera nota de crédito de este cliente</p>
+                    ) : (
+                      <p className="text-sm text-[var(--text-secondary)]">
+                        Este cliente tiene <strong className="text-[var(--text-primary)]">{clienteHistorial}</strong> nota{clienteHistorial !== 1 ? "s" : ""} de crédito anteriore{clienteHistorial !== 1 ? "s" : ""}
+                        {clienteHistorial >= 3 && <span className="ml-1 inline-flex items-center gap-1 text-[var(--data-warning-500)] font-semibold"><AlertTriangle className="h-4 w-4" aria-hidden /> Cliente con múltiples devoluciones</span>}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </m.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

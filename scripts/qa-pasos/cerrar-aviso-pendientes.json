@@ -1,0 +1,3 @@
+[
+ {"eval": "(()=>{const f=()=>{const d=[...document.querySelectorAll('[role=dialog]')].find(x=>/Pendientes y avisos/.test(x.textContent||'')); const b=d&&[...d.querySelectorAll('button')].find(b=>(b.textContent||'').trim()==='Entendido'); if(b) b.click();}; new MutationObserver(f).observe(document.body,{childList:true,subtree:true}); f(); return 'vigilando el aviso de Pendientes'})()"}
+]

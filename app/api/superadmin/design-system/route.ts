@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
+import { DesignSystemActivoDB } from "@/lib/db/design-system-activo.db";
 import { logger } from "@/lib/logger";
 import {
   DESIGN_PRESETS,
@@ -212,6 +213,7 @@ export async function PUT(req: NextRequest) {
         slug: tokens.meta.slug,
         by: session.username,
       });
+      DesignSystemActivoDB.olvidar(); // /api/design-system/active cachea 60 s
       return NextResponse.json({
         ok: true,
         active: tokens.meta.slug,
@@ -271,6 +273,7 @@ export async function PUT(req: NextRequest) {
       by: session.username,
       kind: isOficial ? "oficial" : "custom-saved",
     });
+    DesignSystemActivoDB.olvidar(); // /api/design-system/active cachea 60 s
     return NextResponse.json({ ok: true, active: slug, mode: "slug" });
   } catch (err) {
     logger.error("[design-system] activate failed", { error: String(err) });
@@ -324,7 +327,7 @@ export async function POST(req: NextRequest) {
     const tokens = parsed.data.tokens as DesignTokens;
     if (getPresetBySlug(tokens.meta.slug)) {
       return NextResponse.json(
-        { error: `Slug '${tokens.meta.slug}' colisiona con un preset oficial. Cambiá el nombre.` },
+        { error: `Slug '${tokens.meta.slug}' colisiona con un preset oficial. Cambia el nombre.` },
         { status: 409 },
       );
     }
@@ -343,6 +346,7 @@ export async function POST(req: NextRequest) {
         WHERE id = 'singleton'
       `;
       logger.info("[design-system] saved preset", { slug: tokens.meta.slug });
+      DesignSystemActivoDB.olvidar(); // /api/design-system/active cachea 60 s
       return NextResponse.json({ ok: true, savedPresets: saved });
     } catch (err) {
       logger.error("[design-system] save-preset failed", { error: String(err) });
@@ -382,6 +386,7 @@ export async function POST(req: NextRequest) {
         `;
       }
       logger.info("[design-system] deleted saved preset", { slug });
+      DesignSystemActivoDB.olvidar(); // /api/design-system/active cachea 60 s
       return NextResponse.json({ ok: true, savedPresets: saved });
     } catch (err) {
       logger.error("[design-system] delete-saved failed", { error: String(err) });
@@ -414,6 +419,7 @@ export async function POST(req: NextRequest) {
           "updatedAt"  = NOW()
     `;
     logger.info("[design-system] tenant override saved", { tenantId, presetSlug });
+    DesignSystemActivoDB.olvidar(); // /api/design-system/active cachea 60 s
     return NextResponse.json({ ok: true, tenantId, presetSlug });
   } catch (err) {
     logger.error("[design-system] tenant-override failed", { error: String(err) });
@@ -440,6 +446,7 @@ export async function DELETE(req: NextRequest) {
 
   try {
     await prisma.$executeRaw`DELETE FROM "DesignPresetCustom" WHERE "tenantId" = ${tenantId}`;
+    DesignSystemActivoDB.olvidar(); // /api/design-system/active cachea 60 s
     return NextResponse.json({ ok: true, tenantId });
   } catch (err) {
     logger.error("[design-system] delete override failed", { error: String(err) });

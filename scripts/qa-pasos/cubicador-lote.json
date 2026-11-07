@@ -1,0 +1,5 @@
+[
+  {"esperar": 2500},
+  {"eval": "(()=>{const P=(id,c,e,a,l,esp)=>({id,cantidad:c,espesor:e,ancho:a,largo:l,uEspesor:'pulg',uAncho:'pulg',uLargo:'pies',especie:esp,pieTablar:e*a*l*c/12,m3:e*a*l*c/12/424});localStorage.setItem('buleje-cubicacion-main',JSON.stringify([P('t1',40,2,8,10,'Tornillo'),P('c1',30,2,6,10,'Cumala'),P('t2',20,2,4,10,'Tornillo')]));const B=(id,esp,m3,perm)=>({id,etiqueta:'GTF '+id,especie:esp,m3,origen:'manual',tipo:'rolliza',costoM3:null,aprovechablePct:null,permiso:perm});localStorage.setItem('buleje-cubicacion-main-rolliza',JSON.stringify([B('b1','Tornillo',4,'CON-25-UCA-0142'),B('b2','Cumala',1,'CON-25-UCA-0207')]));localStorage.setItem('buleje-cubicacion-main-vista-resumen','rolliza');location.reload();return 'lote sembrado: 90 pzas, 2 bloques (Tornillo 4 m³, Cumala 1 m³): faltan 7 pzas de Cumala (0.165 m³)'})()"},
+  {"esperar": 6500}
+]

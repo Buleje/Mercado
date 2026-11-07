@@ -93,7 +93,7 @@ describe("FiadosDB — resumenByCustomer (P1-4)", () => {
     });
   });
 
-  it("incluye tenantId + customerId + status=ACTIVO en aggregate y findFirst", async () => {
+  it("incluye tenantId + customerId + status ACTIVO o VENCIDO en aggregate y findFirst", async () => {
     const { prisma } = await import("@/lib/prisma");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (prisma.fiado.aggregate as any).mockResolvedValue({ _sum: { saldo: 150.5 }, _count: 2 });
@@ -108,11 +108,11 @@ describe("FiadosDB — resumenByCustomer (P1-4)", () => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((prisma.fiado.aggregate as any).mock.calls[0][0]).toMatchObject({
-      where: { tenantId: "tenant-a", customerId: "999111111", status: "ACTIVO" },
+      where: { tenantId: "tenant-a", customerId: "999111111", status: { in: ["ACTIVO", "VENCIDO"] } },
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((prisma.fiado.findFirst as any).mock.calls[0][0]).toMatchObject({
-      where: { tenantId: "tenant-a", customerId: "999111111", status: "ACTIVO" },
+      where: { tenantId: "tenant-a", customerId: "999111111", status: { in: ["ACTIVO", "VENCIDO"] } },
     });
   });
 

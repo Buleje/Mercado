@@ -8,6 +8,7 @@ import {
 import type { CheckoutDispatch } from "./useCheckoutState";
 import type { CheckoutState } from "../types";
 import type { UsePhoneSearchResult } from "./usePhoneSearch";
+import { enlaceMapa } from "../parts/ubicacion-en-notas";
 
 /**
  * useCheckoutHandlers — agrupa los handlers de navegación y validación
@@ -28,6 +29,8 @@ type Args = {
   fetchLoyaltyPoints: (phone: string) => Promise<void>;
   fetchReferenceSuggestion: (lat: number, lon: number) => Promise<void>;
   submit: () => Promise<void>;
+  /** `pedidosCliente.pedirUbicacion`: el punto del mapa también va como enlace al negocio. */
+  compartirUbicacion?: boolean;
 };
 
 export function useCheckoutHandlers({
@@ -42,6 +45,7 @@ export function useCheckoutHandlers({
   fetchLoyaltyPoints,
   fetchReferenceSuggestion,
   submit,
+  compartirUbicacion = false,
 }: Args) {
   const handlePhoneSearchSubmit = useCallback(async () => {
     const found = await phoneSearch.search();
@@ -143,11 +147,17 @@ export function useCheckoutHandlers({
     (lat: number, lon: number, addr: string) => {
       dispatch({
         type: "SET_ADDRESS",
-        patch: { mapLat: lat, mapLon: lon, location: addr },
+        patch: {
+          mapLat: lat,
+          mapLon: lon,
+          location: addr,
+          // El punto que el cliente confirmó o ajustó en el mapa es el que va al negocio.
+          ...(compartirUbicacion && { ubicacionEnVivo: enlaceMapa(lat, lon) }),
+        },
       });
       fetchReferenceSuggestion(lat, lon);
     },
-    [dispatch, fetchReferenceSuggestion]
+    [dispatch, fetchReferenceSuggestion, compartirUbicacion]
   );
 
   const handleDataSubmit = useCallback(
@@ -204,6 +214,8 @@ export function useCheckoutHandlers({
 
       if (
         !effectiveLoc.includes("GPS:") &&
+        // Ya compartió su ubicación en vivo (va en las notas): no hace falta el tip.
+        !state.address.ubicacionEnVivo &&
         !state.ui.geoSuggested &&
         typeof navigator !== "undefined" &&
         navigator.geolocation
@@ -226,6 +238,7 @@ export function useCheckoutHandlers({
 
   const canConfirm =
     state.payment.method === "efectivo" ||
+    state.payment.method === "fiado" ||
     (state.payment.method === "yape" &&
       /^\d{6,20}$/.test(state.payment.yapeOpNumber.trim()));
 

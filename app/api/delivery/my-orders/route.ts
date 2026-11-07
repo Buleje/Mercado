@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { limaDayRange } from "@/lib/utils";
 
 /**
  * GET /api/delivery/my-orders
@@ -19,12 +20,9 @@ export async function GET(req: NextRequest) {
     const statusFilter = searchParams.get("status"); // null = todos
     const dateParam = searchParams.get("date"); // YYYY-MM-DD
 
-    // Fecha base: hoy si no se provee
-    const targetDate = dateParam ? new Date(dateParam) : new Date();
-    const from = new Date(targetDate);
-    from.setHours(0, 0, 0, 0);
-    const to = new Date(targetDate);
-    to.setHours(23, 59, 59, 999);
+    // Fecha base: hoy si no se provee. Día de LIMA (el servidor corre en UTC).
+    const { start: from, end } = limaDayRange(dateParam ?? new Date());
+    const to = new Date(end.getTime() - 1);
 
     // Construir filtro por partnerId.
     // El repartidor se identifica por username en la sesión — buscamos el partner

@@ -1,0 +1,213 @@
+"use client";
+
+import { Fragment, useMemo } from "react";
+import { DollarSign, History, Link2, MoreHorizontal, ScrollText, Trash2 } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { cn, limaDateKey } from "@/lib/utils";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
+import { codigoDeOrden, descripcionALaVista } from "@/lib/compras/referencia-documento";
+import PagarCuentaForm, { METODOS } from "./PagarCuentaForm";
+import { diaDeVencimiento, estaPagada, fechaConDia, saldo, vencimiento, type CuentaPorPagar, type TonoVence } from "./resumen-cuentas";
+import type { MetodoPago, PagoCuenta, ResultadoPago } from "./use-cuentas-por-pagar";
+import { DataTable } from "@buleje/design-system";
+import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro } from "@/components/admin/forestal/filtros-tabla-forestal";
+import type { PresetsFiltros } from "@/components/admin/shared/vistas-de-filtros";
+import { ThColumna } from "@/components/admin/shared/th-columna";
+import { useOrdenColumna, type AccesorOrden } from "@/components/admin/shared/use-orden-columna";
+
+export const CHIP_VENCE: Record<TonoVence, string> = {
+  vencida: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]",
+  pronto: "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]",
+  "al-dia": "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+  pagada: "bg-primary/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+};
+
+/** Filtros de columna (como Adelantos › Lista): la lista llega entera, no se pagina en el servidor. */
+const COLUMNAS: readonly ColumnaFiltro<CuentaPorPagar>[] = [
+  { id: "proveedor", label: "Proveedor", tipo: "texto", valor: (c) => [c.supplierName, descripcionALaVista(c.description, c.purchaseOrderId)] },
+  { id: "falta", label: "Te falta pagar", tipo: "rango", numero: (c) => saldo(c), unidad: "S/", paso: 0.01 },
+  { id: "vence", label: "Vence", tipo: "fecha", numero: (c) => diaDeVencimiento(c.dueDate) || null },
+];
+
+const ORDEN: Record<string, AccesorOrden<CuentaPorPagar>> = {
+  proveedor: { valor: (c) => c.supplierName, texto: true },
+  falta: { valor: (c) => saldo(c) },
+  vence: { valor: (c) => diaDeVencimiento(c.dueDate) || null },
+};
+
+export type Abierto = { id: string; que: "pagar" | "pagos" } | null;
+
+/**
+ * Una fila por cuenta: quién te cobra, cuánto falta, cuándo vence y «Pagar».
+ * El resto (pagos hechos, estado de cuenta, vincular a su orden, eliminar) va
+ * en el menú de la fila. Debajo de la fila
+ * se abre el pago o el historial. A 400 px la tabla pasa a tarjetas sola
+ * (`useMobileTableCards` del panel).
+ */
+export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving, onPagar, onEliminar, onAviso, onEstadoDeCuenta, onVincular }: {
+  cuentas: CuentaPorPagar[];
+  hoy: string;
+  abierto: Abierto;
+  setAbierto: (a: Abierto) => void;
+  saving: boolean;
+  onPagar: (id: string, p: PagoCuenta) => Promise<ResultadoPago>;
+  onEliminar: (id: string) => void;
+  onAviso: (texto: string, tono: "ok" | "aviso") => void;
+  onEstadoDeCuenta: (supplierId: string) => void;
+  onVincular: (c: CuentaPorPagar) => void;
+}) {
+  /* Vistas de fábrica (25-10): un clic a lo que se mira primero. */
+  const presets = useMemo<PresetsFiltros>(() => {
+    const hoy = limaDateKey();
+    const ayer = limaDateKey(Date.now() - 86_400_000);
+    const en7 = limaDateKey(Date.now() + 7 * 86_400_000);
+    return [
+      { id: "vencidas", nombre: "Vencidas", ayuda: "Pasó su día y aún falta pagar", estado: { facetas: { vence: { min: null, max: ayer }, falta: { min: 0.01, max: null } }, textos: {} } },
+      { id: "esta-semana", nombre: "Vencen esta semana", ayuda: "De hoy a 7 días", estado: { facetas: { vence: { min: hoy, max: en7 }, falta: { min: 0.01, max: null } }, textos: {} } },
+    ];
+  }, []);
+  const f = useFiltrosTabla(cuentas, COLUMNAS);
+  const ord = useOrdenColumna(ORDEN);
+  const filas = ord.ordenar(f.filtradas);
+  return (
+    <>
+    <BarraFiltrosTabla excel="Lo que debo" vistas="por-pagar" presets={presets} f={f} />
+    <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <DataTable wrapperClassName="overflow-visible rounded-none border-0" className="w-full">
+        <thead>
+          <tr>
+            <ThColumna label="Proveedor" ids={["proveedor"]} f={f} orden={ord} ordenId="proveedor" />
+            <ThColumna label="Te falta pagar" ids={["falta"]} f={f} derecha orden={ord} ordenId="falta" />
+            <ThColumna label="Vence" ids={["vence"]} f={f} orden={ord} ordenId="vence" />
+            <th className="text-right" data-label="Acciones"><span className="sr-only">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[var(--rule-soft)]">
+          {filas.length === 0 && <SinCoincidenciasFila colSpan={4} />}
+          {filas.map((c) => {
+            const falta = saldo(c);
+            const v = vencimiento(c, hoy);
+            const pagada = estaPagada(c);
+            const pct = c.amount > 0 ? Math.min(100, (c.paidAmount / c.amount) * 100) : 0;
+            const acciones: MenuAccion[] = [
+              { id: "pagos", label: `Pagos hechos (${c.payments.length})`, icon: History, onSelect: () => setAbierto(abierto?.id === c.id && abierto.que === "pagos" ? null : { id: c.id, que: "pagos" }) },
+              { id: "estado", label: "Estado de cuenta del proveedor", icon: ScrollText, onSelect: () => onEstadoDeCuenta(c.supplierId) },
+              ...(c.purchaseOrderId ? [] : [{ id: "vincular", label: "Vincular a su orden", hint: "La orden de compra de esta deuda", icon: Link2, onSelect: () => onVincular(c) }]),
+              { id: "eliminar", label: "Eliminar la cuenta", icon: Trash2, tone: "danger", onSelect: () => onEliminar(c.id) },
+            ];
+            return (
+              <Fragment key={c.id}>
+                <tr data-cuenta={c.id} className={cn(v.tono === "vencida" && "bg-[var(--data-error-50)]/40 dark:bg-[var(--data-error-500)]/5")}>
+                  <td className="align-top">
+                    {/* Un solo hijo por celda: a 400 px la celda es «rótulo | contenido» y
+                        dos hijos quedaban uno al lado del otro, montados. */}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[var(--text-primary)]">
+                        {/* El proveedor lleva a su ficha (con sus órdenes); sin id, queda el texto. */}
+                        <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada">{c.supplierName || "Sin nombre"}</EnlacePanel>
+                      </p>
+                      {(c.description || c.purchaseOrderId) && (
+                        <p className="mt-0.5 line-clamp-2 text-sm text-[var(--text-secondary)]">{descripcionALaVista(c.description, c.purchaseOrderId)}</p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="text-right align-top tabular-nums">
+                    <div className="min-w-0">
+                      <p className={cn("font-bold", pagada ? "text-[var(--text-secondary)]" : "text-[var(--text-primary)]")}>{formatCurrency(falta)}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">de {formatCurrency(c.amount)}</p>
+                      <div className="ml-auto mt-1 h-1.5 w-24 max-w-full rounded-full bg-[var(--surface-sunken)]" aria-hidden>
+                        <div className={cn("h-1.5 rounded-full", pct >= 100 ? "bg-[var(--data-success-500)]" : "bg-primary")} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="align-top">
+                    <div className="min-w-0">
+                      <p className="text-[var(--text-primary)]">{fechaConDia(diaDeVencimiento(c.dueDate))}</p>
+                      <span className={cn("mt-1 inline-flex rounded-full px-2 py-0.5 text-sm font-semibold", CHIP_VENCE[v.tono])}>{v.texto}</span>
+                    </div>
+                  </td>
+                  <td className="align-top">
+                    <div className="flex items-center justify-end gap-2">
+                      {!pagada && (
+                        <button
+                          type="button"
+                          onClick={() => setAbierto(abierto?.id === c.id && abierto.que === "pagar" ? null : { id: c.id, que: "pagar" })}
+                          aria-expanded={abierto?.id === c.id && abierto.que === "pagar"}
+                          className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary/90"
+                        >
+                          <DollarSign className="h-4 w-4" aria-hidden /> Pagar
+                        </button>
+                      )}
+                      <ActionMenu label={`Más de la cuenta con ${c.supplierName}`} soloIcono size="md" className="w-12 shrink-0" icon={MoreHorizontal} actions={acciones} />
+                    </div>
+                  </td>
+                </tr>
+                {abierto?.id === c.id && (
+                  <tr>
+                    <td colSpan={4} data-label="">
+                      {abierto.que === "pagar" ? (
+                        <PagarCuentaForm
+                          saldo={falta}
+                          proveedor={c.supplierName}
+                          saving={saving}
+                          onPagar={async (p) => {
+                            const r = await onPagar(c.id, p);
+                            if (r.ok) setAbierto(null);
+                            return r;
+                          }}
+                          onCancelar={() => setAbierto(null)}
+                          onAviso={onAviso}
+                        />
+                      ) : (
+                        <HistorialPagos cuenta={c} />
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </DataTable>
+    </div>
+    </>
+  );
+}
+
+/**
+ * Pagos de la cuenta (C44): el cargo, lo pagado y lo que falta en una línea
+ * que se explica sola. El cargo ya trae restados los descuentos de una
+ * recepción con faltantes.
+ */
+function HistorialPagos({ cuenta }: { cuenta: CuentaPorPagar }) {
+  return (
+    <div className="space-y-1.5 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-3 sm:px-4">
+      <p className="text-sm text-[var(--text-secondary)]">
+        Cargo <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(cuenta.amount)}</strong>
+        {" − pagaste "}<strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(cuenta.paidAmount)}</strong>
+        {" = te falta "}<strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(saldo(cuenta))}</strong>
+        {cuenta.purchaseOrderId && (
+          <>
+            {" · "}
+            <EnlacePanel cosa="oc" id={cuenta.purchaseOrderId} apariencia="heredada">Orden de compra {codigoDeOrden(cuenta.purchaseOrderId)}</EnlacePanel>
+          </>
+        )}
+      </p>
+      {cuenta.payments.length === 0 ? (
+        <p className="text-sm text-[var(--text-secondary)]">Todavía no le pagaste nada de esta cuenta.</p>
+      ) : (
+        cuenta.payments.map((p) => (
+          <div key={p.id} className="flex items-center justify-between gap-3 rounded-lg bg-[var(--surface-raised)] px-3 py-2 text-sm">
+            <span>
+              <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(Number(p.amount))}</strong>
+              <span className="ml-2 text-[var(--text-secondary)]">{METODOS[p.method as MetodoPago] ?? p.method}</span>
+              {p.reference && <span className="ml-2 text-sm text-[var(--text-secondary)]">Ref: {p.reference}</span>}
+            </span>
+            <span className="text-sm text-[var(--text-secondary)]">{formatDate(p.date)}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}

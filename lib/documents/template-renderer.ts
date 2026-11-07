@@ -1,5 +1,7 @@
 import "server-only";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import type { MembreteDocumento } from "@/lib/documentos/membrete-pdf";
+import { crearMembrete, dibujarMembrete, dibujarMembreteBreve, dibujarPies, limiteInferior, type LogoServidor, type MembretePdfLib } from "@/lib/documentos/membrete-pdflib";
 
 /**
  * Renderiza una plantilla Markdown-ligera con placeholders {{key}} a un PDF.
@@ -18,6 +20,11 @@ export interface RenderTemplateOptions {
   body: string;
   values: Record<string, string | number>;
   title?: string;
+  /**
+   * Membrete del negocio (`membreteParaPdf`): logo + nombre arriba, pie paginado.
+   * Sin él (documentos de la plataforma) sale el pie sencillo de siempre.
+   */
+  membrete?: { membrete: MembreteDocumento; logo: LogoServidor | null } | null;
 }
 
 export async function renderTemplateToPdf(
@@ -47,11 +54,18 @@ export async function renderTemplateToPdf(
 
   let page = pdf.addPage([pageWidth, pageHeight]);
   let y = pageHeight - margin;
+  let mb: MembretePdfLib | null = null;
+  let fondo = margin;
+  if (opts.membrete) {
+    mb = await crearMembrete(pdf, opts.membrete.membrete, opts.membrete.logo, { tipo: opts.title ?? "Documento" });
+    y = dibujarMembrete(mb, page) - 12;
+    fondo = limiteInferior() + 10;
+  }
 
   function nextPageIfNeeded(lineH: number) {
-    if (y - lineH < margin) {
+    if (y - lineH < fondo) {
       page = pdf.addPage([pageWidth, pageHeight]);
-      y = pageHeight - margin;
+      y = mb ? dibujarMembreteBreve(mb, page, opts.title ?? "Documento") - 4 : pageHeight - margin;
     }
   }
 
@@ -105,18 +119,15 @@ export async function renderTemplateToPdf(
     }
   }
 
-  // Footer
-  const footerY = margin / 2;
-  const footerTxt = opts.title
-    ? `${opts.title} · Generado por Buleje · ${new Date().toLocaleDateString("es-PE")}`
-    : `Generado por Buleje · ${new Date().toLocaleDateString("es-PE")}`;
-  page.drawText(footerTxt, {
-    x: margin,
-    y: footerY,
-    size: 9,
-    font: helvetica,
-    color: rgb(0.55, 0.55, 0.55),
-  });
+  // Pie: el del membrete (negocio, fecha de emisión, página X de Y) o el sencillo de la plataforma.
+  if (mb) {
+    dibujarPies(mb);
+  } else {
+    const footerTxt = opts.title
+      ? `${opts.title} · Generado por Buleje · ${new Date().toLocaleDateString("es-PE")}`
+      : `Generado por Buleje · ${new Date().toLocaleDateString("es-PE")}`;
+    page.drawText(footerTxt, { x: margin, y: margin / 2, size: 9, font: helvetica, color: rgb(0.55, 0.55, 0.55) });
+  }
 
   const bytes = await pdf.save();
   return Buffer.from(bytes);

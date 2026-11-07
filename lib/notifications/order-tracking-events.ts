@@ -79,7 +79,7 @@ export async function notifyOrderShipped(order: OrderTrackingEventOrder): Promis
     `Pedido #${shortId(order.id)}\n` +
     `Hola *${order.customerName}* 👋 — el repartidor salió hacia tu dirección.\n` +
     `Total: ${fmtSoles(order.total)}\n\n` +
-    `Seguilo en vivo: ${link}`;
+    `Síguelo en vivo: ${link}`;
 
   await Promise.all([
     sendWaSafe(order.customerPhone, wa, ctx),
@@ -108,7 +108,7 @@ export async function notifyOrderNearby(order: OrderTrackingEventOrder): Promise
   const wa =
     `📍 *¡Tu pedido está cerca!*\n` +
     `Pedido #${shortId(order.id)}\n` +
-    `El repartidor llegará en pocos minutos. Andá preparando el pago si es contra-entrega.\n\n` +
+    `El repartidor llegará en pocos minutos. Ve preparando el pago si es contra-entrega.\n\n` +
     `${link}`;
 
   await Promise.all([

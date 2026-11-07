@@ -1,0 +1,66 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=forestal-herramientas&sub=lote&vista=cubicador",
+ "pasos": [
+  {
+   "esperar": 2500
+  },
+  {
+   "eval": "(()=>{const P=(id,c,e,a,l,esp)=>({id,cantidad:c,espesor:e,ancho:a,largo:l,uEspesor:'pulg',uAncho:'pulg',uLargo:'pies',especie:esp,pieTablar:e*a*l*c/12,m3:e*a*l*c/12/424});const k='buleje-cubicacion-main';localStorage.setItem(k,JSON.stringify([P('t1',40,2,8,10,'Tornillo'),P('t2',20,2,4,4,'Tornillo'),P('c1',30,2,6,10,'Cumala'),P('c2',10,1,6,4,'Cumala')]));localStorage.setItem(k+'-modo-precio','manual');localStorage.setItem(k+'-precio','2');localStorage.setItem(k+'-precios-especie',JSON.stringify({tornillo:'2.5'}));localStorage.setItem(k+'-precios-especie-tipo',JSON.stringify({'tornillo|Corta':'1.5'}));location.reload();return 'sembrado'})()"
+  },
+  {
+   "esperar": 6500
+  },
+  {
+   "eval": "(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Guardar');if(!b)return 'sin boton Guardar';b.click();return 'abierto'})()"
+  },
+  {
+   "esperar": "[data-vista='cubicador-madera-guardar']"
+  },
+  {
+   "esperar": 1200
+  },
+  {
+   "eval": "(()=>{const chip=[...document.querySelectorAll('[aria-label=\"Ver el resumen\"] button')].find(b=>b.getAttribute('aria-pressed')==='true');return {resumenPorDefecto:chip?.textContent,altas:[...document.querySelectorAll('[data-alta]')].map(b=>b.dataset.alta),lugares:document.querySelectorAll('#cubg-lugares option').length,cubicadores:document.querySelectorAll('#cubg-cubicadores option').length,placas:document.querySelectorAll('#cubg-placas option').length,switchCuenta:!!document.querySelector('#cubg-cuenta-switch')}})()"
+  },
+  {
+   "click": "#cubg-cuenta-switch"
+  },
+  {
+   "esperar": "#cubg-persona:not([disabled])"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "(()=>{const s=document.querySelector('#cubg-persona');const ops=[...s.options].slice(1);const o=ops.find(o=>/te debe|le debes/.test(o.text))||ops[0];if(!o)return 'sin personas';const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;set.call(s,o.value);s.dispatchEvent(new Event('change',{bubbles:true}));return {elegida:o.text,total:ops.length}})()"
+  },
+  {
+   "esperar": "[data-vista='saldo-persona']"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "eval": "(()=>{const b=document.querySelector(\"[data-vista='saldo-persona']\");const d=document.querySelector('[data-saldo-despues]');return {saldo:b?.innerText,despues:d?.innerText}})()"
+  },
+  {
+   "captura": "guardar-saldo"
+  },
+  {
+   "click": "[data-accion='ver-cuenta-persona']"
+  },
+  {
+   "esperar": "[data-vista='cuenta-persona-detalle']"
+  },
+  {
+   "esperar": 2500
+  },
+  {
+   "eval": "(()=>{const m=document.querySelector(\"[data-vista='cuenta-persona-detalle']\");const dlg=m?.closest('[role=dialog]');return {texto:m?.innerText.slice(0,500),titulo:dlg?.querySelector('h2,h3')?.textContent,encima:dlg?getComputedStyle(dlg).zIndex:null,liquidar:!!document.querySelector(\"[data-accion='liquidar-en-adelantos']\")}})()"
+  },
+  {
+   "captura": "cuenta-detalle"
+  }
+ ]
+}

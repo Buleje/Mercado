@@ -1,0 +1,241 @@
+{
+ "nota": "QA-ui, escribe (→ --anchos 1280 --temas claro): borra plantillas «QA plantilla*», llena título/partida/destinatario, guarda la plantilla, cierra, abre otro despacho con 2 trozas a mano, usa la plantilla (vista previa + Rellenar), registra, lee la hoja SERFOR del iframe, anula la guía y borra la plantilla.",
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+ "pasos": [
+  {
+   "preset": "despacho-abrir"
+  },
+  {
+   "eval": "(async () => { const tok = (document.cookie.match(/(?:^|;\\s*)csrf-token=([^;]+)/) || [])[1]; const h = tok ? { 'x-csrf-token': decodeURIComponent(tok) } : {}; const r = await fetch('/api/admin/forestal/loth/gtf-plantillas', { cache: 'no-store' }); const j = await r.json(); const ps = j.plantillas || j.data?.plantillas || []; const out = []; for (const p of ps.filter((x) => /^QA plantilla/.test(x.nombre))) { const d = await fetch('/api/admin/forestal/loth/gtf-plantillas?id=' + encodeURIComponent(p.id), { method: 'DELETE', headers: h }); out.push(p.nombre + ': ' + d.status); } const r2 = await fetch('/api/admin/forestal/loth/gtf-plantillas', { cache: 'no-store' }); const j2 = await r2.json(); return { borradas: out, quedan: (j2.plantillas || j2.data?.plantillas || []).length }; })()"
+  },
+  {
+   "clicTexto": "Datos de la guía"
+  },
+  {
+   "esperar": "input[aria-label^=\"N° de GTF\"]"
+  },
+  {
+   "eval": "(() => { const sec = (t) => [...document.querySelectorAll('[role=dialog] section')].find((s) => t.test(s.querySelector('header')?.textContent || '')); const ultimos = (s) => (s ? [...s.querySelectorAll('select')].slice(-3) : []); const inputDe = (s, rx) => { if (!s) return null; const t = [...s.querySelectorAll('*')].find((x) => x.children.length === 0 && rx.test(x.textContent.trim())); let n = t; for (let k = 0; n && k < 5; k++, n = n.parentElement) { const i = n.querySelector('input[type=text]'); if (i) return i; } return null; }; const titulo = () => [...document.querySelectorAll('[role=dialog] section')].find((s) => /N° del título habilitante/.test(s.textContent)); window.__qaLeer = () => ({ titulo: ultimos(titulo()).map((x) => x.selectedOptions[0]?.textContent || ''), partida: ultimos(sec(/Punto de partida/)).map((x) => x.selectedOptions[0]?.textContent || ''), destinatario: inputDe(sec(/^\\s*Destinatario/), /^Nombre o razón social/)?.value ?? 'sin campo', numero: document.querySelector('input[aria-label^=\"N° de GTF\"]')?.value }); window.__qaDest = (v) => { const i = inputDe(sec(/^\\s*Destinatario/), /^Nombre o razón social/); if (!i) return 'sin campo'; Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(i, v); i.dispatchEvent(new Event('input', { bubbles: true })); return i.value; }; window.__qaMarcar = () => { ultimos(titulo()).forEach((s, k) => s.setAttribute('data-qa', 'ubi-' + k)); ultimos(sec(/Punto de partida/)).forEach((s, k) => s.setAttribute('data-qa', 'par-' + k)); return 'ok'; }; return { antes: window.__qaLeer(), marcar: window.__qaMarcar() }; })()"
+  },
+  {
+   "elegir": [
+    "[data-qa=ubi-0]",
+    "Ucayali"
+   ]
+  },
+  {
+   "elegirPrimera": [
+    "[data-qa=ubi-1]",
+    "^$"
+   ]
+  },
+  {
+   "elegirPrimera": [
+    "[data-qa=ubi-2]",
+    "^$"
+   ]
+  },
+  {
+   "elegir": [
+    "[data-qa=par-0]",
+    "Ucayali"
+   ]
+  },
+  {
+   "elegirPrimera": [
+    "[data-qa=par-1]",
+    "^$"
+   ]
+  },
+  {
+   "elegirPrimera": [
+    "[data-qa=par-2]",
+    "^$"
+   ]
+  },
+  {
+   "eval": "window.__qaDest('Aserradero QA Plantilla EIRL')"
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "eval": "({ llena: window.__qaLeer(), botonPlantillas: [...document.querySelectorAll('[role=dialog] button')].filter((b) => /^Plantillas/.test(b.textContent.trim())).map((b) => Math.round(b.getBoundingClientRect().height)) })"
+  },
+  {
+   "clicTexto": "Plantillas"
+  },
+  {
+   "esperar": "[role=menu]"
+  },
+  {
+   "eval": "[...document.querySelectorAll('[role=menu] [role=menuitem]')].map((b) => b.innerText.replace(/\\s+/g, ' '))"
+  },
+  {
+   "eval": "(() => { const b = [...document.querySelectorAll('[role=menuitem]')].find((x) => /Guardar como plantilla/.test(x.textContent)); if (!b) return 'sin opción'; b.click(); return 'abrió guardar'; })()"
+  },
+  {
+   "esperar": "[data-qa=plantilla-bloque-titulo]"
+  },
+  {
+   "eval": "({ nombre: document.querySelector('input[placeholder=\"Permiso → destino\"]')?.value, bloques: [...document.querySelectorAll('[data-qa^=plantilla-bloque-]')].map((l) => { const i = l.querySelector('input'); return (i.checked ? '[x] ' : '[ ] ') + (i.disabled ? '(vacío) ' : '') + l.innerText.replace(/\\s+/g, ' ').slice(0, 110); }) })"
+  },
+  {
+   "captura": "plantilla-guardar"
+  },
+  {
+   "llenar": [
+    "input[placeholder=\"Permiso → destino\"]",
+    "QA plantilla 16-10"
+   ]
+  },
+  {
+   "clicTexto": "Guardar plantilla"
+  },
+  {
+   "esperar": "text=Guardé la plantilla"
+  },
+  {
+   "eval": "(async () => { const r = await fetch('/api/admin/forestal/loth/gtf-plantillas', { cache: 'no-store' }); const j = await r.json(); const ps = j.plantillas || j.data?.plantillas || j; return { status: r.status, nombres: Array.isArray(ps) ? ps.map((p) => p.nombre + ' [' + Object.keys(p.contenido || {}).join(',') + ']') : JSON.stringify(j).slice(0, 300), aviso: [...document.querySelectorAll('[role=dialog] [role=status]')].map((x) => x.textContent.trim()).filter((t) => /plantilla/i.test(t)) }; })()"
+  },
+  {
+   "eval": "(() => { const d = [...document.querySelectorAll('[role=dialog]')].find((x) => /Despachar trozas con guía/.test(x.textContent)); const b = d && [...d.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Cerrar'); if (!b) return 'sin Cerrar'; b.click(); return 'cerró'; })()"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "[...document.querySelectorAll('[role=dialog],[role=alertdialog]')].map((d) => d.innerText.replace(/\\s+/g, ' ').slice(0, 120))"
+  },
+  {
+   "clicTexto": "Despachar con guía"
+  },
+  {
+   "esperar": "[data-testid=trozas-a-mano]"
+  },
+  {
+   "elegir": [
+    "[data-testid=trozas-a-mano] select",
+    "Tornillo"
+   ]
+  },
+  {
+   "click": "[data-testid=trozas-a-mano] button[aria-pressed]"
+  },
+  {
+   "preset": "despacho-dos-a-mano"
+  },
+  {
+   "clicTexto": "Datos de la guía"
+  },
+  {
+   "esperar": "input[aria-label^=\"N° de GTF\"]"
+  },
+  {
+   "eval": "({ segundoDespachoAntes: window.__qaLeer() })"
+  },
+  {
+   "clicTexto": "Plantillas"
+  },
+  {
+   "esperar": "[role=menu]"
+  },
+  {
+   "eval": "(() => { const items = [...document.querySelectorAll('[role=menuitem]')].map((b) => b.innerText.replace(/\\s+/g, ' ')); const b = [...document.querySelectorAll('[role=menuitem]')].find((x) => /Usar una plantilla/.test(x.textContent)); b && b.click(); return items; })()"
+  },
+  {
+   "esperar": "[data-qa=plantilla-tarjeta]"
+  },
+  {
+   "eval": "({ tarjetas: [...document.querySelectorAll('[data-qa=plantilla-tarjeta]')].map((li) => li.innerText.replace(/\\s+/g, ' ')), menuAlto: [...document.querySelectorAll('[data-qa=plantilla-tarjeta] button[aria-haspopup=menu]')].map((b) => Math.round(b.getBoundingClientRect().width) + 'x' + Math.round(b.getBoundingClientRect().height)) })"
+  },
+  {
+   "captura": "plantilla-lista"
+  },
+  {
+   "eval": "(() => { const li = [...document.querySelectorAll('[data-qa=plantilla-tarjeta]')].find((x) => x.textContent.includes('QA plantilla 16-10')); if (!li) return 'sin tarjeta'; li.querySelector('button').click(); return 'elegida'; })()"
+  },
+  {
+   "esperar": "[data-qa=plantilla-vista-previa]"
+  },
+  {
+   "eval": "document.querySelector('[data-qa=plantilla-vista-previa]').innerText.replace(/\\s+/g, ' ')"
+  },
+  {
+   "captura": "plantilla-vista-previa"
+  },
+  {
+   "clicTexto": "Rellenar"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "({ despues: window.__qaLeer(), dialogos: document.querySelectorAll('[role=dialog]').length, aviso: [...document.querySelectorAll('[role=status]')].map((x) => x.textContent.trim()).filter((t) => /Rellené/.test(t)) })"
+  },
+  {
+   "captura": "plantilla-rellenada"
+  },
+  {
+   "eval": "(() => { const b = [...document.querySelectorAll('[role=dialog] button')].find((x) => /^Usar el que sigue/.test(x.textContent.trim())); if (b) { b.click(); return 'siguiente: ' + b.textContent.replace(/\\s+/g, ' ').trim(); } return 'sin propuesta'; })()"
+  },
+  {
+   "llenar": [
+    "input[aria-label=\"N° de la lista de trozas (35)\"]",
+    "1"
+   ]
+  },
+  {
+   "esperar": 500
+  },
+  {
+   "eval": "(() => { const pie = [...document.querySelectorAll('[role=dialog] *')].find((x) => /para registrar/.test(x.textContent) && x.children.length === 0); return { leer: window.__qaLeer(), faltan: pie ? pie.textContent : 'nada falta' }; })()"
+  },
+  {
+   "clicTexto": "Registrar despacho y guía"
+  },
+  {
+   "esperar": 3000
+  },
+  {
+   "eval": "(() => { const b = [...document.querySelectorAll('[role=dialog] button')].find((x) => /Sí, usar ese número/.test(x.textContent)); if (b) { b.click(); return 'confirmó número'; } return 'sin pregunta'; })()"
+  },
+  {
+   "esperar": "text=Cerrar y volver al libro"
+  },
+  {
+   "eval": "({ guia: window.__qaGuia ?? null, post: (() => { try { return null; } catch { return null; } })() })"
+  },
+  {
+   "clicTexto": "Imprimir la guía y la lista"
+  },
+  {
+   "esperar": "iframe"
+  },
+  {
+   "esperar": 2000
+  },
+  {
+   "eval": "(() => { const f = document.querySelector('iframe'); const t = (f && f.contentDocument && f.contentDocument.body.innerText || '').replace(/\\s+/g, ' '); const ver = (rx) => { const m = t.match(rx); return m ? t.slice(Math.max(0, m.index - 60), m.index + 90) : 'NO ESTÁ'; }; return { largo: t.length, destinatario: ver(/Aserradero QA Plantilla EIRL/i), partida: ver(/Punto de partida|partida/i), ucayali: (t.match(/Ucayali/gi) || []).length }; })()"
+  },
+  {
+   "captura": "hoja-serfor"
+  },
+  {
+   "tecla": "Escape"
+  },
+  {
+   "esperar": 500
+  },
+  {
+   "clicTexto": "Cerrar y volver al libro"
+  },
+  {
+   "preset": "despacho-anular-al-final"
+  },
+  {
+   "eval": "(async () => { const tok = (document.cookie.match(/(?:^|;\\s*)csrf-token=([^;]+)/) || [])[1]; const h = tok ? { 'x-csrf-token': decodeURIComponent(tok) } : {}; const r = await fetch('/api/admin/forestal/loth/gtf-plantillas', { cache: 'no-store' }); const j = await r.json(); const ps = j.plantillas || j.data?.plantillas || []; const out = []; for (const p of ps.filter((x) => /^QA plantilla/.test(x.nombre))) { const d = await fetch('/api/admin/forestal/loth/gtf-plantillas?id=' + encodeURIComponent(p.id), { method: 'DELETE', headers: h }); out.push(p.nombre + ': ' + d.status); } const r2 = await fetch('/api/admin/forestal/loth/gtf-plantillas', { cache: 'no-store' }); const j2 = await r2.json(); return { borradas: out, quedan: (j2.plantillas || j2.data?.plantillas || []).length }; })()"
+  }
+ ]
+}

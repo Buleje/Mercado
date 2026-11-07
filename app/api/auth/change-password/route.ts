@@ -4,9 +4,10 @@ import { getSessionPayload, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { compare, hash } from "bcryptjs";
 import { z } from "zod";
-import { newPasswordSchema, newPasswordSchemaOptional } from "@/lib/auth/password-schema";
+import { newPasswordSchema } from "@/lib/auth/password-schema";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { TrustedDevicesDB, TRUSTED_DEVICE_COOKIE } from "@/lib/db/trusted-devices.db";
 
 const ChangePasswordSchema = z.object({
   currentPassword: z.string().min(1),
@@ -77,7 +78,15 @@ export async function POST(req: NextRequest) {
     });
     } catch { /* logger not available */ }
 
-    return NextResponse.json({ ok: true });
+    // ADR-304 (defensa): cambiar la clave revoca TODOS los dispositivos de
+    // confianza — si la clave estaba comprometida, el atacante pierde el skip
+    // de 2FA. También limpiamos la cookie trusted de ESTE navegador.
+    await TrustedDevicesDB.revokeAll(payload.tenantId, payload.username).catch((err) =>
+      logger.error("[auth/change-password] revokeAll trusted-devices failed", { error: String(err) }),
+    );
+    const okRes = NextResponse.json({ ok: true });
+    okRes.cookies.set(TRUSTED_DEVICE_COOKIE, "", { maxAge: 0, path: "/" });
+    return okRes;
   } catch {
     return NextResponse.json({ error: "failed to change password" }, { status: 500 });
   }

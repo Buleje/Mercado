@@ -1,14 +1,27 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, CardTitle } from "@buleje/design-system";
 import { useEffect, useState, useCallback, useMemo, useRef, useId } from "react";
 import {
   Store, Package, CreditCard, Users, ShoppingCart,
   ArrowRight, X, Sparkles, Rocket, Check, ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { cachedJson } from "@/lib/client-cache-fetch";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+/** Lo que el asistente mira de /api/admin/dashboard y /api/settings. */
+interface DashboardProgreso {
+  products?: unknown;
+  customers?: unknown;
+  sales?: unknown;
+}
+interface SettingsProgreso {
+  paymentMethods?: Record<string, unknown> | null;
+  businessName?: unknown;
+  slug?: unknown;
+}
 
 interface StepStatus {
   productsDone: boolean;
@@ -82,7 +95,7 @@ function ConfettiOverlay() {
   const tones = [
     "bg-[var(--accent)]",
     "bg-[var(--data-success-600)]",
-    "bg-[var(--accent-muted)]",
+    "bg-primary/15",
     "bg-[var(--data-success-100)]",
   ];
   return (
@@ -143,7 +156,7 @@ function StepRow({
         "group relative w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-all",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]",
         done
-          ? "bg-[var(--accent-soft)] border-[var(--accent)]/30 cursor-default"
+          ? "bg-primary/10 border-[var(--accent)]/30 cursor-default"
           : "bg-[var(--surface-raised)] border-[var(--rule-base)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]/40 active:scale-[0.99]"
       )}
       style={{ animation: `step-in 280ms ease-out ${index * 50}ms backwards` }}
@@ -153,7 +166,7 @@ function StepRow({
           "flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
           done
             ? "bg-[var(--accent-600,var(--accent))] text-white"
-            : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white"
+            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white"
         )}
         aria-hidden="true"
       >
@@ -171,14 +184,14 @@ function StepRow({
           >
             {String(index + 1).padStart(2, "0")}
           </span>
-          <h3
+          <CardTitle
             className={cn(
-              "text-sm font-bold truncate",
+              "truncate text-sm font-bold",
               done ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
             )}
           >
             {step.title}
-          </h3>
+          </CardTitle>
         </div>
         <p className="text-xs text-[var(--text-secondary)] leading-snug mt-0.5 truncate">
           {step.description}
@@ -224,30 +237,28 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigatingRef = useRef(false);
 
-  // Fetch progress (con AbortController + cleanup)
+  // Progreso: el tablero y los ajustes ya los pide el panel al abrir
+  // (Inicio y SettingsProvider) → cachedJson comparte ese mismo pedido.
   useEffect(() => {
     let mounted = true;
-    const controller = new AbortController();
 
     async function checkProgress() {
       setLoading(true);
       setHasError(false);
       try {
-        const [dashRes, settingsRes] = await Promise.all([
-          fetch("/api/admin/dashboard", { signal: controller.signal }),
-          fetch("/api/settings", { signal: controller.signal }),
+        const [data, settingsRaw] = await Promise.all([
+          cachedJson<DashboardProgreso>("/api/admin/dashboard", 30_000),
+          cachedJson<SettingsProgreso>("/api/settings", 30_000),
         ]);
-        if (!dashRes.ok) throw new Error(`dashboard ${dashRes.status}`);
-
-        const data = await dashRes.json();
-        const settings = settingsRes.ok ? await settingsRes.json() : {};
+        if (!data) throw new Error("dashboard sin datos");
+        const settings: SettingsProgreso = settingsRaw ?? {};
 
         const products: unknown[] = Array.isArray(data.products) ? data.products : [];
         const customers: unknown[] = Array.isArray(data.customers) ? data.customers : [];
         const sales: unknown[] = Array.isArray(data.sales) ? data.sales : [];
 
         // paymentMethods puede ser null/undefined/objeto — Object.values(pm ?? {}) protege ambos
-        const pm = (settings && typeof settings === "object" ? settings.paymentMethods : null) ?? {};
+        const pm = settings.paymentMethods ?? {};
         const hasPayment = Object.values(pm).some(Boolean);
 
         const businessName: string =
@@ -264,10 +275,8 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
           salesDone: sales.length >= 1,
           settingsDone,
         });
-      } catch (err) {
-        if (mounted && !(err instanceof DOMException && err.name === "AbortError")) {
-          setHasError(true);
-        }
+      } catch {
+        if (mounted) setHasError(true);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -276,7 +285,6 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
 
     return () => {
       mounted = false;
-      controller.abort();
     };
   }, [tenantSlug]);
 
@@ -421,7 +429,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
               <div className="min-w-0">
                 <SectionTitle
                   id={titleId}
-                  className="text-base font-bold text-[var(--text-primary)] leading-tight truncate"
+                  className="text-sm font-bold text-[var(--text-primary)] leading-tight truncate"
                 >
                   {allDone ? "¡Tu tienda está lista!" : "Configura tu tienda"}
                 </SectionTitle>
@@ -505,7 +513,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold text-white shadow-[var(--shadow-sm)] transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
               style={{
                 background:
                   "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
@@ -519,7 +527,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
               <button
                 type="button"
                 onClick={handleClose}
-                className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-2 h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-lg"
+                className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-2 h-12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-xl"
               >
                 Saltar
               </button>
@@ -529,7 +537,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
                   const first = STEPS.find((s) => !status[s.id]);
                   if (first) handleNavigate(first.href);
                 }}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold text-white shadow-[var(--shadow-sm)] transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+                className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",

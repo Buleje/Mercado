@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
+import { revalidateTenantTag } from "@/lib/cache";
 
 const CsvRowSchema = z.object({
   barcode: z.string().min(1).max(50),
@@ -88,6 +89,17 @@ export async function POST(req: NextRequest) {
       `Importación CSV: ${success} exitosos, ${errors.length} errores de ${parsed.data.rows.length} filas`,
       undefined, auth.username,
     ).catch((err) => logger.warn("[inventory/import-csv] activity log failed", { err: String(err) }));
+
+    /**
+     * Los precios y el stock se escriben con `prisma` directo, salteando
+     * `ProductsDB` — que es quien normalmente invalida. Sin esto, la tienda y
+     * el POS siguen sirviendo el catálogo cacheado: se importa la lista nueva
+     * del proveedor, se ve «120 productos actualizados», y el mostrador sigue
+     * cobrando los precios de antes hasta que venza el cache.
+     */
+    if (success > 0) {
+      revalidateTenantTag(auth.tenantId, "products");
+    }
 
     return NextResponse.json({ success, errors });
   } catch (e) {

@@ -98,7 +98,7 @@ function Section({
   return (
     <section id={id} className={`${CARD} scroll-mt-24 p-6 sm:p-7`}>
       <h2 className="flex items-center gap-3 text-xl font-extrabold tracking-[-0.01em] text-[var(--text-primary)]">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Icon className="h-5 w-5" strokeWidth={2.25} />
         </span>
         <span className="text-sm font-bold text-[var(--text-tertiary)] tabular-nums">{n}.</span>
@@ -168,7 +168,7 @@ export default function TerminosPage() {
                 <li key={id}>
                   <a
                     href={`#${id}`}
-                    className="flex gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
+                    className="flex gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent)]"
                   >
                     <span className="tabular-nums text-[var(--text-tertiary)]">{n}.</span>
                     {title}

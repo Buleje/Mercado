@@ -21,33 +21,6 @@ import { BRAND_GEO } from "@/lib/geo";
 const BRAND_CENTER: [number, number] = [BRAND_GEO.lat, BRAND_GEO.lng];
 const DEFAULT_ZOOM = 12;
 
-/** Emoji por categoría — fallback al pin genérico si no matchea. */
-const CATEGORY_EMOJI: Record<string, string> = {
-  bodega: "🏪",
-  abarrotes: "🛒",
-  polleria: "🍗",
-  panaderia: "🥖",
-  restaurante: "🍽️",
-  pizzeria: "🍕",
-  pizza: "🍕",
-  farmacia: "💊",
-  juguería: "🥤",
-  jugueria: "🥤",
-  cafeteria: "☕",
-  cafetería: "☕",
-  ferreteria: "🔧",
-  ferretería: "🔧",
-  papeleria: "📚",
-  papelería: "📚",
-  moda: "👗",
-  belleza: "💄",
-  pollos: "🍗",
-  helados: "🍦",
-  pastelería: "🎂",
-  pasteleria: "🎂",
-  bebidas: "🧃",
-};
-
 interface Props {
   stores: MarketplaceStore[];
   userCoords?: { lat: number; lng: number } | null;
@@ -88,8 +61,8 @@ function escapeHtml(s: string): string {
 
 // Brandon mayo 2026: pin con icono de tienda (SVG estilo Lucide) en
 // lugar de emojis decorativos (regla del proyecto: solo iconos del DS).
-// Mantenemos CATEGORY_EMOJI para compat en otros consumers, pero el pin
-// del mapa siempre usa el mismo icono "negocio" — limpio y consistente.
+// (El CATEGORY_EMOJI que "se mantenía por compat" se borró 2026-08-03: no
+// estaba exportado, así que nunca pudo tener otros consumers.)
 const STORE_PIN_SVG = `
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -133,6 +106,17 @@ function buildPopup(store: MarketplaceStore): string {
   const name = escapeHtml(store.name);
   const slug = encodeURIComponent(store.slug);
   const category = escapeHtml(store.category ?? "");
+  // Logo (Brandon 2026-07-06) — o inicial de fallback.
+  const logoHtml = store.logo
+    ? `<img src="${escapeHtml(store.logo)}" alt="" class="buleje-popup__logo" />`
+    : `<span class="buleje-popup__logo buleje-popup__logo--fallback">${escapeHtml(
+        store.name.trim().charAt(0).toUpperCase(),
+      )}</span>`;
+  // Estado abierto/cerrado (Brandon 2026-07-06).
+  const isClosed = store.isOpenNow === false;
+  const status = `<span class="buleje-popup__chip ${
+    isClosed ? "buleje-popup__chip--closed" : "buleje-popup__chip--open"
+  }">${isClosed ? "Cerrada" : "Abierto"}</span>`;
   const rating =
     store.rating > 0
       ? `<span class="buleje-popup__chip buleje-popup__chip--rating">★ ${Number(store.rating).toFixed(1)}</span>`
@@ -150,9 +134,14 @@ function buildPopup(store: MarketplaceStore): string {
       : "";
   return `
     <div class="buleje-popup">
-      <div class="buleje-popup__category">${category}</div>
-      <div class="buleje-popup__name">${name}</div>
-      <div class="buleje-popup__row">${rating}${reviews}${delivery}</div>
+      <div class="buleje-popup__head">
+        ${logoHtml}
+        <div class="buleje-popup__headtext">
+          <div class="buleje-popup__category">${category}</div>
+          <div class="buleje-popup__name">${name}</div>
+        </div>
+      </div>
+      <div class="buleje-popup__row">${status}${rating}${reviews}${delivery}</div>
       ${promos ? `<div class="buleje-popup__row">${promos}</div>` : ""}
       <a href="/marketplace/${slug}" class="buleje-popup__cta">Ver tienda →</a>
     </div>
@@ -293,6 +282,30 @@ function ensurePinStyles(): void {
       padding: 14px 16px 12px;
       font-family: system-ui, -apple-system, sans-serif;
     }
+    .buleje-popup__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .buleje-popup__logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .buleje-popup__logo--fallback {
+      font-size: 16px;
+      font-weight: 900;
+      color: #6b7280;
+    }
+    .buleje-popup__headtext { min-width: 0; }
     .buleje-popup__category {
       font-size: 10px;
       font-weight: 800;
@@ -306,7 +319,6 @@ function ensurePinStyles(): void {
       font-weight: 800;
       color: #111;
       line-height: 1.2;
-      margin-bottom: 8px;
     }
     .buleje-popup__row {
       display: flex;
@@ -325,12 +337,20 @@ function ensurePinStyles(): void {
       font-weight: 800;
     }
     .buleje-popup__chip--rating {
-      background: #fef3c7;
-      color: #92400e;
+      background: #fff1ef;
+      color: #842e25;
     }
     .buleje-popup__chip--promo {
       background: #fee2e2;
       color: #b91c1c;
+    }
+    .buleje-popup__chip--open {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .buleje-popup__chip--closed {
+      background: #f3f4f6;
+      color: #4b5563;
     }
     .buleje-popup__muted {
       color: #6b7280;

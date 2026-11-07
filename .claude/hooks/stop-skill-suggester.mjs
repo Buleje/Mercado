@@ -63,7 +63,7 @@ try {
   const sectionMarker = "## Skills sugeridos por compound-learning";
   let block = `\n---\n\n${sectionMarker} (auto, ${today})\n\n`;
   block += `Detectados ${candidates.length} patrones con ≥${MIN_OCCURRENCES} co-edits sin skill creado.\n`;
-  block += `Mostrando top ${top.length}. Para crear skill: usá \`/luis\` o decí "crea skill para X".\n\n`;
+  block += `Mostrando top ${top.length}. Para crear skill: decí "crea una skill para X" (skill-creator).\n\n`;
 
   for (const p of top) {
     block += `### [pending] ${p.id}\n`;

@@ -13,7 +13,7 @@
       "id": "no-text-xs-or-smaller-in-body",
       "weight": "high",
       "check_bash": "! grep -E 'className=[\"\\x27].*text-(xs|2xs)[^a-z]' $FILE || grep -E 'caption|badge|tooltip|label' $FILE",
-      "fail_msg": "text-xs/2xs = letra diminuta para mayores (bsm-typography-rules). Body mínimo text-sm/base. Solo permitido en captions/badges/tooltips."
+      "fail_msg": "text-xs/2xs = letra diminuta para mayores (regla ui-components). Body mínimo text-sm/base. Solo permitido en captions/badges/tooltips."
     },
     {
       "id": "dark-mode-tokens",
@@ -31,7 +31,7 @@
       "id": "filter-inputs-h-12-min",
       "weight": "high",
       "check_bash": "! grep -E '(filter|search|input).*className' $FILE || ! grep -E 'h-(8|9|10)\\b' $FILE",
-      "fail_msg": "Filtros/inputs con h-8/9/10 = chatos (bsm-typography-rules). Mínimo h-12 con border-2 rounded-2xl."
+      "fail_msg": "Filtros/inputs con h-8/9/10 = chatos (regla ui-components). Mínimo h-12 con border-2 rounded-2xl."
     },
     {
       "id": "client-directive-position",

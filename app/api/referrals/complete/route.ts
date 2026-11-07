@@ -9,14 +9,15 @@ import { logger } from "@/lib/logger";
  * POST /api/referrals/complete
  *
  * Endpoint INTERNO — llamado cuando una Order llega al estado 'confirmado'
- * por primera vez para ese customer. Dispara el reward al referrer (cupón S/10).
+ * por primera vez para ese customer. Entrega los premios de referidas que ya
+ * correspondan, con las reglas del negocio (ADR-510; sin config: S/ 10 a quien recomienda).
  *
  * Auth: Bearer <CRON_SECRET> o <INTERNAL_API_KEY>
  * Body: { orderId: string, refereeId: string, tenantId: string }
  *
  * Response: { rewarded: boolean, couponCode?: string, referrerId?: string }
  *
- * Idempotente: si el referral ya está 'rewarded', retorna { rewarded: false }.
+ * Idempotente: cupón con código derivado del vínculo; la 2.ª vez, { rewarded: false }.
  */
 
 const CompleteReferralSchema = z.object({
@@ -63,11 +64,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   try {
     // 3. Disparar reward al referrer (idempotente)
-    const result = await ReferralsDB.onFirstOrderCompleted(
-      tenantId,
-      refereeId,
-      orderId,
-    );
+    const result = await ReferralsDB.onFirstOrderCompleted(tenantId, refereeId);
 
     if (result.rewarded) {
       // 4. Log fire-and-forget
@@ -79,9 +76,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         "system",
         undefined,
         tenantId,
-      ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+      ).catch((err) => logger.error("[referrals/complete] logActivity failed", { error: String(err), tenantId }));
     }
 
     return NextResponse.json(result);

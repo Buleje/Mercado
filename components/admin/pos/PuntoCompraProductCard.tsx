@@ -6,8 +6,12 @@ import Image from "next/image";
 import {
   PurchaseProduct,
   calculateSuggestedQty,
+  metaDeReposicion,
   needsReorder,
 } from "@/lib/types/purchases";
+import { naturalezaDe } from "@/lib/compras/naturaleza";
+import { formatCurrency } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 interface PuntoCompraProductCardProps {
   product: PurchaseProduct;
@@ -20,36 +24,54 @@ export default memo(function PuntoCompraProductCard({
   inCart,
   onAdd,
 }: PuntoCompraProductCardProps) {
+  // Servicio o alquiler (C01): sin agotado, sin «a reponer» y sin sugerido; se
+  // compra por su unidad de cobro («+1 hora»).
+  const nat = naturalezaDe(product);
+  const esServicio = nat.naturaleza !== "inventario";
   const suggestedQty = calculateSuggestedQty(product);
-  const targetStock = product.stockMax ?? (((product.stockMin ?? 0) * 3) || 10);
+  const { meta: targetStock, origen: origenMeta, minimo } = metaDeReposicion(product);
 
   const displayName = product.name || "Sin nombre";
 
-  const displayPrice = product.costPrice ?? product.price;
-  const isOutOfStock = (product.stock ?? 0) === 0;
+  // Costo de la ficha, nunca el precio de venta (auditoría Compras O03: se veía S/35 de venta como costo).
+  const costoFicha = product.costPrice != null && product.costPrice > 0 ? product.costPrice : null;
+  // Distinguir "sin control de stock" (stock null → servicios/gastos como
+  // "Aserrado de madera") de "agotado" (rastreado y en 0). En un Punto de
+  // COMPRA, un producto agotado es justamente lo que querés pedir → la tarjeta
+  // SIEMPRE agrega al carrito. Antes se deshabilitaba y el clic no hacía nada
+  // sin ninguna explicación (reporte QA Compras 2026-07-08).
+  const isOutOfStock = !esServicio && product.stock === 0;
 
-  const handleClick = () => {
-    if (isOutOfStock) return;
-    onAdd(product, suggestedQty);
-  };
+  // Dos acciones a la vista (auditoría Compras O02/C02): antes un clic en la
+  // tarjeta sumaba TODA la sugerencia (21 unidades) sin decirlo.
+  const unidad = esServicio ? nat.unidad : product.unit || "und";
+  const conSugerido = !esServicio && suggestedQty > 1;
+  // C28: la «Meta» se explica con sus números, no sólo con el `title`.
+  const porQueMeta = origenMeta === "maximo"
+    ? `el stock máximo que le pusiste`
+    : origenMeta === "triple-del-minimo"
+      ? `el triple de su mínimo (${minimo}), porque no tiene stock máximo`
+      : "no tiene mínimo ni máximo: se usa 10";
+  const botonCls = "h-10 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={isOutOfStock}
-      aria-label={isOutOfStock ? `${displayName} — agotado` : `Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}`}
+    <div
       className={cn(
-        "relative border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 transition-all bg-[var(--surface-raised)]",
-        "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-        isOutOfStock
-          ? "opacity-60 cursor-not-allowed"
-          : "cursor-pointer hover:shadow-sm hover:border-primary/50 hover:scale-[1.02]",
+        "relative flex h-full flex-col border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 transition-all bg-[var(--surface-raised)]",
+        "text-left w-full hover:shadow-sm hover:border-primary/50",
       )}
     >
-      {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto */}
-      {(product.stock ?? 0) === 0 ? (
+      {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto.
+          AGOTADO solo si el stock está RASTREADO en 0 (no si es null/sin control). */}
+      {esServicio ? (
         <span
+          className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-secondary)] z-10"
+        >
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]" />
+          {nat.distintivo?.toUpperCase()}
+        </span>
+      ) : isOutOfStock ? (
+        <span role="img"
           aria-label="Producto agotado"
           className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error-500)]/30 text-[var(--data-error-500)] z-10"
         >
@@ -57,7 +79,7 @@ export default memo(function PuntoCompraProductCard({
           AGOTADO
         </span>
       ) : needsReorder(product) ? (
-        <span
+        <span role="img"
           aria-label="Necesita reposición"
           className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] z-10"
         >
@@ -68,7 +90,7 @@ export default memo(function PuntoCompraProductCard({
 
       {/* Badge en carrito */}
       {inCart > 0 && (
-        <span
+        <span role="img"
           aria-label={`${inCart} en canasta`}
           className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold z-10"
         >
@@ -79,7 +101,7 @@ export default memo(function PuntoCompraProductCard({
       {/* Imagen o inicial */}
       <div className="flex justify-center mb-2 mt-1">
         {product.image ? (
-          <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5">
+          <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-[var(--surface-sunken)] ">
             <Image
               src={product.image}
               alt={displayName}
@@ -95,7 +117,7 @@ export default memo(function PuntoCompraProductCard({
         ) : (
           <div
             aria-hidden="true"
-            className="h-20 w-20 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary font-bold text-xl"
+            className="h-20 w-20 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-xl"
           >
             {displayName.charAt(0).toUpperCase()}
           </div>
@@ -103,29 +125,65 @@ export default memo(function PuntoCompraProductCard({
       </div>
 
       {/* Nombre */}
-      <p className="text-xs font-semibold text-[var(--text-primary)] line-clamp-2 leading-tight mb-1.5 min-h-[2.5em]">
+      <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 leading-tight mb-1.5 min-h-[2.5em]">
         {displayName}
       </p>
 
       {/* Precio y stock */}
-      <div className="flex items-baseline justify-between gap-1 mb-0.5">
+      {/* Precio y stock en su renglón cada uno si no entran (a 130 px el precio se partía en «S/» y «18.00»). */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-1 mb-0.5">
         <span
-          className="text-sm font-bold text-[var(--text-primary)]"
-          title={`Costo: S/${displayPrice.toFixed(2)} | Venta: S/${Number(product.price).toFixed(2)} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
+          className={cn("whitespace-nowrap text-sm", costoFicha != null ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}
+          title={`Costo de la ficha: ${costoFicha != null ? formatCurrency(costoFicha) : "sin cargar (lo escribes en la canasta)"} | Venta: ${formatCurrency(Number(product.price))} | Margen: ${costoFicha != null && product.price ? ((1 - costoFicha / product.price) * 100).toFixed(0) : "—"}%`}
         >
-          S/{displayPrice.toFixed(2)}
+          {costoFicha != null ? formatCurrency(costoFicha) : "sin costo"}
         </span>
-        <span className="text-xs text-[var(--text-tertiary)]">
-          Stock: {product.stock ?? "—"}
-        </span>
+        {esServicio ? (
+          <span className="text-sm text-[var(--text-secondary)]">{nat.cobro}</span>
+        ) : (
+          <span
+            className="whitespace-nowrap text-sm text-[var(--text-secondary)]"
+            title={product.stock == null ? "Este producto no lleva control de inventario" : `${product.stock} ${product.unit ?? ""} en stock`}
+          >
+            Stock: {product.stock ?? "—"}
+          </span>
+        )}
       </div>
 
-      {/* Cantidad sugerida */}
-      <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
-        <span title={`Stock: ${product.stock ?? 0} | Meta: ${targetStock} → Pedir ${suggestedQty}`}>
-          Sugerido: {suggestedQty} {product.unit}
-        </span>
-      </p>
-    </button>
+      {conSugerido && (
+        <p className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+          Sugerido: {suggestedQty} {unidad}
+          <InfoTip
+            title={`Sugerido ${suggestedQty} ${unidad}`}
+            what={`Meta ${targetStock} ${unidad}: ${porQueMeta}. Tienes ${product.stock ?? 0} → faltan ${suggestedQty}.`}
+            example="No mira cuánto se vendió: para pedir según la venta y lo que ya está en camino, mira Compras › Sugerencias."
+            ariaLabel={`Cómo se calcula el sugerido de ${displayName}`}
+          />
+        </p>
+      )}
+
+      {/* Agregar: +1 siempre; «+N» (la sugerencia entera) sólo si es más de 1. A 130 px «Pedir 21» se cortaba en «Ped…». */}
+      <div className="mt-auto flex gap-1.5 pt-2">
+        <button
+          type="button"
+          onClick={() => onAdd(product, 1)}
+          aria-label={`Agregar 1 ${unidad} de ${displayName}${isOutOfStock ? " (agotado)" : ""}`}
+          className={cn(botonCls, "flex-1", "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]")}
+        >
+          +1
+        </button>
+        {conSugerido && (
+          <button
+            type="button"
+            onClick={() => onAdd(product, suggestedQty)}
+            title={`Stock: ${product.stock ?? 0} · Meta: ${targetStock} → faltan ${suggestedQty} ${unidad}`}
+            aria-label={`Agregar los ${suggestedQty} ${unidad} sugeridos de ${displayName} (stock ${product.stock ?? 0}, meta ${targetStock})`}
+            className={cn(botonCls, "min-w-0 flex-1 px-2 bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent-muted)]")}
+          >
+            +{suggestedQty}
+          </button>
+        )}
+      </div>
+    </div>
   );
 });

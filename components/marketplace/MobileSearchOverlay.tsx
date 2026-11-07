@@ -366,7 +366,7 @@ export default function MobileSearchOverlay({ open, onClose, storesOnly = false 
             {topProducts.length > 0 && (
               <section>
                 <h2 className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Sugerencias para vos
+                  Sugerencias para ti
                 </h2>
                 <ul className="space-y-1">
                   {topProducts.map((p) => (
@@ -441,7 +441,7 @@ export default function MobileSearchOverlay({ open, onClose, storesOnly = false 
             Sin resultados para{" "}
             <strong className="text-[var(--text-primary)]">&quot;{query.trim()}&quot;</strong>.
             <br />
-            Probá con otra palabra.
+            Prueba con otra palabra.
           </div>
         )}
 

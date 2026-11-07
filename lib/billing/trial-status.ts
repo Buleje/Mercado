@@ -37,8 +37,12 @@ export type TrialStatus =
   | { kind: "trial_active"; daysRemaining: number; endsAt: Date }
   /** Trial expirado, sin plan pagado. Sistema entra en read-only. */
   | { kind: "trial_expired"; expiredSinceDays: number }
-  /** Plan pagado activo (Stripe o MP). */
-  | { kind: "paid"; provider: "stripe" | "mp" }
+  /**
+   * Plan pagado activo. `manual` = plan otorgado por el superadmin sin pasarela
+   * (socio, canje, cobro por transferencia o Yape): no hay suscripción que
+   * renovar ni prueba que vencer.
+   */
+  | { kind: "paid"; provider: "stripe" | "mp" | "manual" }
   /** Tenant sin trial registrado y sin plan — caso edge (legacy). */
   | { kind: "unknown" };
 
@@ -46,10 +50,10 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 /**
  * Devuelve el estado de trial/suscripción de un tenant.
- * Determinístico — solo depende de los campos pasados + Date.now().
+ * Determinístico — solo depende de los campos pasados + `now` (por defecto,
+ * Date.now(); el MRR de la plataforma lo fija para medir un mes pasado).
  */
-export function getTrialStatus(t: TenantSubscriptionFields): TrialStatus {
-  const now = Date.now();
+export function getTrialStatus(t: TenantSubscriptionFields, now: number = Date.now()): TrialStatus {
   // 1. Plan pagado vía Stripe.
   // SECURITY 2026-05-06 (pentest billing #3): exigir `stripeCurrentPeriodEnd
   // > now`. Antes, si Stripe no enviaba `customer.subscription.deleted` (queue
@@ -78,10 +82,23 @@ export function getTrialStatus(t: TenantSubscriptionFields): TrialStatus {
     }
     // Período MP vencido sin renovación confirmada — caer a trial check.
   }
-  // 3. Plan free + trial vigente.
+  // 3. Plan pago otorgado a mano, sin pasarela y sin prueba encima.
+  //
+  // `trialEndsAt == null` es la parte que hace esto seguro y NO es un detalle:
+  // el alta self-serve (`app/api/onboarding`) da período de prueba a CUALQUIER
+  // plan que el usuario elija, enterprise incluido. Si acá bastara con
+  // `plan !== "free"`, cualquiera que se registrara eligiendo enterprise se
+  // quedaría con plan pago eterno y gratis. Sólo el superadmin limpia
+  // `trialEndsAt` al otorgar un plan (ver PATCH /api/superadmin/tenants/[slug]),
+  // así que la ausencia de prueba es la marca de "esto se otorgó a mano".
+  if (t.plan && t.plan !== "free" && !t.trialEndsAt
+      && !t.stripeSubscriptionId && !t.mpSubscriptionId) {
+    return { kind: "paid", provider: "manual" };
+  }
+
+  // 4. Plan free + trial vigente.
   if (t.trialEndsAt) {
     const target = new Date(t.trialEndsAt).getTime();
-    const now = Date.now();
     const diffMs = target - now;
     if (diffMs > 0) {
       return {
@@ -95,7 +112,7 @@ export function getTrialStatus(t: TenantSubscriptionFields): TrialStatus {
       expiredSinceDays: Math.floor((now - target) / MS_PER_DAY),
     };
   }
-  // 4. Sin trial ni plan — tenant legacy.
+  // 5. Sin trial ni plan — tenant legacy.
   return { kind: "unknown" };
 }
 

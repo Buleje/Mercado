@@ -67,7 +67,9 @@ async function executeAction(action: { type: string; payload: Record<string, unk
         image: "/placeholder.webp",
         unit: p.unit ?? "unidad",
         stock: p.stock ?? 0,
-        stockMin: p.stockMin ?? 5,
+        // Sin mínimo propio usa el del negocio (`stockMinimoDe`, 09-10);
+        // antes grababa un 5 propio que tapaba al global.
+        stockMin: p.stockMin,
         active: true,
         tenantId,
       });
@@ -80,6 +82,15 @@ async function executeAction(action: { type: string; payload: Record<string, unk
       const validStatuses = ["pendiente", "confirmado", "preparando", "en-camino", "entregado", "cancelado"];
       if (!orderId || !validStatuses.includes(status)) {
         return { ok: false, message: `orderId y status válido (${validStatuses.join(", ")}) son requeridos.` };
+      }
+      if (status === "cancelado") {
+        // Misma puerta que el panel: devuelve stock y puntos canjeados una
+        // sola vez y nunca cancela un pedido entregado.
+        const r = await OrdersDB.cancelarConReposicion(tenantId, orderId, "cancelado por el asistente");
+        if (!r.repuesto) {
+          return { ok: false, message: `Pedido ${orderId} no se canceló (no existe, ya estaba cancelado o fue entregado).` };
+        }
+        return { ok: true, message: `Pedido ${orderId} cancelado; stock y puntos devueltos.` };
       }
       const order = await OrdersDB.update(tenantId, orderId, { status: status as "pendiente" });
       if (!order) return { ok: false, message: `Pedido ${orderId} no encontrado.` };

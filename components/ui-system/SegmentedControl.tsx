@@ -21,8 +21,31 @@
  *   />
  */
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+
+/**
+ * Con muchas opciones en celular la fila va dentro de una caja con scroll
+ * horizontal: si la elegida (p. ej. la recordada «Cuánto pagar», la 4.ª de
+ * Rendimiento a 400 px) quedaba fuera, no se veía cuál estaba activa (04-11).
+ * Mueve sólo el scroll horizontal de esa caja — nunca la página, por eso no
+ * `scrollIntoView` — y sólo si la opción está tapada.
+ */
+function mostrarElegida(grupo: HTMLElement | null, valor: string) {
+  const boton = grupo?.querySelector<HTMLElement>(`[data-value="${CSS.escape(valor)}"]`);
+  let caja: HTMLElement | null = grupo;
+  for (let nivel = 0; caja && nivel < 3; nivel++, caja = caja.parentElement) {
+    if (caja.scrollWidth <= caja.clientWidth + 1) continue;
+    const { overflowX } = getComputedStyle(caja);
+    if (overflowX !== "auto" && overflowX !== "scroll") continue;
+    if (!boton) return;
+    const b = boton.getBoundingClientRect();
+    const c = caja.getBoundingClientRect();
+    if (b.left < c.left) caja.scrollLeft -= c.left - b.left + 8;
+    else if (b.right > c.right) caja.scrollLeft += b.right - c.right + 8;
+    return;
+  }
+}
 
 interface Option<T extends string> {
   value: T;
@@ -31,6 +54,10 @@ interface Option<T extends string> {
   /** Badge opcional (ej. count) */
   badge?: string | number;
   disabled?: boolean;
+  /** Con `soloIcono`: nombre accesible y tooltip nativo de la opción. Por defecto, `label`. */
+  title?: string;
+  /** Atributo `data-qa` del botón (recorridos de QA). */
+  dataQa?: string;
 }
 
 interface Props<T extends string> {
@@ -38,7 +65,9 @@ interface Props<T extends string> {
   onChange: (value: T) => void;
   options: Option<T>[];
   /** Tamaño. Default "md" */
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
+  /** Sólo el ícono de cada opción (cuadrado), con `label`/`title` como `aria-label` y tooltip. */
+  soloIcono?: boolean;
   /** Nombre accesible */
   label?: string;
   className?: string;
@@ -48,6 +77,14 @@ const SIZE_CLASSES = {
   sm: "h-8 text-xs px-3",
   md: "h-9 text-sm px-4",
   lg: "h-11 text-sm px-5",
+  xl: "h-12 text-sm px-5",
+} as const;
+
+const SIZE_ICONO = {
+  sm: "h-8 w-8",
+  md: "h-9 w-9",
+  lg: "h-11 w-11",
+  xl: "h-12 w-12",
 } as const;
 
 export default function SegmentedControl<T extends string>({
@@ -55,10 +92,15 @@ export default function SegmentedControl<T extends string>({
   onChange,
   options,
   size = "md",
+  soloIcono = false,
   label,
   className,
 }: Props<T>) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    mostrarElegida(containerRef.current, value);
+  }, [value]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft" && e.key !== "Home" && e.key !== "End") return;
@@ -70,7 +112,16 @@ export default function SegmentedControl<T extends string>({
     else if (e.key === "ArrowLeft") nextIdx = (currentIdx - 1 + enabled.length) % enabled.length;
     else if (e.key === "Home") nextIdx = 0;
     else if (e.key === "End") nextIdx = enabled.length - 1;
-    onChange(enabled[nextIdx].value);
+    const destino = enabled[nextIdx].value;
+    onChange(destino);
+    /* El foco va con la selección, como pide el patrón radiogroup de ARIA: sin
+       esto la flecha cambiaba de opción y el foco se quedaba en la anterior,
+       que ya tiene tabIndex -1 (medido 25-09 en la ficha del permiso). */
+    requestAnimationFrame(() => {
+      containerRef.current
+        ?.querySelector<HTMLButtonElement>(`[data-value="${CSS.escape(destino)}"]`)
+        ?.focus();
+    });
   };
 
   return (
@@ -91,22 +142,26 @@ export default function SegmentedControl<T extends string>({
             key={opt.value}
             type="button"
             role="radio"
+            data-value={opt.value}
             aria-checked={selected}
             tabIndex={selected ? 0 : -1}
             disabled={opt.disabled}
+            aria-label={soloIcono ? (opt.title ?? opt.label) : undefined}
+            title={soloIcono ? (opt.title ?? opt.label) : undefined}
+            data-qa={opt.dataQa}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full font-bold transition-all",
+              "inline-flex items-center justify-center gap-1.5 rounded-full font-bold transition-all",
               "disabled:opacity-40 disabled:cursor-not-allowed",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
-              SIZE_CLASSES[size],
+              soloIcono ? SIZE_ICONO[size] : SIZE_CLASSES[size],
               selected
                 ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                 : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
             )}
           >
             {opt.icon && <span aria-hidden>{opt.icon}</span>}
-            <span>{opt.label}</span>
+            {!soloIcono && <span>{opt.label}</span>}
             {opt.badge !== undefined && (
               <span
                 className={cn(

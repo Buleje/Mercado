@@ -12,9 +12,12 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-const { mockCreate, mockFindFirst } = vi.hoisted(() => ({
+const { mockCreate, mockFindFirst, mockUpdateMany, mockFindMany, mockCount } = vi.hoisted(() => ({
   mockCreate: vi.fn(),
   mockFindFirst: vi.fn(),
+  mockUpdateMany: vi.fn(),
+  mockFindMany: vi.fn(),
+  mockCount: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -22,12 +25,24 @@ vi.mock("@/lib/prisma", () => ({
     notification: {
       create: mockCreate,
       findFirst: mockFindFirst,
-      updateMany: vi.fn(),
+      updateMany: mockUpdateMany,
+      findMany: mockFindMany,
+      count: mockCount,
     },
   },
 }));
 
-import { NotificationCenterDB } from "@/lib/db/notification-center.db";
+const haceHoras = (h: number) => new Date(Date.now() - h * 60 * 60 * 1000);
+
+import { NotificationCenterDB, filtroVisible, visibilidadDeRol } from "@/lib/db/notification-center.db";
+import { TIPO_AVISO_PAGO_SABADO as PAGO } from "@/lib/rrhh/pago-semana";
+import { TIPOS_AVISO_PLAN } from "@/lib/planificacion/avisos";
+import { TIPO_AVISO_ESENCIALES } from "@/lib/documentos/esenciales-avisos";
+import { TIPO_AVISO_CODIGO_FISICO } from "@/lib/documentos/codigo-fisico-avisos";
+
+/** Los tipos que sólo ve la gestión (plan, esenciales, código físico del papel). */
+// ADELANTOS_SEMANA (25-10): el «hoy toca» de los lunes de Adelantos también es sólo de gestión.
+const GESTION = [...TIPOS_AVISO_PLAN, TIPO_AVISO_ESENCIALES, TIPO_AVISO_CODIGO_FISICO, "ADELANTOS_SEMANA"];
 
 describe("NotificationCenterDB.create", () => {
   beforeEach(() => {
@@ -75,90 +90,146 @@ describe("NotificationCenterDB.create", () => {
   });
 });
 
-describe("NotificationCenterDB.createOrReuse — idempotencia", () => {
+describe("NotificationCenterDB.createOrReuse — un aviso por problema (OPER-1)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("crea si no existe match en la ventana", async () => {
+  const base = {
+    tenantId: "t-1",
+    type: "ADELANTO_VENCIDO",
+    severity: "MEDIUM",
+    title: "Adelantos vencidos por cobrar",
+    body: "3 personas con saldo vencido: S/ 900.00.",
+    actionUrl: "/admin?tab=plata&vista=adelantos",
+    actionLabel: "Ver adelantos",
+  };
+
+  it("crea si no hay uno igual sin leer", async () => {
     mockFindFirst.mockResolvedValueOnce(null);
     mockCreate.mockResolvedValueOnce({ id: "n-3" });
-    const result = await NotificationCenterDB.createOrReuse({
-      tenantId: "t-1",
-      type: "VENDOR_IDENTITY_ALERT",
-      severity: "HIGH",
-      title: "Alerta",
-      body: "Body",
-      entityId: "v-1",
-    });
-    expect(result).toEqual({ id: "n-3", created: true });
+    const result = await NotificationCenterDB.createOrReuse({ ...base, entityId: "v-1" });
+    expect(result).toEqual({ id: "n-3", created: true, refreshed: false });
     expect(mockCreate).toHaveBeenCalled();
+    expect(mockUpdateMany).not.toHaveBeenCalled();
   });
 
-  it("reusa si ya existe match (no leído + dentro de ventana)", async () => {
-    mockFindFirst.mockResolvedValueOnce({ id: "existing-id" });
-    const result = await NotificationCenterDB.createOrReuse({
-      tenantId: "t-1",
-      type: "VENDOR_IDENTITY_ALERT",
-      severity: "HIGH",
-      title: "Alerta",
-      body: "Body",
-      entityId: "v-1",
-    });
-    expect(result).toEqual({ id: "existing-id", created: false });
+  it("la clave es negocio + tipo + entidad, sin ventana de fecha y el más nuevo primero", async () => {
+    mockFindFirst.mockResolvedValueOnce(null);
+    mockCreate.mockResolvedValueOnce({ id: "n" });
+    await NotificationCenterDB.createOrReuse({ ...base, tenantId: "t-scope", entityId: "ent-99" });
+    const arg = mockFindFirst.mock.calls[0][0];
+    expect(arg.where).toEqual({ tenantId: "t-scope", type: "ADELANTO_VENCIDO", entityId: "ent-99", readAt: null });
+    expect(arg.orderBy).toEqual({ createdAt: "desc" });
+  });
+
+  it("sin entidad la clave es entityId null (no cualquier aviso del tipo)", async () => {
+    mockFindFirst.mockResolvedValueOnce(null);
+    mockCreate.mockResolvedValueOnce({ id: "n" });
+    await NotificationCenterDB.createOrReuse(base);
+    expect(mockFindFirst.mock.calls[0][0].where.entityId).toBeNull();
+  });
+
+  it("dentro de la ventana lo reusa sin escribir", async () => {
+    mockFindFirst.mockResolvedValueOnce({ id: "existing-id", createdAt: haceHoras(23) });
+    const result = await NotificationCenterDB.createOrReuse(base);
+    expect(result).toEqual({ id: "existing-id", created: false, refreshed: false });
     expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockUpdateMany).not.toHaveBeenCalled();
   });
 
-  it("default dedupWindowHours=24", async () => {
-    mockFindFirst.mockResolvedValueOnce(null);
-    mockCreate.mockResolvedValueOnce({ id: "n" });
-    await NotificationCenterDB.createOrReuse({
-      tenantId: "t-1",
-      type: "X",
-      severity: "LOW",
-      title: "t",
-      body: "b",
-    });
-    const findArg = mockFindFirst.mock.calls[0][0];
-    const since = findArg.where.createdAt.gte as Date;
-    const ageHours = (Date.now() - since.getTime()) / (60 * 60 * 1000);
-    expect(ageHours).toBeGreaterThan(23.9);
-    expect(ageHours).toBeLessThan(24.1);
-  });
+  it("fuera de la ventana ACTUALIZA el mismo aviso (texto + hora) en vez de crear otro", async () => {
+    mockFindFirst.mockResolvedValueOnce({ id: "viejo", createdAt: haceHoras(25) });
+    mockUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 13 });
+    const antes = Date.now();
+    const result = await NotificationCenterDB.createOrReuse(base);
 
-  it("dedupWindowHours custom usa ventana menor", async () => {
-    mockFindFirst.mockResolvedValueOnce(null);
-    mockCreate.mockResolvedValueOnce({ id: "n" });
-    await NotificationCenterDB.createOrReuse({
-      tenantId: "t-1",
-      type: "X",
-      severity: "LOW",
-      title: "t",
-      body: "b",
-      dedupWindowHours: 1,
-    });
-    const findArg = mockFindFirst.mock.calls[0][0];
-    const since = findArg.where.createdAt.gte as Date;
-    const ageHours = (Date.now() - since.getTime()) / (60 * 60 * 1000);
-    expect(ageHours).toBeGreaterThan(0.9);
-    expect(ageHours).toBeLessThan(1.1);
-  });
-
-  it("scopea where con tenantId + type + entityId", async () => {
-    mockFindFirst.mockResolvedValueOnce(null);
-    mockCreate.mockResolvedValueOnce({ id: "n" });
-    await NotificationCenterDB.createOrReuse({
-      tenantId: "t-scope",
-      type: "VENDOR_IDENTITY_ALERT",
+    expect(result).toEqual({ id: "viejo", created: true, refreshed: true });
+    expect(mockCreate).not.toHaveBeenCalled();
+    const [refresco, copias] = mockUpdateMany.mock.calls.map((c) => c[0]);
+    expect(refresco.where).toEqual({ id: "viejo", tenantId: "t-1", readAt: null });
+    expect(refresco.data).toMatchObject({
+      title: base.title,
+      body: base.body,
       severity: "MEDIUM",
-      title: "t",
-      body: "b",
-      entityId: "ent-99",
+      actionUrl: "/admin?tab=plata&vista=adelantos",
+      actionLabel: "Ver adelantos",
     });
-    const findArg = mockFindFirst.mock.calls[0][0];
-    expect(findArg.where.tenantId).toBe("t-scope");
-    expect(findArg.where.type).toBe("VENDOR_IDENTITY_ALERT");
-    expect(findArg.where.entityId).toBe("ent-99");
-    expect(findArg.where.readAt).toBeNull();
+    expect((refresco.data.createdAt as Date).getTime()).toBeGreaterThanOrEqual(antes);
+    // Las copias viejas de la misma clave (las 14 de Blas) quedan leídas.
+    expect(copias.where).toEqual({
+      tenantId: "t-1",
+      type: "ADELANTO_VENCIDO",
+      entityId: null,
+      readAt: null,
+      id: { not: "viejo" },
+    });
+    expect(copias.data.readAt).toBeInstanceOf(Date);
+  });
+
+  it("ventana custom: con 1 h, uno de hace 2 h se pone al día", async () => {
+    mockFindFirst.mockResolvedValueOnce({ id: "x", createdAt: haceHoras(2) });
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+    const result = await NotificationCenterDB.createOrReuse({ ...base, dedupWindowHours: 1 });
+    expect(result.refreshed).toBe(true);
+  });
+
+  it("si lo leyeron entre la búsqueda y la escritura, crea uno nuevo (no lo des-lee)", async () => {
+    mockFindFirst.mockResolvedValueOnce({ id: "leido", createdAt: haceHoras(30) });
+    mockUpdateMany.mockResolvedValueOnce({ count: 0 });
+    mockCreate.mockResolvedValueOnce({ id: "nuevo" });
+    const result = await NotificationCenterDB.createOrReuse(base);
+    expect(result).toEqual({ id: "nuevo", created: true, refreshed: false });
+    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("campana por rol: los avisos de Cámaras sólo para quien ve las fotos (revisión 23-10)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+    mockUpdateMany.mockResolvedValue({ count: 0 });
+  });
+
+  it("cajero: sin HIGH, sin los del plan y sin Cámaras; almacenero ve Cámaras; gestión, todo", () => {
+    expect(filtroVisible("t1", visibilidadDeRol("cashier"))).toEqual({
+      tenantId: "t1",
+      severity: { not: "HIGH" },
+      type: { notIn: [...GESTION, "camaras", PAGO] },
+    });
+    expect(filtroVisible("t1", visibilidadDeRol("almacenero"))).toEqual({
+      tenantId: "t1",
+      severity: { not: "HIGH" },
+      type: { notIn: [...GESTION, PAGO] },
+    });
+    for (const rol of ["admin", "owner"]) expect(filtroVisible("t1", visibilidadDeRol(rol))).toEqual({ tenantId: "t1" });
+    /* El pago del sábado lleva el sueldo: el encargado no lo ve (ADR-414 §7), sí lo demás. */
+    expect(filtroVisible("t1", visibilidadDeRol("manager"))).toEqual({ tenantId: "t1", type: { notIn: [PAGO] } });
+    /* Sin rol y sin ser gestión: lo más cerrado (tampoco Cámaras ni el pago). */
+    expect(filtroVisible("t1", { canSeeHigh: false }).type).toEqual({ notIn: [...GESTION, "camaras", PAGO] });
+    /* Gestión sin rol: ve lo de gestión, pero no el pago. */
+    expect(filtroVisible("t1", { canSeeHigh: true }).type).toEqual({ notIn: [PAGO] });
+  });
+
+  it("listar y contar usan el mismo filtro del rol", async () => {
+    await NotificationCenterDB.listForAdmin("t1", { ...visibilidadDeRol("cashier"), unread: true });
+    const filtro = filtroVisible("t1", visibilidadDeRol("cashier"));
+    expect(mockFindMany.mock.calls[0][0].where).toEqual({ ...filtro, readAt: null });
+    expect(mockCount.mock.calls[0][0].where).toEqual({ ...filtro, readAt: null });
+  });
+
+  it("marcar como leída (una o todas) sólo lo que ese rol ve, con el negocio en el WHERE", async () => {
+    mockUpdateMany.mockResolvedValueOnce({ count: 0 });
+    expect(await NotificationCenterDB.marcarLeida("t1", "n-camaras", visibilidadDeRol("cashier"))).toBe(0);
+    expect(mockUpdateMany.mock.calls[0][0].where).toEqual({ ...filtroVisible("t1", visibilidadDeRol("cashier")), id: "n-camaras" });
+    mockUpdateMany.mockResolvedValueOnce({ count: 3 });
+    expect(await NotificationCenterDB.marcarTodasLeidas("t1", visibilidadDeRol("cashier"))).toBe(3);
+    expect(mockUpdateMany.mock.calls[1][0].where).toEqual({
+      tenantId: "t1",
+      severity: { not: "HIGH" },
+      type: { notIn: [...GESTION, "camaras", PAGO] },
+      readAt: null,
+    });
   });
 });

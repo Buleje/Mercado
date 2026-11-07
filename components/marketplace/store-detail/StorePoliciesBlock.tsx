@@ -18,7 +18,7 @@ interface PolicyCardProps {
 function PolicyCard({ icon, title, description }: PolicyCardProps) {
   return (
     <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]" aria-hidden>
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden>
         {icon}
       </span>
       <h3 className="text-sm font-bold text-[var(--text-primary)]">
@@ -60,7 +60,7 @@ export default function StorePoliciesBlock() {
       <details className="sm:hidden group rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
         <summary className="cursor-pointer list-none flex items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--surface-sunken)]">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Truck className="h-4 w-4" strokeWidth={2.25} aria-hidden />
             </span>
             <div className="min-w-0">

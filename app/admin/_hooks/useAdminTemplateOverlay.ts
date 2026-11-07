@@ -20,6 +20,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { SPEC_GATED_MODULE_IDS } from "@/hooks/use-enabled-specs";
 import {
   type AdminPlan,
   type AdminTemplate,
@@ -73,6 +74,13 @@ export function useAdminTemplateOverlay(): AdminTemplateOverlay {
 
   const isHiddenByTemplate = useCallback(
     (tabId: string): boolean => {
+      // Módulos de ESPECIALIZACIÓN (cacao, forestal…) se gobiernan por su
+      // feature flag por-tenant (ADR-124), NO por la plantilla genérica: el
+      // superadmin los habilita por negocio y deben aparecer aunque la
+      // plantilla los tenga en visible:false (bug 2026-07-14: spec ON pero
+      // el sidebar no mostraba el enlace). Mismo criterio con el que ya
+      // bypasean el plan tier y el filtro vertical.
+      if (SPEC_GATED_MODULE_IDS.has(tabId)) return false;
       const entry = ADMIN_MODULE_CATALOG.find((m) => m.id === tabId);
       // Tabs que NO están en el catálogo nunca quedan ocultos por la plantilla.
       if (!entry) return false;

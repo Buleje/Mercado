@@ -4,6 +4,7 @@ import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { enqueueDeliveryNotification } from "@/lib/queue/queues";
 import { isFeatureEnabled } from "@/lib/feature-flags";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * lib/db/delivery.db.ts — Bloque D1 del Marketplace (Delivery vivo)
@@ -188,6 +189,7 @@ export const DeliveryTrackingDB = {
 
     invalidateByPrefix(`delivery:tracking:${params.tenantId}:${params.orderId}`);
     invalidateByPrefix(`delivery:tracking:latest:${params.tenantId}`);
+    invalidateByPrefix(`delivery:tracking:recientes:${params.tenantId}`);
 
     logger.info("[DeliveryTracking] event added", {
       tenantId: params.tenantId,
@@ -302,6 +304,12 @@ export const DeliveryTrackingDB = {
 
   /**
    * Último evento de cada Order activo del tenant — para el dashboard en vivo del admin.
+   *
+   * 17-10 (P18): el filtro de cerrados iba ANTES del `DISTINCT ON`, así que un
+   * pedido ya entregado seguía «en camino» con su último evento activo, y el
+   * `LIMIT` cortaba por `orderId` (orden alfabético del id), no por lo más
+   * reciente. Ahora: primero el último evento de cada pedido (de los últimos 7
+   * días), después se descartan los cerrados, y se ordena por lo más nuevo.
    */
   async latestPerOrder(
     tenantId: string,
@@ -330,16 +338,20 @@ export const DeliveryTrackingDB = {
           customerName: string;
         }>
       >(
-        `SELECT DISTINCT ON (dt."orderId")
-                dt."id", dt."tenantId", dt."orderId", dt."status", dt."description",
-                dt."lat", dt."lng", dt."distanceM", dt."etaMinutes", dt."actorId",
-                dt."actorType", dt."photoUrl", dt."metadataJson", dt."createdAt",
-                o."customerName"
-           FROM "DeliveryTracking" dt
-           JOIN "Order" o ON o."id" = dt."orderId"
-          WHERE dt."tenantId" = $1
-            AND dt."status" NOT IN ('delivered','cancelled','failed')
-          ORDER BY dt."orderId", dt."createdAt" DESC
+        `SELECT u.* FROM (
+           SELECT DISTINCT ON (dt."orderId")
+                  dt."id", dt."tenantId", dt."orderId", dt."status", dt."description",
+                  dt."lat", dt."lng", dt."distanceM", dt."etaMinutes", dt."actorId",
+                  dt."actorType", dt."photoUrl", dt."metadataJson", dt."createdAt",
+                  o."customerName"
+             FROM "DeliveryTracking" dt
+             JOIN "Order" o ON o."id" = dt."orderId"
+            WHERE dt."tenantId" = $1
+              AND dt."createdAt" >= now() - interval '7 days'
+            ORDER BY dt."orderId", dt."createdAt" DESC
+          ) u
+          WHERE u."status" NOT IN ('delivered','cancelled','failed')
+          ORDER BY u."createdAt" DESC
           LIMIT $2`,
         tenantId,
         safeLimit,
@@ -361,6 +373,47 @@ export const DeliveryTrackingDB = {
         metadataJson: r.metadataJson,
         createdAt:    r.createdAt.toISOString(),
         customerName: r.customerName,
+      }));
+    });
+  },
+
+  /**
+   * Todos los eventos de las últimas `horas` (17-10, P18): el feed los agrupa
+   * por pedido SIN descartar ninguno (cada uno conserva su hora y quién lo
+   * generó). Incluye los cerrados: «Cerrados» y «Por atender» salen de acá.
+   */
+  async eventosRecientes(
+    tenantId: string,
+    horas = 24,
+    limit = 300,
+  ): Promise<Array<DbDeliveryTracking & { customerName: string }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const safeLimit = Math.min(Math.max(1, Math.trunc(limit)), 500);
+    const safeHoras = Math.min(Math.max(1, Math.trunc(horas)), 72);
+    const cacheKey = `delivery:tracking:recientes:${tenantId}:${safeHoras}:${safeLimit}`;
+    return getOrSet(cacheKey, 10, async () => {
+      const filas = await prisma.deliveryTracking.findMany({
+        where: { tenantId, createdAt: { gte: new Date(Date.now() - safeHoras * 3600_000) } },
+        orderBy: { createdAt: "desc" },
+        take: safeLimit,
+        include: { order: { select: { customerName: true } } },
+      });
+      return filas.map((r) => ({
+        id:           r.id,
+        tenantId:     r.tenantId,
+        orderId:      r.orderId,
+        status:       r.status as DeliveryStatus,
+        description:  r.description,
+        lat:          r.lat,
+        lng:          r.lng,
+        distanceM:    r.distanceM,
+        etaMinutes:   r.etaMinutes,
+        actorId:      r.actorId,
+        actorType:    r.actorType as DeliveryActorType,
+        photoUrl:     r.photoUrl,
+        metadataJson: r.metadataJson,
+        createdAt:    r.createdAt.toISOString(),
+        customerName: r.order?.customerName ?? "Cliente",
       }));
     });
   },
@@ -480,8 +533,7 @@ export const DeliveryRoutesDB = {
     const cacheKey = `delivery:routes:${tenantId}:today:${opts.storeId ?? "all"}:${opts.status ?? "all"}`;
 
     return getOrSet(cacheKey, 20, async () => {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
+      const startOfDay = new Date(startOfLimaDay());
       const endOfDay = new Date(startOfDay);
       endOfDay.setDate(endOfDay.getDate() + 1);
 

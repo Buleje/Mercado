@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionPayload, SESSION, createSessionToken } from "@/lib/session";
+import { getSessionPayload, SESSION, createSessionToken, vencimientoDeSesion } from "@/lib/session";
+import { esSuplantacion } from "@/lib/auth/suplantacion";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { TenantsDB } from "@/lib/db/tenants.db";
+
+/**
+ * ID de soporte de la tienda (ADR-500) para el panel: «ID de tu negocio».
+ * Sale del `tenantId` de la sesión. Si la base no responde, sin ID: el panel
+ * no se cae por esto.
+ */
+async function codigoDeLaTienda(tenantId: string): Promise<string | null> {
+  try {
+    return await TenantsDB.codigoDe(tenantId);
+  } catch (err) {
+    logger.warn("[auth/me] el ID de la tienda no cargó", { error: String(err) });
+    return null;
+  }
+}
 
 export async function GET(req: NextRequest) {
   // Retornamos 200 con role:null cuando no hay sesion para evitar ruido 401
@@ -12,7 +28,20 @@ export async function GET(req: NextRequest) {
   if (!token) return NextResponse.json({ role: null, authenticated: false });
   const payload = await getSessionPayload(token);
   if (!payload) return NextResponse.json({ role: null, authenticated: false });
-  return NextResponse.json({ ...payload, authenticated: true });
+  // Vista de tienda del superadmin (11-10): el panel pinta la franja «quedan N min»
+  // y vuelve al superadmin al vencer. La hora es el `exp` del token (10 min, igual
+  // que su cookie), no un reloj del navegador.
+  const tenantCodigo = await codigoDeLaTienda(payload.tenantId);
+  if (esSuplantacion(payload.username)) {
+    const exp = await vencimientoDeSesion(token);
+    if (exp) {
+      return NextResponse.json(
+        { ...payload, authenticated: true, tenantCodigo, suplantacion: { vence: exp } },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+  }
+  return NextResponse.json({ ...payload, authenticated: true, tenantCodigo });
 }
 
 const UpdateProfileSchema = z.object({
@@ -39,7 +68,7 @@ export async function PATCH(req: NextRequest) {
   try {
     await prisma.adminUser.update({
       where: { tenantId_username: { tenantId: payload.tenantId, username: payload.username } },
-      data: { ...(name !== undefined ? { name } : {}) },
+      data: name !== undefined ? { name } : {},
     });
 
     // Refresh session token with updated name

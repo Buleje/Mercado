@@ -1,491 +1,206 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  Users, Star, DollarSign, Clock, Package,
-  CreditCard, RefreshCw, AlertTriangle, ShoppingCart } from "@buleje/design-system/icons";
-import {
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ResponsiveContainer, Tooltip,
-} from "recharts";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTable, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { RefreshCw, Search, ShoppingCart, Star, Users } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import ComparadorDetalle from "./proveedores/ComparadorDetalle";
+import { ScoreBadge } from "./proveedores/ComparadorPiezas";
+import {
+  cargarProveedoresConPuntaje, diasDeEntrega, indicadoresDelComparador, ordenarProveedores,
+  type OrdenComparador, type SupplierWithScore,
+} from "./proveedores/comparador-datos";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const ORDENES: { id: OrdenComparador; label: string }[] = [
+  { id: "score", label: "Puntaje" },
+  { id: "name", label: "Nombre" },
+  { id: "precio", label: "Precio" },
+];
 
-interface SupplierEvalAverages {
-  punctuality: number; // 1-5
-  quality: number;     // 1-5
-  price: number;       // 1-5 (5 = precio bajo = bueno)
+interface SupplierComparatorProps {
+  /** Lleva al flujo de "Nueva orden" con el proveedor preseleccionado. */
+  onCreateOC?: (supplier: { id: string; name: string }) => void;
+  /** Avisa qué proveedor está elegido (Comparar muestra cómo entrega ese proveedor). */
+  onSeleccion?: (supplier: { id: string; name: string } | null) => void;
 }
 
-interface Supplier {
-  id: string;
-  name: string;
-  categoria?: string | null;
-  condicionPago?: string | null;
-  diasCredito?: number | null;
-  totalPurchases?: number;
-  avgDeliveryDays?: number | null;
-  productCount?: number;
-  averagePurchasePrice?: number;
-  evaluations?: SupplierEvalAverages | null;
-}
-
-interface SupplierWithScore extends Supplier {
-  score: number;
-  scoreCalidad: number;
-  scorePrecio: number;
-  scoreTiempo: number;
-  scoreCondicion: number;
-  scoreVariedad: number;
-}
-
-// ── Score ─────────────────────────────────────────────────────────────────────
-
-function calcScore(s: Supplier): SupplierWithScore {
-  const ev = s.evaluations;
-  // Calidad 40%
-  const scoreCalidad = ev ? (ev.quality / 5) * 100 : 50;
-  // Precio 30% — ev.price 5=bueno
-  const scorePrecio = ev ? (ev.price / 5) * 100 : 50;
-  // Tiempo de entrega 20% — más rápido es mejor (si >0)
-  const delivDays = s.avgDeliveryDays ?? 3;
-  const scoreTiempo = delivDays <= 0 ? 80 : Math.max(10, 100 - (delivDays - 1) * 15);
-  // Condición de pago 10% — crédito > contado (mayor días = mejor para comprador)
-  const dias = s.diasCredito ?? 0;
-  const scoreCondicion = Math.min(100, dias * 3 + (s.condicionPago === "credito" ? 30 : 10));
-  // Variedad (para radar) — basado en productCount
-  const scoreVariedad = Math.min(100, (s.productCount ?? 1) * 5);
-
-  const score =
-    scoreCalidad * 0.4 +
-    scorePrecio  * 0.3 +
-    scoreTiempo  * 0.2 +
-    scoreCondicion * 0.1;
-
-  return { ...s, score, scoreCalidad, scorePrecio, scoreTiempo, scoreCondicion, scoreVariedad };
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function ScoreBar({ value, color }: { value: number; color: string }) {
-  return (
-    <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-      <div className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", color)} style={{ width: `${Math.min(100, value)}%` }} />
-    </div>
-  );
-}
-
-function ScoreBadge({ score }: { score: number }) {
-  const grade = score >= 80 ? "A" : score >= 65 ? "B" : score >= 50 ? "C" : "D";
-  const colors: Record<string, string> = {
-    A: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-    B: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-    C: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
-    D: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
-  };
-  return (
-    <span className={cn("inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-extrabold", colors[grade])}>
-      {grade}
-    </span>
-  );
-}
-
-// ── Radar Chart for single supplier ──────────────────────────────────────────
-
-function SupplierRadar({ supplier }: { supplier: SupplierWithScore }) {
-  const data = [
-    { axis: "Precio",   value: Math.round(supplier.scorePrecio) },
-    { axis: "Calidad",  value: Math.round(supplier.scoreCalidad) },
-    { axis: "Tiempo",   value: Math.round(supplier.scoreTiempo) },
-    { axis: "Variedad", value: Math.round(supplier.scoreVariedad) },
-    { axis: "Pago",     value: Math.round(supplier.scoreCondicion) },
-  ];
-  return (
-    <div className="h-48">
-      <ResponsiveContainer minWidth={0} width="100%" height="100%">
-        <RadarChart data={data} outerRadius="70%">
-          <PolarGrid stroke="var(--card-border, #e5e7eb)" />
-          <PolarAngleAxis
-            dataKey="axis"
-            tick={{ fontSize: 10, fill: "var(--muted, #9ca3af)" }}
-          />
-          <PolarRadiusAxis
-            angle={30}
-            domain={[0, 100]}
-            tick={{ fontSize: 8, fill: "var(--muted, #9ca3af)" }}
-            tickCount={3}
-          />
-          <Radar dataKey="value" stroke="var(--accent)" fill="var(--accent)" fillOpacity={0.2} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "var(--card, #fff)",
-              border: "1px solid var(--card-border, #e5e7eb)",
-              borderRadius: "0.5rem",
-              fontSize: 11,
-            }}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-// ── Main Component ────────────────────────────────────────────────────────────
-
-export default function SupplierComparator() {
+/**
+ * Compras › Proveedores › Comparar: tus proveedores lado a lado por puntaje
+ * (calidad, precio, tiempo y condiciones) y, al elegir uno, su radar y «Crear
+ * orden». El título y las secciones los pone la fila de `ProveedoresVista`.
+ */
+export default function SupplierComparator({ onCreateOC, onSeleccion }: SupplierComparatorProps = {}) {
   const [suppliers, setSuppliers] = useState<SupplierWithScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [productFilter, setProductFilter] = useState("");
-  const [sortBy, setSortBy] = useState<"score" | "name" | "precio">("score");
+  const [texto, setTexto] = useState("");
+  const [orden, setOrden] = useState<OrdenComparador>("score");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [suppRes, evalRes] = await Promise.all([
-        fetch("/api/suppliers"),
-        fetch("/api/supplier-evaluations"),
-      ]);
-
-      const suppJson = suppRes.ok ? await suppRes.json() : [];
-      const evalJson = evalRes.ok ? await evalRes.json() : [];
-
-      const rawSuppliers: Supplier[] = suppJson.suppliers ?? suppJson.data ?? suppJson ?? [];
-      const rawEvals: Array<{ supplierId: string; quality: number; price: number; punctuality: number }> =
-        evalJson.evaluations ?? evalJson ?? [];
-
-      // Compute averages per supplier
-      const evalMap: Record<string, { quality: number[]; price: number[]; punctuality: number[] }> = {};
-      rawEvals.forEach(e => {
-        if (!evalMap[e.supplierId]) evalMap[e.supplierId] = { quality: [], price: [], punctuality: [] };
-        evalMap[e.supplierId].quality.push(e.quality);
-        evalMap[e.supplierId].price.push(e.price);
-        evalMap[e.supplierId].punctuality.push(e.punctuality);
-      });
-
-      const avg = (arr: number[]) => arr.length === 0 ? 3 : arr.reduce((s, v) => s + v, 0) / arr.length;
-
-      const scored = rawSuppliers.map(s => {
-        const ev = evalMap[s.id];
-        return calcScore({
-          ...s,
-          evaluations: ev
-            ? { quality: avg(ev.quality), price: avg(ev.price), punctuality: avg(ev.punctuality) }
-            : null,
-        });
-      });
-
+      const scored = await cargarProveedoresConPuntaje();
       setSuppliers(scored);
-      if (scored.length > 0 && !selectedId) setSelectedId(scored[0].id);
+      setSelectedId((actual) => actual ?? scored[0]?.id ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar proveedores");
     } finally {
       setLoading(false);
     }
   }, []);
+  useEffect(() => { void fetchData(); }, [fetchData]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const sorted = useMemo(() => ordenarProveedores(suppliers, orden, texto), [suppliers, orden, texto]);
+  const selectedSupplier = useMemo(() => suppliers.find((s) => s.id === selectedId) ?? null, [suppliers, selectedId]);
 
-  const sorted = useMemo(() => {
-    const filtered = productFilter.trim()
-      ? suppliers.filter(s => s.name.toLowerCase().includes(productFilter.toLowerCase()))
-      : suppliers;
-    return [...filtered].sort((a, b) => {
-      if (sortBy === "score") return b.score - a.score;
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      if (sortBy === "precio") return (a.averagePurchasePrice ?? 0) - (b.averagePurchasePrice ?? 0);
-      return 0;
-    });
-  }, [suppliers, sortBy, productFilter]);
+  /* Por id y nombre, no por el objeto: `suppliers` se recalcula al actualizar y
+     un objeto nuevo con el mismo proveedor no tiene que remontar a quien escucha. */
+  const elegidoId = selectedSupplier?.id ?? null;
+  const elegidoNombre = selectedSupplier?.name ?? null;
+  useEffect(() => {
+    onSeleccion?.(elegidoId && elegidoNombre ? { id: elegidoId, name: elegidoNombre } : null);
+  }, [onSeleccion, elegidoId, elegidoNombre]);
 
-  const selectedSupplier = useMemo(() => suppliers.find(s => s.id === selectedId) ?? null, [suppliers, selectedId]);
+  // Una OC necesita productos: no se crea vacía por API (el POST viejo daba 404 mudo); se lleva a «Nueva orden» con el proveedor puesto.
+  const crearOC = useCallback((s: SupplierWithScore) => onCreateOC?.({ id: s.id, name: s.name }), [onCreateOC]);
 
-  const handleCreateOC = useCallback(async (supplier: SupplierWithScore) => {
-    if (!confirm(`¿Crear orden de compra para ${supplier.name}?`)) return;
-    try {
-      const res = await fetch("/api/purchase-orders", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ supplierId: supplier.id, supplierName: supplier.name }),
-      });
-      if (!res.ok) throw new Error("No se pudo crear la OC");
-      const json = await res.json();
-      alert(`Orden de compra creada: ${json.id ?? json.orderNumber ?? "OK"}`);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Error al crear OC");
-    }
-  }, []);
+  const k = useMemo(() => indicadoresDelComparador(suppliers), [suppliers]);
+  const kpis = useKpisPlegables({
+    claveMemoria: "compras:proveedores:comparar",
+    alto: "md",
+    compactoEnMovil: true,
+    sinDatosAun: loading,
+    resumen: k.evaluados > 0 ? `Top ${k.topName}` : "Sin evaluar",
+    tarjetas: suppliers.length === 0 ? [] : [
+      <Tarjeta key="top" rotulo="Mejor puntuado" valor={k.topName} detalle={k.topName === "—" ? "Sin proveedores evaluados aún" : `${k.topScore} de 100 puntos`} ayuda="El proveedor con mejor puntaje entre los que tienen evaluaciones reales." />,
+      <Tarjeta key="prom" rotulo="Puntaje promedio" valor={String(k.avgScore)} detalle={`${k.evaluados} de ${k.total} evaluados`} ayuda="Promedio de los proveedores que ya tienen evaluaciones; los demás no cuentan." tono={k.avgScore >= 70 ? "ok" : k.avgScore >= 50 ? "aviso" : k.evaluados > 0 ? "malo" : undefined} />,
+      <Tarjeta key="precio" rotulo="Mejor precio" valor={k.lowestPrice != null ? formatCurrency(Number(k.lowestPrice)) : "—"} detalle={k.lowestPriceName} ayuda="El proveedor con el precio promedio de compra más bajo." />,
+    ],
+  });
 
-  // KPIs globales del scoring (antes de los early returns para no violar
-  // rules-of-hooks)
-  const kpis = useMemo(() => {
-    if (suppliers.length === 0) return { topName: "—", topScore: 0, avgScore: 0, lowestPrice: null as number | null, lowestPriceName: "—" };
-    const sortedByScore = [...suppliers].sort((a, b) => b.score - a.score);
-    const top = sortedByScore[0];
-    const avgScore = Math.round(suppliers.reduce((s, x) => s + x.score, 0) / suppliers.length);
-    const withPrice = suppliers.filter(s => (s.averagePurchasePrice ?? 0) > 0);
-    const sortedByPrice = [...withPrice].sort((a, b) => (a.averagePurchasePrice ?? 0) - (b.averagePurchasePrice ?? 0));
-    const cheapest = sortedByPrice[0];
-    return {
-      topName: top.name,
-      topScore: Math.round(top.score),
-      avgScore,
-      lowestPrice: cheapest?.averagePurchasePrice ?? null,
-      lowestPriceName: cheapest?.name ?? "—",
-    };
-  }, [suppliers]);
-
-  // ── Loading ──
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // ── Error ──
+  if (loading && suppliers.length === 0) return <LoadingState message="Cargando proveedores..." />;
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
-        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
-        <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
-      </div>
+      <ErrorAlert
+        title="No se pudo armar el comparador"
+        description={error}
+        action={<button type="button" onClick={() => void fetchData()} className={button({ variant: "secondary" })}>Reintentar</button>}
+      />
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Comparador de Proveedores</SectionTitle>
-          </div>
-        </div>
-        <button
-          onClick={fetchData}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center self-end"
-          title="Actualizar"
-        >
-          <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
-        </button>
-      </div>
-
-      {/* KPI summary 4 cards */}
-      {suppliers.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Top proveedor</p>
-              <p className="text-lg font-extrabold leading-none mt-1.5 text-[var(--text-primary)] truncate">{kpis.topName}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">Score {kpis.topScore}/100</p>
-            </div>
-            <Star className="h-5 w-5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
-          </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Score promedio</p>
-              <p className={cn(
-                "text-2xl font-extrabold tabular-nums leading-none mt-1.5",
-                kpis.avgScore >= 70 ? "text-[var(--data-success-500)]" : kpis.avgScore >= 50 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
-              )}>{kpis.avgScore}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">de 100 puntos</p>
-            </div>
-            <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
-          </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
-              <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{suppliers.length}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">proveedores evaluados</p>
-            </div>
-            <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
-          </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mejor precio</p>
-              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `S/${Number(kpis.lowestPrice).toFixed(2)}` : "—"}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1 truncate">{kpis.lowestPriceName}</p>
-            </div>
-            <RefreshCw className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
-          </div>
-        </div>
-      )}
-
-      {/* Filter & Sort */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <input
-          type="text"
-          value={productFilter}
-          onChange={e => setProductFilter(e.target.value)}
-          placeholder="Buscar proveedor o producto..."
-          className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Ordenar:</span>
-          {(["score", "name", "precio"] as const).map(s => (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="relative min-w-[14rem] flex-1">
+          <span className="sr-only">Buscar proveedor</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar proveedor"
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
+          />
+        </label>
+        <div role="group" aria-label="Ordenar por" className="inline-flex gap-2">
+          {ORDENES.map((o) => (
             <button
-              key={s}
-              onClick={() => setSortBy(s)}
-              className={cn(
-                "px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all",
-                sortBy === s
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-white/10",
-              )}
+              key={o.id} type="button" aria-pressed={orden === o.id} onClick={() => setOrden(o.id)}
+              className={cn("h-12 rounded-xl border px-3 text-sm font-semibold transition-colors", orden === o.id ? "border-primary bg-primary text-white" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}
             >
-              {s === "score" ? "Score" : s === "name" ? "Nombre" : "Precio"}
+              {o.label}
             </button>
           ))}
         </div>
+        {kpis.boton}
+        <button type="button" onClick={() => void fetchData()} title="Actualizar" aria-label="Actualizar" className={button({ variant: "secondary", className: "w-12 shrink-0 rounded-xl px-0" })}>
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden />
+        </button>
       </div>
 
-      <div className="flex gap-4 flex-col lg:flex-row">
-        {/* Table */}
-        <div className="flex-1 min-w-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+      {kpis.panel}
+
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="min-w-0 flex-1">
           {sorted.length === 0 ? (
-            <div className="py-16 text-center">
-              <Users className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-3" />
-              <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Sin proveedores registrados</p>
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-12 text-center">
+              <Users className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)]" aria-hidden />
+              <p className="text-sm text-[var(--text-secondary)]">{texto.trim() ? "Ningún proveedor coincide." : "Sin proveedores registrados"}</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)]">Proveedor</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Prods.</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold uppercase text-[var(--text-tertiary)] hidden md:table-cell">Precio prom.</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Tiempo</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)] hidden lg:table-cell">Pago</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">Score</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">OC</th>
+            <DataTable className="min-w-[640px]">
+              <thead>
+                <tr>
+                  <th>Proveedor</th>
+                  <th className="hidden text-center sm:table-cell">Prods.</th>
+                  <th className="hidden text-right md:table-cell">Precio prom.</th>
+                  <th className="hidden text-center sm:table-cell">Entrega</th>
+                  <th className="hidden lg:table-cell">Pago</th>
+                  <th className="text-center">Puntaje</th>
+                  <th className="text-center"><span className="sr-only">Orden de compra</span></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--rule-soft)]">
+                {sorted.map((s, idx) => (
+                  <tr
+                    key={s.id}
+                    onClick={() => setSelectedId(s.id)}
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedId(s.id); } }}
+                    aria-label={`Ver detalle del proveedor ${s.name}`}
+                    aria-selected={selectedId === s.id}
+                    className={cn("cursor-pointer", selectedId === s.id ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-[var(--surface-sunken)]")}
+                  >
+                    <td>
+                      <div className="flex items-center gap-2">
+                        {idx === 0 && s.hasData && orden === "score" && <Star className="h-4 w-4 shrink-0 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" aria-label="Mejor puntuado" />}
+                        <div>
+                          <p className="text-sm font-bold text-[var(--text-primary)]">{s.name}</p>
+                          {s.categoria && <p className="text-sm text-[var(--text-secondary)]">{s.categoria}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden text-center text-[var(--text-secondary)] sm:table-cell">{s.productCount ?? "—"}</td>
+                    <td className="hidden text-right font-mono text-[var(--text-secondary)] md:table-cell">{s.averagePurchasePrice ? formatCurrency(s.averagePurchasePrice) : "—"}</td>
+                    <td className="hidden text-center text-[var(--text-secondary)] sm:table-cell">{diasDeEntrega(s) != null ? `${diasDeEntrega(s)} d` : "—"}</td>
+                    <td className="hidden text-[var(--text-secondary)] lg:table-cell">{s.condicionPago ?? "—"}{s.diasCredito ? ` (${s.diasCredito}d)` : ""}</td>
+                    <td className="text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <ScoreBadge score={s.score} hasData={s.hasData} />
+                        <span className="text-sm font-bold text-[var(--text-secondary)]">{s.hasData ? `${Number(s.score).toFixed(0)} pts` : "Sin datos"}</span>
+                      </div>
+                    </td>
+                    <td className="text-center">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); crearOC(s); }} title="Crear orden de compra" className={button({ variant: "secondary", className: "gap-1.5 rounded-xl px-3" })}>
+                        <ShoppingCart className="h-4 w-4" aria-hidden /> Orden
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-                  {sorted.map((s, idx) => (
-                    <tr
-                      key={s.id}
-                      onClick={() => setSelectedId(s.id)}
-                      className={cn(
-                        "cursor-pointer transition-colors",
-                        selectedId === s.id
-                          ? "bg-primary/5 dark:bg-primary/10"
-                          : "hover:bg-gray-50 dark:hover:bg-white/5",
-                      )}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {idx === 0 && (
-                            <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
-                          )}
-                          <div>
-                            <p className="text-xs font-bold text-[var(--text-primary)]">{s.name}</p>
-                            {s.categoria && (
-                              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{s.categoria}</p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center hidden sm:table-cell">
-                        <span className="text-xs text-[var(--text-secondary)]">{s.productCount ?? "—"}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right hidden md:table-cell">
-                        <span className="text-xs font-mono text-[var(--text-secondary)]">
-                          {s.averagePurchasePrice ? fmt(s.averagePurchasePrice) : "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center hidden sm:table-cell">
-                        <span className="text-xs text-[var(--text-secondary)]">
-                          {s.avgDeliveryDays != null ? `${s.avgDeliveryDays}d` : "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className="text-xs text-[var(--text-secondary)]">
-                          {s.condicionPago ?? "—"}{s.diasCredito ? ` (${s.diasCredito}d)` : ""}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <ScoreBadge score={s.score} />
-                          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{Number(s.score).toFixed(0)}pts</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={e => { e.stopPropagation(); handleCreateOC(s); }}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
-                          title="Crear orden de compra"
-                        >
-                          <ShoppingCart className="h-3 w-3" /> OC
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </DataTable>
           )}
         </div>
-
-        {/* Radar detail */}
-        {selectedSupplier && (
-          <div className="w-full lg:w-64 shrink-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-primary)] truncate">{selectedSupplier.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <ScoreBadge score={selectedSupplier.score} />
-                <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{Number(selectedSupplier.score).toFixed(1)} puntos</span>
-              </div>
-            </div>
-
-            <div className="px-3 pt-3">
-              <SupplierRadar supplier={selectedSupplier} />
-            </div>
-
-            {/* Metrics bars */}
-            <div className="px-4 pb-4 space-y-2.5 mt-1">
-              {[
-                { label: "Calidad", value: selectedSupplier.scoreCalidad, icon: Star, color: "bg-[var(--accent-soft)]" },
-                { label: "Precio", value: selectedSupplier.scorePrecio, icon: DollarSign, color: "bg-primary" },
-                { label: "Tiempo", value: selectedSupplier.scoreTiempo, icon: Clock, color: "bg-[var(--accent-soft)]" },
-                { label: "Variedad", value: selectedSupplier.scoreVariedad, icon: Package, color: "bg-[var(--text-primary)]" },
-                { label: "Cond. pago", value: selectedSupplier.scoreCondicion, icon: CreditCard, color: "bg-[var(--data-warning-500)]" },
-              ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted font-medium">
-                      <Icon className="h-3 w-3" /> {label}
-                    </span>
-                    <span className="font-bold text-[var(--text-secondary)]">{value.toFixed(0)}%</span>
-                  </div>
-                  <ScoreBar value={value} color={color} />
-                </div>
-              ))}
-            </div>
-
-            <div className="px-4 pb-4">
-              <button
-                onClick={() => handleCreateOC(selectedSupplier)}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors min-h-[40px]"
-              >
-                <ShoppingCart className="h-4 w-4" /> Crear Orden de Compra
-              </button>
-            </div>
-          </div>
-        )}
+        {selectedSupplier && <ComparadorDetalle proveedor={selectedSupplier} onCrearOC={crearOC} />}
       </div>
+    </div>
+  );
+}
+
+function Tarjeta({ rotulo, valor, detalle, ayuda, tono }: { rotulo: string; valor: string; detalle: string; ayuda: string; tono?: "ok" | "aviso" | "malo" }) {
+  const color = tono === "ok" ? "text-[var(--data-success-ink)]" : tono === "aviso" ? "text-[var(--data-warning-ink)]" : tono === "malo" ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]";
+  return (
+    <div className="min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+      <div className="mb-1 flex items-center gap-2">
+        <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
+        <InfoTip what={ayuda} />
+      </div>
+      <p className={cn("truncate text-lg font-extrabold tabular-nums", color)}>{valor}</p>
+      <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">{detalle}</p>
     </div>
   );
 }

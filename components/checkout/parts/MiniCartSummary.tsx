@@ -18,7 +18,7 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
   if (items.length === 0) return null;
   return (
     <details className="mx-5 mt-2 mb-0 group">
-      <summary className="flex items-center justify-between cursor-pointer list-none text-xs font-semibold text-primary py-1.5 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
+      <summary className="flex items-center justify-between cursor-pointer list-none text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] py-1.5 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
         <span className="flex items-center gap-1.5">
           <ShoppingCart className="h-3.5 w-3.5" />
           {items.length} {items.length === 1 ? "producto" : "productos"} · {formatCurrency(finalTotal)}
@@ -37,7 +37,7 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
           />
         </svg>
       </summary>
-      <div className="mt-1.5 max-h-32 overflow-y-auto rounded-lg border border-[var(--rule-base)] divide-y divide-gray-50 dark:divide-card-border">
+      <div className="mt-1.5 max-h-32 overflow-y-auto rounded-lg border border-[var(--rule-base)] divide-y divide-gray-50 dark:divide-[var(--rule-soft)]">
         {items.map((item) => (
           <div
             key={item.id}
@@ -46,7 +46,7 @@ export function MiniCartSummary({ items, finalTotal }: MiniCartSummaryProps) {
             <span className="text-gray-700 dark:text-[var(--text-primary)] truncate flex-1 min-w-0">
               {item.quantity}× {item.name}
             </span>
-            <span className="text-gray-500 font-semibold ml-2 shrink-0">
+            <span className="text-gray-500 dark:text-[var(--text-secondary)] font-semibold ml-2 shrink-0">
               {formatCurrency(item.price * item.quantity)}
             </span>
           </div>

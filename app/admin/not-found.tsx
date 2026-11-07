@@ -19,7 +19,7 @@ export default function AdminNotFound() {
         </p>
         <Link
           href="/admin"
-          className="mt-6 inline-block rounded-lg bg-[var(--accent-soft)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--accent-soft)] transition-colors"
+          className="mt-6 inline-block rounded-lg bg-primary/10 px-6 py-2 text-sm font-medium text-white hover:bg-primary/10 transition-colors"
         >
           Ir al panel principal
         </Link>

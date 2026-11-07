@@ -117,3 +117,72 @@ export async function getDeadLetterDashboard() {
   ]);
   return { events, crons, mpWebhooks };
 }
+
+const MAX_ATTEMPTS = 5; // igual que el cron event-dlq-replay
+
+export interface EventDlqStats {
+  unresolved: number;
+  nearMax: number; // attemptCount >= MAX-1 → casi sin reintentos
+  oldestFailedAt: string | null;
+  byHandler: { handler: string; count: number }[];
+  byEventType: { eventType: string; count: number }[];
+}
+
+/** Resumen de triage del DLQ de eventos (solo no-resueltos). */
+export async function getEventDlqStats(): Promise<EventDlqStats> {
+  try {
+    const [unresolved, nearMax, oldest, byHandler, byEventType] = await Promise.all([
+      prisma.eventDeadLetter.count({ where: { resolvedAt: null } }),
+      prisma.eventDeadLetter.count({ where: { resolvedAt: null, attemptCount: { gte: MAX_ATTEMPTS - 1 } } }),
+      prisma.eventDeadLetter.findFirst({ where: { resolvedAt: null }, orderBy: { failedAt: "asc" }, select: { failedAt: true } }),
+      prisma.eventDeadLetter.groupBy({ by: ["handlerName"], where: { resolvedAt: null }, _count: { _all: true }, orderBy: { _count: { handlerName: "desc" } }, take: 8 }),
+      prisma.eventDeadLetter.groupBy({ by: ["eventType"], where: { resolvedAt: null }, _count: { _all: true }, orderBy: { _count: { eventType: "desc" } }, take: 8 }),
+    ]);
+    return {
+      unresolved,
+      nearMax,
+      oldestFailedAt: oldest?.failedAt.toISOString() ?? null,
+      byHandler: byHandler.map((h) => ({ handler: h.handlerName, count: h._count._all })),
+      byEventType: byEventType.map((e) => ({ eventType: e.eventType, count: e._count._all })),
+    };
+  } catch (err) {
+    logger.warn("[dlq.db] getEventDlqStats failed", { error: String(err) });
+    return { unresolved: 0, nearMax: 0, oldestFailedAt: null, byHandler: [], byEventType: [] };
+  }
+}
+
+/** Marca un evento del DLQ como resuelto manualmente (sin reintentar). */
+export async function resolveEventDeadLetter(id: string): Promise<boolean> {
+  try {
+    await prisma.eventDeadLetter.update({ where: { id }, data: { resolvedAt: new Date() } });
+    return true;
+  } catch (err) {
+    logger.warn("[dlq.db] resolveEventDeadLetter failed", { id, error: String(err) });
+    return false;
+  }
+}
+
+/**
+ * Reintenta UN evento del DLQ: re-emite el evento original (el handler corre de
+ * nuevo). Si tiene éxito → resolvedAt=now. Misma mecánica que el cron de replay,
+ * pero por-entry desde el panel.
+ */
+export async function retryEventDeadLetter(id: string): Promise<{ ok: boolean; resolved: boolean; error?: string }> {
+  const evt = await prisma.eventDeadLetter.findUnique({ where: { id } });
+  if (!evt) return { ok: false, resolved: false, error: "No encontrado" };
+  if (evt.resolvedAt) return { ok: false, resolved: true, error: "Ya estaba resuelto" };
+  try {
+    const { emitDomainEvent } = await import("@/lib/domain-events/domain-events");
+    const payload = { ...(evt.eventPayload as Record<string, unknown>), _replay: true, _replayAttempt: evt.attemptCount + 1 };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- emitDomainEvent acepta DomainEvent dinámico
+    await emitDomainEvent({ type: evt.eventType, tenantId: evt.tenantId, payload } as any);
+    await prisma.eventDeadLetter.update({ where: { id }, data: { resolvedAt: new Date(), attemptCount: { increment: 1 } } });
+    return { ok: true, resolved: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await prisma.eventDeadLetter
+      .update({ where: { id }, data: { attemptCount: { increment: 1 }, lastError: msg.slice(0, 500) } })
+      .catch((uErr) => logger.error("[dlq.db] retry: update tras fallo falló", { id, error: String(uErr) }));
+    return { ok: true, resolved: false, error: msg };
+  }
+}

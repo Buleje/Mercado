@@ -12,6 +12,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { predictDemand } from "./demand-predictor";
+import { mapEnParalelo } from "./en-paralelo";
 import { PurchasesDB } from "@/lib/db/purchases.db";
 import { logActivity } from "@/lib/activity-logger";
 import { createNotification } from "@/lib/create-notification";
@@ -126,26 +127,31 @@ async function getLastSupplier(
 export async function generateReorderSuggestions(
   tenantId: string,
 ): Promise<ReorderSuggestion[]> {
-  // 1. Productos activos con stock conocido
+  // 1. Productos activos con stock conocido. Un servicio o alquiler no se
+  // repone por saldo (auditoría Compras C01/O07, 17-10): en Blas el aserrado
+  // con stock 0 salía «a reordenar».
   const products = await prisma.product.findMany({
-    where: { tenantId, active: true, deletedAt: null, stock: { not: null } },
+    where: { tenantId, active: true, deletedAt: null, stock: { not: null }, NOT: { type: "service" } },
     select: { id: true, name: true, stock: true, costPrice: true, unit: true },
   });
 
   const suggestions: ReorderSuggestion[] = [];
 
-  for (const product of products) {
-    const currentStock = product.stock ?? 0;
-
-    // 2. Obtener proveedor histórico
-    const supplierInfo = await getLastSupplier(product.id, tenantId);
-    if (!supplierInfo) continue; // sin proveedor conocido, no se puede ordenar
-
-    // 3. Calcular lead time del proveedor
+  // 2-4 de cada producto (proveedor histórico → lead time → demanda en ese
+  // plazo), adelantados en paralelo de a 6: en serie eran 17 s en main (11-10).
+  const datos = await mapEnParalelo(products, 6, async (p) => {
+    const supplierInfo = await getLastSupplier(p.id, tenantId);
+    if (!supplierInfo) return null; // sin proveedor conocido, no se puede ordenar
     const leadTimeDays = await calcLeadTime(supplierInfo.supplierId, tenantId);
+    const prediction = await predictDemand(tenantId, p.id, leadTimeDays);
+    return { supplierInfo, leadTimeDays, prediction };
+  });
 
-    // 4. Predecir demanda para el período de lead time
-    const prediction = await predictDemand(tenantId, product.id, leadTimeDays);
+  for (const [indice, product] of products.entries()) {
+    const currentStock = product.stock ?? 0;
+    const dato = datos[indice];
+    if (!dato) continue;
+    const { supplierInfo, leadTimeDays, prediction } = dato;
     if (!prediction || prediction.predictedQuantity === 0) continue;
 
     const demandDuringLeadTime = prediction.predictedQuantity;

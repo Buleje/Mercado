@@ -25,6 +25,10 @@ interface Props {
   onToggleFocus: () => void;
   onTogglePresentation: () => void;
   onSetTheme: (t: ThemeMode) => void;
+  /** Fondo oscuro propio del header (temas Buleje/Ejecutivo del sidebar),
+   *  independiente del modo claro/oscuro del sitio — `dark:` no alcanza
+   *  porque `.dark` puede no estar en el `<html>` (Brandon 2026-08-28). */
+  onDarkHeader?: boolean;
 }
 
 /**
@@ -46,6 +50,7 @@ export default function AdminOptionsDropdown({
   onToggleFocus,
   onTogglePresentation,
   onSetTheme,
+  onDarkHeader = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -122,22 +127,31 @@ export default function AdminOptionsDropdown({
         aria-haspopup="menu"
         aria-label="Opciones del panel"
         className={cn(
-          // Brandon 2026-05-28: en MOBILE círculo branded teal-soft + accent
-          // (mismo lenguaje que hamburguesa + lupa). En md+ vuelve al pill
-          // compacto con "Opciones" + chevron.
-          "inline-flex items-center justify-center md:justify-start h-11 w-11 md:w-auto md:h-8 md:px-2.5 md:gap-1.5 rounded-xl md:rounded-lg text-xs font-semibold transition-colors shrink-0",
-          "max-md:bg-[var(--accent-soft)] max-md:text-[var(--accent)] max-md:ring-1 max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
-          "md:border md:text-[var(--text-secondary)] md:border-[var(--rule-base)]",
-          "md:dark:text-[var(--text-secondary)] md:dark:border-[var(--rule-base)]",
-          "hover:bg-gray-100 md:dark:hover:bg-[var(--surface-sunken)] md:hover:text-primary",
-          open && "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] md:bg-gray-100 md:dark:bg-[var(--surface-sunken)] md:text-primary",
+          // Brandon 2026-05-28: en MOBILE círculo branded teal-soft + accent. 29-10: en
+          // el celular (cabecera siempre clara) va liso como chat y campana: con
+          // cuatro botones teñidos y tres lisos la fila se veía remendada. En md+
+          // vuelve al pill compacto con "Opciones" + chevron.
+          "inline-flex items-center justify-center md:justify-start h-11 w-11 md:w-auto md:h-8 md:px-2.5 md:gap-1.5 rounded-xl md:rounded-xl text-xs font-semibold transition-colors shrink-0",
+          "max-sm:text-[var(--text-secondary)] max-sm:hover:bg-[var(--surface-sunken)] max-sm:hover:text-[var(--accent-ink)] max-sm:dark:hover:text-[var(--accent)]",
+          "sm:max-md:bg-primary/10 sm:max-md:text-[var(--accent)] sm:max-md:ring-1 sm:max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
+          onDarkHeader
+            ? "md:border md:border-white/15 md:text-white/70 md:hover:bg-white/10 md:hover:text-white"
+            : cn(
+                "md:border md:text-[var(--text-secondary)] md:border-[var(--rule-base)]",
+                "md:dark:text-[var(--text-secondary)] md:dark:border-[var(--rule-base)]",
+                "hover:bg-[var(--rule-soft)] md:dark:hover:bg-[var(--surface-sunken)] md:hover:text-primary",
+              ),
+          open && (onDarkHeader
+            ? "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] max-sm:text-[var(--accent-ink)] md:bg-white/10 md:text-white"
+            : "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] max-sm:text-[var(--accent-ink)] max-sm:dark:text-[var(--accent)] md:bg-gray-100 md:dark:bg-[var(--surface-sunken)] md:text-primary"),
         )}
       >
         <Settings2 className="h-5 w-5 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Opciones</span>
+        {/* Rótulo sólo con encabezado ancho (24-10, «más compacta»): si no, el engranaje solo. */}
+        <span className="hidden @min-[64rem]:inline">Opciones</span>
         <ChevronDown
           className={cn(
-            "hidden md:block h-3.5 w-3.5 transition-transform duration-200",
+            "hidden @min-[64rem]:block h-3.5 w-3.5 transition-transform duration-200",
             open && "rotate-180",
           )}
         />
@@ -153,7 +167,7 @@ export default function AdminOptionsDropdown({
             role="menu"
             className={cn(
               "absolute right-0 top-full mt-2 w-80 rounded-xl z-50",
-              "bg-white dark:bg-[var(--surface-raised)]",
+              "bg-[var(--surface-raised)] ",
               "border border-[var(--rule-base)]",
               "shadow-[var(--shadow-lg)] shadow-black/5 dark:shadow-black/40",
               "overflow-hidden",
@@ -178,8 +192,8 @@ export default function AdminOptionsDropdown({
                     role="menuitem"
                     onClick={it.onClick}
                     className={cn(
-                      "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
-                      "hover:bg-gray-50 dark:hover:bg-[var(--surface-sunken)]",
+                      "w-full flex items-start gap-3 px-3 min-h-11 rounded-xl text-left transition-colors",
+                      "hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]",
                       it.tone === "warning" &&
                         "hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20",
                     )}
@@ -189,7 +203,7 @@ export default function AdminOptionsDropdown({
                         "flex h-8 w-8 items-center justify-center rounded-lg shrink-0 transition-colors",
                         it.tone === "warning"
                           ? "bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)]"
-                          : "bg-gray-50 dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                          : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -224,7 +238,7 @@ export default function AdminOptionsDropdown({
               <div
                 role="radiogroup"
                 aria-label="Seleccionar tema"
-                className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-gray-50 dark:bg-[var(--surface-sunken)] border border-[var(--rule-soft)]"
+                className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)]"
               >
                 {THEME_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
@@ -237,9 +251,9 @@ export default function AdminOptionsDropdown({
                       aria-checked={active}
                       onClick={() => onSetTheme(opt.value)}
                       className={cn(
-                        "relative flex flex-col items-center gap-1 py-2 rounded-md text-xs font-semibold transition-all duration-150",
+                        "relative flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-semibold transition-all duration-150",
                         active
-                          ? "bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)] border border-[var(--rule-base)]"
+                          ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)] border border-[var(--rule-base)]"
                           : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]",
                       )}
                     >

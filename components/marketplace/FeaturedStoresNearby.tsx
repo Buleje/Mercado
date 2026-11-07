@@ -235,7 +235,7 @@ export default function FeaturedStoresNearby({ userCoords, radiusKm }: Props) {
 
               {/* Hint visual del hover */}
               <span className="pointer-events-none absolute bottom-2 right-3 text-[10px] font-bold uppercase tracking-wider text-[var(--brand-primary)] opacity-0 group-hover:opacity-100 transition-opacity">
-                Pasá el mouse →
+                Pasa el mouse →
               </span>
             </div>
           ))}

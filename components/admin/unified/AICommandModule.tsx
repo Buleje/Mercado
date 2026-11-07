@@ -1,26 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Brain } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
-const AICommandCenter = dynamic(
-  () => import("@/components/admin/ai-center/AICommandCenter"),
-  { loading: S }
-);
+const ComandosIA = dynamic(() => import("@/components/admin/comandos-ia/ComandosIA"), { loading: S });
 
-const _MODULE_ID = "ai-command";
-
+/*
+ * Comandos IA (Brandon 2026-10-09): lo que la IA hace por ti. Sin
+ * AdminModuleHeader propio: el hub «Asistente IA» ya pone el título y la
+ * pestaña «Comandos IA» dice dónde estás.
+ */
 export default function AICommandModule() {
-  // 2026-04-24: description removida — los tabs + KPIs + acciones ya
-  // comunican el propósito del centro. Consistencia con el resto del
-  // admin (Ventas/Caja/Inventario/etc también están sin subtítulo).
-  return (
-    <div className="space-y-4">
-      <AdminModuleHeader title="Centro de Comando IA" icon={Brain} />
-      <AICommandCenter />
-    </div>
-  );
+  return <ComandosIA />;
 }

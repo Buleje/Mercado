@@ -7,7 +7,7 @@ Cada `.json` define criterios bash-verificables para una capa de la app.
 | `api-endpoint.json` | `app/api/**/route.ts` | outcome-evaluator, verify |
 | `db-class.json` | `lib/db/**/*.db.ts` | outcome-evaluator |
 | `prisma-migration.json` | `prisma/migrations/**/migration.sql` | outcome-evaluator, migration-planner |
-| `ui-component.json` | `components/**/*.tsx` | outcome-evaluator, bsm-typography-rules |
+| `ui-component.json` | `components/**/*.tsx` | outcome-evaluator, regla ui-components |
 
 ## Formato
 

@@ -29,9 +29,8 @@ async function loadTags(tenantId: string): Promise<TagRecord[]> {
 }
 
 async function saveTags(tenantId: string, tags: TagRecord[]): Promise<void> {
-  const flags = await SettingsDB.getFeatureFlags(tenantId);
-  flags["custom_tags"] = tags;
-  await SettingsDB.setFeatureFlags(tenantId, flags);
+  // Sólo `custom_tags`, en una sentencia (security 10-10 H3: el JSON entero pisaba a los demás).
+  await SettingsDB.pisarClavesFlags(tenantId, { custom_tags: tags });
 }
 
 // ── GET /api/tags?entity=product|customer|order ──────────────────────────────

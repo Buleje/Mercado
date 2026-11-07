@@ -27,12 +27,19 @@ export const EASE = {
   bounceSoft: [0.34, 1.32, 0.64, 1] as const,
 } as const;
 
+// Alineado al ADR-071 (2026-10-09, contrato de diseño ADR-489): las mismas
+// cifras que `--dur-micro/fast/base/slow/slower` del CSS (80/160/240/400/600 ms).
+// Antes `fast`/`base` decían 0,15/0,25 y el CSS 160/240: un modal de framer y uno
+// de CSS no terminaban juntos. `instant` es el `micro` del ADR (80 ms), no su
+// «instant» de 0 ms; `micro` y `slower` son los nombres del ADR, para el codemod.
 export const DURATION = {
   instant: 0.08,
-  fast: 0.15,
-  base: 0.25,
+  micro: 0.08,
+  fast: 0.16,
+  base: 0.24,
   slow: 0.4,
   deliberate: 0.6,
+  slower: 0.6,
   theatrical: 0.8,
 } as const;
 

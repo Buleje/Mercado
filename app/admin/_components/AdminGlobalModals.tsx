@@ -10,13 +10,17 @@
  *
  * Incluye:
  *  - ClearDataModal (wizard de limpieza de datos demo)
- *  - GlobalSearch (command palette global)
+ *  - El puente de Ctrl+K: desde el 20-10 el buscador es el campo de la
+ *    cabecera (`GlobalSearch` en `AdminTopHeader`), sin ventana; `searchOpen`
+ *    sólo le pide que se enfoque.
  *  - CierreDiarioModal (cierre diario de caja, dynamic)
  *  - ChangelogModal (novedades, dynamic)
  *  - AdminModuleManagerModal (gestor de módulos visibles)
  */
 
 import dynamic from "next/dynamic";
+import { useEffect } from "react";
+import { enfocarBuscadorPanel } from "@/components/admin/buscador/enfocar-buscador";
 import { ClearDataModal } from "@/components/admin/AdminModals";
 import { AdminModuleManagerModal } from "@/components/admin/AdminModuleManagerModal";
 import type { Tab } from "../_lib/tabs.types";
@@ -24,10 +28,6 @@ import type { Tab } from "../_lib/tabs.types";
 // Dynamic imports — mismos que vivían en page.tsx
 const ChangelogModal = dynamic(
   () => import("@/components/admin/ChangelogModal"),
-  { ssr: false },
-);
-const GlobalSearch = dynamic(
-  () => import("@/components/admin/GlobalSearch"),
   { ssr: false },
 );
 const CierreDiarioModal = dynamic(
@@ -52,10 +52,11 @@ export interface ClearDataBundle {
 export interface AdminGlobalModalsProps {
   clearData: ClearDataBundle;
 
-  // Global search
+  // Buscador: abrirlo = enfocar el campo de la cabecera (Brandon 20-10, sin ventana).
   searchOpen: boolean;
   setSearchOpen: (v: boolean) => void;
-  navigateTab: (tab: Tab) => void;
+  /** Sin uso desde el 20-10: el buscador de la cabecera navega con `admin:navigate`. */
+  navigateTab: (tab: Tab, vista?: string, sub?: string) => void;
 
   // Cierre diario
   showCierreDiario: boolean;
@@ -79,7 +80,6 @@ export function AdminGlobalModals(props: AdminGlobalModalsProps) {
     clearData,
     searchOpen,
     setSearchOpen,
-    navigateTab,
     showCierreDiario,
     setShowCierreDiario,
     showChangelog,
@@ -88,6 +88,14 @@ export function AdminGlobalModals(props: AdminGlobalModalsProps) {
     setShowModuleManager,
     moduleManager,
   } = props;
+
+  /* Quien «abría el buscador» (Ctrl+K de los atajos, la paleta, un botón)
+     ahora lo enfoca: no hay ventana que abrir. */
+  useEffect(() => {
+    if (!searchOpen) return;
+    enfocarBuscadorPanel();
+    setSearchOpen(false);
+  }, [searchOpen, setSearchOpen]);
 
   // Puente entre el setter simple del hook (Set<string>) y el Dispatch que
   // espera ClearDataModal. Mismo truco que vivía inline en page.tsx.
@@ -114,12 +122,6 @@ export function AdminGlobalModals(props: AdminGlobalModalsProps) {
         setClearingData={clearData.setClearing}
         onClose={() => clearData.setShow(false)}
         demoDataModuleKeys={clearData.demoDataModuleKeys}
-      />
-
-      <GlobalSearch
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        onNavigate={(t) => navigateTab(t as Tab)}
       />
 
       <CierreDiarioModal

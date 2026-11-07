@@ -24,9 +24,9 @@ import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
 import {
   generateSoftwareApplicationLD,
   generateItemListLD,
-  zoneBreadcrumbs,
-} from "@/lib/seo/json-ld";
+  zoneBreadcrumbs, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
@@ -260,13 +260,13 @@ async function ZoneProductContent({
       {/* JSON-LD: Product */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productLD) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(productLD) }}
       />
       {/* JSON-LD: SoftwareApplication context */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateSoftwareApplicationLD(zone)),
+          __html: safeJsonLdStringify(generateSoftwareApplicationLD(zone)),
         }}
       />
       {/* JSON-LD: Related products list */}
@@ -274,7 +274,7 @@ async function ZoneProductContent({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
+            __html: safeJsonLdStringify(
               generateItemListLD(
                 `Productos relacionados en ${zone.name}`,
                 relatedItems,
@@ -541,11 +541,7 @@ export default function ZoneProductPage({ params }: Props) {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="animate-pulse text-sm text-slate-400">
-            Cargando producto...
-          </div>
-        </div>
+        <CargaPagina modo="bloque" etiqueta="Cargando producto" />
       }
     >
       <ZoneProductContentWrapper params={params} />

@@ -5,7 +5,7 @@
  *
  * Se ubica inmediatamente despues del hero. Muestra tres cortes:
  *   1) "Porque compraste pan" — afinidad a última compra (mock).
- *   2) "Porque sos Socio" — solo si isSocio (precio exclusivo visible).
+ *   2) "Porque eres Socio" — solo si isSocio (precio exclusivo visible).
  *   3) "En tu zona" — populares en el distrito del user.
  *
  * Ola 7: migrado al primitivo ProductCardCompact del DS. Antes usaba un
@@ -152,7 +152,7 @@ export default function ParaVosSection() {
       ? [
           {
             key: "socio",
-            title: "Porque sos Socio",
+            title: "Porque eres Socio",
             subtitle: "Precios exclusivos",
             products: RECO_SOCIO,
             memberOnly: true,

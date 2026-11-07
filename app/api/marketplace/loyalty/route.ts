@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
+import { MENSAJE_SOLO_DUENO, puedeSumarPuntosAMano } from "@/lib/loyalty/roles-ajuste";
 import { toErrorPayload, newTraceId, ApiError } from "@/lib/api-error";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
 import { CustomersDB } from "@/lib/db/customers.db";
@@ -202,6 +203,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { action, phone, points, reason, description, orderId } = parsed.data;
+    // El cajero canjea; sumar a mano (Marketplace › Fidelidad) es del dueño o el encargado (11-10).
+    if (action === "earn" && !puedeSumarPuntosAMano(auth.role)) {
+      return NextResponse.json({ error: MENSAJE_SOLO_DUENO }, { status: 403 });
+    }
     const metadata = buildMetadata({ description, orderId, user: auth.username });
 
     const tx =

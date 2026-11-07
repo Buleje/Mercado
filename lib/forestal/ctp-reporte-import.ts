@@ -1,0 +1,398 @@
+/**
+ * El reporte de lo que pasó al importar el libro.
+ *
+ * Importar 300 filas y ver «12 con problema» no sirve para nada: hay que saber
+ * QUÉ filas, POR QUÉ, y sobre todo QUÉ HACER. Este módulo agrupa los problemas
+ * por causa —no por fila— porque las mismas doce fallas suelen ser un solo
+ * error repetido, y arreglarlo una vez las cierra todas.
+ *
+ * Se puede bajar como CSV para abrirlo al lado del Excel y corregir.
+ *
+ * PURO: recibe los resultados y devuelve el reporte. No sabe de fetch ni de DOM.
+ */
+
+import { TITULO_FORMATO, type FormatoCtp } from "./ctp-formatos-serfor";
+import type { PermisoDeFila, ResumenPermisoImport } from "./asignar-permiso-import";
+
+export type FilaDeResultado = { fila?: number; codigo: string; accion: string; mensaje: string; permiso?: PermisoDeFila };
+export type ResultadoDeSeccion = {
+  formato: FormatoCtp;
+  respuesta: { resumen: { creados: number; porCrear: number; existen: number; errores: number }; filas: FilaDeResultado[] };
+  /**
+   * El archivo de donde salió (19-10: varios archivos por sección). Con él, el
+   * reporte dice «archivo · fila» — sin él, la fila 12 de dos Excel distintos
+   * era la misma fila 12.
+   */
+  archivo?: string;
+  /** Lo que el servidor hizo con el permiso del archivo (ADR-503). */
+  permiso?: ResumenPermisoImport | null;
+  /** El archivo entero falló (HTTP ≠ 2xx): no hay filas que contar. */
+  error?: string | null;
+};
+
+/** Una línea por archivo enviado: qué entró y qué pasó con su permiso. */
+export type ResumenDeArchivo = {
+  archivo: string;
+  formato: FormatoCtp;
+  creados: number;
+  /** Sólo en la revisión: lo que entraría. */
+  porCrear: number;
+  existen: number;
+  errores: number;
+  error: string | null;
+  permiso: ResumenPermisoImport | null;
+  /** Filas que traían OTRO permiso (se respetó el suyo), o cuya guía no se pudo tocar (`motivo`). */
+  conflictos: { fila?: number; delArchivo: string | null; motivo: string | null }[];
+};
+
+/** Un problema y todas las filas donde aparece. */
+export type ProblemaAgrupado = {
+  formato: FormatoCtp;
+  /** De qué archivo son las filas (varios archivos por sección). */
+  archivo?: string;
+  /** El mensaje, sin los datos variables: es lo que agrupa. */
+  causa: string;
+  /** Un ejemplo completo, con su dato, para que se entienda. */
+  ejemplo: string;
+  filas: number[];
+  codigos: string[];
+  /** Qué hacer. Vacío si no sabemos: inventar un consejo es peor que no darlo. */
+  comoArreglar: string;
+};
+
+export type ReporteImport = {
+  /** Lo que efectivamente entró al libro. */
+  creados: { formato: FormatoCtp; cantidad: number }[];
+  totalCreados: number;
+  /** Lo que ya estaba y no se tocó (el importador es insert-only). */
+  totalExistentes: number;
+  /** Filas que no entraron. */
+  totalConError: number;
+  problemas: ProblemaAgrupado[];
+  /** Filas incompletas detectadas en el archivo, antes de mandar nada. */
+  incompletas: { formato: FormatoCtp; fila: number; motivos: string[]; archivo?: string }[];
+  /** Avisos de la cadena (rendimientos raros, despachos sin respaldo). */
+  avisosDeCadena: { lote: string; nivel: "error" | "aviso"; mensaje: string }[];
+  /**
+   * Filas que SÍ entraron, pero con un detalle que el operador tiene que ver:
+   * un código de paquete que se tuvo que renombrar por chocar con uno que ya
+   * estaba en la planta, un bulto que entró sin paquete por falta de piezas.
+   *
+   * Van aparte de `problemas` porque no son errores —la fila se importó— pero
+   * aparte de `creados` porque un conteo agregado («40 filas importadas») se
+   * los comía enteros: el código renombrado o el paquete perdido no se veían
+   * en ningún lado.
+   */
+  avisosDeFila: { formato: FormatoCtp; fila?: number; codigo: string; mensaje: string; archivo?: string }[];
+  /** Por archivo, cuando los resultados traen su nombre (vacío si no). */
+  porArchivo: ResumenDeArchivo[];
+  /** true si no hay nada que arreglar. */
+  limpio: boolean;
+};
+
+/**
+ * Separa el mensaje de fila de sus avisos incrustados.
+ *
+ * El servidor los marca con " · AVISO: " porque son del MISMO mensaje que ya
+ * viaja por fila — agregar un campo nuevo al contrato de los dos endpoints de
+ * import (`wood-entries/import` y `ctp-serfor-import`) para esto solo hubiera
+ * significado tocar cuatro lugares para llevar el mismo string.
+ */
+function extraerAvisos(mensaje: string): { limpio: string; avisos: string[] } {
+  const partes = mensaje.split(" · AVISO: ");
+  return { limpio: partes[0], avisos: partes.slice(1) };
+}
+
+/**
+ * Quita los datos variables del mensaje para poder agrupar.
+ *
+ * «GTF de ingreso no encontrado: 019-0000004» y «…: 019-0000007» son el MISMO
+ * problema. Sin normalizar, un archivo con 40 filas rotas por la misma causa
+ * daba 40 líneas distintas y el operador no veía el patrón.
+ */
+export function causaDe(mensaje: string): string {
+  return mensaje
+    .replace(/\d+[.,]\d+/g, "N") // volúmenes
+    .replace(/\b[\w/-]*\d[\w/-]*\b/g, "X") // códigos, guías, fechas
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Qué hacer con cada causa conocida. Lo que no está acá no lleva consejo. */
+function consejoPara(mensaje: string, formato: FormatoCtp): string {
+  const m = mensaje.toLowerCase();
+  if (/no existe en el libro|carg[aá] primero el ingreso|no encontrad/.test(m)) {
+    return "Falta el ingreso de esa troza. Agrega su fila a la Sección 1 con el mismo Código de CTP, o importa primero esa sección.";
+  }
+  if (/ya existe|se salta|duplicada/.test(m)) {
+    return "No hace falta hacer nada: ya está en el libro y no se sobrescribe.";
+  }
+  if (/datos distintos/.test(m)) {
+    return "El libro tiene esa fila con otros valores. Si los del archivo son los correctos, corrígelos desde la ficha — el importador nunca pisa un dato ya registrado.";
+  }
+  if (/sin especie|sin n° de gtf|sin titular|sin tipo de producto/.test(m)) {
+    return `Completa esa columna en la hoja de ${TITULO_FORMATO[formato]}: sin ella la fila no se puede fiscalizar.`;
+  }
+  if (/fuera de rango|inválid/.test(m)) {
+    return "Revisa el número: probablemente tenga un separador de miles o un dígito de más.";
+  }
+  if (/ya se consumió|ya está en el libro/.test(m)) {
+    return "Esa pieza ya se usó. Si el corte es otro, cámbiale el código; si es el mismo, no hay nada que importar.";
+  }
+  if (/período .* cerrado|periodo .* cerrado/.test(m)) {
+    return "El mes ya se presentó. Reabre el período desde el libro si de verdad hay que corregirlo — queda registrado quién y por qué.";
+  }
+  if (/suman más|supera/.test(m)) {
+    return "Los pedazos suman más que la troza madre. Revisa los volúmenes del Apartado 2.";
+  }
+  return "";
+}
+
+export function armarReporte(
+  resultados: readonly ResultadoDeSeccion[],
+  extras: {
+    incompletas?: { formato: FormatoCtp; fila: number; motivos: string[]; archivo?: string }[];
+    avisosDeCadena?: { lote: string; nivel: "error" | "aviso"; mensaje: string }[];
+  } = {},
+): ReporteImport {
+  const creados: { formato: FormatoCtp; cantidad: number }[] = [];
+  let totalExistentes = 0;
+  let totalConError = 0;
+  const porCausa = new Map<string, ProblemaAgrupado>();
+  const avisosDeFila: ReporteImport["avisosDeFila"] = [];
+  const porArchivo: ResumenDeArchivo[] = [];
+
+  for (const r of resultados) {
+    /* Creados por SECCIÓN, aunque vengan de varios archivos: la tabla de lo que
+       entró se cuadra contra el libro, que no sabe de archivos. */
+    if (r.respuesta.resumen.creados > 0) {
+      const previo = creados.find((c) => c.formato === r.formato);
+      if (previo) previo.cantidad += r.respuesta.resumen.creados;
+      else creados.push({ formato: r.formato, cantidad: r.respuesta.resumen.creados });
+    }
+    if (r.archivo) {
+      porArchivo.push({
+        archivo: r.archivo,
+        formato: r.formato,
+        creados: r.respuesta.resumen.creados,
+        porCrear: r.respuesta.resumen.porCrear,
+        existen: r.respuesta.resumen.existen,
+        errores: r.respuesta.resumen.errores,
+        error: r.error ?? null,
+        permiso: r.permiso ?? null,
+        conflictos: r.respuesta.filas
+          .filter((f) => f.permiso?.estado === "conflicto")
+          .map((f) => ({ fila: f.fila, delArchivo: f.permiso?.delArchivo ?? null, motivo: f.permiso?.motivo ?? null })),
+      });
+    }
+    for (const f of r.respuesta.filas) {
+      /* Se saca ANTES de mirar la acción: una fila "creado" con avisos sigue
+         siendo un éxito para el conteo, pero el aviso tiene que salir igual. */
+      const { limpio, avisos } = extraerAvisos(f.mensaje);
+      for (const aviso of avisos) {
+        avisosDeFila.push({ formato: r.formato, fila: f.fila, codigo: f.codigo, mensaje: aviso, archivo: r.archivo });
+      }
+
+      if (f.accion === "existe") {
+        totalExistentes += 1;
+        continue;
+      }
+      if (f.accion !== "error") continue;
+      totalConError += 1;
+
+      const causa = causaDe(limpio);
+      const clave = `${r.archivo ?? ""}::${r.formato}::${causa}`;
+      const previo = porCausa.get(clave);
+      if (previo) {
+        if (f.fila != null) previo.filas.push(f.fila);
+        if (f.codigo && f.codigo !== "—") previo.codigos.push(f.codigo);
+      } else {
+        porCausa.set(clave, {
+          formato: r.formato,
+          ...(r.archivo ? { archivo: r.archivo } : {}),
+          causa,
+          ejemplo: limpio,
+          filas: f.fila != null ? [f.fila] : [],
+          codigos: f.codigo && f.codigo !== "—" ? [f.codigo] : [],
+          comoArreglar: consejoPara(limpio, r.formato),
+        });
+      }
+    }
+  }
+
+  /* Lo que más se repite va primero: es donde un solo arreglo cierra más filas. */
+  const problemas = [...porCausa.values()].sort((a, b) => b.filas.length - a.filas.length);
+  const incompletas = extras.incompletas ?? [];
+  const avisosDeCadena = extras.avisosDeCadena ?? [];
+
+  return {
+    creados,
+    totalCreados: creados.reduce((s, c) => s + c.cantidad, 0),
+    totalExistentes,
+    totalConError,
+    problemas,
+    incompletas,
+    avisosDeCadena,
+    avisosDeFila,
+    porArchivo,
+    limpio:
+      totalConError === 0 &&
+      incompletas.length === 0 &&
+      avisosDeCadena.length === 0 &&
+      avisosDeFila.length === 0 &&
+      !porArchivo.some((a) => a.error),
+  };
+}
+
+/** Un resumen de una línea, para el título del reporte. */
+export function tituloDelReporte(r: ReporteImport): string {
+  if (r.totalCreados === 0 && r.totalConError === 0) {
+    return r.totalExistentes > 0 ? "Todo esto ya estaba en el libro" : "No entró nada";
+  }
+  const n = (c: number, uno: string, varios: string) => `${c} ${c === 1 ? uno : varios}`;
+  const partes = [n(r.totalCreados, "fila importada", "filas importadas")];
+  if (r.totalExistentes > 0) partes.push(n(r.totalExistentes, "ya estaba", "ya estaban"));
+  if (r.totalConError > 0) partes.push(n(r.totalConError, "quedó afuera", "quedaron afuera"));
+  return partes.join(" · ");
+}
+
+/**
+ * El aviso que queda al cerrarse el modal tras importar (Brandon 19-10):
+ * «Importado con éxito · 40 filas en 2 archivos», y si algo quedó afuera lo
+ * dice en la misma línea. `conDetalle` = hay algo que mirar → el aviso lleva
+ * «Ver detalle», que reabre el modal con este mismo reporte.
+ */
+/**
+ * Qué es un «registro creado» en cada sección, en palabras del aserradero: el
+ * servidor crea una guía por GTF (con todas sus trozas), una corrida por
+ * paquete… «1 fila» para un archivo de 3 trozas de una guía confundía (19-10).
+ */
+const UNIDAD_CREADA: Record<FormatoCtp, [string, string]> = {
+  ingresos: ["guía", "guías"],
+  inventarioTrozas: ["guía", "guías"],
+  inventarioAserrada: ["paquete", "paquetes"],
+  produccion: ["corrida", "corridas"],
+  consumos: ["consumo", "consumos"],
+  retrozado: ["retrozado", "retrozados"],
+  salidas: ["despacho", "despachos"],
+};
+
+export function textoDelAviso(r: ReporteImport): { texto: string; conDetalle: boolean } {
+  const n = (c: number, uno: string, varios: string) => `${c} ${c === 1 ? uno : varios}`;
+  const entraron = r.porArchivo.filter((a) => a.creados > 0).length;
+  const caidos = r.porArchivo.filter((a) => a.error).length;
+  const conflictos = r.porArchivo.reduce((s, a) => s + a.conflictos.length, 0);
+  /* Por unidad, sumando las secciones que comparten una (Sección 1 + patio = guías). */
+  const porUnidad = new Map<string, { c: number; u: [string, string] }>();
+  for (const { formato, cantidad } of r.creados) {
+    const u = UNIDAD_CREADA[formato];
+    const prev = porUnidad.get(u[1]);
+    porUnidad.set(u[1], { c: (prev?.c ?? 0) + cantidad, u });
+  }
+  const creado = [...porUnidad.values()].filter((x) => x.c > 0).map((x) => n(x.c, x.u[0], x.u[1])).join(" y ");
+  const partes = [
+    r.totalCreados > 0 && creado
+      ? `${creado}${entraron > 0 ? ` en ${n(entraron, "archivo", "archivos")}` : ""}`
+      : null,
+  ].filter((x): x is string => x !== null);
+  if (r.totalConError > 0) partes.push(n(r.totalConError, "fila quedó afuera", "filas quedaron afuera"));
+  if (caidos > 0) partes.push(n(caidos, "archivo falló", "archivos fallaron"));
+  if (conflictos > 0) partes.push(n(conflictos, "fila con otro permiso", "filas con otro permiso"));
+  const conDetalle = !r.limpio;
+  if (conDetalle && r.totalConError === 0 && caidos === 0 && conflictos === 0) {
+    const avisos = r.avisosDeFila.length + r.avisosDeCadena.length + r.incompletas.length;
+    if (avisos > 0) partes.push(n(avisos, "aviso para revisar", "avisos para revisar"));
+  }
+  return { texto: `${conDetalle && partes.length > 1 ? "Importado" : "Importado con éxito"} · ${partes.join(" · ")}`, conDetalle };
+}
+
+/**
+ * El reporte como CSV, para abrirlo al lado del Excel.
+ *
+ * Separador `;` porque el Excel es-PE usa la coma como decimal: con `,` las
+ * columnas se parten mal y el reporte llega ilegible justo a quien lo necesita.
+ */
+export function reporteACsv(r: ReporteImport, nombreArchivo?: string): string {
+  const esc = (v: unknown): string => {
+    const s = String(v ?? "");
+    return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lineas: string[][] = [
+    ["Reporte de importación del Libro de Operaciones"],
+    ...(nombreArchivo ? [["Archivo", nombreArchivo]] : []),
+    [tituloDelReporte(r)],
+    [],
+    ["Qué entró"],
+    ["Sección", "Filas creadas"],
+    ...r.creados.map((c) => [TITULO_FORMATO[c.formato], String(c.cantidad)]),
+  ];
+  /* «Sección (archivo)» cuando hay varios archivos: mantiene las columnas de
+     siempre y aun así dice de cuál Excel es la fila. */
+  const donde = (formato: FormatoCtp, archivo?: string) =>
+    archivo ? `${TITULO_FORMATO[formato]} (${archivo})` : TITULO_FORMATO[formato];
+
+  if (r.porArchivo.length > 0) {
+    lineas.push([], ["Por archivo"], ["Archivo", "Sección", "Entraron", "Ya estaban", "Afuera", "Permiso", "Asignadas", "Ya tenían", "Con otro permiso", "Heredan", "Falló"]);
+    for (const a of r.porArchivo) {
+      lineas.push([
+        a.archivo,
+        TITULO_FORMATO[a.formato],
+        String(a.creados),
+        String(a.existen),
+        String(a.errores),
+        a.permiso?.codigo ?? "",
+        a.permiso ? String(a.permiso.asignadas) : "",
+        a.permiso ? String(a.permiso.yaTenian) : "",
+        a.permiso ? String(a.permiso.conflictos) : "",
+        a.permiso ? String(a.permiso.heredan) : "",
+        a.error ?? "",
+      ]);
+    }
+  }
+  /* Las filas que conservaron OTRO permiso, una por una: son las que alguien
+     tiene que mirar, y en pantalla sólo entran las primeras. */
+  const conOtro = r.porArchivo.flatMap((a) => a.conflictos.map((c) => ({ a, c })));
+  if (conOtro.length > 0) {
+    lineas.push([], ["Filas con otro permiso (se respetó el suyo)"], ["Archivo", "Sección", "Fila", "Su permiso", "Motivo"]);
+    for (const { a, c } of conOtro) {
+      lineas.push([a.archivo, TITULO_FORMATO[a.formato], c.fila != null ? String(c.fila) : "", c.delArchivo ?? "", c.motivo ?? ""]);
+    }
+  }
+
+  if (r.problemas.length > 0) {
+    lineas.push([], ["Qué quedó afuera"], ["Sección", "Filas", "Códigos", "Problema", "Cómo arreglarlo"]);
+    for (const p of r.problemas) {
+      lineas.push([
+        donde(p.formato, p.archivo),
+        p.filas.join(" "),
+        p.codigos.slice(0, 20).join(" "),
+        p.ejemplo,
+        p.comoArreglar,
+      ]);
+    }
+  }
+
+  if (r.incompletas.length > 0) {
+    lineas.push([], ["Filas incompletas en el archivo"], ["Sección", "Fila", "Qué falta"]);
+    for (const i of r.incompletas) {
+      lineas.push([donde(i.formato, i.archivo), String(i.fila), i.motivos.join(" · ")]);
+    }
+  }
+
+  if (r.avisosDeFila.length > 0) {
+    lineas.push([], ["Entraron, pero revisa esto"], ["Sección", "Fila", "Código", "Aviso"]);
+    for (const a of r.avisosDeFila) {
+      lineas.push([donde(a.formato, a.archivo), a.fila != null ? String(a.fila) : "", a.codigo, a.mensaje]);
+    }
+  }
+
+  if (r.avisosDeCadena.length > 0) {
+    lineas.push([], ["Revisar en el libro"], ["Lote", "Nivel", "Aviso"]);
+    for (const a of r.avisosDeCadena) {
+      lineas.push([a.lote, a.nivel === "error" ? "Error" : "Aviso", a.mensaje]);
+    }
+  }
+
+  /* BOM para que Excel abra los acentos bien. Sin él, «Producción» llega rota. */
+  return "﻿" + lineas.map((l) => l.map(esc).join(";")).join("\n");
+}

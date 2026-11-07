@@ -10,13 +10,16 @@ import {
   getPreviousScore,
 } from "@/lib/churn/health-scorer";
 import { executePlaybook } from "@/lib/churn/intervention-engine";
+import { registrarSenales } from "@/lib/churn/registrar-senales";
+import { fueAccionReal } from "@/lib/churn/intervencion";
 
 /**
  * GET /api/cron/churn-score
  *
  * Cron job diario — Auth: Authorization: Bearer <CRON_SECRET>
- * Recorre todos los tenants activos, calcula health score, detecta signals
- * y ejecuta playbooks automáticos. Cada tenant es fire-and-forget.
+ * Recorre todos los tenants activos, calcula health score, detecta signals,
+ * GUARDA las alertas (siempre) y, sólo con CHURN_AUTORUN=true, ejecuta la regla
+ * (correo/WhatsApp). Un tenant que falla no frena a los demás.
  */
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -45,9 +48,9 @@ export async function GET(req: NextRequest) {
         return { ok: true, processed: 0, message: "Sin tenants activos" };
       }
 
-      // Feature flag: CHURN_AUTORUN controla si los playbooks se ejecutan de verdad
-      // o si sólo corremos en modo dry-run (calcular+persistir score + detectar
-      // signals, pero NO enviar emails/WhatsApp/etc). Default: dry-run.
+      // Feature flag: CHURN_AUTORUN controla sólo la ACCIÓN (correo/WhatsApp/etc).
+      // Score y alertas se guardan siempre: en dry-run el superadmin igual ve a
+      // quién le tocaría. Default: dry-run.
       // Para activar en producción: CHURN_AUTORUN=true en Vercel env.
       const churnAutorun = (process.env.CHURN_AUTORUN ?? "").toLowerCase() === "true";
 
@@ -55,6 +58,9 @@ export async function GET(req: NextRequest) {
       let errors = 0;
       let playbookExecutions = 0;
       let playbookDryRuns = 0;
+      let senalesNuevas = 0;
+      let senalesCerradas = 0;
+      const acciones: Promise<void>[] = [];
       const riskSummary: Record<string, number> = {
         low: 0,
         medium: 0,
@@ -78,34 +84,46 @@ export async function GET(req: NextRequest) {
             // 4. Detectar signals
             const signals = await detectSignals(tenant.slug, currentScore, previousScore);
 
-            // 5. Ejecutar playbooks para cada signal (fire-and-forget por signal)
-            for (const signal of signals) {
+            // 5. Guardar las alertas SIEMPRE (una abierta por tipo) y cerrar
+            //    las que ya no aplican si el negocio salió del riesgo alto.
+            const { alertas, cerradas } = await registrarSenales(tenant.id, signals, currentScore.riskLevel);
+            senalesNuevas += alertas.filter((a) => a.creada).length;
+            senalesCerradas += cerradas;
+
+            // 6. La acción (correo/WhatsApp) sólo con CHURN_AUTORUN y una vez por alerta.
+            for (const alerta of alertas) {
+              if (fueAccionReal(alerta.intervention)) continue;
               if (!churnAutorun) {
-                // Dry-run: solo loguear la intención sin despachar intervención
                 playbookDryRuns++;
-                logger.info("[cron/churn-score] Dry-run (CHURN_AUTORUN=false): skip playbook", {
+                logger.info("[cron/churn-score] Dry-run (CHURN_AUTORUN=false): alerta guardada, sin acción", {
                   slug: tenant.slug,
-                  signalType: signal.signalType,
-                  severity: signal.severity,
+                  signalType: alerta.signal.signalType,
+                  severity: alerta.signal.severity,
                 });
                 continue;
               }
               playbookExecutions++;
-              executePlaybook(signal, {
-                id: tenant.id,
-                slug: tenant.slug,
-                name: tenant.name,
-                ownerEmail: tenant.ownerEmail ?? null,
-                ownerPhone: tenant.ownerPhone ?? null,
-                plan: tenant.plan,
-                trialEndsAt: tenant.trialEndsAt ?? null,
-              }).catch((err) => {
-                logger.warn("[cron/churn-score] Error en playbook (ignorado)", {
-                  slug: tenant.slug,
-                  signalType: signal.signalType,
-                  error: err instanceof Error ? err.message : String(err),
-                });
-              });
+              acciones.push(
+                executePlaybook(
+                  alerta.signal,
+                  {
+                    id: tenant.id,
+                    slug: tenant.slug,
+                    name: tenant.name,
+                    ownerEmail: tenant.ownerEmail ?? null,
+                    ownerPhone: tenant.ownerPhone ?? null,
+                    plan: tenant.plan,
+                    trialEndsAt: tenant.trialEndsAt ?? null,
+                  },
+                  alerta,
+                ).catch((err) => {
+                  logger.warn("[cron/churn-score] Error en playbook (ignorado)", {
+                    slug: tenant.slug,
+                    signalType: alerta.signal.signalType,
+                    error: err instanceof Error ? err.message : String(err),
+                  });
+                }),
+              );
             }
 
             riskSummary[currentScore.riskLevel] = (riskSummary[currentScore.riskLevel] ?? 0) + 1;
@@ -120,8 +138,14 @@ export async function GET(req: NextRequest) {
         })
       );
 
+      // Esperar las acciones antes de responder: en serverless lo que queda
+      // colgado después del return puede no correr nunca.
+      await Promise.allSettled(acciones);
+
       logger.info("[cron/churn-score] Ciclo completado", {
         processed,
+        senalesNuevas,
+        senalesCerradas,
         errors,
         riskSummary,
         churnAutorun,
@@ -138,6 +162,8 @@ export async function GET(req: NextRequest) {
         churnAutorun,
         playbookExecutions,
         playbookDryRuns,
+        senalesNuevas,
+        senalesCerradas,
       };
     });
 

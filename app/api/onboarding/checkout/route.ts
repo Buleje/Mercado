@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const adminSession = sessionToken ? await getSessionPayload(sessionToken) : null;
   if (!adminSession) {
     return NextResponse.json(
-      { error: "Auth requerida — completá signup primero" },
+      { error: "Auth requerida — completa signup primero" },
       { status: 401 }
     );
   }

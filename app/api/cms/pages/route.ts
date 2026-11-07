@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { getAllPages, createPage } from "@/lib/cms-db/pages";
+import { CmsPagesDB } from "@/lib/db/cms-pages.db";
 import { PageSchema } from "@/lib/cms/types";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const pages = await getAllPages(auth.tenantId);
+    const pages = await CmsPagesDB.listar(auth.tenantId);
     return NextResponse.json(pages);
   } catch (error) {
     logger.error("[cms/pages] GET error", { err: error instanceof Error ? error.message : String(error) });
@@ -47,11 +47,13 @@ export async function POST(req: NextRequest) {
     }
     const validated = parsed.data;
 
-    // F1: pasar auth.tenantId para aislamiento multi-tenant
-    const page = await createPage(validated, auth.tenantId);
+    const page = await CmsPagesDB.crear(auth.tenantId, validated);
 
     return NextResponse.json(page, { status: 201 });
   } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      return NextResponse.json({ error: "Ya tienes una página con ese enlace" }, { status: 409 });
+    }
     logger.error("[cms/pages] POST error", { err: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Error al crear página" },

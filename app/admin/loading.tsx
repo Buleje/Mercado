@@ -1,5 +1,5 @@
-import { BulejeLoader } from "@/components/ui-system/BulejeLoader";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 export default function AdminLoading() {
-  return <BulejeLoader label="Cargando panel" />;
+  return <CargaPagina etiqueta="Cargando el panel" />;
 }

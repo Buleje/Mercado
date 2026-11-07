@@ -1,0 +1,65 @@
+{
+ "nota": "Pieza: con la fila de alta ya fijada, anota dos trozas a mano (45×40×3,2 y 50×46×4) con Enter.",
+ "pasos": [
+  {
+   "llenar": [
+    "[data-qa=alta-d1]",
+    "45"
+   ]
+  },
+  {
+   "llenar": [
+    "[data-qa=alta-d2]",
+    "40"
+   ]
+  },
+  {
+   "llenar": [
+    "[data-qa=alta-largo]",
+    "3,2"
+   ]
+  },
+  {
+   "click": "[data-qa=alta-cantidad]"
+  },
+  {
+   "tecla": "Enter"
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "eval": "(() => { const r = document.querySelector('[data-testid=trozas-a-mano]'); const a = document.activeElement; return { especie: r.querySelector('select').value, fijada: r.querySelector('button[aria-pressed]').getAttribute('aria-pressed'), foco: a && (a.getAttribute('placeholder') || a.getAttribute('aria-label')) }; })()"
+  },
+  {
+   "llenar": [
+    "[data-qa=alta-d1]",
+    "50"
+   ]
+  },
+  {
+   "llenar": [
+    "[data-qa=alta-d2]",
+    "46"
+   ]
+  },
+  {
+   "llenar": [
+    "[data-qa=alta-largo]",
+    "4"
+   ]
+  },
+  {
+   "click": "[data-qa=alta-cantidad]"
+  },
+  {
+   "tecla": "Enter"
+  },
+  {
+   "esperar": 300
+  },
+  {
+   "eval": "[...document.querySelectorAll('[data-testid=trozas-a-mano] tbody tr')].map((t) => t.innerText.replace(/\\s+/g, ' '))"
+  }
+ ]
+}

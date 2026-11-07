@@ -7,7 +7,7 @@ export interface CommissionEntry {
   id: string;
   orderId: string;
   amount: number;
-  status: "pendiente" | "liquidado" | "pagado";
+  status: "pendiente" | "liquidado" | "pagado" | "reembolsado";
   createdAt: string;
   orderTotal: number;
 }
@@ -16,17 +16,19 @@ export interface CommissionSummary {
   pendiente: number;
   liquidado: number;
   pagado: number;
+  reembolsado: number;
 }
 
 // La API (`/api/commissions/ledger`) usa estados en inglés
 // (pending/settled/paid/refunded). El tab los muestra en español.
-// `refunded` no se modela en el tipo del tab → lo tratamos como "pagado"
-// (movimiento cerrado) para no romper la UI.
+// `refunded` tiene su propio estado: antes se mostraba como «Pagada» pero el
+// total «Pagadas» del backend (`totalPaid`) no lo suma, y la fila y la cifra
+// se contradecían (mi-pollo: S/ 25,50 reembolsados «pagados», 11-10).
 const STATUS_EN_TO_ES: Record<string, CommissionEntry["status"]> = {
   pending: "pendiente",
   settled: "liquidado",
   paid: "pagado",
-  refunded: "pagado",
+  refunded: "reembolsado",
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,7 +47,7 @@ function toEntry(row: any): CommissionEntry {
 
 export function useMarketplaceCommissions() {
   const [entries, setEntries] = useState<CommissionEntry[]>([]);
-  const [summary, setSummary] = useState<CommissionSummary>({ pendiente: 0, liquidado: 0, pagado: 0 });
+  const [summary, setSummary] = useState<CommissionSummary>({ pendiente: 0, liquidado: 0, pagado: 0, reembolsado: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -66,6 +68,7 @@ export function useMarketplaceCommissions() {
           pendiente: Number(t.totalPending ?? 0),
           liquidado: Number(t.totalSettled ?? 0),
           pagado: Number(t.totalPaid ?? 0),
+          reembolsado: Number(t.totalRefunded ?? 0),
         });
       })
       .catch(() => setError("No se pudieron cargar las comisiones."))

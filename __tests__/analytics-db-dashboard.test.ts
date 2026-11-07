@@ -43,6 +43,10 @@ const { mockPrisma } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
+// Un solo stock mínimo (09-10): el global del negocio sale de Settings.
+vi.mock("@/lib/inventario/stock-minimo.server", () => ({
+  minimoGlobalDelNegocio: vi.fn().mockResolvedValue(7),
+}));
 
 import { AnalyticsDB } from "@/lib/db/analytics.db";
 
@@ -187,13 +191,13 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
     const todayWhere = mockPrisma.order.aggregate.mock.calls[0]?.[0]?.where;
     const weekWhere = mockPrisma.order.aggregate.mock.calls[1]?.[0]?.where;
 
-    // Today filter: createdAt.gte is the start of the current day (00:00:00).
+    // Today filter: createdAt.gte = 00:00 de LIMA (05:00Z), no la medianoche
+    // del servidor (en Vercel, UTC = 19:00 de Lima del día anterior).
     const todayGte: Date = todayWhere?.createdAt?.gte;
     expect(todayGte).toBeInstanceOf(Date);
-    expect(todayGte.getHours()).toBe(0);
-    expect(todayGte.getMinutes()).toBe(0);
-    expect(todayGte.getSeconds()).toBe(0);
-    expect(todayGte.getMilliseconds()).toBe(0);
+    expect(todayGte.toISOString()).toMatch(/T05:00:00\.000Z$/);
+    expect(todayGte.getTime()).toBeLessThanOrEqual(before);
+    expect(before - todayGte.getTime()).toBeLessThan(24 * 60 * 60 * 1000);
 
     // Week filter: createdAt.gte ≈ now - 7d, within a generous slack of the
     // window we timed the call in.
@@ -250,7 +254,7 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
   // ──────────────────────────────────────────────────────────────────────
   // Case 5 — low-stock query respects tenant + active + stockMin NOT NULL
   // ──────────────────────────────────────────────────────────────────────
-  it("low-stock raw query filters by tenant, active, stock/stockMin NOT NULL, stock <= stockMin", async () => {
+  it("low-stock raw query filters by tenant, active, stock NOT NULL, stock <= mínimo efectivo", async () => {
     mockAllQueries({
       todayCount: 0,
       weekCount: 0,
@@ -276,11 +280,13 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
     expect(joined).toContain('"deletedAt" IS NULL');
     expect(joined).toContain('"active" = true');
     expect(joined).toContain('"stock" IS NOT NULL');
-    expect(joined).toContain('"stockMin" IS NOT NULL');
-    expect(joined).toContain('"stock" <= "stockMin"');
+    // Sin mínimo propio cuenta con el global del negocio (antes quedaba fuera).
+    expect(joined).not.toContain('"stockMin" IS NOT NULL');
+    expect(joined).toContain('"stock" <= COALESCE("stockMin",');
 
-    // The tenantId is passed as a parameterised value, not interpolated.
+    // The tenantId and the global minimum go as parameterised values.
     expect(rawCall?.[1]).toBe(TENANT_A);
+    expect(rawCall?.[2]).toBe(7);
 
     // Sanity: tenant A's low-stock count stays at 0 even if tenant B had rows —
     // the mock only returned what was set up for this call.

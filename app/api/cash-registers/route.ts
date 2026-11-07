@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload } from "@/lib/api-error";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
@@ -31,11 +33,12 @@ export async function POST(req: NextRequest) {
   // Y6 FIX 2026-05-07: faltaba await. Sin él applyRateLimit devolvía una
   // Promise (siempre truthy) → el guard cortaba TODOS los POST sin importar
   // el rate actual — ningún cajero podía abrir caja.
-  const rateLimitResult = await applyRateLimit(req, "STRICT", "cash-registers-post");
-  if (rateLimitResult) return rateLimitResult;
-
+  // 17-10: el límite va después del login, por negocio + usuario (antes STRICT
+  // por IP: todos los de la bodega gastaban el mismo cupo).
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
+  const rateLimitResult = await applyRateLimit(req, "MODERATE", `cash-registers-post:${auth.tenantId}:${auth.username}`);
+  if (rateLimitResult) return rateLimitResult;
 
   try {
     const body = await req.json();
@@ -70,6 +73,19 @@ export async function POST(req: NextRequest) {
           : operator
         : userNotes || undefined;
       const reg = await CashRegistersDB.open(auth.tenantId, openingAmount, notes);
+      // Abrir la caja define con cuánta plata arranca el día: sin esto, el
+      // historial auditaba los ingresos y egresos manuales pero NO los dos
+      // momentos en que el monto se fija. Si al cierre falta plata, el primer
+      // dato que se busca es quién abrió y con cuánto.
+      logActivity(
+        "Abrir",
+        "caja",
+        `Apertura de caja con S/${openingAmount.toFixed(2)}${notes ? ` — ${notes}` : ""}`,
+        reg.id,
+        auth.username,
+        undefined,
+        auth.tenantId,
+      ).catch((err) => logger.warn("[cash-registers] activity log failed", { err: String(err) }));
       return NextResponse.json(reg, { status: 201 });
     }
 

@@ -1,0 +1,8 @@
+Paralelismo — 157 transcript(s)
+  tool-calls por mensaje : 1.23  ⚠️ por debajo de la meta (1.5)
+  mensajes con 2+ calls  : 15.4%  (3261 de 21211)
+  subagentes por tanda   : 1.68  (1140 en 679 tandas)
+  total                  : 26049 llamadas
+
+  Cada tanda = una espera completa del modelo. 26049 llamadas en
+  21211 tandas podrían ser ~17366 si lo independiente viajara junto.

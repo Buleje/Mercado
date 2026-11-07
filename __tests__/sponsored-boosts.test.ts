@@ -30,6 +30,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   invalidateByPrefix: vi.fn().mockResolvedValue(undefined),
 }));
 

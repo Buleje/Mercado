@@ -174,7 +174,7 @@ export default function AddressAutocomplete({
               }}
               className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--surface-sunken)] transition-colors border-b border-[var(--rule-base)]"
             >
-              <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] shrink-0">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[var(--accent)] shrink-0">
                 <Navigation className="h-4 w-4" strokeWidth={2} aria-hidden />
               </div>
               <div className="flex-1 min-w-0">

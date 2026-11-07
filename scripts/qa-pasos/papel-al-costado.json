@@ -1,0 +1,54 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=documentos&vista=esenciales&esencial=cmvkay8ab00053fvz038axey0#documentos",
+  "pasos": [
+    {
+      "esperar": "[data-qa=esencial-papel]"
+    },
+    {
+      "esperar": 800
+    },
+    {
+      "eval": "(()=>{const b=document.querySelector('[data-qa=esencial-papel] button')||document.querySelector('[data-qa=esencial-papel]');b.click();return b.textContent.trim().slice(0,50)})()"
+    },
+    {
+      "esperar": 2500
+    },
+    {
+      "eval": "(()=>{const v=document.querySelector('[data-qa=vista-esenciales]');const t=v.textContent;return {volver:/Volver a QA Expediente/.test(t),posicion:(t.match(/\\d+ de \\d+/)||[''])[0],queEs:/Qué es/.test(t),ordenar:/Ordenar/.test(t),dosColumnasPanel:document.querySelector('[data-qa=esencial-panel]')?.getAttribute('data-dos-columnas'),dialogo:[...document.querySelectorAll('[role=dialog]')].some(d=>d.getBoundingClientRect().width>0)}})()"
+    },
+    {
+      "captura": "esenciales"
+    },
+    {
+      "eval": "(async()=>{const t=document.cookie.match(/(?:^|;\\s*)csrf-token=([^;]+)/)?.[1];const r=await fetch('/api/admin/documents/folders/bulk',{method:'POST',credentials:'include',headers:{'content-type':'application/json','x-csrf-token':decodeURIComponent(t||'')},body:JSON.stringify({action:'addTags',ids:['cmvkay8ab00053fvz038axey0'],tags:['cliente:c32565d8663ead469abb1c676']})});return 'vincular '+r.status})()"
+    },
+    {
+      "eval": "(()=>{location.href='/admin?tab=documentos&vista=drive&sub=terceros#documentos';return 'ir'})()"
+    },
+    {
+      "esperar": "[data-qa=vista-terceros]"
+    },
+    {
+      "esperar": 1500
+    },
+    {
+      "eval": "(async()=>{const papel=()=>document.querySelector('[data-qa=vista-terceros] button[aria-label^=\"Ver \"]')||document.querySelector('[data-qa=tercero-papel] button');if(!papel()){const t=[...document.querySelectorAll('[data-qa=vista-terceros] button')].find(b=>/papeles/.test(b.textContent));t&&t.click();await new Promise(r=>setTimeout(r,1500));}const b=papel();b.click();return (b.getAttribute('aria-label')||b.textContent).slice(0,50)})()"
+    },
+    {
+      "esperar": "[data-qa=papel-al-costado]"
+    },
+    {
+      "esperar": 2500
+    },
+    {
+      "eval": "(()=>{const p=document.querySelector('[data-qa=papel-al-costado]');const v=document.querySelector('[data-qa=vista-terceros]');return {columnas:getComputedStyle(v).gridTemplateColumns,volver:p.querySelector('button')?.textContent,posicion:(p.textContent.match(/\\d+ de \\d+/)||[''])[0],ordenar:/Ordenar/.test(p.textContent)}})()"
+    },
+    {
+      "captura": "terceros"
+    },
+    {
+      "eval": "(async()=>{const t=document.cookie.match(/(?:^|;\\s*)csrf-token=([^;]+)/)?.[1];const r=await fetch('/api/admin/documents/folders/bulk',{method:'POST',credentials:'include',headers:{'content-type':'application/json','x-csrf-token':decodeURIComponent(t||'')},body:JSON.stringify({action:'removeTags',ids:['cmvkay8ab00053fvz038axey0'],tags:['cliente:c32565d8663ead469abb1c676']})});return 'deshacer '+r.status})()"
+    }
+  ]
+}

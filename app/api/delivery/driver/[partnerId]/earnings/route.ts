@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireDriver } from "@/lib/auth/driver-session";
+import { startOfLimaDay, startOfLimaMonth } from "@/lib/utils";
 
 /**
  * GET /api/delivery/driver/[partnerId]/earnings
@@ -42,9 +43,9 @@ export async function GET(
     const now = new Date();
     let from: Date;
     if (period === "hoy") {
-      from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      from = new Date(startOfLimaDay(now));
     } else if (period === "mes") {
-      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      from = new Date(startOfLimaMonth(0, now));
     } else {
       // semana: last 7 days
       from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

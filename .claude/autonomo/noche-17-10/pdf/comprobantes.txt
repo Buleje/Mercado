@@ -1,0 +1,1408 @@
+BULEJE / COMPROBANTES                                                                                                 15 OCT 2026
+
+
+
+
+ BULEJE · AUDITORÍA AMPLIADA · 15 OCTUBRE 2026
+
+
+
+
+ Comprobantes
+ con más potencia.
+ Menos recaptura. Mejor seguimiento. Más posibilidades.
+ Revisión de Facturas y boletas, Notas de crédito, Guías de remisión y Cotizaciones, con un plan avanzado de
+ experiencia, operación e integración.
+
+    CONTENIDO                         ENTREGA
+
+
+    Diagnóstico                       12 observaciones verificadas y pruebas de borrador, sin emitir documentos.
+
+
+    Mejoras                           56 propuestas identificadas con prioridad, esfuerzo relativo y aceptación.
+
+
+    Nuevos espacios                   8 pestañas o paneles funcionales, con ubicación, flujo y criterios.
+
+
+    Diseño y ejecución                4 bocetos; arquitectura, fases y pruebas para convertir las propuestas en trabajo.
+
+
+
+   La mejora que haría primero
+   Aclarar antes de confirmar si se creará un registro interno o un documento electrónico; elegir la operación de
+   origen sin copiar IDs; revisar importes; seguir la respuesta y resolver pendientes sin duplicar documentos.
+
+ Guía: 2-4 cobertura y diagnóstico; 5-11 mejoras; 12-13 flujos y navegación; 14-17 nuevos espacios; 18-21 bocetos; 22-24
+ implementación, validación y fuentes.
+
+ Este PDF contiene propuestas, no una implementación. No se crearon clientes, cotizaciones, notas o guías; no se emitieron
+ comprobantes ni se cambiaron datos fiscales. Se usaron valores ficticios en un formulario de cotización que se cerró sin
+ guardar.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                          01
+BULEJE / COMPROBANTES                                                                                                    15 OCT 2026
+
+
+
+
+ COMPROBANTES / 02
+
+
+
+ Qué se revisó y qué queda pendiente
+ Ruta: /admin?tab=facturacion&vista=facturas#facturacion. Inspección directa en escritorio el 15 de octubre de
+ 2026.
+
+    ÁREA                               COBERTURA
+
+
+    Facturas y boletas                 Indicadores expandidos, Más, estado SUNAT y ayuda; formulario en modo Factura y
+                                       Boleta, sin enviar.
+
+
+    Notas de crédito                   Estados Todos/Borrador/Emitida/Anulada; filtros por fecha/monto; Tabla/Tarjetas/Tablero
+                                       visibles; Más y atajos; pasos Documento y Motivo & Items.
+
+
+    Asistente de nota                  Se inspeccionó Continuar sin documento, motivos, descripción, monto sin IGV y notas
+                                       internas. Se comprobó la validación de motivo vacío; no se guardó ni emitió.
+
+
+    Guías de remisión                  Estados y búsqueda, Más y vínculo a Pedidos; formulario de traslado, destinatario, ruta,
+                                       transporte, carga e ítems, cancelado sin guardar.
+
+
+    Cotizaciones                       En curso y Cerradas; indicadores; plantillas guardadas; alta rápida de cliente
+                                       Natural/Jurídica; asistente Cliente > Ítems > Confirmar.
+
+
+    Cálculo de borrador                Con cliente ficticio: 2 x S/100, descuento 10%, subtotal S/180, IGV de ejemplo S/32.40 y
+                                       total S/212.40. Vista final revisada y cerrada sin crear.
+
+
+
+ Límites materiales
+ Las listas estaban vacías. No se pudieron verificar detalle de documentos existentes, conversión de
+ cotizaciones, entrega al cliente, PDF/XML/CDR reales, numeración concurrente, devolución efectiva o
+ respuesta del proveedor. No se intentó una emisión para producir datos de prueba.
+ No es una certificación tributaria, de seguridad ni de accesibilidad. Las reglas fiscales, catálogos y supuestos deben validarse
+ con el proveedor y el responsable tributario para el sistema de emisión aplicable; aquí se evalúa la interfaz y se diseña el flujo.
+
+ P1: integridad, dinero y certeza del resultado. P2: rapidez y claridad. P3: diferenciación. Esfuerzo B/M/A: bajo/medio/alto,
+ relativos; sin presupuesto o plazo comprometido.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                               02
+BULEJE / COMPROBANTES                                                                                       15 OCT 2026
+
+
+
+
+ COMPROBANTES / 03
+
+
+
+ Observaciones prioritarias
+ Las siguientes situaciones se vieron en la interfaz. No se presupone que una opción visible llegue a emitir un
+ documento válido sin sus controles de servidor.
+
+   O01 · Interno y SUNAT deben distinguirse antes
+   El aviso dice “aún no es oficial”; la ayuda indica que, mientras falte configurar, lo emitido queda interno. El
+   modal se titula “Emitir comprobante SUNAT”. Unificar título, acción y resultado esperado. F01, F03.
+
+
+   O02 · Los requisitos se explican dentro de una ayuda
+   El contador de tres requisitos abre texto que menciona datos fiscales, token y estado del RUC. Conviene una
+   lista accionable, sin duplicar conceptos. Son avisos de la app: no se consultó externamente la situación del
+   RUC. F02.
+
+
+   O03 · Se exige copiar un identificador de pedido
+   Emisión pide “ID del pedido” con ejemplo técnico cm3abc123. La guía pide N° de orden; Más describe ir a
+   Pedidos y escribirlo. Proponer un selector y precarga en ambos flujos. F04, F17.
+
+
+   O04 · Emisión inicial sin resumen del origen
+   El formulario inicial muestra tipo, pedido y datos del cliente. Antes de confirmar debe existir un resumen
+   verificable de líneas, importes y resultado. No se probó qué aparece tras introducir un pedido real. F05, F07.
+
+
+   O05 · Nota sin origen visible en el asistente
+   El primer paso ofrece factura, boleta o ticket y “Continuar sin documento”. Hace falta distinguir
+   borrador/ajuste interno de una nota electrónica vinculada al original [R2]. No se comprobó una emisión sin
+   referencia. F09, F10.
+
+
+   O06 · Motivo y formulario requieren más contexto
+   En el recorrido sin documento, elegir corrección de descripción mantiene un campo de monto sin IGV; no se
+   vio comparación de descripción anterior/nueva. Adaptar captura al motivo y documento elegido. F11, F12.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                 03
+BULEJE / COMPROBANTES                                                                                                   15 OCT 2026
+
+
+
+
+ COMPROBANTES / 04
+
+
+
+ Más fricciones y funciones valiosas
+ Conviene conservar lo que ya acelera la operación y extenderlo, evitando propuestas que dupliquen
+ capacidades actuales.
+
+ O07 · Guía extensa y repetitiva
+ El formulario reúne traslado, destinatario, ruta, transporte, carga e ítems en una captura larga; varias identidades y direcciones
+ son manuales. Un asistente con precarga y datos frecuentes reduciría trabajo. F18-F21.
+
+ O08 · Unidad técnica poco explicada
+ El ítem de guía presenta “Unidad” con NIU y placeholder Und. Mostrar nombre legible y código asociado reduce errores de
+ unidad, especialmente con volumen, peso o bultos. F22.
+
+ O09 · Plantillas locales al navegador
+ La ventana informa “0 de 10 · en este navegador”. Es una capacidad existente; compartir y versionar modelos de equipo sería
+ una ampliación. F28, N05.
+
+ O10 · Cliente de cotización se escribe manualmente
+ Cliente pide nombre y RUC opcional; Más ya permite alta rápida Natural/Jurídica. Conectar búsqueda, selección y alta evita
+ recapturar. No se probó deduplicación del servidor. F25.
+
+ O11 · Confirmación de cotización resumida
+ El último paso muestra cliente, número de ítems, total, vigencia y notas. En el ejemplo no se vio detalle completo de líneas ni
+ base/IGV en ese paso. Añadir vista previa y comparación. F27.
+
+ O12 · Métricas con alcance desigual
+ Facturas muestra emitido, IGV, pendientes, rechazados y tipos; cotizaciones distingue emitidas del mes y conversión 0%. Dar
+ período y denominador a cada cifra evita interpretar cero documentos como desempeño. F38, F48.
+
+ Fortalezas comprobadas
+ Búsquedas, estados y filtros; notas con asistente de tres pasos, motivos y opción de guardar template; atajos N/F/Esc; varias
+ vistas y exportaciones; cotizaciones con catálogo sugerido, cantidades, precio, descuento, cálculo en vivo, vigencia y notas;
+ alta rápida de cliente sin salir.
+
+
+   Dos comprobaciones de formulario
+   La cotización bloqueó avanzar sin nombre. La nota bloqueó avanzar sin motivo y mostró “Selecciona un
+   motivo”. El cálculo ficticio de cotización cuadró en el caso probado; esto no valida todos los redondeos ni
+   tratamientos fiscales.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                               04
+BULEJE / COMPROBANTES                                                                                     15 OCT 2026
+
+
+
+
+ COMPROBANTES / 05
+
+
+
+ Facturas y boletas: emitir con claridad
+ Ocho mejoras para que el usuario comprenda origen, importe, destino y resultado antes de confirmar.
+
+ F01 · Modo interno o electrónico explícito
+ P1 · Esfuerzo M | Separar el registro interno del flujo electrónico; reflejarlo en título, botón, vista previa y
+ archivo.
+ Aceptación: El usuario identifica el resultado antes de confirmar. Un comprobante interno no aparece como
+ aceptado por SUNAT.
+
+ F02 · Lista de preparación accionable
+ P1 · Esfuerzo M | Mostrar cada requisito, estado, última comprobación y acceso para resolverlo; ocultar valores
+ secretos.
+ Aceptación: El número de pendientes corresponde a requisitos distintos y desaparece sólo cuando existe
+ verificación suficiente.
+
+ F03 · Entorno y emisor visibles
+ P1 · Esfuerzo M | Identificar empresa, punto de emisión, ambiente de prueba/producción y documento que se
+ pretende emitir.
+ Aceptación: Un ensayo es inequívoco y no se mezcla con producción; cambiar de empresa no reutiliza datos
+ de otro emisor.
+
+ F04 · Buscar la venta o pedido
+ P2 · Esfuerzo M | Seleccionar por código corto, cliente, fecha o importe; abrir también desde la venta, sin copiar
+ un ID.
+ Aceptación: La selección precarga datos y conserva vínculo; otro pedido del mismo importe no se elige
+ automáticamente.
+
+ F05 · Datos del cliente revisables
+ P1 · Esfuerzo M | Mostrar identidad, razón social y dirección de la operación; reutilizar el cliente registrado y
+ señalar datos por confirmar.
+ Aceptación: La información del documento se revisa y se conserva como fue emitida, aunque después cambie
+ la ficha del cliente.
+
+ F06 · Base, descuentos y tributos explicados
+ P1 · Esfuerzo A | Aclarar si el precio incluye impuesto y mostrar tratamiento por línea, redondeo, base y total
+ según reglas aplicables.
+ Aceptación: La vista y lo enviado usan la misma política; no se aplica el 18% observado como tratamiento
+ universal.
+
+ F07 · Confirmación con efecto completo
+ P1 · Esfuerzo M | Antes de enviar: origen, líneas, emisor, receptor, serie y monto; aclarar qué ocurre con el
+ saldo y el stock.
+ Aceptación: Emitir desde una venta registrada no vuelve a cobrar, vender ni descontar inventario por
+ duplicado.
+
+ F08 · Resultado con siguiente acción
+ P1 · Esfuerzo A | Mostrar registrado/enviado/pendiente/aceptado/rechazado según respuesta real, con
+ constancia y fecha [R1].
+ Aceptación: Una respuesta de transporte o un PDF disponible no se interpreta por sí solo como aceptación del
+ documento.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                05
+BULEJE / COMPROBANTES                                                                                     15 OCT 2026
+
+
+
+
+ COMPROBANTES / 06
+
+
+
+ Notas de crédito: ajustar el origen
+ El asistente ya existe. Potenciarlo con reglas y efectos explicados reduce ajustes equivocados.
+
+ F09 · Original consultable y elegible
+ P1 · Esfuerzo M | Seleccionar el comprobante y ver cliente, estado, líneas y ajustes previos; explicar su
+ elegibilidad [R2].
+ Aceptación: Una nota electrónica conserva el original que corresponde; su selección se valida también al
+ guardar/enviar.
+
+ F10 · Borrador sin referencia identificado
+ P1 · Esfuerzo M | Si se permite continuar sin documento, etiquetarlo como borrador o ajuste interno y pedir
+ resolver el origen antes del flujo oficial.
+ Aceptación: El usuario sabe qué está pendiente y no confunde una referencia libre con un comprobante válido
+ seleccionado.
+
+ F11 · Formulario según motivo
+ P1 · Esfuerzo A | Para descripción, comparar texto anterior/nuevo; para devolución, cantidades; para
+ descuento, importe/base afectada.
+ Aceptación: Sólo se exigen campos pertinentes; las reglas se contrastan con el proveedor y el sistema de
+ emisión usado.
+
+ F12 · Seleccionar líneas y cantidades
+ P1 · Esfuerzo M | Usar líneas del original y mostrar cantidades/importe aún ajustables, considerando notas
+ anteriores.
+ Aceptación: No se acredita dos veces la misma parte; devoluciones parciales conservan el remanente.
+
+ F13 · Simular el efecto antes de emitir
+ P1 · Esfuerzo A | Vista previa de base, tributo, saldo del cliente, stock, caja y comisión, distinguiendo cada
+ efecto.
+ Aceptación: La nota no implica automáticamente reembolso de efectivo ni recepción física de productos.
+
+ F14 · Plantillas de motivo con revisión
+ P2 · Esfuerzo M | Ampliar Guardar template con nombre, motivo, alcance y versión; precargar texto, sin copiar
+ un monto antiguo sin aviso.
+ Aceptación: Cada plantilla sigue siendo revisable; una regla vencida o incompatible se señala al usarla.
+
+ F15 · Aprobación por excepción
+ P1 · Esfuerzo A | Solicitar revisión cuando importe, motivo o situación lo requieran; conservar autor y
+ aprobador.
+ Aceptación: La aprobación indica exactamente qué versión se revisó; editarla vuelve a solicitar revisión si
+ cambia el efecto.
+
+ F16 · Ajuste con historial completo
+ P1 · Esfuerzo M | Vincular nota, devolución, recepción, saldo y eventual reembolso; mostrar estado técnico y
+ operativo por separado.
+ Aceptación: El original no desaparece ni se reescribe; una corrección posterior es un evento nuevo y
+ rastreable.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                              06
+BULEJE / COMPROBANTES                                                                                   15 OCT 2026
+
+
+
+
+ COMPROBANTES / 07
+
+
+
+ Guías: preparar el traslado una vez
+ Potenciar la captura actual con datos frecuentes, unidades claras y vínculo al pedido. La validez electrónica
+ requiere su flujo de emisión específico [R3].
+
+ F17 · Precarga desde pedido o traslado
+ P2 · Esfuerzo M | Traer destinatario, dirección, referencias y líneas; soportar un traslado sin venta con su
+ motivo explícito.
+ Aceptación: La guía queda vinculada al origen y evita copiar el número manualmente; no crea otra venta.
+
+ F18 · Captura por etapas y pendientes
+ P2 · Esfuerzo M | Dividir en origen/destino, transporte, carga y revisión, con resumen permanente y borrador
+ recuperable.
+ Aceptación: Cambiar de etapa no borra lo escrito; errores y campos pendientes se localizan sin recorrer todo
+ el formulario.
+
+ F19 · Datos frecuentes y múltiples destinos
+ P2 · Esfuerzo M | Elegir almacén, dirección, transportista, conductor y vehículo desde registros reutilizables.
+ Aceptación: Los datos se revisan para ese traslado; el documento conserva la versión usada y no cambia con
+ la ficha maestra.
+
+ F20 · Tipo y modalidad de guía
+ P1 · Esfuerzo A | Explicar qué flujo se prepara y adaptar campos a modalidad, motivo y proveedor habilitado
+ [R3].
+ Aceptación: No se presupone que el formulario genérico cubra todos los supuestos de GRE; faltantes se
+ muestran antes de enviar.
+
+ F21 · Control de carga por salida
+ P1 · Esfuerzo A | Distribuir cantidades entre vehículos o salidas, manteniendo pendientes y documento
+ correspondiente.
+ Aceptación: Dos guías parciales no hacen salir dos veces la misma cantidad; se identifica qué carga lleva cada
+ vehículo.
+
+ F22 · Unidades y peso comprensibles
+ P1 · Esfuerzo M | Mostrar unidad legible junto al código, origen del peso y fórmula; diferenciar unidad, bulto,
+ volumen y peso bruto.
+ Aceptación: Una conversión no cambia silenciosamente cantidades; los datos estimados se distinguen de los
+ confirmados.
+
+ F23 · Vista previa de ruta y documentos
+ P2 · Esfuerzo M | Revisar origen/destino, vehículo, carga y documentos vinculados; detectar referencias
+ faltantes o incompatibles.
+ Aceptación: El operador corrige la dirección concreta y sabe qué documento sustentará el traslado antes de
+ confirmar.
+
+ F24 · Estado fiscal distinto del logístico
+ P1 · Esfuerzo A | Separar emisión/respuesta de En tránsito/Entregada; enlazar incidencias y cambios de
+ traslado cuando proceda.
+ Aceptación: Entregar físicamente no cambia una respuesta de emisión; un evento se vincula a la guía original
+ sin reescribirla.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                               07
+BULEJE / COMPROBANTES                                                                                      15 OCT 2026
+
+
+
+
+ COMPROBANTES / 08
+
+
+
+ Cotizaciones: vender mejor la propuesta
+ Conservar catálogo, descuentos, plantillas y alta de cliente. Añadir continuidad comercial, alternativas y
+ revisión.
+
+ F25 · Buscar cliente y alta conectada
+ P2 · Esfuerzo M | Seleccionar un cliente existente; conservar Nuevo cliente en el mismo flujo y revisar
+ coincidencias.
+ Aceptación: Dar de alta no obliga a reescribirlo; los posibles duplicados se explican sin fusionar clientes
+ automáticamente.
+
+ F26 · Precio y disponibilidad contextual
+ P1 · Esfuerzo M | Distinguir producto, servicio y alquiler, unidad y precio base; indicar si se reserva stock o sólo
+ se cotiza.
+ Aceptación: La promesa comercial no se confunde con una reserva o entrega confirmada; al convertir se
+ revalida disponibilidad.
+
+ F27 · Vista previa final completa
+ P1 · Esfuerzo M | En Confirmar incluir líneas, descuentos, base/tributo, vigencia, alcance y condiciones; opción
+ de volver al campo.
+ Aceptación: El cliente y el operador ven los mismos importes y condiciones de la versión que se pretende
+ crear o compartir.
+
+ F28 · Modelos compartidos y versionados
+ P2 · Esfuerzo M | Extender plantillas locales a modelos de equipo, con propietario, versiones y permisos;
+ mantener una opción personal.
+ Aceptación: El usuario sabe si el modelo vive en ese navegador o en la empresa; el contenido se revisa antes
+ de reutilizarlo.
+
+ F29 · Alternativas A/B/C
+ P3 · Esfuerzo A | Opciones por calidad, volumen, plazo o servicio, con diferencias visibles de alcance y total.
+ Aceptación: Elegir una alternativa genera un único pedido con sus condiciones, sin sumar las opciones
+ descartadas.
+
+ F30 · Versiones y aceptación trazable
+ P1 · Esfuerzo A | Conservar la versión enviada y los cambios; registrar aceptación comercial vinculada a esa
+ versión.
+ Aceptación: Aceptar no equivale a cobrar ni emitir; una modificación posterior no altera la propuesta ya
+ aceptada.
+
+ F31 · Seguimiento útil de vigencia
+ P2 · Esfuerzo M | Bandeja de cotizaciones próximas a vencer o pendientes de respuesta, con responsable y
+ contacto revisable.
+ Aceptación: No se envían recordatorios duplicados; una renovación crea versión y revalida condiciones.
+
+ F32 · Convertir sin recaptura ni duplicidad
+ P1 · Esfuerzo A | Desde la cotización elegida preparar pedido y luego factura/guía donde corresponda, con
+ comparación de cambios.
+ Aceptación: Convertir dos veces no crea dos pedidos; nuevos precios o faltantes se aceptan explícitamente.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                08
+BULEJE / COMPROBANTES                                                                                   15 OCT 2026
+
+
+
+
+ COMPROBANTES / 09
+
+
+
+ Accesos y operación rápida
+ Ocho mejoras para reducir búsqueda y navegación sin convertir cada acción en otra pestaña principal.
+
+ F33 · Acciones fijadas por persona
+ P2 · Esfuerzo M | Fijar Emitir desde venta, Nueva cotización, Preparar guía, Buscar, Pendientes o Descargar
+ expediente.
+ Aceptación: La acción frecuente se abre con un clic y respeta permisos; se conserva Más para las opciones
+ restantes.
+
+ F34 · Búsqueda global de documentos
+ P2 · Esfuerzo M | Ampliar el buscador existente por serie/número, cliente, pedido, importe, estado y referencia
+ vinculada.
+ Aceptación: El resultado identifica tipo, emisor, fecha y ambiente; no se confunde un documento interno con
+ uno electrónico.
+
+ F35 · Detalle lateral y regreso
+ P2 · Esfuerzo M | Abrir el documento sin abandonar la lista, con sus vínculos y acciones aplicables al estado.
+ Aceptación: Cerrar conserva filtro, scroll y selección; las acciones inválidas explican cómo resolver el bloqueo.
+
+ F36 · Filtros coherentes y guardados
+ P2 · Esfuerzo M | Tipo, fecha, cliente, estado, responsable y origen con chips visibles; vistas guardadas por
+ función.
+ Aceptación: Los filtros afectan indicadores, tabla y exportación de la misma forma; se puede restablecer el
+ alcance.
+
+ F37 · Atajos y foco predecibles
+ P2 · Esfuerzo M | Potenciar N/F/Esc de notas, extender ayuda contextual y revisar foco de los pasos de
+ confirmación.
+ Aceptación: Escribir o pulsar Enter para avanzar no envía ni crea accidentalmente un documento; foco y
+ errores son visibles.
+
+ F38 · Indicadores con período y base
+ P2 · Esfuerzo B | Mostrar fechas, fórmula y cantidad de documentos; abrir los registros detrás de cada
+ indicador.
+ Aceptación: Sin muestra se dice Sin datos para una tasa; emitido y cobrado se presentan como conceptos
+ distintos.
+
+ F39 · Trabajo por lote con revisión
+ P1 · Esfuerzo A | Preparar, validar, descargar o proponer envío de varios documentos, mostrando elegibles y
+ excluidos.
+ Aceptación: El usuario revisa el lote antes de un envío; un error no obliga a repetir los documentos ya
+ resueltos.
+
+ F40 · Campos frecuentes y validación cercana
+ P2 · Esfuerzo M | Autocompletar datos confiables, recordar preferencias de captura y explicar errores junto al
+ campo.
+ Aceptación: No se copian series, fechas, destinatarios o montos sensibles desde otra operación sin revisión.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                               09
+BULEJE / COMPROBANTES                                                                                    15 OCT 2026
+
+
+
+
+ COMPROBANTES / 10
+
+
+
+ Integridad y seguimiento del resultado
+ Son requisitos a verificar en implementación: no se afirma que el servidor actual carezca de estos controles.
+
+ F41 · Una identidad por operación
+ P1 · Esfuerzo A | Usar una referencia única de emisión y la misma referencia en los reintentos; vincular original
+ y respuesta.
+ Aceptación: Doble clic, reconexión o dos usuarios no crean dos documentos por la misma orden de emisión.
+
+ F42 · Consultar antes de reenviar
+ P1 · Esfuerzo A | Si se pierde la respuesta, consultar el estado del documento y conciliarlo antes de repetir el
+ envío.
+ Aceptación: El usuario ve Resultado no confirmado; un timeout no se trata como rechazo ni autoriza otro
+ correlativo automáticamente.
+
+ F43 · Dinero separado de emisión
+ P1 · Esfuerzo A | Enlazar venta, cobros, abonos, nota y reembolso; registrar cada hecho con identidad y fecha
+ propias.
+ Aceptación: Emitir no vuelve a cobrar; una nota no prueba que se devolvió dinero; un abono no crea otra
+ venta.
+
+ F44 · Serie y correlativo controlados
+ P1 · Esfuerzo A | Gestionar asignación por emisor, tipo, punto y ambiente; visualizar conflictos y reservas según
+ el flujo técnico.
+ Aceptación: Dos emisiones simultáneas no comparten número; cancelar un borrador no permite reutilizar un
+ documento ya emitido.
+
+ F45 · Originales y respuesta conservados
+ P1 · Esfuerzo A | Guardar versión de datos enviados, representación, archivo electrónico y respuesta cuando
+ correspondan [R1].
+ Aceptación: Los originales se pueden recuperar y se distinguen de una representación regenerada con datos
+ nuevos.
+
+ F46 · Registro de cambios y permisos
+ P1 · Esfuerzo M | Actor, fecha, motivo y antes/después en cambios, aprobación, emisión, envío y descarga
+ relevante.
+ Aceptación: Un usuario no obtiene por una acción rápida permisos que no tiene en el detalle; el original
+ mantiene su historia.
+
+ F47 · Resolución de errores guiada
+ P1 · Esfuerzo M | Traducir mensajes del proveedor a causa, campo y siguiente paso; conservar la respuesta
+ original consultable.
+ Aceptación: Una corrección mantiene identidad y vínculos; sólo se propone reintentar si el estado y la regla lo
+ permiten.
+
+ F48 · Conciliación de totales y estados
+ P1 · Esfuerzo A | Comparar importes del pedido, documento, ajustes y cobros; detectar desfases con un
+ registro de resolución.
+ Aceptación: Los totales de pantalla y exportación se explican con el mismo conjunto de documentos y el
+ mismo corte.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                10
+BULEJE / COMPROBANTES                                                                                   15 OCT 2026
+
+
+
+
+ COMPROBANTES / 11
+
+
+
+ Ocho funciones creativas con utilidad
+ Son capacidades propuestas para prototipar después de asegurar estados, vínculos y datos.
+
+ F49 · Asistente que prepara y explica
+ P3 · Esfuerzo A | Voz o texto: preparar desde una venta, resumir pendientes o explicar un rechazo con enlaces
+ a su fuente.
+ Aceptación: Produce un borrador revisable; no inventa RUC, datos fiscales o motivos, ni emite por una
+ interpretación ambigua.
+
+ F50 · Documento leído, campos sugeridos
+ P3 · Esfuerzo A | Leer una imagen o documento aportado para sugerir referencias, cliente o carga, señalando
+ confianza y origen.
+ Aceptación: El operador confirma cada dato dudoso; una lectura de imagen no se considera prueba de pago ni
+ aceptación fiscal.
+
+ F51 · Comparador de cambios e importes
+ P3 · Esfuerzo M | Resaltar variaciones entre cotización, pedido y documento: cantidad, precio, descuento,
+ impuesto y condiciones.
+ Aceptación: El usuario distingue un cambio autorizado de un desfase; la comparación no sustituye la revisión
+ tributaria.
+
+ F52 · Entrega al cliente con seguimiento
+ P3 · Esfuerzo A | Un enlace acotado para ver sus documentos y descargar archivos, con registro de entrega y
+ destinatario revisado.
+ Aceptación: Un enlace de un cliente no revela expedientes de otro; la disponibilidad o apertura no se confunde
+ con cobro.
+
+ F53 · Expediente listo para una revisión
+ P3 · Esfuerzo M | Paquete por operación con índice, originales, respuestas, soportes y pendientes; descarga
+ según permiso.
+ Aceptación: El paquete indica lo que falta y su fecha de corte; no incorpora archivos de otro emisor o cliente.
+
+ F54 · Panel de simulación sin emisión
+ P3 · Esfuerzo A | Ensayar descuento, devolución parcial, reparto de carga o alternativa comercial antes de
+ aplicar cambios.
+ Aceptación: Siempre dice Simulación; sus resultados no alteran stock, saldo, correlativos ni documentos
+ oficiales.
+
+ F55 · Captura flexible por actividad
+ P3 · Esfuerzo A | Madera: medidas/volumen; servicios: alcance; alquiler: período; carga: peso/bultos. Mapear a
+ unidades y reglas de salida.
+ Aceptación: La fórmula es visible y versionada; una unidad comercial no se cambia silenciosamente por el
+ código fiscal.
+
+ F56 · Bandeja de oportunidades y alertas
+ P3 · Esfuerzo M | Priorizar cotización por vencer, venta sin documento, guía incompleta o respuesta sin
+ confirmar, con importe y responsable.
+ Aceptación: Un aviso lleva al origen y se cierra con evidencia; no se multiplica por cada actualización de la
+ página.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                               11
+BULEJE / COMPROBANTES                                                                                                 15 OCT 2026
+
+
+
+
+ COMPROBANTES / 12
+
+
+
+ Una operación, varios estados
+ El expediente conecta registros; no los convierte en un único estado llamado Emitido, Pagado o Cancelado.
+
+    DIMENSIÓN                             PREGUNTA QUE RESUELVE
+
+
+    Comercial                             ¿Qué propuesta se aceptó y qué pedido se está atendiendo? Cotización, versión,
+                                          pedido y condiciones.
+
+
+    Documental / emisión                  ¿Qué se registró o envió y qué respuesta se recibió? Interno, borrador, enviado,
+                                          pendiente, resultado confirmado.
+
+
+    Dinero                                ¿Cuánto se cobró, queda pendiente o se reembolsó? Venta, cobros, abonos y
+                                          devolución de dinero con soportes.
+
+
+    Inventario / logística                ¿Qué se reservó, salió, entregó o regresó? Cantidades, salidas parciales, guía,
+                                          recepción y devolución.
+
+
+    Revisión / trazabilidad               ¿Quién preparó, aprobó, cambió y resolvió? Versiones, permisos, eventos y evidencias.
+
+
+
+ Tres recorridos a diseñar
+
+   A · Cotización hasta cierre
+   Cotización v2 aceptada > pedido único > revisión de datos > documento preparado > resultado de emisión >
+   envío al cliente. Cobros y entrega avanzan por sus propios eventos vinculados.
+
+
+   B · Devolución parcial
+   Seleccionar original > elegir líneas aún ajustables > revisar motivo y efecto > emitir ajuste cuando proceda >
+   recibir mercancía y resolver dinero en sus flujos respectivos. Ningún paso borra el original.
+
+
+   C · Traslado en dos salidas
+   Pedido con cantidades > asignar parte a cada salida/vehículo > preparar guía aplicable > confirmar resultado
+   documental > registrar salida/entrega. La cantidad pendiente se mantiene y no se duplica la venta.
+
+ El estado técnico exacto y la elegibilidad dependen del proveedor y del sistema de emisión aplicable. Este esquema propone
+ separar responsabilidades, no reemplazar las reglas de SUNAT.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                          12
+BULEJE / COMPROBANTES                                                                                                  15 OCT 2026
+
+
+
+
+ COMPROBANTES / 13
+
+
+
+ Navegación con potencia y orden
+ Añadir funciones no exige una fila de doce pestañas. Mantener cuatro áreas reconocibles y sumar espacios de
+ trabajo según necesidad.
+
+    ÁREA                              CONTENIDO PROPUESTO
+
+
+    Emitir y consultar                Facturas/boletas actuales + Centro de emisión (N01), búsqueda y borradores. Acceso al
+                                      resultado y al expediente.
+
+
+    Ajustes                           Notas de crédito actuales + Notas de débito (N07), con flujos diferenciados y vínculo al
+                                      original.
+
+
+    Traslados                         Guías actuales, salidas parciales y datos frecuentes. Conexión a Pedidos y reparto; evitar
+                                      otro registro logístico independiente.
+
+
+    Cotizaciones                      En curso/Cerradas actuales; opciones, versiones, aceptación y conversión.
+
+
+    Pendientes                        Seguimiento y pendientes (N02) + Revisiones y aprobaciones (N04). Bandeja por próxima
+                                      acción.
+
+
+    Análisis                          Análisis y conciliación (N08), con períodos y acceso a registros fuente.
+
+
+    Herramientas                      Biblioteca de modelos (N05) y Series/puntos de emisión (N06), visibles según función y
+                                      permisos.
+
+
+    Detalle común                     Expediente (N03) como panel lateral o vista de operación, accesible desde todos los
+                                      documentos.
+
+
+
+ Quién debería ver qué primero
+ Mostrador: emitir desde venta y buscar documento. Ventas: cotizaciones y propuestas pendientes.
+ Despacho: guías y salidas. Responsable de facturación: pendientes y respuestas. Supervisor:
+ aprobaciones, conciliación y configuración controlada.
+ Nuevo propuesto: ocho espacios funcionales N01-N08. Reorganización: la biblioteca amplía las plantillas existentes; el centro
+ de emisión amplía los formularios; expediente y revisiones pueden ser paneles, sin requerir otra pestaña principal.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                               13
+BULEJE / COMPROBANTES                                                                                          15 OCT 2026
+
+
+
+
+ COMPROBANTES / 14
+
+
+
+ Nuevos espacios 1 y 2
+ Preparar y seguir la emisión deben ser tareas distintas. Un lote de borradores no equivale a un lote emitido.
+
+ N01 · Centro de emisión
+ Ubicación: Dentro de Emitir y consultar; entrada desde la venta o pedido.
+ Quién la usa: Mostrador y facturación.
+
+ Campos mínimos: Origen, emisor, ambiente, tipo, receptor, líneas, importes, serie, validaciones y estado de
+ preparación.
+
+ Flujo: Elegir origen > revisar datos > previsualizar > validar > confirmar envío o registro interno > abrir
+ resultado. Permitir preparar varios documentos sin emitirlos.
+
+ Función innovadora: Prechequeo que reúne discrepancias y lleva al campo; comparador entre venta y
+ documento antes de gastar tiempo en un rechazo.
+
+   Criterio para aprobar el prototipo
+   El mismo origen no se emite dos veces por reintento. El modo interno/prueba/producción es inequívoco y la
+   confirmación muestra qué operación se aplicará.
+
+
+ N02 · Seguimiento y pendientes
+ Ubicación: Destino Pendientes, con filtros por causa y responsable.
+ Quién la usa: Facturación y soporte autorizado.
+
+ Campos mínimos: Operación, documento, estado confirmado/no confirmado, respuesta original, intento,
+ fecha, responsable y siguiente acción.
+
+ Flujo: Clasificar pendiente > consultar estado si falta respuesta > corregir datos cuando corresponda > revisar >
+ resolver. Reintentar sólo con una regla segura.
+
+ Función innovadora: Agrupar mensajes técnicos por causa, mantener su detalle y sugerir una solución con
+ evidencia; no sustituir por un genérico “falló”.
+
+   Criterio para aprobar el prototipo
+   Un timeout no produce automáticamente otro documento. Se distingue error de captura, rechazo confirmado
+   y respuesta todavía desconocida.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                   14
+BULEJE / COMPROBANTES                                                                                          15 OCT 2026
+
+
+
+
+ COMPROBANTES / 15
+
+
+
+ Nuevos espacios 3 y 4
+ Un expediente explica lo ocurrido; una aprobación autoriza un cambio concreto antes de aplicarlo.
+
+ N03 · Expediente de la operación
+ Ubicación: Panel común desde cotización, pedido, factura, nota o guía.
+ Quién la usa: Ventas, despacho, facturación y supervisor con su alcance.
+
+ Campos mínimos: Código de operación, documentos y versiones, estados separados, líneas/cantidades,
+ cobros, soportes, eventos y faltantes.
+
+ Flujo: Abrir registro > ver relaciones > entrar al original > resolver pendiente > volver a la misma lista.
+ Descargar un paquete con índice si el perfil lo permite.
+
+ Función innovadora: Línea de tiempo de documentos y comparación de importes; vista “qué falta para cerrar”
+ sin borrar pendientes no resueltos.
+
+   Criterio para aprobar el prototipo
+   El expediente no crea documentos nuevos. Un enlace o una descarga no revela información de otro cliente,
+   empresa o ambiente.
+
+
+ N04 · Revisiones y aprobaciones
+ Ubicación: Subvista de Pendientes.
+ Quién la usa: Preparador y supervisor según la política del negocio.
+
+ Campos mínimos: Solicitud, motivo, versión, diferencias de importe/datos, efectos propuestos, aprobador y
+ resolución.
+
+ Flujo: Preparar excepción > solicitar revisión > comparar > aprobar o devolver con motivo > ejecutar por el flujo
+ correspondiente.
+
+ Función innovadora: Vista de diferencias que permite revisar sólo lo cambiado, con impacto en saldo, carga o
+ condiciones comerciales.
+
+   Criterio para aprobar el prototipo
+   Aprobar una versión no autoriza otra editada. La aprobación no simula una respuesta fiscal ni realiza por sí
+   sola un pago o reembolso.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                   15
+BULEJE / COMPROBANTES                                                                                     15 OCT 2026
+
+
+
+
+ COMPROBANTES / 16
+
+
+
+ Nuevos espacios 5 y 6
+ Son herramientas de administración; deben simplificar el trabajo sin ocultar qué datos se reutilizan.
+
+ N05 · Biblioteca de modelos
+ Ubicación: Herramientas; acceso desde cotizaciones, notas y guías.
+ Quién la usa: Equipo comercial y documental, con permisos de edición.
+
+ Campos mínimos: Tipo de modelo, nombre, actividad, propietario, alcance personal/equipo, campos, versión y
+ última revisión.
+
+ Flujo: Crear desde un documento de ejemplo > quitar datos específicos > revisar > compartir > aplicar como
+ borrador. Conservar plantillas personales.
+
+ Función innovadora: Modelos por tipo de negocio: servicios con alcance, alquiler por período, madera con
+ medidas y carga con unidades; campos dependientes explicados.
+
+   Criterio para aprobar el prototipo
+   No copia cliente, fecha, serie o monto de otra operación sin aviso. La biblioteca indica qué vive sólo en el
+   navegador y qué está compartido en la empresa.
+
+
+ N06 · Series y puntos de emisión
+ Ubicación: Herramientas, restringido a responsables autorizados.
+ Quién la usa: Administrador y responsable de facturación.
+
+ Campos mínimos: Emisor, establecimiento/punto, tipo, ambiente, serie, situación del correlativo, permisos y
+ eventos de configuración.
+
+ Flujo: Consultar configuración > revisar consistencia > preparar cambio > validar con proveedor > activar según
+ permisos y vigencia.
+
+ Función innovadora: Simulador que muestra qué serie se usaría en cada escenario antes de habilitar otro
+ punto o dispositivo.
+
+   Criterio para aprobar el prototipo
+   No se puede reutilizar o editar un número ya emitido como si fuera borrador. Cambiar configuración mantiene
+   historial y no cruza prueba con producción.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                              16
+BULEJE / COMPROBANTES                                                                                      15 OCT 2026
+
+
+
+
+ COMPROBANTES / 17
+
+
+
+ Nuevos espacios 7 y 8
+ Ampliaciones que requieren reglas acordadas y validación del proveedor antes de habilitarse.
+
+ N07 · Notas de débito
+ Ubicación: Subpestaña de Ajustes junto a Notas de crédito.
+ Quién la usa: Facturación y supervisor.
+
+ Campos mínimos: Documento de origen, motivo permitido, conceptos, base/tributo/total, versión, justificación
+ y respuesta.
+
+ Flujo: Elegir original elegible > seleccionar supuesto aplicable > revisar efecto > aprobar cuando corresponda >
+ emitir y seguir resultado. No reutilizar sin cambios el formulario de crédito.
+
+ Función innovadora: Simulación que compara saldo antes/después y explica por qué aumenta; guía de
+ campos según motivo y reglas vigentes.
+
+   Criterio para aprobar el prototipo
+   No crea un cobro recibido ficticio. Motivos, elegibilidad y tratamiento se validan para el sistema aplicable
+   antes de construir la emisión real; no se presume soporte actual por el indicador agregado.
+
+
+ N08 · Análisis y conciliación documental
+ Ubicación: Destino Análisis, enlazado con ventas/caja sin duplicar esos libros.
+ Quién la usa: Supervisor, facturación y responsable contable autorizado.
+
+ Campos mínimos: Período, documentos por estado, neto emitido, ajustes, ventas sin documento, cobros
+ vinculados, tiempos y diferencias.
+
+ Flujo: Elegir corte > detectar diferencia > abrir operaciones fuente > resolver o justificar > conservar cierre de
+ revisión.
+
+ Función innovadora: Mapa de cuellos de botella y simulador de volumen de emisión; alertas por diferencia
+ documental con explicación del origen.
+
+   Criterio para aprobar el prototipo
+   Cada total se reproduce con su detalle. Emitido, aceptado y cobrado se muestran por separado; los
+   supuestos no se presentan como dinero disponible.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                  17
+BULEJE / COMPROBANTES                                                                                                15 OCT 2026
+
+
+
+
+ COMPROBANTES / 18
+
+
+
+ Boceto 1: revisión antes de emitir
+ Diseño conceptual. Todos los nombres, códigos e importes son ficticios. Se ilustra un envío de prueba, no una
+ emisión de producción.
+
+
+
+       COMPROBANTES · DISEÑO PROPUESTO
+
+
+       1 Origen > 2 Revisar > 3 Confirmar > 4 Resultado
+
+
+        Pedido #024 · Cliente ejemplo · Factura
+
+
+
+        Destino: emisión electrónica / entorno de prueba
+
+        Datos verificados | Configuración completa | Serie de prueba
+
+
+
+
+        Concepto               Cant.      Precio base   Descuento
+
+        Ítem de ejemplo         2          S/100.00       10%
+
+
+        Base: S/180.00         IGV de ejemplo: S/32.40
+
+        Total S/212.40
+
+
+
+        Confirmar envío de prueba                                      Volver a revisar
+
+
+
+
+ Por qué cambia el recorrido
+ Origen y receptor se revisan con las líneas e importes; el modo de operación está visible. La acción final
+ describe exactamente qué se confirma. El resultado queda en una operación única para seguimiento.
+
+   Si la configuración permite sólo uso interno
+   La pantalla debe decir “Preparar/crear registro interno” y mostrar su alcance. No presentar ese resultado bajo
+   un título que haga esperar una aceptación de SUNAT.
+
+ El cálculo del boceto reproduce el ejemplo de borrador revisado: 2 x 100 x 0.90 = 180; 180 x 0.18 = 32.40; total 212.40. No se
+ generaliza ese tratamiento a todas las operaciones.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                              18
+BULEJE / COMPROBANTES                                                                                                15 OCT 2026
+
+
+
+
+ COMPROBANTES / 19
+
+
+
+ Boceto 2: resolver pendientes
+ Propuesta de bandeja orientada a causas y siguientes acciones; los ejemplos no representan errores
+ encontrados en documentos reales.
+
+
+
+       COMPROBANTES · DISEÑO PROPUESTO
+
+
+
+       Pendientes | Por revisar 2 | Esperando respuesta 1
+
+       Cada operación conserva una sola identidad
+
+
+
+        #OP-024 · Error en datos del cliente
+        Revisar datos y preparar corrección
+
+        Responsable: facturación
+
+
+
+
+        #OP-025 · Respuesta no confirmada
+        Consultar estado antes de reintentar
+
+        Última consulta: 14:20
+
+
+
+
+        #OP-026 · Falta aprobar excepción
+        Revisar diferencia de importe
+
+        Responsable: supervisor
+
+
+
+       Abrir operación | Consultar estado | Ver respuesta original
+
+
+
+
+ Tres situaciones, tres respuestas
+
+    SITUACIÓN                             PRÓXIMO PASO
+
+
+    Dato por corregir                     Localizar el campo y preparar la corrección pertinente.
+
+
+    Respuesta desconocida                 Consultar y reconciliar la misma operación antes de reenviar.
+
+
+    Revisión pendiente                    Mostrar diferencias y esperar decisión del responsable.
+
+
+ El mensaje simplificado ayuda al operador; la respuesta técnica original se conserva para soporte. Una consulta fallida no
+ cambia por sí sola el estado fiscal del documento.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                          19
+BULEJE / COMPROBANTES                                                                                 15 OCT 2026
+
+
+
+
+ COMPROBANTES / 20
+
+
+
+ Boceto 3: expediente conectado
+ El ejemplo combina historia comercial, documental, logística y de dinero, manteniendo la identidad de cada
+ registro.
+
+
+
+       COMPROBANTES · DISEÑO PROPUESTO
+
+
+
+       Expediente #EXP-024 · Cliente ejemplo
+
+
+        Cotización v2                                            Aceptada por el cliente
+
+
+
+        Pedido #024                                              Preparación completa
+
+
+
+        Factura de prueba                                        Respuesta aceptada registrada
+
+
+
+        Guía de prueba                                           Salida y cantidades vinculadas
+
+
+
+        Cobro                                                    Abono parcial; saldo independiente
+
+
+
+        Nota de crédito                                          Ajuste propuesto, aún sin emitir
+
+
+
+
+       Ver originales | Descargar expediente | Revisar faltantes
+       Los documentos, el dinero y la entrega mantienen estados distintos.
+
+
+
+
+ Una sola vista, documentos originales separados
+ La factura puede estar aceptada y el cobro continuar parcial. La guía puede documentar una salida y el pedido
+ tener otra pendiente. La nota propuesta se identifica como no emitida hasta que exista su resultado.
+
+   Qué aporta a tu operación
+   Menos búsqueda entre módulos, un código corto de referencia y un paquete revisable con documentos,
+   respuestas y soportes. El cierre debe explicar faltantes; no ocultarlos bajo un total agregado.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                             20
+BULEJE / COMPROBANTES                                                                                     15 OCT 2026
+
+
+
+
+ COMPROBANTES / 21
+
+
+
+ Boceto 4: cotización con alternativas
+ Propuesta de experiencia comercial para comparar alcance y condiciones. No supone emitir, cobrar o reservar
+ inventario al enviar una oferta.
+
+
+
+       COMPROBANTES · DISEÑO PROPUESTO
+
+
+
+       Cotización #C-024 · Versión 2 · Ejemplo
+
+
+        Opción A                                                        Opción B
+
+        Entrega estándar                                                Entrega prioritaria
+
+        Total ejemplo: S/1,000                                          Total ejemplo: S/1,100
+
+
+        Condiciones y vigencia visibles                                 Condiciones y vigencia visibles
+
+
+
+
+       Comparar alcance | Ver cambios desde versión 1
+
+       Aceptación comercial registrada; no significa cobro recibido.
+
+
+        Preparar pedido desde la opción elegida
+        Revalidar precio, disponibilidad y condiciones antes de convertir.
+
+
+
+
+       Enviar propuesta sólo tras revisar destinatario y documento.
+
+
+
+
+ Ofrecer opciones sin recapturar
+ Cada alternativa mantiene su precio, plazo y alcance. La elección se vincula a una versión, después se prepara
+ un único pedido y se revalida lo necesario antes de confirmarlo.
+
+   Personalización útil
+   Para madera, comparar medidas o volumen; para servicios, alcance; para alquiler, período y condiciones.
+   Las opciones descartadas no se suman al pedido ni al monto cotizado aceptado.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                              21
+BULEJE / COMPROBANTES                                                                                              15 OCT 2026
+
+
+
+
+ COMPROBANTES / 22
+
+
+
+ Qué haría primero
+ Orden por dependencia y riesgo. No se fijan fechas sin revisar la implementación y los servicios disponibles.
+
+    FASE                   ENTREGA                                        PRUEBA DE SALIDA
+
+
+    A · Claridad           F01-F05, F17-F18, F27, F33-F38.                Modo interno/electrónico inequívoco, origen
+    inmediata                                                             seleccionable, confirmación legible y períodos
+                                                                          explícitos.
+
+
+    B · Emisión            F06-F08, F41-F48; N01-N03, N06.                Una identidad de operación, numeración
+    trazable                                                              consistente, originales y respuesta recuperables;
+                                                                          pendientes resueltos sin duplicación.
+
+
+    C · Ajustes y          F09-F16, F19-F24; N04 y N07 según reglas       Efectos de nota y carga parcial coherentes;
+    traslados              habilitadas.                                   permisos y aprobaciones por versión.
+
+
+    D · Venta y            F25-F32, F39-F40; N05, N08.                    Modelos compartidos, versiones, aceptación y
+    productividad                                                         conversión que mantiene vínculos.
+
+
+    E·                     F49-F56, con un caso piloto medible.           Asistente, lectura de documentos, escenarios y
+    Diferenciación                                                        expediente descargable sin aplicar cambios
+                                                                          automáticamente.
+
+
+
+ Primer paquete concreto
+
+   Para revisar con quien desarrolla
+   1. Modo y requisitos visibles. 2. Selección de origen sin ID técnico. 3. Resumen completo antes de confirmar.
+   4. Estado y respuesta separados del PDF. 5. Pendientes con consulta segura. 6. Vínculos de ajustes y carga
+   parcial. 7. Plantillas con alcance personal/equipo.
+
+
+ Decisiones de negocio
+ Quién puede preparar, aprobar y emitir; qué excepciones requieren revisión; qué datos se conservan en el
+ documento; cómo se gestionan cantidades parciales y devoluciones; cómo distinguir registro interno, pruebas y
+ producción.
+ La implementación debe revisar el proveedor, los catálogos y las reglas aplicables al sistema real. Los espacios N01-N08
+ pueden habilitarse gradualmente; no todos necesitan aparecer en el menú principal desde el primer día.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                          22
+BULEJE / COMPROBANTES                                                                                                  15 OCT 2026
+
+
+
+
+ COMPROBANTES / 23
+
+
+
+ Pruebas y métricas de aceptación
+ Ejecutar con datos de prueba controlados y respuestas del proveedor verificables. La auditoría actual no
+ produjo documentos reales.
+
+    CASO                                  RESULTADO EXIGIBLE
+
+
+    Interno / prueba / producción         Título, acción, archivos y resultado indican el modo correcto. No se mezclan emisores o
+                                          ambientes.
+
+
+    Boleta / factura                      Campos aplicables, receptor y datos del origen consistentes; errores se localizan sin
+                                          perder lo escrito.
+
+
+    Importes y redondeo                   Cantidades decimales, descuento por línea/global, impuestos aplicables, cero y límites.
+                                          Misma política en vista, envío y archivos.
+
+
+    Doble clic / timeout                  Un solo documento; consultar respuesta antes de reintentar; reanudación sobre la
+                                          misma operación.
+
+
+    Dos usuarios / misma serie            Sin correlativos duplicados ni envío duplicado por el mismo origen; resolver conflictos
+                                          de edición.
+
+
+    Nota parcial / notas previas          Sólo líneas e importes elegibles; efectos independientes en saldo, recepción y
+                                          reembolso.
+
+
+    Guía parcial / dos vehículos          Cantidades y documentos por salida, con remanente; estado logístico separado de
+                                          respuesta documental.
+
+
+    Cotización con dos versiones          Conservar la enviada/aceptada; conversión única; aviso de cambios de precio o
+                                          disponibilidad.
+
+
+    Permisos / entrega al cliente         Cada rol ve y ejecuta lo permitido; enlaces y paquetes no exponen otra cuenta.
+                                          Destinatario y contenido revisables.
+
+
+    Accesibilidad / impresión             Teclado, foco, errores, zoom y móvil; PDF/impresión legibles, con los mismos importes
+                                          y estados correctos.
+
+
+
+ Medir mejora antes y después
+ Tiempo mediano y p90 para preparar y localizar documento; campos recapturados; porcentaje listo al primer
+ intento; tiempo hasta resolver pendientes; respuestas desconocidas; duplicados evitados; diferencias sin
+ justificar; conversión de cotizaciones con muestra y período.
+ Las métricas requieren línea base y casos comparables. No se promete un porcentaje de ahorro, cumplimiento fiscal, conexión
+ exitosa o mejora de ventas por el solo rediseño.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                                23
+BULEJE / COMPROBANTES                                                                                                 15 OCT 2026
+
+
+
+
+ COMPROBANTES / 24
+
+
+
+ Fuentes y evidencia
+ Fuente principal: interfaz local autenticada de Comprobantes, inspeccionada el 15 de octubre de 2026.
+
+    FUENTE LOCAL                      EVIDENCIA UTILIZADA
+
+
+    E1 · Emisión                      Aviso y ayuda SUNAT; formulario Boleta/Factura; campos de pedido y receptor;
+                                      indicadores y Más.
+
+
+    E2 · Notas                        Asistente Documento > Motivo & Items > Confirmar; continuar sin documento; motivos,
+                                      template y validación de motivo vacío.
+
+
+    E3 · Guías                        Campos de traslado, ruta, transporte, carga y unidad NIU; estados; menú que explica
+                                      copiar N° de pedido.
+
+
+    E4 · Cotizaciones                 En curso/Cerradas; plantillas 0 de 10 en navegador; cliente Natural/Jurídica; borrador de
+                                      cálculo y confirmación sin guardar.
+
+
+
+ Referencias primarias consultadas
+ R1 · SUNAT · Constancia de recepción, conservación y otorgamiento
+ Apoya distinguir respuesta de aceptación/rechazo, conservación y entrega. No se aplican aquí plazos particulares ni se
+ certifica la situación del emisor.
+
+ R2 · SUNAT · Nota de crédito electrónica
+ Explica su relación con comprobantes previos y sus sistemas. Fundamenta revisar origen y elegibilidad; no prueba el
+ comportamiento del servidor local.
+
+ R3 · SUNAT · Guía de remisión electrónica
+ Referencia para distinguir GRE, traslado y tipos de documento. El diseño debe validarse contra los requisitos del flujo
+ habilitado.
+
+ R4 · NubeFact · Integración de facturación por API
+ Referencia general del proveedor mencionado por la interfaz. No se consultaron ni expusieron credenciales, ni se validó una
+ integración concreta.
+
+ Resultado de este trabajo
+ 56 mejoras y ocho espacios funcionales diseñados; cuatro bocetos y un plan de validación. Las propuestas no se han
+ implementado. Las listas continuaron sin documentos creados por la auditoría y los formularios de prueba se cerraron sin
+ guardar.
+
+
+
+
+Auditoría de interfaz · Diseño avanzado de funciones                                                                              24
+

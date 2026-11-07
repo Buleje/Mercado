@@ -1,0 +1,1 @@
+- [Vaciar libro CTP: alcances combinados + «Lotes» (02-10)](purga-libro-lotes-dependencias.md) — regla de dependencias, huecos abiertos, medir plan en Blas read-only

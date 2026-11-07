@@ -28,6 +28,7 @@ import {
   ShoppingCart,
   User,
   Store as StoreIcon,
+  Tag,
   ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,7 @@ const fmtPEN = (n: number) =>
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type TabId = "inicio" | "tiendas" | "chat" | "cuenta";
+type TabId = "inicio" | "tiendas" | "ofertas" | "chat" | "cuenta";
 
 interface Tab {
   id: TabId;
@@ -51,9 +52,13 @@ interface Tab {
 // top-nav se removió en mobile porque ahora vive acá abajo.
 // Brandon 2026-06-07: tab "Carrito" quitado — el carrito vive en el ícono del
 // top-nav + la franja de pago de arriba. Quedan 4 tabs.
+// Brandon 2026-07-05 (audit navegación): agregado "Ofertas" como atajo directo
+// (antes solo se llegaba por el rail desktop / footer). 5 tabs = patrón Rappi/
+// PedidosYa. El carrito ya tiene su franja integrada arriba de los tabs.
 const TABS: Tab[] = [
   { id: "inicio", label: "Inicio", Icon: Home },
   { id: "tiendas", label: "Tiendas", Icon: StoreIcon },
+  { id: "ofertas", label: "Ofertas", Icon: Tag },
   { id: "chat", label: "Chat", Icon: MessageCircle },
   { id: "cuenta", label: "Cuenta", Icon: User },
 ];
@@ -85,6 +90,8 @@ export default function BottomNav() {
   const activeTab = useCallback((): TabId => {
     if (pathname?.startsWith("/chat")) return "chat";
     if (pathname?.startsWith("/marketplace/mi-cuenta")) return "cuenta";
+    // Ofertas ANTES de tiendas: /marketplace/ofertas también matchea /marketplace.
+    if (pathname?.startsWith("/marketplace/ofertas")) return "ofertas";
     if (pathname === "/") return "inicio";
     if (
       pathname?.startsWith("/tiendas") ||
@@ -110,6 +117,9 @@ export default function BottomNav() {
           break;
         case "tiendas":
           router.push("/tiendas");
+          break;
+        case "ofertas":
+          router.push("/marketplace/ofertas");
           break;
         case "chat":
           // Brandon 2026-06-12: el chat ahora es RUTA REAL (/chat), estilo
@@ -160,7 +170,7 @@ export default function BottomNav() {
             router.push("/marketplace/carrito");
           }}
           aria-label={`Ver carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}, ${fmtPEN(subtotal)}. Ir a pagar`}
-          className="flex w-full items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--accent-soft)] px-4 py-2.5 text-left text-[var(--text-primary)] active:opacity-95 transition-opacity"
+          className="flex w-full items-center gap-3 border-b border-[var(--rule-base)] bg-primary/10 px-4 py-2.5 text-left text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] active:opacity-95 transition-opacity"
         >
           <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10 text-[var(--accent)] ring-1 ring-[var(--accent)]/20">
             <ShoppingCart className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden />
@@ -209,7 +219,7 @@ export default function BottomNav() {
               <span
                 className={cn(
                   "relative inline-flex h-8 w-12 items-center justify-center rounded-full transition-colors duration-200",
-                  isActive ? "bg-[var(--accent-soft)]" : "bg-transparent",
+                  isActive ? "bg-primary/10" : "bg-transparent",
                 )}
               >
                 <Icon

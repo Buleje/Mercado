@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireDriver } from "@/lib/auth/driver-session";
 import { logActivity } from "@/lib/activity-logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 // GET /api/delivery/driver/[partnerId] — driver sees their assigned deliveries
 export async function GET(
@@ -48,8 +49,7 @@ export async function GET(
     });
 
     // Count stats
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const todayStart = new Date(startOfLimaDay());
     const todayDelivered = assignments.filter(
       (a) => a.status === "delivered" && a.deliveredAt && a.deliveredAt >= todayStart
     ).length;

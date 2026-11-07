@@ -31,6 +31,12 @@ vi.mock("@/lib/session", () => ({
   SESSION: { COOKIE_NAME: "bsm-admin-sess" },
 }));
 
+// 08-10: el Referer ahora valida el slug contra la base; sin DB en el test el
+// resolver real quedaría colgado. Mismo comportamiento que "no encontrado".
+vi.mock("@/lib/resolve-tenant", () => ({
+  resolveTenantSlugToId: vi.fn(async (slug: string) => slug),
+}));
+
 // getPlatformSession: por defecto retorna null (sin sesión de plataforma)
 const { mockGetPlatformSession } = vi.hoisted(() => ({
   mockGetPlatformSession: vi.fn(async () => null),

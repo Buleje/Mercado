@@ -1,0 +1,8 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=forestal-herramientas&vista=resumenes&sub=bloques",
+ "pasos": [
+  {"esperar": 1500},
+  {"eval": "(async () => { const ck = document.cookie.split('; ').find((c) => /csrf/i.test(c.split('=')[0])); const tok = ck ? decodeURIComponent(ck.split('=').slice(1).join('=')) : ''; const hoy = new Date().toISOString().slice(0, 10); const l = await fetch('/api/admin/forestal/distribuciones', { credentials: 'include' }).then((r) => r.json()); const sembradas = (l.distribuciones || []).filter((d) => / · \\d+ bloques? · /.test(d.nombre || '') && String(d.createdAt || '').startsWith(hoy) && !(d.bloques || []).some((b) => b.loteId)); const borradas = []; for (const d of sembradas) { const r = await fetch('/api/admin/forestal/distribuciones?id=' + encodeURIComponent(d.id), { method: 'DELETE', credentials: 'include', headers: { 'x-csrf-token': tok } }); borradas.push(d.id + ' → ' + r.status); } return JSON.stringify({ total: (l.distribuciones || []).length, borradas, conLote: (l.distribuciones || []).filter((d) => (d.bloques || []).some((b) => b.loteId)).map((d) => d.id) }); })()"}
+ ]
+}

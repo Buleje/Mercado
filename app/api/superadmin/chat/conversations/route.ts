@@ -3,6 +3,9 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { PlatformChatDB } from "@/lib/db/platform-chat.db";
 import { logger } from "@/lib/logger";
+import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const listSchema = z.object({
   status: z.enum(["open", "closed", "archived"]).optional(),
@@ -17,6 +20,8 @@ const createSchema = z.object({
   subject: z.string().max(300).optional(),
   priority: z.enum(["low", "medium", "high"]).optional(),
   firstMessage: z.string().max(5000).optional(),
+  /** Abrir la conversación de siempre del negocio si ya existe (enlaces «Contactar»). */
+  reusar: z.boolean().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -40,25 +45,35 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
   try {
+    // id o slug → el negocio real; sin negocio no se crea una conversación huérfana.
+    const negocio = await PlatformChatDB.resolverNegocio(parsed.data.tenantId);
+    if (!negocio) {
+      return NextResponse.json({ error: "No encontramos ese negocio" }, { status: 404 });
+    }
+    if (parsed.data.reusar) {
+      const vigente = await PlatformChatDB.conversacionVigente(negocio.id);
+      if (vigente) return NextResponse.json({ conversation: vigente, reusada: true });
+    }
     const conv = await PlatformChatDB.createConversation({
-      tenantId: parsed.data.tenantId,
-      tenantName: parsed.data.tenantName,
+      tenantId: negocio.id,
+      tenantName: parsed.data.tenantName ?? negocio.name,
       subject: parsed.data.subject,
       priority: parsed.data.priority,
-      createdBy: auth.username,
+      createdBy: actorVisibleParaNegocio(),
     });
+    logSuperadminAction("platform_chat_create", `Abrió chat con ${negocio.name}`, { tenantId: negocio.id, conversationId: conv.id }, auth.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
     if (parsed.data.firstMessage?.trim()) {
       await PlatformChatDB.sendMessage({
         conversationId: conv.id,
         senderType: "platform",
-        senderName: auth.username,
-        senderId: auth.username,
+        senderName: actorVisibleParaNegocio(),
+        senderId: actorVisibleParaNegocio(),
         body: parsed.data.firstMessage.trim(),
       });
     }

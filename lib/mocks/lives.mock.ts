@@ -269,36 +269,47 @@ export const LIVES_MOCK: LiveSession[] = [
 ];
 
 // ── Selectors ──────────────────────────────────────────────────────────────
+//
+// Las transmisiones de ejemplo SOLO se ven con NEXT_PUBLIC_LIVES_DEMO=1
+// (Storybook, demos a mano). En el sitio real no se inventa ninguna: el 09-10
+// la tabla live_sessions tenía 0 filas y /marketplace/en-vivo mostraba lives
+// «en vivo» de tiendas que no existen. `LIVES_MOCK` queda exportado para tests.
+
+const LIVES_DEMO = process.env.NEXT_PUBLIC_LIVES_DEMO === "1";
+
+function fuente(): LiveSession[] {
+  return LIVES_DEMO ? LIVES_MOCK : [];
+}
 
 export function getLiveNow(): LiveSession | null {
-  return LIVES_MOCK.find((l) => l.status === "live") ?? null;
+  return fuente().find((l) => l.status === "live") ?? null;
 }
 
 /** Todos los lives activos. Para strips multi-store. */
 export function getLivesNow(): LiveSession[] {
-  return LIVES_MOCK.filter((l) => l.status === "live").sort(
+  return fuente().filter((l) => l.status === "live").sort(
     (a, b) => (b.viewers ?? 0) - (a.viewers ?? 0),
   );
 }
 
 export function getUpcomingLives(): LiveSession[] {
-  return LIVES_MOCK.filter((l) => l.status === "upcoming").sort(
+  return fuente().filter((l) => l.status === "upcoming").sort(
     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
   );
 }
 
 export function getPastLives(): LiveSession[] {
-  return LIVES_MOCK.filter((l) => l.status === "past").sort(
+  return fuente().filter((l) => l.status === "past").sort(
     (a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime(),
   );
 }
 
 export function getLiveById(id: string): LiveSession | null {
-  return LIVES_MOCK.find((l) => l.id === id || l.slug === id) ?? null;
+  return fuente().find((l) => l.id === id || l.slug === id) ?? null;
 }
 
 export function getLiveCategories(): string[] {
   const set = new Set<string>();
-  for (const l of LIVES_MOCK) set.add(l.category);
+  for (const l of fuente()) set.add(l.category);
   return Array.from(set);
 }

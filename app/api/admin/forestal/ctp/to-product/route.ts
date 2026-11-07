@@ -80,13 +80,35 @@ export const POST = withApiHandler("forestal-ctp-to-product", async (req: NextRe
   const typePart = entry.productType?.trim() || "Madera aserrada";
   const productName = `${typePart} — ${speciesPart}`;
 
-  // 7. Stock: quantity del CTP (puede ser null → 0)
+  // 7. Una línea = un producto. Sin esto cada clic creaba otro borrador igual
+  //    (04-11: Blas tenía 4 «Madera aserrada — Tornillo» de la misma línea).
+  //    El SKU sale de la línea; el número solo no basta porque lineNo no es
+  //    único en el schema, por eso lleva la cola del id.
+  const sku = `CTP-L${entry.lineNo}-${entry.id.slice(-6)}`;
+  try {
+    const existente = await ProductsDB.getBySku(tenantId, sku);
+    if (existente) {
+      return NextResponse.json({
+        ok: true,
+        yaExistia: true,
+        message: `Esta línea ya está en inventario como "${existente.name}"${existente.active ? "" : " (borrador)"}. No se creó otro.`,
+        productId: existente.id,
+        productName: existente.name,
+      });
+    }
+  } catch (err) {
+    logger.error("[ctp/to-product] getBySku failed", { tenantId, entryId, error: String(err) });
+    return NextResponse.json({ error: "server_error", message: "Error al revisar el inventario." }, { status: 500 });
+  }
+
+  // 8. Stock: quantity del CTP (puede ser null → 0)
   const stock = entry.quantity != null ? Math.round(Number(entry.quantity)) : 0;
 
-  // 8. Crear Producto borrador via ProductsDB.upsert (id=0 → INSERT nuevo)
+  // 9. Crear Producto borrador via ProductsDB.create
   //    active=false: no aparece en catálogo hasta que el dueño lo active.
   const productPayload = {
     name: productName,
+    sku,
     category: "Madera",            // categoría segura que siempre existe
     price: 0,                      // precio 0 si no hay; dueño lo ajusta
     image: "",
@@ -107,14 +129,14 @@ export const POST = withApiHandler("forestal-ctp-to-product", async (req: NextRe
     const product = await ProductsDB.create(productPayload);
     return NextResponse.json({
       ok: true,
-      message: `Producto "${productName}" creado como borrador en inventario. Activalo desde el catálogo para publicarlo.`,
+      message: `Producto "${productName}" creado como borrador en inventario. Actívalo desde el catálogo para publicarlo.`,
       productId: product.id,
       productName: product.name,
     });
   } catch (err) {
     logger.error("[ctp/to-product] ProductsDB.upsert failed", { tenantId, entryId, error: String(err) });
     return NextResponse.json(
-      { error: "server_error", message: "No se pudo crear el producto. Intentá de nuevo." },
+      { error: "server_error", message: "No se pudo crear el producto. Intenta de nuevo." },
       { status: 500 },
     );
   }

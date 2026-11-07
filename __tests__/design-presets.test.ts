@@ -175,3 +175,49 @@ describe("paridad cross-preset", () => {
     }
   });
 });
+
+/**
+ * Contraste AA de los textos de cada preset sobre sus propias superficies.
+ *
+ * Medido 2026-09-12 con axe sobre 14 pestañas del panel: el 64% de las 572
+ * violaciones de contraste venía de UN token — `textTertiary` del preset
+ * «Buleje Default» (`oklch(0.60 …)` = #7b8187, 3.5:1 sobre el fondo hundido).
+ * El `--text-tertiary` de globals.css cumplía; el preset lo pisaba y nada lo
+ * validaba (ver memoria contraste-badges-lo-pisa-el-preset). Un preset nuevo
+ * que baje de 4.5:1 frena acá, no en la pantalla de un usuario.
+ */
+describe("contraste AA de los textos del preset", () => {
+  /* oklch → sRGB (Björn Ottosson) → luminancia relativa WCAG. */
+  function luminancia(color: string): number {
+    const m = color.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/);
+    if (!m) throw new Error(`color no oklch: ${color}`);
+    const [L, C, H] = [Number(m[1]), Number(m[2]), Number(m[3])];
+    const a = C * Math.cos((H * Math.PI) / 180);
+    const b = C * Math.sin((H * Math.PI) / 180);
+    const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const mm = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+    const lineal = [
+      4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s,
+      -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s,
+      -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s,
+    ].map((v) => Math.min(1, Math.max(0, v)));
+    return 0.2126 * lineal[0] + 0.7152 * lineal[1] + 0.0722 * lineal[2];
+  }
+  const contraste = (x: string, y: string) => {
+    const [hi, lo] = [luminancia(x), luminancia(y)].sort((p, q) => q - p);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  for (const p of DESIGN_PRESETS) {
+    it(`${p.meta.name}: texto primario, secundario y terciario ≥ 4.5:1 sobre las 3 superficies`, () => {
+      const c = p.colors;
+      for (const texto of ["textPrimary", "textSecondary", "textTertiary"] as const) {
+        for (const fondo of ["surface", "surfaceRaised", "surfaceSunken"] as const) {
+          const r = contraste(c[texto], c[fondo]);
+          expect(r, `${texto} sobre ${fondo} = ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    });
+  }
+});

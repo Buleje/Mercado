@@ -1,0 +1,3 @@
+- [Ajustes por persona sin schema](ajustes-por-persona-sin-schema.md) — admin_prefs con subclave por usuario; /api/admin/preferences/panel + lib/admin/guardado-servidor
+- [QA: dos pantallas en una corrida](qa-dos-pantallas-una-corrida.md) — el parche de plantilla sobrevive a location.href; selectores de Recibir/C20; orden recurrente diaria en main
+- [qa-capturas: subvista recordada + rutas Me deben/Equipo de reparto](qa-capturas-subvista-recordada.md) — 2.º tema falla si los pasos cambian de sección; parchear = pathname exacto

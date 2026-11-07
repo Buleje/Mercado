@@ -11,7 +11,7 @@
  *      `stashPendingApproval(...)` en vez de ejecutar el tool directamente.
  *   3. El tool result devuelto al LLM es un mensaje: "Esta acción requiere
  *      aprobación humana. ID: xxx".
- *   4. El frontend (AICommandCenter.tsx en sesión futura) hace polling a
+ *   4. El frontend (Comandos IA › Lo que hizo la IA) hace polling a
  *      GET `/api/ai-assistant/approvals` para mostrar el modal.
  *   5. El admin aprueba/rechaza via POST `/api/ai-assistant/approvals`.
  *   6. Al aprobar, el endpoint ejecuta el tool vía el orchestrator con el
@@ -39,6 +39,12 @@ export interface PendingApproval {
   conversationId?: string;
   /** Username del admin que verá la aprobación. */
   requestedBy: string;
+  /**
+   * Lo que se le muestra al humano en vez del payload crudo (sin ids ni el
+   * número entero). Lo devuelve el ensayo (`data.mostrar`); el GET lo lista
+   * en lugar de `payload`.
+   */
+  mostrar?: Record<string, unknown>;
 }
 
 export interface ApprovalResolution {
@@ -51,6 +57,25 @@ export interface ApprovalResolution {
 }
 
 // ── Store en memoria ─────────────────────────────────────────────────────────
+
+const esObjeto = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * Lo que deja el ensayo de una herramienta con aprobación: qué se guarda para
+ * ejecutar y qué ve el humano en la tarjeta. Un ensayo puede RESOLVER el pedido
+ * («Alex» → el contacto con su número, «la resolución» → el id del papel) y
+ * devolverlo en `data.payloadConfirmado`: tras el «Sí» se ejecuta ESO, no lo
+ * que escribió el modelo, así lo que se confirmó es lo que sale. `data.mostrar`
+ * es la versión para leer. Sin ninguno de los dos, todo sigue como antes.
+ */
+export function payloadsDelEnsayo(
+  args: Record<string, unknown>,
+  data: unknown,
+): { payload: Record<string, unknown>; mostrar?: Record<string, unknown> } {
+  const d = esObjeto(data) ? data : {};
+  const payload = esObjeto(d.payloadConfirmado) ? d.payloadConfirmado : args;
+  return esObjeto(d.mostrar) ? { payload, mostrar: d.mostrar } : { payload };
+}
 
 const TTL_MS = 10 * 60 * 1000; // 10 minutos
 const store = new Map<string, PendingApproval>();

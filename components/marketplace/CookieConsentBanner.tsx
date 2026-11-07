@@ -121,7 +121,7 @@ export default function CookieConsentBanner() {
     >
       <div className="p-5">
         <div className="flex items-start gap-3 mb-3">
-          <span aria-hidden className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <span aria-hidden className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <Cookie className="h-5 w-5" strokeWidth={2.25} />
           </span>
           <div className="flex-1 min-w-0">
@@ -129,7 +129,7 @@ export default function CookieConsentBanner() {
               Usamos cookies
             </p>
             <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
-              Para que la app funcione + analizar uso. Podés elegir qué aceptás.{" "}
+              Para que la app funcione + analizar uso. Puedes elegir qué aceptas.{" "}
               <a href="/privacidad" className="font-bold text-[var(--accent)] underline">
                 Política de privacidad
               </a>

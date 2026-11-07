@@ -1,0 +1,28 @@
+{
+ "nota": "Abre «Plata de la guía» de QA-SEM-003 en main (Recepcionadas → Más → Plata de la guía) sin escribir nada. Deshacer lo que escribas: memoria de agente backend guia-plata-e2e-deshacer-costo.",
+ "tenant": "main",
+ "ruta": "/admin?tab=ctp-libro-operaciones&vista=ingresos",
+ "pasos": [
+  {
+   "esperar": "button:has-text(\"Por recepcionar\")"
+  },
+  {
+   "click": "button:has-text(\"Por recepcionar\")"
+  },
+  {
+   "click": "[role=menuitem]:has-text(\"Recepcionadas\")"
+  },
+  {
+   "esperar": "tr:has-text(\"QA-SEM-003\") button[aria-label=\"Más\"]"
+  },
+  {
+   "click": "tr:has-text(\"QA-SEM-003\") button[aria-label=\"Más\"]"
+  },
+  {
+   "click": "text=Plata de la guía"
+  },
+  {
+   "esperar": "text=A quién le pagas"
+  }
+ ]
+}

@@ -60,6 +60,9 @@ const ProductPostSchema = z.object({
   durationLabel: z.string().max(60).optional(),
   pricingUnit:   z.enum(["fijo", "hora", "m3", "unidad", "dia"]).optional(),
   notes:         z.string().max(2000).optional(),
+  // Contenido rico (estilo Amazon) — el cliente manda estructura, se guarda JSON.
+  specs:         z.array(z.object({ label: z.string().max(60), value: z.string().max(400) })).max(30).optional(),
+  richContent:   z.array(z.object({ heading: z.string().max(120).optional(), body: z.string().max(3000).optional(), imageUrl: z.string().max(500_000).optional() })).max(20).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -206,6 +209,8 @@ export async function POST(req: NextRequest) {
       durationLabel: isService ? (body.durationLabel || undefined) : undefined,
       pricingUnit:   isService ? (body.pricingUnit || undefined) : undefined,
       notes:         body.notes || undefined,
+      specsJson:       body.specs ? JSON.stringify(body.specs) : undefined,
+      richContentJson: body.richContent ? JSON.stringify(body.richContent) : undefined,
     });
     const requestId = req.headers.get("x-request-id") ?? undefined;
     logActivity(

@@ -15,6 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DeliveryPartnersDB, AdminNotificationsDB } from "@/lib/db/delivery-partners.db";
+import { resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import {
   DriverApplySchema,
   buildKycNotes,
@@ -25,6 +26,25 @@ export async function POST(req: NextRequest) {
   // Rate limit anti-spam (5 / 15min / IP).
   const rl = applyRateLimit(req, "STRICT", "marketplace-drivers-apply");
   if (rl) return rl;
+
+  // FIX 2026-08-22: esto estaba hardcodeado a "main" — un repartidor que
+  // aplicaba desde el marketplace de OTRO tenant (ej. mi-pollo) quedaba
+  // guardado y notificado contra Buleje, no contra la tienda real. El
+  // middleware ya resuelve el tenant real por subdominio/dominio y
+  // sobreescribe este header (proxy.ts:61) — el cliente no lo controla.
+  //
+  // El header trae el SLUG, no el cuid — hay que resolverlo antes de
+  // escribir. Verificado en carne propia: `DeliveryPartner.tenantId` es
+  // string libre (acepta el slug sin quejarse, pero queda inconsistente con
+  // las filas existentes que usan el cuid) y `Notification.tenantId` tiene
+  // FK dura a `Tenant.id` — pasarle el slug tira una violación de FK que el
+  // `catch` de `AdminNotificationsDB.create` traga en silencio: la solicitud
+  // se guardaba pero el admin nunca recibía el aviso.
+  const tenantSlug = req.headers.get("x-tenant-id");
+  if (!tenantSlug) {
+    return NextResponse.json({ error: "tenant header requerido" }, { status: 400 });
+  }
+  const tenantId = await resolveTenantSlugToId(tenantSlug);
 
   try {
     const body = await req.json();
@@ -49,7 +69,7 @@ export async function POST(req: NextRequest) {
     const isMotor = MOTORIZED.includes(data.vehicleType);
 
     // Audit project-wide 2026-05-19: idempotente upsert via DB class.
-    const { partnerId } = await DeliveryPartnersDB.upsertApplication("main", phoneDigits, {
+    const { partnerId } = await DeliveryPartnersDB.upsertApplication(tenantId, phoneDigits, {
       name: data.name,
       email: data.email || null,
       zone: data.zone,
@@ -68,7 +88,7 @@ export async function POST(req: NextRequest) {
     ].filter(Boolean);
 
     await AdminNotificationsDB.create({
-      tenantId: "main",
+      tenantId,
       title: "Nueva solicitud de repartidor",
       body: summaryLines.join(" | "),
       type: "DRIVER_APPLICATION",
@@ -106,7 +126,7 @@ export async function POST(req: NextRequest) {
         .filter(Boolean)
         .join("\n");
       await (await import("@/lib/whatsapp"))
-        .sendWhatsAppQueued(adminPhone, msg, { tenantId: "main", context: "drivers/apply:admin" })
+        .sendWhatsAppQueued(adminPhone, msg, { tenantId, context: "drivers/apply:admin" })
         .catch((err) =>
           logger.error("[marketplace/drivers/apply] whatsapp failed", { error: String(err) }),
         );

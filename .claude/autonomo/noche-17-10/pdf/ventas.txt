@@ -1,0 +1,1041 @@
+BULEJE / VENTAS Y OPERACIÓN                                                                                           15 OCT 2026
+
+
+
+
+ BULEJE · REVISIÓN DE LA APLICACIÓN LOCAL · 15 OCT 2026
+
+
+
+
+ Ventas más rápidas.
+ Cuentas más claras.
+ Auditoría de experiencia y operación
+ Ventas & Caja, Me deben, Comisiones de vendedores, Pedidos y reparto y Comprobantes. Revisión directa de
+ la interfaz disponible en localhost:3000.
+
+
+
+    ENTREGABLE                           CONTENIDO
+
+
+    Diagnóstico                          12 hallazgos observados, con contexto y consecuencias.
+
+
+    Plan de mejora                       60 propuestas concretas, con prioridad, esfuerzo y criterio de aceptación.
+
+
+    Diseño y ejecución                   3 bocetos, flujos abreviados, fases y pruebas de validación.
+
+
+
+   La decisión más valiosa
+   Primero aclarar caja, turno, fechas, deuda y regla de comisión. Después hacer visibles las acciones
+   frecuentes y conectar los registros. La aplicación ya ofrece varias herramientas de rapidez que conviene
+   potenciar.
+
+ Primeras cinco acciones: distinguir “hoy” de la sesión de caja; mostrar quién responde por la venta; unificar
+ antigüedad y vencimiento; hacer explícito el 2% de comisión; reemplazar IDs técnicos por búsqueda de
+ pedidos.
+ Método: navegación y lectura de pantallas, menús y formularios. No se finalizaron ventas, pagos, emisiones ni cierres. El
+ artículo agregado al carrito para inspección fue retirado al terminar.
+
+ Guía de lectura
+ Págs. 2-4: cobertura y hallazgos. 5-7: accesos y POS. 8-11: turnos, caja, deuda y comisiones. 12: bocetos de cuenta y
+ comisión. 13-15: pedidos, documentos e innovación. 16-18: orden de trabajo, validación y fuentes.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                              01
+BULEJE / VENTAS Y OPERACIÓN                                                                                             15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 02
+
+
+
+ Qué se revisó y hasta dónde
+ Se recorrieron las pestañas principales y las subpestañas siguientes. “Revisada” indica interfaz inspeccionada;
+ no equivale a una transacción completa validada.
+
+    ÁREA                            COBERTURA Y DATOS DISPONIBLES
+
+
+    Vender                          Búsqueda, catálogo, favoritos, carrito, menú Más, preaviso de venta sin turno y acceso a
+                                    apertura de turno.
+
+
+    Turnos                          Turno, Historial, Semana y Cajeros. Había tres turnos históricos; semana actual sin turnos.
+
+
+    Caja                            Resumen, Movimientos, Medios de pago, Cuadrar e Historial; dentro del historial: Hoy, Por
+                                    caja, Por día y Quién la tocó.
+
+
+    Me deben                        Quién debe, Por vencer, Cobrado y Cada fiado. Una cuenta de prueba: saldo S/30 y abono
+                                    S/20.
+
+
+    Comisiones                      Vendedores y Reglas; período, estado vacío y exportación disponible desde Más cuando
+                                    existan datos.
+
+
+    Pedidos y reparto               Tablero, Lista, Archivados; Reparto: En vivo, Equipo, Asignaciones, Pagos y Ranking. Sin
+                                    pedidos o repartidores para probar operaciones.
+
+
+    Comprobantes                    Facturas y boletas, Notas de crédito, Guías de remisión, Cotizaciones (En curso / Cerradas).
+                                    Formularios de emitir comprobante y crear guía, sin guardar.
+
+
+
+ Cómo leer el documento
+ Observado: texto, estado o interacción visto en esta sesión. Propuesta: diseño recomendado, sin afirmar que
+ el servidor carezca de esa función. Por validar: requiere datos de prueba, otro perfil o una transacción
+ controlada.
+ Prioridad: P1 = confianza y control del dinero; P2 = velocidad y facilidad; P3 = diferenciación. Esfuerzo orientativo: B bajo, M
+ medio, A alto. Son tamaños relativos, no presupuestos ni plazos comprometidos.
+
+ Límites: vista de escritorio; sin revisión de código, base de datos, permisos de otros perfiles, seguridad, accesibilidad completa,
+ impresión física, dispositivos móviles ni rendimiento medido. Había registros identificados como pruebas QA.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                                   02
+BULEJE / VENTAS Y OPERACIÓN                                                                                           15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 03
+
+
+
+ Hallazgos que conviene atender primero
+ Evidencia de la sesión. Son problemas de claridad operativa; un saldo negativo o un registro antiguo no prueba
+ un error de cálculo.
+
+   H01 · P1 · “Caja de hoy” incluye una sesión antigua
+   La alerta dice “abierta hace 127 días”; Turnos sitúa la apertura el 10/06 a las 21:41. Caja se titula “Caja de
+   hoy” y muestra sólo la hora. Puede confundirse el acumulado de la sesión con el movimiento del día.
+   Resolver: M01, M23.
+
+
+   H02 · P1 · Caja abierta y vendedor sin turno
+   La interfaz muestra “Sin turno”; al cobrar advierte que la venta no tendrá cajero responsable ni entrará en su
+   turno o comisiones. Turnos explica que la caja es compartida. Los estados son compatibles, pero el
+   significado se descubre tarde. Resolver: M02, M17, M39.
+
+
+   H03 · P1 · Antigüedad y mora se mezclan
+   Quién debe muestra 99 días desde la apertura; Cada fiado dice “Al día”, con vencimiento vacío. Por vencer
+   aclara que ese fiado no aparece por carecer de fecha. No se demostró mora: falta un vencimiento. Resolver:
+   M31, M33.
+
+
+   H04 · P1 · Comisión del 2% sin reglas guardadas
+   Reglas informa literalmente que, sin reglas guardadas, se usa el 2% para todos. Es visible dentro de Reglas,
+   pero merece aparecer también en el resumen y en cada cálculo. No se verificó una liquidación con ventas.
+   Resolver: M40, M41.
+
+
+   H05 · P1 · Cero y dato no evaluable pueden confundirse
+   Por caja presenta esperado S/-6,424, contado S/0 y diferencia S/0, junto a “Revisar movimientos”. No
+   permite interpretar el cero como cuadre conforme. Conviene distinguir contado real, sin conteo y cálculo no
+   evaluable. Resolver: M25, M26.
+
+ El esperado se reconcilia con los conceptos visibles: 100 + 120 + 30 + 1,200 - 7,859 - 15 = -6,424. Se necesita investigar
+ origen y período de los movimientos; no se encontró un error aritmético en esa suma.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                              03
+BULEJE / VENTAS Y OPERACIÓN                                                                                             15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 04
+
+
+
+ Fricciones visibles y fortalezas
+ La oportunidad es ordenar y conectar una base funcional que ya existe.
+ H06 · P2 · Acciones útiles requieren abrir Más
+ Modo Express, pedido por WhatsApp, ventas de hoy y devolución están en Más del POS. Ya existen; la mejora es permitir
+ fijarlas y acceder a ellas según la tarea. Resolver: M03, M04.
+
+ H07 · P2 · Catálogo pequeño con tarjetas muy compactas
+ En escritorio se vieron tres tarjetas estrechas, iniciales grandes, distintivo Servicio y extensas zonas libres. El nombre compite
+ con la imagen y el stock. Resolver: M09, M10.
+
+ H08 · P2 · Fechas y referencias poco legibles
+ Movimientos usa la columna “Hora” y algunas referencias muestran UUID extensos. Con una caja antigua, resulta difícil ubicar
+ el día y la venta de origen. Resolver: M24, M27.
+
+ H09 · P2 · Emisión exige un ID técnico
+ Emitir comprobante SUNAT pide “ID del pedido” con un ejemplo como cm3abc123. Se solicitan también datos del cliente.
+ Buscar y autocompletar reduciría transcripción. Resolver: M53.
+
+ H10 · P2 · Reparto vacío ofrece un paso bloqueado
+ Asignaciones muestra “Asignar el primero” deshabilitado, sin pedidos ni equipo. Equipo sí ofrece agregar al primer repartidor.
+ Falta conectar los prerrequisitos en el punto de bloqueo. Resolver: M47.
+
+ H11 · P2 · Auditoría sin alcance explícito
+ Quién la tocó dice “Todavía no hay movimientos registrados”, mientras Movimientos sí contiene registros. Pueden ser fuentes
+ o eventos distintos; no se demostró pérdida de datos. El texto debe explicar qué eventos cubre. Resolver: M28.
+
+ H12 · P2 · Indicador de teclado poco adaptado
+ La búsqueda global se identifica como Ctrl+K y visualmente presenta el símbolo de Command. En el entorno Windows
+ conviene una pista coherente. Resolver: M05.
+
+ Conservar y potenciar
+ Búsqueda global, favoritos, voz, escaneo, Express, importación desde WhatsApp, F1/F2/F4, pausa de carrito, letra grande,
+ conteo por denominaciones, conciliación por origen, calendario de fiados, modo llamada y filtros de período en comisiones. No
+ deben perderse durante un rediseño.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                                      04
+BULEJE / VENTAS Y OPERACIÓN                                                                               15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 05
+
+
+
+ Accesos directos y navegación
+ Objetivo: que cada persona llegue a su acción frecuente sin recordar dónde está escondida.
+ M01 · Contexto de fecha siempre visible
+ P1 · Esfuerzo B | Mostrar “Hoy: 15 oct” y “Sesión abierta: 10 jun” como filtros distintos en Caja y reportes.
+ Comprobar: Cambiar el rango actualiza tabla, gráficos y totales juntos; exportar conserva ese rango.
+
+ M02 · Barra de responsable y caja
+ P1 · Esfuerzo M | Juntar estado de caja, cajero, turno y vendedor. Una etiqueta explicará si son personas
+ distintas.
+ Comprobar: Antes de agregar productos se ve quién recibirá atribución de la venta y qué falta completar.
+
+ M03 · Fijar acciones del menú Más
+ P2 · Esfuerzo M | Permitir 4-6 accesos por usuario: Express, WhatsApp, ventas de hoy, devolución, cobrar
+ deuda o emitir.
+ Comprobar: Una acción fijada se abre con un clic; Más conserva las opciones restantes y permite restablecer.
+
+ M04 · Comandos sobre la búsqueda existente
+ P2 · Esfuerzo M | Extender el buscador global con acciones: “cobrar a…”, “venta…”, “nueva cotización” o
+ “cuadrar caja”.
+ Comprobar: Cada resultado muestra entidad, destino y acción; los permisos se aplican también al comando.
+
+ M05 · Atajos coherentes y descubribles
+ P2 · Esfuerzo B | Conservar F1, F2 y F4; mostrar Ctrl o Command según plataforma. Añadir una hoja de atajos
+ contextual.
+ Comprobar: Los atajos no se disparan al escribir cantidades ni dentro de otro modal; Escape vuelve al origen.
+
+ M06 · Últimos registros y volver al trabajo
+ P2 · Esfuerzo M | Panel “Recientes”: últimos clientes, ventas, pedidos y borradores, con ruta de regreso.
+ Comprobar: Abrir un detalle no borra búsqueda, filtros ni carrito de la pantalla de origen.
+
+ M07 · Vistas guardadas por función
+ P2 · Esfuerzo M | Perfiles de pantalla para cajero, cobranza, supervisor y vendedor; guardar filtros y columnas.
+ Comprobar: Cada usuario conserva su vista; puede volver a la estándar sin alterar la vista del equipo.
+
+ M08 · Alertas agrupadas por acción
+ P2 · Esfuerzo M | Agrupar avisos repetidos y ordenar por impacto: caja pendiente, cobros, documentos y stock.
+ Comprobar: Un aviso lleva al registro que lo originó; muestra fecha, responsable y cómo resolverlo.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                    05
+BULEJE / VENTAS Y OPERACIÓN                                                                                 15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 06
+
+
+
+ Vender: un mostrador ágil
+ El POS ya tiene buenas vías de entrada. Conviene mejorar legibilidad, edición y continuidad.
+ M09 · Tarjetas adaptables y vista compacta
+ P2 · Esfuerzo M | Elegir tarjetas amplias o lista: nombre legible, unidad, precio y disponibilidad; reducir iniciales
+ decorativas.
+ Comprobar: Los nombres no se superponen a distintivos; se distinguen producto, servicio y alquiler.
+
+ M10 · Disponibilidad correcta por tipo
+ P1 · Esfuerzo M | Para servicios, indicar capacidad o “sin control de stock”; para alquiler, horario; para madera,
+ unidad y volumen.
+ Comprobar: Un 0 de servicio no se interpreta como agotado; la venta respeta la unidad configurada.
+
+ M11 · Editar cantidad directamente
+ P2 · Esfuerzo B | Permitir escribir cantidad, multiplicador o medida desde el renglón y conservar los botones +/-.
+ Comprobar: Teclado y lector permiten cargar varias unidades sin repetir clics; cantidades inválidas explican el
+ error.
+
+ M12 · Cliente y vendedor antes del cobro
+ P1 · Esfuerzo M | Mostrar ambos en el carrito, con búsqueda rápida y cambio según permiso; avisar de deuda o
+ condición especial.
+ Comprobar: El comprobante y la comisión conservan las personas elegidas; la atribución queda en el detalle.
+
+ M13 · Carritos pausados con nombre
+ P2 · Esfuerzo M | Potenciar Pausar y +Siguiente con cliente, hora, total y contenido resumido; recuperar desde
+ una bandeja.
+ Comprobar: Se retoma el mismo borrador sin duplicar cobros; cualquier reserva de stock indica su duración.
+
+ M14 · Repetir compra como borrador
+ P2 · Esfuerzo M | Desde cliente o venta anterior, precargar los artículos para revisión rápida.
+ Comprobar: Se revalidan precio, stock, impuestos y descuentos actuales antes de confirmar la nueva venta.
+
+ M15 · Cobro dividido y vuelto explícito
+ P1 · Esfuerzo A | Verificar o ampliar el cobro para combinar efectivo, Yape, Plin y transferencia, con saldo y
+ vuelto separados.
+ Comprobar: La suma de medios cubre el total; sólo efectivo genera vuelto. Reintentar no duplica la venta. Flujo
+ final por validar.
+
+ M16 · Descuento con efecto visible
+ P1 · Esfuerzo M | Mostrar descuento por línea y total, motivo y margen cuando el perfil lo permita; pedir
+ autorización sólo por excepción.
+ Comprobar: La vista previa aclara base, redondeo y precio final; devolución y comisión usan esa misma base.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                         06
+BULEJE / VENTAS Y OPERACIÓN                                                                                              15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 07
+
+
+
+ Boceto 1: POS con acciones a mano
+ Propuesta conceptual. Los nombres e importes del boceto son ejemplos, no operaciones de tu tienda.
+
+
+
+       VENDER | Caja abierta: 15 oct | Cajero: Ana
+
+
+
+       Buscar producto / código [F1]                                                      Cliente [propuesto]
+
+
+
+      Express                    WhatsApp                Ventas de hoy                     Devolución
+
+
+
+      Favoritos | Recientes | Categorías
+                                                                                        Venta en curso #B-024
+
+                                                                                        Cliente: Mostrador
+        Tabla tornillo
+        35.00 / unidad                                                                  Vendedor: Ana
+        Disponible: 3
+
+                                                                                        Tabla tornillo   2 x 35
+        Aserrado
+                                                                                        Subtotal         S/70.00
+        50.00 / servicio
+        Elegir volumen                                                                  Total S/70.00
+
+        Alquiler CAT                                                                       Cobrar [F2]
+        150.00 / hora
+        Consultar agenda
+                                                                                        Pausar | Siguiente
+
+
+
+
+ Flujo propuesto para la venta habitual
+
+    PASO                       COMPORTAMIENTO
+
+
+    1 · Buscar                 F1 o lector; nombre, unidad, disponibilidad y precio en el mismo resultado.
+
+
+    2 · Revisar                Cantidad editable; cliente y vendedor visibles; acciones rápidas sin salir del carrito.
+
+
+    3 · Cobrar                 F2 abre resumen y medios. Turno resuelto antes; excepción autorizada con responsable.
+
+
+    4 · Continuar              Resultado confirmado con código corto, recibo y siguiente venta; sin doble registro.
+
+
+ Meta de diseño: fijar una acción frecuente debe ahorrar la apertura de Más; no se midió ahorro de segundos. Mantener una
+ sola acción principal de cobro y separar devoluciones, correcciones y cierre.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                                 07
+BULEJE / VENTAS Y OPERACIÓN                                                                                15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 08
+
+
+
+ Turnos: responsabilidad clara
+ La pantalla explica que la caja es única y compartida. Esa distinción debe acompañar el trabajo diario.
+ M17 · Prechequeo de inicio de jornada
+ P1 · Esfuerzo M | Un bloque breve valida cajero, caja, turno y dispositivo antes de vender. Continuar con
+ excepción requiere una política definida.
+ Comprobar: La advertencia “sin turno” no aparece por primera vez al final de una venta ya armada.
+
+ M18 · Relevo con resumen de entrega
+ P1 · Esfuerzo A | Crear un traspaso entre responsables: efectivo entregado, documentos y pendientes, sin
+ sumar otra apertura de fondo.
+ Comprobar: Quedan quien entrega y quien recibe, fechas y diferencias; caja compartida y turno personal
+ siguen separados.
+
+ M19 · Estados completos en historial
+ P1 · Esfuerzo M | Distinguir cerrado manualmente, cerrado por sistema, sin conteo y por revisar; explicar cada
+ guion.
+ Comprobar: Un cierre automático conserva motivo y referencia; “sin dato” nunca se transforma
+ silenciosamente en cero.
+
+ M20 · Período uniforme de indicadores
+ P2 · Esfuerzo B | Hacer explícito “esta semana”, “este mes” o “todo” en Semana, Cajeros y sus métricas.
+ Comprobar: El ranking, sus totales y ventas/hora responden al mismo período o muestran claramente otro
+ alcance.
+
+ M21 · Métricas con fórmula consultable
+ P1 · Esfuerzo M | Al pulsar ticket promedio o ventas/hora, mostrar ventas válidas, tickets y horas usadas.
+ Comprobar: El ticket promedio divide importe entre tickets válidos; turnos sin ventas no cambian ese
+ denominador. Cálculo actual por validar.
+
+ M22 · Excepciones del turno en una bandeja
+ P2 · Esfuerzo M | Reunir ventas sin responsable, descuentos a revisar, retiros y cierres incompletos, con
+ acceso al origen.
+ Comprobar: Asignar o corregir una excepción exige motivo y actualiza trazabilidad sin reescribir el historial
+ anterior.
+
+
+   Prueba pendiente con datos controlados
+   Abrir dos turnos consecutivos sobre una misma caja y completar un relevo. Comprobar quién recibe la venta,
+   cómo se calcula su comisión y que el fondo inicial no se duplique. Durante esta auditoría no se abrieron
+   turnos.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                   08
+BULEJE / VENTAS Y OPERACIÓN                                                                               15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 09
+
+
+
+ Caja: explicar y conciliar
+ El desglose por origen y el contador de billetes ya aportan control. La mejora es convertirlos en un recorrido de
+ resolución.
+ M23 · Separar día, sesión y saldo
+ P1 · Esfuerzo M | Resumen con “ventas del día”, “flujo del día” y “efectivo esperado de la sesión”, cada uno con
+ su intervalo.
+ Comprobar: Se puede explicar por qué una caja abierta en junio tiene movimientos posteriores sin llamarlos
+ todos “hoy”.
+
+ M24 · Fecha completa y código corto
+ P2 · Esfuerzo B | En Movimientos mostrar día y hora; resumir UUID con un código legible y botón para copiar el
+ identificador técnico.
+ Comprobar: Buscar por código, cliente o concepto lleva al registro y permite regresar al filtro anterior.
+
+ M25 · Estados de conteo inequívocos
+ P1 · Esfuerzo M | Usar “sin contar”, “contado” y “no evaluable” cuando corresponda. Diferencia cero sólo si fue
+ calculable.
+ Comprobar: Un esperado negativo conserva advertencia; el supervisor entiende qué valores se midieron y
+ cuáles no.
+
+ M26 · Asistente para esperado negativo
+ P1 · Esfuerzo M | Abrir los egresos de mayor impacto, período y origen; proponer revisar medio o sesión con
+ vista previa.
+ Comprobar: No se arregla el saldo creando ingresos ficticios; toda corrección enlaza el movimiento y su razón.
+
+ M27 · Cadena de documentos del dinero
+ P1 · Esfuerzo A | Vincular venta, ingreso, abono, adelanto, liquidación y devolución bajo una operación
+ consultable.
+ Comprobar: Abrir un adelanto muestra sus liquidaciones y saldo; una liquidación no vuelve a contar la entrega
+ original.
+
+ M28 · Bitácora con alcance explícito
+ P1 · Esfuerzo M | Aclarar qué registra Quién la tocó; mostrar cambios de medio, monto, responsable y estado
+ con antes/después.
+ Comprobar: Un cambio controlado aparece en la bitácora con actor, fecha, motivo y enlace. Cobertura actual
+ por validar.
+
+ M29 · Conciliar medios y evidencias
+ P1 · Esfuerzo A | Separar efectivo físico de Yape, Plin, tarjeta y banco; importar o adjuntar soporte y resolver
+ coincidencias.
+ Comprobar: Un voucher no se trata como cobro verificado sólo por existir; referencias repetidas generan
+ revisión.
+
+ M30 · Cierre con pendientes y paquete final
+ P1 · Esfuerzo A | Antes de cerrar, resumir conteo, diferencias, egresos y pendientes; generar constancia con
+ responsable.
+ Comprobar: El cierre es único aunque se reintente; sus ajustes posteriores se registran como eventos
+ vinculados.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                     09
+BULEJE / VENTAS Y OPERACIÓN                                                                               15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 10
+
+
+
+ Me deben: cobrar sin perder contexto
+ Ya hay calendario, modo llamada, registro de gestión y acceso a WhatsApp. La prioridad es que los estados
+ signifiquen lo mismo en todas las vistas.
+ M31 · Antigüedad distinta de vencimiento
+ P1 · Esfuerzo B | Mostrar “Sin vencimiento · 99 días de antigüedad”; reservar vencido para una fecha de pago
+ incumplida.
+ Comprobar: Quién debe, Por vencer y Cada fiado coinciden en estado y saldo para la misma cuenta.
+
+ M32 · Cuenta completa en panel lateral
+ P2 · Esfuerzo M | Unificar compras, abonos, recibos, gestiones y promesas sin abandonar la lista de cobranza.
+ Comprobar: Desde un cliente se llega al soporte de un abono y se vuelve a la ronda pendiente con un clic.
+
+ M33 · Asignar fecha a deudas sin plazo
+ P1 · Esfuerzo M | Desde el aviso del calendario abrir la lista sin vencimiento; acordar una fecha sin alterar la
+ fecha original de venta.
+ Comprobar: La nueva fecha aparece en calendario e historial como acuerdo posterior, con quien la registró.
+
+ M34 · Abonos claros y reversos vinculados
+ P1 · Esfuerzo M | Aplicar abono a una deuda o distribuirlo entre varias; mostrar saldo antes/después, medio y
+ comprobante.
+ Comprobar: Venta a crédito y cobro no duplican ingresos de venta; reversar un abono restaura su saldo con
+ trazabilidad.
+
+ M35 · Promesa con siguiente acción
+ P2 · Esfuerzo M | Potenciar las promesas del calendario con monto esperado, responsable y fecha de próxima
+ gestión.
+ Comprobar: Una promesa no reduce la deuda; una promesa incumplida vuelve a la bandeja del responsable.
+
+ M36 · Recordatorio revisable
+ P2 · Esfuerzo M | Extender el WhatsApp existente con mensaje según saldo, plazo y último contacto; vista
+ previa y registro de envío.
+ Comprobar: Se evita repetir el mismo recordatorio en una ronda; el operador confirma destinatario y texto
+ antes de enviar.
+
+ M37 · Límite de crédito en el POS
+ P1 · Esfuerzo A | Mostrar exposición y política de crédito al elegir cliente; permitir excepción con motivo y
+ permiso.
+ Comprobar: La autorización compara saldo vigente más la nueva deuda; el límite no se basa sólo en la última
+ compra.
+
+ M38 · Indicadores de recuperación útiles
+ P2 · Esfuerzo M | En Cobrado separar cobros, nueva deuda y variación neta; permitir abrir los registros detrás
+ del gráfico.
+ Comprobar: El período y las fórmulas son visibles; un +0% con base cero explica que no hay comparación
+ válida.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                    10
+BULEJE / VENTAS Y OPERACIÓN                                                                              15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 11
+
+
+
+ Comisiones de vendedores
+ La pantalla permite período y reglas por vendedor y tramo. Se necesita poder explicar y reproducir cada
+ liquidación.
+ M39 · Atribución antes de vender
+ P1 · Esfuerzo M | Distinguir vendedor comercial de cajero que cobra. Mostrar ventas sin vendedor en una cola
+ de revisión.
+ Comprobar: Asignar vendedor sigue una política explícita y registra el cambio; no se infiere sólo del usuario
+ que cobró.
+
+ M40 · Regla activa visible
+ P1 · Esfuerzo B | Mostrar en Vendedores “2% por defecto, sin reglas guardadas” hasta que exista una política
+ aprobada.
+ Comprobar: El usuario distingue valor de respaldo, regla guardada y regla vigente para cada venta.
+
+ M41 · Simulador antes de guardar
+ P1 · Esfuerzo M | Ingresar una venta de ejemplo y ver base, tramo, porcentaje y total; explicar si el tramo es
+ progresivo o único.
+ Comprobar: Se prueban límites exactos, solapes y huecos; una regla particular y una general tienen
+ precedencia clara.
+
+ M42 · Versiones y vigencia
+ P1 · Esfuerzo A | Guardar quién aprobó la regla y desde cuándo aplica; conservar la versión usada en cada
+ venta.
+ Comprobar: Cambiar el porcentaje hoy no recalcula silenciosamente una comisión ya liquidada del mes
+ anterior.
+
+ M43 · Base de comisión acordada
+ P1 · Esfuerzo M | Definir si la base es venta neta, importe cobrado o margen; tratar descuento, tributo, flete y
+ crédito explícitamente.
+ Comprobar: El detalle muestra base y fórmula; un cobro parcial no genera una comisión duplicada al completar
+ el saldo.
+
+ M44 · Devoluciones que ajustan la comisión
+ P1 · Esfuerzo A | Enlazar devoluciones y anulaciones con la comisión original; definir qué pasa si ya se pagó.
+ Comprobar: El ajuste aparece en el siguiente período o saldo según política; nunca desaparece la liquidación
+ pagada.
+
+ M45 · Generada, aprobada y pagada
+ P1 · Esfuerzo A | Separar esas etapas y permitir liquidar un lote con recibo y medio de pago.
+ Comprobar: Cada comisión se liquida una vez; “por pagar” excluye lo pagado y conserva rechazos o ajustes
+ pendientes.
+
+ M46 · Detalle exportable por venta
+ P2 · Esfuerzo M | Potenciar Exportar CSV con vendedor, venta, base, regla, ajuste y estado; mismo período
+ que la pantalla.
+ Comprobar: La suma del detalle explica el resumen y la constancia; el vendedor ve sólo lo que su perfil
+ permite.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                  11
+BULEJE / VENTAS Y OPERACIÓN                                                                                           15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 12
+
+
+
+ Bocetos 2 y 3: explicar la cuenta
+ Propuestas conceptuales con datos ficticios. Una misma entidad mantiene su historial y puede abrirse desde
+ varias pestañas.
+
+
+
+       Cliente ejemplo | Cuenta completa
+
+
+       Saldo S/300.00                                                 Sin vencimiento
+
+       Antigüedad: 12 días | Última gestión: hoy
+
+
+        Venta #001        + S/500.00
+
+
+        Abono #002       - S/200.00
+
+
+        Promesa: viernes | Pendiente de abono
+
+
+         Registrar abono                           Anotar promesa                        Ver recibos
+
+
+
+
+ Cobranza en contexto
+ El operador ve saldo, antigüedad y plazo antes de registrar un abono o recordatorio. Las promesas se muestran como
+ compromisos, sin descontarlas del saldo.
+
+
+
+       Comisión explicada | Ejemplo de simulación
+
+
+       Vendedor: Ana | Período: octubre
+
+        Base elegible cobrada                                                                  S/1,000.00
+
+        Regla aplicada · versión 3                                                             2%
+
+        Comisión generada                                                                      S/20.00
+
+        Ajuste vinculado a devolución                                                          - S/4.00
+
+
+        Pendiente de aprobar: S/16.00
+
+
+
+ Comisión explicada por línea
+ En este ejemplo: S/1,000 x 2% = S/20; ajuste S/4; pendiente S/16. La base y el ajuste llevan a sus ventas. La política real debe
+ acordarse y guardarse antes de usarla para pagar.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                                12
+BULEJE / VENTAS Y OPERACIÓN                                                                             15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 13
+
+
+
+ Pedidos y reparto
+ Se revisaron Tablero, Lista y Archivados, y las cinco secciones de Reparto. Los estados vacíos permiten auditar
+ orientación, pero no una entrega completa.
+ M47 · Inicio guiado y bloqueo explicado
+ P2 · Esfuerzo B | En Asignaciones indicar “Necesitas un pedido y un repartidor”, con accesos a ambos pasos.
+ Comprobar: Ningún botón deshabilitado importante deja al usuario sin saber cómo habilitarlo.
+
+ M48 · Pedido único entre canales
+ P1 · Esfuerzo A | Conectar POS, WhatsApp, tienda y cotización bajo un pedido; identificar origen y posibles
+ coincidencias.
+ Comprobar: Convertir o retomar un pedido no vuelve a crear su venta, cobro o reserva de inventario.
+
+ M49 · Tablero para la siguiente acción
+ P2 · Esfuerzo M | Priorizar preparar, verificar pago, asignar y entregar; añadir tiempo en estado y acción
+ contextual.
+ Comprobar: Tablero y Lista muestran los mismos pedidos y totales con filtros equivalentes; el cambio de
+ estado exige sus datos.
+
+ M50 · Ruta con capacidad y excepción
+ P3 · Esfuerzo A | Potenciar En vivo y Rutas y paradas con carga, ventanas de entrega y propuesta de
+ agrupación.
+ Comprobar: La ubicación indica hora de actualización; una posición antigua no parece en vivo. La asignación
+ requiere revisión.
+
+ M51 · Entrega y dinero conciliados
+ P1 · Esfuerzo A | En Pagos enlazar entrega, cobro contra entrega, retiro y liquidación del repartidor, con
+ soporte.
+ Comprobar: Cobrar al cliente y rendir a caja son eventos distintos; la rendición no crea otra venta ni otro cobro
+ al cliente.
+
+ M52 · Equipo, archivo y ranking explicables
+ P2 · Esfuerzo M | Desde Equipo abrir historial; desde Archivados conocer motivo; en Ranking mostrar
+ puntualidad y fallos, además de volumen.
+ Comprobar: El período es visible y se pueden consultar las entregas del indicador; no penalizar cancelaciones
+ ajenas sin contexto.
+
+
+   Prueba funcional pendiente
+   Con un pedido de prueba: verificar pago, preparar, asignar, entregar, rendir efectivo y resolver un intento
+   fallido. Comprobar Tablero/Lista/Archivados, caja y saldo del repartidor. No había registros para completar
+   esta prueba.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                 13
+BULEJE / VENTAS Y OPERACIÓN                                                                                         15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 14
+
+
+
+ Comprobantes y cotizaciones
+ La interfaz distingue tipos de documento y ofrece crear borradores. La mayor oportunidad es aprovechar los
+ datos que ya existen en el pedido.
+ M53 · Buscar pedido y autocompletar
+ P2 · Esfuerzo M | Reemplazar la entrada principal del ID técnico por buscador de número, cliente o fecha;
+ ofrecer emitir desde la venta.
+ Comprobar: Elegir pedido trae cliente, ítems e importes; se visualiza el origen antes de emitir y se evita una
+ doble emisión.
+
+ M54 · Preparación de emisión explicada
+ P1 · Esfuerzo M | La alerta SUNAT dice que faltan tres requisitos. Mostrar cada requisito, estado y acceso a
+ resolverlo; distinguir borrador y emisión oficial.
+ Comprobar: El usuario sabe qué puede generar; una respuesta pendiente o rechazada se muestra como tal.
+ La conexión real no fue probada.
+
+ M55 · Nota de crédito desde el origen
+ P1 · Esfuerzo A | Conectar devolución del POS y nota de crédito con el comprobante, líneas, motivo y
+ cantidades disponibles.
+ Comprobar: El ajuste enlaza inventario, deuda, caja y comisión; no se devuelve más que lo permitido por la
+ operación original.
+
+ M56 · Guía precargada y datos frecuentes
+ P2 · Esfuerzo M | Potenciar Vincular pedido en la guía con autocompletado; elegir transportista, conductor,
+ placa y rutas frecuentes.
+ Comprobar: Los ítems, unidades, bultos y pesos quedan revisables; distingue datos estimados de confirmados
+ antes de emitir.
+
+ M57 · Cotización que se convierte sin recaptura
+ P2 · Esfuerzo A | Conectar En curso y Cerradas con versiones, vigencia, aceptación y creación del pedido
+ correspondiente.
+ Comprobar: Al convertir se revalida stock/precio y se conserva el documento aceptado; convertir dos veces no
+ duplica pedido.
+
+ M58 · Bandeja documental de pendientes
+ P2 · Esfuerzo M | Reunir venta sin comprobante, guía por completar y documento rechazado; incluir
+ reimpresión y descarga desde el origen.
+ Comprobar: Cada pendiente tiene responsable y enlace; el estado del documento coincide con el detalle y sus
+ soportes.
+ No se verificó cumplimiento tributario ni conexión efectiva con SUNAT. Las propuestas son de experiencia, trazabilidad y
+ control del flujo; la validación fiscal requiere un entorno y casos específicos.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                            14
+BULEJE / VENTAS Y OPERACIÓN                                                                                                  15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 15
+
+
+
+ Ideas creativas con utilidad real
+ Estas dos capacidades nuevas complementan las mejoras anteriores. Conviene ensayarlas cuando datos,
+ reglas y vínculos estén claros.
+ M59 · Continuidad ante cortes de conexión
+ P3 · Esfuerzo A | Diseñar un modo de borradores sin conexión con cola visible, identificador único y resolución
+ de conflictos al volver.
+ Comprobar: Se distingue pendiente de confirmado. Stock y documentos oficiales se revalidan; sincronizar o
+ reintentar no duplica cobros.
+
+ M60 · Asistente que prepara y explica
+ P3 · Esfuerzo A | Extender la voz existente: “prepara el pedido de ayer”, “explica este descuadre” o “resume lo
+ pendiente”, con fuentes enlazadas.
+ Comprobar: El asistente propone un borrador y muestra campos dudosos; el usuario confirma toda venta,
+ pago, emisión o ajuste.
+
+
+ Ocho ideas para prototipar dentro del plan
+
+    IDEA                                   DÓNDE ENCAJA Y CÓMO APORTA
+
+
+    Mostrador según rubro                  M09-M10: madera con dimensiones y volumen; alquiler con tiempo; servicios con
+                                           capacidad. Cada cálculo muestra unidad y fórmula.
+
+
+    Favoritos de acciones                  M03: cada persona fija operaciones, no sólo productos. Un cobrador prioriza clientes; un
+                                           cajero, ventas de hoy.
+
+
+    Pasaporte de la operación              M27/M48: línea de tiempo desde cotización hasta cobro, guía, devolución y comisión.
+
+
+    Inspector de coincidencias             M29/M48: mismo importe, referencia y fecha sugieren revisar duplicidad; nunca se
+                                           elimina por monto coincidente solamente.
+
+
+    Bandeja “Resolver ahora”               M08/M22/M58: pocas tareas útiles, con importe afectado y siguiente paso, en lugar de
+                                           avisos repetidos.
+
+
+    Retomar cliente habitual               M14: compra anterior como borrador; precios y disponibilidad se actualizan antes de
+                                           vender.
+
+
+    Caja explicada en lenguaje             M26: “el saldo baja por estos adelantos”; enlaces a los registros, sin inventar
+    simple                                 movimientos compensatorios.
+
+
+    Simulador de incentivos                M41-M44: ensayar reglas con ventas, descuentos y devoluciones ficticias antes de
+                                           aplicarlas.
+
+
+ Orden recomendado: primero elegir un caso frecuente y probar un prototipo con quien opera; después ampliar. Las ideas no
+ constituyen funciones ya implementadas ni beneficios medidos.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                                     15
+BULEJE / VENTAS Y OPERACIÓN                                                                            15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 16
+
+
+
+ Qué construir primero
+ La siguiente lista convierte los hallazgos en entregas revisables. Las fases son secuenciales por dependencia;
+ no son una promesa de calendario.
+
+    N°           ENTREGA                                                       REFERENCIAS
+
+
+    1            Fecha/rango y diferencia entre caja y turno visibles.         H01-H02 · M01-M02, M17, M23
+
+
+    2            Antigüedad, vencimiento y ausencia de fecha coherentes.       H03 · M31-M33
+
+
+    3            Regla del 2% visible y definición de base de comisión.        H04 · M40-M43
+
+
+    4            Conteo no evaluable distinto de diferencia cero.              H05 · M25-M26
+
+
+    5            Fecha completa, referencia legible y alcance de bitácora.     H08/H11 · M24, M28
+
+
+    6            Acciones fijadas, atajos y tarjetas del POS legibles.         H06-H07/H12 · M03, M05, M09
+
+
+    7            Buscar pedido para emitir y orientar reparto vacío.           H09-H10 · M47, M53
+
+
+
+ Fase A · Claridad y acceso
+ Entregas 1-7. Diseño y desarrollo de interfaz con operaciones/supervisor. Aceptar sólo si los mismos registros
+ muestran estados y períodos coherentes en todas sus vistas.
+
+ Fase B · Operación conectada
+ Cliente/vendedor en POS, abonos, vínculos de dinero, devolución y reglas versionadas. Requiere acordar
+ atribución, base de comisión, redondeos y tratamiento de ventas a crédito.
+
+ Fase C · Automatización y diferenciación
+ Conciliación con soportes, reparto, paneles por rol, modo sin conexión y asistente. Depende de identificadores
+ únicos, trazabilidad y manejo correcto de reintentos.
+
+   Tres decisiones de negocio necesarias
+   1. ¿La comisión se gana por venta, por cobro o por margen? 2. ¿Qué excepciones permiten vender sin turno
+   o exceder crédito? 3. ¿Qué significa “día” para la caja: calendario o jornada operativa? Guardar la política
+   elegida en el sistema evita interpretaciones distintas.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                  16
+BULEJE / VENTAS Y OPERACIÓN                                                                                               15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 17
+
+
+
+ Cómo comprobar que mejoró
+ Metas propuestas para el piloto. Primero medir una línea base con tareas iguales, los mismos datos y usuarios
+ habituales.
+
+    MEDIR                            VALIDACIÓN PROPUESTA
+
+
+    Rapidez de tareas                Cronometrar buscar producto, armar carrito, cobrar deuda y preparar emisión. Comparar
+                                     mediana y p90 antes/después; anotar errores y pasos, no sólo tiempo.
+
+
+    Accesos frecuentes               Cada acción fijada se abre en un clic desde el área de trabajo; volver conserva contexto.
+                                     Validar con cajero, cobranza y supervisor.
+
+
+    Confianza del dinero             Una operación tiene un solo registro final; los vínculos explican su efecto en venta, efectivo,
+                                     deuda y comisión.
+
+
+    Respuesta de interfaz            Medir INP en uso real, separando escritorio/móvil. Referencia: bueno hasta 200 ms en p75
+                                     [R3]. Esta auditoría no midió INP.
+
+
+    Uso por teclado y táctil         Evaluar foco visible y no oculto [R2], orden de Tab y salidas de modales. Revisar objetivos de
+                                     24 x 24 CSS px o excepciones [R1]; para acciones principales proponer 44 px por
+                                     comodidad.
+
+
+    Claridad                         En una prueba breve, el operador identifica cajero, vendedor, sesión/rango, saldo y regla
+                                     aplicada sin abrir ayuda.
+
+
+
+ Pruebas con mayor valor antes de liberar
+ Venta: contado, pagos mixtos, vuelto, descuento, stock insuficiente, pausa y recuperación. Fiado: abono
+ parcial, pago final y reverso. Turno: apertura, relevo y cierre con diferencia.
+ Comisión: límites del tramo, regla general/particular, cambio de vigencia, cobro parcial, devolución después de
+ pagar y exportación del mismo período.
+ Integridad: doble clic, reintento tras error, dos cajeros sobre el último stock, pedido convertido dos veces y
+ corrección posterior al cierre. Ejecutar en datos de prueba y reconciliar los registros resultantes.
+ Presentación: revisar anchos de 360/390, 768 y escritorio, zoom 200%, teclado, lector y descarga/impresión. Son pruebas
+ pendientes; no se declara conformidad WCAG ni soporte móvil validado.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                                       17
+BULEJE / VENTAS Y OPERACIÓN                                                                                             15 OCT 2026
+
+
+
+
+ AUDITORÍA DE VENTAS / 18
+
+
+
+ Trazabilidad de la revisión
+ Fecha de inspección: 15 de octubre de 2026. Fuente principal: interfaz autenticada de tu aplicación local.
+
+ Rutas y puntos de evidencia
+
+    FUENTE                            EVIDENCIA UTILIZADA
+
+
+    E1 · Ventas & Caja                Entrada: /admin?tab=ventas-caja&vista=pos#ventas-caja. Catálogo, Más, aviso “Sin turno”,
+                                      carrito, Turnos, Caja y subpestañas.
+
+
+    E2 · Me deben                     La misma cuenta aparece con 99 días de antigüedad, sin vencimiento, saldo S/30; Cada
+                                      fiado la presenta “Al día”; calendario explica su exclusión.
+
+
+    E3 · Comisiones                   Vendedores sin ventas con vendedor en el período visto; Reglas informa 2% por defecto sin
+                                      reglas guardadas.
+
+
+    E4 · Pedidos y reparto            Se revisó la navegación lateral y sus pestañas; estados vacíos, cero equipo y botón de
+                                      asignar deshabilitado.
+
+
+    E5 · Comprobantes                 Cuatro tipos de documentos; emisión pide ID del pedido; alerta de tres requisitos; guía
+                                      contiene traslado, destinatario, ruta, transporte, carga e ítems.
+
+
+
+ Referencias para los criterios propuestos
+ R1 · W3C · WCAG 2.2 · Target Size (Minimum)
+ Explica tamaño mínimo de objetivos y excepciones. Se usa como criterio a evaluar, no como incumplimiento demostrado.
+
+ R2 · W3C · WCAG 2.2 · Focus Not Obscured (Minimum)
+ Referencia para que el elemento enfocado no quede completamente oculto por contenido de la interfaz.
+
+ R3 · web.dev · Interaction to Next Paint (INP)
+ Referencia de respuesta: hasta 200 ms en el percentil 75; medir por tipo de dispositivo.
+
+ Resultado y límites de uso
+ Este informe prioriza experiencia de uso y control operativo con la información visible. Las propuestas están listas para
+ convertirse en tareas y prototipos; no se han implementado. No es certificación contable, tributaria, de seguridad ni de
+ accesibilidad.
+
+ No se modificaron reglas, caja, turnos, deudas, pedidos ni comprobantes. No se enviaron mensajes. El carrito creado para
+ inspección quedó vacío. Los bocetos son diseños propuestos y no capturas de la página.
+
+
+
+
+Auditoría de interfaz · Propuestas para revisión                                                                                 18
+

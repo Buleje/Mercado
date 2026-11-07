@@ -1,6 +1,5 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart,
@@ -13,7 +12,9 @@ import {
   Cell,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { RefreshCw } from "@buleje/design-system/icons";
+import { DollarSign, RefreshCw } from "@buleje/design-system/icons";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
+import { formatCurrency } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -58,12 +59,12 @@ function WaterfallTooltip({ active, payload }: { active?: boolean; payload?: Arr
   const d = payload[0].payload;
   return (
     <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
-      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.name}</p>
-      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+      <p className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">{d.name}</p>
+      <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
-        <span className="font-mono font-medium" style={{ color: d.fill }}>S/ {Number(d.displayValue).toFixed(2)}</span>
+        <span className="font-mono font-medium" style={{ color: d.fill }}>{formatCurrency(Number(d.displayValue))}</span>
       </p>
-      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+      <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
         <span>% del total</span>
         <span className="font-mono font-medium text-[var(--text-tertiary)]">{d.label}</span>
       </p>
@@ -126,7 +127,7 @@ export default function MarginWaterfallChart() {
         value: gastos,
         displayValue: gastos,
         base: totalRevenue - totalCost - gastos,
-        fill: "#f97316",
+        fill: "#ff6b5b",
         label: `~10%`,
       },
       {
@@ -158,7 +159,7 @@ export default function MarginWaterfallChart() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="h-5 w-48 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-4 animate-pulse" />
+        <div className="h-5 w-48 bg-[var(--rule-soft)] rounded mb-4 animate-pulse" />
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 h-64 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
           <div className="flex-1 space-y-3">
@@ -178,7 +179,7 @@ export default function MarginWaterfallChart() {
         <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">No se pudieron cargar los datos de margenes</p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
+          className="min-h-12 text-sm px-4 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -190,17 +191,17 @@ export default function MarginWaterfallChart() {
   // ── Empty ──
   if (!data || !data.products.length) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-[var(--text-tertiary)]">No hay datos suficientes de margenes</p>
-      </div>
+      <VacioMetricas
+        icono={DollarSign}
+        titulo="Sin ventas para calcular márgenes"
+        descripcion="Con tus ventas aquí verás cuánto se va en mercadería y gastos y cuánto te queda."
+      />
     );
   }
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <CardTitle className="text-sm font-semibold text-[var(--text-primary)] mb-4">
-        Cascada de Margenes
-      </CardTitle>
+    <div>
+      {/* Sin título ni caja propios: el panel de Métricas dice «Márgenes». */}
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* LEFT: Waterfall chart */}
@@ -241,9 +242,9 @@ export default function MarginWaterfallChart() {
             <button
               onClick={() => setShowBest(true)}
               className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
+                "min-h-12 px-4 rounded-xl text-sm font-semibold transition-colors",
                 showBest
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-[var(--text-primary)]"
+                  ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
                   : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
@@ -252,9 +253,9 @@ export default function MarginWaterfallChart() {
             <button
               onClick={() => setShowBest(false)}
               className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
+                "min-h-12 px-4 rounded-xl text-sm font-semibold transition-colors",
                 !showBest
-                  ? "bg-gray-900 dark:bg-white text-white dark:text-[var(--text-primary)]"
+                  ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
                   : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
@@ -276,11 +277,11 @@ export default function MarginWaterfallChart() {
                 <div key={product.productId} className="flex items-center gap-2 group">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-xs text-[var(--text-secondary)] truncate mr-2 group-hover:text-[var(--text-primary)] dark:group-hover:text-white transition-colors">
+                      <span className="text-sm text-[var(--text-secondary)] truncate mr-2 group-hover:text-[var(--text-primary)] dark:group-hover:text-white transition-colors">
                         {product.name}
                       </span>
                       <span
-                        className={cn("text-xs font-mono font-bold shrink-0", product.marginPct > 20 ? "text-primary" : product.marginPct > 10 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}
+                        className={cn("text-sm font-mono font-bold shrink-0", product.marginPct > 20 ? "text-primary" : product.marginPct > 10 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}
                         style={{ fontVariantNumeric: "tabular-nums" }}
                       >
                         {Number(product.marginPct).toFixed(1)}%

@@ -1,0 +1,601 @@
+{
+ "formato": "GTF Comunidad Nativa Septimo Unidos de Santa Fe de Aguachini",
+ "unidad": "mm",
+ "origen": "esquina superior izquierda del marco azul (sumar margen del papel)",
+ "marco_medido_mm": {
+  "ancho": 195.0,
+  "alto": 299.5
+ },
+ "y_es": "linea base del texto",
+ "precision_aprox_mm": 2.5,
+ "campos": [
+  {
+   "clave": "registro",
+   "campo": "N° de registro",
+   "x": 150,
+   "y": 30.5,
+   "ancho": 35,
+   "max_10cpi": 13,
+   "max_12cpi": 16
+  },
+  {
+   "clave": "arffs",
+   "campo": "(2) Autoridad Regional Forestal (ARFFS)",
+   "x": 85,
+   "y": 39.5,
+   "ancho": 107,
+   "max_10cpi": 41,
+   "max_12cpi": 50
+  },
+  {
+   "clave": "fecha_expedicion",
+   "campo": "(3) Fecha de expedición",
+   "x": 37,
+   "y": 44.5,
+   "ancho": 53,
+   "max_10cpi": 20,
+   "max_12cpi": 24
+  },
+  {
+   "clave": "fecha_vencimiento",
+   "campo": "(4) Fecha de vencimiento",
+   "x": 130,
+   "y": 44.5,
+   "ancho": 62,
+   "max_10cpi": 24,
+   "max_12cpi": 28
+  },
+  {
+   "clave": "origen_numero",
+   "campo": "(6) N°",
+   "x": 13,
+   "y": 67,
+   "ancho": 77,
+   "max_10cpi": 29,
+   "max_12cpi": 35
+  },
+  {
+   "clave": "titular",
+   "campo": "(7) Nombre del titular",
+   "x": 35,
+   "y": 72.5,
+   "ancho": 82,
+   "max_10cpi": 31,
+   "max_12cpi": 38
+  },
+  {
+   "clave": "rep_legal",
+   "campo": "(8) Representante legal",
+   "x": 133,
+   "y": 72.5,
+   "ancho": 59,
+   "max_10cpi": 22,
+   "max_12cpi": 27
+  },
+  {
+   "clave": "resolucion",
+   "campo": "(9) N° Resolución",
+   "x": 29,
+   "y": 77,
+   "ancho": 84,
+   "max_10cpi": 32,
+   "max_12cpi": 39
+  },
+  {
+   "clave": "plan_manejo",
+   "campo": "(10) Plan de manejo (tipo)",
+   "x": 149,
+   "y": 77,
+   "ancho": 43,
+   "max_10cpi": 16,
+   "max_12cpi": 19
+  },
+  {
+   "clave": "origen_dpto",
+   "campo": "(11a) Departamento",
+   "x": 31,
+   "y": 82.2,
+   "ancho": 35,
+   "max_10cpi": 13,
+   "max_12cpi": 16
+  },
+  {
+   "clave": "origen_prov",
+   "campo": "(11b) Provincia",
+   "x": 88,
+   "y": 82.2,
+   "ancho": 40,
+   "max_10cpi": 15,
+   "max_12cpi": 18
+  },
+  {
+   "clave": "origen_dist",
+   "campo": "(11c) Distrito",
+   "x": 148,
+   "y": 82.2,
+   "ancho": 44,
+   "max_10cpi": 16,
+   "max_12cpi": 20
+  },
+  {
+   "clave": "propietario",
+   "campo": "(12) Propietario del producto",
+   "x": 45,
+   "y": 93,
+   "ancho": 147,
+   "max_10cpi": 57,
+   "max_12cpi": 68
+  },
+  {
+   "clave": "propietario_ruc",
+   "campo": "(13) DNI/RUC",
+   "x": 27,
+   "y": 97.5,
+   "ancho": 35,
+   "max_10cpi": 13,
+   "max_12cpi": 16
+  },
+  {
+   "clave": "propietario_dir",
+   "campo": "(14a) Dirección",
+   "x": 84,
+   "y": 97.5,
+   "ancho": 108,
+   "max_10cpi": 42,
+   "max_12cpi": 50
+  },
+  {
+   "clave": "propietario_dpto",
+   "campo": "(14b) Departamento",
+   "x": 31,
+   "y": 103,
+   "ancho": 35,
+   "max_10cpi": 13,
+   "max_12cpi": 16
+  },
+  {
+   "clave": "propietario_prov",
+   "campo": "(14c) Provincia",
+   "x": 88,
+   "y": 103,
+   "ancho": 40,
+   "max_10cpi": 15,
+   "max_12cpi": 18
+  },
+  {
+   "clave": "propietario_dist",
+   "campo": "(14d) Distrito",
+   "x": 148,
+   "y": 103,
+   "ancho": 44,
+   "max_10cpi": 16,
+   "max_12cpi": 20
+  },
+  {
+   "clave": "comprobante_tipo",
+   "campo": "(15) Tipo de comprobante",
+   "x": 65,
+   "y": 108,
+   "ancho": 48,
+   "max_10cpi": 18,
+   "max_12cpi": 22
+  },
+  {
+   "clave": "comprobante_num",
+   "campo": "(16) N° de comprobante",
+   "x": 148,
+   "y": 108,
+   "ancho": 44,
+   "max_10cpi": 16,
+   "max_12cpi": 20
+  },
+  {
+   "clave": "partida",
+   "campo": "(17) Punto de partida",
+   "x": 35,
+   "y": 118.5,
+   "ancho": 85,
+   "max_10cpi": 33,
+   "max_12cpi": 39
+  },
+  {
+   "clave": "partida_aut",
+   "campo": "(18) N° Autorización",
+   "x": 149,
+   "y": 118.5,
+   "ancho": 43,
+   "max_10cpi": 16,
+   "max_12cpi": 19
+  },
+  {
+   "clave": "partida_tipo",
+   "campo": "(19) Tipo de establecimiento",
+   "x": 41,
+   "y": 123.5,
+   "ancho": 51,
+   "max_10cpi": 19,
+   "max_12cpi": 23
+  },
+  {
+   "clave": "partida_dir",
+   "campo": "(20a) Dirección",
+   "x": 115,
+   "y": 123.5,
+   "ancho": 77,
+   "max_10cpi": 29,
+   "max_12cpi": 35
+  },
+  {
+   "clave": "partida_dpto",
+   "campo": "(20b) Departamento",
+   "x": 31,
+   "y": 128.5,
+   "ancho": 35,
+   "max_10cpi": 13,
+   "max_12cpi": 16
+  },
+  {
+   "clave": "partida_prov",
+   "campo": "(20c) Provincia",
+   "x": 88,
+   "y": 128.5,
+   "ancho": 40,
+   "max_10cpi": 15,
+   "max_12cpi": 18
+  },
+  {
+   "clave": "partida_dist",
+   "campo": "(20d) Distrito",
+   "x": 148,
+   "y": 128.5,
+   "ancho": 44,
+   "max_10cpi": 16,
+   "max_12cpi": 20
+  },
+  {
+   "clave": "destinatario",
+   "campo": "(21) Destinatario",
+   "x": 28,
+   "y": 139.4,
+   "ancho": 90,
+   "max_10cpi": 35,
+   "max_12cpi": 42
+  },
+  {
+   "clave": "destinatario_aut",
+   "campo": "(22) N° Autorización",
+   "x": 149,
+   "y": 139.4,
+   "ancho": 43,
+   "max_10cpi": 16,
+   "max_12cpi": 19
+  },
+  {
+   "clave": "destinatario_ruc",
+   "campo": "(23) DNI/RUC",
+   "x": 27,
+   "y": 144.4,
+   "ancho": 45,
+   "max_10cpi": 17,
+   "max_12cpi": 20
+  },
+  {
+   "clave": "destinatario_dir",
+   "campo": "(24a) Dirección",
+   "x": 94,
+   "y": 144.4,
+   "ancho": 98,
+   "max_10cpi": 38,
+   "max_12cpi": 45
+  },
+  {
+   "clave": "destinatario_dpto",
+   "campo": "(24b) Departamento",
+   "x": 31,
+   "y": 149.4,
+   "ancho": 37,
+   "max_10cpi": 14,
+   "max_12cpi": 17
+  },
+  {
+   "clave": "destinatario_prov",
+   "campo": "(24c) Provincia",
+   "x": 87,
+   "y": 149.4,
+   "ancho": 41,
+   "max_10cpi": 15,
+   "max_12cpi": 18
+  },
+  {
+   "clave": "destinatario_dist",
+   "campo": "(24d) Distrito",
+   "x": 148,
+   "y": 149.4,
+   "ancho": 44,
+   "max_10cpi": 16,
+   "max_12cpi": 20
+  },
+  {
+   "clave": "gre_transportista",
+   "campo": "(25) N° Guía de Remisión Transportista",
+   "x": 57,
+   "y": 159.8,
+   "ancho": 55,
+   "max_10cpi": 21,
+   "max_12cpi": 25
+  },
+  {
+   "clave": "tipo_transporte",
+   "campo": "(26) Tipo de transporte",
+   "x": 146,
+   "y": 159.8,
+   "ancho": 46,
+   "max_10cpi": 17,
+   "max_12cpi": 21
+  },
+  {
+   "clave": "tipo_vehiculo",
+   "campo": "(27) Tipo de vehículo",
+   "x": 33,
+   "y": 164.4,
+   "ancho": 43,
+   "max_10cpi": 16,
+   "max_12cpi": 19
+  },
+  {
+   "clave": "placa",
+   "campo": "(28) Placa(s)",
+   "x": 110,
+   "y": 164.4,
+   "ancho": 82,
+   "max_10cpi": 31,
+   "max_12cpi": 38
+  },
+  {
+   "clave": "conductor",
+   "campo": "(29) Nombre del conductor",
+   "x": 43,
+   "y": 169.4,
+   "ancho": 61,
+   "max_10cpi": 23,
+   "max_12cpi": 28
+  },
+  {
+   "clave": "conductor_dni",
+   "campo": "(30) DNI",
+   "x": 120,
+   "y": 169.4,
+   "ancho": 24,
+   "max_10cpi": 9,
+   "max_12cpi": 10
+  },
+  {
+   "clave": "conductor_lic",
+   "campo": "(31) Licencia de conducir",
+   "x": 173,
+   "y": 169.4,
+   "ancho": 19,
+   "max_10cpi": 7,
+   "max_12cpi": 8
+  },
+  {
+   "clave": "gtf_origen",
+   "campo": "(32) N° GTF de origen",
+   "x": 35,
+   "y": 181,
+   "ancho": 75,
+   "max_10cpi": 29,
+   "max_12cpi": 34
+  },
+  {
+   "clave": "lista_trozas",
+   "campo": "(33) Lista de trozas N°",
+   "x": 70,
+   "y": 185.6,
+   "ancho": 122,
+   "max_10cpi": 47,
+   "max_12cpi": 57
+  },
+  {
+   "clave": "total_movilizado",
+   "campo": "(34h) Total movilizado",
+   "x": 169,
+   "y": 244.5,
+   "ancho": 24,
+   "max_10cpi": 9,
+   "max_12cpi": 10
+  },
+  {
+   "clave": "observaciones_1",
+   "campo": "(35) Observaciones — línea 1",
+   "x": 37,
+   "y": 246.3,
+   "ancho": 91,
+   "max_10cpi": 35,
+   "max_12cpi": 42
+  },
+  {
+   "clave": "observaciones_2",
+   "campo": "(35) Observaciones — línea 2",
+   "x": 11,
+   "y": 252.5,
+   "ancho": 117,
+   "max_10cpi": 45,
+   "max_12cpi": 54
+  },
+  {
+   "clave": "emisor_nombre",
+   "campo": "(38) Nombres y apellidos del emisor",
+   "x": 132,
+   "y": 279,
+   "ancho": 60,
+   "max_10cpi": 23,
+   "max_12cpi": 27
+  },
+  {
+   "clave": "emisor_doc",
+   "campo": "(39) Documento de identidad del emisor",
+   "x": 132,
+   "y": 292.5,
+   "ancho": 60,
+   "max_10cpi": 23,
+   "max_12cpi": 27
+  }
+ ],
+ "casillas": [
+  {
+   "clave": "cb_concesion",
+   "casilla": "(5) Concesión",
+   "x_centro": 96.5,
+   "y_centro": 55.5
+  },
+  {
+   "clave": "cb_permiso",
+   "casilla": "(5) Permiso",
+   "x_centro": 125.5,
+   "y_centro": 55.0
+  },
+  {
+   "clave": "cb_autorizacion",
+   "casilla": "(5) Autorización",
+   "x_centro": 153.5,
+   "y_centro": 55.0
+  },
+  {
+   "clave": "cb_bosque_local",
+   "casilla": "(5) Bosque local",
+   "x_centro": 188.5,
+   "y_centro": 53.5
+  },
+  {
+   "clave": "cb_desbosque",
+   "casilla": "(5) Desbosque",
+   "x_centro": 96.5,
+   "y_centro": 59.0
+  },
+  {
+   "clave": "cb_cambio_uso",
+   "casilla": "(5) Cambio de uso",
+   "x_centro": 125.5,
+   "y_centro": 58.5
+  },
+  {
+   "clave": "cb_plantacion",
+   "casilla": "(5) Plantación",
+   "x_centro": 153.5,
+   "y_centro": 58.5
+  },
+  {
+   "clave": "cb_varios_origenes",
+   "casilla": "(5) Varios orígenes",
+   "x_centro": 188.5,
+   "y_centro": 57.0
+  },
+  {
+   "clave": "cb_ctp",
+   "casilla": "(5) Centro de Transformación Primaria",
+   "x_centro": 125.5,
+   "y_centro": 62.5
+  },
+  {
+   "clave": "cb_cesion_uso",
+   "casilla": "(5) Cesión en uso",
+   "x_centro": 153.5,
+   "y_centro": 62.5
+  },
+  {
+   "clave": "cb_anexo01",
+   "casilla": "(36) Anexo 01",
+   "x_centro": 12.6,
+   "y_centro": 260.4
+  },
+  {
+   "clave": "cb_anexo02",
+   "casilla": "(36) Anexo 02",
+   "x_centro": 12.6,
+   "y_centro": 264.1
+  },
+  {
+   "clave": "cb_anexo03",
+   "casilla": "(36) Anexo 03 — Listado de trozas",
+   "x_centro": 12.6,
+   "y_centro": 268.1
+  },
+  {
+   "clave": "cb_anexo04",
+   "casilla": "(36) Anexo 04",
+   "x_centro": 12.6,
+   "y_centro": 271.9
+  }
+ ],
+ "tabla_34": {
+  "filas": 7,
+  "y_lineas": [
+   209.2,
+   214.2,
+   219.2,
+   224.1,
+   229.1,
+   234.0,
+   239.0
+  ],
+  "columnas": [
+   {
+    "clave": "34a",
+    "contenido": "Nombre científico",
+    "x": 2,
+    "ancho": 42,
+    "max_10cpi": 16,
+    "max_12cpi": 19
+   },
+   {
+    "clave": "34b",
+    "contenido": "Nombre común",
+    "x": 44,
+    "ancho": 42,
+    "max_10cpi": 16,
+    "max_12cpi": 19
+   },
+   {
+    "clave": "34c",
+    "contenido": "Tipo de producto",
+    "x": 86,
+    "ancho": 24,
+    "max_10cpi": 9,
+    "max_12cpi": 10
+   },
+   {
+    "clave": "34d",
+    "contenido": "Descripción",
+    "x": 110,
+    "ancho": 23,
+    "max_10cpi": 8,
+    "max_12cpi": 10
+   },
+   {
+    "clave": "34e",
+    "contenido": "Cantidad",
+    "x": 133,
+    "ancho": 18,
+    "max_10cpi": 6,
+    "max_12cpi": 8
+   },
+   {
+    "clave": "34f",
+    "contenido": "Unidad de medida",
+    "x": 151,
+    "ancho": 18,
+    "max_10cpi": 6,
+    "max_12cpi": 8
+   },
+   {
+    "clave": "34g",
+    "contenido": "Total",
+    "x": 169,
+    "ancho": 24,
+    "max_10cpi": 9,
+    "max_12cpi": 10
+   }
+  ]
+ }
+}

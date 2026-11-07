@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { Bike } from "@buleje/design-system/icons";
 import TrackingClient from "./TrackingClient";
 
 export const metadata: Metadata = {
@@ -15,19 +16,19 @@ export default async function TrackingPage({ params }: Props) {
   const { orderId } = await params;
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <main className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background">
       {/* Header de la página */}
-      <div className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <div className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <div className="mx-auto max-w-lg px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]">
-              <span className="text-base">🏍️</span>
+            <div className="flex h-9 w-9 items-center justify-center bg-[var(--accent)]">
+              <Bike className="h-5 w-5 text-white" strokeWidth={2} />
             </div>
             <div>
-              <h1 className="text-base font-bold text-gray-900 dark:text-white">
+              <h1 className="text-base font-bold text-[var(--text-primary)]">
                 Seguimiento de pedido
               </h1>
-              <p className="font-mono text-xs text-gray-500 dark:text-gray-400">
+              <p className="font-mono text-xs text-[var(--text-secondary)]">
                 #{orderId.slice(-8).toUpperCase()}
               </p>
             </div>
@@ -48,12 +49,12 @@ export default async function TrackingPage({ params }: Props) {
 function TrackingLoadingFallback() {
   return (
     <div className="animate-pulse space-y-4">
-      <div className="h-20 rounded-xl bg-gray-200 dark:bg-gray-800" />
-      <div className="h-12 rounded-xl bg-gray-200 dark:bg-gray-800" />
-      <div className="h-72 rounded-xl bg-gray-200 dark:bg-gray-800" />
+      <div className="h-20 bg-gray-200 dark:bg-gray-800" />
+      <div className="h-12 bg-gray-200 dark:bg-gray-800" />
+      <div className="h-72 bg-gray-200 dark:bg-gray-800" />
       <div className="grid grid-cols-2 gap-3">
-        <div className="h-16 rounded-xl bg-gray-200 dark:bg-gray-800" />
-        <div className="h-16 rounded-xl bg-gray-200 dark:bg-gray-800" />
+        <div className="h-16 bg-gray-200 dark:bg-gray-800" />
+        <div className="h-16 bg-gray-200 dark:bg-gray-800" />
       </div>
     </div>
   );

@@ -1,7 +1,13 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/lib/generated/prisma/client";
 import { getOrSet } from "@/lib/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import {
+  ordenarPorRelevancia,
+  type DisponibilidadBuscar,
+  type OrdenBuscar,
+} from "@/lib/marketplace/buscar-params";
 
 // ─── Tipos públicos ───────────────────────────────────────────────────────────
 
@@ -27,6 +33,8 @@ export type StoreFacet = {
   name: string;
   count: number;
   zone: string | null;
+  /** Estrellas de la tienda: si ninguna tiene, el filtro de calificación se esconde. */
+  rating: number;
 };
 
 export type CategoryFacet = {
@@ -40,11 +48,11 @@ export type SearchFilters = {
   stores?: string[];
   priceMin?: number;
   priceMax?: number;
-  inStock?: boolean;
+  /** Stock null = la tienda no lo controla (se hace al pedido): cuenta como disponible. */
+  availability?: DisponibilidadBuscar;
   minRating?: number;
   zone?: string | null;
-  deliveryTime?: "any" | "express" | "sameDay";
-  sort?: "relevance" | "price_asc" | "price_desc" | "rating" | "newest";
+  sort?: OrdenBuscar;
   limit?: number;
   offset?: number;
 };
@@ -54,7 +62,59 @@ export type SearchResult = {
   total: number;
   storesFacet: StoreFacet[];
   categoriesFacet: CategoryFacet[];
+  /** Zonas con tiendas publicadas (no depende del filtro de zona elegido). */
+  zonesFacet: string[];
 };
+
+/** Tope de la muestra para facetas y para ordenar por relevancia en memoria. */
+const MUESTRA_MAX = 2000;
+
+const SELECT_TARJETA = {
+  id: true,
+  retailPrice: true,
+  product: {
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      category: true,
+      unit: true,
+      stock: true,
+    },
+  },
+  store: {
+    select: { id: true, slug: true, name: true, zone: true, rating: true },
+  },
+} as const satisfies Prisma.StoreProductSelect;
+
+type FilaTarjeta = Prisma.StoreProductGetPayload<{
+  select: typeof SELECT_TARJETA;
+}>;
+
+function aProducto(r: FilaTarjeta): SearchProduct {
+  return {
+    storeProductId: r.id,
+    productId: r.product.id,
+    name: r.product.name,
+    price: toNumOrZero(r.retailPrice),
+    image: r.product.image || null,
+    unit: r.product.unit,
+    category: r.product.category,
+    stock: r.product.stock,
+    storeId: r.store.id,
+    storeSlug: r.store.slug,
+    storeName: r.store.name,
+    storeZone: r.store.zone,
+    storeRating: r.store.rating,
+  };
+}
+
+/** Disponibilidad en el WHERE (no en JS después del take: total y páginas cuadran). */
+function whereDisponibilidad(a: DisponibilidadBuscar | undefined): Prisma.ProductWhereInput | null {
+  if (a === "inStock") return { OR: [{ stock: null }, { stock: { gt: 0 } }] };
+  if (a === "outOfStock") return { stock: { lte: 0 } };
+  return null;
+}
 
 // ─── MarketplaceSearchDB ──────────────────────────────────────────────────────
 
@@ -62,7 +122,7 @@ export const MarketplaceSearchDB = {
   /**
    * Búsqueda global de productos en el marketplace.
    *
-   * Busca sobre Product.name, Product.category y Store.name (insensitive).
+   * Busca sobre Product.name y Product.category (insensitive).
    * Solo tiendas publicadas + storeProducts activos.
    *
    * Cache: 60s para resultados — la búsqueda es dinámica, corto TTL.
@@ -74,7 +134,7 @@ export const MarketplaceSearchDB = {
       stores,
       priceMin,
       priceMax,
-      inStock,
+      availability,
       minRating,
       zone,
       sort = "relevance",
@@ -86,40 +146,47 @@ export const MarketplaceSearchDB = {
 
     return getOrSet(cacheKey, 60, async () => {
       // ── Construir where ────────────────────────────────────────────────────
+      const termino = q?.trim() ?? "";
 
-      // Full-text match sobre nombre + category del producto (OR entre sí)
-      const productNameWhere = q?.trim()
-        ? {
-            OR: [
-              { name: { contains: q.trim(), mode: "insensitive" as const } },
-              { category: { contains: q.trim(), mode: "insensitive" as const } },
-            ],
-          }
-        : {};
-
-      const productWhere = {
-        active: true,
-        deletedAt: null,
-        ...productNameWhere,
-        ...(categories?.length && {
+      // Cada condición va en su propio AND: antes el OR de categorías pisaba
+      // al OR del texto buscado y «arroz» + una categoría ignoraba «arroz».
+      const condiciones: Prisma.ProductWhereInput[] = [];
+      if (termino) {
+        condiciones.push({
+          OR: [
+            { name: { contains: termino, mode: "insensitive" } },
+            { category: { contains: termino, mode: "insensitive" } },
+          ],
+        });
+      }
+      if (categories?.length) {
+        condiciones.push({
           OR: categories.map((c) => ({
             category: { contains: c, mode: "insensitive" as const },
           })),
-        }),
+        });
+      }
+      const disponibilidad = whereDisponibilidad(availability);
+      if (disponibilidad) condiciones.push(disponibilidad);
+
+      const productWhere: Prisma.ProductWhereInput = {
+        active: true,
+        deletedAt: null,
+        ...(condiciones.length && { AND: condiciones }),
       };
 
-      const orderBy =
+      // `id` desempata: con todas las tiendas en 0 estrellas el orden sin él
+      // cambiaba entre consultas y una página repetía productos de otra.
+      const orderBy: Prisma.StoreProductOrderByWithRelationInput[] =
         sort === "price_asc"
-          ? { retailPrice: "asc" as const }
+          ? [{ retailPrice: "asc" }, { id: "asc" }]
           : sort === "price_desc"
-            ? { retailPrice: "desc" as const }
+            ? [{ retailPrice: "desc" }, { id: "asc" }]
             : sort === "newest"
-              ? { id: "desc" as const }
-              : sort === "rating"
-                ? { store: { rating: "desc" as const } }
-                : { store: { rating: "desc" as const } }; // relevance fallback
+              ? [{ id: "desc" }]
+              : [{ store: { rating: "desc" } }, { id: "asc" }];
 
-      const where = {
+      const where: Prisma.StoreProductWhereInput = {
         isActive: true,
         product: productWhere,
         store: {
@@ -136,98 +203,70 @@ export const MarketplaceSearchDB = {
         }),
       };
 
+      // «Relevancia» con algo escrito se ordena en memoria sobre la muestra
+      // (ya se trae para las facetas): no hay viaje extra a la base.
+      const porRelevancia = sort === "relevance" && termino !== "";
+
       // ── Ejecutar en paralelo ────────────────────────────────────────────────
-      const [rows, total, allForFacets] = await Promise.all([
-        prisma.storeProduct.findMany({
-          where,
-          select: {
-            id: true,
-            retailPrice: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-                category: true,
-                unit: true,
-                stock: true,
-              },
-            },
-            store: {
-              select: {
-                id: true,
-                slug: true,
-                name: true,
-                zone: true,
-                rating: true,
-              },
-            },
-          },
-          orderBy,
-          take: limit,
-          skip: offset,
-        }),
+      const [pagina, total, muestra, zonas] = await Promise.all([
+        porRelevancia
+          ? Promise.resolve<FilaTarjeta[]>([])
+          : prisma.storeProduct.findMany({
+              where,
+              select: SELECT_TARJETA,
+              orderBy,
+              take: limit,
+              skip: offset,
+            }),
         prisma.storeProduct.count({ where }),
-        // Facets: contamos sobre una muestra acotada para no escanear toda la
-        // tabla en búsquedas populares. take: 2000 cubre catálogos normales;
-        // con >2000 StoreProducts activos los conteos de facets quedan
-        // aproximados — aceptable para filtros de UI (Brandon 2026-05-30, audit).
+        // Facets: muestra acotada para no escanear toda la tabla en búsquedas
+        // populares. Con >2000 StoreProducts los conteos quedan aproximados
+        // (Brandon 2026-05-30, audit) y la relevancia ordena las 2000 mejor
+        // calificadas.
         prisma.storeProduct.findMany({
           where,
-          select: {
-            storeId: true,
-            store: { select: { slug: true, name: true, zone: true } },
-            product: { select: { category: true } },
-          },
-          take: 2000,
+          select: SELECT_TARJETA,
+          orderBy: [{ store: { rating: "desc" } }, { id: "asc" }],
+          take: MUESTRA_MAX,
+        }),
+        prisma.store.findMany({
+          where: { isPublished: true, zone: { not: null } },
+          select: { zone: true },
+          distinct: ["zone"],
+          orderBy: { zone: "asc" },
         }),
       ]);
 
-      // ── Mapear productos ────────────────────────────────────────────────────
-      const products: SearchProduct[] = rows
-        .filter((r) => {
-          if (!inStock) return true;
-          return (r.product.stock ?? 0) > 0;
-        })
-        .map((r) => ({
-          storeProductId: r.id,
-          productId: r.product.id,
-          name: r.product.name,
-          price: toNumOrZero(r.retailPrice),
-          image: r.product.image || null,
-          unit: r.product.unit,
-          category: r.product.category,
-          stock: r.product.stock,
-          storeId: r.store.id,
-          storeSlug: r.store.slug,
-          storeName: r.store.name,
-          storeZone: r.store.zone,
-          storeRating: r.store.rating,
-        }));
+      const filas = porRelevancia
+        ? ordenarPorRelevancia(muestra, termino, (r) => ({
+            nombre: r.product.name,
+            rating: r.store.rating,
+          })).slice(offset, offset + limit)
+        : pagina;
+      const products = filas.map(aProducto);
 
       // ── Facets de tiendas ───────────────────────────────────────────────────
       const storeMap = new Map<string, StoreFacet>();
-      for (const r of allForFacets) {
-        const existing = storeMap.get(r.storeId);
+      for (const r of muestra) {
+        const existing = storeMap.get(r.store.id);
         if (existing) {
           existing.count += 1;
         } else {
-          storeMap.set(r.storeId, {
-            id: r.storeId,
+          storeMap.set(r.store.id, {
+            id: r.store.id,
             slug: r.store.slug,
             name: r.store.name,
             count: 1,
             zone: r.store.zone,
+            rating: r.store.rating,
           });
         }
       }
-      const storesFacet = Array.from(storeMap.values()).sort(
-        (a, b) => b.count - a.count,
-      );
+      const storesFacet = Array.from(storeMap.values()).sort((a, b) => b.count - a.count);
 
       // ── Facets de categorías ────────────────────────────────────────────────
       const catMap = new Map<string, number>();
-      for (const r of allForFacets) {
+      for (const r of muestra) {
         const cat = r.product.category;
         catMap.set(cat, (catMap.get(cat) ?? 0) + 1);
       }
@@ -235,7 +274,9 @@ export const MarketplaceSearchDB = {
         .map(([category, count]) => ({ category, count }))
         .sort((a, b) => b.count - a.count);
 
-      return { products, total, storesFacet, categoriesFacet };
+      const zonesFacet = zonas.map((z) => z.zone).filter((z): z is string => !!z);
+
+      return { products, total, storesFacet, categoriesFacet, zonesFacet };
     });
   },
 

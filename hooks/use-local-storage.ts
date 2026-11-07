@@ -3,7 +3,7 @@
  * Provides a React-friendly API for localStorage with automatic JSON serialization
  */
 
-import { useState, useEffect, useCallback, Dispatch, SetStateAction } from "react";
+import { useState, useEffect, useCallback, useRef, Dispatch, SetStateAction } from "react";
 
 /**
  * Custom hook for managing localStorage with TypeScript support
@@ -52,13 +52,23 @@ export function useLocalStorage<T>(
     }
   });
 
+  /* El último valor, para la forma funcional (`set(p => …)`): con el
+     `storedValue` del cierre, dos llamadas en el mismo tick leían el valor
+     del render anterior y la segunda pisaba a la primera (2026-10-09: cinco
+     flechas seguidas en el asa de las cámaras movían una sola vez). */
+  const ultimoRef = useRef(storedValue);
+  useEffect(() => {
+    ultimoRef.current = storedValue;
+  }, [storedValue]);
+
   // Update localStorage when state changes
   const setValue: Dispatch<SetStateAction<T>> = useCallback(
     (value: SetStateAction<T>) => {
       try {
         // Allow value to be a function (same API as useState)
         const valueToStore =
-          value instanceof Function ? value(storedValue) : value;
+          value instanceof Function ? value(ultimoRef.current) : value;
+        ultimoRef.current = valueToStore;
 
         setStoredValue(valueToStore);
 
@@ -73,10 +83,13 @@ export function useLocalStorage<T>(
           );
         }
       } catch (error) {
-        console.error(`Error setting localStorage key "${key}":`, error);
+        // warn y no error: el estado YA cambió arriba y la pantalla sigue
+        // andando; lo único que se pierde es recordarlo (modo privado, cuota
+        // llena). No es una falla de la app que haya que perseguir.
+        console.warn(`No se pudo guardar "${key}" en localStorage:`, error);
       }
     },
-    [key, storedValue, isClient]
+    [key, isClient]
   );
 
   // Remove value from localStorage
@@ -166,11 +179,18 @@ export function useSessionStorage<T>(
     }
   });
 
+  /* Igual que en `useLocalStorage`: la forma funcional lee el último valor, no el del cierre. */
+  const ultimoRef = useRef(storedValue);
+  useEffect(() => {
+    ultimoRef.current = storedValue;
+  }, [storedValue]);
+
   const setValue: Dispatch<SetStateAction<T>> = useCallback(
     (value: SetStateAction<T>) => {
       try {
         const valueToStore =
-          value instanceof Function ? value(storedValue) : value;
+          value instanceof Function ? value(ultimoRef.current) : value;
+        ultimoRef.current = valueToStore;
 
         setStoredValue(valueToStore);
 
@@ -181,7 +201,7 @@ export function useSessionStorage<T>(
         console.error(`Error setting sessionStorage key "${key}":`, error);
       }
     },
-    [key, storedValue, isClient]
+    [key, isClient]
   );
 
   const remove = useCallback(() => {

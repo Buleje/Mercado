@@ -12,7 +12,7 @@
  * Budget total: <8s. Si algún paso tarda más, lo dispara fire-and-forget.
  * Exit 0 always (non-blocking).
  */
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync, readdirSync, openSync, readFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -37,9 +37,41 @@ function checkSuspiciousStashes() {
   } catch { return null; }
 }
 const BASE = "http://localhost:3000";
+
+// 01-11: con WSL «mirrored» un puerto CERRADO no contesta «rechazado»: el fetch se cuelga hasta su tope (3 s medidos
+// en cada sesión nueva, con el panel apagado a propósito). Antes de preguntar por HTTP se mira en /proc/net si algo
+// escucha en el puerto (≈1 ms). Si /proc no se puede leer, se sigue al fetch como antes.
+function nadieEscucha(puerto) {
+  const hex = puerto.toString(16).toUpperCase().padStart(4, "0");
+  try {
+    for (const f of ["/proc/net/tcp", "/proc/net/tcp6"]) {
+      if (!existsSync(f)) continue;
+      const filas = readFileSync(f, "utf8").split("\n").slice(1);
+      // columnas: sl local_address rem_address st … — st 0A = LISTEN
+      if (filas.some((l) => { const c = l.trim().split(/\s+/); return c[1]?.endsWith(`:${hex}`) && c[3] === "0A"; })) return false;
+    }
+    return true;
+  } catch { return false; }
+}
 const TENANT = "main";
 const HOME = process.env.HOME ?? "";
-const CHROMIUM = join(HOME, ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome");
+// Resuelve dinámicamente el chromium más nuevo instalado por Playwright
+// (el path versionado chromium-NNNN cambia con cada upgrade de Playwright).
+const CHROMIUM = (() => {
+  const base = join(HOME, ".cache/ms-playwright");
+  try {
+    const dirs = readdirSync(base)
+      .filter((d) => /^chromium-\d+$/.test(d))
+      .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
+    for (const d of dirs) {
+      for (const sub of ["chrome-linux64/chrome", "chrome-linux/chrome"]) {
+        const p = join(base, d, sub);
+        if (existsSync(p)) return p;
+      }
+    }
+  } catch { /* cae al path inexistente → reporta not_installed */ }
+  return join(base, "chromium-none/chrome-linux64/chrome");
+})();
 const DEV_LOG = "/tmp/dev-server.log";
 
 const lines = [];
@@ -47,10 +79,13 @@ const log = (s) => lines.push(s);
 
 // ── 1. Dev server status ────────────────────────────────────────────────
 async function checkDevServer() {
+  if (nadieEscucha(Number(new URL(BASE).port) || 80)) return "down";
   try {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 3000);
-    const res = await fetch(`${BASE}/`, { signal: ctrl.signal, redirect: "manual" });
+    /* `/login` y no `/` (01-11): la portada bajaba ~72 KB de la base en cada sesión nueva cuando su
+       caché había vencido; el login no consulta la base (0 B medido) y el autosanador ya lo pide. */
+    const res = await fetch(`${BASE}/login`, { signal: ctrl.signal, redirect: "manual" });
     clearTimeout(tid);
     if (res.status === 200 || res.status === 307) return "running";
     return "unknown_status_" + res.status;
@@ -67,7 +102,9 @@ async function loginAdmin() {
     const res = await fetch(`${BASE}/api/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-tenant-id": TENANT },
-      body: JSON.stringify({ username: "qaadmin", password: "Qa-admin-1234" }),
+      /* `tenantSlug` (04-11): qaadmin tiene varios negocios; sin él el login responde 200 con
+         `requiresTenantChoice` y sólo la cookie csrf, y todo curl de los ayudantes daba 401. */
+      body: JSON.stringify({ username: "qaadmin", password: "Qa-admin-1234", tenantSlug: TENANT }),
       signal: ctrl.signal,
     });
     clearTimeout(tid);
@@ -77,6 +114,7 @@ async function loginAdmin() {
     const rawCookies = setCookie.length > 0 ? setCookie : [res.headers.get("set-cookie") ?? ""];
     const pairs = rawCookies.map((c) => c.split(";")[0]).filter(Boolean);
     const cookieHeader = pairs.join("; ");
+    if (!/buleje-admin-sess=/.test(cookieHeader)) return { ok: false, error: "login sin cookie de sesión (¿requiresTenantChoice?)" };
     const csrfMatch = cookieHeader.match(/csrf-token=([^;]+)/);
     const csrf = csrfMatch ? csrfMatch[1] : "";
 
@@ -98,8 +136,10 @@ async function loginAdmin() {
 }
 
 // ── 3. Health rápido ─────────────────────────────────────────────────────
-async function quickHealth() {
-  const routes = ["/", "/marketplace", "/admin"];
+/* Con el panel compilado, `/login` en vez de `/`: la portada baja ~72 KB de la base cada vez que
+   vence su caché y el login 0 B (medido 01-11); igual prueba que el servidor contesta. */
+async function quickHealth(modoTrabajo = false) {
+  const routes = [modoTrabajo ? "/login" : "/", "/marketplace", "/admin"];
   const results = await Promise.all(routes.map(async (path) => {
     try {
       const ctrl = new AbortController();
@@ -164,18 +204,54 @@ async function main() {
 
   const devStatus = await checkDevServer();
   log(`Dev server (${BASE}): ${devStatus === "running" ? "✅ running" : `⚠️ ${devStatus}`}`);
+  // Modo trabajo (`~/.local/bin/panel-trabajo`, 27-09): el :3000 es el panel COMPILADO → un cambio de código no se ve.
+  const modoTrabajo = devStatus === "running" && spawnSync("pgrep", ["-f", "next start -p 3000"]).status === 0;
+  if (modoTrabajo) {
+    log("   🟢 MODO TRABAJO (panel compilado): los cambios de código NO se ven hasta correr `panel-desarrollo`");
+  }
 
+  // Panel sólo cuando se pide (Brandon 26-10): en local ya NO se prende al abrir cada sesión
+  // (2,4-5,8 GB aunque el pedido no toque el panel). Lo prenden `panel`, el ícono «Prender panel»
+  // o qa-capturas al verificar. BSM_DEV_AL_INICIAR=1 vuelve al arranque automático; el contenedor
+  // recién clonado (sin node_modules) sigue instalando dependencias en el bloque de abajo.
+  const sinDepsAlInicio = !existsSync(join(projectRoot, "node_modules", ".bin"));
+  if (devStatus === "down" && !sinDepsAlInicio && process.env.BSM_DEV_AL_INICIAR !== "1") {
+    log("   💤 apagado a propósito: se prende con `panel`, el ícono «Prender panel» o al verificar con qa-capturas");
+  }
   // Si dev no arranca, lo lanzamos en BG fire-and-forget
-  if (devStatus === "down") {
+  else if (devStatus === "down") {
     try {
-      const child = spawn("npm", ["run", "dev"], {
+      // stdout/stderr a archivo, NO a /dev/null: si el server arranca roto
+      // (DB caida, Prisma desincronizado, puerto tomado) el error tiene que
+      // quedar en algun lado. Con /dev/null el fallo es indiagnosticable —
+      // fricción real 2026-09-07: login imposible, health 503, cero rastro.
+      let stdio = ["ignore", "ignore", "ignore"];
+      try {
+        const fd = openSync(DEV_LOG, "a");
+        stdio = ["ignore", fd, fd];
+      } catch {
+        // sin permiso de escritura: seguimos como antes
+      }
+      // Contenedor en la nube recién clonado (07-10): sin node_modules el dev
+      // muere con ENOENT y la sesión gasta turnos en descubrirlo; npm ci a
+      // secas también falla (engines pide Node 24, el contenedor trae 22).
+      // Instalar + generar Prisma en BG deja listos typecheck y vitest. Sin
+      // .env.local no hay base: no tiene sentido levantar el dev.
+      const sinDeps = !existsSync(join(projectRoot, "node_modules", ".bin"));
+      const conEnv = existsSync(join(projectRoot, ".env.local")) || existsSync(join(projectRoot, ".env"));
+      const cmd = sinDeps
+        ? `npm ci --ignore-scripts --no-audit --no-fund --engine-strict=false && DATABASE_URL="\${DATABASE_URL:-postgresql://x:y@localhost/z}" npx prisma generate${conEnv ? " && npm run dev" : ""}`
+        : "npm run dev";
+      const child = spawn("bash", ["-c", cmd], {
         cwd: projectRoot,
         detached: true,
-        stdio: ["ignore", "ignore", "ignore"],
+        stdio,
         env: process.env,
       });
       child.unref();
-      log(`   → npm run dev disparado en BG (pid ${child.pid})`);
+      log(sinDeps
+        ? `   → sin node_modules: npm ci + prisma generate en BG (pid ${child.pid})${conEnv ? " y después dev" : ", sin .env no hay dev"} · log: ${DEV_LOG}`
+        : `   → npm run dev disparado en BG (pid ${child.pid}) · log: ${DEV_LOG}`);
     } catch (err) {
       log(`   → no pude arrancar dev: ${err.message?.slice(0, 60)}`);
     }
@@ -183,7 +259,7 @@ async function main() {
 
   // Solo si dev está vivo intentamos auth + health
   if (devStatus === "running") {
-    const [auth, health] = await Promise.all([loginAdmin(), quickHealth()]);
+    const [auth, health] = await Promise.all([loginAdmin(), quickHealth(modoTrabajo)]);
     log(`Auth qaadmin: ${auth.ok ? `✅ csrf=${auth.csrfPrefix}... persisted /tmp/bsm-auth.env` : `⚠️ ${auth.error ?? auth.status}`}`);
     if (health.failing === 0) {
       log(`Health: ✅ ${health.results.length}/${health.results.length} rutas`);
@@ -191,11 +267,34 @@ async function main() {
       log(`Health: ⚠️ ${health.failing} ruta(s) fallando`);
       for (const [p, s] of health.results) log(`   · ${p} → ${s}`);
     }
-    const warmedCount = warmupHeavyRoutesAsync();
-    log(`Warmup: 🔥 ${warmedCount} rutas pesadas disparadas en BG (Turbopack compila mientras trabajás)`);
+    /* Tráfico de Supabase (01-11, plan free pasado de 5 GB): el calentamiento sólo sirve para que
+       Turbopack compile en `next dev`. Con el panel compilado no compila nada y cada sesión bajaba
+       ~120 KB de la base (medido: /tiendas 40 KB, /marketplace/buscar 29, mi-pollo 26, producto 27). */
+    if (modoTrabajo) {
+      log("Warmup: ⏭️ omitido (panel compilado: no hay nada que compilar y ahorra ~120 KB de la base por sesión)");
+    } else {
+      const warmedCount = warmupHeavyRoutesAsync();
+      log(`Warmup: 🔥 ${warmedCount} rutas pesadas disparadas en BG (Turbopack compila mientras trabajás)`);
+    }
   }
 
   log(`Chromium: ${chromiumStatus()}`);
+
+  // Tope de RAM del kernel para Bash/Monitor (CLAUDE_CODE_TOOL_MEMORY_LIMIT en settings.json).
+  // Solo aplica si claude corre en un scope de usuario delegado (función `claude` de ~/.bashrc):
+  // en /init.scope el CLI no puede crear el cgroup (EACCES) y corre sin tope. Medido 2026-09-14.
+  const topeRam = process.env.CLAUDE_CODE_TOOL_MEMORY_LIMIT;
+  if (topeRam) {
+    let enInit = false;
+    try {
+      enInit = readFileSync("/proc/self/cgroup", "utf8").trim().endsWith("/init.scope");
+    } catch { /* sin /proc: no se sabe, no se avisa */ }
+    log(
+      enInit
+        ? `Tope RAM Bash: ⚠️ inactivo — claude corre en /init.scope; abrilo desde una terminal nueva (función en ~/.bashrc)`
+        : `Tope RAM Bash: 🧱 ${topeRam} compartido (kernel; un comando que lo pase muere con exit 137 sin mensaje)`,
+    );
+  }
 
   // Watchdog: mata Chromiums/tsc huerfanos cada 60s. Previene bloqueo total de WSL.
   try {

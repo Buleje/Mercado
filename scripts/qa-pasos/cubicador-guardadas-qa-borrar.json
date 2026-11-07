@@ -1,0 +1,3 @@
+[
+  {"eval": "(async()=>{/* Borra TODAS las guardadas «ZZQA…» de prueba (las de cubicador-guardada-qa y las sembradas a mano). */const c=decodeURIComponent(document.cookie.match(/csrf-token=([^;]+)/)?.[1]||'');const l=await (await fetch('/api/admin/forestal/cubicaciones',{credentials:'include'})).json();const ids=(l.cubicaciones||[]).filter((x)=>/^ZZ-?QA/i.test(x.nombre)).map((x)=>x.id);const st=[];for(const id of ids){const r=await fetch('/api/admin/forestal/cubicaciones?id='+encodeURIComponent(id),{method:'DELETE',headers:{'x-csrf-token':c},credentials:'include'});st.push(r.status)}localStorage.removeItem('zzqa-id');return {borradas:ids.length,estados:st}})()"}
+]

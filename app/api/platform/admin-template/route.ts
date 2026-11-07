@@ -96,7 +96,9 @@ export async function GET(req: NextRequest) {
     const rawTenant = await resolveTenantIdForRoute(req);
     const tenantId = await normalizeTenantStorageId(rawTenant);
     if (tenantId) {
-      const perTenant = await PlatformSettingsDB.get<TenantModuleOverrides>(
+      // Casi ningún negocio tiene ajuste propio: la ausencia también se cachea
+      // (la escriben sólo las rutas de module-overrides, vía set/delete).
+      const perTenant = await PlatformSettingsDB.getCacheandoAusencia<TenantModuleOverrides>(
         tenantOverrideKey(tenantId),
       );
       return NextResponse.json({ template: mergeTenantOverrides(tpl, perTenant) });

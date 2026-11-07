@@ -427,7 +427,7 @@ export const SETUP_ITEMS: SetupItem[] = [
     id: "td-025-hitl-modal",
     title: "📋 Sesión: Human-in-the-Loop modal para tools high-risk",
     description:
-      "Excel Agentes IA práctica #10. Hoy el agente ejecuta cualquier tool sin gate previo. Requiere: definir lista de tools high-risk (comprar, rematar, aplicar descuento >20%, crear combo) en tool-definitions.ts + modal de confirmación en AICommandCenter.tsx antes de ejecutar esos tools.",
+      "Excel Agentes IA práctica #10. Hoy el agente ejecuta cualquier tool sin gate previo. Requiere: definir lista de tools high-risk (comprar, rematar, aplicar descuento >20%, crear combo) en tool-definitions.ts + modal de confirmación en Comandos IA › Lo que hizo la IA antes de ejecutar esos tools.",
     priority: "high",
     category: "dev",
     estimatedMinutes: 0,
@@ -436,7 +436,7 @@ export const SETUP_ITEMS: SetupItem[] = [
       "Agregar campo 'requiresApproval: boolean' a las tool definitions en lib/agents/tool-definitions.ts",
       "Marcar los tools críticos: comprar_stock, rematar_producto, aplicar_descuento_grande, crear_combo, cancelar_pedido_masivo",
       "En el orchestrator: interceptar tools con requiresApproval y devolver un 'pendingApproval' event",
-      "En AICommandCenter.tsx: escuchar pendingApproval y mostrar modal con botones Aprobar / Rechazar",
+      "En Comandos IA › Lo que hizo la IA: escuchar pendingApproval y mostrar modal con botones Aprobar / Rechazar",
       "Al aprobar: emit 'approved' event al orchestrator para que continúe",
       "Agregar tests de los 5 tools críticos",
       "Mueve Excel Agentes IA práctica #10 de ⚠️ a ✅",

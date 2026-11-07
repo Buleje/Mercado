@@ -58,6 +58,10 @@ export interface MarketplaceStore {
   searchBoost?: boolean;
   /** Beneficio "Banner propio" → promo banner de la tienda en /tiendas. */
   ownBanner?: boolean;
+  /** Fiado Digital — la tienda acepta "compra ahora, paga después". Badge + filtro. */
+  acceptsFiado?: boolean;
+  /** Zonas de cobertura de reparto (multi-zona, store-extras). "Llega a N zonas". */
+  coverageZones?: string[];
   // ── Backfill marketplace (TS-Sprint5) — opcionales para no romper consumers ──
   paymentMethods?: string[];
   minOrderAmount?: number;
@@ -199,7 +203,7 @@ export function useMarketplaceGeo(
         setGeoLoading(false);
         setProductFilters((prev) => ({ ...prev, nearbyEnabled: false }));
         alert(
-          "No pudimos obtener tu ubicación. Para ver tiendas cerca, permití la ubicación en la configuración de tu navegador.",
+          "No pudimos obtener tu ubicación. Para ver tiendas cerca, permite la ubicación en la configuración de tu navegador.",
         );
       },
       { timeout: 8000 },

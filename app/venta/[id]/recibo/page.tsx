@@ -1,203 +1,88 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Printer, ArrowLeft, Loader2 } from "@buleje/design-system/icons";
 import Link from "next/link";
+import { Printer, ArrowLeft, Loader2 } from "@buleje/design-system/icons";
+import type { VentaGuardada } from "@/components/admin/pos/pos-shared";
+import { entradaDesdeVenta } from "@/components/admin/pos/recibo/entrada-recibo";
+import { useReciboVenta } from "@/components/admin/pos/recibo/use-recibo-venta";
+import ReciboPapel, { SelectorFormatoRecibo } from "@/components/admin/pos/recibo/ReciboPapel";
 
-type Item = { name: string; price: number; quantity: number; unit: string };
-type Sale = {
-  id: string;
-  items: Item[];
-  total: number;
-  payment: string;
-  amountPaid: number;
-  change: number;
-  createdAt: string;
-};
-type Settings = {
-  businessName?: string;
-  businessPhone?: string;
-  businessAddress?: string;
-};
-
-const PAY_LABELS: Record<string, string> = {
-  efectivo: "Efectivo",
-  yape: "Yape",
-  plin: "Plin",
-  tarjeta: "Tarjeta",
-};
-
+/**
+ * Reimprimir el recibo de una venta del POS (historial, «último ticket»). Usa
+ * el mismo modelo y la misma hoja que el modal de venta completada: 80 mm,
+ * 58 mm o A4, con el formato que el negocio dejó elegido.
+ */
 export default function ReciboPOSPage() {
   const { id } = useParams<{ id: string }>();
-  const [sale, setSale] = useState<Sale | null>(null);
-  const [settings, setSettings] = useState<Settings>({});
-  const [loading, setLoading] = useState(true);
+  const [venta, setVenta] = useState<VentaGuardada | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/sales/${encodeURIComponent(id)}`).then((r) =>
-        r.ok ? r.json() : Promise.reject("Venta no encontrada")
-      ),
-      fetch("/api/settings")
-        .then((r) => (r.ok ? r.json() : {}))
-        .catch(() => ({})),
-    ])
-      .then(([s, cfg]) => {
-        setSale(s);
-        setSettings(cfg);
-      })
-      .catch((e) => setError(typeof e === "string" ? e : "Error al cargar"))
-      .finally(() => setLoading(false));
+    let vivo = true;
+    fetch(`/api/sales/${encodeURIComponent(id)}`, { credentials: "include" })
+      .then((r) => (r.ok ? (r.json() as Promise<VentaGuardada>) : Promise.reject(new Error(r.status === 404 ? "No encontramos esa venta" : "No se pudo cargar la venta"))))
+      .then((v) => { if (vivo) setVenta(v); })
+      .catch((e: unknown) => { if (vivo) setError(e instanceof Error ? e.message : "No se pudo cargar la venta"); });
+    return () => { vivo = false; };
   }, [id]);
 
-  if (loading) {
+  if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[var(--surface-sunken)]">
+        <p className="text-base text-[var(--text-secondary)]">{error}</p>
+        <Link href="/admin?tab=ventas-caja&vista=pos" className="text-base font-semibold text-[var(--accent-ink)] underline">Volver al POS</Link>
       </div>
     );
   }
-
-  if (error || !sale) {
+  if (!venta) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-3">
-        <p className="text-gray-500 text-sm">{error || "No encontrada"}</p>
-        <Link href="/admin" className="text-sm text-primary underline">
-          Volver al admin
-        </Link>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--surface-sunken)]" role="status" aria-label="Cargando el recibo">
+        <Loader2 className="h-6 w-6 animate-spin text-[var(--text-tertiary)]" />
       </div>
     );
   }
+  return <ReciboDeLaVenta venta={venta} />;
+}
 
-  const date = new Date(sale.createdAt);
-  const dateStr = date.toLocaleDateString("es-PE", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  const timeStr = date.toLocaleTimeString("es-PE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const biz = settings.businessName || "Buleje";
+function ReciboDeLaVenta({ venta }: { venta: VentaGuardada }) {
+  const entrada = useMemo(
+    () =>
+      entradaDesdeVenta({
+        ventaId: venta.id,
+        detalles: { items: [], total: 0, payment: venta.payment ?? "", venta },
+        atendio: null,
+        respaldo: { total: 0, metodo: venta.payment ?? "", vuelto: null, fecha: new Date(venta.createdAt ?? Date.now()) },
+      }),
+    [venta],
+  );
+  const recibo = useReciboVenta(entrada);
+  const { modelo } = recibo;
 
   return (
-    <div className="min-h-screen bg-gray-100 print:bg-white">
-      {/* Barra de acciones — oculta al imprimir */}
-      <div className="print:hidden sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between z-10">
-        <Link
-          href="/admin"
-          className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-        >
+    <div className="min-h-screen bg-[var(--surface-sunken)]">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3">
+        <Link href="/admin?tab=ventas-caja&vista=pos" className="flex items-center gap-1 text-base text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
           <ArrowLeft className="h-4 w-4" /> Volver al POS
         </Link>
+        <div className="w-full sm:w-[26rem]">
+          <SelectorFormatoRecibo valor={recibo.formato} onChange={recibo.setFormato} />
+        </div>
         <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
+          type="button"
+          onClick={recibo.imprimir}
+          disabled={recibo.cargando}
+          className="flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
         >
-          <Printer className="h-4 w-4" /> Imprimir ticket
+          <Printer className="h-5 w-5" /> Imprimir {modelo.nombreCorto.toLowerCase()}
         </button>
       </div>
-
-      {/* Ticket */}
-      <div className="max-w-sm mx-auto bg-white my-6 print:my-0 print:shadow-none shadow-lg rounded-lg print:rounded-none overflow-hidden">
-        <div className="p-5 print:p-3">
-          {/* Encabezado */}
-          <div className="text-center border-b border-dashed border-gray-300 pb-3 mb-3">
-            <h1 className="text-base font-bold text-gray-900">{biz}</h1>
-            {settings.businessAddress && (
-              <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5">
-                {settings.businessAddress}
-              </p>
-            )}
-            {settings.businessPhone && (
-              <p className="text-[length:var(--ts-2xs)] text-gray-500">
-                Tel: {settings.businessPhone}
-              </p>
-            )}
-            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1.5">
-              TICKET DE VENTA
-            </p>
-          </div>
-
-          {/* Info de la venta */}
-          <div className="grid grid-cols-2 gap-y-0.5 text-[length:var(--ts-2xs)] text-gray-600 mb-3">
-            <span>Ticket:</span>
-            <span className="text-right font-mono">
-              #{sale.id.slice(0, 12).toUpperCase()}
-            </span>
-            <span>Fecha:</span>
-            <span className="text-right">{dateStr}</span>
-            <span>Hora:</span>
-            <span className="text-right">{timeStr}</span>
-            <span>Pago:</span>
-            <span className="text-right capitalize">
-              {PAY_LABELS[sale.payment] ?? sale.payment}
-            </span>
-          </div>
-
-          {/* Tabla de items */}
-          <table className="w-full text-[length:var(--ts-2xs)] mb-3">
-            <thead>
-              <tr className="border-t border-b border-gray-200 text-gray-500">
-                <th className="text-left py-1 font-medium">Producto</th>
-                <th className="text-center py-1 font-medium w-8">Cant</th>
-                <th className="text-right py-1 font-medium w-14">P.U.</th>
-                <th className="text-right py-1 font-medium w-14">Subt.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sale.items.map((item, i) => (
-                <tr key={i} className="border-b border-gray-100">
-                  <td className="py-1 text-gray-700">{item.name}</td>
-                  <td className="py-1 text-center text-gray-600">
-                    {item.quantity}
-                  </td>
-                  <td className="py-1 text-right text-gray-600">
-                    {Number(item.price).toFixed(2)}
-                  </td>
-                  <td className="py-1 text-right font-medium text-gray-800">
-                    {(item.price * item.quantity).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Totales */}
-          <div className="border-t border-dashed border-gray-300 pt-2 space-y-0.5 text-xs">
-            <div className="flex justify-between font-bold text-gray-900">
-              <span>TOTAL</span>
-              <span>S/{Number(sale.total).toFixed(2)}</span>
-            </div>
-            {sale.payment === "efectivo" && (
-              <>
-                <div className="flex justify-between text-gray-600">
-                  <span>Pagó con</span>
-                  <span>S/{Number(sale.amountPaid).toFixed(2)}</span>
-                </div>
-                {sale.change > 0 && (
-                  <div className="flex justify-between text-gray-600">
-                    <span>Vuelto</span>
-                    <span>S/{Number(sale.change).toFixed(2)}</span>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Pie */}
-          <div className="mt-4 text-center border-t border-dashed border-gray-300 pt-3">
-            <p className="text-[length:var(--ts-2xs)] text-gray-400">
-              ¡Gracias por su compra!
-            </p>
-            <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">
-              {biz} — Pucallpa, Perú
-            </p>
-          </div>
-        </div>
+      {modelo.faltantes.length > 0 && (
+        <p className="mx-auto mt-4 max-w-3xl px-4 text-sm font-medium text-[var(--data-warning-ink)]">Falta cargar: {modelo.faltantes.join(", ")}.</p>
+      )}
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        <ReciboPapel html={recibo.html} formato={recibo.formato} titulo={`${modelo.nombreCorto} ${modelo.numero}`} />
       </div>
     </div>
   );

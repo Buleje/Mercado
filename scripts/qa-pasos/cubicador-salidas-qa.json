@@ -1,0 +1,17 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=forestal-herramientas&vista=cubicador&sub=guardadas",
+  "pasos": [
+    {"preset": "cubicador-guardadas-qa-borrar"},
+    {"preset": "cubicador-guardada-qa"},
+    {"click": "article[aria-label='ZZQA guardada'] [data-accion=abrir-salidas]"},
+    {"esperar": "[data-vista=cubicador-salidas]"},
+    {"llenar": ["[data-vista=cubicador-salidas] [data-grupo^='tornillo|'] input[inputmode=numeric]", "2"]},
+    {"llenar": ["#cub-salida-vehiculo", "Camión"]},
+    {"llenar": ["#cub-salida-gtf", "001-0000120"]},
+    {"tecla": "Tab"},
+    {"esperar": "[data-aviso-guia='llenado']"},
+    {"click": "[data-accion=guardar-viaje]"},
+    {"esperar": "[data-vista=cubicador-salidas] [data-lista=viajes] [data-accion=papel-viaje]"}
+  ]
+}

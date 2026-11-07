@@ -154,7 +154,7 @@ export default function DeliveryEstimation({
                   <div className={cn(
                     "h-6 w-6 rounded-full flex items-center justify-center transition-colors",
                     isFirst
-                      ? "bg-primary/20 text-primary"
+                      ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "bg-gray-100 dark:bg-surface text-gray-300 dark:text-gray-600"
                   )}>
                     <Icon className="h-3 w-3" />
@@ -188,7 +188,7 @@ export default function DeliveryEstimation({
           </span>
         )}
         {eta.isToday && deliverySlot === "lo-antes-posible" && (
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-2 py-1 rounded-full">
             <Zap className="h-3 w-3" />
             Entrega express
           </span>

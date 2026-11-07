@@ -1,0 +1,18 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=documentos&vista=drive&sub=all#documentos",
+ "ls": { "doc-view-mode": "grandes", "doc-vista-previa": "0" },
+ "pasos": [
+  { "esperar": "[data-qa=explorador] [data-clave^='c:']" },
+  { "esperar": 800 },
+  { "eval": "(()=>{const f=document.querySelector(\"[data-qa=explorador] [data-clave^='c:']\");const r=f.getBoundingClientRect();f.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:r.left+20,clientY:r.top+20,button:2}));return f.textContent.trim().slice(0,30)})()" },
+  { "esperar": 600 },
+  { "eval": "(()=>{const t=[...document.querySelectorAll('[role=menuitem]')].find(e=>/Ícono y archivador/.test(e.textContent||''));t?.click();return !!t})()" },
+  { "esperar": "[data-qa=carpeta-ubicacion-fisica]" },
+  { "esperar": 600 },
+  { "eval": "(()=>{const d=document.querySelector('[role=dialog]');const i=document.querySelector('[data-qa=carpeta-ubicacion-fisica]');const r=i.getBoundingClientRect();return {sw:document.documentElement.scrollWidth,iw:innerWidth,izq:Math.round(r.left),der:Math.round(r.right),dh:d.scrollHeight,ch:d.clientHeight}})()" },
+  { "captura": "carpeta-donde" },
+  { "tecla": "Escape" },
+  { "esperar": 400 }
+ ]
+}

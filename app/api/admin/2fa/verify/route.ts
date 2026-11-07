@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
       lastUsed,
     });
     return NextResponse.json(
-      { error: "Código ya consumido — esperá el siguiente (refresh tu app)" },
+      { error: "Código ya consumido — espera el siguiente (refresh tu app)" },
       { status: 422 },
     );
   }

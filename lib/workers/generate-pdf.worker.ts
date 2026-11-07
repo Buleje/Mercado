@@ -10,6 +10,32 @@
 
 import { logger } from "@/lib/logger";
 import { queue, PdfPayloadSchema, type JobEnvelope } from "@/lib/queue";
+import { membreteParaPdf } from "@/lib/documentos/membrete-servidor";
+import {
+  altoDelPie,
+  datosDelMembrete,
+  dibujarMembrete,
+  dibujarMembreteBreve,
+  dibujarPies,
+  formatoDeImagen,
+  type DatosMembrete,
+  type MembreteDocumento,
+} from "@/lib/documentos/membrete-pdf";
+
+type JsPdf = InstanceType<typeof import("jspdf").jsPDF>;
+
+/** El negocio del PDF (nombre, RUC, dirección, logo). Sin él (o si el logo falla) sale el monograma: nunca rompe el trabajo. */
+async function negocioDelPdf(tenantId: string): Promise<MembreteDocumento | null> {
+  try {
+    const { membrete, logo } = await membreteParaPdf(tenantId);
+    return { ...membrete, logo: logo ? { dataUrl: `data:image/png;base64,${Buffer.from(logo.bytes).toString("base64")}`, ancho: logo.ancho, alto: logo.alto } : null };
+  } catch (err) {
+    logger.warn("[worker:generate-pdf] sin membrete del negocio", { tenantId, error: String(err) });
+    return null;
+  }
+}
+
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export async function handleGeneratePdf(envelope: JobEnvelope): Promise<void> {
   const parsed = PdfPayloadSchema.safeParse(envelope.payload);
@@ -26,18 +52,19 @@ export async function handleGeneratePdf(envelope: JobEnvelope): Promise<void> {
   try {
     // Importación dinámica para evitar que jsPDF se bundle en el cliente
     const { jsPDF } = await import("jspdf");
+    const negocio = await negocioDelPdf(tenantId);
 
     let pdfBytes: Uint8Array;
 
     switch (pdfType) {
       case "invoice":
-        pdfBytes = await generateInvoicePdf(jsPDF, data);
+        pdfBytes = await generateInvoicePdf(jsPDF, data, negocio);
         break;
       case "order-receipt":
-        pdfBytes = await generateOrderReceiptPdf(jsPDF, data);
+        pdfBytes = await generateOrderReceiptPdf(jsPDF, data, negocio);
         break;
       case "stock-report":
-        pdfBytes = await generateStockReportPdf(jsPDF, data);
+        pdfBytes = await generateStockReportPdf(jsPDF, data, negocio);
         break;
       default:
         logger.warn("[worker:generate-pdf] Unknown PDF type — skipping", {
@@ -62,8 +89,8 @@ export async function handleGeneratePdf(envelope: JobEnvelope): Promise<void> {
       await q.enqueue("send-email", {
         tenantId,
         to: sendTo,
-        subject: getPdfSubject(pdfType, data),
-        html: getPdfEmailHtml(pdfType, data),
+        subject: getPdfSubject(pdfType, data, negocio?.nombre),
+        html: getPdfEmailHtml(pdfType, data, negocio?.nombre),
       });
 
       logger.info("[worker:generate-pdf] Email job enqueued for PDF", {
@@ -88,30 +115,46 @@ export async function handleGeneratePdf(envelope: JobEnvelope): Promise<void> {
 }
 
 // ── Generadores de PDF por subtipo ────────────────────────────────────────────
+// Todos salen con el membrete común del negocio (ADR-514): logo + nombre, tipo/código/fecha
+// y pie paginado; el ticket de 80 mm lleva sólo el logo chico y el nombre.
+
+const aTexto = (v: unknown, defecto = "—") => (v == null || v === "" ? defecto : String(v));
+
+function pieYMembrete(doc: JsPdf, mbr: DatosMembrete): void {
+  dibujarPies(doc, mbr);
+}
 
 async function generateInvoicePdf(
   JsPDF: typeof import("jspdf").jsPDF,
   data: Record<string, unknown>,
+  negocio: MembreteDocumento | null,
 ): Promise<Uint8Array> {
   const doc = new JsPDF({ unit: "mm", format: "a4" });
-
-  doc.setFontSize(20);
-  doc.text("FACTURA", 105, 20, { align: "center" });
-
+  const mbr = datosDelMembrete(negocio, {
+    tipo: "Factura",
+    codigo: aTexto(data.invoiceNumber, "") || null,
+    fecha: aTexto(data.date, new Date().toLocaleDateString("es-PE")),
+  });
+  let y = dibujarMembrete(doc, mbr) + 4;
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(12);
-  doc.text(`N° ${String(data.invoiceNumber ?? "—")}`, 20, 40);
-  doc.text(`Fecha: ${String(data.date ?? new Date().toLocaleDateString("es-PE"))}`, 20, 48);
-  doc.text(`Cliente: ${String(data.customerName ?? "—")}`, 20, 56);
-  doc.text(`RUC/DNI: ${String(data.ruc ?? "—")}`, 20, 64);
+  doc.text(`Cliente: ${aTexto(data.customerName)}`, 20, y);
+  doc.text(`RUC/DNI: ${aTexto(data.ruc)}`, 20, (y += 8));
 
-  doc.line(20, 72, 190, 72);
+  doc.line(20, (y += 8), 190, y);
 
-  doc.text("Descripción", 20, 80);
-  doc.text("Total", 170, 80, { align: "right" });
+  doc.text("Descripción", 20, (y += 8));
+  doc.text("Total", 170, y, { align: "right" });
 
   const items = Array.isArray(data.items) ? data.items : [];
-  let y = 88;
+  y += 8;
   for (const item of items as Array<Record<string, unknown>>) {
+    if (y > 297 - altoDelPie() - 24) {
+      doc.addPage();
+      y = dibujarMembreteBreve(doc, mbr, "Factura");
+      doc.setTextColor(0, 0, 0);
+    }
     doc.setFontSize(10);
     doc.text(String(item.name ?? ""), 20, y);
     doc.text(`S/${Number(item.total ?? 0).toFixed(2)}`, 170, y, { align: "right" });
@@ -124,28 +167,46 @@ async function generateInvoicePdf(
   doc.text("TOTAL:", 140, y);
   doc.text(`S/${Number(data.total ?? 0).toFixed(2)}`, 170, y, { align: "right" });
 
+  pieYMembrete(doc, mbr);
   return doc.output("arraybuffer") as unknown as Uint8Array;
 }
 
 async function generateOrderReceiptPdf(
   JsPDF: typeof import("jspdf").jsPDF,
   data: Record<string, unknown>,
+  negocio: MembreteDocumento | null,
 ): Promise<Uint8Array> {
-  const doc = new JsPDF({ unit: "mm", format: [80, 200] });
+  const items = Array.isArray(data.items) ? (data.items as Array<Record<string, unknown>>) : [];
+  const mbr = datosDelMembrete(negocio, { tipo: "Comprobante de pedido" });
+  // Ticket de 80 mm: la altura crece con los ítems (antes quedaban cortados a los ~17).
+  const doc = new JsPDF({ unit: "mm", format: [80, Math.max(200, 92 + items.length * 7)] });
+
+  // Sólo logo chico + nombre, centrados; sin pie paginado.
+  let y = 6;
+  if (mbr.logo) {
+    const r = mbr.logo.ancho / mbr.logo.alto;
+    const ancho = Math.min(40, 12 * r);
+    doc.addImage(mbr.logo.dataUrl, formatoDeImagen(mbr.logo.dataUrl), 40 - ancho / 2, y, ancho, ancho / r, undefined, "FAST");
+    y += ancho / r + 3;
+  }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(0, 0, 0);
+  const nombre = doc.splitTextToSize(mbr.titulo, 70) as string[];
+  doc.text(nombre, 40, y + 3, { align: "center" });
+  y += 3 + nombre.length * 4.5 + 4;
 
   doc.setFontSize(14);
-  doc.text("COMPROBANTE DE PEDIDO", 40, 15, { align: "center" });
-
+  doc.text("COMPROBANTE DE PEDIDO", 40, y, { align: "center", maxWidth: 70 });
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(`Pedido: #${String(data.orderId ?? "").slice(-8).toUpperCase()}`, 5, 28);
-  doc.text(`Cliente: ${String(data.customerName ?? "—")}`, 5, 36);
-  doc.text(`Fecha: ${String(data.date ?? new Date().toLocaleDateString("es-PE"))}`, 5, 44);
+  doc.text(`Pedido: #${String(data.orderId ?? "").slice(-8).toUpperCase()}`, 5, (y += 13));
+  doc.text(`Cliente: ${aTexto(data.customerName)}`, 5, (y += 8));
+  doc.text(`Fecha: ${aTexto(data.date, new Date().toLocaleDateString("es-PE"))}`, 5, (y += 8));
 
-  doc.line(5, 50, 75, 50);
-
-  const items = Array.isArray(data.items) ? data.items : [];
-  let y = 58;
-  for (const item of items as Array<Record<string, unknown>>) {
+  doc.line(5, (y += 6), 75, y);
+  y += 8;
+  for (const item of items) {
     doc.text(`${Number(item.quantity ?? 1)}x ${String(item.name ?? "")}`, 5, y);
     doc.text(`S/${Number(item.price ?? 0).toFixed(2)}`, 75, y, { align: "right" });
     y += 7;
@@ -163,26 +224,27 @@ async function generateOrderReceiptPdf(
 async function generateStockReportPdf(
   JsPDF: typeof import("jspdf").jsPDF,
   data: Record<string, unknown>,
+  negocio: MembreteDocumento | null,
 ): Promise<Uint8Array> {
   const doc = new JsPDF({ unit: "mm", format: "a4" });
+  const mbr = datosDelMembrete(negocio, { tipo: "Reporte de stock", fecha: new Date().toLocaleDateString("es-PE") });
+  let y = dibujarMembrete(doc, mbr) + 4;
+  doc.setTextColor(0, 0, 0);
 
-  doc.setFontSize(18);
-  doc.text("REPORTE DE STOCK", 105, 20, { align: "center" });
-
-  doc.setFontSize(11);
-  doc.text(`Generado: ${new Date().toLocaleString("es-PE")}`, 20, 32);
-  doc.text(`Tenant: ${String(data.tenantId ?? "—")}`, 20, 40);
-
-  doc.line(20, 46, 190, 46);
-
-  doc.setFontSize(10);
-  doc.text("Producto", 20, 54);
-  doc.text("Stock", 120, 54);
-  doc.text("Mín.", 145, 54);
-  doc.text("Estado", 165, 54);
+  const cabecera = (yy: number) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Producto", 20, yy);
+    doc.text("Stock", 120, yy);
+    doc.text("Mín.", 145, yy);
+    doc.text("Estado", 165, yy);
+    doc.setFont("helvetica", "normal");
+    doc.line(20, yy + 2, 190, yy + 2);
+    return yy + 8;
+  };
+  y = cabecera(y);
 
   const products = Array.isArray(data.products) ? data.products : [];
-  let y = 62;
   for (const product of products as Array<Record<string, unknown>>) {
     const stock = Number(product.stock ?? 0);
     const min = Number(product.minStock ?? 0);
@@ -192,39 +254,42 @@ async function generateStockReportPdf(
     doc.text(String(min), 145, y);
     doc.text(status, 165, y);
     y += 7;
-    if (y > 270) {
+    if (y > 297 - altoDelPie() - 6) {
       doc.addPage();
-      y = 20;
+      y = cabecera(dibujarMembreteBreve(doc, mbr, "Reporte de stock") + 2);
+      doc.setTextColor(0, 0, 0);
     }
   }
 
+  pieYMembrete(doc, mbr);
   return doc.output("arraybuffer") as unknown as Uint8Array;
 }
 
 // ── Helpers de email para PDF ─────────────────────────────────────────────────
 
-function getPdfSubject(pdfType: string, data: Record<string, unknown>): string {
+function getPdfSubject(pdfType: string, data: Record<string, unknown>, negocio?: string | null): string {
+  const firma = negocio?.trim() ? ` — ${negocio.trim()}` : "";
   switch (pdfType) {
     case "invoice":
-      return `Factura N° ${String(data.invoiceNumber ?? "")} — Buleje`;
+      return `Factura N° ${String(data.invoiceNumber ?? "")}${firma}`;
     case "order-receipt":
       return `Comprobante de pedido #${String(data.orderId ?? "").slice(-8).toUpperCase()}`;
     case "stock-report":
       return `Reporte de stock — ${new Date().toLocaleDateString("es-PE")}`;
     default:
-      return "Documento generado — Buleje";
+      return `Documento generado${firma}`;
   }
 }
 
-function getPdfEmailHtml(pdfType: string, data: Record<string, unknown>): string {
+function getPdfEmailHtml(pdfType: string, data: Record<string, unknown>, negocio?: string | null): string {
   return `
     <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;">
       <div style="background:#00A0A0;padding:20px 24px;">
         <h2 style="color:#fff;margin:0;">Documento adjunto</h2>
       </div>
       <div style="padding:20px 24px;">
-        <p>Tu documento <strong>${getPdfSubject(pdfType, data)}</strong> ha sido generado.</p>
-        <p style="color:#666;font-size:13px;">Buleje</p>
+        <p>Tu documento <strong>${esc(getPdfSubject(pdfType, data, negocio))}</strong> ha sido generado.</p>
+        ${negocio?.trim() ? `<p style="color:#666;font-size:13px;">${esc(negocio.trim())}</p>` : ""}
       </div>
     </div>
   `;

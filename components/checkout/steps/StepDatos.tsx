@@ -15,6 +15,7 @@ import { CheckoutDeliverySchedule, CheckoutNotesField } from "..";
 import { CustomerVerifiedCard } from "../parts/CustomerVerifiedCard";
 import { CustomerFormFields } from "../parts/CustomerFormFields";
 import { AddressInput } from "../parts/AddressInput";
+import { UbicacionEnVivoCheckout } from "../parts/UbicacionEnVivoCheckout";
 import { SavedAddressList } from "../parts/SavedAddressList";
 import { validatePhone } from "../parts/phone-validation";
 import type { CheckoutState } from "../types";
@@ -95,7 +96,7 @@ function SectionHeader({
         >
           {title}
         </p>
-        {hint && <p className="text-xs text-muted mt-0.5">{hint}</p>}
+        {hint && <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-0.5">{hint}</p>}
       </div>
     </div>
   );
@@ -311,6 +312,13 @@ export function StepDatos({
                     }}
                   />
 
+                  <UbicacionEnVivoCheckout
+                    enlace={state.address.ubicacionEnVivo}
+                    onQuitar={() =>
+                      dispatch({ type: "SET_ADDRESS", patch: { ubicacionEnVivo: "" } })
+                    }
+                  />
+
                   <CheckoutNotesField
                     notes={state.address.notes}
                     onNotesChange={(notes) =>
@@ -328,6 +336,12 @@ export function StepDatos({
           <>
             <BrandHair />
             <section className="space-y-3">
+              <UbicacionEnVivoCheckout
+                enlace={state.address.ubicacionEnVivo}
+                onQuitar={() =>
+                  dispatch({ type: "SET_ADDRESS", patch: { ubicacionEnVivo: "" } })
+                }
+              />
               <CheckoutNotesField
                 notes={state.address.notes}
                 onNotesChange={(notes) =>

@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     );
 
     return NextResponse.json({ zones });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Error al obtener hot zones" },
       { status: 500 },

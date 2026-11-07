@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { suplantarTienda } from "@/components/superadmin/tenants/abrir-panel-tienda";
 
 interface UseTenantActionsParams {
   setTenants: React.Dispatch<React.SetStateAction<TenantRow[]>>;
@@ -12,6 +13,8 @@ interface UseTenantActionsParams {
   setDeleteTarget: (target: { slug: string; name: string } | null) => void;
   showToast: (msg: string, ok?: boolean) => void;
   loadTenants: () => Promise<void>;
+  /** Suplantar con el candado cerrado: abre la ficha de esa tienda en Credenciales. */
+  onCandadoCerrado?: (slug: string) => void;
 }
 
 export function useTenantActions({
@@ -22,6 +25,7 @@ export function useTenantActions({
   setDeleteTarget,
   showToast,
   loadTenants,
+  onCandadoCerrado,
 }: UseTenantActionsParams) {
   const handleToggleActive = useCallback(async (slug: string, current: boolean) => {
     setActionLoading(`${slug}-active`);
@@ -156,36 +160,13 @@ export function useTenantActions({
   }, [setActionLoading, showToast, loadTenants]);
 
   const handleImpersonate = useCallback(async (slug: string) => {
-    try {
-      const res = await fetch("/api/superadmin/impersonate", {
-        method: "POST", credentials: "include",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ slug }),
-      });
-      if (!res.ok) { showToast("Error al impersonar", false); return; }
-      // [SEGURIDAD MULTI-TENANT] Limpiar TODO cache cliente antes de abrir el
-      // panel del tenant target. Sin esto, el localStorage/sessionStorage/SW
-      // compartido entre pestañas filtraría datos del tenant anterior.
-      try {
-        const { clearAllTenantCache } = await import("@/lib/tenant-cache");
-        clearAllTenantCache();
-        // Notificar a pestañas abiertas del mismo origen para que también
-        // limpien su estado en memoria si están en otro tenant.
-        try {
-          const bc = new BroadcastChannel("tenant-switch");
-          bc.postMessage({ type: "tenant-switched", slug, ts: Date.now() });
-          bc.close();
-        } catch { /* BroadcastChannel no disponible */ }
-      } catch { /* fallback: assertTenantOwnership en /admin lo cubrirá */ }
-      // Cache-busting query (_fresh) garantiza que Next no sirva HTML cacheado
-      // de un tenant previo y que assertTenantOwnership detecte el switch.
-      // /t/{slug}/admin fuerza al proxy a setear x-tenant-id por URL.
-      window.open(
-        `/t/${encodeURIComponent(slug)}/admin?_fresh=${Date.now()}`,
-        "_blank",
-      );
-    } catch { showToast("Error de red", false); }
-  }, [showToast]);
+    // Candado cerrado (423) → la ficha de esa tienda en Credenciales, para abrirlo.
+    const r = await suplantarTienda(slug, (s) => {
+      showToast("Abre tu candado para entrar como la tienda", false);
+      onCandadoCerrado?.(s);
+    });
+    if (r === "error") showToast("Error al impersonar", false);
+  }, [showToast, onCandadoCerrado]);
 
   const handleToggleMarketplace = useCallback(async (tenant: TenantRow) => {
     const store = tenant.stores?.[0];

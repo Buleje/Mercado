@@ -17,6 +17,7 @@
  */
 
 import { useMemo } from "react";
+import { useModuleTabs } from "@/contexts/module-tabs-context";
 import type { ComponentType } from "react";
 import type { Tab } from "../_lib/tabs.types";
 import { MODULE_INFO } from "../_lib/tab-categories";
@@ -80,6 +81,7 @@ const MODULES: ModuleEntry[] = [
   { id: "fiados",           label: "Fiados",                 icon: "",  category: "Negocio" },
   { id: "turnos",           label: "Turnos de Caja",         icon: "",  category: "Negocio" },
   { id: "prestamos",        label: "Prestamos",              icon: "",  category: "Negocio" },
+  { id: "rrhh",             label: "Recursos Humanos",       icon: "",  category: "Negocio" },
   // ── Inventario ──
   { id: "inventario",       label: "Inventario & Almacenes", icon: "",  category: "Inventario" },
   { id: "productos",        label: "Productos & Precios",    icon: "",  category: "Inventario" },
@@ -110,6 +112,17 @@ export function useCommandItems(
   navigateTab: (id: Tab) => void,
   visibleTabIds?: ReadonlySet<string>,
 ): CommandItem[] {
+  /**
+   * Sub-tabs del módulo ABIERTO. El palette indexaba sólo módulos y acciones,
+   * así que estando en Documentos no encontraba "Cotizaciones" —había que
+   * llegar a mano hasta la pestaña. Las sub-tabs del módulo activo ya viven en
+   * este contexto (las registra AdminTabBar al montar), así que se suman.
+   *
+   * Alcance honesto: son las del módulo abierto, no las de los 28. Un catálogo
+   * global exigiría extraer los TABS que hoy viven dentro de cada módulo.
+   */
+  const { subTabs, activeSubTab, setActiveSubTab } = useModuleTabs();
+
   return useMemo<CommandItem[]>(() => {
     const has = (id: Tab) => !visibleTabIds || visibleTabIds.has(id);
 
@@ -131,6 +144,7 @@ export function useCommandItems(
       { id: "action-new-product",  label: "Nuevo producto", target: "productos" },
       { id: "action-new-customer", label: "Nuevo cliente",  target: "clientes" },
       { id: "action-inventario",   label: "Ver stock",      target: "inventario" },
+      { id: "action-marcar-asistencia", label: "Marcar asistencia", target: "rrhh" },
     ];
     for (const a of actions) {
       if (has(a.target)) {
@@ -138,6 +152,17 @@ export function useCommandItems(
       }
     }
 
+    for (const st of subTabs) {
+      if (st.id === activeSubTab) continue; // ya estás ahí
+      items.push({
+        id: `subtab-${st.id}`,
+        label: st.label,
+        category: "En este módulo",
+        iconComponent: st.icon,
+        onSelect: () => setActiveSubTab(st.id),
+      });
+    }
+
     return items;
-  }, [navigateTab, visibleTabIds]);
+  }, [navigateTab, visibleTabIds, subTabs, activeSubTab, setActiveSubTab]);
 }

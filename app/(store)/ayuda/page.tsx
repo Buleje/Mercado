@@ -84,10 +84,10 @@ const howToJsonLd = generateHowToLD({
   description:
     "Pasos para hacer un pedido en el marketplace de bodegas de Ciudad Constitución y pagar con Yape, Plin o efectivo.",
   steps: [
-    { name: "Buscá tu bodega", text: "Entrá a buleje.pe y buscá una tienda por nombre, categoría o zona." },
-    { name: "Armá tu pedido", text: "Agregá productos al carrito; ves el total real en vivo, sin sorpresas." },
-    { name: "Elegí cómo pagar", text: "Pagá con Yape, Plin o efectivo al recibir. No necesitás tarjeta." },
-    { name: "Recibí en tu puerta", text: "El pedido llega a tu domicilio en 25 minutos promedio." },
+    { name: "Busca tu bodega", text: "Entra a buleje.pe y busca una tienda por nombre, categoría o zona." },
+    { name: "Arma tu pedido", text: "Agrega productos al carrito; ves el total real en vivo, sin sorpresas." },
+    { name: "Elige cómo pagar", text: "Paga con Yape, Plin o efectivo al recibir. No necesitas tarjeta." },
+    { name: "Recibe en tu puerta", text: "El pedido llega a tu domicilio en 25 minutos promedio." },
   ],
 });
 
@@ -150,7 +150,7 @@ export default function AyudaPage() {
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/25 bg-[var(--surface-raised)] px-3 py-1 text-sm font-bold text-[var(--accent)] shadow-[var(--shadow-sm)]">
                 <LifeBuoy className="h-4 w-4" strokeWidth={2.5} />
-                Centro de Ayuda · estamos para vos
+                Centro de Ayuda · estamos para ti
               </span>
               <h1 className="mt-5 text-4xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-5xl">
                 ¿En qué podemos ayudarte?
@@ -182,9 +182,9 @@ export default function AyudaPage() {
                         key={title}
                         href={href}
                         {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-[var(--accent-soft)]"
+                        className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-primary/10"
                       >
-                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <Icon className="h-5 w-5" strokeWidth={2.25} />
                         </span>
                         <span className="min-w-0">
@@ -220,7 +220,7 @@ export default function AyudaPage() {
                     className={`${CARD} group flex flex-col gap-3 p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/30`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                         <Icon className="h-5 w-5" strokeWidth={2.25} />
                       </span>
                       <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-bold text-[var(--text-tertiary)]">
@@ -253,7 +253,7 @@ export default function AyudaPage() {
                   <li key={topic.id}>
                     <a
                       href={`#${topic.id}`}
-                      className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
+                      className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent)]"
                     >
                       {topic.title}
                       <span className="tabular-nums text-[var(--text-tertiary)]">{topic.faqs.length}</span>
@@ -270,7 +270,7 @@ export default function AyudaPage() {
                 return (
                   <section key={topic.id} id={topic.id} className="scroll-mt-24">
                     <div className="mb-4 flex items-center gap-3">
-                      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                         <Icon className="h-5 w-5" strokeWidth={2.25} />
                       </span>
                       <div>
@@ -331,7 +331,7 @@ export default function AyudaPage() {
           <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
             <div className={`${CARD} flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8`}>
               <div className="flex items-center gap-4">
-                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Store className="h-6 w-6" strokeWidth={2.25} />
                 </span>
                 <div>

@@ -124,6 +124,16 @@ export async function GET(req: NextRequest) {
     }
 
     // Éxito — la cookie `sb-...-auth-token` quedó seteada por el client.
+    // Tiendas individuales (`origen=tienda`, lo manda siempre `useClienteTienda`):
+    // el cliente vuelve a la misma tienda; el nombre lo lee el hook de la sesión
+    // de Supabase (2026-10-11, kit de pedidos; el checkout de la tienda también
+    // entra por el kit). Sólo por `origen`, nunca por «empieza con /t/»: otros
+    // botones viejos que mandan su pathname siguen pasando por el paso del
+    // celular de abajo.
+    // `safeNext` ya pasó isSafeInternalPath: nunca sale del mismo origen.
+    if (searchParams.get("origen") === "tienda") {
+      return NextResponse.redirect(`${origin}${safeNext}`);
+    }
     // Antes de redirigir, leemos el user de Supabase y, si NO tiene un
     // Customer asociado por email, mandamos a `/marketplace?oauth=complete`
     // con el name pre-llenado para que el modal pida solo el celular.

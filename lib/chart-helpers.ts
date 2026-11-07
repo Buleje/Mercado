@@ -67,6 +67,24 @@ export interface MarginAgg {
 }
 
 /**
+ * Las líneas de UNA venta con su precio llevado a lo que de verdad se cobró
+ * (Brandon 2026-10-09: «Utilidad bruta S/ 6,61» con ventas de S/ 0,10). El
+ * total de la venta ya trae el descuento; los ítems traen el precio de lista.
+ * Sin esto, una venta con descuento sumaba la utilidad del precio lleno.
+ * Sólo baja (factor ≤ 1): si se cobró MÁS que los ítems (delivery, propina),
+ * eso no es venta de productos y no se reparte.
+ */
+export function lineasCobradas<L extends { quantity: number; price: number }>(
+  lineas: readonly L[],
+  totalCobrado: number,
+): L[] {
+  const lista = lineas.reduce((a, l) => a + l.price * l.quantity, 0);
+  if (!(lista > 0) || !Number.isFinite(totalCobrado)) return [...lineas];
+  const factor = Math.min(1, Math.max(0, totalCobrado) / lista);
+  return factor === 1 ? [...lineas] : lineas.map((l) => ({ ...l, price: l.price * factor }));
+}
+
+/**
  * Agrega margen REAL sobre líneas `{ productId, quantity, price }` con un lookup
  * de costo real. El margen se calcula SOLO sobre los ítems con costo cargado,
  * así que `margenPct` es el margen verdadero de lo medible — no un promedio

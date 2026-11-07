@@ -21,6 +21,15 @@
 
 import type { ComponentType, ReactNode } from "react";
 import { ADMIN_TOKENS } from "./admin-tokens";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+
+import { BANDA_MODULO, FILA_TITULO_MODULO, TituloModulo } from "@/components/admin/shared/titulo-modulo";
+import { CabeceraConPestanas } from "@/components/admin/shared/cabecera-con-pestanas";
+import {
+  PestanasDelModulo,
+  useCabeceraCompacta,
+  usePestanasDelModulo,
+} from "@/components/admin/shared/cabecera-compacta";
 
 type LucideIcon = ComponentType<{
   className?: string;
@@ -45,6 +54,15 @@ interface AdminTabShellProps {
   actions?: ReactNode;
   /** Slot derecho con stat pills (ej. KPIs del módulo). Si presente, reemplaza actions. */
   stats?: ReactNode;
+  /** Ícono de info junto al título con popover (qué hace / a dónde afecta / ejemplo). */
+  info?: { title?: string; what: string; affects?: string; example?: string };
+  /**
+   * Pestañas del módulo al lado del título, en la misma fila (Brandon 18-10,
+   * superadmin). Con esto —o dentro del superadmin, que enciende la cabecera
+   * compacta— la banda es `CabeceraConPestanas`: sin rótulo a la vista (va al
+   * ⓘ). Sin pasarlo, en el panel admin la banda queda igual que antes.
+   */
+  pestanas?: ReactNode;
   children: ReactNode;
 }
 
@@ -56,44 +74,73 @@ export default function AdminTabShell({
   chip,
   actions,
   stats,
+  info,
+  pestanas,
   children,
 }: AdminTabShellProps) {
+  const pestanasDelModulo = usePestanasDelModulo();
+  const pestanasFila = pestanas ?? pestanasDelModulo;
+  const compacta = useCabeceraCompacta() || pestanasFila != null;
   const ChipIcon = chip?.icon;
+  /* ⓘ del título: el `info` de la pantalla, o la descripción si no trae uno.
+     Las 23 pantallas que pasaban los dos repetían lo mismo con otras palabras. */
+  const ayuda = info
+    ? { ...info, what: info.what || description || "" }
+    : description
+      ? { title, what: description }
+      : null;
+  const chipVista = chip ? (
+    <span className={chip.tone === "muted" ? ADMIN_TOKENS.chipMuted : ADMIN_TOKENS.chipAccent}>
+      {ChipIcon && <ChipIcon className="h-3 w-3" aria-hidden />}
+      {chip.label}
+    </span>
+  ) : null;
+
+  if (compacta) {
+    return (
+      <div className={ADMIN_TOKENS.sectionGap}>
+        <CabeceraConPestanas
+          icon={Icon}
+          title={title}
+          kicker={kicker}
+          info={ayuda ?? undefined}
+          chip={chipVista}
+          pestanas={pestanasFila}
+          acciones={stats || actions ? <>{stats}{actions}</> : undefined}
+        />
+        {pestanasDelModulo != null ? <PestanasDelModulo pestanas={null}>{children}</PestanasDelModulo> : children}
+      </div>
+    );
+  }
+
   return (
     <div className={ADMIN_TOKENS.sectionGap}>
       {/* ── Header hero premium ───────────────────────────────────────── */}
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-start gap-3.5 min-w-0 flex-1">
-          {Icon && (
-            <span className={ADMIN_TOKENS.iconBadge}>
-              <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden />
-            </span>
-          )}
-          <div className="min-w-0 flex-1">
-            {kicker && (
-              <p className={`${ADMIN_TOKENS.kicker} mb-1`}>{kicker}</p>
-            )}
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className={ADMIN_TOKENS.headingHero}>{title}</h1>
-              {chip && (
-                <span
-                  className={
-                    chip.tone === "muted"
-                      ? ADMIN_TOKENS.chipMuted
-                      : ADMIN_TOKENS.chipAccent
-                  }
-                >
-                  {ChipIcon && <ChipIcon className="h-3 w-3" aria-hidden />}
-                  {chip.label}
-                </span>
-              )}
-            </div>
-            {description && (
-              <p className={`${ADMIN_TOKENS.bodyTextLg} mt-1.5 max-w-3xl`}>
-                {description}
-              </p>
-            )}
-          </div>
+      {/* La misma banda e identidad que el Libro TH (titulo-modulo.tsx,
+          Brandon 08-10: «todos los títulos iguales, como esta pestaña»). */}
+      <header className={BANDA_MODULO}>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-3 py-2.5 sm:px-4">
+        {/* Base de 20rem, no 0: con `flex-1` (base 0) el header nunca envolvía
+            y los stats (`sm:shrink-0`) se comían el ancho — a 958 px el título
+            de «Qué tiene cada negocio» medía 0 px, una palabra por renglón
+            (Brandon 01-10). Con base real, si no entran juntos los stats bajan
+            a la línea siguiente. `min-w-*` no sirve acá: el `* { min-width: 0 }`
+            global lo anula (memoria min-w-anulado-por-global). */}
+        <div className={`${FILA_TITULO_MODULO} flex-[1_1_20rem]`}>
+          <TituloModulo
+            icon={Icon}
+            eyebrow={kicker}
+            title={title}
+            className="flex-1"
+            ayuda={
+              ayuda || chip ? (
+                <>
+                  {ayuda && <InfoTip side="bottom" {...ayuda} />}
+                  {chipVista}
+                </>
+              ) : undefined
+            }
+          />
         </div>
         {(stats || actions) && (
           // Brandon 2026-05-21 FIX bug "pedazo blanco al swipe mobile":
@@ -112,6 +159,7 @@ export default function AdminTabShell({
             {actions}
           </div>
         )}
+      </div>
       </header>
       {children}
     </div>

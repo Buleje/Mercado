@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrestamosDB } from "@/lib/db/prestamos.db";
 import { requireAdmin } from "@/lib/require-admin";
+import { ROLES_PRESTAMOS } from "@/lib/prestamos/roles";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 
 // GET /api/prestamos/exportar — export as CSV
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_PRESTAMOS);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     const headers = [
       "ID", "Tipo", "Dirección", "Cliente/Entidad", "Monto", "Moneda",
-      "Tasa%", "Cuotas", "Sistema", "Estado", "Saldo Pendiente",
+      "Tasa mensual %", "Cuotas", "Sistema", "Estado", "Saldo Pendiente",
       "Mora Acumulada", "Fecha Desembolso", "Fecha Creación",
     ];
 
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse(bom + csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="prestamos-${new Date().toISOString().slice(0, 10)}.csv"`,
+        "Content-Disposition": `attachment; filename="prestamos-${limaDateKey()}.csv"`,
       },
     });
   } catch (e) {

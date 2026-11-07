@@ -1,7 +1,8 @@
 import "server-only";
-import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { ResultadoNegocioDB } from "@/lib/db/resultado-negocio.db";
+import { limaDateKey } from "@/lib/utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Rolling 13-week cashflow projection — Buleje
@@ -17,6 +18,12 @@ import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 //   · Otros gastos fijos (renta, luz, agua) desde Expense recurring=true
 //
 // El backend recompone TODO — el cliente solo pinta la tabla.
+//
+// ADR-451 (2026-09-29): las lecturas viven en `ResultadoNegocioDB.proyeccion`
+// (antes eran `prisma.*` sueltos acá) y el resultado SUMA campos sin tocar los
+// que ya existían: adelantos que vencen en cada semana, de dónde sale la nómina,
+// de dónde sale el saldo inicial y lo que no cae en ninguna semana. Ninguno de
+// los campos nuevos entra en `closingBalance`: la tabla vieja da lo mismo.
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── Types (contract público, consumido por route handler + UI) ─────────────
@@ -35,12 +42,21 @@ export interface WeekRow {
   creditCollections: number;
   /** Payables pendientes/parciales con dueDate en la semana */
   supplierPayments: number;
-  /** Nómina estimada para esta semana (S/ por semana) */
-  payroll: number;
+  /**
+   * Nómina estimada para esta semana (S/ por semana). ADR-451: AUSENTE (no 0)
+   * para quien no ve lo ganado de RRHH (`payrollFuente: "sin_permiso"`); el
+   * cierre de la semana la sigue restando.
+   */
+  payroll?: number;
   /** Cuotas de préstamos (PrestamoCuota) con fechaVence en la semana */
   loans: number;
   /** Otros gastos fijos recurrentes distribuidos por semana */
   otherExpenses: number;
+  /**
+   * ADR-451: saldo de adelantos DADOS abiertos que vencen en la semana. Se
+   * informa aparte y NO entra en `closingBalance` (el cierre no cambia).
+   */
+  advanceCollections: number;
   closingBalance: number;
   /** true si el cierre cae en negativo → UI pinta rojo */
   isNegative: boolean;
@@ -56,6 +72,33 @@ export interface CashflowRollingResult {
   weeks: WeekRow[];
   /** Primera semana (número) con closingBalance < 0, o null si todas sobreviven */
   criticalWeek: number | null;
+  /** ADR-451: el mismo `startingBalance`, diciendo de dónde sale. */
+  saldoInicial: {
+    monto: number;
+    /** `tesoreria` = saldo de las cuentas; `neto_30_dias` = ventas − gastos de 30 días (≈). */
+    fuente: "tesoreria" | "neto_30_dias";
+    estimado: boolean;
+  };
+  /** ADR-451: de dónde sale `payroll` — los gastos de «personal» de 30 días, o nada. */
+  payrollFuente: "gastos_personal" | "sin_dato" | "sin_permiso";
+  /**
+   * ADR-451: ≈ lo ganado por semana según la asistencia de RRHH (últimos 28
+   * días ÷ 4). Referencia al lado de `payroll`; `null` = sin personal cargado.
+   */
+  payrollRrhhSemanal?: number | null;
+  /** ADR-451: adelantos DADOS abiertos que vencen dentro de las 13 semanas. */
+  adelantosConVencimiento: { monto: number; cuantos: number };
+  /**
+   * ADR-451: lo que no cae en ninguna semana — sin fecha pactada o ya vencido
+   * antes de la ventana. No se reparte por semanas.
+   */
+  sinFecha: { porCobrar: number; cuantosPorCobrar: number; porPagar: number; cuantosPorPagar: number };
+  /**
+   * ADR-451: `true` = quien pide no ve lo ganado de RRHH, así que el cierre de
+   * cada semana (y `criticalWeek`) se calcula SIN nómina: no hay sueldo que
+   * deducir restando filas. `false` = el cierre de siempre.
+   */
+  cierreSinNomina: boolean;
 }
 
 // ── Date helpers (sin date-fns — no está instalado) ───────────────────────
@@ -93,32 +136,19 @@ function round2(n: number): number {
  * Falls back to (last-30-day sales − last-30-day expenses) when the tenant
  * hasn't set up Tesorería yet.
  */
-async function getStartingBalance(tenantId: string): Promise<number> {
-  const treasury = await prisma.treasuryCuenta.findMany({
-    where: { tenantId, activa: true },
-    select: { saldo: true },
-  });
+async function getStartingBalance(
+  tenantId: string,
+): Promise<{ monto: number; fuente: "tesoreria" | "neto_30_dias" }> {
+  const treasury = await ResultadoNegocioDB.proyeccion.saldosTesoreria(tenantId);
 
   if (treasury.length > 0) {
-    return round2(treasury.reduce((sum, a) => sum + toNumOrZero(a.saldo), 0));
+    return { monto: round2(treasury.reduce((sum, a) => sum + toNumOrZero(a.saldo), 0)), fuente: "tesoreria" };
   }
 
   // Fallback grueso: neto de los últimos 30 días
   const thirtyDaysAgo = addDays(new Date(), -30);
-  const [salesAgg, expensesAgg] = await Promise.all([
-    prisma.sale.aggregate({
-      where: { tenantId, createdAt: { gte: thirtyDaysAgo } },
-      _sum: { total: true },
-    }),
-    prisma.expense.aggregate({
-      where: { tenantId, date: { gte: thirtyDaysAgo } },
-      _sum: { amount: true },
-    }),
-  ]);
-
-  const sales = toNumOrZero(salesAgg._sum.total);
-  const expenses = toNumOrZero(expensesAgg._sum.amount);
-  return round2(sales - expenses);
+  const { ventas, gastos } = await ResultadoNegocioDB.proyeccion.netoDesde(tenantId, thirtyDaysAgo);
+  return { monto: round2(ventas - gastos), fuente: "neto_30_dias" };
 }
 
 // ── Main computation ───────────────────────────────────────────────────────
@@ -131,7 +161,10 @@ async function getStartingBalance(tenantId: string): Promise<number> {
  */
 export async function computeCashflowRolling(
   tenantId: string,
+  /** ADR-451: `verPlanilla` = quien pide ve lo ganado de RRHH. Por defecto NO. */
+  opciones: { verPlanilla?: boolean } = {},
 ): Promise<CashflowRollingResult> {
+  const verPlanilla = opciones.verPlanilla === true;
   if (!tenantId) {
     throw new Error("tenantId is required for cashflow projection");
   }
@@ -141,8 +174,9 @@ export async function computeCashflowRolling(
   const windowEnd = addDays(firstWeekStart, 13 * 7);
 
   // ── Parallel fetch ───────────────────────────────────────────────────
+  const hoyLima = limaDateKey(now);
   const [
-    startingBalance,
+    saldo,
     pendingOrders,
     activeFiados,
     pendingPayables,
@@ -150,83 +184,52 @@ export async function computeCashflowRolling(
     personalExpenses,
     recurringExpenses,
     weeklyFixedSetting,
+    adelantosAbiertos,
+    fiadosSinFecha,
+    payablesVencidos,
+    ganado28d,
   ] = await Promise.all([
     getStartingBalance(tenantId),
 
     // 1. Cobros esperados: orders pendientes en la ventana
-    prisma.order.findMany({
-      where: {
-        tenantId,
-        status: { in: ["pendiente", "confirmado"] },
-        createdAt: { gte: firstWeekStart, lt: windowEnd },
-      },
-      select: { total: true, createdAt: true },
-    }),
+    ResultadoNegocioDB.proyeccion.pedidosPendientes(tenantId, firstWeekStart, windowEnd),
 
     // 2. Fiados vigentes con fechaVence en la ventana
-    prisma.fiado.findMany({
-      where: {
-        tenantId,
-        status: "ACTIVO",
-        fechaVence: { gte: firstWeekStart, lt: windowEnd },
-      },
-      select: { saldo: true, fechaVence: true },
-    }),
+    ResultadoNegocioDB.proyeccion.fiadosQueVencen(tenantId, firstWeekStart, windowEnd),
 
     // 3. Payables con dueDate en la ventana
-    prisma.payable.findMany({
-      where: {
-        tenantId,
-        status: { in: ["pendiente", "parcial"] },
-        dueDate: { gte: firstWeekStart, lt: windowEnd },
-      },
-      select: { amount: true, paidAmount: true, dueDate: true },
-    }),
+    ResultadoNegocioDB.proyeccion.payablesQueVencen(tenantId, firstWeekStart, windowEnd),
 
     // 4. Cuotas de préstamos pendientes — join manual por prestamo.tenantId
-    prisma.prestamoCuota.findMany({
-      where: {
-        pagadoEn: null,
-        fechaVence: { gte: firstWeekStart, lt: windowEnd },
-        prestamo: { tenantId, status: "ACTIVO" },
-      },
-      select: { monto: true, fechaVence: true },
-    }),
+    ResultadoNegocioDB.proyeccion.cuotasQueVencen(tenantId, firstWeekStart, windowEnd),
 
     // 5. Nómina aproximada — category=personal últimos 30 días (promedio)
-    prisma.expense.aggregate({
-      where: {
-        tenantId,
-        category: "personal",
-        date: { gte: addDays(now, -30) },
-      },
-      _sum: { amount: true },
-    }),
+    // Sin permiso de RRHH ni se consulta: la nómina no entra en ningún número.
+    verPlanilla ? ResultadoNegocioDB.proyeccion.gastoPersonalDesde(tenantId, addDays(now, -30)) : Promise.resolve(0),
 
     // 6. Gastos fijos recurrentes (alquiler, servicios) últimos 30 días
-    prisma.expense.aggregate({
-      where: {
-        tenantId,
-        recurring: true,
-        category: { notIn: ["personal"] },
-        date: { gte: addDays(now, -30) },
-      },
-      _sum: { amount: true },
-    }),
+    ResultadoNegocioDB.proyeccion.gastoRecurrenteDesde(tenantId, addDays(now, -30)),
 
     // 7. Override manual desde platform settings (opcional)
     PlatformSettingsDB.get<number>("estimated_weekly_fixed_expenses"),
+
+    // ── ADR-451: campos nuevos, fuera del cierre de cada semana ─────────
+    ResultadoNegocioDB.proyeccion.adelantosAbiertos(tenantId),
+    ResultadoNegocioDB.proyeccion.fiadosFueraDeLaVentana(tenantId, firstWeekStart),
+    ResultadoNegocioDB.proyeccion.payablesVencidosAntes(tenantId, firstWeekStart),
+    verPlanilla ? ResultadoNegocioDB.proyeccion.ganadoRrhh(tenantId, limaDateKey(addDays(now, -27)), hoyLima) : Promise.resolve(null),
   ]);
+  const startingBalance = saldo.monto;
 
   // Nómina estimada por semana = promedio_30d / 4 (≈ semanal)
-  const estimatedPayrollWeekly = toNumOrZero(personalExpenses._sum.amount) / 4;
+  const estimatedPayrollWeekly = personalExpenses / 4;
   // Otros gastos fijos (renta, luz, agua) por semana
   const settingWeekly =
     typeof weeklyFixedSetting === "number" && weeklyFixedSetting > 0
       ? weeklyFixedSetting
       : null;
   const recurringWeekly =
-    settingWeekly ?? toNumOrZero(recurringExpenses._sum.amount) / 4;
+    settingWeekly ?? recurringExpenses / 4;
 
   // ── Bucket por semana ────────────────────────────────────────────────
   const weeks: WeekRow[] = [];
@@ -261,8 +264,14 @@ export async function computeCashflowRolling(
       .filter((c) => inWindow(c.fechaVence))
       .reduce((s, c) => s + toNumOrZero(c.monto), 0);
 
-    const payroll = estimatedPayrollWeekly;
+    // ADR-451: sin permiso de RRHH el cierre va sin nómina (rotulado `cierreSinNomina`).
+    const payroll = verPlanilla ? estimatedPayrollWeekly : 0;
     const otherExpenses = recurringWeekly;
+
+    // ADR-451: informativo, no entra en el cierre.
+    const advanceCollections = adelantosAbiertos
+      .filter((a) => inWindow(a.fechaVencimiento))
+      .reduce((s, a) => s + toNumOrZero(a.saldoPendiente), 0);
 
     const openingBalance = runningBalance;
     const closingBalance = round2(
@@ -288,9 +297,10 @@ export async function computeCashflowRolling(
       expectedCollections: round2(expectedCollections),
       creditCollections: round2(creditCollections),
       supplierPayments: round2(supplierPayments),
-      payroll: round2(payroll),
+      ...(verPlanilla ? { payroll: round2(payroll) } : {}),
       loans: round2(loans),
       otherExpenses: round2(otherExpenses),
+      advanceCollections: round2(advanceCollections),
       closingBalance,
       isNegative,
     });
@@ -298,29 +308,37 @@ export async function computeCashflowRolling(
     runningBalance = closingBalance;
   }
 
+  const payrollFuente: CashflowRollingResult["payrollFuente"] = !verPlanilla
+    ? "sin_permiso"
+    : personalExpenses > 0
+      ? "gastos_personal"
+      : "sin_dato";
+
+  // ADR-451: lo que ninguna semana muestra.
+  const enVentana = adelantosAbiertos.filter(
+    (a) => a.fechaVencimiento != null && a.fechaVencimiento >= firstWeekStart && a.fechaVencimiento < windowEnd,
+  );
+  const adelantosFuera = adelantosAbiertos.filter((a) => a.fechaVencimiento == null || a.fechaVencimiento < firstWeekStart);
+
   return {
     tenantId,
     generatedAt: now.toISOString(),
     startingBalance: round2(startingBalance),
     weeks,
     criticalWeek,
+    saldoInicial: { monto: round2(startingBalance), fuente: saldo.fuente, estimado: saldo.fuente !== "tesoreria" },
+    payrollFuente,
+    cierreSinNomina: !verPlanilla,
+    ...(verPlanilla ? { payrollRrhhSemanal: ganado28d == null ? null : round2(ganado28d / 4) } : {}),
+    adelantosConVencimiento: {
+      monto: round2(enVentana.reduce((s, a) => s + toNumOrZero(a.saldoPendiente), 0)),
+      cuantos: enVentana.length,
+    },
+    sinFecha: {
+      porCobrar: round2(fiadosSinFecha.monto + adelantosFuera.reduce((s, a) => s + toNumOrZero(a.saldoPendiente), 0)),
+      cuantosPorCobrar: fiadosSinFecha.cuantos + adelantosFuera.length,
+      porPagar: payablesVencidos.monto,
+      cuantosPorPagar: payablesVencidos.cuantos,
+    },
   };
-}
-
-// ── Backwards-compat shim ──────────────────────────────────────────────────
-// El componente antiguo (CashFlowRolling.tsx) y los tests preexistentes
-// importaban `calculateRollingCashflow` con un shape más simple. Mantenemos
-// el nombre exportado como alias, traduciendo al nuevo contract.
-//
-// @deprecated — usa `computeCashflowRolling` directamente.
-
-export type CashflowWeek = WeekRow;
-export type CashflowResult = CashflowRollingResult;
-
-export async function calculateRollingCashflow(
-  tenantId: string,
-  _weeks: number = 13,
-): Promise<CashflowRollingResult> {
-  // `_weeks` se ignora — la proyección rodante siempre es 13 (estándar FP&A).
-  return computeCashflowRolling(tenantId);
 }

@@ -77,7 +77,7 @@ export function BusinessHealthRadial({
       <div className="flex flex-col gap-4">
         {/* Score + radial */}
         <div className="relative" style={{ width: "100%", height: 200, minHeight: 160 }}>
-          <ResponsiveContainer width="99%" height="99%" debounce={50}>
+          <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="99%" height="99%" debounce={50}>
             <RadialBarChart
               data={metrics}
               innerRadius="40%"
@@ -102,7 +102,7 @@ export function BusinessHealthRadial({
             <span
               className="text-[length:var(--ts-3xl)] font-extrabold tabular-nums leading-none"
               style={{
-                color: isHealthy ? "var(--data-success, #10b981)" : "var(--data-warning, #f59e0b)",
+                color: isHealthy ? "var(--data-success, #10b981)" : "#0d9488",
               }}
             >
               {score}
@@ -138,13 +138,13 @@ export function BusinessHealthRadial({
             "flex items-start gap-2 rounded-lg border p-2.5 " +
             (isHealthy
               ? "border-[var(--data-success,#10b981)]/30 bg-[var(--data-success,#10b981)]/5"
-              : "border-[var(--data-warning,#f59e0b)]/30 bg-[var(--data-warning,#f59e0b)]/5")
+              : "border-primary/30 bg-primary/5")
           }
         >
           {isHealthy ? (
             <CheckCircle className="h-4 w-4 mt-0.5 shrink-0 text-[var(--data-success,#10b981)]" />
           ) : (
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[var(--data-warning,#f59e0b)]" />
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
           )}
           <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] leading-snug">
             {isHealthy ? (

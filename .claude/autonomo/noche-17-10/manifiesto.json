@@ -1,0 +1,354 @@
+[
+ {
+  "clave": "ventas-p1",
+  "asunto": "feat(ventas): caja de hoy vs sesión, responsable de la venta, plazo de fiados y comisión visible",
+  "titulo": "Caja de hoy vs. turno, quién vendió, fiados sin plazo y la regla de comisión",
+  "area": "Ventas y caja",
+  "donde": "Ventas y caja › Caja, Me deben, Comisiones",
+  "reporte": "ventas/reporte-p1.md"
+ },
+ {
+  "clave": "ventas-p2",
+  "asunto": "feat(ventas): pos en tarjetas o lista, accesos fijos, esperado negativo explicado y cuenta del fiado",
+  "titulo": "POS en tarjetas o lista, Ctrl+K, ticket promedio real y la cuenta de cada fiado",
+  "area": "Ventas y caja",
+  "donde": "Ventas y caja › Vender, Cajeros, Me deben",
+  "reporte": "ventas/reporte-p2.md"
+ },
+ {
+  "clave": "ventas-p3",
+  "asunto": "feat(caja): bandeja del turno, por qué no cuadra, cola offline por negocio y recordatorio revisable",
+  "titulo": "Bandeja del turno, «¿por qué no cuadra?», cierre sin duplicar y caja sin conexión",
+  "area": "Ventas y caja",
+  "donde": "Ventas y caja › Caja",
+  "reporte": "ventas/reporte-p3.md"
+ },
+ {
+  "clave": "ventas-r1",
+  "asunto": "fix(pos): la cola sin conexión reintenta 429/5xx con la misma clave y resuelve la carrera por clave",
+  "titulo": "La caja ya no frena en la venta 11 ni cobra dos veces sin conexión",
+  "area": "Ventas y caja",
+  "donde": "Ventas y caja › Vender",
+  "reporte": "ventas/reporte-r1.md"
+ },
+ {
+  "clave": "ventas-dev",
+  "asunto": "fix(caja): /api/returns con venta usa el mismo tope que la devolucion del POS",
+  "titulo": "Devolver una venta: nunca más que lo vendido",
+  "area": "Ventas y caja",
+  "donde": "Ventas y caja",
+  "reporte": "ventas/reporte-dev.md"
+ },
+ {
+  "clave": "ventas-dev2",
+  "asunto": "fix(caja): devolver un pedido topa como la venta y el saldo de credito es saldo a favor",
+  "titulo": "Devolver un pedido con tope y el saldo a favor del cliente bien mostrado",
+  "area": "Ventas y caja",
+  "donde": "Clientes y Pedidos",
+  "reporte": "ventas/reporte-dev2.md"
+ },
+ {
+  "clave": "pedidos-p1",
+  "asunto": "feat(pedidos): siguiente paso, quién lo lleva y la plata en cada pedido + historial real",
+  "titulo": "Cada pedido dice qué sigue, quién lo lleva y cuánto falta cobrar",
+  "area": "Pedidos y reparto",
+  "donde": "Pedidos › Tablero, Lista, Archivados",
+  "reporte": "pedidos/reporte-p1.md"
+ },
+ {
+  "clave": "pedidos-p2",
+  "asunto": "feat(reparto): equipo que guarda, asignar eligiendo el pedido, ranking honesto y rutas aparte",
+  "titulo": "Reparto: el equipo guarda de verdad, asignar eligiendo el pedido, ranking honesto",
+  "area": "Pedidos y reparto",
+  "donde": "Pedidos › Reparto",
+  "reporte": "pedidos/reporte-p2.md"
+ },
+ {
+  "clave": "pedidos-p3",
+  "asunto": "feat(reparto): retiros conciliables, ficha del repartidor, feed por pedido y revisar con motivo",
+  "titulo": "Reparto: retiros con filtros, ficha del repartidor y lo que pasó en el día",
+  "area": "Pedidos y reparto",
+  "donde": "Pedidos › Reparto",
+  "reporte": "pedidos/reporte-p3.md"
+ },
+ {
+  "clave": "pedidos-n",
+  "asunto": "feat(pedidos): preparación con hoja de recojo, análisis operativo y agenda de entregas",
+  "titulo": "Pestañas nuevas: Preparación, Análisis y agenda de entregas",
+  "area": "Pedidos y reparto",
+  "donde": "Pedidos",
+  "reporte": "pedidos/reporte-n.md"
+ },
+ {
+  "clave": "compras-p1",
+  "asunto": "fix(compras): la canasta vaciada no resucita y comprar separa +1, costo con fuente, igv y condición",
+  "titulo": "Comprar: la canasta vaciada ya no vuelve, costo real e IGV a la vista",
+  "area": "Compras",
+  "donde": "Compras › Comprar",
+  "reporte": "compras/reporte-p1.md"
+ },
+ {
+  "clave": "compras-p2",
+  "asunto": "feat(compras): en qué va cada orden, entregas por día y recibir con o sin orden",
+  "titulo": "Órdenes: en qué va cada una, entregas por día y recibir con o sin orden",
+  "area": "Compras",
+  "donde": "Compras › Órdenes y recepción",
+  "reporte": "compras/reporte-p2.md"
+ },
+ {
+  "clave": "compras-p3",
+  "asunto": "feat(compras): por pagar con origen y documento, calendario, propuesta y estado de cuenta",
+  "titulo": "Por pagar: de dónde sale cada deuda, calendario, propuesta y estado de cuenta",
+  "area": "Compras",
+  "donde": "Compras › Por pagar",
+  "reporte": "compras/reporte-p3.md"
+ },
+ {
+  "clave": "compras-p4",
+  "asunto": "feat(compras): devoluciones con tope de lo recibido, anular en vez de borrar y costo pendiente",
+  "titulo": "Devoluciones al proveedor con tope y anuladas en vez de borradas",
+  "area": "Compras",
+  "donde": "Compras › Devoluciones",
+  "reporte": "compras/reporte-p4.md"
+ },
+ {
+  "clave": "compras-p5",
+  "asunto": "feat(compras): sugerencias con su cuenta y sin servicios; órdenes sin doble stock ni deuda borrada",
+  "titulo": "Sugerencias que explican su cuenta, sin servicios; órdenes sin stock doble",
+  "area": "Compras",
+  "donde": "Compras › Sugerencias, Órdenes",
+  "reporte": "compras/reporte-p5.md"
+ },
+ {
+  "clave": "compras-p6",
+  "asunto": "feat(compras): ficha del proveedor, duplicados, evaluación por período y precios del mercado",
+  "titulo": "Ficha del proveedor, duplicados, evaluación y precios del mercado",
+  "area": "Compras",
+  "donde": "Compras › Proveedores",
+  "reporte": "compras/reporte-p6.md"
+ },
+ {
+  "clave": "compras-p7",
+  "asunto": "feat(compras): buscar en todo, revisar pendientes, atajos y avisos de plantilla, paquete y factura",
+  "titulo": "Buscar en todo Compras, bandeja «Revisar» y atajos",
+  "area": "Compras",
+  "donde": "Compras",
+  "reporte": "compras/reporte-p7.md"
+ },
+ {
+  "clave": "compras-n",
+  "asunto": "feat(compras): conciliación de documentos en por pagar: orden, recepción, factura, cuenta y pago",
+  "titulo": "Pestaña nueva: conciliación orden ↔ recepción ↔ factura ↔ pago",
+  "area": "Compras",
+  "donde": "Compras › Por pagar › Conciliación",
+  "reporte": "compras/reporte-n.md"
+ },
+ {
+  "clave": "compras-rem",
+  "asunto": "fix(compras): las entregas valoran las órdenes automáticas sin costo por producto",
+  "titulo": "Entregas con valor real en órdenes automáticas",
+  "area": "Compras",
+  "donde": "Compras › Órdenes › Entregas",
+  "reporte": "compras/reporte-rem.md"
+ },
+ {
+  "clave": "compras-403",
+  "asunto": "fix(compras): sin permiso en devoluciones ya no dice «tu sesión venció»",
+  "titulo": "Aviso de permiso correcto en Devoluciones",
+  "area": "Compras",
+  "donde": "Compras › Devoluciones",
+  "reporte": "yo/reporte-403.md"
+ },
+ {
+  "clave": "comp-p1",
+  "asunto": "feat(comprobantes): emitir eligiendo el pedido, con revisión antes y resultado real",
+  "titulo": "Emitir comprobante eligiendo el pedido, con revisión y resultado real",
+  "area": "Comprobantes",
+  "donde": "Comprobantes › Facturas y boletas",
+  "reporte": "comprobantes/reporte-p1.md"
+ },
+ {
+  "clave": "comp-p2",
+  "asunto": "feat(notas-credito): lo que queda por acreditar, campos por motivo, efectos y plantillas",
+  "titulo": "Notas de crédito: lo que queda por acreditar y campos por motivo",
+  "area": "Comprobantes",
+  "donde": "Comprobantes › Notas de crédito",
+  "reporte": "comprobantes/reporte-p2.md"
+ },
+ {
+  "clave": "comp-r1",
+  "asunto": "fix(notas-credito): alta en fila con candado por documento y número, sin acreditar dos veces",
+  "titulo": "Notas de crédito: dos a la vez ya no acreditan el doble",
+  "area": "Comprobantes",
+  "donde": "Comprobantes › Notas de crédito",
+  "reporte": "comprobantes/reporte-r1.md"
+ },
+ {
+  "clave": "comp-p3",
+  "asunto": "feat(guias): guía de remisión desde el pedido, en 5 etapas, unidades por nombre y borrador",
+  "titulo": "Guía de remisión desde el pedido, en 5 etapas",
+  "area": "Comprobantes",
+  "donde": "Comprobantes › Guías",
+  "reporte": "comprobantes/reporte-p3.md"
+ },
+ {
+  "clave": "comp-p4",
+  "asunto": "feat(cotizaciones): cliente de tu lista, stock sin reservar, confirmar todo y plantillas del equipo",
+  "titulo": "Cotizaciones: cliente de tu lista, stock, confirmar todo y plantillas",
+  "area": "Comprobantes",
+  "donde": "Comprobantes › Cotizaciones",
+  "reporte": "comprobantes/reporte-p4.md"
+ },
+ {
+  "clave": "comp-p5",
+  "asunto": "feat(comprobantes): seguimiento de pendientes, expediente, conciliación y filtros con período",
+  "titulo": "Pestañas nuevas: Seguimiento, Expediente y Conciliación; búsqueda en la base",
+  "area": "Comprobantes",
+  "donde": "Comprobantes",
+  "reporte": "comprobantes/reporte-p5.md"
+ },
+ {
+  "clave": "seg-t1",
+  "asunto": "fix(seguridad): pedidos solo los cambia quien escribe; notas y plazo de fiados sin pérdidas",
+  "titulo": "Quién puede cambiar y borrar pedidos; notas que no se pierden",
+  "area": "Seguridad y datos",
+  "donde": "Pedidos",
+  "reporte": "seguridad/reporte-t1.md"
+ },
+ {
+  "clave": "seg-t3",
+  "asunto": "fix(seguridad): cotización convierte sin 503, estados con tabla, alta sin pisar y csv sin fórmulas",
+  "titulo": "Convertir cotización funciona; el alta de cliente ya no pisa datos; CSV sin fórmulas",
+  "area": "Seguridad y datos",
+  "donde": "Cotizaciones, Clientes, exportes",
+  "reporte": "seguridad/reporte-t3.md"
+ },
+ {
+  "clave": "seg-rl",
+  "asunto": "fix(api): límites de la operación diaria después del login y por usuario; ping y chat sin 429",
+  "titulo": "Límites que frenaban la operación: repartidor en el mapa, chat, boletas, caja",
+  "area": "Seguridad y datos",
+  "donde": "Reparto, chat, caja",
+  "reporte": "seguridad/reporte-rl.md"
+ },
+ {
+  "clave": "seg-pii",
+  "asunto": "fix(seguridad): chat de la tienda y listas piden identidad; sugerir por whatsapp con roles y tope",
+  "titulo": "El chat ya no muestra datos de un cliente a quien solo sabe su celular",
+  "area": "Seguridad y datos",
+  "donde": "Tienda › Chat",
+  "reporte": "seguridad/reporte-pii.md"
+ },
+ {
+  "clave": "seg-chat",
+  "asunto": "fix(seguridad): el chat de invitado pide el token de la conversación para leer o escribir",
+  "titulo": "Chat de invitados del marketplace: cada uno ve solo su conversación",
+  "area": "Seguridad y datos",
+  "donde": "Marketplace › Chat",
+  "reporte": "seguridad/reporte-chat.md"
+ },
+ {
+  "clave": "seg-t4",
+  "asunto": "fix(seguridad): el chat exige sesión para escribir, el token vence y las subidas piden el hilo",
+  "titulo": "Chat: escribir pide sesión, el acceso vence, subidas protegidas",
+  "area": "Seguridad y datos",
+  "donde": "Tienda › Chat",
+  "reporte": "seguridad/reporte-t4.md"
+ },
+ {
+  "clave": "panel-m",
+  "asunto": "feat(panel): comandos en el buscador, recientes, vistas guardadas y avisos agrupados por acción",
+  "titulo": "Buscador con comandos, recientes, vistas guardadas y avisos agrupados",
+  "area": "Todo el panel",
+  "donde": "Todo el panel",
+  "reporte": "panel/reporte-m.md"
+ },
+ {
+  "clave": "panel-surface",
+  "asunto": "fix(ui): el fondo --surface-alt existe (193 usos en 120 archivos salían sin fondo)",
+  "titulo": "Fondos que faltaban en 120 pantallas",
+  "area": "Todo el panel",
+  "donde": "Todo el panel",
+  "reporte": "yo/reporte-surface.md"
+ },
+ {
+  "clave": "pedidos-p4",
+  "asunto": "feat(pedidos): botones por rol, emitir y guía desde el pedido, vistas, lote revisado y preparación",
+  "titulo": "Pedidos por rol, Emitir y Guía desde el pedido, y Preparación/Análisis montadas",
+  "area": "Pedidos y reparto",
+  "donde": "Pedidos › detalle, Lista, Preparación, Análisis",
+  "reporte": "pedidos/reporte-p4.md"
+ },
+ {
+  "clave": "ventas-dev3",
+  "asunto": "fix(caja): devolver sólo pedidos entregados y cobrados, frenar lo fiado y no devolver el envío",
+  "titulo": "Devoluciones: sólo lo entregado y lo cobrado",
+  "area": "Ventas y caja",
+  "donde": "Ventas y caja, Pedidos",
+  "reporte": "ventas/reporte-dev3.md"
+ },
+ {
+  "clave": "panel-minw",
+  "asunto": "fix(ui): los min-w-* vuelven a regir: la regla global min-width 0 pasa a @layer base",
+  "titulo": "Anchos mínimos que nunca funcionaban: 342 → 0 en 44 vistas",
+  "area": "Todo el panel",
+  "donde": "Todo el panel (sobre todo en el celular)",
+  "reporte": "yo/reporte-minw.md"
+ },
+ {
+  "clave": "pedidos-rem",
+  "asunto": "feat(pedidos): el detalle dice para cuándo lo pidió el cliente y si ya está listo para salir",
+  "titulo": "Detalle del pedido con la franja de entrega y «Listo para salir»",
+  "area": "Pedidos y reparto",
+  "donde": "Pedidos › detalle",
+  "reporte": "pedidos/reporte-rem.md"
+ },
+ {
+  "clave": "ventas-motivo",
+  "asunto": "feat(motivo): motivo obligatorio al cambiar medio de caja, ajustar stock y cancelar una compra",
+  "titulo": "Motivo obligatorio al ajustar stock, cambiar un medio o cancelar una orden",
+  "area": "Ventas y caja",
+  "donde": "Caja, Inventario, Compras",
+  "reporte": "ventas/reporte-motivo.md"
+ },
+ {
+  "clave": "compras-rem2",
+  "asunto": "fix(compras): órdenes sin desborde a 1280 y recepción con fechas y conformidad según el producto",
+  "titulo": "Órdenes sin desborde y conformidad al recibir servicios y perecibles",
+  "area": "Compras",
+  "donde": "Compras › Órdenes y recepción",
+  "reporte": "compras/reporte-rem2.md"
+ },
+ {
+  "clave": "panel-kv",
+  "asunto": "feat(panel): vistas guardadas y recientes siguen a la persona en otra computadora",
+  "titulo": "Vistas guardadas y recientes que te siguen a otro equipo",
+  "area": "Todo el panel",
+  "donde": "Clientes, Pedidos, cabecera",
+  "reporte": "panel/reporte-kv.md"
+ },
+ {
+  "clave": "ventas-contacto",
+  "asunto": "feat(fiados): último contacto en me deben y tramos con historial en la ficha del repartidor",
+  "titulo": "Me deben con el último contacto y la promesa; repartidor con su historial",
+  "area": "Ventas y caja",
+  "donde": "Me deben, Reparto › ficha",
+  "reporte": "ventas/reporte-contacto.md"
+ },
+ {
+  "clave": "compras-pres",
+  "asunto": "feat(compras): presupuesto de compras del mes y recepción con revisión y rechazo por línea",
+  "titulo": "Presupuesto de compras del mes y aceptación por línea al recibir",
+  "area": "Compras",
+  "donde": "Compras › Órdenes y recepción",
+  "reporte": "compras/reporte-pres.md"
+ },
+ {
+  "clave": "compras-rrec",
+  "asunto": "fix(compras): lo rechazado al recibir baja la cuenta y recibir no dice «sin órdenes» al cargar",
+  "titulo": "Recibir: lo rechazado no se le paga al proveedor",
+  "area": "Compras",
+  "donde": "Compras › Recibir",
+  "reporte": "compras/reporte-rrec.md"
+ }
+]

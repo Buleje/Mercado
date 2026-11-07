@@ -155,7 +155,7 @@ export default function ProductVariantSelector({
                 aria-label={`${variant.name}${isOutOfStock ? " — Agotado" : ""}`}
                 className={cn(
                   "relative flex h-11 min-w-12 items-center justify-center rounded-lg border-2 px-3 text-sm font-bold transition-all",
-                  isSelected ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-primary/40",
+                  isSelected ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-primary/40",
                   isOutOfStock && "opacity-50 cursor-not-allowed line-through"
                 )}
               >
@@ -180,7 +180,7 @@ export default function ProductVariantSelector({
               className={cn(
                 "relative inline-flex items-center gap-2 rounded-full border-2 pl-1 pr-3.5 py-1 text-sm font-semibold transition-all min-h-[44px]",
                 !pillImage && "px-4 py-2",
-                isSelected ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-primary/40",
+                isSelected ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-primary/40",
                 isOutOfStock && "opacity-50 cursor-not-allowed"
               )}
             >

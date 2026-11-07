@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * ComplianceDB
@@ -68,7 +69,7 @@ export const ComplianceDB = {
         where: { tenantId },
         orderBy: { createdAt: "asc" },
         select: { createdAt: true },
-      }).catch(() => null),
+      }).catch(sinDato("compliance.db registro de auditoría más antiguo")),
       prisma.customer.count({
         where: { tenantId },
       }).catch(() => 0),

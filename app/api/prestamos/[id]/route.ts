@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PrestamosDB, type PrestamoUpdateInput } from "@/lib/db/prestamos.db";
 import { requireAdmin } from "@/lib/require-admin";
+import { ROLES_PRESTAMOS } from "@/lib/prestamos/roles";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -32,7 +33,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_PRESTAMOS);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -72,7 +73,7 @@ export async function PUT(
 ) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "prestamos-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_PRESTAMOS);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -116,7 +117,7 @@ export async function PATCH(
 ) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "prestamos-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_PRESTAMOS);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;

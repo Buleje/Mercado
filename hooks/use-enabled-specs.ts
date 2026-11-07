@@ -23,17 +23,30 @@
  * Trigger remoto (desde superadmin tras toggle):
  *   broadcastSpecsChanged(); // ver export más abajo
  */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { cachedJson } from "@/lib/client-cache-fetch";
+import {
+  MODULO_A_MEDIDA,
+  type EnchufeId,
+  type NegocioDePiezas,
+  type PiezaAsignada,
+} from "@/extensiones/_contrato";
 
 interface SpecResponse {
   keys: string[];
   moduleIds: string[];
+  /** ADR-457: las piezas prendidas del negocio (opciones ya validadas en el servidor). */
+  piezas?: PiezaAsignada[];
+  /** ADR-457: el negocio de la sesión, para el `ContextoPieza`. `null` si no hay piezas. */
+  negocio?: NegocioDePiezas | null;
 }
 
 interface UseEnabledSpecsResult {
   enabledKeys: Set<string>;
   enabledModuleIds: Set<string>;
+  /** ADR-457: todas las piezas prendidas del negocio, en orden. */
+  piezas: PiezaAsignada[];
+  negocio: NegocioDePiezas | null;
   isLoading: boolean;
   refresh: () => void;
 }
@@ -167,9 +180,57 @@ export function useEnabledSpecs(): UseEnabledSpecsResult {
   return {
     enabledKeys: new Set(data?.keys ?? []),
     enabledModuleIds: new Set(data?.moduleIds ?? []),
+    piezas: data?.piezas ?? [],
+    negocio: data?.negocio ?? null,
     isLoading,
     refresh,
   };
+}
+
+// ─── Piezas (ADR-457) ───────────────────────────────────────────────────────
+
+export interface PiezasDelNegocio {
+  negocio: NegocioDePiezas | null;
+  piezas: PiezaAsignada[];
+}
+
+const sinPiezas = (): PiezasDelNegocio => ({ negocio: null, piezas: [] });
+
+function delEnchufe(r: SpecResponse | null, enchufe?: EnchufeId): PiezasDelNegocio {
+  const piezas = Array.isArray(r?.piezas) ? r.piezas : [];
+  return {
+    negocio: r?.negocio ?? null,
+    piezas: enchufe ? piezas.filter((p) => p.enchufe === enchufe) : piezas,
+  };
+}
+
+/**
+ * Las piezas prendidas del negocio en un enchufe (p. ej. `"panel.pestana"`),
+ * del mismo pedido que ya hace `useEnabledSpecs` (sin un fetch más). Se
+ * refresca sola cuando el superadmin cambia algo (`broadcastSpecsChanged`).
+ */
+export function usePiezas(enchufe: EnchufeId): PiezasDelNegocio & { isLoading: boolean } {
+  const { piezas, negocio, isLoading } = useEnabledSpecs();
+  const delMio = useMemo(() => piezas.filter((p) => p.enchufe === enchufe), [piezas, enchufe]);
+  return { negocio, piezas: delMio, isLoading };
+}
+
+/**
+ * Lo mismo pero fuera de React (la impresión de la guía no es un hook). Usa la
+ * copia de la sesión si tiene menos de 30 s; si no, pregunta. Falla cerrado:
+ * ante cualquier error, ninguna pieza — la guía sale como siempre.
+ */
+export async function piezasDelNegocio(enchufe?: EnchufeId): Promise<PiezasDelNegocio> {
+  try {
+    const enCache = readCache();
+    if (enCache) return delEnchufe(enCache, enchufe);
+    const r = await cachedJson<SpecResponse>("/api/admin/me/specializations?v=piezas", 5000, { cache: "no-store" });
+    if (r) writeCache({ keys: r.keys ?? [], moduleIds: r.moduleIds ?? [], piezas: r.piezas ?? [], negocio: r.negocio ?? null });
+    return delEnchufe(r, enchufe);
+  } catch {
+    // Sin respuesta = sin piezas: lo normal sigue funcionando.
+    return sinPiezas();
+  }
 }
 
 /**
@@ -186,7 +247,7 @@ export function broadcastSpecsChanged(payload?: {
   if (typeof BroadcastChannel === "undefined") return;
   try {
     const bc = new BroadcastChannel(BROADCAST_CHANNEL);
-    bc.postMessage({ type: "spec-toggled", ...(payload ?? {}) });
+    bc.postMessage({ type: "spec-toggled", ...payload });
     bc.close();
   } catch {
     // silent
@@ -199,9 +260,15 @@ export function broadcastSpecsChanged(payload?: {
  */
 export const SPEC_GATED_MODULE_IDS = new Set<string>([
   "ctp-libro-operaciones",
+  "forestal-lotes",
   "loth-libro-operaciones",
   "gtf-emisor",
+  "forestal-herramientas",
+  "forestal-tramites",
   "cacao-acopio",
   "recetas-medicas",
   "cuero-trazabilidad",
+  // ADR-457: la pestaña «A medida» aparece si el negocio tiene ≥1 pieza en
+  // `panel.pestana` (el endpoint suma el módulo a `moduleIds`).
+  MODULO_A_MEDIDA,
 ]);

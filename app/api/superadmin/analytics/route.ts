@@ -4,8 +4,10 @@ import { cacheLife, cacheTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prismaReadonly as prisma } from "@/lib/prisma-readonly";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { getAllPlanPrices } from "@/lib/plans-server";
+import { estadoDeCobro } from "@/lib/billing/mrr-plataforma";
+import { precioMensualDePlan } from "@/lib/billing/plan-tiers";
 import { logger } from "@/lib/logger";
+import { startOfLimaMonth } from "@/lib/utils";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -27,14 +29,12 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
 
   const now = new Date();
   // Si vienen from/to, usar esos como "periodo actual"; sino fallback al mes en curso.
-  const periodStart = fromISO ? new Date(fromISO) : new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodStart = fromISO ? new Date(fromISO) : new Date(startOfLimaMonth(0, now));
   const periodEnd = toISO ? new Date(toISO) : now;
   const periodMs = Math.max(periodEnd.getTime() - periodStart.getTime(), 86_400_000);
   // Periodo anterior de misma duración para comparación de growth
   const prevEnd = new Date(periodStart.getTime() - 1);
   const prevStart = new Date(prevEnd.getTime() - periodMs);
-
-  const PLAN_PRICES = await getAllPlanPrices();
 
   const [
     allTenants,
@@ -52,6 +52,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
         id: true, slug: true, name: true, plan: true, active: true,
         createdAt: true, cancelAtPeriodEnd: true, trialEndsAt: true,
         stripeCustomerId: true, ownerEmail: true,
+        stripeSubscriptionId: true, stripeCurrentPeriodEnd: true, mpSubscriptionId: true,
       },
     }),
     prisma.tenant.count({ where: { createdAt: { gte: periodStart, lte: periodEnd } } }),
@@ -82,13 +83,27 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   // importar trial → si los 6 tenants estaban en trial, MRR salía
   // S/1834 cuando el real era S/0 (todavía no pagan). Ahora excluimos
   // tenants cuyo trialEndsAt > now (siguen en trial, plan no se cobra).
-  const mrr = allTenants.reduce((sum, t) => {
-    if (!t.active) return sum;
-    // Si el trial aún no expira, el tenant no paga → no suma a MRR
-    if (t.trialEndsAt && new Date(t.trialEndsAt) > now) return sum;
-    const price = PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0;
-    return sum + price;
-  }, 0);
+  //
+  // 2026-10-08: el mismo criterio vale para TODAS las series de ingresos y
+  // para «de pago». Antes sólo el MRR excluía el trial: el dashboard decía
+  // «MRR S/0 · 9 de pago» y la «Visión mensual» sumaba S/15,192 en 6 meses
+  // con los 9 tenants activos en trial hasta 2027 (0 pagan, como dice Billing).
+  // `at` se recorta a `now`: un mes que todavía no terminó se mide hoy.
+  //
+  // 2026-10-09: «paga» y el precio salen de la misma regla que Facturación
+  // (`estadoDeCobro` + `precioMensualDePlan`): una prueba VENCIDA sin pasarela
+  // ya no cuenta como de pago (la app la tiene en solo lectura) y el precio ya
+  // no sale de `plan-prices` (otra tabla que podía diferir de la que se cobra).
+  const pagaEn = (t: (typeof allTenants)[number], at: Date) => {
+    const corte = at > now ? now : at;
+    return (
+      new Date(t.createdAt) <= corte &&
+      estadoDeCobro(t, corte.getTime()).status === "paid"
+    );
+  };
+  const mrrAt = (at: Date) =>
+    allTenants.reduce((s, t) => (pagaEn(t, at) ? s + precioMensualDePlan(t.plan) : s), 0);
+  const mrr = mrrAt(now);
 
   // Growth metrics
   const tenantGrowthPct = tenantsLastMonth > 0
@@ -107,9 +122,9 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   // Monthly signups for the last 6 months (legacy — sigue presente para retro-compat)
   const monthlySignups: { month: string; count: number }[] = [];
   for (let i = 5; i >= 0; i--) {
-    const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
-    const label = start.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
+    const start = new Date(startOfLimaMonth(-i, now));
+    const end = new Date(startOfLimaMonth(-i + 1, now) - 1);
+    const label = start.toLocaleDateString("es-PE", { month: "short", year: "2-digit", timeZone: "America/Lima" });
     const count = allTenants.filter(
       (t) => new Date(t.createdAt) >= start && new Date(t.createdAt) <= end,
     ).length;
@@ -119,14 +134,9 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   // Monthly revenue (estimated) for the last 6 months (legacy)
   const monthlyRevenue: { month: string; revenue: number }[] = [];
   for (let i = 5; i >= 0; i--) {
-    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
-    const label = end.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
-    const revenue = allTenants
-      .filter((t) => new Date(t.createdAt) <= end && t.active)
-      .reduce(
-        (s, t) => s + (PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0),
-        0,
-      );
+    const end = new Date(startOfLimaMonth(-i + 1, now) - 1);
+    const label = end.toLocaleDateString("es-PE", { month: "short", year: "2-digit", timeZone: "America/Lima" });
+    const revenue = mrrAt(end);
     monthlyRevenue.push({ month: label, revenue });
   }
 
@@ -186,12 +196,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
       periodRevenue.push({
         bucket: label,
         iso,
-        revenue: allTenants
-          .filter((t2) => new Date(t2.createdAt) <= bEnd && t2.active)
-          .reduce(
-            (s, t2) => s + (PLAN_PRICES[t2.plan as keyof typeof PLAN_PRICES] ?? 0),
-            0,
-          ),
+        revenue: mrrAt(bEnd),
       });
     }
   } else {
@@ -239,12 +244,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
       periodRevenue.push({
         bucket: label,
         iso,
-        revenue: allTenants
-          .filter((t2) => new Date(t2.createdAt) <= bEnd && t2.active)
-          .reduce(
-            (s, t2) => s + (PLAN_PRICES[t2.plan as keyof typeof PLAN_PRICES] ?? 0),
-            0,
-          ),
+        revenue: mrrAt(bEnd),
       });
     }
   }
@@ -269,23 +269,31 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
 
   // Trial conversion rate
   const activeTenants = allTenants.filter((t) => t.active);
-  const convertedFromTrial = activeTenants.filter(
-    (t) => t.plan !== "free" && t.trialEndsAt,
+  // Sólo cuentan los trials que YA terminaron: uno que sigue corriendo no
+  // convirtió ni dejó de convertir (antes daba 64 % con 9 trials hasta 2027).
+  const trialsTerminados = allTenants.filter(
+    (t) => t.trialEndsAt && new Date(t.trialEndsAt) <= now,
+  );
+  const convertedFromTrial = trialsTerminados.filter(
+    (t) => t.active && t.plan !== "free",
   ).length;
-  const totalTrials = allTenants.filter((t) => t.trialEndsAt).length;
+  const totalTrials = trialsTerminados.length;
   const trialConversionRate = totalTrials > 0
     ? Math.round((convertedFromTrial / totalTrials) * 100 * 10) / 10
     : 0;
+
+  // ARPU = MRR / tiendas que pagan (misma definición que el widget y su descripción).
+  const payingTenants = allTenants.filter((t) => t.plan !== "free" && pagaEn(t, now)).length;
 
   return {
     overview: {
       totalTenants,
       activeTenants: activeTenants.length,
       inactiveTenants,
-      payingTenants: activeTenants.filter((t) => t.plan !== "free").length,
+      payingTenants,
       mrr,
       arr: mrr * 12,
-      arpu: totalTenants > 0 ? Math.round(mrr / totalTenants) : 0,
+      arpu: payingTenants > 0 ? Math.round(mrr / payingTenants) : 0,
       churnRate,
       trialConversionRate,
       cancelingTenants,

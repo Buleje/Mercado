@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyOtp } from "@/lib/auth/otp-store";
 import { CustomersDB } from "@/lib/db/customers.db";
+import { normalizePhone } from "@/lib/db/misc.db";
 import {
   createCustomerToken,
   CUSTOMER_SESSION,
@@ -157,8 +158,11 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. Crear token de sesion firmado (HMAC-SHA256, 30 dias)
+  // `customerId` = los 9 dígitos: `telefonoDeLaSesion` (la llave de puntos,
+  // historial y canje) solo acepta 9 dígitos. El formulario ya deja 9; esto lo
+  // garantiza aunque cambie (security 2026-10-08).
   const token = await createCustomerToken({
-    customerId: customer.phone,
+    customerId: normalizePhone(customer.phone),
     email: `${phone}@phone.buleje.pe`, // placeholder — sin email real en flujo OTP
     name: customer.name,
     tenantId: PLATFORM_TENANT_ID,

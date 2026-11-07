@@ -1,0 +1,30 @@
+-- ════════════════════════════════════════════════════════════════════════════
+-- NO APLICAR — plata pausada.
+-- ════════════════════════════════════════════════════════════════════════════
+--
+-- ADR-504 · paso 3 (CONTRACT), la parte que QUEDA. Archivo suelto a propósito
+-- (sin carpeta): Prisma no lo cuenta como migración y nadie lo aplica por
+-- accidente con un resolve.
+--
+-- La troza ya se contrajo (2026-10-19): el índice viejo por código
+-- `WoodEntryTroza_tenant_codigoPlanta_unico` se soltó en la migración
+-- `20261019e_troza_soltar_codigo_unico_viejo_adr504`.
+--
+-- Lo que sigue es la PLATA, y está EN PAUSA (Brandon 19-10, ADR-504 «Plata por
+-- permiso: PAUSADA»): los índices viejos por N° del abono `madera`
+-- (ForestCuentaMov_tenantId_gtf_madera_vivo_key) y de la guía guardada
+-- (ForestGuiaGuardada_tenantId_gtf_vivo_key) SE QUEDAN: son el freno por N°.
+-- Los nuevos con COALESCE del permiso (20261019c / 20261019d) conviven sin
+-- efecto (el viejo es más estricto).
+--
+-- Cuándo descomentar (todas):
+--   1. El parche `.claude/autonomo/adr-504-plata-pausada.patch` reaplicado,
+--      con el CRÍTICO y la ALTA del ADR cerrados, y desplegado.
+--   2. Los dos índices nuevos de plata existen y están válidos (indisvalid).
+--   3. Pasarlo a una carpeta de migración real y aplicar:
+--        node -r dotenv/config scripts/aplicar-migracion-sesion.mjs <carpeta>/migration.sql --sin-tx dotenv_config_path=.env.local
+--
+-- plata pausada:
+-- DROP INDEX CONCURRENTLY IF EXISTS "ForestCuentaMov_tenantId_gtf_madera_vivo_key";
+-- plata pausada:
+-- DROP INDEX CONCURRENTLY IF EXISTS "ForestGuiaGuardada_tenantId_gtf_vivo_key";

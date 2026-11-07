@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ReviewsDB } from "@/lib/jsondb";
+import { ProductsDB } from "@/lib/db/products.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -71,6 +72,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const data = parsed.data;
+    // Multi-tenant (16-10-2026): la FK Review_productId_fkey sólo pide que el
+    // producto EXISTA, no que sea de esta tienda. Sin este corte, una reseña
+    // con el id de un producto ajeno se guardaba aquí colgada de él.
+    if (data.productId != null && !(await ProductsDB.getById(tenantId, data.productId))) {
+      return NextResponse.json({ error: "El producto no existe en esta tienda" }, { status: 400 });
+    }
     const review = await ReviewsDB.add({
       id: data.id,
       name: data.name ?? "",
@@ -82,7 +89,7 @@ export async function POST(req: NextRequest) {
       status: "pending",
       date: data.date,
     }, tenantId);
-    return NextResponse.json(review);
+    return NextResponse.json(review, { status: 201 });
   } catch (e) {
     logger.error("[reviews] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });

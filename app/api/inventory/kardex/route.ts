@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { limaDayRange } from "@/lib/utils";
 
 // GET /api/inventory/kardex?productId=123&from=2026-01-01&to=2026-12-31
 export async function GET(req: NextRequest) {
@@ -24,12 +25,10 @@ export async function GET(req: NextRequest) {
 
     // Build date filter
     const dateFilter: Record<string, Date> = {};
-    if (from) dateFilter.gte = new Date(from);
-    if (to) {
-      const toDate = new Date(to);
-      toDate.setHours(23, 59, 59, 999);
-      dateFilter.lte = toDate;
-    }
+    // Días de LIMA: `new Date("2026-10-09")` son las 19:00 de Lima del 08 y el
+    // `setHours(23…)` del servidor (UTC) cortaba el día a las 18:59 de Lima.
+    if (from) dateFilter.gte = limaDayRange(from).start;
+    if (to) dateFilter.lte = new Date(limaDayRange(to).end.getTime() - 1);
 
     // Get product info
     const product = await prisma.product.findFirst({

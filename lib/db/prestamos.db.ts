@@ -1,6 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
+// Cronograma de cuotas: la tasa del préstamo es MENSUAL (fuente única del cálculo).
+import { capitalPendiente, fechaDelFormulario, generarCuotas } from "@/lib/prestamos/amortizacion";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -105,6 +107,11 @@ function toNum(d: Prisma.Decimal | null | undefined): number {
   return d ? Number(d) : 0;
 }
 
+/** «S/» sólo para soles: un préstamo en dólares dice «US$» en su nota. */
+function simboloMoneda(moneda: string): string {
+  return moneda === "PEN" ? "S/" : moneda === "USD" ? "US$" : moneda;
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -173,100 +180,6 @@ const INCLUDE_FULL = {
   documentos: { orderBy: { createdAt: "desc" as const } },
 };
 
-// ── Amortization calculators ──────────────────────────────────────────────────
-
-type CuotaCalc = { numeroCuota: number; monto: number; capital: number; interes: number; fechaVence: Date };
-
-function calcFrances(monto: number, tasaMensual: number, n: number, gracia: number, start: Date): CuotaCalc[] {
-  const cuotas: CuotaCalc[] = [];
-  let saldo = monto;
-
-  // Período de gracia: solo interés
-  for (let i = 1; i <= gracia; i++) {
-    const fecha = new Date(start);
-    fecha.setMonth(fecha.getMonth() + i);
-    const interes = round2(saldo * tasaMensual);
-    cuotas.push({ numeroCuota: i, monto: interes, capital: 0, interes, fechaVence: fecha });
-  }
-
-  // Cuotas normales
-  const cuotaFija = tasaMensual > 0
-    ? round2((saldo * tasaMensual * Math.pow(1 + tasaMensual, n)) / (Math.pow(1 + tasaMensual, n) - 1))
-    : round2(saldo / n);
-
-  for (let i = 1; i <= n; i++) {
-    const fecha = new Date(start);
-    fecha.setMonth(fecha.getMonth() + gracia + i);
-    const interes = round2(saldo * tasaMensual);
-    const capital = round2(cuotaFija - interes);
-    saldo = Math.max(0, round2(saldo - capital));
-    // Last cuota adjustment
-    const cuotaReal = i === n ? round2(capital + interes + saldo) : cuotaFija;
-    if (i === n) saldo = 0;
-    cuotas.push({ numeroCuota: gracia + i, monto: cuotaReal, capital: round2(cuotaReal - interes), interes, fechaVence: fecha });
-  }
-  return cuotas;
-}
-
-function calcAleman(monto: number, tasaMensual: number, n: number, gracia: number, start: Date): CuotaCalc[] {
-  const cuotas: CuotaCalc[] = [];
-  let saldo = monto;
-
-  for (let i = 1; i <= gracia; i++) {
-    const fecha = new Date(start);
-    fecha.setMonth(fecha.getMonth() + i);
-    const interes = round2(saldo * tasaMensual);
-    cuotas.push({ numeroCuota: i, monto: interes, capital: 0, interes, fechaVence: fecha });
-  }
-
-  const capitalFijo = round2(monto / n);
-  for (let i = 1; i <= n; i++) {
-    const fecha = new Date(start);
-    fecha.setMonth(fecha.getMonth() + gracia + i);
-    const interes = round2(saldo * tasaMensual);
-    const cap = i === n ? round2(saldo) : capitalFijo;
-    saldo = Math.max(0, round2(saldo - cap));
-    cuotas.push({ numeroCuota: gracia + i, monto: round2(cap + interes), capital: cap, interes, fechaVence: fecha });
-  }
-  return cuotas;
-}
-
-function calcAmericano(monto: number, tasaMensual: number, n: number, gracia: number, start: Date): CuotaCalc[] {
-  const cuotas: CuotaCalc[] = [];
-  const totalPeriods = gracia + n;
-
-  for (let i = 1; i <= totalPeriods; i++) {
-    const fecha = new Date(start);
-    fecha.setMonth(fecha.getMonth() + i);
-    const interes = round2(monto * tasaMensual);
-    const isLast = i === totalPeriods;
-    cuotas.push({
-      numeroCuota: i,
-      monto: isLast ? round2(monto + interes) : interes,
-      capital: isLast ? monto : 0,
-      interes,
-      fechaVence: fecha,
-    });
-  }
-  return cuotas;
-}
-
-function generarCuotas(
-  monto: number,
-  tasaAnual: number,
-  n: number,
-  sistema: PrestamoSistemaAmortizacion,
-  gracia: number,
-  start: Date,
-): CuotaCalc[] {
-  const tasaMensual = tasaAnual > 0 ? tasaAnual / 100 / 12 : 0;
-  switch (sistema) {
-    case "ALEMAN": return calcAleman(monto, tasaMensual, n, gracia, start);
-    case "AMERICANO": return calcAmericano(monto, tasaMensual, n, gracia, start);
-    default: return calcFrances(monto, tasaMensual, n, gracia, start);
-  }
-}
-
 // ── Prestamos DB ──────────────────────────────────────────────────────────────
 
 export const PrestamosDB = {
@@ -319,7 +232,7 @@ export const PrestamosDB = {
     const tasa = data.tasaInteres ?? 0;
     const sistema = data.sistemaAmortizacion ?? "FRANCES";
     const gracia = data.periodoGracia ?? 0;
-    const startDate = data.fechaDesembolso ? new Date(data.fechaDesembolso) : new Date();
+    const startDate = data.fechaDesembolso ? fechaDelFormulario(data.fechaDesembolso) : new Date();
 
     const cuotasCalc = generarCuotas(data.monto, tasa, numCuotas, sistema, gracia, startDate);
     const lastCuota = cuotasCalc[cuotasCalc.length - 1];
@@ -341,9 +254,9 @@ export const PrestamosDB = {
         numeroCuotas: numCuotas,
         sistemaAmortizacion: sistema,
         periodoGracia: gracia,
-        fechaDesembolso: data.fechaDesembolso ? new Date(data.fechaDesembolso) : null,
+        fechaDesembolso: data.fechaDesembolso ? fechaDelFormulario(data.fechaDesembolso) : null,
         fechaVencimiento: data.fechaVencimiento
-          ? new Date(data.fechaVencimiento)
+          ? fechaDelFormulario(data.fechaVencimiento)
           : lastCuota ? lastCuota.fechaVence : null,
         garantia: data.garantia,
         notas: data.notas,
@@ -378,8 +291,8 @@ export const PrestamosDB = {
       ...(data.moraInteres !== undefined && { moraInteres: data.moraInteres }),
       ...(data.garantia !== undefined && { garantia: data.garantia }),
       ...(data.notas !== undefined && { notas: data.notas }),
-      ...(data.fechaDesembolso !== undefined && { fechaDesembolso: data.fechaDesembolso ? new Date(data.fechaDesembolso) : null }),
-      ...(data.fechaVencimiento !== undefined && { fechaVencimiento: data.fechaVencimiento ? new Date(data.fechaVencimiento) : null }),
+      ...(data.fechaDesembolso !== undefined && { fechaDesembolso: data.fechaDesembolso ? fechaDelFormulario(data.fechaDesembolso) : null }),
+      ...(data.fechaVencimiento !== undefined && { fechaVencimiento: data.fechaVencimiento ? fechaDelFormulario(data.fechaVencimiento) : null }),
     };
     await prisma.prestamo.updateMany({ where: { id, tenantId }, data: updateData });
     return this.getById(tenantId, id);
@@ -442,9 +355,9 @@ export const PrestamosDB = {
     const existing = await this.getById(tenantId, id);
     if (!existing || existing.status !== "ACTIVO") return null;
 
-    const saldoPendiente = existing.cuotas
-      .filter((c) => !c.pagadoEn)
-      .reduce((s, c) => s + c.monto, 0);
+    // Se refinancia el CAPITAL que falta, no la suma de cuotas pendientes:
+    // esas ya traen su interés y recalcular sobre ellas cobraba interés sobre interés.
+    const saldoPendiente = capitalPendiente(existing.cuotas);
 
     if (saldoPendiente <= 0) return null;
 
@@ -484,7 +397,7 @@ export const PrestamosDB = {
         numeroCuotas: maxExisting + data.nuevasCuotas,
         sistemaAmortizacion: sistema,
         fechaVencimiento: lastNew?.fechaVence,
-        notas: `${existing.notas ?? ""}\n[Refinanciado el ${new Date().toLocaleDateString("es-PE")} — saldo: S/${saldoPendiente.toFixed(2)}]`.trim(),
+        notas: `${existing.notas ?? ""}\n[Refinanciado el ${new Date().toLocaleDateString("es-PE", { timeZone: "America/Lima" })} — capital pendiente: ${simboloMoneda(existing.moneda)} ${saldoPendiente.toFixed(2)}]`.trim(),
       },
     });
 

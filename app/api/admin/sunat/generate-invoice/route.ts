@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { emitirBoleta, emitirFactura } from "@/lib/integrations/sunat";
 import { isSunatOficial } from "@/lib/sunat/modo-oficial";
+import { afectacionDe } from "@/lib/sunat/lineas-comprobante";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { assertCsrf } from "@/lib/auth/csrf";
 
@@ -27,11 +28,12 @@ const InvoiceSchema = z.object({
   // La UI manda "RUC"/"DNI" o "1"/"6" — lo derivamos de `tipo` + longitud, así
   // que lo aceptamos laxo para no rechazar la request.
   clienteTipoDocumento: z.string().optional(),
+  // Clasificación del bien sujeto a detracción (SPOT): hoy sólo "008" Madera
+  // (venta forestal). El servidor calcula % y monto; el cliente nunca los manda.
+  bienSujetoDetraccion: z.enum(["008"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
-  const rateLimitResponse = applyRateLimit(req, "STRICT", "sunat-generate");
-  if (rateLimitResponse) return rateLimitResponse;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
 
@@ -39,6 +41,12 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req, ["admin", "cajero"]);
     if (auth instanceof NextResponse) return auth;
+    // 17-10: era STRICT por IP (10 cada 15 min) antes del login; una boleta por
+    // venta y el dueño y los cajeros comparten la IP de la bodega → la boleta 11
+    // de la hora punta daba 429. La emisión es idempotente por pedido (el facade),
+    // así que el límite es anti-bucle: por negocio + usuario, 100/min.
+    const rateLimitResponse = applyRateLimit(req, "GENEROUS", `sunat-generate:${auth.tenantId}:${auth.username}`);
+    if (rateLimitResponse) return rateLimitResponse;
 
     // Round 16 M004: SUNAT invoice creation con admin/cajero actor + IP.
     return await runWithAuditContext(req, auth.username, () => generateInvoice(req, auth, traceId));
@@ -74,7 +82,7 @@ async function generateInvoice(
     // Orden con items (necesarios para construir el comprobante).
     const order = await prisma.order.findFirst({
       where: { id: parsed.data.orderId, tenantId: auth.tenantId, deletedAt: null },
-      include: { items: true },
+      include: { items: { include: { product: { select: { taxType: true } } } } },
     });
     if (!order) {
       return NextResponse.json({ ok: false, error: "Orden no encontrada" }, { status: 404 });
@@ -87,6 +95,7 @@ async function generateInvoice(
       cantidad: item.quantity,
       precioConIgv: Number(item.price),
       unidad: "NIU",
+      afectacion: afectacionDe(item.product?.taxType),
     }));
 
     const doc = parsed.data.clienteDocumento ?? "";
@@ -99,12 +108,15 @@ async function generateInvoice(
           clienteRuc: doc,
           clienteRazonSocial: parsed.data.clienteNombre,
           items,
+          totalCobrado: Number(order.total),
+          bienSujetoDetraccion: parsed.data.bienSujetoDetraccion,
         })
       : await emitirBoleta(auth.tenantId, {
           orderId: order.id,
           clienteNombre: parsed.data.clienteNombre,
           clienteDni: doc.length === 8 ? doc : undefined,
           items,
+          totalCobrado: Number(order.total),
         });
 
     logActivity(
@@ -122,7 +134,7 @@ async function generateInvoice(
     if (!result.success) {
       // status "retrying" → encolado (202); resto → error gateway (502).
       return NextResponse.json(
-        { ok: false, error: result.error ?? "Error al emitir comprobante", invoiceId: result.invoiceId, status: result.status },
+        { ok: false, error: result.error ?? "Error al emitir comprobante", invoiceId: result.invoiceId, status: result.status, detraccion: result.detraccion },
         { status: result.status === "retrying" ? 202 : 502 },
       );
     }
@@ -141,6 +153,7 @@ async function generateInvoice(
       xmlUrl: result.xml_url ?? null,
       hash: result.hash ?? null,
       sunatAccepted: result.sunat_accepted,
+      detraccion: result.detraccion ?? null,
       invoice: saved
         ? {
             id: saved.id,

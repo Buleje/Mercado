@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SuppliersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ProveedorFichaDB } from "@/lib/db/proveedor-ficha.db";
+import { errorDeDocumento, hayMismoDocumento, describirCoincidencia } from "@/lib/compras/proveedor-identidad";
 
 
 const SupplierPatchSchema = z.object({
@@ -30,9 +31,13 @@ const SupplierPatchSchema = z.object({
   categoria: z.string().max(50).optional().nullable(),
   condicionPago: z.string().max(30).optional().nullable(),
   diasCredito: z.number().int().min(0).optional(),
+  // ADR-376: de acá sale el punto de reorden de Sugerencias.
+  leadTimeDias: z.number().int().min(0).max(365).optional().nullable(),
   cuentaBancaria: z.string().max(50).optional().nullable(),
   banco: z.string().max(50).optional().nullable(),
   observaciones: z.string().max(2000).optional().nullable(),
+  /** C34: guardar aunque ya haya otro proveedor con el mismo documento. */
+  confirmarDuplicado: z.boolean().optional(),
 }).partial();
 
 export async function GET(
@@ -48,10 +53,9 @@ export async function GET(
     if (!supplier) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
-    // Get full record with new fields from prisma — findFirst con tenantId para evitar IDOR cross-tenant.
-     
-    const full = await prisma.supplier.findFirst({ where: { id, tenantId: auth.tenantId } });
-    return NextResponse.json({ ...supplier, ...full });
+    // `getById` ya trae la ficha entera (mapSupplier): el `prisma.supplier`
+    // directo que había acá sólo duplicaba la lectura (regla 1).
+    return NextResponse.json(supplier);
   } catch (e) {
     logger.error("[suppliers/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
@@ -77,6 +81,27 @@ export async function PATCH(
     // Build update data — includes both old and new fields
     const data: Record<string, unknown> = {};
     const d = parsed.data;
+
+    // C34: si cambia el documento o su tipo, el formato y el repetido se
+    // revisan contra lo que queda guardado (lo nuevo encima de lo de hoy).
+    if (d.documento !== undefined || d.ruc !== undefined || d.tipoDocumento !== undefined) {
+      const actual = await SuppliersDB.getById(auth.tenantId, id);
+      if (!actual) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+      const tipo = d.tipoDocumento !== undefined ? d.tipoDocumento : actual.tipoDocumento;
+      const documento = (d.documento !== undefined ? d.documento : actual.documento) || (d.ruc !== undefined ? d.ruc : actual.ruc) || null;
+      const errorDoc = errorDeDocumento(tipo, documento);
+      if (errorDoc) return NextResponse.json({ error: errorDoc, campo: "documento" }, { status: 400 });
+      if (documento && !d.confirmarDuplicado) {
+        const coincidencias = await ProveedorFichaDB.coincidencias(auth.tenantId, { name: d.name ?? actual.name, tipoDocumento: tipo, documento }, id);
+        const mismo = hayMismoDocumento(coincidencias);
+        if (mismo) {
+          return NextResponse.json(
+            { error: `Ya tienes otro proveedor con ese documento: ${describirCoincidencia(mismo)}. Si es otro, guarda igual.`, coincidencias },
+            { status: 409 },
+          );
+        }
+      }
+    }
     if (d.name !== undefined) data.name = d.name;
     if (d.ruc !== undefined) data.ruc = d.ruc;
     if (d.phone !== undefined) data.phone = d.phone;
@@ -97,6 +122,9 @@ export async function PATCH(
     if (d.categoria !== undefined) data.categoria = d.categoria;
     if (d.condicionPago !== undefined) data.condicionPago = d.condicionPago;
     if (d.diasCredito !== undefined) data.diasCredito = d.diasCredito;
+    // El Zod lo aceptaba y nadie lo escribía: editar los días de entrega de un
+    // proveedor devolvía 200 y la columna seguía igual (09-10).
+    if (d.leadTimeDias !== undefined) data.leadTimeDias = d.leadTimeDias;
     if (d.cuentaBancaria !== undefined) data.cuentaBancaria = d.cuentaBancaria;
     if (d.banco !== undefined) data.banco = d.banco;
     if (d.observaciones !== undefined) data.observaciones = d.observaciones;
@@ -106,12 +134,12 @@ export async function PATCH(
     }
 
      
-    const result = await prisma.supplier.updateMany({ where: { id, tenantId: auth.tenantId }, data });
-    if (result.count === 0) {
+    // Por la DB class: el `prisma.supplier.updateMany` directo salteaba la
+    // invalidación del caché del panel (el proveedor editado seguía viejo).
+    const updated = await SuppliersDB.update(auth.tenantId, id, data as Parameters<typeof SuppliersDB.update>[2]);
+    if (!updated) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
-     
-    const updated = await prisma.supplier.findFirst({ where: { id, tenantId: auth.tenantId } });
     return NextResponse.json(updated);
   } catch (e) {
     logger.error("[suppliers/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });

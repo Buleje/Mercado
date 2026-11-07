@@ -51,7 +51,7 @@ export function StepBar({ current }: { current: Step }) {
                   ? "text-[var(--color-primary,#00A0A0)]"
                   : isDone
                     ? "text-[var(--color-primary,#00A0A0)]/70"
-                    : "text-muted"
+                    : "text-muted dark:text-[var(--text-tertiary)]"
               )}
             >
               <div
@@ -61,7 +61,7 @@ export function StepBar({ current }: { current: Step }) {
                     ? "bg-[var(--color-primary,#00A0A0)] text-white shadow-lg shadow-[var(--color-primary,#00A0A0)]/35 scale-110 ring-4 ring-[var(--color-primary,#00A0A0)]/15"
                     : isDone
                       ? "bg-[var(--color-primary,#00A0A0)]/15 text-[var(--color-primary,#00A0A0)]"
-                      : "bg-[var(--surface-sunken)] text-muted border-2 border-[var(--rule-soft)]"
+                      : "bg-[var(--surface-sunken)] text-muted dark:text-[var(--text-tertiary)] border-2 border-[var(--rule-soft)]"
                 )}
               >
                 {isDone ? (

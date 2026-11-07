@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionPayload, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 // Lazy: OnboardingWizard arrastra framer-motion (~80KB gz) al bundle
 // inicial de /onboarding. Como es ruta exclusiva del wizard, splittear
@@ -55,13 +56,7 @@ async function OnboardingGate() {
 export default function OnboardingPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-pulse text-sm text-muted">
-            Preparando configuración inicial…
-          </div>
-        </div>
-      }
+      fallback={<CargaPagina etiqueta="Preparando la configuración inicial" />}
     >
       <OnboardingGate />
     </Suspense>

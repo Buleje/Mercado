@@ -1,5 +1,7 @@
 // ─── SuperAdmin shared types (importable from client AND server) ─────────────
 
+import type { AvisosCorreoResumen } from "@/lib/avisos-correo-tipos";
+
 export type PlanId = "free" | "pro" | "business" | "enterprise";
 
 export interface TenantStoreInfo {
@@ -18,6 +20,8 @@ export interface TenantStoreInfo {
 export interface TenantRow {
   id: string;
   slug: string;
+  /** ID de la tienda para soporte (ADR-500): «482917», se muestra «482-917». */
+  codigo?: string | null;
   name: string;
   active: boolean;
   plan: PlanId;
@@ -25,6 +29,10 @@ export interface TenantRow {
   createdAt: string;
   ownerEmail: string | null;
   ownerPhone: string | null;
+  /** Teléfono del negocio, WhatsApp y RUC (Settings) — para buscar por número. */
+  businessPhone?: string | null;
+  whatsappPhone?: string | null;
+  ruc?: string | null;
   customDomain: string | null;
   /** Logo del tenant — prioriza Settings.logoUrl (configurado por el admin), fallback a Tenant.logoUrl. */
   logoUrl: string | null;
@@ -44,6 +52,8 @@ export interface TenantRow {
   pendingOrders?: number;
   /** Salud/churn del tenant (merge desde /api/superadmin/churn). Brandon 2026-06-14. */
   risk?: TenantRisk | null;
+  /** Correo que recibe los avisos automáticos y si están pausados (21-10). */
+  avisosCorreo?: AvisosCorreoResumen;
 }
 
 /** Health score + riesgo de churn de un tenant (fuente: TenantHealthScore). */

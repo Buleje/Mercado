@@ -52,9 +52,11 @@ describe("formatProductsForExport", () => {
     expect(row["Costo (S/)"]).toBe("");
   });
 
-  it("uses 0 for stockMin when missing", () => {
+  // Un solo stock mínimo (09-10): sin mínimo propio usa el del negocio; un 0
+  // en la exportación diría «sólo al agotarse», que no es lo que pasa.
+  it("deja vacío el stock mínimo cuando el producto usa el del negocio", () => {
     const [row] = formatProductsForExport([{ ...baseProduct, stockMin: undefined }]);
-    expect(row["Stock Mínimo"]).toBe(0);
+    expect(row["Stock Mínimo"]).toBe("");
   });
 
   it("returns empty array for empty input", () => {

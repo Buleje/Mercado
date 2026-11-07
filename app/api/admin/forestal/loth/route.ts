@@ -1,24 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestLothDB, LOTH_SECTIONS } from "@/lib/db/forest-loth.db";
+import { applyRateLimit, getClientIp } from "@/lib/rate-limit";
+import { ForestLothDB, LOTH_SECTIONS, LothInvariantError } from "@/lib/db/forest-loth.db";
+import { ForestLothDespachoDB } from "@/lib/db/forest-loth-despacho.db";
 import { ForestPlanDB } from "@/lib/db/forest-plan.db";
+import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
+import { permisoDelPedido } from "@/lib/forestal/loth-permiso-pedido";
 
 /**
  * /api/admin/forestal/loth — Libro de Operaciones Títulos Habilitantes (ADR-125)
  *
  * GET  — lista entries (?section, ?caratulaId, ?search, ?includeAnnulled)
- *        ?stats=1 → resumen por sección
+ *        ?stats=1 → resumen por sección (+ `lineasSinPlan`)
+ *        Filtro por permiso, en la lista y en ?stats=1 (`lib/forestal/loth-filtro-permiso`):
+ *          &planId=X&solo=1 → sólo las líneas de ese plan (lo que pide la pantalla)
+ *          &planId=X        → ese plan y las sin plan (alcance del balance, ADR-459)
+ *          &planId=sin-plan → sólo las líneas sin plan
+ *          Plan ajeno o de baja → 404; `planId` mal formado → 400.
+ *        ?usoCenso=1 → por árbol: su tala, trozas, despachadas y consumidas
  * POST — crea entry (status registrado, lineNo correlativo automático)
  *
  * Guard: requireAdmin → rate limit STRICT → spec:forestal:loth-libro
  */
 
 const sectionEnum = z.enum(LOTH_SECTIONS);
+
+/** Quién registra una tala por encima de lo AUTORIZADO para su especie (T9). */
+const PUEDEN_EXCEDER_CUPO: readonly string[] = ["admin", "owner"];
 
 const createSchema = z.object({
   caratulaId: z.string().trim().min(1).nullable().optional(),
@@ -49,7 +62,29 @@ const createSchema = z.object({
 
   discarded: z.boolean().optional(),
   consumoInterno: z.boolean().optional(),
+  // ADR-422: cómo se llegó al Ø promedio y a la longitud aprovechable.
+  // Forma explícita en vez de `z.any()`: lo que entra al libro se valida.
+  medicionCruda: z
+    .object({
+      // Cómo se anotó el Ø: «promedio» = D1/D2 ya promediados en campo, y
+      // entonces `mayor`/`menor` van vacíos (no se inventan cruzadas).
+      forma: z.enum(["cruzadas", "promedio"]).optional(),
+      mayor: z.array(z.number().positive()).max(6),
+      menor: z.array(z.number().positive()).max(6),
+      totalM: z.number().positive().nullable(),
+      descuentos: z.array(z.object({ tipo: z.string().max(40), metros: z.number().nonnegative() })).max(10),
+    })
+    .nullable()
+    .optional(),
+  marcadoFuste: z.boolean().optional(),
+  marcadoTocon: z.boolean().optional(),
   observations: z.string().trim().max(1000).nullable().optional(),
+  // T8: motivo para talar un árbol bajo el DMC de su especie (queda en el libro).
+  justificacionDmc: z.string().trim().max(500).nullable().optional(),
+  // T9: motivo para registrar una tala que deja a su especie por encima del
+  // cupo (autorizado o censado). El servidor recalcula el cupo: esto no decide
+  // si hace falta, sólo explica por qué se asienta igual.
+  motivoSobreCupo: z.string().trim().max(500).nullable().optional(),
 
   correctsLineNo: z.coerce.number().int().positive().nullable().optional(),
   correctionNote: z.string().trim().max(500).nullable().optional(),
@@ -57,6 +92,18 @@ const createSchema = z.object({
   gpsLat: z.coerce.number().min(-90).max(90).nullable().optional(),
   gpsLng: z.coerce.number().min(-180).max(180).nullable().optional(),
   photoUrl: z.string().trim().max(500).nullable().optional(),
+  // De dónde salió el GPS: el tocón (teléfono), la coordenada del censo o una UTM tipeada.
+  gpsOrigen: z.enum(["telefono", "censo", "utm"]).nullable().optional(),
+
+  // Datos INTERNOS de la tala: no salen en el formato SERFOR.
+  motosierrista: z.string().trim().max(120).nullable().optional(),
+  motosierristaId: z.string().trim().max(60).nullable().optional(),
+  horaTala: z
+    .string()
+    .trim()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "La hora va como HH:MM (ej. 09:30)")
+    .nullable()
+    .optional(),
 });
 
 async function ensureSpecOrDeny(tenantId: string) {
@@ -66,7 +113,7 @@ async function ensureSpecOrDeny(tenantId: string) {
       {
         error: "specialization_disabled",
         message:
-          "El Libro de Operaciones de Títulos Habilitantes no está habilitado para este tenant. Solicitá al superadmin habilitarlo.",
+          "El Libro de Operaciones de Títulos Habilitantes no está habilitado para este tenant. Solicita al superadmin habilitarlo.",
       },
       { status: 403 },
     );
@@ -89,12 +136,27 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
   try {
     if (url.searchParams.get("stats") === "1") {
       const caratulaId = url.searchParams.get("caratulaId") ?? undefined;
-      const stats = await ForestLothDB.stats(auth.tenantId, caratulaId);
-      return NextResponse.json({ stats });
+      const permiso = await permisoDelPedido(auth.tenantId, url.searchParams);
+      if (permiso instanceof NextResponse) return permiso;
+      const [stats, lineasSinPlan] = await Promise.all([
+        ForestLothDB.stats(auth.tenantId, caratulaId, permiso.filtro),
+        ForestLothDB.lineasSinPlan(auth.tenantId),
+      ]);
+      return NextResponse.json({ stats, lineasSinPlan });
     }
 
     if (url.searchParams.get("despachables") === "1") {
       return NextResponse.json({ items: await ForestLothDB.despachablesResueltos(auth.tenantId) });
+    }
+
+    // Qué hizo el libro con cada árbol del censo (tala, trozas, despachos):
+    // el modal «Ver censo» de la tala lo cruza con el censo.
+    if (url.searchParams.get("usoCenso") === "1") {
+      return NextResponse.json({ usos: await ForestLothDB.usoDelCenso(auth.tenantId) });
+    }
+
+    if (url.searchParams.get("trozaCodes") === "1") {
+      return NextResponse.json({ codes: await ForestLothDB.trozaCodesRegistrados(auth.tenantId) });
     }
 
     const availableFor = url.searchParams.get("available");
@@ -107,21 +169,34 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
       return NextResponse.json({ items });
     }
 
+    // Cadena de custodia de un árbol/troza por su código (drill-in desde la tabla).
+    const traceCode = url.searchParams.get("trace");
+    if (traceCode) {
+      return NextResponse.json({ trace: await ForestLothDB.traceByCode(auth.tenantId, traceCode) });
+    }
+
     const sectionParam = url.searchParams.get("section");
     const section =
       sectionParam && (LOTH_SECTIONS as readonly string[]).includes(sectionParam)
         ? (sectionParam as (typeof LOTH_SECTIONS)[number])
         : undefined;
 
+    // Antes `?planId=` se ignoraba aquí y volvía el libro entero (02-10-2026).
+    const permiso = await permisoDelPedido(auth.tenantId, url.searchParams);
+    if (permiso instanceof NextResponse) return permiso;
+
     const { entries, total } = await ForestLothDB.list(auth.tenantId, {
       section,
+      permiso: permiso.filtro,
       caratulaId: url.searchParams.get("caratulaId") ?? undefined,
       search: url.searchParams.get("search") ?? undefined,
       includeAnnulled: url.searchParams.get("includeAnnulled") === "1",
       limit: Number(url.searchParams.get("limit")) || undefined,
       offset: Number(url.searchParams.get("offset")) || undefined,
     });
-    return NextResponse.json({ entries, total });
+    // Despacho de trozas: cada línea lleva las medidas del trozado de su troza
+    // (mismo permiso), en un campo aparte y con lista blanca (`trozado`).
+    return NextResponse.json({ entries: await ForestLothDespachoDB.conTrozado(auth.tenantId, entries), total });
   } catch (err) {
     logger.error("[loth.GET] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -146,16 +221,24 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
   }
 
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "validation_error", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  if (!parsed.success) return lothValidationResponse(parsed.error);
 
   try {
+    // El motosierrista elegido de RRHH tiene que ser de ESTE negocio: un id
+    // ajeno se descarta (queda el nombre tipeado).
+    const motosierristaId =
+      parsed.data.motosierristaId && (await ColaboradoresDB.existe(auth.tenantId, parsed.data.motosierristaId))
+        ? parsed.data.motosierristaId
+        : null;
     const entry = await ForestLothDB.create(auth.tenantId, {
       ...parsed.data,
+      motosierristaId,
+      // T9: pasar lo AUTORIZADO de una especie es la excepción que firma el
+      // titular — sólo admin/owner (por el rol del JWT; el body no lo decide,
+      // y el schema ni siquiera acepta el campo). Otro rol → 403 desde la DB class.
+      puedeExcederCupo: PUEDEN_EXCEDER_CUPO.includes(auth.role),
+      // IP y navegador del pedido: van al evento `loth_tala_sobre_cupo`, no a la línea.
+      sesion: { ipAddress: getClientIp(req), userAgent: req.headers.get("user-agent")?.slice(0, 500) ?? null },
       createdBy: auth.username ?? "unknown",
     });
     // ADR-126: al talar, el árbol del censo pasa a "talado" (consume saldo).
@@ -167,7 +250,11 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
     }
     return NextResponse.json({ entry }, { status: 201 });
   } catch (err) {
-    logger.error("[loth.POST] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Un plan que no es de este negocio (o de baja) es un pedido mal armado: 400, no 422.
+    if (err instanceof LothInvariantError && err.code === "PLAN_NO_EXISTE") {
+      return NextResponse.json({ error: err.code, message: err.message }, { status: 400 });
+    }
+    // Una invariante T1–T5 violada es dato del operador (422), no fallo del server.
+    return lothErrorResponse(err, "loth.POST", auth.tenantId);
   }
 });

@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { PrestamosDB } from "@/lib/db/prestamos.db";
 import { requireAdmin } from "@/lib/require-admin";
+import { ROLES_PRESTAMOS } from "@/lib/prestamos/roles";
+// El contrato vive con el armador del cuerpo que usa el modal (mismos nombres).
+import { RefinanciarSchema } from "@/lib/prestamos/refinanciar";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
-
-const RefinanciarSchema = z.object({
-  nuevaTasa: z.number().min(0).max(100).optional(),
-  nuevasCuotas: z.number().int().min(1).max(120),
-  sistema: z.enum(["FRANCES", "ALEMAN", "AMERICANO"]).optional(),
-});
 
 // POST /api/prestamos/[id]/refinanciar — refinance active loan
 export async function POST(
@@ -20,7 +16,7 @@ export async function POST(
 ) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "prestamos-X-refinanciar"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_PRESTAMOS);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;

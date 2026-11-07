@@ -1,0 +1,12 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=ctp-libro-operaciones&vista=ingresos",
+ "pasos": [
+  {
+   "esperar": 1500
+  },
+  {
+   "eval": "(async()=>{const t=decodeURIComponent(document.cookie.match(/(?:^|;\\\\s*)csrf-token=([^;]+)/)?.[1]||'');const j=await (await fetch('/api/admin/forestal/guias/documentos?gtf=QA19-GTF-A1',{credentials:'include'})).json();const ids=(j.casilleros||[]).flatMap(c=>c.docs).filter(d=>/QA-PAPEL-COSTADO/.test(d.name)).map(d=>d.id);const out=[];for(const id of ids){const r=await fetch('/api/admin/forestal/guias/documentos',{method:'DELETE',credentials:'include',headers:{'content-type':'application/json','x-csrf-token':t},body:JSON.stringify({gtf:'QA19-GTF-A1',id})});out.push(r.status)}return 'quitados '+out.join(',')})()"
+  }
+ ]
+}

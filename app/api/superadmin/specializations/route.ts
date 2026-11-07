@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/require-admin";
+import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import {
   setSpecialization,
@@ -30,7 +30,10 @@ const patchSchema = z.object({
 // ─── GET — catálogo + estado del tenant ──────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["superadmin"]);
+  // [AUTH FIX] requirePlatformAPI (PLATFORM_SESSION) — no requireAdmin(SESSION
+  // admin). Era la ÚNICA ruta superadmin con el guard de rol-tenant; ahora coincide
+  // con el middleware y el actor del audit es el username de plataforma.
+  const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
   const rl = await applyRateLimit(req, "STRICT");
@@ -74,7 +77,10 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
-  const auth = await requireAdmin(req, ["superadmin"]);
+  // [AUTH FIX] requirePlatformAPI (PLATFORM_SESSION) — no requireAdmin(SESSION
+  // admin). Era la ÚNICA ruta superadmin con el guard de rol-tenant; ahora coincide
+  // con el middleware y el actor del audit es el username de plataforma.
+  const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
   const rl = await applyRateLimit(req, "STRICT");

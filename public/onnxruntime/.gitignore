@@ -1,0 +1,3 @@
+# Motor de onnxruntime-web (≈26 MB) y su cargador: los copia scripts/copy-onnx-assets.mjs en postinstall.
+*.wasm
+*.mjs

@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       const code = typeof body.code === "string" ? body.code.trim() : "";
       if (!code) {
         return NextResponse.json(
-          { error: "totp_required", message: "Ya tenés TOTP activo. Ingresá el código actual para rotarlo." },
+          { error: "totp_required", message: "Ya tienes TOTP activo. Ingresa el código actual para rotarlo." },
           { status: 400 },
         );
       }

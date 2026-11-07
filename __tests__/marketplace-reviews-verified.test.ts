@@ -48,6 +48,12 @@ vi.mock("@/lib/db/reviews.db", () => ({
   },
 }));
 
+// La ruta busca el producto con { tenantId, id } antes de crear (16-10-2026);
+// el caso de producto ajeno vive en reviews-producto-del-tenant.test.ts.
+vi.mock("@/lib/db/products.db", () => ({
+  ProductsDB: { getById: vi.fn().mockResolvedValue(null) },
+}));
+
 const { POST } = await import("@/app/api/marketplace/reviews/route");
 
 const VALID_STORE = { id: "store-1", tenantId: "tenant-a", name: "Tienda A" };

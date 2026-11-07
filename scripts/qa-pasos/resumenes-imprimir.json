@@ -1,0 +1,93 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=forestal-herramientas&vista=cubicador",
+ "pasos": [
+  {
+   "preset": "cubicador-lote"
+  },
+  {
+   "preset": "resumenes-rolliza"
+  },
+  {
+   "pdf": "ctrlp-oscuro"
+  },
+  {
+   "eval": "(()=>{window.__prints=0;window.print=()=>{window.__prints++};const o=URL.createObjectURL.bind(URL);URL.createObjectURL=b=>{window.__csv=b;return o(b)};const c=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){if(this.download){window.__dl=this.download;return}return c.call(this)};return 'stub'})()"
+  },
+  {
+   "click": "role=button[name=/Exportar/]"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "eval": "[...document.querySelectorAll('[role=menuitem]')].map(e=>e.innerText.replace(/\\s+/g,' ').trim())"
+  },
+  {
+   "clicTexto": "Imprimir «"
+  },
+  {
+   "esperar": 800
+  },
+  {
+   "eval": "({prints:window.__prints, oscuro:document.documentElement.classList.contains('dark'), titulo:document.title, secciones:document.querySelectorAll('#resumen-lote section').length, papel:[...document.querySelectorAll('#resumen-lote p')].map(p=>p.innerText).find(t=>/Emitido/.test(t))||null})"
+  },
+  {
+   "pdf": "boton-vista"
+  },
+  {
+   "eval": "(()=>{window.dispatchEvent(new Event('afterprint'));return 'afterprint'})()"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "eval": "({prints:window.__prints, oscuro:document.documentElement.classList.contains('dark'), titulo:document.title, secciones:document.querySelectorAll('#resumen-lote section').length, papel:[...document.querySelectorAll('#resumen-lote p')].map(p=>p.innerText).find(t=>/Emitido/.test(t))||null})"
+  },
+  {
+   "click": "role=button[name=/Exportar/]"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "clicTexto": "Imprimir todo el resumen"
+  },
+  {
+   "esperar": 1500
+  },
+  {
+   "eval": "({prints:window.__prints, oscuro:document.documentElement.classList.contains('dark'), titulo:document.title, secciones:document.querySelectorAll('#resumen-lote section').length, papel:[...document.querySelectorAll('#resumen-lote p')].map(p=>p.innerText).find(t=>/Emitido/.test(t))||null})"
+  },
+  {
+   "pdf": "boton-todo"
+  },
+  {
+   "eval": "(()=>{window.dispatchEvent(new Event('afterprint'));return 'afterprint'})()"
+  },
+  {
+   "esperar": 600
+  },
+  {
+   "eval": "({prints:window.__prints, oscuro:document.documentElement.classList.contains('dark'), titulo:document.title, secciones:document.querySelectorAll('#resumen-lote section').length, papel:[...document.querySelectorAll('#resumen-lote p')].map(p=>p.innerText).find(t=>/Emitido/.test(t))||null})"
+  },
+  {
+   "click": "role=button[name=/Exportar/]"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "clicTexto": "Bajar CSV"
+  },
+  {
+   "esperar": 400
+  },
+  {
+   "eval": "(async()=>({dl:window.__dl, lineas:window.__csv?(await window.__csv.text()).split('\\n'):null}))()"
+  },
+  {
+   "captura": "impreso-vuelta"
+  }
+ ]
+}

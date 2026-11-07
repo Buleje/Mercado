@@ -1,9 +1,11 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, ChevronRight, Calendar, Package, RefreshCw } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/format";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,11 +35,7 @@ function daysUntilExpiry(expiryDate: string): number {
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -48,12 +46,12 @@ function fmtDate(iso: string) {
 function SkeletonRow() {
   return (
     <div className="flex items-center gap-3 py-2.5 animate-pulse">
-      <div className="h-8 w-8 rounded-lg bg-gray-200 dark:bg-surface shrink-0" />
+      <div className="h-8 w-8 rounded-lg bg-[var(--rule-base)] shrink-0" />
       <div className="flex-1 space-y-1.5">
-        <div className="h-3 w-36 bg-gray-200 dark:bg-surface rounded" />
-        <div className="h-2.5 w-24 bg-gray-200 dark:bg-surface rounded" />
+        <div className="h-3 w-36 bg-[var(--rule-base)] rounded" />
+        <div className="h-2.5 w-24 bg-[var(--rule-base)] rounded" />
       </div>
-      <div className="h-5 w-16 bg-gray-200 dark:bg-surface rounded-full" />
+      <div className="h-5 w-16 bg-[var(--rule-base)] rounded-full" />
     </div>
   );
 }
@@ -87,7 +85,7 @@ export default function ExpiringBatchesAlert() {
   // Sin alertas y sin carga: no renderizar nada
   if (!loading && !error && batches.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 px-4 py-3">
         <Package className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0" />
         <span className="text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           Sin lotes por vencer en los próximos 7 días
@@ -154,7 +152,7 @@ export default function ExpiringBatchesAlert() {
                       key={batch.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-accent/30 transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface-sunken)] dark:hover:bg-accent/30 transition-colors"
                     >
                       <div
                         className={cn(
@@ -212,13 +210,13 @@ export default function ExpiringBatchesAlert() {
           {/* Pie con botón "Ver todos" */}
           {!loading && batches.length > 0 && (
             <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
-              <a
+              <EnlacePanel apariencia="heredada"
                 href="/admin?tab=inventario-almacenes"
                 className="flex items-center gap-1 text-xs font-semibold text-primary dark:text-[var(--data-success-500)] hover:underline"
               >
                 Ver todos los lotes
                 <ChevronRight className="h-3.5 w-3.5" />
-              </a>
+              </EnlacePanel>
             </div>
           )}
         </div>

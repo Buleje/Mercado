@@ -1,0 +1,94 @@
+"use client";
+
+/**
+ * PestanasDeVista — el 2.º nivel de un libro forestal (plan «panel unificado»,
+ * regla R4: en los libros el riel de la cabina es el 1.º nivel y la pestaña
+ * interna, el 2.º; no hay un 3.º).
+ *
+ * Es la misma pieza que las secciones de Saldos (`saldos/Pestanas`: tablist
+ * completo, flechas, Inicio/Fin y foco itinerante), con la altura del panel
+ * (48 px, decisión de Brandon del 2026-10-09) y el ícono de cada pestaña. El
+ * qué-hace-cada-una va en el `title`, como en el riel: no ocupa pantalla.
+ *
+ * Compacta (17-10, «compactar… reducir espacios»): 48 px por fuera como el
+ * selector de fases de la banda (botón de 44 + 2 de borde), del ancho de sus
+ * pestañas y no de toda la vista, y 12 px hasta el contenido. Era 56 + 16.
+ */
+
+import type { ReactNode } from "react";
+import type { LucideIcon } from "@buleje/design-system/icons";
+import { formatNumber } from "@/lib/format";
+import Pestanas from "./saldos/Pestanas";
+
+export interface PestanaDeVista<T extends string> {
+  id: T;
+  label: string;
+  icon?: LucideIcon;
+  hint?: string;
+  /** Cuántas hay adentro, al lado del rótulo («Anuladas y otras 16»). `null` = todavía no se sabe. */
+  cuenta?: number | null;
+}
+
+export default function PestanasDeVista<T extends string>({
+  prefijo,
+  etiqueta,
+  items,
+  activa,
+  onCambiar,
+  unaFila = false,
+  children,
+}: {
+  /** Prefijo de los ids del tablist (`ctp-tablero` → `ctp-tablero-tab-margen`). */
+  prefijo: string;
+  /** El nombre del grupo para el lector de pantalla. */
+  etiqueta: string;
+  items: readonly PestanaDeVista<T>[];
+  activa: T;
+  onCambiar: (id: T) => void;
+  /** Muchas pestañas (el Directorio): una sola fila que se desliza, no se parte. */
+  unaFila?: boolean;
+  children: ReactNode;
+}) {
+  const idTab = (id: T) => `${prefijo}-tab-${id}`;
+  const idPanel = (id: T) => `${prefijo}-panel-${id}`;
+  return (
+    <div className="space-y-3">
+      {items.length > 1 && (
+        <Pestanas
+          items={items.map((p) => ({
+            id: p.id,
+            contenido: (
+              <span title={p.hint} className="inline-flex items-center justify-center gap-2">
+                {p.icon && <p.icon className="h-4 w-4 shrink-0 max-sm:hidden" aria-hidden />}
+                {p.label}
+                {p.cuenta != null && (
+                  <span className="font-mono text-xs font-normal tabular-nums text-[var(--text-tertiary)]">{formatNumber(p.cuenta)}</span>
+                )}
+              </span>
+            ),
+          }))}
+          activa={activa}
+          onCambiar={onCambiar}
+          etiqueta={etiqueta}
+          idTab={idTab}
+          idPanel={idPanel}
+          className={`flex max-w-full gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-0.5 ${unaFila ? "overflow-x-auto [scrollbar-width:thin]" : "w-fit flex-wrap"}`}
+          claseBoton={(sel) =>
+            `min-h-11 flex-1 basis-auto rounded-[10px] ${unaFila ? "shrink-0 whitespace-nowrap" : ""} px-3 text-sm sm:px-4 font-semibold leading-tight transition-colors duration-[var(--dur-fast)] ${
+              sel
+                ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
+                : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]/60 hover:text-[var(--text-primary)]"
+            }`
+          }
+        />
+      )}
+      <div
+        role={items.length > 1 ? "tabpanel" : undefined}
+        id={items.length > 1 ? idPanel(activa) : undefined}
+        aria-labelledby={items.length > 1 ? idTab(activa) : undefined}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}

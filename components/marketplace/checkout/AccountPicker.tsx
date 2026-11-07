@@ -76,7 +76,7 @@ export default function AccountPicker({
                 className={cn(
                   "group relative flex items-center gap-4 rounded-2xl p-4 sm:p-5 transition-all cursor-pointer",
                   isActive
-                    ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)] shadow-[0_6px_20px_-12px_var(--accent)]"
+                    ? "border-2 border-[var(--accent)] bg-primary/10 shadow-[0_6px_20px_-12px_var(--accent)]"
                     : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
                 )}
                 onClick={() => handlePick(acc)}
@@ -96,7 +96,7 @@ export default function AccountPicker({
                     "inline-flex h-12 w-12 items-center justify-center rounded-full text-base font-black shrink-0",
                     isActive
                       ? "bg-[var(--accent-600,var(--accent))] text-white"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                      : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
                   )}
                   aria-hidden
                 >
@@ -157,7 +157,7 @@ export default function AccountPicker({
         className={cn(
           "group w-full inline-flex items-center gap-3 rounded-2xl border-2 border-dashed p-4 sm:p-5",
           "border-[var(--rule-base)] bg-[var(--surface-sunken)]/50",
-          "hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-all",
+          "hover:border-[var(--accent)] hover:bg-primary/10 transition-all",
           "text-left",
         )}
       >

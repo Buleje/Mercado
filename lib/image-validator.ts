@@ -76,7 +76,7 @@ export async function validateProductImage(file: File): Promise<ImageValidationR
       code: "INVALID_FORMAT",
       severity: "error",
       message: `Formato "${format || "desconocido"}" no aceptado.`,
-      fix: "Usá JPG, PNG o WebP. Los formatos GIF, BMP o TIFF no se permiten.",
+      fix: "Usa JPG, PNG o WebP. Los formatos GIF, BMP o TIFF no se permiten.",
     });
   }
 
@@ -94,7 +94,7 @@ export async function validateProductImage(file: File): Promise<ImageValidationR
       code: "FILE_SIZE_WARNING",
       severity: "warning",
       message: `La imagen pesa ${sizeKB} KB, cerca del máximo (${PRODUCT_IMAGE_REQUIREMENTS.maxSizeKB} KB).`,
-      fix: "Considerá comprimirla para mejor performance en móvil.",
+      fix: "Considera comprimirla para mejor performance en móvil.",
     });
   }
 
@@ -118,7 +118,7 @@ export async function validateProductImage(file: File): Promise<ImageValidationR
           code: "RESOLUTION_TOO_LOW",
           severity: "error",
           message: `Resolución ${width}×${height} muy baja. Mínimo ${PRODUCT_IMAGE_REQUIREMENTS.minWidth}×${PRODUCT_IMAGE_REQUIREMENTS.minHeight}.`,
-          fix: "Usá una foto más grande. Se ve pixelada cuando el cliente hace zoom.",
+          fix: "Usa una foto más grande. Se ve pixelada cuando el cliente hace zoom.",
         });
       }
 
@@ -128,7 +128,7 @@ export async function validateProductImage(file: File): Promise<ImageValidationR
           code: "RESOLUTION_TOO_HIGH",
           severity: "warning",
           message: `Resolución ${width}×${height} muy alta. Recomendado máximo ${PRODUCT_IMAGE_REQUIREMENTS.maxWidth}×${PRODUCT_IMAGE_REQUIREMENTS.maxHeight}.`,
-          fix: "Redimensioná a ~1500×1500 px antes de subir — carga más rápido.",
+          fix: "Redimensiona a ~1500×1500 px antes de subir — carga más rápido.",
         });
       }
 
@@ -140,7 +140,7 @@ export async function validateProductImage(file: File): Promise<ImageValidationR
           code: "ASPECT_NOT_SQUARE",
           severity: "warning",
           message: `La foto no es cuadrada (proporción ${aspectRatio.toFixed(2)}:1).`,
-          fix: "Recortá a cuadrado 1:1. En marketplace las fotos cuadradas se ven más ordenadas.",
+          fix: "Recorta a cuadrado 1:1. En marketplace las fotos cuadradas se ven más ordenadas.",
         });
       }
 
@@ -153,7 +153,7 @@ export async function validateProductImage(file: File): Promise<ImageValidationR
           code: "BACKGROUND_NOT_CLEAN",
           severity: "warning",
           message: "El fondo no parece blanco ni transparente.",
-          fix: "Usá fondo blanco #FFFFFF o sube PNG con fondo transparente. Removebg.com es gratis.",
+          fix: "Usa fondo blanco #FFFFFF o sube PNG con fondo transparente. Removebg.com es gratis.",
         });
       }
     } catch {
@@ -161,7 +161,7 @@ export async function validateProductImage(file: File): Promise<ImageValidationR
         code: "IMAGE_READ_FAILED",
         severity: "error",
         message: "No se pudo leer la imagen. ¿Está corrupta?",
-        fix: "Probá abrirla en otro programa y guardarla de nuevo.",
+        fix: "Prueba abrirla en otro programa y guardarla de nuevo.",
       });
     }
   }

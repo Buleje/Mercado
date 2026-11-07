@@ -50,7 +50,7 @@ const SS_KEY = "buleje:sticky-cart:dismissed-subtotal";
 const PREVIEW_COUNT = 3;
 
 export default function StickyCartBar() {
-  const { items, updateQuantity, removeItem } = useMarketplaceCart();
+  const { items, updateQuantity } = useMarketplaceCart();
   const [expanded, setExpanded] = useState(false);
   const pathname = usePathname();
 

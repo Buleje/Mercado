@@ -16,6 +16,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
+import { TenantsDB } from "@/lib/db/tenants.db";
 import { getTemplateCategories } from "@/lib/store-templates";
 import type { TemplateId } from "@/lib/store-templates";
 
@@ -28,7 +29,8 @@ export interface CreateTenantInput {
   ownerPhone?: string;
   plan: "free" | "pro" | "business" | "enterprise";
   type: "store" | "supplier" | "delivery";
-  trialEndsAt: Date;
+  /** null = plan pago otorgado (voucher aprobado): sin prueba que venza. */
+  trialEndsAt: Date | null;
 }
 
 export interface CreateAdminUserInput {
@@ -295,7 +297,10 @@ export async function updateTenantIndustry(
   await prisma.tenant.update({
     where: { id: tenantId },
     data: { industry },
+    select: { id: true },
   });
+  // /api/tenants/resolve devuelve `industry` cacheado 60 s (ADR-509).
+  TenantsDB.olvidarPublico();
 
   logger.info("[tenant-onboarding] industry actualizado", { tenantId, industry });
 }

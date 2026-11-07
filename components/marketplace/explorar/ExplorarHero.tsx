@@ -66,7 +66,7 @@ export default function ExplorarHero({
                 Aquí va tu imagen del banner promocional
               </p>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] max-w-md text-center px-4">
-                Configurá una imagen 1600×400 desde el panel admin para llamar la atención.
+                Configura una imagen 1600×400 desde el panel admin para llamar la atención.
               </p>
             </div>
           )}

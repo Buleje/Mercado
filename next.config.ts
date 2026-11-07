@@ -8,6 +8,24 @@ const bundleAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
 
+// OCR en el servidor (22-10, `lib/documents/ocr-servidor.ts`): el worker y el
+// idioma se cargan por ruta de disco (process.cwd()), así que el trazado de
+// archivos no los ve solo. Sin esto el análisis sigue, pero sin OCR. ~13 MB.
+const ARCHIVOS_OCR = [
+  "./node_modules/tesseract.js/package.json",
+  "./node_modules/tesseract.js/src/**/*",
+  "./node_modules/tesseract.js-core/package.json",
+  "./node_modules/tesseract.js-core/tesseract-core-*lstm.js",
+  "./node_modules/tesseract.js-core/tesseract-core-*lstm.wasm",
+  "./node_modules/@tesseract.js-data/spa/4.0.0_best_int/*",
+  "./node_modules/wasm-feature-detect/**/*",
+  "./node_modules/is-url/**/*",
+  "./node_modules/node-fetch/**/*",
+  "./node_modules/regenerator-runtime/**/*",
+  "./node_modules/bmp-js/**/*",
+  "./node_modules/next/dist/compiled/@vercel/og/*.ttf",
+];
+
 const nextConfig: NextConfig = {
   // TypeScript gate: tsc validation runs in pre-commit hook (husky) and CI.
   // Build-time tsc disabled because it OOMs on Vercel 8GB (131 Prisma models + 3000+ files).
@@ -32,9 +50,17 @@ const nextConfig: NextConfig = {
   // + LCP -200-500ms por servir el shell HTML desde CDN.
   // Activado 2026-04-08 como parte del Plan Maestro Sprint 1 (quick win Q5).
   cacheComponents: true,
+  // Next 16.4 avisa en cada build si falta. `false` = lo de siempre (el prefetch trae también los
+  // datos dinámicos); `true` cambia cómo precarga cada <Link>: se decide y se mide aparte (01-11).
+  partialPrefetching: false,
+
+  // Next 16.3+: `next dev` escribe (y re-agrega si lo borrás) un bloque propio en AGENTS.md cada
+  // vez que lo lanza un agente (Claude Code). Apagado: AGENTS.md es nuestro y la regla
+  // `.claude/rules/code-quality.md` §0 ya manda a leer `node_modules/next/dist/docs/` (01-11).
+  agentRules: false,
 
   // Allow cross-origin dev requests from Cloudflare Tunnel / ngrok
-  allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io"],
+  allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io", "buleje-panel.*.ts.net"],
 
   // Compress responses
   compress: true,
@@ -57,6 +83,37 @@ const nextConfig: NextConfig = {
   // `@prisma/client/runtime/client` que Turbopack intenta bundlear como un
   // alias hasheado y falla ("Cannot find module @prisma/client-<hash>/runtime/client").
   // Marcar estos como externals fuerza que se resuelvan vía Node module system.
+  // La miniatura de Excel/Word dibuja con @napi-rs/canvas, que NO trae fuentes:
+  // sin un .ttf de verdad cada letra sale como un cuadradito. Se usa el Geist
+  // que ya viaja dentro de `next`, pero hay que pedir explícitamente que el
+  // archivo viaje al bundle de la función serverless.
+  outputFileTracingIncludes: {
+    "/api/admin/documents/[id]/thumbnail": [
+      "./node_modules/next/dist/compiled/@vercel/og/*.ttf",
+    ],
+    "/api/admin/documents": ARCHIVOS_OCR,
+    "/api/admin/documents/[id]/analyze": ARCHIVOS_OCR,
+    "/api/admin/documents/indexar-pendientes": ARCHIVOS_OCR,
+    "/api/cron/documentos-indexar": ARCHIVOS_OCR,
+    "/api/cron/documentos-leer-noche": ARCHIVOS_OCR,
+    "/api/whatsapp/webhook": ARCHIVOS_OCR,
+    "/api/admin/forestal/guias/documentos": ARCHIVOS_OCR,
+    "/api/admin/forestal/loth/medicion-carga/[id]/fotos": ARCHIVOS_OCR,
+  },
+  // 04-11: lo que `.vercelignore` no sube (`*.log`, `.claude`, `/tmp`) tampoco puede viajar dentro de una
+  // función: el armado en GitHub (`vercel deploy --prebuilt`) murió con ENOENT en `reports/**/*.log`
+  // porque alguna ruta arrastra la carpeta del proyecto entera (`process.cwd()`).
+  outputFileTracingExcludes: {
+    // sharp trae su copia para Linux «musl» (Alpine) además de la de glibc; Vercel corre en glibc.
+    // Medido 04-11: la función del webhook de WhatsApp pesaba 260,5 MB (tope 250) y la musl son 17 MB.
+    "**": [
+      "**/*.log",
+      ".claude/**",
+      "tmp/**",
+      "**/@img/sharp-libvips-linuxmusl-x64/**",
+      "**/@img/sharp-linuxmusl-x64/**",
+    ],
+  },
   serverExternalPackages: [
     "@prisma/client",
     "@prisma/adapter-pg",
@@ -73,6 +130,10 @@ const nextConfig: NextConfig = {
     // los incluyan accidentalmente vía dynamic imports mal resueltos.
     "jspdf",
     "exceljs",
+    // Miniaturas de PDF: canvas nativo (Skia). Turbopack no puede empaquetar el
+    // binding `.node` → hay que resolverlo desde node_modules en runtime.
+    "@napi-rs/canvas",
+    "unpdf",
   ],
 
   // No source maps in production browser bundle (saves ~30–50% of chunk sizes)
@@ -93,6 +154,9 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "images.openfoodfacts.org" },
       { protocol: "http", hostname: "images.openfoodfacts.org" },
+      // 03-11-2026: 51 productos de main traen la foto de Plaza Vea; sin esto el
+      // optimizador respondía 400 («"url" parameter is not allowed») y salían rotas.
+      { protocol: "https", hostname: "plazavea.vteximg.com.br" },
       { protocol: "https", hostname: "static.openfoodfacts.org" },
       { protocol: "http", hostname: "static.openfoodfacts.org" },
       { protocol: "https", hostname: "*.supabase.co" },
@@ -111,16 +175,49 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // ── React Compiler (pilot, opt-in por archivo) ───────────────────────
-  // Mode: annotation → solo compila componentes con la directiva `'use memo'`
-  // al inicio del archivo. Cero impacto sobre componentes que NO la usen.
-  // Plugin: babel-plugin-react-compiler@1.0.0 (instalado 2026-04-28).
-  // Next 16: reactCompiler salió de `experimental` y es top-level.
+  // ── React Compiler (piloto acotado por carpeta) ──────────────────────
+  // Plugin: babel-plugin-react-compiler@1.0.0. Next 16: `reactCompiler` es top-level.
+  //
+  // 2026-09-22: `annotation` estuvo activo 5 meses y lo usaba UN archivo
+  // (components/marketplace/UnifiedProductCard.tsx) — o sea, pagábamos el plugin sin
+  // cobrarlo, con 1.676 useMemo + 2.151 useCallback + 63 memo() escritos a mano.
+  //
+  // Censo previo (`npm run compiler:census`, reglas duras de react-hooks v7):
+  //   components/marketplace .... 404 archivos, 11 con violación dura → 97,3 % limpio
+  //   components/admin + app .... 2.901 archivos, 171 violaciones duras
+  // El compiler NO rompe: ante un patrón que no puede probar seguro, salta el componente.
+  //
+  // Por eso el opt-in arranca donde el residuo es 2,7 %: la tienda pública, que además
+  // es la superficie donde el render importa (cliente en 4G). Ampliar carpeta por carpeta
+  // midiendo antes con `npm run compiler:census <carpeta>`.
+  // IMPORTANTE (verificado 2026-09-22 contra node_modules/next/dist/server/config-schema.js:673):
+  // Next 16.2.10 sólo acepta `compilationMode` y `panicThreshold`. NO existe `sources`,
+  // así que no se puede acotar el compiler por carpeta desde acá — un `sources` se ignora
+  // en silencio. El acotado se hace por archivo con la directiva `"use memo"`:
+  //     npm run compiler:optin components/marketplace     (agrega la directiva a los limpios)
+  //     npm run compiler:optin -- --off components/marketplace   (la quita)
   reactCompiler: { compilationMode: "annotation" },
 
   experimental: {
+    // 31-10: el proxy corta el cuerpo en 10 MB (default de Next 16) y el drive acepta hasta 50 MB
+    // (MAX_UPLOAD_SIZE): un PDF de 13 MB llegaba truncado («Failed to parse body as FormData», 500).
+    proxyClientMaxBodySize: "50mb",
     // NOTE: instrumentation.ts is detected automatically since Next.js 15.
     // The `instrumentationHook` flag was removed in Next.js 16.
+
+    // ── Procesos del `next build` local (29-10) ─────────────────────────
+    // Por defecto Next abre núcleos − 1 = 11 procesos para prerenderizar las 2.273 páginas, ~1,4 GB
+    // cada uno: la PC bajaba a 600 MB libres, earlyoom mataba el build y, con el dev server
+    // prendido, el swap hacía que `getCachedBrandOverrides` del layout pasara los 50 s de
+    // «use cache» (USE_CACHE_TIMEOUT en /admin/kiosk). Con 4 el kiosko prerenderiza bien. Vercel
+    // queda con su valor por defecto.
+    ...(process.env.VERCEL ? {} : { cpus: 4 }),
+
+    // Caché de disco del `next build` (Next 16.3+, prendido por defecto) apagado SÓLO en local
+    // (01-11) = como compilaba 16.2: `.next/cache` sumaba 1,6 GB y el pico de RAM del build medido
+    // fue el mismo con y sin él (12-13 GB). Falta medir cuánto acorta un build repetido antes de
+    // prenderlo. Vercel lo conserva (restaura `.next/cache` entre deploys).
+    ...(process.env.VERCEL ? {} : { turbopackFileSystemCacheForBuild: false }),
 
     // ── Router cache TTL (fix back-nav blanco en Next 16) ────────────────
     // Next 15+ default: dynamic=0 → cada navegación back refetcha desde server.
@@ -148,6 +245,18 @@ const nextConfig: NextConfig = {
     // Sobrevive restarts: rebuilds ~5s en vez de 30-60s.
     // Fuente: nextjs.org/blog/next-16-2
     turbopackFileSystemCacheForDev: true,
+
+    // Memoria de Turbopack en dev (01-11, Next 16.4): `turbopackMemoryLimit` (5 GiB desde el 10-10)
+    // ya no existe; lo reemplaza `turbopackMemoryEviction` (16.3, 'auto' por defecto): tras guardar
+    // en la caché de disco de arriba, Turbopack suelta de la RAM lo que ya bajó y lo relee al pedirlo.
+
+    // Recarga en caliente del SERVIDOR apagada (12-10). Next la prendió por defecto en 16.2.2 y
+    // tiene un bug: con el panel abierto y sin tocar un archivo, Turbopack ocupaba 10 núcleos sin
+    // parar y la memoria de JS subía 15 MB/s hasta que Next reiniciaba el server cada ~20 min
+    // («approaching the used memory threshold»), cortando lo que el panel estaba cargando.
+    // Medido: el tope de 5 → 10 GB de arriba no cambiaba nada. Issues vercel/next.js #91396 y
+    // #94915. Sin esto, editar código del servidor recarga el módulo entero, como antes de 16.2.2.
+    turbopackServerFastRefresh: false,
 
     // Round 28 Sprint 1 (Quick Win 1.4): inline + minify critical CSS para LCP.
     // Reduce el FOUC en /marketplace y /tienda; ahorro ~20-50ms LCP en 4G.
@@ -361,6 +470,9 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://*.vercel-insights.com https://*.posthog.com",
+              // Igual que en lib/middleware-utils.ts: el OCR del navegador
+              // levanta un worker propio desde /public/tesseract.
+              "worker-src 'self'",
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self'",

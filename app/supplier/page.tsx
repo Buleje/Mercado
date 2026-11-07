@@ -54,7 +54,7 @@ export default function SupplierPage() {
 
   // ── Logout handler ─────────────────────────────────────────────────────────
   const handleLogout = async () => {
-    await fetch("/api/supplier/auth", { method: "DELETE" });
+    await fetch("/api/supplier/auth", { method: "DELETE", headers: csrfHeaders() });
     setAuthenticated(false);
     setSupplierData(null);
   };

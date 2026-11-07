@@ -1,0 +1,35 @@
+Pedidos del agente D (Tablero, Saldos + Cuadros SERFOR, Cumplimiento + Cierre, Fletes, Directorio + Ficha, Contratos) — 2026-10-17
+
+Para E (CTPLibroOperaciones.tsx, ctp-vistas-fusionadas.ts, subvistas-modulos, migración):
+
+1) Pasar el pedido de sub-pestaña a las tres vistas que ahora tienen `?sub=` con usePestanaInterna:
+     <CtpSaldosView ... pedido={pedidoSub?.vista === "saldos" ? pedidoSub : null} />
+     <CtpCompliancePanel period={period} onNavigate={irA} pedido={pedidoSub?.vista === "cumplimiento" ? pedidoSub : null} />
+     <CtpDirectorioView pedido={pedidoSub?.vista === "directorio" ? pedidoSub : null} />
+   (Las tres aceptan `pedido?: {sub, n} | null`; sin él andan igual, sólo que un irA a otra
+   sub-pestaña estando YA en la vista no cambia la pestaña.)
+
+2) Alias en CTP_VISTAS_FUSIONADAS (+ TECLAS si corresponde):
+     resumenes -> saldos / libro        (moduleId de la pestaña: "ctp-saldos")
+     cierre    -> cumplimiento / cerrar (moduleId: "ctp-cumplimiento")
+     ficha     -> directorio / tu-ctp   (moduleId: "ctp-directorio")
+   Las tres vistas ya leen la URL vieja al montar con subPedidoPorVistaVieja("saldos" |
+   "cumplimiento" | "directorio"): con el alias puesto, ?vista=resumenes|cierre|ficha abren su
+   sección sin más cambios.
+
+3) Al quitar la vista «cierre» del libro:
+   - borrar `const cierres = useCtpCierres()` (línea ~299) y la rama `view === "cierre"`
+     (CtpCierreAsistido + CtpCierrePanel, ~839-845): la sección «Cerrar el mes» de Cumplimiento
+     (CtpCumplimientoCerrar.tsx) ya monta los dos con su propio useCtpCierres(). Hasta entonces
+     hay un fetch de cierres repetido cuando se está en ?vista=cierre (inofensivo).
+   - quitar imports CtpCierrePanel / CtpCierreAsistido / useCtpCierres / CtpResumenesSerfor /
+     CtpFichaEditor del libro si ya no se usan.
+
+4) lib/forestal/ctp-puesta-en-marcha.ts:101-115 — la capacidad «Ficha del CTP» tiene
+   `vista: "ficha"` (y la del cierre mensual `vista: "cierre"`). Con el alias del punto 2 el
+   atajo «Activar» del Tablero ya cae en Directorio › Tu CTP / Cumplimiento › Cerrar el mes
+   sin tocar ese archivo. Si preferís cambiar el valor, que sea a "directorio"/"cumplimiento"
+   SÓLO si irA admite la sub (hoy no).
+
+5) Riel: con Cuadros SERFOR, Cierre y Ficha fuera, Control queda en Tablero · Saldos ·
+   Cumplimiento y Gestión pierde Ficha — sobra lugar para las acciones a 1280.

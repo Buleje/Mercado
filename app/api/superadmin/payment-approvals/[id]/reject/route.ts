@@ -10,6 +10,8 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { actorVisibleParaNegocio } from "@/lib/superadmin/actor-visible";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 // Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
@@ -42,8 +44,10 @@ export async function POST(
   const { id } = await params;
   // Round 10 M004: audit log captura superadmin actor + IP en escrituras
   // PaymentApproval rejected + Order cancelado.
-  return runWithAuditContext(req, `superadmin:${auth.username}`, () =>
-    handleReject(req, id, auth.username),
+  const visible = actorVisibleParaNegocio();
+  logSuperadminAction("payment_approval_reject", `Rechazó el pago ${id}`, { approvalId: id }, auth.username).catch((err) => logger.error("[superadmin] auditoría de plataforma falló", { error: String(err) }));
+  return runWithAuditContext(req, visible, () =>
+    handleReject(req, id, visible),
   );
 }
 
@@ -107,10 +111,21 @@ async function handleReject(
       continue;
     }
     try {
-      const updated = await OrdersDB.update(order.tenantId, order.id, {
-        status: "cancelado",
-      });
-      if (updated) ordersUpdated++;
+      // SOLO `cancelarConReposicion`: marca cancelado + cancelledAt y repone el
+      // stock una vez, y su WHERE salta los entregados. Antes se ponía
+      // «cancelado» primero y la condición «no entregado» ya no frenaba: un
+      // pedido entregado quedaba cancelado y con su stock devuelto.
+      const r = await OrdersDB.cancelarConReposicion(order.tenantId, order.id, parsed.data.reason);
+      if (r.repuesto) {
+        ordersUpdated++;
+      } else {
+        logger.warn("[payment-approvals/reject] pedido no cancelado (entregado o ya cancelado)", {
+          approvalId: id,
+          orderId: order.id,
+          tenantId: order.tenantId,
+          status: order.status,
+        });
+      }
     } catch (err) {
       logger.error("[payment-approvals/reject] order cancel failed", {
         approvalId: id,

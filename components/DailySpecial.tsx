@@ -144,7 +144,7 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
 
               {/* Ahorro + countdown — neutral sin amber/emerald */}
               <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                <span className="inline-flex items-center gap-1 bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-bold px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold px-2.5 py-1 rounded-full">
                   Ahorras S/{savings.toFixed(2)}
                 </span>
                 <span

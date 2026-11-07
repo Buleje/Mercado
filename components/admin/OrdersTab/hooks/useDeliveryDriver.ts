@@ -18,14 +18,15 @@ export function useDeliveryDriver({ patchOrder }: UseDeliveryDriverProps) {
     const driver = customDriver.trim() || deliveryDriver;
     if (!driver) return;
     setSavingDriver(true);
-    await patchOrder(orderId, { deliveryDriver: driver } as Partial<DbOrder>);
+    // `riderName` es la columna (17-10: se mandaba `deliveryDriver` y el servidor lo descartaba).
+    await patchOrder(orderId, { riderName: driver });
     setDeliveryDriver("");
     setCustomDriver("");
     setSavingDriver(false);
   };
 
   const driverColor = (name: string): string => {
-    const colors = ["#ef4444", "#f97316", "#f59e0b", "#65a30d", "#14C2C2", "#0ea5e9", "#3b82f6", "#8b5cf6", "#ec4899"];
+    const colors = ["#ef4444", "#ff6b5b", "#ff6b5b", "#65a30d", "#14C2C2", "#0ea5e9", "#3b82f6", "#8b5cf6", "#ec4899"];
     let h = 0;
     for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
     return colors[Math.abs(h) % colors.length];

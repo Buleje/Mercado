@@ -9,11 +9,11 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DANGER_ZONES = [
-  { pattern: /CheckoutModal\.tsx/, skill: 'checkout-flow', label: 'CheckoutModal (pagos, cupones, reservas) + todo components/checkout/**', agent: 'checkout-squad', reason: 'Zona critica de pagos — usar /checkout-squad para coordinacion segura' },
-  { pattern: /components\/checkout\//, skill: 'checkout-flow', label: 'components/checkout/** (flujo de pago completo)', agent: 'checkout-squad', reason: 'Sub-componentes del checkout — requieren checkout-squad' },
+  { pattern: /CheckoutModal\.tsx/, skill: 'checkout-flow', label: 'CheckoutModal (pagos, cupones, reservas) + todo components/checkout/**', agent: 'security + reviewer', reason: 'Zona critica de pagos — usar los agentes security + reviewer' },
+  { pattern: /components\/checkout\//, skill: 'checkout-flow', label: 'components/checkout/** (flujo de pago completo)', agent: 'security + reviewer', reason: 'Sub-componentes del checkout — requieren los agentes security + reviewer' },
   { pattern: /role-permissions\.ts/, skill: 'security-auth', label: 'role-permissions.ts (RBAC 26 recursos × 6 roles)', agent: 'security-squad', reason: 'Cambiar permisos puede bloquear modulos enteros — usar security-squad' },
-  { pattern: /lib\/db\/orders\.db\.ts/, skill: 'database-migrations', label: 'orders.db.ts (state machine, idempotency)', agent: 'database-engineer', reason: 'State machine de ordenes — requiere database-engineer + migration-planner' },
-  { pattern: /schema\.prisma/, skill: 'prisma-schema', label: 'schema.prisma (131 modelos, requiere DIRECT_URL)', agent: 'database-engineer + migration-planner', reason: 'Cambio de schema requiere plan de migracion — usar /audit-first primero' },
+  { pattern: /lib\/db\/orders\.db\.ts/, skill: 'database-migrations', label: 'orders.db.ts (state machine, idempotency)', agent: 'database-engineer', reason: 'State machine de ordenes — requiere database-engineer + migrar-esquema' },
+  { pattern: /schema\.prisma/, skill: 'prisma-schema', label: 'schema.prisma (272 modelos; base compartida = producción)', agent: 'database-engineer + migrar-esquema', reason: 'Cambio de schema requiere plan de migracion — usar /migrar-esquema (y la regla .claude/rules/danger-zone.md)' },
   { pattern: /cart-context\.tsx/, skill: 'state-management', label: 'cart-context.tsx (BroadcastChannel + localStorage multi-tab)', agent: 'frontend-engineer', reason: 'Estado compartido multi-tab — riesgo de race conditions' },
   { pattern: /api\/batches/, skill: 'fefo-inventory', label: 'API batches (FEFO, expiryDate vs expiresAt)', agent: 'backend-platform-engineer', reason: 'Logica FEFO critica para inventario' },
   { pattern: /proxy\.ts/, skill: 'security-auth', label: 'proxy.ts (auth + CSP + tenant + rate limit — 398 lineas)', agent: 'security-squad', reason: 'Middleware central de seguridad — cualquier error expone toda la app' },

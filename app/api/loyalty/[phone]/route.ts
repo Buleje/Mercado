@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
+import { LoyaltyDB as LibroDePuntos } from "@/lib/db/loyalty.db";
+import { ApiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { CUSTOMER_SESSION, telefonoDeLaSesion } from "@/lib/auth/customer-session";
 import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { MENSAJE_SOLO_DUENO, puedeSumarPuntosAMano, ROLES_AJUSTE_PUNTOS } from "@/lib/loyalty/roles-ajuste";
 
 // Auto-discount tiers based on purchase count (from discount engine)
 const AUTO_DISCOUNT_TIERS = [
@@ -24,20 +28,29 @@ export async function GET(
   const { allowed } = rateLimit(`loyalty-get:${ip}`, 60, 60);
   if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
 
-  // Requiere sesion de customer activa
-  const customer = await requireCustomer(req);
-  if (customer instanceof NextResponse) return customer;
-
   const { phone } = await params;
   const requestedPhone = normalizePhone(phone);
 
-  // Ownership check: el customerId en sesion ES el phone normalizado del Customer
-  if (!customer.customerId || normalizePhone(customer.customerId) !== requestedPhone) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // Quién lee nombre y puntos de un teléfono (Ley 29733, security 2026-10-08):
+  //  1. la sesión que PROBÓ ese teléfono (código), del mismo negocio
+  //     (`requireCustomer` compara el negocio de la sesión con el del pedido);
+  //  2. el panel admin del negocio (LoyaltyTab).
+  // Nadie más: 401 sin datos. Antes alcanzaba que los últimos 9 dígitos del
+  // `customerId` coincidieran («google_1177…987654321» abría el 987654321).
+  let tenantId: string | null = null;
+  if (req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value) {
+    const customer = await requireCustomer(req);
+    if (!(customer instanceof NextResponse) && telefonoDeLaSesion(customer) === requestedPhone) {
+      tenantId = customer.tenantId;
+    }
   }
-
-  // tenantId viene de la sesion (ya validado por requireCustomer vs x-tenant-id header)
-  const tenantId = customer.tenantId;
+  if (!tenantId) {
+    const admin = await requireAdmin(req, ["admin", "cajero", "tienda_owner"]);
+    if (admin instanceof NextResponse) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    tenantId = admin.tenantId;
+  }
 
   try {
     const data = await LoyaltyDB.getByPhone(tenantId, requestedPhone);
@@ -77,13 +90,15 @@ const AdjustSchema = z.object({
   reason: z.string().max(200).optional(),
 });
 
-// -- PATCH /api/loyalty/[phone] -- admin only, manual point adjustment --------
+// -- PATCH /api/loyalty/[phone] -- ajuste a mano: admin, dueño y encargado ----
+// Antes `requireAdmin(req)` sin roles: el cajero sumaba puntos a quien quisiera
+// y se cobraban como descuento (11-10). Quién: lib/loyalty/roles-ajuste.ts.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "loyalty-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES_AJUSTE_PUNTOS);
   if (auth instanceof NextResponse) return auth;
 
   const { phone } = await params;
@@ -103,10 +118,26 @@ export async function PATCH(
   try {
     const normalized = normalizePhone(phone);
     const { points } = parsed.data;
+    // Segundo candado por signo: si algún día se abre el canje a otro rol, sumar sigue cerrado.
+    if (points > 0 && !puedeSumarPuntosAMano(auth.role)) {
+      return NextResponse.json({ error: MENSAJE_SOLO_DUENO }, { status: 403 });
+    }
     if (points > 0) {
-      const result = await LoyaltyDB.accruePoints(auth.tenantId, normalized, points);
-      if (!result) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
-      return NextResponse.json(result);
+      /* Ajuste a mano: exactamente N puntos, con su asiento «manual». Antes iba
+         por `accruePoints`, que es el camino de una COMPRA: sumaba S/ N a
+         «Gastado», recalculaba el nivel y daba computePoints(N) puntos (11-10). */
+      try {
+        await LibroDePuntos.earn(auth.tenantId, normalized, points, "manual", {
+          por: auth.username,
+          ...(parsed.data.reason ? { motivo: parsed.data.reason } : {}),
+        });
+      } catch (err) {
+        if (err instanceof ApiError && (err.httpStatus === 404 || err.httpStatus === 403)) {
+          return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
+        }
+        throw err;
+      }
+      return NextResponse.json(await LoyaltyDB.getByPhone(auth.tenantId, normalized));
     } else {
       const ok = await LoyaltyDB.redeemPoints(auth.tenantId, normalized, Math.abs(points));
       if (!ok) return NextResponse.json({ error: "Puntos insuficientes" }, { status: 422 });

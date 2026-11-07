@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import ComprarClient from "@/components/marketplace/gift-cards/comprar/ComprarClient";
-import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 
 export const metadata: Metadata = {
   title: "Comprar Tarjeta de Regalo",
@@ -24,11 +23,8 @@ function ComprarFallback() {
 
 export default function ComprarPage() {
   return (
-    <>
-      <MarketplaceNavbar />
-      <Suspense fallback={<ComprarFallback />}>
-        <ComprarClient />
-      </Suspense>
-    </>
+    <Suspense fallback={<ComprarFallback />}>
+      <ComprarClient />
+    </Suspense>
   );
 }

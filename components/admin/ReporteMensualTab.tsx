@@ -1,329 +1,141 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { useState } from "react";
-import {
-  FileText,
-  Download,
-  Play,
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Users,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+/**
+ * Mi Plata › Impuestos y reportes › Reporte mensual: EL MES EN UNA HOJA. Eliges
+ * el mes, ves sus tres cifras y bajas el PDF (top productos, top clientes y
+ * fiados) que el sistema también te manda el día 1 a las 6:00.
+ *
+ * Antes (medido 11-10): «Generar reporte» respondía siempre 400 («tenantId
+ * requerido»: el panel no le pasaba el negocio al generador), «Descargar PDF»
+ * volvía a generar y mandaba otro correo, y los ingresos eran los pedidos no
+ * cancelados, sin el POS — otra cifra que el Resumen para el mismo mes.
+ */
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, Download, Loader2, Mail, MoreHorizontal, Receipt } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { formatCurrency } from "@/lib/format";
+import { cn, limaDateKey } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
+import { nombreDelMes } from "./impuestos/impuestos-del-mes";
 
-// ── Tipos ─────────────────────────────────────────────────────────────────────
+interface Resultado { ok: boolean; ingresos: number; gastos: number; utilidad: number; emailSent?: boolean; error?: string }
+type Estado = { fase: "cargando" } | { fase: "error"; mensaje: string } | { fase: "lista"; datos: Resultado };
 
-interface ReportResult {
-  ok:        boolean;
-  period:    string;
-  ingresos:  number;
-  gastos:    number;
-  utilidad:  number;
-  emailSent: boolean;
-  pdfSize:   number;
-  error?:    string;
+/** El mes anterior al de Lima: el que ya cerró. */
+function mesAnterior(hoy: string): string {
+  const [y, m] = hoy.split("-").map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
 }
 
-interface ReportHistoryEntry {
-  id:        string;
-  period:    string;
-  year:      number;
-  month:     number;
-  ingresos:  number;
-  utilidad:  number;
-  generatedAt: string;
-}
-
-const MONTH_NAMES = [
-  "Enero","Febrero","Marzo","Abril","Mayo","Junio",
-  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
-];
-
-function fmt(n: number): string {
-  return `S/ ${n.toFixed(2)}`;
-}
-
-// ── Subcomponente: tarjeta KPI ────────────────────────────────────────────────
-
-function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: string;
-  icon:  React.ElementType;
-  color: "green" | "red" | "blue";
-}) {
-  const colors = {
-    green: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
-    red:   "bg-[var(--data-error-50)]   dark:bg-[var(--data-error-500)]/20   text-[var(--data-error-500)]   dark:text-[var(--data-error-500)]   border-[var(--data-error-500)]   dark:border-[var(--data-error-500)]",
-    blue:  "bg-[var(--accent-soft)]  dark:bg-[var(--accent-muted)]  text-[var(--data-success-500)]  dark:text-[var(--data-success-500)]  border-[var(--data-success-500)]/30  dark:border-[var(--data-success-500)]/30",
-  };
-  return (
-    <div className={cn("rounded-xl border p-4 flex items-center gap-3", colors[color])}>
-      <Icon className="h-6 w-6 shrink-0" />
-      <div>
-        <p className="text-xs opacity-70">{label}</p>
-        <p className="text-lg font-bold">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────────────────────
+const url = (mes: string, extra = "") => `/api/admin/monthly-report?year=${mes.slice(0, 4)}&month=${Number(mes.slice(5, 7))}${extra}`;
 
 export default function ReporteMensualTab() {
-  const now          = new Date();
-  // Mes anterior por defecto
-  const defaultYear  = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-  const defaultMonth = now.getMonth() === 0 ? 12 : now.getMonth(); // getMonth() es 0-indexed
+  const hoy = limaDateKey().slice(0, 7);
+  const [mes, setMes] = useState(() => mesAnterior(hoy));
+  const [estado, setEstado] = useState<Estado>({ fase: "cargando" });
+  const [enviando, setEnviando] = useState(false);
 
-  const [year,      setYear]      = useState(defaultYear);
-  const [month,     setMonth]     = useState(defaultMonth);
-  const [loading,   setLoading]   = useState(false);
-  const [result,    setResult]    = useState<ReportResult | null>(null);
-  const [error,     setError]     = useState<string | null>(null);
-  const [history,   setHistory]   = useState<ReportHistoryEntry[]>([]);
-  const [loadingHist, setLoadingHist] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    setEstado({ fase: "cargando" });
+    fetch(url(mes), { credentials: "same-origin" })
+      .then(async (r) => {
+        const j = (await r.json().catch(() => ({}))) as Resultado;
+        if (!vivo) return;
+        if (!r.ok || !j.ok) setEstado({ fase: "error", mensaje: r.status === 429 ? "Muchos pedidos seguidos: espera un minuto." : j.error ?? "No se pudo armar el reporte" });
+        else setEstado({ fase: "lista", datos: j });
+      })
+      .catch(() => { if (vivo) setEstado({ fase: "error", mensaje: "Sin conexión" }); });
+    return () => { vivo = false; };
+  }, [mes]);
 
-  // ── Generar reporte manualmente ──────────────────────────────────────────
-
-  async function handleGenerate() {
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
+  const enviar = async () => {
+    setEnviando(true);
     try {
-      // Round 8 fix: usar proxy admin server-side (lee CRON_SECRET de env real,
-      // no de bundle público). Antes leía NEXT_PUBLIC_CRON_SECRET_PREVIEW que
-      // nunca se definía → siempre 401. Patrón idéntico a /api/admin/webhook-replay.
-      const res = await fetch(
-        `/api/admin/monthly-report?year=${year}&month=${month}`,
-        { credentials: "same-origin" },
-      );
-      const json: ReportResult = await res.json();
-
-      if (!res.ok || !json.ok) {
-        throw new Error(json.error ?? "Error al generar el reporte");
-      }
-
-      setResult(json);
-
-      // Agregar al historial local
-      setHistory((prev) => [
-        {
-          id:          `${year}-${month}-${Date.now()}`,
-          period:      json.period,
-          year,
-          month,
-          ingresos:    json.ingresos,
-          utilidad:    json.utilidad,
-          generatedAt: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      const r = await fetch(url(mes, "&enviar=1"), { credentials: "same-origin" });
+      const j = (await r.json().catch(() => ({}))) as Resultado;
+      if (r.ok && j.emailSent) toast.success("Te lo mandamos al correo del negocio");
+      else toast.error(j.error ?? "No hay correo del negocio configurado");
     } finally {
-      setLoading(false);
+      setEnviando(false);
     }
-  }
+  };
 
-  // ── Descargar PDF (re-genera y descarga) ─────────────────────────────────
-
-  async function handleDownload(y: number, m: number) {
-    setLoadingHist(true);
-    try {
-      // Round 8 fix: usar proxy admin (cookie httpOnly admin) en lugar de
-      // hit directo al cron endpoint. window.open envía la cookie.
-      const url = `/api/admin/monthly-report?year=${y}&month=${m}&download=1`;
-      window.open(url, "_blank");
-    } finally {
-      setLoadingHist(false);
-    }
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
+  const datos = estado.fase === "lista" ? estado.datos : null;
+  const cifras = datos
+    ? [
+        { rotulo: "Ingresos", valor: datos.ingresos, clase: "text-[var(--text-primary)]" },
+        { rotulo: "Gastos", valor: datos.gastos, clase: "text-[var(--text-primary)]" },
+        { rotulo: "Utilidad", valor: datos.utilidad, clase: datos.utilidad >= 0 ? "text-[var(--data-success-ink)]" : "text-[var(--data-error-ink)]" },
+      ]
+    : [];
 
   return (
-    <div className="space-y-6 p-1">
-      {/* Título */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-primary/10">
-          <FileText className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <SectionTitle className="font-bold text-[var(--text-primary)]">Reporte Mensual</SectionTitle>
-          <p className="text-xs text-[var(--text-secondary)]">
-            Genera el reporte PDF con ingresos, gastos, top productos y fiados.
-            Se envía automáticamente el día 1 de cada mes.
-          </p>
-        </div>
-      </div>
-
-      {/* Selector de período + botón */}
-      <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)]">
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Mes
-          </label>
-          <select
-            value={month}
-            onChange={(e) => setMonth(Number(e.target.value))}
-            className="px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {MONTH_NAMES.map((name, i) => (
-              <option key={i + 1} value={i + 1}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Año
-          </label>
-          <input
-            type="number"
-            min={2023}
-            max={2030}
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+    <div className="space-y-4">
+      {/* Una fila: título · mes · Descargar PDF · Más */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Reporte mensual</SectionTitle>
+          <InfoTip
+            title="Reporte mensual"
+            what="El mes en una hoja PDF: ingresos, gastos y utilidad, los 10 productos y los 5 clientes que más dejaron, y los fiados del mes."
+            affects="Ingresos = ventas del mostrador + pedidos confirmados, en camino o entregados (lo mismo que el Resumen de Mi Plata). El día 1 a las 6:00 se manda solo al correo del dueño."
+            example="El 1 de noviembre te llega el de octubre; acá puedes bajar cualquier mes anterior."
           />
         </div>
-
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          className={cn(
-            "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors",
-            loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-primary hover:bg-[#1e4d38]",
-          )}
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Play className="h-4 w-4" />
-          )}
-          {loading ? "Generando..." : "Generar reporte"}
-        </button>
+        <label className="sr-only" htmlFor="reporte-mes">Mes</label>
+        <input
+          id="reporte-mes"
+          type="month"
+          value={mes}
+          max={hoy}
+          onChange={(e) => e.target.value && setMes(e.target.value)}
+          className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+        />
+        <div className="ml-auto flex items-center gap-2">
+          <a
+            href={url(mes, "&download=1")}
+            className={button({ variant: "primary", className: "rounded-xl px-4" })}
+          >
+            <Download className="h-4 w-4" aria-hidden /> Descargar PDF
+          </a>
+          <ActionMenu
+            label="Más"
+            icon={MoreHorizontal}
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            title="Mandar por correo, impuestos del mes"
+            actions={[
+              { id: "correo", label: "Mandármelo por correo", hint: "Al correo del dueño del negocio", icon: Mail, busy: enviando, disabled: enviando, onSelect: () => void enviar() },
+              { id: "impuestos", label: "Impuestos del mes", hint: "Cuánto pagar a SUNAT y cuándo", icon: Receipt, seccion: "Ver", onSelect: () => irAEnlace("/admin?tab=plata&vista=impuestos") },
+            ]}
+          />
+        </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </div>
+      {estado.fase === "cargando" ? (
+        <p className="flex items-center gap-2 py-8 text-sm text-[var(--text-secondary)]" aria-live="polite">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Armando {nombreDelMes(mes)}…
+        </p>
+      ) : estado.fase === "error" ? (
+        <p role="alert" className="flex items-center gap-2 py-8 text-sm text-[var(--data-error-ink)]">
+          <AlertTriangle className="h-4 w-4" aria-hidden /> {estado.mensaje}
+        </p>
+      ) : (
+        <section aria-label={`Resumen de ${nombreDelMes(mes)}`} className="grid grid-cols-1 divide-y divide-[var(--rule-soft)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {cifras.map((c) => (
+            <div key={c.rotulo} className="p-4">
+              <p className="text-sm text-[var(--text-secondary)]">{c.rotulo} de {nombreDelMes(mes)}</p>
+              <p className={cn("text-2xl font-bold tabular-nums", c.clase)}>{formatCurrency(c.valor)}</p>
+            </div>
+          ))}
+        </section>
       )}
-
-      {/* Resultado / Preview */}
-      {result && (
-        <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
-            <span className="font-semibold text-[var(--text-primary)]">
-              Reporte {result.period} generado
-            </span>
-            {result.emailSent && (
-              <span className="text-xs text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-0.5 rounded-full border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-                Email enviado
-              </span>
-            )}
-          </div>
-
-          {/* KPIs del reporte */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <KpiCard
-              label="Ingresos"
-              value={fmt(result.ingresos)}
-              icon={TrendingUp}
-              color="green"
-            />
-            <KpiCard
-              label="Gastos"
-              value={fmt(result.gastos)}
-              icon={TrendingDown}
-              color="red"
-            />
-            <KpiCard
-              label="Utilidad"
-              value={fmt(result.utilidad)}
-              icon={BarChart3}
-              color={result.utilidad >= 0 ? "blue" : "red"}
-            />
-          </div>
-
-          {/* Info PDF */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-            <FileText className="h-4 w-4 shrink-0" />
-            <span>
-              PDF generado ({(result.pdfSize / 1024).toFixed(1)} KB) con top 10 productos,
-              top 5 clientes y resumen de fiados.
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Historial de reportes generados en esta sesión */}
-      {history.length > 0 && (
-        <div>
-          <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] mb-3 flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Reportes generados en esta sesión
-          </CardTitle>
-          <div className="space-y-2">
-            {history.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-center justify-between gap-4 p-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)]"
-              >
-                <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">
-                    {entry.period}
-                  </p>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    Ingresos: {fmt(entry.ingresos)} · Utilidad: {fmt(entry.utilidad)}
-                  </p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    Generado: {new Date(entry.generatedAt).toLocaleString("es-PE")}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleDownload(entry.year, entry.month)}
-                  disabled={loadingHist}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-primary border border-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-                  title="Descargar PDF"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Descargar PDF
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Nota sobre automatización */}
-      <div className="p-3 rounded-lg bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)] text-xs text-[var(--text-secondary)] flex items-start gap-2">
-        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-        <span>
-          El reporte se genera automáticamente el{" "}
-          <strong>día 1 de cada mes a las 6:00 AM</strong> y se envía por email
-          al propietario configurado en el tenant. Puedes forzar la generación manualmente desde aquí.
-        </span>
-      </div>
     </div>
   );
 }

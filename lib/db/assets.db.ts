@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { mismoRecibo } from "@/lib/db/expenses.db";
 
 /**
  * lib/db/assets.db.ts — Activos & Maquinaria (Brandon 2026-06-06).
@@ -209,9 +210,10 @@ export const AssetsDB = {
         _sum: { amount: true, quantity: true },
         _count: { id: true },
       }),
+      // Los vales anulados del cuaderno de combustible (ADR-533) no son gasto.
       prisma.assetExpense.groupBy({
         by: ["assetId"],
-        where: { tenantId, assetId: { in: ids } },
+        where: { tenantId, assetId: { in: ids }, annulledAt: null },
         _sum: { amount: true },
         _count: { id: true },
       }),
@@ -227,7 +229,7 @@ export const AssetsDB = {
       }),
       prisma.assetExpense.groupBy({
         by: ["assetId"],
-        where: { tenantId, assetId: { in: ids }, category: "combustible" },
+        where: { tenantId, assetId: { in: ids }, category: "combustible", annulledAt: null },
         _sum: { gallons: true },
       }),
       prisma.assetMaintenance.findMany({
@@ -351,7 +353,7 @@ export const AssetsDB = {
   async listMovements(tenantId: string, assetId: string, limit = 100): Promise<{ incomes: DbAssetIncome[]; expenses: DbAssetExpense[] }> {
     const [incomes, expenses] = await Promise.all([
       prisma.assetIncome.findMany({ where: { tenantId, assetId }, orderBy: { date: "desc" }, take: limit }),
-      prisma.assetExpense.findMany({ where: { tenantId, assetId }, orderBy: { date: "desc" }, take: limit }),
+      prisma.assetExpense.findMany({ where: { tenantId, assetId, annulledAt: null }, orderBy: { date: "desc" }, take: limit }),
     ]);
     return {
       incomes: incomes.map(mapIncome),
@@ -395,6 +397,24 @@ export const AssetsDB = {
       });
     }
     return mapIncome(row);
+  },
+
+  /**
+   * El gasto de máquina de ESTE negocio con «Recibo <numero>» en las notas (lo
+   * deja el asistente), con el nombre de la máquina, o `null`. Sin caché.
+   */
+  async gastoConRecibo(tenantId: string, numero: string): Promise<{ id: string; date: string; amount: number; maquina: string } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const n = numero.trim();
+    if (!n) return null;
+    const filas = await prisma.assetExpense.findMany({
+      where: { tenantId, annulledAt: null, notes: { contains: `Recibo ${n}`, mode: "insensitive" } },
+      select: { id: true, date: true, amount: true, notes: true, asset: { select: { name: true } } },
+      orderBy: { date: "desc" },
+      take: 20,
+    });
+    const f = filas.find((x) => mismoRecibo(x.notes, n));
+    return f ? { id: f.id, date: f.date.toISOString(), amount: num(f.amount), maquina: f.asset.name } : null;
   },
 
   async addExpense(tenantId: string, data: {

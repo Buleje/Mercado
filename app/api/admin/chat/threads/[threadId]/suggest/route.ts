@@ -62,16 +62,16 @@ export async function POST(
 
 ${transcript}
 
-Generá 3 respuestas CORTAS y distintas que la TIENDA podría mandar ahora, en base al último mensaje del cliente.
+Genera 3 respuestas CORTAS y distintas que la TIENDA podría mandar ahora, en base al último mensaje del cliente.
 
-Devolvé EXCLUSIVAMENTE un JSON válido con esta forma:
+Devuelve EXCLUSIVAMENTE un JSON válido con esta forma:
 {"suggestions":["r1","r2","r3"]}
 
 Reglas:
-- Español de Perú, natural y cercano (tuteo: "tú tienes", no "vos tenés"). Estilo bodega de barrio, cálido pero directo.
+- Español de Perú, natural y cercano (tuteo: "tú tienes", no "vos tienes"). Estilo bodega de barrio, cálido pero directo.
 - Máx 120 caracteres por respuesta. Que sirvan para enviarse tal cual.
 - 3 ángulos distintos (ej: confirmar, dar precio/stock, ofrecer alternativa).
-- No inventes precios, stock ni horarios que no estén en la conversación; si hace falta un dato, dejá la respuesta abierta ("déjame confirmarte el stock").
+- No inventes precios, stock ni horarios que no estén en la conversación; si hace falta un dato, deja la respuesta abierta ("déjame confirmarte el stock").
 - Máximo 1 emoji por respuesta, solo si suma.
 - Solo el JSON, sin markdown ni texto extra.`;
 

@@ -1,0 +1,9 @@
+{
+ "tenant": "inversiones-agroforestales-blas-sociedad-op-qa-ui",
+ "ruta": "/admin?tab=loth-libro-operaciones&vista=gtf",
+ "pasos": [
+  { "preset": "despacho-abrir" },
+  { "click": "button:has-text(\"Datos de la guía\")" },
+  { "esperar": "text=Título habilitante" }
+ ]
+}

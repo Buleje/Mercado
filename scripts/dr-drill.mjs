@@ -117,7 +117,7 @@ const VALIDATIONS = [
     id: 7,
     name: "Fiados con saldo coherente (>= 0)",
     run: () => {
-      const neg = parseCount(sql('SELECT COUNT(*) FROM "Fiado" WHERE balance < 0'));
+      const neg = parseCount(sql('SELECT COUNT(*) FROM "Fiado" WHERE saldo < 0'));
       // Saldos negativos pueden existir si hay pagos en exceso — solo alerta
       return { negativeFiadoBalance: neg, warning: neg > 0 };
     },
@@ -196,7 +196,11 @@ async function main() {
   // Restaurar backup
   console.log("[1/2] Restaurando backup...");
   try {
-    if (BACKUP_PATH.endsWith(".dump")) {
+    if (process.env.DR_SKIP_RESTORE === "1") {
+      // 04-11: scripts/dr-drill-local.sh ya restauró sólo `public` (los roles y extensiones de Supabase
+      // hacen fallar un pg_restore completo sobre un Postgres limpio); acá sólo se valida.
+      console.log("Restauración hecha afuera (dr-drill-local.sh): sólo validar");
+    } else if (BACKUP_PATH.endsWith(".dump")) {
       execSync(`pg_restore --no-owner --no-acl -d "${TEMP_DB_URL}" "${BACKUP_PATH}"`, {
         stdio: "pipe",
         timeout: 600_000,

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { PlatformChatDB } from "@/lib/db/platform-chat.db";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const schema = z.object({
   mode: z.enum(["draft", "summary", "tone"]),
@@ -24,7 +25,7 @@ function buildTranscript(
 export async function POST(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
@@ -32,18 +33,18 @@ export async function POST(req: NextRequest) {
   const { mode, conversationId, text, tone } = parsed.data;
 
   // Construir prompt según el modo.
-  let system = "Sos el asistente del equipo de plataforma de Buleje (SaaS para bodegas en Perú). Respondé en español peruano, claro y profesional, con tuteo (vos no).";
+  let system = "Eres el asistente del equipo de plataforma de Buleje (SaaS para bodegas en Perú). Responde en español peruano, claro y profesional, con tuteo, nunca voseo.";
   let prompt = "";
   try {
     if (mode === "draft") {
       if (!conversationId) return NextResponse.json({ error: "Falta conversationId" }, { status: 400 });
       const messages = await PlatformChatDB.getMessages(conversationId, { includeNotes: false });
-      prompt = `Esta es la conversación con un dueño de tienda. Redactá la PRÓXIMA respuesta de la plataforma, lista para enviar (sin saludos genéricos repetidos, directa y útil):\n\n${buildTranscript(messages)}`;
+      prompt = `Esta es la conversación con un dueño de tienda. Redacta la PRÓXIMA respuesta de la plataforma, lista para enviar (sin saludos genéricos repetidos, directa y útil):\n\n${buildTranscript(messages)}`;
     } else if (mode === "summary") {
       if (!conversationId) return NextResponse.json({ error: "Falta conversationId" }, { status: 400 });
       const messages = await PlatformChatDB.getMessages(conversationId, { includeNotes: false });
-      system = "Resumí conversaciones de soporte de forma ejecutiva en español.";
-      prompt = `Resumí esta conversación en 3-4 bullets (qué pide la tienda, qué se resolvió, qué falta):\n\n${buildTranscript(messages)}`;
+      system = "Resume conversaciones de soporte de forma ejecutiva en español.";
+      prompt = `Resume esta conversación en 3-4 bullets (qué pide la tienda, qué se resolvió, qué falta):\n\n${buildTranscript(messages)}`;
     } else {
       if (!text?.trim()) return NextResponse.json({ error: "Falta texto" }, { status: 400 });
       const toneMap: Record<string, string> = {
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
         cercano: "más cercano y cálido",
         breve: "más breve y directo",
       };
-      prompt = `Reescribí este mensaje en un tono ${toneMap[tone ?? "cercano"]}, manteniendo el significado. Devolvé solo el mensaje reescrito:\n\n${text}`;
+      prompt = `Reescribe este mensaje en un tono ${toneMap[tone ?? "cercano"]}, manteniendo el significado. Devuelve solo el mensaje reescrito:\n\n${text}`;
     }
 
     // Llamada al LLM (degrada si no hay provider configurado).

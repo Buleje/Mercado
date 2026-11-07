@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { claveDeComprobante, gastoConMismoComprobante, type GastoConMismoComprobante } from "@/lib/gastos/factura-repetida";
 
 /**
  * ExpensesDB
@@ -41,4 +42,57 @@ export const ExpensesDB = {
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     return this.listByDateRange(tenantId, startOfMonth, endOfMonth);
   },
+
+  /**
+   * El gasto de ESTE negocio que ya tiene el comprobante `ruc` + `numero`
+   * (comparado sin ceros a la izquierda en el correlativo), o `null`. Sin
+   * caché a propósito: el que se anotó hace un segundo tiene que aparecer.
+   */
+  async comprobanteRepetido(tenantId: string, ruc: string, numero: string, tipo?: string | null): Promise<GastoConMismoComprobante | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const clave = claveDeComprobante(numero);
+    if (!ruc.trim() || !clave) return null;
+    const filas = await prisma.expense.findMany({
+      where: { tenantId, supplierRuc: ruc.trim(), documentNumber: { not: null } },
+      select: { id: true, date: true, amount: true, description: true, documentType: true, documentNumber: true },
+      orderBy: { date: "desc" },
+      take: 500,
+    });
+    // El mismo número en OTRO tipo de papel (recibo por honorarios E001-5 vs factura E001-5) no
+    // es la misma factura (reviewer 11-10); sin tipo en alguno de los dos, se compara igual.
+    const igual = filas.find(
+      (f) => claveDeComprobante(f.documentNumber) === clave && (!tipo || !f.documentType || f.documentType === tipo),
+    );
+    return igual ? gastoConMismoComprobante(igual) : null;
+  },
+
+  /**
+   * El gasto de ESTE negocio con ese n.º de recibo dictado («Recibo E242» en
+   * las notas que deja el asistente, o el `documentNumber` del formulario), o
+   * `null`. Sin caché: el que se anotó hace un minuto tiene que aparecer.
+   */
+  async conRecibo(tenantId: string, numero: string): Promise<{ id: string; date: string; amount: number } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const n = numero.trim();
+    if (!n) return null;
+    const filas = await prisma.expense.findMany({
+      where: {
+        tenantId,
+        recurring: false,
+        OR: [{ notes: { contains: `Recibo ${n}`, mode: "insensitive" } }, { documentNumber: { equals: n, mode: "insensitive" } }],
+      },
+      select: { id: true, date: true, amount: true, notes: true, documentNumber: true },
+      orderBy: { date: "desc" },
+      take: 20,
+    });
+    const f = filas.find((x) => x.documentNumber?.trim().toLowerCase() === n.toLowerCase() || mismoRecibo(x.notes, n));
+    return f ? { id: f.id, date: f.date.toISOString(), amount: toNumOrZero(f.amount) } : null;
+  },
 };
+
+/** «Recibo E242» exacto en las notas: «Recibo E2421» es OTRO recibo. */
+export function mismoRecibo(notas: string | null | undefined, numero: string): boolean {
+  if (!notas) return false;
+  const esc = numero.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^\\p{L}\\p{N}])Recibo ${esc}(?![\\p{L}\\p{N}-])`, "iu").test(notas);
+}

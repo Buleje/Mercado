@@ -44,8 +44,8 @@ export default function DockFeatureSpotlight() {
     <FeatureSpotlight
       id="floating-dock-2026-04"
       target="[aria-label='Volver arriba']"
-      title="Navegá más rápido"
-      description="Con este dock volvés arriba, ves tu historial de productos y consultás atajos de teclado. Presioná ? para verlos."
+      title="Navega más rápido"
+      description="Con este dock vuelves arriba, ves tu historial de productos y consultas atajos de teclado. Presiona ? para verlos."
       placement="left"
       badge="Nuevo"
       showDelayMs={200}

@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { ventanaFijadaEn } from "@/hooks/use-ventana-de-modal";
 
 const FOCUSABLE_SELECTOR = [
   "a[href]",
@@ -74,6 +75,10 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>({
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      /* Ventana fijada (ADR-420): la página de atrás está en uso. El Tab no se
+         atrapa y Escape cierra sólo con el foco adentro — igual que
+         `useModalAccesible` y `AdminModal`. */
+      if (ventanaFijadaEn(container) && (e.key === "Tab" || !container.contains(document.activeElement))) return;
       if (e.key === "Escape" && onEscape) {
         e.stopPropagation();
         onEscape();

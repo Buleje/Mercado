@@ -1,6 +1,10 @@
 import "server-only";
-import { prisma } from "@/lib/prisma";
-import { USAGE_TIERS, type TierName } from "@/lib/billing/wire-up/usage-tiers";
+import { AutomatizacionesDB, type TiendaBasica } from "@/lib/db/automatizaciones.db";
+import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { tiendasDormidas } from "@/lib/superadmin/tienda-dormida";
+import { USAGE_TIERS } from "@/lib/billing/wire-up/usage-tiers";
+import { cupoDeUsoDePlan } from "@/lib/superadmin/upgrade-recommendation";
+import type { NotifyLog } from "@/lib/superadmin/automation-cooldown";
 
 /**
  * Automatizaciones del superadmin (Brandon 2026-06-14). Reglas PRESET que
@@ -18,77 +22,66 @@ export const RULES: { key: RuleKey; title: string; trigger: string; action: stri
     title: "Trial por vencer",
     trigger: "El trial vence en ≤3 días",
     action: "Avisar al dueño (WhatsApp + push)",
-    message: { title: "⏳ Tu prueba de Buleje está por terminar", body: "Tu período de prueba vence pronto. Activá tu plan para no perder acceso. ¿Te ayudamos?" },
+    message: { title: "⏳ Tu prueba de Buleje está por terminar", body: "Tu período de prueba vence pronto. Activa tu plan para no perder acceso. ¿Te ayudamos?" },
   },
   {
     key: "no-login-14d",
     title: "Sin actividad",
     trigger: "Sin iniciar sesión en 14 días",
     action: "Reenganchar al dueño (WhatsApp + push)",
-    message: { title: "👋 Te extrañamos en Buleje", body: "Hace rato no entrás a tu panel. ¿Necesitás una mano para sacarle provecho a tu tienda?" },
+    message: { title: "👋 Te extrañamos en Buleje", body: "Hace rato no entras a tu panel. ¿Necesitas una mano para sacarle provecho a tu tienda?" },
   },
   {
     key: "near-limit",
     title: "Cerca del límite",
     trigger: "Pedidos del mes ≥90% del plan",
     action: "Ofrecer upgrade (WhatsApp + push)",
-    message: { title: "🚀 Tu tienda está creciendo", body: "Estás cerca del límite de pedidos de tu plan. Subí de plan para no frenar tus ventas." },
+    message: { title: "🚀 Tu tienda está creciendo", body: "Estás cerca del límite de pedidos de tu plan. Sube de plan para no frenar tus ventas." },
   },
   {
     key: "stale-30d",
     title: "Tienda dormida",
-    trigger: "Sin pedidos en 30 días",
+    trigger: "Sin pedidos, ventas ni operaciones del libro en 30 días",
     action: "Reactivar al dueño (WhatsApp + push)",
-    message: { title: "🔔 Reactivá tu tienda Buleje", body: "Hace 30 días que no registrás pedidos. ¿Querés que te ayudemos a reactivar tus ventas?" },
+    message: { title: "🔔 Reactiva tu tienda Buleje", body: "Hace 30 días que no registras pedidos. ¿Quieres que te ayudemos a reactivar tus ventas?" },
   },
 ];
 
-function planToTier(plan: string): TierName {
-  if (plan === "pro" || plan === "business") return "pro";
-  if (plan === "enterprise") return "enterprise";
-  if (plan === "starter") return "starter";
-  return "free";
-}
+export type MatchTenant = TiendaBasica;
 
-export type MatchTenant = { id: string; slug: string; name: string };
-
-/** Tiendas que matchean una regla AHORA (datos reales). */
+/** Tiendas que matchean una regla AHORA (datos reales). Las lecturas viven en `AutomatizacionesDB`. */
 export async function computeMatches(key: RuleKey): Promise<MatchTenant[]> {
   const now = Date.now();
   if (key === "trial-expiring") {
-    const rows = await prisma.tenant.findMany({
-      where: { trialEndsAt: { gte: new Date(now), lte: new Date(now + 3 * 86_400_000) } },
-      select: { id: true, slug: true, name: true },
-    });
-    return rows;
+    return AutomatizacionesDB.tiendasConPruebaEntre(new Date(now), new Date(now + 3 * 86_400_000));
   }
   if (key === "stale-30d") {
-    const ago30 = new Date(now - 30 * 86_400_000);
-    const [active, recent] = await Promise.all([
-      prisma.tenant.findMany({ where: { active: true }, select: { id: true, slug: true, name: true } }),
-      prisma.order.groupBy({ by: ["tenantId"], where: { createdAt: { gte: ago30 } }, _count: { _all: true } }),
+    // «Dormida» = sin operaciones reales en 30 días (pedidos, ventas, libro CTP, trozas), no sólo sin pedidos.
+    // Atajo barato: quien tuvo un pedido en 30 días ya tiene operaciones, así que sólo se miden las demás.
+    const [activas, conPedidos] = await Promise.all([
+      AutomatizacionesDB.tiendasActivas(),
+      AutomatizacionesDB.pedidosDesde(new Date(now - 30 * 86_400_000)),
     ]);
-    const withRecent = new Set(recent.map((r) => r.tenantId));
-    return active.filter((t) => !withRecent.has(t.id));
+    const candidatas = activas.filter((t) => !conPedidos.has(t.id));
+    const senales = await AutomatizacionesDB.senalesDeUsoDe(candidatas.map((t) => t.id), now);
+    return tiendasDormidas(candidatas, senales);
   }
   if (key === "no-login-14d") {
     const ago14 = new Date(now - 14 * 86_400_000);
-    const [active, logins] = await Promise.all([
-      prisma.tenant.findMany({ where: { active: true }, select: { id: true, slug: true, name: true } }),
-      prisma.activityLog.groupBy({ by: ["tenantId"], where: { action: "login_success" }, _max: { createdAt: true } }),
+    const [active, lastLogin] = await Promise.all([
+      AutomatizacionesDB.tiendasActivas(),
+      AutomatizacionesDB.ultimoIngresoPorTienda(),
     ]);
-    const lastLogin = new Map(logins.map((l) => [l.tenantId, l._max.createdAt?.getTime() ?? 0]));
     return active.filter((t) => (lastLogin.get(t.id) ?? 0) < ago14.getTime());
   }
   // near-limit
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  const [tenants, ordersBy] = await Promise.all([
-    prisma.tenant.findMany({ select: { id: true, slug: true, name: true, plan: true } }),
-    prisma.order.groupBy({ by: ["tenantId"], where: { createdAt: { gte: monthStart } }, _count: { _all: true } }),
+  const [tenants, orderMap] = await Promise.all([
+    AutomatizacionesDB.tiendasConPlan(),
+    AutomatizacionesDB.pedidosDesde(monthStart),
   ]);
-  const orderMap = new Map(ordersBy.map((r) => [r.tenantId, r._count._all]));
   return tenants.filter((t) => {
-    const quota = USAGE_TIERS[planToTier(t.plan)]["order.created"];
+    const quota = USAGE_TIERS[cupoDeUsoDePlan(t.plan)]["order.created"];
     const limit = quota?.limit ?? Infinity;
     if (limit === Infinity || limit === 0) return false;
     return (orderMap.get(t.id) ?? 0) / limit >= 0.9;
@@ -99,14 +92,20 @@ type RuleState = { enabled?: boolean; lastRunAt?: string | null };
 type AutomationState = Record<string, RuleState>;
 
 export async function getAutomationState(): Promise<AutomationState> {
-  const row = await prisma.platformSetting.findUnique({ where: { key: "automations" } });
-  return (row?.value as AutomationState) ?? {};
+  return (await PlatformSettingsDB.getFresco<AutomationState>("automations")) ?? {};
 }
 
 export async function setAutomationState(state: AutomationState, updatedBy: string): Promise<void> {
-  await prisma.platformSetting.upsert({
-    where: { key: "automations" },
-    create: { key: "automations", value: state, updatedBy },
-    update: { value: state, updatedBy },
-  });
+  await PlatformSettingsDB.set("automations", state, updatedBy);
+}
+
+const NOTIFY_LOG_KEY = "automation-notify-log";
+
+/** Log de dedup: a quien se aviso y cuando, por regla. */
+export async function getNotifyLog(): Promise<NotifyLog> {
+  return (await PlatformSettingsDB.getFresco<NotifyLog>(NOTIFY_LOG_KEY)) ?? {};
+}
+
+export async function setNotifyLog(log: NotifyLog, updatedBy: string): Promise<void> {
+  await PlatformSettingsDB.set(NOTIFY_LOG_KEY, log, updatedBy);
 }

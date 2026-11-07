@@ -33,7 +33,7 @@ export function ScopeBadge({ tabId, variant = "dot", hideForSystem = true, class
   if (variant === "dot") {
     // Solo un punto de color + tooltip. Mínimo footprint visual.
     return (
-      <span
+      <span role="img"
         className={cn("inline-block h-1.5 w-1.5 rounded-full shrink-0", meta.dotClass, className)}
         title={`Datos: ${meta.label}`}
         aria-label={`Datos: ${meta.label}`}
@@ -45,7 +45,7 @@ export function ScopeBadge({ tabId, variant = "dot", hideForSystem = true, class
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider leading-none shrink-0",
+          "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider leading-none shrink-0",
           meta.bgClass,
           meta.textClass,
           className,

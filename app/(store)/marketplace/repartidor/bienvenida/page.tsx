@@ -111,7 +111,7 @@ export default function BienvenidaRepartidorPage() {
                 className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 lg:p-6 flex items-start gap-4 lg:gap-5"
               >
                 <div className="flex flex-col items-center gap-2 shrink-0">
-                  <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center">
                     <s.Icon className="h-6 w-6" />
                   </div>
                   <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
@@ -138,7 +138,7 @@ export default function BienvenidaRepartidorPage() {
                 key={b.title}
                 className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3"
               >
-                <div className="h-11 w-11 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+                <div className="h-11 w-11 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
                   <b.Icon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">

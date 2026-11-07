@@ -15,6 +15,7 @@
  */
 
 import dynamic from "next/dynamic";
+import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 
 const SmoothScrollProvider = dynamic(
   () => import("@/components/SmoothScrollProvider"),
@@ -49,15 +50,51 @@ const CommandPalette = dynamic(() => import("@/components/CommandPalette"), {
 });
 
 export default function RootDeferredWidgets() {
+  // El CommandPalette del root escucha Ctrl+K sin filtro de ruta, así que
+  // dentro de /admin y /superadmin se abría ENCIMA de la paleta propia de cada
+  // panel: dos overlays apilados, cada uno con su buscador y las mismas
+  // acciones repetidas. Cada panel ya trae la suya (GlobalSearch en admin,
+  // superadmin/CommandPalette en superadmin) y son las que conocen sus módulos.
+  const pathname = usePathname();
+  // `startsWith` no cubría el admin multi-tenant, que vive en `/t/<slug>/admin`:
+  // ahí el guard nunca aplicaba y las dos paletas seguían apiladas.
+  const esPanel = /(^|\/)(admin|superadmin)(\/|$)/.test(pathname ?? "");
+  const hasOwnPalette = esPanel;
+  /* El Modo TV de las cámaras (`/tv`) se maneja con el control remoto y no
+     scrollea: sin paleta, sin barra de scroll, sin «instalar la app». */
+  const esTv = pathname === "/tv";
+  /* La tienda de un negocio (`/t/<slug>` y lo que cuelga, fuera de su panel)
+     no carga el scroll suave, la barra de progreso ni la paleta Ctrl+K: es la
+     vitrina del negocio, no Buleje. Lenis y la paleta eran ~140 kB de JS (dev)
+     que se bajaban junto a la foto de la portada (la que mide el LCP), la paleta
+     ofrecía atajos del panel a un comprador y Lenis peleaba con la barra
+     pegajosa y los carriles. Se miran las dos cosas: la ruta del navegador
+     (`/t/main/tienda` se reescribe a la tienda general) y el segmento real (con
+     subdominio o dominio propio la ruta es `/`, pero el árbol es `t/[slug]`). */
+  const segmento = useSelectedLayoutSegment();
+  const esTiendaDeNegocio = !esPanel && (/^\/t\//.test(pathname ?? "") || segmento === "t");
+
   return (
     <>
-      <SmoothScrollProvider />
-      <ScrollProgressBar />
+      {/**
+       * El scroll suave es de la tienda, no del panel.
+       *
+       * Lenis se queda con la rueda de toda la página y anima `window.scrollY`.
+       * En una landing eso se siente bien; en un panel con 142 cajas de scroll
+       * propio —tablas altas, listas de modales, desplegables largos— pelea con
+       * todas: la rueda encima de una tabla movía la página por detrás, con
+       * inercia, en vez de la tabla. `allowNestedScroll` lo acota, pero sigue
+       * siendo una heurística por gesto encima de una herramienta de trabajo
+       * donde nadie pidió inercia. Acá no se monta: la rueda es del navegador,
+       * y de paso el panel se ahorra los ~40 kB.
+       */}
+      {!esPanel && !esTv && !esTiendaDeNegocio && <SmoothScrollProvider />}
+      {!esTv && !esTiendaDeNegocio && <ScrollProgressBar />}
       <AutoTranslator />
       <ClientEffects />
       <ServiceWorkerRegistrar />
-      <InstallPrompt />
-      <CommandPalette />
+      {!esTv && <InstallPrompt />}
+      {!hasOwnPalette && !esTv && !esTiendaDeNegocio && <CommandPalette />}
     </>
   );
 }

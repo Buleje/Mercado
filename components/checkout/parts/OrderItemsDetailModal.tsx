@@ -80,7 +80,7 @@ export function OrderItemsDetailModal({
                   <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
                     Detalle de tu pedido
                   </h3>
-                  <p className="text-xs text-muted leading-snug mt-0.5">
+                  <p className="text-xs text-muted dark:text-[var(--text-tertiary)] leading-snug mt-0.5">
                     {items.length} {items.length === 1 ? "producto" : "productos"} · Total {fmt(finalTotal)}
                   </p>
                 </div>
@@ -135,19 +135,19 @@ export function OrderItemsDetailModal({
                         {item.name}
                       </p>
                       {item.unit && (
-                        <p className="text-xs font-bold uppercase tracking-wider text-muted mt-1">
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted dark:text-[var(--text-tertiary)] mt-1">
                           Por {item.unit}
                         </p>
                       )}
                       {item.note && (
-                        <p className="text-xs text-muted mt-1.5 line-clamp-2 italic">
+                        <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-1.5 line-clamp-2 italic">
                           Nota: {item.note}
                         </p>
                       )}
                     </div>
 
                     <div className="flex items-baseline justify-between mt-2">
-                      <span className="text-xs text-muted tabular-nums">
+                      <span className="text-xs text-muted dark:text-[var(--text-tertiary)] tabular-nums">
                         {fmt(item.price)} {item.unit ? `/ ${item.unit}` : "c/u"}
                       </span>
                       <span
@@ -165,7 +165,7 @@ export function OrderItemsDetailModal({
             {/* Footer con total */}
             <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 px-6 py-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted">Subtotal</span>
+                <span className="text-muted dark:text-[var(--text-tertiary)]">Subtotal</span>
                 <span className="tabular-nums font-semibold text-[var(--text-primary)]">{fmt(cartTotal)}</span>
               </div>
               {discount > 0 && (

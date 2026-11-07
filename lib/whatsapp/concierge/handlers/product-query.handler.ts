@@ -45,6 +45,27 @@ export async function productQueryHandler(
     };
   }
 
+  // ── 0. El número de un negocio vende lo de ese negocio ──────────────────────
+  // Cruzar tiendas es opt-in (Settings › whatsappAsistente.cruzarTiendas): antes
+  // el número de cualquier negocio ofrecía primero productos de TODAS las
+  // tiendas publicadas y el propio solo si no encontraba nada.
+  if (ctx.asistente?.cruzarTiendas !== true) {
+    try {
+      return await _tenantFallbackSearch(ctx, query);
+    } catch (err) {
+      logger.error("[product-query-handler] tenant search error", {
+        tenantId: ctx.tenantId,
+        query,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return {
+        reply:
+          "Tuve un problema buscando ese producto. Intenta de nuevo en un momento.",
+        newState: "browsing",
+      };
+    }
+  }
+
   // ── 1. Cross-tenant marketplace search ──────────────────────────────────────
   try {
     const crossResults = await searchProductsCrossTenant({

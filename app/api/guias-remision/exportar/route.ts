@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GuiasRemisionDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "almacenero"]);
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
       to: sp.get("to") ?? undefined,
     });
 
-    const filename = `guias-remision-${new Date().toISOString().slice(0, 10)}.csv`;
+    const filename = `guias-remision-${limaDateKey()}.csv`;
     return new NextResponse(csv, {
       status: 200,
       headers: {

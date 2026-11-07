@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { m as motion } from "framer-motion";
 import { Save, Printer, MessageCircle, CheckCircle, Loader2 } from "@buleje/design-system/icons";
+import { MembreteImpreso } from "@/components/admin/shared/MembreteImpreso";
 import type { PreviewData } from "./useCierreDiario";
 
 type Props = {
@@ -97,8 +98,7 @@ export default function CierrePaso3Compartir({
 
       {/* Printable summary (hidden on screen, shown on print) */}
       <div className="hidden print:block print-summary space-y-3 p-6">
-        <h1 className="text-2xl font-bold">Cierre del Día — Buleje</h1>
-        <p className="text-sm text-gray-600">Fecha: {preview.fecha}</p>
+        <MembreteImpreso tipo="Cierre del día" fecha={preview.fecha} />
         <table className="w-full text-sm border-collapse">
           <tbody>
             <tr className="border-b"><td className="py-2 font-semibold">Total ventas</td><td className="py-2 text-right">S/ {Number(preview.ventas.total).toFixed(2)}</td></tr>

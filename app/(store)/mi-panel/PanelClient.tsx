@@ -816,7 +816,7 @@ export default function PanelClient() {
               style={{ color: "var(--color-primary-dark, #009690)" }}
             >
               <Zap className="h-3 w-3" strokeWidth={2.5} />
-              Empezá a sumar
+              Empieza a sumar
             </Link>
           </Card>
         </aside>

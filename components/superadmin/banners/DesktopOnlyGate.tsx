@@ -18,6 +18,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useIsDesktop } from "@/hooks/use-media-query";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Monitor, ArrowLeft } from "@buleje/design-system/icons";
 
 interface DesktopOnlyGateProps {
@@ -43,23 +44,24 @@ export default function DesktopOnlyGate({ children }: DesktopOnlyGateProps) {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-[var(--surface-canvas)]">
       <div className="max-w-md w-full text-center">
         {/* Ilustración */}
-        <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-6">
+        <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-6">
           <Monitor className="h-10 w-10" strokeWidth={1.5} aria-hidden />
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] mb-3">
-          Editor de banners requiere pantalla grande
-        </h1>
+        <div className="mb-2 flex items-center justify-center gap-2">
+          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+            Necesita pantalla ancha
+          </h1>
+          <InfoTip
+            side="bottom"
+            title="Editor de banners"
+            what="Es un lienzo con herramientas, capas y transformaciones: necesita al menos 1024 px de ancho para funcionar bien."
+            example="Ábrelo desde tu computadora, o gira la tablet en horizontal."
+          />
+        </div>
 
-        <p className="text-base text-[var(--text-secondary)] leading-relaxed mb-2">
-          El editor de banners es un canvas tipo Photoshop con herramientas,
-          capas y transformaciones. Necesita al menos{" "}
-          <strong className="text-[var(--text-primary)]">1024px de ancho</strong>{" "}
-          para funcionar correctamente.
-        </p>
-
-        <p className="text-sm text-[var(--text-tertiary)] mb-8">
-          Abrilo desde tu computadora o tablet en horizontal.
+        <p className="mb-8 text-base text-[var(--text-secondary)]">
+          Mínimo <strong className="text-[var(--text-primary)]">1024 px</strong> de ancho.
         </p>
 
         {/* CTAs */}
@@ -73,10 +75,6 @@ export default function DesktopOnlyGate({ children }: DesktopOnlyGateProps) {
           </Link>
         </div>
 
-        {/* Detalle */}
-        <p className="mt-8 text-xs text-[var(--text-tertiary)]">
-          Tip: en una tablet, podés girarla a horizontal para alcanzar 1024px.
-        </p>
       </div>
     </div>
   );

@@ -1,0 +1,9 @@
+{
+  "ruta": "/superadmin/tenants",
+  "pasos": [
+    { "esperar": "[data-qa=campana-notificaciones]" },
+    { "click": "[data-qa=campana-notificaciones]" },
+    { "esperar": "[data-qa=lista-avisos]" },
+    { "captura": "campana-abierta" }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=ajustes",
+  "pasos": [
+    {
+      "parchear": [
+        "/api/platform/admin-template",
+        {
+          "template": {
+            "overrides": {
+              "contratos": {
+                "visible": true
+              },
+              "documentos": {
+                "visible": true
+              }
+            },
+            "order": [],
+            "defaultSidebarStyle": "ejecutivo",
+            "version": 2
+          }
+        }
+      ]
+    },
+    {
+      "esperar": 9000
+    },
+    {
+      "eval": "(async()=>{\nconst SEL='input[type=checkbox][aria-label^=\"Seleccionar \"]:not([aria-label^=\"Seleccionar la carpeta\"]):not([aria-label=\"Seleccionar todos\"])';\nconst ARCH='/admin?tab=documentos&vista=drive&sub=all';\nconst OTRA='/admin?tab=ajustes';\nconst sleep=ms=>new Promise(r=>setTimeout(r,ms));\nconst lt=[];\nnew PerformanceObserver(l=>{for(const e of l.getEntries())lt.push({s:e.startTime,d:e.duration})}).observe({type:'longtask'});\nconst ir=u=>{history.pushState(null,'',u);dispatchEvent(new PopStateEvent('popstate'))};\nasync function medir(){\n const t0=performance.now();const n0=performance.getEntriesByType('resource').length;\n ir(ARCH);let tPanel=null;\n while(!document.querySelector(SEL)){if(!tPanel&&document.querySelector('[data-qa=panel-archivo]'))tPanel=performance.now()-t0;await new Promise(r=>requestAnimationFrame(r));if(performance.now()-t0>30000)return{timeout:true};}\n const t1=performance.now()-t0;await sleep(2500);\n const res=performance.getEntriesByType('resource').slice(n0);\n const js=res.filter(r=>/\\.js(\\?|$)/.test(r.name));\n const lista=res.filter(r=>/\\/api\\/admin\\/documents(\\?|$)/.test(r.name)&&!/conteo=1/.test(r.name)).sort((a,b)=>b.responseEnd-a.responseEnd)[0];\n const tareas=lt.filter(x=>x.s>=t0-5&&x.s<=t0+t1+50);\n const despues=lt.filter(x=>x.s>t0+t1+50);\n return{tarjeta:Math.round(t1),panel:tPanel&&Math.round(tPanel),tareaMax:Math.round(Math.max(0,...tareas.map(x=>x.d))),tareasSuma:Math.round(tareas.reduce((a,x)=>a+x.d,0)),nTareas:tareas.length,tareasDespues:despues.map(x=>Math.round(x.d)),jsKB:Math.round(js.reduce((a,r)=>a+(r.decodedBodySize||0),0)/1024),jsN:js.length,listaFin:lista?Math.round(lista.responseEnd-t0):null,trasLista:lista?Math.round(t1-(lista.responseEnd-t0)):null,tarjetas:document.querySelectorAll(SEL).length};\n}\nconst primera=await medir();const segundas=[];\nfor(let i=0;i<3;i++){ir(OTRA);await sleep(3000);segundas.push(await medir());}\nconst med=k=>{const v=segundas.map(s=>s[k]).filter(x=>typeof x==='number').sort((a,b)=>a-b);return v[Math.floor(v.length/2)]};\nreturn JSON.stringify({primera,segunda:{tarjeta:med('tarjeta'),tareaMax:med('tareaMax'),tareasSuma:med('tareasSuma'),trasLista:med('trasLista'),jsKB:med('jsKB')},segundas});\n})()"
+    }
+  ]
+}

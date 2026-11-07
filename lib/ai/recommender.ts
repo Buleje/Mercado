@@ -1,7 +1,7 @@
 import "server-only";
 import { generateText } from "ai";
 import { z } from "zod";
-import { smartModel } from "@/lib/ai/provider";
+import { smartModel, smartModelId } from "@/lib/ai/provider";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
 import { trackAiUsage } from "@/lib/ai/track-usage";
@@ -66,7 +66,7 @@ export async function getRecommendations(
     // Round 19: trackAiUsage envuelve la llamada → registra cost+tokens en
     // logger structured + aiCostGuard. Feature="recommender" para FinOps.
     const { text } = await trackAiUsage(
-      { tenantId, feature: "recommender", model: "claude-haiku-4-5" },
+      { tenantId, feature: "recommender", model: smartModelId },
       () =>
         generateText({
           model: smartModel,

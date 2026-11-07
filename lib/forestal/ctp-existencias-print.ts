@@ -1,0 +1,344 @@
+"use client";
+
+/**
+ * ctp-existencias-print.ts — REPORTE DE EXISTENCIAS imprimible del Libro CTP
+ * (la hoja «Existencias» del LO-CTP, pero por-tab y como PDF para inspección).
+ *
+ * Es el saldo que se declara ante SERFOR: materia prima que entra (validada) vs.
+ * volumen consumido en producción, balance por especie, conciliación del período
+ * (apertura → cierre) y stock de productos transformados. Misma fuente que el
+ * panel Saldos (`ForestCtpDB.saldos()` + conciliación). No reemplaza el registro
+ * oficial en el MC-SNIFFS; es un documento de referencia.
+ *
+ * Primitivos comunes (esc, ventana, identidad, CSS base) en `ctp-print-shared`.
+ */
+
+import {
+  esc,
+  ctpIdentityBlock,
+  ctpReportFooter,
+  openCtpReport,
+  type CtpReportFicha,
+} from "./ctp-print-shared";
+
+/** Un lote con lo que le resta y su plazo (ADR-342 · `finProceso`). */
+export interface LoteDelReporte {
+  code: string;
+  permisos: string[];
+  especie: string;
+  status: string;
+  consumidoM3: number;
+  esperado56M3: number;
+  producidoM3: number | null;
+  /** Al 56 % − producido: lo que el lote todavía admite. `null` sin producción sumable. */
+  restaM3: number | null;
+  /** m³ de madera que siguen sin aserrar — distinto de `restaM3`. */
+  apartadoM3: number;
+  piezas: number;
+  diasParado: number | null;
+  finProceso: string | null;
+  diasParaVencer: number | null;
+  vencido: boolean;
+}
+
+export interface FuenteDelReporte {
+  label: string;
+  m3: number;
+  enProducto: number;
+  convertido: boolean;
+  detalle?: string;
+  /** Por qué esta fuente quedó en cero bajo el filtro. Un cero mudo se lee como
+   *  «no hay»; acá significa «no se puede saber». Gana sobre `detalle`. */
+  noAtribuible?: string;
+}
+
+/** Una corrida cuyo origen no se puede certificar, para el reporte. */
+export interface CorridaSinOrigenReporte {
+  fecha: string;
+  lote: string | null;
+  producto: string | null;
+  especie: string | null;
+  unidad: string;
+  disponible: number;
+  motivo: string;
+  guias: readonly string[];
+}
+
+export interface ExistenciasReportData {
+  periodLabel: string;
+  /** Lo que del depósito no se puede certificar, con el motivo. */
+  origen?: {
+    m3SinCertificar: number;
+    fraccion: number;
+    corridas: readonly CorridaSinOrigenReporte[];
+  } | null;
+  /** El balance de capacidad: las cuatro fuentes y el techo que suman. */
+  balance?: { fuentes: readonly FuenteDelReporte[]; totalProducto: number } | null;
+  /** Opcional: un CTP sin lotes de aserrío no tiene por qué ver la tabla. */
+  lotes?: readonly LoteDelReporte[];
+  materiaPrima: {
+    ingresoM3: number;
+    ingresosCount: number;
+    consumidoM3: number;
+    saldoM3: number;
+    pendienteM3: number;
+    especiesEnNegativo: number;
+  };
+  porEspecie: {
+    especie: string;
+    scientific: string | null;
+    cites: boolean;
+    ingresoM3: number;
+    pendienteM3: number;
+    consumidoM3: number;
+    saldoM3: number;
+    ingresosCount: number;
+  }[];
+  productos: { producto: string; producido: number; despachado: number; stock: number }[];
+  concil?: {
+    fuenteApertura: "cierre" | "calculada" | "sin_apertura";
+    aperturaLabel: string | null;
+    materiaPrima: {
+      especie: string;
+      cites: boolean;
+      apertura: number;
+      ingreso: number;
+      consumido: number;
+      despachadoDirecto?: number;
+      final: number;
+      negativa: boolean;
+    }[];
+    productos: {
+      producto: string;
+      apertura: number;
+      producido: number;
+      despachado: number;
+      final: number;
+      negativo: boolean;
+    }[];
+  } | null;
+  ficha?: CtpReportFicha | null;
+}
+
+const n2 = (n: number): string =>
+  n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const CSS = `
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 4px}
+  .stat{border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;background:#fbfcfb}
+  .stat .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:#888} .stat .v{font-size:17px;font-weight:800;margin-top:2px} .stat .s{font-size:10.5px;color:#777}
+  .cites{display:inline-block;font-size:9.5px;font-weight:700;color:#664d03;background:#fff3cd;border-radius:5px;padding:1px 5px;margin-left:6px;vertical-align:middle}
+  .src{font-size:11.5px;color:#666;margin:2px 0 4px}
+`;
+
+/** Badge CITES junto al nombre de especie. */
+function especieCell(nombre: string, scientific: string | null, cites: boolean): string {
+  const sci = scientific
+    ? `<div class="muted" style="font-style:italic;margin-top:1px">${esc(scientific)}</div>`
+    : "";
+  return `<b>${esc(nombre)}</b>${cites ? '<span class="cites">CITES</span>' : ""}${sci}`;
+}
+
+/** Celda numérica m³ (rojo/negrita si es negativa = sobreconsumo/sobre-despacho). */
+function num(v: number, unit = ""): string {
+  const neg = v < 0;
+  return `<td class="num${neg ? " neg" : ""}">${n2(v)}${unit}</td>`;
+}
+
+export function printExistencias(d: ExistenciasReportData): void {
+  const fecha = new Date().toLocaleString("es-PE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const mp = d.materiaPrima;
+
+  const especieRows = d.porEspecie
+    .map(
+      (s) => `<tr>
+      <td>${especieCell(s.especie, s.scientific, s.cites)}</td>
+      ${num(s.ingresoM3)}${num(s.pendienteM3)}${num(s.consumidoM3)}${num(s.saldoM3)}
+    </tr>`,
+    )
+    .join("");
+  const totalIngreso = d.porEspecie.reduce((a, s) => a + s.ingresoM3, 0);
+  const totalPend = d.porEspecie.reduce((a, s) => a + s.pendienteM3, 0);
+  const totalCons = d.porEspecie.reduce((a, s) => a + s.consumidoM3, 0);
+  const totalSaldo = d.porEspecie.reduce((a, s) => a + s.saldoM3, 0);
+
+  const productoRows = d.productos
+    .map(
+      (p) => `<tr>
+      <td><b>${esc(p.producto)}</b></td>
+      ${num(p.producido)}${num(p.despachado)}${num(p.stock)}
+    </tr>`,
+    )
+    .join("");
+
+  /* La madera vendida en rollo (ADR-363) también baja del patio. Si hubo, la
+     columna va: sin ella, apertura + ingreso − consumido no da el final que se
+     imprime y el fiscalizador ve una tabla que no cierra. Si no hubo, no se
+     imprime una columna de ceros. */
+  const hayDirecto = (d.concil?.materiaPrima ?? []).some(
+    (s) => (s.despachadoDirecto ?? 0) > 0.0001,
+  );
+  const concilBlock =
+    d.concil && d.concil.materiaPrima.length > 0
+      ? `<h2>Conciliación del período · apertura → cierre</h2>
+    <p class="src">Apertura ${
+      d.concil.fuenteApertura === "cierre"
+        ? `tomada del cierre anterior${d.concil.aperturaLabel ? ` (${esc(d.concil.aperturaLabel)})` : ""}`
+        : d.concil.fuenteApertura === "calculada"
+          ? "calculada (sin cierre previo registrado)"
+          : "sin apertura previa"
+    }.</p>
+    <table>
+      <thead><tr><th>Especie</th><th class="num">Apertura</th><th class="num">Ingreso</th><th class="num">Consumido</th>${
+        hayDirecto ? '<th class="num">Salió sin aserrar</th>' : ""
+      }<th class="num">Final</th></tr></thead>
+      <tbody>${d.concil.materiaPrima
+        .map(
+          (s) => `<tr>
+        <td>${esc(s.especie)}${s.cites ? '<span class="cites">CITES</span>' : ""}</td>
+        ${num(s.apertura)}${num(s.ingreso)}${num(s.consumido)}${hayDirecto ? num(s.despachadoDirecto ?? 0) : ""}${num(s.final)}
+      </tr>`,
+        )
+        .join("")}</tbody>
+    </table>`
+      : "";
+
+  const body = `
+  <h1>Reporte de Existencias — Libro de Operaciones CTP</h1>
+  <p class="sub">${esc(d.ficha?.nombreCtp || "Centro de Transformación Primaria")} · Período: ${esc(d.periodLabel)} · Generado: ${esc(fecha)}</p>
+
+  ${ctpIdentityBlock(d.ficha, [
+    `<div><span class="k">Especies con movimiento:</span> ${d.porEspecie.length}</div>`,
+    `<div><span class="k">Productos transformados:</span> ${d.productos.length}</div>`,
+  ])}
+
+  <h2>Resumen de materia prima (m³)</h2>
+  <div class="stats">
+    <div class="stat"><div class="l">Ingresado (validado)</div><div class="v">${n2(mp.ingresoM3)}</div><div class="s">${mp.ingresosCount} ingresos</div></div>
+    <div class="stat"><div class="l">Consumido en producción</div><div class="v">${n2(mp.consumidoM3)}</div><div class="s">&nbsp;</div></div>
+    <div class="stat"><div class="l">Saldo de materia prima</div><div class="v"${mp.saldoM3 < 0 ? ' style="color:#b91c1c"' : ""}>${n2(mp.saldoM3)}</div><div class="s">${mp.saldoM3 < 0 ? "sobreconsumo" : "disponible"}</div></div>
+    <div class="stat"><div class="l">Pendiente de validar</div><div class="v">${n2(mp.pendienteM3)}</div><div class="s">no computa como saldo</div></div>
+  </div>
+
+  <h2>Balance por especie (m³)</h2>
+  ${
+    d.porEspecie.length > 0
+      ? `<table>
+    <thead><tr><th>Especie</th><th class="num">Ingresado</th><th class="num">Pendiente</th><th class="num">Consumido</th><th class="num">Saldo</th></tr></thead>
+    <tbody>${especieRows}</tbody>
+    <tfoot><tr style="font-weight:700;background:#f6f8f7">
+      <td>Total (${d.porEspecie.length} especie${d.porEspecie.length === 1 ? "" : "s"})</td>
+      ${num(totalIngreso)}${num(totalPend)}${num(totalCons)}${num(totalSaldo)}
+    </tr></tfoot>
+  </table>`
+      : `<p style="color:#777">Sin movimientos de madera en ${esc(d.periodLabel)}.</p>`
+  }
+
+  ${concilBlock}
+
+  <h2>Stock de productos transformados (m³)</h2>
+  ${
+    d.productos.length > 0
+      ? `<table>
+    <thead><tr><th>Producto</th><th class="num">Producido</th><th class="num">Despachado</th><th class="num">Stock</th></tr></thead>
+    <tbody>${productoRows}</tbody>
+  </table>`
+      : `<p style="color:#777">Sin productos transformados todavía.</p>`
+  }
+
+  ${
+    (d.lotes ?? []).length > 0
+      ? `<h2>Lo que resta en cada lote de aserrío</h2>
+  <p style="color:#555;margin:0 0 6px">Madera apartada: mientras esté en un lote abierto no se ofrece para otra corrida. El plazo es el «fin de proceso» que el lote declaró (ADR-342).</p>
+  <table>
+    <thead><tr><th>Lote</th><th>N° de permiso</th><th>Especie</th><th>Estado</th><th class="num">Consumido</th><th class="num">Al 56 %</th><th class="num">Producido</th><th class="num">Resta al 56 %</th><th class="num">Apartado</th><th class="num">Piezas</th><th class="num">Parado</th><th>Fin de proceso</th><th>Plazo</th></tr></thead>
+    <tbody>${(d.lotes ?? [])
+      .map(
+        (l) => `<tr>
+      <td>${esc(l.code)}</td>
+      <td>${l.permisos.length > 1 ? `<b>${l.permisos.length} permisos mezclados</b>` : esc(l.permisos[0] ?? "—")}</td>
+      <td>${esc(l.especie)}</td>
+      <td>${esc(l.status)}</td>
+      ${num(l.consumidoM3)}
+      ${num(l.esperado56M3)}
+      <td class="num">${l.producidoM3 == null ? "—" : l.producidoM3.toFixed(3)}</td>
+      <td class="num">${l.restaM3 == null ? "—" : l.restaM3.toFixed(3)}</td>
+      ${num(l.apartadoM3)}
+      <td class="num">${l.piezas}</td>
+      <td class="num">${l.diasParado == null ? "—" : `${l.diasParado} d`}</td>
+      <td>${esc(l.finProceso ?? "—")}</td>
+      <td${l.vencido ? ' style="color:#b91c1c;font-weight:700"' : ""}>${
+        l.vencido
+          ? `${Math.abs(l.diasParaVencer ?? 0)} ${Math.abs(l.diasParaVencer ?? 0) === 1 ? "día" : "días"} vencido`
+          : l.diasParaVencer == null
+            ? "sin fecha"
+            : l.diasParaVencer === 0
+              ? "vence hoy"
+              : `quedan ${l.diasParaVencer} ${l.diasParaVencer === 1 ? "día" : "días"}`
+      }</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
+    <tfoot><tr><td colspan="4"><b>Totales</b></td>${num(
+      (d.lotes ?? []).reduce((a, l) => a + l.consumidoM3, 0),
+    )}${num((d.lotes ?? []).reduce((a, l) => a + l.esperado56M3, 0))}${num(
+      (d.lotes ?? []).reduce((a, l) => a + (l.producidoM3 ?? 0), 0),
+    )}${num((d.lotes ?? []).reduce((a, l) => a + (l.restaM3 ?? 0), 0))}${num((d.lotes ?? []).reduce((a, l) => a + l.apartadoM3, 0))}<td colspan="4"></td></tr></tfoot>
+  </table>`
+      : ""
+  }
+
+  ${
+    d.balance && d.balance.fuentes.length > 0
+      ? `<h2>Capacidad de la planta</h2>
+  <p style="color:#555;margin:0 0 6px">Cuánto producto puede salir de todo lo que hay hoy. La rolliza se convierte al 56 %, que es el <b>techo</b> del rendimiento: el total es un máximo, no una promesa.</p>
+  <table>
+    <thead><tr><th>Fuente</th><th class="num">Como está hoy</th><th class="num">En producto (m³)</th><th>Detalle</th></tr></thead>
+    <tbody>${d.balance.fuentes
+      .map(
+        (f) => `<tr>
+      <td>${f.label}${f.convertido ? ' <span style="color:#777">· al 56 %</span>' : ""}</td>
+      ${num(f.m3)}
+      ${num(f.enProducto)}
+      <td style="color:#555">${esc(f.noAtribuible ?? f.detalle ?? "")}</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
+    <tfoot><tr><td colspan="2"><b>Capacidad máxima en producto</b></td>${num(d.balance.totalProducto)}<td></td></tr></tfoot>
+  </table>`
+      : ""
+  }
+
+  ${
+    d.origen && d.origen.corridas.length > 0
+      ? `<h2>Origen incompleto</h2>
+  <p style="color:#555;margin:0 0 6px"><b>${d.origen.m3SinCertificar.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 })} m³</b> del depósito (${Math.round(d.origen.fraccion * 100)} %) no se pueden certificar. El libro lo admite; el certificado de origen no.</p>
+  <table>
+    <thead><tr><th>Fecha</th><th>Lote</th><th>Producto</th><th class="num">Disponible</th><th>Motivo</th></tr></thead>
+    <tbody>${d.origen.corridas
+      .map(
+        (c) => `<tr>
+      <td>${esc(c.fecha.slice(0, 10))}</td>
+      <td>${esc(c.lote ?? "—")}</td>
+      <td>${esc(c.producto ?? "—")}${c.especie ? ` <span style="color:#777">· ${esc(c.especie)}</span>` : ""}</td>
+      <td class="num">${esc(String(c.disponible))} ${esc(c.unidad)}</td>
+      <td style="color:#555">${c.motivo === "sin_materia_prima" ? "Sin materia prima atada" : `La guía no declara título habilitante${c.guias.length ? ` (${esc(c.guias.join(", "))})` : ""}`}</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
+  </table>`
+      : ""
+  }
+
+  ${ctpReportFooter(
+    "Reporte de existencias generado desde el panel Saldos del Libro de Operaciones del CTP. Corresponde a la hoja «Existencias» del LO-CTP (misma fuente de datos). Documento de referencia para inspección — no reemplaza el registro oficial en el MC-SNIFFS de SERFOR.",
+  )}`;
+
+  openCtpReport({ title: "Reporte de existencias CTP", css: CSS, body });
+}

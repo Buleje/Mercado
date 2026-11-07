@@ -1,0 +1,139 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=administracion&vista=hoy",
+ "pasos": [
+  {
+   "parchear": [
+    "/api/admin/agenda/hoy",
+    {
+     "fecha": "2026-10-20",
+     "hoy": [
+      {
+       "actividadId": "a1",
+       "nombre": "Marcar la asistencia",
+       "regla": "asistencia",
+       "fecha": "2026-10-20",
+       "hora": "09:00",
+       "estado": "pendiente",
+       "origen": "fuente",
+       "detalle": "0 de 8 marcados",
+       "avance": {
+        "hecho": 0,
+        "total": 8
+       },
+       "href": "/admin?tab=rrhh",
+       "nota": null,
+       "marcadoPor": null,
+       "posponerA": null
+      },
+      {
+       "actividadId": "a2",
+       "nombre": "Anotar el servicio de aserrío de hoy",
+       "regla": "servicio_aserrio",
+       "fecha": "2026-10-20",
+       "hora": "17:00",
+       "estado": "pendiente",
+       "origen": "fuente",
+       "detalle": "Sin corridas anotadas",
+       "avance": null,
+       "href": "/admin?tab=rrhh",
+       "nota": null,
+       "marcadoPor": null,
+       "posponerA": null
+      },
+      {
+       "actividadId": "a3",
+       "nombre": "Registrar gastos e ingresos",
+       "regla": "gastos_ingresos",
+       "fecha": "2026-10-20",
+       "hora": "19:00",
+       "estado": "pendiente",
+       "origen": "fuente",
+       "detalle": "0 gastos · 0 ingresos",
+       "avance": {
+        "hecho": 0,
+        "total": 2
+       },
+       "href": "/admin?tab=rrhh",
+       "nota": null,
+       "marcadoPor": null,
+       "posponerA": null
+      }
+     ],
+     "atrasadas": [
+      {
+       "actividadId": "a3",
+       "nombre": "Registrar gastos e ingresos",
+       "regla": "gastos_ingresos",
+       "fecha": "2026-10-18",
+       "hora": "19:00",
+       "estado": "parcial",
+       "origen": "fuente",
+       "detalle": "0 gastos · 2 ingresos",
+       "avance": {
+        "hecho": 1,
+        "total": 2
+       },
+       "href": "/admin?tab=rrhh",
+       "nota": null,
+       "marcadoPor": null,
+       "posponerA": null
+      },
+      {
+       "actividadId": "a1",
+       "nombre": "Marcar la asistencia",
+       "regla": "asistencia",
+       "fecha": "2026-10-19",
+       "hora": "09:00",
+       "estado": "atrasada",
+       "origen": "fuente",
+       "detalle": "0 de 8 marcados",
+       "avance": {
+        "hecho": 0,
+        "total": 8
+       },
+       "href": "/admin?tab=rrhh",
+       "nota": null,
+       "marcadoPor": null,
+       "posponerA": null
+      },
+      {
+       "actividadId": "a2",
+       "nombre": "Anotar el servicio de aserrío de hoy",
+       "regla": "servicio_aserrio",
+       "fecha": "2026-10-19",
+       "hora": "17:00",
+       "estado": "atrasada",
+       "origen": "fuente",
+       "detalle": "Sin corridas anotadas",
+       "avance": null,
+       "href": "/admin?tab=rrhh",
+       "nota": null,
+       "marcadoPor": null,
+       "posponerA": null
+      }
+     ],
+     "cuenta": {
+      "total": 3,
+      "hechas": 0,
+      "pendientes": 3,
+      "atrasadas": 3
+     },
+     "alertas": []
+    }
+   ]
+  },
+  {
+   "eval": "(Object.keys(localStorage).filter(k=>k.startsWith('aviso-agenda-reloj')).forEach(k=>localStorage.removeItem(k)), setTimeout(()=>location.reload(),50), 1)"
+  },
+  {
+   "esperar": 2500
+  },
+  {
+   "esperar": "text=Pendientes y avisos"
+  },
+  {
+   "esperar": 1200
+  }
+ ]
+}

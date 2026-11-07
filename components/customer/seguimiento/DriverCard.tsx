@@ -33,7 +33,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
     return (
       <section
         className={cn(
-          "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-sm text-muted",
+          "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-base text-muted",
           className,
         )}
       >
@@ -49,7 +49,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
     <section
       aria-labelledby="tracking-driver-heading"
       className={cn(
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
+        "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -67,7 +67,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
 
       <div className="flex items-center gap-4">
         <div
-          className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center"
+          className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 bg-primary/10 border-2 border-primary/20 flex items-center justify-center"
           aria-hidden
         >
           <span className="text-lg sm:text-xl font-extrabold text-primary tracking-tight">
@@ -96,7 +96,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
         <div className="mt-5 grid grid-cols-2 gap-2">
           <a
             href={`tel:${driver.phone.replace(/\s+/g, "")}`}
-            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 text-sm font-bold text-[var(--text-primary)] transition-colors"
+            className="inline-flex items-center justify-center gap-2 h-11 border-2 border-[var(--rule-base)] hover:border-[var(--accent)] text-sm font-bold text-[var(--text-primary)] transition-colors"
           >
             <Phone className="h-4 w-4" strokeWidth={1.75} />
             Llamar
@@ -105,7 +105,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
             href={`https://wa.me/${waPhone}?text=${encodeURIComponent("Hola, soy del pedido que estás entregando.")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-[#25D366] hover:bg-[#1ebe5a] text-sm font-bold text-white transition-colors"
+            className="inline-flex items-center justify-center gap-2 h-11 bg-[#25D366] hover:bg-[#1ebe5a] text-sm font-bold text-white transition-colors"
           >
             <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
             WhatsApp

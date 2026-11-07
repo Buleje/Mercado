@@ -7,6 +7,7 @@ import type {
   GuiaRemision as PGuiaRemision,
   GuiaRemisionItem as PGuiaRemisionItem,
 } from "@/lib/generated/prisma/client";
+import { startOfLimaMonth } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,12 @@ export type DbGuiaRemision = {
   vehiculoPlaca?: string;
   conductorNombre?: string;
   conductorDni?: string;
+  conductorLicencia?: string;
+  ubigeoPartida?: string;
+  ubigeoLlegada?: string;
+  modalidadTraslado?: string;
+  origenTipo?: string;
+  origenId?: string;
   bultos?: number;
   documentoRef?: string;
   puntoPartida: string;
@@ -89,6 +96,12 @@ function mapGuia(
     ...(g.vehiculoPlaca != null && { vehiculoPlaca: g.vehiculoPlaca }),
     ...(g.conductorNombre != null && { conductorNombre: g.conductorNombre }),
     ...(g.conductorDni != null && { conductorDni: g.conductorDni }),
+    ...(g.conductorLicencia != null && { conductorLicencia: g.conductorLicencia }),
+    ...(g.ubigeoPartida != null && { ubigeoPartida: g.ubigeoPartida }),
+    ...(g.ubigeoLlegada != null && { ubigeoLlegada: g.ubigeoLlegada }),
+    ...(g.modalidadTraslado != null && { modalidadTraslado: g.modalidadTraslado }),
+    ...(g.origenTipo != null && { origenTipo: g.origenTipo }),
+    ...(g.origenId != null && { origenId: g.origenId }),
     ...(g.bultos != null && { bultos: g.bultos }),
     ...(g.documentoRef != null && { documentoRef: g.documentoRef }),
     puntoPartida: g.puntoPartida,
@@ -211,6 +224,12 @@ export const GuiasRemisionDB = {
       vehiculoPlaca?: string;
       conductorNombre?: string;
       conductorDni?: string;
+      conductorLicencia?: string;
+      ubigeoPartida?: string;
+      ubigeoLlegada?: string;
+      modalidadTraslado?: string;
+      origenTipo?: string;
+      origenId?: string;
       bultos?: number;
       documentoRef?: string;
       puntoPartida: string;
@@ -242,6 +261,12 @@ export const GuiasRemisionDB = {
       vehiculoPlaca: data.vehiculoPlaca,
       conductorNombre: data.conductorNombre,
       conductorDni: data.conductorDni,
+      conductorLicencia: data.conductorLicencia,
+      ubigeoPartida: data.ubigeoPartida,
+      ubigeoLlegada: data.ubigeoLlegada,
+      modalidadTraslado: data.modalidadTraslado,
+      origenTipo: data.origenTipo,
+      origenId: data.origenId,
       bultos: data.bultos,
       documentoRef: data.documentoRef,
       puntoPartida: data.puntoPartida,
@@ -265,6 +290,80 @@ export const GuiasRemisionDB = {
       include: { items: true },
     });
     return mapGuia(row);
+  },
+
+  /** Una guía NO anulada nacida de ese origen (la GTF): evita hacer dos guías de la misma carga. */
+  async getVigentePorOrigen(
+    tenantId: string,
+    origenTipo: string,
+    origenId: string,
+  ): Promise<{ id: string; numero: string } | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.guiaRemision.findFirst({
+      where: { tenantId, origenTipo, origenId, status: { not: "ANULADA" } },
+      select: { id: true, numero: true },
+      orderBy: { createdAt: "desc" },
+    });
+  },
+
+  /**
+   * La GTF de salida de la que se arma la guía: su cuerpo (`gtfDatos`, crudo; lo
+   * valida `leerGtfDatos`) y las líneas despachadas. `ctp_salida` = despacho del
+   * Libro CTP; `loth_gtf` = guía del Libro TH. Vigentes, del negocio y sin baja.
+   */
+  async getOrigenGtf(tenantId: string, origen: "ctp_salida" | "loth_gtf", id: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (origen === "ctp_salida") {
+      const e = await prisma.forestCtpEntry.findFirst({
+        where: { id, tenantId, deletedAt: null, section: "despacho" },
+        select: { gtfNumber: true, gtfDatos: true, speciesCommon: true, productType: true, presentacion: true, quantity: true, unit: true },
+      });
+      if (!e) return null;
+      return {
+        numero: e.gtfNumber,
+        gtfDatos: e.gtfDatos as unknown,
+        columnas: null,
+        lineas: [{ especie: e.speciesCommon, producto: e.productType, presentacion: e.presentacion, cantidad: e.quantity == null ? null : dec(e.quantity), unidad: e.unit }],
+      };
+    }
+    const g = await prisma.forestGtf.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: {
+        gtfNumber: true, gtfDatos: true, conductor: true, conductorLicencia: true, placaVehiculo: true, transportista: true,
+        transportistaDoc: true, destino: true, origen: true, tipo: true, volumenTotalM3: true,
+      },
+    });
+    if (!g) return null;
+    const m3 = g.volumenTotalM3 == null ? null : dec(g.volumenTotalM3);
+    return {
+      numero: g.gtfNumber,
+      gtfDatos: g.gtfDatos as unknown,
+      columnas: g,
+      lineas: [
+        { especie: null, producto: g.tipo === "trozas" ? "Trozas" : "Madera", presentacion: null, cantidad: m3, unidad: "m3" },
+      ],
+    };
+  },
+
+  /** Las GTF de salida recientes para elegir en «Desde la GTF» (las 25 últimas de cada libro). */
+  async listarGtfRecientes(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [ctp, loth] = await Promise.all([
+      prisma.forestCtpEntry.findMany({
+        where: { tenantId, deletedAt: null, section: "despacho", gtfNumber: { not: null } },
+        orderBy: { entryDate: "desc" }, take: 25,
+        select: { id: true, gtfNumber: true, destino: true, entryDate: true },
+      }),
+      prisma.forestGtf.findMany({
+        where: { tenantId, deletedAt: null, status: "emitida" },
+        orderBy: { updatedAt: "desc" }, take: 25,
+        select: { id: true, gtfNumber: true, destino: true, gtfDate: true, updatedAt: true },
+      }),
+    ]);
+    return [
+      ...ctp.map((c) => ({ origen: "ctp_salida" as const, id: c.id, numero: c.gtfNumber ?? "", destino: c.destino ?? "", fecha: toISO(c.entryDate) })),
+      ...loth.map((l) => ({ origen: "loth_gtf" as const, id: l.id, numero: l.gtfNumber, destino: l.destino ?? "", fecha: toISO(l.gtfDate ?? l.updatedAt) })),
+    ].sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 40);
   },
 
   async updateStatus(
@@ -292,7 +391,7 @@ export const GuiasRemisionDB = {
     transportistasFrecuentes: Array<{ nombre: string; ruc: string; count: number }>;
   }> {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonth = new Date(startOfLimaMonth(0, now));
 
     const [totalMes, enTransito, entregadas, anuladas, transportistas] =
       await Promise.all([

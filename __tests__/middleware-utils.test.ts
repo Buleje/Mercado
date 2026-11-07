@@ -27,6 +27,7 @@ import {
   type RateLimitEntry,
 } from "@/lib/middleware-utils";
 import { __resetDistributedRateLimitFallback } from "@/lib/rate-limit";
+import { createSessionToken } from "@/lib/session";
 
 // Helper: crea un NextRequest mínimo con headers opcionales
 function makeReq(url = "http://localhost:3000/", headers: Record<string, string> = {}): NextRequest {
@@ -254,6 +255,23 @@ describe("checkRateLimit (distributed — Upstash fallback path)", () => {
     expect(Number(retryAfter)).toBeGreaterThan(0);
   });
 
+  // security 03-11: el x-tenant-id lo manda el cliente; cambiarlo en cada pedido
+  // no puede dar un cupo nuevo. El negocio lo pasa el proxy ya resuelto.
+  it("cambiar el header x-tenant-id en cada pedido no renueva el cupo", async () => {
+    for (let i = 0; i < 60; i++) {
+      await checkRateLimit(makeReq("http://localhost/", { "x-forwarded-for": "10.6.0.1", "x-tenant-id": `falso-${i}` }), "main");
+    }
+    const otra = makeReq("http://localhost/", { "x-forwarded-for": "10.6.0.1", "x-tenant-id": "falso-61" });
+    expect((await checkRateLimit(otra, "main"))?.status).toBe(429);
+  });
+
+  it("negocios resueltos distintos no comparten contador", async () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "10.6.0.2" });
+    for (let i = 0; i < 60; i++) await checkRateLimit(req, "negocio-a");
+    expect(await checkRateLimit(req, "negocio-a")).not.toBeNull();
+    expect(await checkRateLimit(req, "negocio-b")).toBeNull();
+  });
+
   it("IPs diferentes no comparten contador", async () => {
     const reqA = makeReq("http://localhost/", { "x-forwarded-for": "10.2.0.1" });
     const reqB = makeReq("http://localhost/", { "x-forwarded-for": "10.2.0.2" });
@@ -282,6 +300,52 @@ describe("checkRateLimit (distributed — Upstash fallback path)", () => {
     expect(body.error).toBeTruthy();
     expect(typeof body.error).toBe("string");
   });
+
+  // Leer el drive (miniaturas + archivo servido + ficha) gasta muchas requests
+  // baratas: con el techo general de 60/min, revisar una carpeta grande moría a
+  // los pocos archivos y el 429 se dibujaba dentro del visor.
+  it("GET del drive: la request 61 sigue permitida (cupo propio)", async () => {
+    const req = makeReq("http://localhost/api/admin/documents/abc/raw", { "x-forwarded-for": "10.5.0.1" });
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    expect(await checkRateLimit(req)).toBeNull();
+  });
+
+  it("GET del drive: se corta igual al pasar su propio cupo", async () => {
+    const req = makeReq("http://localhost/api/admin/documents/abc/raw", { "x-forwarded-for": "10.5.0.2" });
+    for (let i = 0; i < 300; i++) await checkRateLimit(req);
+    expect(await checkRateLimit(req)).not.toBeNull();
+  });
+
+  it("el cupo del drive NO se gasta desde el resto de la API", async () => {
+    const drive = makeReq("http://localhost/api/admin/documents/abc/raw", { "x-forwarded-for": "10.5.0.3" });
+    const otra = makeReq("http://localhost/api/orders", { "x-forwarded-for": "10.5.0.3" });
+    for (let i = 0; i < 60; i++) await checkRateLimit(otra);
+    expect(await checkRateLimit(otra)).not.toBeNull(); // el general sí se agotó
+    expect(await checkRateLimit(drive)).toBeNull();    // el del drive sigue libre
+  });
+
+  // Panel con sesión (03-11-2026): abrir el Libro CTP hace 58 pedidos en 12 s;
+  // con 60/min la segunda pantalla rebotaba con 429 (agenda, auth/refresh…).
+  it("con sesión de admin válida, la request 61 sigue permitida (cupo del panel)", async () => {
+    const token = await createSessionToken("admin", "qaadmin", "t-panel");
+    const req = makeReq("http://localhost/api/admin/agenda/hoy", { "x-forwarded-for": "10.6.0.1", cookie: `buleje-admin-sess=${token}` });
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    expect(await checkRateLimit(req)).toBeNull();
+  });
+
+  it("con sesión válida se corta igual al pasar los 300", async () => {
+    const token = await createSessionToken("admin", "qaadmin", "t-panel");
+    const req = makeReq("http://localhost/api/settings", { "x-forwarded-for": "10.6.0.2", cookie: `buleje-admin-sess=${token}` });
+    for (let i = 0; i < 300; i++) await checkRateLimit(req);
+    const r = await checkRateLimit(req);
+    expect(r?.status).toBe(429);
+  });
+
+  it("una cookie de sesión inventada NO da más cupo: sigue en 60", async () => {
+    const req = makeReq("http://localhost/api/settings", { "x-forwarded-for": "10.6.0.3", cookie: "buleje-admin-sess=inventada.firma" });
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    expect((await checkRateLimit(req))?.status).toBe(429);
+  });
 });
 
 // ── buildCSP ──────────────────────────────────────────────────────────────────
@@ -303,6 +367,33 @@ describe("buildCSP", () => {
       expect(csp).toContain("'strict-dynamic'");
       const scriptSrc = csp.split(";").find(d => d.trim().startsWith("script-src")) ?? "";
       expect(scriptSrc).not.toContain("'unsafe-inline'");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("panel liviano de la PC (BSM_CSP_SIN_NONCE=1, fuera de Vercel): sin nonce ni strict-dynamic", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("BSM_CSP_SIN_NONCE", "1");
+    vi.stubEnv("VERCEL", "");
+    try {
+      const scriptSrc = buildCSP("/admin", "abc123").split(";").find(d => d.trim().startsWith("script-src")) ?? "";
+      expect(scriptSrc).toContain("'unsafe-inline'");
+      expect(scriptSrc).not.toContain("'strict-dynamic'");
+      expect(scriptSrc).not.toContain("'nonce-abc123'");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("BSM_CSP_SIN_NONCE en Vercel no cambia nada: sigue nonce + strict-dynamic", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("BSM_CSP_SIN_NONCE", "1");
+    vi.stubEnv("VERCEL", "1");
+    try {
+      const csp = buildCSP("/admin", "abc123");
+      expect(csp).toContain("'nonce-abc123'");
+      expect(csp).toContain("'strict-dynamic'");
     } finally {
       vi.unstubAllEnvs();
     }
@@ -338,6 +429,14 @@ describe("buildCSP", () => {
 
   it("object-src is 'none'", () => {
     expect(buildCSP("/")).toContain("object-src 'none'");
+  });
+
+  // Sin frame-src explícito se hereda `default-src 'self'`, que no incluye
+  // blob:, y la vista previa del drive (que arma un blob para poder leer el
+  // status antes de mostrar el archivo) quedaba bloqueada por el navegador.
+  it("frame-src allows blob: so the document preview can render", () => {
+    const csp = buildCSP("/admin", "n");
+    expect(csp).toContain("frame-src 'self' blob: data:");
   });
 
   it("includes upgrade-insecure-requests", () => {

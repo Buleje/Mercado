@@ -13,6 +13,8 @@
     "./typography": "./src/typography.tsx",
     "./layout": "./src/layout.tsx",
     "./feedback": "./src/feedback.tsx",
+    "./carga-pagina": "./src/carga-pagina.tsx",
+    "./carga-pagina-reloj": "./src/carga-pagina-reloj.ts",
     "./data-display": "./src/data-display.tsx",
     "./product-card": "./src/product-card/index.ts",
     "./dashboard": "./src/dashboard/index.ts"

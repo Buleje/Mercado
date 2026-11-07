@@ -57,7 +57,7 @@ const HINTS: Hint[] = [
   {
     id: "asistente",
     href: "/asistente",
-    label: "Escribile al asistente si no sabes que cocinar hoy.",
+    label: "Escríbele al asistente si no sabes que cocinar hoy.",
     Icon: Bot,
   },
   {

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-label="Shampoo Reparación Intensa 300 ml">
+<defs>
+<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7ece7"/><stop offset="1" stop-color="#e9d3ca"/></linearGradient>
+<radialGradient id="luz" cx="50%" cy="36%" r="58%"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="b" x1="0" x2="1"><stop offset="0" stop-color="#4d363d"/><stop offset=".45" stop-color="#2b1d22"/><stop offset="1" stop-color="#1f1518"/></linearGradient>
+<linearGradient id="t" x1="0" x2="1"><stop offset="0" stop-color="#fbcb9e"/><stop offset=".5" stop-color="#c9a27e"/><stop offset="1" stop-color="#8d7158"/></linearGradient>
+<filter id="s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+</defs>
+<rect width="600" height="600" fill="url(#f)"/><rect width="600" height="600" fill="url(#luz)"/>
+<path d="M0 470 Q300 448 600 470 L600 600 L0 600Z" fill="#fff" opacity=".22"/>
+<g transform="translate(300 330) scale(1.12) translate(-300 -330)"><ellipse cx="300" cy="514" rx="120" ry="16" fill="#000" opacity=".2" filter="url(#s)"/><rect x="244" y="126" width="112" height="64" rx="12" fill="url(#t)"/><rect x="244" y="150" width="112" height="3" fill="#000" opacity=".15"/><path d="M214 232Q214 190 256 186L344 186Q386 190 386 232L386 484Q386 512 358 512L242 512Q214 512 214 484Z" fill="url(#b)"/><rect x="232" y="212" width="20" height="270" rx="10" fill="#fff" opacity=".2"/><text x="300" y="300" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" letter-spacing="3.75" fill="#c9a27e">BULEJE PRO</text><rect x="282" y="312" width="36" height="2" fill="#c9a27e" opacity=".8"/><text x="300" y="348" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="24" fill="#f6e7dc">Reparación</text><text x="300" y="378" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="24" fill="#f6e7dc">Intensa</text><text x="300" y="406" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="14" letter-spacing="1" fill="#f6e7dc" opacity=".85">Shampoo · 300 ml</text></g>
+</svg>

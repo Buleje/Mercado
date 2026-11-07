@@ -7,7 +7,6 @@ import {
   TimerIcon,
   PinIcon,
   CashIcon,
-  PackageIcon,
   PhoneRing,
   CheckBadge,
   HeroDeliveryIllustration,
@@ -214,7 +213,7 @@ export default function OfferPage() {
         {/* ── Info principal ─────────────────────────────── */}
         <section className="space-y-5">
           <header>
-            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 h-8 text-xs font-extrabold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 h-8 text-xs font-extrabold uppercase tracking-wider">
               Oferta nueva · Intento #{offer.attempt}
             </span>
             <h1 className="mt-3 text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] tabular-nums">
@@ -376,10 +375,10 @@ function Block({
       {extras
         .filter((e): e is { icon: React.ReactNode | null; text: string } => Boolean(e))
         .map((e, i) => (
-          <p key={i} className="mt-1 text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
+          <div key={i} className="mt-1 text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
             {e.icon && <span className="text-[var(--text-tertiary)]">{e.icon}</span>}
             {e.text}
-          </p>
+          </div>
         ))}
     </div>
   );

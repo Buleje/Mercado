@@ -104,7 +104,7 @@ export async function deductStockFEFO(
   });
 
   // Propagar expiresAt al producto (fire-and-forget).
-  propagateExpiresAt(productId).catch((err) =>
+  propagateExpiresAt(productId, tenantId).catch((err) =>
     logger.warn("[fefo-deduct] propagateExpiresAt failed", {
       productId,
       err: err instanceof Error ? err.message : String(err),

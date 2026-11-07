@@ -7,7 +7,7 @@ Ejecutá `node scripts/dev-helpers/admin-auth.mjs`. Reportá si OK + 1 línea co
 
 ```
 source /tmp/bsm-auth.env
-curl $BSM_BASE/api/admin/X $BSM_CURL_FLAGS
+bsm_curl "$BSM_BASE/api/admin/X"
 ```
 
 Si fall login (HTTP != 200), sugerí correr antes `DOTENV_CONFIG_PATH=.env.local node -r dotenv/config scripts/create-qa-admin-raw.mjs` para crear el QA admin.

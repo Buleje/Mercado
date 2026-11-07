@@ -90,6 +90,25 @@ const parseLabels = (raw: string | null): string[] => {
 
 // ─── ChatThreadsDB ────────────────────────────────────────────────────────────
 
+const SQL_CREAR_HILO = `INSERT INTO "ConversationThread"
+     ("id","tenantId","storeId","orderId","customerPhone","customerName","subject",
+      "status","unreadForBuyer","unreadForSeller","createdAt","updatedAt")
+   VALUES ($1,$2,$3,$4,$5,$6,$7,'open',0,0,$8,$8)`;
+const SQL_CREAR_HILO_SI_NO_HAY_ABIERTO = `${SQL_CREAR_HILO} ON CONFLICT DO NOTHING`;
+
+/**
+ * `openOrGet({ soloNuevo: true })` cuando ese celular ya tiene un hilo abierto
+ * con la tienda (índice único parcial `ConversationThread_store_customer_orderId_unique`,
+ * uno abierto por tienda + celular + pedido). Quien abre sin probar ser el dueño
+ * del celular no recibe ese hilo (2026-10-17).
+ */
+export class HiloYaAbiertoError extends Error {
+  constructor() {
+    super("Ese celular ya tiene una conversación abierta con la tienda");
+    this.name = "HiloYaAbiertoError";
+  }
+}
+
 export const ChatThreadsDB = {
   /**
    * Abre (o reutiliza) un hilo existente entre un buyer y una tienda.
@@ -97,6 +116,11 @@ export const ChatThreadsDB = {
    * lo devuelve. Si no, crea uno nuevo.
    *
    * Idempotente: llamar varias veces con los mismos params devuelve el mismo thread.
+   *
+   * `soloNuevo` (2026-10-17): sólo crea; si ya hay uno abierto tira
+   * `HiloYaAbiertoError` en vez de devolverlo. Lo usa el chat de invitado
+   * cuando quien abre no prueba ser el dueño del celular: así no recibe el
+   * hilo (ni los mensajes) de otra persona. Atómico: lo decide el índice único.
    */
   async openOrGet(params: {
     tenantId: string;
@@ -105,11 +129,12 @@ export const ChatThreadsDB = {
     customerName: string;
     orderId?: string | null;
     subject?: string;
+    soloNuevo?: boolean;
   }): Promise<DbConversationThread> {
     const orderId = params.orderId ?? null;
 
     // 1. Buscar si ya existe uno abierto
-    const existing = await prisma.$queryRawUnsafe<
+    const existing = params.soloNuevo ? [] : await prisma.$queryRawUnsafe<
       Array<{
         id: string;
         tenantId: string;
@@ -175,11 +200,8 @@ export const ChatThreadsDB = {
     const id = crypto.randomUUID();
     const now = new Date();
 
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "ConversationThread"
-         ("id","tenantId","storeId","orderId","customerPhone","customerName","subject",
-          "status","unreadForBuyer","unreadForSeller","createdAt","updatedAt")
-       VALUES ($1,$2,$3,$4,$5,$6,$7,'open',0,0,$8,$8)`,
+    const creados = await prisma.$executeRawUnsafe(
+      params.soloNuevo ? SQL_CREAR_HILO_SI_NO_HAY_ABIERTO : SQL_CREAR_HILO,
       id,
       params.tenantId,
       params.storeId,
@@ -189,6 +211,7 @@ export const ChatThreadsDB = {
       params.subject ?? null,
       now,
     );
+    if (params.soloNuevo && creados === 0) throw new HiloYaAbiertoError();
 
     invalidateByPrefix(`chat:threads:${params.tenantId}`);
 

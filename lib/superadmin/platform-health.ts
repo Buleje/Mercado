@@ -30,10 +30,12 @@ export function getPlatformHealth(platformIds: readonly string[]): PlatformHealt
   const result: PlatformHealthMap = {};
   for (const id of platformIds) {
     // TODO(health-checks): reemplazar por un ping real con timeout corto y
-    // caché de ~30s por plataforma. De momento asumimos "operational".
+    // caché de ~30s por plataforma. 2026-10-08: sin ping no se afirma nada —
+    // antes devolvía "operational" sin chequear y el Centro de control
+    // mostraba «Operativo» en 7 tarjetas y «135 con incidencias» en el resto.
     result[id] = {
       id,
-      status: "operational",
+      status: "unknown",
       lastCheckedAt: null,
     };
   }

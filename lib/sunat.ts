@@ -27,6 +27,12 @@ export interface SunatDocument {
   totalIgv: number;
   totalVenta: number;
   moneda: "PEN" | "USD";
+  /**
+   * Bien sujeto a detracción (SPOT), p. ej. «008» Madera. Este armador UBL a
+   * mano NO soporta detracción: si viene, se rechaza para no emitir un 0101 sin
+   * SPOT. La emisión con detracción va por Nubefact (lib/integrations/sunat.ts).
+   */
+  bienSujetoDetraccion?: "008" | null;
 }
 
 export interface SunatInvoiceData {
@@ -51,6 +57,8 @@ export interface SunatInvoiceData {
   }>;
   totalIgv: number;
   totalVenta: number;
+  /** Ver SunatDocument.bienSujetoDetraccion: este armador rechaza la detracción. */
+  bienSujetoDetraccion?: "008" | null;
 }
 
 export interface SunatResult {
@@ -145,6 +153,12 @@ export async function generateCorrelativo(
  * Referencia: https://cpe.sunat.gob.pe/sites/default/files/inline-files/Manual_comprobante_de_pago.pdf
  */
 export function generateXML(doc: SunatDocument): string {
+  if (doc.bienSujetoDetraccion) {
+    throw new Error(
+      "Venta sujeta a detracción (SPOT): este armador UBL a mano no la soporta. " +
+        "Emítela por Nubefact (lib/integrations/sunat.ts).",
+    );
+  }
   const rucEmisor = process.env.RUC_EMISOR ?? "";
   const razonSocial = process.env.RAZON_SOCIAL_EMISOR ?? "Buleje";
   const tipoDoc = doc.tipo === "boleta" ? "03" : doc.tipo === "factura" ? "01" : doc.tipo === "nota_credito" ? "07" : "08";
@@ -256,9 +270,18 @@ export function generateXML(doc: SunatDocument): string {
 
 // ── Emisión vía Nubefact OSE ───────────────────────────────────────────────────
 
+// NOTA: el único camino para emitir madera (con detracción SPOT) es POST
+// /api/admin/sunat/generate-invoice (lib/integrations/sunat.ts); este armador
+// a mano rechaza toda venta sujeta a detracción.
 export async function emitirComprobante(
   data: SunatInvoiceData,
 ): Promise<SunatResult> {
+  if (data.bienSujetoDetraccion) {
+    throw new Error(
+      "Venta sujeta a detracción (SPOT): este emisor UBL a mano no la soporta. " +
+        "Emítela por Nubefact (lib/integrations/sunat.ts).",
+    );
+  }
   const token = process.env.NUBEFACT_TOKEN;
   if (!token)
     throw new Error(

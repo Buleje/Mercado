@@ -4,6 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { normalizePhone } from "@/lib/db/misc.db";
 import { logger } from "@/lib/logger";
+import { ETIQUETA_UBICACION } from "@/components/checkout/parts/ubicacion-en-notas";
+
+/** Las notas del pedido sin el renglón de la ubicación en vivo del cliente. */
+function notasPublicas(notas: string | null | undefined): string | null {
+  if (!notas) return null;
+  const limpias = notas
+    .split("\n")
+    .filter((l) => !l.trimStart().startsWith(ETIQUETA_UBICACION))
+    .join("\n")
+    .trim();
+  return limpias || null;
+}
 
 /**
  * GET /api/orders/[id]/public?phone=<customerPhone>
@@ -65,7 +77,10 @@ export async function GET(
       items: order.items.map((i) => ({ name: i.name, quantity: i.quantity, unit: i.unit })),
       total: order.total,
       paymentMethod: order.paymentMethod ?? null,
-      notes: order.notes ?? null,
+      // Sin el renglón «Mi ubicación: <Maps>» que suma el checkout: el GPS exacto
+      // de la casa sólo lo ve el negocio, nunca quien tenga el enlace de
+      // seguimiento (Ley 29733; security 11-10).
+      notes: notasPublicas(order.notes),
       deliverySlot: order.deliverySlot ?? null,
       couponDiscount: order.couponDiscount ?? null,
       discountAmount: order.discountAmount ?? null,

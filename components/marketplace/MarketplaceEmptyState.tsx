@@ -25,7 +25,7 @@ interface Props {
 export default function MarketplaceEmptyState({
   eyebrow,
   title = "Aún estamos cargando esta sección",
-  description = "Mientras tanto, podés explorar el catálogo completo del marketplace.",
+  description = "Mientras tanto, puedes explorar el catálogo completo del marketplace.",
   cta = { label: "Explorar marketplace", href: "/marketplace/explorar" },
   compact = false,
 }: Props) {

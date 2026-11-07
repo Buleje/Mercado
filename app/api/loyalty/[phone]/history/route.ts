@@ -3,6 +3,8 @@ import { z } from "zod";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { telefonoDeLaSesion } from "@/lib/auth/customer-session";
+import { normalizePhone } from "@/lib/db/misc.db";
 import { toErrorPayload, newTraceId, ApiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
@@ -47,16 +49,11 @@ export async function GET(
     // del payload. tenantId viene del JWT, no del header.
     const customer = await requireCustomer(req);
     if (customer instanceof NextResponse) return customer;
-    const normalizedRequested = phone.replace(/\D/g, "");
-    const normalizedSession = (customer.customerId ?? "").replace(/\D/g, "");
-    if (
-      normalizedRequested.length < 6 ||
-      normalizedSession.length < 6 ||
-      // Match por sufijo de 9 digitos (PE phones) o full string
-      (normalizedSession !== normalizedRequested &&
-        !normalizedSession.endsWith(normalizedRequested) &&
-        !normalizedRequested.endsWith(normalizedSession))
-    ) {
+    // Igualdad exacta con el teléfono que la sesión PROBÓ (código). Antes se
+    // aceptaba un sufijo: «google_1177…987654321» abría el 987654321 ajeno.
+    const normalizedRequested = normalizePhone(phone);
+    const normalizedSession = telefonoDeLaSesion(customer) ?? "";
+    if (!normalizedSession || normalizedSession !== normalizedRequested) {
       logger.warn("[loyalty/history] phone mismatch — forbidden", {
         sessionPhone: normalizedSession,
         requestedPhone: normalizedRequested,
@@ -84,7 +81,7 @@ export async function GET(
     const { limit, offset } = parsed.data;
 
     // Obtener historial del LoyaltyDB (tenantId primero, CLAUDE.md regla #3)
-    const page = await LoyaltyDB.getHistory(tenantId, phone, limit, offset);
+    const page = await LoyaltyDB.getHistory(tenantId, normalizedSession, limit, offset);
 
     return NextResponse.json({
       phone,

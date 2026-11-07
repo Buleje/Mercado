@@ -9,7 +9,7 @@ import type { Step } from "./StepBar";
 
 export type { Step };
 
-export type PaymentMethod = "yape" | "efectivo";
+export type PaymentMethod = "yape" | "efectivo" | "fiado";
 
 export type DniLookupStatus = "idle" | "loading" | "success" | "error";
 
@@ -43,6 +43,11 @@ export type AddressState = {
   useNewAddress: boolean;
   /** Distancia haversine al local cuando hay GPS. */
   distanceKm: number | undefined;
+  /**
+   * Enlace de Google Maps de la ubicación en vivo (`pedidosCliente.pedirUbicacion`).
+   * No es un campo del pedido: `buildOrderPayload` lo suma como renglón de las notas.
+   */
+  ubicacionEnVivo?: string;
 };
 
 export type CouponState = {
@@ -56,8 +61,18 @@ export type CouponState = {
 export type LoyaltyState = {
   points: number | null;
   tier: string | null;
-  /** Soles a descontar por canje de puntos (50 pts = S/1). */
+  /**
+   * Soles a canjear con puntos (100 pts = S/ 1, `PTS_PER_SOL`). Lo que vale
+   * de verdad lo topa `canjeDeLaVista` (saldo y `TOPE_CANJE_PCT`).
+   */
   redemptionSoles: number;
+  /**
+   * ¿Hay sesión VERIFICADA del cliente? null = todavía no se sabe. Sin ella
+   * no hay canje: el checkout ofrece «Inicia sesión para usar tus puntos».
+   */
+  sesionVerificada: boolean | null;
+  /** Teléfono (9 dígitos) dueño de `points`: el canje solo vale para él. */
+  telefono: string | null;
 };
 
 export type PaymentState = {
@@ -108,6 +123,8 @@ export type CheckoutAction =
   | { type: "RESET"; initial: CheckoutState }
   | { type: "SET_STEP"; step: Step }
   | { type: "SET_CUSTOMER"; patch: Partial<CustomerInfoState> }
+  /** Pone el nombre SÓLO si el estado de ese momento no tiene uno (Google tras el reset). */
+  | { type: "RELLENAR_NOMBRE_SI_VACIO"; name: string }
   | { type: "SET_ADDRESS"; patch: Partial<AddressState> }
   | { type: "SET_COUPON"; patch: Partial<CouponState> }
   | { type: "RESET_COUPON" }

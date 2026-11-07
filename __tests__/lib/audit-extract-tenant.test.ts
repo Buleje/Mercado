@@ -30,6 +30,7 @@ vi.mock("@/lib/audit/hash-chain", () => ({
 
 // cache no debe tocar Redis en unit tests
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   cacheStore: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
 }));
 

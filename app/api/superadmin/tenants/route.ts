@@ -11,6 +11,16 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { resumenAvisosCorreo } from "@/lib/avisos-correo";
+
+type SettingsContacto = {
+  tenantId: string;
+  logoUrl: string | null;
+  businessPhone: string | null;
+  whatsappBusinessNum: string | null;
+  ruc: string | null;
+  sunatRuc: string | null;
+};
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -32,7 +42,7 @@ async function getTenantsData() {
   cacheLife({ revalidate: 60, stale: 30, expire: 300 });
   // v2: cuando agregamos pendingOrders necesitamos invalidar el cache.
   // El cambio del tag fuerza un cache-miss garantizado.
-  cacheTag("superadmin:tenants:v4");
+  cacheTag("superadmin:tenants:v5"); // v5: + codigo (ADR-500)
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -43,6 +53,7 @@ async function getTenantsData() {
         select: {
           id: true,
           slug: true,
+          codigo: true,
           name: true,
           active: true,
           plan: true,
@@ -100,10 +111,10 @@ async function getTenantsData() {
       }).catch(() => [] as Array<{ tenantId: string; _sum: { amount: number | null } }>),
       // Logos configurados por el admin de cada tenant en Settings.
       // Tienen prioridad sobre Tenant.logoUrl porque reflejan lo último que el dueño puso.
+      // + teléfonos y RUC para buscar un negocio por su número (SUPMKT-3, 2026-10-09).
       prisma.settings.findMany({
-        select: { tenantId: true, logoUrl: true },
-        where: { logoUrl: { not: null } },
-      }).catch(() => [] as Array<{ tenantId: string; logoUrl: string | null }>),
+        select: { tenantId: true, logoUrl: true, businessPhone: true, whatsappBusinessNum: true, ruc: true, sunatRuc: true },
+      }).catch(() => [] as SettingsContacto[]),
     ]);
 
     // AdminUser.tenantId = slug, Order.tenantId = slug OR cuid (varies by tenant)
@@ -129,10 +140,11 @@ async function getTenantsData() {
     );
     // Settings.logoUrl indexado por tenantId (que en Settings es el slug)
     const settingsLogoMap = Object.fromEntries(
-      (settingsLogos as Array<{ tenantId: string; logoUrl: string | null }>)
+      (settingsLogos as SettingsContacto[])
         .filter((r) => r.logoUrl)
         .map((r) => [r.tenantId, r.logoUrl as string])
     );
+    const settingsMap = new Map((settingsLogos as SettingsContacto[]).map((r) => [r.tenantId, r]));
 
     // Audit performance #1 (2026-05-19): convertido de `getTenantUsage(slug)`
     // fan-out (4 queries × N tenants = 4N queries → 4000 con 1000 tenants)
@@ -167,9 +179,13 @@ async function getTenantsData() {
       // Logo: Settings primero (lo que el admin sube), Tenant.logoUrl como fallback
       const settingsLogo = settingsLogoMap[t.slug] ?? settingsLogoMap[t.id] ?? null;
       const effectiveLogo = settingsLogo ?? t.logoUrl ?? null;
+      const contacto = settingsMap.get(t.id) ?? settingsMap.get(t.slug);
       return {
         ...t,
         logoUrl: effectiveLogo,
+        businessPhone: contacto?.businessPhone ?? null,
+        whatsappPhone: contacto?.whatsappBusinessNum ?? null,
+        ruc: contacto?.ruc || contacto?.sunatRuc || null,
         _count: { AdminUser: adminCount },
         usage,
         limits: {
@@ -189,6 +205,21 @@ async function getTenantsData() {
     return rows;
 }
 
+/**
+ * Avisos por correo de cada tienda (21-10), FUERA de la caché de `getTenantsData`:
+ * pausar desde el superadmin tiene que verse al recargar, no a los 60 s. Son 5
+ * consultas en lote (sin N+1). Si fallan, la lista sale igual, sin el bloque.
+ */
+async function conAvisosCorreo<T extends { id: string; slug: string; ownerEmail: string | null }>(rows: T[]) {
+  try {
+    const resumen = await resumenAvisosCorreo(rows);
+    return rows.map((r) => ({ ...r, avisosCorreo: resumen.get(r.id) }));
+  } catch (err) {
+    logger.warn("[superadmin/tenants] avisos por correo no disponibles", { error: String(err).slice(0, 200) });
+    return rows;
+  }
+}
+
 // GET /api/superadmin/tenants
 // Returns all tenants with plan, billing, usage, store, and financial data
 export async function GET(req: NextRequest) {
@@ -196,7 +227,7 @@ export async function GET(req: NextRequest) {
     const session = await requirePlatform(req);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-    const rows = await getTenantsData();
+    const rows = await conAvisosCorreo(await getTenantsData());
     // Brandon 2026-05-21 audit blindaje batch 3 perf: cache private 60s
     // + SWR 300s. getTenantsData es query pesada (findMany tenants con
     // joins de orders/products/users); cachear evita re-ejecutar en cada

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { DocumentsDB } from "@/lib/db/documents.db";
+import { CarpetaAjenaError, DocumentsDB } from "@/lib/db/documents.db";
 import {
   buildStoragePath,
   isMimeAllowed,
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       size: file.size,
       storagePath: "pending",
       uploadedById: auth.username,
+      viewerRole: auth.role,
     });
 
     const storagePath = buildStoragePath({
@@ -108,6 +109,8 @@ export async function POST(req: NextRequest) {
         : { ok: false },
     });
   } catch (err) {
+    // Carpeta de otro negocio (o inexistente): 404 como en el resto del Drive, no un 500.
+    if (err instanceof CarpetaAjenaError) return NextResponse.json({ error: "folder_not_found" }, { status: 404 });
     logger.error("documents.scan.exception", { err: String(err) });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

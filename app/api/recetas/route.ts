@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { RecetasDB } from "@/lib/db/recetas.db";
+import { KitsDB, esCategoriaKit } from "@/lib/db/kits.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
@@ -17,9 +18,10 @@ const CreateRecetaSchema = z.object({
   nombre: z.string().min(1).max(200),
   descripcion: z.string().max(1000).optional(),
   productoId: z.number().int().positive().optional(),
+  /** `"kit"`: la receta es la composición de un kit y vender el kit descuenta sus componentes. */
+  categoria: z.string().max(60).optional(),
   ingredientes: z.array(IngredienteSchema).min(1),
 });
-
 // GET /api/recetas — list recetas for tenant
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -67,11 +69,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Un kit (`lib/db/kits.db.ts`) descuenta sus componentes al venderse: con
+    // media unidad o un kit adentro de otro, la caja no podría vender bien.
+    if (esCategoriaKit(parsed.data.categoria)) {
+      const problema = await KitsDB.problemaDeKit(auth.tenantId, {
+        productoId: parsed.data.productoId,
+        ingredientes: parsed.data.ingredientes,
+      });
+      if (problema) return NextResponse.json({ error: problema }, { status: 400 });
+    }
+
     const receta = await RecetasDB.create({
       tenantId: auth.tenantId,
       nombre: parsed.data.nombre,
       descripcion: parsed.data.descripcion,
       productoId: parsed.data.productoId,
+      categoria: parsed.data.categoria?.trim() || undefined,
       ingredientes: parsed.data.ingredientes,
     });
 

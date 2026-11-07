@@ -14,9 +14,23 @@
 import type { ComponentType } from "react";
 import { CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 
 type LucideProps = { className?: string; strokeWidth?: number; "aria-hidden"?: boolean };
 type IconComponent = ComponentType<LucideProps>;
+
+// Métodos con ícono de marca propio (arte original). Para el resto, se usa el
+// ícono Lucide que pase el caller.
+const BRANDED_METHODS = new Set([
+  "yape",
+  "plin",
+  "efectivo",
+  "cash",
+  "transfer",
+  "transferencia",
+  "card",
+  "tarjeta",
+]);
 
 export interface PaymentMethodCardProps {
   id: string;
@@ -51,7 +65,7 @@ export default function PaymentMethodCard({
         "group relative text-left w-full rounded-2xl p-3.5 sm:p-5 transition-colors duration-200",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
         selected
-          ? "border-2 border-[var(--accent)] bg-[var(--accent-soft)]"
+          ? "border-2 border-[var(--accent)] bg-primary/10"
           : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40",
       )}
     >
@@ -67,30 +81,38 @@ export default function PaymentMethodCard({
 
       {/* Icon + Wordmark row — si hay brandColor, nombre va en color de marca prominente */}
       <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
-        <span
-          className={cn(
-            "inline-flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl shrink-0 transition-colors",
-            selected
-              ? "bg-[var(--accent-600,var(--accent))] text-white"
-              : brandColor
-              ? ""
-              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)]",
-          )}
-          style={
-            brandColor && !selected
-              ? { backgroundColor: `${brandColor}14`, color: brandColor }
-              : undefined
-          }
-          aria-hidden
-        >
-          <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
-        </span>
+        {BRANDED_METHODS.has(id.toLowerCase()) ? (
+          // Ícono de marca (SVG con color + glifo propio) — no necesita fondo tintado.
+          <PaymentMethodIcon
+            method={id}
+            size={44}
+            title={name}
+            className="h-9 w-9 sm:h-11 sm:w-11 shrink-0"
+          />
+        ) : (
+          <span
+            className={cn(
+              "inline-flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl shrink-0 transition-colors",
+              selected
+                ? "bg-[var(--accent-600,var(--accent))] text-white"
+                : brandColor
+                ? ""
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-primary/10",
+            )}
+            style={
+              brandColor && !selected
+                ? { backgroundColor: `${brandColor}14`, color: brandColor }
+                : undefined
+            }
+            aria-hidden
+          >
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
+          </span>
+        )}
         <p
           className={cn(
-            "tracking-[var(--ls-tight)] leading-none truncate",
-            brandColor
-              ? "text-lg sm:text-2xl font-black"
-              : "text-[length:var(--ts-sm)] sm:text-base font-bold text-[var(--text-primary)]",
+            "tracking-[var(--ls-tight)] leading-none truncate text-[length:var(--ts-sm)] sm:text-base",
+            brandColor ? "font-bold" : "font-semibold text-[var(--text-primary)]",
           )}
           style={brandColor && !selected ? { color: brandColor } : undefined}
         >

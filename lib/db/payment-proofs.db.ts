@@ -16,7 +16,7 @@
 
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
+import { ensureTable } from "@/lib/db/ensure-table";
 
 export type PaymentMethod = "yape" | "plin" | "transfer";
 export type PaymentStatus = "pending" | "approved" | "rejected";
@@ -56,9 +56,7 @@ let bootstrapDone = false;
 
 async function bootstrap(): Promise<void> {
   if (bootstrapDone) return;
-  try {
-     
-    await prisma.$executeRawUnsafe(`
+  await ensureTable("PaymentProof", `
       CREATE TABLE IF NOT EXISTS "PaymentProof" (
         id              TEXT PRIMARY KEY,
         "tenantSlug"    TEXT NOT NULL,
@@ -92,12 +90,8 @@ async function bootstrap(): Promise<void> {
       CREATE INDEX IF NOT EXISTS "PaymentProof_tenantSlug_idx"
         ON "PaymentProof"("tenantSlug");
       ALTER TABLE "PaymentProof" ADD COLUMN IF NOT EXISTS "passwordHash" TEXT;
-    `);
-    bootstrapDone = true;
-  } catch (err) {
-    logger.error("[payment-proofs] bootstrap failed", { error: String(err) });
-    throw err;
-  }
+    `, "payment-proofs");
+  bootstrapDone = true;
 }
 
 interface CreateInput {
@@ -186,6 +180,37 @@ export const PaymentProofsDB = {
       limit,
     );
     return rows.map(rowToProof);
+  },
+
+  /**
+   * Plata que ENTRÓ a la plataforma por vouchers: pagos APROBADOS con monto > 0
+   * (las altas gratis aprobadas no cuentan). El mes se toma por `createdAt` = cuándo
+   * subió el voucher el dueño (cuándo pagó), no cuándo lo revisaste. `desde`/`hasta`
+   * = rango [desde, hasta) ya resuelto en hora de Lima por quien llama.
+   */
+  async resumenCobrado(
+    desde: Date,
+    hasta: Date,
+  ): Promise<{ mesPen: number; pagosMes: number; historicoPen: number; pagosHistorico: number }> {
+    await bootstrap();
+    const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+      `SELECT
+         COALESCE(SUM("amountPEN") FILTER (WHERE "createdAt" >= $1 AND "createdAt" < $2), 0)::float8 AS mes,
+         COUNT(*) FILTER (WHERE "createdAt" >= $1 AND "createdAt" < $2)::int AS pagos_mes,
+         COALESCE(SUM("amountPEN"), 0)::float8 AS historico,
+         COUNT(*)::int AS pagos_historico
+       FROM "PaymentProof"
+       WHERE status = 'approved' AND "amountPEN" > 0`,
+      desde,
+      hasta,
+    );
+    const r = rows[0] ?? {};
+    return {
+      mesPen: Number(r.mes ?? 0),
+      pagosMes: Number(r.pagos_mes ?? 0),
+      historicoPen: Number(r.historico ?? 0),
+      pagosHistorico: Number(r.pagos_historico ?? 0),
+    };
   },
 
   async approve(

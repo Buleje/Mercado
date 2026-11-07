@@ -25,7 +25,7 @@ export function SavedAddressList({
 }: SavedAddressListProps) {
   return (
     <div>
-      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
+      <label className="block text-xs font-bold text-gray-500 dark:text-[var(--text-secondary)] mb-2 uppercase tracking-wider">
         Dirección de entrega
       </label>
       <div className="space-y-2">
@@ -38,7 +38,7 @@ export function SavedAddressList({
               "w-full text-left flex items-start gap-3 p-3 rounded-xl border-2 transition-all",
               selectedLocId === loc.id
                 ? "border-primary bg-primary/5"
-                : "border-gray-100 hover:border-primary/30"
+                : "border-gray-100 dark:border-[var(--rule-soft)] hover:border-primary/30"
             )}
           >
             <div
@@ -46,7 +46,7 @@ export function SavedAddressList({
                 "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
                 selectedLocId === loc.id
                   ? "border-primary bg-primary"
-                  : "border-gray-300"
+                  : "border-gray-300 dark:border-[var(--rule-base)]"
               )}
             >
               {selectedLocId === loc.id && (
@@ -57,12 +57,12 @@ export function SavedAddressList({
               <p
                 className={cn(
                   "text-sm font-semibold truncate",
-                  selectedLocId === loc.id ? "text-primary" : "text-gray-900"
+                  selectedLocId === loc.id ? "text-primary" : "text-gray-900 dark:text-[var(--text-primary)]"
                 )}
               >
                 {loc.location}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+              <p className="text-xs text-gray-400 dark:text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1">
                 <Home className="h-3 w-3 shrink-0" />
                 {loc.reference}
               </p>
@@ -72,7 +72,7 @@ export function SavedAddressList({
         <button
           type="button"
           onClick={onAddNew}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-[var(--rule-base)] text-sm font-semibold text-gray-400 dark:text-[var(--text-tertiary)] hover:text-primary hover:border-primary/30 transition-all"
         >
           <MapPin className="h-4 w-4" /> Usar otra dirección
         </button>

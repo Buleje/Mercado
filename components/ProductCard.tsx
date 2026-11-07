@@ -1,6 +1,5 @@
 import { memo, useCallback, useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Plus, Minus, Heart, Eye, Flame, Clock, ShoppingCart, Star, BellRing } from "lucide-react";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
@@ -15,31 +14,6 @@ import type { Product } from "@/data/products";
 import { trackView } from "@/components/RecentlyViewedSingleTenant";
 import ProductImagePlaceholder from "@/components/store/ProductImagePlaceholder";
 import { SocioPriceBadge } from "@/components/marketplace/SocioPriceBadge";
-import { BodegaAbriendo } from "@/components/ui-system/illustrations/contextual";
-import { CanastaVacia } from "@/components/ui-system/illustrations/empty-states";
-import {
-  VerduraFresca,
-  CarniceriaFresca,
-  LacteosRefresh,
-  BebidasVarias,
-  LimpiezaDomicilio,
-} from "@/components/ui-system/illustrations/categories";
-
-/**
- * Mapeo de categoria de producto -> ilustracion del DS.
- * Usa if/else explicit para cumplir react-hooks/static-components.
- */
-function ProductCategoryIllustration({ category, className }: { category?: string; className?: string }) {
-  const cat = (category ?? "").toLowerCase();
-  const common = { size: 120, strokeWidth: 1.5, className } as const;
-  if (cat.includes("abarrote")) return <BodegaAbriendo {...common} />;
-  if (cat.includes("fruta") || cat.includes("verdura")) return <VerduraFresca {...common} />;
-  if (cat.includes("carne")) return <CarniceriaFresca {...common} />;
-  if (cat.includes("lacte") || cat.includes("láct")) return <LacteosRefresh {...common} />;
-  if (cat.includes("bebida")) return <BebidasVarias {...common} />;
-  if (cat.includes("limpie")) return <LimpiezaDomicilio {...common} />;
-  return <CanastaVacia {...common} />;
-}
 
 type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number; isTopSeller?: boolean; comparePrice?: number; promoEndDate?: string; socioPrice?: number };
 
@@ -251,7 +225,7 @@ function ProductCardComponent({ product }: ProductCardProps) {
           "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-[var(--shadow-sm)] flex items-center gap-0.5",
           offerUrgent
             ? "bg-[var(--accent-600,var(--accent))] text-white"
-            : "bg-[var(--accent-soft)] text-[var(--accent)]"
+            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         )}>
           <Clock className="h-3 w-3" /> {offerUrgent ? "Última hora" : offerCountdown}
         </span>
@@ -265,11 +239,11 @@ function ProductCardComponent({ product }: ProductCardProps) {
               <Star className="h-3 w-3 fill-current" /> Popular
             </span>
           ) : soldCount >= 5 ? (
-            <span className="flex items-center gap-0.5 bg-[var(--accent-soft)] text-[var(--accent)] rounded-full px-2 py-0.5">
+            <span className="flex items-center gap-0.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-full px-2 py-0.5">
               <Flame className="h-3 w-3" /> {soldCount} vendidos hoy
             </span>
           ) : (
-            <span className="flex items-center gap-0.5 bg-[var(--accent-soft)] text-[var(--accent)] rounded-full px-2 py-0.5">
+            <span className="flex items-center gap-0.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-full px-2 py-0.5">
               <Flame className="h-3 w-3" /> Vendiendo rápido
             </span>
           )}
@@ -421,7 +395,7 @@ function ProductCardComponent({ product }: ProductCardProps) {
 
         {/* AA2: Bulk discount hint */}
         {product.unit === "und" && product.price <= 15 && !isOutOfStock && (
-          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] rounded-md px-1.5 py-0.5 w-fit">Lleva 3+ · 5% off</span>
+          <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--accent)] bg-primary/10 rounded-md px-1.5 py-0.5 w-fit">Lleva 3+ · 5% off</span>
         )}
 
         <div>
@@ -436,7 +410,7 @@ function ProductCardComponent({ product }: ProductCardProps) {
                     unit={product.unit}
                     size="md"
                   />
-                  <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--accent)] px-1.5 py-0.5 rounded font-bold w-fit">
+                  <span className="text-[length:var(--ts-2xs)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-1.5 py-0.5 rounded font-bold w-fit">
                     -{Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}%
                   </span>
                 </div>

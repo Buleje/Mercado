@@ -1,6 +1,7 @@
 import "server-only";
 import { getOrSet } from "@/lib/cache";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
+import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
 
 /**
  * Check if a tenant slug or ID exists in the database.
@@ -11,7 +12,7 @@ import { findTenantByIdOrSlug } from "@/lib/tenant";
  * para deduplicar el lookup dentro del mismo request.
  */
 export async function tenantExists(slugOrId: string): Promise<boolean> {
-  if (slugOrId === "main") return true;
+  if (esTenantPorDefecto(slugOrId)) return true;
 
   return getOrSet<boolean>(`tenant-exists:${slugOrId}`, 300, async () => {
     const tenant = await findTenantByIdOrSlug(slugOrId);

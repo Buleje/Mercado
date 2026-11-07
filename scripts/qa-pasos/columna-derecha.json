@@ -1,0 +1,58 @@
+{
+ "tenant": "main",
+ "ruta": "/admin?tab=documentos&vista=esenciales",
+ "pasos": [
+  {
+   "espiar": [
+    "/api/admin/preferences/panel",
+    "PUT",
+    true
+   ]
+  },
+  {
+   "preset": "agenda-aviso"
+  },
+  {
+   "eval": "(document.querySelector('[data-qa=aviso-al-costado]')?.click(), 1)"
+  },
+  {
+   "esperar": "[data-qa=aviso-lateral]"
+  },
+  {
+   "esperar": 900
+  },
+  {
+   "eval": "(\"solo-aviso\", (()=>{const r=s=>{const e=[...document.querySelectorAll(s)].find(x=>x.getBoundingClientRect().width>0);if(!e)return null;const b=e.getBoundingClientRect();return [Math.round(b.left),Math.round(b.top),Math.round(b.width),Math.round(b.height)]};const sh=document.querySelector('[data-admin-shell]');return {vw:innerWidth,col:r('[data-qa=columna-derecha]'),cont:r('[data-admin-contenido]'),head:r('[data-admin-header]'),fab:r('[data-fab-rapido]'),aviso:r('[data-qa=aviso-lateral]'),avisoEnCol:!!document.querySelector('[data-qa=columna-derecha] [data-qa=aviso-lateral]'),ese:r('[data-qa=esencial-columna]'),cajon:!!document.querySelector('[data-qa=esencial-cajon]'),varCol:getComputedStyle(document.documentElement).getPropertyValue('--columna-derecha'),padShell:sh&&getComputedStyle(sh).paddingRight,borde:getComputedStyle(document.querySelector('[data-qa=esencial-columna]')?.parentElement||document.body).borderTopWidth,velo:!!document.querySelector('.modal-backdrop')}})())"
+  },
+  {
+   "captura": "solo-aviso"
+  },
+  {
+   "esperar": "[data-qa=esencial-tarjeta]"
+  },
+  {
+   "click": "[data-qa=esencial-tarjeta] >> text=QA Expediente CCNN 22-10"
+  },
+  {
+   "esperar": 1200
+  },
+  {
+   "eval": "(\"los-dos\", (()=>{const r=s=>{const e=[...document.querySelectorAll(s)].find(x=>x.getBoundingClientRect().width>0);if(!e)return null;const b=e.getBoundingClientRect();return [Math.round(b.left),Math.round(b.top),Math.round(b.width),Math.round(b.height)]};const sh=document.querySelector('[data-admin-shell]');return {vw:innerWidth,col:r('[data-qa=columna-derecha]'),cont:r('[data-admin-contenido]'),head:r('[data-admin-header]'),fab:r('[data-fab-rapido]'),aviso:r('[data-qa=aviso-lateral]'),avisoEnCol:!!document.querySelector('[data-qa=columna-derecha] [data-qa=aviso-lateral]'),ese:r('[data-qa=esencial-columna]'),cajon:!!document.querySelector('[data-qa=esencial-cajon]'),varCol:getComputedStyle(document.documentElement).getPropertyValue('--columna-derecha'),padShell:sh&&getComputedStyle(sh).paddingRight,borde:getComputedStyle(document.querySelector('[data-qa=esencial-columna]')?.parentElement||document.body).borderTopWidth,velo:!!document.querySelector('.modal-backdrop')}})())"
+  },
+  {
+   "captura": "los-dos"
+  },
+  {
+   "eval": "(document.querySelector('[data-qa=aviso-lateral] button[aria-label=Cerrar]')?.click(), 1)"
+  },
+  {
+   "esperar": 900
+  },
+  {
+   "eval": "(\"solo-esenciales\", (()=>{const r=s=>{const e=[...document.querySelectorAll(s)].find(x=>x.getBoundingClientRect().width>0);if(!e)return null;const b=e.getBoundingClientRect();return [Math.round(b.left),Math.round(b.top),Math.round(b.width),Math.round(b.height)]};const sh=document.querySelector('[data-admin-shell]');return {vw:innerWidth,col:r('[data-qa=columna-derecha]'),cont:r('[data-admin-contenido]'),head:r('[data-admin-header]'),fab:r('[data-fab-rapido]'),aviso:r('[data-qa=aviso-lateral]'),avisoEnCol:!!document.querySelector('[data-qa=columna-derecha] [data-qa=aviso-lateral]'),ese:r('[data-qa=esencial-columna]'),cajon:!!document.querySelector('[data-qa=esencial-cajon]'),varCol:getComputedStyle(document.documentElement).getPropertyValue('--columna-derecha'),padShell:sh&&getComputedStyle(sh).paddingRight,borde:getComputedStyle(document.querySelector('[data-qa=esencial-columna]')?.parentElement||document.body).borderTopWidth,velo:!!document.querySelector('.modal-backdrop')}})())"
+  },
+  {
+   "captura": "solo-esenciales"
+  }
+ ]
+}

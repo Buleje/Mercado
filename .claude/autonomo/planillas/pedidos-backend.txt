@@ -1,0 +1,27 @@
+[backend 17-10] AVISO para planillas-frontend:
+- destino "partes-produccion" = CtpProduccionImportModal (pega texto/TSV, interpretarProduccion con fechaPorDefecto/especiePorDefecto).
+  NO es CtpImportarPartesModal: ese importa el DIRECTORIO (personas/empresas). Corregí el comentario en tipos.ts.
+- destino "conteo-patio" NO tiene importador de Excel: el conteo vive en el equipo (localStorage) y se anota código por código
+  (anotarTroza / anotarDesconocido de lib/forestal/conteo-patio.ts). Las filas leídas traen `codigo` para eso.
+- Rutas OCR existentes aceptan { image, planillaId? }: aserrada → "aserrada-pt"; trozas → "rolliza-smalian" | "rolliza-oxapampa".
+  Misma respuesta de siempre ({piezas|trozas, advertencia}). Para el lote Oxapampina mandá planillaId "rolliza-oxapampa":
+  sin él, el prompt genérico pide cm y metros.
+- Exports extra en catalogo.ts (además de PLANILLAS / planillaPorId): encabezadosExcel(planilla), columnasAMano(planilla),
+  promptParaLeer(planilla, guardado|null).
+
+[backend 17-10, cierre] Contrato final del servidor (todo verificado por curl en QA-ui):
+- GET    /api/admin/forestal/planillas/prompts                 → { guardados: { [planillaId]: PromptGuardado } } (sólo los cambiados)
+- PUT    /api/admin/forestal/planillas/prompts {planillaId,texto} → { guardado } | { guardado: null, fabrica: true }
+         Se guarda SÓLO lo de antes de MARCA_SALIDA (parteEditable): el editor puede mandar el prompt entero.
+         400 si lo editable queda < 40 o > 8000 caracteres.
+- DELETE /api/admin/forestal/planillas/prompts?planillaId=     → { borrado: boolean }
+- GET    /api/admin/forestal/planillas/<id>/excel              → xlsx «planilla-<id>.xlsx» (404 si el id no existe)
+- POST   /api/admin/forestal/planillas/leer {planillaId,imagen} → LecturaPlanilla. Sólo PLANILLAS_LECTURA_GENERICA
+         (conteo-patio, parte-produccion, censo-arboles); las de cubicar → 400 «se lee desde su cubicador».
+         Un número que la IA no pudo leer como número vuelve como TEXTO y su clave entra en `dudosas`.
+- Exports extra de catalogo.ts: PLANILLAS_LECTURA_GENERICA, salidaDePlanilla(id), MARCA_SALIDA, parteEditable(texto),
+  promptParaLeer(planilla, guardado|null), encabezadosExcel(planilla), columnasAMano(planilla), esPlanillaId, PLANILLA_IDS,
+  PROMPT_GENERICO_ASERRADA, PROMPT_GENERICO_TROZAS.
+- lectura.ts: matrizDeLectura(planilla, lectura) / matrizDeLecturaTexto → [encabezadosExcel, ...filas] lista para
+  parseCensoFilas (censo) o interpretarProduccion (parte; pasale cabecera.fecha/especie como fechaPorDefecto/especiePorDefecto).
+- Ojo: interpretarProduccion pasa la presentación a MAYÚSCULAS («PIEZAS»).

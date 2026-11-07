@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SponsoredBoostsDB } from "@/lib/db/sponsored-boosts.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 /**
  * POST /api/marketplace/sponsored/[id]/click
@@ -18,7 +19,7 @@ export async function POST(
   try {
     // SECURITY F1: no aceptar "main" como fallback controlado por el cliente.
     const tenantId = req.headers.get("x-tenant-id");
-    if (!tenantId || tenantId === "main") {
+    if (!tenantId || esMarketplace(tenantId)) {
       return NextResponse.json({ error: "tenant header requerido" }, { status: 400 });
     }
     const { id } = await params;

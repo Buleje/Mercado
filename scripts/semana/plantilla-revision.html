@@ -1,0 +1,47 @@
+<!doctype html>
+<!--
+  Plantilla de la «Revisión de la semana» (Brandon 28-10-2026). La rutina del
+  domingo copia este archivo, reemplaza cada {{…}} con texto corto y lo pasa a
+  PDF con scripts/semana/html-a-pdf.mjs. Una página si se puede; nada inventado:
+  todo sale de datos-semana.mjs o del calendario.
+-->
+<html lang="es"><head><meta charset="utf-8"><title>Revisión de la semana</title>
+<style>
+  :root { --tinta:#1d2420; --suave:#5d6a62; --linea:#dde3dc; --acento:#1f7a5a; --aviso:#b4432f; --fondo:#f6f7f4; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:13px/1.5 "Segoe UI", system-ui, sans-serif; color:var(--tinta); }
+  header { border-bottom:3px solid var(--acento); padding-bottom:8px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:baseline; }
+  h1 { margin:0; font-size:22px; } .rango { color:var(--suave); font-size:13px; }
+  h2 { font-size:15px; margin:16px 0 6px; color:var(--acento); }
+  .cifras { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .cifra { background:var(--fondo); border:1px solid var(--linea); border-radius:8px; padding:8px 10px; }
+  .cifra b { display:block; font-size:18px; font-variant-numeric:tabular-nums; } .cifra span { color:var(--suave); font-size:11px; }
+  table { width:100%; border-collapse:collapse; } td, th { text-align:left; padding:4px 6px; border-bottom:1px solid var(--linea); vertical-align:top; }
+  th { color:var(--suave); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+  ul { margin:0; padding-left:18px; } li { margin:2px 0; }
+  .falta li::marker { color:var(--aviso); }
+  footer { margin-top:18px; color:var(--suave); font-size:10px; border-top:1px solid var(--linea); padding-top:6px; }
+</style></head><body>
+<header><h1>Revisión de la {{nombreSemana sin el paréntesis, ej. Semana 1}}</h1><div class="rango">{{lunes dd-mes}} al {{domingo dd-mes}} · {{año}}</div></header>
+
+<h2>Números de Blas</h2>
+<div class="cifras">
+  <div class="cifra"><b>{{S/ saldo te deben}}</b><span>adelantos abiertos ({{n}})</span></div>
+  <div class="cifra"><b>{{n}}</b><span>adelantos nuevos esta semana</span></div>
+  <div class="cifra"><b>{{registros}}</b><span>registros del Libro CTP</span></div>
+  <div class="cifra"><b>{{n}}</b><span>cubicaciones por valorizar</span></div>
+</div>
+
+<h2>Lo que hiciste</h2>
+<table><tr><th>Categoría</th><th>Archivos de la semana</th></tr>
+{{una fila por categoría que tuvo archivos: nombre · cuántos · hasta 3 nombres}}
+</table>
+
+<h2>La semana que viene</h2>
+<ul>{{eventos de los próximos 7 días del calendario, o «Sin eventos en el calendario»}}</ul>
+
+<h2>Lo que falta</h2>
+<ul class="falta">{{adelantos que vencen, vencimientos próximos, cubicaciones por valorizar, vencimientos sin fecha; sólo lo que dicen los datos}}</ul>
+
+<footer>Lo armó Claude el domingo {{dd-mes}} a las {{hh:mm}} con los datos del panel y tus archivos. Queda en «Semana actual» y el lunes pasa a «Semanas anteriores».</footer>
+</body></html>

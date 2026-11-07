@@ -29,7 +29,7 @@ export const TOAST = {
   },
   subscriberAdded: {
     title: "Suscrito correctamente",
-    description: "Recibirás ofertas exclusivas. Cancelás cuando quieras.",
+    description: "Recibirás ofertas exclusivas. Cancelas cuando quieras.",
   },
   couponApplied: (discount: string) => ({
     title: "Cupón aplicado",
@@ -43,7 +43,7 @@ export const TOAST = {
   // ── Info ──────────────────────────────────────────────────
   draftSaved: {
     title: "Borrador guardado automáticamente",
-    description: "Puedes cerrar esta ventana — no perdés nada.",
+    description: "Puedes cerrar esta ventana — no pierdes nada.",
   },
   offlineSyncing: {
     title: "Trabajando sin conexión",
@@ -51,13 +51,13 @@ export const TOAST = {
   },
   updateAvailable: {
     title: "Nueva versión disponible",
-    description: "Recargá la página para activar las mejoras.",
+    description: "Recarga la página para activar las mejoras.",
   },
 
   // ── Warning ───────────────────────────────────────────────
   stockLow: (product: string, qty: number) => ({
     title: "Stock bajo",
-    description: `Solo quedan ${qty} de "${product}". Reponé pronto.`,
+    description: `Solo quedan ${qty} de "${product}". Repón pronto.`,
   }),
   unsavedChanges: {
     title: "Cambios sin guardar",
@@ -65,7 +65,7 @@ export const TOAST = {
   },
   slowConnection: {
     title: "Conexión lenta detectada",
-    description: "Estamos cargando — esperá unos segundos.",
+    description: "Estamos cargando — espera unos segundos.",
   },
 
   // ── Error ─────────────────────────────────────────────────
@@ -79,6 +79,6 @@ export const TOAST = {
   },
   uploadFailed: {
     title: "Archivo no subido",
-    description: "Intentá con una imagen más liviana (máx 5MB).",
+    description: "Intenta con una imagen más liviana (máx 5MB).",
   },
 } as const;

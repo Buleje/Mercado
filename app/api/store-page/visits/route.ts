@@ -5,6 +5,7 @@ import { StorePageDB } from "@/lib/db/store-page.db";
 import { logger } from "@/lib/logger";
 import crypto from "node:crypto";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 const VisitSchema = z.object({
   tenantSlug: z.string().min(1).max(120),
@@ -24,7 +25,7 @@ const VisitSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "store-page-visits"); if (_rl) return _rl;
-  const raw = await req.json().catch(() => null);
+  const raw = await leerJson(req);
   const parsed = VisitSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ ok: false }, { status: 200 });

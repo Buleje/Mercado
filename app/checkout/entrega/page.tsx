@@ -8,7 +8,9 @@
  *   - Método de pago (3 PaymentMethodCards: Efectivo / Yape / Plin)
  *   - Cupón por tienda + Puntos Buleje (si disponible)
  *
- * Auto-redirect a /carrito si esta vacio o /datos si faltan datos cliente.
+ * Datos + entrega unificados (Brandon 2026-07-06): captura quién recibe
+ * (CheckoutIdentitySection) + dirección + pago en UNA página. Auto-redirect a
+ * /carrito solo si el carrito está vacío.
  */
 
 import { useRouter } from "next/navigation";
@@ -20,21 +22,24 @@ import {
   Wallet,
   Smartphone,
   Landmark,
+  Check,
   CheckCircle2,
   Tag,
   Sparkles,
   AlertCircle,
   Navigation,
   Edit3,
+  UserCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCheckoutData } from "@/hooks/use-checkout-data";
 import { useCustomer } from "@/contexts/customer-context";
-import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
-import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
+import { useRegisterCheckoutSummary } from "@/contexts/checkout-summary-context";
 import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCard";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
+import CheckoutIdentitySection from "@/components/marketplace/checkout/CheckoutIdentitySection";
+import CheckoutCouponFields from "@/components/marketplace/checkout/CheckoutCouponFields";
 import AddressPicker from "@/components/marketplace/checkout/AddressPicker";
 import AddAddressFlowModal from "@/components/marketplace/checkout/AddAddressFlowModal";
 import CashChangeModal from "@/components/marketplace/checkout/CashChangeModal";
@@ -49,7 +54,6 @@ import {
   useCheckoutTransition,
 } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
 import { useSavedAddresses, type SavedAddress } from "@/hooks/use-saved-addresses";
-import { csrfHeaders } from "@/lib/csrf-client";
 // Round 23 (Performance): ubigeo dataset (~350KB) ya NO se importa en
 // cliente. Se consume via fetch /api/marketplace/ubigeo y reverse-geocode
 // server-side. Resultado: -350KB en el bundle de checkout (mayor ruta de
@@ -144,47 +148,102 @@ function selectCls(error?: boolean) {
   return cn(pillCls(error), "appearance-none pr-10 bg-no-repeat bg-[right_1rem_center]");
 }
 
-// ── Section wrapper con kicker editorial ──────────────────────────────────
+// ── Section wrapper editorial con badge de completado (Brandon 2026-07-06) ──
+// El ícono de la sección vive en un badge circular que se convierte en CHECK
+// cuando ese paso está completo → la página combinada se lee como un checklist
+// premium. `active` (paso actual = 1er incompleto) pulsa suave. Las secciones
+// no-rastreadas (cupón/puntos) omiten `done` → badge neutro sin ring.
 function SectionBox({
+  done,
+  active = false,
+  collapsed = false,
+  summary,
+  onEdit,
   kicker,
   title,
   icon: Icon,
   action,
   children,
 }: {
+  done?: boolean;
+  active?: boolean;
+  /** Paso completo → colapsa a resumen + "Editar" (foco en el paso actual). */
+  collapsed?: boolean;
+  summary?: React.ReactNode;
+  onEdit?: () => void;
   kicker: string;
   title: string;
   icon: typeof Wallet;
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  // Brandon, mayo 14 2026: padding mas compacto en mobile (p-4) para reducir
-  // scroll, kicker oculto en mobile, titulo mas chico, icono inline al titulo.
+  const tracked = done !== undefined;
   return (
-    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <p className="hidden sm:flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
-            <span
-              aria-hidden
-              className="inline-flex h-[3px] w-6 rounded-full bg-[var(--accent)]"
-            />
-            <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
-            {kicker}
-          </p>
-          <h2 className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            <span
-              aria-hidden
-              className="sm:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]"
-            >
-              <Icon className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-            <span className="truncate">{title}</span>
-          </h2>
+    <section
+      className={cn(
+        "rounded-2xl border bg-[var(--surface-raised)] p-4 sm:p-5 transition-[border-color] duration-[var(--dur-base)]",
+        collapsed ? "space-y-0" : "space-y-4",
+        done
+          ? "border-[color-mix(in_srgb,var(--accent)_25%,transparent)]"
+          : active
+            ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)]"
+            : "border-[var(--rule-soft)]",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span
+            aria-hidden
+            className={cn(
+              "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-[var(--dur-base)]",
+              done
+                ? "bg-[var(--accent)] text-white"
+                : tracked
+                  ? "bg-primary/10 text-[var(--accent-dark)] ring-2 ring-inset ring-[color-mix(in_srgb,var(--accent)_28%,transparent)] dark:text-[var(--accent)]"
+                  : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+            )}
+          >
+            {active && !done && (
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full bg-[var(--accent)]/20 animate-ping motion-reduce:hidden"
+              />
+            )}
+            {done ? (
+              <Check className="relative h-5 w-5" strokeWidth={3} />
+            ) : (
+              <Icon className="relative h-[18px] w-[18px]" strokeWidth={2.25} />
+            )}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
+              {kicker}
+            </p>
+            {collapsed && summary != null ? (
+              <div className="text-base font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight truncate">
+                {summary}
+              </div>
+            ) : (
+              <h2 className="text-base sm:text-lg font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+                {title}
+              </h2>
+            )}
+          </div>
         </div>
-        {action}
+        {collapsed && onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-[length:var(--ts-sm)] font-bold text-[var(--accent)] hover:bg-primary/10 transition-colors"
+          >
+            <Edit3 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Editar
+          </button>
+        ) : (
+          action
+        )}
       </div>
-      {children}
+      {!collapsed && children}
     </section>
   );
 }
@@ -210,10 +269,12 @@ export default function CheckoutEntregaPage() {
     loyaltyDiscountTotal,
   } = useCheckoutData();
   const [touched, setTouched] = useState(false);
+  // Acordeón (Brandon 2026-07-06): las secciones completas colapsan a un resumen;
+  // "Editar" las reabre (una vez abiertas, quedan abiertas). Foco en el paso actual.
+  const [editingSection, setEditingSection] = useState<Record<string, boolean>>({});
+  const editSection = (id: string) =>
+    setEditingSection((s) => ({ ...s, [id]: true }));
 
-  const [couponInputs, setCouponInputs] = useState<Record<string, string>>({});
-  const [couponLoading, setCouponLoading] = useState<Record<string, boolean>>({});
-  const [couponErrors, setCouponErrors] = useState<Record<string, string>>({});
   const [couponsUserOpened, setCouponsUserOpened] = useState(false);
   const hasAppliedCoupons = Object.keys(coupons).length > 0;
   const showCouponFields = couponsUserOpened || hasAppliedCoupons;
@@ -630,11 +691,13 @@ export default function CheckoutEntregaPage() {
   // Brandon mayo 15 v4 (audit QA #1): flags reales `hydrated` en lugar de
   // setTimeout(250). En redes lentas el guard antiguo expulsaba al cliente.
   const cartReady = cartHydrated && hydrated;
+  // Datos + entrega unificados (Brandon 2026-07-06): el cliente se captura acá
+  // mismo (CheckoutIdentitySection), así que NO redirigimos por customer inválido
+  // — solo si el carrito quedó vacío.
   useEffect(() => {
     if (!cartReady) return;
     if (itemCount === 0) router.replace("/marketplace/carrito");
-    else if (!isCustomerValid) router.replace("/checkout/datos");
-  }, [cartReady, itemCount, isCustomerValid, router]);
+  }, [cartReady, itemCount, router]);
 
   // Prefetch del próximo paso (acelera la navegación a /confirmar)
   useEffect(() => {
@@ -788,13 +851,33 @@ export default function CheckoutEntregaPage() {
   // trackeamos el metodo previo y solo abrimos si paso de !efectivo →
   // efectivo via interaccion del cliente.
   const prevPaymentMethodRef = useRef(payment.method);
+  // Cuando la selección de efectivo es PROGRAMÁTICA (auto-select de opción única),
+  // no queremos abrir el modal de vuelto — este flag lo suprime una sola vez.
+  const suppressCashModalRef = useRef(false);
   useEffect(() => {
     const prev = prevPaymentMethodRef.current;
     if (prev !== "efectivo" && payment.method === "efectivo") {
-      setCashModalOpen(true);
+      if (suppressCashModalRef.current) {
+        suppressCashModalRef.current = false;
+      } else {
+        setCashModalOpen(true);
+      }
     }
     prevPaymentMethodRef.current = payment.method;
   }, [payment.method]);
+
+  // Auto-seleccionar cuando hay UNA sola opción de pago (Brandon 2026-07-06):
+  // el cliente no debería tener que tocar la única alternativa. Suprime el modal
+  // de vuelto para no abrirlo sin pedirlo (el cliente puede abrirlo desde la card).
+  const autoSelectedPaymentRef = useRef(false);
+  useEffect(() => {
+    if (paymentConfigsLoading || autoSelectedPaymentRef.current) return;
+    if (availableMethods.length === 1 && payment.method === "") {
+      autoSelectedPaymentRef.current = true;
+      suppressCashModalRef.current = availableMethods[0] === "efectivo";
+      setPayment({ method: availableMethods[0] });
+    }
+  }, [paymentConfigsLoading, availableMethods, payment.method, setPayment]);
 
   const buildProofModalConfig = useCallback(
     (storeSlug: string): PaymentProofModalConfig => {
@@ -814,79 +897,81 @@ export default function CheckoutEntregaPage() {
     (e: React.FormEvent) => {
       e.preventDefault();
       setTouched(true);
+      if (!isCustomerValid) return;
       if (!isAddressValid) return;
       // Brandon mayo 15 v4: bloqueo submit si no eligió método de pago.
       if (payment.method === "") return;
       if (!allProofsReady) return;
       navigateTo("/checkout/confirmar", "Preparando tu resumen");
     },
-    [isAddressValid, allProofsReady, navigateTo, payment.method],
-  );
-
-  const validateCoupon = useCallback(
-    async (storeSlug: string) => {
-      const code = (couponInputs[storeSlug] || "").trim();
-      if (!code) return;
-      const cartTotal = totalByStore[storeSlug]?.total ?? 0;
-      setCouponLoading((p) => ({ ...p, [storeSlug]: true }));
-      setCouponErrors((p) => ({ ...p, [storeSlug]: "" }));
-      try {
-        const res = await fetch("/api/marketplace/coupons/validate", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ code, storeSlug, cartTotal }),
-        });
-        // Brandon mayo 15 v4 (audit QA #5): chequear res.ok antes de .json().
-        // Si Vercel edge devuelve 4xx/5xx con body HTML, .json() rompe y
-        // el cliente veia "Error de conexión" cuando en realidad era un 429,
-        // 401 o 503. Ahora intentamos leer un mensaje del server primero.
-        if (!res.ok) {
-          let reason = "Cupón inválido";
-          try {
-            const body = await res.json();
-            if (body?.reason) reason = body.reason;
-            else if (res.status === 429) reason = "Demasiados intentos. Probá en un momento.";
-            else if (res.status >= 500) reason = "El servidor falló. Intentá de nuevo.";
-          } catch {
-            if (res.status === 429) reason = "Demasiados intentos. Probá en un momento.";
-            else if (res.status >= 500) reason = "El servidor falló. Intentá de nuevo.";
-          }
-          setCouponErrors((p) => ({ ...p, [storeSlug]: reason }));
-          return;
-        }
-        const data = await res.json();
-        if (data.valid) {
-          setCouponForStore(storeSlug, {
-            code: data.code || code,
-            discount: Number(data.discount) || 0,
-            description: data.description,
-          });
-          setCouponInputs((p) => ({ ...p, [storeSlug]: "" }));
-        } else {
-          setCouponErrors((p) => ({ ...p, [storeSlug]: data.reason || "Cupón inválido" }));
-        }
-      } catch {
-        setCouponErrors((p) => ({ ...p, [storeSlug]: "Error de conexión" }));
-      } finally {
-        setCouponLoading((p) => ({ ...p, [storeSlug]: false }));
-      }
-    },
-    [couponInputs, totalByStore, setCouponForStore],
-  );
-
-  const removeCoupon = useCallback(
-    (storeSlug: string) => setCouponForStore(storeSlug, null),
-    [setCouponForStore],
+    [isCustomerValid, isAddressValid, allProofsReady, navigateTo, payment.method],
   );
 
   const totalAfterCoupons = Math.max(0, grandTotal - couponDiscountTotal);
   const maxRedeemByCart = totalAfterCoupons * 100;
   const maxRedeem = Math.min(loyaltyAvailable, Math.floor(maxRedeemByCart / 100) * 100);
 
-  const showAddressError = touched && !isAddressValid;
+  // Errores de dirección granulares (QA 2026-07-04): distinguimos calle corta
+  // de ubigeo incompleto para que el aviso apunte al campo real.
+  const showStreetError = touched && address.address.trim().length < 5;
+  const showUbigeoError =
+    touched &&
+    (!address.departmentCode || !address.provinceCode || !address.districtCode);
   const cashAmount = Number(payment.cashAmount || 0);
   const cashChange = cashAmount - grandTotal;
-  const cashShort = cashAmount > 0 && cashAmount < grandTotal;
+
+  // "Pago listo" = método elegido explícitamente Y comprobantes ok. `allProofsReady`
+  // solo es vacuo-verdadero (invitado paga al recibir); sin exigir método elegido
+  // el CTA se habilitaría pero handleSubmit lo frena → paso de pago inconsistente.
+  const paymentChosen = payment.method !== "";
+  const paymentReady = paymentChosen && allProofsReady;
+
+  // Resúmenes de una línea para las secciones colapsadas (acordeón).
+  const datosSummary = [customer.name?.trim(), customer.phone ? `+51 ${customer.phone}` : ""]
+    .filter(Boolean)
+    .join(" · ");
+  const direccionSummary = [address.address?.trim(), address.districtName?.trim()]
+    .filter(Boolean)
+    .join(" · ");
+  const paymentSummary =
+    PAYMENT_METHODS.find((m) => m.key === payment.method)?.label ?? "";
+
+  // CTA del riel de resumen (sin evento — handleSubmit es para el <form>).
+  const handleContinue = () => {
+    setTouched(true);
+    if (isCustomerValid && isAddressValid && paymentReady)
+      navigateTo("/checkout/confirmar", "Preparando tu resumen");
+  };
+
+  // Primer requisito faltante → etiqueta/razón del CTA (datos → dirección → pago).
+  const missingLabel = !isCustomerValid
+    ? "Completá tus datos"
+    : !isAddressValid
+      ? "Completá tu dirección"
+      : !paymentChosen
+        ? "Elegí cómo pagás"
+        : !allProofsReady
+          ? "Subí los comprobantes"
+          : null;
+
+  // Riel de resumen persistente — lo dibuja el layout (CheckoutShell).
+  useRegisterCheckoutSummary({
+    ctaLabel: missingLabel ?? "Revisar pedido",
+    onCtaClick: handleContinue,
+    ctaDisabled: !isCustomerValid || !isAddressValid || !paymentReady,
+    couponDiscount: couponDiscountTotal,
+    loyaltyDiscount: loyaltyDiscountTotal,
+    showItems: true,
+    helperText: missingLabel
+      ? "Completá lo que falta para continuar"
+      : "Un paso más para confirmar",
+    mobileTotal: Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal),
+    mobileCtaLabel: missingLabel ? "Falta info" : "Revisar pedido",
+    mobileDisabledReason: missingLabel ?? undefined,
+    mobileHelperText: missingLabel
+      ? "Completá lo que falta para continuar"
+      : "¡Todo listo! Solo falta confirmar.",
+  });
 
   if (itemCount === 0) return null;
 
@@ -895,15 +980,28 @@ export default function CheckoutEntregaPage() {
       {/* Header compartido (Brandon 2026-06-01): mismo formato que datos y
           confirmar — back link + h1 + subtítulo, tamaños y padding unificados. */}
       <CheckoutStepHeader
-        backHref="/checkout/datos"
-        backLabel="Volver a tus datos"
-        title="Entrega y pago"
-        lead="Paso 2 de 3."
-        subtitle="Elegí a dónde te lo llevamos y cómo pagás."
+        backHref="/marketplace/carrito"
+        backLabel="Volver al carrito"
+        title="Tus datos y entrega"
+        lead="Paso 1 de 2."
+        subtitle="Quién recibe, a dónde te lo llevamos y cómo pagás."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
+          {/* ── Identidad (datos + entrega unificados, Brandon 2026-07-06) ── */}
+          <SectionBox
+            kicker="Datos"
+            title="¿Quién recibe?"
+            icon={UserCircle}
+            done={isCustomerValid}
+            active={!isCustomerValid}
+            collapsed={isCustomerValid && !editingSection.datos}
+            summary={datosSummary}
+            onEdit={() => editSection("datos")}
+          >
+            <CheckoutIdentitySection />
+          </SectionBox>
+
           {/* ── Direcciones guardadas (si hay) ───────────────────────
                 Brandon, mayo 14 2026: el boton "Usar otra direccion" del
                 picker abre AddAddressFlowModal (paso 1: CTA "Poner ubicacion
@@ -950,6 +1048,11 @@ export default function CheckoutEntregaPage() {
                 : "¿A dónde te lo llevamos?"
             }
             icon={MapPin}
+            done={isAddressValid}
+            active={isCustomerValid && !isAddressValid}
+            collapsed={isAddressValid && !editingSection.direccion}
+            summary={direccionSummary}
+            onEdit={() => editSection("direccion")}
             action={
               savedAddresses.length > 0 && manualAddressEntry ? (
                 <button
@@ -975,7 +1078,7 @@ export default function CheckoutEntregaPage() {
                 "disabled:cursor-wait",
                 geoSuccess
                   ? "border-2 border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white"
-                  : "border border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--accent)] hover:border-[var(--accent)]",
+                  : "border border-[var(--accent)]/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:border-[var(--accent)]",
               )}
             >
               {/* Icono */}
@@ -1012,7 +1115,7 @@ export default function CheckoutEntregaPage() {
                       ? "Buscando tu zona..."
                       : "1 toque · Autollenar"}
                 </span>
-                <span className="block text-lg sm:text-xl font-black tracking-[var(--ls-tight)]">
+                <span className="block text-base sm:text-lg font-bold tracking-[var(--ls-tight)]">
                   {geoSuccess
                     ? "Dirección autollenada"
                     : geoLoading
@@ -1063,7 +1166,7 @@ export default function CheckoutEntregaPage() {
                     setManualAddressEntry(true);
                     setUseNewAddress(true);
                   }}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] h-12 sm:h-13 px-5 text-[length:var(--ts-sm)] sm:text-base font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 active:scale-[0.98] transition-all shadow-sm"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] h-12 sm:h-13 px-5 text-[length:var(--ts-sm)] sm:text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 active:scale-[0.98] transition-all shadow-sm"
                 >
                   <Edit3 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                   Ingresar Dirección Manualmente
@@ -1085,9 +1188,9 @@ export default function CheckoutEntregaPage() {
                 maxLength={300}
                 autoComplete="street-address"
                 required
-                className={pillCls(showAddressError)}
+                className={pillCls(showStreetError)}
               />
-              {showAddressError && (
+              {showStreetError && (
                 <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">
                   Ingresá una dirección válida (mínimo 5 caracteres).
                 </p>
@@ -1165,6 +1268,11 @@ export default function CheckoutEntregaPage() {
                 </select>
               </div>
             </div>
+            {showUbigeoError && (
+              <p className="-mt-1 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">
+                Elegí departamento, provincia y distrito para tu entrega.
+              </p>
+            )}
 
             <div>
               <Label htmlFor="ck-notes">Referencia o instrucciones</Label>
@@ -1198,7 +1306,16 @@ export default function CheckoutEntregaPage() {
           )}
 
           {/* ── PAGO ──────────────────────────────────────────────── */}
-          <SectionBox kicker="Método de pago" title="¿Cómo te queda más cómodo?" icon={Wallet}>
+          <SectionBox
+            kicker="Método de pago"
+            title="¿Cómo te queda más cómodo?"
+            icon={Wallet}
+            done={paymentReady}
+            active={isCustomerValid && isAddressValid && !paymentReady}
+            collapsed={paymentReady && !editingSection.pago}
+            summary={paymentSummary}
+            onEdit={() => editSection("pago")}
+          >
             {paymentConfigsLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 {[1, 2, 3].map((i) => (
@@ -1269,13 +1386,13 @@ export default function CheckoutEntregaPage() {
               // movio al CashChangeModal que se abre al seleccionar efectivo.
               // Aca solo dejamos un resumen del monto/vuelto elegido + boton
               // para reabrir el modal y modificar.
-              <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-[var(--accent-soft)]/50 p-4 flex items-center justify-between gap-3">
+              <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-primary/10 p-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
                     Pago en efectivo
                   </p>
                   {cashAmount >= grandTotal && cashAmount > grandTotal ? (
-                    <p className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
                       Pagas con {fmt(cashAmount)} · vuelto {fmt(cashChange)}
                     </p>
                   ) : (
@@ -1287,7 +1404,7 @@ export default function CheckoutEntregaPage() {
                 <button
                   type="button"
                   onClick={() => setCashModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border border-[var(--accent)]/30 px-3.5 h-9 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border border-[var(--accent)]/30 px-3.5 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors shrink-0"
                 >
                   Cambiar vuelto
                 </button>
@@ -1301,7 +1418,6 @@ export default function CheckoutEntregaPage() {
                 </p>
                 {storesNeedingProof.map((s) => {
                   const proof = paymentProofs[s.storeSlug];
-                  const cfg = paymentConfigs[s.storeSlug];
                   const methodLabel =
                     payment.method === "yape"
                       ? "Yape"
@@ -1342,7 +1458,7 @@ export default function CheckoutEntregaPage() {
                         "w-full flex items-center justify-between gap-3 rounded-2xl border-2 p-4 text-left transition-all",
                         proof
                           ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5 hover:border-[var(--data-success-500)]"
-                          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-primary/10",
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -1399,10 +1515,10 @@ export default function CheckoutEntregaPage() {
             <button
               type="button"
               onClick={() => setCouponsUserOpened(true)}
-              className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-10 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+              className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-11 text-base font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
               <Tag className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-              <span>¿Tenés un cupón? Agregalo</span>
+              <span>¿Tienes un cupón? Agrégalo</span>
               <span className="text-[var(--accent)] font-extrabold" aria-hidden>+</span>
             </button>
           ) : (
@@ -1427,81 +1543,12 @@ export default function CheckoutEntregaPage() {
               Un cupón por cada tienda. El descuento se refleja en el total.
             </p>
 
-            <div className="space-y-3">
-              {Object.keys(byStore).map((sid) => {
-                const g = byStore[sid];
-                const slug = g.storeSlug;
-                const applied = coupons[slug];
-                const inputVal = couponInputs[slug] ?? "";
-                const isLoading = !!couponLoading[slug];
-                const err = couponErrors[slug];
-                return (
-                  <div key={sid} className="space-y-2">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      {g.storeName}
-                    </p>
-                    {applied ? (
-                      <div className="flex items-center justify-between rounded-full border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)] pl-4 pr-2 py-1.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <CheckCircle2
-                            className="h-4 w-4 text-[var(--accent)] shrink-0"
-                            strokeWidth={2.5}
-                            aria-hidden
-                          />
-                          <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] truncate">
-                            {applied.code}
-                          </span>
-                          <span className="text-[length:var(--ts-xs)] text-[var(--accent)] tabular-nums font-bold shrink-0">
-                            −{fmt(applied.discount)}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeCoupon(slug)}
-                          className="inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] px-3 h-7 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={inputVal}
-                          onChange={(e) =>
-                            setCouponInputs((p) => ({ ...p, [slug]: e.target.value.toUpperCase() }))
-                          }
-                          placeholder="Código de cupón"
-                          maxLength={30}
-                          aria-label={`Cupón para ${g.storeName}`}
-                          className={cn(pillCls(!!err), "uppercase tracking-wider font-semibold")}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => validateCoupon(slug)}
-                          disabled={isLoading || !inputVal.trim()}
-                          className={cn(
-                            "shrink-0 inline-flex items-center justify-center rounded-full px-5 h-12",
-                            "text-[length:var(--ts-xs)] font-bold transition-colors",
-                            "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]",
-                            "hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40",
-                            "disabled:opacity-50 disabled:cursor-not-allowed",
-                          )}
-                        >
-                          {isLoading ? "..." : "Aplicar"}
-                        </button>
-                      </div>
-                    )}
-                    {err && !applied && (
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] inline-flex items-center gap-1 ml-4">
-                        <AlertCircle className="h-3 w-3" strokeWidth={2} aria-hidden />
-                        {err}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <CheckoutCouponFields
+              byStore={byStore}
+              coupons={coupons}
+              setCouponForStore={setCouponForStore}
+              totalByStore={totalByStore}
+            />
               </>
           </SectionBox>
           )}
@@ -1511,7 +1558,7 @@ export default function CheckoutEntregaPage() {
             <SectionBox kicker="Puntos Buleje" title="Canjeá lo que tengas" icon={Sparkles}>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] -mt-2">
                 Tienes{" "}
-                <strong className="text-[var(--text-primary)] tabular-nums font-black">
+                <strong className="text-[var(--text-primary)] tabular-nums font-bold">
                   {loyaltyAvailable}
                 </strong>{" "}
                 puntos · 100 pts = S/1
@@ -1551,7 +1598,7 @@ export default function CheckoutEntregaPage() {
                       key={v}
                       type="button"
                       onClick={() => setLoyalty({ redeemPoints: v })}
-                      className="rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors"
+                      className="rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--accent)] transition-colors"
                     >
                       {v} pts
                     </button>
@@ -1560,7 +1607,7 @@ export default function CheckoutEntregaPage() {
                     <button
                       type="button"
                       onClick={() => setLoyalty({ redeemPoints: maxRedeem })}
-                      className="rounded-full border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+                      className="rounded-full border border-[var(--accent)]/30 bg-primary/10 px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
                     >
                       Máximo ({maxRedeem})
                     </button>
@@ -1579,53 +1626,6 @@ export default function CheckoutEntregaPage() {
               CheckoutMobileCtaBar sticky bottom cubre el rol sin duplicar
               el "Revisar pedido" que ya aparece en el CheckoutSummary. */}
         </form>
-
-        {/* CheckoutSummary oculto en mobile — CheckoutMobileCtaBar sticky
-            bottom ya cubre total + CTA revisar pedido (Brandon, mayo 14 2026) */}
-        <div className="hidden lg:block">
-          <CheckoutSummary
-            ctaLabel={!allProofsReady ? "Subí los comprobantes" : "Revisar pedido"}
-            onCtaClick={() => {
-              setTouched(true);
-              if (isAddressValid && allProofsReady)
-                navigateTo("/checkout/confirmar", "Preparando tu resumen");
-            }}
-            ctaDisabled={!isAddressValid || !allProofsReady}
-            couponDiscount={couponDiscountTotal}
-            loyaltyDiscount={loyaltyDiscountTotal}
-            showItems
-            helperText={
-              !allProofsReady
-                ? "Falta subir el comprobante de pago"
-                : "Un paso más para confirmar"
-            }
-          />
-        </div>
-      </div>
-
-      <CheckoutMobileCtaBar
-        primaryLabel="Total"
-        total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
-        ctaLabel={!allProofsReady ? "Falta comprobante" : "Revisar pedido"}
-        ctaOnClick={() => {
-          setTouched(true);
-          if (isAddressValid && allProofsReady)
-            navigateTo("/checkout/confirmar", "Preparando tu resumen");
-        }}
-        ctaDisabled={!isAddressValid || !allProofsReady}
-        disabledReason={
-          !isAddressValid
-            ? "Completá tu dirección"
-            : !allProofsReady
-              ? "Subí los comprobantes"
-              : undefined
-        }
-        helperText={
-          isAddressValid && allProofsReady
-            ? "¡Todo listo! Solo falta confirmar."
-            : "Un paso más para confirmar"
-        }
-      />
 
       <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
       {mapInitial && (

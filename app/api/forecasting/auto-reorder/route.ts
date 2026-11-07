@@ -5,7 +5,7 @@
  * reales en la DB, agrupadas por proveedor.
  *
  * Body (opcional):
- *   suggestions?: ReorderSuggestion[]  — si se omite, las calcula en tiempo real
+ *   productIds?: string[] — si viene, sólo crea órdenes de esos productos (ids ajenos se ignoran)
  *
  * Roles permitidos: admin (solo admin puede crear POs automáticas)
  */
@@ -25,6 +25,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 const BodySchema = z.object({
   /** Si no se envía, se calculan en tiempo real */
   usePrecalculated: z.boolean().optional().default(false),
+  /** Si viene, sólo se piden las sugerencias de estos productos (el servidor calcula cantidades y precios) */
+  productIds: z.array(z.string().trim().min(1).max(64)).min(1).max(500).optional(),
 }).strict();
 
 export async function POST(req: NextRequest) {
@@ -56,7 +58,9 @@ export async function POST(req: NextRequest) {
 
   // 3. Generar sugerencias y crear POs
   try {
-    const suggestions = await generateReorderSuggestions(auth.tenantId);
+    const todas = await generateReorderSuggestions(auth.tenantId);
+    const pedidos = parsed.data.productIds ? new Set(parsed.data.productIds) : null;
+    const suggestions = pedidos ? todas.filter((s) => pedidos.has(String(s.productId))) : todas;
 
     if (suggestions.length === 0) {
       logger.info("[forecasting/auto-reorder] Sin sugerencias — no se crearon POs", {

@@ -109,7 +109,7 @@ export default function NewArrivalsRow() {
               className="group/card relative block overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition-all duration-300 hover:border-[var(--accent)]/40 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/40 motion-reduce:hover:translate-y-0"
             >
               {/* Badge "Nuevo" — tamaño legible */}
-              <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center rounded-md border border-[var(--accent)]/30 bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-xs font-bold uppercase tracking-wider leading-none">
+              <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center rounded-md border border-[var(--accent)]/30 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2.5 py-1 text-xs font-bold uppercase tracking-wider leading-none">
                 Nuevo
               </span>
 

@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { telefonoDeLaSesion } from "@/lib/auth/customer-session";
 
 /**
  * Bandeja del chat marketplace (estilo Messenger) — Brandon 2026-06-06 v2.
@@ -43,7 +44,7 @@ export const GET = withApiHandler("chat-mkt-conversations-get", async (req: Next
   if (!customer.customerId) {
     return NextResponse.json({ error: "Cuenta no vinculada a un teléfono" }, { status: 400 });
   }
-  const phone = normalizePhone(customer.customerId);
+  const phone = telefonoDeLaSesion(customer) ?? "";
   if (!PHONE_RE.test(phone)) {
     return NextResponse.json({ error: "Teléfono de sesión inválido" }, { status: 400 });
   }
@@ -91,7 +92,7 @@ export const PATCH = withApiHandler("chat-mkt-conversations-read", async (req: N
   if (!customer.customerId) {
     return NextResponse.json({ error: "Cuenta no vinculada a un teléfono" }, { status: 400 });
   }
-  const phone = normalizePhone(customer.customerId);
+  const phone = telefonoDeLaSesion(customer) ?? "";
   if (!PHONE_RE.test(phone)) {
     return NextResponse.json({ error: "Teléfono de sesión inválido" }, { status: 400 });
   }

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getQualityTrends } from "@/lib/ai-quality-evaluator";
 import { getABTestResults } from "@/lib/ai-ab-testing";
@@ -16,10 +17,10 @@ interface SubsystemCheck {
 // ── GET handler ─────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "owner"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/ai-assistant/health"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rateLimited = applyRateLimit(req, "MODERATE", "ai-health");
+  const rateLimited = applyRateLimit(req, "SHELL_POLL", "ai-health");
   if (rateLimited) return rateLimited;
 
   const checks: SubsystemCheck[] = [];

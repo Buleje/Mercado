@@ -18,6 +18,7 @@ import type {
   VendorDistrict,
   VendorPlan,
 } from "@/lib/generated/prisma/client";
+import { startOfLimaMonth } from "@/lib/utils";
 
 // Re-export public del state machine para no romper callers existentes.
 // Los consumers pueden tambien importar directo desde
@@ -131,9 +132,9 @@ const tagFor = (id: string) => `vendor-applications:${id}` as const;
 function invalidateAll(id?: string): void {
   // Next 16: revalidateTag requiere 2 args (tag, profile). "max" descarta
   // la entrada sin esperar al ciclo de revalidacion.
-  revalidateTag(TAG_LIST, "max");
-  revalidateTag(TAG_STATS, "max");
-  if (id) revalidateTag(tagFor(id), "max");
+  revalidateTag(TAG_LIST, { expire: 0 });
+  revalidateTag(TAG_STATS, { expire: 0 });
+  if (id) revalidateTag(tagFor(id), { expire: 0 });
 }
 
 // ─── DB class ────────────────────────────────────────────────────────────────
@@ -479,7 +480,7 @@ export const VendorApplicationsDB = {
     cacheTag(TAG_STATS);
 
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthStart = new Date(startOfLimaMonth(0, now));
 
     const [
       pending,

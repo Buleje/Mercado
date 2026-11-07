@@ -1,0 +1,11 @@
+Paralelismo por tipo de subagente (≥50 tandas)
+  frontend             1.09 llamadas/tanda · 8.1% con 2+ · 43327 tandas
+  backend              1.10 llamadas/tanda · 8.6% con 2+ · 21851 tandas
+  general-purpose      1.32 llamadas/tanda · 19.6% con 2+ · 3971 tandas
+  reviewer             1.16 llamadas/tanda · 14.2% con 2+ · 4055 tandas
+  security             1.27 llamadas/tanda · 22.9% con 2+ · 2172 tandas
+  architect            1.40 llamadas/tanda · 34.8% con 2+ · 1115 tandas
+  database             1.26 llamadas/tanda · 19.5% con 2+ · 1071 tandas
+  tester               1.08 llamadas/tanda · 6.8% con 2+ · 615 tandas
+  Explore              1.17 llamadas/tanda · 16.5% con 2+ · 139 tandas
+  claude-code-guide    2.28 llamadas/tanda · 51.7% con 2+ · 60 tandas

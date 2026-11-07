@@ -7,7 +7,6 @@
  */
 import { z } from "zod";
 import { registerEndpoint } from "../registry";
-import { ErrorResponseSchema } from "../common";
 
 // NOTE: mirror of inline schema in route file
 const StorePhoneParamsSchema = z

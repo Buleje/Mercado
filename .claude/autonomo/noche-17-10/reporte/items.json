@@ -1,0 +1,467 @@
+[
+  {
+    "tanda": "",
+    "carril": "ventas-p1",
+    "titulo": "feat(ventas): caja de hoy vs sesión, responsable de la venta, plazo de fiados y comisión visible",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| H01/M01/M23 | Sí | Caja abierta hace 7 días = «Caja de hoy» → «Caja en curso» + chip «Desde el sábado 10/10 · 7 días» + línea «Hoy…» aparte |\n| H02/M02/M17/M39 | Sí (mostrar) | Chip del turno sin nombre → «QA · sin turno»; aviso falso «sin turno no comisiona» corregido; `/api/turnos/activo` devuelve `esMio` |\n| H03/M31/M33 | Sí | Fiado sin fecha caía en «31 a 60» y «Al día» → «Sin plazo · lleva 40 d» + «Poner fecha» |\n| H04/M40/M41/M46 | Sí (M46 parcial) | «2 % · por defecto» → «Regla vigente» con ⓘ, simulador «Si vende S/», CSV con base/regla/tramo; ningún cálculo cambió (21 tests) |\n| H05/M25/M19 | Sí | Arqueo S/ 0.00 sin conteo → «sin contar» |\n| H08/M24 | Sí | UUID y sólo hora → día y hora, «Venta #63a4541a», buscador |\n| H11/M28 | Alcance | Auditoría dice qué cubre |",
+    "antesDespues": "Evidencia: typecheck ✅ 14,6 s; vitest related 755 ✅; qa-capturas main claro 1280, 0 ≥400 (datos simulados con `parchear`, PATCH frenado con `espiar`).\nVer: venta `bc19cbe5` S/ 0,10 con devolución S/ 24,90 (¿devolver más de lo vendido?).",
+    "captura": "",
+    "pendientes": [
+      "PEDIR SECURITY: PATCH `{fechaVence}` en `app/api/fiados/[id]/route.ts`; `esMio` de `/api/turnos/activo`.",
+      "DECIDE BRANDON: M43 base de comisión (venta/cobrado/margen); M12/M39 vendedor ≠ cajero; vender sin turno o en turno ajeno; mover fecha de vencimiento ya puesta."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "ventas-p2",
+    "titulo": "feat(ventas): pos en tarjetas o lista, accesos fijos, esperado negativo explicado y cuenta del fiado",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| H07/M09 | Sí | Catálogo sólo en grilla → tarjetas o lista (se recuerda) |\n| M10 | Sí | «Bajo» con `stockMin || 5` → disponibilidad por tipo (unidad, servicio, alquiler) y regla única `enStockBajo` |\n| H06/M03 | Parcial | Todo dentro de «Más» → hasta 4 accesos fijos por usuario; F3 pide confirmar (faltan «cobrar deuda» y «emitir») |\n| H12/M05 | Sí | «⌘K» en todos lados → «Ctrl+K» en Windows/Linux; hoja de atajos con los del POS |\n| M20 | Sí | Período fijo → Cajeros por semana, mes o todo |\n| M21 | Sí | Ticket promedio dividía entre turnos → entre tickets (contados en el servidor), fórmula en ⓘ |\n| M26 | Sí | Esperado S/ −3.472 sin explicación → egresos en efectivo que lo bajan + «Ver en Movimientos» |\n| M32 | Sí | Sin historial del cliente → pestaña «Cuenta» con compras, abonos con recibo y gestiones |\n| M38 | Sí | «+0 %» sin cobros previos → «sin cobros: no hay con qué comparar» |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "816 tests ✅, guardianes 334 ✅. DECIDE BRANDON: ticket promedio = ventas ÷ tickets; con stockMin 0 el POS avisa sólo al agotarse (antes lo volvía 5); fiado-analytics agrupa meses en UTC. Datos de main: fotos de producto cruzadas."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "ventas-p3",
+    "titulo": "feat(caja): bandeja del turno, por qué no cuadra, cola offline por negocio y recordatorio revisable",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| M22 | Sí | Lo raro del turno suelto → «Para revisar del turno» en Caja › Hoy (5 tipos de aviso con «Ver») |\n| M60 | Parcial | Descuadre sin explicar → «¿Por qué no cuadra?» busca la venta o retiro del mismo monto |\n| Arreglo | Sí | El faltante del Arqueo express («S/ -15.50») se leía sin diferencia → se leen los dos formatos |\n| M28 | Sí | Bitácora sin qué cambió → antes → después; editar/anular movimiento y arqueo anotados; cambiar medio pide motivo |\n| M29 | Sí | Cobros repetidos invisibles → «Para revisar (1): la misma venta entró 2 veces» |\n| M30 | Sí | Cierre sin pendientes → constancia y pendientes antes de cerrar; cerrar dos veces = 409 |\n| M34 + recibos | Sí | Abono sin saldo → saldo antes → después; recibo con la deuda original de SU compra y cuotas del mismo cobro juntas |\n| M36 | Sí | Recordatorio directo → vista previa editable, queda anotado |\n| M59 (BUG) | Sí | Cola sin conexión mezclada y POST DOBLE por venta → separada por negocio, «Descartar», 1 POST con clave de idempotencia |\n| H06 | Sí | «Cobrar una deuda» y «Emitir boleta o factura» en el «Más»; el «Más» entra en una fila a 1280 |\n| fiado-analytics | Sí | Meses en UTC → hora de Lima |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: motivo siempre obligatorio, tolerancia 0 en pagos digitales, deshacer un abono, N.° de operación Yape, asignar cada aviso a una persona, último contacto en el recordatorio."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "ventas-r1",
+    "titulo": "fix(pos): la cola sin conexión reintenta 429/5xx con la misma clave y resuelve la carrera por clave",
+    "resumen": "| Hallazgo | Antes → Después |\n|---|---|\n| ALTO: límite de ventas | 10 ventas cada 15 min por conexión: la venta 11 en hora punta rebotaba (dueño y cajeros comparten conexión) → 100 por minuto por cajero, después del login |\n| ALTO: cola sin conexión | Cualquier error dejaba la venta en «No pasó» para siempre; con un 504 la venta pudo guardarse y el aviso pedía volver a anotarla (cobro doble) → 429/5xx/sin red siguen pendientes con la misma clave; «Reintentar»; «Descartar» primero busca la venta por su clave |\n| Dos envíos con la misma clave | El segundo daba 500 y la venta (que existía) quedaba en «No pasó» → 200 «ya estaba» |\n| Venta descartada | Reaparecía si se descartaba durante la sincronización → no reaparece |\n| Cierre ya hecho | Reintentar mostraba error → muestra el cierre guardado |\n| Negocio de cada venta en cola | Salía de una cookie de 7 días → sale de la sesión |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "58 tests ✅. DECIDE BRANDON: cobro en línea con error ambiguo (504) puede duplicarse si el cajero vuelve a cobrar con otra clave."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "ventas-dev",
+    "titulo": "fix(caja): /api/returns con venta usa el mismo tope que la devolucion del POS",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| Venta rara S/ 0,10 con devolución S/ 24,90 | Dato de prueba del 09-10 (trueque QA) creado 3 h antes del arreglo de la pantalla del POS; desde entonces 0 devoluciones pasan lo vendido |\n| `POST /api/returns` con venta | Seguía SIN tope: devolvía precio × cantidad sin descontar trueque ni descuento, la misma unidad N veces, acreditaba al teléfono que mandaran, saltaba «efectivo sólo admin o dueño» y no validaba el cuerpo → pasa por la misma cuenta del POS con candado y Zod |",
+    "antesDespues": "6 de 8 tests fallaban sin el arreglo; 26/26 con él. Ninguna pantalla llama a esa ruta, pero un cajero o almacenero podía usarla directo.",
+    "captura": "",
+    "pendientes": [
+      "Queda: devolver un PEDIDO por la misma ruta tiene los mismos huecos; el saldo de crédito del cliente se usa con dos sentidos (la devolución a crédito sube saldo a favor, pero Clientes lo muestra como «Debe S/ X»)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "ventas-dev2",
+    "titulo": "fix(caja): devolver un pedido topa como la venta y el saldo de credito es saldo a favor",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| Devolver un pedido por la ruta directa | Sin tope (la misma unidad N veces), acreditaba al teléfono que mandaran, sin candado → candado por pedido, tope por unidades y por total, crédito al cliente DEL pedido; el estado del pedido no se toca |\n| Devoluciones en efectivo | También cualquier rol → sólo admin o dueño; unidades enteras |\n| Saldo del cliente | El mismo campo se usaba como «saldo a favor» (devoluciones) y se mostraba como «Debe S/ X» → es saldo a favor; Clientes muestra «A favor S/ X»; consumir más del que hay = 422; moverlo a mano sólo admin/dueño |\n| Ficha del cliente | «Disponible» mezclaba el saldo → límite − deuda de fiados, con su línea de saldo a favor aparte |\n| Campañas | El segmento «deudores» salía vacío → lee la deuda real |",
+    "antesDespues": "Con sesión real: devolver 5 de 4 = 400, producto ajeno = 400, pedido de otro negocio = 404, sin sesión = 401; 0 devoluciones creadas. Ningún cliente tenía saldo distinto de 0: nada ambiguo en los datos.",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "pedidos-p1",
+    "titulo": "feat(pedidos): siguiente paso, quién lo lleva y la plata en cada pedido + historial real",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| B1 | Sí | Repartidor asignado no se guardaba → se guarda («Lo lleva Vecino QA», probado y borrado) |\n| B2 | Sí | Motivo de cancelar se perdía → se guarda y Archivados lo muestra en «Cierre» |\n| B3 | Sí, SECURITY | Notas internas nunca se guardaban → quedan con autor y hora |\n| B4 | Sí, SECURITY | Historial decía siempre «admin» → usuario de la sesión |\n| B5 | No, SECURITY | Cambio de estado en lote sin historial (`orders.db.ts:744`, zona de peligro) |\n| B6 | No, DECIDE BRANDON | «Yape falso» borra el pedido en vez de cancelarlo |\n| P03/M49, P26 | Sí | Botón con el paso que sigue, la plata («Cobrar S/ 31.50 al entregar»), quién lo lleva, «Falta teléfono · dirección» |\n| P05, P10 | Parcial / Sí | Línea de tiempo real con quién y nota |\n| O02/P01, O03/P02, O04/P06 | Sí | Vacíos con salida, filtros visibles y quitables, «Sin pedidos», «Por cobrar» |\n| O09/P11, P07 | Sí | Archivados con «Plata», «Pedido el», «Cierre»; búsqueda por número |",
+    "antesDespues": "Endpoint nuevo `/api/orders/historial`: 200 con sesión, 400 sin pedidos, 401 sin sesión, 403 ids ajenos. Typecheck ✅, 47 tests ✅.",
+    "captura": "",
+    "pendientes": [
+      "Queda: asignar repartidor reinicia «sin avanzar»; B5; B7 filtro «con notas» muerto (p2); nota de prueba en pedido QA «Test» de main."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "pedidos-p2",
+    "titulo": "feat(reparto): equipo que guarda, asignar eligiendo el pedido, ranking honesto y rutas aparte",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| P20/P22 | Sí | Editar, pausar y borrar repartidor daban 404 y la pantalla fingía guardar → ruta `delivery/partners/[id]` real, teléfono único; con historial se pausa, no se borra (11 tests) |\n| P25/M47 | Sí | Botón apagado sin explicación + «ID de orden» a mano → «Para asignar necesitas» con botones; pedido elegido de una lista; tabla con repartidor y fecha (salían vacíos) |\n| P29 | Sí | Permisos sin explicación → ⓘ por rol y quién hizo el último cambio |\n| P30 | Sí | Red de reparto invisible → «Reparten: tu equipo» |\n| P31 | Sí | «Pagos / Por pagar» → «Retiros / Les debes» (no incluye efectivo cobrado a clientes) |\n| P37/P38 | Sí | Periodo falso y 0 % sin ofertas → fechas reales y «Sin datos» (9 tests) |\n| P14 | Sí | Igual con o sin señal → «Sin señal desde el 18 jun.» y punto punteado |\n| P17 | Sí | Rutas plegadas bajo el mapa → sección «Rutas y paradas» |\n| B7 | → p4 | — |",
+    "antesDespues": "Seguridad de paso: la lista de repartidores mandaba `passwordHash` al navegador del cajero → la clase lo omite.",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: ofertas automáticas pagan 5 + 1,5/km ignorando la tarifa de cada repartidor; las marcas de «Permisos de tienda» no se hacen cumplir en ninguna acción; P13, P19, P21."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "pedidos-p3",
+    "titulo": "feat(reparto): retiros conciliables, ficha del repartidor, feed por pedido y revisar con motivo",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| P34/P35/P36 | Sí | Retiros sin filtros → filtro por estado, fechas y repartidor; totales del rango; alertas que avisan sin decidir; CSV |\n| P24/P41/P42 | Sí | Sin ficha → ficha del repartidor desde Equipo y Ranking: 5 cifras, «Ganado» y «Pagado» aparte, incidencias, tarea con responsable |\n| P18 | Sí | Último estado suelto (el mapa lo leía mal) → feed del día por pedido con quién hizo cada cambio |\n| P45 | Parcial | Botón copiar/abrir seguimiento en el feed |\n| P23 | Sí | Rechazar postulante con un clic sin motivo → ventana con motivo y alcance; la tarjeta dice quién decidió |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "698 tests ✅. DECIDE BRANDON: N.° de operación obligatorio al pagar por Yape; constancia o foto del pago."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "pedidos-n",
+    "titulo": "feat(pedidos): preparación con hoja de recojo, análisis operativo y agenda de entregas",
+    "resumen": "| N | Estado | Antes → Después |\n|---|---|---|\n| N02 Preparación | HECHO | No existía → qué juntar por producto y por pedido, «listo para salir» (sin tocar la máquina de estados), hoja de recojo imprimible |\n| N06 Análisis operativo | HECHO | No existía → tiempo por paso, atascados, cancelados por motivo, entregas por repartidor y zona, demanda por hora/día/canal (servidor) |\n| N01 Programados | HECHO | La agenda tenía 0 filas: el pedido DESCARTABA el día y la franja que el cliente elegía en el checkout → se guardan (si falla, el pedido sale igual) y la agenda los muestra |\n| N03 Incidencias, N04 Devoluciones, N05 Zonas y tarifas | DECIDE BRANDON | Los pedidos no guardan su zona y no hay tabla de devoluciones ni de incidencias |",
+    "antesDespues": "Rutas nuevas 200 en main (Preparación: 10 pedidos; Análisis: 20). 56 tests ✅.",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "compras-p1",
+    "titulo": "fix(compras): la canasta vaciada no resucita y comprar separa +1, costo con fuente, igv y condición",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| C07/C58 (BUG) | Sí | Vaciar la canasta dejaba el borrador y volvía al recargar → se borra; dos pestañas no se pisan; «Guardada HH:MM» |\n| C02 | Sí | Un clic sumaba toda la sugerencia (21) → botones «+1» y «+N» con «Sugerido: N und»; cantidad editable |\n| C03 | Sí | La tarjeta mostraba el precio de VENTA como costo → costo real o «sin costo»; cada línea dice de dónde sale su costo |\n| C04 | Sí | IGV escondido → base, IGV y exonerado a la vista (Carne de Res: 19,49 + 3,51 = 23,00) |\n| C05 | Parcial | «Condición de pago» con su efecto y fecha («vence el domingo 01/11»); medio previsto = DECIDE BRANDON (columna) |\n| C08 + crear/recibir/pagar | Sí | La orden creada dice qué sigue y si dejó deuda; ⓘ explica los tres pasos |\n| C17/C18 | Sí | Recibir con rótulos «Esperado»/«Llegó» y aviso cuando no hay órdenes pendientes |",
+    "antesDespues": "Probado en main: vaciar + recargar → borrador null, 0 líneas. 75 tests ✅.",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "compras-p2",
+    "titulo": "feat(compras): en qué va cada orden, entregas por día y recibir con o sin orden",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| C10/C59 | Sí | Sólo el estado → «Sigue: Pagar S/ 250.00» en la fila; detalle con Aprobación, Entrega, Comprobante y Pago, con botón |\n| C15 | Sí | Cancelaba a ciegas → antes de confirmar dice qué pasa con stock y deuda; Pago lee Por pagar (antes «Contado» con S/ 200 de deuda) |\n| C16 | Sí | Duplicar → «Repetir con revisión», avisa costos cambiados |\n| C19 | Sí | Faltante invisible → «Llegó 10 de 24 · faltan 14» |\n| C23 | Sí | Guardar a ciegas → «Suma al stock / De más / La orden queda recibida entera», en vivo |\n| C18 | Sí (BUG) | La recepción sin orden nunca se guardaba → se guarda con motivo; no suma stock ni deuda |\n| C14 | Sí (sin almacén) | Nuevo: sección Entregas (atrasadas, hoy, sin fecha) con cambio de fecha y «Recibir» |",
+    "antesDespues": "29 tests ✅ (`compras-ciclo-oc`); 7 capturas 1280 sin errores ni escrituras.",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: cancelar una OC a crédito con parte recibida anula la deuda ENTERA; lo recibido sin orden no suma stock; «marcar recibida» suma también lo marcado «no llegará»."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-p3",
+    "titulo": "feat(compras): por pagar con origen y documento, calendario, propuesta y estado de cuenta",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| C41 | Sí | Descripción libre e id técnico → origen elegido (factura/boleta con serie y número, orden, saldo inicial, otro); orden visible «Orden de compra #053-YI71»; «Vincular a orden» en el ⋯ |\n| C42 | Sí | La misma factura creaba otra deuda → aviso rojo al escribirla + 409 en el servidor; mismo importe sólo avisa; buscador encuentra «F1-123» |\n| C45 | Vista | Sección Calendario con antigüedad del saldo por tramos |\n| C46 | Vista | Sección Propuesta: vencidas y de la semana marcadas, total y CSV (no paga) |\n| C48 | Sí | Estado de cuenta del proveedor al corte (cargos, abonos, saldo, vencido) calculado en el servidor, con CSV |",
+    "antesDespues": "Evidencia: fila del título 104 → 48 px a 1280; 60 tests ✅; 0 errores, 0 ≥400.",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: C44 anticipos; C45 reagendar con promesa; C46 caja prevista y cuenta destino; moneda/emisor/adjunto como columnas.",
+      "PEDIR SECURITY: PATCH `/api/payables/[id]` deja cambiar monto y estado sin registrar pagos (no tocado)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-p4",
+    "titulo": "feat(compras): devoluciones con tope de lo recibido, anular en vez de borrar y costo pendiente",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| C49 | Sí | Se podía devolver cualquier cantidad → tope en el servidor (409 «pides 11 y puedes devolver hasta 10»), aviso previo en el formulario |\n| C51 | Sí | Sin costo salía S/ 0 → «Pendiente de valoración» + «Poner costo» (orden de origen → última compra → ficha) |\n| C53 | Sí | Mandaba un WhatsApp solo → mensaje preparado que revisas y envías; próximo paso y «esperando hace N días» |\n| C55 | Sí | Borrar se llevaba el registro y devolvía stock a ciegas → «Anulada» con motivo, quién y fecha; el stock vuelve una vez y sólo si la mercadería volvió |\n| C56 | Sí | Recuperación sin base → «4 devoluciones (sin 1 anulada) · recuperado S/ 22,80 de S/ 49,50»; sin valorar aparte |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "75 tests ✅ (3 archivos nuevos sobre stock). PEDIR SECURITY: rutas nuevas `anular` y `reingresar` (mueven stock, sólo admin).",
+      "DECIDE BRANDON: columnas para responsable, fecha prometida, fotos, origen, lote y resolución; monto parcial de la nota de crédito."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-p5",
+    "titulo": "feat(compras): sugerencias con su cuenta y sin servicios; órdenes sin doble stock ni deuda borrada",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| C01/O07 | Sí | Servicios entraban como «AGOTADO / a reponer» → insignia SERVICIO/ALQUILER, «se contrata por m³», sin sugerido (en Blas: «Aserrado de madera», «Cargador Frontal CAT»); también fuera del auto-reorden y alertas |\n| C25 | Sí | «No se reponen por stock: 1 servicio y 1 alquiler» con ⓘ; «Nada que reponer» ya no sale verde con productos bajo mínimo |\n| C26 | Sí | Cada tarjeta dice causa y criterio; agrupar por urgencia o por causa; la OC nace con criterio y fecha |\n| C27 | Sí | En camino = pedido − recibido − no llegará; borradores aparte; «+6 en camino (llega martes 20/10)» |\n| C28 | Sí | «¿Cómo se calculó?»: venta, plazo, cuándo pedir, lo que tienes, cuánto pedir; aviso si hay pocos datos |\n| C30 | No | DECIDE BRANDON (presentación y mínimo por proveedor = schema) |",
+    "antesDespues": "«A reponer» en Comprar: 3 → 1 (los 2 servicios fuera). 60 tests ✅.",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: tipo propio «alquiler»; unificar motores de predicción, IA y compras."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-p6",
+    "titulo": "feat(compras): ficha del proveedor, duplicados, evaluación por período y precios del mercado",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| C33 | Sí | Sólo existía Editar → ficha de consulta (deuda, compras, en camino, devoluciones, datos, historial) con `?proveedor=` |\n| C34 | Sí | Sin validar → RUC 11 / DNI 8; mismo documento = 409 salvo confirmar; «Posible duplicado» por nombre/teléfono/correo |\n| C36 | Sí | Puntaje sin muestra → «Sin evaluar» con menos de 3 órdenes; muestra y fórmula a la vista; 3/6/12 meses |\n| C37 | Sí | Precio crudo mezclando unidades → costo puesto (descuento, IGV, flete repartidos) dentro de la misma unidad |\n| C38 | Sí | Un número en el navegador → precios del mercado con fecha, fuente, moneda y quién lo vio; sólo soles ≤30 días; compartir opcional |\n| C39 | Ya existía | Revisado |\n| Textos | Sí | «ordenes», «recepciónes» con tilde; fechas con año |",
+    "antesDespues": "Typecheck 0 en todo el repo (en su momento); 48 tests ✅.",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: unir proveedores duplicados; precios del mercado ligados al catálogo o tabla propia.",
+      "PEDIR SECURITY: `app/api/suppliers/[id]/ficha` (deuda sólo gestión), PUT `app/api/compras/mercado` (admin y almacenero)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-p7",
+    "titulo": "feat(compras): buscar en todo, revisar pendientes, atajos y avisos de plantilla, paquete y factura",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| C57 | Sí | Sin buscador → «Buscar» (o «/») encuentra órdenes, proveedores, cuentas, recepciones y devoluciones y abre cada una |\n| C64 | Sí | Sin bandeja → «Revisar 7»: costo faltante, órdenes vencidas, cuentas vencidas, recepciones con diferencia |\n| C63 | Sí | Sin atajos → / N R anunciados y apagables, sin dispararse con un modal abierto |\n| C61 | Sí | «No hay paquetes» sin salida → plantilla; el paquete usa el costo de tu última compra; avisa proveedor cambiado y costos viejos |\n| C60 | Sí | Nada avisaba → comprobante repetido bajo el campo y costos dudosos de la factura leída (±50 %) |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "28 tests ✅. C62 = zona de peligro (no). DECIDE BRANDON: pantalla para armar paquetes; almacenero sin acceso a paquetes (role-permissions)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-n",
+    "titulo": "feat(compras): conciliación de documentos en por pagar: orden, recepción, factura, cuenta y pago",
+    "resumen": "| N | Estado | Detalle |\n|---|---|---|\n| N03 Agenda de entregas | Ya hecho hoy | Sección Entregas (p2) |\n| N07 Costo puesto | Parcial hoy | Costo puesto en Comparar (p6) |\n| N04 Conciliación de documentos | HECHO | Por pagar › Conciliación: orden ↔ llegó ↔ factura ↔ cuenta ↔ pago lado a lado, 18 tipos de diferencia con su papel de origen, calculado en el servidor (18 tests). Main: 10 filas, 2 por revisar. Hallazgo: orden cancelada con mercadería recibida salía «Cuadra» → «Por revisar: 2 u (S/ 30) sin deuda» |\n| N01 Solicitudes internas | DECIDE BRANDON | Tabla nueva de pedidos internos de compra |\n| N02 Plan y presupuesto | DECIDE BRANDON | No hay presupuesto de compras: guardarlo por mes (y categoría/proveedor) + 3 escenarios sobre las sugerencias |\n| N05 Anticipos | DECIDE BRANDON | Tabla de adelantos al proveedor con candado para no aplicarlos dos veces |\n| N06 Contratos | DECIDE BRANDON | Acuerdos de compra con precio y tope |\n| N08 Colaboración del proveedor | DECIDE BRANDON | 0 portales de proveedor en la base; dar acceso pasa por security |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "Pendiente: Entregas valora en S/ 0 las órdenes automáticas con costo 0 por producto (`lib/compras/ciclo-oc.ts:117`)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-rem",
+    "titulo": "fix(compras): las entregas valoran las órdenes automáticas sin costo por producto",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| Entregas | Las órdenes automáticas con costo 0 por producto valían S/ 0 → regla única: el total se reparte por unidad pedida (15 de 20 unidades = S/ 150) |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "compras-403",
+    "titulo": "fix(compras): sin permiso en devoluciones ya no dice «tu sesión venció»",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| Sin permiso para anular/reingresar | Decía «Tu sesión venció, recarga» → «Tu usuario no tiene permiso para esto» (401 sigue siendo sesión vencida) |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "comp-p1",
+    "titulo": "feat(comprobantes): emitir eligiendo el pedido, con revisión antes y resultado real",
+    "resumen": "| Código | Hecho/No | Antes → Después |\n|---|---|---|\n| F01 | Hecho | Título fijo «Emitir comprobante SUNAT» → aviso oficial / prueba / «no se crea nada»; botón deshabilitado con modo apagado |\n| F02 / M54 | Hecho | Requisitos sólo en un ⓘ → lista con ✓/✗, ⓘ «qué hacer» y «Configurar →» |\n| F03 | Hecho | Sin ambiente ni serie → «Emite <razón social> · RUC» y la serie real |\n| F04 / M53 | Hecho | ID del pedido a mano → buscador; facturados/cancelados visibles pero no elegibles; `?emitir=` |\n| F05 | Parcial | Cliente precargado del pedido y validado (RUC 11, DNI 8, boleta > S/ 700 pide DNI) |\n| F07 / F43 | Hecho | Sin resumen → líneas, descuento, total y «no cobra otra vez ni descuenta stock» |\n| F08 / F47 | Hecho | Aviso genérico → resultado según la respuesta real |\n| F41 (UI) / F42 (UI) | Hecho | Doble clic / «Emitiendo…» eterno → no se elige un pedido ya facturado; red caída = «Revisar el pedido» |\n| F10 | Hecho | «Seguir sin documento (ajuste interno)» + aviso en Confirmar |\n| B1-B8 | Hecho | retrying=Pendiente · sin fila inventada · red caída · texto falso del modo · buscador NC que filtra · «Marcar emitida» · 202 = en cola · fuera Dirección ignorada |",
+    "antesDespues": "Evidencia: typecheck limpio; 317 tests verdes (20 nuevos); navegador en main: 20 pedidos (1 cancelado bloqueado), paso 2 en S/ 7,20; NC «18,00 cono» deja 2 de 13; 0 respuestas ≥400.",
+    "captura": "",
+    "pendientes": [
+      "Queda: F06 y F15 (decide Brandon); ventas POS no facturables desde aquí (zona de peligro); F41 servidor (migración + security); → pedidos: «Emitir comprobante» en el ⋯ del pedido con `?emitir=<id>`."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "comp-p2",
+    "titulo": "feat(notas-credito): lo que queda por acreditar, campos por motivo, efectos y plantillas",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| F09 | Sí | Tope sólo en el POST → «lo que queda por acreditar» calculado en el servidor (`lib/notas-credito/remanente.ts` + GET) que leen pantalla y POST |\n| F11 | Sí | Monto suelto → cada motivo pide lo suyo (03 decía/debe decir, 02 RUC, 07/08 unidades, 04/05/09/10 base) |\n| F12 | Sí | Precio de lista → unidades × precio cobrado (venta 18,00, 1 de 3 conos = 6,00 = 5,08 + 0,92) |\n| F13 | Sí | Nuevo «Qué cambia al crearla» (18,00 → 12,00; stock, caja, saldo, comisión) |\n| F14 | Sí | Plantillas con versión, alcance y reglas |\n| F16 | Sí | Detalle con el documento de origen: venta, sus notas, devoluciones de caja y lo que queda |\n| M55 | Sí | `pos-devolucion` verde (fixture mandaba 06 por la mitad; la ruta no cambió) |",
+    "antesDespues": "Hallazgo transversal: `--surface-alt` no existe y lo usan ~120 archivos (salen sin fondo).",
+    "captura": "",
+    "pendientes": [
+      "Sin hacer: guardar unidades por nota (schema): dos notas 07 pueden acreditar la misma unidad (hay aviso).",
+      "DECIDE BRANDON: plantillas en localStorage; sin documento el IGV se estima al 18 %."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "comp-r1",
+    "titulo": "fix(notas-credito): alta en fila con candado por documento y número, sin acreditar dos veces",
+    "resumen": "| Hallazgo | Antes → Después |\n|---|---|\n| Dos notas a la vez sobre la misma venta | Se acreditaba el doble y repetían número → candado por documento y por número: probado en main, 201 + 400 |\n| Número de la nota | Tomaba «la última nota» → el correlativo más alto ya usado, bajo candado del negocio |\n| «Usar lo devuelto en Caja» | Volvía a proponer la unidad ya acreditada → se esconde cuando lo acreditado cubre lo devuelto |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "5 tests de concurrencia (3 fallan sin el candado). Las 3 notas de prueba de main quedaron ANULADAS (NC-0001 a 0003 consumidos)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "comp-p3",
+    "titulo": "feat(guias): guía de remisión desde el pedido, en 5 etapas, unidades por nombre y borrador",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| F17/M56 | Sí | N° de orden a mano → buscador; precarga destinatario, RUC, dirección, llegada, comprobante e ítems; enlace `?guia=<pedido>` |\n| F18 | Sí | Un formulario → 5 etapas con «!» donde falta, resumen fijo, borrador 7 días; «Crear guía» bloqueado hasta completar |\n| F19 | Sí | «Usar de nuevo» partidas, destinos y transportes anteriores |\n| F20 | Sí | Privado/Público con ⓘ (no se guarda: falta columna) |\n| F22 | Sí | «Und» libre → unidad por nombre con código SUNAT; peso estimado aparte |\n| F23 | Parcial | Etapa Revisar con lo que falta y «Ir a…»; sin mapa |\n| F21, F24 | No | DECIDE BRANDON (cambio de base) |",
+    "antesDespues": "Seguridad arreglada de paso: `app/api/guias-remision/route.ts:84` enlazaba un pedido de OTRO negocio si venían ítems → ahora valida siempre el negocio; la impresión no escapaba HTML (XSS) → `escapeHtml`. Desborde a 400 px arreglado.",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "comp-p4",
+    "titulo": "feat(cotizaciones): cliente de tu lista, stock sin reservar, confirmar todo y plantillas del equipo",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| F25 | Sí | Cliente a mano → buscador (nombre, RUC/DNI, celular); «Nuevo cliente» encima con lo escrito; RUC repetido avisa «Usar este» |\n| F26 | Sí (sin alquiler) | Sin stock → cada línea dice cuánto hay («faltan 8 (hay 12)», «servicio: no usa stock»), cotizar no aparta; convertir revisa otra vez y no convierte dos veces |\n| F27 | Sí | Confirmar sólo pedía fecha → cliente, líneas, base, IGV, total, vigencia 7/15/30, condiciones, «Cambiar» por bloque, vista impresa |\n| F28 | Sí | Plantillas sólo del navegador → también «De tu empresa» (dueño, versiones) |\n| F31 | Sí | Sin bandeja → «Por seguir» con autor, celular y último recordatorio; pregunta antes de repetir en 24 h |",
+    "antesDespues": "Arreglos de paso: vigencia salía un día antes; el impreso mostraba el % de descuento como soles; buscador de productos ignoraba el filtro; WhatsApp sin celular; renovar perdía el cliente.",
+    "captura": "",
+    "pendientes": [
+      "PEDIR SECURITY: convertir + cliente/producto de otro negocio al crear. DECIDE BRANDON: alquiler como tipo. Clientes: el alta pisa un cliente por celular (ver)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "comp-p5",
+    "titulo": "feat(comprobantes): seguimiento de pendientes, expediente, conciliación y filtros con período",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| F33 | Sí | Sin accesos → hasta 3 fijados por persona |\n| F34 | Sí | Buscaba en 100 filas del navegador → busca en la base por serie-número, cliente/RUC, #pedido, importe y estado |\n| F36 | Sí | Sin período → período, chips, «Restablecer alcance», vistas guardadas; tabla, cifras y Excel con el mismo alcance |\n| F37 | Sí | Sin atajos → «/» busca, «N» abre Emitir; Enter no envía nada |\n| F38 | Sí | 4 cifras sin período → 10 con período, fórmula y «Sin datos»; emitido ≠ cobrado |\n| F40 | Sí | RUC a mano → sugiere clientes anteriores y avisa si ese RUC salió con otro nombre |\n| F56/M58/N02 | Sí | Nueva vista «Seguimiento» con la bandeja de pendientes |\n| N03 | Sí | Nuevo expediente de la operación (`?expediente=<id>`): venta, comprobante, notas, guías, cotización, pagos; separa «Electrónico · SUNAT» de «Interno» |\n| N08 | Sí | Nueva conciliación documental por período |",
+    "antesDespues": "Arreglos de paso: filtros aplastados a 400 px («Tip»); cotización que vence el lunes decía «domingo · hoy».",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: N04 aprobaciones (tabla nueva), N07 notas de débito (emisión + tabla + motivos), N01 borradores, N05/N06; filtro «responsable» (el comprobante no guarda quién lo emitió)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "seg-t1",
+    "titulo": "fix(seguridad): pedidos solo los cambia quien escribe; notas y plazo de fiados sin pérdidas",
+    "resumen": "| Hallazgo | Antes → Después |\n|---|---|\n| ALTO: cambiar y borrar pedidos | Cualquier rol del panel (el almacenero, que sólo lee pedidos) podía cambiar estado, cancelar (devuelve stock), tocar deuda y borrar → cambiar: cajero y dueño de tienda (+ gestión); borrar: sólo gestión; el cambio en lote igual |\n| Historial de pedidos | Entraban repartidor y proveedor → cajero, almacenero, analista y dueño de tienda |\n| Registro de actividad | 8 filas quedaban sin negocio (`__unknown__`) → llevan el negocio |\n| Notas internas | Se borraban a los 90 días con la limpieza → quedan fuera de la limpieza |\n| Plazo del fiado | Cerrar el fiado y ponerle plazo a la vez guardaba el estado aunque la fecha fallara → valida la fecha antes de escribir |",
+    "antesDespues": "Probado con los 4 usuarios QA (rol-probe): almacenero 403 al cambiar y en lote; cajero 403 al borrar. 101 tests ✅.",
+    "captura": "",
+    "pendientes": [
+      "Pendiente: 5 notas de prueba del revisor en el pedido QA de main (no hay forma de borrarlas sin SQL a mano)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "seg-t3",
+    "titulo": "fix(seguridad): cotización convierte sin 503, estados con tabla, alta sin pisar y csv sin fórmulas",
+    "resumen": "| Hallazgo | Antes → Después |\n|---|---|\n| ALTO: convertir cotización en pedido | Fallaba SIEMPRE (503: celular vacío contra la referencia al cliente) → convierte (probado de punta a punta en main y limpiado) |\n| Estado de una cotización | Se podía poner cualquiera (CONVERTIDA → BORRADOR → segundo pedido) → tabla de pasos; CONVERTIDA es final (409) |\n| Alta de cliente | Un segundo alta con el mismo celular PISABA nombre, RUC, razón social y borraba direcciones → 409 con el cliente existente y «Usar este»; POS, alta inicial y tienda usan «si existe, úsalo» sin modificarlo; ahora guarda el límite de crédito |\n| Cancelar orden de compra | El almacenero podía cancelar y bajar una cuenta por pagar → con deuda, sólo gestión; cuerpo vacío daba 500 → 400 |\n| Anular/reingresar devoluciones | También el encargado → sólo dueño o administrador |\n| Exportes CSV | Un texto que empieza con = + - @ llegaba a Excel como fórmula → helper único `lib/csv/celda.ts` en 5 exportes |",
+    "antesDespues": "Nota: el aviso «ya está registrado en otra tienda de la red» (decisión del 10-06) revela que ese celular existe en otra tienda.",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "seg-rl",
+    "titulo": "fix(api): límites de la operación diaria después del login y por usuario; ping y chat sin 429",
+    "resumen": "| Ruta | Antes | Después | Por qué |\n|---|---|---|---|\n| POST /api/sales (yo) | STRICT por IP antes del login (10 ventas/15 min) | GENEROUS por negocio+cajero tras el login | La venta 11 en hora punta daba 429 (IP compartida) |\n| delivery/me/ping | STRICT por IP | POLL (60/5 min) por repartidor | La app manda la ubicación cada 30 s: a los 5 min el repartidor quedaba congelado 10 min en el mapa |\n| chat GET/POST | un límite compartido | GET con POLL, POST sigue STRICT | El widget se refresca cada 15 s: a los 10 refrescos el cliente no podía escribir |\n| admin/sunat/generate-invoice | STRICT por IP | GENEROUS por negocio+usuario | Una boleta por venta |\n| ocr/invoice, admin/whatsapp/suggest | STRICT por IP | MODERATE por negocio+usuario | Facturas en lote, IP compartida |\n| cash-registers POST/PATCH | STRICT/MODERATE por IP | MODERATE por negocio+usuario | Abrir, movimientos, arqueo, cierre |\n| delivery proof/deliver | STRICT por IP | STRICT por repartidor | Varios repartidores salen por la misma IP móvil |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "9 rutas revisadas quedan igual (ocasionales, cron o públicas contra abuso)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "seg-pii",
+    "titulo": "fix(seguridad): chat de la tienda y listas piden identidad; sugerir por whatsapp con roles y tope",
+    "resumen": "| Hallazgo | Antes → Después |\n|---|---|\n| ALTO: chat del cliente | `GET /api/chat?phone=…` SIN sesión devolvía el nombre completo del cliente y sus mensajes (probado: 200 con nombre y 2 mensajes) → exige la sesión de cliente verificada y que el celular sea el suyo (sin cookie 401, otro celular 403) |\n| Listas de compras | La ruta no pedía rol y tomaba el negocio de la petición → roles según la matriz y negocio de la sesión |\n| Respuestas sugeridas de WhatsApp (IA) | Cualquier sesión, sin tope de gasto → roles que contestan WhatsApp, presupuesto mensual de IA y tope de 150 por negocio y día |",
+    "antesDespues": "20 tests nuevos ✅.",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: `/api/chat/public?action=open` devuelve sin sesión la conversación abierta de cualquier celular (chat de invitado del marketplace)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "seg-chat",
+    "titulo": "fix(seguridad): el chat de invitado pide el token de la conversación para leer o escribir",
+    "resumen": "| Qué | Antes (sin sesión) → Después |\n|---|---|\n| ALTO: abrir el chat con el celular de otro | 200 + la conversación de esa persona → 401 «inicia sesión», sin datos |\n| Leer mensajes | 200 con 7 mensajes AJENOS: nombre, texto, fotos, ubicación y pedido → 401 sin token, 403 con token de otra conversación, 200 con el propio |\n| Escribir y escuchar en vivo | Se podía en conversaciones ajenas → 401 sin token |\n| Abrir un chat nuevo | 200 → 200, ahora con un token firmado que el widget guarda |",
+    "antesDespues": "Efecto: un invitado que abrió su chat antes del cambio pierde su historial hasta que inicie sesión (la tienda lo conserva).",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "seg-t4",
+    "titulo": "fix(seguridad): el chat exige sesión para escribir, el token vence y las subidas piden el hilo",
+    "resumen": "| Hallazgo | Antes → Después |\n|---|---|\n| Escribir por el chat | Sin sesión se escribía con el celular de otro; un cliente logueado escribía como «sistema» → sin sesión 401, otro celular 403, «sistema»/«bot» 403 (el aviso del bot lo arma el servidor) |\n| Token del hilo | No vencía → vence a los 30 días |\n| Sentry | Guardaba el token de la URL → se tacha `*token=` en URLs, migas y eventos |\n| Pedido en el chat | Con un pedido ajeno se veía su estado y total → sólo si el celular del pedido es el del hilo |\n| Subir fotos/audio | Sin hilo ni token → hilo propio, abierto y con token |",
+    "antesDespues": "De paso: `auto-reply` usaba el negocio «main» por defecto → corregido. 153 tests ✅.\nEfecto: quien no inició sesión ya no escribe por el chat de la tienda; el widget le pide ingresar.",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "panel-m",
+    "titulo": "feat(panel): comandos en el buscador, recientes, vistas guardadas y avisos agrupados por acción",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| M04 | Sí | El buscador sólo encontraba lugares → «cobrar a Ana» ofrece «Cobrar a Ana» (Me deben) y busca a la persona; «nueva» da Nueva venta / Nueva oferta |\n| M06 | Sí | Sin historial → «Abriste hace poco» en la cabecera |\n| M07 | Sí | Sin vistas → Mis clientes trae Estándar, Con deuda, Frecuentes, Para recuperar y «Guardar lo que se ve…» |\n| M08 | Sí | Una fila por aviso → «Cuadrar la caja, Cobrar 2, Revisar 2 comprobantes, Reponer 1» con «Resolver» que lleva al lugar |",
+    "antesDespues": "Arreglos de paso: el buscador entraba en bucle («Maximum update depth») y nunca traía productos ni clientes; «Cobrar 44» contaba el mismo resumen diario repetido → «Cobrar 2».",
+    "captura": "",
+    "pendientes": [
+      "DECIDE BRANDON: vistas y recientes viven en el navegador; llevarlos entre equipos = guardarlos por usuario."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "panel-surface",
+    "titulo": "fix(ui): el fondo --surface-alt existe (193 usos en 120 archivos salían sin fondo)",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| `--surface-alt` | Usado 193 veces en 120 archivos y nunca definido: filas, cajas y secciones alternas salían transparentes → definido como el fondo hundido de cada tema |",
+    "antesDespues": "Medido en el navegador: claro #fafafa, oscuro #161b22.",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "pedidos-p4",
+    "titulo": "feat(pedidos): botones por rol, emitir y guía desde el pedido, vistas, lote revisado y preparación",
+    "resumen": "| Código | Hecho | Antes → Después |\n|---|---|---|\n| Roles | Sí | El almacenero no podía abrir el detalle → lo abre en sólo lectura (sin mover ni cobrar); el cajero podía borrar → ya no |\n| Emitir / Guía | Sí | No había → «Emitir comprobante» y «Guía de remisión» en el pie del detalle, con el pedido ya elegido |\n| B7 | Sí | El filtro «Con notas» no encontraba nada → busca en el historial |\n| P08 | Sí | Vistas guardadas de la Lista con el menú de todo el panel |\n| P09 | Sí | Acción masiva sin aviso → revisión antes e informe después |\n| P12 | Sí | Hoja impresa sin contexto → en el orden de la Lista, con filtros y vista |\n| N01/N02/N06 | Sí | Preparación y Análisis montadas como pestañas de Pedidos |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "343 tests ✅; probado con admin, cajero y almacenero. Queda: chip «Listo para salir» y franja de entrega en el detalle; vistas guardadas entre equipos = columna nueva (decides tú)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "ventas-dev3",
+    "titulo": "fix(caja): devolver sólo pedidos entregados y cobrados, frenar lo fiado y no devolver el envío",
+    "resumen": "| Hallazgo | Antes → Después |\n|---|---|\n| ALTO: pedido no entregado | Se podía devolver; si luego se cancelaba, el stock volvía dos veces y el saldo a favor quedaba → 409 «cancélalo en vez de devolverlo» |\n| Venta fiada | Devolverla a crédito daba saldo a favor con el fiado entero → 409 «descuéntalo del fiado» mientras el cliente deba |\n| Pedido por cobrar | 409 «cóbralo primero y después registra la devolución» |\n| Envío | Devolver todo devolvía también el envío → tope = productos |\n| Rótulo | «Crédito» en Fidelidad → «Saldo a favor» |",
+    "antesDespues": "82 tests ✅ (5 nuevos fallan sin el arreglo). 0 devoluciones de pedidos y 0 de ventas fiadas en la base: nada que corregir. Solución completa del fiado: migración 02 (fiado ↔ venta), decides tú.",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "panel-minw",
+    "titulo": "fix(ui): los min-w-* vuelven a regir: la regla global min-width 0 pasa a @layer base",
+    "resumen": "| Área (vistas) | Anchos mínimos anulados a 400 px: antes → después | Desborde a 400 px |\n|---|---|---|\n| Ventas y caja (7) | 51 → 0 | 0 → 0 |\n| Pedidos (5) | 41 → 0 | 0 → 0 |\n| Compras (8) | 60 → 0 | 0 → 0 |\n| Comprobantes (5) | 37 → 0 | 0 → 0 |\n| Inventario (6) | 44 → 0 | 0 → 0 |\n| Clientes · Mi Plata · Configuración (13) | 109 → 0 | 0 → 0 |\n| **Total (44 vistas)** | **342 → 0 (a 1280: 313 → 0)** | 0 → 0 |",
+    "antesDespues": "Ejemplo: el buscador de Compras › Órdenes a 400 px medía 15 px y tapaba «Todas 43» → 368 px.",
+    "captura": "",
+    "pendientes": [
+      "Causa: una regla global `* { min-width: 0 }` fuera de capa le ganaba a todo `min-w-*` de Tailwind 4 (382 archivos). Pasó a `@layer base`; las tablas-tarjeta del celular quedaron sin piso (368 px a 400, no 640)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "pedidos-rem",
+    "titulo": "feat(pedidos): el detalle dice para cuándo lo pidió el cliente y si ya está listo para salir",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| Franja de entrega | No se veía → «Lo pidió para hoy · de 14:00 a 16:00» en Contacto y entrega; «atrasado» si el día pasó y sigue en marcha |\n| «Listo para salir» | No había → chip en la cabecera (o «Listo con faltante»), con quién lo dejó listo, bultos y lo que faltó |\n| Unir los dos mapas de reparto | No hecho (grande; main tiene 0 rutas para verificar): diseño listo para otra sesión |\n| Reparto no aparece en main | Es la plantilla global (reparto oculto por defecto), no el código: se activa en superadmin › Plantilla (decides tú) |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": []
+  },
+  {
+    "tanda": "",
+    "carril": "ventas-motivo",
+    "titulo": "feat(motivo): motivo obligatorio al cambiar medio de caja, ajustar stock y cancelar una compra",
+    "resumen": "| Acción | Antes → Después |\n|---|---|\n| Caja: cambiar el medio de un movimiento | Motivo opcional → obligatorio (la pantalla no deja confirmar) |\n| Ajuste de stock (uno o en lote) | Opcional → obligatorio |\n| Cambiar el stock desde la ficha del producto | Se guardaba «sin razón documentada» → obligatorio |\n| Cancelar orden de compra | La pantalla nunca mandaba el motivo → obligatorio y se guarda |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "Regla única: al menos 3 letras o números («..» no pasa). Probado en main: sin motivo = 400 y nada cambia (el stock siguió en 108, la orden siguió pendiente)."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-rem2",
+    "titulo": "fix(compras): órdenes sin desborde a 1280 y recepción con fechas y conformidad según el producto",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| Tabla de Órdenes a 1280 px | Se salía 120 px → 0 (la columna del proveedor toma el espacio y corta con «…») |\n| Fechas al recibir | Una sola fecha → «Programada miércoles 14/10 · Llegó viernes 16/10 · Aceptada viernes 16/10 por Brandon» |\n| Servicios | Se recibían como mercadería → piden «qué se aceptó» y «quién acepta», no suman stock |\n| Perecibles | Se guardaban sin vencimiento → avisa antes de guardar |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "Queda: «perecible» se decide por la categoría (nadie llena la vida útil); aceptar otro día que la llegada pide columna (decides tú); `OCRecepcionModal.tsx` pasa las 300 líneas."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "panel-kv",
+    "titulo": "feat(panel): vistas guardadas y recientes siguen a la persona en otra computadora",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| Vistas guardadas (Clientes, Pedidos) | Sólo en este navegador → se guardan en el servidor por persona y negocio; borrar el navegador y recargar: siguen ahí |\n| «Abriste hace poco» | Sólo en este navegador → se juntan los de tus equipos sin repetir |\n| Seguridad | Negocio y persona salen de la sesión (otro usuario no ve las tuyas; sin sesión 401); topes 15 recientes, 20 vistas por pantalla |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "Sin tabla nueva: usa los ajustes por persona que ya usaba el Acceso rápido del Drive. Queda: las vistas de Comprobantes siguen en el navegador."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "ventas-contacto",
+    "titulo": "feat(fiados): último contacto en me deben y tramos con historial en la ficha del repartidor",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| Me deben | «Le escribí hace 2 d» → «Último contacto: miércoles 14/10 por WhatsApp · prometió pagar S/ 150,00 el viernes 23/10»; promesa vencida dice «y no cumplió» |\n| Recordatorio de cobro | Sin el último contacto → lo muestra en la vista previa; plantillas con {ultimo_contacto} y {promesa} |\n| Ficha del repartidor (P39/P40) | Sin historial por pedido → estados en orden y cada entrega partida en espera y recorrido («asignado 8 min después · esperó 32 min · 18 min de recorrido») |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "26 tests ✅. Queda: las plantillas por defecto no usan aún las variables nuevas."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-pres",
+    "titulo": "feat(compras): presupuesto de compras del mes y recepción con revisión y rechazo por línea",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| N02 Presupuesto | No existía → sección «Presupuesto» en Órdenes: lo comprado en el mes (servidor; main S/ 4.218,50 = SELECT) contra el presupuesto total y por proveedor, barra, «Te quedan / Te pasaste», «Fijar» en línea; usa el presupuesto de Mi Plata con categorías `compras:` (Mi Plata no las suma como gasto) |\n| C20 Aceptación al recibir | Lo «en buen estado» entraba entero → se parte en disponible / en revisión / rechazado; sólo lo disponible entra a stock y lo rechazado va a merma (10 recibidos, 2 en revisión, 1 rechazado → «Entra a stock: 7») |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "488 tests ✅. Queda: escenarios del presupuesto, botón «Liberar» lo que quedó en revisión, nota de crédito por lo rechazado; revisar por qué Recibir dice «No hay órdenes esperando» con 8 pendientes en main."
+    ]
+  },
+  {
+    "tanda": "",
+    "carril": "compras-rrec",
+    "titulo": "fix(compras): lo rechazado al recibir baja la cuenta y recibir no dice «sin órdenes» al cargar",
+    "resumen": "| Qué | Antes → Después |\n|---|---|\n| ALTO: rechazado al recibir | Llegaban 10, se rechazaban 3: entraban 7 al stock pero Por pagar seguía por 10 → lo rechazado se descuenta como lo dañado (con el mismo tope por producto); lo «en revisión» sí se paga |\n| Pregunta «¿Le descuentas…?» | No salía si sólo había rechazos → sale |\n| «No hay órdenes esperando» con 9 pendientes en main | Era el mensaje mientras cargaba (y fijo si fallaba) → «Buscando…» y «Reintentar» |",
+    "antesDespues": "",
+    "captura": "",
+    "pendientes": [
+      "87 tests ✅. Queda: «Recibir» desde la fila de la orden descuenta sin preguntar (ya pasaba con lo dañado); liberar lo «en revisión» dos veces (decides tú)."
+    ]
+  }
+]

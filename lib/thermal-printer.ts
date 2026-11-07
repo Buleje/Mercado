@@ -79,6 +79,8 @@ export type ReceiptData = {
   businessName: string;
   businessAddress?: string;
   businessPhone?: string;
+  /** El pie que el negocio escribió (`Settings.invoiceFooterText`); reemplaza al agradecimiento. */
+  footerText?: string;
   ticketId: string;
   date: Date;
   items: ReceiptItem[];
@@ -107,7 +109,7 @@ function buildReceipt(data: ReceiptData): Uint8Array {
 
   // Header
   add(CMD.alignCenter, CMD.boldOn, CMD.doubleHeight);
-  add(line(data.businessName));
+  if (data.businessName) add(line(data.businessName));
   add(CMD.normalSize, CMD.boldOff);
   if (data.businessAddress) add(line(data.businessAddress));
   if (data.businessPhone) add(line(`Tel: ${data.businessPhone}`));
@@ -154,8 +156,8 @@ function buildReceipt(data: ReceiptData): Uint8Array {
   // Footer
   add(CMD.alignCenter);
   add(CMD.lineFeed);
-  add(line("¡Gracias por su compra!"));
-  add(line(`${data.businessName} - Pucallpa`));
+  // El nombre y la dirección ya van arriba: abajo, el pie del negocio o el gracias.
+  add(line(data.footerText?.trim() || "¡Gracias por tu compra!"));
   add(CMD.feedLines(4));
   add(CMD.partialCut);
 

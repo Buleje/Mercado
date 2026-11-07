@@ -1,8 +1,8 @@
 "use client";
 
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { useState, useEffect, startTransition } from "react";
-import Image from "next/image";
-import { Clock, ShoppingCart, Package, Minus, Plus } from "@buleje/design-system/icons";
+import { Clock, ShoppingCart, Minus, Plus } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { useQuickAddSafe } from "@/contexts/quick-add-context";
 import { useToast } from "@/contexts/toast-context";
@@ -143,7 +143,7 @@ export default function FlashDeals({ serverProducts, showEmpty = false, emptyVar
     <section className="py-10 sm:py-14 bg-[var(--surface-sunken)]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(flashOffersSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(flashOffersSchema) }}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -201,7 +201,7 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
     <div className="group relative bg-[var(--surface-canvas)] rounded-xl overflow-hidden border border-[var(--rule-soft)] hover:border-[var(--rule-base)] transition-colors duration-200">
       {/* Discount badge — teal accent soft (no scarcity-red) */}
       {deal.discount > 0 && (
-        <div className="absolute top-1.5 left-1.5 z-10 bg-[var(--accent-soft)] text-[var(--accent)] rounded-md px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold tabular-nums">
+        <div className="absolute top-1.5 left-1.5 z-10 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-md px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold tabular-nums">
           -{deal.discount}%
         </div>
       )}

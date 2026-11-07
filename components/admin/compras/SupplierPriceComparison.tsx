@@ -1,339 +1,164 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
-import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, BarChart3, X } from "@buleje/design-system/icons";
+import { useEffect, useState } from "react";
+import { BlockTitle, DataTable } from "@buleje/design-system";
+import { AlertTriangle, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
+import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import { button } from "@/components/ui-system/button-variants";
+import { diaCorto } from "@/lib/compras/ciclo-oc";
+import { DIAS_PRECIO_VIEJO, type FilaComparable } from "@/lib/compras/precio-comparable";
+import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-type Comparacion = {
-  supplierId: string;
-  supplierName: string;
-  lastPrice: number;
-  lastDate: string;
-  purchaseCount: number;
-  isCheapest: boolean;
-};
 
 interface SupplierPriceComparisonProps {
   productId: number;
   productName: string;
 }
 
-// ── Mejora 16: Tipo para cotización completa ────────────────────────────────
+export { QuotationComparator } from "./QuotationComparator";
 
-type OCForComparison = {
-  id: string;
-  supplierId: string;
-  supplierName: string;
-  items: Array<{ productId: number; name: string; unitCost: number; quantity: number }>;
-  total: number;
-  createdAt: string;
-};
+const CHIP = "inline-flex items-center gap-0.5 whitespace-nowrap rounded-full px-1.5 py-0.5 text-sm font-semibold";
+const CHIP_VERDE = "bg-[var(--data-success-100)] text-[var(--data-success-ink)] dark:bg-[var(--data-success-500)]/15";
+const CHIP_AMBAR = "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/15";
+const CHIP_GRIS = "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
 
-/** Comparador de cotizaciones completas (Mejora 16) */
-export function QuotationComparator({ orders, suppliers }: {
-  orders: Array<{ id: string; supplierId: string; supplierName?: string; items: Array<{ productId: number; name: string; unitCost: number; quantity: number }>; total: number; createdAt: string; status: string }>;
-  suppliers: Array<{ id: string; name: string }>;
-}) {
-  const [open, setOpen] = useState(false);
-  const [selectedOCIds, setSelectedOCIds] = useState<string[]>([]);
+const haceDias = (n: number) => (n === 0 ? "hoy" : n === 1 ? "ayer" : `hace ${n} días`);
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info-500)]/30 px-3 py-2 rounded-lg transition-colors"
-      >
-        <BarChart3 className="h-4 w-4" /> Comparar cotizaciones
-      </button>
-    );
-  }
-
-  const toggleOC = (id: string) => {
-    setSelectedOCIds(prev => {
-      if (prev.includes(id)) return prev.filter(x => x !== id);
-      if (prev.length >= 3) return prev; // Max 3
-      return [...prev, id];
-    });
-  };
-
-  const selectedOCs: OCForComparison[] = selectedOCIds
-    .map(id => {
-      const oc = orders.find(o => o.id === id);
-      if (!oc) return null;
-      const sup = suppliers.find(s => s.id === oc.supplierId);
-      return { ...oc, supplierName: sup?.name || oc.supplierName || oc.supplierId } as OCForComparison;
-    })
-    .filter(Boolean) as OCForComparison[];
-
-  // Build comparison table
-  const allProductIds = new Set<number>();
-  for (const oc of selectedOCs) {
-    for (const item of oc.items) allProductIds.add(item.productId);
-  }
-  const productIds = Array.from(allProductIds);
-  const productNames: Record<number, string> = {};
-  for (const oc of selectedOCs) {
-    for (const item of oc.items) { productNames[item.productId] = item.name; }
-  }
-
-  // Per-product best price
-  const bestPerProduct: Record<number, { price: number; ocId: string }> = {};
-  for (const pid of productIds) {
-    let best = Infinity;
-    let bestOcId = "";
-    for (const oc of selectedOCs) {
-      const item = oc.items.find(i => i.productId === pid);
-      if (item && item.unitCost < best) { best = item.unitCost; bestOcId = oc.id; }
-    }
-    if (best < Infinity) bestPerProduct[pid] = { price: best, ocId: bestOcId };
-  }
-
-  // Totals
-  const ocTotals = selectedOCs.map(oc => ({
-    id: oc.id,
-    total: oc.items.reduce((s, i) => s + i.unitCost * i.quantity, 0),
-  }));
-  const bestTotalOcId = ocTotals.length > 0 ? ocTotals.reduce((a, b) => a.total < b.total ? a : b).id : "";
-  const worstTotal = ocTotals.length > 0 ? Math.max(...ocTotals.map(t => t.total)) : 0;
-  const bestTotal = ocTotals.length > 0 ? Math.min(...ocTotals.map(t => t.total)) : 0;
-  const savings = worstTotal - bestTotal;
-
-  return (
-    <div className="modal-backdrop p-4" onClick={() => setOpen(false)}>
-      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparar cotizaciones completas
-          </CardTitle>
-          <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-            <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-          </button>
-        </div>
-
-        {/* Step 1: Select OCs */}
-        <div>
-          <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-2">Selecciona 2-3 OCs para comparar</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-            {orders.slice(0, 20).map(oc => {
-              const sup = suppliers.find(s => s.id === oc.supplierId);
-              const isSelected = selectedOCIds.includes(oc.id);
-              return (
-                <button
-                  key={oc.id}
-                  onClick={() => toggleOC(oc.id)}
-                  disabled={!isSelected && selectedOCIds.length >= 3}
-                  className={cn(
-                    "text-left px-3 py-2 rounded-xl border text-xs transition-colors",
-                    isSelected
-                      ? "border-[var(--data-info-500)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]",
-                    !isSelected && selectedOCIds.length >= 3 && "opacity-40 cursor-not-allowed"
-                  )}
-                >
-                  <span className="font-semibold">{sup?.name || oc.supplierId}</span>
-                  <span className="text-[var(--text-tertiary)] ml-2">S/{Number(oc.total).toFixed(2)} · {oc.items.length} items · {new Date(oc.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Step 2: Comparison Table */}
-        {selectedOCs.length < 2 ? (
-          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-6">Necesitas al menos 2 OCs para comparar</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                  <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
-                  {selectedOCs.map(oc => (
-                    <th key={oc.id} className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                      {oc.supplierName}
-                    </th>
-                  ))}
-                  <th className="text-center py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mejor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {productIds.map(pid => {
-                  const best = bestPerProduct[pid];
-                  return (
-                    <tr key={pid} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
-                      <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{productNames[pid]}</td>
-                      {selectedOCs.map(oc => {
-                        const item = oc.items.find(i => i.productId === pid);
-                        const isBest = best && best.ocId === oc.id;
-                        return (
-                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
-                            {item ? `S/ ${Number(item.unitCost).toFixed(2)}` : "—"}
-                          </td>
-                        );
-                      })}
-                      <td className="py-2 px-2 text-center">
-                        {best && (
-                          <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                            {selectedOCs.find(oc => oc.id === best.ocId)?.supplierName?.split(" ")[0] ?? ""} ✓
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {/* TOTAL row */}
-                <tr className="border-t-2 border-[var(--rule-base)] dark:border-gray-600 font-bold">
-                  <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">TOTAL</td>
-                  {selectedOCs.map(oc => {
-                    const total = ocTotals.find(t => t.id === oc.id)?.total ?? 0;
-                    const isBest = oc.id === bestTotalOcId;
-                    return (
-                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
-                        S/ {total.toFixed(2)}
-                      </td>
-                    );
-                  })}
-                  <td className="py-2 px-2 text-center">
-                    <span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                      {selectedOCs.find(oc => oc.id === bestTotalOcId)?.supplierName?.split(" ")[0] ?? ""} ✓
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* Savings */}
-            {savings > 0 && (
-              <div className="mt-3 flex items-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5">
-                <TrendingDown className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
-                <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                  Ahorro vs mas caro: S/ {savings.toFixed(2)}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
-  } catch {
-    return iso;
-  }
-}
-
-function SkeletonTable() {
-  return (
-    <div className="animate-pulse space-y-2">
-      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-      <div className="h-6 bg-[var(--surface-sunken)] rounded w-full" />
-      <div className="h-6 bg-[var(--surface-sunken)] rounded w-full" />
-    </div>
-  );
-}
-
+/**
+ * Cuánto te cuesta un producto con cada proveedor (C37): costo PUESTO en tu
+ * tienda (descuento, IGV y flete de la orden), una fila por proveedor y unidad,
+ * y «el mejor» sólo entre filas de la misma unidad. Lo calcula el servidor
+ * (`lib/compras/precio-comparable.ts`); acá sólo se dibuja.
+ */
 export default function SupplierPriceComparison({ productId, productName }: SupplierPriceComparisonProps) {
-  const [comparaciones, setComparaciones] = useState<Comparacion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [filas, setFilas] = useState<{ id: number; filas: FilaComparable[] } | null>(null);
+  const [error, setError] = useState(false);
+  const [vuelta, setVuelta] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch(`/api/compras/precio-comparativo?productId=${productId}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (!cancelled && data) setComparaciones(data.comparaciones ?? []);
+    const ctrl = new AbortController();
+    setError(false);
+    fetch(`/api/compras/precio-comparativo?productId=${productId}`, { signal: ctrl.signal, cache: "no-store" })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = (await r.json()) as { comparaciones?: FilaComparable[] };
+        setFilas({ id: productId, filas: data.comparaciones ?? [] });
       })
-      .catch((err) => console.warn("[SupplierPriceComparison] fetch failed:", err))
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [productId]);
+      .catch((err: unknown) => {
+        if (ctrl.signal.aborted) return;
+        console.warn("[SupplierPriceComparison] fetch failed:", err);
+        setError(true);
+      });
+    return () => ctrl.abort();
+  }, [productId, vuelta]);
 
-  if (loading) return <SkeletonTable />;
+  const producto = <EnlacePanel cosa="producto" id={String(productId)} apariencia="heredada">{productName}</EnlacePanel>;
 
+  if (error) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 py-3 text-sm">
+        <span className="text-[var(--data-error-ink)]">No se pudo comparar los precios de {productName}.</span>
+        <button type="button" onClick={() => setVuelta((v) => v + 1)} className={button({ variant: "ghost", className: "rounded-xl" })}>Reintentar</button>
+      </div>
+    );
+  }
+  if (!filas || filas.id !== productId) return <TableSkeleton rows={2} cols={4} />;
+
+  const comparaciones = filas.filas;
   if (comparaciones.length === 0) {
     return (
-      <div className="text-center py-4">
-        <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)] mx-auto mb-2" />
-        <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
-          No hay historial de compras para <strong>{productName}</strong>
-        </p>
+      <div className="py-4 text-center">
+        <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
+        <p className="text-sm text-[var(--text-secondary)]">No hay compras de <strong>{producto}</strong> (sin contar las anuladas).</p>
       </div>
     );
   }
 
-  const minPrice = Math.min(...comparaciones.map((c) => c.lastPrice));
+  const unidades = new Set(comparaciones.map((c) => c.unidad));
+  const proveedores = new Set(comparaciones.map((c) => c.supplierId));
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-        Comparacion de precios: {productName}
-      </h4>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <BlockTitle>Cuánto te cuesta puesto: {producto}</BlockTitle>
+        <InfoTip
+          title="Costo puesto en tu tienda"
+          what="El costo de la orden con su descuento, más IGV si se cargó sin IGV, más el flete y otros gastos de esa orden repartidos por valor."
+          affects={`Se toma la última compra que llegó de cada proveedor (si nunca llegó, la última pedida, marcada). «Mejor» sólo compara la misma unidad: un saco no se compara con un kilo. Un precio de más de ${DIAS_PRECIO_VIEJO} días puede no ser el de hoy.`}
+          example="S/ 100 con 10 % de descuento, sin IGV y S/ 5 de flete repartido = S/ 111,20."
+        />
+      </div>
 
-      {comparaciones.length === 1 && (
-        <div className="flex items-center gap-2 text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg px-3 py-2">
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-          Solo has comprado a 1 proveedor. Considera cotizar con otros.
-        </div>
+      {proveedores.size === 1 && (
+        <p className="flex items-center gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/10">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Sólo le compraste a 1 proveedor: cotiza con otro para tener con qué comparar.
+        </p>
+      )}
+      {unidades.size > 1 && (
+        <p className="text-sm text-[var(--text-secondary)]">Lo compraste en {unidades.size} unidades distintas: cada una se compara por separado.</p>
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <DataTable className="w-full">
           <thead>
-            <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-              <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</th>
-              <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Último precio</th>
-              <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
-              <th className="text-center py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted"># Compras</th>
-              <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">vs Mejor</th>
+            <tr>
+              <th>Proveedor</th>
+              <th>Unidad</th>
+              <th className="text-right">Costo puesto</th>
+              <th className="text-right">Fecha</th>
+              <th className="text-right">Compras</th>
+              <th className="text-right">Frente al mejor</th>
             </tr>
           </thead>
           <tbody>
-            {comparaciones.map((c) => {
-              const diff = minPrice > 0 ? ((c.lastPrice - minPrice) / minPrice) * 100 : 0;
-              return (
-                <tr
-                  key={c.supplierId}
-                  className={cn(
-                    "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 transition-colors",
-                    c.isCheapest && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+            {comparaciones.map((c) => (
+              <tr key={`${c.supplierId}|${c.unidad}`}>
+                <td>
+                  <div className="min-w-0">
+                    <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada" className="font-semibold">{c.supplierName}</EnlacePanel>
+                    <div className="mt-0.5 flex flex-wrap gap-1 empty:hidden">
+                      {c.mejor && <span className={cn(CHIP, CHIP_VERDE)}><TrendingDown className="h-3 w-3" aria-hidden /> Mejor</span>}
+                      {!c.llego && <span className={cn(CHIP, CHIP_GRIS)}>Sólo pedida</span>}
+                      {c.vieja && <span className={cn(CHIP, CHIP_AMBAR)}>Precio viejo</span>}
+                    </div>
+                  </div>
+                </td>
+                <td>{c.unidad}</td>
+                <td className="text-right">
+                  <div className="min-w-0">
+                    <p className="font-bold tabular-nums">{c.costoPuesto > 0 ? formatCurrency(c.costoPuesto) : "Sin costo"}</p>
+                    {c.ajustes.length > 0 && (
+                      <p className="text-sm text-[var(--text-tertiary)]" title={c.ajustes.join(" · ")}>
+                        en la orden {formatCurrency(c.costoDeLista)}
+                      </p>
+                    )}
+                  </div>
+                </td>
+                <td className="text-right">
+                  <div className="min-w-0">
+                    <p>{diaCorto(c.fecha)}</p>
+                    <p className="text-sm text-[var(--text-tertiary)]">{haceDias(c.diasDesde)}</p>
+                  </div>
+                </td>
+                <td className="text-right tabular-nums">{c.compras}</td>
+                <td className="text-right">
+                  {c.mejor ? (
+                    <span className="text-sm font-bold text-[var(--data-success-ink)]">El mejor</span>
+                  ) : c.sobreElMejor !== null ? (
+                    <span className="inline-flex items-center justify-end gap-0.5 text-sm font-semibold text-[var(--data-error-ink)]">
+                      <TrendingUp className="h-3 w-3" aria-hidden /> +{c.sobreElMejor} %
+                    </span>
+                  ) : (
+                    <span className="text-sm text-[var(--text-tertiary)]">Sin con quién comparar</span>
                   )}
-                >
-                  <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                    {c.supplierName}
-                    {c.isCheapest && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">
-                        <TrendingDown className="h-2.5 w-2.5" /> Mejor precio
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-2 px-2 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                    S/ {Number(c.lastPrice).toFixed(2)}
-                  </td>
-                  <td className="py-2 px-2 text-right text-[var(--text-secondary)] dark:text-muted text-xs">
-                    {formatDate(c.lastDate)}
-                  </td>
-                  <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">
-                    {c.purchaseCount}
-                  </td>
-                  <td className="py-2 px-2 text-right">
-                    {c.isCheapest ? (
-                      <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-xs">Mejor</span>
-                    ) : (
-                      <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold text-xs flex items-center justify-end gap-0.5">
-                        <TrendingUp className="h-3 w-3" /> +{diff.toFixed(0)}%
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+                </td>
+              </tr>
+            ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
     </div>
   );

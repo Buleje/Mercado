@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import type { Metadata } from "next";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -21,6 +22,8 @@ import {
   Percent,
   MapPin,
 } from "@buleje/design-system/icons";
+import ProductShowcase from "@/components/landing/abrir-tienda/ProductShowcase";
+import FounderTestimonial from "@/components/landing/abrir-tienda/FounderTestimonial";
 
 // LandingHeader + Footer removidos — chrome unificado vive en
 // app/(store)/layout.tsx (mismo nav que /tiendas y /marketplace).
@@ -55,6 +58,13 @@ const BodegaScene = dynamic(
     ),
   },
 );
+// Client-only: CTA flotante (scroll) + mini-form de captación (WhatsApp).
+const StickyActivateCTA = dynamic(
+  () => import("@/components/landing/abrir-tienda/StickyActivateCTA"),
+);
+const LeadCaptureForm = dynamic(
+  () => import("@/components/landing/abrir-tienda/LeadCaptureForm"),
+);
 
 const PAGE_URL = "https://www.buleje.pe/abrir-tienda";
 
@@ -65,7 +75,7 @@ export const metadata: Metadata = {
   // ("software para bodega"), sin canibalizar keywords.
   title: "Abre tu tienda online gratis en 5 minutos",
   description:
-    `Crea tu tienda online y vendé hoy: catálogo, pagos Yape/Plin, delivery y reportes. Gratis, sin tarjeta ni comisión, en ${BRAND_GEO.city}.`,
+    `Crea tu tienda online y vende hoy: catálogo, pagos Yape/Plin, delivery y reportes. Gratis, sin tarjeta ni comisión, en ${BRAND_GEO.city}.`,
   keywords: [
     "abrir tienda online",
     "crear tienda online Perú",
@@ -103,7 +113,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Abre tu tienda online gratis en 5 minutos | Buleje",
     description:
-      "Vendé hoy con catálogo, Yape/Plin, delivery y reportes. Gratis para empezar, sin tarjeta, sin comisión.",
+      "Vende hoy con catálogo, Yape/Plin, delivery y reportes. Gratis para empezar, sin tarjeta, sin comisión.",
     images: ["/api/og/negocios"],
   },
 };
@@ -111,23 +121,23 @@ export const metadata: Metadata = {
 const FAQS = [
   {
     q: "¿Cuánto tarda el setup?",
-    a: "5 minutos. Subís logo, catálogo y horarios. Te ayudamos por WhatsApp si quieres.",
+    a: "5 minutos. Subes logo, catálogo y horarios. Te ayudamos por WhatsApp si quieres.",
   },
   {
     q: "¿Puedo cambiar de plan después?",
-    a: "Sí. Subís o bajás de plan cuando quieras. Los cambios se aplican al siguiente ciclo de facturación.",
+    a: "Sí. Subes o bajas de plan cuando quieras. Los cambios se aplican al siguiente ciclo de facturación.",
   },
   {
     q: "¿Hay contrato o permanencia mínima?",
-    a: "No. Todos los planes son sin permanencia. Cancelás con un click cuando quieras.",
+    a: "No. Todos los planes son sin permanencia. Cancelas con un click cuando quieras.",
   },
   {
     q: "¿Necesito tarjeta de crédito para registrarme?",
-    a: "No. Empezás con Yape o efectivo y migrás a tarjeta cuando quieras.",
+    a: "No. Empiezas con Yape o efectivo y migras a tarjeta cuando quieras.",
   },
   {
     q: "¿Qué pasa con mis datos si dejo de usarlo?",
-    a: "Te llevás todo exportado en CSV: clientes, pedidos, productos, reportes. Tus datos son tuyos.",
+    a: "Te llevas todo exportado en CSV: clientes, pedidos, productos, reportes. Tus datos son tuyos.",
   },
   {
     q: "¿Tienen soporte humano?",
@@ -135,19 +145,19 @@ const FAQS = [
   },
   {
     q: "¿Buleje cobra comisión por cada venta?",
-    a: "No. 0% de comisión. El dinero llega directo a tu Yape, tu cuenta o tu caja. Solo pagás el plan mensual, sin sorpresas.",
+    a: "No. 0% de comisión. El dinero llega directo a tu Yape, tu cuenta o tu caja. Solo pagas el plan mensual, sin sorpresas.",
   },
   {
     q: "¿Mis clientes necesitan instalar una app?",
-    a: "No. Tus clientes te compran desde el navegador con un link — no descargan nada. Vos manejás tu tienda desde el celular o la compu.",
+    a: "No. Tus clientes te compran desde el navegador con un link — no descargan nada. Vos manejas tu tienda desde el celular o la compu.",
   },
   {
     q: "¿Funciona si no sé nada de tecnología?",
-    a: "Sí. Si sabés usar WhatsApp, sabés usar Buleje. Y en el Plan Fundador hacemos el setup 1-a-1 contigo por videollamada.",
+    a: "Sí. Si sabes usar WhatsApp, sabes usar Buleje. Y en el Plan Fundador hacemos el setup 1-a-1 contigo por videollamada.",
   },
   {
     q: "¿Puedo usar mi propia marca y dominio?",
-    a: "Sí. Tu tienda lleva tu logo, tus colores y tu nombre. Desde el plan Starter podés conectar tu propio dominio.",
+    a: "Sí. Tu tienda lleva tu logo, tus colores y tu nombre. Desde el plan Starter puedes conectar tu propio dominio.",
   },
 ];
 
@@ -169,9 +179,9 @@ const PATHS: {
     cost: "Gratis… pero te sale caro",
     points: [
       "Solo te compran los que pasan por tu puerta",
-      "Sumás a mano y a veces no te cuadra la caja",
-      "No sabés qué se vende ni qué se te está acabando",
-      "Si te olvidás de un fiado, esa plata se pierde",
+      "Sumas a mano y a veces no te cuadra la caja",
+      "No sabes qué se vende ni qué se te está acabando",
+      "Si te olvidas de un fiado, esa plata se pierde",
       "Cierras de noche, cansado y sin saber cómo te fue",
     ],
     positive: false,
@@ -181,9 +191,9 @@ const PATHS: {
     verdict: "Te cobra todos los meses",
     cost: "S/ 300 o más al mes",
     points: [
-      "Pagás caro aunque ese mes vendas poco",
+      "Pagas caro aunque ese mes vendas poco",
       "Solo cobra: no te consigue ni un cliente nuevo",
-      "Necesitás un técnico para instalarlo y arreglarlo",
+      "Necesitas un técnico para instalarlo y arreglarlo",
       "Atado a una máquina en el mostrador, no a tu celular",
       "Sin tienda online ni delivery para tus clientes",
     ],
@@ -195,23 +205,23 @@ const PATHS: {
     cost: "Gratis para empezar · sin tarjeta",
     points: [
       `Tu puesto en el marketplace de ${BRAND_GEO.city}: miles de vecinos te ven cada día`,
-      "Tu propia tienda online con tu marca — vendés aunque la bodega esté cerrada",
-      "Cobrás con Yape, Plin, efectivo o tarjeta — la plata llega directo a vos",
-      "Tus clientes te piden por WhatsApp y vos despachás con delivery",
-      "Sabés al instante qué vendiste, qué falta y a quién le fiaste",
+      "Tu propia tienda online con tu marca — vendes aunque la bodega esté cerrada",
+      "Cobras con Yape, Plin, efectivo o tarjeta — la plata llega directo a ti",
+      "Tus clientes te piden por WhatsApp y tú despachas con delivery",
+      "Sabes al instante qué vendiste, qué falta y a quién le fiaste",
       "Boletas y facturas SUNAT, fiado digital y reportes, todo en una app",
-      "Lo abrís en tu celular en 5 minutos, sin técnico ni local",
+      "Lo abres en tu celular en 5 minutos, sin técnico ni local",
     ],
-    reassurance: "0% comisión · sin tarjeta · cancelás cuando quieras",
+    reassurance: "0% comisión · sin tarjeta · cancelas cuando quieras",
     positive: true,
   },
 ];
 
 // ── Garantías de confianza ──
 const GUARANTEES = [
-  { icon: CreditCard, t: "Empezás sin pagar", d: "Probás gratis y sin dejar tu tarjeta. Si no te sirve, no perdiste ni un sol." },
-  { icon: RefreshCcw, t: "Cancelás cuando quieras", d: "Con un click, sin llamadas ni penalidad. Te quedás solo si te conviene." },
-  { icon: Download, t: "Tu plata y tus datos son tuyos", d: "El dinero llega directo a vos. Y tus clientes y ventas te los llevás cuando quieras." },
+  { icon: CreditCard, t: "Empiezas sin pagar", d: "Pruebas gratis y sin dejar tu tarjeta. Si no te sirve, no perdiste ni un sol." },
+  { icon: RefreshCcw, t: "Cancelas cuando quieras", d: "Con un click, sin llamadas ni penalidad. Te quedas solo si te conviene." },
+  { icon: Download, t: "Tu plata y tus datos son tuyos", d: "El dinero llega directo a ti. Y tus clientes y ventas te los llevas cuando quieras." },
   { icon: ShieldCheck, t: "Tu info segura", d: "Respaldos todos los días y protección de la Ley 29733 del Perú." },
 ];
 
@@ -261,7 +271,7 @@ function NodeTile({ item }: { item: LogoItem }) {
       ) : item.kind === "mark" ? (
         <span aria-hidden className="text-white text-sm sm:text-base font-black tracking-tight">{item.name}</span>
       ) : (
-        <span aria-hidden className="inline-flex h-full w-full items-center justify-center rounded-[1.25rem] bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span aria-hidden className="inline-flex h-full w-full items-center justify-center rounded-[1.25rem] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Receipt className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={2} />
         </span>
       )}
@@ -302,13 +312,18 @@ function NetworkHub() {
         className="absolute inset-0 h-full w-full"
         aria-hidden
       >
-        {INTEGRATION_LOGOS.map((item) => {
+        {INTEGRATION_LOGOS.map((item, i) => {
           const p = NET_POS[item.name];
           if (!p) return null;
           return (
             <g key={item.name}>
               <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={3} strokeOpacity={0.28} />
               <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={4} strokeLinecap="round" className="net-line" strokeOpacity={0.95} />
+              {/* Punto de dato viajando del nodo al hub — sensación de "conectado en vivo" */}
+              <circle r={5} fill="var(--accent)" style={{ filter: "drop-shadow(0 0 6px var(--accent))" }}>
+                <animateMotion dur="2.4s" begin={`${i * 0.35}s`} repeatCount="indefinite" path={`M${p.x},${p.y} L${NET_CX},${NET_CY}`} />
+                <animate attributeName="opacity" dur="2.4s" begin={`${i * 0.35}s`} values="0;1;1;0" keyTimes="0;0.15;0.85;1" repeatCount="indefinite" />
+              </circle>
             </g>
           );
         })}
@@ -324,12 +339,31 @@ function NetworkHub() {
             className="absolute -translate-x-1/2 -translate-y-1/2"
             style={{ left: `${(p.x / 1000) * 100}%`, top: `${(p.y / 600) * 100}%` }}
           >
-            <div className="net-float" style={{ animationDelay: `${i * 0.45}s` }}>
+            <div className="net-float flex flex-col items-center gap-1.5" style={{ animationDelay: `${i * 0.45}s` }}>
               <NodeTile item={item} />
+              <span className="hidden sm:block whitespace-nowrap text-[11px] font-bold text-[var(--text-tertiary)]">
+                {item.name}
+              </span>
             </div>
           </div>
         );
       })}
+
+      {/* Pills de resultado flotando — lo que las integraciones LOGRAN (desktop) */}
+      {[
+        { Icon: CreditCard, label: "Cobras al instante", pos: "left-[1%] top-[8%]", delay: "0s" },
+        { Icon: MessageCircle, label: "Pedidos por WhatsApp", pos: "right-[1%] top-[4%]", delay: "1.1s" },
+        { Icon: Receipt, label: "Boleta SUNAT lista", pos: "left-0 bottom-[6%]", delay: "0.6s" },
+      ].map((pill) => (
+        <div
+          key={pill.label}
+          style={{ animationDelay: pill.delay }}
+          className={`net-float absolute z-10 hidden items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] shadow-[var(--shadow-md)] lg:flex ${pill.pos}`}
+        >
+          <pill.Icon className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+          {pill.label}
+        </div>
+      ))}
 
       {/* Hub central — Buleje */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
@@ -357,8 +391,8 @@ function IntegrationsStrip() {
           <span className="italic font-serif text-[var(--accent)]">conectado a Buleje.</span>
         </h2>
         <p className="mt-4 text-base sm:text-lg text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed">
-          Yape, Plin, WhatsApp, SUNAT y las tarjetas — ya integrados. No instalás
-          nada, no contratás a nadie.
+          Yape, Plin, WhatsApp, SUNAT y las tarjetas — ya integrados. No instalas
+          nada, no contratas a nadie.
         </p>
       </div>
 
@@ -466,18 +500,18 @@ function GuaranteeSection() {
             Sin riesgo
           </p>
           <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
-            Probás tranquilo.{" "}
+            Pruebas tranquilo.{" "}
             <span className="italic font-serif text-[var(--accent)]">Sin letra chica.</span>
           </h2>
           <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
-            No te pedimos tarjeta ni te amarramos a un contrato. Probás, y si no
+            No te pedimos tarjeta ni te amarramos a un contrato. Pruebas, y si no
             te sirve, te vas sin haber perdido nada.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {GUARANTEES.map((g) => (
             <div key={g.t} className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 transition-all hover:border-[var(--accent)]/40 hover:shadow-md">
-              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
+              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
                 <g.icon className="h-6 w-6" strokeWidth={1.75} />
               </span>
               <h3 className="text-lg font-extrabold tracking-[-0.01em] text-[var(--text-primary)] leading-tight">{g.t}</h3>
@@ -499,7 +533,7 @@ const FOUNDER_PERKS = [
   {
     icon: Wrench,
     title: "Te armamos tu tienda completa, 1-a-1",
-    sub: "Cargamos productos, fotos y precios contigo. No tocás nada.",
+    sub: "Cargamos productos, fotos y precios contigo. No tocas nada.",
     value: "S/ 300",
   },
   {
@@ -523,7 +557,7 @@ const FOUNDER_PERKS = [
   {
     icon: MapPin,
     title: `En el mapa de ${BRAND_GEO.city} desde el día 1`,
-    sub: "Miles de vecinos te encuentran apenas abrís.",
+    sub: "Miles de vecinos te encuentran apenas abres.",
     value: "incluido",
   },
 ] as const;
@@ -547,22 +581,22 @@ function SocialProofSection() {
           <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[1]">
             Sé de las primeras{" "}
             <span className="italic font-serif text-[var(--accent)]">{CUPOS_TOTAL} bodegas</span>
-            <br className="hidden sm:block" /> y arrancá con todo gratis.
+            <br className="hidden sm:block" /> y arranca con todo gratis.
           </h2>
           <p className="mt-5 text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-2xl mx-auto">
             Elegimos a los primeros negocios de Ciudad Constitución para crecer juntos.
-            Lo que normalmente se cobra aparte, hoy lo hacés{" "}
+            Lo que normalmente se cobra aparte, hoy lo haces{" "}
             <strong className="text-[var(--text-primary)]">sin pagar un sol</strong>.
           </p>
         </div>
 
-        <div className="relative overflow-hidden rounded-[2rem] border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-6 sm:p-8 lg:p-10">
+        <div className="relative overflow-hidden rounded-[2rem] border-2 border-[var(--accent)]/30 bg-primary/10 p-6 sm:p-8 lg:p-10">
           <div aria-hidden className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/15 blur-3xl" />
           <div className="relative grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-8 lg:gap-12 items-start">
             {/* Izquierda — value stack con anclaje de precio */}
             <div>
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-4">
-                Lo que te llevás como fundador
+                Lo que te llevas como fundador
               </p>
               <ul className="space-y-2.5">
                 {FOUNDER_PERKS.map((perk) => {
@@ -572,7 +606,7 @@ function SocialProofSection() {
                       key={perk.title}
                       className="group flex items-center gap-4 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-3.5 sm:p-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-sm)]"
                     >
-                      <span aria-hidden className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] ring-1 ring-[var(--accent)]/20">
+                      <span aria-hidden className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-[var(--accent)]/20">
                         <Icon className="h-5 w-5" strokeWidth={2} />
                       </span>
                       <div className="min-w-0 flex-1">
@@ -608,7 +642,7 @@ function SocialProofSection() {
                 </div>
                 <div className="text-right">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
-                    Hoy pagás
+                    Hoy pagas
                   </p>
                   <p className="text-3xl sm:text-4xl font-extrabold text-[var(--accent)] tabular-nums leading-none mt-0.5">
                     S/ 0
@@ -621,7 +655,7 @@ function SocialProofSection() {
             <div className="rounded-[1.75rem] border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7 shadow-[var(--shadow-lg)]">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Cupos del mes</p>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#c93b2c)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
                   <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Quedan pocos
                 </span>
               </div>
@@ -636,7 +670,7 @@ function SocialProofSection() {
                       className={`h-9 rounded-lg border-2 flex items-center justify-center transition-colors ${
                         tomado
                           ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                          : "border-dashed border-[var(--accent)]/40 bg-[var(--accent-soft)]/40 text-[var(--accent)]"
+                          : "border-dashed border-[var(--accent)]/40 bg-primary/10 text-[var(--accent)]"
                       }`}
                     >
                       {tomado ? (
@@ -658,7 +692,7 @@ function SocialProofSection() {
                   {[
                     { l: "D", c: "var(--accent)" },
                     { l: "P", c: "#722EAB" },
-                    { l: "L", c: "#f97316" },
+                    { l: "L", c: "#ff6b5b" },
                   ].map(({ l, c }) => (
                     <span key={l} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white font-extrabold text-sm ring-3 ring-[var(--surface-raised)]" style={{ background: c }}>
                       {l}
@@ -757,21 +791,21 @@ function AbrirTiendaJsonLd() {
     "@type": "HowTo",
     name: "Cómo abrir tu tienda online en Buleje",
     totalTime: "PT5M",
-    description: "Activá tu tienda online en 5 minutos, sin código ni técnicos.",
+    description: "Activa tu tienda online en 5 minutos, sin código ni técnicos.",
     step: [
-      { "@type": "HowToStep", position: 1, name: "Registrate gratis", text: "Creás tu cuenta sin tarjeta en menos de un minuto." },
-      { "@type": "HowToStep", position: 2, name: "Subí tu catálogo", text: "Cargás tus productos con fotos, precios y stock — o te ayudamos por WhatsApp." },
-      { "@type": "HowToStep", position: 3, name: "Conectá tus pagos", text: "Activás Yape, Plin, efectivo o tarjeta. El dinero llega directo a vos." },
-      { "@type": "HowToStep", position: 4, name: "Empezá a vender", text: "Compartís tu link y tus clientes te compran desde el navegador, sin instalar nada." },
+      { "@type": "HowToStep", position: 1, name: "Regístrate gratis", text: "Creas tu cuenta sin tarjeta en menos de un minuto." },
+      { "@type": "HowToStep", position: 2, name: "Sube tu catálogo", text: "Cargas tus productos con fotos, precios y stock — o te ayudamos por WhatsApp." },
+      { "@type": "HowToStep", position: 3, name: "Conecta tus pagos", text: "Activas Yape, Plin, efectivo o tarjeta. El dinero llega directo a ti." },
+      { "@type": "HowToStep", position: 4, name: "Empieza a vender", text: "Compartes tu link y tus clientes te compran desde el navegador, sin instalar nada." },
     ],
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(softwareLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(howToLd) }} />
     </>
   );
 }
@@ -882,6 +916,9 @@ export default function AbrirTiendaPage() {
         {/* ── Beneficios con tabs interactivas ───────────────────────── */}
         <BenefitsTabs />
 
+        {/* ── Mirá cómo se ve — mockups del producto (tienda + panel) ── */}
+        <ProductShowcase />
+
         {/* ── Comparativa honesta — Buleje vs cuaderno vs POS caro ───── */}
         <CompareSection />
 
@@ -893,6 +930,12 @@ export default function AbrirTiendaPage() {
 
         {/* ── Prueba social — Plan Fundador ──────────────────────────── */}
         <SocialProofSection />
+
+        {/* ── Testimonio de un fundador (cara + nombre) ──────────────── */}
+        <FounderTestimonial />
+
+        {/* ── Captación inline por WhatsApp ──────────────────────────── */}
+        <LeadCaptureForm />
 
         {/* ── FAQ ─────────────────────────────────────────────────────── */}
         <section className="py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]">
@@ -982,7 +1025,7 @@ export default function AbrirTiendaPage() {
                   {[
                     { icon: Sparkles, label: "Listo en 5 minutos" },
                     { icon: CreditCard, label: "Sin tarjeta" },
-                    { icon: RefreshCcw, label: "Cancelás cuando quieras" },
+                    { icon: RefreshCcw, label: "Cancelas cuando quieras" },
                   ].map((c) => (
                     <span
                       key={c.label}
@@ -1021,6 +1064,9 @@ export default function AbrirTiendaPage() {
             </div>
           </div>
         </section>
+
+        {/* CTA flotante que sigue el scroll en esta página larga */}
+        <StickyActivateCTA />
       </main>
     </>
   );

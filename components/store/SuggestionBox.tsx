@@ -141,7 +141,7 @@ export default function SuggestionBox() {
                   className={cn(
                     "w-8 h-8 transition-colors",
                     (hoveredStar || rating) >= star
-                      ? "fill-[#f97316] text-[#f97316]"
+                      ? "fill-[#ff6b5b] text-[#ff6b5b]"
                       : "text-gray-300 dark:text-gray-600"
                   )}
                 />

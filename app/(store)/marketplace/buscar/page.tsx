@@ -1,28 +1,16 @@
 import type { Metadata } from "next";
 import { MarketplaceSearchDB } from "@/lib/db/marketplace-search.db";
 import BuscarClient from "@/components/marketplace/buscar/BuscarClient";
+import { leerParamsBuscar } from "@/lib/marketplace/buscar-params";
 
 interface PageProps {
-  searchParams: Promise<{
-    q?: string;
-    cat?: string | string[];
-    store?: string | string[];
-    sort?: string;
-    min?: string;
-    max?: string;
-    page?: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export async function generateMetadata({
-  searchParams,
-}: PageProps): Promise<Metadata> {
-  const params = await searchParams;
-  const q = params.q?.trim() ?? "";
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const { q } = leerParamsBuscar(await searchParams);
 
-  const title = q
-    ? `Resultados para "${q}" — Buleje`
-    : "Buscar productos — Buleje";
+  const title = q ? `Resultados para "${q}" — Buleje` : "Buscar productos — Buleje";
 
   const description = q
     ? `Encuentra "${q}" en bodegas y tiendas cerca tuyo en Ciudad Constitución. Delivery rápido, Yape y efectivo.`
@@ -55,47 +43,31 @@ export async function generateMetadata({
  *   min    — precio mínimo (S/)
  *   max    — precio máximo (S/)
  *   page   — pagina (1-indexed)
+ *   stock  — 1 = con stock · 0 = agotados
+ *   rating — estrellas mínimas de la tienda (1..4)
+ *   zone   — zona de la tienda
+ *
+ * Lectura y escritura del link: lib/marketplace/buscar-params.ts (una sola
+ * fuente con BuscarClient; un valor roto se ignora, nunca revienta).
  */
 export default async function BuscarPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-
-  const q = params.q?.trim() ?? "";
-  const sort = (params.sort ?? "relevance") as
-    | "relevance"
-    | "price_asc"
-    | "price_desc"
-    | "rating"
-    | "newest";
-  const page = Math.max(1, parseInt(params.page ?? "1", 10));
+  const params = leerParamsBuscar(await searchParams);
   const limit = 24;
-  const offset = (page - 1) * limit;
-
-  // Normalizar params multi-value (Next los puede pasar como string o string[])
-  const categories = params.cat
-    ? Array.isArray(params.cat)
-      ? params.cat
-      : [params.cat]
-    : [];
-
-  const stores = params.store
-    ? Array.isArray(params.store)
-      ? params.store
-      : [params.store]
-    : [];
-
-  const priceMin = params.min ? parseFloat(params.min) : undefined;
-  const priceMax = params.max ? parseFloat(params.max) : undefined;
 
   const initialData = await MarketplaceSearchDB.search({
-    q: q || undefined,
-    categories: categories.length ? categories : undefined,
-    stores: stores.length ? stores : undefined,
-    priceMin: isNaN(priceMin ?? NaN) ? undefined : priceMin,
-    priceMax: isNaN(priceMax ?? NaN) ? undefined : priceMax,
-    sort,
+    q: params.q || undefined,
+    categories: params.categories.length ? params.categories : undefined,
+    stores: params.stores.length ? params.stores : undefined,
+    priceMin: params.priceMin ?? undefined,
+    priceMax: params.priceMax ?? undefined,
+    availability: params.availability,
+    minRating: params.minRating || undefined,
+    zone: params.zone,
+    sort: params.sort,
     limit,
-    offset,
+    offset: (params.page - 1) * limit,
   });
+  const q = params.q;
 
   return (
     <>
@@ -109,16 +81,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
           ? `Resultados de búsqueda para "${q}" en bodegas de Ciudad Constitución`
           : "Busca productos en bodegas y tiendas de Ciudad Constitución — Buleje"}
       </h1>
-      <BuscarClient
-        initialQuery={q}
-        initialSort={sort}
-        initialPage={page}
-        initialData={initialData}
-        initialCategories={categories}
-        initialStores={stores}
-        initialPriceMin={priceMin}
-        initialPriceMax={priceMax}
-      />
+      <BuscarClient params={params} initialData={initialData} />
     </>
   );
 }

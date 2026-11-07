@@ -1,0 +1,1212 @@
+diff --git a/components/admin/OrdersTab/OrdersArchive.tsx b/components/admin/OrdersTab/OrdersArchive.tsx
+index 298a74b31..b705e4dd1 100644
+--- a/components/admin/OrdersTab/OrdersArchive.tsx
++++ b/components/admin/OrdersTab/OrdersArchive.tsx
+@@ -1,10 +1,18 @@
+ "use client";
+ 
++/**
++ * Pedidos y reparto › Archivados (`?vista=archivados`): los entregados y los
++ * cancelados. Antes era un modal que se abría desde el menú «Más»; ahora es
++ * una vista con link propio (plan «panel unificado», 2026-10-09).
++ *
++ * Sus filtros (cliente y fechas) van pegados a la tabla; en el celular la
++ * tabla se vuelve tarjetas sola (`useMobileTableCards`), sin tarjetas a mano.
++ */
+ import { useState } from "react";
+-import { Search, MapPin, Trash2 } from "@buleje/design-system/icons";
++import { Search, MapPin, Trash2, Archive } from "@buleje/design-system/icons";
+ import { DataTable } from "@buleje/design-system";
+-import { activateProps } from "@/components/admin/shared/a11y";
+-import AdminModal from "@/components/admin/shared/AdminModal";
++import { EmptyState } from "@/components/admin/EmptyState";
++import { IconAction } from "@/components/admin/shared/module-primitives";
+ import { cn } from "@/lib/utils";
+ import type { DbOrder } from "@/lib/jsondb";
+ import { formatDate } from "@/lib/admin-helpers";
+@@ -17,15 +25,13 @@ interface OrdersArchiveProps {
+   archivedOrders: DbOrder[];
+   onSelectOrder: (order: DbOrder) => void;
+   onDeleteOrder: (id: string) => void;
+-  onClose: () => void;
+ }
+ 
+-export function OrdersArchive({
+-  archivedOrders,
+-  onSelectOrder,
+-  onDeleteOrder,
+-  onClose,
+-}: OrdersArchiveProps) {
++const CAMPO =
++  "h-12 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:border-primary";
++const TH = "text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted";
++
++export function OrdersArchive({ archivedOrders, onSelectOrder, onDeleteOrder }: OrdersArchiveProps) {
+   const [archiveSearch, setArchiveSearch] = useState("");
+   const [archiveDateFrom, setArchiveDateFrom] = useState("");
+   const [archiveDateTo, setArchiveDateTo] = useState("");
+@@ -40,151 +46,85 @@ export function OrdersArchive({
+   });
+ 
+   return (
+-    <AdminModal open={true} onClose={onClose} title="Cancelados y Entregados" variant="wide">
+-        {/* Filters */}
+-        <div className="border-b border-[var(--rule-soft)] dark:border-card-border flex flex-col sm:flex-row gap-2 px-5 py-3 sm:px-6">
+-          <div className="relative flex-1">
+-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
+-            <input
+-              type="text"
+-              placeholder="Buscar cliente o teléfono…"
+-              value={archiveSearch}
+-              onChange={e => setArchiveSearch(e.target.value)}
+-              className="w-full pl-9 pr-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary"
+-            />
+-          </div>
++    <div className="space-y-3">
++      <div role="search" aria-label="Filtrar archivados" className="flex flex-col gap-2 sm:flex-row sm:items-center">
++        <div className="relative w-full sm:w-72">
++          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+           <input
+-            type="date"
+-            value={archiveDateFrom}
+-            onChange={e => setArchiveDateFrom(e.target.value)}
+-            title="Desde"
+-            aria-label="Desde"
+-            className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 h-10 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
+-          />
+-          <input
+-            type="date"
+-            value={archiveDateTo}
+-            onChange={e => setArchiveDateTo(e.target.value)}
+-            title="Hasta"
+-            aria-label="Hasta"
+-            className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 h-10 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
++            type="search"
++            placeholder="Buscar cliente o teléfono…"
++            aria-label="Buscar archivados por cliente o teléfono"
++            value={archiveSearch}
++            onChange={e => setArchiveSearch(e.target.value)}
++            className={cn(CAMPO, "w-full pl-9 pr-3")}
+           />
+         </div>
++        <input type="date" value={archiveDateFrom} onChange={e => setArchiveDateFrom(e.target.value)} title="Desde" aria-label="Desde" className={cn(CAMPO, "px-3 text-[var(--text-secondary)]")} />
++        <input type="date" value={archiveDateTo} onChange={e => setArchiveDateTo(e.target.value)} title="Hasta" aria-label="Hasta" className={cn(CAMPO, "px-3 text-[var(--text-secondary)]")} />
++      </div>
+ 
+-        <div className="p-5">
+-          {filteredArchive.length === 0 ? (
+-            <div className="h-32 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted text-sm">
+-              No se encontraron pedidos
+-            </div>
+-          ) : (
+-            <>
+-              {/* Desktop table */}
+-              <div className="hidden sm:block rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+-                <DataTable className="w-full text-sm">
+-                  <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)] dark:border-card-border">
+-                    <tr>
+-                      <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
+-                      <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Estado</th>
+-                      <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Total</th>
+-                      <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
+-                      <th className="px-4 py-2.5" />
+-                    </tr>
+-                  </thead>
+-                  <tbody className="divide-y divide-[var(--rule-soft)]">
+-                    {filteredArchive.map(o => (
+-                      <tr
+-                        key={o.id}
+-                        className="hover:bg-[var(--surface-sunken)] cursor-pointer"
+-                        onClick={() => { onSelectOrder(o); onClose(); }}
+-                        tabIndex={0}
+-                        onKeyDown={e => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelectOrder(o); onClose(); } }}
+-                        aria-label={`Ver pedido de ${o.customer.name}`}
+-                      >
+-                        <td className="px-4 py-3">
+-                          <p className="font-semibold text-[var(--text-primary)] dark:text-foreground"><EnlacePanel cosa="cliente" id={o.customer.phone}>{o.customer.name}</EnlacePanel></p>
+-                          {o.customer.phone && (
+-                            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{o.customer.phone}</p>
+-                          )}
+-                        </td>
+-                        <td className="px-4 py-3">
+-                          <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
+-                            {STATUS_LABELS[o.status]}
+-                          </span>
+-                        </td>
+-                        <td className="px-4 py-3 font-semibold text-primary">{formatCurrency(Number(o.total))}</td>
+-                        <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted">{formatDate(o.createdAt)}</td>
+-                        <td className="px-4 py-3">
+-                          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+-                            <a
+-                              href={googleMapsUrl(o.customer.location)}
+-                              target="_blank"
+-                              rel="noopener noreferrer"
+-                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
+-                              title="Ver en Maps"
+-                            >
+-                              <MapPin className="h-4 w-4" />
+-                            </a>
+-                            <button
+-                              onClick={() => onDeleteOrder(o.id)}
+-                              className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+-                              title="Eliminar"
+-                            >
+-                              <Trash2 className="h-4 w-4" />
+-                            </button>
+-                          </div>
+-                        </td>
+-                      </tr>
+-                    ))}
+-                  </tbody>
+-                </DataTable>
+-              </div>
+-
+-              {/* Mobile cards */}
+-              <div className="sm:hidden space-y-3">
+-                {filteredArchive.map(o => (
+-                  <div
+-                    key={o.id}
+-                    className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 cursor-pointer hover:bg-[var(--surface-sunken)] transition-colors"
+-                    {...activateProps(() => { onSelectOrder(o); onClose(); })}
+-                  >
+-                    <div className="flex justify-between items-start gap-3">
+-                      <div className="flex-1 min-w-0">
+-                        <p className="font-bold text-[var(--text-primary)] dark:text-foreground"><EnlacePanel cosa="cliente" id={o.customer.phone} className="font-bold">{o.customer.name}</EnlacePanel></p>
+-                        {o.customer.phone && (
+-                          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{o.customer.phone}</p>
+-                        )}
+-                        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5 truncate">{o.customer.location}</p>
+-                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{formatDate(o.createdAt)}</p>
+-                      </div>
+-                      <div className="shrink-0 text-right">
+-                        <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
+-                          {STATUS_LABELS[o.status]}
+-                        </span>
+-                        <p className="text-sm font-bold text-primary mt-1">{formatCurrency(Number(o.total))}</p>
+-                      </div>
+-                    </div>
+-                    <div className="flex gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border" onClick={e => e.stopPropagation()}>
++      {filteredArchive.length === 0 ? (
++        <EmptyState
++          icon={<Archive className="h-10 w-10 text-[var(--text-tertiary)]" />}
++          title={archivedOrders.length === 0 ? "Todavía no hay pedidos entregados ni cancelados" : "No encontramos pedidos con esa búsqueda"}
++          actions={[]}
++        />
++      ) : (
++        <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
++          <DataTable className="w-full text-sm">
++            <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)] dark:border-card-border">
++              <tr>
++                <th className={TH}>Cliente</th>
++                <th className={TH}>Estado</th>
++                <th className={TH}>Total</th>
++                <th className={TH}>Fecha</th>
++                <th className="px-4 py-2.5" aria-label="Acciones" />
++              </tr>
++            </thead>
++            <tbody className="divide-y divide-[var(--rule-soft)]">
++              {filteredArchive.map(o => (
++                <tr
++                  key={o.id}
++                  className="hover:bg-[var(--surface-sunken)] cursor-pointer"
++                  onClick={() => onSelectOrder(o)}
++                  tabIndex={0}
++                  onKeyDown={e => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelectOrder(o); } }}
++                  aria-label={`Ver pedido de ${o.customer.name}`}
++                >
++                  <td className="px-4 py-3">
++                    <span className="block font-semibold text-[var(--text-primary)] dark:text-foreground"><EnlacePanel cosa="cliente" id={o.customer.phone}>{o.customer.name}</EnlacePanel></span>
++                    {o.customer.phone && (
++                      <span className="block text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{o.customer.phone}</span>
++                    )}
++                  </td>
++                  <td className="px-4 py-3">
++                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
++                      {STATUS_LABELS[o.status]}
++                    </span>
++                  </td>
++                  <td className="px-4 py-3 font-semibold text-[var(--text-primary)] tabular-nums">{formatCurrency(Number(o.total))}</td>
++                  <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted">{formatDate(o.createdAt)}</td>
++                  <td className="px-4 py-3">
++                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                       <a
+                         href={googleMapsUrl(o.customer.location)}
+                         target="_blank"
+                         rel="noopener noreferrer"
+-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors"
++                        className="grid h-9 w-9 place-items-center rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--accent-ink)] hover:bg-primary/10 transition-colors"
++                        title="Ver en Maps"
++                        aria-label={`Ver en Maps la dirección de ${o.customer.name}`}
+                       >
+-                        <MapPin className="h-4 w-4" /> Maps
++                        <MapPin className="h-4 w-4" />
+                       </a>
+-                      <button
+-                        onClick={() => onDeleteOrder(o.id)}
+-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
+-                      >
+-                        <Trash2 className="h-4 w-4" /> Eliminar
+-                      </button>
++                      <IconAction icon={Trash2} label={`Eliminar el pedido de ${o.customer.name}`} tone="danger" onClick={() => onDeleteOrder(o.id)} />
+                     </div>
+-                  </div>
+-                ))}
+-              </div>
+-            </>
+-          )}
++                  </td>
++                </tr>
++              ))}
++            </tbody>
++          </DataTable>
+         </div>
+-    </AdminModal>
++      )}
++    </div>
+   );
+ }
+diff --git a/components/admin/OrdersTab/OrdersFilters.tsx b/components/admin/OrdersTab/OrdersFilters.tsx
+index 3aab24cd1..8c8f8fe16 100644
+--- a/components/admin/OrdersTab/OrdersFilters.tsx
++++ b/components/admin/OrdersTab/OrdersFilters.tsx
+@@ -1,12 +1,18 @@
+ "use client";
+ 
+-import { useId, useRef } from "react";
+-import { CardTitle } from "@buleje/design-system";
++/**
++ * El formulario completo de filtros de Pedidos y reparto: lo que no entra en
++ * la barra (origen, montos, notas internas) y, en el celular, todo. Se abre
++ * desde el botón «Filtros» de la barra (`BarraPedidos`) y escribe el MISMO
++ * estado que ella. Antes era un modal hecho a mano; ahora es `AdminModal`.
++ */
++import { useId } from "react";
+ import { Field } from "@/components/admin/shared/Field";
+-import { X, Search } from "@buleje/design-system/icons";
+-import { useModalAccesible } from "@/hooks/use-modal-accesible";
+-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
++import { Search } from "@buleje/design-system/icons";
++import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
++import { ModalFooter } from "@/components/admin/shared/ModalFooter";
++import { Button } from "@/components/ui-system/Button";
++import { button } from "@/components/ui-system/button-variants";
+ import { cn } from "@/lib/utils";
+ import type { OrderFilters, FiltersAction, OrderSource } from "./types";
+ import { STATUS_LABELS } from "./types";
+@@ -23,6 +29,16 @@ interface OrdersFiltersProps {
+   onClose: () => void;
+ }
+ 
++/** Opción elegida o no de los grupos «Origen» y «Método de pago». */
++const opcion = (activa: boolean) =>
++  button({
++    variant: "secondary",
++    className: cn(
++      "flex-1 rounded-xl px-3",
++      activa && "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
++    ),
++  });
++
+ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onRepartidor, onClose }: OrdersFiltersProps) {
+   const handleClearAndClose = () => {
+     dispatch({ type: "CLEAR" });
+@@ -30,46 +46,30 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+     onClose();
+   };
+ 
+-  const titleId = useId();
+   const dateFromId = useId();
+   const dateToId = useId();
+   const repartidorId = useId();
+-  const modalRef = useRef<HTMLDivElement>(null);
+-  useModalAccesible(modalRef, { onCerrar: onClose });
+-  const ventana = useVentanaDeModal(true, { ref: modalRef, aplicarTranslate: true, claveMemoria: "pedidos-filtros" });
+ 
+   return (
+-    <div
+-      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
+-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
++    <AdminModal
++      open
++      onClose={onClose}
++      title="Filtros de pedidos"
++      description="Afina qué pedidos ves en el tablero y en la lista"
++      variant="wide"
++      claveVentana="pedidos-filtros"
++      footer={
++        <ModalFooter>
++          <Button type="button" variant="secondary" onClick={handleClearAndClose}>
++            Limpiar filtros
++          </Button>
++          <Button type="button" variant="accent" onClick={onClose}>
++            Aplicar filtros
++          </Button>
++        </ModalFooter>
++      }
+     >
+-      <div
+-        ref={modalRef}
+-        role="dialog"
+-        aria-modal="true"
+-        aria-labelledby={titleId}
+-        tabIndex={-1}
+-        className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+-        onClick={e => e.stopPropagation()}
+-      >
+-        {/* Header */}
+-        <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
+-          <div>
+-            <CardTitle id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Filtros Avanzados</CardTitle>
+-            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Afina tu búsqueda de pedidos</p>
+-          </div>
+-          <span className="ml-auto flex items-center gap-1">
+-            <ControlesDeVentana ventana={ventana} />
+-            <button aria-label="Cerrar"
+-              onClick={onClose}
+-              className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
+-            >
+-              <X className="h-5 w-5" />
+-            </button>
+-          </span>
+-        </div>
+-
+-        <div className="overflow-y-auto flex-1 p-5 space-y-4">
++        <div className={cn(MODAL_BODY, "space-y-4")}>
+           {/* Status multi-select */}
+           <div className="space-y-2">
+             <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Estado</p>
+@@ -108,13 +108,10 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+               {(["", "direct", "marketplace"] as OrderSource[]).map(src => (
+                 <button
+                   key={src || "all"}
++                  type="button"
++                  aria-pressed={filters.source === src}
+                   onClick={() => dispatch({ type: "SET_SOURCE", value: src })}
+-                  className={cn(
+-                    "flex-1 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
+-                    filters.source === src
+-                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
+-                  )}
++                  className={opcion(filters.source === src)}
+                 >
+                   {src === "" ? "Todos" : src === "direct" ? "Tienda Personal" : "Marketplace"}
+                 </button>
+@@ -129,16 +126,13 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+               {(["yape", "efectivo"] as const).map(method => (
+                 <button
+                   key={method}
++                  type="button"
++                  aria-pressed={filters.paymentMethod === method}
+                   onClick={() => dispatch({
+                     type: "SET_PAYMENT_METHOD",
+                     value: filters.paymentMethod === method ? "" : method,
+                   })}
+-                  className={cn(
+-                    "flex-1 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
+-                    filters.paymentMethod === method
+-                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
+-                  )}
++                  className={opcion(filters.paymentMethod === method)}
+                 >
+                   {method === "yape" ? "Yape" : "Efectivo"}
+                 </button>
+@@ -154,7 +148,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+                 id={repartidorId}
+                 value={repartidor}
+                 onChange={(e) => onRepartidor(e.target.value)}
+-                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary"
++                className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary"
+               >
+                 <option value="">Todos los repartidores</option>
+                 {repartidores.map((r) => (
+@@ -173,7 +167,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+                 type="date"
+                 value={filters.dateFrom}
+                 onChange={(e) => dispatch({ type: "SET_DATE_FROM", value: e.target.value })}
+-                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
++                className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+               />
+             </div>
+             <div className="space-y-2">
+@@ -183,7 +177,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+                 type="date"
+                 value={filters.dateTo}
+                 onChange={(e) => dispatch({ type: "SET_DATE_TO", value: e.target.value })}
+-                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
++                className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+               />
+             </div>
+           </div>
+@@ -199,7 +193,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+                   value={filters.amountMin}
+                   onChange={(e) => dispatch({ type: "SET_AMOUNT_MIN", value: e.target.value })}
+                   placeholder="0.00"
+-                  className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
++                  className="w-full pl-8 pr-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                 />
+               </div>
+             </div>
+@@ -212,7 +206,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+                   value={filters.amountMax}
+                   onChange={(e) => dispatch({ type: "SET_AMOUNT_MAX", value: e.target.value })}
+                   placeholder="999.99"
+-                  className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
++                  className="w-full pl-8 pr-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                 />
+               </div>
+             </div>
+@@ -228,7 +222,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+                 value={filters.customerSearch}
+                 onChange={(e) => dispatch({ type: "SET_CUSTOMER_SEARCH", value: e.target.value })}
+                 placeholder="Nombre o teléfono..."
+-                className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
++                className="w-full pl-9 pr-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+               />
+             </div>
+           </div>
+@@ -272,23 +266,6 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
+           </div>
+         </div>
+ 
+-        {/* Footer */}
+-        <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 flex gap-3">
+-          <button
+-            onClick={handleClearAndClose}
+-            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+-          >
+-            Limpiar filtros
+-          </button>
+-          <button
+-            onClick={onClose}
+-            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+-          >
+-            Aplicar filtros
+-          </button>
+-        </div>
+-        <TiradorDeVentana ventana={ventana} />
+-      </div>
+-    </div>
++    </AdminModal>
+   );
+ }
+diff --git a/components/admin/OrdersTab/hooks/useDeliveryPartnersLive.ts b/components/admin/OrdersTab/hooks/useDeliveryPartnersLive.ts
+index 6a28a6347..951fdcded 100644
+--- a/components/admin/OrdersTab/hooks/useDeliveryPartnersLive.ts
++++ b/components/admin/OrdersTab/hooks/useDeliveryPartnersLive.ts
+@@ -1,6 +1,23 @@
+ "use client";
+ 
+-import { useCallback, useEffect, useState } from "react";
++/**
++ * Los repartidores en vivo del negocio (`/api/admin/delivery/partners-live`):
++ * quién está en línea, dónde, con qué pedido y con cuántas ofertas.
++ *
++ * UN solo hook para las dos pantallas que lo leen (plan «panel unificado»,
++ * 2026-10-09): el despacho del detalle del pedido (`DespachoSection`) y el
++ * mapa de Pedidos y reparto › Reparto › En vivo (`DeliveryPartnersLiveMap`).
++ * Antes cada una tenía su propio `fetch` al mismo endpoint, con su propio
++ * mensaje de error y su propio cada-cuánto.
++ *
++ * - El sondeo es silencioso; `refresh()` (el botón «Actualizar») prende
++ *   `refreshing` para que el ícono gire.
++ * - Una respuesta vieja no pisa a una nueva: cada pedido lleva su número y
++ *   sólo el último escribe (un sondeo lento que vuelve después del clic en
++ *   «Actualizar» dejaba el mapa con datos de antes).
++ */
++import { useCallback, useEffect, useRef, useState } from "react";
++import { tenantFetch } from "@/lib/tenant-fetch";
+ 
+ export interface DeliveryPartnerLive {
+   id: string;
+@@ -33,43 +50,74 @@ export interface DeliveryPartnersSummary {
+ export interface UseDeliveryPartnersLiveResult {
+   partners: DeliveryPartnerLive[];
+   summary: DeliveryPartnersSummary;
++  /** Hasta la primera respuesta. */
+   loading: boolean;
++  /** Mientras corre un `refresh()` pedido a mano (el sondeo no lo prende). */
++  refreshing: boolean;
+   error: string | null;
++  /** Cuándo llegó la última respuesta buena; `null` hasta la primera. */
++  lastUpdate: Date | null;
+   refresh: () => void;
+ }
+ 
+-const REFRESH_MS = 30_000;
++export interface OpcionesRepartidoresEnVivo {
++  /** `false` = no pide nada (el despacho cerrado). Por defecto, sí. */
++  enabled?: boolean;
++  /** Cada cuánto se vuelve a pedir. El despacho: 30 s; el mapa: 10 s. */
++  intervaloMs?: number;
++}
++
++const INTERVALO_POR_DEFECTO_MS = 30_000;
++const RESUMEN_VACIO: DeliveryPartnersSummary = { total: 0, online: 0, withOffer: 0, busy: 0 };
++
++export function useDeliveryPartnersLive(
++  opciones: OpcionesRepartidoresEnVivo | boolean = {},
++): UseDeliveryPartnersLiveResult {
++  const { enabled = true, intervaloMs = INTERVALO_POR_DEFECTO_MS } =
++    typeof opciones === "boolean" ? { enabled: opciones } : opciones;
+ 
+-export function useDeliveryPartnersLive(enabled = true): UseDeliveryPartnersLiveResult {
+   const [partners, setPartners] = useState<DeliveryPartnerLive[]>([]);
+-  const [summary, setSummary] = useState<DeliveryPartnersSummary>({ total: 0, online: 0, withOffer: 0, busy: 0 });
++  const [summary, setSummary] = useState<DeliveryPartnersSummary>(RESUMEN_VACIO);
+   const [loading, setLoading] = useState<boolean>(enabled);
++  const [refreshing, setRefreshing] = useState(false);
+   const [error, setError] = useState<string | null>(null);
++  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
++  const ultimoPedido = useRef(0);
+ 
+-  const load = useCallback(async () => {
++  const cargar = useCallback(async (aMano: boolean) => {
++    const numero = ++ultimoPedido.current;
++    if (aMano) setRefreshing(true);
+     try {
+-      const res = await fetch("/api/admin/delivery/partners-live", { credentials: "include" });
++      const res = await tenantFetch("/api/admin/delivery/partners-live");
++      if (numero !== ultimoPedido.current) return;
+       if (!res.ok) {
+-        setError("No pudimos cargar motorizados.");
++        setError(`No pudimos cargar a los repartidores (error ${res.status}).`);
+         return;
+       }
+-      const data = (await res.json()) as { partners: DeliveryPartnerLive[]; summary: DeliveryPartnersSummary };
++      const data = (await res.json()) as { partners?: DeliveryPartnerLive[]; summary?: DeliveryPartnersSummary };
++      if (numero !== ultimoPedido.current) return;
+       setPartners(data.partners ?? []);
+-      setSummary(data.summary ?? { total: 0, online: 0, withOffer: 0, busy: 0 });
++      setSummary(data.summary ?? RESUMEN_VACIO);
++      setLastUpdate(new Date());
+       setError(null);
+     } catch {
+-      setError("Error de red al cargar motorizados.");
++      if (numero === ultimoPedido.current) setError("Error de red: revisa tu conexión.");
+     } finally {
+-      setLoading(false);
++      if (numero === ultimoPedido.current) {
++        setLoading(false);
++        setRefreshing(false);
++      }
+     }
+   }, []);
+ 
+   useEffect(() => {
+     if (!enabled) return;
+-    void load();
+-    const t = setInterval(() => void load(), REFRESH_MS);
++    void cargar(false);
++    const t = setInterval(() => void cargar(false), intervaloMs);
+     return () => clearInterval(t);
+-  }, [enabled, load]);
++  }, [enabled, intervaloMs, cargar]);
+ 
+-  return { partners, summary, loading, error, refresh: load };
++  const refresh = useCallback(() => void cargar(true), [cargar]);
++
++  return { partners, summary, loading, refreshing, error, lastUpdate, refresh };
+ }
+diff --git a/components/admin/delivery/DeliveryPartnersLiveMap.tsx b/components/admin/delivery/DeliveryPartnersLiveMap.tsx
+index eb5639771..6358144db 100644
+--- a/components/admin/delivery/DeliveryPartnersLiveMap.tsx
++++ b/components/admin/delivery/DeliveryPartnersLiveMap.tsx
+@@ -14,7 +14,7 @@
+  *   - azul   → online + atendiendo pedido
+  */
+ 
+-import { useCallback, useEffect, useRef, useState } from "react";
++import { useEffect, useRef, useState } from "react";
+ import { CardTitle } from "@buleje/design-system";
+ import {
+   MapPin,
+@@ -31,7 +31,11 @@ import {
+   Users,
+ } from "@buleje/design-system/icons";
+ import { cn } from "@/lib/utils";
+-import { tenantFetch } from "@/lib/tenant-fetch";
++import {
++  useDeliveryPartnersLive,
++  type DeliveryPartnerLive,
++  type DeliveryPartnersSummary,
++} from "@/components/admin/OrdersTab/hooks/useDeliveryPartnersLive";
+ import { formatDateShort } from "@/lib/format";
+ 
+ // F1-XSS: helper modulo-level para escapar HTML antes de interpolar en Leaflet divIcon/bindPopup
+@@ -44,28 +48,8 @@ function escapeHtml(s: string): string {
+     .replace(/'/g, "&#039;");
+ }
+ 
+-interface Partner {
+-  id: string;
+-  name: string;
+-  phone: string;
+-  vehicleType: string;
+-  isOnline: boolean;
+-  lat: number | null;
+-  lng: number | null;
+-  lastPingAt: string | null;
+-  currentOrderId: string | null;
+-  rating: number | string;
+-  acceptanceRate: number | string;
+-  pendingOffers: number;
+-  activeAssignment: { id: string; orderId: string; status: string; fee: number | string } | null;
+-}
+-
+-interface Summary {
+-  total: number;
+-  online: number;
+-  withOffer: number;
+-  busy: number;
+-}
++type Partner = DeliveryPartnerLive;
++type Summary = DeliveryPartnersSummary;
+ 
+ const REFRESH_MS = 10_000;
+ const PUCALLPA_LAT = -8.379;
+@@ -185,12 +169,12 @@ export default function DeliveryPartnersLiveMap() {
+   const mapRef = useRef<any>(null);
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   const markersRef = useRef<Map<string, any>>(new Map());
+-  const [partners, setPartners] = useState<Partner[]>([]);
+-  const [summary, setSummary] = useState<Summary | null>(null);
+-  const [error, setError] = useState<string | null>(null);
+-  const [loading, setLoading] = useState(true);
+-  const [refreshing, setRefreshing] = useState(false);
+-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
++  // El mismo hook que el despacho del pedido (un solo fetch de repartidores en
++  // vivo, plan «panel unificado» 2026-10-09); acá se refresca cada 10 s.
++  const { partners, summary: resumen, loading, refreshing, error, lastUpdate, refresh } =
++    useDeliveryPartnersLive({ intervaloMs: REFRESH_MS });
++  // Sin respuesta buena todavía, no hay resumen que mostrar (como antes).
++  const summary: Summary | null = lastUpdate ? resumen : null;
+   const [selectedId, setSelectedId] = useState<string | null>(null);
+ 
+   // Inicializar mapa una vez
+@@ -223,41 +207,6 @@ export default function DeliveryPartnersLiveMap() {
+     };
+   }, []);
+ 
+-  const load = useCallback(async (opts?: { silent?: boolean }) => {
+-    if (!opts?.silent) setRefreshing(true);
+-    try {
+-      const res = await tenantFetch("/api/admin/delivery/partners-live");
+-      if (!res.ok) {
+-        setError(`HTTP ${res.status}`);
+-        return;
+-      }
+-      const data: { partners: Partner[]; summary: Summary } = await res.json();
+-      setPartners(data.partners);
+-      setSummary(data.summary);
+-      setError(null);
+-      setLastUpdate(new Date());
+-    } catch {
+-      setError("Error de red — verifica tu conexión");
+-    } finally {
+-      setLoading(false);
+-      setRefreshing(false);
+-    }
+-  }, []);
+-
+-  // Load + polling
+-  useEffect(() => {
+-    let cancelled = false;
+-    const tick = () => {
+-      if (!cancelled) void load({ silent: true });
+-    };
+-    void load();
+-    const id = setInterval(tick, REFRESH_MS);
+-    return () => {
+-      cancelled = true;
+-      clearInterval(id);
+-    };
+-  }, [load]);
+-
+   // Render markers cuando cambian partners
+   useEffect(() => {
+     if (!mapRef.current) return;
+@@ -365,7 +314,7 @@ export default function DeliveryPartnersLiveMap() {
+           </div>
+           <button
+             type="button"
+-            onClick={() => void load()}
++            onClick={refresh}
+             disabled={refreshing}
+             className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+           >
+@@ -455,7 +404,7 @@ export default function DeliveryPartnersLiveMap() {
+           <p className="text-sm font-bold text-[var(--data-error-500)] flex-1">{error}</p>
+           <button
+             type="button"
+-            onClick={() => void load()}
++            onClick={refresh}
+             className="text-sm font-bold text-[var(--data-error-500)] underline hover:no-underline"
+           >
+             Reintentar
+diff --git a/components/admin/unified/DeliveryPartnersModule.tsx b/components/admin/unified/DeliveryPartnersModule.tsx
+index 2cc6c4c92..a01fbef75 100644
+--- a/components/admin/unified/DeliveryPartnersModule.tsx
++++ b/components/admin/unified/DeliveryPartnersModule.tsx
+@@ -1,12 +1,30 @@
+ "use client";
+ 
+-import { useState, useEffect, useCallback } from "react";
+-import { useVistaModulo } from "@/hooks/use-vista-modulo";
++/**
++ * Reparto — el delivery del negocio, en 5 secciones (plan «panel unificado»,
++ * 2026-10-09; Brandon eligió Delivery DENTRO de Pedidos y reparto).
++ *
++ *   En vivo        ← delivery-partners:live + pedidos-vivo (= delivery-live)
++ *   Repartidores   ← delivery-partners:repartidores + solicitudes («Postulantes»)
++ *   Asignaciones   ← delivery-partners:asignaciones + permisos (mismo /api/store-permissions)
++ *   Pagos          ← delivery-partners:retiros
++ *   Ranking        ← delivery-partners:ranking
++ *
++ * Se monta de dos maneras, con el MISMO cuerpo (R5: mover = montar):
++ *  - dentro de Pedidos y reparto (`anidado`): la sección vive en `?sub=`,
++ *    porque `?vista=reparto` es de Pedidos; la barra no dibuja título (la
++ *    pestaña del hub ya lo dice, module-depth);
++ *  - suelto, por `?tab=delivery-partners` mientras ese id no sea un alias:
++ *    la sección vive en `?vista=` y los nombres viejos (`live`, `retiros`…)
++ *    llevan a la sección que hoy los cubre.
++ */
+ import dynamic from "next/dynamic";
+-import { Truck, Users, ClipboardList, Shield, RefreshCw, MapPin, FileText, Trophy, Activity, Wallet } from "@buleje/design-system/icons";
+-import { cn } from "@/lib/utils";
+-import { tenantFetch } from "@/lib/tenant-fetch";
++import { ClipboardList, MapPin, Trophy, Truck, Users, Wallet } from "@buleje/design-system/icons";
++import { useSubvistaModulo, useVistaModulo, type AliasDeVista } from "@/hooks/use-vista-modulo";
+ import AdminTabBar from "@/components/admin/shared/AdminTabBar";
++import Plegable from "@/components/admin/shared/Plegable";
++import SegmentedControl from "@/components/ui-system/SegmentedControl";
++import FranjaReparto from "@/components/admin/delivery/FranjaReparto";
+ import { RepartidoresTab } from "@/components/admin/delivery-partners/tabs/RepartidoresTab";
+ import { AsignacionesTab } from "@/components/admin/delivery-partners/tabs/AsignacionesTab";
+ import { PermisosTab } from "@/components/admin/delivery-partners/tabs/PermisosTab";
+@@ -14,103 +32,113 @@ import { RankingTab } from "@/components/admin/delivery-partners/tabs/RankingTab
+ import { SolicitudesTab } from "@/components/admin/delivery-partners/tabs/SolicitudesTab";
+ import { RetirosTab } from "@/components/admin/repartidores/RetirosTab";
+ 
+-// Lazy-load del mapa Leaflet (usa window) — tab "live".
++// Lazy-load del mapa Leaflet (usa window).
+ const DeliveryPartnersLiveMap = dynamic(
+   () => import("@/components/admin/delivery/DeliveryPartnersLiveMap"),
+   { ssr: false, loading: () => <div className="h-[600px] flex items-center justify-center text-[var(--text-tertiary)]">Cargando mapa…</div> },
+ );
+ 
+-// Delivery en vivo (seguimiento de pedidos en ruta) — consolidado como sub-tab
+-// (antes era el módulo top-level "delivery-live"). No trae header propio, así
+-// que se renderiza bajo el header "Delivery" sin duplicar.
+-const DeliveryEnVivoTab = dynamic(() => import("@/components/admin/DeliveryTab"), { ssr: false, loading: () => <div className="h-[400px] flex items-center justify-center text-[var(--text-tertiary)]">Cargando…</div> });
++// Rutas y paradas (antes la pestaña «Pedidos en vivo» y, antes, el módulo
++// «delivery-live»). No trae cabecera propia.
++const DeliveryEnVivoTab = dynamic(() => import("@/components/admin/DeliveryTab"), {
++  ssr: false,
++  loading: () => <div className="h-[400px] flex items-center justify-center text-[var(--text-tertiary)]">Cargando…</div>,
++});
+ 
+ const MODULE_ID = "delivery-partners";
+ 
+ const TABS = [
+-  { id: "live",          label: "En vivo",       icon: MapPin },
+-  { id: "pedidos-vivo",  label: "Pedidos en vivo", icon: Activity },
+-  { id: "repartidores",  label: "Repartidores",  icon: Users },
+-  { id: "solicitudes",   label: "Solicitudes",   icon: FileText },
+-  { id: "asignaciones",  label: "Asignaciones",  icon: ClipboardList },
+-  { id: "retiros",       label: "Retiros",        icon: Wallet },
+-  { id: "ranking",       label: "Ranking",        icon: Trophy },
+-  { id: "permisos",      label: "Permisos",       icon: Shield },
++  { id: "en-vivo", label: "En vivo", icon: MapPin },
++  { id: "repartidores", label: "Repartidores", icon: Users },
++  { id: "asignaciones", label: "Asignaciones y permisos", shortLabel: "Asignaciones", icon: ClipboardList },
++  { id: "pagos", label: "Pagos a repartidores", shortLabel: "Pagos", icon: Wallet },
++  { id: "ranking", label: "Ranking", icon: Trophy },
+ ];
+ 
+-type TabId = string;
+-const TAB_IDS: readonly TabId[] = TABS.map((t) => t.id);
++/**
++ * Lo que la URL puede pedir. `postulantes` no es pestaña: es Repartidores con el
++ * filtro de quienes postularon (la vieja «Solicitudes»), y así tiene link propio.
++ */
++const SECCIONES_REPARTO = ["en-vivo", "repartidores", "postulantes", "asignaciones", "pagos", "ranking"] as const;
++type Seccion = (typeof SECCIONES_REPARTO)[number];
+ 
+-// ─────────────────────────────────────────────
+-// Modal para crear/editar repartidor
+-// ─────────────────────────────────────────────
++/** Los ids de las 8 pestañas de antes → la sección que hoy los cubre. */
++const NOMBRES_VIEJOS: AliasDeVista<Seccion> = {
++  live: "en-vivo",
++  "pedidos-vivo": "en-vivo",
++  solicitudes: "postulantes",
++  retiros: "pagos",
++  permisos: "asignaciones",
++};
+ 
+-interface DeliveryKPIs {
+-  activePartners: number;
+-  deliveriesToday: number;
+-  pendingDeliveries: number;
++export default function DeliveryPartnersModule({
++  initialTab,
++  anidado = false,
++}: { initialTab?: string; anidado?: boolean } = {}) {
++  return anidado ? <RepartoAnidado /> : <RepartoSuelto initialTab={initialTab} />;
+ }
+ 
+-export default function DeliveryPartnersModule({ initialTab }: { initialTab?: string } = {}) {
+-  // La sub-vista vive en `?vista=` (useVistaModulo): link compartible, «atrás» del
+-  // navegador y destino de avisos y del buscador. Antes era estado local y `?vista=`
+-  // se ignoraba (medido 2026-09-14: `?vista=` se ignoraba en 16 módulos).
+-  const { vista: tab, irA: setTab } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
+-  const [, setKpis] = useState<DeliveryKPIs>({
+-    activePartners: 0,
+-    deliveriesToday: 0,
+-    pendingDeliveries: 0,
++function RepartoSuelto({ initialTab }: { initialTab?: string }) {
++  const forzada = initialTab ? (NOMBRES_VIEJOS[initialTab] ?? initialTab) : undefined;
++  const { vista, irA } = useVistaModulo<Seccion>(MODULE_ID, SECCIONES_REPARTO, "en-vivo", forzada, {
++    alias: NOMBRES_VIEJOS,
+   });
+-  const [kpisLoading, setKpisLoading] = useState(true);
++  return <Reparto seccion={vista} irA={irA} />;
++}
+ 
+-  const refreshKpis = useCallback(() => {
+-    setKpisLoading(true);
+-    tenantFetch("/api/delivery/kpis")
+-      .then((r) => (r.ok ? r.json() : null))
+-      .then((d) => { if (d) setKpis(d as DeliveryKPIs); })
+-      .catch((err) => console.warn("[DeliveryPartnersModule] /api/delivery/kpis failed:", err))
+-      .finally(() => setKpisLoading(false));
+-  }, []);
+-
+-  useEffect(() => { refreshKpis(); }, [refreshKpis]);
++function RepartoAnidado() {
++  const { vista, irA } = useSubvistaModulo<Seccion>(MODULE_ID, SECCIONES_REPARTO, "en-vivo");
++  return <Reparto seccion={vista} irA={irA} />;
++}
+ 
++function Reparto({ seccion, irA }: { seccion: Seccion; irA: (v: string) => void }) {
++  const activa = seccion === "postulantes" ? "repartidores" : seccion;
+   return (
+-    <div className="space-y-4">
+-      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+-          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+-          pestañas a la derecha, una sola regla; las acciones del módulo, en
+-          la misma banda. Recupera ~90px verticales por pantalla. */}
+-      <AdminTabBar
+-        heading={{
+-          title: "Delivery",
+-          description: "Gestiona repartidores, asignaciones, retiros y permisos.",
+-          icon: Truck,
+-          actions: (
+-            <>
+-              <button
+-                onClick={refreshKpis}
+-                className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+-                title="Actualizar"
+-              >
+-                <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
+-              </button>
+-            </>
+-          ),
+-        }}
+-        tabs={TABS}
+-        activeTab={tab}
+-        onTabChange={(id) => setTab(id)}
+-        moduleId={MODULE_ID}
+-      >
+-        {tab === "live"         && <DeliveryPartnersLiveMap />}
+-        {tab === "pedidos-vivo" && <DeliveryEnVivoTab />}
+-        {tab === "repartidores" && <RepartidoresTab />}
+-        {tab === "solicitudes"  && <SolicitudesTab />}
+-        {tab === "asignaciones" && <AsignacionesTab />}
+-        {tab === "retiros"      && <RetirosTab />}
+-        {tab === "ranking"      && <RankingTab />}
+-        {tab === "permisos"     && <PermisosTab />}
+-      </AdminTabBar>
+-    </div>
++    <AdminTabBar
++      heading={{
++        title: "Delivery",
++        description: "Repartidores en vivo, tu equipo y quienes postulan, asignaciones, pagos y ranking.",
++        icon: Truck,
++      }}
++      tabs={TABS}
++      activeTab={activa}
++      onTabChange={irA}
++      moduleId={MODULE_ID}
++    >
++      <div className="space-y-4">
++        <FranjaReparto />
++        {activa === "en-vivo" && (
++          <>
++            <DeliveryPartnersLiveMap />
++            <Plegable clave="pedidos:reparto:rutas" titulo="Rutas y paradas">
++              <DeliveryEnVivoTab />
++            </Plegable>
++          </>
++        )}
++        {activa === "repartidores" && (
++          <>
++            <SegmentedControl<"repartidores" | "postulantes">
++              value={seccion === "postulantes" ? "postulantes" : "repartidores"}
++              onChange={irA}
++              label="Qué repartidores ver"
++              size="lg"
++              options={[
++                { value: "repartidores", label: "Tu equipo" },
++                { value: "postulantes", label: "Postulantes" },
++              ]}
++            />
++            {seccion === "postulantes" ? <SolicitudesTab /> : <RepartidoresTab />}
++          </>
++        )}
++        {activa === "asignaciones" && (
++          <>
++            <AsignacionesTab />
++            <PermisosTab />
++          </>
++        )}
++        {activa === "pagos" && <RetirosTab />}
++        {activa === "ranking" && <RankingTab />}
++      </div>
++    </AdminTabBar>
+   );
+ }
+diff --git a/components/admin/unified/RecursosHumanosHubModule.tsx b/components/admin/unified/RecursosHumanosHubModule.tsx
+index b3c289144..2d5ed636b 100644
+--- a/components/admin/unified/RecursosHumanosHubModule.tsx
++++ b/components/admin/unified/RecursosHumanosHubModule.tsx
+@@ -1,21 +1,29 @@
+ "use client";
+ 
+ /**
+- * RecursosHumanosHubModule — el hub de Recursos Humanos (ADR-414 §7).
++ * RecursosHumanosHubModule — «Equipo»: el hub de Recursos Humanos (ADR-414 §7)
++ * más Tareas y Notas (plan «panel unificado» 2026-10, F28).
+  *
+- * Personal, asistencia del día y del mes, lo ganado de referencia y contratos
+- * vinculados, en un solo lugar. El hub NO deduce el rol en el cliente: filtra
+- * las sub-pestañas con el `nivel` que devuelve `GET /api/rrhh/resumen` — el
+- * servidor vuelve a chequear en cada ruta, esto es sólo para no ofrecer un
+- * botón que 403 al tocarlo.
++ * Personal, asistencia del día y del mes, lo ganado de referencia, contratos
++ * vinculados, puestos, tareas y notas, en un solo lugar. El hub NO deduce el
++ * rol en el cliente: filtra las sub-pestañas de RRHH con el `nivel` que
++ * devuelve `GET /api/rrhh/resumen` — el servidor vuelve a chequear en cada
++ * ruta, esto es sólo para no ofrecer un botón que 403 al tocarlo.
++ *
++ * Tareas y Notas vivían en su propio hub (`EquipoHubModule`, `?tab=tareas`) y
++ * NO dependen del nivel de RRHH (`nivelMin: null`): un rol sin RRHH que antes
++ * las abría (analista, superadmin) las sigue abriendo — el 403 del resumen ya
++ * no tapa el hub. Quién las ve lo decide su `origen` (`useVistasPermitidas`,
++ * regla R2 del plan): el mismo permiso que tenía la pestaña de donde vienen.
+  */
+ 
+-import { useMemo } from "react";
++import { useEffect, useMemo } from "react";
+ import dynamic from "next/dynamic";
+-import { CalendarDays, Users, Wallet, FileSignature, Briefcase } from "@buleje/design-system/icons";
++import { Briefcase, CalendarDays, CheckSquare, FileSignature, StickyNote, Users, Wallet } from "@buleje/design-system/icons";
+ import { useVistaModulo } from "@/hooks/use-vista-modulo";
+ import { useRrhhResumen } from "@/hooks/use-rrhh-resumen";
+-import AdminTabBar from "@/components/admin/shared/AdminTabBar";
++import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
++import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+ import { LoadingState, ErrorAlert } from "@buleje/design-system";
+ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+ import type { NivelRrhh } from "@/lib/rrhh/tipos";
+@@ -25,32 +33,50 @@ const PersonalView = dynamic(() => import("@/components/admin/rrhh/personal/Pers
+ const GanadoView = dynamic(() => import("@/components/admin/rrhh/ganado/GanadoView"), { loading: S });
+ const ContratosDelPersonalView = dynamic(() => import("@/components/admin/rrhh/contratos/ContratosDelPersonalView"), { loading: S });
+ const PuestosView = dynamic(() => import("@/components/admin/rrhh/puestos/PuestosView"), { loading: S });
++const TasksTab = dynamic(() => import("@/components/admin/TasksTab"), { loading: S });
++const QuickNotesTab = dynamic(() => import("@/components/admin/QuickNotesTab"), { loading: S });
+ 
+ const MODULE_ID = "rrhh-hub";
+ 
++/** El id de la pestaña en la barra: con él se leen el registro de vistas y su permiso. */
++const TAB = "rrhh";
++
+ const NIVEL_ORDEN: Record<NivelRrhh, number> = { marcar: 0, gestion: 1, completo: 2 };
+ 
+-const TODAS_LAS_VISTAS = [
+-  { id: "asistencia", label: "Asistencia", icon: CalendarDays, nivelMin: "marcar" as NivelRrhh },
+-  { id: "personal", label: "Personal", icon: Users, nivelMin: "gestion" as NivelRrhh },
+-  { id: "ganado", label: "Lo ganado", icon: Wallet, nivelMin: "completo" as NivelRrhh },
+-  { id: "contratos", label: "Contratos", icon: FileSignature, nivelMin: "gestion" as NivelRrhh },
+-  { id: "puestos", label: "Puestos", icon: Briefcase, nivelMin: "gestion" as NivelRrhh },
++interface VistaEquipo extends AdminTab {
++  /** El nivel de RRHH mínimo para verla; `null` = no depende de RRHH. */
++  nivelMin: NivelRrhh | null;
++}
++
++const TODAS_LAS_VISTAS: VistaEquipo[] = [
++  { id: "asistencia", label: "Asistencia", icon: CalendarDays, nivelMin: "marcar" },
++  { id: "personal", label: "Personal", icon: Users, nivelMin: "gestion" },
++  { id: "ganado", label: "Lo ganado", icon: Wallet, nivelMin: "completo" },
++  { id: "contratos", label: "Contratos", icon: FileSignature, nivelMin: "gestion" },
++  { id: "puestos", label: "Puestos", icon: Briefcase, nivelMin: "gestion" },
++  { id: "tareas", label: "Tareas", icon: CheckSquare, nivelMin: null },
++  { id: "notas", label: "Notas", icon: StickyNote, nivelMin: null },
+ ];
+ 
++/** Va al ⓘ del título: por qué cada uno ve distintas pestañas. */
++const AYUDA =
++  "Lo de tu gente en un solo lugar. Lo que ves depende de tu rol: cajero y almacenero marcan la asistencia; " +
++  "el encargado suma personal, contratos y puestos; el dueño, además, lo ganado. Tareas y Notas son de todo el equipo.";
++
+ export default function RecursosHumanosHubModule({ initialTab }: { initialTab?: string } = {}) {
+-  const { resumen, loading, error, recargar } = useRrhhResumen();
++  const { resumen, loading, error, sinAcceso, recargar } = useRrhhResumen();
+ 
+   // Sólo la PRIMERA carga tapa la pantalla. `recargar()` lo llaman la hoja
+   // del día (tras «Todos presentes» o un alta) y antes volvía a pintar este
+   // loader: desmontaba Asistencia y te devolvía a HOY aunque estuvieras
+   // corrigiendo el 10/09 (memoria: guard `loading && !X`).
+-  if (loading && !resumen) return <LoadingState message="Cargando Recursos Humanos..." />;
++  if (loading && !resumen) return <LoadingState message="Cargando Equipo..." />;
+ 
+-  if (!resumen) {
++  // Sin acceso a RRHH no es una falla: quedan Tareas y Notas.
++  if (!resumen && !sinAcceso) {
+     return (
+       <ErrorAlert
+-        title="No se pudo abrir Recursos Humanos"
++        title="No se pudo abrir Equipo"
+         description={error ?? "Intenta de nuevo en un momento."}
+         action={
+           <button
+@@ -65,7 +91,7 @@ export default function RecursosHumanosHubModule({ initialTab }: { initialTab?:
+     );
+   }
+ 
+-  return <HubConNivel nivel={resumen.nivel} initialTab={initialTab} onCambioPersonal={recargar} />;
++  return <HubConNivel nivel={resumen?.nivel ?? null} initialTab={initialTab} onCambioPersonal={recargar} />;
+ }
+ 
+ /**
+@@ -75,27 +101,51 @@ export default function RecursosHumanosHubModule({ initialTab }: { initialTab?:
+  * mientras el resumen cargaba, sólo conocía «asistencia» (el nivel por
+  * defecto): un link a `?vista=personal` se reescribía a `?vista=asistencia` y
+  * la memoria de «donde quedaste» tampoco sobrevivía (medido 2026-09-14).
++ *
++ * Por lo mismo la URL se valida contra las vistas del NIVEL y no contra las
++ * permitidas: el permiso por origen necesita el rol de `/api/auth/me`, y
++ * mientras llega un `?vista=tareas` se habría reescrito a asistencia.
+  */
+-function HubConNivel({ nivel, initialTab, onCambioPersonal }: { nivel: NivelRrhh; initialTab?: string; onCambioPersonal: () => void }) {
+-  const tabs = useMemo(() => TODAS_LAS_VISTAS.filter((v) => NIVEL_ORDEN[nivel] >= NIVEL_ORDEN[v.nivelMin]), [nivel]);
+-  const tabIds = useMemo(() => tabs.map((t) => t.id), [tabs]);
++function HubConNivel({ nivel, initialTab, onCambioPersonal }: { nivel: NivelRrhh | null; initialTab?: string; onCambioPersonal: () => void }) {
++  const porNivel = useMemo(
++    () => TODAS_LAS_VISTAS.filter((v) => v.nivelMin === null || (nivel !== null && NIVEL_ORDEN[nivel] >= NIVEL_ORDEN[v.nivelMin])),
++    [nivel],
++  );
++  const tabIds = useMemo(() => porNivel.map((t) => t.id), [porNivel]);
++  const tabs = useVistasPermitidas(TAB, porNivel);
++  const ctx = useContextoPermiso();
+ 
+-  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, tabIds, "asistencia", initialTab);
++  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, tabIds, tabIds[0], initialTab);
++  const permitida = tabs.some((t) => t.id === sub);
++
++  // Con el rol ya confirmado, una vista que no le toca (llegó por un enlace)
++  // cae en la primera que sí. Mientras no se confirma, la vista espera.
++  useEffect(() => {
++    if (ctx && !permitida && tabs[0]) setSub(tabs[0].id);
++  }, [ctx, permitida, tabs, setSub]);
+ 
+   return (
+     <div className="space-y-4">
+       <AdminTabBar
+-        heading={{ title: "Recursos Humanos", description: "Personal, asistencia, lo ganado de referencia y contratos.", icon: Users }}
++        heading={{ title: "Equipo", description: AYUDA, icon: Users }}
+         tabs={tabs}
+         activeTab={sub}
+         onTabChange={setSub}
+         moduleId={MODULE_ID}
+       >
+-        {sub === "asistencia" && <AsistenciaView nivel={nivel} onCambioPersonal={onCambioPersonal} />}
+-        {sub === "personal" && <PersonalView nivel={nivel} />}
+-        {sub === "ganado" && nivel === "completo" && <GanadoView />}
+-        {sub === "contratos" && <ContratosDelPersonalView />}
+-        {sub === "puestos" && <PuestosView nivel={nivel} />}
++        {!permitida ? (
++          <S />
++        ) : (
++          <>
++            {sub === "asistencia" && nivel && <AsistenciaView nivel={nivel} onCambioPersonal={onCambioPersonal} />}
++            {sub === "personal" && nivel && <PersonalView nivel={nivel} />}
++            {sub === "ganado" && nivel === "completo" && <GanadoView />}
++            {sub === "contratos" && nivel && <ContratosDelPersonalView />}
++            {sub === "puestos" && nivel && <PuestosView nivel={nivel} />}
++            {sub === "tareas" && <TasksTab />}
++            {sub === "notas" && <QuickNotesTab />}
++          </>
++        )}
+       </AdminTabBar>
+     </div>
+   );
+diff --git a/hooks/use-rrhh-resumen.ts b/hooks/use-rrhh-resumen.ts
+index acb7216bf..db268be12 100644
+--- a/hooks/use-rrhh-resumen.ts
++++ b/hooks/use-rrhh-resumen.ts
+@@ -16,6 +16,11 @@ export interface UseRrhhResumenResult {
+   resumen: ResumenRrhhDTO | null;
+   loading: boolean;
+   error: string | null;
++  /**
++   * El rol no entra a Recursos Humanos (403). No es una falla: el hub «Equipo»
++   * igual muestra Tareas y Notas, que no dependen del nivel de RRHH.
++   */
++  sinAcceso: boolean;
+   recargar: () => void;
+ }
+ 
+@@ -23,19 +28,30 @@ export function useRrhhResumen(): UseRrhhResumenResult {
+   const [resumen, setResumen] = useState<ResumenRrhhDTO | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
++  const [sinAcceso, setSinAcceso] = useState(false);
+   const [tick, setTick] = useState(0);
+ 
+   useEffect(() => {
+     let vigente = true;
+     setLoading(true);
+     setError(null);
++    setSinAcceso(false);
+     fetch("/api/rrhh/resumen", { credentials: "include" })
+       .then((r) => {
+-        if (!r.ok) throw new Error(r.status === 403 ? "Sin acceso a Recursos Humanos" : "No se pudo cargar el resumen");
++        // 403 = un rol sin RRHH (analista, superadmin): es el camino esperado,
++        // no se registra como falla.
++        if (r.status === 403) {
++          if (vigente) {
++            setSinAcceso(true);
++            setError("Sin acceso a Recursos Humanos");
++          }
++          return null;
++        }
++        if (!r.ok) throw new Error("No se pudo cargar el resumen");
+         return r.json() as Promise<ResumenRrhhDTO>;
+       })
+       .then((data) => {
+-        if (vigente) setResumen(data);
++        if (vigente && data) setResumen(data);
+       })
+       .catch((err) => {
+         sinDato("RRHH resumen")(err);
+@@ -51,5 +67,5 @@ export function useRrhhResumen(): UseRrhhResumenResult {
+ 
+   const recargar = useCallback(() => setTick((t) => t + 1), []);
+ 
+-  return { resumen, loading, error, recargar };
++  return { resumen, loading, error, sinAcceso, recargar };
+ }

@@ -61,9 +61,9 @@ function buildMessage(items: SimpleCartItem[], heading?: string): string {
   lines.push("");
   lines.push(`*Total: ${fmtCurrency(total)}*`);
   lines.push("");
-  lines.push("👉 ¿Falta algo? Avisame antes que cierre el pedido.");
+  lines.push("👉 ¿Falta algo? Avísame antes que cierre el pedido.");
   lines.push("");
-  lines.push("Comprá en Buleje: https://buleje.pe/tiendas");
+  lines.push("Compra en Buleje: https://buleje.pe/tiendas");
   return lines.join("\n");
 }
 

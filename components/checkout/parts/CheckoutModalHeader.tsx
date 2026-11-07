@@ -52,7 +52,7 @@ export function CheckoutModalHeader({
           <h2 className="font-extrabold text-white text-xl leading-tight">
             Completar pedido
           </h2>
-          <p className="text-sm text-white/70">
+          <p className="text-sm text-white/70 dark:text-white">
             {displayName} · {itemCount}{" "}
             {itemCount === 1 ? "producto" : "productos"}
           </p>

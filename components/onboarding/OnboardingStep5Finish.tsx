@@ -45,7 +45,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
 
       <div className="space-y-4">
         {/* Notifications */}
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)] has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--accent-soft)]">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-primary/10 has-[:checked]:border-[var(--accent)] has-[:checked]:bg-primary/10">
           <input
             type="checkbox"
             checked={data.notifications}
@@ -59,7 +59,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
         </label>
 
         {/* PWA */}
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)] has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--accent-soft)]">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-primary/10 has-[:checked]:border-[var(--accent)] has-[:checked]:bg-primary/10">
           <input
             type="checkbox"
             checked={data.pwa}
@@ -73,7 +73,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
         </label>
 
         {/* WhatsApp resumen */}
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)] has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--accent-soft)]">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 transition-all duration-200 hover:border-[var(--accent)]/50 hover:bg-primary/10 has-[:checked]:border-[var(--accent)] has-[:checked]:bg-primary/10">
           <input
             type="checkbox"
             checked={data.whatsappResumen}

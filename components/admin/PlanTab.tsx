@@ -1,41 +1,36 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
+/**
+ * Configuración › Plan (`?tab=config&vista=plan`).
+ *
+ * Compactado el 11-10 (patrón del panel, «lo central a la vista»): una
+ * tarjeta «Tu plan» con qué plan tienes, el uso del mes, qué te falta y el
+ * botón para mejorar; «Comparar planes» y «Dominio propio» plegados con su
+ * resumen. Antes eran 6 bloques apilados (2,32 pantallas) y «Funcionalidades
+ * incluidas» repetía la lista de la tarjeta de tu plan en «Comparar planes».
+ * Las piezas viven en `components/admin/settings/plan/`.
+ */
 import { useEffect, useState } from "react";
-import {
-  Zap, ShoppingBag, Users, ShoppingCart, Globe, BarChart2,
-  CheckCircle2, XCircle, Crown, Loader2, AlertTriangle, CreditCard,
-  Link, Trash2, RefreshCw,
-} from "@buleje/design-system/icons";
-import { PLANS, type PlanId, type PlanDef, type PlanLimits } from "@/lib/plans";
+import { toast } from "sonner";
+import { CardTitle, LoadingState } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import Plegable from "@/components/admin/shared/Plegable";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { button } from "@/components/ui-system/button-variants";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { tenantFetch } from "@/lib/tenant-fetch";
+import { PLANS, PLAN_ORDER, type PlanId, type PlanDef, type PlanLimits } from "@/lib/plans";
+import { FUNCIONALIDADES, PlanCard, UsageBar, precioPlan } from "@/components/admin/settings/plan/PlanCard";
+import { DominioPropio } from "@/components/admin/settings/plan/DominioPropio";
+import {
+  AlertTriangle, ArrowUpRight, CreditCard, Loader2, ShoppingBag, ShoppingCart, Users, XCircle, Zap,
+} from "@buleje/design-system/icons";
 
-// ─── Icono SVG de Mercado Pago ────────────────────────────
-function MercadoPagoIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 28 28"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M14 0C6.268 0 0 6.268 0 14s6.268 14 14 14 14-6.268 14-14S21.732 0 14 0zm6.576 10.164c-.394 2.61-2.07 4.76-4.34 5.875l2.43 5.797H15.29l-2.13-5.07h-1.498v5.07H8.28V7.164h5.688c2.942 0 5.014 1.274 6.608 3zm-6.608-.558h-2.256v4.046h2.256c1.38 0 2.34-.87 2.34-2.024 0-1.152-.96-2.022-2.34-2.022z" />
-    </svg>
-  );
-}
-
-// ─── Types ───────────────────────────────────────────────
 interface PlanStatus {
   plan: string;
   planDef: PlanDef;
   limits: PlanLimits;
-  usage: {
-    products: number;
-    users: number;
-    ordersThisMonth: number;
-  };
+  usage: { products: number; users: number; ordersThisMonth: number };
   tenant: {
     id?: string;
     slug: string;
@@ -47,246 +42,36 @@ interface PlanStatus {
   };
 }
 
-// ─── Helpers ─────────────────────────────────────────────
-function pct(used: number, max: number) {
-  if (max === -1) return 0; // unlimited
-  return Math.min(100, Math.round((used / max) * 100));
+const CLAVE_COMPARAR = "ajustes-plegable-plan-comparar";
+const PRIMERO_CON_DOMINIO = PLAN_ORDER.map((id) => PLANS[id]).find((p) => p.limits.customDomain);
+
+/** Lo que devuelve un checkout: la URL a la que ir, o el error para el toast. */
+async function irAlPago(url: string, body: Record<string, unknown> | null, campo: "url" | "init_point", error: string) {
+  const res = await tenantFetch(url, {
+    method: "POST",
+    ...(body ? { headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) } : {}),
+  });
+  const data = await res.json() as { url?: string; init_point?: string; error?: string };
+  const destino = data[campo];
+  if (!res.ok || !destino) { toast.error(data.error ?? error); return; }
+  window.location.href = destino;
 }
 
-function formatLimit(max: number) {
-  return max === -1 ? "Ilimitado" : max.toLocaleString("es-PE");
-}
-
-const PLAN_COLORS: Record<string, string> = {
-  free: "bg-gray-200 dark:bg-gray-700 text-[var(--text-primary)]",
-  pro: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-  business: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
-  enterprise: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
-};
-
-const PLAN_BAR_COLOR: Record<string, string> = {
-  free: "bg-gray-400",
-  pro: "bg-[var(--accent-soft)]",
-  business: "bg-[var(--text-primary)]",
-  enterprise: "bg-[var(--data-warning-500)]",
-};
-
-const WARNING_THRESHOLD = 80; // % usage where we show a warning
-
-// ─── UsageBar ────────────────────────────────────────────
-function UsageBar({
-  label, icon, used, max, planId,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  used: number;
-  max: number;
-  planId: string;
-}) {
-  const unlimited = max === -1;
-  const percent = pct(used, max);
-  const isWarning = !unlimited && percent >= WARNING_THRESHOLD;
-  const isFull = !unlimited && percent >= 100;
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-1.5 font-medium">
-          {icon}
-          {label}
-        </div>
-        <span className={`text-xs font-semibold ${isFull ? "text-[var(--data-error-500)]" : isWarning ? "text-[var(--data-warning-500)]" : "text-muted"}`}>
-          {unlimited ? (
-            <span className="text-[var(--data-success-500)] font-bold">∞ ilimitado</span>
-          ) : (
-            <>{used.toLocaleString("es-PE")} / {max.toLocaleString("es-PE")}</>
-          )}
-        </span>
-      </div>
-      {!unlimited && (
-        <div className="h-2 w-full bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${isFull ? "bg-[var(--data-error-500)]" : isWarning ? "bg-[var(--data-warning-500)]" : PLAN_BAR_COLOR[planId] ?? "bg-primary"}`}
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-      )}
-      {isWarning && !isFull && (
-        <p className="text-xs text-[var(--data-warning-500)] flex items-center gap-1">
-          <AlertTriangle className="w-3 h-3" /> Cerca del límite ({percent}%)
-        </p>
-      )}
-      {isFull && (
-        <p className="text-xs text-[var(--data-error-500)] flex items-center gap-1">
-          <XCircle className="w-3 h-3" /> Límite alcanzado — actualiza tu plan
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ─── FeatureRow ───────────────────────────────────────────
-function FeatureRow({ label, available }: { label: string; available: boolean }) {
-  return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      {available ? (
-        <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)] shrink-0" />
-      ) : (
-        <XCircle className="w-4 h-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />
-      )}
-      <span className={available ? "text-[var(--text-primary)]" : "text-muted line-through"}>{label}</span>
-    </div>
-  );
-}
-
-// ─── PlanCard ─────────────────────────────────────────────
-function PlanCard({
-  def,
-  isActive,
-  onSelectStripe,
-  onSelectMP,
-  loadingStripe,
-  loadingMP,
-}: {
-  def: PlanDef;
-  isActive: boolean;
-  onSelectStripe?: () => void;
-  onSelectMP?: () => void;
-  loadingStripe?: boolean;
-  loadingMP?: boolean;
-}) {
-  const limits = def.limits;
-  const isPaid = def.priceMonthly > 0;
-
-  return (
-    <div
-      className={`rounded-xl border-2 p-3 sm:p-5 space-y-4 transition-all ${
-        isActive
-          ? "border-primary bg-primary/5"
-          : "border-[var(--rule-base)] hover:border-primary/40"
-      }`}
-    >
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            {(def.id === "business" || def.id === "enterprise") && <Crown className={`w-4 h-4 ${def.id === "enterprise" ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`} />}
-            <CardTitle className="font-bold text-base">{def.name}</CardTitle>
-          </div>
-          <div className="mt-1">
-            {def.priceMonthly === 0 ? (
-              <span className="text-xl sm:text-2xl font-extrabold">Gratis</span>
-            ) : (
-              <span className="text-xl sm:text-2xl font-extrabold">
-                ${def.priceMonthly}
-                <span className="text-sm font-normal text-muted">/mes</span>
-              </span>
-            )}
-          </div>
-        </div>
-        {isActive && (
-          <span className="text-xs font-bold px-2 py-1 rounded-full bg-primary text-white">
-            Plan actual
-          </span>
-        )}
-      </div>
-
-      {/* Limits */}
-      <div className="space-y-1 text-sm text-muted">
-        <p className="flex items-center gap-1"><ShoppingBag className="w-3.5 h-3.5" /> {formatLimit(limits.maxProducts)} productos</p>
-        <p className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {formatLimit(limits.maxUsers)} usuarios</p>
-        <p className="flex items-center gap-1"><ShoppingCart className="w-3.5 h-3.5" /> {formatLimit(limits.maxOrdersPerMonth)} pedidos/mes</p>
-      </div>
-
-      {/* Features */}
-      <div className="space-y-1.5 border-t border-[var(--rule-base)] pt-3">
-        <FeatureRow label="Dominio propio" available={limits.customDomain} />
-        <FeatureRow label="Analytics avanzado" available={limits.advancedAnalytics} />
-        <FeatureRow label="API access" available={limits.apiAccess} />
-        <FeatureRow label="Multi-tienda" available={limits.multiStore} />
-        <FeatureRow label="Soporte prioritario" available={limits.prioritySupport} />
-        <FeatureRow label="White label" available={limits.whiteLabel} />
-        <FeatureRow label="Soporte dedicado" available={limits.dedicatedSupport} />
-        <FeatureRow label="SLA garantizado" available={limits.sla} />
-      </div>
-
-      {/* CTAs — solo si no es el plan actual y es de pago */}
-      {!isActive && isPaid && (
-        <div className="space-y-2">
-          {/* Stripe */}
-          <button
-            onClick={onSelectStripe}
-            disabled={loadingStripe || loadingMP}
-            className="w-full py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
-          >
-            {loadingStripe ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <CreditCard className="w-4 h-4" />
-            )}
-            Tarjeta / Stripe
-          </button>
-
-          {/* Mercado Pago */}
-          <button
-            onClick={onSelectMP}
-            disabled={loadingStripe || loadingMP}
-            className="w-full py-2 rounded-lg text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
-            style={{ backgroundColor: loadingStripe || loadingMP ? "#009ee3cc" : "#009ee3" }}
-          >
-            {loadingMP ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <MercadoPagoIcon className="w-4 h-4" />
-            )}
-            Yape / BCP / MP
-          </button>
-        </div>
-      )}
-
-      {/* Plan gratuito sin botones de pago */}
-      {!isActive && !isPaid && (
-        <p className="text-xs text-muted text-center">Plan base — sin costo</p>
-      )}
-    </div>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────
 export default function PlanTab() {
   const [status, setStatus] = useState<PlanStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
   const [redirectingMP, setRedirectingMP] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [now] = useState(() => Date.now());
+  const [, setCompararAbierto] = useLocalStorage<boolean>(CLAVE_COMPARAR, false);
 
-  // ── Custom domain state ──
-  const [domainInput, setDomainInput] = useState("");
-  const [domainSaving, setDomainSaving] = useState(false);
-  const [domainRemoving, setDomainRemoving] = useState(false);
-  const [domainVerifying, setDomainVerifying] = useState(false);
-  const [domainVerified, setDomainVerified] = useState<boolean | null>(null);
-  const [domainVerifyMsg, setDomainVerifyMsg] = useState("");
-
-  const showToast = (msg: string, ok = true) => {
-    setToast({ msg, ok });
-    setTimeout(() => setToast(null), 3500);
-  };
-
-  // Leer mp_status al regresar del checkout de Mercado Pago
+  // Al volver del checkout de Mercado Pago: aviso y se limpia el parámetro de la URL.
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const mpStatus = params.get("mp_status");
-    if (mpStatus === "approved") {
-      showToast("Pago con Mercado Pago aprobado. Tu plan se actualizará en breve.");
-    } else if (mpStatus === "pending") {
-      showToast("Pago pendiente. Te notificaremos cuando se confirme.", true);
-    } else if (mpStatus === "failure") {
-      showToast("El pago con Mercado Pago no se completó. Intenta de nuevo.", false);
-    }
-    // Limpiar el parámetro de la URL sin recargar la página
+    if (mpStatus === "approved") toast.success("Pago con Mercado Pago aprobado", { description: "Tu plan se actualiza en breve." });
+    else if (mpStatus === "pending") toast("Pago pendiente", { description: "Te avisamos cuando se confirme." });
+    else if (mpStatus === "failure") toast.error("El pago con Mercado Pago no se completó", { description: "Prueba de nuevo." });
     if (mpStatus) {
       const cleanUrl = window.location.pathname + (window.location.search.replace(/[?&]mp_status=[^&]*/g, "").replace(/^&/, "?") || "");
       window.history.replaceState({}, "", cleanUrl);
@@ -295,377 +80,148 @@ export default function PlanTab() {
 
   useEffect(() => {
     fetch("/api/plan")
-      .then((r) => {
-        if (!r.ok) throw new Error("not ok");
-        return r.json();
-      })
-      .then((data: PlanStatus) => {
-        setStatus(data);
-        setDomainInput(data.tenant?.customDomain ?? "");
-      })
-      .catch(() => showToast("Error al cargar el plan", false))
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((data: PlanStatus) => setStatus(data))
+      .catch(() => toast.error("No se pudo cargar tu plan"))
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSaveDomain = async () => {
-    const domain = domainInput.trim().toLowerCase();
-    if (!domain) return;
-    setDomainSaving(true);
+  const pagar = async (planId: PlanId, medio: "stripe" | "mp") => {
+    const set = medio === "stripe" ? setRedirecting : setRedirectingMP;
+    set(true);
     try {
-      const res = await fetch("/api/tenant/custom-domain", {
-        method: "PUT",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ domain }),
-      });
-      const data = await res.json() as { customDomain?: string; error?: string };
-      if (!res.ok) { showToast(data.error ?? "Error al guardar dominio", false); return; }
-      setStatus((prev) => prev ? { ...prev, tenant: { ...prev.tenant, customDomain: data.customDomain ?? domain } } : prev);
-      setDomainVerified(null);
-      setDomainVerifyMsg("");
-      showToast("Dominio guardado. Configura el CNAME para activarlo.");
+      if (medio === "stripe") await irAlPago("/api/billing/checkout", { plan: planId }, "url", "No se pudo iniciar el pago");
+      else await irAlPago("/api/billing/mp-checkout", { plan: planId }, "init_point", "No se pudo iniciar el pago con Mercado Pago");
+    } catch {
+      toast.error("Error de red. Prueba de nuevo.");
     } finally {
-      setDomainSaving(false);
+      set(false);
     }
   };
 
-  const handleRemoveDomain = async () => {
-    setDomainRemoving(true);
-    try {
-      const res = await fetch("/api/tenant/custom-domain", { method: "DELETE" });
-      if (!res.ok) { showToast("Error al eliminar dominio", false); return; }
-      setStatus((prev) => prev ? { ...prev, tenant: { ...prev.tenant, customDomain: null } } : prev);
-      setDomainInput("");
-      setDomainVerified(null);
-      showToast("Dominio eliminado");
-    } finally {
-      setDomainRemoving(false);
-    }
-  };
-
-  const handleVerifyDomain = async () => {
-    setDomainVerifying(true);
-    setDomainVerified(null);
-    try {
-      const res = await fetch("/api/tenant/custom-domain/verify");
-      const data = await res.json() as { verified: boolean; target?: string; expected?: string; error?: string };
-      setDomainVerified(data.verified);
-      if (data.verified) {
-        setDomainVerifyMsg("¡CNAME verificado! Tu dominio ya apunta correctamente.");
-      } else if (data.error) {
-        setDomainVerifyMsg(data.error);
-      } else {
-        setDomainVerifyMsg(`CNAME apunta a "${data.target}" pero se esperaba "${data.expected}".`);
-      }
-    } finally {
-      setDomainVerifying(false);
-    }
-  };
-
-  const handleUpgrade = async (planId: PlanId) => {
+  const abrirPortal = async () => {
     setRedirecting(true);
-    try {
-      const res = await tenantFetch("/api/billing/checkout", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ plan: planId }),
-      });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        showToast(data.error ?? "No se pudo iniciar el pago", false);
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      showToast("Error de red. Intenta de nuevo.", false);
-    } finally {
-      setRedirecting(false);
-    }
+    try { await irAlPago("/api/billing/portal", null, "url", "No se pudo abrir el portal de facturación"); }
+    catch { toast.error("Error de red. Prueba de nuevo."); }
+    finally { setRedirecting(false); }
   };
 
-  const handleUpgradeMP = async (planId: PlanId) => {
-    setRedirectingMP(true);
-    try {
-      const res = await tenantFetch("/api/billing/mp-checkout", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ plan: planId }),
-      });
-      const data = await res.json() as { init_point?: string; error?: string };
-      if (!res.ok || !data.init_point) {
-        showToast(data.error ?? "No se pudo iniciar el pago con Mercado Pago", false);
-        return;
-      }
-      window.location.href = data.init_point;
-    } catch {
-      showToast("Error de red. Intenta de nuevo.", false);
-    } finally {
-      setRedirectingMP(false);
-    }
+  const verPlanes = () => {
+    setCompararAbierto(true);
+    setTimeout(() => document.getElementById("plan-comparar")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   };
 
-  const handlePortal = async () => {
-    setRedirecting(true);
-    try {
-      const res = await tenantFetch("/api/billing/portal", { method: "POST" });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        showToast(data.error ?? "No se pudo abrir el portal de facturación", false);
-        return;
-      }
-      window.location.href = data.url;
-    } catch {
-      showToast("Error de red. Intenta de nuevo.", false);
-    } finally {
-      setRedirecting(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <LoadingState />
-    );
-  }
+  if (loading) return <LoadingState />;
 
   if (!status) {
     return (
-      <div className="text-center py-16 text-muted text-sm">
-        <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-40" />
-        No se pudo cargar la información del plan.
-      </div>
+      <p role="alert" className="flex items-center gap-2 py-8 text-sm text-[var(--text-secondary)]">
+        <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-ink)]" aria-hidden /> No se pudo cargar la información de tu plan.
+      </p>
     );
   }
 
   const { plan, planDef, limits, usage, tenant } = status;
-
-  // Trial banner
-  const trialDaysLeft = tenant.trialEndsAt
-    ? Math.ceil((new Date(tenant.trialEndsAt).getTime() - now) / 86400000)
-    : null;
+  const trialDaysLeft = tenant.trialEndsAt ? Math.ceil((new Date(tenant.trialEndsAt).getTime() - now) / 86400000) : null;
   const trialActive = trialDaysLeft !== null && trialDaysLeft > 0;
+  const faltan = FUNCIONALIDADES.filter((f) => !limits[f.clave]);
+  const incluye = FUNCIONALIDADES.filter((f) => limits[f.clave]);
+  const puedeMejorar = PLAN_ORDER.indexOf(plan as PlanId) < PLAN_ORDER.length - 1;
+  const conPortal = plan !== "free" && Boolean(tenant.stripeCustomerId);
+  const dominio = tenant.customDomain ?? null;
+  const setDominio = (d: string | null) => setStatus((prev) => (prev ? { ...prev, tenant: { ...prev.tenant, customDomain: d } } : prev));
 
   return (
-    <div className="space-y-8 max-w-4xl">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm font-medium ${
-            toast.ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]"
-          }`}
-        >
-          {toast.msg}
-        </div>
-      )}
-
-      {/* Trial banner */}
+    <div className="space-y-4">
       {trialActive && (
-        <div className="flex flex-wrap items-center gap-3 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-4">
-          <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)] shrink-0" />
-          <div>
-            <p className="font-semibold text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-              Período de prueba — {trialDaysLeft} día{trialDaysLeft !== 1 ? "s" : ""} restantes
-            </p>
-            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
-              Actualiza tu plan antes de que venza para no perder el acceso.
-            </p>
-          </div>
-        </div>
+        <p className="flex items-center gap-2 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-semibold text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/20">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+          Período de prueba: te quedan {trialDaysLeft} día{trialDaysLeft !== 1 ? "s" : ""}
+          <InfoTip title="Período de prueba" what="Mejora tu plan antes de que venza para no perder el acceso." />
+        </p>
       )}
 
-      {/* Current plan header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
-        <div>
-          <SectionTitle className="text-base sm:text-xl font-bold flex flex-wrap items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            Plan actual
-          </SectionTitle>
-          <p className="text-muted text-sm mt-1">Tienda: <strong>{tenant.name ?? tenant.slug}</strong></p>
-        </div>
-        <span className={`text-sm font-bold px-4 py-1.5 rounded-full ${PLAN_COLORS[plan] ?? PLAN_COLORS.free}`}>
-          {planDef.name}
-          {plan !== "free" && ` — $${planDef.priceMonthly}/mes`}
-        </span>
-      </div>
-
-      {/* Usage meters */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-3 sm:space-y-6">
-        <CardTitle className="font-semibold text-sm text-muted">Uso del mes actual</CardTitle>
-        <UsageBar
-          label="Productos"
-          icon={<ShoppingBag className="w-4 h-4 text-muted" />}
-          used={usage.products}
-          max={limits.maxProducts}
-          planId={plan}
-        />
-        <UsageBar
-          label="Usuarios activos"
-          icon={<Users className="w-4 h-4 text-muted" />}
-          used={usage.users}
-          max={limits.maxUsers}
-          planId={plan}
-        />
-        <UsageBar
-          label="Pedidos este mes"
-          icon={<ShoppingCart className="w-4 h-4 text-muted" />}
-          used={usage.ordersThisMonth}
-          max={limits.maxOrdersPerMonth}
-          planId={plan}
-        />
-      </div>
-
-      {/* Features enabled */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-3">
-        <CardTitle className="font-semibold text-sm text-muted flex items-center gap-1.5">
-          <BarChart2 className="w-4 h-4" /> Funcionalidades incluidas
-        </CardTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <FeatureRow label="Analytics avanzado" available={limits.advancedAnalytics} />
-          <FeatureRow label="API Access" available={limits.apiAccess} />
-          <FeatureRow label="Multi-tienda" available={limits.multiStore} />
-          <FeatureRow label="Soporte prioritario" available={limits.prioritySupport} />
-          <FeatureRow label="White label" available={limits.whiteLabel} />
-          <FeatureRow label="Soporte dedicado" available={limits.dedicatedSupport} />
-          <FeatureRow label="SLA garantizado" available={limits.sla} />
-        </div>
-      </div>
-
-      {/* Custom domain management */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-4">
-        <CardTitle className="font-semibold text-sm text-muted flex items-center gap-1.5">
-          <Globe className="w-4 h-4" /> Dominio personalizado
-        </CardTitle>
-        {!limits.customDomain ? (
-          <div className="flex flex-wrap items-start gap-3 text-sm text-muted">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" />
-            <span>El dominio personalizado está disponible en los planes <strong>Pro</strong>, <strong>Business</strong> y <strong>Enterprise</strong>. Actualiza tu plan para configurarlo.</span>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Input row */}
-            <div className="flex flex-wrap gap-2">
-              <div className="relative flex-1">
-                <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                <input
-                  type="text"
-                  value={domainInput}
-                  onChange={(e) => setDomainInput(e.target.value)}
-                  placeholder="www.mitienda.com"
-                  className="w-full bg-transparent border border-(--color-card-border) rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <button
-                onClick={handleSaveDomain}
-                disabled={domainSaving || !domainInput.trim()}
-                className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {domainSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                Guardar
+      {/* Tu plan: qué tienes, cuánto usaste, qué te falta y el botón. */}
+      <section aria-label="Tu plan" className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--rule-soft)] px-4 py-2.5 sm:px-5 dark:border-[var(--rule-base)]">
+          <Zap className="h-5 w-5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
+          <CardTitle className="text-base font-bold">Tu plan: {planDef.name}</CardTitle>
+          <span className="rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-sm font-bold text-[var(--text-primary)]">{precioPlan(planDef)}</span>
+          <InfoTip title="Tu plan" what={`Tienda: ${tenant.name ?? tenant.slug}. El uso cuenta los productos y usuarios de hoy y los pedidos de este mes.`} />
+          <div className="ml-auto flex flex-wrap gap-2">
+            {conPortal && (
+              <button type="button" onClick={abrirPortal} disabled={redirecting} title="Cambia tu método de pago, descarga facturas o cancela" className={button({ variant: "secondary", className: "rounded-xl" })}>
+                {redirecting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CreditCard className="h-4 w-4" aria-hidden />}
+                Facturación
               </button>
-              {tenant.customDomain && (
-                <button
-                  onClick={handleRemoveDomain}
-                  disabled={domainRemoving}
-                  title="Eliminar dominio"
-                  className="p-2.5 rounded-lg border border-[var(--data-error-500)] text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950 disabled:opacity-50"
-                >
-                  {domainRemoving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                </button>
-              )}
-            </div>
-
-            {/* DNS instructions */}
-            {tenant.customDomain && (
-              <div className="bg--(--color-surface) rounded-xl p-4 space-y-3">
-                <p className="text-sm font-semibold">Configura tu DNS</p>
-                <p className="text-xs text-muted">En el panel de tu proveedor de dominio, añade el siguiente registro:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs font-mono bg-muted/10 rounded-lg p-3">
-                  <div><span className="text-muted">Tipo</span><br /><strong>CNAME</strong></div>
-                  <div><span className="text-muted">Nombre</span><br /><strong>{tenant.customDomain.split(".")[0]}</strong></div>
-                  <div className="truncate"><span className="text-muted">Apunta a</span><br /><strong>{process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "bodegasaas.com"}</strong></div>
-                </div>
-                <p className="text-xs text-muted">Los cambios de DNS pueden tardar hasta 48 horas en propagarse.</p>
-
-                {/* Verify */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={handleVerifyDomain}
-                    disabled={domainVerifying}
-                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-(--color-card-border) hover:bg-(--color-surface) disabled:opacity-50"
-                  >
-                    {domainVerifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                    Verificar CNAME
-                  </button>
-                  {domainVerified === true && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--data-success-500)] font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Verificado
-                    </span>
-                  )}
-                  {domainVerified === false && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--data-error-500)]">
-                      <XCircle className="w-3.5 h-3.5" /> No verificado
-                    </span>
-                  )}
-                </div>
-                {domainVerifyMsg && (
-                  <p className={`text-xs mt-1 ${domainVerified ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>{domainVerifyMsg}</p>
-                )}
-              </div>
+            )}
+            {puedeMejorar && (
+              <button type="button" onClick={verPlanes} className={button({ variant: "primary", className: "rounded-xl" })}>
+                <ArrowUpRight className="h-4 w-4" aria-hidden /> Mejorar plan
+              </button>
             )}
           </div>
-        )}
+        </div>
+        <div className="space-y-4 px-4 py-4 sm:px-5">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <UsageBar label="Productos" icon={<ShoppingBag className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />} used={usage.products} max={limits.maxProducts} />
+            <UsageBar label="Usuarios" icon={<Users className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />} used={usage.users} max={limits.maxUsers} />
+            <UsageBar label="Pedidos del mes" icon={<ShoppingCart className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />} used={usage.ordersThisMonth} max={limits.maxOrdersPerMonth} />
+          </div>
+          {faltan.length > 0 && (
+            <p className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+              <span><span className="font-semibold text-[var(--text-primary)]">Te falta:</span> {faltan.map((f) => f.label).join(" · ")}</span>
+            </p>
+          )}
+          {faltan.length === 0 && incluye.length > 0 && (
+            <p className="text-sm text-[var(--data-success-ink)]">Tu plan incluye todo: {incluye.map((f) => f.label).join(" · ")}</p>
+          )}
+        </div>
+      </section>
+
+      <div id="plan-comparar" className="scroll-mt-24">
+        <Plegable
+          clave={CLAVE_COMPARAR}
+          titulo="Comparar planes"
+          resumen={`${PLAN_ORDER.length} planes · paga con tarjeta o con Yape, BCP y Mercado Pago`}
+          acciones={<InfoTip title="Cómo pagar tu plan" what="Paga con tarjeta (Stripe) o con Mercado Pago (Yape, BCP, Plin y más)." />}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {PLAN_ORDER.map((id) => PLANS[id]).map((def) => (
+              <PlanCard
+                key={def.id}
+                def={def}
+                isActive={def.id === plan}
+                onSelectStripe={() => pagar(def.id, "stripe")}
+                onSelectMP={() => pagar(def.id, "mp")}
+                loadingStripe={redirecting}
+                loadingMP={redirectingMP}
+              />
+            ))}
+          </div>
+          {(redirecting || redirectingMP) && (
+            <p className="mt-3 flex items-center justify-center gap-2 text-sm text-[var(--text-secondary)]" aria-live="polite">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> {redirecting ? "Te llevamos a pagar con tarjeta…" : "Te llevamos a Mercado Pago…"}
+            </p>
+          )}
+        </Plegable>
       </div>
 
-      {/* Manage subscription (only when on a paid plan with Stripe) */}
-      {plan !== "free" && tenant.stripeCustomerId && (
-        <div className="flex items-center justify-between bg--(--color-card) border border-(--color-card-border) rounded-xl px-5 py-4">
-          <div>
-            <p className="font-semibold text-sm">Gestionar facturación</p>
-            <p className="text-xs text-muted mt-0.5">Cambia tu método de pago, descarga facturas o cancela.</p>
-          </div>
-          <button
-            onClick={handlePortal}
-            disabled={redirecting}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-(--color-card-border) text-sm font-semibold hover:bg-(--color-surface) disabled:opacity-60"
-          >
-            {redirecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-            Portal de facturación
-          </button>
-        </div>
-      )}
-
-      {/* Plan comparison cards */}
-      <div>
-        <CardTitle className="font-semibold text-base mb-4">Comparar planes</CardTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-          {(Object.values(PLANS) as PlanDef[]).map((def) => (
-            <PlanCard
-              key={def.id}
-              def={def}
-              isActive={def.id === plan}
-              onSelectStripe={() => handleUpgrade(def.id)}
-              onSelectMP={() => handleUpgradeMP(def.id)}
-              loadingStripe={redirecting}
-              loadingMP={redirectingMP}
-            />
-          ))}
-        </div>
-
-        {/* Mensajes de redirección */}
-        {redirecting && (
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-sm text-muted">
-            <Loader2 className="w-4 h-4 animate-spin" /> Redirigiendo a Stripe…
-          </div>
+      <Plegable
+        clave="ajustes-plegable-plan-dominio"
+        titulo="Dominio propio"
+        resumen={dominio ?? (limits.customDomain ? "Sin configurar · www.mitienda.com" : `Desde el plan ${PRIMERO_CON_DOMINIO?.name ?? "Starter"}`)}
+      >
+        {limits.customDomain ? (
+          <DominioPropio dominio={dominio} onDominio={setDominio} />
+        ) : (
+          <p className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
+            Tu tienda con tu propia dirección (www.mitienda.com) viene desde el plan {PRIMERO_CON_DOMINIO?.name ?? "Starter"}.
+            {puedeMejorar && <button type="button" onClick={verPlanes} className="font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]">Ver planes</button>}
+          </p>
         )}
-        {redirectingMP && (
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-sm text-muted">
-            <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#009ee3" }} />
-            <span>Redirigiendo a Mercado Pago…</span>
-          </div>
-        )}
-
-        <p className="text-xs text-muted mt-4 text-center">
-          Paga con Stripe (tarjeta internacional) o Mercado Pago (Yape, BCP, Plin y más).
-        </p>
-      </div>
+      </Plegable>
     </div>
   );
 }

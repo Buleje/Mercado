@@ -20,6 +20,9 @@ import { useState } from "react";
 import { m } from "framer-motion";
 import { User, Phone, Loader2, ShieldCheck, Lock, UserPlus, ArrowRight, Mail, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import type { ClienteTienda } from "@/lib/tienda-cliente/contrato";
+import { CuentaGoogle } from "./parts/CuentaGoogle";
+import { LARGO_MAX_CELULAR_ESCRITO, limpiarCelularEscrito } from "./parts/phone-validation";
 
 interface PhoneValidation {
   valid: boolean;
@@ -39,8 +42,12 @@ export interface CheckoutAccountStepProps {
   onSkipAccount: () => void;
   /** Crear cuenta nueva. Opcional — solo UI; lógica server en el padre. */
   onCreateAccount?: (data: { phone: string; name: string; email?: string }) => Promise<void> | void;
-  /** Iniciar sesión con Google (OAuth). Opcional — solo UI. */
-  onGoogleSignIn?: () => Promise<void> | void;
+  /** Entrar con Google (`useGoogleCheckout().entrar`). Sin esto no hay botón. */
+  onGoogleSignIn?: (volverA?: string) => Promise<void>;
+  /** Cuenta de Google con la que ya entró: sólo rellena el nombre. */
+  clienteGoogle?: ClienteTienda | null;
+  /** «No soy yo» de la cuenta de Google. */
+  onSalirGoogle?: () => Promise<void> | void;
   /** Nombre de la tienda para copy ("Tu cuenta en X"). */
   storeName?: string;
 }
@@ -55,26 +62,20 @@ export function CheckoutAccountStep({
   onSkipAccount,
   onCreateAccount,
   onGoogleSignIn,
+  clienteGoogle = null,
+  onSalirGoogle,
   storeName,
 }: CheckoutAccountStepProps) {
   const [mode, setMode] = useState<Mode>("menu");
-  const [signupName, setSignupName] = useState("");
+  // null = el cliente todavía no tocó el campo: arranca con el nombre de Google.
+  const [signupNameEscrito, setSignupName] = useState<string | null>(null);
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupLoading, setSignupLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const signupName = signupNameEscrito ?? clienteGoogle?.nombre ?? "";
 
   const signupValid = signupName.trim().length >= 2 && signupPhone.length === 9 && signupPhone.startsWith("9");
-
-  const handleGoogleSignIn = async () => {
-    if (!onGoogleSignIn) return;
-    setGoogleLoading(true);
-    try {
-      await onGoogleSignIn();
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
 
   const handleCreateAccount = async () => {
     if (!signupValid || !onCreateAccount) return;
@@ -106,13 +107,13 @@ export function CheckoutAccountStep({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
-              {mode === "menu" && "¿Cómo querés continuar?"}
+              {mode === "menu" && "¿Cómo quieres continuar?"}
               {mode === "search" && "Buscar mi cuenta"}
               {mode === "signup" && "Crear cuenta nueva"}
             </h3>
-            <p className="text-sm text-muted leading-snug mt-0.5">
+            <p className="text-sm text-muted dark:text-[var(--text-tertiary)] leading-snug mt-0.5">
               {mode === "menu" && (storeName ? `Tu cuenta queda en ${storeName} — independiente de otras tiendas.` : "Tu información solo se guarda en esta tienda.")}
-              {mode === "search" && "Ingresá tu celular para cargar tus datos."}
+              {mode === "search" && "Ingresa tu celular para cargar tus datos."}
               {mode === "signup" && "Solo necesitamos tu nombre y celular."}
             </p>
           </div>
@@ -120,7 +121,7 @@ export function CheckoutAccountStep({
             <button
               type="button"
               onClick={() => setMode("menu")}
-              className="text-xs font-bold text-muted hover:text-[var(--text-primary)]"
+              className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
             >
               ← Volver
             </button>
@@ -130,26 +131,13 @@ export function CheckoutAccountStep({
         {/* ── MENU principal ───────────────────────────────────────── */}
         {mode === "menu" && (
           <div className="space-y-3">
-            {/* Google sign-in */}
-            {onGoogleSignIn && (
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={googleLoading}
-                className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] font-bold text-sm hover:border-primary/50 hover:shadow-md transition-all disabled:opacity-60"
-              >
-                {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleLogo />}
-                {googleLoading ? "Conectando…" : "Continuar con Google"}
-              </button>
-            )}
-
-            {onGoogleSignIn && (
-              <div className="flex items-center gap-3 py-1">
-                <div className="flex-1 h-px bg-[var(--rule-soft)]" />
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">o</span>
-                <div className="flex-1 h-px bg-[var(--rule-soft)]" />
-              </div>
-            )}
+            {/* Google: botón o «Hola, Ana» (interruptor loginGoogle del negocio) */}
+            <CuentaGoogle
+              cliente={clienteGoogle}
+              entrar={onGoogleSignIn}
+              onSalir={onSalirGoogle}
+              onContinuar={onSkipAccount}
+            />
 
             {/* Buscar cuenta */}
             <button
@@ -162,9 +150,9 @@ export function CheckoutAccountStep({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">Ya tengo cuenta</p>
-                <p className="text-xs text-muted mt-0.5 leading-snug">Buscar mis datos por número de celular</p>
+                <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-0.5 leading-snug">Buscar mis datos por número de celular</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+              <ArrowRight className="h-4 w-4 text-muted dark:text-[var(--text-tertiary)] group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
             </button>
 
             {/* Crear cuenta */}
@@ -179,9 +167,9 @@ export function CheckoutAccountStep({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">Crear cuenta</p>
-                  <p className="text-xs text-muted mt-0.5 leading-snug">Solo nombre + celular · 30 segundos</p>
+                  <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-0.5 leading-snug">Solo nombre + celular · 30 segundos</p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="h-4 w-4 text-muted dark:text-[var(--text-tertiary)] group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
               </button>
             )}
 
@@ -191,7 +179,7 @@ export function CheckoutAccountStep({
                 type="button"
                 onClick={onSkipAccount}
                 data-testid="checkout-skip-account"
-                className="text-sm font-semibold text-muted hover:text-[var(--text-primary)] transition-colors underline-offset-4 hover:underline"
+                className="text-sm font-semibold text-muted dark:text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors underline-offset-4 hover:underline"
               >
                 Continuar sin cuenta →
               </button>
@@ -202,22 +190,22 @@ export function CheckoutAccountStep({
         {/* ── BUSCAR ────────────────────────────────────────────── */}
         {mode === "search" && (
           <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 flex flex-col gap-3 bg-[var(--surface-raised)]">
-            <label className="text-xs font-bold text-muted uppercase tracking-wider">
+            <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider">
               Número de celular
             </label>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[var(--text-tertiary)]" />
                 <input
                   type="tel"
                   value={phoneQuery}
-                  onChange={(e) => onPhoneQueryChange(e.target.value.replace(/[^\d]/g, ""))}
+                  onChange={(e) => onPhoneQueryChange(limpiarCelularEscrito(e.target.value))}
                   placeholder="987 654 321"
-                  maxLength={9}
+                  maxLength={LARGO_MAX_CELULAR_ESCRITO}
                   onKeyDown={(e) => e.key === "Enter" && onPhoneSearch()}
                   autoFocus
                   className={cn(
-                    "w-full pl-10 pr-3 h-12 rounded-xl border-2 text-base text-[var(--text-primary)] placeholder:text-muted focus:ring-2 outline-none transition-all",
+                    "w-full pl-10 pr-3 h-12 rounded-xl border-2 text-base text-[var(--text-primary)] placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] focus:ring-2 outline-none transition-all",
                     phoneQuery.length === 0
                       ? "border-[var(--rule-base)] dark:border-[var(--rule-base)] focus:border-primary focus:ring-primary/20"
                       : phoneQueryValidation.valid
@@ -269,9 +257,9 @@ export function CheckoutAccountStep({
         {mode === "signup" && onCreateAccount && (
           <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 space-y-4 bg-[var(--surface-raised)]">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted uppercase tracking-wider">Tu nombre</label>
+              <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider">Tu nombre</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[var(--text-tertiary)]" />
                 <input
                   type="text"
                   value={signupName}
@@ -279,26 +267,26 @@ export function CheckoutAccountStep({
                   placeholder="María González"
                   maxLength={60}
                   autoFocus
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] text-base text-[var(--text-primary)] placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted uppercase tracking-wider">Celular (WhatsApp)</label>
+              <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider">Celular (WhatsApp)</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[var(--text-tertiary)]" />
                 <input
                   type="tel"
                   value={signupPhone}
-                  onChange={(e) => setSignupPhone(e.target.value.replace(/[^\d]/g, ""))}
+                  onChange={(e) => setSignupPhone(limpiarCelularEscrito(e.target.value))}
                   placeholder="987 654 321"
-                  maxLength={9}
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  maxLength={LARGO_MAX_CELULAR_ESCRITO}
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] text-base text-[var(--text-primary)] placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
               {signupPhone.length > 0 && signupPhone.length < 9 && (
-                <p className="text-xs text-muted">Ingresá los 9 dígitos completos</p>
+                <p className="text-xs text-muted dark:text-[var(--text-tertiary)]">Ingresa los 9 dígitos completos</p>
               )}
               {signupPhone.length === 9 && !signupPhone.startsWith("9") && (
                 <p className="text-xs text-[var(--data-error-500)] font-semibold">El celular debe empezar con 9</p>
@@ -306,18 +294,18 @@ export function CheckoutAccountStep({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
+              <label className="text-xs font-bold text-muted dark:text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1.5">
                 Email
-                <span className="text-[length:var(--ts-2xs)] font-normal text-muted normal-case tracking-normal">(opcional)</span>
+                <span className="text-[length:var(--ts-2xs)] font-normal text-muted dark:text-[var(--text-tertiary)] normal-case tracking-normal">(opcional)</span>
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[var(--text-tertiary)]" />
                 <input
                   type="email"
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] text-base text-[var(--text-primary)] placeholder:text-muted dark:placeholder:text-[var(--text-tertiary)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
             </div>
@@ -334,7 +322,7 @@ export function CheckoutAccountStep({
               {signupLoading ? "Creando cuenta…" : "Crear cuenta y continuar"}
             </m.button>
 
-            <p className="text-xs text-muted text-center leading-relaxed">
+            <p className="text-xs text-muted dark:text-[var(--text-tertiary)] text-center leading-relaxed">
               Tu cuenta queda solo en {storeName ?? "esta tienda"} — no se comparte con otras tiendas ni con marketplace.
             </p>
           </div>
@@ -342,33 +330,20 @@ export function CheckoutAccountStep({
 
         {/* Trust signals */}
         <div className="flex items-center justify-center gap-4 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted dark:text-[var(--text-tertiary)]">
             <ShieldCheck className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>Compra protegida</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted dark:text-[var(--text-tertiary)]">
             <Lock className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>SSL encriptado</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted dark:text-[var(--text-tertiary)]">
             <User className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>Solo en {storeName ?? "esta tienda"}</span>
           </div>
         </div>
       </div>
     </m.div>
-  );
-}
-
-// ── Logo de Google ────────────────────────────────────────────────
-
-function GoogleLogo() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
-      <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
-      <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
-      <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
-    </svg>
   );
 }

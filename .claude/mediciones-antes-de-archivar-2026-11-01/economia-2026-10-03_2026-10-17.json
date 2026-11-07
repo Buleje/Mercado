@@ -1,0 +1,16 @@
+{
+  "medido": "2026-11-01",
+  "sesiones": 34,
+  "gates a mano por sesión": {
+    "typecheck": 8.5,
+    "lint": 0.7,
+    "vitest": 8.5
+  },
+  "gates justo antes de commit por sesión": 5.5,
+  "llamadas por mensaje (hilo principal)": 1.1,
+  "subagentes": 454,
+  "turnos por subagente": 66.9,
+  "contexto inicial por subagente (tokens)": 38463,
+  "capturas leídas por subagente": 3.4,
+  "llamadas por mensaje (subagentes)": 1.2
+}

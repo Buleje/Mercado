@@ -1,0 +1,46 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=documentos&vista=drive&sub=all#documentos",
+  "ls": {
+    "doc-view-mode": "grandes",
+    "doc-vista-previa": "1"
+  },
+  "pasos": [
+    {
+      "esperar": "[data-qa=explorador] [data-clave^='d:']"
+    },
+    {
+      "esperar": 600
+    },
+    {
+      "eval": "(()=>{const pdf=[...document.querySelectorAll(\"[data-qa=explorador] [data-clave^='d:']\")].find(e=>/\\.pdf/i.test(e.textContent||''))||document.querySelector(\"[data-qa=explorador] [data-clave^='d:']\");pdf.scrollIntoView({block:'center',behavior:'instant'});pdf.click();return pdf.textContent.trim().slice(0,60)})()"
+    },
+    {
+      "esperar": "[data-qa=panel-vista-previa]"
+    },
+    {
+      "esperar": 3500
+    },
+    {
+      "eval": "(()=>{const p=document.querySelector('[data-qa=panel-vista-previa]');const r=p.getBoundingClientRect();return {ancho:Math.round(r.width),izq:Math.round(r.left),titulo:p.querySelector('h3,h4,[class*=CardTitle]')?.textContent||p.textContent.slice(0,80),queEs:/Qué es/.test(p.textContent),iframe:!!p.querySelector('iframe'),img:!!p.querySelector('img'),posicion:(p.textContent.match(/\\d+ de \\d+/)||[''])[0]}})()"
+    },
+    {
+      "eval": "(()=>{const f=[...document.querySelectorAll(\"[data-qa=explorador] [data-clave^='d:']\")].find(e=>/\\.(png|jpe?g)/i.test(e.textContent||''));f.click();window.scrollBy(0,500);return f.textContent.trim().slice(0,40)})()"
+    },
+    {
+      "esperar": 2500
+    },
+    {
+      "eval": "(()=>{const p=document.querySelector('[data-qa=panel-vista-previa]');const img=[...p.querySelectorAll('img')].find(i=>i.src.includes('/raw'));const hdr=document.querySelector('header');return {top:Math.round(p.getBoundingClientRect().top),altoBarra:hdr?Math.round(hdr.getBoundingClientRect().bottom):null,fotoCargada:!!img&&img.complete&&img.naturalWidth>0,ancho:img?.naturalWidth,titulo:p.querySelector('h3,h4')?.textContent}})()"
+    },
+    {
+      "click": "[data-qa=panel-vista-previa] [aria-label='Archivo siguiente']"
+    },
+    {
+      "esperar": 1500
+    },
+    {
+      "eval": "document.querySelector('[data-qa=panel-vista-previa] h3, [data-qa=panel-vista-previa] h4')?.textContent"
+    }
+  ]
+}

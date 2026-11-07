@@ -40,7 +40,7 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
   // El layout aplica un template `%s | Buleje` al <title>, así que NO repetimos
   // la marca acá (evita "... | Buleje | Buleje"). El OG title sí la lleva abajo.
   const title = `${cat.label} con delivery en ${city}`;
-  const description = `${cat.subtitle} Pedí con Yape o efectivo y recibí a domicilio en ${city}.`.slice(0, 158);
+  const description = `${cat.subtitle} Pide con Yape o efectivo y recibe a domicilio en ${city}.`.slice(0, 158);
   const url = `${BASE_URL}/tiendas/categoria/${cat.slug}`;
 
   return {

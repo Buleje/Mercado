@@ -127,6 +127,7 @@ export function Paginator({
       </div>
       {onPageSize && (
         <select
+          aria-label="Filas por página"
           value={pageSize}
           onChange={e => onPageSize(Number(e.target.value))}
           className="text-xs rounded-lg border border-border bg-background px-2 py-1"

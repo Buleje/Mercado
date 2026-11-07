@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
-import { CartProvider, useCart } from "@/contexts/cart-context";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { renderHook, act, waitFor } from "@testing-library/react";
+import { CARRITO_NO_AGREGADO, CartProvider, useCart } from "@/contexts/cart-context";
 import type { Product } from "@/data/products";
 import type { ReactNode } from "react";
 
@@ -152,5 +152,71 @@ describe("useCart", () => {
     expect(() => {
       renderHook(() => useCart());
     }).toThrow("useCart must be inside CartProvider");
+  });
+});
+
+/**
+ * 16-10 (tienda Musa): con sesión de admin de OTRO negocio, /api/products
+ * devolvía los productos del admin y `addItem` rechazaba en silencio todo lo de
+ * la tienda (sólo un console.warn): el botón «Agregar» quedaba mudo.
+ */
+describe("addItem en una tienda /t/<slug>", () => {
+  const tienda = ({ children }: { children: ReactNode }) => <CartProvider tenantSlug="musa">{children}</CartProvider>;
+
+  function simularServidor(existentesEnLaTienda: number[]) {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith("/api/products")) return new Response(JSON.stringify([{ id: 999 }]), { status: 200 }); // los del admin
+      if (url.startsWith("/api/marketplace/products/check-exists")) {
+        const ids = new URL(url, "http://x").searchParams.get("ids")!.split(",").map(Number);
+        return new Response(JSON.stringify({ existingIds: ids.filter((i) => existentesEnLaTienda.includes(i)) }), { status: 200 });
+      }
+      return new Response("null", { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("pide el set de la tienda como visitante (sin la sesión del admin)", async () => {
+    const fetchMock = simularServidor([1]);
+    renderHook(() => useCart(), { wrapper: tienda });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/products?active=true", expect.objectContaining({ credentials: "omit" })));
+  });
+
+  it("si el set no lo tiene, lo confirma por el slug de la tienda y lo agrega", async () => {
+    const fetchMock = simularServidor([1]);
+    const { result } = renderHook(() => useCart(), { wrapper: tienda });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await act(async () => {}); // el set (id 999) ya está cargado
+
+    act(() => {
+      result.current.addItem(apple);
+      result.current.addItem(apple); // doble toque mientras confirma: uno solo
+    });
+
+    await waitFor(() => expect(result.current.count).toBe(1));
+    expect(fetchMock).toHaveBeenCalledWith("/api/marketplace/products/check-exists?ids=1&tenantSlug=musa", expect.anything());
+    // Confirmado una vez, el siguiente entra directo (sin otra consulta).
+    act(() => result.current.addItem(apple));
+    expect(result.current.count).toBe(2);
+    expect(fetchMock.mock.calls.filter(([u]) => String(u).includes("check-exists"))).toHaveLength(1);
+  });
+
+  it("si no es de la tienda, no lo agrega y avisa con CARRITO_NO_AGREGADO", async () => {
+    const fetchMock = simularServidor([]);
+    const avisos: unknown[] = [];
+    const oir = (e: Event) => avisos.push((e as CustomEvent).detail);
+    window.addEventListener(CARRITO_NO_AGREGADO, oir);
+    const { result } = renderHook(() => useCart(), { wrapper: tienda });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await act(async () => {});
+
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    act(() => result.current.addItem(milk));
+    await waitFor(() => expect(avisos).toEqual([{ id: 2, nombre: "Leche Fresca" }]));
+    expect(result.current.count).toBe(0);
+    warn.mockRestore();
+    window.removeEventListener(CARRITO_NO_AGREGADO, oir);
   });
 });

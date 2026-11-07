@@ -36,7 +36,7 @@ export function DLQExport({
       onClick={onExport}
       disabled={rows.length === 0}
       title="Exportar CSV"
-      className="inline-flex items-center gap-2 h-10 px-4 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors disabled:opacity-50"
+      className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors disabled:opacity-50"
     >
       <Download className="w-4 h-4" />
       Exportar CSV

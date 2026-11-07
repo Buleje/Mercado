@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ExpensesDB } from "@/lib/jsondb";
+import { GastoConCajaDB } from "@/lib/db/gasto-con-caja.db";
+import { decodeExpenseDescription } from "@/lib/expense-meta";
+import { esDeHoyEnLima, pedidoInvalido, saleDeCaja, SOLO_EFECTIVO_SALE_DE_CAJA, SOLO_HOY_SALE_DE_CAJA } from "@/lib/caja/egreso-de-caja";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -22,6 +25,10 @@ const Body = z.object({
   amount: z.number().positive().optional(),
   description: z.string().max(500).optional(),
   date: z.string().datetime().optional(),
+  /** Hoy se pagó con otro medio que el de la plantilla (ej. efectivo en vez de Yape). */
+  paymentMethod: z.enum(["efectivo", "yape", "plin", "transferencia", "tarjeta", "credito"]).optional(),
+  /** Contrato «sale de la caja» (`lib/caja/egreso-de-caja.ts`): sólo con efectivo. */
+  salidaDeCaja: z.boolean().optional().default(false),
 });
 
 export async function POST(
@@ -44,7 +51,51 @@ export async function POST(
       );
     }
 
-    const expense = await ExpensesDB.addFromTemplate(auth.tenantId, id, parsed.data);
+    const { salidaDeCaja, paymentMethod, ...overrides } = parsed.data;
+
+    // Con salida de caja (o con otro medio que el de la plantilla) el pago se
+    // escribe junto con su egreso; si no, el camino de siempre, intacto.
+    if (salidaDeCaja || paymentMethod) {
+      const tpl = await ExpensesDB.getById(auth.tenantId, id);
+      if (!tpl || !tpl.recurring) {
+        return NextResponse.json(
+          { error: "Template no encontrado o no es recurring en este tenant" },
+          { status: 404 },
+        );
+      }
+      const metodo = paymentMethod ?? tpl.paymentMethod ?? null;
+      if (pedidoInvalido(salidaDeCaja, metodo)) {
+        return NextResponse.json({ error: SOLO_EFECTIVO_SALE_DE_CAJA }, { status: 400 });
+      }
+      if (salidaDeCaja && !esDeHoyEnLima(overrides.date)) {
+        return NextResponse.json({ error: SOLO_HOY_SALE_DE_CAJA, campo: "date" }, { status: 400 });
+      }
+      const fecha = overrides.date ?? new Date().toISOString();
+      const { gasto, caja } = await GastoConCajaDB.registrarGasto(auth.tenantId, {
+        category: tpl.category,
+        // Limpia, como `addFromTemplate`: la metadata vive en las columnas.
+        description: overrides.description ?? decodeExpenseDescription(tpl.description).description,
+        amount: overrides.amount ?? tpl.amount,
+        date: fecha,
+        recurring: false,
+        templateId: tpl.id,
+        frequency: tpl.frequency ?? null,
+        paymentDay: tpl.paymentDay ?? null,
+        paymentMethod: metodo,
+        supplierName: tpl.supplierName ?? null,
+        supplierId: tpl.supplierId ?? null,
+        costCenter: tpl.costCenter ?? null,
+        createdBy: auth.username ?? null,
+        paidAt: fecha,
+      }, { salidaDeCaja: saleDeCaja(salidaDeCaja, metodo) });
+      return NextResponse.json(caja ? { ...gasto, caja } : gasto, { status: 201 });
+    }
+
+    // Quién registró el pago sale de la sesión, nunca del body (ADR-374).
+    const expense = await ExpensesDB.addFromTemplate(auth.tenantId, id, {
+      ...overrides,
+      ...(auth.username ? { createdBy: auth.username } : {}),
+    });
     if (!expense) {
       return NextResponse.json(
         { error: "Template no encontrado o no es recurring en este tenant" },

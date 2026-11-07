@@ -1,0 +1,13 @@
+{
+  "tenant": "main",
+  "ruta": "/admin?tab=dashboard",
+  "pasos": [
+    { "esperar": "button[aria-haspopup=dialog][aria-label^=Notificaciones]" },
+    { "esperar": 1500 },
+    { "click": "button[aria-haspopup=dialog][aria-label^=Notificaciones]" },
+    { "esperar": "[role=dialog]" },
+    { "esperar": 2500 },
+    { "medir": "[role=dialog]" },
+    { "captura": "campana-panel" }
+  ]
+}

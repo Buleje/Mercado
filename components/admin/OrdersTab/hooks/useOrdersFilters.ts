@@ -4,7 +4,7 @@ import { useReducer } from "react";
 import type { OrderStatus } from "@/lib/jsondb";
 import type { OrderFilters, FiltersAction } from "../types";
 
-const initialFilters: OrderFilters = {
+export const FILTROS_INICIALES: OrderFilters = {
   statuses: new Set<OrderStatus>(),
   paymentMethod: "",
   source: "",
@@ -39,15 +39,17 @@ function filtersReducer(state: OrderFilters, action: FiltersAction): OrderFilter
       return { ...state, hasDebt: action.value };
     case "SET_HAS_ADMIN_NOTES":
       return { ...state, hasAdminNotes: action.value };
+    case "SET_ALL":
+      return { ...action.filters, statuses: new Set(action.filters.statuses) };
     case "CLEAR":
-      return { ...initialFilters, statuses: new Set<OrderStatus>() };
+      return { ...FILTROS_INICIALES, statuses: new Set<OrderStatus>() };
     default:
       return state;
   }
 }
 
 export function useOrdersFilters() {
-  const [filters, dispatch] = useReducer(filtersReducer, initialFilters);
+  const [filters, dispatch] = useReducer(filtersReducer, FILTROS_INICIALES);
 
   const activeFiltersCount =
     filters.statuses.size +

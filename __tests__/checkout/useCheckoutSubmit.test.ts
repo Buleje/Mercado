@@ -89,6 +89,46 @@ function setup(overrides: Partial<CheckoutState> = {}, finalTotal = 7) {
 }
 
 describe("useCheckoutSubmit", () => {
+  it("422 TOTAL_MISMATCH con descuento → muestra el total real y el 2.º POST manda el serverTotal", async () => {
+    // La cotización falló (429/red): la vista previa no tenía el descuento y
+    // mandó 7. Antes cada reconfirmación repetía 7 → el mismo 422 sin salida.
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 422,
+        json: async () => ({
+          error: "El total no coincide.",
+          code: "TOTAL_MISMATCH",
+          serverTotal: 6.65,
+          descuentoAutomatico: { monto: 0.35, porcentaje: 5, etiqueta: "Descuento por volumen" },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: "ORDER-OK", total: 6.65 }),
+      });
+
+    const result = setup();
+    await act(async () => {
+      await result.current.submit.submit();
+    });
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body as string).total).toBe(7);
+    await waitFor(() => {
+      expect(result.current.submit.ajusteServidor?.serverTotal).toBe(6.65);
+    });
+    expect(result.current.submit.ajusteServidor?.descuentoAutomatico?.monto).toBe(0.35);
+    expect(result.current.state.ui.submitError).toMatch(/6\.65/);
+
+    await act(async () => {
+      await result.current.submit.submit();
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(mockFetch.mock.calls[1][1].body as string).total).toBe(6.65);
+    await waitFor(() => {
+      expect(result.current.state.ui.orderId).toBe("ORDER-OK");
+    });
+  });
+
   it("envía el pedido con efectivo y marca deuda=true", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -164,7 +204,7 @@ describe("useCheckoutSubmit", () => {
     expect(body.couponDiscount).toBe(5);
   });
 
-  it("guarda el tip en el payload cuando es > 0", async () => {
+  it("no manda la propina en el pedido (el servidor no la guarda ni la cobra)", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ id: "ORDER-TIP" }),
@@ -183,7 +223,7 @@ describe("useCheckoutSubmit", () => {
     });
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
-    expect(body.tip).toBe(2.5);
+    expect(body).not.toHaveProperty("tip");
   });
 
   it("bloquea doble submit cuando submitting=true", async () => {

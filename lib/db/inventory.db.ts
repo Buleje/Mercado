@@ -6,6 +6,7 @@ import type {
   Warehouse as PWarehouse,
 } from "@/lib/generated/prisma/client";
 import { DomainEvents } from "@/lib/domain-events";
+import { minimoGlobalDe, stockMinimoDe } from "@/lib/inventario/stock-minimo";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -86,6 +87,57 @@ function mapWarehouse(w: PWarehouse): DbWarehouse {
 
 // ── Inventory Movements DB ────────────────────────────────────────────────────
 
+/**
+ * Aviso (push + evento de dominio) cuando una salida cruza el stock mínimo.
+ * Mínimo efectivo = el propio del producto o, si no tiene, el global del
+ * negocio (`stockMinimoDe`, 09-10). Corre fuera del camino de la venta.
+ */
+async function avisarSiCruzaMinimo(a: {
+  tenantId: string;
+  productId: number;
+  productName: string;
+  stockMinPropio: number | null;
+  prevStock: number;
+  clampedNewStock: number;
+  quantity: number;
+  type: string;
+}): Promise<void> {
+  let minimoGlobal = 0;
+  if (a.stockMinPropio == null) {
+    const { SettingsDB } = await import("@/lib/db/settings.db");
+    minimoGlobal = minimoGlobalDe(await SettingsDB.get(a.tenantId));
+  }
+  const minimo = stockMinimoDe({ stockMin: a.stockMinPropio }, minimoGlobal);
+  if (!(a.prevStock > minimo && a.clampedNewStock <= minimo)) return;
+
+  // 1) Legacy push notification — scoped por tenantId (audit WhatsApp #14).
+  import("@/lib/push-sender").then(({ broadcastPush }) =>
+    broadcastPush({
+      title: `⚠️ Stock bajo: ${a.productName}`,
+      body: a.clampedNewStock === 0
+        ? `Se agotó "${a.productName}". Reabastece cuanto antes.`
+        : `Solo quedan ${a.clampedNewStock} unidad(es) de "${a.productName}" (mínimo: ${minimo}).`,
+      url: "/admin?tab=inventario",
+    }, a.tenantId)
+  ).catch((err) => logger.error("[inventory.db] low-stock notification failed", { error: String(err), productId: a.productId }));
+
+  // 2) Domain event
+  await DomainEvents.stockBajo(a.tenantId, {
+    productId:     a.productId,
+    productName:   a.productName,
+    currentStock:  a.clampedNewStock,
+    stockMin:      minimo,
+    lastDeduction: a.quantity,
+    reason:        (a.type === "venta" || a.type === "venta_online")
+      ? "venta"
+      : a.type === "merma"
+        ? "merma"
+        : a.type === "ajuste_negativo"
+          ? "ajuste"
+          : "transferencia",
+  }).catch((err) => logger.error("[inventory.db] DomainEvents.stockBajo failed", { error: String(err), productId: a.productId }));
+}
+
 export const InventoryMovementsDB = {
   async getAll(tenantId: string, limit = 200): Promise<DbInventoryMovement[]> {
     const where: Record<string, unknown> = { tenantId };
@@ -95,6 +147,42 @@ export const InventoryMovementsDB = {
       take: limit,
       include: { product: { select: { id: true, name: true } } },
     })).map(mapInventoryMovement);
+  },
+  /**
+   * Una página del kardex, con cursor.
+   *
+   * `getAll` corta en 200 sin decirlo: la pantalla de Entradas y Salidas
+   * mostraba «Todo» y era «los últimos 200», así que en un negocio con
+   * movimiento el historial simplemente no estaba. El cursor es el patrón que
+   * ya usa `ActivityLogDB.listWithCursor`, y mantiene acotada cada consulta.
+   */
+  async listWithCursor(
+    tenantId: string,
+    opts: { limit?: number; cursor?: string; desde?: Date } = {},
+  ): Promise<{ items: DbInventoryMovement[]; nextCursor: string | null; total: number }> {
+    const limit = Math.min(500, Math.max(1, opts.limit ?? 100));
+    const where: Record<string, unknown> = { tenantId };
+    if (opts.desde) where.createdAt = { gte: opts.desde };
+
+    const [rows, total] = await Promise.all([
+      prisma.inventoryMovement.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit + 1,
+        ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+        include: { product: { select: { id: true, name: true } } },
+      }),
+      // El total del período, para que la pantalla pueda decir cuánto falta en
+      // vez de dejar al usuario adivinando si la lista terminó.
+      prisma.inventoryMovement.count({ where }),
+    ]);
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    return {
+      items: items.map(mapInventoryMovement),
+      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+      total,
+    };
   },
   /**
    * Round 28 P0 (DB profundo audit): firma cambió de `(productId)` a
@@ -150,11 +238,42 @@ export const InventoryMovementsDB = {
     return { movements: items.map(mapInventoryMovement), nextCursor, total };
   },
 
-  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string }): Promise<DbInventoryMovement> {
+  /**
+   * Registra un movimiento y **mueve el stock**.
+   *
+   * Ojo con el nombre: `record` suena a "sólo anotar", y por eso dos llamadores
+   * que YA habían escrito el stock lo llamaban "para el audit trail" y el
+   * movimiento se aplicaba dos veces. Medido el 2026-08-11:
+   *
+   *   - vender 3 unidades descontaba **6** (`app/api/sales`)
+   *   - ajustar el stock a 80 desde 100 dejaba **60** (`PUT /api/products/[id]`)
+   *
+   * Para esos casos existe `stockYaAplicado: true`: deja la constancia en el
+   * kardex con las cantidades correctas, sin volver a tocar el producto.
+   */
+  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string; stockYaAplicado?: boolean }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement
     const product = await prisma.product.findFirst({ where: { id: data.productId, tenantId: data.tenantId } });
     const prevStock = product?.stock ?? 0;
     const isIncrease = ["compra", "devolucion", "ajuste_positivo"].includes(data.type);
+
+    if (data.stockYaAplicado) {
+      // El caller ya escribió el stock. El kardex se reconstruye hacia atrás
+      // para que la fila diga de dónde vino y a dónde fue.
+      const previoReal = isIncrease ? prevStock - data.quantity : prevStock + data.quantity;
+      const row = await prisma.inventoryMovement.create({
+        data: {
+          productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
+          previousStock: Math.max(0, previoReal), newStock: prevStock,
+          reference: data.reference, notes: data.notes,
+          tenantId: data.tenantId,
+          ...(data.warehouseId ? { warehouseId: data.warehouseId } : {}),
+          ...(data.createdBy ? { createdBy: data.createdBy } : {}),
+        },
+      });
+      return mapInventoryMovement(row);
+    }
+
     const newStock = isIncrease ? prevStock + data.quantity : prevStock - data.quantity;
     const clampedNewStock = Math.max(0, newStock);
     // SECURITY 2026-05-06 (audit stock #1): updateMany con guard `stock=prevStock`
@@ -178,43 +297,22 @@ export const InventoryMovementsDB = {
       },
     });
 
-    // Fire-and-forget: push notification when stock drops below minimum
-    const lowStockMin = (product as unknown as { stockMin?: number | null })?.stockMin;
-    if (
-      !isIncrease &&
-      lowStockMin != null &&
-      prevStock > lowStockMin &&
-      clampedNewStock <= lowStockMin &&
-      product
-    ) {
-      // 1) Legacy push notification — scoped por tenantId (audit WhatsApp #14).
-      import("@/lib/push-sender").then(({ broadcastPush }) =>
-        broadcastPush({
-          title: `⚠️ Stock bajo: ${product.name}`,
-          body: clampedNewStock === 0
-            ? `Se agotó "${product.name}". Reabastece cuanto antes.`
-            : `Solo quedan ${clampedNewStock} unidad(es) de "${product.name}" (mínimo: ${lowStockMin}).`,
-          url: "/admin?tab=inventario",
-        }, data.tenantId)
-      ).catch((err) => logger.error("[inventory.db] low-stock notification failed", { error: String(err), productId: data.productId }));
-
-      // 2) Domain event
-      if (data.tenantId) {
-        DomainEvents.stockBajo(data.tenantId, {
-          productId:     data.productId,
-          productName:   product.name,
-          currentStock:  clampedNewStock,
-          stockMin:      lowStockMin,
-          lastDeduction: data.quantity,
-          reason:        (data.type === "venta" || data.type === "venta_online")
-            ? "venta"
-            : data.type === "merma"
-              ? "merma"
-              : data.type === "ajuste_negativo"
-                ? "ajuste"
-                : "transferencia",
-        }).catch((err) => logger.error("[inventory.db] DomainEvents.stockBajo failed", { error: String(err), productId: data.productId }));
-      }
+    // Fire-and-forget: push notification when stock drops below minimum.
+    // Un solo stock mínimo (09-10): sin mínimo propio, el global del negocio
+    // (`Settings.globalMinStock`). Se lee sólo en ese caso y fuera del camino
+    // de la venta (SettingsDB.get va cacheado); antes esos productos nunca
+    // avisaban.
+    if (!isIncrease && product && product.stock != null) {
+      avisarSiCruzaMinimo({
+        tenantId: data.tenantId,
+        productId: data.productId,
+        productName: product.name,
+        stockMinPropio: product.stockMin,
+        prevStock,
+        clampedNewStock,
+        quantity: data.quantity,
+        type: data.type,
+      }).catch((err) => logger.error("[inventory.db] aviso de stock mínimo falló", { error: String(err), productId: data.productId }));
     }
 
     return mapInventoryMovement(row);
@@ -223,9 +321,21 @@ export const InventoryMovementsDB = {
   /**
    * Decrement stock using FEFO (First Expired, First Out) batch selection.
    */
-  async decrementFEFO(productId: number, quantity: number, tenantId: string, reference?: string, type: string = "venta_online"): Promise<void> {
-    // 1. Decrement Product.stock globally
-    await this.record({ productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades`, tenantId });
+  async decrementFEFO(
+    productId: number,
+    quantity: number,
+    tenantId: string,
+    reference?: string,
+    type: string = "venta_online",
+    opts: { stockYaAplicado?: boolean } = {},
+  ): Promise<void> {
+    // 1. Kardex + Product.stock. Con `stockYaAplicado` el caller ya bajó el
+    //    stock en su transacción atómica (POST /api/orders): solo se anota el
+    //    movimiento. Sin la marca se bajaba dos veces (vender 1 restaba 2).
+    await this.record({
+      productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades`, tenantId,
+      stockYaAplicado: opts.stockYaAplicado,
+    });
 
     // 2. Decrement from batches (FEFO order). SECURITY 2026-05-06: filtrar
     // por tenantId para evitar consumir batches de otro tenant.
@@ -260,7 +370,19 @@ export const InventoryMovementsDB = {
 
   async adjust(productId: number, newStock: number, tenantId: string, warehouseId?: string, notes?: string, createdBy?: string): Promise<DbInventoryMovement> {
     const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
-    const prevStock = product?.stock ?? 0;
+    /**
+     * Sin producto no hay ajuste que registrar.
+     *
+     * Antes seguía derecho con `prevStock = 0`: el `updateMany` (que sí filtra
+     * por tenant) no tocaba ninguna fila, pero el movimiento se creaba igual y
+     * la API respondía 201. Ajustar el stock de un producto de otra empresa
+     * —o de uno borrado— devolvía «listo» y dejaba un renglón fantasma en el
+     * kardex, con un `previousStock` inventado en 0.
+     */
+    if (!product) {
+      throw new Error("Ese producto no existe en este negocio");
+    }
+    const prevStock = product.stock ?? 0;
     const diff = newStock - prevStock;
     const type = diff >= 0 ? "ajuste_positivo" : "ajuste_negativo";
     await prisma.product.updateMany({ where: { id: productId, tenantId }, data: { stock: Math.max(0, newStock) } });
@@ -340,13 +462,27 @@ export const WarehousesDB = {
 // ── Auto-Reorder Helper ───────────────────────────────────────────────────────
 
 export const AutoReorderDB = {
+  /**
+   * Productos en o bajo su stock mínimo. Un solo stock mínimo (09-10): los que
+   * no tienen mínimo propio usan `Settings.globalMinStock` (antes quedaban
+   * fuera). `stockMin` sale ya como el mínimo efectivo.
+   */
   async getLowStockProducts(tenantId: string): Promise<{ id: number; name: string; stock: number; stockMin: number; stockMax: number; category: string; unit: string }[]> {
+    const { SettingsDB } = await import("@/lib/db/settings.db");
+    const minimoGlobal = minimoGlobalDe(await SettingsDB.get(tenantId));
     const prods = await prisma.product.findMany({
-      where: { tenantId, active: true, stock: { not: null }, stockMin: { not: null } },
+      where: {
+        tenantId, active: true, deletedAt: null, stock: { not: null },
+        OR: [
+          { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+          { stockMin: null, stock: { lte: minimoGlobal } },
+        ],
+      },
       select: { id: true, name: true, stock: true, stockMin: true, stockMax: true, category: true, unit: true },
     });
     return prods
-      .filter(p => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin)
-      .map(p => ({ id: p.id, name: p.name, stock: p.stock ?? 0, stockMin: p.stockMin ?? 0, stockMax: p.stockMax ?? (p.stockMin ?? 0) * 3, category: p.category, unit: p.unit }));
+      .map(p => ({ p, minimo: stockMinimoDe(p, minimoGlobal) }))
+      .filter(({ p, minimo }) => p.stock !== null && p.stock <= minimo)
+      .map(({ p, minimo }) => ({ id: p.id, name: p.name, stock: p.stock ?? 0, stockMin: minimo, stockMax: p.stockMax ?? minimo * 3, category: p.category, unit: p.unit }));
   },
 };

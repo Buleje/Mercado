@@ -17,9 +17,11 @@
  * Compatible con LazyMotion strict (usa `m` de admin/providers).
  */
 
+import { KPI_GRID_6 } from "./kpi-grid";
 import { m } from "@/components/admin/providers";
 import { BulejeMark } from "@/components/ui-system/illustrations/BulejeLogo";
 import { cn } from "@/lib/utils";
+import { CargaPagina } from "@buleje/design-system/carga-pagina";
 
 interface Props {
   variant?: "full" | "inline" | "card";
@@ -36,11 +38,20 @@ export function BulejeLoader({
   className,
   minHeight,
 }: Props) {
+  // Pantalla y tarjeta = el cargador de página del DS (número 1→100, sin texto
+  // a la vista; Brandon 2026-10-17). `inline` sigue siendo el logo chico.
+  if (variant !== "inline") {
+    return (
+      <CargaPagina
+        modo={variant === "full" ? "pantalla" : "bloque"}
+        etiqueta={label.replace(/(\.\.\.|…)$/, "")}
+        className={className}
+      />
+    );
+  }
+
   const wrapperCls = cn(
-    "flex flex-col items-center justify-center gap-4",
-    variant === "full" && "min-h-screen",
-    variant === "card" && "py-12",
-    variant === "inline" && "py-6",
+    "flex flex-col items-center justify-center gap-4 py-6",
     className,
   );
 
@@ -173,12 +184,12 @@ export function BulejeSkeleton({
  */
 export function BulejeDashboardSkeleton() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Logo loader arriba */}
       <BulejeLoader variant="inline" label="Cargando datos..." size={40} />
 
       {/* KPI row skeletons */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={KPI_GRID_6}>
         {Array.from({ length: 6 }).map((_, i) => (
           <BulejeSkeleton key={i} height={112} delay={i * 0.04} />
         ))}

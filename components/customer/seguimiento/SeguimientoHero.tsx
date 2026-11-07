@@ -48,13 +48,16 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
   const eta = msToMinLabel(diff);
   const isDone = status === "delivered";
   const isCanceled = status === "canceled";
+  // El ETA ("Llega en X min") solo tiene sentido cuando el pedido ya salió a reparto
+  // (audit 2026-06-26: antes aparecía también en confirmed/preparing, antes del despacho).
+  const isEnRoute = status === "shipping" || status === "nearby";
   const short = orderId.length > 12 ? `#${orderId.slice(-8).toUpperCase()}` : `#${orderId.toUpperCase()}`;
 
   return (
     <section
       aria-labelledby="tracking-hero-heading"
       className={cn(
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8",
+        "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8",
         className,
       )}
     >
@@ -73,7 +76,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
           >
             Pedido cancelado
           </h1>
-          <p className="mt-3 text-sm text-muted max-w-xl leading-relaxed">
+          <p className="mt-3 text-base text-muted max-w-xl leading-relaxed">
             Este pedido fue cancelado. Si fue un error, contacta a la tienda.
           </p>
         </>
@@ -85,11 +88,11 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
           >
             Entregado
           </h1>
-          <p className="mt-3 text-sm text-muted max-w-xl leading-relaxed">
+          <p className="mt-3 text-base text-muted max-w-xl leading-relaxed">
             Tu pedido fue entregado. Gracias por confiar en {storeName}.
           </p>
         </>
-      ) : (
+      ) : isEnRoute ? (
         <>
           <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-muted mb-1 block">
             {STATUS_LABEL[status]}
@@ -108,8 +111,23 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
               </span>
             )}
           </h1>
-          <p className="mt-3 text-sm text-muted max-w-xl leading-relaxed">
+          <p className="mt-3 text-base text-muted max-w-xl leading-relaxed">
             Tu pedido está en camino. Te avisaremos cuando el repartidor esté cerca.
+          </p>
+        </>
+      ) : (
+        <>
+          <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-muted mb-1 block">
+            {STATUS_LABEL[status]}
+          </span>
+          <h1
+            id="tracking-hero-heading"
+            className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)]"
+          >
+            {status === "preparing" ? "Estamos preparando tu pedido" : "Pedido confirmado"}
+          </h1>
+          <p className="mt-3 text-base text-muted max-w-xl leading-relaxed">
+            Te avisaremos en cuanto salga a reparto y verás el tiempo estimado de llegada.
           </p>
         </>
       )}
@@ -126,9 +144,9 @@ function ProgressBar({ status }: { status: TrackingStatus }) {
 
   return (
     <div className="mt-6" aria-hidden>
-      <div className="h-2 w-full rounded-full bg-[var(--surface-sunken)] dark:bg-surface overflow-hidden">
+      <div className="h-2.5 w-full bg-[var(--surface-sunken)] dark:bg-surface overflow-hidden">
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-[var(--dur-slower)] ease-out"
+          className="h-full bg-primary transition-[width] duration-[var(--dur-slower)] ease-out"
           style={{ width: `${Math.round(fraction * 100)}%` }}
         />
       </div>

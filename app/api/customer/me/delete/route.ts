@@ -8,6 +8,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 /**
  * POST /api/customer/me/delete
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = await req.json().catch(() => null);
+  const body = await leerJson(req);
   if (!body) {
     return NextResponse.json(
       { error: "Body inválido" },

@@ -51,7 +51,8 @@ export type Resource =
   | "store_settings"
   | "wholesale_orders"
   | "delivery_assignments"
-  | "adelantos";
+  | "adelantos"
+  | "adelantos-entregar";
 
 /**
  * Matriz de permisos: role → resource → actions permitidas
@@ -87,6 +88,7 @@ const PERMISSIONS: Partial<Record<Role, Partial<Record<Resource, Action[]>>>> = 
     sales: ["read", "write", "delete"],
     expenses: ["read", "write", "delete"],
     adelantos: ["read", "write", "delete"],
+    "adelantos-entregar": ["write"],
     payables: ["read", "write", "delete"],
     
     // Inventario y compras
@@ -149,6 +151,7 @@ const PERMISSIONS: Partial<Record<Role, Partial<Record<Resource, Action[]>>>> = 
     
     // Caja
     "cash-registers": ["read", "write"], // Apertura/cierre de caja
+    "adelantos-entregar": ["write"], // Entrega un adelanto del cajón con firma (ADR-491); no ve ni cambia los demás
     
     // Inventario (solo consulta)
     inventory: ["read"],
@@ -287,6 +290,7 @@ const PERMISSIONS: Partial<Record<Role, Partial<Record<Resource, Action[]>>>> = 
     sales: ["read", "write", "delete"],
     expenses: ["read", "write", "delete"],
     adelantos: ["read", "write", "delete"],
+    "adelantos-entregar": ["write"],
     payables: ["read", "write", "delete"],
     inventory: ["read", "write", "delete"],
     suppliers: ["read", "write", "delete"],
@@ -330,6 +334,7 @@ const PERMISSIONS: Partial<Record<Role, Partial<Record<Resource, Action[]>>>> = 
     sales: ["read", "write"],
     expenses: ["read", "write"],
     adelantos: ["read", "write"],
+    "adelantos-entregar": ["write"],
     payables: ["read", "write"],
     inventory: ["read", "write"],
     suppliers: ["read", "write"],

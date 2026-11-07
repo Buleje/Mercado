@@ -66,7 +66,8 @@ export async function GET(
 ) {
   // SECURITY 2026-05-06 (audit team): rate limit por IP — endpoint público
   // sin auth permite enumeración de orderIds. Cache 15s mitiga repetidos pero
-  // scraping masivo aún era posible. STRICT = 60 req/min/IP.
+  // scraping masivo aún era posible. STRICT = 10 cada 15 min por IP (17-10:
+  // nada sondea esta ruta; la página /tracking sondea /api/delivery/tracking).
   const rl = await applyRateLimit(req, "STRICT", "track-public");
   if (rl) return rl;
 
